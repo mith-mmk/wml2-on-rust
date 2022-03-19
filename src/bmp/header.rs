@@ -110,7 +110,7 @@ impl BitmapHeader {
             };
             width = os2header.bc_width as usize;
             height = os2header.bc_height as usize;
-            compression = None;
+            compression = Some(Compressions::BiRGB);
             bit_per_count = os2header.bc_bit_count as usize;
             clut_size = 0;
             bitmap_info = BitmapInfo::Os2(os2header);

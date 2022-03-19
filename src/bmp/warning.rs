@@ -9,9 +9,9 @@ pub enum BMPWarningKind {
 }
 
 #[allow(unused)]
-#[allow(non_snake_case)]
 impl WarningKind for BMPWarningKind {
     fn as_str(&self) -> &'static str {
+        use BMPWarningKind::*;
         match &*self {
             OutOfMemory => {"Out of memory"},
             DataCorruption => {"Data Corruption"},

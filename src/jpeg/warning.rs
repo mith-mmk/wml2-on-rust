@@ -18,6 +18,7 @@ pub enum JpegWarningKind {
 #[allow(non_snake_case)]
 impl WarningKind for JpegWarningKind {
     fn as_str(&self) -> &'static str {
+        use JpegWarningKind::*;
         match &*self {
             IlligalRSTMaker => {"Illigal RST Maker"},
             OutOfMemory => {"Out of memory"},

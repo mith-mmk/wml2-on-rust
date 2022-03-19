@@ -1,4 +1,5 @@
 
+use crate::io::read_bytes;
 use crate::warning::ImgWarning;
 use crate::io::read_byte;
 use crate::io::read_u16le;
@@ -8,7 +9,7 @@ use crate::DecodeOptions;
 use crate::bmp::header::BitmapHeader;
 use crate::bmp::header::Compressions;
 
-fn extract_rgba(buffer:&[u8],line: &mut Vec<u8>,header:&BitmapHeader) -> Result<(),ImgError> {
+fn covert_rgba32(buffer:&[u8],line: &mut Vec<u8>,header:&BitmapHeader) -> Result<(),ImgError> {
     let mut offset = 0;
     match header.bit_count {
         32 => { // bgra
@@ -118,8 +119,8 @@ fn decode_rgb(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptions) -> 
     let line_size =  ((header.width as usize * header.bit_count + 31) / 32) * 4;
     for y_ in  0..header.height {
         let y = header.height -1 - y_ ;
-        let mut offset = y_ * line_size;
-        extract_rgba(&buffer[offset..],&mut line,header)?;
+        let offset = y_ * line_size;
+        covert_rgba32(&buffer[offset..],&mut line,header)?;
         option.drawer.draw(0,y,header.width,1,&line)?;
     }
     option.drawer.terminate()?;
@@ -127,9 +128,76 @@ fn decode_rgb(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptions) -> 
 }
 
 fn decode_rle(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,ImgError>  {
-//    option.drawer.init(header.width,header.height);
-    return Err(ImgError::new_const(ImgErrorKind::NoSupportFormat,&"RLE bitmap not support"))
+    option.drawer.init(header.width,header.height)?;
+    let mut line :Vec<u8> = (0..header.width*4).map(|i| if i%4==3 {0xff} else {0}).collect();
+    let mut ptr = 0;
+    let mut y:usize = header.height - 1;
+    let rev_bytes = (8 / header.bit_count) as usize;
+    loop{
+        let mut x:usize = 0;
+        let mut buf :Vec<u8> = (0..((header.width + rev_bytes -1) / rev_bytes)).map(|_| 0).collect();
+        let mut is_eob = false;
+        loop {
+            if ptr >= buffer.len() {
+                break;
+            }
+            let data0 = read_byte(buffer, ptr);
+            let data1 = read_byte(buffer, ptr+1);
+            ptr += 2;
+            if data0 == 0 {
+                if data1==0 {break}    // EOL
+                if data1==1 {
+                    is_eob = true;
+                    break
+                }    // EOB
+                if data1 == 2 {         // Jump
+                    let data0 = read_byte(buffer, ptr);
+                    let data1 = read_byte(buffer, ptr+1);
+                    ptr += 2;
+                    if data1 == 0 {
+                        x += data0 as usize;
+                    } else {
+                        covert_rgba32(&buf, &mut line, header)?;
+                        option.drawer.draw(0,y,header.width,1,&line)?;
+                        if y == 0 {break;}
+                        y -= 1;
+                        buf  = (0..((header.width + rev_bytes -1) / rev_bytes)).map(|_| 0).collect();
+                        for _ in 0..data1 as usize {
+                            covert_rgba32(&buf, &mut line, header)?;
+                            option.drawer.draw(0,y,header.width,1,&line)?;
+                            if y == 0 {break;}
+                            y -= 1;
+                        }
+                    }
+                }
+
+                let bytes = (data1 as usize + rev_bytes -1) / rev_bytes;   // pixel
+                let rbytes = (bytes + 1) /2 * 2;        // even bytes
+                let rbuf = read_bytes(buffer,ptr,rbytes);
+                ptr += rbytes;
+            
+                for i in 0..bytes {
+                    buf[x] = rbuf[i];
+                    x += 1;
+                }    
+            } else {
+                for _ in 0..data0 as usize / rev_bytes{
+                    buf[x] = data1;
+                    x += 1;
+                }
+            }
+        }
+        covert_rgba32(&buf, &mut line, header)?;
+        option.drawer.draw(0,y,header.width,1,&line)?;
+        if y == 0 || ptr >= buffer.len() || is_eob {
+            break;
+        }
+        y -= 1;
+    }
+    option.drawer.terminate()?;
+    return Ok(None)
 }
+
 
 fn decode_jpeg(buffer: &[u8],_:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,ImgError>  {
     let ret = crate::jpeg::decoder::decode(buffer,option);
@@ -150,7 +218,6 @@ fn decode_jpeg(buffer: &[u8],_:&BitmapHeader,option:&mut  DecodeOptions) -> Resu
 fn decode_png(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,ImgError>  {
     return Err(ImgError::new_const(ImgErrorKind::NoSupportFormat,&"PNG bitmap not support"))
 }
-
 
 pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) 
                     -> Result<Option<ImgWarning>,ImgError> {

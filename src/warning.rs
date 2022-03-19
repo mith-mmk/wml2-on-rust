@@ -26,7 +26,7 @@ impl ImgWarning {
     }
 
     #[inline]
-    pub(crate) const fn new_const(kind: ImgWarningKind, message: &'static &'static str) -> ImgWarning {
+    pub const fn new_const(kind: ImgWarningKind, message: &'static &'static str) -> ImgWarning {
         Self { repr: Repr::SimpleMessage(kind, message) }
     }
 
@@ -39,24 +39,6 @@ impl ImgWarning {
             Repr::SimpleMessage(..) => None,
         }
     }
-
-    #[must_use]
-    #[inline]
-    pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
-        match self.repr {
-            Repr::Simple(..) => None,
-            Repr::SimpleMessage(..) => None,
-            Repr::Custom(ref c) => None, //todo
-        }
-    }
-
-    pub fn into_inner(self) -> Option<Box<dyn std::error::Error + Send + Sync>> {
-        match self.repr {
-            Repr::Simple(..) => None,
-            Repr::SimpleMessage(..) => None,
-            Repr::Custom(ref c) => None, //todo
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -67,13 +49,12 @@ pub(crate) enum Repr {
     Custom(Box<Custom>),
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub(crate) struct Custom {
     kind: ImgWarningKind,
     warning: Box<dyn Debug + Send + Sync>,
 }
-
-
 
 #[derive(Debug)]
 pub enum ImgWarningKind {
@@ -82,20 +63,20 @@ pub enum ImgWarningKind {
     Other,
 }
 
+#[allow(unused)]
 impl WarningKind for ImgWarningKind {
-
     fn as_str(&self) -> &'static str {
         use self::ImgWarningKind::*;
         match &*self {
-           Jpeg(waning) => {
-               "todo"
-           },
-           Bmp(waning) => {
-               "todo"
-           },
-           Other => {
+            Jpeg(warning) => {
+               warning.as_str()
+            },
+            Bmp(warning) => {
+                warning.as_str()
+            },
+            Other => {
                "Unknown warning"
-           }
+            }
         }
      }
 }

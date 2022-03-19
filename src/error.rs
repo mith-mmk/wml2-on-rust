@@ -1,4 +1,3 @@
-//use crate::error::Repr as OtherRepr;
 use core::fmt::*;
 
 pub struct ImgError {
@@ -24,7 +23,7 @@ impl ImgError {
     }
 
     #[inline]
-    pub(crate) const fn new_const(kind: ImgErrorKind, message: &'static &'static str) -> ImgError {
+    pub const fn new_const(kind: ImgErrorKind, message: &'static &'static str) -> ImgError {
         Self { repr: Repr::SimpleMessage(kind, message) }
     }
 
@@ -32,9 +31,7 @@ impl ImgError {
     #[inline]
     pub fn raw_os_error(&self) -> Option<i32> {
         match self.repr {
-            Repr::Os(i) => Some(i),
             Repr::Custom(..) => None,
-            Repr::Simple(..) => None,
             Repr::SimpleMessage(..) => None,
         }
     }
@@ -43,8 +40,6 @@ impl ImgError {
     #[inline]
     pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
         match self.repr {
-            Repr::Os(..) => None,
-            Repr::Simple(..) => None,
             Repr::SimpleMessage(..) => None,
             Repr::Custom(ref c) => Some(&*c.error),
         }
@@ -52,8 +47,6 @@ impl ImgError {
 
     pub fn into_inner(self) -> Option<Box<dyn std::error::Error + Send + Sync>> {
         match self.repr {
-            Repr::Os(..) => None,
-            Repr::Simple(..) => None,
             Repr::SimpleMessage(..) => None,
             Repr::Custom(c) => Some(c.error),
         }
@@ -62,13 +55,12 @@ impl ImgError {
 
 #[derive(Debug)]
 pub(crate) enum Repr {
-    Os(i32),
-    Simple(ImgErrorKind),
     // &str is a fat pointer, but &&str is a thin pointer.
     SimpleMessage(ImgErrorKind, &'static &'static str),
     Custom(Box<Custom>),
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub(crate) struct Custom {
     kind: ImgErrorKind,
@@ -101,6 +93,7 @@ pub enum ImgErrorKind {
 #[allow(unused)]
 impl ImgErrorKind {
     pub(crate) fn as_str(&self) -> &'static str {
+        use ImgErrorKind::*;
         match &*self {
             UnknownFormat => {"Unknown format"},
             OutOfMemory => {"Out of memory"},
@@ -118,7 +111,7 @@ impl ImgErrorKind {
             OutboundIndex => {"Outbound index"},
             IlligalCallback => {"Illigal Callback"},
             NotInitializedImageBuffer => {"Not initialized Image Buffer"},
-            NotInitializedImageBuffer => {"OS error"},
+            OSError => {"OS error"},
             UnknownError => {"Unkonw error"}            
         }
     }

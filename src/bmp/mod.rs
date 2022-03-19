@@ -1,3 +1,3 @@
 pub mod header;
 pub mod decoder;
-pub mod worning;
+pub mod warning;

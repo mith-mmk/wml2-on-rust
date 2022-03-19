@@ -3,11 +3,9 @@
  * use MIT License
  */
 
-use crate::error::ImgError::Custom;
-use crate::error::{ImgError,ErrorKind};
-use crate::error::ImgError::{SimpleAddMessage};
 use crate::io::{read_byte, read_bytes, read_string, read_u128be, read_u16be, read_u32be, read_u64be};
-
+use crate::error::ImgError;
+use crate::error::ImgErrorKind;
 
 /* from SOS */
 pub struct HuffmanScanHeader {
@@ -458,7 +456,11 @@ impl JpegHaeder {
         }
 
         if offset >= 16 {
-            return Err(Custom("Not Jpeg".to_string()))
+            return Err(
+                ImgError::new_const(
+                    ImgErrorKind::NoSupportFormat,
+                    &"Not Jpeg"
+                ))
         }
 
         return Self::read_makers(&buffer[offset..],opt,true,false)
@@ -551,18 +553,18 @@ impl JpegHaeder {
                             frame_header = Some(fh);
                             offset = offset + length; //skip
                         } else {
-                            return Err(SimpleAddMessage(ErrorKind::DecodeError,"SOF Header Multiple".to_string()))
+                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"SOF Header Multiple"))
                         }
                     },
                     0xd8 => { // Start of Image
                         if include_soi {
                             _flag = true;
                         } else {
-                            return Err(SimpleAddMessage(ErrorKind::DecodeError,"SOI Header Mutiple".to_string()))
+                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"SOI Header Mutiple"))
                         }
                     },
                     0xd9=> { // End of Image
-                        return Err(SimpleAddMessage(ErrorKind::DecodeError ,"Unexpect EOI".to_string()));
+                        return Err(ImgError::new_const(ImgErrorKind::DecodeError ,&"Unexpect EOI"));
                     },
                     0xda=> { // SOS Scan header
                         _sos_flag = true;
@@ -619,7 +621,7 @@ impl JpegHaeder {
                     0xdc =>{ // DNL Define Number Lines
                         _dqt_flag = true;
                         if is_only_tables {
-                            return Err(SimpleAddMessage(ErrorKind::DecodeError,"Disallow DNL Header".to_string()))
+                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Disallow DNL Header"))
                         }
                         let length: usize = read_u16be(&buffer,offset) as usize;
                         let nl = read_u16be(&buffer,offset) as usize;
@@ -635,7 +637,7 @@ impl JpegHaeder {
                     },
                     0xde => {   // DHP Hierachical mode
                         if is_only_tables {
-                            return Err(SimpleAddMessage(ErrorKind::DecodeError,"Disallow DNP Header".to_string()))
+                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Disallow DNP Header"))
                         }
                         let length = read_u16be(&buffer,offset) as usize;
                         is_hierachical = true;
@@ -643,7 +645,7 @@ impl JpegHaeder {
                     },
                     0xdf => {   //EXP
                         if is_only_tables {
-                            return Err(SimpleAddMessage(ErrorKind::DecodeError,"Disallow EXP Header".to_string()))
+                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Disallow EXP Header"))
                         }
                         let length = read_u16be(&buffer,offset) as usize;
                         offset = offset + length; // skip
@@ -683,13 +685,13 @@ impl JpegHaeder {
                     }
                 }
             } else {
-                return Err(SimpleAddMessage(ErrorKind::UnknownFormat,"Not Jpeg".to_string()));
+                return Err(ImgError::new_const(ImgErrorKind::UnknownFormat,&"Not Jpeg"));
             }
 
         }
 
         if _sof_flag && _sos_flag && _dht_flag && _dqt_flag == false {
-            return Err(SimpleAddMessage(ErrorKind::IlligalData,"Maker is shortage".to_string()));
+            return Err(ImgError::new_const(ImgErrorKind::IlligalData,&"Maker is shortage"));
         }
 
         if _jpeg_app_headers.len() > 0 {

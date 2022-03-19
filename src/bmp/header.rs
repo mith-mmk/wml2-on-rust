@@ -1,11 +1,11 @@
 use crate::io::*;
 use crate::error::ImgError;
-use crate::error::ErrorKind;
-use crate::SimpleAddMessage;
+use crate::error::ImgErrorKind;
 
 // not support bitmap header V4/V5 yet
 
 #[allow(unused)]
+#[derive(Debug)]
 pub struct BitmapHeader {
     pub filesize: usize,
     pub image_offset: usize,
@@ -18,6 +18,7 @@ pub struct BitmapHeader {
     pub bitmap_info: BitmapInfo,
 }
 
+#[derive(Debug)]
 pub struct BitmapFileHeader {
     pub bf_type : u16,
     pub bf_size : u32,
@@ -27,6 +28,7 @@ pub struct BitmapFileHeader {
 }
 
 #[allow(unused)]
+#[derive(Debug)]
 pub struct BitmapWindowsInfo {
 	pub bi_size : u32,
 	pub bi_width : u32,
@@ -41,6 +43,7 @@ pub struct BitmapWindowsInfo {
 	pub bi_clr_importation : u32,
 }
 
+#[derive(Debug)]
 pub struct BitmapCore{
 	pub bc_size : u32 ,
 	pub bc_width : u16,
@@ -49,11 +52,13 @@ pub struct BitmapCore{
 	pub bc_bit_count : u16,
 }
 
+#[derive(Debug)]
 pub enum BitmapInfo {
     Windows(BitmapWindowsInfo),
     Os2(BitmapCore),
 }
 
+#[derive(Debug)]
 pub struct ColorTable {
     pub blue: u8,
     pub green: u8,
@@ -61,6 +66,7 @@ pub struct ColorTable {
     pub reserved: u8
 }
 
+#[derive(Debug)]
 pub enum Compressions {
     BiRGB = 0,
     BiRLE8 = 1,
@@ -73,7 +79,7 @@ pub enum Compressions {
 impl BitmapHeader {
     pub fn new(buffer :&[u8],_opt :usize) -> Result<Self,ImgError> {
         if buffer[0] != b'B' || buffer[1] != b'M' {
-            return Err(SimpleAddMessage(ErrorKind::UnknownFormat,"Not Bitmap".to_string()))
+            return Err(ImgError::new_const(ImgErrorKind::UnknownFormat,&"Not Bitmap"))
         }
 
         let bitmap_file_header = BitmapFileHeader {
@@ -96,11 +102,11 @@ impl BitmapHeader {
 
         if bi_size == 12 {
             let os2header = BitmapCore {
-                bc_size : read_u32le(buffer,10) ,
-                bc_width : read_u16le(buffer,14),
-                bc_height : read_u16le(buffer,16),
-                bc_plane : read_u16le(buffer,18),
-                bc_bit_count : read_u16le(buffer,20),
+                bc_size : read_u32le(buffer,14),
+                bc_width : read_u16le(buffer,18),
+                bc_height : read_u16le(buffer,20),
+                bc_plane : read_u16le(buffer,22),
+                bc_bit_count : read_u16le(buffer,24),
             };
             width = os2header.bc_width as usize;
             height = os2header.bc_height as usize;
@@ -110,17 +116,17 @@ impl BitmapHeader {
             bitmap_info = BitmapInfo::Os2(os2header);
         } else {
             let info_header = BitmapWindowsInfo {
-                bi_size : read_u32le(buffer,10),
-                bi_width : read_u32le(buffer,14),
-                bi_height : read_u32le(buffer,18),
-                bi_plane : read_u16le(buffer,20),
-                bi_bit_count : read_u16le(buffer,22),
-                bi_compression : read_u32le(buffer,24),
-                bi_size_image : read_u32le(buffer,28),
-                bi_xpels_per_meter : read_u32le(buffer,32),
-                bi_ypels_per_meter : read_u32le(buffer,36),
-                bi_clr_used : read_u32le(buffer,40),
-                bi_clr_importation : read_u32le(buffer,44), 
+                bi_size : read_u32le(buffer,14),
+                bi_width : read_u32le(buffer,18),
+                bi_height : read_u32le(buffer,22),
+                bi_plane : read_u16le(buffer,26),
+                bi_bit_count : read_u16le(buffer,28),
+                bi_compression : read_u32le(buffer,30),
+                bi_size_image : read_u32le(buffer,34),
+                bi_xpels_per_meter : read_u32le(buffer,38),
+                bi_ypels_per_meter : read_u32le(buffer,42),
+                bi_clr_used : read_u32le(buffer,46),
+                bi_clr_importation : read_u32le(buffer,50), 
             };
             width = info_header.bi_width as usize;
             height = info_header.bi_height as usize;

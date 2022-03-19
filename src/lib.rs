@@ -10,14 +10,13 @@ pub mod jpeg;
 pub mod tiff;
 pub mod bmp;
 pub mod error;
-pub mod worning;
+pub mod warning;
 pub mod util;
 pub mod iccprofile;
 
-use crate::ImgError::SimpleAddMessage;
 use crate::error::ImgError;
-use crate::error::ErrorKind;
-
+use crate::error::ImgErrorKind;
+use crate::warning::ImgWarning;
 /* Dynamic Select Callback System */
 
 pub enum DrawNextOptions {
@@ -76,12 +75,13 @@ impl DrawCallback for ImageBuffer {
     fn draw(&mut self, start_x: usize, start_y: usize, width: usize, height: usize, data: &[u8])
                 -> Result<Option<isize>,ImgError>  {
         if self.buffer.is_none() {
-            return Err(ImgError::Simple(ErrorKind::NotInitializedImageBuffer))
+            return Err(ImgError::new_const(ImgErrorKind::NotInitializedImageBuffer,&"in draw"))
         }
         let buffer =  self.buffer.as_deref_mut().unwrap();
         if start_x >= self.width || start_y >= self.height {return Ok(None);}
         let w = if self.width < width + start_x {self.width - start_x} else { width };
         let h = if self.height < height + start_y {self.height - start_y} else { height };
+
         for y in 0..h {
             let scanline_src =  y * width * 4;
             let scanline_dest= (start_y + y) * self.width * 4;
@@ -89,7 +89,7 @@ impl DrawCallback for ImageBuffer {
                 let offset_src = scanline_src + x * 4;
                 let offset_dest = scanline_dest + (x + start_x) * 4;
                 if offset_src + 3 >= data.len() {
-                    return Err(SimpleAddMessage(ErrorKind::OutboundIndex,format!("decoder buffer in draw {}",data.len())))
+                    return Err(ImgError::new_const(ImgErrorKind::OutboundIndex,&"decoder buffer in draw"))
                 }
                 buffer[offset_dest    ] = data[offset_src];
                 buffer[offset_dest + 1] = data[offset_src + 1];
@@ -118,3 +118,35 @@ pub struct DecodeOptions<'a> {
     pub debug_flag: usize,
     pub drawer: &'a mut dyn DrawCallback,
 }
+
+pub fn image_decoder(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<ImgWarning>,ImgError> {
+    let r = crate::bmp::decoder::decode(buffer, option);
+    match r {
+        Ok(option) => {
+            match option {
+                Some(Warning) => {return Ok(None)}
+                None => {return Ok(None)},
+            }
+        },
+        _ => {
+
+        },
+//        Err(err) => {return Err(err)},
+    }
+    let r2 = crate::jpeg::decoder::decode(buffer, option);
+    if let Ok(option) = r2 {
+        match option {
+            Some(Warning) => {return Ok(None)}
+            None => {return Ok(None)},
+        }
+    }
+    match r {
+        Err(err) => {
+            return Err(err)
+        },
+        Ok(..) =>{
+            return Ok(None)
+        }
+    }
+}
+

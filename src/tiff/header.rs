@@ -4,8 +4,8 @@
  */
 
 /* for EXIF */
-use crate::error::{ImgError,ErrorKind};
-use crate::error::ImgError::{SimpleAddMessage};
+use crate::error::ImgError;
+use crate::error::ImgErrorKind;
 use super::tags::gps_mapper;
 use super::tags::tag_mapper;
 use super::super::io::*;
@@ -56,7 +56,7 @@ pub struct TiffHeaders {
 pub fn read_tags( buffer: &Vec<u8>) -> Result<TiffHeaders,ImgError>{
     let endian :bool;
     if buffer[0] != buffer [1] {
-        return Err(SimpleAddMessage(ErrorKind::IlligalData,"not Tiff".to_string()));
+        return Err(ImgError::new_const(ImgErrorKind::IlligalData,&"not Tiff"));
     }
 
     if buffer[0] == 'I' as u8 { // Little Endian
@@ -64,7 +64,7 @@ pub fn read_tags( buffer: &Vec<u8>) -> Result<TiffHeaders,ImgError>{
     } else if buffer[0] == 'M' as u8 {      // Big Eindian
         endian = false;
     } else {
-        return Err(SimpleAddMessage(ErrorKind::IlligalData,"not Tiff".to_string()));
+        return Err(ImgError::new_const(ImgErrorKind::IlligalData,&"not Tiff"));
     }
 
     let mut ptr = 2 as usize;

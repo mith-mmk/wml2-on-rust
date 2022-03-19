@@ -1,28 +1,83 @@
-use self::ImgError::{Custom, Simple, SimpleAddMessage};
-use self::ErrorKind::*;
+//use crate::error::Repr as OtherRepr;
+use core::fmt::*;
 
-#[allow(unused)]
-pub enum ImgError {
-    Simple(ErrorKind),
-    SimpleAddMessage(ErrorKind,String),
-    Custom(String),
+pub struct ImgError {
+    repr: Repr,
 }
 
-#[allow(unused)]
+impl Debug for ImgError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        Debug::fmt(&self.repr, f)
+    }
+}
+
 impl ImgError {
-    pub fn fmt(&self) -> String {
-        match self {
-            Simple(error_kind) => { error_kind.as_str().to_string()},
-            SimpleAddMessage(error_kind,s) => {
-                error_kind.as_str().to_string() + " " + &s.to_string()
-            },
-            Custom(s) => {s.to_string()},
+    pub fn new<E>(kind: ImgErrorKind, error: E) -> ImgError
+    where
+        E: Into<Box<dyn std::error::Error + Send + Sync>>,
+    {
+        Self::_new(kind, error.into())
+    }
+
+    fn _new(kind: ImgErrorKind, error: Box<dyn std::error::Error + Send + Sync>) -> ImgError {
+        ImgError { repr: Repr::Custom(Box::new(Custom { kind, error })) }
+    }
+
+    #[inline]
+    pub(crate) const fn new_const(kind: ImgErrorKind, message: &'static &'static str) -> ImgError {
+        Self { repr: Repr::SimpleMessage(kind, message) }
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn raw_os_error(&self) -> Option<i32> {
+        match self.repr {
+            Repr::Os(i) => Some(i),
+            Repr::Custom(..) => None,
+            Repr::Simple(..) => None,
+            Repr::SimpleMessage(..) => None,
+        }
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
+        match self.repr {
+            Repr::Os(..) => None,
+            Repr::Simple(..) => None,
+            Repr::SimpleMessage(..) => None,
+            Repr::Custom(ref c) => Some(&*c.error),
+        }
+    }
+
+    pub fn into_inner(self) -> Option<Box<dyn std::error::Error + Send + Sync>> {
+        match self.repr {
+            Repr::Os(..) => None,
+            Repr::Simple(..) => None,
+            Repr::SimpleMessage(..) => None,
+            Repr::Custom(c) => Some(c.error),
         }
     }
 }
 
+#[derive(Debug)]
+pub(crate) enum Repr {
+    Os(i32),
+    Simple(ImgErrorKind),
+    // &str is a fat pointer, but &&str is a thin pointer.
+    SimpleMessage(ImgErrorKind, &'static &'static str),
+    Custom(Box<Custom>),
+}
+
+#[derive(Debug)]
+pub(crate) struct Custom {
+    kind: ImgErrorKind,
+    error: Box<dyn std::error::Error + Send + Sync>,
+}
+
 #[allow(unused)]
-pub enum ErrorKind {
+#[derive(Debug)]
+pub enum ImgErrorKind {
     UnknownFormat,
     OutOfMemory,
     CannotDecode,
@@ -39,11 +94,12 @@ pub enum ErrorKind {
     Reset,
     IlligalCallback,
     NotInitializedImageBuffer,
+    OSError,
     UnknownError,
 }
 
 #[allow(unused)]
-impl ErrorKind {
+impl ImgErrorKind {
     pub(crate) fn as_str(&self) -> &'static str {
         match &*self {
             UnknownFormat => {"Unknown format"},
@@ -62,8 +118,8 @@ impl ErrorKind {
             OutboundIndex => {"Outbound index"},
             IlligalCallback => {"Illigal Callback"},
             NotInitializedImageBuffer => {"Not initialized Image Buffer"},
+            NotInitializedImageBuffer => {"OS error"},
             UnknownError => {"Unkonw error"}            
         }
     }
 }
-

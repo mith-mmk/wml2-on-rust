@@ -3,17 +3,16 @@
  * use MIT License
  */
 
+use crate::warning::ImgWarningKind::Jpeg;
+use crate::warning::ImgWarningKind;
+use crate::warning::ImgWarning;
+use crate::DecodeOptions;
 use crate::jpeg::header::Component;
 use crate::jpeg::header::HuffmanTable;
 use crate::jpeg::header::JpegHaeder;
+use crate::jpeg::warning::JpegWarningKind;
 use crate::jpeg::util::print_header;
-use crate::jpeg::worning::JPEGWorning::SimpleAddMessage as WorningAddMessage;
-use crate::jpeg::worning::JPEGWorning;
-use crate::jpeg::worning::WorningKind;
-use crate::error::ImgError::SimpleAddMessage;
-use crate::error::{ImgError,ErrorKind};
-use crate::error::ImgError::{Simple};
-use crate::DecodeOptions;
+use crate::error::{ImgError,ImgErrorKind};
 
 
 struct BitReader {
@@ -47,7 +46,7 @@ impl BitReader {
 
     fn get_byte(self: &mut Self) -> Result<u8,ImgError> {
         if self.ptr >= self.buffer.len() {
-            return Err(Simple(ErrorKind::OutboundIndex));
+            return Err(ImgError::new_const(ImgErrorKind::OutboundIndex,&"in jpeg::decoder::BitReader::get_byte"));
         }
         self.b = self.buffer[self.ptr];
         self.ptr = self.ptr + 1;
@@ -72,7 +71,7 @@ impl BitReader {
 
     fn next_marker(self: &mut Self) -> Result<u8,ImgError> {
         if self.get_byte()? != 0xff {
-            return Err(SimpleAddMessage(ErrorKind::DecodeError,"Nothing marker".to_string()));
+            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Nothing marker"));
         }
         loop {
             let b = self.get_byte()?; 
@@ -92,9 +91,8 @@ impl BitReader {
                 0xd0..=0xd7 =>  {    // RST    
                     let rst_no = (self.b & 0x7) as usize;
                     if rst_no != (self.prev_rst + 1) % 8 {
-                        return Err(SimpleAddMessage(ErrorKind::DecodeError,format!("No Interval RST {} -> {}",self.prev_rst,rst_no)))
+                        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"No Interval RST"))
                     }
-
                     self.prev_rst = rst_no;
                     self.rst = true;
                     self.rst_ptr = self.ptr;
@@ -104,7 +102,7 @@ impl BitReader {
                 },
                 _ =>{
                     self.b = 0xff;
-                    return Err(SimpleAddMessage(ErrorKind::DecodeError,"FF after  00 or RST".to_string()))
+                    return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"FF after  00 or RST"))
                 },                    
             }
         }
@@ -161,7 +159,7 @@ impl BitReader {
             self.eof_flag = false;
             Ok(self.ptr)
         } else {
-            Err(Simple(ErrorKind::OutboundIndex))
+            Err(ImgError::new_const(ImgErrorKind::OutboundIndex,&"in BitReader set_offset"))
         }
     }
 
@@ -181,7 +179,7 @@ fn huffman_read (bit_reader:&mut BitReader,table: &HuffmanDecodeTable)  -> Resul
             return Ok(table.val[p] as u32)                      
         }
     }
-    Err(SimpleAddMessage(ErrorKind::OutboundIndex,"Huffman read Overflow".to_string()))  
+    Err(ImgError::new_const(ImgErrorKind::OutboundIndex,&"huffman_read is overflow"))  
 }
 
 
@@ -706,10 +704,9 @@ pub(crate) fn huffman_extend(huffman_tables:&Vec<HuffmanTable>) -> (Vec<HuffmanD
     (ac_decode,dc_decode)
 }
 
-pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) 
-    -> Result<Option<JPEGWorning>,ImgError> {
+pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<ImgWarning>,ImgError> {
 
-    let mut worning: Option<JPEGWorning> = None;
+    let mut warning: Option<ImgWarning> = None;
         // Make Huffman Table
     // Scan Header
     let header = JpegHaeder::new(buffer,0)?;
@@ -720,13 +717,13 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
     }
     
     if header.is_hierachical {
-        return Err(SimpleAddMessage(ErrorKind::DecodeError,"Hierachical is not support".to_string()));
+        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Hierachical is not support"));
     }
 
     let huffman_scan_header  = header.huffman_scan_header.as_ref().unwrap();
     match header.huffman_tables {
         None => {
-            return Err(SimpleAddMessage(ErrorKind::DecodeError,"Not undefined Huffman Tables".to_string()));
+            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not undefined Huffman Tables"));
         },
         _ => {
 
@@ -735,7 +732,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
 
     match header.frame_header {
         None => {
-            return Err(SimpleAddMessage(ErrorKind::DecodeError,"Not undefined Frame Header".to_string()));
+            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not undefined Frame Header"));
         },
         _ => {
 
@@ -747,11 +744,11 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
     let height = fh.height;
     let plane = fh.plane;
     if plane == 0 || plane > 4 {
-        return Err(SimpleAddMessage(ErrorKind::DecodeError,"Not support planes".to_string()));
+        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not support planes"));
     }
     match fh.component {
         None => {
-            return Err(SimpleAddMessage(ErrorKind::DecodeError,"Not undefined Frame Header Component".to_string()));
+            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not undefined Frame Header Component"));
         },
         _ => {
 
@@ -762,7 +759,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
 
     match header.quantization_tables {
         None => {
-            return Err(SimpleAddMessage(ErrorKind::DecodeError,"Not undefined Quantization Tables".to_string()));
+            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not undefined Quantization Tables"));
         },
         _ => {
 
@@ -770,19 +767,28 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
     }
 
     if fh.is_huffman == false {
-        return Err(SimpleAddMessage(ErrorKind::DecodeError,"This decoder suport huffman only".to_string()));
+        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"This decoder suport huffman only"));
     }
 
     if fh.is_baseline == false {
-        return Err(SimpleAddMessage(ErrorKind::DecodeError,"This Decoder support Baseline Only".to_string()));
+        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"This Decoder support Baseline Only"));
     }
 
     if fh.is_differential == true {
-        return Err(SimpleAddMessage(ErrorKind::DecodeError,"This Decoder not support differential".to_string()));
+        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"This Decoder not support differential"));
     }
 
     if plane == 4 {
-        worning = Some(JPEGWorning::SimpleAddMessage(WorningKind::UnknowFormat,"Plane 4 color translation rule is known".to_string()));
+        if warning.is_none() {
+            warning = Some(
+                ImgWarning::new_const(
+                    ImgWarningKind::Jpeg(JpegWarningKind::UnknowFormat),
+                           &"Plane 4 color translation rule is known"));   
+        } else {
+            warning = Some
+                (ImgWarning::add(
+                    Jpeg(super::warning::JpegWarningKind::UnknowFormat), warning.unwrap()));
+        }
     }
 
     // decode
@@ -850,8 +856,11 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                         zz = _zz;
                         pred = _pred; 
                     }
-                    Err(r) => {
-                        return Ok(Some(WorningAddMessage(WorningKind::DataCorruption,r.fmt())));
+                    Err(..) => {
+                        return Ok(Some(
+                            ImgWarning::new_const(
+                                Jpeg(JpegWarningKind::DataCorruption),&"baseline"
+                            )));
                     }
                 }
                 preds[i] = pred;
@@ -883,16 +892,22 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                             preds[i] = 0;
                         }
                     } else {
-                        worning = Some(WorningAddMessage(WorningKind::IlligalRSTMaker,"no mcu interval".to_string()));
-                        return Ok(worning)
+                        warning = Some(
+                            ImgWarning::new_const(
+                                Jpeg(JpegWarningKind::IlligalRSTMaker),
+                                &"no mcu interval"));
+                        return Ok(warning)
                     }
                 } else if bitread.rst()? == true {
-                    worning = Some(WorningAddMessage(WorningKind::IlligalRSTMaker,"mismatch mcu interval".to_string()));
+                    warning = Some(
+                        ImgWarning::new_const(
+                            Jpeg(JpegWarningKind::IlligalRSTMaker),
+                            &"mismatch mcu interval"));
                     mcu_interval = header.interval as isize;
                     for i in 0..preds.len() {
                         preds[i] = 0;
                     }
-   //                 return Ok(worning);
+   //                 return Ok(Warning);
                 }
             }
         }
@@ -905,11 +920,19 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                 },
                 0xdd => {
                     option.drawer.terminate()?;
-                    return Ok(Some(WorningAddMessage(WorningKind::UnexpectMaker,"DNL,No Support Multi scan/frame".to_string())))
+                    warning = Some(
+                        ImgWarning::new_const(
+                            Jpeg(JpegWarningKind::UnexpectMarker),
+                            &"DNL,No Support Multi scan/frame"));
+                    return Ok(warning)
                 },
                _ => {
                     option.drawer.terminate()?;
-                    return Ok(Some(WorningAddMessage(WorningKind::UnexpectMaker,"No Support Multi scan/frame".to_string())))
+                    warning = Some(
+                        ImgWarning::new_const(
+                            Jpeg(JpegWarningKind::UnexpectMarker),
+                            &"No Support Multi scan/frame"));
+                    return Ok(warning)
                 // offset = bitread.offset() -2
                 // new_jpeg_header = read_makers(buffer[offset:],opt,false,true);
                 // jpeg_header <= new Huffman Table if exit
@@ -922,10 +945,13 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
             }
         },
         Err(..) => {
-            worning = Some(WorningAddMessage(WorningKind::UnexpectMaker,"Not found EOI".to_string()));
+            warning = Some(
+                ImgWarning::new_const(
+                    Jpeg(JpegWarningKind::UnexpectMarker),
+                    &"Not found EOI")
+            );
         }
     }
     option.drawer.terminate()?;
-    Ok(worning)
-
+    Ok(warning)
 }

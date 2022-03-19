@@ -8,7 +8,9 @@
 pub mod io;
 pub mod jpeg;
 pub mod tiff;
+pub mod bmp;
 pub mod error;
+pub mod worning;
 pub mod util;
 pub mod iccprofile;
 

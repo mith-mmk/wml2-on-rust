@@ -113,7 +113,6 @@ impl DrawCallback for ImageBuffer {
     }
 }
 
-
 pub struct DecodeOptions<'a> {
     pub debug_flag: usize,
     pub drawer: &'a mut dyn DrawCallback,
@@ -124,7 +123,7 @@ pub fn image_decoder(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<I
     match r {
         Ok(option) => {
             match option {
-                Some(Warning) => {return Ok(None)}
+                Some(warning) => {return Ok(Some(warning))}
                 None => {return Ok(None)},
             }
         },
@@ -136,7 +135,7 @@ pub fn image_decoder(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<I
     let r2 = crate::jpeg::decoder::decode(buffer, option);
     if let Ok(option) = r2 {
         match option {
-            Some(Warning) => {return Ok(None)}
+            Some(warning) => {return Ok(Some(warning))}
             None => {return Ok(None)},
         }
     }

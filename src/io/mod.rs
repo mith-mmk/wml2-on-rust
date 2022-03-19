@@ -20,11 +20,9 @@ pub fn read_byte(buf: &[u8],ptr: usize ) -> u8 {
 
 #[inline]
 pub fn read_i8(buf: &[u8],ptr: usize ) -> i8 {
-    unsafe {
-        *((
+    ((
             &buf[ptr]
         ) as *const u8) as i8
-    }
 }
 
 #[inline]
@@ -34,11 +32,9 @@ pub fn read_u16be (buf: &[u8],ptr: usize ) -> u16 {
 
 #[inline]
 pub fn read_i16be (buf: &[u8],ptr: usize ) -> i16 {
-    unsafe {
-        *((
+        ((
             &(buf[ptr] as u16) << 8 | (buf[ptr+1] as u16)
-        ) as *const u16) as i16
-    }
+        ) as u16) as i16
 }
 
 #[inline]
@@ -49,12 +45,10 @@ pub fn read_u32be (buf: &[u8],ptr: usize ) -> u32 {
 
 #[inline]
 pub fn read_i32be (buf: &[u8],ptr: usize ) -> i32 {
-    unsafe {
-        *((
+        ((
             (buf[ptr  ] as u32) << 24 | (buf[ptr+1] as u32) << 16 |
             (buf[ptr+2] as u32) << 8  | (buf[ptr+3] as u32)
-        ) as *const u32) as i32
-    }
+        ) as u32) as i32
 }
 
 #[inline]
@@ -76,14 +70,12 @@ pub fn read_u128be (buf: &[u8],ptr: usize) -> u128 {
 #[allow(unused)]
 #[inline]
 pub fn read_i64be (buf: &[u8],ptr: usize ) -> i64 {
-    unsafe {
-        *((
+        ((
             (buf[ptr  ] as u64) << 56 | (buf[ptr+1] as u64) << 48 |
             (buf[ptr+2] as u64) << 40 | (buf[ptr+3] as u64) << 32 |
             (buf[ptr+4] as u64) << 24 | (buf[ptr+5] as u64) << 16 |
             (buf[ptr+6] as u64) << 8  | (buf[ptr+7] as u64) 
-        ) as *const u64) as i64
-    }
+        ) as  u64) as i64
 }
 
 #[inline]
@@ -108,12 +100,8 @@ pub fn read_u32le (buf: &[u8],ptr: usize ) -> u32 {
 
 #[inline]
 pub fn read_i32le (buf: &[u8],ptr: usize ) -> i32 {
-    unsafe {
-        *((
-            (buf[ptr+3] as u32) << 24 | (buf[ptr+2] as u32) << 16 |
-            (buf[ptr+1] as u32) << 8  | (buf[ptr  ]) as u32
-        ) as *const u32) as i32
-    }
+      ((buf[ptr+3] as u32) << 24 | (buf[ptr+2] as u32) << 16 |
+            (buf[ptr+1] as u32) << 8  | (buf[ptr  ]) as u32) as i32
 }
 
 #[allow(unused)]
@@ -128,14 +116,12 @@ pub fn read_u64le (buf: &[u8],ptr: usize ) -> u64 {
 #[allow(unused)]
 #[inline]
 pub fn read_i64le (buf: &[u8],ptr: usize ) -> i64 {
-    unsafe {
-        *((
-            (buf[ptr+7] as u64) << 56 | (buf[ptr+6] as u64) << 48 |
+(
+        ((buf[ptr+7] as u64) << 56 | (buf[ptr+6] as u64) << 48 |
             (buf[ptr+5] as u64) << 40 | (buf[ptr+4] as u64) << 32 |
             (buf[ptr+3] as u64) << 24 | (buf[ptr+2] as u64) << 16 |
             (buf[ptr+1] as u64) << 8  | buf[ptr] as u64 
-        ) as *const u64) as i64
-    }
+        ) as u64) as i64
 }
 
 #[inline]

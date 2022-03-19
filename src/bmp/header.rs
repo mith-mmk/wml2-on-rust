@@ -9,8 +9,8 @@ use crate::error::ImgErrorKind;
 pub struct BitmapHeader {
     pub filesize: usize,
     pub image_offset: usize,
-    pub width: usize,
-    pub height: usize,
+    pub width: isize,
+    pub height: isize,
     pub bit_count: usize,
     pub compression: Option<Compressions>,
     pub color_table: Option<Vec<ColorTable>>,
@@ -41,6 +41,8 @@ pub struct BitmapWindowsInfo {
 	pub bi_ypels_per_meter : u32,
 	pub bi_clr_used : u32,
 	pub bi_clr_importation : u32,
+    pub b_v4_header : Option<BitmapInfoV4>,
+    pub b_v5_header : Option<BitmapInfoV5>,
 }
 
 #[derive(Debug)]
@@ -51,6 +53,43 @@ pub struct BitmapCore{
 	pub bc_plane : u16,
 	pub bc_bit_count : u16,
 }
+
+
+#[derive(Debug)]
+pub struct CieXYZ{
+    pub ciexyz_x :u32 ,
+    pub ciexyz_y :u32 ,
+    pub ciexyz_z :u32 ,
+}
+
+#[derive(Debug)]
+pub struct CieXYZTriple{
+    pub ciexyz_red   :CieXYZ,
+    pub ciexyz_green :CieXYZ,
+    pub ciexyz_blue  :CieXYZ,
+}
+
+#[derive(Debug)]
+pub struct BitmapInfoV4 {
+    pub b_v4_red_mask :u32 ,
+    pub b_v4_green_mask:u32,
+    pub b_v4_blue_mask:u32,
+    pub b_v4_alpha_mask:u32,
+    pub b_v4_cstype:u32,
+    pub b_v4_endpoints: Option<CieXYZTriple>,
+    pub b_v4_gamma_red:u32,
+    pub b_v4_gamma_green:u32,
+    pub b_v4_gamma_blue:u32,
+}
+
+#[derive(Debug)]
+pub struct BitmapInfoV5 {
+    pub b_v5_intent: u32,
+    pub b_v5_profile_data: u32, 
+    pub b_v5_profile_size: u32, 
+    pub b_v5_reserved: u32,
+}
+
 
 #[derive(Debug)]
 pub enum BitmapInfo {
@@ -108,13 +147,88 @@ impl BitmapHeader {
                 bc_plane : read_u16le(buffer,22),
                 bc_bit_count : read_u16le(buffer,24),
             };
-            width = os2header.bc_width as usize;
-            height = os2header.bc_height as usize;
+            width = os2header.bc_width as isize;
+            height = os2header.bc_height as isize;
             compression = Some(Compressions::BiRGB);
             bit_per_count = os2header.bc_bit_count as usize;
             clut_size = 0;
             bitmap_info = BitmapInfo::Os2(os2header);
         } else {
+            let b_v4_header = if bi_size >= 40 {  // V4
+                let ptr = 14;
+                let b_v4_red_mask = read_u32le(buffer,ptr + 40);
+                let b_v4_green_mask= read_u32le(buffer,ptr + 44);        
+                let b_v4_blue_mask = read_u32le(buffer,ptr + 48);
+                let mut b_v4_alpha_mask = 0;
+                let mut b_v4_cstype = 0;
+                let mut b_v4_endpoints :Option<CieXYZTriple> = None;
+                let mut b_v4_gamma_red =  0;
+                let mut b_v4_gamma_green = 0;
+                let mut b_v4_gamma_blue =  0;
+
+                if bi_size >= 56 {
+                    b_v4_alpha_mask= read_u32le(buffer,ptr + 52);
+                }
+                if bi_size >= 60 {
+                    b_v4_cstype = read_u32le(buffer,ptr + 56);
+                }
+                if bi_size >= 96 {
+                    b_v4_endpoints = Some(CieXYZTriple{
+                        ciexyz_red: CieXYZ {
+                            ciexyz_x: read_u32le(buffer,ptr + 60),
+                            ciexyz_y: read_u32le(buffer,ptr + 64),
+                            ciexyz_z: read_u32le(buffer,ptr + 68),
+                        },
+                        ciexyz_green: CieXYZ {
+                            ciexyz_x: read_u32le(buffer,ptr + 72),
+                            ciexyz_y: read_u32le(buffer,ptr + 76),
+                            ciexyz_z: read_u32le(buffer,ptr + 80),
+                        },
+                        ciexyz_blue: CieXYZ {
+                            ciexyz_x: read_u32le(buffer,ptr + 84),
+                            ciexyz_y: read_u32le(buffer,ptr + 88),
+                            ciexyz_z: read_u32le(buffer,ptr + 92),
+                        },
+                    });
+                }
+                if bi_size >= 108 {
+                    b_v4_gamma_red   = read_u32le(buffer,ptr + 96);
+                    b_v4_gamma_green = read_u32le(buffer,ptr +100);
+                    b_v4_gamma_blue  = read_u32le(buffer,ptr +104);  //108 
+                }
+
+                Some(BitmapInfoV4 { 
+                    b_v4_red_mask: b_v4_red_mask, 
+                    b_v4_green_mask: b_v4_green_mask, 
+                    b_v4_blue_mask: b_v4_blue_mask, 
+                    b_v4_alpha_mask: b_v4_alpha_mask, 
+                    b_v4_cstype: b_v4_cstype, 
+                    b_v4_endpoints: b_v4_endpoints, 
+                    b_v4_gamma_red: b_v4_gamma_red, 
+                    b_v4_gamma_green: b_v4_gamma_green, 
+                    b_v4_gamma_blue: b_v4_gamma_blue, 
+                })
+            } else {
+                None
+            };
+
+            let b_v5_header = if bi_size >= 112 {
+                let ptr = 14;
+                let b_v5_intent = read_u32le(buffer,ptr + 108); // 112
+                let (b_v5_profile_data,b_v5_profile_size) = if bi_size >= 120 {
+                    (read_u32le(buffer,ptr + 112),read_u32le(buffer,ptr + 116))
+                  } else {(0,0)};  //120
+                let b_v5_reserved = if bi_size >= 124 {read_u32le(buffer,ptr + 120)} else {0};
+                Some(BitmapInfoV5{
+                    b_v5_intent,
+                    b_v5_profile_data,
+                    b_v5_profile_size,
+                    b_v5_reserved,
+                })
+            } else {
+                None
+            };
+
             let info_header = BitmapWindowsInfo {
                 bi_size : read_u32le(buffer,14),
                 bi_width : read_u32le(buffer,18),
@@ -126,10 +240,15 @@ impl BitmapHeader {
                 bi_xpels_per_meter : read_u32le(buffer,38),
                 bi_ypels_per_meter : read_u32le(buffer,42),
                 bi_clr_used : read_u32le(buffer,46),
-                bi_clr_importation : read_u32le(buffer,50), 
+                bi_clr_importation : read_u32le(buffer,50),
+                b_v4_header: b_v4_header,
+                b_v5_header: b_v5_header,
             };
-            width = info_header.bi_width as usize;
-            height = info_header.bi_height as usize;
+            width = read_i32le(buffer,18) as isize;
+            height = read_i32le(buffer,22) as isize;
+                println!("{} {}",info_header.bi_width,info_header.bi_height);
+                println!("{} {}",width,height);
+        
             compression = match info_header.bi_compression {
                 0 => {Some(Compressions::BiRGB)},
                 1 => {Some(Compressions::BiRLE8)},

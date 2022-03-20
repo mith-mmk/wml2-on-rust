@@ -251,6 +251,10 @@ pub fn image_decoder(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<I
             return crate::bmp::decoder::decode(buffer, option);
 
         },
+        Gif => {
+            return crate::gif::decoder::decode(buffer, option);
+
+        },
         _ => {
             return Err(
                 ImgError::new_const(ImgErrorKind::NoSupportFormat, &"This buffer can not decode")

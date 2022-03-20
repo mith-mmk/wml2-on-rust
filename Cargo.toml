@@ -8,6 +8,12 @@ license = "MIT"
 [lib]
 crate-type = ["rlib"] 
 
+[dependencies]
+
+[dependencies.weezl]
+version = "0.1.5"
+
+
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = 3

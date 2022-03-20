@@ -1,6 +1,8 @@
 
 use crate::io::read_string;
 
+
+
 pub enum ImageFormat{
     Gif,    // GIF87a , GIF89a
     Jpeg,   // 0xfffe

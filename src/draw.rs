@@ -1,3 +1,7 @@
+//! draw.rs  Image Load to Buffer Library
+//! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
+//! Drawer will use callback, flexisble drawing.
+use crate::util::format_check;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use crate::warning::ImgWarning;
@@ -12,6 +16,7 @@ pub enum DrawNextOptions {
 }
 
 pub trait DrawCallback {
+/// DrawCallback trait is callback template
     fn init(&mut self,width: usize,height: usize,option: Option<InitOptions>) -> Result<Option<CallbackResponse>,ImgError>;
     fn draw(&mut self,start_x: usize, start_y: usize, width: usize, height: usize, data: &[u8],option: Option<DrawOptions>)
              -> Result<Option<CallbackResponse>,ImgError>;
@@ -135,6 +140,12 @@ impl CallbackResponse {
 
 #[allow(unused)]
 pub struct ImageBuffer {
+    /// ImageBuffer is default drawer
+    /// Excample callback impliment
+    /// ImageBuffer use only RGBA8888 color space model
+    /// buffersize = width * height * 4 (8+8+8+8)/8
+    /// other color space is implement feature.
+
     pub width: usize,
     pub height: usize,
     pub buffer: Option<Vec<u8>>,
@@ -155,6 +166,7 @@ impl ImageBuffer {
         }
     }
 
+    /// A funtion set_verbose uses also debug.
     pub fn set_verbose(&mut self,verbose:fn(&str) -> Result<Option<CallbackResponse>,ImgError>) {
         self.fnverbose = verbose;
     }
@@ -215,33 +227,34 @@ pub struct DecodeOptions<'a> {
     pub drawer: &'a mut dyn DrawCallback,
 }
 
+pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer,ImgError> {    
+    let mut ib = ImageBuffer::new();
+    let mut option = DecodeOptions {
+        debug_flag: 0,
+        drawer: &mut ib
+    };
+
+    image_decoder(buffer,&mut option)?;
+    Ok(ib)
+}
+
 pub fn image_decoder(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<ImgWarning>,ImgError> {
-    let r = crate::bmp::decoder::decode(buffer, option);
-    match r {
-        Ok(option) => {
-            match option {
-                Some(warning) => {return Ok(Some(warning))}
-                None => {return Ok(None)},
-            }
-        },
-        _ => {
+    let format = format_check(buffer);
+
+    use crate::util::ImageFormat::*;
+    match format {
+        Jpeg => {
+            return crate::jpeg::decoder::decode(buffer, option);
 
         },
-//        Err(err) => {return Err(err)},
-    }
-    let r2 = crate::jpeg::decoder::decode(buffer, option);
-    if let Ok(option) = r2 {
-        match option {
-            Some(warning) => {return Ok(Some(warning))}
-            None => {return Ok(None)},
-        }
-    }
-    match r {
-        Err(err) => {
-            return Err(err)
+        Bmp => {
+            return crate::bmp::decoder::decode(buffer, option);
+
         },
-        Ok(..) =>{
-            return Ok(None)
-        }
+        _ => {
+            return Err(
+                ImgError::new_const(ImgErrorKind::NoSupportFormat, &"This buffer can not decode")
+            )
+        }        
     }
 }

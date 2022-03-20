@@ -321,10 +321,6 @@ fn decode_bit_fileds(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptio
         println!("{:>04x} {:>032b} >>{} {}",alpha_mask,alpha_mask,alpha_shift,alpha_bits);
     }
 
-    if cfg!(debug_assertions) {
-        println!("{} {}",width,height);
-    }
-
     option.drawer.init(width,height,InitOptions::new())?;
     let mut line :Vec<u8> = (0..width*4).map(|i| if i%4==3 {0xff} else {0}).collect();
 
@@ -332,9 +328,7 @@ fn decode_bit_fileds(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptio
     for y_ in  0..height {
         let y = height -1 - y_ ;
         let offset = y_ * line_size;
-        if cfg!(debug_assertions) {
-            println!("{} {}",y,offset);
-        }
+
         for x in 0..width {
             let color = if header.bit_count == 32 {
                 read_u32le(buffer, offset + x * 4) as u32
@@ -364,19 +358,7 @@ fn decode_bit_fileds(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptio
 }
 
 fn decode_jpeg(buffer: &[u8],_:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,ImgError>  {
-    let ret = crate::jpeg::decoder::decode(buffer,option);
-    match ret {
-        Err(error) => {
-            return Err(error);
-        },
-        Ok(some) => {
-            if let Some(warning) = some {
-                return Ok(Some(warning))
-            } else {
-                Ok(None)
-            }
-        }
-    }
+    return crate::jpeg::decoder::decode(buffer,option);
 }
 
 fn decode_png(_buffer: &[u8],_header:&BitmapHeader,_option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,ImgError>  {
@@ -388,8 +370,9 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
     
     let header = BitmapHeader::new(&buffer,option.debug_flag)?;
 
-    if cfg!(debug_assertions) {
-        println!("{:?}", header);
+    if option.debug_flag > 0 {
+        let s = format!("{:?}",&header);
+        option.drawer.verbose(&s,None)?;
     }
 
     let offset = header.image_offset;

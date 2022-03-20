@@ -3,11 +3,10 @@
  * use MIT License
  */
 
-use crate::InitOptions;
 use crate::warning::ImgWarningKind::Jpeg;
 use crate::warning::ImgWarningKind;
 use crate::warning::ImgWarning;
-use crate::DecodeOptions;
+use crate::draw::*;
 use crate::jpeg::header::Component;
 use crate::jpeg::header::HuffmanTable;
 use crate::jpeg::header::JpegHaeder;

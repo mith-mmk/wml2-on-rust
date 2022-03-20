@@ -7,7 +7,7 @@
 
 use crate::bmp::header::BitmapInfo::Windows;
 use crate::error::{ImgError,ImgErrorKind};
-use crate::{DecodeOptions,InitOptions};
+use crate::draw::*;
 use crate::io::{read_byte, read_bytes, read_u16le, read_u32le};
 use crate::warning::ImgWarning;
 

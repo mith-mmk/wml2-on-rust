@@ -1,12 +1,15 @@
+/*
+ *  bmp/decorder.rs (C) 2022 Mith@mmk
+ *  
+ * 
+ */
 
-use crate::io::read_u32le;
+
 use crate::bmp::header::BitmapInfo::Windows;
-use crate::io::read_bytes;
+use crate::error::{ImgError,ImgErrorKind};
+use crate::{DecodeOptions,InitOptions};
+use crate::io::{read_byte, read_bytes, read_u16le, read_u32le};
 use crate::warning::ImgWarning;
-use crate::io::read_byte;
-use crate::io::read_u16le;
-use crate::error::{ImgError,*};
-use crate::DecodeOptions;
 
 use crate::bmp::header::BitmapHeader;
 use crate::bmp::header::Compressions;
@@ -14,7 +17,6 @@ use crate::bmp::header::Compressions;
 fn covert_rgba32(buffer:&[u8],line: &mut Vec<u8>,header:&BitmapHeader,bit_count: usize) -> Result<(),ImgError> {
     let mut offset = 0;
     let width = header.width.abs() as usize;
-    let height = header.height.abs() as usize;
     match bit_count {
         32 => { // bgra
             for x in  0..width{
@@ -113,7 +115,7 @@ fn covert_rgba32(buffer:&[u8],line: &mut Vec<u8>,header:&BitmapHeader,bit_count:
 fn decode_rgb(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,ImgError>  {
     let width = header.width.abs() as usize;
     let height = header.height.abs() as usize;
-    option.drawer.init(width,height)?;
+    option.drawer.init(width,height,InitOptions::new())?;
     let mut line :Vec<u8> = (0..width*4).map(|i| if i%4==3 {0xff} else {0}).collect();
     if header.bit_count <= 8 && header.color_table.is_none() {
         return  Err(
@@ -128,19 +130,19 @@ fn decode_rgb(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptions) -> 
         let offset = y_ * line_size;
         covert_rgba32(&buffer[offset..],&mut line,header,header.bit_count)?;
         if header.height > 0 {
-            option.drawer.draw(0,y,width,1,&line)?;
+            option.drawer.draw(0,y,width,1,&line,None)?;
         } else {
-            option.drawer.draw(0,y_,width,1,&line)?;
+            option.drawer.draw(0,y_,width,1,&line,None)?;
         }
     }
-    option.drawer.terminate()?;
+    option.drawer.terminate(None)?;
     Ok(None)
 }
 
 fn decode_rle(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,ImgError>  {
     let width = header.width.abs() as usize;
     let height = header.height.abs() as usize;
-    option.drawer.init(width,height)?;
+    option.drawer.init(width,height,InitOptions::new())?;
     let mut line :Vec<u8> = (0..header.width*4).map(|i| if i%4==3 {0xff} else {0}).collect();
     let mut ptr = 0;
     let mut y:usize = height - 1;
@@ -170,13 +172,13 @@ fn decode_rle(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptions) -> 
                         x += data0 as usize;
                     } else {
                         covert_rgba32(&buf, &mut line, header,8)?;
-                        option.drawer.draw(0,y,width,1,&line)?;
+                        option.drawer.draw(0,y,width,1,&line,None)?;
                         if y == 0 {break;}
                         y -= 1;
                         buf  = (0..((width + rev_bytes -1) / rev_bytes)).map(|_| 0).collect();
                         for _ in 0..data1 as usize {
                             covert_rgba32(&buf, &mut line, header,8)?;
-                            option.drawer.draw(0,y,width,1,&line)?;
+                            option.drawer.draw(0,y,width,1,&line,None)?;
                             if y == 0 {break;}
                             y -= 1;
                         }
@@ -238,16 +240,16 @@ fn decode_rle(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptions) -> 
         }
         covert_rgba32(&buf, &mut line, header,8)?;
         if header.height > 0 {
-            option.drawer.draw(0,y,width,1,&line)?;
+            option.drawer.draw(0,y,width,1,&line,None)?;
         } else {
-            option.drawer.draw(0,height - 1 - y,width,1,&line)?;
+            option.drawer.draw(0,height - 1 - y,width,1,&line,None)?;
         }
         if y == 0 || ptr >= buffer.len()  {
             break;
         }
         y -= 1;
     }
-    option.drawer.terminate()?;
+    option.drawer.terminate(None)?;
     return Ok(None)
 }
 
@@ -323,7 +325,7 @@ fn decode_bit_fileds(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptio
         println!("{} {}",width,height);
     }
 
-    option.drawer.init(width,height)?;
+    option.drawer.init(width,height,InitOptions::new())?;
     let mut line :Vec<u8> = (0..width*4).map(|i| if i%4==3 {0xff} else {0}).collect();
 
     let line_size =  ((width as usize * header.bit_count + 31) / 32) * 4;
@@ -352,12 +354,12 @@ fn decode_bit_fileds(buffer: &[u8],header:&BitmapHeader,option:&mut  DecodeOptio
             line[x*4+3] = (alpha << (8 - alpha_bits) | alpha >> alpha_bits) as u8;
         }
         if header.height > 0 {
-            option.drawer.draw(0,y,width,1,&line)?;
+            option.drawer.draw(0,y,width,1,&line,None)?;
         } else {
-            option.drawer.draw(0,y_,width,1,&line)?;
+            option.drawer.draw(0,y_,width,1,&line,None)?;
         }
     }
-    option.drawer.terminate()?;
+    option.drawer.terminate(None)?;
     Ok(None)
 }
 

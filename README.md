@@ -39,5 +39,5 @@ Notice: Specification of this library is not decision.
  - terminate -> You can impl terminate process
 
 # update
-0.0.1 baseline jpeg
-0.0.2 bmp OS2/Windows RGB/RLE4/RLE8/bit fields/baseline JPEG
+- 0.0.1 baseline jpeg
+- 0.0.2 bmp OS2/Windows RGB/RLE4/RLE8/bit fields/baseline JPEG

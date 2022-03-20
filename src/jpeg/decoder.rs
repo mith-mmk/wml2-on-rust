@@ -3,6 +3,7 @@
  * use MIT License
  */
 
+use crate::InitOptions;
 use crate::warning::ImgWarningKind::Jpeg;
 use crate::warning::ImgWarningKind;
 use crate::warning::ImgWarning;
@@ -713,7 +714,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
 
     if option.debug_flag > 0 {
         let boxstr = print_header(&header,option.debug_flag);
-        option.drawer.verbose(&boxstr)?;
+        option.drawer.verbose(&boxstr,None)?;
     }
     
     if header.is_hierachical {
@@ -792,7 +793,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
     }
 
     // decode
-    option.drawer.init(width,height)?;
+    option.drawer.init(width,height,InitOptions::new())?;
     // take buffer for progressive 
     // progressive has 2mode
     //  - Spectral selection control
@@ -881,7 +882,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
                          }
                          else {y_to_rgb(&mcu_units,&component)}; // g / ga
 
-            option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data)?;
+            option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
 
             if header.interval > 0 {
                 mcu_interval = mcu_interval - 1;
@@ -919,7 +920,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
                 0xd9 => {   // EOI
                 },
                 0xdd => {
-                    option.drawer.terminate()?;
+                    option.drawer.terminate(None)?;
                     warning = Some(
                         ImgWarning::new_const(
                             Jpeg(JpegWarningKind::UnexpectMarker),
@@ -927,7 +928,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
                     return Ok(warning)
                 },
                _ => {
-                    option.drawer.terminate()?;
+                    option.drawer.terminate(None)?;
                     warning = Some(
                         ImgWarning::new_const(
                             Jpeg(JpegWarningKind::UnexpectMarker),
@@ -952,6 +953,6 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
             );
         }
     }
-    option.drawer.terminate()?;
+    option.drawer.terminate(None)?;
     Ok(warning)
 }

@@ -1,8 +1,13 @@
+/*
+ *  bmp/header.rs (C) 2022 Mith@mmk
+ *  
+ * 
+ */
+
 use crate::io::*;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 
-// not support bitmap header V4/V5 yet
 
 #[allow(unused)]
 #[derive(Debug)]

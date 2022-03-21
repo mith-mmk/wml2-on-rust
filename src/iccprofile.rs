@@ -146,7 +146,7 @@ pub enum Data {
 }
 
 impl Data {
-    pub fn get(data_type:String,data: &[u8],length: usize) -> Data {
+    pub fn get(data_type:String,_data: &[u8],_length: usize) -> Data {
         match data_type  {
             _ => {
 
@@ -175,7 +175,7 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
         str +=  &format!("Tag name {} {}bytes\n",tag_name,tag_length);
         match &*tag_name {
             "A2B0" | "A2B1" | "A2B2" => {
-                let mut ptr = tag_offset - header_size;
+                let ptr = tag_offset - header_size;
                 let data_type = read_string(&icc_profile.data, ptr as usize, 4);
                 str += &(data_type + "\n");
                 let data_type = read_string(&icc_profile.data, ptr as usize, 4);
@@ -241,8 +241,8 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
                 if data_type == "mft1" {
                     p = 48;
                     let length = tag_length - p;
-                    let input_channel_size = 256 * ich * 1;
-                    let clut_size = clut_point.pow(ich as u32);
+                    let _input_channel_size = 256 * ich * 1;
+                    let _clut_size = clut_point.pow(ich as u32);
                     // mft2
                     // ch4 YCMK (clut_size) ** color_d (YCMK,YCcK =4,RGB,YUV=3)
                     // input ch [255] -> Y [0..255] C [0..255] M [0..255] K[0..255]
@@ -251,7 +251,7 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
                     // YCMK (clut_size,clut_size,clut_size,clut_size) YUV[u8][u8][u8]
                     // output ch [255] -> Y [0..255] U [0..255] V [0..255]
                     for i in 0..length {
-                        let data = read_byte(&icc_profile.data, ptr+ p + i);
+                        let _data = read_byte(&icc_profile.data, ptr+ p + i);
                         if i % 32 == 31 {
                         }
                     }
@@ -263,9 +263,9 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
                     str +=  &format!("Input #{} Output #{}\n",input,output);
                     p = 52;
                     let input_channel_size = input * ich * 2;
-                    let output_channel_size = output * och * 2;
-                    let start_point = p + input_channel_size;
-                    let clut_size = clut_point.pow(ich as u32) * 2;
+                    let _output_channel_size = output * och * 2;
+                    let _start_point = p + input_channel_size;
+                    let _clut_size = clut_point.pow(ich as u32) * 2;
                     // mft2
                     // ch4 YCMK (clut_size+1) ** color_d (YCMK,YCcK =4,RGB,YUV=3)
                     // input ch [#] -> Y [0..#] C [0..#] M [0..#] K[0..#]
@@ -274,9 +274,9 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
                     // YCMK (clut_size,clut_size,clut_size,clut_size) YUV[u16][u16][u16]
                     // output ch [#] -> Y [0..#] U [0..#] V [0..#]
 
-                    let length = tag_length - p;
+                    let _length = tag_length - p;
                     for i in 0..input*output*256 {
-                        let data = read_byte(&icc_profile.data, ptr+ p + i);
+                        let _data = read_byte(&icc_profile.data, ptr+ p + i);
                     }
                 }
             },

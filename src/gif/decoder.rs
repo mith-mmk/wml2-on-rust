@@ -1,129 +1,154 @@
-use crate::draw::NextOptions;
+use super::header::*;
+use crate::io::*;
+use crate::draw::*;
 use crate::color::RGBA;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use crate::warning::ImgWarning;
-use crate::draw::DecodeOptions;
-use super::header::*;
-use crate::io::*;
 
-const SEPARATER: u8 = b',';
-const EXTEND_BLOCK:u8 = b'!';
+const SEPARATER: u8 = b',';     // 0x2c
+const EXTEND_BLOCK:u8 = b'!';   // 0x21
 const COMMENT_LABEL:u8 = 0xfe;
 const GRAPHIC_CONTROLE:u8 = 0xf9;
-const END_MARKER:u8 = b';';
+const END_MARKER:u8 = b';';     // 0x3c
 const END:u8 = 0x00;
+const MAX_TABLE:usize = 4096;
 
-// under construction...
-/*
-struct LzwInfrate {
+
+struct Lzwdecode {
     buffer: Vec<u8>,
     cbl: usize,
-    rcbl: usize,
+    recovery_cbl: usize,
     last_byte: u64,
     left_bits: usize,
+    bit_mask: u64,
     ptr: usize,
     clear: usize,
     end: usize,
-    max_bits: usize,
-    max_table:usize,
     dic: Vec<Vec<u8>>,
-    dic_size: usize,
+    prev_code: usize,
     is_init: bool,
 }
 
-impl LzwInfrate {
-    const CLEAR: usize = 0x100;
-    const END: usize = 0x101;
-    const DATA: usize = 0x102;
+impl Lzwdecode {
 
-    pub fn new(cbl: usize) -> Self{
+    pub fn new(lzw_min_bits: usize) -> Self{
+        let cbl = lzw_min_bits +1;
+        let clear_code = 1 << lzw_min_bits;
         Self {
             buffer: Vec::new(),
-            cbl: cbl +1,
-            rcbl: cbl +1,
+            cbl: cbl,
+            recovery_cbl: cbl,
+            bit_mask: (1 << cbl) -1,
             last_byte: 0,
             left_bits: 0,
             ptr: 0,
-            clear:  1 << cbl,
-            end:  1 << cbl +1,            
-            max_bits: MAX_BITS,
-            max_table: MAX_TABLE,
+            clear: clear_code,
+            end:   clear_code+ 1,            
             dic: Vec::with_capacity(MAX_TABLE),
-            dic_size: 0,
+            prev_code: clear_code,
             is_init: false,
         }
+    }
+    
+    fn fill_bits(&mut self) {
+        self.clear_dic();
+        self.last_byte = 0;
+        let ptr = self.ptr;
+        self.last_byte = read_byte(&self.buffer,  ptr) as u64;
+        self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u64) << 8;
+        self.last_byte |= (read_byte(&self.buffer,ptr + 2) as u64) << 16;
+        self.left_bits = 24;
+        self.ptr = 3;
+
     }
 
     fn get_bits(&mut self) -> Result<usize,ImgError> {
         let size = self.cbl;
-        while self.left_bits <= 8 {
+        while self.left_bits <= 16 {
             if self.ptr >= self.buffer.len() { 
                 if self.left_bits <= 8 && self.left_bits < size {
                     return Err(ImgError::new_const(ImgErrorKind::IOError, &"data shortage"))
                 }
                 break;
             }
-            self.last_byte = (self.last_byte >> 8) & 0xff | ((self.buffer[self.ptr] as u64) << 8) as u64;
+            self.last_byte = (self.last_byte >> 8) & 0xffff | ((self.buffer[self.ptr] as u64) << 16);
             self.ptr +=1;
             self.left_bits += 8;
         }
-        let mask = ((1 << size) - 1) << (16 - self.left_bits);
-        let bits = (self.last_byte & mask) >>  (16 - self.left_bits);
+        let bits = (self.last_byte >>  (24 - self.left_bits)) & self.bit_mask;
+
         self.left_bits -= size;
         Ok(bits as usize)
     }
 
-    fn init_table(&mut self) {
-        self.dic = (0..LzwInfrate::END+1).map(|i| [i as u8].to_vec()).collect();
-        self.cbl = self.rcbl;
-        self.dic_size = Self::END+1;
+    fn clear_dic(&mut self) {
+        self.dic = (0..self.end+1).map(|i| if i < self.clear { vec![i as u8] } else {vec![]}).collect();
+        self.cbl = self.recovery_cbl;
+        self.bit_mask = (1 << self.cbl) - 1;
+
     }
 
-    pub fn infrate(&mut self,buf: &[u8]) -> Result<Vec<u8>,ImgError> {
+    pub fn decode(&mut self,buf: &[u8]) -> Result<Vec<u8>,ImgError> {
+        self.buffer = buf.to_vec();
         if self.is_init == false {
-            self.init_table();
-            self.last_byte = 0;
-            self.buffer = buf.to_vec();
-            self.last_byte = read_byte(buf, 0) as u64;
-            self.last_byte |= (read_byte(buf, 1) as u64) << 8 ;
-            self.left_bits = 16;
-            self.ptr = 2;
+            self.fill_bits();
             self.is_init = true;
         } else {
             self.ptr = 0;
         }
 
         let mut data :Vec<u8> = Vec::new();
-        let mut table :Vec<u8> = Vec::new();
-        let mut prev_d = 0;
+        self.prev_code = self.clear;  // NULL
 
         loop {
-            let d = self.get_bits()?;
-            println!("data {} {:08x}",d,self.ptr);
+            let code = self.get_bits()?;
 
-            if d == self.clear {
-                self.init_table();
-                prev_d = d;
-                let d = self.get_bits()?;
-                self.dic.push(vec![prev_d as u8,d as u8]);
-                println!("*dic[]{} d {:?}",self.dic.len(),self.dic[self.dic.len() - 1]);
-//                table = vec![d as u8];
-            } else if d == self.end {
-                return Ok(data);
-            } else if d == self.dic.len() {
-//                self.dic.push(table);
-//                table = vec![d as u8];
-            } else if d < self.max_table {
-                //
-                
+
+
+            if code == self.clear {
+                for p in &self.dic[self.prev_code] {
+                    data.push(*p);
+                }
+
+                self.clear_dic();
+            } else if code == self.end {
+                let mut table :Vec<u8> = Vec::new();
+                for p in &self.dic[self.prev_code] {
+                    data.push(*p);
+                    table.push(*p);
+                }
+                let append_code = self.dic[self.prev_code][0];
+                table.push(append_code);
+                return Ok(data)
+            } else if code > self.dic.len() {
+                return Err(ImgError::new_const(ImgErrorKind::IlligalData, &"Over table in LZW"));
             } else {
-                return Err(ImgError::new_const(ImgErrorKind::IlligalData, &"Over number in LZW"));
+                let append_code;
+                if code == self.dic.len() {
+                    append_code = self.dic[self.prev_code][0];
+                } else {
+                    append_code = self.dic[code][0];
+                }
+                if self.prev_code != self.end && self.prev_code != self.clear {
+                    let mut table :Vec<u8> = Vec::new();
+                    for p in &self.dic[self.prev_code] {
+                        data.push(*p);
+                        table.push(*p);
+                    }
+                    table.push(append_code);
+                    self.dic.push(table);
+                    if self.dic.len() == self.bit_mask as usize + 1 && self.dic.len() < MAX_TABLE{
+                        self.cbl += 1;
+                        self.bit_mask = (self.bit_mask << 1) | 1;
+                    }
+                }
             }
+            self.prev_code = code;
         }
     } 
 }
-*/
+
 
 pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) 
                     -> Result<Option<ImgWarning>,ImgError> {
@@ -134,13 +159,16 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
     let mut transperarent_color = 0x00;
     let mut delay_time = 0 ;
 
-    println!("{:?}",&header);
+    if option.debug_flag >0 {
+        option.drawer.verbose(&format!("{:?}",&header),None)?;
+    }
 
 
     option.drawer.init(header.width,header.height,None)?;
 
     loop {
         let c = read_byte(buffer,ptr); ptr += 1;
+
         match c {   // BLOCK LOOP
             END => {
 
@@ -152,17 +180,18 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                     COMMENT_LABEL => {
                         let mut s = "Comment: ".to_string();
                         loop {
-                            let len = read_byte(buffer, ptr) as usize; ptr += len;
+                            let len = read_byte(buffer, ptr) as usize; ptr += 1;
                             if len == 0 {break;}
                             if ext == COMMENT_LABEL {
                                 s = s.to_owned() + &read_string(buffer, ptr, len);
                             }                            
+                            ptr += len;
                         }
                         if option.debug_flag > 0 {
                             option.drawer.verbose(&s,None)?;
                         }
                         comment += &s;
-                        },
+                    },
                     GRAPHIC_CONTROLE => {
                         let len = read_byte(buffer, ptr) as usize;
 
@@ -182,12 +211,29 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
 
                         transperarent_color = read_byte(buffer, ptr + 4) as usize;
 
-                        ptr += len;
+                        if option.debug_flag > 0 {
+                            let s = format!("Grahic Controle {} delay {}ms  transpearent {:?}",flag,delay_time,is_transpearent);
+                            option.drawer.verbose(&s,None)?;
+                        }
 
+                        ptr += len + 1;
+                    },
+                    0xff => {   // Netscape 2.0 (Animation Flag)
+                        loop {
+                            let len = read_byte(buffer, ptr) as usize; ptr += 1;
+                            if len == 0 {break;}
+                            let s = "Animation tag: ".to_owned() + &read_string(buffer,ptr,len); ptr += len;
+                            if option.debug_flag > 0 {
+                                option.drawer.verbose(&s,None)?;
+                            }
+                        }
                     },
                     _ => {
-                        let len = read_byte(buffer, ptr) as usize;
-                        ptr += len;
+                        loop {
+                            let len = read_byte(buffer, ptr) as usize; ptr += 1;
+                            if len == 0 {break;}
+                            ptr += len;
+                        }
                     }
                 }
             },
@@ -222,7 +268,6 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                 }
                 // LZW block 
                 let lzw_min_bits = read_byte(buffer, ptr) as usize; ptr += 1;
-                println! ("LZW Minimum Code Side {} ",lzw_min_bits);
                 let mut buf :Vec<u8> = Vec::new();
                 'lzw_read: loop {
                     let len = read_byte(buffer,ptr) as usize; ptr += 1;
@@ -231,20 +276,26 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                     }
                     buf.append(&mut read_bytes(buffer,ptr,len)); ptr += len;
                 }
-//                let mut infrater = LzwInfrate::new(lzw_min_bits);
-//                let data = infrater.infrate(&buf)?;
-                use weezl::{BitOrder, decode::Decoder};
-                let data = Decoder::new(BitOrder::Lsb,lzw_min_bits as u8).decode(&buf);
-                let data = data.unwrap();
+                let mut decoder = Lzwdecode::new(lzw_min_bits);
+                let data = decoder.decode(&buf)?;
+//                use weezl::{BitOrder, decode::Decoder};
+//                let data = Decoder::new(BitOrder::Lsb,lzw_min_bits as u8).decode(&buf);
+//                let data = data.unwrap();
                 let color_table = if has_local_pallet {&local_color_table} else {&header.color_table};
 
                 let width = if (lscd.xsize as usize) < header.width {lscd.xsize as usize} else {header.width};
                 let height = if (lscd.ysize as usize) < header.height {lscd.ysize as usize} else {header.height};
-                println!("{:?}",lscd);
-                println!("{} {} {} = {}",width,height,width*height,data.len());
+                if option.debug_flag > 0 {
+                    option.drawer.verbose(&format!("{:?}",lscd),None)?;
+                }
 
+                let mut interlace_start_y = [0,4,2,1];
+                let mut interlace_delta_y = [8,8,4,2];
+                let mut interlace_mode = 0;
+                let mut interlace_y = interlace_start_y[interlace_mode];
+                let is_interlace = if (lscd.field & 0x40) == 0x40 {true} else {false};
 
-                for y in 0..height {
+                for y in lscd.ystart as usize..height {
                     let mut line :Vec<u8> = vec![0;width*4];
                     let offset = y * width;
                     for x in 0..width as usize {
@@ -255,11 +306,31 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                         line[x*4+3] = color_table[color].alpha;
 
                     }
-                    option.drawer.draw(0,y,width,1,&line,None)?;
+                    if is_interlace {
+                        println!("{}",interlace_y);
+                        option.drawer.draw(lscd.xstart as usize,interlace_y,width,1,&line,None)?;
+                        if interlace_y == 16 {
+                            interlace_y += 8;
+                        } else {
+                            interlace_y += interlace_delta_y[interlace_mode];
+                        }
+                        if interlace_y >= height {
+                            interlace_mode += 1;
+                            if interlace_mode >= interlace_start_y.len() {break}
+                            interlace_y = interlace_start_y[interlace_mode];
+                        }
+                    } else {
+                        option.drawer.draw(lscd.xstart as usize,y,width,1,&line,None)?;
+                    }
                 }
 
 
-                option.drawer.next(Some(NextOptions::wait((delay_time * 10) as u64)))?;
+                let result = option.drawer.next(Some(NextOptions::wait((delay_time * 10) as u64)))?;
+                if let Some(response) = result {
+                    if response.response == ResposeCommand::Abort {
+                        return Ok(None);
+                    }
+                }
                 
             },
             END_MARKER => {

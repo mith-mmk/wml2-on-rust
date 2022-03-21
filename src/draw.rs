@@ -110,6 +110,7 @@ impl NextOptions {
     }
 }
 
+#[derive(std::cmp::PartialEq)]
 pub enum ResposeCommand {
     Abort,
     Continue,
@@ -214,7 +215,7 @@ impl DrawCallback for ImageBuffer {
     }
 
     fn next(&mut self, _: Option<NextOptions>) -> Result<Option<CallbackResponse>, crate::error::ImgError> {
-        Ok(None)
+        Ok(Some(CallbackResponse::abort()))
     }
 
     fn verbose(&mut self, str: &str,_: Option<VerboseOptions>) -> Result<Option<CallbackResponse>, ImgError> { 

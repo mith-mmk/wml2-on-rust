@@ -523,27 +523,27 @@ fn ycck_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,
     let c2_map = c1_map + hv_maps[1].h * hv_maps[1].v;
     let k_map = c2_map + hv_maps[2].h * hv_maps[2].v;
 
-    let yy = v_max / hv_maps[0].v as usize;
+    let _yy = v_max / hv_maps[0].v as usize;
     let c1y = v_max / hv_maps[1].v as usize;
     let c2y = v_max / hv_maps[2].v as usize;
-    let ky =  v_max / hv_maps[3].v as usize;
+    let _ky =  v_max / hv_maps[3].v as usize;
 
-    let yx = h_max / hv_maps[0].h as usize;
+    let _yx = h_max / hv_maps[0].h as usize;
     let c1x = h_max / hv_maps[1].h as usize;
     let c2x = h_max / hv_maps[2].h as usize;
-    let kx = h_max / hv_maps[3].h as usize;
+    let _kx = h_max / hv_maps[3].h as usize;
 
     for v in 0..v_max {
-        let mut y_map_cur = y_map + v / v_max;
-        let mut c1_map_cur = c1_map + v / v_max;
-        let mut c2_map_cur = c2_map + v / v_max;
-        let mut k_map_cur = k_map + v / v_max;
+        let y_map_cur = y_map + v / v_max;
+        let c1_map_cur = c1_map + v / v_max;
+        let c2_map_cur = c2_map + v / v_max;
+        let k_map_cur = k_map + v / v_max;
 
         for h in 0..h_max {
-            y_map_cur = y_map_cur + h / h_max;
-            c1_map_cur = c1_map_cur + h / h_max;
-            c1_map_cur = c2_map_cur + h / h_max;
-            k_map_cur = k_map_cur + h / h_max;
+            let y_map_cur = y_map_cur + h / h_max;
+            let c1_map_cur = c1_map_cur + h / h_max;
+            let c2_map_cur = c2_map_cur + h / h_max;
+            let k_map_cur = k_map_cur + h / h_max;
 
             for y in 0..8 {
                 let offset = ((y + v * 8) * (8 * h_max)) * 4;
@@ -552,7 +552,7 @@ fn ycck_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,
                     let yin = yuv[y_map_cur][(((y + v * 8)  % 8) * 8)  + ((x + h * 8)) % 8] as i32;
                     let c1  = yuv[c1_map_cur][(((y + v * 8) / c1y % 8) * 8)  + ((x + h * 8) / c1x) % 8] as i32;
                     let c2  = yuv[c2_map_cur][(((y + v * 8) / c2y % 8) * 8)  + ((x + h * 8) / c2x) % 8] as i32;
-                    let key = yuv[k_map_cur][(((y + v * 8) % 8) * 8)  + (x + h * 8) % 8] as i32;
+                    let _key = yuv[k_map_cur][(((y + v * 8) % 8) * 8)  + (x + h * 8) % 8] as i32;
 
                     let cy = yin;
                     let cb = 255 - c1;
@@ -628,7 +628,7 @@ fn cmyk_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,
                     let cc = yuv[c_map_cur][(((y + v * 8) / cy % 8) * 8)  + ((x + h * 8) / cx) % 8] as i32;
                     let cm = yuv[m_map_cur][(((y + v * 8) / my % 8) * 8)  + ((x + h * 8) / mx) % 8] as i32;
                     let cy = yuv[y_map_cur][(((y + v * 8) / yy % 8) * 8)  + ((x + h * 8) / yx) % 8] as i32;
-                    let ck = yuv[k_map_cur][(((y + v * 8) / ky % 8) * 8)  + ((x + h * 8) / kx) % 8] as i32;
+                    let _ck = yuv[k_map_cur][(((y + v * 8) / ky % 8) * 8)  + ((x + h * 8) / kx) % 8] as i32;
 
                     // from Japn Color 2011 Coated
                     // R  69 K  + (255 - 69) Y +        0 C  

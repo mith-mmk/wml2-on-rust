@@ -72,7 +72,7 @@ impl GifHeader {
                 let palette = RGBA {
                     red: read_byte(buffer, ptr),
                     green: read_byte(buffer, ptr+1),
-                    blue: read_byte(buffer, ptr+3),
+                    blue: read_byte(buffer, ptr+2),
                     alpha: 0xff,
                 };
                 color_table.push(palette);
@@ -98,8 +98,8 @@ impl GifLscd {
             xstart: read_u16le(buffer,ptr),
             ystart: read_u16le(buffer,ptr + 2),
             xsize: read_u16le(buffer,ptr + 4),
-            ysize: read_u16le(buffer,ptr + 8),
-            field: read_byte(buffer,ptr + 9),
+            ysize: read_u16le(buffer,ptr + 6),
+            field: read_byte(buffer,ptr + 8),
         }
     }
 }

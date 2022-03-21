@@ -63,8 +63,8 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
                 }
         },
         0xff => {
-            if buffer[1] == 0xfe {
-                return ImageFormat::Tiff
+            if buffer[1] == 0xd8 {
+                return ImageFormat::Jpeg
             }
 
         }

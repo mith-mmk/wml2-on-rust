@@ -16,4 +16,6 @@ pub mod util;
 pub mod draw;
 pub mod iccprofile;
 pub mod color;
+pub mod decoder;
+
 

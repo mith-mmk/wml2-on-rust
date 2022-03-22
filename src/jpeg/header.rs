@@ -142,6 +142,8 @@ impl FrameHeader {
         let nf = read_byte(&buffer,5) as i32;
         plane = nf as usize;
 
+        
+
         let mut ptr = 6;
 
         component = Vec::new();
@@ -302,6 +304,7 @@ fn read_app(num: usize,tag :&String,buffer :&[u8],mut ptr :usize,mut len :usize)
 
                     let exif = super::super::tiff::header::read_tags(&buf)?;
                     return Ok(JpegAppHeaders::Exif(exif))
+//                    return Ok(JpegAppHeaders::Unknown(UnknownApp{number:num ,tag: tag.to_string(),length: len}))
                 },
                 _ => {
                 }
@@ -661,6 +664,10 @@ impl JpegHaeder {
                         let tag = read_string(buffer,offset + 2,length -2);
                         let len = length - 2 - tag.len() + 1;
                         let ptr = 2 + tag.len() + 1 + offset;
+                        if cfg!(debug_assertions) {
+                            println!("App {} {} {} {} {}",num,length,tag,len,ptr);
+                        }
+
                         let result = read_app(num , &tag, &buffer[ptr..len+ptr], 0, len)?;
                         match &result {
                             JpegAppHeaders::Adobe(ref app) => {

@@ -3,7 +3,10 @@
  * use MIT License
  */
 
+
+
 /* for EXIF */
+use crate::color::RGBA;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use super::tags::gps_mapper;
@@ -44,10 +47,116 @@ pub struct TiffHeader {
     pub data: DataPack,
 }
 
+pub enum Compression {
+    NoneCompression = 1,
+    CCITTHuffmanRE = 2,
+    CCITTGroup3Fax = 3,
+    CCITTGroup4Fax = 4,
+    LZW = 5,
+    OldJpeg = 6,
+    JPeg = 7,
+    AdobeDeflate = 8,
+    Next = 32766,
+    CcittrleW = 32771,
+    Packbits = 32773,
+    ThunderScan = 32809,
+    IT8CTPad = 32895,
+    IT8LW = 32896,
+    IT8MP = 32897,
+    IT8BL = 32898,
+    PIXARFILM = 32908,
+    PIXARLOG = 32909,
+    DEFLATE = 32946,
+    DCS = 32947,
+    JBIG = 34661,
+    SGILOG = 34676,
+    SGILOG24 = 34677,
+    Jpeg2000 = 34712,
+}
+
+// This struct is not use embed tiff tag,also EXIF.
+// Use only tiff encoder/decoder
+pub struct TiffBaseline {
+    //must
+
+    pub newsubfiletype:u32,             // 0x00fe  also 0
+    pub subfiletype:u32,                // 0x00ff  also 1              
+    pub width: u32,                     // 0x0100
+    pub height: u32,                    // 0x0101
+    pub bitperpixel: u32,               // 0x0102 data takes 1..N. if data count is 1>0,also bitperpixel =24
+    pub photometric_interpretation: u32,// 0x0106
+    // 0 = White is zero white based grayscale
+    // 1 = black is zero black based grayscale
+    // 2 = RGB888
+    // 3 = Palette color
+    // 4 = Transparecy Mask
+    //
+    // 5 = alos CMYK
+    // 6 = YCbCr
+    // 8 = CieLaB
+    // 9 = ICCLab
+    //10 = ITULab
+    //32844 = Logl
+    //32845 = logluv
+    //32803 = Color filter array
+    //34892 = Linear Raw
+    //51177 = depth
+
+    pub fill_order:u32,                 // 0x010A 1 = msb ,2 = lsb. usualy msb but lzw also use lsb
+    pub strip_offsets: u32,             // 0x0111 image data offsets, data number also 1, but it may be exist mutli offsets images.
+    pub orientation: u32,               // 0x0112 also 1  0
+    // 1 = TOPLEFT (LEFT,TOP) Image end (RIGHT,BOTTOM)
+    // 2 = TOPRIGHT right-left reverce Image
+    // 3 = BOTTOMRIGHT top-bottom and right-left reverce Image
+    // 4 = BOTTOMLEFT also same Windows Bitmap
+    // 5 = LEFTTOP rotate 90 TOPLEFT (TOP,LEFT) - (BOTTOM,RIGHT)
+    // 6 = RIGHTTOP rotate 90 TOPRIGHT
+    // 7 = RIGHTBOTTOM rotate 90 BOTTOMRIGHT
+    // 8 = LEFTBOTTOM  rotate 90 BOTTOMLEFT
+    pub samples_per_pixel:u16,          // 0x0115
+    pub rows_per_strip: u32,            // 0x0116 also width * BitPerSample /8  <= row_per_strip
+    pub strip_byte_counts :u32,         // 0x0117 For each strip, the number of bytes in the strip after compression.
+    pub min_sample_value:u16,           // 0x0118 also no use
+    pub max_sample_value:u16,           // 0x0119 default 2**(BitsPerSample) - 1
+    pub planar_config: u32,             // 0x011c also 1
+    pub compression: Compression,       // 0x0103 see enum Compression
+
+    // may
+    pub x_resolution:u32,               // 0x011A also for DTP
+    pub y_resolution:u32,               // 0x0112 also for DTP
+    pub color_table: Option<Vec<RGBA>>, // 0x0140 use only bitperpixel <= 8
+                                        // if color_table is empty,
+                                        // you use standard color pallte or grayscale
+
+    pub threshholding: u32, // 0x0107
+    pub cell_width:u32, //0x0108
+    pub cell_height:u32, //0x0109
+    pub free_offsets:u32, //288	0120	
+    pub free_byte_counts:u32, //289	0121	
+    pub gray_response_unit:u32, //290	0122
+    pub gray_response_curve:u32, //291	0123
+
+    // comments
+    pub document_name:String, //0x010d
+    pub make:String, //0x010f
+    pub model:String, //0x0110
+    pub software:String, //0x131
+    pub datetime:String, //0x132
+    pub artist:String, //0x13b
+    pub host_computer:String, //0x13c
+
+    // no baseline
+    pub startx: u32,                // 0x011E
+    pub starty: u32,                // 0x011F
+
+}
+
+
 #[allow(unused)]
 pub struct TiffHeaders {
     pub version :u16,
     pub headers :Vec<TiffHeader>,
+    pub standard: Option<TiffBaseline>,
     pub exif: Option<Vec<TiffHeader>>,
     pub gps: Option<Vec<TiffHeader>>,
     pub little_endian: bool,
@@ -171,6 +280,7 @@ fn get_data (buffer: &[u8], ptr :usize ,datatype:usize, datalen: usize, endian: 
                 }
             }
             data = DataPack::Undef(d);
+
         },
         8 => {  // 6 i8 
             let mut d: Vec<i16> = Vec::with_capacity(datalen);
@@ -272,20 +382,26 @@ fn read_gps (version:u16,buffer: &[u8], offset_ifd: usize,endian: bool) -> Resul
 
 fn read_tag (version:u16,buffer: &[u8], mut offset_ifd: usize,endian: bool,mode: usize) -> Result<TiffHeaders,ImgError>{
     let mut ifd = 0;
-    let mut headers :TiffHeaders = TiffHeaders{version,headers:Vec::new(),exif:None,gps:None,little_endian: endian};
-    loop {
+    let mut headers :TiffHeaders = TiffHeaders{version,headers:Vec::new(),standard:None,exif:None,gps:None,little_endian: endian};
+    'reader: loop {
         let mut ptr = offset_ifd;
-        let tag = read_u16(buffer,ptr,endian);
+        if buffer.len() <= ptr {
+            break 'reader;
+        }
+        let tag = read_u16(buffer,ptr,endian); 
         ptr = ptr + 2;
  
         for _ in 0..tag {
+            if buffer.len() <= ptr {
+                break 'reader;
+            }
             let tagid = read_u16(buffer,ptr,endian);
             let datatype = read_u16(buffer,ptr + 2,endian) as usize;
             let datalen = read_u32(buffer,ptr + 4,endian) as usize;
+
             ptr = ptr + 8;
             let data :DataPack = get_data(buffer, ptr, datatype, datalen, endian);
             ptr = ptr + 4;
-
     
             if mode != 2 {
                 match tagid {

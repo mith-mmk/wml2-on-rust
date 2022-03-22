@@ -1,6 +1,7 @@
 use super::header::*;
 use crate::io::*;
 use crate::draw::*;
+use crate::decoder::lzw::Lzwdecode;
 use crate::color::RGBA;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
@@ -12,142 +13,7 @@ const COMMENT_LABEL:u8 = 0xfe;
 const GRAPHIC_CONTROLE:u8 = 0xf9;
 const END_MARKER:u8 = b';';     // 0x3c
 const END:u8 = 0x00;
-const MAX_TABLE:usize = 4096;
 
-
-struct Lzwdecode {
-    buffer: Vec<u8>,
-    cbl: usize,
-    recovery_cbl: usize,
-    last_byte: u64,
-    left_bits: usize,
-    bit_mask: u64,
-    ptr: usize,
-    clear: usize,
-    end: usize,
-    dic: Vec<Vec<u8>>,
-    prev_code: usize,
-    is_init: bool,
-}
-
-impl Lzwdecode {
-
-    pub fn new(lzw_min_bits: usize) -> Self{
-        let cbl = lzw_min_bits +1;
-        let clear_code = 1 << lzw_min_bits;
-        Self {
-            buffer: Vec::new(),
-            cbl: cbl,
-            recovery_cbl: cbl,
-            bit_mask: (1 << cbl) -1,
-            last_byte: 0,
-            left_bits: 0,
-            ptr: 0,
-            clear: clear_code,
-            end:   clear_code+ 1,            
-            dic: Vec::with_capacity(MAX_TABLE),
-            prev_code: clear_code,
-            is_init: false,
-        }
-    }
-    
-    fn fill_bits(&mut self) {
-        self.clear_dic();
-        self.last_byte = 0;
-        let ptr = self.ptr;
-        self.last_byte = read_byte(&self.buffer,  ptr) as u64;
-        self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u64) << 8;
-        self.last_byte |= (read_byte(&self.buffer,ptr + 2) as u64) << 16;
-        self.left_bits = 24;
-        self.ptr = 3;
-
-    }
-
-    fn get_bits(&mut self) -> Result<usize,ImgError> {
-        let size = self.cbl;
-        while self.left_bits <= 16 {
-            if self.ptr >= self.buffer.len() { 
-                if self.left_bits <= 8 && self.left_bits < size {
-                    return Err(ImgError::new_const(ImgErrorKind::IOError, &"data shortage"))
-                }
-                break;
-            }
-            self.last_byte = (self.last_byte >> 8) & 0xffff | ((self.buffer[self.ptr] as u64) << 16);
-            self.ptr +=1;
-            self.left_bits += 8;
-        }
-        let bits = (self.last_byte >>  (24 - self.left_bits)) & self.bit_mask;
-
-        self.left_bits -= size;
-        Ok(bits as usize)
-    }
-
-    fn clear_dic(&mut self) {
-        self.dic = (0..self.end+1).map(|i| if i < self.clear { vec![i as u8] } else {vec![]}).collect();
-        self.cbl = self.recovery_cbl;
-        self.bit_mask = (1 << self.cbl) - 1;
-
-    }
-
-    pub fn decode(&mut self,buf: &[u8]) -> Result<Vec<u8>,ImgError> {
-        self.buffer = buf.to_vec();
-        if self.is_init == false {
-            self.fill_bits();
-            self.is_init = true;
-        } else {
-            self.ptr = 0;
-        }
-
-        let mut data :Vec<u8> = Vec::new();
-        self.prev_code = self.clear;  // NULL
-
-        loop {
-            let code = self.get_bits()?;
-
-
-
-            if code == self.clear {
-                for p in &self.dic[self.prev_code] {
-                    data.push(*p);
-                }
-
-                self.clear_dic();
-            } else if code == self.end {
-                let mut table :Vec<u8> = Vec::new();
-                for p in &self.dic[self.prev_code] {
-                    data.push(*p);
-                    table.push(*p);
-                }
-                let append_code = self.dic[self.prev_code][0];
-                table.push(append_code);
-                return Ok(data)
-            } else if code > self.dic.len() {
-                return Err(ImgError::new_const(ImgErrorKind::IlligalData, &"Over table in LZW"));
-            } else {
-                let append_code;
-                if code == self.dic.len() {
-                    append_code = self.dic[self.prev_code][0];
-                } else {
-                    append_code = self.dic[code][0];
-                }
-                if self.prev_code != self.end && self.prev_code != self.clear {
-                    let mut table :Vec<u8> = Vec::new();
-                    for p in &self.dic[self.prev_code] {
-                        data.push(*p);
-                        table.push(*p);
-                    }
-                    table.push(append_code);
-                    self.dic.push(table);
-                    if self.dic.len() == self.bit_mask as usize + 1 && self.dic.len() < MAX_TABLE{
-                        self.cbl += 1;
-                        self.bit_mask = (self.bit_mask << 1) | 1;
-                    }
-                }
-            }
-            self.prev_code = code;
-        }
-    } 
-}
 
 
 pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) 
@@ -276,7 +142,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                     }
                     buf.append(&mut read_bytes(buffer,ptr,len)); ptr += len;
                 }
-                let mut decoder = Lzwdecode::new(lzw_min_bits);
+                let mut decoder = Lzwdecode::gif(lzw_min_bits);
                 let data = decoder.decode(&buf)?;
 //                use weezl::{BitOrder, decode::Decoder};
 //                let data = Decoder::new(BitOrder::Lsb,lzw_min_bits as u8).decode(&buf);
@@ -289,8 +155,8 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                     option.drawer.verbose(&format!("{:?}",lscd),None)?;
                 }
 
-                let mut interlace_start_y = [0,4,2,1];
-                let mut interlace_delta_y = [8,8,4,2];
+                let interlace_start_y = [0,4,2,1];
+                let interlace_delta_y = [8,8,4,2];
                 let mut interlace_mode = 0;
                 let mut interlace_y = interlace_start_y[interlace_mode];
                 let is_interlace = if (lscd.field & 0x40) == 0x40 {true} else {false};

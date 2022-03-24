@@ -9,11 +9,8 @@ license = "MIT"
 crate-type = ["rlib"] 
 
 [dependencies]
+bin-rs = {version = "0.0.1",features = ["stream"]}
 
-[dependencies.bin-rs]
-git = "https://github.com/mith-mmk/bin-rs"
-version = "0.0.1"
-features = ["stream"]
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.

@@ -83,13 +83,14 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
  - terminate -> You can impl terminate process
 
+
 # update
 - 0.0.1 baseline jpeg
 - 0.0.2 bmp OS2/Windows RGB/RLE4/RLE8/bit fields/baseline JPEG
 - 0.0.3 add GIF
 - 0.0.4 change error message
 - 0.0.5 reader change/Error delagation change
-
+- issue RST maker read bug
 # todo
 
 - ICCProfile Reader

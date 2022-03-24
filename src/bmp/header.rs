@@ -185,8 +185,8 @@ impl BitmapHeader {
             read_size += 40 - 4;
             bit_per_count = info_header.bi_bit_count as usize;
             clut_size = if bit_per_count <= 8 {info_header.bi_clr_used as usize} else {0};
-            let header_size = bitmap_file_header.bf_offbits -14 - (clut_size * 4) as u32;
-
+            let header_size = bitmap_file_header.bf_offbits -14 - (clut_size * 4) as u32;   // issue image header size 40 but required 56
+            
             width = info_header.bi_width as isize;
             height = info_header.bi_height as isize;
 
@@ -252,12 +252,12 @@ impl BitmapHeader {
                 None
             };
 
-            let b_v5_header = if bi_size >= 112 {
+            let b_v5_header = if header_size > 112 {
                 let b_v5_intent = reader.read_u32_le()?; // 112
-                let (b_v5_profile_data,b_v5_profile_size) = if bi_size >= 120 {
+                let (b_v5_profile_data,b_v5_profile_size) = if header_size > 120 {
                     (reader.read_u32_le()?,reader.read_u32_le()?)
                   } else {(0,0)};  //120
-                let b_v5_reserved = if bi_size >= 124 {reader.read_u32_le()?} else {0};
+                let b_v5_reserved = if header_size > 124 {reader.read_u32_le()?} else {0};
                 Some(BitmapInfoV5{
                     b_v5_intent,
                     b_v5_profile_data,
@@ -270,9 +270,6 @@ impl BitmapHeader {
 
             info_header.b_v4_header = b_v4_header;
             info_header.b_v5_header = b_v5_header;
-
-//                println!("{} {}",info_header.bi_width,info_header.bi_height);
-//            println!("{} {}",bi_size,header_size);
         
             compression = match info_header.bi_compression {
                 0 => {Some(Compressions::BiRGB)},
@@ -286,7 +283,7 @@ impl BitmapHeader {
 
             bitmap_info = BitmapInfo::Windows(info_header);
         }
-        if clut_size == 0 && bit_per_count <=8 {
+        if clut_size == 0 && bit_per_count <=8 && bit_per_count > 0 {
             clut_size = 1 << bit_per_count;
         }
 
@@ -316,7 +313,6 @@ impl BitmapHeader {
                 }
             }
         }
-//        println!("{} {}",read_size,bitmap_file_header.bf_offbits);
 
         let color_table = if color_table.len() > 0 {Some(color_table)} else {None};
 

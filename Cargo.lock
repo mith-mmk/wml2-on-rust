@@ -5,7 +5,8 @@ version = 3
 [[package]]
 name = "bin-rs"
 version = "0.0.1"
-source = "git+https://github.com/mith-mmk/bin-rs#835769b51cfde8c9e69e73f973ff4fef0088b76f"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1601a962746b756a64ba06f9d58bf9e164555f9e1de802617713ec2701b01f48"
 
 [[package]]
 name = "wml2"

@@ -499,9 +499,6 @@ impl JpegHaeder {
             if byte == 0xff { // header head
                 let nextbyte :u8 = reader.read_byte()?;
                 offset = offset + 2;
-                if cfg!(debug_assertions) {
-                    println!("{:02x}{:02x}",byte,nextbyte);
-                }
                 match nextbyte {
                     0xc4 => { // DHT maker
                         _dht_flag = true;
@@ -660,8 +657,18 @@ impl JpegHaeder {
                     },
                     0xfe => { // Comment
                         let length = reader.read_u16_be()? as usize;
-                        comment = Some(reader.read_ascii_string(length- 2)?);
-                        offset = offset + length; // skip
+                        println!("comment");
+                        let text = reader.read_ascii_string(length- 2);
+                        match text {
+                            Ok(text) => {comment =Some(text)},
+                            Err(err) => {
+                                if cfg!(debug_assertions) {
+                                    println!("Unreadable string{:?}",err);
+                                }
+                
+                            }
+                        }
+                        // offset = offset + length; // skip
                     },
                     0xe0..=0xef => { // Applications 
                         let num = (nextbyte & 0xf) as usize;

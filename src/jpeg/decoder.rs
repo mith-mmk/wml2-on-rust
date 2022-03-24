@@ -46,42 +46,22 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     }
 
     fn rst(self: &mut Self) -> Result<bool,Error> {
-        let b = self.reader.read_byte()?;
-        if b == 0xff {
-            let marker = self.reader.read_byte()?;
-            match marker {
-                0xd0..=0xd7 =>  {    // RST    
-                    self.bptr = 0;
-                    self.b = 0;
-                    return Ok(true);
-                },
-                0x00 => {
-                    self.b = 0xff;
-                    self.bptr = 0;
-                    return Ok(true);
-
-                },
-                _ => {
-                    self.b = 0xff;
-                    self.bptr = 0;
-                    return Ok(false);
-                },
-            }
-        } else {
-            self.b = b;
-        }
-        Ok(false)
+        Ok(self.rst)
     }
 
     fn next_marker(self: &mut Self) -> Result<u8,Error> {
-        let b = self.reader.read_byte()?;
-        if self.reader.read_byte()? != 0xff {
+        let buf = self.reader.read_bytes_no_move(8)?;
+        println!("{:02x} {:02x} {:02x} {:02x} {:02x} {:02x} {:02x} {:02x}"
+        ,buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7]);
+        if buf[0] != 0xff {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Nothing marker".to_string())));
         }
+        self.reader.read_byte()?;
         loop {
             let b = self.reader.read_byte()?;
             if b != 0xff {
                 self.b = 0;
+                self.bptr =0;
                 return Ok(b);
             }
         }
@@ -96,7 +76,11 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
                 0x00 => {
                     b = 0xff;
                 },
-                0xd0..=0xd7 =>  {    // RST    
+                0xd0..=0xd7 =>  {    // RST
+                    if cfg!(debug_assertions) {
+                        println!("RST {:02x}{:02x}",b,marker);
+                    }
+    
                     let rst_no = (b & 0x7) as usize;
                     if rst_no != (self.prev_rst + 1) % 8 {
                         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"No Interval RST".to_string())))
@@ -104,6 +88,7 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
                     self.prev_rst = rst_no;
                     self.rst = true;
                     self.rst_ptr = self.ptr;
+                    return self.next_byte();
                 },
                 0xd9=> { // EOI
                     return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"FF after  00 or RST".to_string())))
@@ -868,20 +853,27 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
 
             option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
 
+            println!("{},{} {} {}",mcu_x,mcu_y,mcu_x_max,mcu_y_max);
+
             if header.interval > 0 {
                 mcu_interval = mcu_interval - 1;
-                if mcu_interval == 0 { 
+                if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max -1 { 
                     if  bitread.rst()? == true {
+                        if cfg!(debug_assertions) {
+                            println!("reset interval {},{} {} {}",mcu_x,mcu_y,mcu_x_max,mcu_y_max);
+                        }
                         mcu_interval = header.interval as isize;
                         for i in 0..preds.len() {
                             preds[i] = 0;
                         }
                     } else {
-                        warning = Some(
-                            ImgWarning::new_const(
-                                Jpeg(JpegWarningKind::IlligalRSTMaker),
-                                &"no mcu interval"));
-                        return Ok(warning)
+                        let r = bitread.next_marker()?;
+                        if r >= 0xd0 && r<= 0xf7 {
+                            mcu_interval = header.interval as isize;
+                            for i in 0..preds.len() {
+                                preds[i] = 0;
+                            }    
+                        }
                     }
                 } else if bitread.rst()? == true {
                     warning = Some(

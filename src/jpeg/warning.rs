@@ -12,6 +12,7 @@ pub enum JpegWarningKind {
       BufferOverrun,
       UnexpectMarker,
       UnknowFormat,
+      UnreadbleString,
   }
 
 #[allow(unused)]
@@ -26,6 +27,7 @@ impl WarningKind for JpegWarningKind {
             BufferOverrun => {"Buffer Overrun"},
             UnexpectMarker => {"Unexpect Marker"},
             UnknowFormat => {"Unexpect Maker"},
+            UnreadbleString => {"Unreadable String"},
         }
     }
 }

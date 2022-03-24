@@ -162,7 +162,7 @@ pub struct TiffHeaders {
     pub little_endian: bool,
 }
 
-pub fn read_tags( buffer: &Vec<u8>) -> Result<TiffHeaders,Error>{
+pub fn read_tags( buffer: &[u8]) -> Result<TiffHeaders,Error>{
     let endian :bool;
 
     if buffer[0] != buffer [1] {

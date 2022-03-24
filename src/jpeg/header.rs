@@ -263,11 +263,14 @@ pub enum JpegAppHeaders {
     Unknown(UnknownApp),
 }
 
-fn read_app(num: usize,tag :&String,buffer :&[u8],mut ptr :usize,mut len :usize) -> Result<JpegAppHeaders,Error> {
+fn read_app(num: usize,tag :&String,buffer :&[u8]) -> Result<JpegAppHeaders,Error> {
+    let mut ptr = tag.len() + 1;
+    let mut len = buffer.len();
     match num {
         0 => {
             match tag.as_str() {
                 "JFIF" => {
+                    ptr = 5;
                     let version = read_u16be(&buffer,ptr) as u16;
                     let unit = read_byte(&buffer,ptr + 2) as usize;
                     let xr = read_u16be(&buffer,ptr + 3) as usize;
@@ -296,15 +299,9 @@ fn read_app(num: usize,tag :&String,buffer :&[u8],mut ptr :usize,mut len :usize)
         1 => {
             match tag.as_str() {
                 "Exif" => {
-                    ptr = ptr + 1; // start 6byte
-                    len = len - 1;
-                    let buf :Vec<u8> = (0..len)
-                        .map(|i| {buffer[ptr + i]})
-                        .collect();
-
-                    let exif = super::super::tiff::header::read_tags(&buf)?;
+                    let buf = &buffer[6..];
+                    let exif = super::super::tiff::header::read_tags(buf)?;
                     return Ok(JpegAppHeaders::Exif(exif))
-//                    return Ok(JpegAppHeaders::Unknown(UnknownApp{number:num ,tag: tag.to_string(),length: len}))
                 },
                 _ => {
                 }
@@ -499,11 +496,12 @@ impl JpegHaeder {
 
         'header:  loop {
             let byte = reader.read_byte()?;  // read byte
-            println!("{:02x}",byte);
             if byte == 0xff { // header head
                 let nextbyte :u8 = reader.read_byte()?;
                 offset = offset + 2;
-
+                if cfg!(debug_assertions) {
+                    println!("{:02x}{:02x}",byte,nextbyte);
+                }
                 match nextbyte {
                     0xc4 => { // DHT maker
                         _dht_flag = true;
@@ -670,12 +668,12 @@ impl JpegHaeder {
                         let length = reader.read_u16_be()? as usize;
                         let buffer = reader.read_bytes_as_vec(length- 2)?;
                         let tag = read_string(&buffer ,0, length-2);
-                        let len = length - 2 - tag.len() + 1;
-                        let ptr = 1 + tag.len();
+                        let len = buffer.len() - tag.len() -1;
+                        let ptr = tag.len();
                         if cfg!(debug_assertions) {
                             println!("App {} {} {} {} {}",num,length,tag,len,ptr);
                         }
-                        let result = read_app(num , &tag, &buffer, ptr, len)?;
+                        let result = read_app(num , &tag, &buffer)?;
                         match &result {
                             JpegAppHeaders::Adobe(ref app) => {
                                 adobe_color_transform = app.color_transform;

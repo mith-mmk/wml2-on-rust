@@ -45,41 +45,43 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
         }
     }
 
-    fn get_byte(self: &mut Self) -> Result<u8,Error> {
-        self.b =self.reader.read_byte()?;
-        Ok(self.b)
-    }
-
     fn rst(self: &mut Self) -> Result<bool,Error> {
-        if self.get_byte()? == 0xff {
-            match self.b {
+        let b = self.reader.read_byte()?;
+        if b == 0xff {
+            let marker = self.reader.read_byte()?;
+            match marker {
                 0xd0..=0xd7 =>  {    // RST    
-                    self.ptr = self.ptr + 2;
                     self.bptr = 0;
+                    self.b = 0;
                     return Ok(true);
                 },
                 0x00 => {
                     self.b = 0xff;
-                    self.ptr = self.ptr + 2;
                     self.bptr = 0;
                     return Ok(true);
 
                 },
                 _ => {
+                    self.b = 0xff;
+                    self.bptr = 0;
                     return Ok(false);
                 },
             }
+        } else {
+            self.b = b;
         }
         Ok(false)
     }
 
     fn next_marker(self: &mut Self) -> Result<u8,Error> {
-        if self.get_byte()? != 0xff {
+        let b = self.reader.read_byte()?;
+        if self.reader.read_byte()? != 0xff {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Nothing marker".to_string())));
         }
         loop {
-            let b = self.get_byte()?; 
+            let b = self.reader.read_byte()?;
             if b != 0xff {
+                self.b = 0;
                 return Ok(b);
             }
         }
@@ -87,13 +89,15 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
 
     #[inline]
     fn next_byte(self: &mut Self) -> Result<u8,Error> {
-        if self.get_byte()? == 0xff {
-            match self.get_byte()? {
+        let mut b = self.reader.read_byte()?;
+        if b == 0xff {
+            let marker = self.reader.read_byte()?; 
+            match marker {
                 0x00 => {
-                    self.b = 0xff;
+                    b = 0xff;
                 },
                 0xd0..=0xd7 =>  {    // RST    
-                    let rst_no = (self.b & 0x7) as usize;
+                    let rst_no = (b & 0x7) as usize;
                     if rst_no != (self.prev_rst + 1) % 8 {
                         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"No Interval RST".to_string())))
                     }
@@ -102,21 +106,21 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
                     self.rst_ptr = self.ptr;
                 },
                 0xd9=> { // EOI
-                    self.b = 0xff;
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"FF after  00 or RST".to_string())))
                 },
                 _ =>{
-                    self.b = 0xff;
                     return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"FF after  00 or RST".to_string())))
                 },                    
             }
         }
-        Ok(self.b)
+        println!("{:02x} ",b);
+        Ok(b)
     }
 
     pub fn get_bit(self: &mut Self) -> Result<usize,Error> {
         if self.bptr == 0 {
             self.bptr = 8;
-            self.next_byte()?;
+            self.b = self.next_byte()?;
         }
         self.bptr -= 1;
         let r = (self.b  >> self.bptr) as usize & 0x1;
@@ -126,7 +130,7 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     #[inline]
     pub fn get_bits(self: &mut Self,mut bits:usize) -> Result<i32,Error> {
         if self.bptr == 0 {
-            self.next_byte()?;
+            self.b = self.next_byte()?;
             self.bptr = 8;
         }
         let mut v = 0_i32;
@@ -135,7 +139,7 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
             if bits > self.bptr {
                 v = (v << self.bptr) | (self.b as i32 & ((1 << self.bptr) -1));
                 bits -= self.bptr;
-                self.next_byte();
+                self.b = self.next_byte()?;
                 self.bptr = 8;
             } else {
                 self.bptr -= bits;

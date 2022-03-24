@@ -242,11 +242,11 @@ pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer,Error> {
     Ok(ib)
 }
 
-pub fn image_loader(buffer: &[u8],option:&mut DecodeOptions) -> Result<(),Error> {    
+pub fn image_loader(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<ImgWarning>,Error> {    
     let mut reader = BytesReader::new(buffer);
 
-    image_decoder(&mut reader,option)?;
-    Ok(())
+    let r =image_decoder(&mut reader,option)?;
+    Ok(r)
 }
 
 

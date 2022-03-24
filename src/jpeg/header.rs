@@ -529,9 +529,9 @@ impl JpegHaeder {
                             for i in 0..16 {
                                 for _ in 0..len[i] {
                                     val.push(reader.read_byte()? as usize);
-                                    pss =  pss + 1;
                                 }
                                 p.push(pss);
+                                pss += len[i]; 
                             }
                             size = size + 16;
 

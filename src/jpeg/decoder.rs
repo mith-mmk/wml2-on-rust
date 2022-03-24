@@ -113,7 +113,6 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
                 },                    
             }
         }
-        println!("{:02x} ",b);
         Ok(b)
     }
 

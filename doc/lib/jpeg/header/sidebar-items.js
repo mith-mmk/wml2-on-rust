@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["ICCProfileData",""],["JpegAppHeaders",""]],"struct":[["AdobeApp14",""],["Component",""],["Ducky",""],["FrameHeader",""],["HuffmanScanHeader",""],["HuffmanTable",""],["ICCProfilePacker",""],["Jfif",""],["Jfxx",""],["JpegHaeder",""],["QuantizationTable",""],["UnknownApp",""]],"type":[["Exif",""]]});

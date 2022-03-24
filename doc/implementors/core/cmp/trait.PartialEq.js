@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["lib"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.58.1/core/cmp/trait.PartialEq.html\" title=\"trait core::cmp::PartialEq\">PartialEq</a>&lt;<a class=\"struct\" href=\"lib/jpeg/decoder/struct.HuffmanDecodeTable.html\" title=\"struct lib::jpeg::decoder::HuffmanDecodeTable\">HuffmanDecodeTable</a>&gt; for <a class=\"struct\" href=\"lib/jpeg/decoder/struct.HuffmanDecodeTable.html\" title=\"struct lib::jpeg::decoder::HuffmanDecodeTable\">HuffmanDecodeTable</a>","synthetic":false,"types":["lib::jpeg::decoder::HuffmanDecodeTable"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

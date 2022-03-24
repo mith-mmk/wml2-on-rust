@@ -2,7 +2,8 @@
  * jpeg/decoder.rs  Mith@mmk (C) 2022
  * use MIT License
  */
-
+type Error = Box<dyn std::error::Error>;
+use bin_rs::reader::BinaryReader;
 use crate::warning::ImgWarningKind::Jpeg;
 use crate::warning::ImgWarningKind;
 use crate::warning::ImgWarning;
@@ -15,8 +16,8 @@ use crate::jpeg::util::print_header;
 use crate::error::{ImgError,ImgErrorKind};
 
 
-struct BitReader {
-    buffer: Vec<u8>,
+struct BitReader<'decode, B> {
+    reader: &'decode mut B,
     ptr : usize,
     bptr : usize,
     b: u8,
@@ -27,13 +28,13 @@ struct BitReader {
 }
 
 #[allow(unused)]
-impl BitReader {
-    pub fn new(buffer:&[u8]) -> Self{
+impl <'decode, B: BinaryReader>BitReader<'decode, B> {
+    pub fn new(reader:&'decode mut B) -> Self{
         let ptr:usize = 0;
         let bptr:usize = 0;
         let b:u8 = 0;
         Self{
-            buffer: buffer.to_vec(),
+            reader: reader,
             ptr: ptr,
             bptr: bptr,
             b: b,
@@ -44,22 +45,25 @@ impl BitReader {
         }
     }
 
-    fn get_byte(self: &mut Self) -> Result<u8,ImgError> {
-        if self.ptr >= self.buffer.len() {
-            return Err(ImgError::new_const(ImgErrorKind::OutboundIndex,&"in jpeg::decoder::BitReader::get_byte"));
-        }
-        self.b = self.buffer[self.ptr];
-        self.ptr = self.ptr + 1;
+    fn get_byte(self: &mut Self) -> Result<u8,Error> {
+        self.b =self.reader.read_byte()?;
         Ok(self.b)
     }
 
-    fn rst(self: &mut Self) -> Result<bool,ImgError> {
-        if self.buffer[self.ptr] == 0xff {
-            match self.buffer[self.ptr+1] {
+    fn rst(self: &mut Self) -> Result<bool,Error> {
+        if self.get_byte()? == 0xff {
+            match self.b {
                 0xd0..=0xd7 =>  {    // RST    
                     self.ptr = self.ptr + 2;
                     self.bptr = 0;
                     return Ok(true);
+                },
+                0x00 => {
+                    self.b = 0xff;
+                    self.ptr = self.ptr + 2;
+                    self.bptr = 0;
+                    return Ok(true);
+
                 },
                 _ => {
                     return Ok(false);
@@ -69,9 +73,9 @@ impl BitReader {
         Ok(false)
     }
 
-    fn next_marker(self: &mut Self) -> Result<u8,ImgError> {
+    fn next_marker(self: &mut Self) -> Result<u8,Error> {
         if self.get_byte()? != 0xff {
-            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Nothing marker"));
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Nothing marker".to_string())));
         }
         loop {
             let b = self.get_byte()?; 
@@ -82,7 +86,7 @@ impl BitReader {
     }
 
     #[inline]
-    fn next_byte(self: &mut Self) -> Result<u8,ImgError> {
+    fn next_byte(self: &mut Self) -> Result<u8,Error> {
         if self.get_byte()? == 0xff {
             match self.get_byte()? {
                 0x00 => {
@@ -91,7 +95,7 @@ impl BitReader {
                 0xd0..=0xd7 =>  {    // RST    
                     let rst_no = (self.b & 0x7) as usize;
                     if rst_no != (self.prev_rst + 1) % 8 {
-                        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"No Interval RST"))
+                        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"No Interval RST".to_string())))
                     }
                     self.prev_rst = rst_no;
                     self.rst = true;
@@ -102,14 +106,14 @@ impl BitReader {
                 },
                 _ =>{
                     self.b = 0xff;
-                    return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"FF after  00 or RST"))
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"FF after  00 or RST".to_string())))
                 },                    
             }
         }
         Ok(self.b)
     }
 
-    pub fn get_bit(self: &mut Self) -> Result<usize,ImgError> {
+    pub fn get_bit(self: &mut Self) -> Result<usize,Error> {
         if self.bptr == 0 {
             self.bptr = 8;
             self.next_byte()?;
@@ -120,7 +124,7 @@ impl BitReader {
     }
 
     #[inline]
-    pub fn get_bits(self: &mut Self,mut bits:usize) -> Result<i32,ImgError> {
+    pub fn get_bits(self: &mut Self,mut bits:usize) -> Result<i32,Error> {
         if self.bptr == 0 {
             self.next_byte()?;
             self.bptr = 8;
@@ -142,35 +146,14 @@ impl BitReader {
         Ok(v)
     }
 
-    pub fn eof(self: &mut Self) -> bool {
-        if self.buffer.len() - 2 < self.ptr || self.eof_flag
-         {self.eof_flag=true}
-        self.eof_flag
-    }
-
     pub fn reset(self: &mut Self) {
         self.ptr = 0;
         self.eof_flag = false;
     }
-
-    pub fn set_offset(self: &mut Self ,offset: usize) -> Result<usize,ImgError> {
-        if offset < self.buffer.len() {
-            self.ptr = offset;
-            self.eof_flag = false;
-            Ok(self.ptr)
-        } else {
-            Err(ImgError::new_const(ImgErrorKind::OutboundIndex,&"in BitReader set_offset"))
-        }
-    }
-
-    pub fn offset(self: &mut Self) -> usize {
-        self.ptr
-    }
-
 }
 
 #[inline]
-fn huffman_read (bit_reader:&mut BitReader,table: &HuffmanDecodeTable)  -> Result<u32,ImgError>{
+fn huffman_read<B: BinaryReader> (bit_reader:&mut BitReader<B>,table: &HuffmanDecodeTable)  -> Result<u32,Error>{
     let mut d = 0;
     for l in 0..16 {
         d = (d << 1) | bit_reader.get_bit()?;
@@ -179,7 +162,7 @@ fn huffman_read (bit_reader:&mut BitReader,table: &HuffmanDecodeTable)  -> Resul
             return Ok(table.val[p] as u32)                      
         }
     }
-    Err(ImgError::new_const(ImgErrorKind::OutboundIndex,&"huffman_read is overflow"))  
+    Err(Box::new(ImgError::new_const(ImgErrorKind::OutboundIndex,"huffman_read is overflow".to_string())))  
 }
 
 
@@ -192,7 +175,7 @@ pub(crate) struct HuffmanDecodeTable {
 }
 
 #[inline]
-fn dc_read(bitread: &mut BitReader,dc_decode:&HuffmanDecodeTable,pred:i32) -> Result<i32,ImgError> {
+fn dc_read<B: BinaryReader>(bitread: &mut BitReader<B>,dc_decode:&HuffmanDecodeTable,pred:i32) -> Result<i32,Error> {
     let ssss = huffman_read(bitread,&dc_decode)?;
     let v = bitread.get_bits(ssss as usize)?;
     let diff = extend(v,ssss as usize);
@@ -201,7 +184,7 @@ fn dc_read(bitread: &mut BitReader,dc_decode:&HuffmanDecodeTable,pred:i32) -> Re
 }
 
 #[inline] // for base line huffman
-fn ac_read(bitread: &mut BitReader,ac_decode:&HuffmanDecodeTable) -> Result<Vec<i32>,ImgError> {
+fn ac_read<B: BinaryReader>(bitread: &mut BitReader<B>,ac_decode:&HuffmanDecodeTable) -> Result<Vec<i32>,Error> {
     let mut zigzag : usize= 1;
     let mut zz  = [0_i32;64];
     loop {  // F2.2.2
@@ -231,7 +214,7 @@ fn ac_read(bitread: &mut BitReader,ac_decode:&HuffmanDecodeTable) -> Result<Vec<
 }
 
 #[inline]
-fn baseline_read(bitread: &mut BitReader,dc_decode:&HuffmanDecodeTable,ac_decode:&HuffmanDecodeTable,pred: i32)-> Result<(Vec<i32>,i32),ImgError> {
+fn baseline_read<B:BinaryReader>(bitread: &mut BitReader<B>,dc_decode:&HuffmanDecodeTable,ac_decode:&HuffmanDecodeTable,pred: i32)-> Result<(Vec<i32>,i32),Error> {
     let dc = dc_read(bitread, dc_decode, pred)?;
     let mut zz = ac_read(bitread, ac_decode)?;
     zz[0] = dc;
@@ -704,12 +687,12 @@ pub(crate) fn huffman_extend(huffman_tables:&Vec<HuffmanTable>) -> (Vec<HuffmanD
     (ac_decode,dc_decode)
 }
 
-pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<ImgWarning>,ImgError> {
+pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarning>,Error> {
 
     let mut warning: Option<ImgWarning> = None;
         // Make Huffman Table
     // Scan Header
-    let header = JpegHaeder::new(buffer,0)?;
+    let header = JpegHaeder::new(reader,0)?;
 
     if option.debug_flag > 0 {
         let boxstr = print_header(&header,option.debug_flag);
@@ -717,13 +700,13 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
     }
     
     if header.is_hierachical {
-        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Hierachical is not support"));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Hierachical is not support".to_string())))
     }
 
     let huffman_scan_header  = header.huffman_scan_header.as_ref().unwrap();
     match header.huffman_tables {
         None => {
-            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not undefined Huffman Tables"));
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Huffman Tables".to_string())))
         },
         _ => {
 
@@ -732,7 +715,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
 
     match header.frame_header {
         None => {
-            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not undefined Frame Header"));
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header".to_string())))
         },
         _ => {
 
@@ -744,11 +727,11 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
     let height = fh.height;
     let plane = fh.plane;
     if plane == 0 || plane > 4 {
-        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not support planes"));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support planes".to_string())))
     }
     match fh.component {
         None => {
-            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not undefined Frame Header Component"));
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header Component".to_string())));
         },
         _ => {
 
@@ -759,7 +742,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
 
     match header.quantization_tables {
         None => {
-            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Not undefined Quantization Tables"));
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Quantization Tables".to_string())));
         },
         _ => {
 
@@ -767,15 +750,15 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
     }
 
     if fh.is_huffman == false {
-        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"This decoder suport huffman only"));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This decoder suport huffman only".to_string())));
     }
 
     if fh.is_baseline == false {
-        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"This Decoder support Baseline Only"));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder support Baseline Only".to_string())));
     }
 
     if fh.is_differential == true {
-        return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"This Decoder not support differential"));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder not support differential".to_string())));
     }
 
     if plane == 4 {
@@ -807,9 +790,8 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
     let quantization_tables = header.quantization_tables.as_ref().unwrap();
     let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables.as_ref().unwrap());
 
-
-    let slice = &buffer[header.imageoffset..];
-    let bitread :&mut BitReader = &mut BitReader::new(&slice);
+//    let slice = &buffer[header.imageoffset..];
+    let mut bitread = BitReader::new(reader);
     let mut h_max = 1;
     let mut v_max = 1;
     let mut dy = 8;
@@ -846,7 +828,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option
             let mut mcu_units :Vec<Vec<u8>> = Vec::new();
             for scannumber in 0..mcu_size {
                 let (dc_current,ac_current,i,tq) = scan[scannumber];
-                let ret = baseline_read(bitread
+                let ret = baseline_read(&mut bitread
                             ,&dc_decode[dc_current]
                             ,&ac_decode[ac_current]
                             ,preds[i]);

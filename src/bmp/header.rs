@@ -4,7 +4,9 @@
  * 
  */
 
-use crate::io::*;
+type Error = Box<dyn std::error::Error>;
+
+use bin_rs::reader::BinaryReader;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 
@@ -21,6 +23,7 @@ pub struct BitmapHeader {
     pub color_table: Option<Vec<ColorTable>>,
     pub bitmap_file_header: BitmapFileHeader,
     pub bitmap_info: BitmapInfo,
+    pub read_size: u32,
 }
 
 #[derive(Debug)]
@@ -58,7 +61,6 @@ pub struct BitmapCore{
 	pub bc_plane : u16,
 	pub bc_bit_count : u16,
 }
-
 
 #[derive(Debug)]
 pub struct CieXYZ{
@@ -121,22 +123,26 @@ pub enum Compressions {
 }
 
 impl BitmapHeader {
-    pub fn new(buffer :&[u8],_opt :usize) -> Result<Self,ImgError> {
-        if buffer[0] != b'B' || buffer[1] != b'M' {
-            return Err(ImgError::new_const(ImgErrorKind::UnknownFormat,&"Not Bitmap"))
+    pub fn new<B:BinaryReader>(reader:&mut B,_opt :usize) -> Result<Self,Error> {
+        let mut read_size;
+        let b = reader.read_byte()?;
+        let m = reader.read_byte()?;
+
+        if b != b'B' || m != b'M' {
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::UnknownFormat,"Not Bitmap".to_string())))
         }
 
         let bitmap_file_header = BitmapFileHeader {
-            bf_type : read_u16le(buffer,0),
-            bf_size  :read_u32le(buffer,2),
-            bf_reserved1: read_u16le(buffer,6),
-            bf_reserved2: read_u16le(buffer,8),
-            bf_offbits: read_u32le(buffer,10),
+            bf_type : (b as u16)  | (m as u16) << 8,
+            bf_size  :reader.read_u32_le()?,
+            bf_reserved1: reader.read_u16_le()?,
+            bf_reserved2: reader.read_u16_le()?,
+            bf_offbits: reader.read_u32_le()?,
     
         };
 
-        let bi_size = read_u32le(buffer,14);
-        let mut ptr :usize = bi_size as usize + 14;
+        let bi_size = reader.read_u32_le()?;
+        read_size = bi_size as u32 + 14;
         let width;
         let height;
         let bit_per_count;
@@ -146,11 +152,11 @@ impl BitmapHeader {
 
         if bi_size == 12 {
             let os2header = BitmapCore {
-                bc_size : read_u32le(buffer,14),
-                bc_width : read_u16le(buffer,18),
-                bc_height : read_u16le(buffer,20),
-                bc_plane : read_u16le(buffer,22),
-                bc_bit_count : read_u16le(buffer,24),
+                bc_size : reader.read_u32_le()?,
+                bc_width : reader.read_u16_le()?,
+                bc_height : reader.read_u16_le()?,
+                bc_plane : reader.read_u16_le()?,
+                bc_bit_count : reader.read_u16_le()?,
             };
             width = os2header.bc_width as isize;
             height = os2header.bc_height as isize;
@@ -159,11 +165,28 @@ impl BitmapHeader {
             clut_size = 0;
             bitmap_info = BitmapInfo::Os2(os2header);
         } else {
+            let mut info_header = BitmapWindowsInfo {
+                bi_size : reader.read_u32_le()?,
+                bi_width : reader.read_u32_le()?,
+                bi_height : reader.read_u32_le()?,
+                bi_plane : reader.read_u16_le()?,
+                bi_bit_count : reader.read_u16_le()?,
+                bi_compression : reader.read_u32_le()?,
+                bi_size_image : reader.read_u32_le()?,
+                bi_xpels_per_meter : reader.read_u32_le()?,
+                bi_ypels_per_meter : reader.read_u32_le()?,
+                bi_clr_used : reader.read_u32_le()?,
+                bi_clr_importation : reader.read_u32_le()?, //40
+                b_v4_header: None,
+                b_v5_header: None,
+            };
+            width = info_header.bi_width as isize;
+            height = info_header.bi_height as isize;
+
             let b_v4_header = if bi_size >= 40 {  // V4
-                let ptr = 14;
-                let b_v4_red_mask = read_u32le(buffer,ptr + 40);
-                let b_v4_green_mask= read_u32le(buffer,ptr + 44);        
-                let b_v4_blue_mask = read_u32le(buffer,ptr + 48);
+                let b_v4_red_mask = reader.read_u32_le()?;
+                let b_v4_green_mask= reader.read_u32_le()?;        
+                let b_v4_blue_mask = reader.read_u32_le()?;
                 let mut b_v4_alpha_mask = 0;
                 let mut b_v4_cstype = 0;
                 let mut b_v4_endpoints :Option<CieXYZTriple> = None;
@@ -172,34 +195,34 @@ impl BitmapHeader {
                 let mut b_v4_gamma_blue =  0;
 
                 if bi_size >= 56 {
-                    b_v4_alpha_mask= read_u32le(buffer,ptr + 52);
+                    b_v4_alpha_mask= reader.read_u32_le()?;
                 }
                 if bi_size >= 60 {
-                    b_v4_cstype = read_u32le(buffer,ptr + 56);
+                    b_v4_cstype = reader.read_u32_le()?;
                 }
                 if bi_size >= 96 {
                     b_v4_endpoints = Some(CieXYZTriple{
                         ciexyz_red: CieXYZ {
-                            ciexyz_x: read_u32le(buffer,ptr + 60),
-                            ciexyz_y: read_u32le(buffer,ptr + 64),
-                            ciexyz_z: read_u32le(buffer,ptr + 68),
+                            ciexyz_x: reader.read_u32_le()?,
+                            ciexyz_y: reader.read_u32_le()?,
+                            ciexyz_z: reader.read_u32_le()?,
                         },
                         ciexyz_green: CieXYZ {
-                            ciexyz_x: read_u32le(buffer,ptr + 72),
-                            ciexyz_y: read_u32le(buffer,ptr + 76),
-                            ciexyz_z: read_u32le(buffer,ptr + 80),
+                            ciexyz_x: reader.read_u32_le()?,
+                            ciexyz_y: reader.read_u32_le()?,
+                            ciexyz_z: reader.read_u32_le()?,
                         },
                         ciexyz_blue: CieXYZ {
-                            ciexyz_x: read_u32le(buffer,ptr + 84),
-                            ciexyz_y: read_u32le(buffer,ptr + 88),
-                            ciexyz_z: read_u32le(buffer,ptr + 92),
+                            ciexyz_x: reader.read_u32_le()?,
+                            ciexyz_y: reader.read_u32_le()?,
+                            ciexyz_z: reader.read_u32_le()?,
                         },
                     });
                 }
                 if bi_size >= 108 {
-                    b_v4_gamma_red   = read_u32le(buffer,ptr + 96);
-                    b_v4_gamma_green = read_u32le(buffer,ptr +100);
-                    b_v4_gamma_blue  = read_u32le(buffer,ptr +104);  //108 
+                    b_v4_gamma_red   = reader.read_u32_le()?;
+                    b_v4_gamma_green = reader.read_u32_le()?;
+                    b_v4_gamma_blue  = reader.read_u32_le()?;  //108 
                 }
 
                 Some(BitmapInfoV4 { 
@@ -218,12 +241,11 @@ impl BitmapHeader {
             };
 
             let b_v5_header = if bi_size >= 112 {
-                let ptr = 14;
-                let b_v5_intent = read_u32le(buffer,ptr + 108); // 112
+                let b_v5_intent = reader.read_u32_le()?; // 112
                 let (b_v5_profile_data,b_v5_profile_size) = if bi_size >= 120 {
-                    (read_u32le(buffer,ptr + 112),read_u32le(buffer,ptr + 116))
+                    (reader.read_u32_le()?,reader.read_u32_le()?)
                   } else {(0,0)};  //120
-                let b_v5_reserved = if bi_size >= 124 {read_u32le(buffer,ptr + 120)} else {0};
+                let b_v5_reserved = if bi_size >= 124 {reader.read_u32_le()?} else {0};
                 Some(BitmapInfoV5{
                     b_v5_intent,
                     b_v5_profile_data,
@@ -234,25 +256,11 @@ impl BitmapHeader {
                 None
             };
 
-            let info_header = BitmapWindowsInfo {
-                bi_size : read_u32le(buffer,14),
-                bi_width : read_u32le(buffer,18),
-                bi_height : read_u32le(buffer,22),
-                bi_plane : read_u16le(buffer,26),
-                bi_bit_count : read_u16le(buffer,28),
-                bi_compression : read_u32le(buffer,30),
-                bi_size_image : read_u32le(buffer,34),
-                bi_xpels_per_meter : read_u32le(buffer,38),
-                bi_ypels_per_meter : read_u32le(buffer,42),
-                bi_clr_used : read_u32le(buffer,46),
-                bi_clr_importation : read_u32le(buffer,50),
-                b_v4_header: b_v4_header,
-                b_v5_header: b_v5_header,
-            };
-            width = read_i32le(buffer,18) as isize;
-            height = read_i32le(buffer,22) as isize;
-                println!("{} {}",info_header.bi_width,info_header.bi_height);
-                println!("{} {}",width,height);
+            info_header.b_v4_header = b_v4_header;
+            info_header.b_v5_header = b_v5_header;
+
+//                println!("{} {}",info_header.bi_width,info_header.bi_height);
+//                println!("{} {}",width,height);
         
             compression = match info_header.bi_compression {
                 0 => {Some(Compressions::BiRGB)},
@@ -278,21 +286,21 @@ impl BitmapHeader {
                 match bitmap_info {
                     BitmapInfo::Windows(..) => {
                         color_table.push(ColorTable{
-                            blue: read_byte(buffer,ptr),
-                            green: read_byte(buffer,ptr+1),
-                            red: read_byte(buffer,ptr+2),
-                            reserved: read_byte(buffer,ptr+3),
+                            blue: reader.read_byte()?,
+                            green: reader.read_byte()?,
+                            red: reader.read_byte()?,
+                            reserved: reader.read_byte()?,
                         });
-                        ptr += 4;
+                        read_size += 4;
                     },
                     BitmapInfo::Os2(..) => {
                         color_table.push(ColorTable{
-                            blue: read_byte(buffer,ptr),
-                            green: read_byte(buffer,ptr+1),
-                            red: read_byte(buffer,ptr+2),
+                            blue: reader.read_byte()?,
+                            green: reader.read_byte()?,
+                            red: reader.read_byte()?,
                             reserved: 0,
                         });
-                        ptr += 3;
+                        read_size += 3;
                     },
                 }
             }
@@ -310,6 +318,7 @@ impl BitmapHeader {
             color_table,
             bitmap_file_header,
             bitmap_info,
+            read_size,
         })
     }
 }

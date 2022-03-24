@@ -1,7 +1,18 @@
-use core::fmt::*;
+use std::fmt::*;
+use std::error::Error;
 
 pub struct ImgError {
     repr: Repr,
+}
+
+impl Error for ImgError {
+
+}
+
+impl Display for ImgError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f,"{:?}",&self.repr)
+    }
 }
 
 impl Debug for ImgError {
@@ -23,7 +34,7 @@ impl ImgError {
     }
 
     #[inline]
-    pub const fn new_const(kind: ImgErrorKind, message: &'static &'static str) -> ImgError {
+    pub const fn new_const(kind: ImgErrorKind, message: String) -> ImgError {
         Self { repr: Repr::SimpleMessage(kind, message) }
     }
 
@@ -56,7 +67,7 @@ impl ImgError {
 #[derive(Debug)]
 pub(crate) enum Repr {
     // &str is a fat pointer, but &&str is a thin pointer.
-    SimpleMessage(ImgErrorKind, &'static &'static str),
+    SimpleMessage(ImgErrorKind, String),
     Custom(Box<Custom>),
 }
 

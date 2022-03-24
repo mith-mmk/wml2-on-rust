@@ -1,7 +1,8 @@
+use bin_rs::reader::BinaryReader;
 use crate::color::RGBA;
-use crate::io::*;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
+type Error = Box<dyn std::error::Error>;
 
 #[derive(Debug)]
 pub struct GifHeader {
@@ -41,24 +42,24 @@ pub struct GifExtend {
 }
 
 impl GifHeader {
-    pub fn new(buffer :&[u8],_opt :usize) -> Result<Self,ImgError> {
+    pub fn new<B: BinaryReader>(reader:&mut B,_opt :usize) -> Result<Self,Error> {
         let mut ptr = 0;
-        let gif = read_bytes(buffer,ptr,6);
+        let gif = reader.read_bytes_as_vec(6)?;
 
         if gif[0] != b'G' || gif[1] != b'I' || gif[2] != b'F' {
-            return Err(ImgError::new_const(ImgErrorKind::UnknownFormat,&"not Gif"))
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::UnknownFormat,"not Gif".to_string())))
         }
         if gif[3] != b'8' || (gif[4] != b'7' && gif[4] != b'9') || gif[5] != b'a' {
-            return Err(ImgError::new_const(ImgErrorKind::UnknownFormat,&"not Gif"))
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::UnknownFormat,"not Gif".to_string())))
         }
         ptr += 6;
 
         let scd = GifScd{
-            width: read_u16le(buffer,ptr + 0),
-            height: read_u16le(buffer,ptr + 2),
-            field: read_byte(buffer,ptr + 4),
-            color_index: read_byte(buffer,ptr + 5),
-            aspect: read_byte(buffer,ptr + 6),
+            width: reader.read_u16_le()?,
+            height: reader.read_u16_le()?,
+            field: reader.read_byte()?,
+            color_index: reader.read_byte()?,
+            aspect: reader.read_byte()?,
         };
         ptr += 7;
 
@@ -70,9 +71,9 @@ impl GifHeader {
 
             for _ in 0..table_size {
                 let palette = RGBA {
-                    red: read_byte(buffer, ptr),
-                    green: read_byte(buffer, ptr+1),
-                    blue: read_byte(buffer, ptr+2),
+                    red: reader.read_byte()?,
+                    green: reader.read_byte()?,
+                    blue: reader.read_byte()?,
                     alpha: 0xff,
                 };
                 color_table.push(palette);
@@ -93,13 +94,13 @@ impl GifHeader {
 }
 
 impl GifLscd {
-    pub fn new(buffer :&[u8],ptr: usize) -> Self{
-        Self {
-            xstart: read_u16le(buffer,ptr),
-            ystart: read_u16le(buffer,ptr + 2),
-            xsize: read_u16le(buffer,ptr + 4),
-            ysize: read_u16le(buffer,ptr + 6),
-            field: read_byte(buffer,ptr + 8),
-        }
+    pub fn new<B: BinaryReader>(reader:&mut B) -> Result<Self,Error>{
+        Ok(Self {
+            xstart: reader.read_u16_le()?,
+            ystart: reader.read_u16_le()?,
+            xsize: reader.read_u16_le()?,
+            ysize: reader.read_u16_le()?,
+            field: reader.read_byte()?,
+        })
     }
 }

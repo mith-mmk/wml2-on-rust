@@ -2,22 +2,24 @@
  * io/mod.rs  Mith@mmk (C) 2022
  * 
  */
-
+#[allow(unused)]
 #[inline]
 pub fn read_f32 (buf: &[u8],ptr: usize,flag: bool) -> f32 {
     f32::from_bits(read_u32(buf,ptr,flag))
 }
-
+#[allow(unused)]
 #[inline]
 pub fn read_f64 (buf: &[u8],ptr: usize,flag: bool) -> f64 {
     f64::from_bits(read_u64(buf,ptr,flag))
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_byte(buf: &[u8],ptr: usize ) -> u8 {
     buf[ptr]
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_i8(buf: &[u8],ptr: usize ) -> i8 {
     ((
@@ -25,11 +27,13 @@ pub fn read_i8(buf: &[u8],ptr: usize ) -> i8 {
         ) as *const u8) as i8
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_u16be (buf: &[u8],ptr: usize ) -> u16 {
     (buf[ptr] as u16) << 8 | (buf[ptr+1] as u16)
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_i16be (buf: &[u8],ptr: usize ) -> i16 {
         ((
@@ -37,12 +41,14 @@ pub fn read_i16be (buf: &[u8],ptr: usize ) -> i16 {
         ) as u16) as i16
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_u32be (buf: &[u8],ptr: usize ) -> u32 {
     (buf[ptr  ] as u32) << 24 | (buf[ptr+1] as u32) << 16 |
     (buf[ptr+2] as u32) << 8  | (buf[ptr+3] as u32)
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_i32be (buf: &[u8],ptr: usize ) -> i32 {
         ((
@@ -51,6 +57,7 @@ pub fn read_i32be (buf: &[u8],ptr: usize ) -> i32 {
         ) as u32) as i32
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_u64be (buf: &[u8],ptr: usize) -> u64 {
     (buf[ptr  ] as u64) << 56 | (buf[ptr+1] as u64) << 48 |
@@ -59,6 +66,7 @@ pub fn read_u64be (buf: &[u8],ptr: usize) -> u64 {
     (buf[ptr+6] as u64) << 8  | (buf[ptr+7] as u64)  
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_u128be (buf: &[u8],ptr: usize) -> u128 {
     let b0 = read_u64be(buf,ptr);
@@ -78,6 +86,7 @@ pub fn read_i64be (buf: &[u8],ptr: usize ) -> i64 {
         ) as  u64) as i64
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_i16le (buf: &[u8],ptr: usize ) -> i16 {
     unsafe {
@@ -87,17 +96,20 @@ pub fn read_i16le (buf: &[u8],ptr: usize ) -> i16 {
     }
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_u16le (buf: &[u8],ptr: usize ) -> u16 {
     (buf[ptr+1] as u16) << 8 | buf[ptr] as u16
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_u32le (buf: &[u8],ptr: usize ) -> u32 {
     (buf[ptr+3] as u32) << 24 | (buf[ptr+2] as u32) << 16 |
     (buf[ptr+1] as u32) << 8  | (buf[ptr  ]) as u32        
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_i32le (buf: &[u8],ptr: usize ) -> i32 {
       ((buf[ptr+3] as u32) << 24 | (buf[ptr+2] as u32) << 16 |
@@ -124,6 +136,7 @@ pub fn read_i64le (buf: &[u8],ptr: usize ) -> i64 {
         ) as u64) as i64
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_u16 (buf: &[u8],ptr: usize ,flag: bool) -> u16 {
     if flag {
@@ -133,7 +146,7 @@ pub fn read_u16 (buf: &[u8],ptr: usize ,flag: bool) -> u16 {
     }
 } 
 
-
+#[allow(unused)]
 #[inline]
 pub fn read_u32 (buf: &[u8],ptr: usize ,flag: bool) -> u32 {
     if flag {
@@ -153,6 +166,7 @@ pub fn read_u64 (buf: &[u8],ptr: usize ,flag: bool) -> u64 {
     }
 } 
 
+#[allow(unused)]
 #[inline]
 pub fn read_i16 (buf: &[u8],ptr: usize ,flag: bool) -> i16 {
     if flag {
@@ -162,6 +176,7 @@ pub fn read_i16 (buf: &[u8],ptr: usize ,flag: bool) -> i16 {
     }
 } 
 
+#[allow(unused)]
 #[inline]
 pub fn read_i32 (buf: &[u8],ptr: usize ,flag: bool) -> i32 {
     if flag {
@@ -181,6 +196,7 @@ pub fn read_i64 (buf: &[u8],ptr: usize ,flag: bool) -> i64 {
     }
 } 
 
+#[allow(unused)]
 #[inline]
 pub fn read_string (buf: &[u8],ptr: usize ,num: usize) -> String {
     let mut s = Vec::new();
@@ -200,6 +216,7 @@ pub fn read_string (buf: &[u8],ptr: usize ,num: usize) -> String {
     }
 }
 
+#[allow(unused)]
 #[inline]
 pub fn read_bytes (buf: &[u8],ptr: usize ,length: usize) -> Vec<u8> {
     let mut c = Vec::new();

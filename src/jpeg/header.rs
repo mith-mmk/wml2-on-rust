@@ -2,8 +2,9 @@
  * jpeg/header.rs  Mith@mmk (C) 2022
  * use MIT License
  */
-
-use crate::io::{read_byte, read_bytes, read_string, read_u128be, read_u16be, read_u32be, read_u64be};
+use bin_rs::reader::BinaryReader;
+use crate::io::{read_byte, read_string, read_u128be, read_u16be, read_u32be, read_u64be};
+type Error = Box<dyn std::error::Error>;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 
@@ -246,7 +247,6 @@ pub struct JpegHaeder {
     pub quantization_tables:Option<Vec<QuantizationTable>>,
     pub line: usize,
     pub interval :usize,
-    pub imageoffset: usize,
     pub comment: Option<String>,
     pub jpeg_app_headers: Option<Vec<JpegAppHeaders>>,
     pub is_hierachical: bool,
@@ -263,7 +263,7 @@ pub enum JpegAppHeaders {
     Unknown(UnknownApp),
 }
 
-fn read_app(num: usize,tag :&String,buffer :&[u8],mut ptr :usize,mut len :usize) -> Result<JpegAppHeaders,ImgError> {
+fn read_app(num: usize,tag :&String,buffer :&[u8],mut ptr :usize,mut len :usize) -> Result<JpegAppHeaders,Error> {
     match num {
         0 => {
             match tag.as_str() {
@@ -449,31 +449,31 @@ fn read_app(num: usize,tag :&String,buffer :&[u8],mut ptr :usize,mut len :usize)
 }
 
 impl JpegHaeder {
-    pub fn new(buffer :&[u8],opt :usize) -> Result<Self,ImgError> {
+    pub fn new<B: BinaryReader>(reader:&mut B,opt :usize) -> Result<Self,Error> {
         let mut offset = 0;
 
         while offset < 16 { //SOI check
-            let soi = read_u16be(buffer,offset);
+            let soi = reader.read_u16_be()?;
             if soi == 0xffd8 {break};
             offset = offset + 1;
         }
 
         if offset >= 16 {
-            return Err(
+            return Err(Box::new(
                 ImgError::new_const(
                     ImgErrorKind::NoSupportFormat,
-                    &"Not Jpeg"
-                ))
+                    "Not Jpeg".to_string()
+                )))
         }
 
-        return Self::read_makers(&buffer[offset..],opt,true,false)
+        return Self::read_makers(reader,opt,true,false)
     }
 
     /* 
      * is_only_tables = only allow DQT,DHT,DAC,DRI,COM,APPn
      */
 
-    pub(crate) fn read_makers(buffer :&[u8],opt :usize,include_soi:bool,is_only_tables:bool) ->  Result<Self,ImgError> {
+    pub(crate) fn read_makers<B: BinaryReader>(reader:&mut B,opt :usize,include_soi:bool,is_only_tables:bool) ->  Result<Self,Error> {
         let _flag = opt;
         let mut _flag = false;
         let mut _dqt_flag = false;
@@ -486,7 +486,7 @@ impl JpegHaeder {
         let mut bpp: usize = 0;
         let mut _huffman_tables:Vec<HuffmanTable> = Vec::new();
         let huffman_tables:Option<Vec<HuffmanTable>>;
-        let mut huffman_scan_header:Option<HuffmanScanHeader> = None;
+        let huffman_scan_header:Option<HuffmanScanHeader>;
         let mut quantization_tables:Vec<QuantizationTable> = Vec::new();
         let mut line: usize = 0;
         let mut interval :usize = 0;
@@ -497,39 +497,42 @@ impl JpegHaeder {
         let mut adobe_color_transform = 0;
         let mut offset = 0;
 
-        while offset < buffer.len() {
-            let byte = buffer[offset];  // read byte
+        'header:  loop {
+            let byte = reader.read_byte()?;  // read byte
             if byte == 0xff { // header head
-                let nextbyte :u8 = read_byte(&buffer,offset + 1);
+                let nextbyte :u8 = reader.read_byte()?;
                 offset = offset + 2;
 
                 match nextbyte {
                     0xc4 => { // DHT maker
                         _dht_flag = true;
-                        let length = read_u16be(&buffer,offset) as usize;
+                        let length = reader.read_u16_be()? as usize;
 
                         let mut size :usize = 2;
                         while size < length {
-                            let tc = read_byte(&buffer,offset + size) >> 4;
-                            let th = read_byte(&buffer,offset + size) & 0x0f;
+                            let t = reader.read_byte()?;
+                            let tc = t >> 4;
+                            let th = t & 0x0f;
 
                             let ac = if tc == 0 { false } else { true };
                             let no = th as usize;
                             size = size + 1;
-                            let mut pss :usize = 0;
                             let mut len :Vec<usize> = Vec::with_capacity(16);
                             let mut p :Vec<usize> = Vec::with_capacity(16);
                             let mut val :Vec<usize> = Vec::new();
                             let mut vlen = 0;
-                            for i in 0..16 {
-                                let l = read_byte(&buffer,offset + size + i) as usize;
-                                p.push(pss);
+                            for _ in 0..16 {
+                                let l = reader.read_byte()? as usize;
                                 vlen = vlen + l;
                                 len.push(l);
-                                for _ in 0..l {
-                                    val.push(read_byte(&buffer,offset + size + 16 + pss) as usize);
+                            }
+                            let mut pss :usize = 0;
+                            for i in 0..16 {
+                                for _ in 0..len[i] {
+                                    val.push(reader.read_byte()? as usize);
                                     pss =  pss + 1;
                                 }
+                                p.push(pss);
                             }
                             size = size + 16;
 
@@ -537,18 +540,19 @@ impl JpegHaeder {
                             size = size + vlen;
                         }
 
-                        offset = offset + length; // skip
+                        //  offset = offset + length; // skip
                     },
                     0xcc => {   //DAC no impl
-                        let length = read_u16be(&buffer,offset) as usize;
-                        offset = offset + length; // skip
+                        let length = reader.read_u16_be()? as usize;
+                        reader.skip_ptr(length-2)?;
+                        // offset = offset + length; // skip
                     },
                     0xc0..=0xcf => {  // SOF Frame Headers;
                         if !_sof_flag  {
                             _sof_flag = true;
                             let num = (nextbyte & 0x0f) as usize;
-                            let length = read_u16be(&buffer,offset) as usize;
-                            let buf = read_bytes(&buffer,offset + 2,length - 2);
+                            let length = reader.read_u16_be()? as usize;
+                            let buf = reader.read_bytes_as_vec(length - 2)?;
                             let fh = FrameHeader::new(num,&buf);
                             width = fh.width;
                             height = fh.height;
@@ -556,119 +560,121 @@ impl JpegHaeder {
                             frame_header = Some(fh);
                             offset = offset + length; //skip
                         } else {
-                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"SOF Header Multiple"))
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"SOF Header Multiple".to_string())))
                         }
                     },
                     0xd8 => { // Start of Image
                         if include_soi {
                             _flag = true;
                         } else {
-                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"SOI Header Mutiple"))
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"SOI Header Mutiple".to_string())))
                         }
                     },
                     0xd9=> { // End of Image
-                        return Err(ImgError::new_const(ImgErrorKind::DecodeError ,&"Unexpect EOI"));
+                        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError ,"Unexpect EOI".to_string())))
                     },
                     0xda=> { // SOS Scan header
                         _sos_flag = true;
-                        let length: usize = read_u16be(&buffer,offset) as usize;
-                        let mut ptr = offset + 2;
-                        let ns = read_byte(&buffer,ptr) as usize;
-                        ptr = ptr + 1;
+                        let _length = reader.read_u16_be()? as usize;
+                        let ns = reader.read_byte()? as usize;
                         let mut csn: Vec<usize> = Vec::with_capacity(ns);
                         let mut tdn: Vec<usize> = Vec::with_capacity(ns);
                         let mut tan: Vec<usize> = Vec::with_capacity(ns);
                         for _i in 0..ns {
-                            csn.push(read_byte(&buffer,ptr) as usize);
-                            tdn.push((read_byte(&buffer,ptr + 1) >> 4) as usize);
-                            tan.push((read_byte(&buffer,ptr + 1) & 0xf ) as usize);
-                            ptr = ptr + 2;
+                            csn.push(reader.read_byte()? as usize);
+                            let t = reader.read_byte()?;
+                            tdn.push((t >> 4) as usize);
+                            tan.push((t & 0xf ) as usize);
                         }
-                        let ss = read_byte(&buffer,ptr) as usize;
-                        let se = read_byte(&buffer,ptr) as usize;
-                        let ah = (read_byte(&buffer,ptr + 2) >> 4) as usize;
-                        let al = (read_byte(&buffer,ptr + 2) & 0xf ) as usize;
+                        // progressive
+                        let ss = reader.read_byte()? as usize;
+                        let se = reader.read_byte()? as usize;
+                        let a = reader.read_byte()?;
+                        let ah = (a >> 4) as usize;
+                        let al = (a & 0xf) as usize;
                         huffman_scan_header = Some(HuffmanScanHeader::new(ns,csn,tdn,tan,ss,se,ah,al));
 
-                        offset = offset + length; //skip
-                        break; // next is imagedata
+                        break 'header;
                     },
                     0xdb =>{ // Define Quantization Table
                         _dqt_flag = true;
-                        let length: usize = read_u16be(&buffer,offset) as usize;
+                        let length: usize = reader.read_u16_be()? as usize;
                         // read_dqt;
                         let mut pos :usize = 2;
                         while pos < length {
                             let mut quantizations :Vec<usize> = Vec::with_capacity(64);
                             let presision :usize;
-                            let p = read_byte(&buffer,pos + offset) >> 4;
-                            let no = (read_byte(&buffer,pos + offset) & 0x0f) as usize;
+                            let b = reader.read_byte()?;
+                            let p = b >> 4;
+                            let no = (b & 0x0f) as usize;
                             pos = pos + 1;
                             if p == 0 {
                                 presision = 8;
                                 for _ in 0..64 {
-                                    quantizations.push(read_byte(&buffer,pos + offset) as usize);
+                                    quantizations.push(reader.read_byte()? as usize);
                                     pos = pos + 1;
                                 }
                             } else {
                                 presision = 16;
                                 for _ in 0..64 {
-                                    quantizations.push(read_u16be(&buffer,pos + offset) as usize);
+                                    quantizations.push(reader.read_u16_be()? as usize);
                                     pos = pos + 2;
                                 }
                             }
                             quantization_tables.push(QuantizationTable::new(presision,no,quantizations));
                         }
-                        offset = offset + length; // skip
+                        // offset = offset + length; // skip
                     },
                     0xdc =>{ // DNL Define Number Lines
                         _dqt_flag = true;
                         if is_only_tables {
-                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Disallow DNL Header"))
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Disallow DNL Header".to_string())))
                         }
-                        let length: usize = read_u16be(&buffer,offset) as usize;
-                        let nl = read_u16be(&buffer,offset) as usize;
+                        let _length: usize = reader.read_u16_be()?  as usize;
+                        let nl = reader.read_u16_be()? as usize;
                         line = nl;
                         // read_dqt;
-                        offset = offset + length; // skip
+                        // offset = offset + length; // skip
                     },
                     0xdd => { // Define Restart Interval
-                        let length = read_u16be(&buffer,offset) as usize;
-                        let ri = read_u16be(&buffer,offset + 2);
+                        let _length = reader.read_u16_be()? as usize;
+                        let ri = reader.read_u16_be()?;
                         interval = ri as usize;
-                        offset = offset + length; // skip
+                        // offset = offset + length; // skip
                     },
                     0xde => {   // DHP Hierachical mode
                         if is_only_tables {
-                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Disallow DNP Header"))
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Disallow DNP Header".to_string())))
                         }
-                        let length = read_u16be(&buffer,offset) as usize;
+                        let length = reader.read_u16_be()? as usize;
                         is_hierachical = true;
-                        offset = offset + length; // skip
+                        reader.skip_ptr(length - 2)?;
+//                        offset = offset + length; // skip
                     },
                     0xdf => {   //EXP
                         if is_only_tables {
-                            return Err(ImgError::new_const(ImgErrorKind::DecodeError,&"Disallow EXP Header"))
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Disallow EXP Header".to_string())))
                         }
-                        let length = read_u16be(&buffer,offset) as usize;
-                        offset = offset + length; // skip
+                        let length = reader.read_u16_be()? as usize;
+                        reader.skip_ptr(length - 2)?;
+//                        offset = offset + length; // skip
                     },
                     0xfe => { // Comment
-                        let length = read_u16be(&buffer,offset) as usize;
-                        comment = Some(read_string(buffer, offset, length- 2));
+                        let length = reader.read_u16_be()? as usize;
+                        comment = Some(reader.read_ascii_string(length- 2)?);
                         offset = offset + length; // skip
                     },
                     0xe0..=0xef => { // Applications 
                         let num = (nextbyte & 0xf) as usize;
-                        let length = read_u16be(&buffer,offset) as usize;
-                        let tag = read_string(buffer,offset + 2,length -2);
+                        let length = reader.read_u16_be()? as usize;
+                        let tag = reader.read_ascii_string(length- 2)?;
                         let len = length - 2 - tag.len() + 1;
                         let ptr = 2 + tag.len() + 1 + offset;
                         if cfg!(debug_assertions) {
                             println!("App {} {} {} {} {}",num,length,tag,len,ptr);
                         }
-
-                        let result = read_app(num , &tag, &buffer[ptr..len+ptr], 0, len)?;
+                        let buffer = reader.read_bytes_as_vec(len)?;
+                        let result = read_app(num , &tag, &buffer, 0, len)?;
                         match &result {
                             JpegAppHeaders::Adobe(ref app) => {
                                 adobe_color_transform = app.color_transform;
@@ -679,7 +685,7 @@ impl JpegHaeder {
                         offset = offset + length; // skip
                     },
                     0xff => { // padding
-                        offset = offset + 1;
+                        // offset = offset + 1;
                     },
                     0x00 => { //data
                         // skip
@@ -687,18 +693,19 @@ impl JpegHaeder {
                     0xd0..=0xd7 => {   // REST0-7
                     },
                     _ => {
-                        let length = read_u16be(&buffer,offset) as usize;
-                        offset = offset + length;
+                        let length = reader.read_u16_be()? as usize;
+                        reader.skip_ptr(length-2)?;
+//                        offset = offset + length;
                     }
                 }
             } else {
-                return Err(ImgError::new_const(ImgErrorKind::UnknownFormat,&"Not Jpeg"));
+                return Err(Box::new(ImgError::new_const(ImgErrorKind::UnknownFormat,"Not Jpeg".to_string())));
             }
 
         }
 
         if _sof_flag && _sos_flag && _dht_flag && _dqt_flag == false {
-            return Err(ImgError::new_const(ImgErrorKind::IlligalData,&"Maker is shortage"));
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"Maker is shortage".to_string())));
         }
 
         if _jpeg_app_headers.len() > 0 {
@@ -725,7 +732,6 @@ impl JpegHaeder {
             quantization_tables: Some(quantization_tables),
             line,
             interval,
-            imageoffset:  offset,
             comment,
             jpeg_app_headers,
             is_hierachical,

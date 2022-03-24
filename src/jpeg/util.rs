@@ -3,7 +3,7 @@
  * use MIT License
  */
 
-
+//type Error = Box<dyn std::error::Error>;
 use crate::iccprofile::{icc_profile_header_print, icc_profile_print, ICCProfile};
 use super::header::JpegAppHeaders::{Adobe, Ducky, Exif,  Jfif, Unknown};
 use super::header::JpegAppHeaders::ICCProfile as JpegICCProfile;

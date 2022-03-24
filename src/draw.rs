@@ -1,6 +1,8 @@
 //! draw.rs  Image Load to Buffer Library
 //! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
 //! Drawer will use callback, flexisble drawing.
+type Error = Box<dyn std::error::Error>;
+use bin_rs::reader::*;
 use crate::util::format_check;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
@@ -17,12 +19,12 @@ pub enum DrawNextOptions {
 
 pub trait DrawCallback {
 /// DrawCallback trait is callback template
-    fn init(&mut self,width: usize,height: usize,option: Option<InitOptions>) -> Result<Option<CallbackResponse>,ImgError>;
+    fn init(&mut self,width: usize,height: usize,option: Option<InitOptions>) -> Result<Option<CallbackResponse>,Error>;
     fn draw(&mut self,start_x: usize, start_y: usize, width: usize, height: usize, data: &[u8],option: Option<DrawOptions>)
-             -> Result<Option<CallbackResponse>,ImgError>;
-    fn terminate(&mut self, _term: Option<TerminateOptions>) -> Result<Option<CallbackResponse>,ImgError>;
-    fn next(&mut self, _next: Option<NextOptions>) -> Result<Option<CallbackResponse>,ImgError>;
-    fn verbose(&mut self, _verbose: &str,_: Option<VerboseOptions>  ) -> Result<Option<CallbackResponse>,ImgError>;
+             -> Result<Option<CallbackResponse>,Error>;
+    fn terminate(&mut self, _term: Option<TerminateOptions>) -> Result<Option<CallbackResponse>,Error>;
+    fn next(&mut self, _next: Option<NextOptions>) -> Result<Option<CallbackResponse>,Error>;
+    fn verbose(&mut self, _verbose: &str,_: Option<VerboseOptions>  ) -> Result<Option<CallbackResponse>,Error>;
 }
 
 #[allow(unused)]
@@ -150,10 +152,10 @@ pub struct ImageBuffer {
     pub width: usize,
     pub height: usize,
     pub buffer: Option<Vec<u8>>,
-    fnverbose: fn(&str) -> Result<Option<CallbackResponse>,ImgError>,
+    fnverbose: fn(&str) -> Result<Option<CallbackResponse>,Error>,
 }
 
-fn default_verbose(_ :&str) -> Result<Option<CallbackResponse>, ImgError>{
+fn default_verbose(_ :&str) -> Result<Option<CallbackResponse>, Error>{
     Ok(None)
 }
 
@@ -168,13 +170,13 @@ impl ImageBuffer {
     }
 
     /// A funtion set_verbose uses also debug.
-    pub fn set_verbose(&mut self,verbose:fn(&str) -> Result<Option<CallbackResponse>,ImgError>) {
+    pub fn set_verbose(&mut self,verbose:fn(&str) -> Result<Option<CallbackResponse>,Error>) {
         self.fnverbose = verbose;
     }
 }
 
 impl DrawCallback for ImageBuffer {
-    fn init(&mut self, width: usize, height: usize,_: Option<InitOptions>) -> Result<Option<CallbackResponse>, ImgError> {
+    fn init(&mut self, width: usize, height: usize,_: Option<InitOptions>) -> Result<Option<CallbackResponse>, Error> {
         let buffersize = width * height * 4;
         self.width = width;
         self.height = height;
@@ -183,9 +185,9 @@ impl DrawCallback for ImageBuffer {
     }
 
     fn draw(&mut self, start_x: usize, start_y: usize, width: usize, height: usize, data: &[u8],_: Option<DrawOptions>)
-                -> Result<Option<CallbackResponse>,ImgError>  {
+                -> Result<Option<CallbackResponse>,Error>  {
         if self.buffer.is_none() {
-            return Err(ImgError::new_const(ImgErrorKind::NotInitializedImageBuffer,&"in draw"))
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::NotInitializedImageBuffer,"in draw".to_string())))
         }
         let buffer =  self.buffer.as_deref_mut().unwrap();
         if start_x >= self.width || start_y >= self.height {return Ok(None);}
@@ -199,7 +201,7 @@ impl DrawCallback for ImageBuffer {
                 let offset_src = scanline_src + x * 4;
                 let offset_dest = scanline_dest + (x + start_x) * 4;
                 if offset_src + 3 >= data.len() {
-                    return Err(ImgError::new_const(ImgErrorKind::OutboundIndex,&"decoder buffer in draw"))
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::OutboundIndex,"decoder buffer in draw".to_string())))
                 }
                 buffer[offset_dest    ] = data[offset_src];
                 buffer[offset_dest + 1] = data[offset_src + 1];
@@ -210,15 +212,15 @@ impl DrawCallback for ImageBuffer {
         Ok(None)
     }
 
-    fn terminate(&mut self,_: Option<TerminateOptions>) -> Result<Option<CallbackResponse>, ImgError> {
+    fn terminate(&mut self,_: Option<TerminateOptions>) -> Result<Option<CallbackResponse>, Error> {
         Ok(None)
     }
 
-    fn next(&mut self, _: Option<NextOptions>) -> Result<Option<CallbackResponse>, crate::error::ImgError> {
+    fn next(&mut self, _: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error> {
         Ok(Some(CallbackResponse::abort()))
     }
 
-    fn verbose(&mut self, str: &str,_: Option<VerboseOptions>) -> Result<Option<CallbackResponse>, ImgError> { 
+    fn verbose(&mut self, str: &str,_: Option<VerboseOptions>) -> Result<Option<CallbackResponse>, Error> { 
         return (self.fnverbose)(str);
     }
 }
@@ -228,38 +230,46 @@ pub struct DecodeOptions<'a> {
     pub drawer: &'a mut dyn DrawCallback,
 }
 
-pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer,ImgError> {    
+pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer,Error> {    
     let mut ib = ImageBuffer::new();
     let mut option = DecodeOptions {
         debug_flag: 0,
         drawer: &mut ib
     };
+    let mut reader = BytesReader::new(buffer);
 
-    image_decoder(buffer,&mut option)?;
+    image_decoder(&mut reader,&mut option)?;
     Ok(ib)
 }
 
-pub fn image_decoder(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<ImgWarning>,ImgError> {
-    let format = format_check(buffer);
+pub fn image_loader(buffer: &[u8],option:&mut DecodeOptions) -> Result<(),Error> {    
+    let mut reader = BytesReader::new(buffer);
+
+    image_decoder(&mut reader,option)?;
+    Ok(())
+}
+
+
+pub fn image_decoder<B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) -> Result<Option<ImgWarning>,Error> {
+    let buffer = reader.read_bytes_no_move(128)?;
+    let format = format_check(&buffer);
 
     use crate::util::ImageFormat::*;
     match format {
         Jpeg => {
-            return crate::jpeg::decoder::decode(buffer, option);
+            return crate::jpeg::decoder::decode(reader, option);
 
         },
         Bmp => {
-            return crate::bmp::decoder::decode(buffer, option);
+            return crate::bmp::decoder::decode(reader, option);
 
         },
         Gif => {
-            return crate::gif::decoder::decode(buffer, option);
-
+            return crate::gif::decoder::decode(reader, option);
         },
         _ => {
             return Err(
-                ImgError::new_const(ImgErrorKind::NoSupportFormat, &"This buffer can not decode")
-            )
-        }        
+                Box::new(ImgError::new_const(ImgErrorKind::NoSupportFormat, "This buffer can not decode".to_string())))
+        }
     }
 }

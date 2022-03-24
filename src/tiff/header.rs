@@ -3,7 +3,7 @@
  * use MIT License
  */
 
-
+type Error = Box<dyn std::error::Error>;
 
 /* for EXIF */
 use crate::color::RGBA;
@@ -162,10 +162,10 @@ pub struct TiffHeaders {
     pub little_endian: bool,
 }
 
-pub fn read_tags( buffer: &Vec<u8>) -> Result<TiffHeaders,ImgError>{
+pub fn read_tags( buffer: &Vec<u8>) -> Result<TiffHeaders,Error>{
     let endian :bool;
     if buffer[0] != buffer [1] {
-        return Err(ImgError::new_const(ImgErrorKind::IlligalData,&"not Tiff"));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
     }
 
     if buffer[0] == 'I' as u8 { // Little Endian
@@ -173,7 +173,7 @@ pub fn read_tags( buffer: &Vec<u8>) -> Result<TiffHeaders,ImgError>{
     } else if buffer[0] == 'M' as u8 {      // Big Eindian
         endian = false;
     } else {
-        return Err(ImgError::new_const(ImgErrorKind::IlligalData,&"not Tiff"));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
     }
 
     let mut ptr = 2 as usize;
@@ -372,15 +372,15 @@ fn get_data (buffer: &[u8], ptr :usize ,datatype:usize, datalen: usize, endian: 
     data
 }
 
-fn read_tiff (version:u16,buffer: &[u8], offset_ifd: usize,endian: bool) -> Result<TiffHeaders,ImgError>{
+fn read_tiff (version:u16,buffer: &[u8], offset_ifd: usize,endian: bool) -> Result<TiffHeaders,Error>{
     read_tag(version,buffer,offset_ifd,endian,0)
 }
 
-fn read_gps (version:u16,buffer: &[u8], offset_ifd: usize,endian: bool) -> Result<TiffHeaders,ImgError> {
+fn read_gps (version:u16,buffer: &[u8], offset_ifd: usize,endian: bool) -> Result<TiffHeaders,Error> {
     read_tag(version,buffer,offset_ifd,endian,2)
 }
 
-fn read_tag (version:u16,buffer: &[u8], mut offset_ifd: usize,endian: bool,mode: usize) -> Result<TiffHeaders,ImgError>{
+fn read_tag (version:u16,buffer: &[u8], mut offset_ifd: usize,endian: bool,mode: usize) -> Result<TiffHeaders,Error>{
     let mut ifd = 0;
     let mut headers :TiffHeaders = TiffHeaders{version,headers:Vec::new(),standard:None,exif:None,gps:None,little_endian: endian};
     'reader: loop {

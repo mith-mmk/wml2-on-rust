@@ -1,5 +1,6 @@
+type Error = Box<dyn std::error::Error>;
+use bin_rs::reader::BinaryReader;
 use super::header::*;
-use crate::io::*;
 use crate::draw::*;
 use crate::decoder::lzw::Lzwdecode;
 use crate::color::RGBA;
@@ -16,9 +17,9 @@ const END:u8 = 0x00;
 
 
 
-pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions) 
-                    -> Result<Option<ImgWarning>,ImgError> {
-    let mut header = GifHeader::new(buffer,option.debug_flag)?;
+pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) 
+                    -> Result<Option<ImgWarning>,Error> {
+    let mut header = GifHeader::new(reader,option.debug_flag)?;
     let mut ptr = header.header_size;
     let mut comment = "".to_string();
     let mut is_transpearent = false;
@@ -33,23 +34,23 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
     option.drawer.init(header.width,header.height,None)?;
 
     loop {
-        let c = read_byte(buffer,ptr); ptr += 1;
+        let c = reader.read_byte()?;
 
         match c {   // BLOCK LOOP
             END => {
 
             },
             EXTEND_BLOCK => {
-                let ext = read_byte(buffer, ptr); ptr +=1;
+                let ext = reader.read_byte()?;
                 match ext {
                     END => { },
                     COMMENT_LABEL => {
                         let mut s = "Comment: ".to_string();
                         loop {
-                            let len = read_byte(buffer, ptr) as usize; ptr += 1;
+                            let len = reader.read_byte()? as usize;
                             if len == 0 {break;}
                             if ext == COMMENT_LABEL {
-                                s = s.to_owned() + &read_string(buffer, ptr, len);
+                                s = s.to_owned() + &reader.read_ascii_string(len)?;
                             }                            
                             ptr += len;
                         }
@@ -59,11 +60,9 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                         comment += &s;
                     },
                     GRAPHIC_CONTROLE => {
-                        let len = read_byte(buffer, ptr) as usize;
-
-                        let flag = read_byte(buffer, ptr + 1);
-                            
-                        delay_time = read_u16le(buffer, ptr + 2);
+                        let _len = reader.read_byte()? as usize; //5
+                        let flag = reader.read_byte()?;                            
+                        delay_time = reader.read_u16_le()?;
 
                         if is_transpearent {
                             header.color_table[transperarent_color].alpha = 0xff;
@@ -75,20 +74,19 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                             is_transpearent = false
                         }
 
-                        transperarent_color = read_byte(buffer, ptr + 4) as usize;
+                        transperarent_color = reader.read_byte()? as usize;
 
                         if option.debug_flag > 0 {
                             let s = format!("Grahic Controle {} delay {}ms  transpearent {:?}",flag,delay_time,is_transpearent);
                             option.drawer.verbose(&s,None)?;
                         }
-
-                        ptr += len + 1;
+                        reader.read_byte()?;// is 00
                     },
                     0xff => {   // Netscape 2.0 (Animation Flag)
                         loop {
-                            let len = read_byte(buffer, ptr) as usize; ptr += 1;
+                            let len = reader.read_byte()? as usize;
                             if len == 0 {break;}
-                            let s = "Animation tag: ".to_owned() + &read_string(buffer,ptr,len); ptr += len;
+                            let s = "Animation tag: ".to_owned() + &reader.read_ascii_string(len)?;
                             if option.debug_flag > 0 {
                                 option.drawer.verbose(&s,None)?;
                             }
@@ -96,7 +94,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                     },
                     _ => {
                         loop {
-                            let len = read_byte(buffer, ptr) as usize; ptr += 1;
+                            let len = reader.read_byte()? as usize;
                             if len == 0 {break;}
                             ptr += len;
                         }
@@ -105,7 +103,7 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
             },
 
             SEPARATER => {
-                let lscd = GifLscd::new(buffer,ptr);
+                let lscd = GifLscd::new(reader)?;
                 ptr = ptr + 9;
                 let has_local_pallet;
                 let mut local_color_table = Vec::new();
@@ -114,12 +112,11 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                     let color_table_size = (1 << ((lscd.field & 0x07) + 1)) as usize;
                     for _ in 0..color_table_size {
                         let color = RGBA{
-                            red: read_byte(buffer, ptr),
-                            green: read_byte(buffer, ptr+1),
-                            blue: read_byte(buffer, ptr+2),
+                            red: reader.read_byte()?,
+                            green: reader.read_byte()?,
+                            blue: reader.read_byte()?,
                             alpha: 0xff,
                         };
-                        ptr += 3;
                         local_color_table.push(color);
                     }
                     if is_transpearent {
@@ -133,14 +130,14 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                     header.color_table[transperarent_color].alpha = 0xff;
                 }
                 // LZW block 
-                let lzw_min_bits = read_byte(buffer, ptr) as usize; ptr += 1;
+                let lzw_min_bits = reader.read_byte()? as usize;
                 let mut buf :Vec<u8> = Vec::new();
                 'lzw_read: loop {
-                    let len = read_byte(buffer,ptr) as usize; ptr += 1;
+                    let len = reader.read_byte()? as usize;
                     if len == 0 {
                         break 'lzw_read;
                     }
-                    buf.append(&mut read_bytes(buffer,ptr,len)); ptr += len;
+                    buf.append(&mut reader.read_bytes_as_vec(len)?);
                 }
                 let mut decoder = Lzwdecode::gif(lzw_min_bits);
                 let data = decoder.decode(&buf)?;
@@ -203,12 +200,9 @@ pub fn decode<'decode>(buffer: &[u8],option:&mut DecodeOptions)
                 break;
             },
             _ => {
-                return Err(ImgError::new_const(ImgErrorKind::IlligalData,&"read error in gif decode"))
+                return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"read error in gif decode".to_string())))
             },
         };
-        if ptr >= buffer.len() {
-            return Err(ImgError::new_const(ImgErrorKind::OutboundIndex,&"data shotage in gif decode"))
-        }
     }
 
     Ok(None)

@@ -1,3 +1,4 @@
+type Error = Box<dyn std::error::Error>;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use crate::io::*;
@@ -69,7 +70,7 @@ impl Lzwdecode {
 
     }
 
-    fn get_bits(&mut self) -> Result<usize,ImgError> {
+    fn get_bits(&mut self) -> Result<usize,Error> {
         if self.is_lsb {
             return self.get_bits_lsb()
         } else {
@@ -77,12 +78,12 @@ impl Lzwdecode {
         }
     }
 
-    fn get_bits_msb(&mut self) -> Result<usize,ImgError> {
+    fn get_bits_msb(&mut self) -> Result<usize,Error> {
         let size = self.cbl;
         while self.left_bits <= 16 {
             if self.ptr >= self.buffer.len() { 
                 if self.left_bits <= 8 && self.left_bits < size {
-                    return Err(ImgError::new_const(ImgErrorKind::IOError, &"data shortage"))
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::IOError, "data shortage".to_string())))
                 }
                 break;
             }
@@ -96,12 +97,12 @@ impl Lzwdecode {
         Ok(bits as usize)
     }
 
-    fn get_bits_lsb(&mut self) -> Result<usize,ImgError> {
+    fn get_bits_lsb(&mut self) -> Result<usize,Error> {
         let size = self.cbl;
         while self.left_bits <= 16 {
             if self.ptr >= self.buffer.len() { 
                 if self.left_bits <= 8 && self.left_bits < size {
-                    return Err(ImgError::new_const(ImgErrorKind::IOError, &"data shortage"))
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::IOError, "data shortage".to_string())))
                 }
                 break;
             }
@@ -123,7 +124,7 @@ impl Lzwdecode {
     }
 
     // Multi chuck image data decoding is not debug.
-    pub fn decode(&mut self,buf: &[u8]) -> Result<Vec<u8>,ImgError> {
+    pub fn decode(&mut self,buf: &[u8]) -> Result<Vec<u8>,Error> {
         self.buffer = buf.to_vec();
         if self.is_init == false {
             self.fill_bits();
@@ -154,7 +155,7 @@ impl Lzwdecode {
                 table.push(append_code);
                 return Ok(data)
             } else if code > self.dic.len() {
-                return Err(ImgError::new_const(ImgErrorKind::IlligalData, &"Over table in LZW"));
+                return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData, "Over table in LZW".to_string())));
             } else {
                 let append_code;
                 if code == self.dic.len() {

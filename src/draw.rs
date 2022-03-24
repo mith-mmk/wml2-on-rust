@@ -2,6 +2,7 @@
 //! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
 //! Drawer will use callback, flexisble drawing.
 type Error = Box<dyn std::error::Error>;
+use std::io::BufRead;
 use bin_rs::reader::*;
 use crate::util::format_check;
 use crate::error::ImgError;
@@ -248,6 +249,15 @@ pub fn image_loader(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<Im
     let r =image_decoder(&mut reader,option)?;
     Ok(r)
 }
+
+pub fn image_reader<R:BufRead>(reader: R,option:&mut DecodeOptions) -> Result<Option<ImgWarning>,Error> {    
+
+    let mut reader = StreamReader::new(reader);
+
+    let r =image_decoder(&mut reader,option)?;
+    Ok(r)
+}
+
 
 
 pub fn image_decoder<B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) -> Result<Option<ImgWarning>,Error> {

@@ -22,6 +22,51 @@ Notice: Specification of this library is not decision.
   let r = wml2::jpeg::decoder::decode(data, &mut option);
 ```
 
+Symple Reader
+
+```
+use std::io::BufReader;
+use std::error::Error;
+use wml2::draw::DecodeOptions;
+use wml2::draw::*;
+use wml2::draw::ImageBuffer;
+use wml2::draw::CallbackResponse;
+
+use std::fs::File;
+let f = File::open(file)?;
+let reader = BufReader::new(f);
+
+/* Callback verbose info */
+fn write_log(str: &str) -> Result<Option<CallbackResponse>,Box<dyn Error>> {
+    println!("{}", str);
+    Ok(None)
+}
+
+pub fn main()-> Result<(),Box<dyn Error>> {
+    println!("read");
+    let f = File::open("foo.bmp")?;
+    let reader = BufReader::new(f);
+    let mut image = ImageBuffer::new();
+    image.set_verbose(write_log);
+    let mut option = DecodeOptions {
+        debug_flag: 0xff, // All message
+        drawer: &mut image,
+    };
+    image_reader(reader, &mut option)?;
+    /*
+      // for on memory image
+      let mut buf :Vec<u8> = Vec::new();
+      f.read_to_end(&mut buf)?;
+      image_loader(&buf,&mut option)?;
+
+    */
+
+    Ok(())
+}
+
+
+```
+
  ImageBuffer impl DrawCallback trait, 5 function.
 
  - init -> callback initialize.Decoder return width and height (and more...).You must get buffers or resours for use.
@@ -41,3 +86,14 @@ Notice: Specification of this library is not decision.
 # update
 - 0.0.1 baseline jpeg
 - 0.0.2 bmp OS2/Windows RGB/RLE4/RLE8/bit fields/baseline JPEG
+- 0.0.3 add GIF
+- 0.0.4 change error message
+- 0.0.5 reader change/Error delagation change
+
+# todo
+
+- ICCProfile Reader
+- Formated Header writer
+- other decoder
+- color translation
+- encoder

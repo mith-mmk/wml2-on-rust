@@ -9,7 +9,7 @@ source = "git+https://github.com/mith-mmk/bin-rs#835769b51cfde8c9e69e73f973ff4fe
 
 [[package]]
 name = "wml2"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "bin-rs",
 ]

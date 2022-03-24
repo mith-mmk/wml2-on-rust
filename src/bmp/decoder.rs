@@ -127,10 +127,13 @@ fn decode_rgb<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  De
 
     let line_size =  ((width as usize * header.bit_count + 31) / 32) * 4;
     for y_ in  0..height {
+        if cfg!(debug_assertions) {
+            println!("{}",y_);
+        }
         let buffer = reader.read_bytes_as_vec(line_size)?;
         let y = height -1 - y_ ;
-        let offset = y_ * line_size;
-        covert_rgba32(&buffer[offset..],&mut line,header,header.bit_count)?;
+//        let offset = y_ * line_size;
+        covert_rgba32(&buffer,&mut line,header,header.bit_count)?;
         if header.height > 0 {
             option.drawer.draw(0,y,width,1,&line,None)?;
         } else {
@@ -321,15 +324,16 @@ fn decode_bit_fileds<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&
 
     let line_size =  ((width as usize * header.bit_count + 31) / 32) * 4;
     for y_ in  0..height {
+
         let buffer = reader.read_bytes_as_vec(line_size)?;
         let y = height -1 - y_ ;
-        let offset = y_ * line_size;
+//        let offset = y_ * line_size;
 
         for x in 0..width {
             let color = if header.bit_count == 32 {
-                read_u32le(&buffer, offset + x * 4) as u32
+                read_u32le(&buffer, x * 4) as u32
             } else {
-                read_u16le(&buffer, offset + x * 2) as u32
+                read_u16le(&buffer, x * 2) as u32
             };
             let red   = ((color & red_mask) >> red_shift) as u32;
             let green = ((color & green_mask) >> green_shift) as u32;
@@ -370,11 +374,12 @@ pub fn decode<'decode, B:BinaryReader>(reader:&mut B ,option:&mut DecodeOptions)
         let s = format!("{:?}",&header);
         option.drawer.verbose(&s,None)?;
     }
+    /*
     let read_size = header.read_size;
     let offset = header.image_offset;
     if offset - read_size as usize >  0 {
         reader.skip_ptr(offset - (read_size as usize))?;
-    }
+    }*/
 
     if let Some(ref compression) = header.compression {
         match compression {

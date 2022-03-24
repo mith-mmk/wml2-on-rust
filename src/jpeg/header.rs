@@ -499,6 +499,7 @@ impl JpegHaeder {
 
         'header:  loop {
             let byte = reader.read_byte()?;  // read byte
+            println!("{:02x}",byte);
             if byte == 0xff { // header head
                 let nextbyte :u8 = reader.read_byte()?;
                 offset = offset + 2;
@@ -667,14 +668,14 @@ impl JpegHaeder {
                     0xe0..=0xef => { // Applications 
                         let num = (nextbyte & 0xf) as usize;
                         let length = reader.read_u16_be()? as usize;
-                        let tag = reader.read_ascii_string(length- 2)?;
+                        let buffer = reader.read_bytes_as_vec(length- 2)?;
+                        let tag = read_string(&buffer ,0, length-2);
                         let len = length - 2 - tag.len() + 1;
-                        let ptr = 2 + tag.len() + 1 + offset;
+                        let ptr = 1 + tag.len();
                         if cfg!(debug_assertions) {
                             println!("App {} {} {} {} {}",num,length,tag,len,ptr);
                         }
-                        let buffer = reader.read_bytes_as_vec(len)?;
-                        let result = read_app(num , &tag, &buffer, 0, len)?;
+                        let result = read_app(num , &tag, &buffer, ptr, len)?;
                         match &result {
                             JpegAppHeaders::Adobe(ref app) => {
                                 adobe_color_transform = app.color_transform;

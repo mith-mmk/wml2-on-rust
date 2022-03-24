@@ -141,8 +141,9 @@ impl BitmapHeader {
     
         };
 
+        read_size = 14;
         let bi_size = reader.read_u32_le()?;
-        read_size = bi_size as u32 + 14;
+        read_size += 4;
         let width;
         let height;
         let bit_per_count;
@@ -152,12 +153,13 @@ impl BitmapHeader {
 
         if bi_size == 12 {
             let os2header = BitmapCore {
-                bc_size : reader.read_u32_le()?,
+                bc_size : bi_size,
                 bc_width : reader.read_u16_le()?,
                 bc_height : reader.read_u16_le()?,
                 bc_plane : reader.read_u16_le()?,
                 bc_bit_count : reader.read_u16_le()?,
             };
+            read_size += 12 - 4;
             width = os2header.bc_width as isize;
             height = os2header.bc_height as isize;
             compression = Some(Compressions::BiRGB);
@@ -166,7 +168,7 @@ impl BitmapHeader {
             bitmap_info = BitmapInfo::Os2(os2header);
         } else {
             let mut info_header = BitmapWindowsInfo {
-                bi_size : reader.read_u32_le()?,
+                bi_size : bi_size,
                 bi_width : reader.read_u32_le()?,
                 bi_height : reader.read_u32_le()?,
                 bi_plane : reader.read_u16_le()?,
@@ -180,10 +182,15 @@ impl BitmapHeader {
                 b_v4_header: None,
                 b_v5_header: None,
             };
+            read_size += 40 - 4;
+            bit_per_count = info_header.bi_bit_count as usize;
+            clut_size = if bit_per_count <= 8 {info_header.bi_clr_used as usize} else {0};
+            let header_size = bitmap_file_header.bf_offbits -14 - (clut_size * 4) as u32;
+
             width = info_header.bi_width as isize;
             height = info_header.bi_height as isize;
 
-            let b_v4_header = if bi_size >= 40 {  // V4
+            let b_v4_header = if header_size > 40 {  // V4
                 let b_v4_red_mask = reader.read_u32_le()?;
                 let b_v4_green_mask= reader.read_u32_le()?;        
                 let b_v4_blue_mask = reader.read_u32_le()?;
@@ -193,14 +200,17 @@ impl BitmapHeader {
                 let mut b_v4_gamma_red =  0;
                 let mut b_v4_gamma_green = 0;
                 let mut b_v4_gamma_blue =  0;
+                read_size += 12;
 
-                if bi_size >= 56 {
+                if header_size > 56 {
                     b_v4_alpha_mask= reader.read_u32_le()?;
+                    read_size += 4;
                 }
-                if bi_size >= 60 {
+                if header_size > 60 {
                     b_v4_cstype = reader.read_u32_le()?;
+                    read_size += 4;
                 }
-                if bi_size >= 96 {
+                if header_size > 96 {
                     b_v4_endpoints = Some(CieXYZTriple{
                         ciexyz_red: CieXYZ {
                             ciexyz_x: reader.read_u32_le()?,
@@ -218,11 +228,13 @@ impl BitmapHeader {
                             ciexyz_z: reader.read_u32_le()?,
                         },
                     });
+                    read_size += 36;
                 }
-                if bi_size >= 108 {
+                if header_size > 108 {
                     b_v4_gamma_red   = reader.read_u32_le()?;
                     b_v4_gamma_green = reader.read_u32_le()?;
                     b_v4_gamma_blue  = reader.read_u32_le()?;  //108 
+                    read_size += 12;
                 }
 
                 Some(BitmapInfoV4 { 
@@ -260,7 +272,7 @@ impl BitmapHeader {
             info_header.b_v5_header = b_v5_header;
 
 //                println!("{} {}",info_header.bi_width,info_header.bi_height);
-//                println!("{} {}",width,height);
+//            println!("{} {}",bi_size,header_size);
         
             compression = match info_header.bi_compression {
                 0 => {Some(Compressions::BiRGB)},
@@ -271,8 +283,7 @@ impl BitmapHeader {
                 5 => {Some(Compressions::BiPng)},
                 _ => {None}
             };
-            bit_per_count = info_header.bi_bit_count as usize;
-            clut_size = if bit_per_count <= 8 {info_header.bi_clr_used as usize} else {0};
+
             bitmap_info = BitmapInfo::Windows(info_header);
         }
         if clut_size == 0 && bit_per_count <=8 {
@@ -305,6 +316,7 @@ impl BitmapHeader {
                 }
             }
         }
+//        println!("{} {}",read_size,bitmap_file_header.bf_offbits);
 
         let color_table = if color_table.len() > 0 {Some(color_table)} else {None};
 

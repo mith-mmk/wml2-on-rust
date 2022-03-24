@@ -164,6 +164,7 @@ pub struct TiffHeaders {
 
 pub fn read_tags( buffer: &Vec<u8>) -> Result<TiffHeaders,Error>{
     let endian :bool;
+
     if buffer[0] != buffer [1] {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
     }

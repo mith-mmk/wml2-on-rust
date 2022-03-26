@@ -11,19 +11,23 @@ use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use super::tags::gps_mapper;
 use super::tags::tag_mapper;
-use super::super::io::*;
+use bin_rs::reader::BinaryReader;
+use bin_rs::Endian;
+use std::io::SeekFrom;
 
-
+#[derive(Debug)]
 pub struct Rational {
     pub n: u32,
     pub d: u32,
 }
 
+#[derive(Debug)]
 pub struct RationalU64 {
     pub n: u64,
     pub d: u64,
 }
 
+#[derive(Debug)]
 pub enum DataPack {
     Bytes(Vec<u8>),
     Ascii(String),
@@ -42,11 +46,13 @@ pub enum DataPack {
 
 
 #[allow(unused)]
+#[derive(Debug)]
 pub struct TiffHeader {
     pub tagid: usize,
     pub data: DataPack,
 }
 
+#[derive(Debug)]
 pub enum Compression {
     NoneCompression = 1,
     CCITTHuffmanRE = 2,
@@ -74,8 +80,9 @@ pub enum Compression {
     Jpeg2000 = 34712,
 }
 
-// This struct is not use embed tiff tag,also EXIF.
-// Use only tiff encoder/decoder
+/// This struct is not use embed tiff tag,also EXIF.
+/// Use only tiff encoder/decoder
+#[derive(Debug)]
 pub struct TiffBaseline {
     //must
 
@@ -153,132 +160,159 @@ pub struct TiffBaseline {
 
 
 #[allow(unused)]
+#[derive(Debug)]
 pub struct TiffHeaders {
     pub version :u16,
     pub headers :Vec<TiffHeader>,
     pub standard: Option<TiffBaseline>,
     pub exif: Option<Vec<TiffHeader>>,
     pub gps: Option<Vec<TiffHeader>>,
-    pub little_endian: bool,
+    pub endian: Endian,
 }
+/*
+impl TiffHeaders {
+    pub fn new(reader: &dyn BinaryReader) -> Self{
 
-pub fn read_tags( buffer: &[u8]) -> Result<TiffHeaders,Error>{
-    let endian :bool;
 
-    if buffer[0] != buffer [1] {
+
+
+    }
+}
+*/
+
+pub fn read_tags(reader: &mut dyn bin_rs::reader::BinaryReader) -> Result<TiffHeaders,Error>{
+    let b0 = reader.read_byte()?;
+    let b1 = reader.read_byte()?;
+
+    if b0 != b1 {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
     }
 
-    if buffer[0] == 'I' as u8 { // Little Endian
-        endian = true;
-    } else if buffer[0] == 'M' as u8 {      // Big Eindian
-        endian = false;
+    if b0 == 'I' as u8 { // Little Endian
+        reader.set_endian(Endian::LittleEndian);
+    } else if b0 == 'M' as u8 {      // Big Eindian
+        reader.set_endian(Endian::BigEndian);
     } else {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
     }
 
-    let mut ptr = 2 as usize;
     // version
-    let ver = read_u16(buffer,ptr,endian);
-    ptr = ptr + 2;
-    let offset_ifd  = read_u32(buffer,ptr,endian) as usize;
-    read_tiff(ver,buffer,offset_ifd,endian)
+    let ver = reader.read_u16()?;
+    let offset_ifd  = reader.read_u32()? as usize;
+    read_tiff(ver,reader,offset_ifd)
 }
 
-fn get_data (buffer: &[u8], ptr :usize ,datatype:usize, datalen: usize, endian: bool) -> DataPack {
+fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> Result<DataPack,Error> {
     let data :DataPack;
     match datatype {
         1  => {  // 1.BYTE(u8)
             let mut d: Vec<u8> = Vec::with_capacity(datalen);
             if datalen <=4 {
+                let buf = reader.read_bytes_as_vec(4)?;
                 for i in 0.. datalen { 
-                    d.push(read_byte(buffer,ptr + i));
+                    d.push(buf[i]);
                 }
+
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_byte(buffer,offset + i));
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                for _ in 0.. datalen { 
+                    d.push(reader.read_byte()?);
                 }
+                reader.seek(SeekFrom::Start(current))?;
             }
             data = DataPack::Bytes(d);
         },
         2 => {  // 2. ASCII(u8)
             let string;
             if datalen <=4 {
-                string = read_string(buffer,ptr,datalen);
-
+                string = reader.read_ascii_string(4)?;
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                string = read_string(buffer,offset,datalen);
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                string = reader.read_ascii_string(datalen)?;
+                reader.seek(SeekFrom::Start(current))?;
             }
             data = DataPack::Ascii(string);    
         }
         3 => {  // SHORT (u16)
             let mut d: Vec<u16> = Vec::with_capacity(datalen);
             if datalen*2 <= 4 {
-                if datalen == 1 {
-                    d.push(read_u16(buffer,ptr,endian));
-                } else if datalen == 2{
-                    d.push(read_u16(buffer,ptr,endian));
-                    d.push(read_u16(buffer,ptr + 2,endian));
-                }
+                d.push(reader.read_u16()?);
+                d.push(reader.read_u16()?);
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_u16(buffer,offset + i*2,endian));
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                for _ in 0.. datalen { 
+                    d.push(reader.read_u16()?);
                 }
+                reader.seek(SeekFrom::Start(current))?;
             }
             data = DataPack::Short(d);
         },
         4 => {  // LONG (u32)
             let mut d :Vec<u32> = Vec::with_capacity(datalen);
             if datalen*4 <= 4 {
-                d.push(read_u32(buffer,ptr,endian));
+                d.push(reader.read_u32()?);
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_u32(buffer,offset + i*4,endian));
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                for _ in 0.. datalen { 
+                    d.push(reader.read_u32()?);
                 }
+                reader.seek(SeekFrom::Start(current))?;
             }
             data = DataPack::Long(d);
         },
         5 => {  //RATIONAL u32/u32
             let mut d :Vec<Rational> = Vec::with_capacity(datalen);
-            let offset = read_u32(buffer,ptr,endian) as usize;
-            for i in 0.. datalen { 
-                let n  = read_u32(buffer,offset + i*8,endian);
-                let denomi = read_u32(buffer,offset + i*8+4,endian);
+            let offset = reader.read_u32()? as u64;
+            let current = reader.offset()?;
+            reader.seek(SeekFrom::Start(offset))?;
+            for _ in 0.. datalen { 
+                let n  = reader.read_u32()?;
+                let denomi = reader.read_u32()?;
                 d.push(Rational{n:n,d:denomi});
-
             }
+            reader.seek(SeekFrom::Start(current))?;
             data = DataPack::Rational(d);
         },
         6 => {  // 6 i8 
             let mut d: Vec<i8> = Vec::with_capacity(datalen);
+            let buf = reader.read_bytes_as_vec(4)?;
             if datalen <=4 {
                 for i in 0.. datalen { 
-                    d.push(read_i8(buffer,ptr + i));
+                    d.push(buf[i] as i8);
                 }
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_i8(buffer,offset + i));
-
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                for _ in 0.. datalen { 
+                    d.push(reader.read_i8()?);
                 }
+                reader.seek(SeekFrom::Start(current))?;
             }
             data = DataPack::SByte(d);
         },
         7 => {  // 1.undef
             let mut d: Vec<u8> = Vec::with_capacity(datalen);
             if datalen <=4 {
-                for i in 0.. datalen { 
-                    d.push(read_byte(buffer,ptr + i));
+                for _ in 0.. datalen { 
+                    d = reader.read_bytes_as_vec(4)?;
                 }
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_byte(buffer,offset + i));
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                for _ in 0.. datalen { 
+                    d.push(reader.read_byte()?);
                 }
+                reader.seek(SeekFrom::Start(current))?;
             }
             data = DataPack::Undef(d);
 
@@ -286,161 +320,166 @@ fn get_data (buffer: &[u8], ptr :usize ,datatype:usize, datalen: usize, endian: 
         8 => {  // 6 i8 
             let mut d: Vec<i16> = Vec::with_capacity(datalen);
             if datalen <=4 {
-                for i in 0.. datalen { 
-                    d.push(read_i16(buffer,ptr + i,endian));
-                }
+                d.push(reader.read_i16()?);
+                d.push(reader.read_i16()?);
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_i16(buffer,offset + i,endian));
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                for _ in 0.. datalen { 
+                    d.push(reader.read_i16()?);
 
                 }
+                reader.seek(SeekFrom::Start(current))?;
             }
             data = DataPack::SShort(d);
         },
         9 => {  // i32 
             let mut d: Vec<i32> = Vec::with_capacity(datalen);
-            if datalen <=4 {
-                for i in 0.. datalen { 
-                    d.push(read_i32(buffer,ptr + i,endian));
+            if datalen*4 <=4 {
+                for _ in 0.. datalen { 
+                    d.push(reader.read_i32()?);
                 }
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_i32(buffer,offset + i,endian));
-
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                for _ in 0.. datalen { 
+                    d.push(reader.read_i32()?);
                 }
+                reader.seek(SeekFrom::Start(current))?;
+
             }
             data = DataPack::SLong(d);
         },
         // 7 undefined 8 s16 9 s32 10 srational u64/u64 11 float 12 double
         10 => {  //RATIONAL u64/u64
             let mut d :Vec<RationalU64> = Vec::with_capacity(datalen);
-            let offset = read_u32(buffer,ptr,endian) as usize;
-            for i in 0.. datalen { 
-                let n_u64 = read_u64(buffer,offset + i*8,endian);
-                let d_u64 =read_u64(buffer,offset + i*8+4,endian);
+            let offset = reader.read_u32()? as u64;
+            let current = reader.offset()?;
+            reader.seek(SeekFrom::Start(offset))?;
+            for _ in 0.. datalen { 
+                let n_u64 = reader.read_u64()?;
+                let d_u64 = reader.read_u64()?;
                 d.push(RationalU64{n:n_u64,d:d_u64});
             }
+            reader.seek(SeekFrom::Start(current))?;
             data = DataPack::RationalU64(d);
 
         },
         11 => {  // f32 
             let mut d: Vec<f32> = Vec::with_capacity(datalen);
-            if datalen <=4 {
-                for i in 0.. datalen { 
-                    d.push(read_f32(buffer,ptr + i,endian));
+            if datalen*4 <=4 {
+                for _ in 0.. datalen { 
+                    d.push(reader.read_f32()?);
                 }
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_f32(buffer,offset + i,endian));
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                for _ in 0.. datalen { 
+                    d.push(reader.read_f32()?);
 
                 }
+                reader.seek(SeekFrom::Start(current))?;
             }
             data = DataPack::Float(d);
         },
         12 => {  // f64 
             let mut d: Vec<f64> = Vec::with_capacity(datalen);
-            if datalen <=4 {
-                for i in 0.. datalen { 
-                    d.push(read_f64(buffer,ptr + i,endian));
-                }
-            } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_f64(buffer,offset + i,endian));
+            let offset = reader.read_u32()? as u64;
+            let current = reader.offset()?;
+            reader.seek(SeekFrom::Start(offset))?;
+            for _ in 0.. datalen { 
+                d.push(reader.read_f64()?);
 
-                }
             }
+            reader.seek(SeekFrom::Start(current))?;
             data = DataPack::Double(d);
         },
         _ => {
             let mut d: Vec<u8> = Vec::with_capacity(datalen);
             if datalen <=4 {
-                for i in 0.. datalen { 
-                    d.push(read_byte(buffer,ptr + i));
+                for _ in 0.. datalen { 
+                    d = reader.read_bytes_as_vec(4)?;
                 }
             } else {
-                let offset = read_u32(buffer,ptr,endian) as usize;
-                for i in 0.. datalen { 
-                    d.push(read_byte(buffer,offset + i));
+                let offset = reader.read_u32()? as u64;
+                let current = reader.offset()?;
+                reader.seek(SeekFrom::Start(offset))?;
+                for _ in 0.. datalen { 
+                    d.push(reader.read_byte()?);
                 }
+                reader.seek(SeekFrom::Start(current))?;
             };
             data = DataPack::Unkown(d);
         }
     }
-    data
+    Ok(data)
 }
 
-fn read_tiff (version:u16,buffer: &[u8], offset_ifd: usize,endian: bool) -> Result<TiffHeaders,Error>{
-    read_tag(version,buffer,offset_ifd,endian,0)
+fn read_tiff (version:u16,reader: &mut dyn BinaryReader, offset_ifd: usize) -> Result<TiffHeaders,Error>{
+    read_tag(version,reader,offset_ifd,0)
 }
 
-fn read_gps (version:u16,buffer: &[u8], offset_ifd: usize,endian: bool) -> Result<TiffHeaders,Error> {
-    read_tag(version,buffer,offset_ifd,endian,2)
+fn read_gps (version:u16,reader: &mut dyn BinaryReader, offset_ifd: usize) -> Result<TiffHeaders,Error> {
+    read_tag(version,reader,offset_ifd,2)
 }
 
-fn read_tag (version:u16,buffer: &[u8], mut offset_ifd: usize,endian: bool,mode: usize) -> Result<TiffHeaders,Error>{
-    let mut ifd = 0;
-    let mut headers :TiffHeaders = TiffHeaders{version,headers:Vec::new(),standard:None,exif:None,gps:None,little_endian: endian};
-    'reader: loop {
-        let mut ptr = offset_ifd;
-        if buffer.len() <= ptr {
-            break 'reader;
-        }
-        let tag = read_u16(buffer,ptr,endian); 
-        ptr = ptr + 2;
- 
-        for _ in 0..tag {
-            if buffer.len() <= ptr {
-                break 'reader;
-            }
-            let tagid = read_u16(buffer,ptr,endian);
-            let datatype = read_u16(buffer,ptr + 2,endian) as usize;
-            let datalen = read_u32(buffer,ptr + 4,endian) as usize;
+fn read_tag (version:u16,reader: &mut dyn BinaryReader, offset_ifd: usize,mode: usize) -> Result<TiffHeaders,Error>{
+    let endian = reader.endian();
+    let mut headers :TiffHeaders = TiffHeaders{version,headers:Vec::new(),standard:None,exif:None,gps:None,endian};
+    let mut ptr = offset_ifd;
+    let tag = reader.read_u16()?; 
 
-            ptr = ptr + 8;
-            let data :DataPack = get_data(buffer, ptr, datatype, datalen, endian);
-            ptr = ptr + 4;
-    
-            if mode != 2 {
-                match tagid {
-                    0x8769 => {
-                        match &data {
-                            DataPack::Long(d) => {
-                                let r = read_tag(version,buffer, d[0] as usize, endian,1)?; // read exif
-                                headers.exif = Some(r.headers);
 
-                            },
-                            _  => {
-                            }
-                        }
-                    },
-                    0x8825 => {
-                        match &data {
-                            DataPack::Long(d) => {
-                                let r = read_gps(version,buffer, d[0] as usize, endian)?; // read exif
-                                headers.gps = Some(r.headers);
+    for _i in 0..tag {
+        let tagid = reader.read_u16()?;
+        if tagid == 0x0 {break}
+        let datatype = reader.read_u16()? as usize;
+        let datalen = reader.read_u32()? as usize;
+        ptr = ptr + 8;
+        let data :DataPack = get_data(reader, datatype, datalen)?;
+        ptr = ptr + 4;
+        if mode != 2 {
+            match tagid {
+                0x8769 => {
+                    match &data {
+                        DataPack::Long(d) => {
+                            let current = reader.offset()?;
+                            reader.seek(SeekFrom::Start(d[0] as u64))?;
+                            let r = read_tag(version,reader, d[0] as usize,1)?; // read exif
+                            headers.exif = Some(r.headers);
+                            reader.seek(SeekFrom::Start(current))?;
                         },
                         _  => {
                         }
-                        }
-                    },
-                    _ => {
-                        #[cfg(debug_assertions)]
-                        tag_mapper(tagid ,&data);
                     }
+                },
+                0x8825 => {
+                    match &data {
+                        DataPack::Long(d) => {
+                            let current = reader.offset()?;
+                            reader.seek(SeekFrom::Start(d[0] as u64))?;
+                            let r = read_gps(version,reader, d[0] as usize)?; // read exif
+                            reader.seek(SeekFrom::Start(current))?;
+                            headers.gps = Some(r.headers);
+                    },
+                    _  => {
+                    }
+                    }
+                },
+                _ => {
+                    #[cfg(debug_assertions)]
+                    tag_mapper(tagid ,&data);
                 }
-            } else {
-                #[cfg(debug_assertions)]
-                gps_mapper(tagid ,&data);
             }
-            headers.headers.push(TiffHeader{tagid: tagid as usize,data: data});
+        } else {
+            #[cfg(debug_assertions)]
+            gps_mapper(tagid ,&data);
         }
-        offset_ifd  = read_u32(buffer,ptr,endian) as usize;
-        if offset_ifd == 0 {break ;}
-        ifd = ifd + 1;
+        headers.headers.push(TiffHeader{tagid: tagid as usize,data: data});
     }
+
     Ok(headers)
 }

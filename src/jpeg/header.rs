@@ -2,6 +2,8 @@
  * jpeg/header.rs  Mith@mmk (C) 2022
  * use MIT License
  */
+use crate::tiff::header::read_tags;
+use bin_rs::reader::BytesReader;
 use bin_rs::reader::BinaryReader;
 use crate::io::{read_byte, read_string, read_u128be, read_u16be, read_u32be, read_u64be};
 type Error = Box<dyn std::error::Error>;
@@ -300,7 +302,8 @@ fn read_app(num: usize,tag :&String,buffer :&[u8]) -> Result<JpegAppHeaders,Erro
             match tag.as_str() {
                 "Exif" => {
                     let buf = &buffer[6..];
-                    let exif = super::super::tiff::header::read_tags(buf)?;
+                    let mut reader = BytesReader::new(buf);
+                    let exif = read_tags(&mut reader)?;
                     return Ok(JpegAppHeaders::Exif(exif))
                 },
                 _ => {
@@ -657,7 +660,6 @@ impl JpegHaeder {
                     },
                     0xfe => { // Comment
                         let length = reader.read_u16_be()? as usize;
-                        println!("comment");
                         let text = reader.read_ascii_string(length- 2);
                         match text {
                             Ok(text) => {comment =Some(text)},

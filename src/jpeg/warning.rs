@@ -79,9 +79,9 @@ impl JpegWarning {
 impl WarningKind for JpegWarningKind {
     fn as_str(&self) -> &'static str {
         use JpegWarningKind::*;
-        match &*self {
+        match &self {
             IlligalRSTMaker => {"Illigal RST Maker"},
-            OutOfMemory => {"Out of memory"},
+            UnfindEOIMaker => {"Unfind EOI Maker"},
             DataCorruption => {"Data Corruption"},
             BufferOverrun => {"Buffer Overrun"},
             UnexpectMarker => {"Unexpect Marker"},

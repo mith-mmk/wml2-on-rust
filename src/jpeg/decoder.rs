@@ -49,11 +49,10 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     }
 
     fn next_marker(self: &mut Self) -> Result<u8,Error> {
-        let buf = self.reader.read_bytes_no_move(8)?;
-        println!("{:02x} {:02x} {:02x} {:02x} {:02x} {:02x} {:02x} {:02x}"
-        ,buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7]);
+        let buf = self.reader.read_bytes_no_move(2)?;
         if buf[0] != 0xff {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Nothing marker".to_string())));
+            let s = format!("Nothing marker but {:02x}",buf[0]);
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,s.to_string())));
         }
         self.reader.read_byte()?;
         loop {
@@ -846,7 +845,6 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
 
             option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
 
-            println!("{},{} {} {}",mcu_x,mcu_y,mcu_x_max,mcu_y_max);
 
             if header.interval > 0 {
                 mcu_interval = mcu_interval - 1;
@@ -861,11 +859,18 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
                         }
                     } else {    // Reset Interval
                         let r = bitread.next_marker()?;
-                        if r >= 0xd0 && r<= 0xf7 {
+                        if r >= 0xd0 && r<= 0xd7 {
                             mcu_interval = header.interval as isize;
                             for i in 0..preds.len() {
                                 preds[i] = 0;
                             }    
+                        } else if r == 0xd9 {   // EOI
+                            option.drawer.terminate(None)?;
+                            warnings = ImgWarnings::add(warnings,Box::new(
+                                JpegWarning::new_const(
+                                JpegWarningKind::IlligalRSTMaker,
+                                "Unexcept EOI,Is this image corruption?".to_string())));
+                            return Ok(warnings)
                         }
                     }
                 } else if bitread.rst()? == true {
@@ -883,10 +888,13 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
         }
     }
 
-    match bitread.next_marker() {
+    let b = bitread.next_marker();
+    match b {
         Ok(marker) => {
             match marker {
                 0xd9 => {   // EOI
+                    option.drawer.terminate(None)?;
+                    return Ok(warnings)
                 },
                 0xdd => {
                     option.drawer.terminate(None)?;
@@ -914,11 +922,12 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
                },
             }
         },
-        Err(..) => {
+        Err(s) => {
+            let s = format!("found {:?}",s);
             warnings = ImgWarnings::add(warnings,Box::new(
                 JpegWarning::new_const(
                     JpegWarningKind::UnexpectMarker,
-                    "Not found EOI".to_string())));
+                    s.to_string())));
         }
     }
     option.drawer.terminate(None)?;

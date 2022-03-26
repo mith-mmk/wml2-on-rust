@@ -7,9 +7,15 @@ use crate::tiff::header::DataPack;
 use crate::tiff::tags::gps_mapper;
 use crate::tiff::tags::tag_mapper;
 use crate::tiff::header::TiffHeaders;
+use bin_rs::Endian;
 
 pub fn print_tags(header: &TiffHeaders) -> String {
-    let mut s :String = format!("TIFF Ver{} {}\n",header.version,if header.little_endian {"Little Endian"} else {"Big Endian"});
+    let endian = match header.endian {
+        Endian::BigEndian => {"Big Endian"},
+        Endian::LittleEndian => {"Little Endian"}
+    };
+
+    let mut s :String = format!("TIFF Ver{} {}\n",header.version,endian);
 
     for tag in &header.headers {
         let (tag_name,string) = tag_mapper(tag.tagid as u16,&tag.data);

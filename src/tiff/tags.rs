@@ -3,7 +3,7 @@
  * use MIT License
  */
 
-use super::super::io::read_string;
+use bin_rs::io::read_string;
 use super::header::DataPack;
 use super::util::print_data;
 pub fn gps_mapper(tag :u16, data: &DataPack) -> (String,String){

@@ -1,7 +1,8 @@
 type Error = Box<dyn std::error::Error>;
+use bin_rs::io::read_byte;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
-use crate::io::*;
+
 
 const MAX_TABLE:usize = 4096;
 

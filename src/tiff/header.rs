@@ -198,6 +198,9 @@ pub fn read_tags(reader: &mut dyn bin_rs::reader::BinaryReader) -> Result<TiffHe
 
     // version
     let ver = reader.read_u16()?;
+    if ver != 42 {
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
+    }
     let offset_ifd  = reader.read_u32()? as usize;
     read_tiff(ver,reader,offset_ifd)
 }
@@ -426,60 +429,80 @@ fn read_gps (version:u16,reader: &mut dyn BinaryReader, offset_ifd: usize) -> Re
     read_tag(version,reader,offset_ifd,2)
 }
 
-fn read_tag (version:u16,reader: &mut dyn BinaryReader, offset_ifd: usize,mode: usize) -> Result<TiffHeaders,Error>{
+fn read_tag (version:u16,reader: &mut dyn BinaryReader, mut offset_ifd: usize,mode: usize) -> Result<TiffHeaders,Error>{
     let endian = reader.endian();
     let mut headers :TiffHeaders = TiffHeaders{version,headers:Vec::new(),standard:None,exif:None,gps:None,endian};
-    let mut ptr = offset_ifd;
-    let tag = reader.read_u16()?; 
+    let mut imageoffset = 0;
 
-
-    for _i in 0..tag {
-        let tagid = reader.read_u16()?;
-        if tagid == 0x0 {break}
-        let datatype = reader.read_u16()? as usize;
-        let datalen = reader.read_u32()? as usize;
-        ptr = ptr + 8;
-        let data :DataPack = get_data(reader, datatype, datalen)?;
-        ptr = ptr + 4;
-        if mode != 2 {
-            match tagid {
-                0x8769 => {
-                    match &data {
-                        DataPack::Long(d) => {
-                            let current = reader.offset()?;
-                            reader.seek(SeekFrom::Start(d[0] as u64))?;
-                            let r = read_tag(version,reader, d[0] as usize,1)?; // read exif
-                            headers.exif = Some(r.headers);
-                            reader.seek(SeekFrom::Start(current))?;
+    loop {
+        reader.seek(SeekFrom::Start(offset_ifd as u64))?;
+        let tag = reader.read_u16()? as usize; 
+        let buf = reader.read_bytes_no_move(tag *12 + 4)?;
+        let next_ifd = bin_rs::io::read_u32(&buf,tag*12,reader.endian());
+    
+        for _i in 0..tag {
+            let tagid = reader.read_u16()?;
+            if tagid == 0x0 {break}
+            let datatype = reader.read_u16()? as usize;
+            let datalen = reader.read_u32()? as usize;
+            let data :DataPack = get_data(reader, datatype, datalen)?;
+            if mode != 2 {
+                match tagid {
+                    0x0111 => { // Image Offsets
+                        match &data {
+                            DataPack::Long(d) => {
+                                imageoffset = d[0] as usize;
+                            },
+                            DataPack::Short(d) => {
+                                imageoffset = d[0] as usize;
+                            },
+                            _  => {
+                            }
+                        }
+                    },
+                    0x8769 => { // 
+                        match &data {
+                            DataPack::Long(d) => {
+                                let current = reader.offset()?;
+                                reader.seek(SeekFrom::Start(d[0] as u64))?;
+                                let r = read_tag(version,reader, d[0] as usize,1)?; // read exif
+                                headers.exif = Some(r.headers);
+                                reader.seek(SeekFrom::Start(current))?;
+                            },
+                            _  => {
+                            }
+                        }
+                    },
+                    0x8825 => {
+                        match &data {
+                            DataPack::Long(d) => {
+                                let current = reader.offset()?;
+                                reader.seek(SeekFrom::Start(d[0] as u64))?;
+                                let r = read_gps(version,reader, d[0] as usize)?; // read gps
+                                reader.seek(SeekFrom::Start(current))?;
+                                headers.gps = Some(r.headers);
                         },
                         _  => {
                         }
-                    }
-                },
-                0x8825 => {
-                    match &data {
-                        DataPack::Long(d) => {
-                            let current = reader.offset()?;
-                            reader.seek(SeekFrom::Start(d[0] as u64))?;
-                            let r = read_gps(version,reader, d[0] as usize)?; // read exif
-                            reader.seek(SeekFrom::Start(current))?;
-                            headers.gps = Some(r.headers);
+                        }
                     },
-                    _  => {
+                    _ => {
+                        #[cfg(debug_assertions)]
+                        tag_mapper(tagid ,&data);
                     }
-                    }
-                },
-                _ => {
-                    #[cfg(debug_assertions)]
-                    tag_mapper(tagid ,&data);
                 }
+            } else {
+                #[cfg(debug_assertions)]
+                gps_mapper(tagid ,&data);
             }
-        } else {
-            #[cfg(debug_assertions)]
-            gps_mapper(tagid ,&data);
+            headers.headers.push(TiffHeader{tagid: tagid as usize,data: data});
         }
-        headers.headers.push(TiffHeader{tagid: tagid as usize,data: data});
+        if next_ifd == 0 {
+            break;
+        }
+        offset_ifd = next_ifd as usize;
     }
+
 
     Ok(headers)
 }

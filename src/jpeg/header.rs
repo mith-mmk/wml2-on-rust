@@ -2,10 +2,10 @@
  * jpeg/header.rs  Mith@mmk (C) 2022
  * use MIT License
  */
+use bin_rs::io::*;
 use crate::tiff::header::read_tags;
 use bin_rs::reader::BytesReader;
 use bin_rs::reader::BinaryReader;
-use crate::io::{read_byte, read_string, read_u128be, read_u16be, read_u32be, read_u64be};
 type Error = Box<dyn std::error::Error>;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
@@ -140,8 +140,8 @@ impl FrameHeader {
 
         let p = read_byte(&buffer,0) as i32;
         bitperpixel = p as usize;
-        height = read_u16be(&buffer,1) as usize;
-        width = read_u16be(&buffer,3) as usize;
+        height = read_u16_be(&buffer,1) as usize;
+        width = read_u16_be(&buffer,3) as usize;
         let nf = read_byte(&buffer,5) as i32;
         plane = nf as usize;
 
@@ -273,10 +273,10 @@ fn read_app(num: usize,tag :&String,buffer :&[u8]) -> Result<JpegAppHeaders,Erro
             match tag.as_str() {
                 "JFIF" => {
                     ptr = 5;
-                    let version = read_u16be(&buffer,ptr) as u16;
+                    let version = read_u16_be(&buffer,ptr) as u16;
                     let unit = read_byte(&buffer,ptr + 2) as usize;
-                    let xr = read_u16be(&buffer,ptr + 3) as usize;
-                    let yr = read_u16be(&buffer,ptr + 5) as usize;
+                    let xr = read_u16_be(&buffer,ptr + 3) as usize;
+                    let yr = read_u16_be(&buffer,ptr + 5) as usize;
                     let width = read_byte(&buffer,ptr + 7) as usize;
                     let height = read_byte(&buffer,ptr + 8) as usize;
 
@@ -327,54 +327,54 @@ fn read_app(num: usize,tag :&String,buffer :&[u8]) -> Result<JpegAppHeaders,Erro
 
                         return Ok(JpegAppHeaders::ICCProfile(icc_profile))
                     };
-                    let length = read_u32be(&buffer,ptr);
+                    let length = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let cmmid = read_u32be(&buffer,ptr);
+                    let cmmid = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let version = read_u32be(&buffer,ptr);
+                    let version = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let device_class = read_u32be(&buffer,ptr);
+                    let device_class = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let color_space = read_u32be(&buffer,ptr);
+                    let color_space = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let pcs = read_u32be(&buffer,ptr);
+                    let pcs = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let year = read_u16be(&buffer,ptr);
+                    let year = read_u16_be(&buffer,ptr);
                     ptr = ptr + 2;
-                    let month = read_u16be(&buffer,ptr);
+                    let month = read_u16_be(&buffer,ptr);
                     ptr = ptr + 2;
-                    let day = read_u16be(&buffer,ptr);
+                    let day = read_u16_be(&buffer,ptr);
                     ptr = ptr + 2;
-                    let hour = read_u16be(&buffer,ptr);
+                    let hour = read_u16_be(&buffer,ptr);
                     ptr = ptr + 2;
-                    let minute = read_u16be(&buffer,ptr);
+                    let minute = read_u16_be(&buffer,ptr);
                     ptr = ptr + 2;
-                    let second = read_u16be(&buffer,ptr);
+                    let second = read_u16_be(&buffer,ptr);
                     ptr = ptr + 2;
-                    let magicnumber_ascp = read_u32be(&buffer,ptr);
+                    let magicnumber_ascp = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let platform = read_u32be(&buffer,ptr);
+                    let platform = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let flags = read_u32be(&buffer,ptr);
+                    let flags = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let manufacturer = read_u32be(&buffer,ptr);
+                    let manufacturer = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let model = read_u32be(&buffer,ptr);
+                    let model = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let attributes = read_u64be(&buffer,ptr);
+                    let attributes = read_u64_be(&buffer,ptr);
                     ptr = ptr + 8;
-                    let rendering_intent = read_u32be(&buffer,ptr);
+                    let rendering_intent = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
                     let mut illuminate = [0_u32;3];
-                    illuminate[0] = read_u32be(&buffer,ptr);
+                    illuminate[0] = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    illuminate[1] = read_u32be(&buffer,ptr);
+                    illuminate[1] = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    illuminate[2] = read_u32be(&buffer,ptr);
+                    illuminate[2] = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let creator = read_u32be(&buffer,ptr);
+                    let creator = read_u32_be(&buffer,ptr);
                     ptr = ptr + 4;
-                    let profile_id = read_u128be(&buffer, ptr);
+                    let profile_id = read_u128_be(&buffer, ptr);
                     ptr = ptr + 16;
                     let reserved :Vec<u8> = (0..28).map(|i| buffer[i]).collect();
                     ptr = ptr + 28;
@@ -416,7 +416,7 @@ fn read_app(num: usize,tag :&String,buffer :&[u8]) -> Result<JpegAppHeaders,Erro
         12 => {
             match tag.as_str() {
                 "Ducky" => {
-                    let q = read_u32be(&buffer,ptr) as usize;
+                    let q = read_u32_be(&buffer,ptr) as usize;
                     ptr = ptr + 4;
                     len = len - 4;
                     let comment = read_string(&buffer,ptr,len);

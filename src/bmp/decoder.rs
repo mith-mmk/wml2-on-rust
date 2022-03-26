@@ -10,7 +10,7 @@ type Error = Box<dyn std::error::Error>;
 use crate::bmp::header::BitmapInfo::Windows;
 use crate::error::{ImgError,ImgErrorKind};
 use crate::draw::*;
-use crate::io::{read_byte, read_u16le, read_u32le};
+use bin_rs::io::*;
 use crate::warning::ImgWarnings;
 
 use crate::bmp::header::BitmapHeader;
@@ -44,7 +44,7 @@ fn covert_rgba32(buffer:&[u8],line: &mut Vec<u8>,header:&BitmapHeader,bit_count:
         },
         16 => { // rgb555
             for x in  0..width{
-                let color = read_u16le(buffer,offset);
+                let color = read_u16_le(buffer,offset);
                 let r = ((color & 0x7c00) >> 10) as u8;
                 let g = ((color & 0x03e0) >> 5) as u8;
                 let b = (color & 0x001f) as u8;
@@ -331,9 +331,9 @@ fn decode_bit_fileds<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&
 
         for x in 0..width {
             let color = if header.bit_count == 32 {
-                read_u32le(&buffer, x * 4) as u32
+                read_u32_le(&buffer, x * 4) as u32
             } else {
-                read_u16le(&buffer, x * 2) as u32
+                read_u16_le(&buffer, x * 2) as u32
             };
             let red   = ((color & red_mask) >> red_shift) as u32;
             let green = ((color & green_mask) >> green_shift) as u32;

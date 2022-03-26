@@ -1,5 +1,6 @@
 
-use crate::io::read_string;
+
+use bin_rs::io::read_string;
 
 pub enum ImageFormat{
     Gif,    // GIF87a , GIF89a
@@ -34,11 +35,18 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         },
         b'I' => {
             if buffer[1] == b'I' {
-                return ImageFormat::Tiff
+                let ver = bin_rs::io::read_u16_le(buffer, 2);
+                if ver == 42 {
+                    return ImageFormat::Tiff
+                }
             }
         },
         b'M' => {
             if buffer[1] == b'M' {
+                let ver = bin_rs::io::read_u16_be(buffer, 2);
+                if ver == 42 {
+                    return ImageFormat::Tiff
+                }
                 return ImageFormat::Tiff
             }
         },

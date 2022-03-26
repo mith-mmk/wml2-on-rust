@@ -1,5 +1,5 @@
 
-use crate::io::*;
+use bin_rs::io::*;
 
 pub struct ICCProfile {
     pub length : u32,
@@ -162,15 +162,15 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
     let header_size = 128;
     let mut ptr = 0;
     str += "ICC Profiles defined data\n";
-    let tags = read_u32be(&icc_profile.data,ptr);
+    let tags = read_u32_be(&icc_profile.data,ptr);
     ptr +=  4;
     str += &format!("Tags {}\n",tags);
     for _ in 0..tags {
         let tag_name = read_string(&icc_profile.data,ptr,4);
         ptr +=  4;
-        let tag_offset = read_u32be(&icc_profile.data,ptr) as usize;
+        let tag_offset = read_u32_be(&icc_profile.data,ptr) as usize;
         ptr +=  4;
-        let tag_length = read_u32be(&icc_profile.data,ptr) as usize;
+        let tag_length = read_u32_be(&icc_profile.data,ptr) as usize;
         ptr +=  4;
         str +=  &format!("Tag name {} {}bytes\n",tag_name,tag_length);
         match &*tag_name {
@@ -186,48 +186,48 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
                 str +=  &format!("Input #{} Output #{} CLUT{} //{}\n",ich,och,clut_point,reserve);
                 let mut p = 12;
                 let e00 = S15FixedNumber {
-                    integer: read_i16be(&icc_profile.data, ptr+p),
-                    decimal: read_u16be(&icc_profile.data, ptr+p+2)
+                    integer: read_i16_be(&icc_profile.data, ptr+p),
+                    decimal: read_u16_be(&icc_profile.data, ptr+p+2)
                 };
                 p += 4;
                 let e01 = S15FixedNumber {
-                    integer: read_i16be(&icc_profile.data, ptr+p),
-                    decimal: read_u16be(&icc_profile.data, ptr+p+2)
+                    integer: read_i16_be(&icc_profile.data, ptr+p),
+                    decimal: read_u16_be(&icc_profile.data, ptr+p+2)
                 };
                 p += 4;
                 let e02 = S15FixedNumber {
-                    integer: read_i16be(&icc_profile.data, ptr+p),
-                    decimal: read_u16be(&icc_profile.data, ptr+p+2)
+                    integer: read_i16_be(&icc_profile.data, ptr+p),
+                    decimal: read_u16_be(&icc_profile.data, ptr+p+2)
                 };
                 p += 4;
                 let e10 = S15FixedNumber {
-                    integer: read_i16be(&icc_profile.data, ptr+p),
-                    decimal: read_u16be(&icc_profile.data, ptr+p+2)
+                    integer: read_i16_be(&icc_profile.data, ptr+p),
+                    decimal: read_u16_be(&icc_profile.data, ptr+p+2)
                 };
                 p += 4;
                 let e11 = S15FixedNumber {
-                    integer: read_i16be(&icc_profile.data, ptr+p),
-                    decimal: read_u16be(&icc_profile.data, ptr+p+2)
+                    integer: read_i16_be(&icc_profile.data, ptr+p),
+                    decimal: read_u16_be(&icc_profile.data, ptr+p+2)
                 };
                 p += 4;
                 let e12 = S15FixedNumber {
-                    integer: read_i16be(&icc_profile.data, ptr+p),
-                    decimal: read_u16be(&icc_profile.data, ptr+p+2)
+                    integer: read_i16_be(&icc_profile.data, ptr+p),
+                    decimal: read_u16_be(&icc_profile.data, ptr+p+2)
                 };
                 p += 4;
                 let e20 = S15FixedNumber {
-                    integer: read_i16be(&icc_profile.data, ptr+p),
-                    decimal: read_u16be(&icc_profile.data, ptr+p+2)
+                    integer: read_i16_be(&icc_profile.data, ptr+p),
+                    decimal: read_u16_be(&icc_profile.data, ptr+p+2)
                 };
                 p += 4;
                 let e21 = S15FixedNumber {
-                    integer: read_i16be(&icc_profile.data, ptr+p),
-                    decimal: read_u16be(&icc_profile.data, ptr+p+2)
+                    integer: read_i16_be(&icc_profile.data, ptr+p),
+                    decimal: read_u16_be(&icc_profile.data, ptr+p+2)
                 };
                 p += 4;
                 let e22 = S15FixedNumber {
-                    integer: read_i16be(&icc_profile.data, ptr+p),
-                    decimal: read_u16be(&icc_profile.data, ptr+p+2)
+                    integer: read_i16_be(&icc_profile.data, ptr+p),
+                    decimal: read_u16_be(&icc_profile.data, ptr+p+2)
                 };
 
                 str += "Transration\n";
@@ -258,8 +258,8 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
                     str +=  &format!("\n\n");
 
                 } else if data_type == "mft2" {
-                    let input = read_u16be(&icc_profile.data, ptr+48) as usize;
-                    let output = read_u16be(&icc_profile.data, ptr+50) as usize;
+                    let input = read_u16_be(&icc_profile.data, ptr+48) as usize;
+                    let output = read_u16_be(&icc_profile.data, ptr+50) as usize;
                     str +=  &format!("Input #{} Output #{}\n",input,output);
                     p = 52;
                     let input_channel_size = input * ich * 2;
@@ -294,7 +294,7 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
                 ptr +=  4;
 //                str += &(data_type + "\n");
                 ptr +=  4;
-                let length = read_u32be(&icc_profile.data,ptr) as usize;
+                let length = read_u32_be(&icc_profile.data,ptr) as usize;
                 ptr +=  4;  // padding
 //                str += &format!("length {}\n",length);        
                 let desc = read_string(&icc_profile.data, ptr as usize, length);
@@ -316,22 +316,22 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
                 ptr +=  4;
                 str += &(data_type + "\n"); // XYZ only
                 ptr +=  4;
-//                let length = read_u32be(&icc_profile.data,ptr) as usize;    // only 0
+//                let length = read_u32_be(&icc_profile.data,ptr) as usize;    // only 0
                 ptr +=  4;  // padding
                 // XYZNumber[n] 4*3*n//
                 str += &format!("data length={}\n",(tag_length - 8));
                 for _ in 0..(tag_length - 8)/12 {
                     let x = S15FixedNumber {
-                        integer: read_i16be(&icc_profile.data, ptr),
-                        decimal: read_u16be(&icc_profile.data, ptr+2)
+                        integer: read_i16_be(&icc_profile.data, ptr),
+                        decimal: read_u16_be(&icc_profile.data, ptr+2)
                     };
                     let y = S15FixedNumber {
-                        integer: read_i16be(&icc_profile.data, ptr+4),
-                        decimal: read_u16be(&icc_profile.data, ptr+6)
+                        integer: read_i16_be(&icc_profile.data, ptr+4),
+                        decimal: read_u16_be(&icc_profile.data, ptr+6)
                     };
                     let z = S15FixedNumber {
-                        integer: read_i16be(&icc_profile.data, ptr+8),
-                        decimal: read_u16be(&icc_profile.data, ptr+10)
+                        integer: read_i16_be(&icc_profile.data, ptr+8),
+                        decimal: read_u16_be(&icc_profile.data, ptr+10)
                     };
                     str += &format!("X:{}({}.{}) Y:{}({}.{}) Z:{}({}.{})\n"
                                 ,x.as_f32(),x.int(),x.decimal()

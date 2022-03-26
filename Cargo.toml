@@ -9,8 +9,8 @@ license = "MIT"
 crate-type = ["rlib"] 
 
 [dependencies]
-bin-rs = {version = "0.0.5",features = ["stream"]}
-#bin-rs = {path = "../bin-rs",features = ["stream"]}
+#bin-rs = {version = "0.0.5",features = ["stream","util"]}
+bin-rs = {path = "../bin-rs",features = ["stream","util"]}
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.

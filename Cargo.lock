@@ -10,7 +10,7 @@ checksum = "1601a962746b756a64ba06f9d58bf9e164555f9e1de802617713ec2701b01f48"
 
 [[package]]
 name = "wml2"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "bin-rs",
 ]

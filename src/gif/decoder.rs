@@ -1,4 +1,5 @@
 type Error = Box<dyn std::error::Error>;
+use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
 use super::header::*;
 use crate::draw::*;
@@ -6,7 +7,7 @@ use crate::decoder::lzw::Lzwdecode;
 use crate::color::RGBA;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
-use crate::warning::ImgWarning;
+
 
 const SEPARATER: u8 = b',';     // 0x2c
 const EXTEND_BLOCK:u8 = b'!';   // 0x21
@@ -18,13 +19,14 @@ const END:u8 = 0x00;
 
 
 pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) 
-                    -> Result<Option<ImgWarning>,Error> {
+                    -> Result<Option<ImgWarnings>,Error> {
     let mut header = GifHeader::new(reader,option.debug_flag)?;
     let mut ptr = header.header_size;
     let mut comment = "".to_string();
     let mut is_transpearent = false;
     let mut transperarent_color = 0x00;
     let mut delay_time = 0 ;
+    let warnings:Option<ImgWarnings> = None;
 
     if option.debug_flag >0 {
         option.drawer.verbose(&format!("{:?}",&header),None)?;
@@ -205,5 +207,5 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
         };
     }
 
-    Ok(None)
+    Ok(warnings)
 }

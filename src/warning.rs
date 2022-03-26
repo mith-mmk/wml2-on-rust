@@ -1,82 +1,47 @@
-use core::fmt::*;
-use crate::jpeg::warning::JpegWarningKind;
-use crate::bmp::warning::BMPWarningKind;
+use std::fmt::*;
 
 pub trait WarningKind {
     fn as_str(&self) -> &'static str;
 }
 
-pub struct ImgWarning {
-    repr: Repr,
+pub trait ImgWarning: Display + Debug {
+
 }
 
-impl Debug for ImgWarning {
+pub struct ImgWarnings {
+    warnings: Vec<Box<dyn ImgWarning>>,
+}
+
+
+
+impl Debug for ImgWarnings {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        Debug::fmt(&self.repr, f)
+        Ok(for warning in &self.warnings {
+            std::fmt::Display::fmt(&warning, f)?;
+        })
     }
 }
 
-impl ImgWarning {
-    pub fn new<E>(kind: ImgWarningKind) -> ImgWarning {
-        ImgWarning { repr: Repr::Simple(kind) }
-    }
-
-    pub fn add(kind: ImgWarningKind, warning: ImgWarning) -> ImgWarning {
-        ImgWarning  { repr: Repr::Custom(Box::new(Custom { kind, warning:Box::new(warning) })) }
-    }
-
-    #[inline]
-    pub const fn new_const(kind: ImgWarningKind, message: &'static &'static str) -> ImgWarning {
-        Self { repr: Repr::SimpleMessage(kind, message) }
-    }
-
-    #[must_use]
-    #[inline]
-    pub fn raw_os_error(&self) -> Option<i32> {
-        match self.repr {
-            Repr::Custom(..) => None,
-            Repr::Simple(..) => None,
-            Repr::SimpleMessage(..) => None,
-        }
+impl Display for ImgWarnings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        Ok(for warning in &self.warnings {
+            write!(f,"{}",&warning)?;
+        })
     }
 }
 
-#[derive(Debug)]
-pub(crate) enum Repr {
-    Simple(ImgWarningKind),
-    // &str is a fat pointer, but &&str is a thin pointer.
-    SimpleMessage(ImgWarningKind, &'static &'static str),
-    Custom(Box<Custom>),
-}
-
-#[allow(unused)]
-#[derive(Debug)]
-pub(crate) struct Custom {
-    kind: ImgWarningKind,
-    warning: Box<dyn Debug + Send + Sync>,
-}
-
-#[derive(Debug)]
-pub enum ImgWarningKind {
-    Jpeg(JpegWarningKind),
-    Bmp(BMPWarningKind),
-    Other,
-}
-
-#[allow(unused)]
-impl WarningKind for ImgWarningKind {
-    fn as_str(&self) -> &'static str {
-        use self::ImgWarningKind::*;
-        match &*self {
-            Jpeg(warning) => {
-               warning.as_str()
+impl ImgWarnings {
+    pub fn add(warnings: Option<ImgWarnings>,warning: Box<dyn ImgWarning>) -> Option<Self> {
+        match warnings {
+            Some(mut w) => {
+                w.warnings.push(warning);
+                Some(w)
             },
-            Bmp(warning) => {
-                warning.as_str()
-            },
-            Other => {
-               "Unknown warning"
+            None => {
+                let mut result: Vec<Box<dyn ImgWarning>> = Vec::new();
+                result.push(warning);
+                Some(ImgWarnings{warnings:result})
             }
         }
-     }
+    }
 }

@@ -11,7 +11,7 @@ use crate::bmp::header::BitmapInfo::Windows;
 use crate::error::{ImgError,ImgErrorKind};
 use crate::draw::*;
 use crate::io::{read_byte, read_u16le, read_u32le};
-use crate::warning::ImgWarning;
+use crate::warning::ImgWarnings;
 
 use crate::bmp::header::BitmapHeader;
 use crate::bmp::header::Compressions;
@@ -114,7 +114,7 @@ fn covert_rgba32(buffer:&[u8],line: &mut Vec<u8>,header:&BitmapHeader,bit_count:
 }
 
 
-fn decode_rgb<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,Error>  {
+fn decode_rgb<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarnings>,Error>  {
     let width = header.width.abs() as usize;
     let height = header.height.abs() as usize;
     option.drawer.init(width,height,InitOptions::new())?;
@@ -144,7 +144,7 @@ fn decode_rgb<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  De
     Ok(None)
 }
 
-fn decode_rle<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,Error>  {
+fn decode_rle<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarnings>,Error>  {
     let width = header.width.abs() as usize;
     let height = header.height.abs() as usize;
     option.drawer.init(width,height,InitOptions::new())?;
@@ -276,7 +276,7 @@ fn get_shift(mask :u32) -> (u32,u32) {
     (shift,bits)
 }
 
-fn decode_bit_fileds<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,Error>  {
+fn decode_bit_fileds<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarnings>,Error>  {
     let width = header.width.abs() as usize;
     let height = header.height.abs() as usize;
 
@@ -357,16 +357,16 @@ fn decode_bit_fileds<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&
     Ok(None)
 }
 
-fn decode_jpeg<B:BinaryReader>(reader:&mut B,_:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,Error>  {
+fn decode_jpeg<B:BinaryReader>(reader:&mut B,_:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarnings>,Error>  {
     return crate::jpeg::decoder::decode(reader,option);
 }
 
-fn decode_png<B:BinaryReader>(_reader:&B,_header:&BitmapHeader,_option:&mut  DecodeOptions) -> Result<Option<ImgWarning>,Error>  {
+fn decode_png<B:BinaryReader>(_reader:&B,_header:&BitmapHeader,_option:&mut  DecodeOptions) -> Result<Option<ImgWarnings>,Error>  {
     return Err(Box::new(ImgError::new_const(ImgErrorKind::NoSupportFormat,"PNG bitmap not support".to_string())))
 }
 
 pub fn decode<'decode, B:BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) 
-                    -> Result<Option<ImgWarning>,Error> {
+                    -> Result<Option<ImgWarnings>,Error> {
     
     let header = BitmapHeader::new(reader,option.debug_flag)?;
 

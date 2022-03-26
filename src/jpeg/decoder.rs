@@ -3,10 +3,9 @@
  * use MIT License
  */
 type Error = Box<dyn std::error::Error>;
+use crate::jpeg::warning::JpegWarning;
 use bin_rs::reader::BinaryReader;
-use crate::warning::ImgWarningKind::Jpeg;
-use crate::warning::ImgWarningKind;
-use crate::warning::ImgWarning;
+use crate::warning::{ImgWarnings};
 use crate::draw::*;
 use crate::jpeg::header::Component;
 use crate::jpeg::header::HuffmanTable;
@@ -675,9 +674,9 @@ pub(crate) fn huffman_extend(huffman_tables:&Vec<HuffmanTable>) -> (Vec<HuffmanD
     (ac_decode,dc_decode)
 }
 
-pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarning>,Error> {
+pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
 
-    let mut warning: Option<ImgWarning> = None;
+    let mut warnings: Option<ImgWarnings> = None;
         // Make Huffman Table
     // Scan Header
     let header = JpegHaeder::new(reader,0)?;
@@ -750,16 +749,10 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     }
 
     if plane == 4 {
-        if warning.is_none() {
-            warning = Some(
-                ImgWarning::new_const(
-                    ImgWarningKind::Jpeg(JpegWarningKind::UnknowFormat),
-                           &"Plane 4 color translation rule is known"));   
-        } else {
-            warning = Some
-                (ImgWarning::add(
-                    Jpeg(super::warning::JpegWarningKind::UnknowFormat), warning.unwrap()));
-        }
+        warnings = ImgWarnings::add(warnings,Box::new(
+            JpegWarning::new_const(
+                JpegWarningKind::UnknowFormat,
+                "Plane 4 color translation rule is known".to_string())))
     }
 
     // decode
@@ -827,10 +820,10 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
                         pred = _pred; 
                     }
                     Err(..) => {
-                        return Ok(Some(
-                            ImgWarning::new_const(
-                                Jpeg(JpegWarningKind::DataCorruption),&"baseline"
-                            )));
+                        warnings = ImgWarnings::add(warnings, 
+                            Box::new(JpegWarning::new_const(
+                                JpegWarningKind::DataCorruption,"baseline".to_string())));
+                        return Ok(warnings)
                     }
                 }
                 preds[i] = pred;
@@ -860,13 +853,13 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
                 if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max -1 { 
                     if  bitread.rst()? == true {
                         if cfg!(debug_assertions) {
-                            println!("reset interval {},{} {} {}",mcu_x,mcu_y,mcu_x_max,mcu_y_max);
+                            println!("strange reset interval {},{} {} {}",mcu_x,mcu_y,mcu_x_max,mcu_y_max);
                         }
                         mcu_interval = header.interval as isize;
                         for i in 0..preds.len() {
                             preds[i] = 0;
                         }
-                    } else {
+                    } else {    // Reset Interval
                         let r = bitread.next_marker()?;
                         if r >= 0xd0 && r<= 0xf7 {
                             mcu_interval = header.interval as isize;
@@ -876,10 +869,10 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
                         }
                     }
                 } else if bitread.rst()? == true {
-                    warning = Some(
-                        ImgWarning::new_const(
-                            Jpeg(JpegWarningKind::IlligalRSTMaker),
-                            &"mismatch mcu interval"));
+                    warnings = ImgWarnings::add(warnings,Box::new(
+                        JpegWarning::new_const(
+                            JpegWarningKind::IlligalRSTMaker,
+                            "Unexcept RST marker location,Is this image corruption?".to_string())));
                     mcu_interval = header.interval as isize;
                     for i in 0..preds.len() {
                         preds[i] = 0;
@@ -897,19 +890,19 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
                 },
                 0xdd => {
                     option.drawer.terminate(None)?;
-                    warning = Some(
-                        ImgWarning::new_const(
-                            Jpeg(JpegWarningKind::UnexpectMarker),
-                            &"DNL,No Support Multi scan/frame"));
-                    return Ok(warning)
+                    warnings = ImgWarnings::add(warnings,Box::new(
+                        JpegWarning::new_const(
+                            JpegWarningKind::UnexpectMarker,
+                            "DNL,No Support Multi scan/frame".to_string())));
+                    return Ok(warnings)
                 },
                _ => {
                     option.drawer.terminate(None)?;
-                    warning = Some(
-                        ImgWarning::new_const(
-                            Jpeg(JpegWarningKind::UnexpectMarker),
-                            &"No Support Multi scan/frame"));
-                    return Ok(warning)
+                    warnings = ImgWarnings::add(warnings,Box::new(
+                        JpegWarning::new_const(
+                            JpegWarningKind::UnexpectMarker,
+                            "No Support Multi scan/frame".to_string())));
+                    return Ok(warnings)
                 // offset = bitread.offset() -2
                 // new_jpeg_header = read_makers(buffer[offset:],opt,false,true);
                 // jpeg_header <= new Huffman Table if exit
@@ -922,13 +915,12 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
             }
         },
         Err(..) => {
-            warning = Some(
-                ImgWarning::new_const(
-                    Jpeg(JpegWarningKind::UnexpectMarker),
-                    &"Not found EOI")
-            );
+            warnings = ImgWarnings::add(warnings,Box::new(
+                JpegWarning::new_const(
+                    JpegWarningKind::UnexpectMarker,
+                    "Not found EOI".to_string())));
         }
     }
     option.drawer.terminate(None)?;
-    Ok(warning)
+    Ok(warnings)
 }

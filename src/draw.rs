@@ -7,7 +7,7 @@ use bin_rs::reader::*;
 use crate::util::format_check;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
-use crate::warning::ImgWarning;
+use crate::warning::ImgWarnings;
 /* Dynamic Select Callback System */
 
 pub enum DrawNextOptions {
@@ -243,14 +243,14 @@ pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer,Error> {
     Ok(ib)
 }
 
-pub fn image_loader(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<ImgWarning>,Error> {    
+pub fn image_loader(buffer: &[u8],option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {    
     let mut reader = BytesReader::new(buffer);
 
     let r =image_decoder(&mut reader,option)?;
     Ok(r)
 }
 
-pub fn image_reader<R:BufRead>(reader: R,option:&mut DecodeOptions) -> Result<Option<ImgWarning>,Error> {    
+pub fn image_reader<R:BufRead>(reader: R,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {    
 
     let mut reader = StreamReader::new(reader);
 
@@ -260,7 +260,7 @@ pub fn image_reader<R:BufRead>(reader: R,option:&mut DecodeOptions) -> Result<Op
 
 
 
-pub fn image_decoder<B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) -> Result<Option<ImgWarning>,Error> {
+pub fn image_decoder<B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
     let buffer = reader.read_bytes_no_move(128)?;
     let format = format_check(&buffer);
 

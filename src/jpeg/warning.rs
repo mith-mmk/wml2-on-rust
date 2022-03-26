@@ -2,7 +2,9 @@
  * jpeg/Warning.rs  Mith@mmk (C) 2022
  * use MIT License
  */
+use std::fmt::*;
 use crate::warning::WarningKind;
+use crate::warning::ImgWarning;
 
 #[derive(Debug)]
 pub enum JpegWarningKind {
@@ -13,7 +15,64 @@ pub enum JpegWarningKind {
       UnexpectMarker,
       UnknowFormat,
       UnreadbleString,
-  }
+}
+
+#[allow(unused)]
+pub struct JpegWarning {
+    kind: JpegWarningKind,
+    message: Option<String>,
+}
+
+impl ImgWarning for JpegWarning {
+
+}
+
+impl Debug for JpegWarning {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let s;
+        match &self.message {
+            None => {
+                s = self.kind.as_str().to_owned()
+            },
+            Some(message) => {
+                s = self.kind.as_str().to_owned() + ":" + &message;
+            }
+        }
+        std::fmt::Display::fmt(&s, f)        
+    }
+}
+
+impl Display for JpegWarning {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let s;
+        match &self.message {
+            None => {
+                s = self.kind.as_str().to_owned()
+            },
+            Some(message) => {
+                s = self.kind.as_str().to_owned() + ":" + &message;
+            }
+        }
+        write!(f, "{}", &s)
+    }
+}
+
+impl JpegWarning {
+    pub fn new(kind :JpegWarningKind) -> Self{
+        Self {
+            kind,
+            message : None,
+        }
+    }
+
+    pub fn new_const(kind :JpegWarningKind,message :String) -> Self{
+        Self {
+            kind,
+            message: Some(message)
+        }
+    }
+}
+
 
 #[allow(unused)]
 #[allow(non_snake_case)]

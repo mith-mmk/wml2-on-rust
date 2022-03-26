@@ -66,7 +66,6 @@ impl GifHeader {
         let mut color_table :Vec<RGBA> = Vec::new();
 
         if (scd.field & 0x80) == 0x80 {
-            println!("Read color table");
             let table_size = 1 << ((scd.field&0x07) +1);
 
             for _ in 0..table_size {

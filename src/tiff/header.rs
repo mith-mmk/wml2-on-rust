@@ -169,6 +169,16 @@ pub struct TiffHeaders {
     pub gps: Option<Vec<TiffHeader>>,
     pub endian: Endian,
 }
+
+
+#[derive(Debug)]
+#[derive(std::cmp::PartialEq)]
+enum IfdMode {
+    BaseTiff,
+    Exif,
+    Gps,
+}
+
 /*
 impl TiffHeaders {
     pub fn new(reader: &dyn BinaryReader) -> Self{
@@ -202,7 +212,7 @@ pub fn read_tags(reader: &mut dyn bin_rs::reader::BinaryReader) -> Result<TiffHe
         return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
     }
     let offset_ifd  = reader.read_u32()? as usize;
-    read_tiff(ver,reader,offset_ifd)
+    read_tag(reader,offset_ifd,IfdMode::BaseTiff)
 }
 
 fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> Result<DataPack,Error> {
@@ -421,17 +431,11 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
     Ok(data)
 }
 
-fn read_tiff (version:u16,reader: &mut dyn BinaryReader, offset_ifd: usize) -> Result<TiffHeaders,Error>{
-    read_tag(version,reader,offset_ifd,0)
-}
 
-fn read_gps (version:u16,reader: &mut dyn BinaryReader, offset_ifd: usize) -> Result<TiffHeaders,Error> {
-    read_tag(version,reader,offset_ifd,2)
-}
 
-fn read_tag (version:u16,reader: &mut dyn BinaryReader, mut offset_ifd: usize,mode: usize) -> Result<TiffHeaders,Error>{
+fn read_tag (reader: &mut dyn BinaryReader, mut offset_ifd: usize,mode: IfdMode) -> Result<TiffHeaders,Error>{
     let endian = reader.endian();
-    let mut headers :TiffHeaders = TiffHeaders{version,headers:Vec::new(),standard:None,exif:None,gps:None,endian};
+    let mut headers :TiffHeaders = TiffHeaders{version:42,headers:Vec::new(),standard:None,exif:None,gps:None,endian};
     let mut imageoffset = 0;
 
     loop {
@@ -439,14 +443,22 @@ fn read_tag (version:u16,reader: &mut dyn BinaryReader, mut offset_ifd: usize,mo
         let tag = reader.read_u16()? as usize; 
         let buf = reader.read_bytes_no_move(tag *12 + 4)?;
         let next_ifd = bin_rs::io::read_u32(&buf,tag*12,reader.endian());
+
+        if cfg!(debug_assertions) {
+            println!("Tiff ifd {} {} {}",tag,offset_ifd,next_ifd);
+        }
     
         for _i in 0..tag {
             let tagid = reader.read_u16()?;
             if tagid == 0x0 {break}
             let datatype = reader.read_u16()? as usize;
             let datalen = reader.read_u32()? as usize;
+            if cfg!(debug_assertions) {
+                println!("tag {:04x} {} {}",tagid,datatype,datalen);
+            }
+    
             let data :DataPack = get_data(reader, datatype, datalen)?;
-            if mode != 2 {
+            if mode == IfdMode::BaseTiff {
                 match tagid {
                     0x0111 => { // Image Offsets
                         match &data {
@@ -465,7 +477,7 @@ fn read_tag (version:u16,reader: &mut dyn BinaryReader, mut offset_ifd: usize,mo
                             DataPack::Long(d) => {
                                 let current = reader.offset()?;
                                 reader.seek(SeekFrom::Start(d[0] as u64))?;
-                                let r = read_tag(version,reader, d[0] as usize,1)?; // read exif
+                                let r = read_tag(reader, d[0] as usize,IfdMode::Exif)?; // read exif
                                 headers.exif = Some(r.headers);
                                 reader.seek(SeekFrom::Start(current))?;
                             },
@@ -478,7 +490,7 @@ fn read_tag (version:u16,reader: &mut dyn BinaryReader, mut offset_ifd: usize,mo
                             DataPack::Long(d) => {
                                 let current = reader.offset()?;
                                 reader.seek(SeekFrom::Start(d[0] as u64))?;
-                                let r = read_gps(version,reader, d[0] as usize)?; // read gps
+                                let r = read_tag(reader, d[0] as usize,IfdMode::Gps)?; // read gps
                                 reader.seek(SeekFrom::Start(current))?;
                                 headers.gps = Some(r.headers);
                         },
@@ -497,12 +509,11 @@ fn read_tag (version:u16,reader: &mut dyn BinaryReader, mut offset_ifd: usize,mo
             }
             headers.headers.push(TiffHeader{tagid: tagid as usize,data: data});
         }
-        if next_ifd == 0 {
+        if next_ifd == 0 || mode != IfdMode::BaseTiff {
             break;
         }
         offset_ifd = next_ifd as usize;
     }
-
 
     Ok(headers)
 }

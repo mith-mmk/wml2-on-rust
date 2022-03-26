@@ -172,7 +172,6 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
 
                     }
                     if is_interlace {
-                        println!("{}",interlace_y);
                         option.drawer.draw(lscd.xstart as usize,interlace_y,width,1,&line,None)?;
                         if interlace_y == 16 {
                             interlace_y += 8;

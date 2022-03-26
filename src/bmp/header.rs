@@ -16,8 +16,8 @@ use crate::error::ImgErrorKind;
 pub struct BitmapHeader {
     pub filesize: usize,
     pub image_offset: usize,
-    pub width: isize,
-    pub height: isize,
+    pub width: i32,
+    pub height: i32,
     pub bit_count: usize,
     pub compression: Option<Compressions>,
     pub color_table: Option<Vec<ColorTable>>,
@@ -160,8 +160,8 @@ impl BitmapHeader {
                 bc_bit_count : reader.read_u16_le()?,
             };
             read_size += 12 - 4;
-            width = os2header.bc_width as isize;
-            height = os2header.bc_height as isize;
+            width = os2header.bc_width as i32;
+            height = os2header.bc_height as i32;
             compression = Some(Compressions::BiRGB);
             bit_per_count = os2header.bc_bit_count as usize;
             clut_size = 0;
@@ -187,8 +187,8 @@ impl BitmapHeader {
             clut_size = if bit_per_count <= 8 {info_header.bi_clr_used as usize} else {0};
             let header_size = bitmap_file_header.bf_offbits -14 - (clut_size * 4) as u32;   // issue image header size 40 but required 56
             
-            width = info_header.bi_width as isize;
-            height = info_header.bi_height as isize;
+            width = info_header.bi_width as i32;
+            height = info_header.bi_height as i32;
 
             let b_v4_header = if header_size > 40 {  // V4
                 let b_v4_red_mask = reader.read_u32_le()?;

@@ -317,12 +317,15 @@ fn decode_bit_fileds<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&
         println!("{:>04x} {:>032b} >>{} {}",green_mask,green_mask,green_shift,green_bits);
         println!("{:>04x} {:>032b} >>{} {}",blue_mask,blue_mask,blue_shift,blue_bits);
         println!("{:>04x} {:>032b} >>{} {}",alpha_mask,alpha_mask,alpha_shift,alpha_bits);
+        println!("{} {}", width,height);
     }
+
 
     option.drawer.init(width,height,InitOptions::new())?;
     let mut line :Vec<u8> = (0..width*4).map(|i| if i%4==3 {0xff} else {0}).collect();
 
     let line_size =  ((width as usize * header.bit_count + 31) / 32) * 4;
+
     for y_ in  0..height {
 
         let buffer = reader.read_bytes_as_vec(line_size)?;

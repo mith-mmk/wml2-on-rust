@@ -50,12 +50,13 @@ pub enum DataPack {
 pub struct TiffHeader {
     pub tagid: usize,
     pub data: DataPack,
+    pub length: usize
 }
 
 #[derive(Debug)]
 pub enum Compression {
     NoneCompression = 1,
-    CCITTHuffmanRE = 2,
+    CCITTHuffmanRLE = 2,
     CCITTGroup3Fax = 3,
     CCITTGroup4Fax = 4,
     LZW = 5,
@@ -83,78 +84,114 @@ pub enum Compression {
 /// This struct is not use embed tiff tag,also EXIF.
 /// Use only tiff encoder/decoder
 #[derive(Debug)]
-pub struct TiffBaseline {
-    //must
+pub struct Tiff {
+    /// 0x00fe  also 0
+    pub newsubfiletype:u32,
+    /// 0x00ff  also 1
+    pub subfiletype:u32,                              
+    /// These tag must need decode image.
+    /// 0x0100
+    pub width: u32,
+    /// 0x0101
+    pub height: u32,
+    /// 0x0102 data takes 1..N. but only use one data.
+    /// N = SamplesPerPixel if N > 1 also RGB888
+    pub bitpersample: u16,        
+    /// 0x0106 PhotometricInterpretation for color space.
 
-    pub newsubfiletype:u32,             // 0x00fe  also 0
-    pub subfiletype:u32,                // 0x00ff  also 1              
-    pub width: u32,                     // 0x0100
-    pub height: u32,                    // 0x0101
-    pub bitperpixel: u32,               // 0x0102 data takes 1..N. if data count is 1>0,also bitperpixel =24
-    pub photometric_interpretation: u32,// 0x0106
-    // 0 = White is zero white based grayscale
-    // 1 = black is zero black based grayscale
-    // 2 = RGB888
-    // 3 = Palette color
-    // 4 = Transparecy Mask
-    //
-    // 5 = alos CMYK
-    // 6 = YCbCr
-    // 8 = CieLaB
-    // 9 = ICCLab
-    //10 = ITULab
-    //32844 = Logl
-    //32845 = logluv
-    //32803 = Color filter array
-    //34892 = Linear Raw
-    //51177 = depth
+    /// 0 = White is zero white based grayscale
+    /// 1 = black is zero black based grayscale
+    /// 2 = RGB888
+    /// 3 = Palette color
+    /// 4 = Transparecy Mask
+    /// 
+    /// Extention use
+    /// 5 = alos CMYK
+    /// 6 = YCbCr
+    /// 8 = CieLaB
+    /// 9 = ICCLab
+    /// 10 = ITULab
+    /// 32844 = Logl
+    /// 32845 = logluv
+    /// 
+    /// DNG
+    /// 32803 = Color filter array
+    /// 34892 = Linear Raw
+    /// 51177 = depth
+    pub photometric_interpretation: u16,
 
-    pub fill_order:u32,                 // 0x010A 1 = msb ,2 = lsb. usualy msb but lzw also use lsb
-    pub strip_offsets: u32,             // 0x0111 image data offsets, data number also 1, but it may be exist mutli offsets images.
-    pub orientation: u32,               // 0x0112 also 1  0
-    // 1 = TOPLEFT (LEFT,TOP) Image end (RIGHT,BOTTOM)
-    // 2 = TOPRIGHT right-left reverce Image
-    // 3 = BOTTOMRIGHT top-bottom and right-left reverce Image
-    // 4 = BOTTOMLEFT also same Windows Bitmap
-    // 5 = LEFTTOP rotate 90 TOPLEFT (TOP,LEFT) - (BOTTOM,RIGHT)
-    // 6 = RIGHTTOP rotate 90 TOPRIGHT
-    // 7 = RIGHTBOTTOM rotate 90 BOTTOMRIGHT
-    // 8 = LEFTBOTTOM  rotate 90 BOTTOMLEFT
-    pub samples_per_pixel:u16,          // 0x0115
-    pub rows_per_strip: u32,            // 0x0116 also width * BitPerSample /8  <= row_per_strip
-    pub strip_byte_counts :u32,         // 0x0117 For each strip, the number of bytes in the strip after compression.
-    pub min_sample_value:u16,           // 0x0118 also no use
+    /// 0x010A FillOrder
+    /// 1 = msb ,2 = lsb. usualy msb but lzw may use lsb(GIF like)
+    pub fill_order:u16,
+    /// 0x0111 Strip Offsets count 1 or 2
+    /// Image data start offset, data number also 1, but it may be exist mutli offsets images.
+    pub strip_offsets: u32,             
+    /// 0x0112 also 1  0
+    /// 1 = TOPLEFT (LEFT,TOP) Image end (RIGHT,BOTTOM)
+    /// 2 = TOPRIGHT right-left reverce Image
+    /// 3 = BOTTOMRIGHT top-bottom and right-left reverce Image
+    /// 4 = BOTTOMLEFT also same Windows Bitmap
+    /// 5 = LEFTTOP rotate 90 TOPLEFT (TOP,LEFT) - (BOTTOM,RIGHT)
+    /// 6 = RIGHTTOP rotate 90 TOPRIGHT
+    /// 7 = RIGHTBOTTOM rotate 90 BOTTOMRIGHT
+    /// 8 = LEFTBOTTOM  rotate 90 BOTTOMLEFT
+    pub orientation: u32,               
+    /// 0x0115
+    /// 1 grayscale or Index color
+    /// 3 RGB Image
+    pub samples_per_pixel:u16,          
+    /// 0x0116 also width * BitPerSample /8  <= rows_per_strip
+    pub rows_per_strip: u32,
+    /// 0x0117 For each strip(width), the number of bytes in the strip after compression.           
+    pub strip_byte_counts :u32,
+    /// 0x0118 also no use         
+    pub min_sample_value:u16,           
     pub max_sample_value:u16,           // 0x0119 default 2**(BitsPerSample) - 1
-    pub planar_config: u32,             // 0x011c also 1
-    pub compression: Compression,       // 0x0103 see enum Compression
+    // 0x011C
+
+    pub planar_config: u16,
+    // 0x0103 Compression
+    /// NoneCompression = 1,
+    /// CCITTHuffmanRE = 2,
+    /// CCITTGroup3Fax = 3,
+    /// CCITTGroup4Fax = 4,
+    /// LZW = 5,
+    /// OldJpeg = 6,
+    /// JPeg = 7,
+    /// AdobeDeflate = 8,
+    /// Next = 32766,
+    /// CcittrleW = 32771,
+    /// Packbits = 32773,
+    /// ThunderScan = 32809,
+    /// IT8CTPad = 32895,
+    /// IT8LW = 32896,
+    /// IT8MP = 32897,
+    /// IT8BL = 32898,
+    /// PIXARFILM = 32908,
+    /// PIXARLOG = 32909,
+    /// DEFLATE = 32946,
+    /// DCS = 32947,
+    /// JBIG = 34661,
+    /// SGILOG = 34676,
+    /// SGILOG24 = 34677,
+    /// Jpeg2000 = 34712,
+    pub compression: Compression,
 
     // may
-    pub x_resolution:u32,               // 0x011A also for DTP
-    pub y_resolution:u32,               // 0x0112 also for DTP
-    pub color_table: Option<Vec<RGBA>>, // 0x0140 use only bitperpixel <= 8
-                                        // if color_table is empty,
-                                        // you use standard color pallte or grayscale
+    /// 0x011A x dot per inch
+    pub x_resolution:f32,
+    /// 0x011B y dot per inch
+    pub y_resolution:f32,
 
-    pub threshholding: u32, // 0x0107
-    pub cell_width:u32, //0x0108
-    pub cell_height:u32, //0x0109
-    pub free_offsets:u32, //288	0120	
-    pub free_byte_counts:u32, //289	0121	
-    pub gray_response_unit:u32, //290	0122
-    pub gray_response_curve:u32, //291	0123
-
-    // comments
-    pub document_name:String, //0x010d
-    pub make:String, //0x010f
-    pub model:String, //0x0110
-    pub software:String, //0x131
-    pub datetime:String, //0x132
-    pub artist:String, //0x13b
-    pub host_computer:String, //0x13c
+    // 0x0140 use only bitperpixel <= 8
+    // if color_table is empty,
+    // use standard color pallte or grayscale
+    pub color_table: Option<Vec<RGBA>>, 
 
     // no baseline
     pub startx: u32,                // 0x011E
     pub starty: u32,                // 0x011F
+    pub tiff_headers: TiffHeaders,
 
 }
 
@@ -164,7 +201,6 @@ pub struct TiffBaseline {
 pub struct TiffHeaders {
     pub version :u16,
     pub headers :Vec<TiffHeader>,
-    pub standard: Option<TiffBaseline>,
     pub exif: Option<Vec<TiffHeader>>,
     pub gps: Option<Vec<TiffHeader>>,
     pub endian: Endian,
@@ -179,16 +215,208 @@ enum IfdMode {
     Gps,
 }
 
-/*
-impl TiffHeaders {
-    pub fn new(reader: &dyn BinaryReader) -> Self{
+
+impl Tiff {
+    pub fn new(reader: &mut dyn BinaryReader) -> Result<Self,Error>{
+        let tiff_headers = read_tags(reader)?;
+        //m ay        
+        let  mut newsubfiletype:u32 = 0;            
+        let  mut subfiletype:u32 = 1;               // 0x00ff  also 1              
+
+        // must
+        let  mut width: u32 = 0;                    // 0x0100
+        let  mut height: u32 = 0;                   // 0x0101
+        let  mut bitpersample: u16 = 24;             // 0x0102 data takes 1..N. if data count is 1>0;also bitperpixel =24
+        let  mut photometric_interpretation: u16 = 2;// 0x0106
+        let  mut fill_order:u16 = 1;
+        let  strip_offsets: u32 = 1;
+        let  orientation: u32 = 1;
+        let  mut samples_per_pixel:u16  = 0;        // 0x0115
+        let  mut rows_per_strip: u32 = 0;           // 0x0116 also width * BitPerSample /8  <= row_per_strip
+        let  strip_byte_counts :u32 = 0;        // 0x0117 For each strip;the number of bytes in the strip after compression.
+        let  min_sample_value:u16 = 0;          // 0x0118 also no use
+        let  mut max_sample_value:u16 = 0;          // 0x0119 default 2**(BitsPerSample) - 1
+        let  mut planar_config: u16 = 1;            // 0x011c also 1
+        let  mut compression: Compression =Compression::NoneCompression;      // 0x0103 see enum Compression
+
+        // may
+        let  x_resolution:f32 = 0.0;              // 0x011A also for DTP
+        let  y_resolution:f32 = 0.0;              // 0x0112 also for DTP
+        let  mut color_table: Option<Vec<RGBA>> = None; // 0x0140 use only bitperpixel <= 8
+
+        // no baseline
+        let  startx: u32 = 0;               // 0x011E
+        let  starty: u32 = 0;               // 0x011F
 
 
+        for header in &tiff_headers.headers {
+            match header.tagid {
+                0xff => {
+                    if let DataPack::Long(d) = &header.data {
+                        subfiletype = d[0]
+                    }
+                },
+			    0xfe =>{
+                    if let DataPack::Long(d) = &header.data {
+                        newsubfiletype = d[0]
+                    }
+                },
+                0x100 => {
+                    if let DataPack::Long(d) = &header.data {
+                        width = d[0]
+                    } else if let DataPack::Short(d) = &header.data {
+                        width = d[0] as u32;
+                    }
+                },
+                0x101 => {
+                    if let DataPack::Long(d) = &header.data {
+                        height = d[0]
+                    } else if let DataPack::Short(d) = &header.data {
+                        height = d[0] as u32;
+                    }
+                },
+                0x102 => {
+                    if header.length == 1{
+                        if let DataPack::Short(d) = &header.data {
+                            bitpersample = d[0] as u16;
+                        } 
+                    } else {
+                        bitpersample = 24;
+                        // alos d[0] + .. + d[n-1]
+                    }
+                },
+                0x103 => {
+    				if let DataPack::Short(d) = &header.data {
+                        compression =
+                            match d[0] {
+                                1 => {
+                                    Compression::NoneCompression
+                                },
+                                2 => {
+                                    Compression::CCITTHuffmanRLE
+                                },
+                                3 => {
+                                    Compression::CCITTGroup3Fax
+                                },
+                                4 => {
+                                    Compression::CCITTGroup4Fax
+                                },
+                                5 => {
+                                    Compression::LZW
+                                },
+                                6 => {
+                                    Compression::OldJpeg
+                                }
+                                7 => {
+                                    Compression::JPeg
+                                },
+                                8 => {
+                                    Compression::AdobeDeflate
+                                },
+                                _ => {
+                                    return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,
+                                        "Unknown or Never Support Compression".to_string())));
+                                }                            
+                        };
+                    }
+                }, 
+                0x106 => {
+                    if let DataPack::Short(d) = &header.data {
+                        photometric_interpretation =  d[0];
+                    } 
+                },
+                0x10A => {
+                    if let DataPack::Short(d) = &header.data {
+                        fill_order =  d[0];
+                    }
+                },
+                0x115 =>{
+                    if let DataPack::Short(d) = &header.data {
+                        samples_per_pixel =  d[0];
+                    }
+                },
+                0x111 => {
+                    if let DataPack::Short(d) = &header.data {
+                        samples_per_pixel =  d[0];
+                    } else if let DataPack::Long(d) = &header.data {
+                        samples_per_pixel =  d[0] as u16;
+                    }
+                },
+                0x119 => {
+                    if header.length == 1 {
+                        if let DataPack::Short(d) = &header.data {
+                            max_sample_value =  d[0];
+                        }
+                    } else {
+                        max_sample_value = 255;
+                    }
+                },
+                0x11c => {
+                    if let DataPack::Short(d) = &header.data {
+                        planar_config =  d[0];
+                    }
+                },
+                0x116 => {
+                    if let DataPack::Short(d) = &header.data {
+                        rows_per_strip =  d[0] as u32;
+                    } else if let DataPack::Long(d) = &header.data {
+                        rows_per_strip =  d[0];
+                    }
+
+                },
+                0x140 => {
+                    if let DataPack::Short(d) = &header.data {
+                        let mut table :Vec<RGBA> = Vec::new();
+
+                        for i in 0..header.length/3 {
+                            let red = (d[i*3] >> 8) as u8;
+                            let green = (d[i*3+1] >> 8) as u8;
+                            let blue = (d[i*3+2] >> 8) as u8;
+                            let alpha = 0xff;
+                            let color = RGBA{
+                                red,
+                                green,
+                                blue,
+                                alpha,
+                            };
+                            table.push(color);
+                        }
+                        color_table = Some(table)
+                    }
+                },
+                _ => {},
+            }
+
+        }
 
 
+        Ok(Self{
+            newsubfiletype,
+            subfiletype,
+            width,
+            height,
+            bitpersample,
+            photometric_interpretation,
+            fill_order,
+            strip_offsets,
+            orientation,
+            samples_per_pixel,
+            rows_per_strip,
+            strip_byte_counts ,
+            min_sample_value,
+            max_sample_value,
+            planar_config,
+            compression,
+            x_resolution,
+            y_resolution,
+            color_table,
+            startx,
+            starty,
+            tiff_headers,
+        })
     }
 }
-*/
+
 
 pub fn read_tags(reader: &mut dyn bin_rs::reader::BinaryReader) -> Result<TiffHeaders,Error>{
     let b0 = reader.read_byte()?;
@@ -238,17 +466,17 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
             data = DataPack::Bytes(d);
         },
         2 => {  // 2. ASCII(u8)
-            let string;
+            let s;
             if datalen <=4 {
-                string = reader.read_ascii_string(4)?;
+                s = reader.read_ascii_string(4)?;
             } else {
                 let offset = reader.read_u32()? as u64;
                 let current = reader.offset()?;
                 reader.seek(SeekFrom::Start(offset))?;
-                string = reader.read_ascii_string(datalen)?;
+                s = reader.read_ascii_string(datalen)?;
                 reader.seek(SeekFrom::Start(current))?;
             }
-            data = DataPack::Ascii(string);    
+            data = DataPack::Ascii(s);    
         }
         3 => {  // SHORT (u16)
             let mut d: Vec<u16> = Vec::with_capacity(datalen);
@@ -435,8 +663,7 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
 
 fn read_tag (reader: &mut dyn BinaryReader, mut offset_ifd: usize,mode: IfdMode) -> Result<TiffHeaders,Error>{
     let endian = reader.endian();
-    let mut headers :TiffHeaders = TiffHeaders{version:42,headers:Vec::new(),standard:None,exif:None,gps:None,endian};
-    let mut imageoffset = 0;
+    let mut headers :TiffHeaders = TiffHeaders{version:42,headers:Vec::new(),exif:None,gps:None,endian};
 
     loop {
         reader.seek(SeekFrom::Start(offset_ifd as u64))?;
@@ -456,22 +683,10 @@ fn read_tag (reader: &mut dyn BinaryReader, mut offset_ifd: usize,mode: IfdMode)
             if cfg!(debug_assertions) {
                 println!("tag {:04x} {} {}",tagid,datatype,datalen);
             }
-    
+
             let data :DataPack = get_data(reader, datatype, datalen)?;
             if mode == IfdMode::BaseTiff {
                 match tagid {
-                    0x0111 => { // Image Offsets
-                        match &data {
-                            DataPack::Long(d) => {
-                                imageoffset = d[0] as usize;
-                            },
-                            DataPack::Short(d) => {
-                                imageoffset = d[0] as usize;
-                            },
-                            _  => {
-                            }
-                        }
-                    },
                     0x8769 => { // 
                         match &data {
                             DataPack::Long(d) => {
@@ -500,14 +715,14 @@ fn read_tag (reader: &mut dyn BinaryReader, mut offset_ifd: usize,mode: IfdMode)
                     },
                     _ => {
                         #[cfg(debug_assertions)]
-                        tag_mapper(tagid ,&data);
+                        tag_mapper(tagid ,&data,datalen);
                     }
                 }
             } else {
                 #[cfg(debug_assertions)]
-                gps_mapper(tagid ,&data);
+                gps_mapper(tagid ,&data,datalen);
             }
-            headers.headers.push(TiffHeader{tagid: tagid as usize,data: data});
+            headers.headers.push(TiffHeader{tagid: tagid as usize,data: data,length: datalen});
         }
         if next_ifd == 0 || mode != IfdMode::BaseTiff {
             break;

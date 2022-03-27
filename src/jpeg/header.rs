@@ -3,7 +3,7 @@
  * use MIT License
  */
 use bin_rs::io::*;
-use crate::tiff::header::read_tags;
+use crate::tiff::header::*;
 use bin_rs::reader::BytesReader;
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;

@@ -19,3 +19,5 @@ pub mod color;
 pub mod decoder;
 
 
+#[cfg(test)]
+pub mod test;

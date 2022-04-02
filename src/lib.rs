@@ -10,6 +10,7 @@ pub mod jpeg;
 pub mod tiff;
 pub mod bmp;
 pub mod gif;
+pub mod png;
 pub mod error;
 pub mod warning;
 pub mod util;

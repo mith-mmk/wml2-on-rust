@@ -314,7 +314,7 @@ impl Tiff {
                                     Compression::AdobeDeflate
                                 },
                                 _ => {
-                                    return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,
+                                    return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData,
                                         "Unknown or Never Support Compression".to_string())));
                                 }                            
                         };
@@ -423,7 +423,7 @@ pub fn read_tags(reader: &mut dyn bin_rs::reader::BinaryReader) -> Result<TiffHe
     let b1 = reader.read_byte()?;
 
     if b0 != b1 {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData,"not Tiff".to_string())));
     }
 
     if b0 == 'I' as u8 { // Little Endian
@@ -431,13 +431,13 @@ pub fn read_tags(reader: &mut dyn bin_rs::reader::BinaryReader) -> Result<TiffHe
     } else if b0 == 'M' as u8 {      // Big Eindian
         reader.set_endian(Endian::BigEndian);
     } else {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData,"not Tiff".to_string())));
     }
 
     // version
     let ver = reader.read_u16()?;
     if ver != 42 {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"not Tiff".to_string())));
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData,"not Tiff".to_string())));
     }
     let offset_ifd  = reader.read_u32()? as usize;
     read_tag(reader,offset_ifd,IfdMode::BaseTiff)

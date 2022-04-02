@@ -19,10 +19,10 @@ struct BitReader<'decode, B> {
     reader: &'decode mut B,
     ptr : usize,
     bptr : usize,
-    b: u8,
-    rst: bool,
     rst_ptr : usize,
     prev_rst: usize,
+    b: u8,
+    rst: bool,
     eof_flag: bool,
 }
 
@@ -99,6 +99,7 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
         Ok(b)
     }
 
+    #[inline]
     pub fn get_bit(self: &mut Self) -> Result<usize,Error> {
         if self.bptr == 0 {
             self.bptr = 8;
@@ -198,6 +199,8 @@ fn ac_read<B: BinaryReader>(bitread: &mut BitReader<B>,ac_decode:&HuffmanDecodeT
         zigzag = zigzag + 1;
     }
 }
+
+
 
 #[inline]
 fn baseline_read<B:BinaryReader>(bitread: &mut BitReader<B>,dc_decode:&HuffmanDecodeTable,ac_decode:&HuffmanDecodeTable,pred: i32)-> Result<(Vec<i32>,i32),Error> {
@@ -673,104 +676,20 @@ pub(crate) fn huffman_extend(huffman_tables:&Vec<HuffmanTable>) -> (Vec<HuffmanD
     (ac_decode,dc_decode)
 }
 
-pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
 
-    let mut warnings: Option<ImgWarnings> = None;
-        // Make Huffman Table
-    // Scan Header
-    let header = JpegHaeder::new(reader,0)?;
-
-    if option.debug_flag > 0 {
-        let boxstr = print_header(&header,option.debug_flag);
-        option.drawer.verbose(&boxstr,None)?;
-    }
-    
-    if header.is_hierachical {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Hierachical is not support".to_string())))
-    }
-
-    let huffman_scan_header  = header.huffman_scan_header.as_ref().unwrap();
-    match header.huffman_tables {
-        None => {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Huffman Tables".to_string())))
-        },
-        _ => {
-
-        }
-    }
-
-    match header.frame_header {
-        None => {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header".to_string())))
-        },
-        _ => {
-
-        }
-    }
-
+fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
+    let width = header.width;
+    let height = header.height;
+    let huffman_scan_header = header.huffman_scan_header.as_ref().unwrap();
     let fh = header.frame_header.as_ref().unwrap();
-    let width = fh.width;
-    let height = fh.height;
-    let plane = fh.plane;
-    if plane == 0 || plane > 4 {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support planes".to_string())))
-    }
-    match fh.component {
-        None => {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header Component".to_string())));
-        },
-        _ => {
-
-        }
-    }
-
     let component = fh.component.as_ref().unwrap();
-
-    match header.quantization_tables {
-        None => {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Quantization Tables".to_string())));
-        },
-        _ => {
-
-        }
-    }
-
-    if fh.is_huffman == false {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This decoder suport huffman only".to_string())));
-    }
-
-    if fh.is_baseline == false {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder support Baseline Only".to_string())));
-    }
-
-    if fh.is_differential == true {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder not support differential".to_string())));
-    }
-
-    if plane == 4 {
-        warnings = ImgWarnings::add(warnings,Box::new(
-            JpegWarning::new_const(
-                JpegWarningKind::UnknowFormat,
-                "Plane 4 color translation rule is known".to_string())))
-    }
-
+    let plane = fh.plane;
     // decode
     option.drawer.init(width,height,InitOptions::new())?;
-    // take buffer for progressive 
-    // progressive has 2mode
-    //  - Spectral selection control
-    //  - Successive approximation control
-    /*  huffman for progressive
-        EOBn -> 1 << n + get.bits(n)
-        todo()
-    */
-
-    // loop start    
 
     let quantization_tables = header.quantization_tables.as_ref().unwrap();
     let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables.as_ref().unwrap());
 
-//    let slice = &buffer[header.imageoffset..];
     let mut bitread = BitReader::new(reader);
     let mut h_max = 1;
     let mut v_max = 1;
@@ -800,6 +719,7 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     let mcu_y_max =(height+dy-1)/dy;
     let mcu_x_max =(width+dx-1)/dx;
 
+
     let mut mcu_interval = if header.interval > 0 { header.interval as isize} else {-1};
 
 
@@ -808,29 +728,34 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
             let mut mcu_units :Vec<Vec<u8>> = Vec::new();
             for scannumber in 0..mcu_size {
                 let (dc_current,ac_current,i,tq) = scan[scannumber];
-                let ret = baseline_read(&mut bitread
+
+                if !fh.is_progressive {
+                    let ret = baseline_read(&mut bitread
                             ,&dc_decode[dc_current]
                             ,&ac_decode[ac_current]
                             ,preds[i]);
-                let (zz,pred);
-                match ret {
-                    Ok((_zz,_pred)) => {
-                        zz = _zz;
-                        pred = _pred; 
-                    }
-                    Err(..) => {
-                        warnings = ImgWarnings::add(warnings, 
-                            Box::new(JpegWarning::new_const(
+                    let (zz,pred);
+                    match ret {
+                        Ok((_zz,_pred)) => {
+                            zz = _zz;
+                            pred = _pred; 
+                        }
+                        Err(..) => {
+                            warnings = ImgWarnings::add(warnings, 
+                                Box::new(JpegWarning::new_const(
                                 JpegWarningKind::DataCorruption,"baseline".to_string())));
-                        return Ok(warnings)
+                            return Ok(warnings)
+                        }
                     }
-                }
-                preds[i] = pred;
+                    preds[i] = pred;
 
-                let sq = &super::util::ZIG_ZAG_SEQUENCE;
-                let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * quantization_tables[tq].q[sq[i]] as i32).collect();
-                let ff = fast_idct(&zz);
-                mcu_units.push(ff);
+                    let sq = &super::util::ZIG_ZAG_SEQUENCE;
+                    let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * quantization_tables[tq].q[sq[i]] as i32).collect();
+                    let ff = fast_idct(&zz);
+                    mcu_units.push(ff);
+                } else {
+                // no impl 
+                }
             }
 
             // Only implement RGB
@@ -904,21 +829,13 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
                             "DNL,No Support Multi scan/frame".to_string())));
                     return Ok(warnings)
                 },
-               _ => {
+                _ => {
                     option.drawer.terminate(None)?;
                     warnings = ImgWarnings::add(warnings,Box::new(
                         JpegWarning::new_const(
                             JpegWarningKind::UnexpectMarker,
                             "No Support Multi scan/frame".to_string())));
                     return Ok(warnings)
-                // offset = bitread.offset() -2
-                // new_jpeg_header = read_makers(buffer[offset:],opt,false,true);
-                // jpeg_header <= new Huffman Table if exit
-                // jpeg_header <= new Quantize Table if exit
-                // jpeg_header <= new Restart Interval if exit
-                // jpeg_header <= new Add Comment Table if exit
-                // jpeg_header <= new Add Appn if exit
-                // goto loop
                },
             }
         },
@@ -932,4 +849,87 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     }
     option.drawer.terminate(None)?;
     Ok(warnings)
+}
+
+pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
+
+    let mut warnings: Option<ImgWarnings> = None;
+        // Make Huffman Table
+    // Scan Header
+    let header = JpegHaeder::new(reader,0)?;
+
+    if option.debug_flag > 0 {
+        let boxstr = print_header(&header,option.debug_flag);
+        option.drawer.verbose(&boxstr,None)?;
+    }
+    
+    if header.is_hierachical {
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Hierachical is not support".to_string())))
+    }
+
+    match header.huffman_tables {
+        None => {
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Huffman Tables".to_string())))
+        },
+        _ => {
+
+        }
+    }
+
+    match header.frame_header {
+        None => {
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header".to_string())))
+        },
+        _ => {
+
+        }
+    }
+
+    let fh = header.frame_header.as_ref().unwrap();
+    let plane = fh.plane;
+    if plane == 0 || plane > 4 {
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support planes".to_string())))
+    }
+    match fh.component {
+        None => {
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header Component".to_string())));
+        },
+        _ => {
+
+        }
+    }
+
+
+    match header.quantization_tables {
+        None => {
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Quantization Tables".to_string())));
+        },
+        _ => {
+
+        }
+    }
+
+    if fh.is_huffman == false {
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This decoder suport huffman only".to_string())));
+    }
+
+
+    if fh.is_baseline == false {
+//        if fh.is_progressive == false {
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder support Baseline Only".to_string())));
+//        }
+    }
+
+    if fh.is_differential == true {
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder not support differential".to_string())));
+    }
+
+    if plane == 4 {
+        warnings = ImgWarnings::add(warnings,Box::new(
+            JpegWarning::new_const(
+                JpegWarningKind::UnknowFormat,
+                "Plane 4 color translation rule is known".to_string())))
+    }
+
+    decode_baseline(reader, &header, option,warnings)
 }

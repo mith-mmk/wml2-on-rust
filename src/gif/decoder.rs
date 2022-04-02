@@ -201,7 +201,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                 break;
             },
             _ => {
-                return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData,"read error in gif decode".to_string())))
+                return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData,"read error in gif decode".to_string())))
             },
         };
     }

@@ -156,7 +156,7 @@ impl Lzwdecode {
                 table.push(append_code);
                 return Ok(data)
             } else if code > self.dic.len() {
-                return Err(Box::new(ImgError::new_const(ImgErrorKind::IlligalData, "Over table in LZW".to_string())));
+                return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData, "Over table in LZW".to_string())));
             } else {
                 let append_code;
                 if code == self.dic.len() {

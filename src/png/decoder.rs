@@ -67,7 +67,7 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                     }
                 },
                 2 => { // Up
-                    if prev_buf.len() > outptr +4 {
+                    if prev_buf.len() > 0 {
                         gray   += prev_buf[outptr];
                     }
                     if is_alpha == 0 {
@@ -76,22 +76,24 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                 }
                 3 => { // Avalage
                     let (mut gray_,mut alpha_);
-                    if outptr >= 4 {
-                        gray_  = outbuf[outptr -4];
-                        alpha_ = outbuf[outptr -1];
+                    if outptr > 0 {
+                        gray_  = outbuf[outptr -4] as u32;
+                        alpha_ = outbuf[outptr -1] as u32;
                     } else {
                         gray_  = 0;
                         alpha_ = 0;
                     }
-                    if prev_buf.len() > outptr +4 {
-                        gray_   += prev_buf[outptr];
-                        alpha_ += prev_buf[outptr+3];
+                    if prev_buf.len() > 0 {
+                        gray_   += prev_buf[outptr] as u32;
+                        alpha_ += prev_buf[outptr+3] as u32;
                     } else {
                         gray_   += 0;
                         alpha_ += 0;
                     }
-                    gray  += gray_  / 2;
-                    alpha += alpha_ / 2;
+                    gray_ /= 2;
+                    alpha_ /= 2;
+                    gray  += gray_ as u8;
+                    alpha += alpha_ as u8;
 
                     if is_alpha == 0 {
                         alpha = 0xff;
@@ -99,7 +101,7 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                 },
                 4 => { // Pease
                     let (gray_a, alpha_a);
-                    if outptr >= 4 {
+                    if outptr > 0 {
                         gray_a  = outbuf[outptr -4] as i32;
                         alpha_a = outbuf[outptr -1] as i32;
                     } else {
@@ -107,7 +109,7 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                         alpha_a  = 0;
                     }
                     let (gray_b, alpha_b);
-                    if prev_buf.len() > outptr +4 {
+                    if prev_buf.len() > 0 {
                         gray_b  = prev_buf[outptr] as i32;
                         alpha_b = outbuf[outptr -1] as i32;
                     } else {
@@ -115,7 +117,7 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                         alpha_b = 0;
                     }
                     let (gray_c, alpha_c);
-                    if prev_buf.len() > outptr +4 && outptr >=4 {
+                    if prev_buf.len() > 0 && outptr > 0 {
                         gray_c  = prev_buf[outptr-4] as i32;
                         alpha_c = prev_buf[outptr-1] as i32;
                     } else {
@@ -186,18 +188,15 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
             }
             match flag {
                 1 => { // Sub
-                    if outptr >= 4 {
+                    if outptr > 0 {
                         red   += outbuf[outptr -4];
                         green += outbuf[outptr -3];
                         blue  += outbuf[outptr -2];
                         alpha += outbuf[outptr -1];
                     }
-                    if is_alpha == 0 {
-                        alpha = 0xff;
-                    }
                 },
                 2 => { // Up
-                    if prev_buf.len() > outptr +4 {
+                    if prev_buf.len() > 0 {
                         red   += prev_buf[outptr];
                         green += prev_buf[outptr+1];
                         blue  += prev_buf[outptr+2];
@@ -207,37 +206,42 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                 }
                 3 => { // Avalage
                     let (mut red_, mut green_, mut blue_, mut alpha_);
-                    if outptr >= 4 {
-                        red_   = outbuf[outptr -4];
-                        green_ = outbuf[outptr -3];
-                        blue_  = outbuf[outptr -2];
-                        alpha_ = outbuf[outptr -1];
+                    if outptr > 0 {
+                        red_   = outbuf[outptr -4] as u32;
+                        green_ = outbuf[outptr -3] as u32;
+                        blue_  = outbuf[outptr -2] as u32;
+                        alpha_ = outbuf[outptr -1] as u32;
                     } else {
                         red_   = 0;
                         green_ = 0;
                         blue_  = 0;
                         alpha_  = 0;
                     }
-                    if prev_buf.len() > outptr +4 {
-                        red_   += prev_buf[outptr];
-                        green_ += prev_buf[outptr+1];
-                        blue_  += prev_buf[outptr+2];
-                        alpha_ += prev_buf[outptr+3];
+                    if prev_buf.len() > 0 {
+                        red_   += prev_buf[outptr] as u32;
+                        green_ += prev_buf[outptr+1] as u32;
+                        blue_  += prev_buf[outptr+2] as u32;
+                        alpha_ += prev_buf[outptr+3] as u32;
                     } else {
                         red_   += 0;
                         green_ += 0;
                         blue_  += 0;
                         alpha_ += 0;
                     }
-                    red   += red_   / 2;
-                    green += green_ / 2;
-                    blue  += blue_  / 2;
-                    alpha += alpha_ / 2;
+                    red_ /=2;
+                    green_ /= 2;
+                    blue_ /=2;
+                    alpha_ /=2;
+
+                    red   += red_ as u8;
+                    green += green_ as u8;
+                    blue  += blue_ as u8;
+                    alpha += alpha_ as u8;
 
                 },
                 4 => { // Pease
                     let (red_a, green_a, blue_a, alpha_a);
-                    if outptr >= 4 {
+                    if outptr > 0 {
                         red_a   = outbuf[outptr -4] as i32;
                         green_a = outbuf[outptr -3] as i32;
                         blue_a  = outbuf[outptr -2] as i32;
@@ -249,7 +253,7 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                         alpha_a  = 0;
                     }
                     let (red_b, green_b, blue_b, alpha_b);
-                    if prev_buf.len() > outptr +4 {
+                    if prev_buf.len() > 0 {
                         red_b   = prev_buf[outptr] as i32;
                         green_b = prev_buf[outptr+1] as i32;
                         blue_b  = prev_buf[outptr+2] as i32;
@@ -261,7 +265,7 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                         alpha_b = 0;
                     }
                     let (red_c, green_c, blue_c, alpha_c);
-                    if prev_buf.len() > outptr +4 && outptr >=4 {
+                    if prev_buf.len() > 0 && outptr > 0 {
                         red_c   = prev_buf[outptr-4] as i32;
                         green_c = prev_buf[outptr-3] as i32;
                         blue_c  = prev_buf[outptr-2] as i32;

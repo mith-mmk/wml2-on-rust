@@ -21,6 +21,7 @@ impl Debug for ImgError {
     }
 }
 
+
 impl ImgError {
     pub fn new<E>(kind: ImgErrorKind, error: E) -> ImgError
     where

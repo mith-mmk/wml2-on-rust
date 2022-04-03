@@ -1,6 +1,7 @@
 
 use bin_rs::io::*;
 
+#[derive(Debug)]
 pub struct ICCProfile {
     pub length : u32,
     pub cmmid : u32,

@@ -278,6 +278,9 @@ pub fn image_decoder<B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) 
         Gif => {
             return crate::gif::decoder::decode(reader, option);
         },
+        Png => {
+            return crate::png::decoder::decode(reader, option);
+        },
         _ => {
             return Err(
                 Box::new(ImgError::new_const(ImgErrorKind::NoSupportFormat, "This buffer can not decode".to_string())))

@@ -1,3 +1,4 @@
+use bin_rs::io::read_u32_be;
 use crate::error::*;
 use crate::iccprofile::ICCProfile;
 use crate::color::RGBA;
@@ -7,8 +8,8 @@ type Error = Box<dyn std::error::Error>;
 const SIGNATURE: [u8; 8] = [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A];
 const IMAGE_HEADER:[u8;4] = [b'I',b'H',b'D',b'R'];
 const PALLET:[u8;4] = [b'P',b'L',b'T',b'E'];
-const IMAGE_DATA:[u8;4] = [b'I',b'D',b'A',b'T'];
-const IMAG_EEND:[u8;4] = [b'I',b'E',b'N',b'D'];
+pub(crate) const IMAGE_DATA:[u8;4] = [b'I',b'D',b'A',b'T'];
+pub(crate) const IMAGE_END:[u8;4] = [b'I',b'E',b'N',b'D'];
 const TRANNCEPEARENCY:[u8;4] = [b't',b'R',b'N',b'S'];
 const GAMMA:[u8;4] =  [b'g',b'A',b'M',b'A'];
 const COLOR_HMR:[u8;4] = [b'c',b'H',b'R',b'M'];
@@ -35,33 +36,33 @@ const SCAL:[u8;4] = [b's',b'C',b'A',b'L'];
 */
 
 // APNG
-const ANIMATION_CONTROLE:[u8;4] = [b'a',b'c',b'T',b'L'];
-const FRAME_CONTROLE:[u8;4] = [b'f',b'c',b'T',b'L'];
-const FRAME_DATA:[u8;4] = [b'f',b'd',b'A',b'T'];
+pub(crate) const ANIMATION_CONTROLE:[u8;4] = [b'a',b'c',b'T',b'L'];
+pub(crate) const FRAME_CONTROLE:[u8;4] = [b'f',b'c',b'T',b'L'];
+pub(crate) const FRAME_DATA:[u8;4] = [b'f',b'd',b'A',b'T'];
 
 
-struct PngHeader {
-    width: u32,
-    height: u32,
-    bitpersample: u8,
-    color_type: u8,
-    compression: u8,
-    filter_method: u8,
-    interace_method: u8,
-    crc: u32,
-    image_lenghth: u32,
-    pallete: Option<Vec<RGBA>>,
-    gamma: Option<u32>,
-    transparencey: Option<Vec<u8>>,
-    iccprofile: Option<ICCProfile>,
-    backgroud_color: Option<u8>,
-    sbit: Option<Vec<u8>>,
-    modified_time:Option<String>,
-    animation:Option<()>,
+#[derive(Debug)]
+pub struct PngHeader {
+    pub width: u32,
+    pub height: u32,
+    pub bitpersample: u8,
+    pub color_type: u8,
+    pub compression: u8,
+    pub filter_method: u8,
+    pub interace_method: u8,
+    pub crc: u32,
+    pub image_lenghth: u32,
+    pub pallete: Option<Vec<RGBA>>,
+    pub gamma: Option<u32>,
+    pub transparencey: Option<Vec<u8>>,
+    pub iccprofile: Option<ICCProfile>,
+    pub backgroud_color: Option<u8>,
+    pub sbit: Option<Vec<u8>>,
+    pub modified_time:Option<String>,
 }
 
 impl PngHeader {
-    pub fn new<B:BinaryReader>(&self, reader:&mut B,_opt :usize) -> Result<Self,Error> {
+    pub fn new<B:BinaryReader>(reader:&mut B,_opt :usize) -> Result<Self,Error> {
         let signature = reader.read_bytes_as_vec(8)?;
         if signature != SIGNATURE {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::NoSupportFormat, "not PNG".to_string())))
@@ -84,14 +85,14 @@ impl PngHeader {
             backgroud_color: None,
             sbit:None,
             modified_time: None,
-            animation: None,
         };
 
         let mut pallete_size = 0;
 
         loop {
-            let length = reader.read_u32_be()?;
-            let chunck = reader.read_bytes_as_vec(4)?;
+            let buf = reader.read_bytes_no_move(8)?;
+            let length = read_u32_be(&buf,0);
+            let chunck = &buf[4..];
             if chunck == IMAGE_DATA {
                 header.image_lenghth = length;
                 break;
@@ -99,6 +100,7 @@ impl PngHeader {
                 if length != 13  {
                     return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData, "Illegal size IHDR".to_string())))   
                 }
+                reader.skip_ptr(8)?;
                 header.width = reader.read_u32_be()?;
                 header.height = reader.read_u32_be()?;
                 header.bitpersample = reader.read_byte()?;
@@ -152,6 +154,7 @@ impl PngHeader {
                 header.interace_method = reader.read_byte()?;
                 let _crc = reader.read_u32_be();
             } else if chunck == PALLET {
+                reader.skip_ptr(8)?;
                 if length % 3 != 0  {
                     return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData, "Illegal size PLTE".to_string())))   
                 }
@@ -168,6 +171,7 @@ impl PngHeader {
                 }
                 header.pallete = Some(pallet);
             } else if chunck == TRANNCEPEARENCY {
+                reader.skip_ptr(8)?;
                 if header.pallete.is_none() {
                     return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData, "Illegal format tRNS before PLTE".to_string())))   
                 } else if length as usize > pallete_size {
@@ -178,9 +182,10 @@ impl PngHeader {
                         pallete[i].alpha = reader.read_byte()?;
                     }  
                 }
-            } else {
+            } else { // no impl...
+                reader.skip_ptr(8)?;
                 reader.skip_ptr(length as usize)?;
-                let _crc = reader.read_u32_be();
+                let _crc = reader.read_u32_be()?;
             }
         }
         Ok(

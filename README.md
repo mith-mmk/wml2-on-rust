@@ -90,9 +90,11 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.3 add GIF
 - 0.0.4 change error message
 - 0.0.5 reader change/Error delagation change
-- issue RST maker read bug
-# todo
+- 0.0.6 issue RST maker read bug fix
+- 0.0.7 add PNG
 
+# todo
+- TIFF
 - ICCProfile Reader
 - Formated Header writer
 - other decoder

@@ -821,13 +821,11 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                     if chunck == IMAGE_END {
                         break;
                     } else if chunck == TEXTDATA || chunck == I18N_TEXT {
-                        reader.skip_ptr(8)?;
                         let text = reader.read_bytes_as_vec(length as usize)?;
                         let (keyword,string) = to_string(&text,false);
                         header.text.push((keyword,string));
                       let _crc = reader.read_u32_be()?;                
                     } else if chunck == COMPRESSED_TEXTUAL_DATA {
-                        reader.skip_ptr(8)?;
                         let text = reader.read_bytes_as_vec(length as usize)?;
                         let (keyword,string) = to_string(&text,true);
                         header.text.push((keyword,string));

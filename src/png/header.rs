@@ -11,6 +11,7 @@ const PALLET:[u8;4] = [b'P',b'L',b'T',b'E'];
 pub(crate) const IMAGE_DATA:[u8;4] = [b'I',b'D',b'A',b'T'];
 pub(crate) const IMAGE_END:[u8;4] = [b'I',b'E',b'N',b'D'];
 const TRANNCEPEARENCY:[u8;4] = [b't',b'R',b'N',b'S'];
+/*
 const GAMMA:[u8;4] =  [b'g',b'A',b'M',b'A'];
 const COLOR_HMR:[u8;4] = [b'c',b'H',b'R',b'M'];
 const SRPG:[u8;4] = [b's',b'R',b'P',b'G'];
@@ -24,6 +25,7 @@ const SIGNIFICANT_BITS:[u8;4] = [b's',b'B',b'I',b'T'];
 const STANDARD_PALLET:[u8;4] = [b's',b'P',b'L',b'T'];
 const PALLTE_HISTGRAM:[u8;4] = [b'h',b'I',b'S',b'T'];
 const MODIFIED_TIME:[u8;4] = [b't',b'I',b'M',b'E'];
+*/
 /*
 // no impl
 const FRACTALIMAGE:[u8;4] = [b'f',b'R',b'A',b'c'];
@@ -36,10 +38,11 @@ const SCAL:[u8;4] = [b's',b'C',b'A',b'L'];
 */
 
 // APNG
+/*
 pub(crate) const ANIMATION_CONTROLE:[u8;4] = [b'a',b'c',b'T',b'L'];
 pub(crate) const FRAME_CONTROLE:[u8;4] = [b'f',b'c',b'T',b'L'];
 pub(crate) const FRAME_DATA:[u8;4] = [b'f',b'd',b'A',b'T'];
-
+*/
 
 #[derive(Debug)]
 pub struct PngHeader {

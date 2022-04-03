@@ -1,5 +1,4 @@
 use crate::color::RGBA;
-use std::cmp::min;
 use crate::png::warning::PngWarning;
 use crate::png::header::PngHeader;
 use crate::warning::*;
@@ -7,6 +6,21 @@ use crate::draw::DecodeOptions;
 use crate::error::*;
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;
+
+#[inline]
+fn paeth(d:u8,a:i32,b:i32,c:i32) -> u8 {
+    let pa = (b - c).abs();
+    let pb = (a - c).abs();
+    let pc = (b + a - c - c).abs();
+    let d = d as i32;
+    if pa <= pb && pa <= pc {
+        ((d + a) & 0xff) as u8
+    } else if pb <= pc {
+        ((d + b) & 0xff) as u8
+    } else {
+        ((d + c) & 0xff) as u8
+    }
+}
 
 fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
 -> Result<Option<ImgWarnings>,Error> {
@@ -21,10 +35,10 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
         ptr += 1;
         let mut outptr = 0;
         for _ in 0..header.width as usize {
-            let (mut grey, mut alpha) = (0,0xff);
+            let (mut gray, mut alpha) = (0,0xff);
             match header.bitpersample {
                 16 => {
-                    grey = buffer[ptr];ptr += 2;
+                    gray = buffer[ptr];ptr += 2;
                     if is_alpha == 1 {                
                         alpha = buffer[ptr];ptr += 2;
                     } else {
@@ -32,7 +46,7 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                     }
                 },
                 8 => {
-                    grey = buffer[ptr];ptr += 1;
+                    gray = buffer[ptr];ptr += 1;
                     if is_alpha == 1 {                
                         alpha = buffer[ptr];ptr += 1;
                     } else {
@@ -44,7 +58,7 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
             match flag {
                 1 => { // Sub
                     if outptr > 0 {
-                        grey   += outbuf[outptr -4];
+                        gray   += outbuf[outptr -4];
                     }
                     if is_alpha == 1 {
                         outbuf[outptr - 1] = alpha;
@@ -54,29 +68,29 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                 },
                 2 => { // Up
                     if prev_buf.len() > outptr +4 {
-                        grey   += prev_buf[outptr];
+                        gray   += prev_buf[outptr];
                     }
                     if is_alpha == 0 {
                         alpha = 0xff;
                     }
                 }
                 3 => { // Avalage
-                    let (mut grey_,mut alpha_);
+                    let (mut gray_,mut alpha_);
                     if outptr >= 4 {
-                        grey_  = outbuf[outptr -4];
+                        gray_  = outbuf[outptr -4];
                         alpha_ = outbuf[outptr -1];
                     } else {
-                        grey_  = 0;
+                        gray_  = 0;
                         alpha_ = 0;
                     }
                     if prev_buf.len() > outptr +4 {
-                        grey_   += prev_buf[outptr];
+                        gray_   += prev_buf[outptr];
                         alpha_ += prev_buf[outptr+3];
                     } else {
-                        grey_   += 0;
+                        gray_   += 0;
                         alpha_ += 0;
                     }
-                    grey  += grey_  / 2;
+                    gray  += gray_  / 2;
                     alpha += alpha_ / 2;
 
                     if is_alpha == 0 {
@@ -84,33 +98,34 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                     }
                 },
                 4 => { // Pease
-                    let (grey_a, alpha_a);
+                    let (gray_a, alpha_a);
                     if outptr >= 4 {
-                        grey_a  = outbuf[outptr -4];
-                        alpha_a = outbuf[outptr -1];
+                        gray_a  = outbuf[outptr -4] as i32;
+                        alpha_a = outbuf[outptr -1] as i32;
                     } else {
-                        grey_a   = 0;
+                        gray_a   = 0;
                         alpha_a  = 0;
                     }
-                    let (grey_b, alpha_b);
+                    let (gray_b, alpha_b);
                     if prev_buf.len() > outptr +4 {
-                        grey_b  = prev_buf[outptr];
-                        alpha_b = outbuf[outptr -1];
+                        gray_b  = prev_buf[outptr] as i32;
+                        alpha_b = outbuf[outptr -1] as i32;
                     } else {
-                        grey_b  = 0;
+                        gray_b  = 0;
                         alpha_b = 0;
                     }
-                    let (grey_c, alpha_c);
+                    let (gray_c, alpha_c);
                     if prev_buf.len() > outptr +4 && outptr >=4 {
-                        grey_c  = prev_buf[outptr-4];
-                        alpha_c = prev_buf[outptr-1];
+                        gray_c  = prev_buf[outptr-4] as i32;
+                        alpha_c = prev_buf[outptr-1] as i32;
                     } else {
-                        grey_c  = 0;
+                        gray_c  = 0;
                         alpha_c = 0;
                     }
 
-                    grey   += min(min(grey_a,grey_b),grey_c);
-                    alpha += min(min(alpha_a,alpha_b),alpha_c);
+
+                    gray  = paeth(gray,gray_a,gray_b,gray_c);
+                    alpha = paeth(alpha,alpha_a,alpha_b,alpha_c);
 
                     if is_alpha == 0 {
                         alpha = 0xff;
@@ -118,9 +133,9 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                 }
                 _ => {}  // None
             }
-            outbuf[outptr] = grey;
-            outbuf[outptr+1] = grey;
-            outbuf[outptr+2] = grey;
+            outbuf[outptr] = gray;
+            outbuf[outptr+1] = gray;
+            outbuf[outptr+2] = gray;
             outbuf[outptr+3] = alpha;
             outptr += 4;
         }
@@ -134,12 +149,17 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
 -> Result<Option<ImgWarnings>,Error> {
 
     let is_alpha = if header.color_type == 6 {1} else {0};
-    let raw_length = (header.width * (header.bitpersample as u32 / 8 + is_alpha) + 1) as usize;
+    let raw_length = (header.width * (header.bitpersample as u32 / 8 * (3 + is_alpha)) + 1) as usize;
     let mut prev_buf:Vec<u8> = Vec::new();
 
     for y in 0..header.height as usize{
         let mut ptr = raw_length * y;
         let flag = buffer[ptr];
+        if option.debug_flag & 0x4 == 0x4 {
+            let string = format!("Y:{} filter is {} ",y,flag);
+            option.drawer.verbose(&string,None)?;
+        }
+
         let mut outbuf:Vec<u8> = (0..header.width * 4).map(|_| 0).collect();
         ptr += 1;
         let mut outptr = 0;
@@ -183,9 +203,7 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                         blue  += prev_buf[outptr+2];
                         alpha += prev_buf[outptr+3];
                     }
-                    if is_alpha == 0 {
-                        alpha = 0xff;
-                    }
+
                 }
                 3 => { // Avalage
                     let (mut red_, mut green_, mut blue_, mut alpha_);
@@ -216,17 +234,14 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                     blue  += blue_  / 2;
                     alpha += alpha_ / 2;
 
-                    if is_alpha == 0 {
-                        alpha = 0xff;
-                    }
                 },
                 4 => { // Pease
                     let (red_a, green_a, blue_a, alpha_a);
                     if outptr >= 4 {
-                        red_a   = outbuf[outptr -4];
-                        green_a = outbuf[outptr -3];
-                        blue_a  = outbuf[outptr -2];
-                        alpha_a = outbuf[outptr -1];
+                        red_a   = outbuf[outptr -4] as i32;
+                        green_a = outbuf[outptr -3] as i32;
+                        blue_a  = outbuf[outptr -2] as i32;
+                        alpha_a = outbuf[outptr -1] as i32;
                     } else {
                         red_a   = 0;
                         green_a = 0;
@@ -235,10 +250,10 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                     }
                     let (red_b, green_b, blue_b, alpha_b);
                     if prev_buf.len() > outptr +4 {
-                        red_b   = prev_buf[outptr];
-                        green_b = prev_buf[outptr+1];
-                        blue_b  = prev_buf[outptr+2];
-                        alpha_b = prev_buf[outptr+3];
+                        red_b   = prev_buf[outptr] as i32;
+                        green_b = prev_buf[outptr+1] as i32;
+                        blue_b  = prev_buf[outptr+2] as i32;
+                        alpha_b = prev_buf[outptr+3] as i32;
                     } else {
                         red_b   = 0;
                         green_b = 0;
@@ -247,10 +262,10 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                     }
                     let (red_c, green_c, blue_c, alpha_c);
                     if prev_buf.len() > outptr +4 && outptr >=4 {
-                        red_c   = prev_buf[outptr-4];
-                        green_c = prev_buf[outptr-3];
-                        blue_c  = prev_buf[outptr-2];
-                        alpha_c = prev_buf[outptr-1];
+                        red_c   = prev_buf[outptr-4] as i32;
+                        green_c = prev_buf[outptr-3] as i32;
+                        blue_c  = prev_buf[outptr-2] as i32;
+                        alpha_c = prev_buf[outptr-1] as i32;
                     } else {
                         red_c   = 0;
                         green_c = 0;
@@ -258,24 +273,24 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                         alpha_c = 0;
                     }
 
-                    red   += min(min(red_a,red_b),red_c);
-                    green += min(min(green_a,green_b),green_c);
-                    blue  += min(min(blue_a,blue_b),blue_c);
-                    alpha += min(min(alpha_a,alpha_b),alpha_c);
+                    red   = paeth(red,red_a,red_b,red_c);
+                    green = paeth(green,green_a,green_b,green_c);
+                    blue  = paeth(blue,blue_a,blue_b,blue_c);
+                    alpha = paeth(alpha,alpha_a,alpha_b,alpha_c);
 
-                    if is_alpha == 0 {
-                        alpha = 0xff;
-                    }
                 }
                 _ => {}  // None
             }
             outbuf[outptr] = red;
             outbuf[outptr+1] = green;
-            outbuf[outptr+2] = blue;
+            outbuf[outptr+2] = blue;            
+            if is_alpha == 0 {
+                alpha = 0xff;
+            }
             outbuf[outptr+3] = alpha;
             outptr += 4;
         } 
-        option.drawer.draw(0,y,header.width as usize,1,buffer,None)?;
+        option.drawer.draw(0,y,header.width as usize,1,&outbuf,None)?;
         prev_buf = outbuf;
     }
     return Ok(None)
@@ -334,7 +349,7 @@ fn load_index_color(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
             outbuf[outptr+3] = 0xff;
             outptr += 4;
         }
-        option.drawer.draw(0,y,header.width as usize,1,buffer,None)?;
+        option.drawer.draw(0,y,header.width as usize,1,&outbuf,None)?;
     }
     return Ok(None)
 }
@@ -342,29 +357,34 @@ fn load_index_color(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
 fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
     match header.color_type {
         0 => {
+            option.drawer.verbose("Glayscale",None)?;
             if header.bitpersample >= 8 {
                 return load_grayscale(&header,&buffer,option)
             } else {
                 let color_max = 1 << header.bitpersample;
                 let mut pallet :Vec<RGBA> = Vec::new();
                 for i in 1..color_max {
-                    let grey = (i * 255 / (color_max - 1)) as u8;
-                    pallet.push(RGBA{red:grey,green:grey,blue:grey,alpha:0xff});
+                    let gray = (i * 255 / (color_max - 1)) as u8;
+                    pallet.push(RGBA{red:gray,green:gray,blue:gray,alpha:0xff});
                 }
                 header.pallete = Some(pallet);
                 return load_index_color(header, buffer, option)
             }
         },
         2 => {
+            option.drawer.verbose("True Color",None)?;
             return load_truecolor(&header,&buffer,option)
         },
         3 => {
+            option.drawer.verbose("Index Color",None)?;
             return load_index_color(&header,&buffer,option)
         },
         4 => {
+            option.drawer.verbose("Grayscale with alpha",None)?;
             return load_grayscale(&header,&buffer,option)
         },
         6 => {
+            option.drawer.verbose("Truecolor with alpha",None)?;
             return load_truecolor(&header,&buffer,option)
         },
         _ => {
@@ -378,7 +398,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                     -> Result<Option<ImgWarnings>,Error> {
 
     let mut header = PngHeader::new(reader,option.debug_flag)?;
-    if option.debug_flag > 0 {
+    if option.debug_flag > 1 {
         let string = format!("{:?}",&header);
         option.drawer.verbose(&string,None)?;
     }
@@ -394,8 +414,8 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                 if chunck == super::header::IMAGE_END {
                     let decomressed = miniz_oxide::inflate::decompress_to_vec_zlib(&buffer);
                     match decomressed {
-                        Ok(buffer) => {
-                            load(&mut header, &buffer, option)?;
+                        Ok(debuffer) => {
+                            load(&mut header, &debuffer, option)?;
                         },
                         Err(err) => {
                             let message = format!("Uncompressed Error {:?}",err);
@@ -413,10 +433,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                     let mut buf = reader.read_bytes_as_vec(length as usize)?;
                     buffer.append(&mut buf);
                     let _crc = reader.read_u32_be()?;
-
-//                    imagelen += length as usize;
                 } else {
-                    let length = reader.read_u32_be()?;
                     reader.skip_ptr(length as usize)?;
                     let _crc = reader.read_u32_be()?;
                 }

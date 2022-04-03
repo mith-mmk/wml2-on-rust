@@ -782,10 +782,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                     -> Result<Option<ImgWarnings>,Error> {
 
     let mut header = PngHeader::new(reader,option.debug_flag)?;
-    if option.debug_flag > 1 {
-        let string = format!("{:?}",&header);
-        option.drawer.verbose(&string,None)?;
-    }
+
     option.drawer.init(header.width as usize,header.height as usize,None)?;
 
     let mut buffer: Vec<u8> = Vec::new();
@@ -827,20 +824,12 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                         reader.skip_ptr(8)?;
                         let text = reader.read_bytes_as_vec(length as usize)?;
                         let (keyword,string) = to_string(&text,false);
-                        if option.debug_flag > 0 {
-                            let s = format!("{} : {}",keyword,string);
-                            option.drawer.verbose(&s,None)?;
-                        }
                         header.text.push((keyword,string));
                       let _crc = reader.read_u32_be()?;                
                     } else if chunck == COMPRESSED_TEXTUAL_DATA {
                         reader.skip_ptr(8)?;
                         let text = reader.read_bytes_as_vec(length as usize)?;
                         let (keyword,string) = to_string(&text,true);
-                        if option.debug_flag > 0 {
-                            let s = format!("{} : {}",keyword,string);
-                            option.drawer.verbose(&s,None)?;
-                        }
                         header.text.push((keyword,string));
                         let _crc = reader.read_u32_be()?;
                     } else if chunck == ANIMATION_CONTROLE {
@@ -864,11 +853,21 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
             Err(_) => {
                 let warnings = ImgWarnings::add(None,Box::new(
                         PngWarning::new("Data crruption after image datas".to_string())));
+                if option.debug_flag > 1 {
+                    let string = format!("{:?}",&header);
+                    option.drawer.verbose(&string,None)?;
+                }
+                option.drawer.terminate(None)?;
                 return Ok(warnings)
             }
         }
 
     }
+    if option.debug_flag > 1 {
+        let string = format!("{:?}",&header);
+        option.drawer.verbose(&string,None)?;
+    }
+    option.drawer.terminate(None)?;
     Ok(None)
 
 }

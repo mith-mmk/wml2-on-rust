@@ -49,15 +49,13 @@ pub(crate) const FRAME_DATA:[u8;4] = [b'f',b'd',b'A',b'T'];
 
 
 pub(crate) fn to_string<'a>(text :&[u8],compressed: bool) -> (String,String) {
-    let mut keyword :Vec<u8> = Vec::new();
     let mut split = 0;
+    let keyword = read_ascii_string(&text,0,text.len());
     for i in 0..text.len() {
-        let c = text[i];
         if text[i] == 0 {
             split = i + 1;
             break;
         }
-        keyword.push(c);
     }
     let string =  if compressed {
         let decoded = miniz_oxide::inflate::decompress_to_vec_zlib(&text[split..]);
@@ -69,7 +67,6 @@ pub(crate) fn to_string<'a>(text :&[u8],compressed: bool) -> (String,String) {
     } else {
         text[split..].to_vec()
     };
-    let keyword = read_ascii_string(&keyword,0,keyword.len());
     let string = read_ascii_string(&string,0,string.len());
     (keyword,string)
 }

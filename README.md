@@ -95,6 +95,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
 # todo
 - TIFF
+- animation image buffer
 - ICCProfile Reader
 - Formated Header writer
 - other decoder

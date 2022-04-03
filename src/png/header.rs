@@ -1,4 +1,4 @@
-use bin_rs::io::read_u32_be;
+use bin_rs::io::*;
 use crate::error::*;
 use crate::iccprofile::ICCProfile;
 use crate::color::RGBA;
@@ -11,21 +11,25 @@ const PALLET:[u8;4] = [b'P',b'L',b'T',b'E'];
 pub(crate) const IMAGE_DATA:[u8;4] = [b'I',b'D',b'A',b'T'];
 pub(crate) const IMAGE_END:[u8;4] = [b'I',b'E',b'N',b'D'];
 const TRANNCEPEARENCY:[u8;4] = [b't',b'R',b'N',b'S'];
-/*
+
 const GAMMA:[u8;4] =  [b'g',b'A',b'M',b'A'];
+/*
 const COLOR_HMR:[u8;4] = [b'c',b'H',b'R',b'M'];
 const SRPG:[u8;4] = [b's',b'R',b'P',b'G'];
 const ICC_PROFILE:[u8;4] = [b'i',b'C',b'C',b'P'];
-const TEXTDATA:[u8;4] = [b't',b'E',b'X',b't'];
-const COMPRESSED_TEXTUAL_DATA:[u8;4] = [b'z',b'T',b'X',b't'];
-const I18N_TEXT:[u8;4] = [b'i',b'T',b'X',b't'];
+*/
+pub(crate) const TEXTDATA:[u8;4] = [b't',b'E',b'X',b't'];
+pub(crate) const COMPRESSED_TEXTUAL_DATA:[u8;4] = [b'z',b'T',b'X',b't'];
+pub(crate) const I18N_TEXT:[u8;4] = [b'i',b'T',b'X',b't'];
 const BACKGROUND_COLOR:[u8;4] = [b'b',b'K',b'G',b'D'];
+/* no use
 const PHYSICAL_PIXEL_DIMENSION:[u8;4] = [b'p',b'H',b'Y',b's'];
 const SIGNIFICANT_BITS:[u8;4] = [b's',b'B',b'I',b'T'];
 const STANDARD_PALLET:[u8;4] = [b's',b'P',b'L',b'T'];
 const PALLTE_HISTGRAM:[u8;4] = [b'h',b'I',b'S',b'T'];
-const MODIFIED_TIME:[u8;4] = [b't',b'I',b'M',b'E'];
 */
+const MODIFIED_TIME:[u8;4] = [b't',b'I',b'M',b'E'];
+
 /*
 // no impl
 const FRACTALIMAGE:[u8;4] = [b'f',b'R',b'A',b'c'];
@@ -38,11 +42,45 @@ const SCAL:[u8;4] = [b's',b'C',b'A',b'L'];
 */
 
 // APNG
-/*
+
 pub(crate) const ANIMATION_CONTROLE:[u8;4] = [b'a',b'c',b'T',b'L'];
 pub(crate) const FRAME_CONTROLE:[u8;4] = [b'f',b'c',b'T',b'L'];
 pub(crate) const FRAME_DATA:[u8;4] = [b'f',b'd',b'A',b'T'];
-*/
+
+
+pub(crate) fn to_string<'a>(text :&[u8],compressed: bool) -> (String,String) {
+    let mut keyword :Vec<u8> = Vec::new();
+    let mut split = 0;
+    for i in 0..text.len() {
+        let c = text[i];
+        if text[i] == 0 {
+            split = i + 1;
+            break;
+        }
+        keyword.push(c);
+    }
+    let string =  if compressed {
+        let decoded = miniz_oxide::inflate::decompress_to_vec_zlib(&text[split..]);
+        if let Ok(decode) = decoded {
+            decode
+        }  else {
+            b"".to_vec()
+        }
+    } else {
+        text[split..].to_vec()
+    };
+    let keyword = read_ascii_string(&keyword,0,keyword.len());
+    let string = read_ascii_string(&string,0,string.len());
+    (keyword,string)
+}
+
+#[derive(Debug)]
+pub enum BacgroundColor {
+    Index(u8),
+    Grayscale(u16),
+    TrueColor((u16,u16,u16)),
+}
+
 
 #[derive(Debug)]
 pub struct PngHeader {
@@ -59,8 +97,9 @@ pub struct PngHeader {
     pub gamma: Option<u32>,
     pub transparencey: Option<Vec<u8>>,
     pub iccprofile: Option<ICCProfile>,
-    pub backgroud_color: Option<u8>,
+    pub backgroud_color: Option<BacgroundColor>,
     pub sbit: Option<Vec<u8>>,
+    pub text: Vec<(String,String)>,
     pub modified_time:Option<String>,
 }
 
@@ -87,6 +126,7 @@ impl PngHeader {
             iccprofile: None,
             backgroud_color: None,
             sbit:None,
+            text:Vec::new(),
             modified_time: None,
         };
 
@@ -96,6 +136,7 @@ impl PngHeader {
             let buf = reader.read_bytes_no_move(8)?;
             let length = read_u32_be(&buf,0);
             let chunck = &buf[4..];
+
             if chunck == IMAGE_DATA {
                 header.image_lenghth = length;
                 break;
@@ -185,6 +226,62 @@ impl PngHeader {
                         pallete[i].alpha = reader.read_byte()?;
                     }  
                 }
+            } else if chunck == GAMMA {
+                reader.skip_ptr(8)?;
+                let gamma = reader.read_u32_be()?;
+                header.gamma = Some(gamma);
+                let _crc = reader.read_u32_be()?;
+            } else if chunck == TEXTDATA || chunck == I18N_TEXT {
+                reader.skip_ptr(8)?;
+                let text = reader.read_bytes_as_vec(length as usize)?;
+                header.text.push(to_string(&text,false));
+                let _crc = reader.read_u32_be()?;                
+            } else if chunck == COMPRESSED_TEXTUAL_DATA {
+                reader.skip_ptr(8)?;
+                let text = reader.read_bytes_as_vec(length as usize)?;
+                header.text.push(to_string(&text,true));
+                let _crc = reader.read_u32_be()?;                    
+            } else if chunck == BACKGROUND_COLOR {
+                reader.skip_ptr(8)?;
+                let buffer = reader.read_bytes_as_vec(length as usize)?;
+                match header.color_type {
+                    3 => {
+                        header.backgroud_color = Some(BacgroundColor::Index(buffer[0]));
+                    },
+                    0 | 4 => {
+                        let color = read_u16_be(&buffer,0);
+                        header.backgroud_color = Some(BacgroundColor::Grayscale(color));
+                    },
+                    2 | 6 => {
+                        let red = read_u16_be(&buffer,0);
+                        let green = read_u16_be(&buffer,2);
+                        let blue = read_u16_be(&buffer,4);
+                        header.backgroud_color = Some(BacgroundColor::TrueColor((red,green,blue)));
+                    },
+                    _ => {},
+                }
+                let _crc = reader.read_u32_be()?;
+            } else if chunck == MODIFIED_TIME{ // no impl...
+                reader.skip_ptr(8)?;
+                let year = reader.read_u16_be()?;
+                let month = reader.read_byte()?;
+                let day = reader.read_byte()?;
+                let hour = reader.read_byte()?;
+                let miniute = reader.read_byte()?;
+                let second = reader.read_byte()?;
+                let date = format!("{}-{}-{} {}:{}:{}",year,month,day,hour,miniute,second);
+                header.modified_time = Some(date);
+                let _crc = reader.read_u32_be()?;
+            } else if chunck == ANIMATION_CONTROLE {
+                // noimpl
+                reader.skip_ptr(8)?;
+                reader.skip_ptr(length as usize)?;
+                let _crc = reader.read_u32_be()?;                    
+            } else if chunck == FRAME_CONTROLE {
+                // noimpl
+                reader.skip_ptr(8)?;
+                reader.skip_ptr(length as usize)?;
+                let _crc = reader.read_u32_be()?;      
             } else { // no impl...
                 reader.skip_ptr(8)?;
                 reader.skip_ptr(length as usize)?;

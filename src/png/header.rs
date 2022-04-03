@@ -58,7 +58,7 @@ pub(crate) fn to_string<'a>(text :&[u8],compressed: bool) -> (String,String) {
         }
     }
     let string =  if compressed {
-        let decoded = miniz_oxide::inflate::decompress_to_vec_zlib(&text[split..]);
+        let decoded = miniz_oxide::inflate::decompress_to_vec_zlib(&text[split+1..]);
         if let Ok(decode) = decoded {
             decode
         }  else {

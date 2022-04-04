@@ -364,8 +364,8 @@ fn decode_jpeg<B:BinaryReader>(reader:&mut B,_:&BitmapHeader,option:&mut  Decode
     return crate::jpeg::decoder::decode(reader,option);
 }
 
-fn decode_png<B:BinaryReader>(_reader:&B,_header:&BitmapHeader,_option:&mut  DecodeOptions) -> Result<Option<ImgWarnings>,Error>  {
-    return Err(Box::new(ImgError::new_const(ImgErrorKind::NoSupportFormat,"PNG bitmap not support".to_string())))
+fn decode_png<B:BinaryReader>(reader:&mut B,_header:&BitmapHeader,option:&mut  DecodeOptions) -> Result<Option<ImgWarnings>,Error>  {
+    return crate::png::decoder::decode(reader,option);
 }
 
 pub fn decode<'decode, B:BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) 

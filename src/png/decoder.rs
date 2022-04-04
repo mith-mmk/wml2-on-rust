@@ -784,6 +784,31 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
     let mut header = PngHeader::new(reader,option.debug_flag)?;
 
     option.drawer.init(header.width as usize,header.height as usize,None)?;
+    if option.debug_flag > 0 {
+        let mut s = "PNG\n".to_string();
+        let s_ = format!("width {} height {}  {} bits per sample\n",header.width,header.height,header.bitpersample);
+        s += &s_;
+        let s_ = match header.color_type {
+            0 => {"Color type: Glayscale\n"},
+            2 => {"Color type: Truecolor\n"},
+            3 => {"Color type: Index Color\n"},
+            4 => {"Color type: Glayscale with alpha\n"},
+            6 => {"Color type: Truecolor with alpha\n"},
+            _ => {"Color type: unkwon\n"},
+        };
+        s += &s_.to_string();
+        let s_ = format!("Transparency {:?}\n",header.transparency);
+        s += &s_;
+        let s_ = format!("Backgroud color {:?}\n",header.backgroud_color);
+        s += &s_;
+        let s_ = format!("Modified time {:?}\n",header.modified_time);
+        s += &s_;
+        for (key,mes) in &header.text {
+            let s_ = format!("{} : {}",key,mes);
+            s += &s_;            
+        }
+        option.drawer.verbose(&s,None)?;
+    }
 
     let mut buffer: Vec<u8> = Vec::new();
 

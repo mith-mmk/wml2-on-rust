@@ -374,7 +374,10 @@ pub fn decode<'decode, B:BinaryReader>(reader:&mut B ,option:&mut DecodeOptions)
     let header = BitmapHeader::new(reader,option.debug_flag)?;
 
     if option.debug_flag > 0 {
-        let s = format!("{:?}",&header);
+        let s1 = format!("BITMAP Header size {}",header.bitmap_file_header.bf_offbits);
+        let s2 = format!("width {} height {}  {} bits per sample\n",header.width,header.height,header.bit_count);
+        let s3 = format!("Compression {:?}\n",header.compression);
+        let s = s1 + &s2 + &s3;
         option.drawer.verbose(&s,None)?;
     }
     /*

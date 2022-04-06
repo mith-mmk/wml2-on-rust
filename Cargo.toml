@@ -17,7 +17,7 @@ crate-type = ["rlib"]
 #all = []
 
 [dependencies]
-bin-rs = {version = "0.0.6",features = ["stream","util"]}
+bin-rs = {version = "0.0.7",features = ["stream","util"]}
 #bin-rs = {path = "../bin-rs",features = ["stream","util"]}
 miniz_oxide =  {version = "0.5.1"}
 

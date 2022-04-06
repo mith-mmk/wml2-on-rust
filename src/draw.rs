@@ -229,7 +229,7 @@ impl DrawCallback for ImageBuffer {
 
 pub struct DecodeOptions<'a> {
     pub debug_flag: usize,
-    pub drawer: &'a mut dyn DrawCallback,
+    pub drawer: &'a mut (dyn DrawCallback + Sync + Send),
 }
 
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer,Error> {    

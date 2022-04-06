@@ -78,6 +78,6 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         _ => {
             return ImageFormat::Unknown
         }
-    }    ImageFormat::Unknown
-
+    }    
+    ImageFormat::Unknown
 }

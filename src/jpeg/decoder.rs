@@ -726,37 +726,48 @@ fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,op
     for mcu_y in 0..mcu_y_max {
         for mcu_x in 0..mcu_x_max {
             let mut mcu_units :Vec<Vec<u8>> = Vec::new();
+// this multi thread impl very slowly
+//            let mut handles :Vec<std::thread::JoinHandle<Vec<u8>>> = Vec::new();
+
             for scannumber in 0..mcu_size {
                 let (dc_current,ac_current,i,tq) = scan[scannumber];
-
-                if !fh.is_progressive {
-                    let ret = baseline_read(&mut bitread
+                let ret = baseline_read(&mut bitread
                             ,&dc_decode[dc_current]
                             ,&ac_decode[ac_current]
                             ,preds[i]);
-                    let (zz,pred);
-                    match ret {
-                        Ok((_zz,_pred)) => {
-                            zz = _zz;
-                            pred = _pred; 
-                        }
-                        Err(..) => {
-                            warnings = ImgWarnings::add(warnings, 
-                                Box::new(JpegWarning::new_const(
-                                JpegWarningKind::DataCorruption,"baseline".to_string())));
-                            return Ok(warnings)
-                        }
+                let (zz,pred);
+                match ret {
+                    Ok((_zz,_pred)) => {
+                        zz = _zz;
+                        pred = _pred; 
                     }
-                    preds[i] = pred;
-
-                    let sq = &super::util::ZIG_ZAG_SEQUENCE;
-                    let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * quantization_tables[tq].q[sq[i]] as i32).collect();
+                    Err(..) => {
+                        warnings = ImgWarnings::add(warnings, 
+                            Box::new(JpegWarning::new_const(
+                             JpegWarningKind::DataCorruption,"baseline".to_string())));
+                        return Ok(warnings)
+                    }
+                }
+                preds[i] = pred;
+                    
+                let sq = &super::util::ZIG_ZAG_SEQUENCE;
+                let q = quantization_tables[tq].q.clone();
+                let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
+ 
+//                let handle = std::thread::spawn(move || {
                     let ff = fast_idct(&zz);
                     mcu_units.push(ff);
-                } else {
-                // no impl 
-                }
+//                    ff
+//                });
+//                handles.push(handle);                    
             }
+
+/*
+            for handle in handles {
+                let ff = handle.join().unwrap();
+                mcu_units.push(ff);
+            }
+*/
 
             // Only implement RGB
 

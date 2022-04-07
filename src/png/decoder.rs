@@ -733,7 +733,6 @@ fn load_index_color_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut Decod
 fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
     match header.color_type {
         0|4 => {
-            option.drawer.verbose("Glayscale",None)?;
             if header.bitpersample >= 8 {
                 if header.interace_method == 0 {
                     return load_grayscale(&header,&buffer,option)
@@ -756,7 +755,6 @@ fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result
             }
         },
         2|6 => {
-            option.drawer.verbose("True Color",None)?;
             if header.interace_method == 0 {
                 return load_truecolor(&header,&buffer,option)
             } else {
@@ -764,7 +762,6 @@ fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result
             }
         },
         3 => {
-            option.drawer.verbose("Index Color",None)?;
             if header.interace_method == 0 {
                 return load_index_color(&header,&buffer,option)
             } else {

@@ -676,7 +676,238 @@ pub(crate) fn huffman_extend(huffman_tables:&Vec<HuffmanTable>) -> (Vec<HuffmanD
     (ac_decode,dc_decode)
 }
 
+#[cfg(feature="multithread")]
+#[derive(std::cmp::PartialEq)]
+enum ThreadCommand {
+    Stop,
+    Run,
+}
 
+#[cfg(feature="multithread")]
+fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
+    let width = header.width;
+    let height = header.height;
+    let huffman_scan_header = header.huffman_scan_header.as_ref().unwrap();
+    let fh = header.frame_header.clone().unwrap();
+    let component = fh.component.clone().unwrap();
+    let plane = fh.plane;
+    // decode
+    option.drawer.init(width,height,InitOptions::new())?;
+
+    let quantization_tables = header.quantization_tables.clone().unwrap();
+    let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables.as_ref().unwrap());
+
+    let mut bitread = BitReader::new(reader);
+    let mut h_max = 1;
+    let mut v_max = 1;
+    let mut dy = 8;
+    let mut dx = 8;
+    let mut scan : Vec<(usize,usize,usize,usize)> = Vec::new();
+    let mcu_size = {
+        let mut size = 0;
+        for i in 0..component.len() {
+            size = size + component[i].h * component[i].v;
+            let tq = component[i].tq;
+            for _ in 0..component[i].h * component[i].v {
+                scan.push((huffman_scan_header.tdcn[i],
+                            huffman_scan_header.tacn[i],
+                            i,tq));
+            }
+            dx = usize::max(component[i].h * 8 ,dx);
+            dy = usize::max(component[i].v * 8 ,dy);
+            h_max = usize::max(component[i].h ,h_max);
+            v_max = usize::max(component[i].v ,v_max);
+        }
+        size
+    };
+
+    let mut preds: Vec::<i32> = (0..component.len()).map(|_| 0).collect();
+
+    let mcu_y_max =(height+dy-1)/dy;
+    let mcu_x_max =(width+dx-1)/dx;
+
+
+    let mut mcu_interval = if header.interval > 0 { header.interval as isize} else {-1};
+
+
+    let (tx1,rx1) = std::sync::mpsc::channel();
+    let (tx2,rx2) = std::sync::mpsc::channel();
+    let (tx3,rx3) = std::sync::mpsc::channel();
+    let (tx4,rx4) = std::sync::mpsc::channel();
+                    
+    let sq = &super::util::ZIG_ZAG_SEQUENCE;
+
+    std::thread::spawn(move || {
+        loop {
+            let (com,zz,mcu_x,mcu_y,tq) = rx1.recv().unwrap_or((ThreadCommand::Stop,vec![],0,0,0));
+            if com == ThreadCommand::Stop {
+                let _ = tx2.send((com,zz,mcu_x,mcu_y));
+                break;
+            }
+            let q = quantization_tables[tq].q.clone();
+            let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
+            let _ = tx2.send((com,zz,mcu_x,mcu_y));
+        } 
+    });
+
+    std::thread::spawn(move || {
+        loop {
+            let (com,zz,mcu_x,mcu_y) = rx2.recv().unwrap_or((ThreadCommand::Stop,vec![],0,0));
+            if com == ThreadCommand::Stop {
+                let _ = tx3.send((com,vec![],mcu_x,mcu_y));
+                break;
+            }
+            let ff = fast_idct(&zz);
+            let _ = tx3.send((com,ff,mcu_x,mcu_y));
+        }
+    });
+
+    let adobe_color_transform = header.adobe_color_transform.clone();
+    std::thread::spawn(move || {
+        loop {
+            let mut mcu_units :Vec<Vec<u8>> = Vec::new();
+            let mut com = ThreadCommand::Run;
+            let mut mcu_x = 0;
+            let mut mcu_y = 0;
+            for _ in 0..mcu_size {
+                let (_com,ff,_mcu_x,_mcu_y) = rx3.recv().unwrap_or((ThreadCommand::Stop,vec![],0,0));
+                mcu_units.push(ff);
+                com = _com;
+                mcu_x = _mcu_x;
+                mcu_y = _mcu_y
+                
+            }
+            if com == ThreadCommand::Stop {
+                let _ = tx4.send((com,vec![],mcu_x,mcu_y));
+                break;
+            }
+            let data = if plane == 3 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))}  // RGB
+                else if plane == 4 { // hasBug
+                   if adobe_color_transform == 2 {ycck_to_rgb(&mcu_units,&component,(h_max,v_max))}  // YCcK Spec Unknown
+                   else if adobe_color_transform == 1 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))} // RGBA
+                   else {cmyk_to_rgb(&mcu_units,&component,(h_max,v_max))} // CMYK Spec Unknown
+                }
+                else {y_to_rgb(&mcu_units,&component)}; // g / ga
+            let _ = tx4.send((com,data,mcu_x,mcu_y));
+        }
+    });
+
+    for mcu_y in 0..mcu_y_max {
+        for mcu_x in 0..mcu_x_max {
+            for scannumber in 0..mcu_size {
+                let (dc_current,ac_current,i,tq) = scan[scannumber];
+                let ret = baseline_read(&mut bitread
+                            ,&dc_decode[dc_current]
+                            ,&ac_decode[ac_current]
+                            ,preds[i]);
+                let (zz,pred);
+                match ret {
+                    Ok((_zz,_pred)) => {
+                        zz = _zz;
+                        pred = _pred; 
+                    }
+                    Err(..) => {
+                        warnings = ImgWarnings::add(warnings, 
+                            Box::new(JpegWarning::new_const(
+                             JpegWarningKind::DataCorruption,"baseline".to_string())));
+                        return Ok(warnings)
+                    }
+                }
+                preds[i] = pred;
+                let _ = tx1.send((ThreadCommand::Run,zz,mcu_x,mcu_y,tq));
+            }
+            if header.interval > 0 {
+                mcu_interval = mcu_interval - 1;
+                if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max -1 { 
+                    if  bitread.rst()? == true {
+                        if cfg!(debug_assertions) {
+                            println!("strange reset interval {},{} {} {}",mcu_x,mcu_y,mcu_x_max,mcu_y_max);
+                        }
+                        mcu_interval = header.interval as isize;
+                        for i in 0..preds.len() {
+                            preds[i] = 0;
+                        }
+                    } else {    // Reset Interval
+                        let r = bitread.next_marker()?;
+                        if r >= 0xd0 && r<= 0xd7 {
+                            mcu_interval = header.interval as isize;
+                            for i in 0..preds.len() {
+                                preds[i] = 0;
+                            }    
+                        } else if r == 0xd9 {   // EOI
+                            option.drawer.terminate(None)?;
+                            warnings = ImgWarnings::add(warnings,Box::new(
+                                JpegWarning::new_const(
+                                JpegWarningKind::IlligalRSTMaker,
+                                "Unexcept EOI,Is this image corruption?".to_string())));
+                            let _ = tx1.send((ThreadCommand::Stop,vec![],0,0,0));
+                            return Ok(warnings)
+                        }
+                    }
+                } else if bitread.rst()? == true {
+                    warnings = ImgWarnings::add(warnings,Box::new(
+                        JpegWarning::new_const(
+                            JpegWarningKind::IlligalRSTMaker,
+                            "Unexcept RST marker location,Is this image corruption?".to_string())));
+                    mcu_interval = header.interval as isize;
+                    for i in 0..preds.len() {
+                        preds[i] = 0;
+                    }
+                }
+            }
+        }
+    }
+    let _ = tx1.send((ThreadCommand::Stop,vec![],0,0,0));
+    // Only implement RGB
+
+
+    loop {
+        let (com,data,mcu_x,mcu_y) = rx4.recv().unwrap_or((ThreadCommand::Stop,vec![],0,0));
+        if com == ThreadCommand::Stop {
+            break;
+        }
+        option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
+    }
+
+    let b = bitread.next_marker();
+    match b {
+        Ok(marker) => {
+            match marker {
+                0xd9 => {   // EOI
+                    option.drawer.terminate(None)?;
+                    return Ok(warnings)
+                },
+                0xdd => {
+                    option.drawer.terminate(None)?;
+                    warnings = ImgWarnings::add(warnings,Box::new(
+                        JpegWarning::new_const(
+                            JpegWarningKind::UnexpectMarker,
+                            "DNL,No Support Multi scan/frame".to_string())));
+                    return Ok(warnings)
+                },
+                _ => {
+                    option.drawer.terminate(None)?;
+                    warnings = ImgWarnings::add(warnings,Box::new(
+                        JpegWarning::new_const(
+                            JpegWarningKind::UnexpectMarker,
+                            "No Support Multi scan/frame".to_string())));
+                    return Ok(warnings)
+               },
+            }
+        },
+        Err(s) => {
+            let s = format!("found {:?}",s);
+            warnings = ImgWarnings::add(warnings,Box::new(
+                JpegWarning::new_const(
+                    JpegWarningKind::UnexpectMarker,
+                    s.to_string())));
+        }
+    }
+    option.drawer.terminate(None)?;
+    Ok(warnings)
+}
+
+#[cfg(not(feature="multithread"))]
 fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
     let width = header.width;
     let height = header.height;

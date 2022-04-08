@@ -60,6 +60,7 @@ impl HuffmanTable {
 }
 
 /* from DQT */
+#[derive(Clone)]
 pub struct QuantizationTable {
     pub presision: usize,
     pub no: usize,
@@ -77,6 +78,7 @@ impl QuantizationTable {
 
 }
 /* SOF */
+#[derive(Clone)]
 pub struct Component{
     pub c: usize,
     pub h: usize,
@@ -84,6 +86,7 @@ pub struct Component{
     pub tq: usize
 }
 
+#[derive(Clone)]
 pub struct FrameHeader {
     pub is_baseline: bool,
     pub is_sequential: bool,

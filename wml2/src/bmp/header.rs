@@ -189,7 +189,7 @@ impl BitmapHeader {
             bit_per_count = info_header.bi_bit_count as usize;
             clut_size = if bit_per_count <= 8 {info_header.bi_clr_used as usize} else {0};
             let header_size = bitmap_file_header.bf_offbits -14 - (clut_size * 4) as u32;   // issue image header size 40 but required 56
-            clut_offset = info_header.bi_size as u64 + 14;
+            clut_offset = info_header.bi_size as u64 + 14;  // same too
             width = info_header.bi_width as i32;
             height = info_header.bi_height as i32;
 

@@ -45,7 +45,7 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
         b_v5_header : None,
     };
 
-    let mut data: Vec<u8> = Vec::with_capacity((header.bi_size + header.bi_size_image) as usize);
+    let mut data: Vec<u8> = Vec::with_capacity((bitmap_file_header.bf_offbits + header.bi_size_image) as usize);
     write_u16_le(bitmap_file_header.bf_type,&mut data);
     write_u32_le(bitmap_file_header.bf_size,&mut data);
     write_u16_le(bitmap_file_header.bf_reserved1,&mut data);

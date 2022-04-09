@@ -2,6 +2,8 @@
 //! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
 //! Drawer will use callback, flexisble drawing.
 type Error = Box<dyn std::error::Error>;
+use std::io::Write;
+use crate::util::ImageFormat;
 use std::io::BufReader;
 use std::io::Seek;
 use std::io::BufRead;
@@ -22,7 +24,7 @@ pub enum DrawNextOptions {
 
 pub type Response =  Result<Option<CallbackResponse>,Error>;
 
-pub trait DrawCallback {
+pub trait DrawCallback: Sync + Send {
 /// DrawCallback trait is callback template
     fn init(&mut self,width: usize,height: usize,option: Option<InitOptions>) -> Result<Option<CallbackResponse>,Error>;
     fn draw(&mut self,start_x: usize, start_y: usize, width: usize, height: usize, data: &[u8],option: Option<DrawOptions>)
@@ -32,7 +34,7 @@ pub trait DrawCallback {
     fn verbose(&mut self, _verbose: &str,_: Option<VerboseOptions>  ) -> Result<Option<CallbackResponse>,Error>;
 }
 
-pub trait PickCallback {
+pub trait PickCallback: Sync + Send {
     /// DrawCallback trait is callback template
     fn encode_start(&mut self,option: Option<EncoderOptions>) -> Result<Option<ImageProfiles>,Error>;
     fn encode_pick(&mut self,start_x: usize, start_y: usize, width: usize, height: usize,option: Option<PickOptions>)
@@ -299,12 +301,12 @@ impl PickCallback for ImageBuffer {
 
 pub struct DecodeOptions<'a> {
     pub debug_flag: usize,
-    pub drawer: &'a mut (dyn DrawCallback + Sync + Send),
+    pub drawer: &'a mut dyn DrawCallback,
 }
 
 pub struct EncodeOptions<'a> {
     pub debug_flag: usize,
-    pub drawer: &'a mut (dyn PickCallback + Sync + Send),    
+    pub drawer: &'a mut dyn PickCallback,    
 }
 
 pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer,Error> {
@@ -322,6 +324,17 @@ pub fn image_from_file(filename: String) -> Result<ImageBuffer,Error> {
     let _ = image_reader(reader, &mut option)?;
     Ok(image)
 }
+
+pub fn image_to_file(filename: String,image:&mut dyn PickCallback,format:ImageFormat) -> Result<(),Error> {
+    let f = std::fs::File::create(&filename)?;
+    let mut option = EncodeOptions {
+        debug_flag: 0x00,
+        drawer: image,
+    };
+    image_writer(f,&mut option,format)?;
+    Ok(())
+}
+
 
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer,Error> {    
     let mut ib = ImageBuffer::new();
@@ -350,6 +363,15 @@ pub fn image_reader<R:BufRead + Seek>(reader: R,option:&mut DecodeOptions) -> Re
     Ok(r)
 }
 
+
+pub fn image_writer<W:Write>(mut writer: W,option:&mut EncodeOptions,format:ImageFormat) -> Result<Option<ImgWarnings>,Error> {    
+    let buffer =image_encoder(option,format)?;
+    writer.write_all(&buffer)?;
+    writer.flush()?;
+    Ok(None)
+}
+
+
 pub fn image_decoder<B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
     let buffer = reader.read_bytes_no_move(128)?;
     let format = format_check(&buffer);
@@ -373,6 +395,21 @@ pub fn image_decoder<B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) 
         _ => {
             return Err(
                 Box::new(ImgError::new_const(ImgErrorKind::NoSupportFormat, "This buffer can not decode".to_string())))
+        }
+    }
+}
+
+
+pub fn image_encoder(option:&mut EncodeOptions,format:ImageFormat) -> Result<Vec<u8>,Error> {
+    use crate::util::ImageFormat::*;
+
+    match format {
+        Bmp => {
+            return crate::bmp::encoder::encode(option);
+        },
+        _ => {
+            return Err(
+                Box::new(ImgError::new_const(ImgErrorKind::NoSupportFormat, "This encoder no impl".to_string())))
         }
     }
 }

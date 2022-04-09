@@ -1,0 +1,24 @@
+[package]
+name = "wasm-img"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.56"
+
+license = "MIT"
+scription = "Image decoder with Callback system for WASM."
+authors = ["MITH@mmk"]
+readme = "README.md"
+
+[features]
+default = []
+parallel = []
+
+[dependencies]
+dotenv = "0.15"
+
+[dependencies.wml2]
+path = "../wml2"
+features = ["multithread"]
+
+[profile.release]
+opt-level = 3

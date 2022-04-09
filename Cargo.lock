@@ -30,10 +30,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-img"
+version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "wml2",
+]
+
+[[package]]
 name = "wml2"
-version = "0.0.7"
+version = "0.0.8-alpha"
 dependencies = [
  "bin-rs",
- "dotenv",
  "miniz_oxide",
 ]

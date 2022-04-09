@@ -18,7 +18,3 @@ pub mod draw;
 pub mod iccprofile;
 pub mod color;
 pub mod decoder;
-
-
-#[cfg(test)]
-pub mod test;

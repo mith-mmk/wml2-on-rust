@@ -1,6 +1,6 @@
 [package]
 name = "wml2"
-version = "0.0.7"
+version = "0.0.8-alpha"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
 edition = "2021"
 license = "MIT"
@@ -21,9 +21,6 @@ multithread = []
 bin-rs = {version = "0.0.7",features = ["stream","util"]}
 #bin-rs = {path = "../bin-rs",features = ["stream","util"]}
 miniz_oxide =  {version = "0.5.1"}
-
-[dev-dependencies]
-dotenv = "0.15"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.

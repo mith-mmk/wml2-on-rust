@@ -1,4 +1,9 @@
 [workspace]
 members = [
     "wml2",
+    "wml2-test",
+]
+
+exclude = [
+    "wml2-win"
 ]

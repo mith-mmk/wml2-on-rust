@@ -2,6 +2,7 @@
 //! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
 //! Drawer will use callback, flexisble drawing.
 type Error = Box<dyn std::error::Error>;
+use std::io::BufReader;
 use std::io::Seek;
 use std::io::BufRead;
 use bin_rs::reader::*;
@@ -19,6 +20,8 @@ pub enum DrawNextOptions {
     None,
 }
 
+pub type Response =  Result<Option<CallbackResponse>,Error>;
+
 pub trait DrawCallback {
 /// DrawCallback trait is callback template
     fn init(&mut self,width: usize,height: usize,option: Option<InitOptions>) -> Result<Option<CallbackResponse>,Error>;
@@ -30,16 +33,19 @@ pub trait DrawCallback {
 }
 
 #[allow(unused)]
+/// InitOptions added infomations send for drawer allback function
+/// loop_count uses animation images (not impl)
+/// backgroud if uses backgroud with alpha channel images;
 pub struct InitOptions {
-    loop_count: u32,
-    backgorund: Option<u32>, // RGBA
+    pub loop_count: u32,
+    pub background: Option<u32>, // RGBA
 }
 
 impl InitOptions {
     pub fn new() -> Option<Self> {
         Some(Self {
             loop_count: 1,
-            backgorund: None,
+            background: None,
         })
     }
 }
@@ -140,9 +146,6 @@ impl CallbackResponse {
     }
 }
 
-
-
-
 #[allow(unused)]
 pub struct ImageBuffer {
     /// ImageBuffer is default drawer
@@ -153,6 +156,7 @@ pub struct ImageBuffer {
 
     pub width: usize,
     pub height: usize,
+    pub backgroud_color: u32,
     pub buffer: Option<Vec<u8>>,
     fnverbose: fn(&str) -> Result<Option<CallbackResponse>,Error>,
 }
@@ -166,6 +170,7 @@ impl ImageBuffer {
         Self {
             width: 0,
             height: 0,
+            backgroud_color: 0x00_00_00_00,
             buffer: None,
             fnverbose: default_verbose,
         }
@@ -178,11 +183,16 @@ impl ImageBuffer {
 }
 
 impl DrawCallback for ImageBuffer {
-    fn init(&mut self, width: usize, height: usize,_: Option<InitOptions>) -> Result<Option<CallbackResponse>, Error> {
+    fn init(&mut self, width: usize, height: usize,option: Option<InitOptions>) -> Result<Option<CallbackResponse>, Error> {
         let buffersize = width * height * 4;
         self.width = width;
         self.height = height;
         self.buffer = Some((0 .. buffersize).map(|_| 0).collect());
+        if let Some(option) = option {
+            if let Some(backgroud) = option.background {
+                self.backgroud_color = backgroud;
+            }
+        }
         Ok(None)
     }
 
@@ -230,6 +240,22 @@ impl DrawCallback for ImageBuffer {
 pub struct DecodeOptions<'a> {
     pub debug_flag: usize,
     pub drawer: &'a mut (dyn DrawCallback + Sync + Send),
+}
+
+pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer,Error> {
+    image_load(buffer)
+}
+
+pub fn image_from_file(filename: String) -> Result<ImageBuffer,Error> {
+    let f = std::fs::File::open(&filename)?;
+    let reader = BufReader::new(f);
+    let mut image = ImageBuffer::new();
+    let mut option = DecodeOptions {
+        debug_flag: 0x00,
+        drawer: &mut image,
+    };
+    let _ = image_reader(reader, &mut option)?;
+    Ok(image)
 }
 
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer,Error> {    

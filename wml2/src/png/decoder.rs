@@ -1,3 +1,4 @@
+use crate::draw::InitOptions;
 use crate::color::RGBA;
 use crate::png::warning::PngWarning;
 use crate::png::header::*;
@@ -780,7 +781,36 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
 
     let mut header = PngHeader::new(reader,option.debug_flag)?;
 
-    option.drawer.init(header.width as usize,header.height as usize,None)?;
+    let opt =  if let Some(ref background) = header.background_color {
+        let background = match background {
+            BacgroundColor::Grayscale(gray) => {
+                let g = if header.bitpersample == 8 { *gray as u32} else { (*gray >> 8) as u32};
+                g << 24 | g << 16 | g << 8 | 0xff
+            },
+            BacgroundColor::TrueColor((red,green,blue)) => {
+                let (r,g,b) = if header.bitpersample == 8 { (*red as u32,*green as u32,*blue as u32)}
+                                 else { (*red as u32 >> 8,*green as u32 >> 8,*blue as u32 >> 8)};
+                r << 24 | g << 16 | b << 8 | 0xff
+            },
+            BacgroundColor::Index(index) => {
+                let index = *index as usize;
+                let pallete = &header.pallete.as_ref().unwrap();
+                let r = pallete[index].red as u32;
+                let g = pallete[index].red as u32;
+                let b = pallete[index].red as u32;
+                r << 24 | g << 16 | b << 8 | 0xff
+            }
+        };
+        let init_options = InitOptions{
+            loop_count: 1,
+            background: Some(background), // RGBA
+        };
+        Some(init_options)
+    } else {
+        None
+    };
+
+    option.drawer.init(header.width as usize,header.height as usize,opt)?;
     if option.debug_flag > 0 {
         let mut s = "PNG\n".to_string();
         let s_ = format!("width {} height {}  {} bits per sample\n",header.width,header.height,header.bitpersample);
@@ -796,7 +826,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
         s += &s_.to_string();
         let s_ = format!("Transparency {:?}\n",header.transparency);
         s += &s_;
-        let s_ = format!("Backgroud color {:?}\n",header.backgroud_color);
+        let s_ = format!("Backgroud color {:?}\n",header.background_color);
         s += &s_;
         let s_ = format!("Modified time {:?}\n",header.modified_time);
         s += &s_;

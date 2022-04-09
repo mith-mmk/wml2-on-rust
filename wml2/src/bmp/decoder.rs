@@ -205,7 +205,6 @@ fn decode_rle<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  De
                     return Err(Box::new(ImgError::new_const(ImgErrorKind::NoSupportFormat,"Unknwon".to_string())))
                 } 
             } else {
-
                 if header.bit_count == 8 {
                     for _ in 0..data0{
                         buf[x] = data1;

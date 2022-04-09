@@ -18,7 +18,7 @@ dotenv = "0.15"
 
 [dependencies.wml2]
 path = "../wml2"
-features = ["multithread"]
+#features = ["multithread"]
 
 [profile.release]
 opt-level = 3

@@ -32,6 +32,18 @@ pub trait DrawCallback {
     fn verbose(&mut self, _verbose: &str,_: Option<VerboseOptions>  ) -> Result<Option<CallbackResponse>,Error>;
 }
 
+pub trait PickCallback {
+    /// DrawCallback trait is callback template
+    fn encode_start(&mut self,option: Option<EncoderOptions>) -> Result<Option<ImageProfiles>,Error>;
+    fn encode_pick(&mut self,start_x: usize, start_y: usize, width: usize, height: usize,option: Option<PickOptions>)
+                 -> Result<Option<Vec<u8>>,Error>;
+    fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(),Error>;
+}
+
+pub struct EncoderOptions {}
+pub struct PickOptions {}
+pub struct EndOptions{}
+
 #[allow(unused)]
 /// InitOptions added infomations send for drawer allback function
 /// loop_count uses animation images (not impl)
@@ -146,6 +158,12 @@ impl CallbackResponse {
     }
 }
 
+pub struct ImageProfiles {
+    pub width: usize,
+    pub height: usize,
+    pub background: Option<u32>,
+}
+
 #[allow(unused)]
 pub struct ImageBuffer {
     /// ImageBuffer is default drawer
@@ -156,7 +174,7 @@ pub struct ImageBuffer {
 
     pub width: usize,
     pub height: usize,
-    pub backgroud_color: u32,
+    pub backgroud_color: Option<u32>,
     pub buffer: Option<Vec<u8>>,
     fnverbose: fn(&str) -> Result<Option<CallbackResponse>,Error>,
 }
@@ -170,7 +188,7 @@ impl ImageBuffer {
         Self {
             width: 0,
             height: 0,
-            backgroud_color: 0x00_00_00_00,
+            backgroud_color: None,
             buffer: None,
             fnverbose: default_verbose,
         }
@@ -189,9 +207,7 @@ impl DrawCallback for ImageBuffer {
         self.height = height;
         self.buffer = Some((0 .. buffersize).map(|_| 0).collect());
         if let Some(option) = option {
-            if let Some(backgroud) = option.background {
-                self.backgroud_color = backgroud;
-            }
+            self.backgroud_color = option.background;
         }
         Ok(None)
     }
@@ -237,9 +253,58 @@ impl DrawCallback for ImageBuffer {
     }
 }
 
+impl PickCallback for ImageBuffer {
+    
+    fn encode_start(&mut self, _: Option<EncoderOptions>) -> Result<Option<ImageProfiles>, Error> {
+        let init = ImageProfiles {
+            width: self.width,
+            height: self.height,
+            background: self.backgroud_color,
+        };
+        Ok(Some(init))
+    }
+
+    fn encode_pick(&mut self,start_x: usize, start_y: usize, width: usize, height: usize, _: Option<PickOptions>) -> Result<Option<Vec<u8>>,Error> {
+        if self.buffer.is_none() {
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::NotInitializedImageBuffer,"in pick".to_string())))
+        }
+        let buffersize = width * height * 4;
+        let mut data = Vec::with_capacity(buffersize);
+        let buffer = self.buffer.as_ref().unwrap();
+
+        if start_x >= self.width || start_y >= self.height {return Ok(None);}
+        let w = if self.width < width + start_x {self.width - start_x} else { width };
+        let h = if self.height < height + start_y {self.height - start_y} else { height };
+
+        for y in 0..h {
+            let scanline_src =  (start_y + y) * width * 4;
+            for x in 0..w {
+                let offset_src = scanline_src + (start_x + x) * 4;
+                if offset_src + 3 >= buffer.len() {
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::OutboundIndex,"Image buffer in pick".to_string())))
+                }
+                data.push(buffer[offset_src]);
+                data.push(buffer[offset_src + 1]);
+                data.push(buffer[offset_src + 2]);
+                data.push(buffer[offset_src + 3]);
+            }
+        }
+        Ok(Some(data))
+    }
+
+    fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
 pub struct DecodeOptions<'a> {
     pub debug_flag: usize,
     pub drawer: &'a mut (dyn DrawCallback + Sync + Send),
+}
+
+pub struct EncodeOptions<'a> {
+    pub debug_flag: usize,
+    pub drawer: &'a mut (dyn PickCallback + Sync + Send),    
 }
 
 pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer,Error> {
@@ -284,8 +349,6 @@ pub fn image_reader<R:BufRead + Seek>(reader: R,option:&mut DecodeOptions) -> Re
     let r =image_decoder(&mut reader,option)?;
     Ok(r)
 }
-
-
 
 pub fn image_decoder<B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
     let buffer = reader.read_bytes_no_move(128)?;

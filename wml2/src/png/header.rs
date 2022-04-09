@@ -94,7 +94,7 @@ pub struct PngHeader {
     pub gamma: Option<u32>,
     pub transparency: Option<Vec<u8>>,
     pub iccprofile: Option<ICCProfile>,
-    pub backgroud_color: Option<BacgroundColor>,
+    pub background_color: Option<BacgroundColor>,
     pub sbit: Option<Vec<u8>>,
     pub text: Vec<(String,String)>,
     pub modified_time:Option<String>,
@@ -121,7 +121,7 @@ impl PngHeader {
             gamma: None,
             transparency: None,
             iccprofile: None,
-            backgroud_color: None,
+            background_color: None,
             sbit:None,
             text:Vec::new(),
             modified_time: None,
@@ -243,17 +243,17 @@ impl PngHeader {
                 let buffer = reader.read_bytes_as_vec(length as usize)?;
                 match header.color_type {
                     3 => {
-                        header.backgroud_color = Some(BacgroundColor::Index(buffer[0]));
+                        header.background_color = Some(BacgroundColor::Index(buffer[0]));
                     },
                     0 | 4 => {
                         let color = read_u16_be(&buffer,0);
-                        header.backgroud_color = Some(BacgroundColor::Grayscale(color));
+                        header.background_color = Some(BacgroundColor::Grayscale(color));
                     },
                     2 | 6 => {
                         let red = read_u16_be(&buffer,0);
                         let green = read_u16_be(&buffer,2);
                         let blue = read_u16_be(&buffer,4);
-                        header.backgroud_color = Some(BacgroundColor::TrueColor((red,green,blue)));
+                        header.background_color = Some(BacgroundColor::TrueColor((red,green,blue)));
                     },
                     _ => {},
                 }

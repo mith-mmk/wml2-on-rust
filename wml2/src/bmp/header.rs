@@ -6,6 +6,7 @@
 
 type Error = Box<dyn std::error::Error>;
 
+use std::io::SeekFrom;
 use bin_rs::reader::BinaryReader;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
@@ -150,6 +151,7 @@ impl BitmapHeader {
         let bitmap_info;
         let compression;
         let mut clut_size;
+        let clut_offset;
 
         if bi_size == 12 {
             let os2header = BitmapCore {
@@ -165,6 +167,7 @@ impl BitmapHeader {
             compression = Some(Compressions::BiRGB);
             bit_per_count = os2header.bc_bit_count as usize;
             clut_size = 0;
+            clut_offset = 12 + 14;
             bitmap_info = BitmapInfo::Os2(os2header);
         } else {
             let mut info_header = BitmapWindowsInfo {
@@ -186,7 +189,7 @@ impl BitmapHeader {
             bit_per_count = info_header.bi_bit_count as usize;
             clut_size = if bit_per_count <= 8 {info_header.bi_clr_used as usize} else {0};
             let header_size = bitmap_file_header.bf_offbits -14 - (clut_size * 4) as u32;   // issue image header size 40 but required 56
-            
+            clut_offset = info_header.bi_size as u64 + 14;
             width = info_header.bi_width as i32;
             height = info_header.bi_height as i32;
 
@@ -290,6 +293,7 @@ impl BitmapHeader {
         let mut color_table :Vec<ColorTable> = Vec::with_capacity(clut_size);
 
         if clut_size > 0 {
+            reader.seek(SeekFrom::Start(clut_offset))?;
             for _ in 0..clut_size {
                 match bitmap_info {
                     BitmapInfo::Windows(..) => {

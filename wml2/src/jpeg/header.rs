@@ -160,7 +160,6 @@ impl FrameHeader {
             let v = (read_byte(&buffer,ptr + 1) & 0x07) as usize;
             let tq = read_byte(&buffer,ptr + 2) as usize;
             ptr = ptr + 3;
-//            log(format!("No{} {}x{} Table{}", c,h,v,tq);
             component.push(Component{c,h,v,tq});
         }
  

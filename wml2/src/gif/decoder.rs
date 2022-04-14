@@ -1,4 +1,6 @@
 type Error = Box<dyn std::error::Error>;
+
+use bin_rs::io::read_ascii_string;
 use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
 use super::header::*;
@@ -25,15 +27,15 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
     let mut comment = "".to_string();
     let mut is_transpearent = false;
     let mut transperarent_color = 0x00;
-    let mut delay_time = 0 ;
+    let mut delay_time = 0;
+    let mut loop_count = 0;
+    let mut is_inited = false;
+    let mut is_first = true;
     let warnings:Option<ImgWarnings> = None;
 
     if option.debug_flag >0 {
         option.drawer.verbose(&format!("{:?}",&header),None)?;
     }
-
-
-    option.drawer.init(header.width,header.height,None)?;
 
     loop {
         let c = reader.read_byte()?;
@@ -84,13 +86,27 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                         }
                         reader.read_byte()?;// is 00
                     },
-                    0xff => {   // Netscape 2.0 (Animation Flag)
+                    0xff => {   // Netscape2.0 (Animation Flag)
+                        let len = reader.read_byte()? as usize;
+                        if len == 0 {break;}
+                        let buf = reader.read_bytes_as_vec(len)?;
+                        let s = read_ascii_string(&buf,0,len);
                         loop {
                             let len = reader.read_byte()? as usize;
                             if len == 0 {break;}
-                            let s = "Animation tag: ".to_owned() + &reader.read_ascii_string(len)?;
-                            if option.debug_flag > 0 {
-                                option.drawer.verbose(&s,None)?;
+                            let id =  reader.read_byte()?;
+
+                            if s == "NETSCAPE2.0" {
+                                if option.debug_flag > 0 {
+                                    option.drawer.verbose(&("Animation tag: ".to_owned() + &s),None)?;
+                                }
+                                if id == 0x01 {
+                                    loop_count = reader.read_u16_le()? as u32;
+                                } else {
+                                    reader.skip_ptr(len)?;
+                                }
+                            } else {
+                                reader.skip_ptr(len)?;
                             }
                         }
                     },
@@ -106,6 +122,60 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
 
             SEPARATER => {
                 let lscd = GifLscd::new(reader)?;
+                if !is_inited {
+                    let init = InitOptions{
+                        loop_count,
+                        background: None,
+                        animation: true,
+                    };
+                    option.drawer.init(header.width,header.height,Some(init))?;
+                    is_inited = true;
+                }
+
+                if !is_first {
+                    let rect = ImageRect{
+                        width: lscd.xsize as usize,
+                        height:lscd.ysize as usize,
+                        start_x:lscd.xstart as i32,
+                        start_y:lscd.ystart as i32,
+                    };
+
+                    let await_time = (delay_time * 10) as u64;
+
+                    let dispose_option :NextDispose = 
+                        match lscd.field {
+                            0 => {
+                                NextDispose::None
+                            },
+                            1 => {
+                                NextDispose::Override
+                            },
+                            2 => {
+                                NextDispose::Background
+                            },
+                            3 => {
+                                NextDispose::Previous
+                            }
+                            _ => {
+                                NextDispose::None
+                            }
+                        };
+
+                    let opt = NextOptions{
+                        flag: NextOption::Next,
+                        await_time,
+                        image_rect: Some(rect),
+                        dispose_option: Some(dispose_option),
+                        blend: Some(NextBlend::Override),
+                    };
+                    
+                    let result = option.drawer.next(Some(opt))?;
+                    if let Some(response) = result {
+                        if response.response == ResposeCommand::Abort {
+                            return Ok(None);
+                        }
+                    }
+                }
                 ptr = ptr + 9;
                 let has_local_pallet;
                 let mut local_color_table = Vec::new();
@@ -143,15 +213,13 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                 }
                 let mut decoder = Lzwdecode::gif(lzw_min_bits);
                 let data = decoder.decode(&buf)?;
-//                use weezl::{BitOrder, decode::Decoder};
-//                let data = Decoder::new(BitOrder::Lsb,lzw_min_bits as u8).decode(&buf);
-//                let data = data.unwrap();
                 let color_table = if has_local_pallet {&local_color_table} else {&header.color_table};
 
-                let width = if (lscd.xsize as usize) < header.width {lscd.xsize as usize} else {header.width};
-                let height = if (lscd.ysize as usize) < header.height {lscd.ysize as usize} else {header.height};
+                let width = lscd.xsize as usize;
+                let height = lscd.ysize as usize;
                 if option.debug_flag > 0 {
                     option.drawer.verbose(&format!("{:?}",lscd),None)?;
+                    option.drawer.verbose(&format!("{} {} {} data length {}",width,height,width*height,data.len()),None)?;
                 }
 
                 let interlace_start_y = [0,4,2,1];
@@ -160,7 +228,8 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                 let mut interlace_y = interlace_start_y[interlace_mode];
                 let is_interlace = if (lscd.field & 0x40) == 0x40 {true} else {false};
 
-                for y in lscd.ystart as usize..height {
+
+                for y in 0..height {
                     let mut line :Vec<u8> = vec![0;width*4];
                     let offset = y * width;
                     for x in 0..width as usize {
@@ -172,7 +241,12 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
 
                     }
                     if is_interlace {
-                        option.drawer.draw(lscd.xstart as usize,interlace_y,width,1,&line,None)?;
+                        if is_first {
+                            let y = interlace_y + lscd.ystart as usize;
+                            option.drawer.draw(lscd.xstart as usize,y,width,1,&line,None)?;
+                        } else {
+                            option.drawer.draw(0,interlace_y,width,1,&line,None)?;
+                        }
                         if interlace_y == 16 {
                             interlace_y += 8;
                         } else {
@@ -184,18 +258,18 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                             interlace_y = interlace_start_y[interlace_mode];
                         }
                     } else {
-                        option.drawer.draw(lscd.xstart as usize,y,width,1,&line,None)?;
+                        if is_first {
+                            let y = y + lscd.ystart as usize;
+                            option.drawer.draw(lscd.xstart as usize,y,width,1,&line,None)?;
+                        } else {
+                            option.drawer.draw(0,y,width,1,&line,None)?;
+                        }
                     }
                 }
 
-
-                let result = option.drawer.next(Some(NextOptions::wait((delay_time * 10) as u64)))?;
-                if let Some(response) = result {
-                    if response.response == ResposeCommand::Abort {
-                        return Ok(None);
-                    }
-                }
-                
+                if is_first {
+                    is_first = false;
+                }                
             },
             END_MARKER => {
                 break;

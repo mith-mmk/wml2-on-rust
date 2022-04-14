@@ -804,6 +804,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
         let init_options = InitOptions{
             loop_count: 1,
             background: Some(background), // RGBA
+            animation: false,
         };
         Some(init_options)
     } else {

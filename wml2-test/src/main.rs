@@ -30,7 +30,7 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
             let mut image = ImageBuffer::new();
             image.set_verbose(write_log);
             let mut option = DecodeOptions {
-                debug_flag: 0x00,
+                debug_flag: 0x01,
                 drawer: &mut image,
             };
             let r = image_reader(reader, &mut option);
@@ -62,8 +62,15 @@ fn wml_test() -> Result<(),Box<dyn Error>>{
         let filename = file?.path();
         let image = loader(&filename);
         if let Some(mut image) = image {
+            if let Some(animation) = &image.animation {
+                println!("Animation frames {}",animation.len());
+                for i in 0..animation.len() {
+                    let layer = &animation[i];
+                    println!("{}: {} {} {}x{} {}ms",i,layer.start_x,layer.start_y,layer.width,layer.height,layer.control.await_time);
+                }
+            }
             let mut option = EncodeOptions {
-                debug_flag: 0,
+                debug_flag: 1,
                 drawer: &mut image,    
             };
             let data = wml2::bmp::encoder::encode(&mut option);

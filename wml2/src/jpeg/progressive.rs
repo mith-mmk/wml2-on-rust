@@ -1,5 +1,5 @@
 
-#[inline] // for base line huffman
+#[inline] // for progressive huffman
 fn ac_read_progressive<B: BinaryReader>(bitread: &mut BitReader<B>,ac_decode:&HuffmanDecodeTable,zz:&mut [i32],al:u32,ah:u32,eob:&mut u32) -> Result<(),Error> {
     let mut zigzag : usize= al as usize;
     let mut run = ah -al;

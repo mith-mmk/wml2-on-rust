@@ -53,6 +53,7 @@ pub struct EndOptions{}
 pub struct InitOptions {
     pub loop_count: u32,
     pub background: Option<u32>, // RGBA
+    pub animation: bool,
 }
 
 impl InitOptions {
@@ -60,6 +61,7 @@ impl InitOptions {
         Some(Self {
             loop_count: 1,
             background: None,
+            animation: false
         })
     }
 }
@@ -86,6 +88,7 @@ pub enum NextOption {
 
 pub enum NextDispose {
     None,
+    Override,
     Background,
     Previous,
 }
@@ -97,19 +100,19 @@ pub enum NextBlend {
 
 #[allow(unused)]
 pub struct ImageRect {
-    start_x: i32,
-    start_y: i32,
-    width: i32,
-    height: i32,
+    pub start_x: i32,
+    pub start_y: i32,
+    pub width: usize,
+    pub height: usize,
 }
 
 #[allow(unused)]
 pub struct NextOptions {
-    flag: NextOption,
-    await_time: u64,
-    image_rect: Option<ImageRect>,
-    dispose_option: Option<NextDispose>,
-    blend: Option<NextBlend>
+    pub flag: NextOption,
+    pub await_time: u64,
+    pub image_rect: Option<ImageRect>,
+    pub dispose_option: Option<NextDispose>,
+    pub blend: Option<NextBlend>
 }
 
 impl NextOptions {
@@ -166,6 +169,15 @@ pub struct ImageProfiles {
     pub background: Option<u32>,
 }
 
+pub struct AnimationLayer {
+    pub width: usize,
+    pub height: usize,
+    pub start_x: i32,
+    pub start_y: i32,
+    pub buffer: Vec<u8>,
+    pub control: NextOptions,
+}
+
 #[allow(unused)]
 pub struct ImageBuffer {
     /// ImageBuffer is default drawer
@@ -178,6 +190,10 @@ pub struct ImageBuffer {
     pub height: usize,
     pub backgroud_color: Option<u32>,
     pub buffer: Option<Vec<u8>>,
+    pub animation: Option<Vec<AnimationLayer>>,
+    pub current: Option<usize>,
+    pub loop_count: Option<u32>,
+    pub first_wait_time: Option<u64>,
     fnverbose: fn(&str) -> Result<Option<CallbackResponse>,Error>,
 }
 
@@ -192,8 +208,21 @@ impl ImageBuffer {
             height: 0,
             backgroud_color: None,
             buffer: None,
+            animation: None,
+            current: None,
+            loop_count: None,
+            first_wait_time: None,
             fnverbose: default_verbose,
         }
+    }
+
+    pub fn set_animation(&mut self,flag: bool) {
+        if flag {
+            self.animation = Some(Vec::new())
+        } else {
+            self.animation = None
+        }
+
     }
 
     /// A funtion set_verbose uses also debug.
@@ -210,6 +239,10 @@ impl DrawCallback for ImageBuffer {
         self.buffer = Some((0 .. buffersize).map(|_| 0).collect());
         if let Some(option) = option {
             self.backgroud_color = option.background;
+            if option.animation {
+                self.set_animation(true);
+            }
+            self.loop_count = Some(option.loop_count);
         }
         Ok(None)
     }
@@ -219,14 +252,28 @@ impl DrawCallback for ImageBuffer {
         if self.buffer.is_none() {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::NotInitializedImageBuffer,"in draw".to_string())))
         }
-        let buffer =  self.buffer.as_deref_mut().unwrap();
-        if start_x >= self.width || start_y >= self.height {return Ok(None);}
-        let w = if self.width < width + start_x {self.width - start_x} else { width };
-        let h = if self.height < height + start_y {self.height - start_y} else { height };
+        let buffer;
+        let (w,h,raws);
+        if self.current.is_none() {
+            if start_x >= self.width || start_y >= self.height {return Ok(None);}
+            w = if self.width < width + start_x {self.width - start_x} else { width };
+            h = if self.height < height + start_y {self.height - start_y} else { height };
+            raws = self.width;
+            buffer =  self.buffer.as_deref_mut().unwrap();
+        } else if let Some(animation) = &mut self.animation {
+            let current = self.current.unwrap();
+            if start_x >= animation[current].width || start_y >= animation[current].height {return Ok(None);}
+            w = if animation[current].width < width + start_x {animation[current].width - start_x} else { width };
+            h = if animation[current].height < height + start_y {animation[current].height - start_y} else { height };
+            raws = animation[current].width;
+            buffer = &mut animation[current].buffer;
+        } else {
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::NotInitializedImageBuffer,"in animation".to_string())))
+        }
 
         for y in 0..h {
             let scanline_src =  y * width * 4;
-            let scanline_dest= (start_y + y) * self.width * 4;
+            let scanline_dest= (start_y + y) * raws * 4;
             for x in 0..w {
                 let offset_src = scanline_src + x * 4;
                 let offset_dest = scanline_dest + (x + start_x) * 4;
@@ -246,7 +293,43 @@ impl DrawCallback for ImageBuffer {
         Ok(None)
     }
 
-    fn next(&mut self, _: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error> {
+    fn next(&mut self, opt: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error> {
+        if  self.animation.is_some() {
+            if let Some(opt) = opt  {
+                if self.current.is_none() {
+                    self.current = Some(0);
+                    self.first_wait_time = Some(opt.await_time);
+                } else {
+                    self.current = Some(self.current.unwrap() + 1);
+                }
+                let (width,height,start_x,start_y);
+                if let Some(ref rect) = opt.image_rect {
+                    width = rect.width;
+                    height= rect.height;
+                    start_x=rect.start_x;
+                    start_y=rect.start_y;
+                } else {
+                    width = self.width;
+                    height= self.height;
+                    start_x=0;
+                    start_y=0;
+                }
+                let buffersize = width * height * 4;
+                let buffer: Vec<u8> = (0..buffersize).map(|_| 0).collect();
+                let layer = AnimationLayer {
+                    width: width,
+                    height: height,
+                    start_x: start_x,
+                    start_y: start_y,
+                    buffer: buffer,
+                    control: opt,
+                };
+
+                self.animation.as_mut().unwrap().push(layer);
+
+                return Ok(Some(CallbackResponse::cont()))
+            }
+        }
         Ok(Some(CallbackResponse::abort()))
     }
 

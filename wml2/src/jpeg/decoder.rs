@@ -3,20 +3,18 @@
  * use MIT License
  */
 type Error = Box<dyn std::error::Error>;
-use crate::jpeg::warning::JpegWarning;
 use bin_rs::reader::BinaryReader;
-use crate::warning::{ImgWarnings};
+use crate::warning::*;
 use crate::draw::*;
-use crate::jpeg::header::Component;
-use crate::jpeg::header::HuffmanTable;
-use crate::jpeg::header::JpegHaeder;
-use crate::jpeg::warning::JpegWarningKind;
+use crate::error::*;
+use crate::jpeg::header::*;
+use crate::jpeg::warning::*;
+use crate::jpeg::progressive::decode_progressive;
 use crate::jpeg::util::print_header;
-use crate::error::{ImgError,ImgErrorKind};
 
 
-struct BitReader<'decode, B> {
-    reader: &'decode mut B,
+pub(crate) struct BitReader<'decode, B> {
+    pub reader: &'decode mut B,
     ptr : usize,
     bptr : usize,
     rst_ptr : usize,
@@ -44,14 +42,14 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
         }
     }
 
-    fn rst(self: &mut Self) -> Result<bool,Error> {
+    pub fn rst(self: &mut Self) -> Result<bool,Error> {
         Ok(self.rst)
     }
 
-    fn next_marker(self: &mut Self) -> Result<u8,Error> {
+    pub fn next_marker(self: &mut Self) -> Result<u8,Error> {
         let buf = self.reader.read_bytes_no_move(2)?;
         if buf[0] != 0xff {
-            let s = format!("Nothing marker but {:02x}",buf[0]);
+            let s = format!("Nothing marker but {:02x} offset:{:08x}",buf[0],self.reader.offset()?);
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,s.to_string())));
         }
         self.reader.read_byte()?;
@@ -66,7 +64,7 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     }
 
     #[inline]
-    fn next_byte(self: &mut Self) -> Result<u8,Error> {
+    pub fn next_byte(self: &mut Self) -> Result<u8,Error> {
         let mut b = self.reader.read_byte()?;
         if b == 0xff {
             let marker = self.reader.read_byte()?; 
@@ -140,7 +138,7 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
 }
 
 #[inline]
-fn huffman_read<B: BinaryReader> (bit_reader:&mut BitReader<B>,table: &HuffmanDecodeTable)  -> Result<u32,Error>{
+pub(crate) fn huffman_read<B: BinaryReader> (bit_reader:&mut BitReader<B>,table: &HuffmanDecodeTable)  -> Result<u32,Error>{
     let mut d = 0;
     for l in 0..16 {
         d = (d << 1) | bit_reader.get_bit()?;
@@ -162,7 +160,7 @@ pub(crate) struct HuffmanDecodeTable {
 }
 
 #[inline]
-fn dc_read<B: BinaryReader>(bitread: &mut BitReader<B>,dc_decode:&HuffmanDecodeTable,pred:i32) -> Result<i32,Error> {
+pub(crate) fn dc_read<B: BinaryReader>(bitread: &mut BitReader<B>,dc_decode:&HuffmanDecodeTable,pred:i32) -> Result<i32,Error> {
     let ssss = huffman_read(bitread,&dc_decode)?;
     let v = bitread.get_bits(ssss as usize)?;
     let diff = extend(v,ssss as usize);
@@ -171,7 +169,7 @@ fn dc_read<B: BinaryReader>(bitread: &mut BitReader<B>,dc_decode:&HuffmanDecodeT
 }
 
 #[inline] // for base line huffman
-fn ac_read<B: BinaryReader>(bitread: &mut BitReader<B>,ac_decode:&HuffmanDecodeTable) -> Result<Vec<i32>,Error> {
+pub(crate) fn ac_read<B: BinaryReader>(bitread: &mut BitReader<B>,ac_decode:&HuffmanDecodeTable) -> Result<Vec<i32>,Error> {
     let mut zigzag : usize= 1;
     let mut zz  = [0_i32;64];
     loop {  // F2.2.2
@@ -203,7 +201,7 @@ fn ac_read<B: BinaryReader>(bitread: &mut BitReader<B>,ac_decode:&HuffmanDecodeT
 
 
 #[inline]
-fn baseline_read<B:BinaryReader>(bitread: &mut BitReader<B>,dc_decode:&HuffmanDecodeTable,ac_decode:&HuffmanDecodeTable,pred: i32)-> Result<(Vec<i32>,i32),Error> {
+pub(crate) fn baseline_read<B:BinaryReader>(bitread: &mut BitReader<B>,dc_decode:&HuffmanDecodeTable,ac_decode:&HuffmanDecodeTable,pred: i32)-> Result<(Vec<i32>,i32),Error> {
     let dc = dc_read(bitread, dc_decode, pred)?;
     let mut zz = ac_read(bitread, ac_decode)?;
     zz[0] = dc;
@@ -212,7 +210,7 @@ fn baseline_read<B:BinaryReader>(bitread: &mut BitReader<B>,dc_decode:&HuffmanDe
 
 
 #[inline]
-fn extend(mut v:i32,t: usize) -> i32 {
+pub(crate) fn extend(mut v:i32,t: usize) -> i32 {
     if t == 0 {
         return v;
     }
@@ -252,7 +250,7 @@ fn idct(f :&[i32]) -> Vec<u8> {
 
 #[inline]
 // AAN algorythm
-fn fast_idct(f: &[i32]) -> Vec<u8> {
+pub fn fast_idct(f: &[i32]) -> Vec<u8> {
     let mut _f  = [0_f32;64];
     let mut vals = [0_u8;64];
     let m0 = 1.847759;
@@ -411,7 +409,7 @@ fn fast_idct(f: &[i32]) -> Vec<u8> {
 
 
 // Glayscale
-fn y_to_rgb  (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>) -> Vec<u8> {
+pub(crate) fn y_to_rgb  (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>) -> Vec<u8> {
     let mut buffer:Vec<u8> = (0 .. hv_maps[0].h * hv_maps[0].v * 64 * 4).map(|_| 0).collect();
     for v in 0..hv_maps[0].v {
         for h in 0..hv_maps[0].h {
@@ -432,7 +430,7 @@ fn y_to_rgb  (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>) -> Vec<u8> {
     buffer
 }
 
-fn yuv_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
+pub(crate) fn yuv_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
     let mut buffer:Vec<u8> = (0..h_max * v_max * 64 * 4).map(|_| 0).collect();
     let y_map = 0;
     let u_map = y_map + hv_maps[0].h * hv_maps[0].v;
@@ -488,7 +486,7 @@ fn yuv_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,u
 }
 
 /* spec known */
-fn ycck_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
+pub(crate) fn ycck_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
     let mut buffer:Vec<u8> = (0..h_max * v_max * 64 * 4).map(|_| 0).collect();
     let y_map = 0;
     let c1_map = y_map + hv_maps[0].h * hv_maps[0].v;
@@ -564,7 +562,7 @@ fn ycck_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,
 }
 
 /* spec known */
-fn cmyk_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
+pub(crate) fn cmyk_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
     let mut buffer:Vec<u8> = (0..h_max * v_max * 64 * 4).map(|_| 0).collect();
     let k_map = 0;
     let m_map = k_map + hv_maps[0].h * hv_maps[0].v;
@@ -683,8 +681,50 @@ enum ThreadCommand {
     Run,
 }
 
+
+pub(crate) fn calc_mcu(component: &Vec<Component>) -> (usize,usize,usize,usize,usize) {
+    let mut h_max = 1;
+    let mut v_max = 1;
+    let mut dy = 8;
+    let mut dx = 8;
+    let mut size = 0;
+    for i in 0..component.len() {
+        size += component[i].h * component[i].v;
+        dx = usize::max(component[i].h * 8 ,dx);
+        dy = usize::max(component[i].v * 8 ,dy);
+        h_max = usize::max(component[i].h ,h_max);
+        v_max = usize::max(component[i].v ,v_max);
+    }
+
+
+
+    (size,h_max,v_max,dx,dy)
+}
+
+pub(crate) fn calc_scan(component: &Vec<Component>,huffman_scan_header: &HuffmanScanHeader) -> Vec<(usize,usize,usize,usize,bool)> {
+    let mut scan : Vec<(usize,usize,usize,usize,bool)> = Vec::new();
+    let mut j = 0;
+
+    for i in 0..component.len() {
+        if j < huffman_scan_header.ns && huffman_scan_header.csn[j] == i + 1 {
+            for _ in 0..component[i].h * component[i].v {
+                let tq = component[j].tq;
+                scan.push((huffman_scan_header.tdcn[j],
+                            huffman_scan_header.tacn[j],
+                            j,tq,true));
+            }
+            j += 1;
+        } else {
+            for _ in 0..component[i].h * component[i].v {
+                scan.push((0,0,0,0,false));
+            }
+        }
+    }
+    scan
+}
+
 #[cfg(feature="multithread")]
-fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
+pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
     let width = header.width;
     let height = header.height;
     let huffman_scan_header = header.huffman_scan_header.as_ref().unwrap();
@@ -698,28 +738,8 @@ fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,op
     let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables.as_ref().unwrap());
 
     let mut bitread = BitReader::new(reader);
-    let mut h_max = 1;
-    let mut v_max = 1;
-    let mut dy = 8;
-    let mut dx = 8;
-    let mut scan : Vec<(usize,usize,usize,usize)> = Vec::new();
-    let mcu_size = {
-        let mut size = 0;
-        for i in 0..component.len() {
-            size = size + component[i].h * component[i].v;
-            let tq = component[i].tq;
-            for _ in 0..component[i].h * component[i].v {
-                scan.push((huffman_scan_header.tdcn[i],
-                            huffman_scan_header.tacn[i],
-                            i,tq));
-            }
-            dx = usize::max(component[i].h * 8 ,dx);
-            dy = usize::max(component[i].v * 8 ,dy);
-            h_max = usize::max(component[i].h ,h_max);
-            v_max = usize::max(component[i].v ,v_max);
-        }
-        size
-    };
+    let (mcu_size,h_max,v_max,dx,dy) = calc_mcu(&component);
+    let scan = calc_scan(&component,&huffman_scan_header);
 
     let mut preds: Vec::<i32> = (0..component.len()).map(|_| 0).collect();
 
@@ -795,7 +815,7 @@ fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,op
     for mcu_y in 0..mcu_y_max {
         for mcu_x in 0..mcu_x_max {
             for scannumber in 0..mcu_size {
-                let (dc_current,ac_current,i,tq) = scan[scannumber];
+                let (dc_current,ac_current,i,tq,_) = scan[scannumber];
                 let ret = baseline_read(&mut bitread
                             ,&dc_decode[dc_current]
                             ,&ac_decode[ac_current]
@@ -908,7 +928,7 @@ fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,op
 }
 
 #[cfg(not(feature="multithread"))]
-fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
+pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
     let width = header.width;
     let height = header.height;
     let huffman_scan_header = header.huffman_scan_header.as_ref().unwrap();
@@ -922,28 +942,9 @@ fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,op
     let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables.as_ref().unwrap());
 
     let mut bitread = BitReader::new(reader);
-    let mut h_max = 1;
-    let mut v_max = 1;
-    let mut dy = 8;
-    let mut dx = 8;
-    let mut scan : Vec<(usize,usize,usize,usize)> = Vec::new();
-    let mcu_size = {
-        let mut size = 0;
-        for i in 0..component.len() {
-            size = size + component[i].h * component[i].v;
-            let tq = component[i].tq;
-            for _ in 0..component[i].h * component[i].v {
-                scan.push((huffman_scan_header.tdcn[i],
-                            huffman_scan_header.tacn[i],
-                            i,tq));
-            }
-            dx = usize::max(component[i].h * 8 ,dx);
-            dy = usize::max(component[i].v * 8 ,dy);
-            h_max = usize::max(component[i].h ,h_max);
-            v_max = usize::max(component[i].v ,v_max);
-        }
-        size
-    };
+    let (mcu_size,h_max,v_max,dx,dy) = calc_mcu(&component);
+    let scan = calc_scan(&component,&huffman_scan_header);
+
 
     let mut preds: Vec::<i32> = (0..component.len()).map(|_| 0).collect();
 
@@ -957,11 +958,9 @@ fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,op
     for mcu_y in 0..mcu_y_max {
         for mcu_x in 0..mcu_x_max {
             let mut mcu_units :Vec<Vec<u8>> = Vec::new();
-// this multi thread impl very slowly
-//            let mut handles :Vec<std::thread::JoinHandle<Vec<u8>>> = Vec::new();
 
             for scannumber in 0..mcu_size {
-                let (dc_current,ac_current,i,tq) = scan[scannumber];
+                let (dc_current,ac_current,i,tq,_) = scan[scannumber];
                 let ret = baseline_read(&mut bitread
                             ,&dc_decode[dc_current]
                             ,&ac_decode[ac_current]
@@ -984,21 +983,9 @@ fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,op
                 let sq = &super::util::ZIG_ZAG_SEQUENCE;
                 let q = quantization_tables[tq].q.clone();
                 let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
- 
-//                let handle = std::thread::spawn(move || {
-                    let ff = fast_idct(&zz);
-                    mcu_units.push(ff);
-//                    ff
-//                });
-//                handles.push(handle);                    
+                let ff = fast_idct(&zz);
+                 mcu_units.push(ff);
             }
-
-/*
-            for handle in handles {
-                let ff = handle.join().unwrap();
-                mcu_units.push(ff);
-            }
-*/
 
             // Only implement RGB
 
@@ -1109,22 +1096,12 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Hierachical is not support".to_string())))
     }
 
-    match header.huffman_tables {
-        None => {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Huffman Tables".to_string())))
-        },
-        _ => {
-
-        }
+    if header.huffman_tables.is_none() {
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Huffman Tables".to_string())))
     }
 
-    match header.frame_header {
-        None => {
+    if header.frame_header.is_none() {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header".to_string())))
-        },
-        _ => {
-
-        }
     }
 
     let fh = header.frame_header.as_ref().unwrap();
@@ -1132,23 +1109,14 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     if plane == 0 || plane > 4 {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support planes".to_string())))
     }
-    match fh.component {
-        None => {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header Component".to_string())));
-        },
-        _ => {
 
-        }
+    if fh.component.is_none() {
+            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header Component".to_string())));
     }
 
 
-    match header.quantization_tables {
-        None => {
+    if header.quantization_tables.is_none() {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Quantization Tables".to_string())));
-        },
-        _ => {
-
-        }
     }
 
     if fh.is_huffman == false {
@@ -1156,11 +1124,9 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     }
 
 
-    if fh.is_baseline == false {
-//        if fh.is_progressive == false {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder support Baseline Only".to_string())));
-//        }
-    }
+//    if fh.is_progressive == true {
+//        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder is not support progressive".to_string())));
+//    }
 
     if fh.is_differential == true {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder not support differential".to_string())));
@@ -1173,5 +1139,10 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
                 "Plane 4 color translation rule is known".to_string())))
     }
 
-    decode_baseline(reader, &header, option,warnings)
+    if fh.is_progressive {
+        // in debug
+        decode_progressive(reader, &header, option,warnings)
+    } else {
+        decode_baseline(reader, &header, option,warnings)
+    }
 }

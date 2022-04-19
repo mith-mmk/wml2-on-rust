@@ -51,7 +51,7 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
     match &header.frame_header {
         Some(fh) =>  {
             str = str + &format!(
-            "SOF\nBaseline {} Progressiv {} Huffman {} Diffelensial {} Sequensial {} Lossless {} \n",
+            "SOF\nBaseline {} Progressive {} Huffman {} Diffelensial {} Sequensial {} Lossless {} \n",
             fh.is_baseline,fh.is_progressive,fh.is_huffman,fh.is_differential,fh.is_sequential,fh.is_lossress);
 
             str = str + &format!(

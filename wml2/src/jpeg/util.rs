@@ -4,6 +4,7 @@
  */
 
 //type Error = Box<dyn std::error::Error>;
+use crate::jpeg::header::HuffmanTable;
 use crate::iccprofile::{icc_profile_header_print, icc_profile_print, ICCProfile};
 use super::header::JpegAppHeaders::{Adobe, Ducky, Exif,  Jfif, Unknown};
 use super::header::JpegAppHeaders::ICCProfile as JpegICCProfile;
@@ -204,63 +205,49 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
     }
 
     if option & 0x02 == 0x02 { // Define Huffman Table Flags
-        match &header.huffman_tables {
-            Some(hts) => {
-                str = str + "DHT\n";
-                for ht in hts.iter()  {
-                    str = str + &format!("{} Table{}\n",if ht.ac == true {"AC"} else {"DC"},ht.no);
-                    str = str + "L ";
-                    for l in ht.len.iter() {
-                        str = str + &l.to_string() + " ";
-                    }
-                    str = str + "\n V ";
-                    for v in ht.val.iter()  {
-                        str = str + &v.to_string() + " ";                    
-                    }
-                    str = str + "\n";
+        let hts = &header.huffman_tables;
+        str = str + "DHT\n";
+        for ht in hts.dc_tables.iter()  {
+            if let Some(ht) = ht {
+                str = str + &format!("DC Table{}\n",ht.no);
+                str = str + "L ";
+                for l in ht.len.iter() {
+                    str = str + &l.to_string() + " ";
                 }
-            },
-            _ => {
-                str = str + "DQT in nothing!\n\n";
+                str = str + "\n V ";
+                for v in ht.val.iter()  {
+                    str = str + &v.to_string() + " ";                    
+                }
+                str = str + "\n";
             }
-    
+        }
+        for ht in hts.ac_tables.iter()  {
+            if let Some(ht) = ht {
+                str = str + &format!("AC Table{}\n",ht.no);
+                str = str + "L ";
+                for l in ht.len.iter() {
+                    str = str + &l.to_string() + " ";
+                }
+                str = str + "\n V ";
+                for v in ht.val.iter()  {
+                    str = str + &v.to_string() + " ";                    
+                }
+                str = str + "\n";
+            }
         }
     }
 
     if option & 0x04 == 0x04 { // Define Huffman Table Decoded
-        match &header.huffman_tables {
-            Some(huffman_tables) => {
-                for (i,huffman_table) in huffman_tables.iter().enumerate() {
-                    let mut current_max: Vec<i32> = Vec::new();
-                    let mut current_min: Vec<i32> = Vec::new();
-
-                    if huffman_table.ac {
-                        str = str + &format!("Huffman Table AC {}\n",i);
-                    } else {
-                        str = str + &format!("Huffman Table DC {}\n",i);
-                    }
-
-                    let mut code :i32 = 0;
-                    let mut pos :usize = 0;
-                    for l in 0..16 {
-                        if huffman_table.len[l] != 0 {
-                            current_min.push(code);
-                            for _ in 0..huffman_table.len[l] {
-                                if pos >= huffman_table.val.len() { break;}
-                                str = str + &format!("{:>02b}  {:>02x}\n",code,huffman_table.val[pos]);
-                                pos = pos + 1;
-                                code = code + 1;
-                            }
-                            current_max.push(code - 1); 
-                        } else {
-                            current_min.push(-1);
-                            current_max.push(-1);
-                        }
-                        code = code << 1;
-                    }                    
-                }
-            },
-            _  =>  {}
+        let hts = &header.huffman_tables;
+        for (i,huffman_table) in hts.dc_tables.iter().enumerate() {
+            if let Some(huffman_table) = huffman_table {
+               str += &print_huffman(i, huffman_table);
+            }
+        }
+        for (i,huffman_table) in hts.ac_tables.iter().enumerate() {
+            if let Some(huffman_table) = huffman_table {
+               str += &print_huffman(i, huffman_table);
+            }
         }
     }
 
@@ -276,4 +263,38 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
     let strbox :Box<String> = Box::new(str);
 
     strbox
+}
+
+fn print_huffman(i:usize,huffman_table:&HuffmanTable) -> String {
+    let mut current_max: Vec<i32> = Vec::new();
+    let mut current_min: Vec<i32> = Vec::new();
+    let mut str = "".to_string();
+
+    if huffman_table.ac {
+        str = str + &format!("Huffman Table AC {}\n",i);
+    } else {
+        str = str + &format!("Huffman Table DC {}\n",i);
+    }
+
+    let mut code :i32 = 0;
+    let mut pos :usize = 0;
+    for l in 0..16 {
+        if huffman_table.len[l] != 0 {
+            current_min.push(code);
+            for _ in 0..huffman_table.len[l] {
+                if pos >= huffman_table.val.len() { break;}
+                str = str + &format!("{:>02b}  {:>02x}\n",code,huffman_table.val[pos]);
+                pos = pos + 1;
+                code = code + 1;
+            }
+            current_max.push(code - 1); 
+        } else {
+            current_min.push(-1);
+            current_max.push(-1);
+        }
+        code = code << 1;
+    }                    
+
+    str
+    
 }

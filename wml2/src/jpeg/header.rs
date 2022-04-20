@@ -37,8 +37,26 @@ impl HuffmanScanHeader {
     }
 }
 
+#[derive(Debug)]
+pub struct HuffmanTables {
+    pub ac_tables: Vec<Option<HuffmanTable>>,
+    pub dc_tables: Vec<Option<HuffmanTable>>,
+}
+
+impl HuffmanTables {
+    pub fn new() -> Self {
+        let ac_tables: Vec<Option<HuffmanTable>> = vec![None,None,None,None];
+        let dc_tables: Vec<Option<HuffmanTable>> = vec![None,None,None,None];
+        Self {
+            ac_tables,
+            dc_tables,
+        }
+
+    }
+}
 
 /* from DHT */
+#[derive(Debug)]
 pub struct HuffmanTable {
     pub ac: bool,
     pub no: usize,
@@ -246,7 +264,7 @@ pub struct JpegHaeder {
     pub height: usize,
     pub bpp: usize,
     pub frame_header:Option<FrameHeader>,
-    pub huffman_tables:Option<Vec<HuffmanTable>>,
+    pub huffman_tables:HuffmanTables,
     pub huffman_scan_header:Option<HuffmanScanHeader>,
     pub quantization_tables:Option<Vec<QuantizationTable>>,
     pub line: usize,
@@ -438,7 +456,7 @@ fn read_app(num: usize,tag :&String,buffer :&[u8]) -> Result<JpegAppHeaders,Erro
                     let flag1 = read_byte(&buffer, ptr + 1) as usize;
                     let flag2 = read_byte(&buffer, ptr + 2) as usize;
                     let ct = read_byte(&buffer, ptr + 3) as usize;
-                        return Ok(JpegAppHeaders::Adobe(AdobeApp14{dct_encode_version: ver,flag1 :flag1,flag2: flag2,color_transform: ct}));
+                    return Ok(JpegAppHeaders::Adobe(AdobeApp14{dct_encode_version: ver,flag1 :flag1,flag2: flag2,color_transform: ct}));
                 },
                 _ => {
                 }
@@ -471,7 +489,7 @@ impl JpegHaeder {
         return Self::read_makers(reader,opt,true,false)
     }
 
-    pub(crate) fn dht_read<B: BinaryReader>(reader:&mut B,huffman_tables:&mut Vec<HuffmanTable>) ->  Result<(),Error> {
+    pub(crate) fn dht_read<B: BinaryReader>(reader:&mut B,huffman_tables:&mut HuffmanTables) ->  Result<(),Error> {
         let length = reader.read_u16_be()? as usize;
         let mut size :usize = 2;
         while size < length {
@@ -501,7 +519,18 @@ impl JpegHaeder {
             }
             size = size + 16;
 
-            huffman_tables.push(HuffmanTable::new(ac,no,len,p,val));
+            if no > 3 {
+                return Err(Box::new(
+                    ImgError::new_const(
+                        ImgErrorKind::OutboundIndex,
+                        "overflow huffman tables".to_string()
+                    )))
+            }
+            if ac {
+                huffman_tables.ac_tables[no] = Some(HuffmanTable::new(ac,no,len,p,val))
+            } else {
+                huffman_tables.dc_tables[no] = Some(HuffmanTable::new(ac,no,len,p,val))          
+            }
             size = size + vlen;
         }
         Ok(())
@@ -568,8 +597,7 @@ impl JpegHaeder {
         let mut width : usize = 0;
         let mut height: usize = 0;
         let mut bpp: usize = 0;
-        let mut _huffman_tables:Vec<HuffmanTable> = Vec::new();
-        let huffman_tables:Option<Vec<HuffmanTable>>;
+        let mut huffman_tables = HuffmanTables::new();
         let huffman_scan_header:Option<HuffmanScanHeader>;
         let mut quantization_tables:Vec<QuantizationTable> = Vec::new();
         let mut line: usize = 0;
@@ -624,7 +652,7 @@ impl JpegHaeder {
                             size = size + vlen;
                         }
                         */
-                        Self::dht_read(reader, &mut _huffman_tables)?;
+                        Self::dht_read(reader, &mut huffman_tables)?;
 
                         //  offset = offset + length; // skip
                     },
@@ -812,12 +840,6 @@ impl JpegHaeder {
             jpeg_app_headers = Some(_jpeg_app_headers);
         } else {
             jpeg_app_headers = None;
-        }
-
-        if _huffman_tables.len() > 0 {
-            huffman_tables = Some(_huffman_tables);
-        } else {
-            huffman_tables = None;
         }
 
 

@@ -67,7 +67,10 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     pub fn next_byte(self: &mut Self) -> Result<u8,Error> {
         let mut b = self.reader.read_byte()?;
         if b == 0xff {
-            let marker = self.reader.read_byte()?; 
+            let mut marker = self.reader.read_byte()?; 
+            while marker == 0xff {
+                marker = self.reader.read_byte()?; 
+            }
             match marker {
                 0x00 => {
                     b = 0xff;
@@ -87,10 +90,12 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
                     return self.next_byte();
                 },
                 0xd9=> { // EOI
-                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"FF after  00 or RST".to_string())))
+                    let boxstr = format!("FF after 00 or RST {:02x} offset {:08x}",marker,self.reader.offset()?);
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,boxstr)))
                 },
                 _ =>{
-                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"FF after  00 or RST".to_string())))
+                    let boxstr = format!("FF after 00 or RST {:02x} offset {:08x}",marker,self.reader.offset()?);
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,boxstr)))
                 },                    
             }
         }
@@ -147,11 +152,12 @@ pub(crate) fn huffman_read<B: BinaryReader> (bit_reader:&mut BitReader<B>,table:
             return Ok(table.val[p] as u32)                      
         }
     }
-    Err(Box::new(ImgError::new_const(ImgErrorKind::OutboundIndex,"huffman_read is overflow".to_string())))  
+    let boxstr = format!("huffman_read is overflow val{} offset {:08x}",d,bit_reader.reader.offset()?);
+    Err(Box::new(ImgError::new_const(ImgErrorKind::OutboundIndex,boxstr)))
 }
 
 
-#[derive(std::cmp::PartialEq)]
+#[derive(std::cmp::PartialEq,Debug)]
 pub(crate) struct HuffmanDecodeTable {
     pos: Vec::<usize>,
     val: Vec::<usize>,
@@ -189,7 +195,10 @@ pub(crate) fn ac_read<B: BinaryReader>(bitread: &mut BitReader<B>,ac_decode:&Huf
         } else {
             zigzag = zigzag + rrrr as usize;
             let v = bitread.get_bits(ssss as usize)?;
-            zz[zigzag] = extend(v,ssss as usize);
+            let z = extend(v,ssss as usize);
+            if zigzag <= 63 {
+                zz[zigzag] = z;
+            }
         }
         if zigzag >= 63 {
             return Ok(zz.to_vec())
@@ -622,47 +631,72 @@ pub(crate) fn cmyk_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_m
     buffer
 }
 
-pub(crate) fn huffman_extend(huffman_tables:&Vec<HuffmanTable>) -> (Vec<HuffmanDecodeTable>,Vec<HuffmanDecodeTable>) {
+pub(crate) fn huffman_extend(huffman_tables:&HuffmanTables) -> (Vec<Option<HuffmanDecodeTable>>,Vec<Option<HuffmanDecodeTable>>) {
 
-    let mut ac_decode : Vec<HuffmanDecodeTable> = Vec::new();
-    let mut dc_decode : Vec<HuffmanDecodeTable> = Vec::new();
+    let mut ac_decode : Vec<Option<HuffmanDecodeTable>> = vec![None,None,None,None];
+    let mut dc_decode : Vec<Option<HuffmanDecodeTable>> = vec![None,None,None,None];
 
-    for huffman_table in huffman_tables.iter() {
+    
+    for huffman_table in huffman_tables.ac_tables.iter() {
+        if let Some(huffman_table) = huffman_table {
 
-        let mut current_max: Vec<i32> = Vec::new();
-        let mut current_min: Vec<i32> = Vec::new();
+            let mut current_max: Vec<i32> = Vec::new();
+            let mut current_min: Vec<i32> = Vec::new();
 
-        let mut code :i32 = 0;
-        let mut pos :usize = 0;
-        for l in 0..16 {
-            if huffman_table.len[l] != 0 {
-                current_min.push(code); 
-                for _ in 0..huffman_table.len[l] {
-                    if pos >= huffman_table.val.len() { break;}
-                    pos = pos + 1;
-                    code = code + 1;
+            let mut code :i32 = 0;
+            let mut pos :usize = 0;
+            for l in 0..16 {
+                if huffman_table.len[l] != 0 {
+                    current_min.push(code); 
+                    for _ in 0..huffman_table.len[l] {
+                        if pos >= huffman_table.val.len() { break;}
+                        pos = pos + 1;
+                        code = code + 1;
+                    }
+                    current_max.push(code - 1); 
+                } else {
+                    current_min.push(-1);
+                    current_max.push(-1);
                 }
-                current_max.push(code - 1); 
-            } else {
-                current_min.push(-1);
-                current_max.push(-1);
+                code = code << 1;
             }
-            code = code << 1;
-        }
         
-        if huffman_table.ac {
             let val : Vec<usize> = huffman_table.val.iter().map(|i| *i).collect();
             let pos : Vec<usize> = huffman_table.pos.iter().map(|i| *i).collect();
-            ac_decode.push(HuffmanDecodeTable{
+            ac_decode[huffman_table.no] = Some(HuffmanDecodeTable{
                 val: val,
                 pos: pos,
                 max: current_max,
                 min: current_min,
             });
-        } else {
+        }
+    }
+
+    for huffman_table in huffman_tables.dc_tables.iter() {
+        if let Some(huffman_table) = huffman_table {
+            let mut current_max: Vec<i32> = Vec::new();
+            let mut current_min: Vec<i32> = Vec::new();
+
+            let mut code :i32 = 0;
+            let mut pos :usize = 0;
+            for l in 0..16 {
+                if huffman_table.len[l] != 0 {
+                    current_min.push(code); 
+                    for _ in 0..huffman_table.len[l] {
+                        if pos >= huffman_table.val.len() { break;}
+                        pos = pos + 1;
+                        code = code + 1;
+                    }
+                    current_max.push(code - 1); 
+                } else {
+                    current_min.push(-1);
+                    current_max.push(-1);
+                }
+                code = code << 1;
+            }
             let val : Vec<usize> = huffman_table.val.iter().map(|i| *i).collect();
             let pos : Vec<usize> = huffman_table.pos.iter().map(|i| *i).collect();
-            dc_decode.push(HuffmanDecodeTable{
+            dc_decode[huffman_table.no] = Some(HuffmanDecodeTable{
                 val: val,
                 pos: pos,
                 max: current_max,
@@ -735,7 +769,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
     option.drawer.init(width,height,InitOptions::new())?;
 
     let quantization_tables = header.quantization_tables.clone().unwrap();
-    let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables.as_ref().unwrap());
+    let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables.as_ref());
 
     let mut bitread = BitReader::new(reader);
     let (mcu_size,h_max,v_max,dx,dy) = calc_mcu(&component);
@@ -939,7 +973,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
     option.drawer.init(width,height,InitOptions::new())?;
 
     let quantization_tables = header.quantization_tables.as_ref().unwrap();
-    let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables.as_ref().unwrap());
+    let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables);
 
     let mut bitread = BitReader::new(reader);
     let (mcu_size,h_max,v_max,dx,dy) = calc_mcu(&component);
@@ -962,8 +996,8 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
             for scannumber in 0..mcu_size {
                 let (dc_current,ac_current,i,tq,_) = scan[scannumber];
                 let ret = baseline_read(&mut bitread
-                            ,&dc_decode[dc_current]
-                            ,&ac_decode[ac_current]
+                            ,&dc_decode[dc_current].as_ref().unwrap()
+                            ,&ac_decode[ac_current].as_ref().unwrap()
                             ,preds[i]);
                 let (zz,pred);
                 match ret {
@@ -1085,7 +1119,7 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     let mut warnings: Option<ImgWarnings> = None;
         // Make Huffman Table
     // Scan Header
-    let header = JpegHaeder::new(reader,0)?;
+    let mut header = JpegHaeder::new(reader,0)?;
 
     if option.debug_flag > 0 {
         let boxstr = print_header(&header,option.debug_flag);
@@ -1094,10 +1128,6 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     
     if header.is_hierachical {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Hierachical is not support".to_string())))
-    }
-
-    if header.huffman_tables.is_none() {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Huffman Tables".to_string())))
     }
 
     if header.frame_header.is_none() {
@@ -1141,7 +1171,7 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
 
     if fh.is_progressive {
         // in debug
-        decode_progressive(reader, &header, option,warnings)
+        decode_progressive(reader, &mut header, option,warnings)
     } else {
         decode_baseline(reader, &header, option,warnings)
     }

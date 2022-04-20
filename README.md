@@ -92,7 +92,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.5 reader change/Error delagation change
 - 0.0.6 issue RST maker read bug fix
 - 0.0.7 add PNG
-- 0.0.8 add Jpeg multithread(pipelined) / BMP saver / Animation GIF(alpha)
+- 0.0.8 add Jpeg multithread(pipelined),Progressive Jpeg has bugs(4,1,1) / BMP saver / Animation GIF(alpha)
 
 # todo
 - TIFF

@@ -39,6 +39,7 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
     let mut loop_count = 1;
 
     loop {
+        bitread.reset();
         let (ac_decode, dc_decode) = huffman_extend(&huffman_tables);
 
         let (ss, se, ah,al) = (huffman_scan_header.ss,huffman_scan_header.se,huffman_scan_header.ah,huffman_scan_header.al);
@@ -52,6 +53,10 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
             loop_count += 1;
         }
         let scan = calc_scan(&component,&huffman_scan_header);
+        if option.debug_flag > 0 {
+            let boxstr = &format!(" Scan {:?} \n",scan);
+            option.drawer.verbose(&boxstr,None)?;
+        }
         let mut preds: Vec::<i32> = (0..component.len()).map(|_| 0).collect();
         let mut eobrun: usize = 0;
 
@@ -166,7 +171,6 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                             return Ok(warnings)
                         },
                         0xc4 => { // DHT
-                            //_huffman_tables.clear();
                             JpegHaeder::dht_read(bitread.reader, &mut huffman_tables)?;
                             println!("redefine huffman");
                             println!("{:?}",huffman_tables);
@@ -226,13 +230,9 @@ fn progressive_ac_read<B: BinaryReader>(bitread:&mut BitReader<B>, ac_decode:&Hu
                 zigzag += 16;
                 continue;
             } else {    // G.1.2.2
-                if rrrr != 0 {
-                    let e = (1 << rrrr) as usize;
-                    let v = bitread.get_bits(rrrr as usize)? as usize;
-                    eob = e + v;
-                } else {
-                    eob = 1;
-                }
+                let e = (1 << rrrr) as usize;
+                let v = bitread.get_bits(rrrr as usize)? as usize;
+                eob = e + v;
                 return Ok(eob-1)
             }
         } else {

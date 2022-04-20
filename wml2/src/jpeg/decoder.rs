@@ -16,10 +16,10 @@ use crate::jpeg::util::print_header;
 pub(crate) struct BitReader<'decode, B> {
     pub reader: &'decode mut B,
     ptr : usize,
-    bptr : usize,
+    pub(crate) bptr : usize,
     rst_ptr : usize,
     prev_rst: usize,
-    b: u8,
+    pub(crate) b: u8,
     rst: bool,
     eof_flag: bool,
 }
@@ -115,6 +115,7 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
 
     #[inline]
     pub fn get_bits(self: &mut Self,mut bits:usize) -> Result<i32,Error> {
+        if bits == 0 { return Ok(0)}
         if self.bptr == 0 {
             self.b = self.next_byte()?;
             self.bptr = 8;
@@ -631,77 +632,53 @@ pub(crate) fn cmyk_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_m
     buffer
 }
 
+pub(crate) fn expand_huffman_table(huffman_table: &HuffmanTable) -> Option<HuffmanDecodeTable> {
+    let mut current_max: Vec<i32> = Vec::new();
+    let mut current_min: Vec<i32> = Vec::new();
+
+    let mut code :i32 = 0;
+    let mut pos :usize = 0;
+    for l in 0..16 {
+        if huffman_table.len[l] != 0 {
+            current_min.push(code); 
+            for _ in 0..huffman_table.len[l] {
+                if pos >= huffman_table.val.len() { break;}
+                pos = pos + 1;
+                code = code + 1;
+            }
+            current_max.push(code - 1); 
+        } else {
+            current_min.push(-1);
+            current_max.push(-1);
+        }
+        code = code << 1;
+    }
+
+    let val : Vec<usize> = huffman_table.val.iter().map(|i| *i).collect();
+    let pos : Vec<usize> = huffman_table.pos.iter().map(|i| *i).collect();
+
+    Some(HuffmanDecodeTable{
+        val: val,
+        pos: pos,
+        max: current_max,
+        min: current_min,
+    })
+}
+
 pub(crate) fn huffman_extend(huffman_tables:&HuffmanTables) -> (Vec<Option<HuffmanDecodeTable>>,Vec<Option<HuffmanDecodeTable>>) {
 
     let mut ac_decode : Vec<Option<HuffmanDecodeTable>> = vec![None,None,None,None];
     let mut dc_decode : Vec<Option<HuffmanDecodeTable>> = vec![None,None,None,None];
-
     
     for huffman_table in huffman_tables.ac_tables.iter() {
         if let Some(huffman_table) = huffman_table {
-
-            let mut current_max: Vec<i32> = Vec::new();
-            let mut current_min: Vec<i32> = Vec::new();
-
-            let mut code :i32 = 0;
-            let mut pos :usize = 0;
-            for l in 0..16 {
-                if huffman_table.len[l] != 0 {
-                    current_min.push(code); 
-                    for _ in 0..huffman_table.len[l] {
-                        if pos >= huffman_table.val.len() { break;}
-                        pos = pos + 1;
-                        code = code + 1;
-                    }
-                    current_max.push(code - 1); 
-                } else {
-                    current_min.push(-1);
-                    current_max.push(-1);
-                }
-                code = code << 1;
-            }
-        
-            let val : Vec<usize> = huffman_table.val.iter().map(|i| *i).collect();
-            let pos : Vec<usize> = huffman_table.pos.iter().map(|i| *i).collect();
-            ac_decode[huffman_table.no] = Some(HuffmanDecodeTable{
-                val: val,
-                pos: pos,
-                max: current_max,
-                min: current_min,
-            });
+            ac_decode[huffman_table.no] = expand_huffman_table(huffman_table);
         }
     }
 
     for huffman_table in huffman_tables.dc_tables.iter() {
         if let Some(huffman_table) = huffman_table {
-            let mut current_max: Vec<i32> = Vec::new();
-            let mut current_min: Vec<i32> = Vec::new();
-
-            let mut code :i32 = 0;
-            let mut pos :usize = 0;
-            for l in 0..16 {
-                if huffman_table.len[l] != 0 {
-                    current_min.push(code); 
-                    for _ in 0..huffman_table.len[l] {
-                        if pos >= huffman_table.val.len() { break;}
-                        pos = pos + 1;
-                        code = code + 1;
-                    }
-                    current_max.push(code - 1); 
-                } else {
-                    current_min.push(-1);
-                    current_max.push(-1);
-                }
-                code = code << 1;
-            }
-            let val : Vec<usize> = huffman_table.val.iter().map(|i| *i).collect();
-            let pos : Vec<usize> = huffman_table.pos.iter().map(|i| *i).collect();
-            dc_decode[huffman_table.no] = Some(HuffmanDecodeTable{
-                val: val,
-                pos: pos,
-                max: current_max,
-                min: current_min,
-            });
+            dc_decode[huffman_table.no] = expand_huffman_table(huffman_table);
         }
     }
 

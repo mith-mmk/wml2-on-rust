@@ -87,7 +87,6 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                         eobrun = successive_approximation_read(&mut bitread, &ac_decode[ac_current].as_ref().unwrap(),zz,start,se,ah,al,eobrun)?;
                     }
                 }
-
                 if header.interval > 0 {
                     mcu_interval = mcu_interval - 1;
                     if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max -1 { 
@@ -238,9 +237,9 @@ fn progressive_ac_read<B: BinaryReader>(bitread:&mut BitReader<B>, ac_decode:&Hu
             }
         } else {
             zigzag += rrrr as usize;
-            let v = bitread.get_bits(ssss as usize)?;
-            let z = extend(v,ssss as usize) << al as usize;
             if zigzag <= se {
+                let v = bitread.get_bits(ssss as usize)?;
+                let z = extend(v,ssss as usize) << al as usize;
                 zz[zigzag] = z;
             }
         }

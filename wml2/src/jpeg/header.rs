@@ -37,7 +37,7 @@ impl HuffmanScanHeader {
     }
 }
 
-#[derive(Debug)]
+
 pub struct HuffmanTables {
     pub ac_tables: Vec<Option<HuffmanTable>>,
     pub dc_tables: Vec<Option<HuffmanTable>>,
@@ -56,7 +56,7 @@ impl HuffmanTables {
 }
 
 /* from DHT */
-#[derive(Debug)]
+
 pub struct HuffmanTable {
     pub ac: bool,
     pub no: usize,

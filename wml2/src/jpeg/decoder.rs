@@ -418,6 +418,18 @@ pub fn fast_idct(f: &[i32]) -> Vec<u8> {
 }
 
 
+
+pub(crate) fn convert_rgb(plane: usize,mcu_units :&Vec<Vec<u8>>,component: &Vec<Component>,adobe_color_transform:usize,(h_max,v_max):(usize,usize)) -> Vec<u8> {
+    let data = if plane == 3 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))}  // RGB
+    else if plane == 4 { // hasBug
+       if adobe_color_transform == 2 {ycck_to_rgb(&mcu_units,&component,(h_max,v_max))}  // YCcK Spec Unknown
+       else if adobe_color_transform == 1 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))} // RGBA
+       else {cmyk_to_rgb(&mcu_units,&component,(h_max,v_max))} // CMYK Spec Unknown
+    }
+    else {y_to_rgb(&mcu_units,&component)}; // g / ga
+    data
+}
+
 // Glayscale
 pub(crate) fn y_to_rgb  (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>) -> Vec<u8> {
     let mut buffer:Vec<u8> = (0 .. hv_maps[0].h * hv_maps[0].v * 64 * 4).map(|_| 0).collect();
@@ -734,6 +746,9 @@ pub(crate) fn calc_scan(component: &Vec<Component>,huffman_scan_header: &Huffman
     scan
 }
 
+
+
+
 #[cfg(feature="multithread")]
 pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
     let width = header.width;
@@ -746,7 +761,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
     option.drawer.init(width,height,InitOptions::new())?;
 
     let quantization_tables = header.quantization_tables.clone().unwrap();
-    let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables.as_ref());
+    let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables);
 
     let mut bitread = BitReader::new(reader);
     let (mcu_size,h_max,v_max,dx,dy) = calc_mcu(&component);
@@ -812,13 +827,8 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
                 let _ = tx4.send((com,vec![],mcu_x,mcu_y));
                 break;
             }
-            let data = if plane == 3 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))}  // RGB
-                else if plane == 4 { // hasBug
-                   if adobe_color_transform == 2 {ycck_to_rgb(&mcu_units,&component,(h_max,v_max))}  // YCcK Spec Unknown
-                   else if adobe_color_transform == 1 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))} // RGBA
-                   else {cmyk_to_rgb(&mcu_units,&component,(h_max,v_max))} // CMYK Spec Unknown
-                }
-                else {y_to_rgb(&mcu_units,&component)}; // g / ga
+            let data = convert_rgb(plane,&mcu_units,&component,adobe_color_transform,(h_max,v_max));
+
             let _ = tx4.send((com,data,mcu_x,mcu_y));
         }
     });
@@ -828,8 +838,8 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
             for scannumber in 0..mcu_size {
                 let (dc_current,ac_current,i,tq,_) = scan[scannumber];
                 let ret = baseline_read(&mut bitread
-                            ,&dc_decode[dc_current]
-                            ,&ac_decode[ac_current]
+                            ,&dc_decode[dc_current].as_ref().unwrap()
+                            ,&ac_decode[ac_current].as_ref().unwrap()
                             ,preds[i]);
                 let (zz,pred);
                 match ret {
@@ -999,14 +1009,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
             }
 
             // Only implement RGB
-
-            let data = if plane == 3 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))}  // RGB
-                         else if plane == 4 { // hasBug
-                            if header.adobe_color_transform == 2 {ycck_to_rgb(&mcu_units,&component,(h_max,v_max))}  // YCcK Spec Unknown
-                            else if header.adobe_color_transform == 1 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))} // RGBA
-                            else {cmyk_to_rgb(&mcu_units,&component,(h_max,v_max))} // CMYK Spec Unknown
-                         }
-                         else {y_to_rgb(&mcu_units,&component)}; // g / ga
+            let data = convert_rgb(plane,&mcu_units,&component,header.adobe_color_transform,(h_max,v_max));
 
             option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
 

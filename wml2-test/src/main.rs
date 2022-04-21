@@ -71,7 +71,8 @@ fn wml_test() -> Result<(),Box<dyn Error>>{
             }
             let mut option = EncodeOptions {
                 debug_flag: 0x01,
-                drawer: &mut image,    
+                drawer: &mut image,
+                options: None,
             };
             let data = wml2::bmp::encoder::encode(&mut option);
             if let Ok(data) = data {

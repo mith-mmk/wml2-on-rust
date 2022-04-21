@@ -1,4 +1,5 @@
 type Error = Box<dyn std::error::Error>;
+use crate::jpeg::util::print_huffman_tables;
 use bin_rs::reader::BinaryReader;
 use crate::warning::*;
 use crate::draw::*;
@@ -7,6 +8,7 @@ use crate::jpeg::decoder::*;
 use crate::jpeg::header::*;
 use crate::jpeg::warning::*;
 
+// y4 u1 v1 Progressive Jpeg decoder has bugs
 
 pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
     let width = header.width;
@@ -37,6 +39,7 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
     let mut quantization_tables = header.quantization_tables.clone().unwrap();
     let mut huffman_tables = &mut header.huffman_tables;
     let mut loop_count = 1;
+    let mut eobrun: usize = 0;
 
     loop {
         bitread.reset();
@@ -53,12 +56,11 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
             loop_count += 1;
         }
         let scan = calc_scan(&component,&huffman_scan_header);
-        if option.debug_flag > 0 {
+        if option.debug_flag & 0x02 > 0 {
             let boxstr = &format!(" Scan {:?} \n",scan);
             option.drawer.verbose(&boxstr,None)?;
         }
         let mut preds: Vec::<i32> = (0..component.len()).map(|_| 0).collect();
-        let mut eobrun: usize = 0;
 
 
         let mut mcu_interval = if header.interval > 0 { header.interval as isize} else {-1};
@@ -71,27 +73,44 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                     if cs == false { continue }
                     let zz = &mut mcu_block[scannumber];
                     if ss == 0 {
-                        let pred = preds[i];
                         if ah == 0 {
+                            let pred = preds[i];
                             let val = dc_read(&mut bitread, &dc_decode[dc_current].as_ref().unwrap(), pred)?;
-                            zz[0] += val << al as usize;
+                            zz[0] = val << al as usize;
                             preds[i] = val;
                         } else {
-                            if bitread.get_bit()? == 1{
-                                zz[0] += 1 << al as usize;
+                            if bitread.get_bit()? == 1 {
+                                zz[0] |= 1 << al as usize;
                             }
                         }
-                        if se == 0 {
-                            continue;
+                    }
+                    if se > 0 {
+                        let start = if ss == 0 { 1 } else { ss };
+                        if ah == 0  {
+                            eobrun = progressive_ac_read(&mut bitread, &ac_decode[ac_current].as_ref().unwrap(),zz,start,se,ah,al,eobrun)?;
+                            if mcu_y + 1 == mcu_y_max {
+                                println!("{:4} {:4} {} {} {} {:08x}",mcu_x,mcu_y,scannumber,eobrun,bitread.bptr,bitread.reader.offset()?);
+                            }
+                        } else {
+                            eobrun = successive_approximation_read(&mut bitread, &ac_decode[ac_current].as_ref().unwrap(),zz,start,se,ah,al,eobrun)?;
                         }
                     }
-                    let start = if ss == 0 { 1 } else { ss };
-                    if ah == 0  {
-                        eobrun = progressive_ac_read(&mut bitread, &ac_decode[ac_current].as_ref().unwrap(),zz,start,se,ah,al,eobrun)?;
-                    } else {
-                        eobrun = successive_approximation_read(&mut bitread, &ac_decode[ac_current].as_ref().unwrap(),zz,start,se,ah,al,eobrun)?;
-                    }
                 }
+                // Progressive draws
+                /*
+                let mut mcu_units :Vec<Vec<u8>> = Vec::new();                    
+                for scannumber in 0..mcu_size {
+                    let (_,_,_,tq,_) = scan[scannumber];
+                    let zz = &mut mcu_block[scannumber];
+                    let q = quantization_tables[tq].q.clone();
+                    let sq = &super::util::ZIG_ZAG_SEQUENCE;
+                    let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
+                    let ff = fast_idct(&zz);
+                    mcu_units.push(ff);
+                }
+                let data = convert_rgb(plane,&mcu_units,&component,header.adobe_color_transform,(h_max,v_max));
+                option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
+                */
                 if header.interval > 0 {
                     mcu_interval = mcu_interval - 1;
                     if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max -1 { 
@@ -137,7 +156,6 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
             }
         }
 
-
         loop {
             let b = bitread.next_marker();
             match b {
@@ -157,13 +175,7 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                                         let ff = fast_idct(&zz);
                                         mcu_units.push(ff);
                                     }
-                                    let data = if plane == 3 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))}  // RGB
-                                    else if plane == 4 { // hasBug
-                                       if header.adobe_color_transform == 2 {ycck_to_rgb(&mcu_units,&component,(h_max,v_max))}  // YCcK Spec Unknown
-                                       else if header.adobe_color_transform == 1 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))} // RGBA
-                                       else {cmyk_to_rgb(&mcu_units,&component,(h_max,v_max))} // CMYK Spec Unknown
-                                    }
-                                    else {y_to_rgb(&mcu_units,&component)}; // g / ga
+                                    let data = convert_rgb(plane,&mcu_units,&component,header.adobe_color_transform,(h_max,v_max));
                                     option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
                                 }
                             }
@@ -172,8 +184,10 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                         },
                         0xc4 => { // DHT
                             JpegHaeder::dht_read(bitread.reader, &mut huffman_tables)?;
-                            println!("redefine huffman");
-                            println!("{:?}",huffman_tables);
+
+                            if option.debug_flag & 0x04 > 0 {
+                                print_huffman_tables(&huffman_tables);
+                            }
                         },
                         0xda => { // SOS 
                             _huffman_scan_header = JpegHaeder::sos_reader(bitread.reader)?;
@@ -210,7 +224,6 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
 }
 
 
-// in debug
 fn progressive_ac_read<B: BinaryReader>(bitread:&mut BitReader<B>, ac_decode:&HuffmanDecodeTable,zz:&mut [i32],ss: usize,se: usize,_ah: usize,al: usize,mut eob: usize)
     ->  Result<usize,Error> {
 
@@ -230,23 +243,19 @@ fn progressive_ac_read<B: BinaryReader>(bitread:&mut BitReader<B>, ac_decode:&Hu
                 zigzag += 16;
                 continue;
             } else {    // G.1.2.2
-                let e = (1 << rrrr) as usize;
+                let e = 1 << rrrr as usize;
                 let v = bitread.get_bits(rrrr as usize)? as usize;
-                eob = e + v;
-                return Ok(eob-1)
+                return Ok(e + v - 1)
             }
         } else {
             zigzag += rrrr as usize;
+            let v = bitread.get_bits(ssss as usize)?;
+            let z = extend(v,ssss as usize);
             if zigzag <= se {
-                let v = bitread.get_bits(ssss as usize)?;
-                let z = extend(v,ssss as usize) << al as usize;
-                zz[zigzag] = z;
+                zz[zigzag] = z << al as usize;
             }
         }
-        if zigzag >= se {
-            return Ok(0)
-        }
-        zigzag = zigzag + 1;
+        zigzag += 1;
     }
     Ok(0)
 }
@@ -267,16 +276,16 @@ fn successive_approximation_read <B: BinaryReader>(bitread:&mut BitReader<B>, ac
                 if rrrr == 15 { //ZRL
                     // Nil
                 } else {    // G.1.2.2
-                    let e = (1 << rrrr)  as usize;
+                    let e = 1 << rrrr as usize;
                     let v = bitread.get_bits(rrrr as usize)? as usize;
                     eob = e + v;
                     break;
                 }
             } else if ssss == 1 {
                 bits = if bitread.get_bit()? == 1 {
-                    val
+                    val     // positive value
                 } else {
-                    - val
+                    - val   // negative value
                 };
             } else {
                 return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData,"illegal data in successive approximation".to_string())))
@@ -287,19 +296,15 @@ fn successive_approximation_read <B: BinaryReader>(bitread:&mut BitReader<B>, ac
                     if rrrr == 0 { break;}
                     rrrr -= 1;
                 } else if bitread.get_bit()? == 1 {
-                    if zz[zigzag] & val == 0 {
-                        if zz[zigzag] > 0 {
-                            zz[zigzag] += val;
-                        } else {
-                            zz[zigzag] -= val;
-                        }
-                    }
+                    zz[zigzag] |= val;
                 }
                 zigzag += 1;
                 if !(zigzag <= se) { break;}
             }
             if zigzag <= se {
-                zz[zigzag] = bits;
+                if bits != 0 {
+                    zz[zigzag] = bits;
+                }
             }
             zigzag += 1;
         }
@@ -309,19 +314,12 @@ fn successive_approximation_read <B: BinaryReader>(bitread:&mut BitReader<B>, ac
         while zigzag <= se {
             if zz[zigzag] != 0 {
                 if bitread.get_bit()? == 1 {
-                    if zz[zigzag] & val == 0 {
-                        if zz[zigzag] > 0 {
-                            zz[zigzag] += val;
-                        } else {
-                            zz[zigzag] -= val;
-                        }
-                    }
+                    zz[zigzag] |= val;
                 }
             }
             zigzag += 1;
         }
         eob -= 1;
-        return Ok(eob)
     }
-    Ok(0)
+    Ok(eob)
 }

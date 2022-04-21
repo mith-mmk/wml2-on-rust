@@ -5,7 +5,7 @@
  *  use MIT Licnce
  */
 
-//pub(crate) mod io;
+//pub(crate) mod io; // move bin_rs crate
 pub mod jpeg;
 pub mod tiff;
 pub mod bmp;

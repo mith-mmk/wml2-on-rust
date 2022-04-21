@@ -2,6 +2,7 @@
 //! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
 //! Drawer will use callback, flexisble drawing.
 type Error = Box<dyn std::error::Error>;
+use std::collections::HashMap;
 use std::io::Write;
 use crate::util::ImageFormat;
 use std::io::BufReader;
@@ -387,9 +388,17 @@ pub struct DecodeOptions<'a> {
     pub drawer: &'a mut dyn DrawCallback,
 }
 
+pub enum DataPack {
+    UInt(u64),
+    SInt(i64),
+    Float(f64),
+    String(String),    
+}
+
 pub struct EncodeOptions<'a> {
     pub debug_flag: usize,
-    pub drawer: &'a mut dyn PickCallback,    
+    pub drawer: &'a mut dyn PickCallback,
+    pub options: Option<HashMap<String,DataPack>>,
 }
 
 pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer,Error> {
@@ -413,6 +422,7 @@ pub fn image_to_file(filename: String,image:&mut dyn PickCallback,format:ImageFo
     let mut option = EncodeOptions {
         debug_flag: 0x00,
         drawer: image,
+        options: None,
     };
     image_writer(f,&mut option,format)?;
     Ok(())

@@ -4,6 +4,7 @@
  */
 
 //type Error = Box<dyn std::error::Error>;
+use crate::jpeg::header::HuffmanTables;
 use crate::jpeg::header::HuffmanTable;
 use crate::iccprofile::{icc_profile_header_print, icc_profile_print, ICCProfile};
 use super::header::JpegAppHeaders::{Adobe, Ducky, Exif,  Jfif, Unknown};
@@ -238,17 +239,8 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
     }
 
     if option & 0x04 == 0x04 { // Define Huffman Table Decoded
-        let hts = &header.huffman_tables;
-        for (i,huffman_table) in hts.dc_tables.iter().enumerate() {
-            if let Some(huffman_table) = huffman_table {
-               str += &print_huffman(i, huffman_table);
-            }
-        }
-        for (i,huffman_table) in hts.ac_tables.iter().enumerate() {
-            if let Some(huffman_table) = huffman_table {
-               str += &print_huffman(i, huffman_table);
-            }
-        }
+        str += &print_huffman_tables(&header.huffman_tables);
+
     }
 
     if option & 0x20 == 0x20 {  // ICC Profile decode
@@ -265,6 +257,22 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
     strbox
 }
 
+pub(crate) fn print_huffman_tables(huffman_tables:&HuffmanTables) -> String {
+    let hts = huffman_tables;
+    let mut str = "".to_string();
+    for (i,huffman_table) in hts.dc_tables.iter().enumerate() {
+        if let Some(huffman_table) = huffman_table {
+           str += &print_huffman(i, huffman_table);
+        }
+    }
+    for (i,huffman_table) in hts.ac_tables.iter().enumerate() {
+        if let Some(huffman_table) = huffman_table {
+           str += &print_huffman(i, huffman_table);
+        }
+    }
+    str
+}
+
 fn print_huffman(i:usize,huffman_table:&HuffmanTable) -> String {
     let mut current_max: Vec<i32> = Vec::new();
     let mut current_min: Vec<i32> = Vec::new();
@@ -274,8 +282,7 @@ fn print_huffman(i:usize,huffman_table:&HuffmanTable) -> String {
         str = str + &format!("Huffman Table AC {}\n",i);
     } else {
         str = str + &format!("Huffman Table DC {}\n",i);
-    }
-
+    }  
     let mut code :i32 = 0;
     let mut pos :usize = 0;
     for l in 0..16 {

@@ -18,11 +18,11 @@ Notice: Specification of this library is not decision.
 |TIFF|x|x|header reader only|
 |WEBP|x|x|not support|
 
-# using
+# using loader
 - on memory compress image buffer (now only baseline jpg)
 - output memory buffer and callback (defalt use ImageBuffer)
 
-```
+```rust
   let image = new ImageBuffer();
   let verbose = 0;
   let mut option = DecodeOptions{
@@ -35,7 +35,7 @@ Notice: Specification of this library is not decision.
 
 Symple Reader
 
-```
+```rust
 use std::io::BufReader;
 use std::error::Error;
 use wml2::draw::DecodeOptions;
@@ -77,7 +77,6 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
 
 ```
-
  ImageBuffer impl DrawCallback trait, 5 function.
 
  - init -> callback initialize.Decoder return width and height (and more...).You must get buffers or resours for use.
@@ -94,7 +93,33 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
  - terminate -> You can impl terminate process
 
+# using saver
+```rust
+  let image = new ImageBuffer(width,height);
 
+  if let Some(image) = image {
+      let option = EncodeOptions {
+          debug_flag: 0,
+          drawer: &mut image,    
+      };
+      let data = wml2::bmp::encoder(option);
+      if let Ok(data) = data {
+          let filename = format!("{}.bmp",filename);
+          let f = File::create(&filename).unwrap();
+          f.write_all(data).unwrap();
+          f.flush().unwrap();
+      }
+  }
+```
+
+ ImageBuffer encoder impl PickCallback trait, 3 function.
+
+```
+    fn encode_start(&mut self,option: Option<EncoderOptions>) -> Result<Option<ImageProfiles>,Error>;
+    fn encode_pick(&mut self,start_x: usize, start_y: usize, width: usize, height: usize,option: Option<PickOptions>)
+                 -> Result<Option<Vec<u8>>,Error>;
+    fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(),Error>;
+```
 # update
 - 0.0.1 baseline jpeg
 - 0.0.2 bmp OS2/Windows RGB/RLE4/RLE8/bit fields/baseline JPEG

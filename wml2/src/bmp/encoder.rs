@@ -85,5 +85,6 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
             data.push(0);
         }
     }
+    image.drawer.encode_end(None)?;
     Ok(data)
 }

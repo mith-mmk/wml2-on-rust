@@ -134,6 +134,6 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
     write_bytes(&IMAGE_END,&mut write_buffer);
     let crc = crc32.crc32(&IMAGE_END);
     write_u32_be(crc,&mut write_buffer);
-
+    image.drawer.encode_end(None)?;
     Ok(write_buffer)
 }

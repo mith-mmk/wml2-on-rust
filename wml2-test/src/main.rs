@@ -112,13 +112,13 @@ fn wml_test() -> Result<(),Box<dyn Error>>{
 
         let handle = std::thread::spawn(move || {
             image = loader(&filename);
-            if let Some(image) = image {
+            if let Ok(image) = image {
                 let option = EncodeOptions {
                     debug_flag: 0,
                     drawer: &mut image,    
                 };
                 let data = wml2::bmp::encoder(option);
-                if let Some(data) = data {
+                if let Ok(data) = data {
                     let filename = format!("{}.bmp",filename);
                     let f = File::create(&filename).unwrap();
                     f.write_all(data).unwrap();

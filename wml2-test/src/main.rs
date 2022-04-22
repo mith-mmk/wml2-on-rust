@@ -84,6 +84,7 @@ fn wml_test() -> Result<(),Box<dyn Error>>{
                 f.flush().unwrap();
             }
         }
+        println!("");
     }
     Ok(())
 }

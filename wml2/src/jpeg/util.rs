@@ -274,8 +274,6 @@ pub(crate) fn print_huffman_tables(huffman_tables:&HuffmanTables) -> String {
 }
 
 fn print_huffman(i:usize,huffman_table:&HuffmanTable) -> String {
-    let mut current_max: Vec<i32> = Vec::new();
-    let mut current_min: Vec<i32> = Vec::new();
     let mut str = "".to_string();
 
     if huffman_table.ac {
@@ -287,17 +285,12 @@ fn print_huffman(i:usize,huffman_table:&HuffmanTable) -> String {
     let mut pos :usize = 0;
     for l in 0..16 {
         if huffman_table.len[l] != 0 {
-            current_min.push(code);
             for _ in 0..huffman_table.len[l] {
                 if pos >= huffman_table.val.len() { break;}
                 str = str + &format!("{:>02b}  {:>02x}\n",code,huffman_table.val[pos]);
                 pos = pos + 1;
                 code = code + 1;
             }
-            current_max.push(code - 1); 
-        } else {
-            current_min.push(-1);
-            current_max.push(-1);
         }
         code = code << 1;
     }                    

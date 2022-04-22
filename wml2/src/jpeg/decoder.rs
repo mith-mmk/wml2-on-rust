@@ -15,30 +15,23 @@ use crate::jpeg::util::print_header;
 
 pub(crate) struct BitReader<'decode, B> {
     pub reader: &'decode mut B,
-    ptr : usize,
     pub(crate) bptr : usize,
-    rst_ptr : usize,
     prev_rst: usize,
     pub(crate) b: u8,
     rst: bool,
-    eof_flag: bool,
 }
 
 #[allow(unused)]
 impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     pub fn new(reader:&'decode mut B) -> Self{
-        let ptr:usize = 0;
         let bptr:usize = 0;
         let b:u8 = 0;
         Self{
             reader: reader,
-            ptr: ptr,
             bptr: bptr,
             b: b,
             rst: false,
-            rst_ptr: 0,
             prev_rst: 7,
-            eof_flag: false,
         }
     }
 
@@ -86,7 +79,6 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
                     }
                     self.prev_rst = rst_no;
                     self.rst = true;
-                    self.rst_ptr = self.ptr;
                     return self.next_byte();
                 },
                 0xd9=> { // EOI
@@ -105,8 +97,8 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     #[inline]
     pub fn get_bit(self: &mut Self) -> Result<usize,Error> {
         if self.bptr == 0 {
-            self.bptr = 8;
             self.b = self.next_byte()?;
+            self.bptr = 8;
         }
         self.bptr -= 1;
         let r = (self.b  >> self.bptr) as usize & 0x1;
@@ -114,23 +106,23 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     }
 
     #[inline]
-    pub fn get_bits(self: &mut Self,mut bits:usize) -> Result<i32,Error> {
+    pub fn get_bits(self: &mut Self,mut bits:usize) -> Result<usize,Error> {
         if bits == 0 { return Ok(0)}
         if self.bptr == 0 {
             self.b = self.next_byte()?;
             self.bptr = 8;
         }
-        let mut v = 0_i32;
+        let mut v = 0_usize;
 
         loop {
             if bits > self.bptr {
-                v = (v << self.bptr) | (self.b as i32 & ((1 << self.bptr) -1));
+                v = (v << self.bptr) | (self.b as usize & ((1 << self.bptr) -1));
                 bits -= self.bptr;
                 self.b = self.next_byte()?;
                 self.bptr = 8;
             } else {
                 self.bptr -= bits;
-                v = (v << bits) | (self.b as i32 >> self.bptr) & ((1 << bits) -1);
+                v = (v << bits) | (self.b as usize >> self.bptr) & ((1 << bits) -1);
                 break;
             }
         }
@@ -138,8 +130,8 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     }
 
     pub fn reset(self: &mut Self) {
-        self.ptr = 0;
-        self.eof_flag = false;
+        self.bptr = 0;
+        self.b = 0;
     }
 }
 
@@ -160,10 +152,10 @@ pub(crate) fn huffman_read<B: BinaryReader> (bit_reader:&mut BitReader<B>,table:
 
 #[derive(std::cmp::PartialEq,Debug)]
 pub(crate) struct HuffmanDecodeTable {
-    pos: Vec::<usize>,
-    val: Vec::<usize>,
-    min: Vec::<i32>,
-    max: Vec::<i32>,     
+    pub(crate) pos: Vec::<usize>,
+    pub(crate) val: Vec::<usize>,
+    pub(crate) min: Vec::<i32>,
+    pub(crate) max: Vec::<i32>,     
 }
 
 #[inline]
@@ -220,7 +212,8 @@ pub(crate) fn baseline_read<B:BinaryReader>(bitread: &mut BitReader<B>,dc_decode
 
 
 #[inline]
-pub(crate) fn extend(mut v:i32,t: usize) -> i32 {
+pub(crate) fn extend(v:usize,t: usize) -> i32 {
+    let mut v = v as i32;
     if t == 0 {
         return v;
     }
@@ -228,7 +221,7 @@ pub(crate) fn extend(mut v:i32,t: usize) -> i32 {
 
     if v < vt {
         vt = (-1 << t) + 1;
-        v = v + vt;
+        v += vt;
     }
     v
 }
@@ -653,11 +646,9 @@ pub(crate) fn expand_huffman_table(huffman_table: &HuffmanTable) -> Option<Huffm
     for l in 0..16 {
         if huffman_table.len[l] != 0 {
             current_min.push(code); 
-            for _ in 0..huffman_table.len[l] {
-                if pos >= huffman_table.val.len() { break;}
-                pos = pos + 1;
-                code = code + 1;
-            }
+            if pos >= huffman_table.val.len() { break;}
+            pos += huffman_table.len[l];
+            code += huffman_table.len[l] as i32;
             current_max.push(code - 1); 
         } else {
             current_min.push(-1);
@@ -719,27 +710,25 @@ pub(crate) fn calc_mcu(component: &Vec<Component>) -> (usize,usize,usize,usize,u
         v_max = usize::max(component[i].v ,v_max);
     }
 
-
-
     (size,h_max,v_max,dx,dy)
 }
 
 pub(crate) fn calc_scan(component: &Vec<Component>,huffman_scan_header: &HuffmanScanHeader) -> Vec<(usize,usize,usize,usize,bool)> {
     let mut scan : Vec<(usize,usize,usize,usize,bool)> = Vec::new();
-    let mut j = 0;
 
+    let mut j = 0;
     for i in 0..component.len() {
+        let tq = component[i].tq;
         if j < huffman_scan_header.ns && huffman_scan_header.csn[j] == i + 1 {
             for _ in 0..component[i].h * component[i].v {
-                let tq = component[j].tq;
                 scan.push((huffman_scan_header.tdcn[j],
                             huffman_scan_header.tacn[j],
-                            j,tq,true));
+                            i,tq,true));
             }
             j += 1;
         } else {
             for _ in 0..component[i].h * component[i].v {
-                scan.push((0,0,0,0,false));
+                scan.push((0,0,i,tq,false));
             }
         }
     }

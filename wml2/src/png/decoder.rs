@@ -32,7 +32,7 @@ const STEP_X: [usize; 7] = [8, 8, 4, 4, 2, 2, 1 ];
 fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
 -> Result<Option<ImgWarnings>,Error> {
     let is_alpha = if header.color_type == 4 {1} else {0};
-    let raw_length = (header.width * ((header.bitpersample as u32 +7 / 8) + is_alpha) + 1) as usize;
+    let raw_length = (header.width * (header.bitpersample as u32 / 8 + is_alpha) + 1) as usize;
     let mut prev_buf:Vec<u8> = Vec::new();
 
     for y in 0..header.height as usize{
@@ -66,50 +66,43 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                 1 => { // Sub
                     if outptr > 0 {
                         gray   += outbuf[outptr -4];
-                    }
-                    if is_alpha == 1 {
-                        outbuf[outptr - 1] = alpha;
-                    } else {
-                        outbuf[outptr+3] = 0xff;
+                        alpha += outbuf[outptr -1];
                     }
                 },
                 2 => { // Up
                     if prev_buf.len() > 0 {
-                        gray   += prev_buf[outptr];
+                        gray  += prev_buf[outptr];
+                        alpha += prev_buf[outptr+3];
                     }
-                    if is_alpha == 0 {
-                        alpha = 0xff;
-                    }
+
                 }
                 3 => { // Avalage
-                    let (mut gray_,mut alpha_);
+                    let (mut gray_, mut alpha_);
                     if outptr > 0 {
                         gray_  = outbuf[outptr -4] as u32;
                         alpha_ = outbuf[outptr -1] as u32;
                     } else {
-                        gray_  = 0;
-                        alpha_ = 0;
+                        gray_   = 0;
+                        alpha_  = 0;
                     }
                     if prev_buf.len() > 0 {
-                        gray_   += prev_buf[outptr] as u32;
+                        gray_  += prev_buf[outptr] as u32;
                         alpha_ += prev_buf[outptr+3] as u32;
                     } else {
-                        gray_   += 0;
+                        gray_  += 0;
                         alpha_ += 0;
                     }
-                    gray_ /= 2;
-                    alpha_ /= 2;
+                    gray_ /=2;
+                    alpha_ /=2;
+
                     gray  += gray_ as u8;
                     alpha += alpha_ as u8;
 
-                    if is_alpha == 0 {
-                        alpha = 0xff;
-                    }
                 },
                 4 => { // Pease
                     let (gray_a, alpha_a);
                     if outptr > 0 {
-                        gray_a  = outbuf[outptr -4] as i32;
+                        gray_a   = outbuf[outptr -4] as i32;
                         alpha_a = outbuf[outptr -1] as i32;
                     } else {
                         gray_a   = 0;
@@ -117,38 +110,37 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                     }
                     let (gray_b, alpha_b);
                     if prev_buf.len() > 0 {
-                        gray_b  = prev_buf[outptr] as i32;
-                        alpha_b = outbuf[outptr -1] as i32;
+                        gray_b   = prev_buf[outptr] as i32;
+                        alpha_b = prev_buf[outptr+3] as i32;
                     } else {
-                        gray_b  = 0;
+                        gray_b   = 0;
                         alpha_b = 0;
                     }
                     let (gray_c, alpha_c);
                     if prev_buf.len() > 0 && outptr > 0 {
-                        gray_c  = prev_buf[outptr-4] as i32;
+                        gray_c   = prev_buf[outptr-4] as i32;
                         alpha_c = prev_buf[outptr-1] as i32;
                     } else {
-                        gray_c  = 0;
+                        gray_c   = 0;
                         alpha_c = 0;
                     }
 
-
-                    gray  = paeth(gray,gray_a,gray_b,gray_c);
+                    gray   = paeth(gray,gray_a,gray_b,gray_c);
                     alpha = paeth(alpha,alpha_a,alpha_b,alpha_c);
 
-                    if is_alpha == 0 {
-                        alpha = 0xff;
-                    }
                 }
                 _ => {}  // None
             }
             outbuf[outptr] = gray;
             outbuf[outptr+1] = gray;
-            outbuf[outptr+2] = gray;
+            outbuf[outptr+2] = gray;            
+            if is_alpha == 0 {
+                alpha = 0xff;
+            }
             outbuf[outptr+3] = alpha;
             outptr += 4;
         }
-        option.drawer.draw(0,y,header.width as usize,1,buffer,None)?;
+        option.drawer.draw(0,y,header.width as usize,1,&outbuf,None)?;
         prev_buf = outbuf;
     }
     return Ok(None)
@@ -199,50 +191,43 @@ fn load_grayscale_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeO
                     1 => { // Sub
                         if outptr > 0 {
                             gray   += outbuf[outptr -4];
-                        }
-                        if is_alpha == 1 {
-                            outbuf[outptr - 1] = alpha;
-                        } else {
-                            outbuf[outptr+3] = 0xff;
+                            alpha += outbuf[outptr -1];
                         }
                     },
                     2 => { // Up
                         if prev_buf.len() > 0 {
-                            gray   += prev_buf[outptr];
+                            gray  += prev_buf[outptr];
+                            alpha += prev_buf[outptr+3];
                         }
-                        if is_alpha == 0 {
-                            alpha = 0xff;
-                        }
+    
                     }
                     3 => { // Avalage
-                        let (mut gray_,mut alpha_);
+                        let (mut gray_, mut alpha_);
                         if outptr > 0 {
                             gray_  = outbuf[outptr -4] as u32;
                             alpha_ = outbuf[outptr -1] as u32;
                         } else {
-                            gray_  = 0;
-                            alpha_ = 0;
+                            gray_   = 0;
+                            alpha_  = 0;
                         }
                         if prev_buf.len() > 0 {
-                            gray_   += prev_buf[outptr] as u32;
+                            gray_  += prev_buf[outptr] as u32;
                             alpha_ += prev_buf[outptr+3] as u32;
                         } else {
-                            gray_   += 0;
+                            gray_  += 0;
                             alpha_ += 0;
                         }
-                        gray_ /= 2;
-                        alpha_ /= 2;
+                        gray_ /=2;
+                        alpha_ /=2;
+    
                         gray  += gray_ as u8;
                         alpha += alpha_ as u8;
     
-                        if is_alpha == 0 {
-                            alpha = 0xff;
-                        }
                     },
                     4 => { // Pease
                         let (gray_a, alpha_a);
                         if outptr > 0 {
-                            gray_a  = outbuf[outptr -4] as i32;
+                            gray_a   = outbuf[outptr -4] as i32;
                             alpha_a = outbuf[outptr -1] as i32;
                         } else {
                             gray_a   = 0;
@@ -250,28 +235,24 @@ fn load_grayscale_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeO
                         }
                         let (gray_b, alpha_b);
                         if prev_buf.len() > 0 {
-                            gray_b  = prev_buf[outptr] as i32;
-                            alpha_b = outbuf[outptr -1] as i32;
+                            gray_b   = prev_buf[outptr] as i32;
+                            alpha_b = prev_buf[outptr+3] as i32;
                         } else {
-                            gray_b  = 0;
+                            gray_b   = 0;
                             alpha_b = 0;
                         }
                         let (gray_c, alpha_c);
                         if prev_buf.len() > 0 && outptr > 0 {
-                            gray_c  = prev_buf[outptr-4] as i32;
+                            gray_c   = prev_buf[outptr-4] as i32;
                             alpha_c = prev_buf[outptr-1] as i32;
                         } else {
-                            gray_c  = 0;
+                            gray_c   = 0;
                             alpha_c = 0;
                         }
     
-    
-                        gray  = paeth(gray,gray_a,gray_b,gray_c);
+                        gray   = paeth(gray,gray_a,gray_b,gray_c);
                         alpha = paeth(alpha,alpha_a,alpha_b,alpha_c);
     
-                        if is_alpha == 0 {
-                            alpha = 0xff;
-                        }
                     }
                     _ => {}  // None
                 }
@@ -609,7 +590,7 @@ fn load_index_color(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
         return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData, string.to_string()))) 
     }
     let pallet = header.pallete.as_ref().unwrap();
-    let raw_length = (header.width * ((header.bitpersample as u32 +7 / 8)) + 1) as usize;
+    let raw_length = ((header.width * header.bitpersample as u32 + 7) / 8 + 1) as usize;
 
     let mut outbuf:Vec<u8> = (0..header.width * 4).map(|_| 0).collect();
 
@@ -743,7 +724,7 @@ fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result
             } else {
                 let color_max = 1 << header.bitpersample;
                 let mut pallet :Vec<RGBA> = Vec::new();
-                for i in 1..color_max {
+                for i in 0..color_max {
                     let gray = (i * 255 / (color_max - 1)) as u8;
                     pallet.push(RGBA{red:gray,green:gray,blue:gray,alpha:0xff});
                 }
@@ -829,6 +810,9 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
         s += &s_;
         let s_ = format!("Backgroud color {:?}\n",header.background_color);
         s += &s_;
+        let s_ = format!("Pallet {:?}\n",header.pallete);
+        s += &s_;
+
         let s_ = format!("Modified time {:?}\n",header.modified_time);
         s += &s_;
         for (key,mes) in &header.text {

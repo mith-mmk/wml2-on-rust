@@ -7,17 +7,16 @@ Notice: Specification of this library is not decision.
 - not use multithreding
 - No need to force use - becouse You can use Javascript Image.
 
-# Support Format 0.0.8
+# Support Format 0.0.9
 
 |format|enc|dec|  |
 |------|---|---|--|
 |BMP|O|O|encode only no compress|
 |JPEG|x|O|Baseline and huffman progressive|
 |GIF|x|O|with Animation GIF|
-|PNG|x|O|APNG not supprt|
+|PNG|O|O|APNG not supprt/encode Truecolor + alpha only|
 |TIFF|x|x|header reader only|
 |WEBP|x|x|not support|
-|heif|x|x|never support for licenses probrem|
 
 # using
 - on memory compress image buffer (now only baseline jpg)

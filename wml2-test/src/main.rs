@@ -14,8 +14,17 @@ fn write_log(str: &str) -> Result<Option<CallbackResponse>,Box<dyn Error>> {
     Ok(None)
 }
 
+fn crc_test() {
+    let crc32 = wml2::png::utils::CRC32::new();
+    let buf = [73,69,78,68];
+    let result = crc32.crc32(&buf);
+    println!("{:04x}",result);
+
+}
+
 pub fn main()-> Result<(),Box<dyn Error>> {
     wml_test()?;
+//    crc_test();
     Ok(())
 }
 
@@ -74,10 +83,11 @@ fn wml_test() -> Result<(),Box<dyn Error>>{
                 drawer: &mut image,
                 options: None,
             };
-            let data = wml2::bmp::encoder::encode(&mut option);
+//            let data = wml2::bmp::encoder::encode(&mut option);
+            let data = wml2::png::encoder::encode(&mut option);
             if let Ok(data) = data {
                 let filename = filename.file_name().unwrap().to_str().unwrap();
-                let filename = format!("{}/{}.bmp",out_path,filename);
+                let filename = format!("{}/{}.png",out_path,filename);
                 println!("{}", filename);
                 let mut f = File::create(&filename).unwrap();
                 f.write_all(&data).unwrap();

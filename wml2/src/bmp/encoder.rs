@@ -8,11 +8,11 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
     let profile = image.drawer.encode_start(None)?;
     let width;
     let height;
-    let _backgroud;
+    let _background;
     if let Some(profile) = profile {
         width = profile.width as u32;
         height= profile.height as u32;
-        _backgroud = profile.background;
+        _background = profile.background;
     } else {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::OutboundIndex,"Image profiles nothing".to_string())))
     }

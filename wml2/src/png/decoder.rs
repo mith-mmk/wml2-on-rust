@@ -1,33 +1,18 @@
 use crate::draw::InitOptions;
+use crate::draw::DecodeOptions;
 use crate::color::RGBA;
+use crate::error::*;
 use crate::png::warning::PngWarning;
 use crate::png::header::*;
+use crate::png::utils::paeth_dec;
 use crate::warning::*;
-use crate::draw::DecodeOptions;
-use crate::error::*;
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;
-
-#[inline]
-fn paeth(d:u8,a:i32,b:i32,c:i32) -> u8 {
-    let pa = (b - c).abs();
-    let pb = (a - c).abs();
-    let pc = (b + a - c - c).abs();
-    let d = d as i32;
-    if pa <= pb && pa <= pc {
-        ((d + a) & 0xff) as u8
-    } else if pb <= pc {
-        ((d + b) & 0xff) as u8
-    } else {
-        ((d + c) & 0xff) as u8
-    }
-}
 
 const START_X:  [usize; 7] = [0, 0, 4, 0, 2, 0, 1 ];
 const START_Y:  [usize; 7] = [0, 4, 0, 2, 0, 1, 0 ];
 const STEP_Y: [usize; 7] = [8, 8, 8, 4, 4, 2, 2 ];
 const STEP_X: [usize; 7] = [8, 8, 4, 4, 2, 2, 1 ];
-
 
 fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
 -> Result<Option<ImgWarnings>,Error> {
@@ -125,8 +110,8 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                         alpha_c = 0;
                     }
 
-                    gray   = paeth(gray,gray_a,gray_b,gray_c);
-                    alpha = paeth(alpha,alpha_a,alpha_b,alpha_c);
+                    gray   = paeth_dec(gray,gray_a,gray_b,gray_c);
+                    alpha = paeth_dec(alpha,alpha_a,alpha_b,alpha_c);
 
                 }
                 _ => {}  // None
@@ -250,8 +235,8 @@ fn load_grayscale_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeO
                             alpha_c = 0;
                         }
     
-                        gray   = paeth(gray,gray_a,gray_b,gray_c);
-                        alpha = paeth(alpha,alpha_a,alpha_b,alpha_c);
+                        gray   = paeth_dec(gray,gray_a,gray_b,gray_c);
+                        alpha = paeth_dec(alpha,alpha_a,alpha_b,alpha_c);
     
                     }
                     _ => {}  // None
@@ -402,10 +387,10 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
                         alpha_c = 0;
                     }
 
-                    red   = paeth(red,red_a,red_b,red_c);
-                    green = paeth(green,green_a,green_b,green_c);
-                    blue  = paeth(blue,blue_a,blue_b,blue_c);
-                    alpha = paeth(alpha,alpha_a,alpha_b,alpha_c);
+                    red   = paeth_dec(red,red_a,red_b,red_c);
+                    green = paeth_dec(green,green_a,green_b,green_c);
+                    blue  = paeth_dec(blue,blue_a,blue_b,blue_c);
+                    alpha = paeth_dec(alpha,alpha_a,alpha_b,alpha_c);
 
                 }
                 _ => {}  // None
@@ -557,10 +542,10 @@ fn load_truecolor_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeO
                             alpha_c = 0;
                         }
     
-                        red   = paeth(red,red_a,red_b,red_c);
-                        green = paeth(green,green_a,green_b,green_c);
-                        blue  = paeth(blue,blue_a,blue_b,blue_c);
-                        alpha = paeth(alpha,alpha_a,alpha_b,alpha_c);
+                        red   = paeth_dec(red,red_a,red_b,red_c);
+                        green = paeth_dec(green,green_a,green_b,green_c);
+                        blue  = paeth_dec(blue,blue_a,blue_b,blue_c);
+                        alpha = paeth_dec(alpha,alpha_a,alpha_b,alpha_c);
     
                     }
                     _ => {}  // None

@@ -5,8 +5,8 @@ use crate::color::RGBA;
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;
 
-const SIGNATURE: [u8; 8] = [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A];
-const IMAGE_HEADER:[u8;4] = [b'I',b'H',b'D',b'R'];
+pub(crate) const SIGNATURE: [u8; 8] = [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A];
+pub(crate) const IMAGE_HEADER:[u8;4] = [b'I',b'H',b'D',b'R'];
 const PALLET:[u8;4] = [b'P',b'L',b'T',b'E'];
 pub(crate) const IMAGE_DATA:[u8;4] = [b'I',b'D',b'A',b'T'];
 pub(crate) const IMAGE_END:[u8;4] = [b'I',b'E',b'N',b'D'];
@@ -21,14 +21,14 @@ const ICC_PROFILE:[u8;4] = [b'i',b'C',b'C',b'P'];
 pub(crate) const TEXTDATA:[u8;4] = [b't',b'E',b'X',b't'];
 pub(crate) const COMPRESSED_TEXTUAL_DATA:[u8;4] = [b'z',b'T',b'X',b't'];
 pub(crate) const I18N_TEXT:[u8;4] = [b'i',b'T',b'X',b't'];
-const BACKGROUND_COLOR:[u8;4] = [b'b',b'K',b'G',b'D'];
+pub(crate) const BACKGROUND_COLOR:[u8;4] = [b'b',b'K',b'G',b'D'];
 /* no use
 const PHYSICAL_PIXEL_DIMENSION:[u8;4] = [b'p',b'H',b'Y',b's'];
 const SIGNIFICANT_BITS:[u8;4] = [b's',b'B',b'I',b'T'];
 const STANDARD_PALLET:[u8;4] = [b's',b'P',b'L',b'T'];
 const PALLTE_HISTGRAM:[u8;4] = [b'h',b'I',b'S',b'T'];
 */
-const MODIFIED_TIME:[u8;4] = [b't',b'I',b'M',b'E'];
+pub(crate) const MODIFIED_TIME:[u8;4] = [b't',b'I',b'M',b'E'];
 
 /*
 // no impl

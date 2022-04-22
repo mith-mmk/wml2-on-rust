@@ -42,7 +42,7 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
     let mut eobrun: usize = 0;
 
     loop {
-        let (ac_decode, dc_decode) = huffman_extend(&huffman_tables);
+        let (dc_decode,ac_decode) = huffman_extend(&huffman_tables);
 
         let (ss, se, ah,al) = (huffman_scan_header.ss,huffman_scan_header.se,huffman_scan_header.ah,huffman_scan_header.al);
         if option.debug_flag > 0 {
@@ -245,7 +245,7 @@ fn progressive_ac_read<B: BinaryReader>(bitread:&mut BitReader<B>, ac_decode:&Hu
                 return Ok(0)
             }
             if rrrr == 15 { //ZRL
-                zigzag = zigzag + 16;
+                zigzag += 16;
                 continue
             }
 
@@ -254,9 +254,9 @@ fn progressive_ac_read<B: BinaryReader>(bitread:&mut BitReader<B>, ac_decode:&Hu
             return Ok(eob - 1)
         } else {
             zigzag += rrrr as usize;
-            let v = bitread.get_bits(ssss as usize)?;
-            let z = extend(v,ssss as usize);
             if zigzag <= se {
+                let v = bitread.get_bits(ssss as usize)?;
+                let z = extend(v,ssss as usize);
                 zz[zigzag] = z << al;
             }
         }

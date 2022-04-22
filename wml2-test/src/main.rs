@@ -31,7 +31,7 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
             let mut image = ImageBuffer::new();
             image.set_verbose(write_log);
             let mut option = DecodeOptions {
-                debug_flag: 0x01,
+                debug_flag: 0x02,
                 drawer: &mut image,
             };
             let r = image_reader(reader, &mut option);

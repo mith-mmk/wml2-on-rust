@@ -669,9 +669,14 @@ pub(crate) fn expand_huffman_table(huffman_table: &HuffmanTable) -> Option<Huffm
 }
 
 pub(crate) fn huffman_extend(huffman_tables:&HuffmanTables) -> (Vec<Option<HuffmanDecodeTable>>,Vec<Option<HuffmanDecodeTable>>) {
-
-    let mut ac_decode : Vec<Option<HuffmanDecodeTable>> = vec![None,None,None,None];
     let mut dc_decode : Vec<Option<HuffmanDecodeTable>> = vec![None,None,None,None];
+    let mut ac_decode : Vec<Option<HuffmanDecodeTable>> = vec![None,None,None,None];
+
+    for huffman_table in huffman_tables.dc_tables.iter() {
+        if let Some(huffman_table) = huffman_table {
+            dc_decode[huffman_table.no] = expand_huffman_table(huffman_table);
+        }
+    }
     
     for huffman_table in huffman_tables.ac_tables.iter() {
         if let Some(huffman_table) = huffman_table {
@@ -679,13 +684,8 @@ pub(crate) fn huffman_extend(huffman_tables:&HuffmanTables) -> (Vec<Option<Huffm
         }
     }
 
-    for huffman_table in huffman_tables.dc_tables.iter() {
-        if let Some(huffman_table) = huffman_table {
-            dc_decode[huffman_table.no] = expand_huffman_table(huffman_table);
-        }
-    }
 
-    (ac_decode,dc_decode)
+    (dc_decode,ac_decode)
 }
 
 #[cfg(feature="multithread")]
@@ -750,7 +750,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
     option.drawer.init(width,height,InitOptions::new())?;
 
     let quantization_tables = header.quantization_tables.clone().unwrap();
-    let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables);
+    let (dc_decode,ac_decode) = huffman_extend(&header.huffman_tables);
 
     let mut bitread = BitReader::new(reader);
     let (mcu_size,h_max,v_max,dx,dy) = calc_mcu(&component);
@@ -949,7 +949,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
     option.drawer.init(width,height,InitOptions::new())?;
 
     let quantization_tables = header.quantization_tables.as_ref().unwrap();
-    let (ac_decode,dc_decode) = huffman_extend(&header.huffman_tables);
+    let (dc_decode,ac_decode) = huffman_extend(&header.huffman_tables);
 
     let mut bitread = BitReader::new(reader);
     let (mcu_size,h_max,v_max,dx,dy) = calc_mcu(&component);

@@ -713,22 +713,26 @@ pub(crate) fn calc_mcu(component: &Vec<Component>) -> (usize,usize,usize,usize,u
     (size,h_max,v_max,dx,dy)
 }
 
-pub(crate) fn calc_scan(component: &Vec<Component>,huffman_scan_header: &HuffmanScanHeader) -> Vec<(usize,usize,usize,usize,bool)> {
-    let mut scan : Vec<(usize,usize,usize,usize,bool)> = Vec::new();
+pub(crate) fn calc_scan(component: &Vec<Component>,huffman_scan_header: &HuffmanScanHeader) -> Vec<(usize,usize,usize,usize,bool,bool)> {
+    let mut scan : Vec<(usize,usize,usize,usize,bool,bool)> = Vec::new();
 
     let mut j = 0;
     for i in 0..component.len() {
         let tq = component[i].tq;
         if j < huffman_scan_header.ns && huffman_scan_header.csn[j] == i + 1 {
-            for _ in 0..component[i].h * component[i].v {
+            scan.push((huffman_scan_header.tdcn[j],
+                huffman_scan_header.tacn[j],
+                i,tq,true,true));
+            for _ in 1..component[i].h * component[i].v {
                 scan.push((huffman_scan_header.tdcn[j],
                             huffman_scan_header.tacn[j],
-                            i,tq,true));
+                            i,tq,true,false));
             }
             j += 1;
         } else {
-            for _ in 0..component[i].h * component[i].v {
-                scan.push((0,0,i,tq,false));
+            scan.push((0,0,i,tq,false,true));
+            for _ in 1..component[i].h * component[i].v {
+                scan.push((0,0,i,tq,false,false));
             }
         }
     }
@@ -825,7 +829,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
     for mcu_y in 0..mcu_y_max {
         for mcu_x in 0..mcu_x_max {
             for scannumber in 0..mcu_size {
-                let (dc_current,ac_current,i,tq,_) = scan[scannumber];
+                let (dc_current,ac_current,i,tq,_,_) = scan[scannumber];
                 let ret = baseline_read(&mut bitread
                             ,&dc_decode[dc_current].as_ref().unwrap()
                             ,&ac_decode[ac_current].as_ref().unwrap()
@@ -970,7 +974,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
             let mut mcu_units :Vec<Vec<u8>> = Vec::new();
 
             for scannumber in 0..mcu_size {
-                let (dc_current,ac_current,i,tq,_) = scan[scannumber];
+                let (dc_current,ac_current,i,tq,_,_) = scan[scannumber];
                 let ret = baseline_read(&mut bitread
                             ,&dc_decode[dc_current].as_ref().unwrap()
                             ,&ac_decode[ac_current].as_ref().unwrap()

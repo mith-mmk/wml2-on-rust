@@ -14,14 +14,6 @@ fn write_log(str: &str) -> Result<Option<CallbackResponse>,Box<dyn Error>> {
     Ok(None)
 }
 
-fn crc_test() {
-    let crc32 = wml2::png::utils::CRC32::new();
-    let buf = [73,69,78,68];
-    let result = crc32.crc32(&buf);
-    println!("{:04x}",result);
-
-}
-
 pub fn main()-> Result<(),Box<dyn Error>> {
     wml_test()?;
 //    crc_test();

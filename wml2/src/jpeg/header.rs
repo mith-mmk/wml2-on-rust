@@ -475,7 +475,7 @@ impl JpegHaeder {
         while offset < 16 { //SOI check
             let soi = reader.read_u16_be()?;
             if soi == 0xffd8 {break};
-            offset = offset + 2;
+            offset = offset + 1;
         }
 
         if offset >= 16 {
@@ -496,14 +496,8 @@ impl JpegHaeder {
             let t = reader.read_byte()?;
             let tc = t >> 4;
             let th = t & 0x0f;
-            let ac = if tc == 0 { false } else if tc == 1 { true } else {
-                let boxstr = format!("Huffman table class require 0 or 1 but {}",tc);
-                return Err(Box::new(
-                    ImgError::new_const(
-                        ImgErrorKind::IllegalData,
-                        boxstr
-                    )))
-            };
+
+            let ac = if tc == 0 { false } else { true };
             let no = th as usize;
             size = size + 1;
             let mut len :Vec<usize> = Vec::with_capacity(16);
@@ -533,13 +527,9 @@ impl JpegHaeder {
                     )))
             }
             if ac {
-                if huffman_tables.ac_tables[no].is_none() {
-                    huffman_tables.ac_tables[no] = Some(HuffmanTable::new(ac,no,len,p,val))
-                }
+                huffman_tables.ac_tables[no] = Some(HuffmanTable::new(ac,no,len,p,val))
             } else {
-                if huffman_tables.dc_tables[no].is_none() {
-                    huffman_tables.dc_tables[no] = Some(HuffmanTable::new(ac,no,len,p,val))          
-                }
+                huffman_tables.dc_tables[no] = Some(HuffmanTable::new(ac,no,len,p,val))          
             }
             size = size + vlen;
         }
@@ -627,11 +617,49 @@ impl JpegHaeder {
                 match nextbyte {
                     0xc4 => { // DHT maker
                         _dht_flag = true;
+                        /*
+                        let length = reader.read_u16_be()? as usize;
+
+                        let mut size :usize = 2;
+                        while size < length {
+                            let t = reader.read_byte()?;
+                            let tc = t >> 4;
+                            let th = t & 0x0f;
+
+                            let ac = if tc == 0 { false } else { true };
+                            let no = th as usize;
+                            size = size + 1;
+                            let mut len :Vec<usize> = Vec::with_capacity(16);
+                            let mut p :Vec<usize> = Vec::with_capacity(16);
+                            let mut val :Vec<usize> = Vec::new();
+                            let mut vlen = 0;
+                            for _ in 0..16 {
+                                let l = reader.read_byte()? as usize;
+                                vlen = vlen + l;
+                                len.push(l);
+                            }
+                            let mut pss :usize = 0;
+                            for i in 0..16 {
+                                for _ in 0..len[i] {
+                                    val.push(reader.read_byte()? as usize);
+                                }
+                                p.push(pss);
+                                pss += len[i]; 
+                            }
+                            size = size + 16;
+
+                            _huffman_tables.push(HuffmanTable::new(ac,no,len,p,val));
+                            size = size + vlen;
+                        }
+                        */
                         Self::dht_read(reader, &mut huffman_tables)?;
+
+                        //  offset = offset + length; // skip
                     },
                     0xcc => {   //DAC no impl
                         let length = reader.read_u16_be()? as usize;
                         reader.skip_ptr(length-2)?;
+                        // offset = offset + length; // skip
                     },
                     0xc0..=0xcf => {  // SOF Frame Headers;
                         if !_sof_flag  {
@@ -661,12 +689,60 @@ impl JpegHaeder {
                     },
                     0xda=> { // SOS Scan header
                         _sos_flag = true;
+                        /*
+                        let _length = reader.read_u16_be()? as usize;
+                        let ns = reader.read_byte()? as usize;
+                        let mut csn: Vec<usize> = Vec::with_capacity(ns);
+                        let mut tdn: Vec<usize> = Vec::with_capacity(ns);
+                        let mut tan: Vec<usize> = Vec::with_capacity(ns);
+                        for _i in 0..ns {
+                            csn.push(reader.read_byte()? as usize);
+                            let t = reader.read_byte()?;
+                            tdn.push((t >> 4) as usize);
+                            tan.push((t & 0xf ) as usize);
+                        }
+                        // progressive
+                        let ss = reader.read_byte()? as usize;
+                        let se = reader.read_byte()? as usize;
+                        let a = reader.read_byte()?;
+                        let ah = (a >> 4) as usize;
+                        let al = (a & 0xf) as usize;
+                        huffman_scan_header = Some(HuffmanScanHeader::new(ns,csn,tdn,tan,ss,se,ah,al));
+                        */
                         huffman_scan_header = Some(Self::sos_reader(reader)?);
                         break 'header;
                     },
                     0xdb => { // Define Quantization Table
                         _dqt_flag = true;
+                        /*
+                        let length: usize = reader.read_u16_be()? as usize;
+                        // read_dqt;
+                        let mut pos :usize = 2;
+                        while pos < length {
+                            let mut quantizations :Vec<usize> = Vec::with_capacity(64);
+                            let presision :usize;
+                            let b = reader.read_byte()?;
+                            let p = b >> 4;
+                            let no = (b & 0x0f) as usize;
+                            pos = pos + 1;
+                            if p == 0 {
+                                presision = 8;
+                                for _ in 0..64 {
+                                    quantizations.push(reader.read_byte()? as usize);
+                                    pos = pos + 1;
+                                }
+                            } else {
+                                presision = 16;
+                                for _ in 0..64 {
+                                    quantizations.push(reader.read_u16_be()? as usize);
+                                    pos = pos + 2;
+                                }
+                            }
+                            quantization_tables.push(QuantizationTable::new(presision,no,quantizations));
+                        }
+                        */
                         Self::dqt_reader(reader,&mut quantization_tables)?;
+                        // offset = offset + length; // skip
                     },
                     0xdc =>{ // DNL Define Number Lines
                         _dqt_flag = true;
@@ -676,11 +752,14 @@ impl JpegHaeder {
                         let _length: usize = reader.read_u16_be()?  as usize;
                         let nl = reader.read_u16_be()? as usize;
                         line = nl;
+                        // read_dqt;
+                        // offset = offset + length; // skip
                     },
                     0xdd => { // Define Restart Interval
                         let _length = reader.read_u16_be()? as usize;
                         let ri = reader.read_u16_be()?;
                         interval = ri as usize;
+                        // offset = offset + length; // skip
                     },
                     0xde => {   // DHP Hierachical mode
                         if is_only_tables {
@@ -689,6 +768,7 @@ impl JpegHaeder {
                         let length = reader.read_u16_be()? as usize;
                         is_hierachical = true;
                         reader.skip_ptr(length - 2)?;
+//                        offset = offset + length; // skip
                     },
                     0xdf => {   //EXP
                         if is_only_tables {
@@ -696,6 +776,7 @@ impl JpegHaeder {
                         }
                         let length = reader.read_u16_be()? as usize;
                         reader.skip_ptr(length - 2)?;
+//                        offset = offset + length; // skip
                     },
                     0xfe => { // Comment
                         let length = reader.read_u16_be()? as usize;
@@ -709,6 +790,7 @@ impl JpegHaeder {
                 
                             }
                         }
+                        // offset = offset + length; // skip
                     },
                     0xe0..=0xef => { // Applications 
                         let num = (nextbyte & 0xf) as usize;
@@ -737,11 +819,11 @@ impl JpegHaeder {
                         // skip
                     },
                     0xd0..=0xd7 => {   // REST0-7
-                        // skip
                     },
                     _ => {
                         let length = reader.read_u16_be()? as usize;
                         reader.skip_ptr(length-2)?;
+//                        offset = offset + length;
                     }
                 }
             } else {

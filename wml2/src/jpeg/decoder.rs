@@ -106,23 +106,23 @@ impl <'decode, B: BinaryReader>BitReader<'decode, B> {
     }
 
     #[inline]
-    pub fn get_bits(self: &mut Self,mut bits:usize) -> Result<usize,Error> {
+    pub fn get_bits(self: &mut Self,mut bits:usize) -> Result<i32,Error> {
         if bits == 0 { return Ok(0)}
         if self.bptr == 0 {
             self.b = self.next_byte()?;
             self.bptr = 8;
         }
-        let mut v = 0_usize;
+        let mut v = 0_i32;
 
         loop {
             if bits > self.bptr {
-                v = (v << self.bptr) | (self.b as usize & ((1 << self.bptr) -1));
+                v = (v << self.bptr) | (self.b as i32 & ((1 << self.bptr) -1));
                 bits -= self.bptr;
                 self.b = self.next_byte()?;
                 self.bptr = 8;
             } else {
                 self.bptr -= bits;
-                v = (v << bits) | (self.b as usize >> self.bptr) & ((1 << bits) -1);
+                v = (v << bits) | (self.b as i32 >> self.bptr) & ((1 << bits) -1);
                 break;
             }
         }
@@ -212,7 +212,7 @@ pub(crate) fn baseline_read<B:BinaryReader>(bitread: &mut BitReader<B>,dc_decode
 
 
 #[inline]
-pub(crate) fn extend(v:usize,t: usize) -> i32 {
+pub(crate) fn extend(v:i32,t: usize) -> i32 {
     let mut v = v as i32;
     if t == 0 {
         return v;

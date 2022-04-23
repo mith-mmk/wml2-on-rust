@@ -148,11 +148,11 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
 
             for mcu_y in 0..mcu_y_max {
                 for mcu_y_fix in 0..component[i].v {
-                    if mcu_y * dy + mcu_y_fix * 8 > height { break;}
+                    if mcu_y * dy + mcu_y_fix * 8 >= height { break;}
                     for mcu_x in 0..mcu_x_max {
                         let mcu_block = &mut mcu_blocks[mcu_y*mcu_x_max+mcu_x];
                         for mcu_x_fix in 0..component[i].h {
-                            if mcu_x * dx + mcu_x_fix * 8 > width { break;}
+                            if mcu_x * dx + mcu_x_fix * 8 >= width { break;}
                             let scannumber = scanfirst + mcu_y_fix * component[i].h +  mcu_x_fix;
                             let (dc_current,ac_current,i,_,cs,_) = scan[scannumber];
                             if cs == false { continue }
@@ -181,12 +181,14 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                             }
                         }
                     }
-                    }
                 }
             }
+        }
 
-                // Progressive draws
-                /*
+        // Progressive draws
+        /*
+        for mcu_y in 0..mcu_y_max {
+            for mcu_x in 0..mcu_x_max {
                 let mut mcu_units :Vec<Vec<u8>> = Vec::new();                    
                 for scannumber in 0..mcu_size {
                     let (_,_,_,tq,_) = scan[scannumber];
@@ -199,7 +201,9 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                 }
                 let data = convert_rgb(plane,&mcu_units,&component,header.adobe_color_transform,(h_max,v_max));
                 option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
-                */
+            }
+        }
+        */
 
 
         loop {

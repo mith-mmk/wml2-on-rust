@@ -92,6 +92,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
    You may impl animation,slice images and more.
 
  - terminate -> You can impl terminate process
+ - set_metadata -> 0.0.10 after 
 
 # using saver
 ```rust
@@ -119,6 +120,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
     fn encode_pick(&mut self,start_x: usize, start_y: usize, width: usize, height: usize,option: Option<PickOptions>)
                  -> Result<Option<Vec<u8>>,Error>;
     fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(),Error>;
+    fn set_metadata // 0.0.10 after 
 ```
 # update
 - 0.0.1 baseline jpeg

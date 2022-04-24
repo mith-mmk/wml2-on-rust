@@ -72,7 +72,7 @@ pub fn print_data (data: &DataPack,length:usize) -> String{
         DataPack::SByte(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
             for i in 0..length {
-                s += &format!("{}",d[i]);
+                s += &format!("{} ",d[i]);
             }
 
         },
@@ -97,21 +97,21 @@ pub fn print_data (data: &DataPack,length:usize) -> String{
         DataPack::Long(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
             for i in 0..length {
-                s += &format!("{}",d[i]);
+                s += &format!("{} ",d[i]);
             }
 
         },
         DataPack::SShort(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
             for i in 0..length {
-                s += &format!("{}",d[i]);
+                s += &format!("{} ",d[i]);
             }
 
         },
         DataPack::SLong(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
             for i in 0..length {
-                s += &format!("{}",d[i]);
+                s += &format!("{} ",d[i]);
             }
 
         },
@@ -125,7 +125,7 @@ pub fn print_data (data: &DataPack,length:usize) -> String{
         DataPack::Double(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
             for i in 0..length {
-                s += &format!("{}",d[i]);
+                s += &format!("{} ",d[i]);
             }
 
         },

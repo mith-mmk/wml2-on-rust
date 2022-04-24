@@ -13,6 +13,22 @@ use crate::util::format_check;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use crate::warning::ImgWarnings;
+
+
+#[derive(Clone)]
+pub enum DataMap{
+    UInt(u64),
+    SInt(i64),
+    Float(f64),
+    UIntAllay(Vec<u64>),
+    SIntAllay(Vec<i64>),
+    FloatAllay(Vec<f64>),
+    Raw(Vec<u8>),
+    Ascii(String),
+    I18NString(String),
+    None,
+}
+
 /* Dynamic Select Callback System */
 
 pub enum DrawNextOptions {
@@ -33,6 +49,8 @@ pub trait DrawCallback: Sync + Send {
     fn terminate(&mut self, _term: Option<TerminateOptions>) -> Result<Option<CallbackResponse>,Error>;
     fn next(&mut self, _next: Option<NextOptions>) -> Result<Option<CallbackResponse>,Error>;
     fn verbose(&mut self, _verbose: &str,_: Option<VerboseOptions>  ) -> Result<Option<CallbackResponse>,Error>;
+    // after 0.0.10
+    fn set_metadata(&mut self, key: &str,value: DataMap ) -> Result<Option<CallbackResponse>,Error>;
 }
 
 pub trait PickCallback: Sync + Send {
@@ -41,6 +59,8 @@ pub trait PickCallback: Sync + Send {
     fn encode_pick(&mut self,start_x: usize, start_y: usize, width: usize, height: usize,option: Option<PickOptions>)
                  -> Result<Option<Vec<u8>>,Error>;
     fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(),Error>;
+    // after 0.0.10
+    fn metadata(&mut self) -> Result<Option<HashMap<String,DataMap>>,Error>;
 }
 
 pub struct EncoderOptions {}
@@ -179,6 +199,7 @@ pub struct AnimationLayer {
     pub control: NextOptions,
 }
 
+
 #[allow(unused)]
 pub struct ImageBuffer {
     /// ImageBuffer is default drawer
@@ -196,6 +217,7 @@ pub struct ImageBuffer {
     pub loop_count: Option<u32>,
     pub first_wait_time: Option<u64>,
     fnverbose: fn(&str) -> Result<Option<CallbackResponse>,Error>,
+    pub metadata: Option<HashMap<String,DataMap>>,
 }
 
 fn default_verbose(_ :&str) -> Result<Option<CallbackResponse>, Error>{
@@ -203,7 +225,7 @@ fn default_verbose(_ :&str) -> Result<Option<CallbackResponse>, Error>{
 }
 
 impl ImageBuffer {
-    pub fn new () -> Self {
+    pub fn new() -> Self {
         Self {
             width: 0,
             height: 0,
@@ -214,6 +236,22 @@ impl ImageBuffer {
             loop_count: None,
             first_wait_time: None,
             fnverbose: default_verbose,
+            metadata: None,
+        }
+    }
+
+    pub fn set_buffer(width: usize, height:usize, buf:Vec<u8>) -> Self {
+        Self {
+            width: width,
+            height: height,
+            backgroud_color: None,
+            buffer: Some(buf),
+            animation: None,
+            current: None,
+            loop_count: None,
+            first_wait_time: None,
+            fnverbose: default_verbose,
+            metadata: None,
         }
     }
 
@@ -337,6 +375,18 @@ impl DrawCallback for ImageBuffer {
     fn verbose(&mut self, str: &str,_: Option<VerboseOptions>) -> Result<Option<CallbackResponse>, Error> { 
         return (self.fnverbose)(str);
     }
+
+    fn set_metadata(&mut self,key: &str, value: DataMap) -> Result<Option<CallbackResponse>, Error> { 
+        let hashmap = if let Some(ref mut hashmap) = self.metadata {
+            hashmap
+        } else {
+            self.metadata = Some(HashMap::new());
+            self.metadata.as_mut().unwrap()
+        };
+        hashmap.insert(key.to_string(), value);
+
+        return Ok(None)
+    }
 }
 
 impl PickCallback for ImageBuffer {
@@ -380,6 +430,14 @@ impl PickCallback for ImageBuffer {
 
     fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(), Error> {
         Ok(())
+    }
+
+    fn metadata(&mut self) -> Result<Option<HashMap<String,DataMap>>,Error> {
+        if let Some(hashmap) = &self.metadata {
+            Ok(Some(hashmap.clone()))
+        } else {
+            Ok(None)
+        }
     }
 }
 

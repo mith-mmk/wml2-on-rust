@@ -3,14 +3,14 @@
  * use MIT License
  */
 
-//type Error = Box<dyn std::error::Error>;
+// type Error = Box<dyn std::error::Error>;
 use crate::jpeg::header::HuffmanTables;
 use crate::jpeg::header::HuffmanTable;
 use crate::iccprofile::{icc_profile_header_print, icc_profile_print, ICCProfile};
 use super::header::JpegAppHeaders::{Adobe, Ducky, Exif,  Jfif, Unknown};
 use super::header::JpegAppHeaders::ICCProfile as JpegICCProfile;
 use super::header::JpegHaeder;
-use super::header::ICCProfileData;
+
 
 
 #[allow(unused)]
@@ -101,9 +101,12 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
 
         },
     }
-    let mut icc_profile_header :Option<ICCProfile> = None;
+    let icc_profile_header :Option<ICCProfile> = None;
 
-    let mut icc_profile_data :Vec<u8> = Vec::new();
+    let icc_profile_data :Vec<u8> = Vec::new();
+    if header.icc_profile.is_some() {
+        println!("ICC Profile {}",&header.icc_profile.as_ref().unwrap().len());
+    }
 
     match &header.jpeg_app_headers {
         Some(app_headers) => {
@@ -148,22 +151,7 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
                     JpegICCProfile(icc_profile) => {
                         str = str + &format!(
                             "ICC Profile {} of {}\n",icc_profile.number,icc_profile.total);
-                        match &icc_profile.data {
-                            ICCProfileData::Header(ref header) => {
-                                if option & 0x20 != 0x20 {  // ICC Profile
-                                    str += &icc_profile_header_print(&header);
-                                } else {
-                                    icc_profile_header = Some(ICCProfile::new(header));
-                                    icc_profile_data = header.data.to_vec();
-                                }
-                            },
-                            ICCProfileData::Data(data) => {
-                                str += &format!("Data length {}bytes\n",&data.len());
-                                if icc_profile_data.len() > 0 {
-                                    icc_profile_data.append(&mut data.to_vec());
-                                }
-                            },
-                        }
+
                     }
                     Unknown(app) => {
                         str = str + &format!("App{} {} {}bytes is unknown\n",app.number,app.tag,app.length);
@@ -175,6 +163,21 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
         _ => {
 
         },
+    }
+
+    let mut icc_profile:Option<ICCProfile> = None;
+
+    if let Some(data) = &header.icc_profile.as_ref() {
+        icc_profile = Some(ICCProfile::new(data));
+//        let _decoded_icc_profile = icc_profile_decode(&ICCProfile::new(data));
+    }
+
+    if let Some(ref icc_profile) = icc_profile {
+        if option & 0x40 == 0x40 {  // ICC Profile
+            str += &icc_profile_print(icc_profile);
+        } else if option & 0x60 == 0x20 {  // ICC Profile
+            str += &icc_profile_header_print(icc_profile);
+        }
     }
 
 

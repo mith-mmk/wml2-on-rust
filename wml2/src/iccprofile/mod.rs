@@ -5,7 +5,7 @@ use crate::iccprofile::Data::*;
 pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
     let mut str = icc_profile_header_print(&icc_profile);
     let header_size = 128;
-    let mut ptr = 0;
+    let mut ptr = header_size;
     str += "==== ICC Profiles defined data ====\n";
     let tags = read_u32_be(&icc_profile.data,ptr);
     ptr +=  4;
@@ -13,7 +13,7 @@ pub fn icc_profile_print(icc_profile :&ICCProfile) -> String {
     for _ in 0..tags {
         let tag_name = read_string(&icc_profile.data,ptr,4);
         ptr +=  4;
-        let tag_offset = read_u32_be(&icc_profile.data,ptr) as usize - header_size;
+        let tag_offset = read_u32_be(&icc_profile.data,ptr) as usize;
         ptr +=  4;
         let tag_length = read_u32_be(&icc_profile.data,ptr) as usize;
         ptr +=  4;
@@ -225,10 +225,8 @@ impl ICCProfile {
         let creator = read_u32_be(&buffer,ptr);
         ptr = ptr + 4;
         let profile_id = read_u128_be(&buffer, ptr);
-        ptr = ptr + 16;
-        let _reserved :Vec<u8> = (0..28).map(|i| buffer[i]).collect();
-        ptr = ptr + 28;
-        let data :Vec<u8> = buffer[ptr..].to_vec();
+        // ptr = ptr + 16;
+        // reserved 28 byte skip
 
         let create_date = format!("{:>4}/{:>2}/{:>2} {:>02}:{:>02}:{:>02}",
             year,month,day,hour,minute,second);
@@ -251,7 +249,7 @@ impl ICCProfile {
             creator: creator,
             profile_id: profile_id,
             reserved: Vec::new(),
-            data : data.to_vec(),
+            data : buffer.to_vec(),
         }
     }
 }

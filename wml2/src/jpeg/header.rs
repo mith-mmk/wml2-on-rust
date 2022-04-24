@@ -256,6 +256,7 @@ pub struct UnknownApp {
     pub number : usize,
     pub tag : String,
     pub length : usize,
+    pub raw: Vec<u8>,
 }
 
 
@@ -384,7 +385,7 @@ fn read_app(num: usize,tag :&String,buffer :&[u8]) -> Result<JpegAppHeaders,Erro
         _ => {
         }
     }
-    Ok(JpegAppHeaders::Unknown(UnknownApp{number:num ,tag: tag.to_string(),length: len}))
+    Ok(JpegAppHeaders::Unknown(UnknownApp{number:num ,tag: tag.to_string(),length: len,raw: buffer.to_vec()}))
 }
 
 impl JpegHaeder {

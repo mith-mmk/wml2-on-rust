@@ -4,9 +4,12 @@
  */
 
 // type Error = Box<dyn std::error::Error>;
+use crate::iccprofile::ICCProfile;
+use std::collections::HashMap;
+use crate::draw::DataMap;
 use crate::jpeg::header::HuffmanTables;
 use crate::jpeg::header::HuffmanTable;
-use crate::iccprofile::{icc_profile_header_print, icc_profile_print, ICCProfile};
+use crate::iccprofile::{icc_profile_header_print, icc_profile_print};
 use super::header::JpegAppHeaders::{Adobe, Ducky, Exif,  Jfif, Unknown};
 use super::header::JpegAppHeaders::ICCProfile as JpegICCProfile;
 use super::header::JpegHaeder;
@@ -101,9 +104,7 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
 
         },
     }
-    let icc_profile_header :Option<ICCProfile> = None;
 
-    let icc_profile_data :Vec<u8> = Vec::new();
     if header.icc_profile.is_some() {
         println!("ICC Profile {}",&header.icc_profile.as_ref().unwrap().len());
     }
@@ -245,15 +246,6 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
         str += &print_huffman_tables(&header.huffman_tables);
 
     }
-
-    if option & 0x20 == 0x20 {  // ICC Profile decode
-        if icc_profile_header.is_some() {
-            let mut icc_profile = icc_profile_header.unwrap();
-            icc_profile.data = icc_profile_data;
-            str += &icc_profile_print(&icc_profile);
-        }
-    }
-
             
     let strbox :Box<String> = Box::new(str);
 
@@ -301,3 +293,94 @@ fn print_huffman(i:usize,huffman_table:&HuffmanTable) -> String {
     str
     
 }
+
+pub fn make_metadata(header: &JpegHaeder) -> HashMap<String,DataMap> {
+    let mut map :HashMap<String,DataMap> = HashMap::new();
+    if let Some(fh) =&header.frame_header {
+        if fh.is_baseline {
+            map.insert("Jpeg DCT process".to_string(), DataMap::Ascii("Baseline".to_string()));
+        } else {
+            map.insert("Jpeg DCT process".to_string(), DataMap::Ascii("Extended".to_string()));
+        }
+        if fh.is_progressive {
+            map.insert("Jpeg frame order".to_string(), DataMap::Ascii("Progressive".to_string()));
+        } else {
+            map.insert("Jpeg frame order".to_string(), DataMap::Ascii("Sequential".to_string()));
+        }
+        if fh.is_huffman {
+            map.insert("Jpeg coding".to_string(), DataMap::Ascii("Huffman".to_string()));
+        } else {
+            map.insert("Jpeg coding".to_string(), DataMap::Ascii("Arithmetic".to_string()));
+        }
+        if fh.is_differential {
+            map.insert("Jpeg differential".to_string(), DataMap::Ascii("Differential".to_string()));
+        }
+        if fh.is_lossress {
+            map.insert("Jpeg DCT process".to_string(), DataMap::Ascii("Lossress".to_string()));
+        }
+        map.insert("width".to_string(), DataMap::UInt(fh.width as u64));
+        map.insert("height".to_string(), DataMap::UInt(fh.height as u64));
+        map.insert("Bit per pixel".to_string(), DataMap::UInt(fh.bitperpixel as u64));
+    }
+
+    if let Some(comment) = &header.comment {
+        map.insert("comment".to_string(), DataMap::Ascii(comment.to_string()));
+    }
+
+    if header.icc_profile.is_some() {
+        map.insert("ICC Profile".to_string(), DataMap::ICCProfile(header.icc_profile.as_ref().unwrap().to_vec()));
+    }
+
+    match &header.jpeg_app_headers {
+        Some(app_headers) => {
+            for app in app_headers.iter() {
+                match app {
+                    Jfif(jfif) => {
+                        let unit = 
+                        match jfif.resolusion_unit {
+                            0 => {""}, 1 => {"dpi"},
+                            2 => {"dpi"}, _ => {"N/A"}
+                        };
+
+                        let str = format!(
+                            "JFIF Ver{:>03x} Resilution Unit X{}{} Y{}{} Thumnail {} {}\n",
+                            jfif.version,jfif.x_resolusion,unit,jfif.y_resolusion,unit,jfif.width,jfif.height);
+                        map.insert("JFIF".to_string(), DataMap::Ascii(str));
+
+                    },
+                    Exif(exif) => {
+                        map.insert("EXIF".to_string(), DataMap::Exif(exif.clone()));
+                    },
+                    Ducky(ducky) => {
+                        let str = format!(
+                            "Ducky .. unknow format {} {} {}\n",
+                            ducky.quality,ducky.comment,ducky.copyright);
+                        map.insert("Ducky".to_string(), DataMap::Ascii(str));
+
+                    },
+                    Adobe(adobe) => {
+                        let str = format!(
+                            "Adobe App14 DCTEncode Version:{} Flag1:{} Flag2:{} ColorTransform {} {}\n"
+                            ,adobe.dct_encode_version
+                            ,adobe.flag1,adobe.flag2,adobe.color_transform,match adobe.color_transform {
+                                    1 => {"YCbCr"}, 2 => {"YCCK"}, _ =>{"Unknown"}});
+                        map.insert("Adobe".to_string(), DataMap::Ascii(str));
+
+                    },
+                    
+                    Unknown(app) => {
+                        let key = format!("App{} {}",app.number,app.tag);
+                        map.insert(key,DataMap::Raw(app.raw.clone()));
+                    },
+                    _ => {},
+                }
+
+            }
+        },
+        _ => {
+
+        },
+    }
+    map
+}
+

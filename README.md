@@ -122,6 +122,18 @@ pub fn main()-> Result<(),Box<dyn Error>> {
     fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(),Error>;
     fn set_metadata // 0.0.10 after 
 ```
+
+# debug flag
+## JPEG
+-  0x01 basic header
+-  0x02 with Huffman Table
+-  0x04 with Extract Huffman Table 
+-  0x08 with Define Quatization Table
+-  0x10 with Exif
+-  0x20 with IIC Profile(header)
+-  0x40 with IIC Profile(more infomation)
+-  0x60 with IIC Profile(all)
+-  0x80 ...
 # update
 - 0.0.1 baseline jpeg
 - 0.0.2 bmp OS2/Windows RGB/RLE4/RLE8/bit fields/baseline JPEG

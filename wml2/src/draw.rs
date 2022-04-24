@@ -2,6 +2,7 @@
 //! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
 //! Drawer will use callback, flexisble drawing.
 type Error = Box<dyn std::error::Error>;
+use crate::tiff::header::TiffHeaders;
 use std::collections::HashMap;
 use std::io::Write;
 use crate::util::ImageFormat;
@@ -15,7 +16,7 @@ use crate::error::ImgErrorKind;
 use crate::warning::ImgWarnings;
 
 
-#[derive(Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum DataMap{
     UInt(u64),
     SInt(i64),
@@ -26,6 +27,8 @@ pub enum DataMap{
     Raw(Vec<u8>),
     Ascii(String),
     I18NString(String),
+    Exif(TiffHeaders),
+    ICCProfile(Vec<u8>),
     None,
 }
 

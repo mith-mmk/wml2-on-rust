@@ -3,6 +3,7 @@
  * use MIT License
  */
 type Error = Box<dyn std::error::Error>;
+use crate::jpeg::util::make_metadata;
 use bin_rs::reader::BinaryReader;
 use crate::warning::*;
 use crate::draw::*;
@@ -1140,6 +1141,11 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
             JpegWarning::new_const(
                 JpegWarningKind::UnknowFormat,
                 "Plane 4 color translation rule is known".to_string())))
+    }
+
+    let map = make_metadata(&header);
+    for (key,value) in &map {
+        option.drawer.set_metadata(key,value.clone())?;
     }
 
     if fh.is_progressive {

@@ -31,7 +31,7 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
             let mut image = ImageBuffer::new();
             image.set_verbose(write_log);
             let mut option = DecodeOptions {
-                debug_flag: 0xff,
+                debug_flag: 0x0,
                 drawer: &mut image,
             };
             let r = image_reader(reader, &mut option);
@@ -39,6 +39,45 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
             match r {
                 Ok(..) => {
                     println! ("{:?} {} ms",filename,eslaped_time.as_millis());
+                    let metadata = image.metadata();
+                    if let Ok(metadata) = metadata {
+                        if let Some(metadata) = metadata {
+                            for (key,value) in metadata {
+                                match value {
+                                    DataMap::None => {
+                                        println!("{}",key);
+                                    },
+                                    DataMap::Raw(value) => {
+                                        println!("{}: {}bytes",key,value.len());
+                                    },
+                                    DataMap::Exif(value) => {
+                                        println!("=============== EXIF START ==============");
+                                        let string = value.to_string();
+                                        println!("{}", string);
+                                        println!("================ EXIF END ===============");
+                                    },
+                                    DataMap::ICCProfile(data) => {
+                                        println!("{}: {}bytes",key,data.len());
+                                    /*
+                                        let out_path = dotenv::var("RESULTPATH");
+                                        if let Ok(out_path) = out_path {
+                                            let filename = filename.file_name().unwrap().to_str().unwrap();
+                                            let filename = format!("{}/{}.icc",out_path,filename);
+                                            println!("{}", filename);
+                                            let mut f = File::create(&filename).unwrap();
+                                            f.write_all(&data).unwrap();
+                                            f.flush().unwrap();
+                                        }
+                                    */
+                                    },
+                                    _ => {
+                                        println!("{}: {:?}",key,value);
+                                    }
+                                }
+                            }        
+                        }
+                    }
+
                     return Some(image);
                 },
                 Err(err) => {

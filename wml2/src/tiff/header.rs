@@ -6,6 +6,7 @@
 type Error = Box<dyn std::error::Error>;
 
 /* for EXIF */
+use crate::tiff::util::print_tags;
 use crate::color::RGBA;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
@@ -23,7 +24,7 @@ trait RationalNumber {
     fn numerator(&self) -> u64;
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct Rational {
     pub n: u32,
     pub d: u32,
@@ -51,7 +52,7 @@ impl RationalNumber for Rational {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct RationalU64 {
     pub n: u64,
     pub d: u64,
@@ -79,7 +80,7 @@ impl RationalNumber for RationalU64 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum DataPack {
     Bytes(Vec<u8>),
     Ascii(String),
@@ -98,12 +99,38 @@ pub enum DataPack {
 
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct TiffHeader {
     pub tagid: usize,
     pub data: DataPack,
     pub length: usize
 }
+
+
+#[allow(unused)]
+#[derive(Debug,Clone,PartialEq)]
+pub struct TiffHeaders {
+    pub version :u16,
+    pub headers :Vec<TiffHeader>,
+    pub exif: Option<Vec<TiffHeader>>,
+    pub gps: Option<Vec<TiffHeader>>,
+    pub endian: Endian,
+}
+
+impl TiffHeaders {
+    pub fn to_string(&self) -> String {
+        print_tags(self)
+    }
+}
+
+#[derive(Debug)]
+#[derive(std::cmp::PartialEq)]
+enum IfdMode {
+    BaseTiff,
+    Exif,
+    Gps,
+}
+
 
 #[derive(Debug)]
 pub enum Compression {
@@ -247,25 +274,6 @@ pub struct Tiff {
 
 }
 
-
-#[allow(unused)]
-#[derive(Debug)]
-pub struct TiffHeaders {
-    pub version :u16,
-    pub headers :Vec<TiffHeader>,
-    pub exif: Option<Vec<TiffHeader>>,
-    pub gps: Option<Vec<TiffHeader>>,
-    pub endian: Endian,
-}
-
-
-#[derive(Debug)]
-#[derive(std::cmp::PartialEq)]
-enum IfdMode {
-    BaseTiff,
-    Exif,
-    Gps,
-}
 
 
 impl Tiff {

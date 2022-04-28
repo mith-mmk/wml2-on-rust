@@ -3,6 +3,7 @@
  * use MIT License
  */
 
+use crate::metadata::DataMap;
 use crate::tiff::header::DataPack;
 use crate::tiff::tags::gps_mapper;
 use crate::tiff::tags::tag_mapper;
@@ -18,16 +19,18 @@ pub fn print_tags(header: &TiffHeaders) -> String {
     let mut s :String = format!("TIFF Ver{} {}\n",header.version,endian);
 
     for tag in &header.headers {
-        let (tag_name,string) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
+        let (tag_name,_) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
+        let string = print_data(&tag.data,tag.length);
         s += &(tag_name + " : " + &string + "\n");
     }
     match &header.exif {
         Some(exif) => {
             s += "\nIFD Exif \n";
             for tag in exif {
-                let (tag_name,string) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
+                let (tag_name,_) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
+                let string = print_data(&tag.data,tag.length);
                 s += &(tag_name + " : " + &string + "\n");
-            }
+                    }
         },
         _ => {},
     }
@@ -35,7 +38,8 @@ pub fn print_tags(header: &TiffHeaders) -> String {
         Some(gps) => {
             s += "\nIFD GPS \n";
             for tag in gps {
-                let (tag_name,string) = gps_mapper(tag.tagid as u16,&tag.data,tag.length);
+                let (tag_name,_) = gps_mapper(tag.tagid as u16,&tag.data,tag.length);
+                let string = print_data(&tag.data,tag.length);
                 s += &(tag_name + " : " + &string + "\n");
             }
         },
@@ -45,8 +49,7 @@ pub fn print_tags(header: &TiffHeaders) -> String {
     s
 }
 
-
-pub fn print_data (data: &DataPack,length:usize) -> String{
+pub fn print_data(data: &DataPack,length:usize) -> String{
     let mut s = "".to_string();
     
     match data {
@@ -134,4 +137,165 @@ pub fn print_data (data: &DataPack,length:usize) -> String{
         },
     }
     s
+}
+
+/*
+pub fn make_metadata(header: &TiffHeaders) -> HashMap<String,DataMap> {
+    let mut map:HashMap<String,DataMap> = HashMap::new();
+    let endian = match header.endian {
+        Endian::BigEndian => {"Big Endian"},
+        Endian::LittleEndian => {"Little Endian"}
+    };
+    map.insert("endian".to_string(),DataMap::Ascii(endian.to_string()));
+    map.insert("Tiff version".to_string(),DataMap::UInt(header.version as u64));
+
+
+    for tag in &header.headers {
+        let (tag_name,data) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
+        map.insert(tag_name,data);
+    }
+    match &header.exif {
+        Some(exif) => {
+            for tag in exif {
+                let (tag_name,data) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
+                map.insert(tag_name,data);
+            }
+        },
+        _ => {},
+    }
+    match &header.gps {
+        Some(gps) => {
+            for tag in gps {
+                let (tag_name,data) = gps_mapper(tag.tagid as u16,&tag.data,tag.length);
+                map.insert(tag_name,data);
+            }
+        },
+        _ => {},
+    }
+    
+    map
+}
+*/
+
+pub fn convert(data: &DataPack,length:usize) -> DataMap {
+    match data {
+        DataPack::Rational(d) => {
+            if length == 1 {
+                return DataMap::Float(d[0].n as f64/d[0].d as f64);
+            }
+            let mut data = vec![];
+
+            for val in d {
+                let val = val.n as f64/ val.d as f64;
+                data.push(val);
+            }
+            return DataMap::FloatAllay(data);
+        },
+        DataPack::RationalU64(d) => {
+            if length == 1 {
+                return DataMap::Float(d[0].n as f64/d[0].d as f64);
+            }
+            let mut data = vec![];
+
+            for val in d {
+                let val = val.n as f64/ val.d as f64;
+                data.push(val);
+            }
+            return DataMap::FloatAllay(data);
+        },
+        DataPack::Bytes(d) => {
+            if length == 1 {
+                return DataMap::UInt(d[0] as u64);
+            }
+            let mut data = vec![];
+            for val in d {
+                data.push(*val as u64);
+            }
+            return DataMap::UIntAllay(data);
+        },
+        DataPack::SByte(d) => {
+            if length == 1 {
+                return DataMap::SInt(d[0] as i64);
+            }
+            let mut data = vec![];
+            for val in d {
+                data.push(*val as i64);
+            }
+            return DataMap::SIntAllay(data);
+        },
+        DataPack::Undef(d) => {
+            return DataMap::Raw(d.to_vec())
+        },
+
+        DataPack::Ascii(ss) => {
+            return DataMap::Ascii(ss.to_string())
+        },
+        DataPack::Short(d) => {
+            if length == 1 {
+                return DataMap::UInt(d[0] as u64);
+            }
+            let mut data = vec![];
+            for val in d {
+                data.push(*val as u64);
+            }
+            return DataMap::UIntAllay(data);
+
+        },
+        DataPack::Long(d) => {
+            if length == 1 {
+                return DataMap::UInt(d[0] as u64);
+            }
+            let mut data = vec![];
+            for val in d {
+                data.push(*val as u64);
+            }
+            return DataMap::UIntAllay(data);
+
+        },
+        DataPack::SShort(d) => {
+            if length == 1 {
+                return DataMap::SInt(d[0] as i64);
+            }
+            let mut data = vec![];
+            for val in d {
+                data.push(*val as i64);
+            }
+            return DataMap::SIntAllay(data);
+
+        },
+        DataPack::SLong(d) => {
+            if length == 1 {
+                return DataMap::SInt(d[0] as i64);
+            }
+            let mut data = vec![];
+            for val in d {
+                data.push(*val as i64);
+            }
+            return DataMap::SIntAllay(data);
+
+        },
+        DataPack::Float(d) => {
+            if length == 1 {
+                return DataMap::Float(d[0] as f64);
+            }
+            let mut data = vec![];
+            for val in d {
+                data.push(*val as f64);
+            }
+            return DataMap::FloatAllay(data);
+        },
+        DataPack::Double(d) => {
+            if length == 1 {
+                return DataMap::Float(d[0] as f64);
+            }
+            let mut data = vec![];
+            for val in d {
+                data.push(*val as f64);
+            }
+            return DataMap::FloatAllay(data);
+        },
+        DataPack::Unkown(d) => {
+            return DataMap::Raw(d.to_vec())
+        }
+    }
 }

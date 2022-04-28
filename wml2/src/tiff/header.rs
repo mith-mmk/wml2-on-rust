@@ -140,7 +140,7 @@ pub enum Compression {
     CCITTGroup4Fax = 4,
     LZW = 5,
     OldJpeg = 6,
-    JPeg = 7,
+    Jpeg = 7,
     AdobeDeflate = 8,
     Next = 32766,
     CcittrleW = 32771,
@@ -204,7 +204,7 @@ pub struct Tiff {
     pub fill_order:u16,
     /// 0x0111 Strip Offsets count 1 or 2
     /// Image data start offset, data number also 1, but it may be exist mutli offsets images.
-    pub strip_offsets: u32,             
+    pub strip_offsets:Vec<u32>,             
     /// 0x0112 also 1  0
     /// 1 = TOPLEFT (LEFT,TOP) Image end (RIGHT,BOTTOM)
     /// 2 = TOPRIGHT right-left reverce Image
@@ -222,7 +222,7 @@ pub struct Tiff {
     /// 0x0116 also width * BitPerSample /8  <= rows_per_strip
     pub rows_per_strip: u32,
     /// 0x0117 For each strip(width), the number of bytes in the strip after compression.           
-    pub strip_byte_counts :u32,
+    pub strip_byte_counts :Vec<u32>,
     /// 0x0118 also no use         
     pub min_sample_value:u16,           
     pub max_sample_value:u16,           // 0x0119 default 2**(BitsPerSample) - 1
@@ -287,11 +287,11 @@ impl Tiff {
         let  mut bitpersample: u16 = 24;             // 0x0102 data takes 1..N. if data count is 1>0;also bitperpixel =24
         let  mut photometric_interpretation: u16 = 2;// 0x0106
         let  mut fill_order:u16 = 1;
-        let  strip_offsets: u32 = 1;
+        let  mut strip_offsets = vec![];                 // 0x111
         let  orientation: u32 = 1;
         let  mut samples_per_pixel:u16  = 0;        // 0x0115
-        let  mut rows_per_strip: u32 = 0;           // 0x0116 also width * BitPerSample /8  <= row_per_strip
-        let  strip_byte_counts :u32 = 0;        // 0x0117 For each strip;the number of bytes in the strip after compression.
+        let  mut rows_per_strip = 0_u32;           // 0x0116 also width * BitPerSample /8  <= row_per_strip
+        let  mut strip_byte_counts = vec![];        // 0x0117 For each strip;the number of bytes in the strip after compression.
         let  min_sample_value:u16 = 0;          // 0x0118 also no use
         let  mut max_sample_value:u16 = 0;          // 0x0119 default 2**(BitsPerSample) - 1
         let  mut planar_config: u16 = 1;            // 0x011c also 1
@@ -305,7 +305,6 @@ impl Tiff {
         // no baseline
         let  startx: u32 = 0;               // 0x011E
         let  starty: u32 = 0;               // 0x011F
-
 
         for header in &tiff_headers.headers {
             match header.tagid {
@@ -366,7 +365,7 @@ impl Tiff {
                                     Compression::OldJpeg
                                 }
                                 7 => {
-                                    Compression::JPeg
+                                    Compression::Jpeg
                                 },
                                 8 => {
                                     Compression::AdobeDeflate
@@ -395,9 +394,31 @@ impl Tiff {
                 },
                 0x111 => {
                     if let DataPack::Short(d) = &header.data {
-                        samples_per_pixel =  d[0];
+                        for v in d {
+                            strip_offsets.push(*v as u32);
+                        }
                     } else if let DataPack::Long(d) = &header.data {
-                        samples_per_pixel =  d[0] as u16;
+                        for v in d {
+                            strip_offsets.push(*v as u32);
+                        }
+                    }
+                },
+                0x116 => {
+                    if let DataPack::Short(d) = &header.data {
+                        rows_per_strip = d[0] as u32;
+                    } else if let DataPack::Long(d) = &header.data {
+                        rows_per_strip = d[0] as u32;
+                    }
+                },
+                0x117 => {
+                    if let DataPack::Short(d) = &header.data {
+                        for v in d {
+                            strip_byte_counts.push(*v as u32);
+                        }
+                    } else if let DataPack::Long(d) = &header.data {
+                        for v in d {
+                            strip_byte_counts.push(*v as u32);
+                        }
                     }
                 },
                 0x119 => {
@@ -413,14 +434,6 @@ impl Tiff {
                     if let DataPack::Short(d) = &header.data {
                         planar_config =  d[0];
                     }
-                },
-                0x116 => {
-                    if let DataPack::Short(d) = &header.data {
-                        rows_per_strip =  d[0] as u32;
-                    } else if let DataPack::Long(d) = &header.data {
-                        rows_per_strip =  d[0];
-                    }
-
                 },
                 0x140 => {
                     if let DataPack::Short(d) = &header.data {

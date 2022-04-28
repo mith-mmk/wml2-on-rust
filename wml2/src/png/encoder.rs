@@ -1,3 +1,6 @@
+//! PNG encoder has Bug some case
+//! 
+
 use crate::draw::*;
 use crate::error::*;
 use crate::png::header::*;

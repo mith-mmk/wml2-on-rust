@@ -1,6 +1,7 @@
-//! draw.rs  Image Load to Buffer Library
+//! Images load to Buffer or save to buffer library
 //! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
 //! Drawer will use callback, flexisble drawing.
+//! 0.0.10 using color space RGBA32 only
 type Error = Box<dyn std::error::Error>;
 use std::collections::HashMap;
 use std::io::Write;
@@ -18,6 +19,7 @@ use crate::metadata::DataMap;
 
 /* Dynamic Select Callback System */
 
+/// Drawing Next Options using for Multi images format/ Animation images
 pub enum DrawNextOptions {
     Continue,
     NextImage,
@@ -29,24 +31,24 @@ pub enum DrawNextOptions {
 pub type Response =  Result<Option<CallbackResponse>,Error>;
 
 pub trait DrawCallback: Sync + Send {
-/// DrawCallback trait is callback template
+/// DrawCallback trait is callback template 
     fn init(&mut self,width: usize,height: usize,option: Option<InitOptions>) -> Result<Option<CallbackResponse>,Error>;
     fn draw(&mut self,start_x: usize, start_y: usize, width: usize, height: usize, data: &[u8],option: Option<DrawOptions>)
              -> Result<Option<CallbackResponse>,Error>;
     fn terminate(&mut self, _term: Option<TerminateOptions>) -> Result<Option<CallbackResponse>,Error>;
     fn next(&mut self, _next: Option<NextOptions>) -> Result<Option<CallbackResponse>,Error>;
     fn verbose(&mut self, _verbose: &str,_: Option<VerboseOptions>  ) -> Result<Option<CallbackResponse>,Error>;
-    // after 0.0.10
+    /// fn set_metadata after 0.0.10
     fn set_metadata(&mut self, key: &str,value: DataMap ) -> Result<Option<CallbackResponse>,Error>;
 }
 
 pub trait PickCallback: Sync + Send {
-    /// DrawCallback trait is callback template
+    /// PickCallback trait is callback template for saver
     fn encode_start(&mut self,option: Option<EncoderOptions>) -> Result<Option<ImageProfiles>,Error>;
     fn encode_pick(&mut self,start_x: usize, start_y: usize, width: usize, height: usize,option: Option<PickOptions>)
                  -> Result<Option<Vec<u8>>,Error>;
     fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(),Error>;
-    // after 0.0.10
+    /// fn metadata is after 0.0.10
     fn metadata(&mut self) -> Result<Option<HashMap<String,DataMap>>,Error>;
 }
 
@@ -177,6 +179,7 @@ pub struct ImageProfiles {
     pub background: Option<u32>,
 }
 
+/// Using for Animation GIF/PNG/other
 pub struct AnimationLayer {
     pub width: usize,
     pub height: usize,
@@ -242,6 +245,7 @@ impl ImageBuffer {
         }
     }
 
+    /// ImageBuffer allow animation
     pub fn set_animation(&mut self,flag: bool) {
         if flag {
             self.animation = Some(Vec::new())
@@ -258,6 +262,7 @@ impl ImageBuffer {
 }
 
 impl DrawCallback for ImageBuffer {
+    /// initialized Image Buffer
     fn init(&mut self, width: usize, height: usize,option: Option<InitOptions>) -> Result<Option<CallbackResponse>, Error> {
         let buffersize = width * height * 4;
         self.width = width;
@@ -273,6 +278,7 @@ impl DrawCallback for ImageBuffer {
         Ok(None)
     }
 
+    /// draw a part of image
     fn draw(&mut self, start_x: usize, start_y: usize, width: usize, height: usize, data: &[u8],_: Option<DrawOptions>)
                 -> Result<Option<CallbackResponse>,Error>  {
         if self.buffer.is_none() {
@@ -315,10 +321,12 @@ impl DrawCallback for ImageBuffer {
         Ok(None)
     }
 
+    /// terminate ImageBuffer
     fn terminate(&mut self,_: Option<TerminateOptions>) -> Result<Option<CallbackResponse>, Error> {
         Ok(None)
     }
 
+    /// Decoders tell ImageBuffer had next an image/images. 
     fn next(&mut self, opt: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error> {
         if  self.animation.is_some() {
             if let Some(opt) = opt  {
@@ -359,10 +367,12 @@ impl DrawCallback for ImageBuffer {
         Ok(Some(CallbackResponse::abort()))
     }
 
+    /// Decoder tell ImageBuffer verbose
     fn verbose(&mut self, str: &str,_: Option<VerboseOptions>) -> Result<Option<CallbackResponse>, Error> { 
         return (self.fnverbose)(str);
     }
 
+    /// Decoder set metadata to ImageBuffer
     fn set_metadata(&mut self,key: &str, value: DataMap) -> Result<Option<CallbackResponse>, Error> { 
         let hashmap = if let Some(ref mut hashmap) = self.metadata {
             hashmap
@@ -377,7 +387,7 @@ impl DrawCallback for ImageBuffer {
 }
 
 impl PickCallback for ImageBuffer {
-    
+    /// Encoder tell start ImageBuffer
     fn encode_start(&mut self, _: Option<EncoderOptions>) -> Result<Option<ImageProfiles>, Error> {
         let init = ImageProfiles {
             width: self.width,
@@ -387,6 +397,7 @@ impl PickCallback for ImageBuffer {
         Ok(Some(init))
     }
 
+    /// Encoder pick a part of image from ImageBuffer
     fn encode_pick(&mut self,start_x: usize, start_y: usize, width: usize, height: usize, _: Option<PickOptions>) -> Result<Option<Vec<u8>>,Error> {
         if self.buffer.is_none() {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::NotInitializedImageBuffer,"in pick".to_string())))
@@ -415,10 +426,12 @@ impl PickCallback for ImageBuffer {
         Ok(Some(data))
     }
 
+    /// Encoder tell ending encode to ImageBuffer
     fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(), Error> {
         Ok(())
     }
 
+    /// Encoder get metadata from ImageBuffer
     fn metadata(&mut self) -> Result<Option<HashMap<String,DataMap>>,Error> {
         if let Some(hashmap) = &self.metadata {
             Ok(Some(hashmap.clone()))
@@ -433,23 +446,18 @@ pub struct DecodeOptions<'a> {
     pub drawer: &'a mut dyn DrawCallback,
 }
 
-pub enum DataPack {
-    UInt(u64),
-    SInt(i64),
-    Float(f64),
-    String(String),    
-}
 
 pub struct EncodeOptions<'a> {
     pub debug_flag: usize,
     pub drawer: &'a mut dyn PickCallback,
-    pub options: Option<HashMap<String,DataPack>>,
+    pub options: Option<HashMap<String,DataMap>>,
 }
 
 pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer,Error> {
     image_load(buffer)
 }
 
+/// load image from file
 pub fn image_from_file(filename: String) -> Result<ImageBuffer,Error> {
     let f = std::fs::File::open(&filename)?;
     let reader = BufReader::new(f);
@@ -462,6 +470,7 @@ pub fn image_from_file(filename: String) -> Result<ImageBuffer,Error> {
     Ok(image)
 }
 
+/// save image to file
 pub fn image_to_file(filename: String,image:&mut dyn PickCallback,format:ImageFormat) -> Result<(),Error> {
     let f = std::fs::File::create(&filename)?;
     let mut option = EncodeOptions {
@@ -473,7 +482,7 @@ pub fn image_to_file(filename: String,image:&mut dyn PickCallback,format:ImageFo
     Ok(())
 }
 
-
+/// load image from buffer
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer,Error> {    
     let mut ib = ImageBuffer::new();
     let mut option = DecodeOptions {
@@ -530,6 +539,9 @@ pub fn image_decoder<B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) 
         Png => {
             return crate::png::decoder::decode(reader, option);
         },
+        Tiff => {
+            return crate::tiff::decoder::decode(reader, option);
+        },
         _ => {
             return Err(
                 Box::new(ImgError::new_const(ImgErrorKind::NoSupportFormat, "This buffer can not decode".to_string())))
@@ -544,6 +556,9 @@ pub fn image_encoder(option:&mut EncodeOptions,format:ImageFormat) -> Result<Vec
     match format {
         Bmp => {
             return crate::bmp::encoder::encode(option);
+        },
+        Png => {
+            return crate::png::encoder::encode(option);
         },
         _ => {
             return Err(

@@ -5,6 +5,7 @@
  */
 
 
+use crate::metadata::DataMap;
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;
 use crate::bmp::header::BitmapInfo::Windows;
@@ -380,30 +381,38 @@ pub fn decode<'decode, B:BinaryReader>(reader:&mut B ,option:&mut DecodeOptions)
         option.drawer.verbose(&s,None)?;
     }
     /*
-    let read_size = header.read_size;
     let offset = header.image_offset;
-    if offset - read_size as usize >  0 {
-        reader.skip_ptr(offset - (read_size as usize))?;
-    }*/
+    reader.seek(std::io::SeekFrom::Start(offset as u64))?;
+    */
+    option.drawer.set_metadata("Format",DataMap::Ascii("BMP".to_owned()))?;
+    option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
+    option.drawer.set_metadata("height",DataMap::UInt(header.height as u64))?;
+    option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bit_count as u64))?;
 
     if let Some(compression) = &header.compression {
         match compression {
             Compressions::BiRGB => {
+                option.drawer.set_metadata("compression",DataMap::Ascii("None".to_owned()))?;
                 return decode_rgb(reader,&header,option);
             },
             Compressions::BiRLE8 => {
+                option.drawer.set_metadata("compression",DataMap::Ascii("RLE".to_owned()))?;
                 return decode_rle(reader,&header,option);
             },
             Compressions::BiRLE4 => {
+                option.drawer.set_metadata("compression",DataMap::Ascii("RLE".to_owned()))?;
                 return decode_rle(reader,&header,option);
             },
             Compressions::BiBitFileds => {
+                option.drawer.set_metadata("compression",DataMap::Ascii("Bit fields".to_owned()))?;
                 return decode_bit_fileds(reader,&header,option);
             },
             Compressions::BiJpeg => {
+                option.drawer.set_metadata("compression",DataMap::Ascii("Jpeg".to_owned()))?;
                 return decode_jpeg(reader,&header,option);
             },
             Compressions::BiPng => {
+                option.drawer.set_metadata("compression",DataMap::Ascii("PNG".to_owned()))?;
                 return decode_png(reader,&header,option);
             },
         }

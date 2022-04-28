@@ -8,7 +8,7 @@ Notice: Specification of this library is not decision.
 - No need to force use - becouse You can use Javascript Image.
 
 # run example
-
+See wml-test/examples
 ## decode bmp reader
 $ cargo run --example to_bmp --release <inputfile> <output_dir>
 

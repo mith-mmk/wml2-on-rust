@@ -92,7 +92,7 @@ impl Lzwdecode {
             self.ptr +=1;
             self.left_bits += 8;
         }
-        let bits = (self.last_byte >>  (24 - self.left_bits)) & self.bit_mask;
+        let bits = (self.last_byte >> (self.left_bits - size)) & self.bit_mask;
 
         self.left_bits -= size;
         Ok(bits as usize)
@@ -172,7 +172,7 @@ impl Lzwdecode {
                     }
                     table.push(append_code);
                     self.dic.push(table);
-                    if self.dic.len() + self.is_tiff == self.bit_mask as usize + 1 && self.dic.len() < self.max_table{ 
+                    if self.dic.len() - self.is_tiff == self.bit_mask as usize + 1 && self.dic.len() < self.max_table{ 
                             // tiff use self.dic.len() + 1 
                         self.cbl += 1;
                         self.bit_mask = (self.bit_mask << 1) | 1;

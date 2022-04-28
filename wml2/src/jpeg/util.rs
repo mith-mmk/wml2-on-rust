@@ -296,6 +296,7 @@ fn print_huffman(i:usize,huffman_table:&HuffmanTable) -> String {
 
 pub fn make_metadata(header: &JpegHaeder) -> HashMap<String,DataMap> {
     let mut map :HashMap<String,DataMap> = HashMap::new();
+    map.insert("Format".to_string(), DataMap::Ascii("JPEG".to_string()));
     if let Some(fh) =&header.frame_header {
         if fh.is_baseline {
             map.insert("Jpeg DCT process".to_string(), DataMap::Ascii("Baseline".to_string()));

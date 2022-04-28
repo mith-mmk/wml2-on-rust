@@ -71,6 +71,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
       image_loader(&buf,&mut option)?;
 
     */
+    let metadata = image.metadata()?.unwrap();
 
     Ok(())
 }

@@ -1,6 +1,5 @@
 use bin_rs::io::*;
 use crate::error::*;
-use crate::iccprofile::ICCProfile;
 use crate::color::RGBA;
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;
@@ -15,9 +14,10 @@ const TRANNCEPEARENCY:[u8;4] = [b't',b'R',b'N',b'S'];
 const GAMMA:[u8;4] =  [b'g',b'A',b'M',b'A'];
 /*
 const COLOR_HMR:[u8;4] = [b'c',b'H',b'R',b'M'];
-const SRPG:[u8;4] = [b's',b'R',b'P',b'G'];
-const ICC_PROFILE:[u8;4] = [b'i',b'C',b'C',b'P'];
 */
+const SRGB:[u8;4] = [b's',b'R',b'G',b'B'];
+const ICC_PROFILE:[u8;4] = [b'i',b'C',b'C',b'P'];
+
 pub(crate) const TEXTDATA:[u8;4] = [b't',b'E',b'X',b't'];
 pub(crate) const COMPRESSED_TEXTUAL_DATA:[u8;4] = [b'z',b'T',b'X',b't'];
 pub(crate) const I18N_TEXT:[u8;4] = [b'i',b'T',b'X',b't'];
@@ -93,7 +93,8 @@ pub struct PngHeader {
     pub pallete: Option<Vec<RGBA>>,
     pub gamma: Option<u32>,
     pub transparency: Option<Vec<u8>>,
-    pub iccprofile: Option<ICCProfile>,
+    pub srgb: Option<u8>,
+    pub iccprofile: Option<Vec<u8>>,
     pub background_color: Option<BacgroundColor>,
     pub sbit: Option<Vec<u8>>,
     pub text: Vec<(String,String)>,
@@ -120,6 +121,7 @@ impl PngHeader {
             pallete: None,
             gamma: None,
             transparency: None,
+            srgb: None,
             iccprofile: None,
             background_color: None,
             sbit:None,
@@ -279,6 +281,19 @@ impl PngHeader {
                 reader.skip_ptr(8)?;
                 reader.skip_ptr(length as usize)?;
                 let _crc = reader.read_u32_be()?;      
+            } else if chunck == SRGB {
+                // noimpl
+                reader.skip_ptr(8)?;
+                let srgb = reader.read_byte()?;
+                header.srgb = Some(srgb);
+                let _crc = reader.read_u32_be()?;     
+            } else if chunck == ICC_PROFILE {
+                    // noimpl
+                    reader.skip_ptr(8)?;
+                    let icc_profile = reader.read_bytes_as_vec(length as usize)?;
+                    header.iccprofile = Some(icc_profile);
+                    let _crc = reader.read_u32_be()?;     
+    
             } else { // no impl...
                 reader.skip_ptr(8)?;
                 reader.skip_ptr(length as usize)?;

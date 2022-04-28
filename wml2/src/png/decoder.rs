@@ -1,3 +1,4 @@
+use crate::png::utils::make_metadata;
 use crate::draw::InitOptions;
 use crate::draw::DecodeOptions;
 use crate::color::RGBA;
@@ -887,6 +888,11 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
         let string = format!("{:?}",&header);
         option.drawer.verbose(&string,None)?;
     }
+    let map = make_metadata(&header);
+    for (key,value) in &map {
+        option.drawer.set_metadata(key,value.clone())?;
+    }
+
     option.drawer.terminate(None)?;
     Ok(None)
 

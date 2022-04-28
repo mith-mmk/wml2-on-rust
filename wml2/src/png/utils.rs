@@ -1,3 +1,8 @@
+use bin_rs::io::read_byte;
+use bin_rs::io::read_ascii_string;
+use crate::draw::DataMap;
+use std::collections::HashMap;
+
 pub(crate) fn paeth_dec(d:u8,a:i32,b:i32,c:i32) -> u8 {
     let pa = (b - c).abs();
     let pb = (a - c).abs();
@@ -75,3 +80,41 @@ fn crc_test() {
 }
 
 */
+
+pub(crate) fn make_metadata(header: &super::header::PngHeader) -> HashMap<String,DataMap> {
+    let mut map :HashMap<String,DataMap> = HashMap::new();
+    map.insert("Format".to_string(), DataMap::Ascii("PNG".to_string()));
+    map.insert("width".to_string(), DataMap::UInt(header.width as u64));
+    map.insert("height".to_string(), DataMap::UInt(header.height as u64));
+    if let Some(gamma) = header.gamma {
+        let gamma = gamma as f64 / 100000.0;
+        map.insert("gamma".to_string(), DataMap::Float(gamma));
+    }
+    if let Some(modified_time) = &header.modified_time {
+        map.insert("gamma".to_string(), DataMap::Ascii(modified_time.to_string()));
+    }
+    if let Some(srgb) = &header.srgb {
+        map.insert("sRGB".to_string(), DataMap::UInt(*srgb as u64));
+    }
+    for (key,val) in &header.text {
+        map.insert(key.to_string(), DataMap::Ascii(val.to_string()));
+    }
+    if let Some(profile) = &header.iccprofile {
+        let profile_name = read_ascii_string(profile,0,79);
+        let mut ptr = profile_name.len() + 1;
+        let _ = read_byte(profile,ptr);  // alway 0
+        ptr += 1;
+        let decompressed = miniz_oxide::inflate::decompress_to_vec_zlib(&profile[ptr..]);
+        if let Ok(icc_profile) = decompressed {
+            map.insert("ICC Profile name".to_string(), DataMap::Ascii(profile_name.to_string()));
+            map.insert("ICC Profile".to_string(), DataMap::ICCProfile(icc_profile));
+        }
+    }
+/*
+    pub transparency: Option<Vec<u8>>,
+    pub background_color: Option<BacgroundColor>,
+    pub sbit: Option<Vec<u8>>,
+*/
+
+    map
+}

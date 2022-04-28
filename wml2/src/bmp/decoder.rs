@@ -386,7 +386,7 @@ pub fn decode<'decode, B:BinaryReader>(reader:&mut B ,option:&mut DecodeOptions)
         reader.skip_ptr(offset - (read_size as usize))?;
     }*/
 
-    if let Some(ref compression) = header.compression {
+    if let Some(compression) = &header.compression {
         match compression {
             Compressions::BiRGB => {
                 return decode_rgb(reader,&header,option);

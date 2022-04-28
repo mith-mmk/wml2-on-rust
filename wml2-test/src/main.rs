@@ -50,6 +50,9 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
                                     DataMap::Raw(value) => {
                                         println!("{}: {}bytes",key,value.len());
                                     },
+                                    DataMap::Ascii(string) => {
+                                        println!("{}: {}",key,string);
+                                    },
                                     DataMap::Exif(value) => {
                                         println!("=============== EXIF START ==============");
                                         let string = value.to_string();

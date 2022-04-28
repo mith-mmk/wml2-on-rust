@@ -38,18 +38,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasm-img"
+name = "wml2"
+version = "0.0.10-alpha1"
+dependencies = [
+ "bin-rs",
+ "miniz_oxide",
+]
+
+[[package]]
+name = "wml2-test"
 version = "0.1.0"
 dependencies = [
  "dotenv",
  "icc-profile",
  "wml2",
-]
-
-[[package]]
-name = "wml2"
-version = "0.0.9"
-dependencies = [
- "bin-rs",
- "miniz_oxide",
 ]

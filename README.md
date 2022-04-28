@@ -16,7 +16,7 @@ $ cargo run --example to_bmp --release <inputfile> <output_dir>
 $ cargo run --example metadata --release <inputfile>
 
 
-# Support Format 0.0.9
+# Support Format 0.0.10
 
 |format|enc|dec|  |
 |------|---|---|--|
@@ -28,14 +28,14 @@ $ cargo run --example metadata --release <inputfile>
 |WEBP|x|x|not support|
 
 # using loader
-- on memory compress image buffer (now only baseline jpg)
+- an on-memory compress buffered image or an image file 
 - output memory buffer and callback (defalt use ImageBuffer)
 
 ```rust
   let image = new ImageBuffer();
   let verbose = 0;
   let mut option = DecodeOptions{
-    debug_flag: verbose,
+    debug_flag: verbose,  // depended decoder
     drawer: image,
   };
 
@@ -50,8 +50,7 @@ use wml2::draw::ImageBuffer;
 
 pub fn main()-> Result<(),Box<dyn Error>> {
     println!("read");
-    let f = File::open("foo.bmp")?;
-    let reader = BufReader::new(f);
+    let filename = "foo.bmp";
     let mut image = image_from_file(filename.to_string())?;
     let _metadata = image.metadata()?.unwrap();
 
@@ -96,14 +95,32 @@ pub fn main()-> Result<(),Box<dyn Error>> {
   }
 ```
 
- ImageBuffer encoder impl PickCallback trait, 3 function.
+ ImageBuffer encoder impl PickCallback trait, 4 function.
 
-```
-    fn encode_start(&mut self,option: Option<EncoderOptions>) -> Result<Option<ImageProfiles>,Error>;
-    fn encode_pick(&mut self,start_x: usize, start_y: usize, width: usize, height: usize,option: Option<PickOptions>)
-                 -> Result<Option<Vec<u8>>,Error>;
-    fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(),Error>;
-    fn set_metadata // 0.0.10 after 
+- encode_start encoder start
+- encode_pick  encoder pick image data from Image Buffer
+- encode_end   terminate encode
+- set_metadata // 0.0.10 after
+
+# Metadata
+ Metadatas is had by (Key Value) HashMap.
+ Metadata key is String.value is into DataMap.
+
+```rust
+
+// Get ICC Profile
+    let filename = "foo.bmp";
+    let mut image = image_from_file(filename.to_string())?;
+    let metadata = image.metadata()?.unwrap();
+
+    if let Some(icc_profile_data) = metadata.get(&"ICC Profile") {
+      if let DataMap::ICCProfile(icc_profile) = icc_profile_data {
+        // Read ICC Profile
+      }
+    }
+
+  
+
 ```
 
 # debug flag

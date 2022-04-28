@@ -1,9 +1,13 @@
 [package]
 name = "wml2"
-version = "0.0.9"
+version = "0.0.10-alpha1"
+repository = "https://github.com/mith-mmk/wml2-on-rust"
+homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
+description = "WML2 - Web graphic Multi format Library"
 edition = "2021"
 license = "MIT"
+tags = ["image","jpeg","gif","png","bmp","exif"]
 
 [lib]
 crate-type = ["rlib"] 

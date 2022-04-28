@@ -151,6 +151,7 @@ pub struct DecodedICCProfile {
     pub tags: HashMap<String,Data>,
 }
 
+
 #[derive(Debug)]
 pub struct ICCProfile {
     pub length : u32,

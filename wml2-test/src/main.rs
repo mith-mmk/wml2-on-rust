@@ -1,13 +1,18 @@
-#[cfg(feature="parallel")]
-use std::thread::JoinHandle;
+use icc_profile::utils::decoded_print;
+use icc_profile::DecodedICCProfile;
 use std::io::Write;
 use std::time::Instant;
 use wml2::draw::*;
+use wml2::metadata::DataMap;
 use std::io::BufReader;
 use std::error::Error;
 use wml2::draw::CallbackResponse;
 use std::fs;
 use std::fs::File;
+
+#[cfg(feature="parallel")]
+use std::thread::JoinHandle;
+
 
 fn write_log(str: &str) -> Result<Option<CallbackResponse>,Box<dyn Error>> {
     println!("{}", str);
@@ -61,6 +66,11 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
                                     },
                                     DataMap::ICCProfile(data) => {
                                         println!("{}: {}bytes",key,data.len());
+                                        let decoded = DecodedICCProfile::new(&data).unwrap();
+                                        println!("=========== ICC Profile START ===========");
+                                        println!("{}",decoded_print(&decoded, 0).unwrap());
+                                        println!("============= ICC Profile END ===========");
+
                                     /*
                                         let out_path = dotenv::var("RESULTPATH");
                                         if let Ok(out_path) = out_path {

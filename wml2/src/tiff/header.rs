@@ -274,8 +274,6 @@ pub struct Tiff {
 
 }
 
-
-
 impl Tiff {
     pub fn new(reader: &mut dyn BinaryReader) -> Result<Self,Error>{
         let tiff_headers = read_tags(reader)?;

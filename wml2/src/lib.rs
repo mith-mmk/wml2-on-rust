@@ -18,3 +18,4 @@ pub mod draw;
 pub mod iccprofile;
 pub mod color;
 pub mod decoder;
+pub mod metadata;

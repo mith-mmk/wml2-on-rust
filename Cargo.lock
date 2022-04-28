@@ -21,6 +21,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
+name = "icc-profile"
+version = "0.0.1"
+source = "git+https://github.com/mith-mmk/icc_profile#1e2621384a25dd6ed64d1841223bd78958052a08"
+dependencies = [
+ "bin-rs",
+]
+
+[[package]]
 name = "miniz_oxide"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -34,6 +42,7 @@ name = "wasm-img"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "icc-profile",
  "wml2",
 ]
 

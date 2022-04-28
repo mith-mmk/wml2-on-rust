@@ -7,6 +7,15 @@ Notice: Specification of this library is not decision.
 - not use multithreding
 - No need to force use - becouse You can use Javascript Image.
 
+# run example
+
+## decode bmp reader
+$ cargo run --example to_bmp --release <inputfile> <output_dir>
+
+## metadata reader
+$ cargo run --example metadata --release <inputfile>
+
+
 # Support Format 0.0.9
 
 |format|enc|dec|  |
@@ -33,45 +42,18 @@ Notice: Specification of this library is not decision.
   let r = wml2::jpeg::decoder::decode(data, &mut option);
 ```
 
-Symple Reader
+## Symple Reader
 
 ```rust
-use std::io::BufReader;
 use std::error::Error;
-use wml2::draw::DecodeOptions;
-use wml2::draw::*;
 use wml2::draw::ImageBuffer;
-use wml2::draw::CallbackResponse;
-
-use std::fs::File;
-let f = File::open(file)?;
-let reader = BufReader::new(f);
-
-/* Callback verbose info */
-fn write_log(str: &str) -> Result<Option<CallbackResponse>,Box<dyn Error>> {
-    println!("{}", str);
-    Ok(None)
-}
 
 pub fn main()-> Result<(),Box<dyn Error>> {
     println!("read");
     let f = File::open("foo.bmp")?;
     let reader = BufReader::new(f);
-    let mut image = ImageBuffer::new();
-    image.set_verbose(write_log);
-    let mut option = DecodeOptions {
-        debug_flag: 0xff, // All message
-        drawer: &mut image,
-    };
-    image_reader(reader, &mut option)?;
-    /*
-      // for on memory image
-      let mut buf :Vec<u8> = Vec::new();
-      f.read_to_end(&mut buf)?;
-      image_loader(&buf,&mut option)?;
-
-    */
-    let metadata = image.metadata()?.unwrap();
+    let mut image = image_from_file(filename.to_string())?;
+    let _metadata = image.metadata()?.unwrap();
 
     Ok(())
 }

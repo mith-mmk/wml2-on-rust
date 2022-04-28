@@ -2,7 +2,6 @@
 //! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
 //! Drawer will use callback, flexisble drawing.
 type Error = Box<dyn std::error::Error>;
-use crate::tiff::header::TiffHeaders;
 use std::collections::HashMap;
 use std::io::Write;
 use crate::util::ImageFormat;
@@ -14,23 +13,8 @@ use crate::util::format_check;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use crate::warning::ImgWarnings;
+use crate::metadata::DataMap;
 
-
-#[derive(Debug,Clone,PartialEq)]
-pub enum DataMap{
-    UInt(u64),
-    SInt(i64),
-    Float(f64),
-    UIntAllay(Vec<u64>),
-    SIntAllay(Vec<i64>),
-    FloatAllay(Vec<f64>),
-    Raw(Vec<u8>),
-    Ascii(String),
-    I18NString(String),
-    Exif(TiffHeaders),
-    ICCProfile(Vec<u8>),
-    None,
-}
 
 /* Dynamic Select Callback System */
 
@@ -243,7 +227,7 @@ impl ImageBuffer {
         }
     }
 
-    pub fn set_buffer(width: usize, height:usize, buf:Vec<u8>) -> Self {
+    pub fn from_buffer(width: usize, height:usize, buf:Vec<u8>) -> Self {
         Self {
             width: width,
             height: height,

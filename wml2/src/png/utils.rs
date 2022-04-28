@@ -1,6 +1,6 @@
 use bin_rs::io::read_byte;
 use bin_rs::io::read_ascii_string;
-use crate::draw::DataMap;
+use crate::metadata::DataMap;
 use std::collections::HashMap;
 
 pub(crate) fn paeth_dec(d:u8,a:i32,b:i32,c:i32) -> u8 {

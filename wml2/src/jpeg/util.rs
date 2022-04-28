@@ -6,7 +6,7 @@
 // type Error = Box<dyn std::error::Error>;
 use crate::iccprofile::ICCProfile;
 use std::collections::HashMap;
-use crate::draw::DataMap;
+use crate::metadata::DataMap;
 use crate::jpeg::header::HuffmanTables;
 use crate::jpeg::header::HuffmanTable;
 use crate::iccprofile::{icc_profile_header_print, icc_profile_print};

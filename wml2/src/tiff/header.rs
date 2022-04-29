@@ -10,8 +10,6 @@ use crate::tiff::util::print_tags;
 use crate::color::RGBA;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
-use super::tags::gps_mapper;
-use super::tags::tag_mapper;
 use bin_rs::reader::BinaryReader;
 use bin_rs::Endian;
 use std::io::SeekFrom;
@@ -186,7 +184,7 @@ impl Compression {
                 "Jpeg".to_string()
             },
             Compression::AdobeDeflate => {
-                "Adboe Deflate".to_string()
+                "Adobe Deflate".to_string()
             },
             Compression::Next => {
                 "Next".to_string()
@@ -357,6 +355,7 @@ pub struct Tiff {
     pub startx: u32,                // 0x011E
     pub starty: u32,                // 0x011F
     pub tiff_headers: TiffHeaders,
+    pub icc_profile: Option<Vec<u8>>,
 
     // pub predicator // if predicator is 2,pixels are horizontal differencing. not support
 }
@@ -391,9 +390,13 @@ impl Tiff {
         // no baseline
         let  startx: u32 = 0;               // 0x011E
         let  starty: u32 = 0;               // 0x011F
+        let mut icc_profile = None;
 
 
         for header in &tiff_headers.headers {
+            if newsubfiletype > 0 {
+                continue;
+            }
             match header.tagid {
                 0xff => {
                     if let DataPack::Long(d) = &header.data {
@@ -403,7 +406,6 @@ impl Tiff {
 			    0xfe =>{
                     if let DataPack::Long(d) = &header.data {
                         newsubfiletype = d[0];
-                        break;  // thumnail or mutlti part data
                     }
                 },
                 0x100 => {
@@ -599,10 +601,17 @@ impl Tiff {
                         color_table = Some(table)
                     }
                 },
+                0x8773 => { //ICC Profile
+                    if let DataPack::Undef(d) = &header.data {
+                        icc_profile = Some(d.to_vec());
+                    }
+                }
                 _ => {},
             }
 
         }
+
+
 
 
         Ok(Self{
@@ -628,6 +637,7 @@ impl Tiff {
             startx,
             starty,
             tiff_headers,
+            icc_profile,
         })
     }
 }
@@ -930,12 +940,12 @@ fn read_tag (reader: &mut dyn BinaryReader, mut offset_ifd: usize,mode: IfdMode)
                     },
                     _ => {
                         #[cfg(debug_assertions)]
-                        tag_mapper(tagid ,&data,datalen);
+                        super::tags::tag_mapper(tagid ,&data,datalen);
                     }
                 }
             } else {
                 #[cfg(debug_assertions)]
-                gps_mapper(tagid ,&data,datalen);
+                super::tags::gps_mapper(tagid ,&data,datalen);
             }
             headers.headers.push(TiffHeader{tagid: tagid as usize,data: data,length: datalen});
         }

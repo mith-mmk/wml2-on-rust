@@ -24,7 +24,7 @@ $ cargo run --example metadata --release <inputfile>
 |JPEG|x|O|Baseline and huffman progressive|
 |GIF|x|O|with Animation GIF|
 |PNG|O|O|APNG not supprt/encode Truecolor + alpha only|
-|TIFF|x|o|no compression/LZW/Packbits|
+|TIFF|x|o|no compression/LZW/Packbits/Jpeg(new)|
 |WEBP|x|x|not support|
 
 # using loader

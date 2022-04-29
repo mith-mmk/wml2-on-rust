@@ -81,7 +81,7 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
             let mut image = ImageBuffer::new();
             image.set_verbose(write_log);
             let mut option = DecodeOptions {
-                debug_flag: 0x1,
+                debug_flag: 0x0,
                 drawer: &mut image,
             };
             let r = image_reader(reader, &mut option);
@@ -117,7 +117,6 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
     None
 }
 
-#[cfg(not(feature="parallel"))]
 fn wml_test() -> Result<(),Box<dyn Error>>{
     let path = dotenv::var("IMAGEPATH")?;
     let out_path = dotenv::var("RESULTPATH")?;
@@ -155,40 +154,3 @@ fn wml_test() -> Result<(),Box<dyn Error>>{
     Ok(())
 }
 
-#[cfg(feature="parallel")]
-fn wml_test() -> Result<(),Box<dyn Error>>{
-    let path = dotenv::var("IMAGEPATH")?;
-    let out_path = dotenv::var("RESULTPATH")?;
-    println!("read");
-    let dir = fs::read_dir(path)?;
-    let mut handles:Vec<JoinHandle<()>> = Vec::new();
-    for file in dir {
-        let filename = file?.path();
-        println!("decode {:?}", filename);
-
-        let handle = std::thread::spawn(move || {
-            image = loader(&filename);
-            if let Ok(image) = image {
-                let option = EncodeOptions {
-                    debug_flag: 0,
-                    drawer: &mut image,    
-                };
-                let data = wml2::bmp::encoder(option);
-                if let Ok(data) = data {
-                    let filename = format!("{}.bmp",filename);
-                    let f = File::create(&filename).unwrap();
-                    f.write_all(data).unwrap();
-                    f.flush().unwrap();
-                }
-            }
-
-            ()         
-        });
-
-        handles.push(handle);
-    }
-    for handle in handles {
-        let _ = handle.join();
-    }
-    Ok(())
-}

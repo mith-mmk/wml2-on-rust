@@ -1114,7 +1114,11 @@ pub fn tag_mapper(tag :u16, data: &DataPack,length: usize) -> (String,DataMap) {
         },
         0x8773 => {
             tagname = "ICC_Profile";
-            s = convert(&data,length);
+            if let DataPack::Undef(data) = data {
+                s = DataMap::ICCProfile(data.to_vec())
+            } else {
+                s = convert(&data,length);
+            }
      
         },
         0x877f => {

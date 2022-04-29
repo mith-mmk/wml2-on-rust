@@ -419,10 +419,9 @@ pub(crate) fn convert_rgb(plane: usize,mcu_units :&Vec<Vec<u8>>,component: &Vec<
         else {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))}
         } else if plane == 4 { // hasBug
             if &color_space == "YCcK" {ycck_to_rgb(&mcu_units,&component,(h_max,v_max))}  // YCcK Spec Unknown
-            else if &color_space == "YUV" {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))} // RGBA
-            else {cmyk_to_rgb(&mcu_units,&component,(h_max,v_max))} // CMYK Spec Unknown
-    }
-    else {y_to_rgb(&mcu_units,&component)}; // g / ga
+            else if &color_space == "CMYK" { cmyk_to_rgb(&mcu_units,&component,(h_max,v_max)) }
+            else { yuv_to_rgb(&mcu_units,&component,(h_max,v_max)) }
+    } else {y_to_rgb(&mcu_units,&component)}; // g / ga
     data
 }
 
@@ -505,31 +504,34 @@ pub(crate) fn yuv_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_ma
 
 pub(crate) fn rgb_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
     let mut buffer:Vec<u8> = (0..h_max * v_max * 64 * 4).map(|_| 0).collect();
-    let y_map = 0;
-    let u_map = y_map + hv_maps[0].h * hv_maps[0].v;
-    let v_map = u_map + hv_maps[1].h * hv_maps[1].v;
+    let r_map = 0;
+    let g_map = r_map + hv_maps[0].h * hv_maps[0].v;
+    let b_map = g_map + hv_maps[1].h * hv_maps[1].v;
 
-    let uy = v_max / hv_maps[1].v as usize;
-    let vy = v_max / hv_maps[2].v as usize;
-    let ux = h_max / hv_maps[1].h as usize;
-    let vx = h_max / hv_maps[2].h as usize;
+    let ry = v_max / hv_maps[0].v as usize;
+    let gy = v_max / hv_maps[1].v as usize;
+    let by = v_max / hv_maps[2].v as usize;
+    let rx = h_max / hv_maps[0].h as usize;
+    let gx = h_max / hv_maps[1].h as usize;
+    let bx = h_max / hv_maps[2].h as usize;
 
     for v in 0..v_max {
-        let mut u_map_cur = u_map + v / v_max;
-        let mut v_map_cur = v_map + v / v_max;
+        let mut r_map_cur = r_map + v / v_max;
+        let mut g_map_cur = g_map + v / v_max;
+        let mut b_map_cur = b_map + v / v_max;
 
         for h in 0..h_max {
-            let gray = &yuv[v*h_max + h];
-            u_map_cur = u_map_cur + h / h_max;
-            v_map_cur = v_map_cur + h / h_max;
+            r_map_cur = r_map_cur + h / h_max;
+            g_map_cur = g_map_cur + h / h_max;
+            b_map_cur = b_map_cur + h / h_max;
 
             for y in 0..8 {
                 let offset = ((y + v * 8) * (8 * h_max)) * 4;
                 for x in 0..8 {
                     let xx = (x + h * 8) * 4;
-                    let red = gray[y * 8 + x];
-                    let green = yuv[u_map_cur][(((y + v * 8) / uy % 8) * 8)  + ((x + h * 8) / ux) % 8];
-                    let blue = yuv[v_map_cur][(((y + v * 8) / vy % 8) * 8)  + ((x + h * 8) / vx) % 8];
+                    let red   = yuv[r_map_cur][(((y + v * 8) / ry % 8) * 8)  + ((x + h * 8) / rx) % 8];
+                    let green = yuv[g_map_cur][(((y + v * 8) / gy % 8) * 8)  + ((x + h * 8) / gx) % 8];
+                    let blue  = yuv[b_map_cur][(((y + v * 8) / by % 8) * 8)  + ((x + h * 8) / bx) % 8];
 
                     buffer[xx + offset    ] = red; //R
                     buffer[xx + offset + 1] = green; //G
@@ -543,8 +545,6 @@ pub(crate) fn rgb_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_ma
     buffer
 }
 
-
-/* spec known */
 pub(crate) fn ycck_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
     let mut buffer:Vec<u8> = (0..h_max * v_max * 64 * 4).map(|_| 0).collect();
     let y_map = 0;
@@ -578,12 +578,12 @@ pub(crate) fn ycck_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_m
                 let offset = ((y + v * 8) * (8 * h_max)) * 4;
                 for x in 0..8 {
                     let xx = (x + h * 8) * 4;
-                    let yin = yuv[y_map_cur][(((y + v * 8)  % 8) * 8)  + ((x + h * 8)) % 8] as i32;
+                    let yin = yuv[y_map_cur][(((y + v * 8)  / _yy % 8) * 8)  + ((x + h * 8) / _yx) % 8] as i32;
                     let c1  = yuv[c1_map_cur][(((y + v * 8) / c1y % 8) * 8)  + ((x + h * 8) / c1x) % 8] as i32;
                     let c2  = yuv[c2_map_cur][(((y + v * 8) / c2y % 8) * 8)  + ((x + h * 8) / c2x) % 8] as i32;
-                    let _key = yuv[k_map_cur][(((y + v * 8) % 8) * 8)  + (x + h * 8) % 8] as i32;
+                    let key = yuv[k_map_cur][(((y + v * 8)  / _ky % 8) * 8)  + ((x + h * 8) / _kx) % 8] as i32;
 
-                    let cy = yin;
+                    let cy = key - yin;
                     let cb = 255 - c1;
                     let cr = 255 - c2;
 
@@ -623,20 +623,20 @@ pub(crate) fn ycck_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_m
 /* spec known */
 pub(crate) fn cmyk_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
     let mut buffer:Vec<u8> = (0..h_max * v_max * 64 * 4).map(|_| 0).collect();
-    let k_map = 0;
-    let m_map = k_map + hv_maps[0].h * hv_maps[0].v;
-    let c_map = m_map + hv_maps[1].h * hv_maps[1].v;
-    let y_map = c_map + hv_maps[2].h * hv_maps[2].v;
+    let c_map = 0;
+    let m_map = c_map + hv_maps[0].h * hv_maps[0].v;
+    let y_map = m_map + hv_maps[1].h * hv_maps[1].v;
+    let k_map = y_map + hv_maps[2].h * hv_maps[2].v;
 
-    let ky = v_max / hv_maps[0].v as usize;
-    let cy = v_max / hv_maps[1].v as usize;
-    let my = v_max / hv_maps[2].v as usize;
-    let yy = v_max / hv_maps[3].v as usize;
+    let cy = v_max / hv_maps[0].v as usize;
+    let my = v_max / hv_maps[1].v as usize;
+    let yy = v_max / hv_maps[2].v as usize;
+    let ky = v_max / hv_maps[3].v as usize;
 
-    let kx = h_max / hv_maps[0].h as usize;
-    let cx = h_max / hv_maps[1].h as usize;
-    let mx = h_max / hv_maps[2].h as usize;
-    let yx = h_max / hv_maps[3].h as usize;
+    let cx = h_max / hv_maps[0].h as usize;
+    let mx = h_max / hv_maps[1].h as usize;
+    let yx = h_max / hv_maps[2].h as usize;
+    let kx = h_max / hv_maps[3].h as usize;
 
     for v in 0..v_max {
         let mut c_map_cur = c_map + v / cy;
@@ -657,16 +657,11 @@ pub(crate) fn cmyk_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_m
                     let cc = yuv[c_map_cur][(((y + v * 8) / cy % 8) * 8)  + ((x + h * 8) / cx) % 8] as i32;
                     let cm = yuv[m_map_cur][(((y + v * 8) / my % 8) * 8)  + ((x + h * 8) / mx) % 8] as i32;
                     let cy = yuv[y_map_cur][(((y + v * 8) / yy % 8) * 8)  + ((x + h * 8) / yx) % 8] as i32;
-                    let _ck = yuv[k_map_cur][(((y + v * 8) / ky % 8) * 8)  + ((x + h * 8) / kx) % 8] as i32;
+                    let ck = yuv[k_map_cur][(((y + v * 8) / ky % 8) * 8)  + ((x + h * 8) / kx) % 8] as i32;
 
-                    // from Japn Color 2011 Coated
-                    // R  69 K  + (255 - 69) Y +        0 C  
-                    // G          (255 -204) Y + (255-160)C
-                    // B  92 K            32 Y +            + 131M
-
-                    let red   = (cy as i32).clamp(0,255) as u8;
-                    let green = (cm as i32).clamp(0,255) as u8;
-                    let blue  = (cc as i32).clamp(0,255) as u8;
+                    let red   = (ck + cc - 255).clamp(0,255) as u8;
+                    let green = (ck + cm - 255).clamp(0,255) as u8;
+                    let blue  = (ck + cy - 255).clamp(0,255) as u8;
 
                     buffer[xx + offset    ] = red; //R
                     buffer[xx + offset + 1] = green; //G
@@ -789,6 +784,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
     let height = header.height;
     let huffman_scan_header = header.huffman_scan_header.as_ref().unwrap();
     let fh = header.frame_header.clone().unwrap();
+    let color_space = fh.color_space.to_string();
     let component = fh.component.clone().unwrap();
     let plane = fh.plane;
     // decode
@@ -859,7 +855,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
                 let _ = tx4.send((com,vec![],mcu_x,mcu_y));
                 break;
             }
-            let data = convert_rgb(plane,&mcu_units,&component,fh.color_space.to_string(),(h_max,v_max));
+            let data = convert_rgb(plane,&mcu_units,&component,color_space.to_string(),(h_max,v_max));
 
             let _ = tx4.send((com,data,mcu_x,mcu_y));
         }
@@ -986,6 +982,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
     let height = header.height;
     let huffman_scan_header = header.huffman_scan_header.as_ref().unwrap();
     let fh = header.frame_header.as_ref().unwrap();
+    let color_space = fh.color_space.to_string();
     let component = fh.component.as_ref().unwrap();
     let plane = fh.plane;
     // decode
@@ -1041,7 +1038,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
             }
 
             // Only implement RGB
-            let data = convert_rgb(plane,&mcu_units,&component,header.adobe_color_transform,(h_max,v_max));
+            let data = convert_rgb(plane,&mcu_units,&component,color_space.to_string(),(h_max,v_max));
 
             option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
 

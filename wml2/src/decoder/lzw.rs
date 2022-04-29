@@ -63,9 +63,15 @@ impl Lzwdecode {
         self.clear_dic();
         self.last_byte = 0;
         let ptr = self.ptr;
-        self.last_byte = read_byte(&self.buffer,  ptr) as u64;
-        self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u64) << 8;
-        self.last_byte |= (read_byte(&self.buffer,ptr + 2) as u64) << 16;
+        if self.is_lsb {
+            self.last_byte = read_byte(&self.buffer,  ptr) as u64;
+            self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u64) << 8;
+            self.last_byte |= (read_byte(&self.buffer,ptr + 2) as u64) << 16;
+        } else {
+            self.last_byte = (read_byte(&self.buffer,  ptr) as u64) << 16;
+            self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u64) << 8;
+            self.last_byte |= read_byte(&self.buffer,ptr + 2) as u64;
+        }
         self.left_bits = 24;
         self.ptr = 3;
 
@@ -88,6 +94,7 @@ impl Lzwdecode {
                 }
                 break;
             }
+
             self.last_byte = (self.last_byte << 8) | (self.buffer[self.ptr] as u64);
             self.ptr +=1;
             self.left_bits += 8;
@@ -108,6 +115,7 @@ impl Lzwdecode {
                 break;
             }
             self.last_byte = (self.last_byte >> 8) & 0xffff | ((self.buffer[self.ptr] as u64) << 16);
+
             self.ptr +=1;
             self.left_bits += 8;
         }
@@ -172,8 +180,8 @@ impl Lzwdecode {
                     }
                     table.push(append_code);
                     self.dic.push(table);
-                    if self.dic.len() - self.is_tiff == self.bit_mask as usize + 1 && self.dic.len() < self.max_table{ 
-                            // tiff use self.dic.len() + 1 
+                    let next = self.dic.len() + self.is_tiff as usize;
+                    if next == self.bit_mask as usize + 1 && next < self.max_table { 
                         self.cbl += 1;
                         self.bit_mask = (self.bit_mask << 1) | 1;
                     }

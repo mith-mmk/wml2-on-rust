@@ -1,12 +1,12 @@
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct RGB {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct RGBA {
     pub red: u8,
     pub green: u8,

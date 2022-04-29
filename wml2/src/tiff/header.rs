@@ -438,11 +438,11 @@ impl Tiff {
                 0x140 => {
                     if let DataPack::Short(d) = &header.data {
                         let mut table :Vec<RGBA> = Vec::new();
-
-                        for i in 0..header.length/3 {
-                            let red = (d[i*3] >> 8) as u8;
-                            let green = (d[i*3+1] >> 8) as u8;
-                            let blue = (d[i*3+2] >> 8) as u8;
+                        let offset = header.length / 3;
+                        for i in 0..offset {
+                            let red   = (d[i] >> 8) as u8;
+                            let green = (d[i + offset] >> 8) as u8;
+                            let blue  = (d[i + offset*2] >> 8) as u8;
                             let alpha = 0xff;
                             let color = RGBA{
                                 red,

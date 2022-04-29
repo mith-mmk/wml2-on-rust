@@ -386,7 +386,13 @@ pub fn decode<'decode, B:BinaryReader>(reader:&mut B ,option:&mut DecodeOptions)
     */
     option.drawer.set_metadata("Format",DataMap::Ascii("BMP".to_owned()))?;
     option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
-    option.drawer.set_metadata("height",DataMap::UInt(header.height as u64))?;
+    option.drawer.set_metadata("height",DataMap::UInt(header.height.abs() as u64))?;
+    if header.height < 0 {
+        option.drawer.set_metadata("row order",DataMap::Ascii("Up to Down".to_string()))?;
+    } else {
+        option.drawer.set_metadata("row order",DataMap::Ascii("Down to Up".to_string()))?;
+    }
+
     option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bit_count as u64))?;
 
     if let Some(compression) = &header.compression {

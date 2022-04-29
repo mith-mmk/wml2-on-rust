@@ -13,6 +13,7 @@ use crate::draw::DecodeOptions;
 use bin_rs::reader::BinaryReader;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
+mod packbits;
 
 fn create_pallet(bits:usize,is_black_zero:bool) -> Vec<RGBA>{
     let color_max = 1 << bits;
@@ -33,6 +34,7 @@ fn create_pallet(bits:usize,is_black_zero:bool) -> Vec<RGBA>{
 }
 
 pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error> {
+
     if header.photometric_interpretation >= 4{
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Decoder is not support this color modelBuffer overrun in draw.".to_string())));
     }
@@ -171,45 +173,39 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
     Ok(None)
 }
 
-// has bug Lzwdecode::tiff
-pub fn decode_lzw_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
-//    let buf = reader.read_bytes_as_vec()
-    let is_lsb = if header.fill_order == 2 { true } else {false};
+fn read_strips<'decode,B: BinaryReader>(reader:&mut B,header: &Tiff) -> Result<Vec<u8>,Error> {
     let mut data = vec![];
     for (i,offset) in header.strip_offsets.iter().enumerate() {
         reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
         let mut buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
         data.append(&mut buf);
     }
+    Ok(data)
+}
 
-    let mut decoder = Lzwdecode::tiff(8,is_lsb);
+pub fn decode_lzw_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
+    let data = read_strips(reader, header)?;
+
+    let is_lsb = if header.fill_order == 2 { true } else {false}; // 1: MSB 2: LSB
+    let mut decoder = Lzwdecode::tiff(is_lsb);
 
     let data = decoder.decode(&data)?;
     let warnings = draw(&data,option,header)?;
     Ok(warnings)
 }
 
-pub fn decode_none_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
-    if header.bitpersample <=8 {
-        if header.color_table.is_none() {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not suport index image without color table.".to_string())));
-        } else {
-            let colors = 1 << header.bitpersample;
-            if header.color_table.as_ref().unwrap().len() < colors {
-                return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"A color table is shortage.".to_string())));
 
-            }
-        }
-    }
-    let mut data = vec![];
-    for (i,offset) in header.strip_offsets.iter().enumerate() {
-        reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
-        let mut buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
-        data.append(&mut buf);
-    }
-
+pub fn decode_packbits_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
+    let data = read_strips(reader, header)?;
+    let data = packbits::decode(&data)?;
     let warnings = draw(&data,option,header)?;
+    Ok(warnings)
+}
 
+pub fn decode_none_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
+
+    let data = read_strips(reader, header)?;
+    let warnings = draw(&data,option,header)?;
     Ok(warnings)
 }
 
@@ -224,21 +220,21 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     option.drawer.set_metadata("height",DataMap::UInt(header.height as u64))?;
     option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bitpersample as u64))?;
     option.drawer.set_metadata("Tiff headers",DataMap::Exif(header.tiff_headers.clone()))?;
+    option.drawer.set_metadata("compression",DataMap::Ascii(header.compression.to_string()))?;
 
     match header.compression { 
         Compression::NoneCompression => {
-            option.drawer.set_metadata("compression",DataMap::Ascii("None".to_owned()))?;
             return decode_none_compresson(reader,option,&header);
         },
         Compression::LZW => {
-            option.drawer.set_metadata("compression",DataMap::Ascii("LZW".to_owned()))?;
             return decode_lzw_compresson(reader,option,&header);
         },
         Compression::Jpeg => {
-            option.drawer.set_metadata("compression",DataMap::Ascii("JPEG".to_owned()))?;
             return crate::jpeg::decoder::decode(reader,option)
         },
-
+        Compression::Packbits => {
+            return decode_packbits_compresson(reader,option,&header);
+        }
         _ => {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not suport compression".to_string())));
         }

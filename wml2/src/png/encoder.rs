@@ -43,15 +43,15 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
     write_u32_be(crc,&mut write_buffer);
 
     if let Some(background) = background {
-        let red = background >> 24;
-        let green = background >> 16;
-        let blue = background >> 8;
+        let red = (background >> 24) as u16;
+        let green = (background >> 16) as u16;
+        let blue = (background >> 8) as u16;
         write_u32_be(6,&mut write_buffer); // 2byte * 3;
         let mut temp_buffer:Vec<u8> = Vec::with_capacity(10);
         write_bytes(&BACKGROUND_COLOR,&mut temp_buffer);
-        write_u32_be(red,&mut temp_buffer);
-        write_u32_be(green,&mut temp_buffer);
-        write_u32_be(blue,&mut temp_buffer);
+        write_u16_be(red,&mut temp_buffer);
+        write_u16_be(green,&mut temp_buffer);
+        write_u16_be(blue,&mut temp_buffer);
         write_bytes(&temp_buffer, &mut write_buffer);
         let crc = crc32.crc32(&temp_buffer);
         write_u32_be(crc,&mut write_buffer);

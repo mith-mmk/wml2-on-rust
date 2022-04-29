@@ -158,6 +158,90 @@ pub enum Compression {
     SGILOG = 34676,
     SGILOG24 = 34677,
     Jpeg2000 = 34712,
+    Unknown = 0,
+}
+
+impl Compression {
+    pub fn to_string(&self) -> String {
+        match self {
+            Compression::NoneCompression => {
+                "None".to_string()
+            },
+            Compression::CCITTHuffmanRLE => {
+                "CCITT Huffman RLE".to_string()
+            },
+            Compression::CCITTGroup3Fax => {
+                "CCITF Group3 Fax".to_string()
+            },
+            Compression::CCITTGroup4Fax => {
+                "CCIT Group4 Fax".to_string()
+            },
+            Compression::LZW => {
+                "LZW(Tiff)".to_string()
+            },
+            Compression::OldJpeg => {
+                "Jpeg(old)".to_string()
+            },
+            Compression::Jpeg => {
+                "Jpeg".to_string()
+            },
+            Compression::AdobeDeflate => {
+                "Adboe Deflate".to_string()
+            },
+            Compression::Next => {
+                "Next".to_string()
+            },
+            Compression::CcittrleW => {
+                "CCITT RLEW".to_string()
+            },
+            Compression::Packbits => {
+                "Apple Macintosh Packbits".to_string()
+            },
+            Compression::ThunderScan => {
+                "Thuder Scan".to_string()
+            },
+            Compression::IT8CTPad => {
+                "IT8 CTPad".to_string()
+            },
+            Compression::IT8LW => {
+                "IT8 LW".to_string()
+            },
+            Compression::IT8MP => {
+                "IT8 MP".to_string()
+            }
+            Compression::IT8BL => {
+                "IT8 BL".to_string()
+            }
+            Compression::PIXARFILM => {
+                "Pixar Film".to_string()
+            }
+            Compression::PIXARLOG => {
+                "Pixar Log".to_string()
+            }
+            Compression::DEFLATE => {
+                "Deflate".to_string()
+            }
+            Compression::DCS => {
+                "DCS".to_string()
+            }
+            Compression::JBIG => {
+                "JBIG".to_string()
+            }
+            Compression::SGILOG => {
+                "SGI LOG".to_string()
+            }
+            Compression::SGILOG24 => {
+                "SGI LOG24".to_string()
+            }
+            Compression::Jpeg2000 => {
+                "JPEG2000".to_string()
+            }
+            Compression::Unknown => {
+                "Unknown".to_string()
+            }
+        }
+
+    }
 }
 
 /// This struct is not use embed tiff tag,also EXIF.
@@ -296,7 +380,6 @@ impl Tiff {
         let  mut max_sample_value:u16 = 0;          // 0x0119 default 2**(BitsPerSample) - 1
         let  mut planar_config: u16 = 1;            // 0x011c also 1
         let  mut compression: Compression =Compression::NoneCompression;      // 0x0103 see enum Compression
-
         // may
         let  x_resolution:f32 = 0.0;              // 0x011A also for DTP
         let  y_resolution:f32 = 0.0;              // 0x0112 also for DTP
@@ -370,9 +453,56 @@ impl Tiff {
                                 8 => {
                                     Compression::AdobeDeflate
                                 },
+                                32766 => {
+                                    Compression::Next
+                                },
+                                32771 => {
+                                    Compression::CcittrleW
+                                },
+                                32773 => {
+                                    Compression::Packbits
+                                },
+                                32809 => {
+                                    Compression::ThunderScan
+                                },
+                                32895 => {
+                                    Compression::IT8CTPad
+                                },
+                                32896 => {
+                                    Compression::IT8LW
+                                },
+                                32897 => {
+                                    Compression::IT8MP
+                                },
+                                32898 => {
+                                    Compression::IT8BL
+                                },
+                                32908 => {
+                                    Compression::PIXARFILM
+                                },
+                                32909 => {
+                                    Compression::PIXARLOG
+                                },
+                                32946 => {
+                                    Compression::DEFLATE
+                                },
+                                32947 => {
+                                    Compression::DCS
+                                },
+                                34661 => {
+                                    Compression::JBIG
+                                },
+                                34676 => {
+                                    Compression::SGILOG
+                                },
+                                34677 => {
+                                    Compression::SGILOG24
+                                },
+                                34712 => {
+                                    Compression::Jpeg2000
+                                }
                                 _ => {
-                                    return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData,
-                                        "Unknown or Never Support Compression".to_string())));
+                                    Compression::Unknown                                    
                                 }                            
                         };
                     }

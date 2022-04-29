@@ -22,7 +22,6 @@ pub struct Lzwdecode {
     is_init: bool,
     is_lsb: bool,
     is_tiff: usize,
-
 }
 
 impl Lzwdecode {
@@ -30,9 +29,9 @@ impl Lzwdecode {
         Self::new(lzw_min_bits,true,false)
     }
 
-    // no debug
-    pub fn tiff(lzw_min_bits: usize,is_lsb: bool) -> Self {
-        Self::new(lzw_min_bits,is_lsb,true)
+    /// Tiff LZW entry size - 1
+    pub fn tiff(is_lsb: bool) -> Self {
+        Self::new(8,is_lsb,true)
     }
 
     pub fn new(lzw_min_bits: usize,is_lsb: bool,is_tiff: bool) -> Self{

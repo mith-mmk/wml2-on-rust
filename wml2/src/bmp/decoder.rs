@@ -380,49 +380,50 @@ pub fn decode<'decode, B:BinaryReader>(reader:&mut B ,option:&mut DecodeOptions)
         let s = s1 + &s2 + &s3;
         option.drawer.verbose(&s,None)?;
     }
-    /*
+
     let offset = header.image_offset;
     reader.seek(std::io::SeekFrom::Start(offset as u64))?;
-    */
-    option.drawer.set_metadata("Format",DataMap::Ascii("BMP".to_owned()))?;
-    option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
-    option.drawer.set_metadata("height",DataMap::UInt(header.height.abs() as u64))?;
-    if header.height < 0 {
-        option.drawer.set_metadata("row order",DataMap::Ascii("Up to Down".to_string()))?;
-    } else {
-        option.drawer.set_metadata("row order",DataMap::Ascii("Down to Up".to_string()))?;
-    }
 
-    option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bit_count as u64))?;
-
+    let result;
     if let Some(compression) = &header.compression {
         match compression {
             Compressions::BiRGB => {
+                result = decode_rgb(reader,&header,option);
                 option.drawer.set_metadata("compression",DataMap::Ascii("None".to_owned()))?;
-                return decode_rgb(reader,&header,option);
             },
             Compressions::BiRLE8 => {
+                result = decode_rle(reader,&header,option);
                 option.drawer.set_metadata("compression",DataMap::Ascii("RLE".to_owned()))?;
-                return decode_rle(reader,&header,option);
             },
             Compressions::BiRLE4 => {
+                result = decode_rle(reader,&header,option);
                 option.drawer.set_metadata("compression",DataMap::Ascii("RLE".to_owned()))?;
-                return decode_rle(reader,&header,option);
             },
             Compressions::BiBitFileds => {
+                result = decode_bit_fileds(reader,&header,option);
                 option.drawer.set_metadata("compression",DataMap::Ascii("Bit fields".to_owned()))?;
-                return decode_bit_fileds(reader,&header,option);
             },
             Compressions::BiJpeg => {
+                result = decode_jpeg(reader,&header,option);
                 option.drawer.set_metadata("compression",DataMap::Ascii("Jpeg".to_owned()))?;
-                return decode_jpeg(reader,&header,option);
             },
             Compressions::BiPng => {
+                result = decode_png(reader,&header,option);
                 option.drawer.set_metadata("compression",DataMap::Ascii("PNG".to_owned()))?;
-                return decode_png(reader,&header,option);
             },
         }
     } else {
-        return decode_rgb(reader,&header,option);
+        result = decode_rgb(reader,&header,option);
+        option.drawer.set_metadata("compression",DataMap::Ascii("OS2".to_owned()))?;
     }
+
+    if header.height < 0 {
+        option.drawer.set_metadata("negative height",DataMap::Ascii("true".to_string()))?;
+    }
+    option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bit_count as u64))?;
+    option.drawer.set_metadata("Format",DataMap::Ascii("BMP".to_owned()))?;
+    option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
+    option.drawer.set_metadata("height",DataMap::UInt(header.height.abs() as u64))?;
+
+    result
 }

@@ -225,7 +225,7 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                                         let ff = fast_idct(&zz);
                                         mcu_units.push(ff);
                                     }
-                                    let data = convert_rgb(plane,&mcu_units,&component,header.adobe_color_transform,(h_max,v_max));
+                                    let data = convert_rgb(plane,&mcu_units,&component,fh.color_space.to_string(),(h_max,v_max));
                                     option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
                                 }
                             }

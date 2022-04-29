@@ -132,7 +132,7 @@ enum IfdMode {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub enum Compression {
     NoneCompression = 1,
     CCITTHuffmanRLE = 2,
@@ -250,25 +250,27 @@ impl Compression {
 pub struct Tiff {
     /// 0x00fe  also 0
     pub newsubfiletype:u32,
-    /// 0x00ff  also 1
-    pub subfiletype:u32,                              
+    /// 0x00ff  also 1, but 2,3 is multi part image,This decoder is not support.
+    pub subfiletype:u32,
     /// These tag must need decode image.
     /// 0x0100
     pub width: u32,
     /// 0x0101
     pub height: u32,
     /// 0x0102 data takes 1..N. but only use one data.
-    /// N = SamplesPerPixel if N > 1 also RGB888
-    pub bitpersample: u16,        
+    /// N = SamplesPerPixel if N =2 GA88 , N = 3 also RGB888, N = 4 also YMCK8888/RGBA8888
+    pub bitpersample: u16,
     /// 0x0106 PhotometricInterpretation for color space.
 
     /// 0 = White is zero white based grayscale
     /// 1 = black is zero black based grayscale
     /// 2 = RGB888
     /// 3 = Palette color
+    /// Transparency Mask is not support
+    /// 
     /// 4 = Transparecy Mask
     /// 
-    /// Extention use
+    /// Extention use - This color space need color management modules.
     /// 5 = alos CMYK
     /// 6 = YCbCr
     /// 8 = CieLaB
@@ -284,12 +286,11 @@ pub struct Tiff {
     pub photometric_interpretation: u16,
 
     /// 0x010A FillOrder
-    /// 1 = msb ,2 = lsb. usualy msb but lzw may use lsb(GIF like)
+    /// 1 = msb ,2 = lsb. usualy msb.
     pub fill_order:u16,
-    /// 0x0111 Strip Offsets count 1 or 2
-    /// Image data start offset, data number also 1, but it may be exist mutli offsets images.
+    /// Image data start offsets. strip_offsets length need equal strip_byte_counts length
     pub strip_offsets:Vec<u32>,             
-    /// 0x0112 also 1  0
+    /// 0x0112 also 1  0    this parameter is not use.
     /// 1 = TOPLEFT (LEFT,TOP) Image end (RIGHT,BOTTOM)
     /// 2 = TOPRIGHT right-left reverce Image
     /// 3 = BOTTOMRIGHT top-bottom and right-left reverce Image
@@ -303,28 +304,29 @@ pub struct Tiff {
     /// 1 grayscale or Index color
     /// 3 RGB Image
     pub samples_per_pixel:u16,          
-    /// 0x0116 also width * BitPerSample /8  <= rows_per_strip
+    /// 0x0116 also width * BitPerSample /8
     pub rows_per_strip: u32,
-    /// 0x0117 For each strip(width), the number of bytes in the strip after compression.           
+    /// 0x0117 For each strip(width), the number of bytes in the strip after compression.       
     pub strip_byte_counts :Vec<u32>,
-    /// 0x0118 also no use         
+    /// 0x0118 also this decoder does not use.
     pub min_sample_value:u16,           
-    pub max_sample_value:u16,           // 0x0119 default 2**(BitsPerSample) - 1
-    // 0x011C
+    /// 0x0119 also this decoder does not use. default 2**(BitsPerSample) - 1
+    pub max_sample_value:u16,
 
+    // 0x011C support only 1
     pub planar_config: u16,
     // 0x0103 Compression
-    /// NoneCompression = 1,
+    /// NoneCompression = 1,    supported
     /// CCITTHuffmanRE = 2,
     /// CCITTGroup3Fax = 3,
     /// CCITTGroup4Fax = 4,
-    /// LZW = 5,
+    /// LZW = 5,    supported
     /// OldJpeg = 6,
-    /// JPeg = 7,
+    /// Jpeg = 7,    not debug
     /// AdobeDeflate = 8,
     /// Next = 32766,
     /// CcittrleW = 32771,
-    /// Packbits = 32773,
+    /// Packbits = 32773,   supported
     /// ThunderScan = 32809,
     /// IT8CTPad = 32895,
     /// IT8LW = 32896,
@@ -356,6 +358,7 @@ pub struct Tiff {
     pub starty: u32,                // 0x011F
     pub tiff_headers: TiffHeaders,
 
+    // pub predicator // if predicator is 2,pixels are horizontal differencing. not support
 }
 
 impl Tiff {
@@ -379,7 +382,7 @@ impl Tiff {
         let  min_sample_value:u16 = 0;          // 0x0118 also no use
         let  mut max_sample_value:u16 = 0;          // 0x0119 default 2**(BitsPerSample) - 1
         let  mut planar_config: u16 = 1;            // 0x011c also 1
-        let  mut compression: Compression =Compression::NoneCompression;      // 0x0103 see enum Compression
+        let  mut compression: Compression =Compression::Unknown;      // 0x0103 see enum Compression
         // may
         let  x_resolution:f32 = 0.0;              // 0x011A also for DTP
         let  y_resolution:f32 = 0.0;              // 0x0112 also for DTP
@@ -388,6 +391,7 @@ impl Tiff {
         // no baseline
         let  startx: u32 = 0;               // 0x011E
         let  starty: u32 = 0;               // 0x011F
+
 
         for header in &tiff_headers.headers {
             match header.tagid {
@@ -398,7 +402,8 @@ impl Tiff {
                 },
 			    0xfe =>{
                     if let DataPack::Long(d) = &header.data {
-                        newsubfiletype = d[0]
+                        newsubfiletype = d[0];
+                        break;  // thumnail or mutlti part data
                     }
                 },
                 0x100 => {
@@ -416,17 +421,25 @@ impl Tiff {
                     }
                 },
                 0x102 => {
-                    if header.length == 1{
+                    if header.length == 1 {
                         if let DataPack::Short(d) = &header.data {
                             bitpersample = d[0] as u16;
                         } 
                     } else {
-                        bitpersample = 24;
-                        // alos d[0] + .. + d[n-1]
+                        let mut bpm = 0;
+                        for i in 0..header.length {
+                            if let DataPack::Short(d) = &header.data {
+                                bpm += d[i] as u16;
+                            } 
+                        }
+                        bitpersample = bpm;
                     }
                 },
                 0x103 => {
     				if let DataPack::Short(d) = &header.data {
+                        if compression != Compression::Unknown {
+                            break;
+                        }
                         compression =
                             match d[0] {
                                 1 => {
@@ -444,9 +457,10 @@ impl Tiff {
                                 5 => {
                                     Compression::LZW
                                 },
+                                // obsolete
                                 6 => {
                                     Compression::OldJpeg
-                                }
+                                },
                                 7 => {
                                     Compression::Jpeg
                                 },
@@ -909,9 +923,9 @@ fn read_tag (reader: &mut dyn BinaryReader, mut offset_ifd: usize,mode: IfdMode)
                                 let r = read_tag(reader, d[0] as usize,IfdMode::Gps)?; // read gps
                                 reader.seek(SeekFrom::Start(current))?;
                                 headers.gps = Some(r.headers);
-                        },
-                        _  => {
-                        }
+                            },
+                            _  => {
+                            }
                         }
                     },
                     _ => {

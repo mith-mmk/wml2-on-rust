@@ -413,12 +413,14 @@ pub fn fast_idct(f: &[i32]) -> Vec<u8> {
 
 
 
-pub(crate) fn convert_rgb(plane: usize,mcu_units :&Vec<Vec<u8>>,component: &Vec<Component>,adobe_color_transform:usize,(h_max,v_max):(usize,usize)) -> Vec<u8> {
-    let data = if plane == 3 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))}  // RGB
-    else if plane == 4 { // hasBug
-       if adobe_color_transform == 2 {ycck_to_rgb(&mcu_units,&component,(h_max,v_max))}  // YCcK Spec Unknown
-       else if adobe_color_transform == 1 {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))} // RGBA
-       else {cmyk_to_rgb(&mcu_units,&component,(h_max,v_max))} // CMYK Spec Unknown
+pub(crate) fn convert_rgb(plane: usize,mcu_units :&Vec<Vec<u8>>,component: &Vec<Component>,color_space:String,(h_max,v_max):(usize,usize)) -> Vec<u8> {
+    let data = if plane == 3 {
+        if &color_space == "RGB" {rgb_to_rgb(&mcu_units,&component,(h_max,v_max))} // RGB
+        else {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))}
+        } else if plane == 4 { // hasBug
+            if &color_space == "YCcK" {ycck_to_rgb(&mcu_units,&component,(h_max,v_max))}  // YCcK Spec Unknown
+            else if &color_space == "YUV" {yuv_to_rgb(&mcu_units,&component,(h_max,v_max))} // RGBA
+            else {cmyk_to_rgb(&mcu_units,&component,(h_max,v_max))} // CMYK Spec Unknown
     }
     else {y_to_rgb(&mcu_units,&component)}; // g / ga
     data
@@ -500,6 +502,47 @@ pub(crate) fn yuv_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_ma
 
     buffer
 }
+
+pub(crate) fn rgb_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
+    let mut buffer:Vec<u8> = (0..h_max * v_max * 64 * 4).map(|_| 0).collect();
+    let y_map = 0;
+    let u_map = y_map + hv_maps[0].h * hv_maps[0].v;
+    let v_map = u_map + hv_maps[1].h * hv_maps[1].v;
+
+    let uy = v_max / hv_maps[1].v as usize;
+    let vy = v_max / hv_maps[2].v as usize;
+    let ux = h_max / hv_maps[1].h as usize;
+    let vx = h_max / hv_maps[2].h as usize;
+
+    for v in 0..v_max {
+        let mut u_map_cur = u_map + v / v_max;
+        let mut v_map_cur = v_map + v / v_max;
+
+        for h in 0..h_max {
+            let gray = &yuv[v*h_max + h];
+            u_map_cur = u_map_cur + h / h_max;
+            v_map_cur = v_map_cur + h / h_max;
+
+            for y in 0..8 {
+                let offset = ((y + v * 8) * (8 * h_max)) * 4;
+                for x in 0..8 {
+                    let xx = (x + h * 8) * 4;
+                    let red = gray[y * 8 + x];
+                    let green = yuv[u_map_cur][(((y + v * 8) / uy % 8) * 8)  + ((x + h * 8) / ux) % 8];
+                    let blue = yuv[v_map_cur][(((y + v * 8) / vy % 8) * 8)  + ((x + h * 8) / vx) % 8];
+
+                    buffer[xx + offset    ] = red; //R
+                    buffer[xx + offset + 1] = green; //G
+                    buffer[xx + offset + 2] = blue; //B
+                    buffer[xx + offset + 3] = 0xff; //A
+                }
+            }
+        }
+    }
+
+    buffer
+}
+
 
 /* spec known */
 pub(crate) fn ycck_to_rgb (yuv: &Vec<Vec<u8>>,hv_maps:&Vec<Component>,(h_max,v_max):(usize,usize)) -> Vec<u8> {
@@ -740,9 +783,6 @@ pub(crate) fn calc_scan(component: &Vec<Component>,huffman_scan_header: &Huffman
     scan
 }
 
-
-
-
 #[cfg(feature="multithread")]
 pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
     let width = header.width;
@@ -768,7 +808,6 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
 
 
     let mut mcu_interval = if header.interval > 0 { header.interval as isize} else {-1};
-
 
     let (tx1,rx1) = std::sync::mpsc::channel();
     let (tx2,rx2) = std::sync::mpsc::channel();
@@ -802,7 +841,6 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
         }
     });
 
-    let adobe_color_transform = header.adobe_color_transform.clone();
     std::thread::spawn(move || {
         loop {
             let mut mcu_units :Vec<Vec<u8>> = Vec::new();
@@ -821,7 +859,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
                 let _ = tx4.send((com,vec![],mcu_x,mcu_y));
                 break;
             }
-            let data = convert_rgb(plane,&mcu_units,&component,adobe_color_transform,(h_max,v_max));
+            let data = convert_rgb(plane,&mcu_units,&component,fh.color_space.to_string(),(h_max,v_max));
 
             let _ = tx4.send((com,data,mcu_x,mcu_y));
         }

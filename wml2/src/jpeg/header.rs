@@ -117,6 +117,7 @@ pub struct FrameHeader {
     pub bitperpixel: usize,
     pub plane: usize,
     pub component: Option<Vec<Component>>,
+    pub color_space: String,
 }
 
 impl FrameHeader {
@@ -133,6 +134,7 @@ impl FrameHeader {
         let bitperpixel: usize;
         let plane: usize;
         let mut component: Vec<Component>;
+        let mut color_space = "YUV".to_string();
 
         if num & 0x03 == 0x00 {
             is_baseline = true;
@@ -166,8 +168,6 @@ impl FrameHeader {
         let nf = read_byte(&buffer,5) as i32;
         plane = nf as usize;
 
-        
-
         let mut ptr = 6;
 
         component = Vec::new();
@@ -180,6 +180,22 @@ impl FrameHeader {
             ptr = ptr + 3;
             component.push(Component{c,h,v,tq});
         }
+
+        let mut id = "".to_string();
+
+        for c in &component {
+            if c.c < 0x20 {break;}
+            let ch = char::from_u32(c.c as u32);
+            if let Some(ch) = ch {
+                id += &ch.to_string();
+            }
+        }
+        if id != "" {
+            color_space = id;
+        }
+        println!("{}", color_space);
+
+
  
         Self {
             is_baseline,
@@ -193,6 +209,7 @@ impl FrameHeader {
             bitperpixel,
             plane,
             component: Some(component), 
+            color_space
         }
     }
 }

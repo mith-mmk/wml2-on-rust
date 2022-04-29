@@ -10,9 +10,9 @@ pub struct Lzwdecode {
     buffer: Vec<u8>,
     cbl: usize,
     recovery_cbl: usize,
-    last_byte: u64,
+    last_byte: u32,
     left_bits: usize,
-    bit_mask: u64,
+    bit_mask: u32,
     ptr: usize,
     clear: usize,
     end: usize,
@@ -25,11 +25,12 @@ pub struct Lzwdecode {
 }
 
 impl Lzwdecode {
+    /// for GIF LZW
     pub fn gif(lzw_min_bits: usize) -> Self {
         Self::new(lzw_min_bits,true,false)
     }
 
-    /// Tiff LZW entry size - 1
+    /// for Tiff LZW
     pub fn tiff(is_lsb: bool) -> Self {
         Self::new(8,is_lsb,true)
     }
@@ -58,18 +59,19 @@ impl Lzwdecode {
         }
     }
     
+    // use 32bit
     fn fill_bits(&mut self) {
         self.clear_dic();
         self.last_byte = 0;
         let ptr = self.ptr;
         if self.is_lsb {
-            self.last_byte = read_byte(&self.buffer,  ptr) as u64;
-            self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u64) << 8;
-            self.last_byte |= (read_byte(&self.buffer,ptr + 2) as u64) << 16;
+            self.last_byte = read_byte(&self.buffer,  ptr) as u32;
+            self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u32) << 8;
+            self.last_byte |= (read_byte(&self.buffer,ptr + 2) as u32) << 16;
         } else {
-            self.last_byte = (read_byte(&self.buffer,  ptr) as u64) << 16;
-            self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u64) << 8;
-            self.last_byte |= read_byte(&self.buffer,ptr + 2) as u64;
+            self.last_byte = (read_byte(&self.buffer,  ptr) as u32) << 16;
+            self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u32) << 8;
+            self.last_byte |= read_byte(&self.buffer,ptr + 2) as u32;
         }
         self.left_bits = 24;
         self.ptr = 3;
@@ -94,7 +96,7 @@ impl Lzwdecode {
                 break;
             }
 
-            self.last_byte = (self.last_byte << 8) | (self.buffer[self.ptr] as u64);
+            self.last_byte = (self.last_byte << 8) | (self.buffer[self.ptr] as u32);
             self.ptr +=1;
             self.left_bits += 8;
         }
@@ -113,7 +115,7 @@ impl Lzwdecode {
                 }
                 break;
             }
-            self.last_byte = (self.last_byte >> 8) & 0xffff | ((self.buffer[self.ptr] as u64) << 16);
+            self.last_byte = (self.last_byte >> 8) & 0xffff | ((self.buffer[self.ptr] as u32) << 16);
 
             self.ptr +=1;
             self.left_bits += 8;
@@ -127,7 +129,7 @@ impl Lzwdecode {
     fn clear_dic(&mut self) {
         self.dic = (0..self.end+1).map(|i| if i < self.clear { vec![i as u8] } else {vec![]}).collect();
         self.cbl = self.recovery_cbl;
-        self.bit_mask = (1 << self.cbl) - 1;
+        self.bit_mask = ((1_u64 << self.cbl) - 1) as u32;
 
     }
 
@@ -145,7 +147,9 @@ impl Lzwdecode {
         self.prev_code = self.clear;  // NULL
 
         loop {
-            let code = self.get_bits()?;    // GIF Lsb only Tiff use Lsb or Msb
+            let res = self.get_bits();    // GIF Lsb only Tiff use Lsb or Msb
+            // If data is shotage,it returns value and waits next buffer. 
+            let code = if let Ok(code) = res { code } else {return Ok(data)};
 
             if code == self.clear {
                 for p in &self.dic[self.prev_code] {
@@ -179,6 +183,7 @@ impl Lzwdecode {
                     }
                     table.push(append_code);
                     self.dic.push(table);
+                    // Tiff LZW is increment entry value before next loop.
                     let next = self.dic.len() + self.is_tiff as usize;
                     if next == self.bit_mask as usize + 1 && next < self.max_table { 
                         self.cbl += 1;

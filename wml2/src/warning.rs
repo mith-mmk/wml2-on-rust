@@ -9,7 +9,7 @@ pub trait ImgWarning: Display + Debug {
 }
 
 pub struct ImgWarnings {
-    warnings: Vec<Box<dyn ImgWarning>>,
+    pub(crate) warnings: Vec<Box<dyn ImgWarning>>,
 }
 
 

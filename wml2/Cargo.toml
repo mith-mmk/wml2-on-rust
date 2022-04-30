@@ -7,7 +7,7 @@ authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
 description = "WML2 - Web graphic Multi format Library"
 edition = "2021"
 license = "MIT"
-#tag = ["image","jpeg","gif","png","bmp","exif"]
+tags = ["image","jpeg","gif","png","bmp","exif"]
 
 [lib]
 crate-type = ["rlib"] 
@@ -23,9 +23,7 @@ multithread = []
 
 [dependencies]
 bin-rs = {version = "0.0.7",features = ["stream","util"]}
-#bin-rs = {path = "../bin-rs",features = ["stream","util"]}
-miniz_oxide =  {version = "0.5.1"}
+miniz_oxide = {version = "0.5.1"}
 
 [profile.release]
-# Tell `rustc` to optimize for small code size.
 opt-level = 3

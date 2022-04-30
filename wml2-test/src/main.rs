@@ -11,9 +11,6 @@ use wml2::draw::CallbackResponse;
 use std::fs;
 use std::fs::File;
 
-#[cfg(feature="parallel")]
-use std::thread::JoinHandle;
-
 
 fn write_log(str: &str) -> Result<Option<CallbackResponse>,Box<dyn Error>> {
     println!("{}", str);
@@ -22,7 +19,6 @@ fn write_log(str: &str) -> Result<Option<CallbackResponse>,Box<dyn Error>> {
 
 pub fn main()-> Result<(),Box<dyn Error>> {
     wml_test()?;
-//    crc_test();
     Ok(())
 }
 

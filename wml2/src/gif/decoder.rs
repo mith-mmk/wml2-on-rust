@@ -1,5 +1,6 @@
 type Error = Box<dyn std::error::Error>;
 
+use crate::metadata::DataMap;
 use bin_rs::io::read_ascii_string;
 use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
@@ -36,6 +37,11 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
     if option.debug_flag >0 {
         option.drawer.verbose(&format!("{:?}",&header),None)?;
     }
+    option.drawer.set_metadata("Format",DataMap::Ascii("GIF".to_string()))?;
+    option.drawer.set_metadata("version",DataMap::Ascii(header.version.to_string()))?;
+    option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
+    option.drawer.set_metadata("heigth",DataMap::UInt(header.height as u64))?;
+    let mut comment_count = 0;
 
     loop {
         let c = reader.read_byte()?;
@@ -49,18 +55,22 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                 match ext {
                     END => { },
                     COMMENT_LABEL => {
-                        let mut s = "Comment: ".to_string();
+                        let mut s = "".to_string();
+                        comment_count += 1;
                         loop {
                             let len = reader.read_byte()? as usize;
                             if len == 0 {break;}
                             if ext == COMMENT_LABEL {
-                                s = s.to_owned() + &reader.read_ascii_string(len)?;
+                                let comment = reader.read_ascii_string(len)?;
+                                s = s.to_owned() + &comment;
                             }                            
                             ptr += len;
                         }
                         if option.debug_flag > 0 {
-                            option.drawer.verbose(&s,None)?;
+                            option.drawer.verbose(&("Comment: ".to_owned() + &s),None)?;
                         }
+                        let string = format!("comment:{}",comment_count);
+                        option.drawer.set_metadata(&string,DataMap::Ascii(s.to_string()))?;
                         comment += &s;
                     },
                     GRAPHIC_CONTROLE => {
@@ -79,7 +89,6 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                         }
 
                         transperarent_color = reader.read_byte()? as usize;
-
                         if option.debug_flag > 0 {
                             let s = format!("Grahic Controle {} delay {}ms  transpearent {:?}",flag,delay_time,is_transpearent);
                             option.drawer.verbose(&s,None)?;
@@ -97,6 +106,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                             let id =  reader.read_byte()?;
 
                             if s == "NETSCAPE2.0" {
+                                option.drawer.set_metadata("Animation GIF",DataMap::Ascii("NETSCAPE2.0".to_string()))?;
                                 if option.debug_flag > 0 {
                                     option.drawer.verbose(&("Animation tag: ".to_owned() + &s),None)?;
                                 }

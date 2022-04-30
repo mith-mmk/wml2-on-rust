@@ -321,7 +321,7 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String,DataMap> {
         }
         map.insert("width".to_string(), DataMap::UInt(fh.width as u64));
         map.insert("height".to_string(), DataMap::UInt(fh.height as u64));
-        map.insert("Bit per pixel".to_string(), DataMap::UInt(fh.bitperpixel as u64));
+        map.insert("Bits per pixel".to_string(), DataMap::UInt(fh.bitperpixel as u64));
         map.insert("Color Space".to_string(),DataMap::Ascii(fh.color_space.to_string()));
     }
 

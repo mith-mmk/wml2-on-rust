@@ -6,6 +6,7 @@ type Error = Box<dyn std::error::Error>;
 
 #[derive(Debug)]
 pub struct GifHeader {
+    pub version: String,
     pub width: usize,
     pub height: usize,
     pub color_table: Vec<RGBA>,
@@ -53,6 +54,7 @@ impl GifHeader {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::UnknownFormat,"not Gif".to_string())))
         }
         ptr += 6;
+        
 
         let scd = GifScd{
             width: reader.read_u16_le()?,
@@ -81,6 +83,7 @@ impl GifHeader {
         }
     
         return Ok(GifHeader {
+            version: String::from_utf8_lossy(&gif[3..]).to_string(),
             width: scd.width as usize,
             height: scd.height as usize,
             color_table: color_table,

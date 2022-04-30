@@ -257,7 +257,8 @@ pub struct Tiff {
     pub height: u32,
     /// 0x0102 data takes 1..N. but only use one data.
     /// N = SamplesPerPixel if N =2 GA88 , N = 3 also RGB888, N = 4 also YMCK8888/RGBA8888
-    pub bitpersample: u16,
+    pub bitspersample: u16,
+    pub bitspersamples: Vec<u16>,
     /// 0x0106 PhotometricInterpretation for color space.
 
     /// 0 = White is zero white based grayscale
@@ -302,7 +303,7 @@ pub struct Tiff {
     /// 1 grayscale or Index color
     /// 3 RGB Image
     pub samples_per_pixel:u16,          
-    /// 0x0116 also width * BitPerSample /8
+    /// 0x0116 also width * Bitspersample /8
     pub rows_per_strip: u32,
     /// 0x0117 For each strip(width), the number of bytes in the strip after compression.       
     pub strip_byte_counts :Vec<u32>,
@@ -354,10 +355,12 @@ pub struct Tiff {
     // no baseline
     pub startx: u32,                // 0x011E
     pub starty: u32,                // 0x011F
+    pub predictor: u16,             // 0x013D
+    pub extra_samples:Vec<u16>,     // 0x0152
     pub tiff_headers: TiffHeaders,
     pub icc_profile: Option<Vec<u8>>,
 
-    // pub predicator // if predicator is 2,pixels are horizontal differencing. not support
+    // pub predictor // if predictor is 2,pixels are horizontal differencing. not support
 }
 
 impl Tiff {
@@ -370,13 +373,14 @@ impl Tiff {
         // must
         let  mut width: u32 = 0;                    // 0x0100
         let  mut height: u32 = 0;                   // 0x0101
-        let  mut bitpersample: u16 = 24;             // 0x0102 data takes 1..N. if data count is 1>0;also bitperpixel =24
+        let  mut bitspersample: u16 = 24;             // 0x0102 data takes 1..N. if data count is 1>0;also bitperpixel =24
+        let  mut bitspersamples: Vec<u16> = vec![];
         let  mut photometric_interpretation: u16 = 2;// 0x0106
         let  mut fill_order:u16 = 1;
         let  mut strip_offsets = vec![];                 // 0x111
         let  orientation: u32 = 1;
         let  mut samples_per_pixel:u16  = 0;        // 0x0115
-        let  mut rows_per_strip = 0_u32;           // 0x0116 also width * BitPerSample /8  <= row_per_strip
+        let  mut rows_per_strip = 0_u32;           // 0x0116 also width * Bitspersample /8  <= row_per_strip
         let  mut strip_byte_counts = vec![];        // 0x0117 For each strip;the number of bytes in the strip after compression.
         let  min_sample_value:u16 = 0;          // 0x0118 also no use
         let  mut max_sample_value:u16 = 0;          // 0x0119 default 2**(BitsPerSample) - 1
@@ -385,6 +389,8 @@ impl Tiff {
         // may
         let  x_resolution:f32 = 0.0;              // 0x011A also for DTP
         let  y_resolution:f32 = 0.0;              // 0x0112 also for DTP
+        let  mut predictor = 1;                   // 1 = none 2 = Horizontal differencing
+        let  mut extra_samples = vec![];          // RGB + A 
         let  mut color_table: Option<Vec<RGBA>> = None; // 0x0140 use only bitperpixel <= 8
 
         // no baseline
@@ -425,16 +431,17 @@ impl Tiff {
                 0x102 => {
                     if header.length == 1 {
                         if let DataPack::Short(d) = &header.data {
-                            bitpersample = d[0] as u16;
+                            bitspersample = d[0] as u16;
                         } 
                     } else {
                         let mut bpm = 0;
                         for i in 0..header.length {
                             if let DataPack::Short(d) = &header.data {
                                 bpm += d[i] as u16;
+                                bitspersamples.push(d[i] as u16);
                             } 
                         }
-                        bitpersample = bpm;
+                        bitspersample = bpm;
                     }
                 },
                 0x103 => {
@@ -601,6 +608,16 @@ impl Tiff {
                         color_table = Some(table)
                     }
                 },
+                0x013d => { // predictor
+                    if let DataPack::Short(d) = &header.data {
+                        predictor = d[0];
+                    }                    
+                },
+                0x0152 => { // ExtraSamples
+                    if let DataPack::Short(d) = &header.data {
+                        extra_samples = d.to_vec();
+                    }                    
+                },
                 0x8773 => { //ICC Profile
                     if let DataPack::Undef(d) = &header.data {
                         icc_profile = Some(d.to_vec());
@@ -619,7 +636,8 @@ impl Tiff {
             subfiletype,
             width,
             height,
-            bitpersample,
+            bitspersample,
+            bitspersamples,
             photometric_interpretation,
             fill_order,
             strip_offsets,
@@ -636,6 +654,8 @@ impl Tiff {
             color_table,
             startx,
             starty,
+            predictor,
+            extra_samples,
             tiff_headers,
             icc_profile,
         })

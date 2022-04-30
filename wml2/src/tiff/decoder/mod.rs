@@ -39,29 +39,30 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
     if data.len() == 0 {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data empty.".to_string())));
     }
-    if header.photometric_interpretation >= 4{
+    if header.photometric_interpretation >= 4 { 
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This decoder is not support this color modelBuffer overrun in draw.".to_string())));
     }
     let color_table: Option<Vec<RGBA>> = 
         if let Some(color_table) = header.color_table.as_ref() {
             Some(color_table.to_vec())
         } else {
+            let bitspersample = if header.bitspersample >= 8 { 8 } else { header.bitspersample };
             match header.photometric_interpretation {
                 0 => {  // WhiteIsZero
-                    Some(create_pallet(header.bitpersample as usize, false))
+                    Some(create_pallet(bitspersample as usize, false))
                 },
                 1 => {  // BlackIsZero
-                    Some(create_pallet(header.bitpersample as usize, true))
+                    Some(create_pallet(bitspersample as usize, true))
                 },
                 3 => {  // RGB Palette
-                    Some(create_pallet(header.bitpersample as usize, true))
+                    Some(create_pallet(bitspersample as usize, true))
                 },
                 _ => {
                     None
                 }
             }
         };
-    if header.bitpersample <= 8 {
+    if header.bitspersample <= 8 {
         if color_table.is_none() {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This is an index color image,but A color table is empty.".to_string())));
         }
@@ -71,18 +72,72 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
 
     for y in 0..header.height as usize {
         let mut buf = vec![];
+        let mut prevs = vec![0_u8;header.samples_per_pixel as usize];
         for _ in 0..header.width as usize {
-            match header.bitpersample {
+            match header.bitspersample {
+                32 => { // 8 8 8 8
+                    let mut r = data[i];
+                    let mut g = data[i+1];
+                    let mut b = data[i+2];
+                    let mut a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2 {
+                        data[i+3] } else { 0xff };
+
+                    if header.predictor == 2 {
+                        r += prevs[0];
+                        prevs[0] = r; 
+                        g += prevs[1];
+                        prevs[1] = g; 
+                        b += prevs[2];
+                        prevs[2] = b;
+                        if header.extra_samples.len() > 0 && header.extra_samples[0]  == 2 {
+                            a += prevs[3];
+                            prevs[3] = a;
+                        }
+                    }
+                    buf.push(r);
+                    buf.push(g);
+                    buf.push(b);
+                    buf.push(0xff);
+                    i += 4;
+                },
                 24 => {
-                    let r = data[i];
-                    let g = data[i+1];
-                    let b = data[i+2];
+                    let mut r = data[i];
+                    let mut g = data[i+1];
+                    let mut b = data[i+2];
+                    if header.predictor == 2 {
+                        r += prevs[0];
+                        prevs[0] = r; 
+                        g += prevs[1];
+                        prevs[1] = g; 
+                        b += prevs[2];
+                        prevs[2] = b; 
+                    }
                     buf.push(r);
                     buf.push(g);
                     buf.push(b);
                     buf.push(0xff);
                     i += 3;
                 },
+                16 => { // 8 + 8
+                    if header.photometric_interpretation <= 1 && header.samples_per_pixel == 2 {
+                        let mut color = data[i];
+                        let mut a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2 {
+                             data[i+1] } else { 0xff };
+                        if header.predictor == 2 {
+                            color += prevs[0];
+                            prevs[0] = color;
+                            if header.extra_samples.len() > 0 && header.extra_samples[0]  == 2 {
+                                a += prevs[1];
+                                prevs[1] = a;
+                            }
+                        }
+                        buf.push(color);
+                        buf.push(color);
+                        buf.push(color);
+                        buf.push(a);
+                        i += 2;
+                    }
+                }
                 15 => {
                     let color = read_u16(data,i,header.tiff_headers.endian);
                     let r = (color >> 10) & 0x1f;
@@ -98,7 +153,12 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                     i += 2;
                 },
                 8 => {
-                    let color = data[i];
+                    let mut color = data[i];
+                    if header.predictor == 2 {
+                        color += prevs[0];
+                        prevs[0] = color; 
+                    }
+
                     let rgba = &color_table.as_ref().unwrap()[color as usize];
 
                     buf.push(rgba.red);
@@ -214,6 +274,21 @@ pub fn decode_packbits_compresson<'decode,B: BinaryReader>(reader:&mut B,option:
     Ok(warnings)
 }
 
+pub fn decode_deflate_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
+    let data = read_strips(reader, header)?;
+    let res = miniz_oxide::inflate::decompress_to_vec_zlib(&data);
+    match res {
+        Ok(data) => {
+            let warnings = draw(&data,option,header)?;
+            Ok(warnings)    
+        },
+        Err(err) => {
+            let deflate_err = format!("{:?}",err);
+            Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,deflate_err)))
+        }
+    }
+}
+
 pub fn decode_none_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
 
     let data = read_strips(reader, header)?;
@@ -230,7 +305,7 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
 
     option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
     option.drawer.set_metadata("height",DataMap::UInt(header.height as u64))?;
-    option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bitpersample as u64))?;
+    option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bitspersample as u64))?;
     option.drawer.set_metadata("Tiff headers",DataMap::Exif(header.tiff_headers.clone()))?;
     option.drawer.set_metadata("compression",DataMap::Ascii(header.compression.to_string()))?;
     if let Some(ref icc_profile) = header.icc_profile {
@@ -249,7 +324,11 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
         },
         Compression::Packbits => {
             return decode_packbits_compresson(reader,option,&header);
+        },
+        Compression::AdobeDeflate => {
+            return decode_deflate_compresson(reader,option,&header);
         }
+
         _ => {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not suport compression".to_string())));
         }

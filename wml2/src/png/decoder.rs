@@ -896,10 +896,6 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                                             allow_multi_image = true;
                                             load(&mut header.clone(), &debuffer, option)?;  // Image = Animation Frame 0
                                         }
-                                        if option.debug_flag > 1 {
-                                            let sequence_number = frame_control.sequence_number;
-                                            println!("Sequence Number {}",sequence_number);
-                                        }
                                     }
                                 }
                             },
@@ -979,7 +975,8 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                                 allow_multi_image = true;
                             }
                             if option.debug_flag > 0 {
-                                println!("{:?}",frame_control);
+                                let str = format!("{:?}",frame_control);
+                                option.drawer.verbose(&str,None)?;
                             }
                         }
 

@@ -96,6 +96,7 @@ pub enum NextOption {
     Terminate,
 }
 
+#[derive(Debug)]
 pub enum NextDispose {
     None,
     Override,
@@ -103,6 +104,7 @@ pub enum NextDispose {
     Previous,
 }
 
+#[derive(Debug)]
 pub enum NextBlend {
     Source,
     Override,

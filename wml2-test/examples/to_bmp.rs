@@ -53,7 +53,8 @@ fn wml_test(filename:String,out_path:String) -> Result<(),Box<dyn Error>>{
          println!("Animation frames {}",animation.len());
          for i in 0..animation.len() {     
              let layer = &animation[i];
-             println!("{}: {} {} {}x{} {}ms",i,layer.start_x,layer.start_y,layer.width,layer.height,layer.control.await_time);
+             println!("{}: {} {} {}x{} {}ms blend {:?} dispose {:?}",i,layer.start_x,layer.start_y,layer.width,layer.height
+                ,layer.control.await_time,layer.control.blend,layer.control.dispose_option);
              let mut image = ImageBuffer::from_buffer(layer.width.clone(),layer.height.clone(),layer.buffer.to_vec());
 
              let mut option = EncodeOptions {        

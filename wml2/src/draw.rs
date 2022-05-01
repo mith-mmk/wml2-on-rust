@@ -60,7 +60,7 @@ pub struct EndOptions{}
 #[allow(unused)]
 /// InitOptions added infomations send for drawer allback function
 /// loop_count uses animation images (not impl)
-/// backgroud if uses backgroud with alpha channel images;
+/// background if uses background with alpha channel images;
 pub struct InitOptions {
     pub loop_count: u32,
     pub background: Option<RGBA>, // RGBA
@@ -203,7 +203,7 @@ pub struct ImageBuffer {
 
     pub width: usize,
     pub height: usize,
-    pub backgroud_color: Option<RGBA>,
+    pub background_color: Option<RGBA>,
     pub buffer: Option<Vec<u8>>,
     pub animation: Option<Vec<AnimationLayer>>,
     pub current: Option<usize>,
@@ -222,7 +222,7 @@ impl ImageBuffer {
         Self {
             width: 0,
             height: 0,
-            backgroud_color: None,
+            background_color: None,
             buffer: None,
             animation: None,
             current: None,
@@ -237,7 +237,7 @@ impl ImageBuffer {
         Self {
             width: width,
             height: height,
-            backgroud_color: None,
+            background_color: None,
             buffer: Some(buf),
             animation: None,
             current: None,
@@ -271,18 +271,18 @@ impl DrawCallback for ImageBuffer {
         self.width = width;
         self.height = height;
         if let Some(option) = option {
-            self.backgroud_color = option.background;
+            self.background_color = option.background;
             if option.animation {
                 self.set_animation(true);
             }
             self.loop_count = Some(option.loop_count);
         }
-        if let Some(backgroud) = &self.backgroud_color {
+        if let Some(background) = &self.background_color {
             self.buffer = Some((0 .. buffersize).map(|i| 
                 match i%4 {
-                    0 => { backgroud.red },
-                    1 => { backgroud.green},
-                    2 => { backgroud.blue},
+                    0 => { background.red },
+                    1 => { background.green},
+                    2 => { background.blue},
                     _ => { 0xff },
                 }
                 ).collect());
@@ -407,7 +407,7 @@ impl PickCallback for ImageBuffer {
         let init = ImageProfiles {
             width: self.width,
             height: self.height,
-            background: self.backgroud_color.clone(),
+            background: self.background_color.clone(),
         };
         Ok(Some(init))
     }

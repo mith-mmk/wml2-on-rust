@@ -21,6 +21,7 @@ use crate::metadata::DataMap;
 /* Dynamic Select Callback System */
 
 /// Drawing Next Options using for Multi images format/ Animation images
+#[derive(Debug)]
 pub enum DrawNextOptions {
     Continue,
     NextImage,
@@ -53,14 +54,20 @@ pub trait PickCallback: Sync + Send {
     fn metadata(&mut self) -> Result<Option<HashMap<String,DataMap>>,Error>;
 }
 
+#[derive(Debug)]
 pub struct EncoderOptions {}
+
+#[derive(Debug)]
 pub struct PickOptions {}
+
+#[derive(Debug)]
 pub struct EndOptions{}
 
 #[allow(unused)]
 /// InitOptions added infomations send for drawer allback function
 /// loop_count uses animation images (not impl)
 /// background if uses background with alpha channel images;
+#[derive(Debug)]
 pub struct InitOptions {
     pub loop_count: u32,
     pub background: Option<RGBA>, // RGBA
@@ -77,18 +84,22 @@ impl InitOptions {
     }
 }
 
+#[derive(Debug)]
 pub struct DrawOptions {
     
 }
 
+#[derive(Debug)]
 pub struct TerminateOptions {
 
 }
 
+#[derive(Debug)]
 pub struct VerboseOptions {
 
 }
 
+#[derive(Debug)]
 pub enum NextOption {
     Continue,
     Next,
@@ -112,6 +123,7 @@ pub enum NextBlend {
 }
 
 #[allow(unused)]
+#[derive(Debug)]
 pub struct ImageRect {
     pub start_x: i32,
     pub start_y: i32,
@@ -120,6 +132,7 @@ pub struct ImageRect {
 }
 
 #[allow(unused)]
+#[derive(Debug)]
 pub struct NextOptions {
     pub flag: NextOption,
     pub await_time: u64,
@@ -151,11 +164,13 @@ impl NextOptions {
 }
 
 #[derive(std::cmp::PartialEq)]
+#[derive(Debug)]
 pub enum ResposeCommand {
     Abort,
     Continue,
 }
 
+#[derive(Debug)]
 pub struct CallbackResponse {
     pub response: ResposeCommand,
 }
@@ -176,6 +191,7 @@ impl CallbackResponse {
     }
 }
 
+#[derive(Debug)]
 pub struct ImageProfiles {
     pub width: usize,
     pub height: usize,

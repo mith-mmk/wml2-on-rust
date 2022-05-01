@@ -1,6 +1,5 @@
 use crate::png::utils::make_metadata;
-use crate::draw::InitOptions;
-use crate::draw::DecodeOptions;
+use crate::draw::*;
 use crate::color::RGBA;
 use crate::error::*;
 use crate::png::warning::PngWarning;
@@ -15,19 +14,30 @@ const START_Y:  [usize; 7] = [0, 4, 0, 2, 0, 1, 0 ];
 const STEP_Y: [usize; 7] = [8, 8, 8, 4, 4, 2, 2 ];
 const STEP_X: [usize; 7] = [8, 8, 4, 4, 2, 2, 1 ];
 
+fn draw_rect(header:&PngHeader) -> (u32,u32) {
+    if header.frame_controls.len() == 0 {
+        (header.width,header.height)
+    } else {
+        let last = header.frame_controls.len() - 1;
+        (header.frame_controls[last].width,header.frame_controls[last].height)
+    }
+}
+
 fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
 -> Result<Option<ImgWarnings>,Error> {
     let is_alpha = if header.color_type == 4 {1} else {0};
-    let raw_length = (header.width * (header.bitpersample as u32 / 8 + is_alpha) + 1) as usize;
+    let (width,height) = draw_rect(header);
+    let raw_length = (width * (header.bitpersample as u32 / 8 + is_alpha) + 1) as usize;
     let mut prev_buf:Vec<u8> = Vec::new();
 
-    for y in 0..header.height as usize{
+
+    for y in 0..height as usize{
         let mut ptr = raw_length * y;
         let flag = buffer[ptr];
-        let mut outbuf:Vec<u8> = (0..header.width * 4).map(|_| 0).collect();
+        let mut outbuf:Vec<u8> = (0..width * 4).map(|_| 0).collect();
         ptr += 1;
         let mut outptr = 0;
-        for _ in 0..header.width as usize {
+        for _ in 0..width as usize {
             let (mut gray, mut alpha) = (0,0xff);
             match header.bitpersample {
                 16 => {
@@ -126,7 +136,7 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
             outbuf[outptr+3] = alpha;
             outptr += 4;
         }
-        option.drawer.draw(0,y,header.width as usize,1,&outbuf,None)?;
+        option.drawer.draw(0,y,width as usize,1,&outbuf,None)?;
         prev_buf = outbuf;
     }
     return Ok(None)
@@ -137,7 +147,7 @@ fn load_grayscale_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeO
     let is_alpha = if header.color_type == 6 {1} else {0};
     let mut prev_buf:Vec<u8> = Vec::new();
 
-
+    let (width,height) = draw_rect(header);
     let mut ptr = 0;
 
     for i in 0..7 {
@@ -146,13 +156,13 @@ fn load_grayscale_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeO
         let step_x = STEP_X[i];
         let step_y = STEP_Y[i];
         let mut y = sy;
-        while y < header.height as usize {
-            let mut outbuf:Vec<u8> = (0..header.width * 4).map(|_| 0).collect();
+        while y <height as usize {
+            let mut outbuf:Vec<u8> = (0..width * 4).map(|_| 0).collect();
             let flag = buffer[ptr];
             ptr += 1;
             let mut outptr = 0;
             let mut x = sx;
-            while x < header.width as usize {
+            while x < width as usize {
                 let (mut gray, mut alpha) = (0,0xff);
                 match header.bitpersample {
                     16 => {
@@ -262,10 +272,11 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
 -> Result<Option<ImgWarnings>,Error> {
 
     let is_alpha = if header.color_type == 6 {1} else {0};
-    let raw_length = (header.width * (header.bitpersample as u32 / 8 * (3 + is_alpha)) + 1) as usize;
+    let (width,height) = draw_rect(header);
+    let raw_length = (width * (header.bitpersample as u32 / 8 * (3 + is_alpha)) + 1) as usize;
     let mut prev_buf:Vec<u8> = Vec::new();
 
-    for y in 0..header.height as usize{
+    for y in 0..height as usize{
         let mut ptr = raw_length * y;
         let flag = buffer[ptr];
         if option.debug_flag & 0x4 == 0x4 {
@@ -273,10 +284,10 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
             option.drawer.verbose(&string,None)?;
         }
 
-        let mut outbuf:Vec<u8> = (0..header.width * 4).map(|_| 0).collect();
+        let mut outbuf:Vec<u8> = (0..width * 4).map(|_| 0).collect();
         ptr += 1;
         let mut outptr = 0;
-        for _ in 0..header.width as usize {
+        for _ in 0..width as usize {
             let (mut red, mut green, mut blue, mut alpha);
             if header.bitpersample == 16 {
                 red = buffer[ptr];ptr += 2;
@@ -405,7 +416,7 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
             outbuf[outptr+3] = alpha;
             outptr += 4;
         } 
-        option.drawer.draw(0,y,header.width as usize,1,&outbuf,None)?;
+        option.drawer.draw(0,y,width as usize,1,&outbuf,None)?;
         prev_buf = outbuf;
     }
     return Ok(None)
@@ -415,8 +426,7 @@ fn load_truecolor_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeO
 -> Result<Option<ImgWarnings>,Error> {
     let is_alpha = if header.color_type == 6 {1} else {0};
     let mut prev_buf:Vec<u8> = Vec::new();
-
-
+    let (width,height) = draw_rect(header);
     let mut ptr = 0;
 
     for i in 0..7 {
@@ -425,13 +435,13 @@ fn load_truecolor_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeO
         let step_x = STEP_X[i];
         let step_y = STEP_Y[i];
         let mut y = sy;
-        while y < header.height as usize {
-            let mut outbuf:Vec<u8> = (0..header.width * 4).map(|_| 0).collect();
+        while y <height as usize {
+            let mut outbuf:Vec<u8> = (0..width * 4).map(|_| 0).collect();
             let flag = buffer[ptr];
             ptr += 1;
             let mut outptr = 0;
             let mut x = sx;
-            while x < header.width as usize {
+            while x < width as usize {
                 let (mut red, mut green, mut blue, mut alpha);
                 if header.bitpersample == 16 {
                     red = buffer[ptr];ptr += 2;
@@ -575,16 +585,17 @@ fn load_index_color(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
         let string = "Pallte data is nothing.";
         return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData, string.to_string()))) 
     }
+    let (width,height) = draw_rect(header);
     let pallet = header.pallete.as_ref().unwrap();
-    let raw_length = ((header.width * header.bitpersample as u32 + 7) / 8 + 1) as usize;
+    let raw_length = ((width * header.bitpersample as u32 + 7) / 8 + 1) as usize;
 
-    let mut outbuf:Vec<u8> = (0..header.width * 4).map(|_| 0).collect();
+    let mut outbuf:Vec<u8> = (0..width * 4).map(|_| 0).collect();
 
-    for y in 0..header.height as usize{
+    for y in 0..height as usize{
         let mut ptr = raw_length * y;
         ptr += 1;
         let mut outptr = 0;
-        for x in 0..header.width as usize {
+        for x in 0..width as usize {
             let mut color = 0;
             match header.bitpersample {
                 8 => {
@@ -623,7 +634,7 @@ fn load_index_color(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
             outbuf[outptr+3] = 0xff;
             outptr += 4;
         }
-        option.drawer.draw(0,y,header.width as usize,1,&outbuf,None)?;
+        option.drawer.draw(0,y,width as usize,1,&outbuf,None)?;
     }
     return Ok(None)
 }
@@ -635,8 +646,9 @@ fn load_index_color_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut Decod
         return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData, string.to_string()))) 
     }
     let pallet = header.pallete.as_ref().unwrap();
+    let (width,height) = draw_rect(header);
 
-    let mut outbuf:Vec<u8> = (0..header.width * 4).map(|_| 0).collect();
+    let mut outbuf:Vec<u8> = (0..width * 4).map(|_| 0).collect();
     let mut ptr = 0;
 
     for i in 0..7 {
@@ -645,12 +657,12 @@ fn load_index_color_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut Decod
         let step_x = STEP_X[i];
         let step_y = STEP_Y[i];
         let mut y = sy;
-        while y < header.height as usize {
+        while y <height as usize {
             ptr += 1;
             let mut outptr = 0;
             let mut x = sx;
             let mut x_ = 0;
-            while x < header.width as usize {
+            while x < width as usize {
                 let mut color = 0;
                 match header.bitpersample {
                     8 => {
@@ -699,6 +711,7 @@ fn load_index_color_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut Decod
 }
 
 fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
+
     match header.color_type {
         0|4 => {
             if header.bitpersample >= 8 {
@@ -743,12 +756,41 @@ fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result
     }
 }
 
+fn next_options(frame_control:&FrameControl) -> NextOptions {
+    let flag = NextOption::Continue;
+    let image_rect = Some(ImageRect {
+        start_x: frame_control.x_offset as i32,
+        start_y: frame_control.y_offset as i32,
+        width: frame_control.width as usize,
+        height: frame_control.height as usize,
+    });
+    let delay_den = if frame_control.delay_den ==0 { 100 } else {frame_control.delay_den};
+    let await_time = ((frame_control.delay_num as f32 / delay_den as f32) * 1000.0) as u64;   
+    let dispose_option = Some(match frame_control.dispose_op {
+        1 => { NextDispose::Background },
+        2 => { NextDispose::Previous },
+        _ => { NextDispose::None} ,
+    });
+
+    let blend = Some(match frame_control.blend_op {
+        1 => { NextBlend::Source },
+        _ => { NextBlend::Override},                         
+    });
+    NextOptions {
+        flag,
+        await_time,
+        image_rect,
+        dispose_option,
+        blend,
+    }
+}
+
 pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions) 
                     -> Result<Option<ImgWarnings>,Error> {
 
     let mut header = PngHeader::new(reader,option.debug_flag)?;
 
-    let opt =  if let Some(ref background) = header.background_color {
+    let backgroud = if let Some(ref background) = header.background_color {
         let background = match background {
             BacgroundColor::Grayscale(gray) => {
                 let g = if header.bitpersample == 8 { *gray as u32} else { (*gray >> 8) as u32};
@@ -768,14 +810,24 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                 r << 24 | g << 16 | b << 8 | 0xff
             }
         };
-        let init_options = InitOptions{
-            loop_count: 1,
-            background: Some(background), // RGBA
-            animation: false,
-        };
-        Some(init_options)
+        Some(background) // RGBA
     } else {
         None
+    };
+
+
+    let opt = if header.is_apng {
+        Some(InitOptions {
+            loop_count: header.num_plays,
+            background: backgroud,
+            animation: true,
+        })
+    } else {
+        Some(InitOptions {
+            loop_count: 0,
+            background: backgroud,
+            animation: false,
+        })
     };
 
     option.drawer.init(header.width as usize,header.height as usize,opt)?;
@@ -806,11 +858,15 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
             s += &s_;            
         }
         option.drawer.verbose(&s,None)?;
+        if header.frame_controls.len() > 0 {
+            let s = format!("{:?}",header.frame_controls[0]);
+            option.drawer.verbose(&s,None)?;
+        }
     }
 
     let mut buffer: Vec<u8> = Vec::new();
-
     let mut idat = true;
+    let mut allow_multi_image = false;
 
     loop {
         let length = reader.read_u32_be()?;
@@ -830,7 +886,22 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                         let decomressed = miniz_oxide::inflate::decompress_to_vec_zlib(&buffer);
                         match decomressed {
                             Ok(debuffer) => {
-                                load(&mut header, &debuffer, option)?;
+                                load(&mut header.clone(), &debuffer, option)?;
+                                if header.frame_controls.len() > 0 {
+                                    let frame_control = &header.frame_controls[0];
+                                    let next = next_options(frame_control);
+                                    let result = option.drawer.next(Some(next))?;
+                                    if let Some(response) = result {
+                                        if response.response == ResposeCommand::Continue {
+                                            allow_multi_image = true;
+                                            load(&mut header.clone(), &debuffer, option)?;  // Image = Animation Frame 0
+                                        }
+                                        if option.debug_flag > 1 {
+                                            let sequence_number = frame_control.sequence_number;
+                                            println!("Sequence Number {}",sequence_number);
+                                        }
+                                    }
+                                }
                             },
                             Err(err) => {
                                 let message = format!("Uncompressed Error {:?}",err);
@@ -839,9 +910,25 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                                 )
                             }
                         }
+
                         idat = false;
+                        buffer = vec![];
                     }
                     if chunck == IMAGE_END {
+                        if buffer.len() > 0 {
+                            let decomressed = miniz_oxide::inflate::decompress_to_vec_zlib(&buffer);
+                            match decomressed {
+                                Ok(debuffer) => {
+                                    load(&mut header, &debuffer, option)?;
+                                },
+                                Err(err) => {
+                                    let message = format!("Uncompressed Error {:?}",err);
+                                    return Err(
+                                        Box::new(ImgError::new_const(ImgErrorKind::DecodeError,message))
+                                    )
+                                }
+                            }
+                        }
                         break;
                     } else if chunck == TEXTDATA || chunck == I18N_TEXT {
                         let text = reader.read_bytes_as_vec(length as usize)?;
@@ -858,12 +945,56 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                         reader.skip_ptr(length as usize)?;
                         let _crc = reader.read_u32_be()?;                    
                     } else if chunck == FRAME_CONTROLE {
-                        // noimpl
-                        reader.skip_ptr(length as usize)?;
+                        let frame_control = FrameControl{
+                            sequence_number: reader.read_u32_be()?,
+                            width: reader.read_u32_be()?,
+                            height: reader.read_u32_be()?,
+                            x_offset: reader.read_u32_be()?,
+                            y_offset: reader.read_u32_be()?,
+                            delay_num:reader.read_u16_be()?,
+                            delay_den:reader.read_u16_be()?,
+                            dispose_op: reader.read_byte()?,
+                            blend_op: reader.read_byte()?,
+                        };
+                        if allow_multi_image && buffer.len() > 0 {
+                            let decomressed = miniz_oxide::inflate::decompress_to_vec_zlib(&buffer);
+                            match decomressed {
+                                Ok(debuffer) => {
+                                    load(&mut header, &debuffer, option)?;
+                                },
+                                Err(err) => {
+                                    let message = format!("Uncompressed Error {:?}",err);
+                                    return Err(
+                                        Box::new(ImgError::new_const(ImgErrorKind::DecodeError,message))
+                                    )
+                                }
+                            }
+                        }
+                        buffer = vec![];
+
+                        let next = next_options(&frame_control);
+                        let result = option.drawer.next(Some(next))?;
+                        if let Some(response) = result {
+                            if response.response == ResposeCommand::Continue {
+                                allow_multi_image = true;
+                            }
+                            if option.debug_flag > 0 {
+                                println!("{:?}",frame_control);
+                            }
+                        }
+
+                        header.frame_controls.push(frame_control);
+
                         let _crc = reader.read_u32_be()?;                    
                     } else if chunck == FRAME_DATA {
-                        // noimpl
-                        reader.skip_ptr(length as usize)?;
+                        let sequence_number = reader.read_u32_be()?;
+                        if option.debug_flag > 0 {
+                            let string = format!("read compressed animation image data:{} {} bytes",sequence_number,length - 4);
+                            option.drawer.verbose(&string,None)?;
+                        }
+
+                        let mut buf = reader.read_bytes_as_vec(length as usize - 4)?;
+                        buffer.append(&mut buf);
                         let _crc = reader.read_u32_be()?;           
                     } else {
                         reader.skip_ptr(length as usize)?;

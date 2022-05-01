@@ -71,15 +71,27 @@ pub(crate) fn to_string<'a>(text :&[u8],compressed: bool) -> (String,String) {
     (keyword,string)
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum BacgroundColor {
     Index(u8),
     Grayscale(u16),
     TrueColor((u16,u16,u16)),
 }
 
+#[derive(Debug,Clone)]
+pub struct FrameControl {
+    pub sequence_number: u32,
+    pub width: u32,
+    pub height: u32,
+    pub x_offset: u32,
+    pub y_offset: u32,
+    pub delay_num: u16,
+    pub delay_den: u16,
+    pub dispose_op: u8,
+    pub blend_op: u8,
+}
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct PngHeader {
     pub width: u32,
     pub height: u32,
@@ -99,6 +111,10 @@ pub struct PngHeader {
     pub sbit: Option<Vec<u8>>,
     pub text: Vec<(String,String)>,
     pub modified_time:Option<String>,
+    pub is_apng:bool,
+    pub num_frames: u32,
+    pub num_plays: u32,
+    pub frame_controls: Vec<FrameControl>,
 }
 
 impl PngHeader {
@@ -127,6 +143,10 @@ impl PngHeader {
             sbit:None,
             text:Vec::new(),
             modified_time: None,
+            is_apng: false,
+            num_frames: 0,
+            num_plays: 0,
+            frame_controls: vec![],
         };
 
         let mut pallete_size = 0;
@@ -272,14 +292,26 @@ impl PngHeader {
                 header.modified_time = Some(date);
                 let _crc = reader.read_u32_be()?;
             } else if chunck == ANIMATION_CONTROLE {
-                // noimpl
                 reader.skip_ptr(8)?;
-                reader.skip_ptr(length as usize)?;
+                header.is_apng = true;
+                header.num_frames = reader.read_u32_be()?;
+                header.num_plays = reader.read_u32_be()?;
                 let _crc = reader.read_u32_be()?;                    
             } else if chunck == FRAME_CONTROLE {
                 // noimpl
                 reader.skip_ptr(8)?;
-                reader.skip_ptr(length as usize)?;
+                let frame_control = FrameControl{
+                    sequence_number: reader.read_u32_be()?,
+                    width: reader.read_u32_be()?,
+                    height: reader.read_u32_be()?,
+                    x_offset: reader.read_u32_be()?,
+                    y_offset: reader.read_u32_be()?,
+                    delay_num:reader.read_u16_be()?,
+                    delay_den:reader.read_u16_be()?,
+                    dispose_op: reader.read_byte()?,
+                    blend_op: reader.read_byte()?,
+                };
+                header.frame_controls.push(frame_control);
                 let _crc = reader.read_u32_be()?;      
             } else if chunck == SRGB {
                 // noimpl

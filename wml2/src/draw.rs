@@ -3,6 +3,7 @@
 //! Drawer will use callback, flexisble drawing.
 //! 0.0.10 using color space RGBA32 only
 type Error = Box<dyn std::error::Error>;
+use crate::color::RGBA;
 use std::collections::HashMap;
 use std::io::Write;
 use crate::util::ImageFormat;
@@ -62,7 +63,7 @@ pub struct EndOptions{}
 /// backgroud if uses backgroud with alpha channel images;
 pub struct InitOptions {
     pub loop_count: u32,
-    pub background: Option<u32>, // RGBA
+    pub background: Option<RGBA>, // RGBA
     pub animation: bool,
 }
 
@@ -178,7 +179,7 @@ impl CallbackResponse {
 pub struct ImageProfiles {
     pub width: usize,
     pub height: usize,
-    pub background: Option<u32>,
+    pub background: Option<RGBA>,
 }
 
 /// Using for Animation GIF/PNG/other
@@ -202,7 +203,7 @@ pub struct ImageBuffer {
 
     pub width: usize,
     pub height: usize,
-    pub backgroud_color: Option<u32>,
+    pub backgroud_color: Option<RGBA>,
     pub buffer: Option<Vec<u8>>,
     pub animation: Option<Vec<AnimationLayer>>,
     pub current: Option<usize>,
@@ -269,7 +270,6 @@ impl DrawCallback for ImageBuffer {
         let buffersize = width * height * 4;
         self.width = width;
         self.height = height;
-        self.buffer = Some((0 .. buffersize).map(|_| 0).collect());
         if let Some(option) = option {
             self.backgroud_color = option.background;
             if option.animation {
@@ -277,6 +277,19 @@ impl DrawCallback for ImageBuffer {
             }
             self.loop_count = Some(option.loop_count);
         }
+        if let Some(backgroud) = &self.backgroud_color {
+            self.buffer = Some((0 .. buffersize).map(|i| 
+                match i%4 {
+                    0 => { backgroud.red },
+                    1 => { backgroud.green},
+                    2 => { backgroud.blue},
+                    _ => { 0xff },
+                }
+                ).collect());
+        } else {
+            self.buffer = Some((0 .. buffersize).map(|_| 0).collect());
+        }
+
         Ok(None)
     }
 
@@ -394,7 +407,7 @@ impl PickCallback for ImageBuffer {
         let init = ImageProfiles {
             width: self.width,
             height: self.height,
-            background: self.backgroud_color,
+            background: self.backgroud_color.clone(),
         };
         Ok(Some(init))
     }

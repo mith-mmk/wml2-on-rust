@@ -793,21 +793,33 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
     let backgroud = if let Some(ref background) = header.background_color {
         let background = match background {
             BacgroundColor::Grayscale(gray) => {
-                let g = if header.bitpersample == 8 { *gray as u32} else { (*gray >> 8) as u32};
-                g << 24 | g << 16 | g << 8 | 0xff
+                RGBA{
+                    red: *gray as u8,
+                    green: *gray as u8,
+                    blue: *gray as u8,
+                    alpha: 0xff
+                }
             },
             BacgroundColor::TrueColor((red,green,blue)) => {
-                let (r,g,b) = if header.bitpersample == 8 { (*red as u32,*green as u32,*blue as u32)}
-                                 else { (*red as u32 >> 8,*green as u32 >> 8,*blue as u32 >> 8)};
-                r << 24 | g << 16 | b << 8 | 0xff
+                RGBA{
+                    red: *red as u8,
+                    green: *green as u8,
+                    blue: *blue as u8,
+                    alpha: 0xff
+                }
             },
             BacgroundColor::Index(index) => {
                 let index = *index as usize;
                 let pallete = &header.pallete.as_ref().unwrap();
-                let r = pallete[index].red as u32;
-                let g = pallete[index].red as u32;
-                let b = pallete[index].red as u32;
-                r << 24 | g << 16 | b << 8 | 0xff
+                let r = pallete[index].red;
+                let g = pallete[index].green;
+                let b = pallete[index].blue;
+                RGBA{
+                    red: r,
+                    green: g,
+                    blue: b,
+                    alpha: 0xff
+                }
             }
         };
         Some(background) // RGBA

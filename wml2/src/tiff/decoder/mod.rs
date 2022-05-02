@@ -97,7 +97,7 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                     buf.push(r);
                     buf.push(g);
                     buf.push(b);
-                    buf.push(0xff);
+                    buf.push(a);
                     i += 4;
                 },
                 24 => {
@@ -141,8 +141,8 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                 15 => {
                     let color = read_u16(data,i,header.tiff_headers.endian);
                     let r = (color >> 10) & 0x1f;
-                    let g = (color >> 10) & 0x1f;
-                    let b = (color >> 10) & 0x1f;
+                    let g = (color >> 5) & 0x1f;
+                    let b = color & 0x1f;
                     let r = ((r << 3) | (r >> 2)) as u8;
                     let g = ((g << 3) | (g >> 2)) as u8;
                     let b = ((b << 3) | (b >> 2)) as u8;

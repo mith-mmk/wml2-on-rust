@@ -964,7 +964,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                             dispose_op: reader.read_byte()?,
                             blend_op: reader.read_byte()?,
                         };
-                        if allow_multi_image && buffer.len() > 0 {
+                        if buffer.len() > 0 && allow_multi_image {
                             let decomressed = miniz_oxide::inflate::decompress_to_vec_zlib(&buffer);
                             match decomressed {
                                 Ok(debuffer) => {

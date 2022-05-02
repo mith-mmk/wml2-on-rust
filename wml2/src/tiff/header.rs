@@ -321,8 +321,8 @@ pub struct Tiff {
     /// CCITTGroup4Fax = 4,
     /// LZW = 5,    supported
     /// OldJpeg = 6,
-    /// Jpeg = 7,    not debug
-    /// AdobeDeflate = 8,
+    /// Jpeg = 7,   supported
+    /// AdobeDeflate = 8,   supported
     /// Next = 32766,
     /// CcittrleW = 32771,
     /// Packbits = 32773,   supported

@@ -368,14 +368,15 @@ impl Tiff {
         let tiff_headers = read_tags(reader)?;
         //m ay        
         let  mut newsubfiletype:u32 = 0;            
-        let  mut subfiletype:u32 = 1;               // 0x00ff  also 1              
+        let  mut subfiletype:u32 = 0;               // 0x00ff  also 1              
 
         // must
         let  mut width: u32 = 0;                    // 0x0100
         let  mut height: u32 = 0;                   // 0x0101
-        let  mut bitspersample: u16 = 24;             // 0x0102 data takes 1..N. if data count is 1>0;also bitperpixel =24
+        // If it does not have BitsPerSample tag,set default [1]
+        let  mut bitspersample: u16 = 1;             // 0x0102 data takes 1..N.
         let  mut bitspersamples: Vec<u16> = vec![];
-        let  mut photometric_interpretation: u16 = 2;// 0x0106
+        let  mut photometric_interpretation: u16 = 2; // 0x0106
         let  mut fill_order:u16 = 1;
         let  mut strip_offsets = vec![];                 // 0x111
         let  orientation: u32 = 1;
@@ -400,7 +401,8 @@ impl Tiff {
 
 
         for header in &tiff_headers.headers {
-            if newsubfiletype > 0 {
+            // skip thumbnail or multi page images
+            if newsubfiletype > 0 || subfiletype > 0 {
                 continue;
             }
             match header.tagid {
@@ -628,8 +630,9 @@ impl Tiff {
 
         }
 
-
-
+        if bitspersamples.len() == 0 {
+            bitspersamples.push(bitspersample);
+        }
 
         Ok(Self{
             newsubfiletype,
@@ -713,7 +716,8 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
         2 => {  // 2. ASCII(u8)
             let s;
             if datalen <=4 {
-                s = reader.read_ascii_string(4)?;
+                s = reader.read_ascii_string(datalen)?;
+                reader.skip_ptr(4 - datalen)?;
             } else {
                 let offset = reader.read_u32()? as u64;
                 let current = reader.offset()?;
@@ -727,7 +731,11 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
             let mut d: Vec<u16> = Vec::with_capacity(datalen);
             if datalen*2 <= 4 {
                 d.push(reader.read_u16()?);
-                d.push(reader.read_u16()?);
+                if datalen == 2 {
+                    d.push(reader.read_u16()?);
+                } else {
+                    reader.skip_ptr(2)?;
+                }
             } else {
                 let offset = reader.read_u32()? as u64;
                 let current = reader.offset()?;
@@ -769,8 +777,8 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
         },
         6 => {  // 6 i8 
             let mut d: Vec<i8> = Vec::with_capacity(datalen);
-            let buf = reader.read_bytes_as_vec(4)?;
             if datalen <=4 {
+                let buf = reader.read_bytes_as_vec(4)?;
                 for i in 0.. datalen { 
                     d.push(buf[i] as i8);
                 }
@@ -788,8 +796,9 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
         7 => {  // 1.undef
             let mut d: Vec<u8> = Vec::with_capacity(datalen);
             if datalen <=4 {
-                for _ in 0.. datalen { 
-                    d = reader.read_bytes_as_vec(4)?;
+                let buf = reader.read_bytes_as_vec(4)?;
+                for i in 0.. datalen { 
+                    d.push(buf[i]);
                 }
             } else {
                 let offset = reader.read_u32()? as u64;
@@ -803,11 +812,15 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
             data = DataPack::Undef(d);
 
         },
-        8 => {  // 6 i8 
+        8 => {  // 6 i16
             let mut d: Vec<i16> = Vec::with_capacity(datalen);
-            if datalen <=4 {
+            if datalen <=2 {
                 d.push(reader.read_i16()?);
-                d.push(reader.read_i16()?);
+                if datalen == 2 {
+                    d.push(reader.read_i16()?);
+                } else {
+                    reader.skip_ptr(2)?;
+                }
             } else {
                 let offset = reader.read_u32()? as u64;
                 let current = reader.offset()?;
@@ -823,9 +836,7 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
         9 => {  // i32 
             let mut d: Vec<i32> = Vec::with_capacity(datalen);
             if datalen*4 <=4 {
-                for _ in 0.. datalen { 
-                    d.push(reader.read_i32()?);
-                }
+                d.push(reader.read_i32()?);
             } else {
                 let offset = reader.read_u32()? as u64;
                 let current = reader.offset()?;
@@ -886,8 +897,9 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
         _ => {
             let mut d: Vec<u8> = Vec::with_capacity(datalen);
             if datalen <=4 {
-                for _ in 0.. datalen { 
-                    d = reader.read_bytes_as_vec(4)?;
+                let buf = reader.read_bytes_as_vec(4)?;
+                for i in 0.. datalen { 
+                    d.push(buf[i])
                 }
             } else {
                 let offset = reader.read_u32()? as u64;

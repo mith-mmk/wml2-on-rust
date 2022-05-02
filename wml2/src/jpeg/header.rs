@@ -8,7 +8,7 @@ use bin_rs::reader::BytesReader;
 use bin_rs::reader::BinaryReader;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
-use crate::tiff::header::*;
+use crate::tiff::header::*; // for exif
 
 /* from SOS */
 pub struct HuffmanScanHeader {

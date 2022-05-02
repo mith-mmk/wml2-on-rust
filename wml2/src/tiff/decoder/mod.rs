@@ -3,6 +3,7 @@
 //! 
 
 type Error = Box<dyn std::error::Error>;
+use bin_rs::io::read_u32;
 use bin_rs::io::read_u16;
 use crate::color::RGBA;
 use crate::decoder::lzw::Lzwdecode;
@@ -74,13 +75,140 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
         let mut buf = vec![];
         let mut prevs = vec![0_u8;header.samples_per_pixel as usize];
         for _ in 0..header.width as usize {
-            match header.bitspersample {
-                32 => { // 8 8 8 8
-                    let mut r = data[i];
-                    let mut g = data[i+1];
-                    let mut b = data[i+2];
-                    let mut a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2 {
-                        data[i+3] } else { 0xff };
+
+            match header.photometric_interpretation {
+                0 | 1 | 3 => {
+                    match header.bitspersamples[0] {
+                        8 => {
+                            let mut color = data[i];
+                            if header.predictor == 2 {
+                                color += prevs[0];
+                                prevs[0] = color; 
+                            }
+        
+                            let rgba = &color_table.as_ref().unwrap()[color as usize];
+        
+                            buf.push(rgba.red);
+                            buf.push(rgba.green);
+                            buf.push(rgba.blue);
+                            buf.push(rgba.alpha);
+                            i += header.samples_per_pixel as usize;
+                        }
+                        4 => {
+                            let c;
+                            let color = data[i/2];
+                            if i % 2 == 0 {
+                                if header.fill_order == 1 {
+                                    c = (color >> 4) as usize;
+                                } else {
+                                    c = (color & 0xf) as usize;
+                                }
+                            } else {
+                                if header.fill_order == 1 {
+                                    c = (color & 0xf) as usize;
+                                } else {
+                                    c = (color >> 4) as usize;
+                                }
+                            }
+                            
+                            let rgba = &color_table.as_ref().unwrap()[c];
+        
+                            buf.push(rgba.red);
+                            buf.push(rgba.green);
+                            buf.push(rgba.blue);
+                            buf.push(rgba.alpha);
+                            i += 1; //  i += header.samples_per_pixel as usize; ?
+                        },
+                        2 => {  // usually illegal
+                            let c;
+                            let color = data[i/4];
+                            let shift = (i % 4) * 2;
+                            if header.fill_order == 1 {
+                                    c = ((color >> (6 - shift)) & 0x3) as usize;
+                            } else {
+                                    c = ((color >> shift)& 0x3) as usize;
+                            }
+                            
+                            let rgba = &color_table.as_ref().unwrap()[c];
+        
+                            buf.push(rgba.red);
+                            buf.push(rgba.green);
+                            buf.push(rgba.blue);
+                            buf.push(rgba.alpha);
+                            i += 1;
+                        },
+                        1 => {
+                            let c;
+                            let color = data[i/8];
+                            let shift = i % 8;
+                            if header.fill_order == 1 {
+                                    c = ((color >> (7 - shift)) & 0x1) as usize;
+                            } else {
+                                    c = ((color >> shift)& 0x1) as usize;
+                            }
+                            
+                            let rgba = &color_table.as_ref().unwrap()[c];
+        
+                            buf.push(rgba.red);
+                            buf.push(rgba.green);
+                            buf.push(rgba.blue);
+                            buf.push(rgba.alpha);
+                            i += 1;
+                        },
+        
+                        _ => {
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This bit per sample is not support.".to_string())));
+                        }
+                    }
+                
+                },
+                2 => {  //RGB
+                    let (mut r, mut g, mut b, mut a);
+                    a = 0xff;
+                    match header.bitspersamples[0] {  //bit per samples same (8,8,8), but also (8,16,8) pattern 
+                        8 => {
+                            r = data[i];
+                            g = data[i+1];
+                            b = data[i+2];
+                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
+                                        && header.samples_per_pixel > 3 {
+                                data[i+3] } else { 0xff };
+                            i += header.samples_per_pixel as usize;
+                        },
+
+                        16 => {
+                            if header.samples_per_pixel >= 3 {
+                                r = (read_u16(data,i,header.tiff_headers.endian) >> 8) as u8;
+                                g = (read_u16(data,i+2,header.tiff_headers.endian) >> 8) as u8;
+                                b = (read_u16(data,i+4,header.tiff_headers.endian) >> 8) as u8;
+                                a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
+                                            && header.samples_per_pixel > 3 {
+                                        (read_u16(data,i+6,header.tiff_headers.endian) >> 8) as u8 } else { 0xff };
+                                i += header.samples_per_pixel as usize * 2;
+                            } else {    // Illegal tiff(TWONS TIFF)
+                                let color = read_u16(data,i,header.tiff_headers.endian) >> 8;
+                                let temp_r = (color >> 5 & 0x1f) as u8;
+                                r = (temp_r <<3 | temp_r >>2) as u8;
+                                let temp_g = (color >> 10 & 0x1f) as u8;
+                                g = (temp_g <<3 | temp_g>>2) as u8;
+                                let temp_b = (color & 0x1f) as u8;
+                                b = (temp_b <<3 | temp_b>>2) as u8;
+                                i += 2;
+                            }
+                        },
+                        32 => {
+                            r = (read_u32(data,i,header.tiff_headers.endian) >> 24) as u8;
+                            g = (read_u32(data,i+4,header.tiff_headers.endian) >> 24) as u8;
+                            b = (read_u32(data,i+8,header.tiff_headers.endian) >> 24) as u8;
+                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
+                                        && header.samples_per_pixel > 3 {
+                                    (read_u32(data,i+12,header.tiff_headers.endian) >> 24) as u8 } else { 0xff };
+                            i += header.samples_per_pixel as usize * 4;
+                        },
+                        _ => {
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support color space.".to_string())));
+                        }
+                    }
 
                     if header.predictor == 2 {
                         r += prevs[0];
@@ -98,141 +226,12 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                     buf.push(g);
                     buf.push(b);
                     buf.push(a);
-                    i += 4;
-                },
-                24 => {
-                    let mut r = data[i];
-                    let mut g = data[i+1];
-                    let mut b = data[i+2];
-                    if header.predictor == 2 {
-                        r += prevs[0];
-                        prevs[0] = r; 
-                        g += prevs[1];
-                        prevs[1] = g; 
-                        b += prevs[2];
-                        prevs[2] = b; 
-                    }
-                    buf.push(r);
-                    buf.push(g);
-                    buf.push(b);
-                    buf.push(0xff);
-                    i += 3;
-                },
-                16 => { // 8 + 8
-                    if header.photometric_interpretation <= 1 && header.samples_per_pixel == 2 {
-                        let mut color = data[i];
-                        let mut a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2 {
-                             data[i+1] } else { 0xff };
-                        if header.predictor == 2 {
-                            color += prevs[0];
-                            prevs[0] = color;
-                            if header.extra_samples.len() > 0 && header.extra_samples[0]  == 2 {
-                                a += prevs[1];
-                                prevs[1] = a;
-                            }
-                        }
-                        buf.push(color);
-                        buf.push(color);
-                        buf.push(color);
-                        buf.push(a);
-                        i += 2;
-                    }
+ 
                 }
-                15 => {
-                    let color = read_u16(data,i,header.tiff_headers.endian);
-                    let r = (color >> 10) & 0x1f;
-                    let g = (color >> 5) & 0x1f;
-                    let b = color & 0x1f;
-                    let r = ((r << 3) | (r >> 2)) as u8;
-                    let g = ((g << 3) | (g >> 2)) as u8;
-                    let b = ((b << 3) | (b >> 2)) as u8;
-                    buf.push(r);
-                    buf.push(g);
-                    buf.push(b);
-                    buf.push(0xff);
-                    i += 2;
-                },
-                8 => {
-                    let mut color = data[i];
-                    if header.predictor == 2 {
-                        color += prevs[0];
-                        prevs[0] = color; 
-                    }
-
-                    let rgba = &color_table.as_ref().unwrap()[color as usize];
-
-                    buf.push(rgba.red);
-                    buf.push(rgba.green);
-                    buf.push(rgba.blue);
-                    buf.push(rgba.alpha);
-                    i += 1;
-                }
-                4 => {
-                    let c;
-                    let color = data[i/2];
-                    if i % 2 == 0 {
-                        if header.fill_order == 1 {
-                            c = (color >> 4) as usize;
-                        } else {
-                            c = (color & 0xf) as usize;
-                        }
-                    } else {
-                        if header.fill_order == 1 {
-                            c = (color & 0xf) as usize;
-                        } else {
-                            c = (color >> 4) as usize;
-                        }
-                    }
-                    
-                    let rgba = &color_table.as_ref().unwrap()[c];
-
-                    buf.push(rgba.red);
-                    buf.push(rgba.green);
-                    buf.push(rgba.blue);
-                    buf.push(rgba.alpha);
-                    i += 1;
-                },
-                2 => {
-                    let c;
-                    let color = data[i/4];
-                    let shift = (i % 4) * 2;
-                    if header.fill_order == 1 {
-                            c = ((color >> (6 - shift)) & 0x3) as usize;
-                    } else {
-                            c = ((color >> shift)& 0x3) as usize;
-                    }
-                    
-                    let rgba = &color_table.as_ref().unwrap()[c];
-
-                    buf.push(rgba.red);
-                    buf.push(rgba.green);
-                    buf.push(rgba.blue);
-                    buf.push(rgba.alpha);
-                    i += 1;
-                },
-                1 => {
-                    let c;
-                    let color = data[i/8];
-                    let shift = i % 8;
-                    if header.fill_order == 1 {
-                            c = ((color >> (7 - shift)) & 0x1) as usize;
-                    } else {
-                            c = ((color >> shift)& 0x1) as usize;
-                    }
-                    
-                    let rgba = &color_table.as_ref().unwrap()[c];
-
-                    buf.push(rgba.red);
-                    buf.push(rgba.green);
-                    buf.push(rgba.blue);
-                    buf.push(rgba.alpha);
-                    i += 1;
-                },
-
                 _ => {
-                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This bit per sample is not support.".to_string())));
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support color space.".to_string())));
                 }
-            }
+            }           
         }
         option.drawer.draw(0,y,header.width as usize,1,&buf,None)?;
         if i > data.len() {

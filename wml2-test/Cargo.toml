@@ -16,7 +16,7 @@ dotenv = "0.15"
 
 [dependencies.wml2]
 path = "../wml2"
-#features = ["multithread"]
+features = ["multithread"]
 
 [dependencies.icc-profile]
 git = "https://github.com/mith-mmk/icc_profile"

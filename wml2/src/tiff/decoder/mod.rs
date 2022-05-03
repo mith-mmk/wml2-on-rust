@@ -36,13 +36,34 @@ fn create_pallet(bits:usize,is_black_zero:bool) -> Vec<RGBA>{
     pallet
 }
 
+fn planar_to_chuncky(data:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
+    let mut buf = vec![];
+    let length = header.height as usize * header.width as usize * header.bitspersamples[0] as usize / 8;
+    if buf.len() < length * header.samples_per_pixel as usize {
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data shotage.".to_string())));
+    }
+
+    for i in 0..length {
+        for j in 0..header.samples_per_pixel as usize {
+            buf.push(data[i + j * length]);
+        }
+    }
+
+    Ok(buf)
+}
+
 pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error> {
     if data.len() == 0 {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data empty.".to_string())));
     }
-    if header.photometric_interpretation >= 4 { 
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This decoder is not support this color modelBuffer overrun in draw.".to_string())));
+
+    let mut data = data.to_owned();
+
+    // no debug
+    if header.planar_config == 2 && header.samples_per_pixel > 1 {
+        data = planar_to_chuncky(&data,header)?;
     }
+    
     let color_table: Option<Vec<RGBA>> = 
         if let Some(color_table) = header.color_table.as_ref() {
             Some(color_table.to_vec())
@@ -55,11 +76,32 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                 1 => {  // BlackIsZero
                     Some(create_pallet(bitspersample as usize, true))
                 },
+                2 => {
+                    if header.samples_per_pixel < 3 {
+                        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"RGB image needs Sample per pixel >=3.".to_string())));
+                    } else {
+                        None
+                    }
+                },
                 3 => {  // RGB Palette
                     Some(create_pallet(bitspersample as usize, true))
                 },
+                5 => {
+                    if header.samples_per_pixel < 4 {
+                        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"YMCK image needs Sample per pixel >=4.".to_string())));
+                    } else {
+                        None
+                    }
+                },
+                6 => {
+                    if header.samples_per_pixel < 3 {
+                        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"YCbCr image needs Sample per pixel >=3.".to_string())));
+                    } else {
+                        None
+                    }
+                },
                 _ => {
-                    None
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not Supprt Color model.".to_string())));
                 }
             }
         };
@@ -79,6 +121,33 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
             match header.photometric_interpretation {
                 0 | 1 | 3 => {
                     match header.bitspersamples[0] {
+                        16 => { // Illegal tiff(TOWNS TIFF)
+                            if header.max_sample_values[0] == 32767 && header.tiff_headers.endian == bin_rs::Endian::LittleEndian {
+                                let color = read_u16(&data,i,header.tiff_headers.endian) >> 8;
+                                let temp_r = (color >> 5 & 0x1f) as u8;
+                                let r = (temp_r <<3 | temp_r >>2) as u8;
+                                let temp_g = (color >> 10 & 0x1f) as u8;
+                                let g = (temp_g <<3 | temp_g>>2) as u8;
+                                let temp_b = (color & 0x1f) as u8;
+                                let b = (temp_b <<3 | temp_b>>2) as u8;
+                                buf.push(r);
+                                buf.push(g);
+                                buf.push(b);
+                                buf.push(0xff);
+                                i += 2;
+                            } else {    // 16 bit glayscale
+                                let mut color = data[i];
+                                if header.predictor == 2 {
+                                    color += prevs[0];
+                                    prevs[0] = color; 
+                                }
+                                buf.push(color);
+                                buf.push(color);
+                                buf.push(color);
+                                buf.push(color);
+                                i += header.samples_per_pixel as usize;
+                            }
+                        },
                         8 => {
                             let mut color = data[i];
                             if header.predictor == 2 {
@@ -163,8 +232,7 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                 
                 },
                 2 => {  //RGB
-                    let (mut r, mut g, mut b, mut a);
-                    a = 0xff;
+                    let (mut r, mut g, mut b, mut a) = (0,0,0,0xff);
                     match header.bitspersamples[0] {  //bit per samples same (8,8,8), but also (8,16,8) pattern 
                         8 => {
                             r = data[i];
@@ -175,38 +243,28 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                                 data[i+3] } else { 0xff };
                             i += header.samples_per_pixel as usize;
                         },
-
                         16 => {
                             if header.samples_per_pixel >= 3 {
-                                r = (read_u16(data,i,header.tiff_headers.endian) >> 8) as u8;
-                                g = (read_u16(data,i+2,header.tiff_headers.endian) >> 8) as u8;
-                                b = (read_u16(data,i+4,header.tiff_headers.endian) >> 8) as u8;
+                                r = (read_u16(&data,i,header.tiff_headers.endian) >> 8) as u8;
+                                g = (read_u16(&data,i+2,header.tiff_headers.endian) >> 8) as u8;
+                                b = (read_u16(&data,i+4,header.tiff_headers.endian) >> 8) as u8;
                                 a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
                                             && header.samples_per_pixel > 3 {
-                                        (read_u16(data,i+6,header.tiff_headers.endian) >> 8) as u8 } else { 0xff };
+                                        (read_u16(&data,i+6,header.tiff_headers.endian) >> 8) as u8 } else { 0xff };
                                 i += header.samples_per_pixel as usize * 2;
-                            } else {    // Illegal tiff(TWONS TIFF)
-                                let color = read_u16(data,i,header.tiff_headers.endian) >> 8;
-                                let temp_r = (color >> 5 & 0x1f) as u8;
-                                r = (temp_r <<3 | temp_r >>2) as u8;
-                                let temp_g = (color >> 10 & 0x1f) as u8;
-                                g = (temp_g <<3 | temp_g>>2) as u8;
-                                let temp_b = (color & 0x1f) as u8;
-                                b = (temp_b <<3 | temp_b>>2) as u8;
-                                i += 2;
                             }
                         },
                         32 => {
-                            r = (read_u32(data,i,header.tiff_headers.endian) >> 24) as u8;
-                            g = (read_u32(data,i+4,header.tiff_headers.endian) >> 24) as u8;
-                            b = (read_u32(data,i+8,header.tiff_headers.endian) >> 24) as u8;
+                            r = (read_u32(&data,i,header.tiff_headers.endian) >> 24) as u8;
+                            g = (read_u32(&data,i+4,header.tiff_headers.endian) >> 24) as u8;
+                            b = (read_u32(&data,i+8,header.tiff_headers.endian) >> 24) as u8;
                             a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
                                         && header.samples_per_pixel > 3 {
-                                    (read_u32(data,i+12,header.tiff_headers.endian) >> 24) as u8 } else { 0xff };
+                                    (read_u32(&data,i+12,header.tiff_headers.endian) >> 24) as u8 } else { 0xff };
                             i += header.samples_per_pixel as usize * 4;
                         },
                         _ => {
-                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support color space.".to_string())));
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This bit per sample is not support.".to_string())));
                         }
                     }
 
@@ -228,8 +286,134 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                     buf.push(a);
  
                 }
+                // 4 : Transparentary musk is not support
+                5 => {  //CMYK
+                    let (mut c, mut m, mut y, mut k,mut a);
+                    match header.bitspersamples[0] {  //bit per samples same (8,8,8), but also (8,16,8) pattern 
+                        8 => {
+                            c = data[i];
+                            m = data[i+1];
+                            y = data[i+2];
+                            k = data[i+3];
+                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
+                                && header.samples_per_pixel > 4 { data[i+4] } else { 0xff };
+                            i += header.samples_per_pixel as usize;
+                        },
+                        16 => {
+                            c = (read_u16(&data,i,header.tiff_headers.endian) >> 8) as u8;
+                            m = (read_u16(&data,i+2,header.tiff_headers.endian) >> 8) as u8;
+                            y = (read_u16(&data,i+4,header.tiff_headers.endian) >> 8) as u8;
+                            k = (read_u16(&data,i+6,header.tiff_headers.endian) >> 8) as u8;
+                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
+                                        && header.samples_per_pixel > 4 {
+                                    (read_u16(&data,i+8,header.tiff_headers.endian) >> 8) as u8 } else { 0xff };
+                            i += header.samples_per_pixel as usize * 2;
+                        },
+                        32 => {
+                            c = (read_u32(&data,i,header.tiff_headers.endian) >> 24) as u8;
+                            m = (read_u32(&data,i+4,header.tiff_headers.endian) >> 24) as u8;
+                            y = (read_u32(&data,i+8,header.tiff_headers.endian) >> 24) as u8;
+                            k = (read_u32(&data,i+12,header.tiff_headers.endian) >> 24) as u8;
+                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
+                                        && header.samples_per_pixel > 4 {
+                                    (read_u32(&data,i+16,header.tiff_headers.endian) >> 24) as u8 } else { 0xff };
+                            i += header.samples_per_pixel as usize * 4;
+                        },
+                        _ => {
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This bit per sample is not support.".to_string())));
+                        }
+                    }
+
+                    if header.predictor == 2 {
+                        y += prevs[0];
+                        prevs[0] = y; 
+                        m += prevs[1];
+                        prevs[1] = m; 
+                        c += prevs[2];
+                        prevs[2] = c;
+                        k += prevs[3];
+                        prevs[3] = k;
+                        if header.extra_samples.len() > 0 && header.extra_samples[0]  == 2 {
+                            a += prevs[4];
+                            prevs[4] = a;
+                        }
+                    }
+                    let r = 255 - c;
+                    let g = 255 - m;
+                    let b = 255 - y;
+
+                    buf.push(r);
+                    buf.push(g);
+                    buf.push(b);
+                    buf.push(a);
+                },
+                // not support 
+                /*
+                6 => {  // YCbCr ... this function is not suport YCbCrCoficients,positioning...,yet.  ....4:1:1 sampling
+                    let (mut y, mut cb, mut cr, mut a);
+                    match header.bitspersamples[0] {  //bit per samples same (8,8,8), but also (8,16,8) pattern 
+                        8 => {
+                            y = data[i];
+                            cb = data[i+1];
+                            cr = data[i+2];
+                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
+                                        && header.samples_per_pixel > 3 {
+                                data[i+3] } else { 0xff };
+                            i += header.samples_per_pixel as usize;
+                        },
+                        16 => {
+                            y = (read_u16(&data,i,header.tiff_headers.endian) >> 8) as u8;
+                            cb = (read_u16(&data,i+2,header.tiff_headers.endian) >> 8) as u8;
+                            cr = (read_u16(&data,i+4,header.tiff_headers.endian) >> 8) as u8;
+                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
+                                        && header.samples_per_pixel > 3 {
+                                    (read_u16(&data,i+6,header.tiff_headers.endian) >> 8) as u8 } else { 0xff };
+                            i += header.samples_per_pixel as usize * 2;
+                        },
+                        32 => {
+                            y = (read_u32(&data,i,header.tiff_headers.endian) >> 24) as u8;
+                            cb = (read_u32(&data,i+4,header.tiff_headers.endian) >> 24) as u8;
+                            cr = (read_u32(&data,i+8,header.tiff_headers.endian) >> 24) as u8;
+                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
+                                        && header.samples_per_pixel > 3 {
+                                    (read_u32(&data,i+12,header.tiff_headers.endian) >> 24) as u8 } else { 0xff };
+                            i += header.samples_per_pixel as usize * 4;
+                        },
+                        _ => {
+                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This bit per sample is not support.".to_string())));
+                        }
+                    }
+
+                    if header.predictor == 2 {
+                        y += prevs[0];
+                        prevs[0] = y; 
+                        cb += prevs[1];
+                        prevs[1] = cb; 
+                        cr += prevs[2];
+                        prevs[2] = cr;
+                        if header.extra_samples.len() > 0 && header.extra_samples[0]  == 2 {
+                            a += prevs[3];
+                            prevs[3] = a;
+                        }
+                    }
+                    // Bt601.1
+                    let lr = 0.299;
+                    let lg = 0.587;
+                    let lb = 0.114;
+
+                    let r = ((y as f32 + (2.0 - 2.0 * lr ) * cr as f32) as i16).clamp(0,255) as u8;
+                    let b = ((y as f32 + (2.0 - 2.0 * lb ) * cr as f32) as i16).clamp(0,255) as u8;
+                    let g = (((y as f32 - lb * b as f32 - lr * r as f32) / lg) as i16).clamp(0,255) as u8;
+
+                    buf.push(r);
+                    buf.push(g);
+                    buf.push(b);
+                    buf.push(a);
+ 
+                }
+                */
                 _ => {
-                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support color space.".to_string())));
+//                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support color space.".to_string())));
                 }
             }           
         }

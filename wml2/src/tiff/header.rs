@@ -308,9 +308,9 @@ pub struct Tiff {
     /// 0x0117 For each strip(width), the number of bytes in the strip after compression.       
     pub strip_byte_counts :Vec<u32>,
     /// 0x0118 also this decoder does not use.
-    pub min_sample_value:u16,           
+    pub min_sample_values:Vec<u16>,           
     /// 0x0119 also this decoder does not use. default 2**(BitsPerSample) - 1
-    pub max_sample_value:u16,
+    pub max_sample_values:Vec<u16>,
 
     // 0x011C support only 1
     pub planar_config: u16,
@@ -358,7 +358,7 @@ pub struct Tiff {
     pub predictor: u16,             // 0x013D
     pub extra_samples:Vec<u16>,     // 0x0152
     pub tiff_headers: TiffHeaders,
-    pub icc_profile: Option<Vec<u8>>,
+    pub icc_profile: Option<Vec<u8>>,       
 
     // pub predictor // if predictor is 2,pixels are horizontal differencing. not support
 }
@@ -383,8 +383,8 @@ impl Tiff {
         let  mut samples_per_pixel:u16  = 0;        // 0x0115
         let  mut rows_per_strip = 0_u32;           // 0x0116 also width * Bitspersample /8  <= row_per_strip
         let  mut strip_byte_counts = vec![];        // 0x0117 For each strip;the number of bytes in the strip after compression.
-        let  min_sample_value:u16 = 0;          // 0x0118 also no use
-        let  mut max_sample_value:u16 = 0;          // 0x0119 default 2**(BitsPerSample) - 1
+        let  mut min_sample_values = vec![];          // 0x0118 also no use
+        let  mut max_sample_values = vec![];          // 0x0119 default 2**(BitsPerSample) - 1
         let  mut planar_config: u16 = 1;            // 0x011c also 1
         let  mut compression: Compression =Compression::Unknown;      // 0x0103 see enum Compression
         // may
@@ -576,13 +576,18 @@ impl Tiff {
                         }
                     }
                 },
-                0x119 => {
-                    if header.length == 1 {
+                0x118 => {
+                    for i in 0..header.length {
                         if let DataPack::Short(d) = &header.data {
-                            max_sample_value =  d[0];
+                            min_sample_values.push(d[i]);
                         }
-                    } else {
-                        max_sample_value = 255;
+                    }
+                },
+                0x119 => {
+                    for i in 0..header.length {
+                        if let DataPack::Short(d) = &header.data {
+                            max_sample_values.push(d[i]);
+                        }
                     }
                 },
                 0x11c => {
@@ -648,8 +653,8 @@ impl Tiff {
             samples_per_pixel,
             rows_per_strip,
             strip_byte_counts ,
-            min_sample_value,
-            max_sample_value,
+            min_sample_values,
+            max_sample_values,
             planar_config,
             compression,
             x_resolution,

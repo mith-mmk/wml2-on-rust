@@ -1,5 +1,6 @@
 //!
-//! TIFF Decoder No test
+//! TIFF Decoder is support No Compress,LZW,Pack bits,JPEG(new style),Adobe Deflate images.
+//! 
 //! 
 
 type Error = Box<dyn std::error::Error>;

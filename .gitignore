@@ -1,5 +1,5 @@
 target
 /test
 .env
-Cargo.lock
 /wml2-win
+Cargo.lock

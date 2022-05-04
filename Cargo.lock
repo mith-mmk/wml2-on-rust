@@ -23,7 +23,7 @@ checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 [[package]]
 name = "icc-profile"
 version = "0.0.1"
-source = "git+https://github.com/mith-mmk/icc_profile#1e2621384a25dd6ed64d1841223bd78958052a08"
+source = "git+https://github.com/mith-mmk/icc_profile#eae2707c1cdbf9d6a75aa2a2c05760c125405206"
 dependencies = [
  "bin-rs",
 ]

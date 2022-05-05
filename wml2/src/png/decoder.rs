@@ -142,7 +142,7 @@ fn load_grayscale(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
     return Ok(None)
 }
 
-fn load_grayscale_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
+fn load_grayscale_progressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
 -> Result<Option<ImgWarnings>,Error> {
     let is_alpha = if header.color_type == 6 {1} else {0};
     let mut prev_buf:Vec<u8> = Vec::new();
@@ -422,7 +422,7 @@ fn load_truecolor(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
     return Ok(None)
 }
 
-fn load_truecolor_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
+fn load_truecolor_progressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
 -> Result<Option<ImgWarnings>,Error> {
     let is_alpha = if header.color_type == 6 {1} else {0};
     let mut prev_buf:Vec<u8> = Vec::new();
@@ -639,7 +639,7 @@ fn load_index_color(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions)
     return Ok(None)
 }
 
-fn load_index_color_prgressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
+fn load_index_color_progressive(header:&PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) 
 -> Result<Option<ImgWarnings>,Error> {
     if header.pallete.is_none() {
         let string = "Pallte data is nothing.";
@@ -718,7 +718,7 @@ fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result
                 if header.interace_method == 0 {
                     return load_grayscale(&header,&buffer,option)
                 } else {
-                    return load_grayscale_prgressive(&header,&buffer,option)
+                    return load_grayscale_progressive(&header,&buffer,option)
                 }
             } else {
                 let color_max = 1 << header.bitpersample;
@@ -731,7 +731,7 @@ fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result
                 if header.interace_method == 0 {
                     return load_index_color(&header,&buffer,option)
                 } else {
-                    return load_index_color_prgressive(&header,&buffer,option)
+                    return load_index_color_progressive(&header,&buffer,option)
                 }
             }
         },
@@ -739,14 +739,14 @@ fn load(header:&mut PngHeader,buffer:&[u8] ,option:&mut DecodeOptions) -> Result
             if header.interace_method == 0 {
                 return load_truecolor(&header,&buffer,option)
             } else {
-                return load_truecolor_prgressive(&header,&buffer,option)
+                return load_truecolor_progressive(&header,&buffer,option)
             }
         },
         3 => {
             if header.interace_method == 0 {
                 return load_index_color(&header,&buffer,option)
             } else {
-                return load_index_color_prgressive(&header,&buffer,option)
+                return load_index_color_progressive(&header,&buffer,option)
             }
         },
         _ => {

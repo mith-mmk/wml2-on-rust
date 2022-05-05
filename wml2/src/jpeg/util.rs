@@ -4,12 +4,10 @@
  */
 
 // type Error = Box<dyn std::error::Error>;
-use crate::iccprofile::ICCProfile;
 use std::collections::HashMap;
 use crate::metadata::DataMap;
 use crate::jpeg::header::HuffmanTables;
 use crate::jpeg::header::HuffmanTable;
-use crate::iccprofile::{icc_profile_header_print, icc_profile_print};
 use super::header::JpegAppHeaders::{Adobe, Ducky, Exif,  Jfif, Unknown};
 use super::header::JpegAppHeaders::ICCProfile as JpegICCProfile;
 use super::header::JpegHaeder;
@@ -164,21 +162,6 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
         _ => {
 
         },
-    }
-
-    let mut icc_profile:Option<ICCProfile> = None;
-
-    if let Some(data) = &header.icc_profile.as_ref() {
-        icc_profile = Some(ICCProfile::new(data));
-//        let _decoded_icc_profile = icc_profile_decode(&ICCProfile::new(data));
-    }
-
-    if let Some(ref icc_profile) = icc_profile {
-        if option & 0x40 == 0x40 {  // ICC Profile
-            str += &icc_profile_print(icc_profile);
-        } else if option & 0x60 == 0x20 {  // ICC Profile
-            str += &icc_profile_header_print(icc_profile);
-        }
     }
 
 

@@ -254,18 +254,11 @@ pub struct Ducky {
     pub copyright: String,
 }
 
-pub enum ICCProfileData {
-    Header(crate::iccprofile::ICCProfile),
-    Data(Vec<u8>),
-}
-
 pub struct ICCProfilePacker {
     pub number : usize,
     pub total: usize,
     pub data: Vec<u8>,
 }
-
-
 
 
 #[allow(unused)]

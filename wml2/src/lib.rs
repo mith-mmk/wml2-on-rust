@@ -63,7 +63,7 @@ pub mod png;
 pub mod error;
 pub mod warning;
 pub mod util;
-pub mod iccprofile;
+//pub mod iccprofile;
 pub mod color;
 pub mod decoder;
 pub mod metadata;

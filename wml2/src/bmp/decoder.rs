@@ -17,7 +17,7 @@ use crate::warning::ImgWarnings;
 use crate::bmp::header::BitmapHeader;
 use crate::bmp::header::Compressions;
 
-fn covert_rgba32(buffer:&[u8],line: &mut Vec<u8>,header:&BitmapHeader,bit_count: usize) -> Result<(),Error> {
+fn convert_rgba32(buffer:&[u8],line: &mut Vec<u8>,header:&BitmapHeader,bit_count: usize) -> Result<(),Error> {
     let mut offset = 0;
     let width = header.width.abs() as usize;
     match bit_count {
@@ -134,7 +134,7 @@ fn decode_rgb<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  De
         let buffer = reader.read_bytes_as_vec(line_size)?;
         let y = height -1 - y_ ;
 //        let offset = y_ * line_size;
-        covert_rgba32(&buffer,&mut line,header,header.bit_count)?;
+        convert_rgba32(&buffer,&mut line,header,header.bit_count)?;
         if header.height > 0 {
             option.drawer.draw(0,y,width,1,&line,None)?;
         } else {
@@ -171,13 +171,13 @@ fn decode_rle<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  De
                     if data1 == 0 {
                         x += data0 as usize;
                     } else {
-                        covert_rgba32(&buf, &mut line, header,8)?;
+                        convert_rgba32(&buf, &mut line, header,8)?;
                         option.drawer.draw(0,y,width,1,&line,None)?;
                         if y == 0 {break;}
                         y -= 1;
                         buf  = (0..((width + rev_bytes -1) / rev_bytes)).map(|_| 0).collect();
                         for _ in 0..data1 as usize {
-                            covert_rgba32(&buf, &mut line, header,8)?;
+                            convert_rgba32(&buf, &mut line, header,8)?;
                             option.drawer.draw(0,y,width,1,&line,None)?;
                             if y == 0 {break;}
                             y -= 1;
@@ -236,7 +236,7 @@ fn decode_rle<B:BinaryReader>(reader:&mut B,header:&BitmapHeader,option:&mut  De
                 }
             }
         }
-        covert_rgba32(&buf, &mut line, header,8)?;
+        convert_rgba32(&buf, &mut line, header,8)?;
         if header.height > 0 {
             option.drawer.draw(0,y,width,1,&line,None)?;
         } else {

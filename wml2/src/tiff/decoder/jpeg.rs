@@ -6,7 +6,7 @@ use crate::draw::DecodeOptions;
 use bin_rs::reader::BinaryReader;
 
 
-// Tiff in JPEG is multi part images.
+// Tiff in JPEG is a multi parts image.
 pub fn decode_jpeg_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
 
     let mut jpeg_tables:Option<Vec<u8>> = None;

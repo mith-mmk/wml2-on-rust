@@ -148,7 +148,7 @@ impl Lzwdecode {
 
         loop {
             let res = self.get_bits();    // GIF Lsb only Tiff use Lsb or Msb
-            // If data is shotage,it returns value and waits next buffer. 
+            // If data is shotage,it returns values and waits a next buffer. 
             let code = if let Ok(code) = res { code } else {return Ok(data)};
 
             if code == self.clear {

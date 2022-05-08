@@ -1,6 +1,8 @@
 mod white;
 mod black;
-
+type Error = Box<dyn std::error::Error>;
+use crate::tiff::decoder::Tiff;
+use bin_rs::io::read_byte;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 pub use white::white_tree;
@@ -25,60 +27,93 @@ pub enum Value {
 pub struct BitReader {
     pub buffer: Vec<u8>,
     ptr: usize,
-    bptr: usize,
-    bits: u32,
+    left_bits: usize,
+    last_byte: u32,
+    bit_mask: u32,
+    is_lsb:bool,
 }
 
 
 impl BitReader {
-    pub fn new(data:&[u8]) -> Self {
-        Self {
+    pub fn new(data:&[u8],is_lsb:bool) -> Self {
+        let mut this = Self {
             buffer: data.to_vec(),
+            last_byte: 0,
             ptr: 0,
-            bptr: 0,
-            bits: 0,
-        }
+            left_bits: 0,
+            bit_mask: 0,
+            is_lsb: is_lsb,
+        };
+        this.fill_bits();
+
+        this
     }
 
-    fn fill_bits(&mut self) -> Result<(),ImgError>{
-        if self.bptr < 8 && self.ptr < self.buffer.len() {
-            return Err(ImgError::new_const(ImgErrorKind::IOError,"buffer overrun".to_string()))
-        }
-
-        if self.bptr < 24 {
-            if self.ptr < self.buffer.len() {
-                self.bits = self.bits << 8 | self.buffer[self.ptr] as u32;
-                self.ptr += 1;
-                self.bptr += 8;
-            }
-        }
-
-        Ok(())
-    }
-
-    fn get_bit(&self) -> bool {
-        if (self.bits >> self.bptr) & 0x01 == 0x01 {
-            true
+    // use 32bit
+    fn fill_bits(&mut self) {
+        self.last_byte = 0;
+        let ptr = self.ptr;
+        if self.is_lsb {
+            self.last_byte = read_byte(&self.buffer,  ptr) as u32;
+            self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u32) << 8;
+            self.last_byte |= (read_byte(&self.buffer,ptr + 2) as u32) << 16;
         } else {
-            false
+            self.last_byte = (read_byte(&self.buffer,  ptr) as u32) << 16;
+            self.last_byte |= (read_byte(&self.buffer,ptr + 1) as u32) << 8;
+            self.last_byte |= read_byte(&self.buffer,ptr + 2) as u32;
+        }
+        self.left_bits = 24;
+        self.ptr = 3;
+
+    }
+
+    fn get_bits(&mut self,size:usize) -> Result<usize,Error> {
+        if self.is_lsb {
+            return self.get_bits_lsb(size)
+        } else {
+            return self.get_bits_msb(size)
         }
     }
 
-    fn get_bits(&mut self,size:usize) -> Result<usize,ImgError> {
-        self.fill_bits()?;
-        let mut val = 0;
-        for _ in 0..size {
-            val = val << 1;
-            if self.get_bit() {
-                val += 1;
+    fn get_bits_msb(&mut self,size:usize) -> Result<usize,Error> {
+        while self.left_bits <= 16 {
+            if self.ptr >= self.buffer.len() { 
+                if self.left_bits <= 8 && self.left_bits < size {
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::IOError, "data shortage".to_string())))
+                }
+                break;
             }
-            if self.bptr == 0 {break;}
-            self.bptr -= 1;
+
+            self.last_byte = (self.last_byte << 8) | (self.buffer[self.ptr] as u32);
+            self.ptr +=1;
+            self.left_bits += 8;
         }
-        Ok(val)
+        let bits = (self.last_byte >> (self.left_bits - size)) & self.bit_mask;
+
+        self.left_bits -= size;
+        Ok(bits as usize)
     }
 
-    fn value(&mut self, tree:&Value) -> Result<isize,ImgError> {
+    fn get_bits_lsb(&mut self,size:usize) -> Result<usize,Error> {
+        while self.left_bits <= 16 {
+            if self.ptr >= self.buffer.len() { 
+                if self.left_bits <= 8 && self.left_bits < size {
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::IOError, "data shortage".to_string())))
+                }
+                break;
+            }
+            self.last_byte = (self.last_byte >> 8) & 0xffff | ((self.buffer[self.ptr] as u32) << 16);
+
+            self.ptr +=1;
+            self.left_bits += 8;
+        }
+        let bits = (self.last_byte >>  (24 - self.left_bits)) & self.bit_mask;
+
+        self.left_bits -= size;
+        Ok(bits as usize)
+    }
+
+    fn value(&mut self, tree:&Value) -> Result<isize,Error> {
         let val;
         let mut tree = tree;
     
@@ -109,8 +144,8 @@ impl BitReader {
                     break;
                 },
                 Value::None => {
-                    return Err(ImgError::new_const(ImgErrorKind::DecodeError, 
-                            "A value is none in a table".to_owned()))
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, 
+                            "A value is none in a table".to_owned())))
                 },
             }
         }
@@ -118,12 +153,17 @@ impl BitReader {
     }
 }
 
-pub fn decode(buf:&[u8],width:usize,height:usize,photometric_interpretation: u16) -> Result<Vec<u8>,ImgError> {
+pub fn decode(buf:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
+    let width = header.width.clone() as usize;
+    let height = header.height.clone() as usize;
+    let photometric_interpretation = header.photometric_interpretation.clone();
+    let is_lsb = if header.fill_order==2 {true} else {false};
+
     let mut data = vec![];
     let white = white_tree();
     let black = black_tree();
 
-    let mut reader = BitReader::new(buf);
+    let mut reader = BitReader::new(buf,is_lsb);
     let mut x = 0;
     let mut y = 0;
 

@@ -483,8 +483,7 @@ pub fn decode_none_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut
 
 pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
     let buf = read_strips(reader, header)?;
-    let data= ccitt::decode(&buf, header.width as  usize, header.height as usize
-            ,header.photometric_interpretation)?;
+    let data= ccitt::decode(&buf, header)?;
     let warnings = draw(&data,option,header)?;
     Ok(warnings)
 }

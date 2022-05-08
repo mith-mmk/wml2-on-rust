@@ -18,6 +18,7 @@ use crate::error::ImgErrorKind;
 use self::jpeg::decode_jpeg_compresson;
 mod packbits;
 mod jpeg;
+mod ccitt;
 
 fn create_pallet(bits:usize,is_black_zero:bool) -> Vec<RGBA>{
     let color_max = 1 << bits;
@@ -480,6 +481,14 @@ pub fn decode_none_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut
     Ok(warnings)
 }
 
+pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
+    let buf = read_strips(reader, header)?;
+    let data= ccitt::decode(&buf, header.width as  usize, header.height as usize
+            ,header.photometric_interpretation)?;
+    let warnings = draw(&data,option,header)?;
+    Ok(warnings)
+}
+
 pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
 
     let header = Tiff::new(reader)?;
@@ -511,7 +520,11 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
         },
         Compression::AdobeDeflate => {
             return decode_deflate_compresson(reader,option,&header);
-        }
+        },
+        // no debug
+        Compression::CCITTHuffmanRLE => {
+            return decode_ccitt_compresson(reader, option, &header);
+        },
 
         _ => {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not suport compression".to_string())));

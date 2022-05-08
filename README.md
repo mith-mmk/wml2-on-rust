@@ -16,7 +16,7 @@ $ cargo run --example to_bmp --release <inputfile> <output_dir>
 $ cargo run --example metadata --release <inputfile>
 
 
-# Support Format 0.0.10
+# Support Format 0.0.11
 
 |format|enc|dec|  |
 |------|---|---|--|
@@ -145,12 +145,10 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.8 add Jpeg multithread(pipelined),Progressive Jpeg has bugs(4,1,1) / BMP saver / Animation GIF(alpha)
 - 0.0.9 Png Saver
 - 0.0.10 Progressive Bug(4,1,1) fix
+- 0.0.11 obsolete ICCProfile parse in verbose -> use metadata - see https://github.com/mith-mmk/icc_profile
 
 # todo
-- TIFF
-- animation image buffer
-- ICCProfile Reader
 - Formated Header writer
 - other decoder
 - color translation
-- encoder
+- jpeg encoder

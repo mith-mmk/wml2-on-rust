@@ -169,10 +169,10 @@ impl Compression {
                 "CCITT Huffman RLE".to_string()
             },
             Compression::CCITTGroup3Fax => {
-                "CCITF Group3 Fax".to_string()
+                "CCITT Group3 Fax".to_string()
             },
             Compression::CCITTGroup4Fax => {
-                "CCIT Group4 Fax".to_string()
+                "CCITT Group4 Fax".to_string()
             },
             Compression::LZW => {
                 "LZW(Tiff)".to_string()

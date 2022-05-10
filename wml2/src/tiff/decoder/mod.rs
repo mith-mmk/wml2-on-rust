@@ -54,7 +54,7 @@ fn planar_to_chuncky(data:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
     Ok(buf)
 }
 
-pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error> {
+pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error>  {
     if data.len() == 0 {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data empty.".to_string())));
     }
@@ -112,10 +112,10 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This is an index color image,but A color table is empty.".to_string())));
         }
     }
-    option.drawer.init(header.width as usize,header.height as usize,None)?;
+
     let mut i = 0;
 
-    for y in 0..header.height as usize {
+    for y in y..(y+strip) {
         let mut buf = vec![];
         let mut prevs = vec![0_u8;header.samples_per_pixel as usize];
         for _ in 0..header.width as usize {
@@ -151,6 +151,10 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                             }
                         },
                         8 => {
+                            if i >= data.len() {
+                                //return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Buffer shotage".to_string())));
+                                return Ok(None)
+                            }
                             let mut color = data[i];
                             if header.predictor == 2 {
                                 color += prevs[0];
@@ -237,6 +241,10 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
                     let (mut r, mut g, mut b, mut a) = (0,0,0,0xff);
                     match header.bitspersamples[0] {  //bit per samples same (8,8,8), but also (8,16,8) pattern 
                         8 => {
+                            if i + 2 >= data.len() {
+//                                return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Buffer shotage".to_string())));
+                                return Ok(None)
+                            }
                             r = data[i];
                             g = data[i+1];
                             b = data[i+2];
@@ -425,11 +433,32 @@ pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option
         }
     }
     Ok(None)
+
+}
+
+pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error> {
+    if data.len() == 0 {
+        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data empty.".to_string())));
+    }
+    option.drawer.init(header.width as usize,header.height as usize,None)?;
+    draw_strip(data, 0, header.height as usize, option, header)
 }
 
 fn read_strips<'decode,B: BinaryReader>(reader:&mut B,header: &Tiff) -> Result<Vec<u8>,Error> {
     let mut data = vec![];
     if header.strip_offsets.len() != header.strip_byte_counts.len() {
+        if header.strip_offsets.len() == 1 && header.strip_byte_counts.len() == 0 && header.compression == Compression::NoneCompression {
+            let offset = header.strip_offsets[0] as u64;
+            reader.seek(std::io::SeekFrom::Start(offset))?;
+            let mut byte = 0;
+            for sample in &header.bitspersamples {
+                byte += (*sample as u32 + 7) / 8;
+            }
+
+            let strip_byte_counts = header.width * header.height * byte;
+            let buf = reader.read_bytes_as_vec(strip_byte_counts as usize)?;
+            return Ok(buf)
+        }
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Mismach length, image strip offsets and strib byte counts.".to_string())));
     }
     for (i,offset) in header.strip_offsets.iter().enumerate() {
@@ -441,14 +470,26 @@ fn read_strips<'decode,B: BinaryReader>(reader:&mut B,header: &Tiff) -> Result<V
 }
 
 pub fn decode_lzw_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
-    let data = read_strips(reader, header)?;
-
     let is_lsb = if header.fill_order == 2 { true } else {false}; // 1: MSB 2: LSB
-    let mut decoder = Lzwdecode::tiff(is_lsb);
-
-    let data = decoder.decode(&data)?;
-    let warnings = draw(&data,option,header)?;
-    Ok(warnings)
+    option.drawer.init(header.width as usize,header.height as usize,None)?;
+    let mut y = 0;
+    let mut strip = header.rows_per_strip as usize;
+    for (i,offset) in header.strip_offsets.iter().enumerate() {
+        reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
+        let buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
+        let mut decoder = Lzwdecode::tiff(is_lsb);
+        let data = decoder.decode(&buf)?;
+        draw_strip(&data, y, strip, option, header)?;
+        y += strip;
+        if y >= header.height as usize {
+            break;
+        }
+        if y + strip >= header.height as usize {
+            strip = header.height as usize - y;
+        }
+    }
+    
+    Ok(None)
 }
 
 
@@ -481,16 +522,42 @@ pub fn decode_none_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut
     Ok(warnings)
 }
 
-pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
-    let buf = read_strips(reader, header)?;
-    let data= ccitt::decode(&buf, header)?;
-    let warnings = draw(&data,option,header)?;
-    Ok(warnings)
+
+pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &mut Tiff)-> Result<Option<ImgWarnings>,Error> {
+//    let buf = read_strips(reader, header)?;
+
+    option.drawer.init(header.width as usize,header.height as usize,None)?;
+    let mut y = 0;
+    let mut strip = header.rows_per_strip as usize;
+
+    let bak_bitspersample = header.bitspersample;
+    let bak_bitspersamples = header.bitspersamples.to_vec();
+    header.bitspersample = 8;
+    header.bitspersamples = [8].to_vec();
+
+
+    for (i,offset) in header.strip_offsets.iter().enumerate() {
+        reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
+        let buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
+        let data= ccitt::decode(&buf, header)?;
+        draw_strip(&data, y, strip, option, header)?;
+        y += strip;
+        if y >= header.height as usize {
+            break;
+        }
+        if y + strip >= header.height as usize {
+            strip = header.height as usize - y;
+        }
+    }
+    header.bitspersample = bak_bitspersample;
+    header.bitspersamples = bak_bitspersamples.to_vec();
+    Ok(None)
 }
+
 
 pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
 
-    let header = Tiff::new(reader)?;
+    let mut header = Tiff::new(reader)?;
 
     option.drawer.set_metadata("Format",DataMap::Ascii("Tiff".to_owned()))?;
 //    let mut map = super::util::make_metadata(&header.tiff_headers);
@@ -521,8 +588,8 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
             return decode_deflate_compresson(reader,option,&header);
         },
         // no debug
-        Compression::CCITTHuffmanRLE => {
-            return decode_ccitt_compresson(reader, option, &header);
+        Compression::CCITTHuffmanRLE | Compression::CCITTGroup3Fax => {
+            return decode_ccitt_compresson(reader, option, &mut header);
         },
 
         _ => {

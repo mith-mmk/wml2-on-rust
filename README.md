@@ -103,7 +103,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - encode_start encoder start
 - encode_pick  encoder pick image data from Image Buffer
 - encode_end   terminate encode
-- set_metadata // 0.0.10 after
+- metadata // 0.0.10 after
 
 # Metadata
  Metadatas is had by (Key Value) HashMap.

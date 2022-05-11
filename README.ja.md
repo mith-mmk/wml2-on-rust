@@ -64,7 +64,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
 
 ```
- ImageBufferはDrawCallback トレイトを実装して作成する。
+ ImageBufferはDrawCallback トレイトを実装して作成されている。
 
  - init -> デコーダが最初に呼び出す。関数は引数をみてからバッファを確保することが可能。
  - draw -> デコーダがデータを書き出す時に呼び出す。画像全体とは限らず一部だけ書き出すことが可能
@@ -72,7 +72,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
  - next -> 複数イメージが存在する場合、次の処理を要求します。
   - アニメーション(GIF/APNG)もしくはマルチイメージフォーマット（Tiffなど）をサポートするときに利用。
  - terminate -> デコーダが終了したときに呼び出され、後処理をおこなう関数
- - set_metadata -> メタデータをセットします(0.0.10移行)
+ - set_metadata -> メタデータをセットする(0.0.10移行)
 
 # using saver
 ```rust
@@ -98,7 +98,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - encode_start エンコーダが開始された時呼び出される
 - encode_pick  エンコーダが画像の一部のデータを読み取る時に呼び出れる関数
 - encode_end   エンコーダが終了したときに呼び出される関数
-- set_metadata メタデータを要求した時に呼び出される関数。0.0.10移行
+- metadata メタデータを要求した時に呼び出される関数。0.0.10移行
 
 # Metadata
  Metadatasは、(Key Value)のHashMapになっている。KeyはString型、ValueはDataMap型で実装されている。.

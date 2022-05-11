@@ -98,6 +98,7 @@ pub struct BitReader {
     left_bits: usize,
     last_byte: u32,
     is_lsb:bool,
+    flag:bool,
 }
 
 
@@ -109,6 +110,7 @@ impl BitReader {
             ptr: 0,
             left_bits: 0,
             is_lsb: is_lsb,
+            flag: false
         };
 //        this.fill_bits();
 
@@ -184,7 +186,7 @@ impl BitReader {
         while self.left_bits <= 24 {
             if self.ptr >= self.buffer.len() { 
                 if self.left_bits <= 8 && self.left_bits < size {
-                    return Err(Box::new(ImgError::new_const(ImgErrorKind::IOError, "data shortage".to_string())))
+ //                   return Err(Box::new(ImgError::new_const(ImgErrorKind::IOError, "data shortage".to_string())))
                 }
                 break;
             }
@@ -209,11 +211,27 @@ impl BitReader {
     fn value(&mut self,tree:&HuffmanTree) -> Result<i32,Error> {
         let pos = self.look_bits(tree.working_bits)?;
         let (mut bits, mut val) = tree.matrix[pos];
+        if self.flag {
+            if tree.working_bits == 9 {
+                println!("{} {} {:09b} {}",bits,val,pos,tree.working_bits);
+            } else {
+                println!("{} {} {:06b} {}",bits,val,pos,tree.working_bits);
+            }
+
+        }
         if bits == -1 {
             let pos = self.look_bits(tree.max_bits)?;
             (bits,val) = tree.append[pos];
+            if self.flag {
+                if tree.working_bits == 9 {
+                    println!("{} {} {:012b} {}",bits,val,pos,tree.working_bits);
+                } else {
+                    println!("{} {} {:013b} {}",bits,val,pos,tree.working_bits);
+                }
+        
+            }
             if bits == -1 { //fill
-                self.skip_bits(12);
+                self.skip_bits(1);
                 return self.value(tree);
             }
         }
@@ -282,44 +300,35 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
     }*/
 
     let mode = if next_line_2d { Mode::get(&mut reader)? } else { Mode::Horiz }; 
-    println!("mode {:?}",mode);
+
 
     loop {
-        if y == 489 {
-            print!("\ny:{} {}",y,height);
-        }
+
+
         if y >= height {
             break;
         }
+
+        if y >= 487 && y <= 490 {
+            println!("X{} y{}",x,y);
+        }
+
+        if y >= 487 {reader.flag = true}
+        if y >= 491 {reader.flag = false}
+
       
         let run_len = reader.run_len(&white)?;
         white_run[run_len as usize % 64] = white_run[run_len as usize % 64] + 1;
-        if y == 489 {
-            print!(" w {} ",run_len);
-        }
+
         if run_len == -2 {  // EOL
-            if y == 489 {
-                println!("EOL x:{} ",x);
-                for (i,val) in white_run.iter().enumerate() {
-                    print!("{:3} {:6},    ",i,val);
-                    if i % 8 == 7 {
-                        println!("");
-                    }
-                }
-                for (i,val) in black_run.iter().enumerate() {
-                    print!("{:3} {:6},    ",i,val);
-                    if i % 8 == 7 {
-                        println!("");
-                    }
-                }   
-            }
+
             for _ in x..width {
                 data.push(0x00);
             }
 
             x = 0;
             y += 1;
-            continue;
+//            continue;
         } 
 //        let ex = width.min(x + run_len as usize);
 
@@ -331,28 +340,9 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
         let run_len = reader.run_len(&black)?;
         black_run[run_len as usize % 64] = black_run[run_len as usize % 64] + 1;
 
-        if y == 489 {
-            print!("b {} ",run_len);
-        }
-
         if run_len == -2 {  // EOL
             for _ in x..width {
                 data.push(0x00);
-            }
-            if y == 489 {
-                    println!("EOL x:{} ",x);
-                    for (i,val) in white_run.iter().enumerate() {
-                        print!("{:3} {:6},    ",i,val);
-                        if i % 8 == 7 {
-                            println!("");
-                        }
-                    }
-                    for (i,val) in black_run.iter().enumerate() {
-                        print!("{:3} {:6},    ",i,val);
-                        if i % 8 == 7 {
-                            println!("");
-                        }
-                    }   
             }
             /*
             let bit = reader.get_bits(1)?;
@@ -361,7 +351,7 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
             }*/
             x = 0;
             y += 1;
-            continue;
+//            continue;
         } 
 //        let ex = width.min(x + run_len as usize + 1);
 //        let ex = x + run_len as usize + 1;

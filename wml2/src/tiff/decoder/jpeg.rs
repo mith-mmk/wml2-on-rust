@@ -13,7 +13,8 @@ pub fn decode_jpeg_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut
     for header in &header.tiff_headers.headers {
         if header.tagid == 0x015b {
             if let DataPack::Undef(data) = &header.data {
-                jpeg_tables = Some(data.to_vec())
+                jpeg_tables = Some(data.to_vec());
+                break;
             }
         }
     }

@@ -527,31 +527,23 @@ pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mu
 //    let buf = read_strips(reader, header)?;
 
     option.drawer.init(header.width as usize,header.height as usize,None)?;
-    let mut y = 0;
-    let mut strip = header.rows_per_strip as usize;
+//    let mut y = 0;
+//    let mut strip = header.rows_per_strip as usize;
+//    let mut warnings = None;
 
     let bak_bitspersample = header.bitspersample;
     let bak_bitspersamples = header.bitspersamples.to_vec();
     header.bitspersample = 8;
     header.bitspersamples = [8].to_vec();
 
+    let buf = read_strips(reader, header)?;
+    let (data,_warning) = ccitt::decode(&buf, header)?;
 
-    for (i,offset) in header.strip_offsets.iter().enumerate() {
-        reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
-        let buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
-        let data= ccitt::decode(&buf, header)?;
-        draw_strip(&data, y, strip, option, header)?;
-        y += strip;
-        if y >= header.height as usize {
-            break;
-        }
-        if y + strip >= header.height as usize {
-            strip = header.height as usize - y;
-        }
-    }
+    let warnings = draw(&data,option,header)?;
+
     header.bitspersample = bak_bitspersample;
     header.bitspersamples = bak_bitspersamples.to_vec();
-    Ok(None)
+    Ok(warnings)
 }
 
 

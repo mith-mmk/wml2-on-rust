@@ -6,6 +6,7 @@
 type Error = Box<dyn std::error::Error>;
 
 /* for EXIF */
+
 use crate::tiff::util::print_tags;
 use crate::color::RGBA;
 use crate::error::ImgError;
@@ -13,6 +14,9 @@ use crate::error::ImgErrorKind;
 use bin_rs::reader::BinaryReader;
 use bin_rs::Endian;
 use std::io::SeekFrom;
+
+
+
 
 
 trait RationalNumber {

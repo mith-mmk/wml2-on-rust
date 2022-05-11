@@ -1,38 +1,40 @@
 Notice: Specification of this library is not decision.
 
 # WML2 - Web graphic Multi format Library To Rust
-- Rust writing graphic loader for WASM
-- only on memory use
-- callback system
-- not use multithreding
-- No need to force use - becouse You can use Javascript Image.
+- 名前はただのこじつけ
+- WASMで動作可能 https://github.com/mith-mmk/wasm-paint
+- メモリーバッファで動作可能
+- callback 関数を使った拡張が可能
+- UIはまだない
 
-# run example
-See wml-test/examples
-## decode bmp reader
+# 実装例
+wml-test/examplesを参考
+
+## BMPリーダーのサンプル
 ```
 $ cargo run --example to_bmp --release <inputfile> <output_dir>
 ```
-## metadata reader
+
+## メタデータリーダーのサンプル
 
 ```
 $ cargo run --example metadata --release <inputfile>
 ```
 
-# Support Format 0.0.11
+# サポートフォーマット 0.0.11
 
-|format|enc|dec|  |
+|フォーマット|エンコード|デコード|  |
 |------|---|---|--|
-|BMP|O|O|encode only no compress|
-|JPEG|x|O|Baseline and huffman progressive|
-|GIF|x|O|with Animation GIF|
-|PNG|O|O|APNG not supprt/encode Truecolor + alpha only|
-|TIFF|x|o|no compression/LZW/Packbits/Jpeg(new)|
+|BMP|O|O|エンコーダは無圧縮のみ|
+|JPEG|x|O|算術符号には対応していない|
+|GIF|x|O|アニメーションGIF対応|
+|PNG|O|O|APNG対応|
+|TIFF|x|o|無圧縮/LZW/Packbits/Jpeg(new)/3G Fax(1Dのみ)に対応|
 |WEBP|x|x|not support|
 
-# using loader
-- an on-memory compress buffered image or an image file 
-- output memory buffer and callback (defalt use ImageBuffer)
+# 使い方
+- バッファ上にあるイメージをロードする
+- Callbackを実装することで拡張が可能 (デフォルトで ImageBufferが装備)
 
 ```rust
   let image = new ImageBuffer();
@@ -45,7 +47,7 @@ $ cargo run --example metadata --release <inputfile>
   let r = wml2::jpeg::decoder::decode(data, &mut option);
 ```
 
-## Symple Reader
+## シンプルデコーダ
 
 ```rust
 use std::error::Error;
@@ -62,22 +64,15 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
 
 ```
- ImageBuffer impl DrawCallback trait, 5 function.
+ ImageBufferはDrawCallback トレイトを実装して作成する。
 
- - init -> callback initialize.Decoder return width and height (and more...).You must get buffers or resours for use.
- - draw -> callback draw.Decoder return a part of image.You must draw or other process.
- - verbose -> callback verbose. for debug use
- - next -> If the image has more frame or rewrite(ex.progressive jpeg),next function return value DrawNextOptions,
-    - Continue,             -- continue image draw 
-    - NextImage,            -- this image has other images
-    - ClearNext,            -- You may next image draw before clear
-    - WaitTime(usize),      -- You may wait time(ms)
-    - None,                 -- none option
-    - and other...(no impl)
-   You may impl animation,slice images and more.
-
- - terminate -> You can impl terminate process
- - set_metadata -> 0.0.10 after 
+ - init -> デコーダが最初に呼び出す。関数は引数をみてからバッファを確保することが可能。
+ - draw -> デコーダがデータを書き出す時に呼び出す。画像全体とは限らず一部だけ書き出すことが可能
+ - verbose -> デバッグ用の詳細情報を返します
+ - next -> 複数イメージが存在する場合、次の処理を要求します。
+  - アニメーション(GIF/APNG)もしくはマルチイメージフォーマット（Tiffなど）をサポートするときに利用。
+ - terminate -> デコーダが終了したときに呼び出され、後処理をおこなう関数
+ - set_metadata -> メタデータをセットします(0.0.10移行)
 
 # using saver
 ```rust
@@ -98,16 +93,15 @@ pub fn main()-> Result<(),Box<dyn Error>> {
   }
 ```
 
- ImageBuffer encoder impl PickCallback trait, 4 function.
-
-- encode_start encoder start
-- encode_pick  encoder pick image data from Image Buffer
-- encode_end   terminate encode
-- set_metadata // 0.0.10 after
+ ImageBufferのエンコーダはPickCallbackトレイトを実装している
+ 
+- encode_start エンコーダが開始された時呼び出される
+- encode_pick  エンコーダが画像の一部のデータを読み取る時に呼び出れる関数
+- encode_end   エンコーダが終了したときに呼び出される関数
+- set_metadata メタデータを要求した時に呼び出される関数。0.0.10移行
 
 # Metadata
- Metadatas is had by (Key Value) HashMap.
- Metadata key is String.value is into DataMap.
+ Metadatasは、(Key Value)のHashMapになっている。KeyはString型、ValueはDataMap型で実装されている。.
 
 ```rust
 
@@ -147,8 +141,10 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.7 add PNG
 - 0.0.8 add Jpeg multithread(pipelined),Progressive Jpeg has bugs(4,1,1) / BMP saver / Animation GIF(alpha)
 - 0.0.9 Png Saver
-- 0.0.10 Progressive Bug(4,1,1) fix
-- 0.0.11 obsolete ICCProfile parse in verbose -> use metadata - see https://github.com/mith-mmk/icc_profile
+- 0.0.10 Progressive JPEG YUV=4,1,1 fix
+- 0.0.11 
+  - ICCProfileパーサの除去 -> see https://github.com/mith-mmk/icc_profile に移行
+ - TIFF 3G FAX(1Dのみ)サポート
 
 # todo
 - Formated Header writer
@@ -161,4 +157,3 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
 # Author
  MITH@mmk https://mith-mmk.github.io/
-

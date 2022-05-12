@@ -101,7 +101,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - metadata メタデータを要求した時に呼び出される関数。0.0.10移行
 
 # Metadata
- Metadatasは、(Key Value)のHashMapになっている。KeyはString型、ValueはDataMap型で実装されている。.
+ Metadatasは、(Key Value)のHashMapになっている。KeyはString型、ValueはDataMap型で実装されている。
 
 ```rust
 
@@ -151,6 +151,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - other decoder
 - color translation
 - jpeg encoder
+- publish 0.1.0?
 
 #　License
  MIT License (C) 2022

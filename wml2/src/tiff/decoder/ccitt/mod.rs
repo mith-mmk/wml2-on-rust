@@ -382,7 +382,9 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
     let mut y = 0;
 
     while y < height {
-        print!("\ny {:04} {:4} ",y,codes.len());
+        if encoding == 2 {
+            print!("\ny {:04} {:?} ",y,codes);
+        }
 
         let mut a0 = 0;
         let mut code_num = 0;
@@ -399,13 +401,18 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                         eol = true;
                     } else {
                         let run_len = run_len.min((width - a0) as i32);
-                        a0 += run_len as usize; // a1
 
-                        for _ in 0..run_len {
+                        let now = data.len();
+
+                        for _ in 0..run_len {    
                             data.push(0x00);
-                        }
+                        }        
+                        a0 += run_len as usize; // a1
                         codes.push(a0);
-//                        code_num += 1;
+                    }
+
+                    if encoding == 2 {
+                        print!("Horiz {}",a0);
                     }
 
                     let run_len = reader.run_len(&black)?;
@@ -413,14 +420,15 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                         eol = true;
                     } else {
                         let run_len = run_len.min((width - a0) as i32);
-                        a0 += run_len as usize; // a2
 
                         for _ in 0..run_len {
                             data.push(0xff);
                         }
-                        print!("{} ",a0);
+                        a0 += run_len as usize; // a2
                         codes.push(a0);
-//                       code_num += 1;
+                    }
+                    if encoding == 2 {
+                        print!(" {} ",a0);
                     }
                 },
 
@@ -428,18 +436,26 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                     print!("V{} ",n);
 
                     let b1 = if pre_codes.len() > code_num {pre_codes[code_num]} else {width}; 
-                    let run_len = b1 + n - a0 ;  //a1 - a0
+                    let run_len = b1 - a0 ;  //a1 - a0
                     let run_len = run_len.min(width - a0);
                     a0 += run_len as usize;
-                    codes.push(a0);
-                    //let mut ptr = data.len() - width + n;   // b0
-                    let color = if code_num % 2 == 0 {0} else {0xff};
+                    codes.push(a0+n);
+                    let mut ptr = data.len() - width - n;   // b0
                     code_num += 1;
+                    let now = data.len();
+
+                    for j in 0..n {
+                        let i = n - j;
+                        let color = data[ptr];
+                        ptr += 1;
+                        data[now - i] = color;
+                    }
+
                     for _ in 0..run_len {
-                    //    let color = data[ptr];
-                    //    ptr += 1;
+                        let color = data[ptr];
+                        ptr += 1;
                         data.push(color);
-                    } 
+                    }
 
                     print!("{} ",a0);
                 },
@@ -447,17 +463,15 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                     print!("Vl{} ",n);
                     if pre_codes.len() > code_num {
                         let b1 = if pre_codes.len() > code_num {pre_codes[code_num]} else {width}; 
-                        let run_len = b1 - n - a0 ;  //a1 - a0
+                        code_num += 1;
+                        let run_len = if a0 < n {b1 - a0} else {b1 - a0 - n};  //a1 - a0
                         let run_len = run_len.min(width - a0);
                         a0 += run_len as usize;
-                        codes.push(a0);
-                   //     let mut ptr = data.len() - width - n;   // b0
-                        let color = if code_num % 2 == 0 {0} else {0xff};
-                        code_num += 1;
-//                        let color = data[ptr];
+                        codes.push(a0-n);
+                        let mut ptr = data.len() - width + n;   // b0
                         for _ in 0..run_len {
-//                            let color = data[ptr];
-//                            ptr += 1;
+                            let color = data[ptr];
+                            ptr += 1;
                             data.push(color);
                         } 
                     }
@@ -474,7 +488,6 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                     code_num += 2;
                     let run_len = run_len.min(width - a0);
                     a0 += run_len as usize;
-                    codes.push(a0);
 
                     for _ in 0..run_len {
                         data.push(0x00);

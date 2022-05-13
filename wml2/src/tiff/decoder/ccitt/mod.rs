@@ -18,19 +18,23 @@ pub struct HuffmanTree{
     pub append: Vec<(i32,i32)>,
 }
 
+/*
 #[derive(Debug)]
 #[derive(PartialEq)]
 pub enum Mode {
     Pass,
     Horiz,
-    V(isize),
+    V,
+    Vr(usize),
+    Vl(usize),
     D2Ext(usize),
     D1Ext(usize),
     EOL,
     None
 }
+*/
 
-
+/*
 impl Mode {
     fn get(reader:&mut BitReader) -> Result<Mode,Error> {
         if reader.look_bits(12)? == 1 {
@@ -86,7 +90,7 @@ impl Mode {
         Ok(Mode::None)
     }
 }
-
+*/
 
 
 
@@ -124,6 +128,7 @@ impl BitReader {
         }
     }
 
+    /*
     fn get_bits(&mut self,size:usize) -> Result<usize,Error> {
         if self.is_lsb {
             return self.get_bits_lsb(size)
@@ -131,6 +136,7 @@ impl BitReader {
             return self.get_bits_msb(size)
         }
     }
+    */
 
     fn look_bits_msb(&mut self,size:usize) -> Result<usize,Error> {
         while self.left_bits <= 24 {
@@ -155,11 +161,7 @@ impl BitReader {
         Ok(bits as usize)
     }
 
-    fn get_bits_msb(&mut self,size:usize) -> Result<usize,Error> {
-        let bits = self.look_bits_msb(size);
-        self.skip_bits(size);
-        bits
-    }
+
 
     fn skip_bits(&mut self,size:usize) {
         self.left_bits -= size;
@@ -189,12 +191,19 @@ impl BitReader {
 
     }
 
+    /*
+    fn get_bits_msb(&mut self,size:usize) -> Result<usize,Error> {
+        let bits = self.look_bits_msb(size);
+        self.skip_bits(size);
+        bits
+    }
 
     fn get_bits_lsb(&mut self,size:usize) -> Result<usize,Error> {
         let bits = self.look_bits_lsb(size);
         self.skip_bits(size);
         bits
     }
+    */
 
     fn value(&mut self,tree:&HuffmanTree) -> Result<i32,Error> {
         let pos = self.look_bits(tree.working_bits)?;
@@ -225,9 +234,9 @@ impl BitReader {
     }
  
     // skip next byte
-    fn flush(&mut self) {
-        self.left_bits -= self.left_bits % 8;
-    }
+//    fn flush(&mut self) {
+//        self.left_bits -= self.left_bits % 8;
+//    }
 }
   
 
@@ -251,12 +260,12 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
         }
     }
 
-
+    /*
     let mut encoding = 1;   //1D
 
     if header.compression == Compression::CCITTGroup4Fax {
         encoding = 2;
-    }
+    }*/
 
     if t4_options & 0x01 > 0 {
 //        encoding = 2;   //2D
@@ -296,124 +305,80 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
         }    
     }
 
-    let mut next_line_2d = if header.compression == Compression::CCITTGroup4Fax {true} else {false};
+//    let mut next_line_2d = if header.compression == Compression::CCITTGroup4Fax {true} else {false};
 
     let mut x = 0;
     let mut y = 0;
     let mut eol = true;
-
+    /*
     if encoding == 2 && header.compression == Compression::CCITTGroup3Fax {
         if reader.get_bits(1)? == 0 {
             next_line_2d = true
         }
     }
+    */
 
-    let mut mode = if next_line_2d { Mode::get(&mut reader)? } else { Mode::Horiz }; 
-    let mut codes = vec![];
-    let mut code_num = 0;
+//    let mut mode = if next_line_2d { Mode::get(&mut reader)? } else { Mode::Horiz }; 
+//    let mut mode = Mode::Horiz; 
+//    let mut codes = vec![];
+//    let mut code_num = 0;
 
-    while y <= height {
-        match mode {
-            Mode::Horiz => {
-                let run_len = reader.run_len(&white)?;
-                if run_len == -2 {  // EOL
-                    eol = true
-                } else {
-                    codes.push(run_len);
-                }
-                let run_len = run_len.min((width - x) as i32);
-
-                for _ in 0..run_len {
-                    data.push(0x00);
-                    x += 1;
-                }
-                let run_len = reader.run_len(&black)?;
-                
-                let run_len = run_len.min((width - x) as i32);
-                if run_len == -2 {  // EOL
-                    eol = true;
-                } else {
-                    codes.push(run_len);
-                }
-
-                for _ in 0..run_len {
-                    data.push(0xff);
-                    x += 1;
-                }
-            },
-
-            Mode::V(n) => { 
-                print!("V{} ",n);
-                if codes.len() > code_num {
-                    if codes[code_num] > 0 {  // EOL
-                        let color = if code_num % 2 == 0 {
-                            0x00  // white
-                        } else {
-                            0xff  //black
-                        };
-                        let run_len = codes[code_num] + n as i32;
-                        let run_len = run_len.min((width - x) as i32);
-                        for _ in 0..run_len {
-                            data.push(color);
-                        }
-                        x += run_len as usize;
-                    }
-                    code_num += 1;
-                }
-
-            },
-            Mode::Pass => {
-                code_num += 1;
-                print!("Ps ");
-            },
-            Mode::D2Ext(val) => {
-                print!("2D Ext ({}) ",val );
-
-            }
-            Mode::D1Ext(val) => {
-                print!("1D Ext ({}) ",val );
-            }
-            Mode::None => {
-//                break;
-            },
-            Mode::EOL => {
+    while y < height {
+        while x < width && !eol {
+            let run_len = reader.run_len(&white)?;
+            if run_len == -2 {  // EOL
                 eol = true
             }
-        }
-        if x >= width {
-            eol = true;
-        }
-        if eol {
-            for _ in x..width {
+            let run_len = run_len.min((width - x) as i32);
+
+            for _ in 0..run_len {
                 data.push(0x00);
+                x += 1;
+            }
+            let run_len = reader.run_len(&black)?;
+            
+            let run_len = run_len.min((width - x) as i32);
+            if run_len == -2 {  // EOL
+                eol = true;
             }
 
-            code_num = 0;
-            x = 0;
-            y += 1;
-            if encoding == 2 {
-                if reader.look_bits(12)? == 1 {  // EOL?
-                    reader.skip_bits(12);
-                }
-                print!("\ny {:04} {:4} ",y,codes.len());
-                if header.compression == Compression::CCITTGroup3Fax {
-                    let v = reader.get_bits(1)?;
-                    if v == 0 {
-                        next_line_2d = true
-                    } else {
-                        next_line_2d = false
-                    }    
-                }
-        
+            for _ in 0..run_len {
+                data.push(0xff);
+                x += 1;
             }
+        }
+
+        for _ in x..width {
+            data.push(0x00);
+        }
+
+//        code_num = 0;
+        x = 0;
+        y += 1;
+        /*
+        if encoding == 2 {
+            if reader.look_bits(12)? == 1 {  // EOL?
+                reader.skip_bits(12);
+            }
+            if header.compression == Compression::CCITTGroup3Fax {
+                let v = reader.get_bits(1)?;
+                if v == 0 {
+                    next_line_2d = true
+                } else {
+                    next_line_2d = false
+                }    
+            }
+        }*/
+        
+            /*
             mode = if next_line_2d { Mode::get(&mut reader)? } else { Mode::Horiz }; 
 
             if !next_line_2d {
                 codes.clear();
             }
-
+            */
             eol = false;
-
+            /*
             if header.compression == Compression::CCITTHuffmanRLE {
                 reader.flush();
             }
@@ -421,6 +386,7 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
         } else {
            if next_line_2d { mode =  Mode::get(&mut reader)? }; 
         }
+        */
 
     }
 

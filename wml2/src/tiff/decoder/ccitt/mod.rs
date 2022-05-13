@@ -350,7 +350,7 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
     let height = header.height.clone() as usize;
     let photometric_interpretation = header.photometric_interpretation.clone();
     let is_lsb = if header.fill_order == 2 {true} else {false};
-    let mut data = Vec::with_capacity(width * height);
+    let mut data =vec![0_u8;width * height];
     let white = if photometric_interpretation == 0 {white_tree()} else {black_tree()};
     let black = if photometric_interpretation == 1 {white_tree()} else {black_tree()};
 
@@ -387,126 +387,75 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
         }
 
         let mut a0 = 0;
-        let mut code_num = 0;
+        let mut code_num = 1;
+        let mut b1 = 0;
         let mut eol = false;
-        let pre_codes = codes.clone();
-        codes = vec![];
+        let pre_codes = codes;
+        codes = vec![0];
+        let mut skip = false;
 
         while a0 < width && !eol {
             let mode = if is2d { Mode::get(&mut reader)? } else { Mode::Horiz }; 
             match mode {
                 Mode::Horiz => {
-                    let run_len = reader.run_len(&white)?;
-                    if run_len == -2 {  // EOL
+                    let mut len1 = reader.run_len(&white)?;
+                    if len1 == -2 {  // EOL
                         eol = true;
+                        len1 = 0;
                     } else {
-                        let run_len = run_len.min((width - a0) as i32);
-
-                        let now = data.len();
-
-                        for _ in 0..run_len {    
-                            data.push(0x00);
-                        }        
-                        a0 += run_len as usize; // a1
-                        codes.push(a0);
+                        if !skip {
+                            codes.push(len1 as usize);
+                            skip = false;
+                        }
                     }
 
                     if encoding == 2 {
                         print!("Horiz {}",a0);
                     }
 
-                    let run_len = reader.run_len(&black)?;
-                    if run_len == -2 {  // EOL
+                    let mut len2 = reader.run_len(&black)?;
+                    if len2 == -2 {  // EOL
                         eol = true;
+                        len2 = 0
                     } else {
-                        let run_len = run_len.min((width - a0) as i32);
-
-                        for _ in 0..run_len {
-                            data.push(0xff);
-                        }
-                        a0 += run_len as usize; // a2
-                        codes.push(a0);
+                        codes.push(len2 as usize);
                     }
                     if encoding == 2 {
                         print!(" {} ",a0);
                     }
+                    a0 += len1 as usize + len2 as usize;
                 },
 
                 Mode::V(n) => { 
                     print!("V{} ",n);
-
-                    let b1 = if pre_codes.len() > code_num {pre_codes[code_num]} else {width}; 
-                    let run_len = b1 - a0 ;  //a1 - a0
-                    let run_len = run_len.min(width - a0);
-                    a0 += run_len as usize;
-                    codes.push(a0+n);
-                    let mut ptr = data.len() - width - n;   // b0
+                    b1 += if pre_codes.len() > code_num {pre_codes[code_num]} else {width}; 
+                    codes.push(b1 - a0 + n);
+                    a0 = b1 + n;
                     code_num += 1;
-                    let now = data.len();
-
-                    for j in 0..n {
-                        let i = n - j;
-                        let color = data[ptr];
-                        ptr += 1;
-                        data[now - i] = color;
-                    }
-
-                    for _ in 0..run_len {
-                        let color = data[ptr];
-                        ptr += 1;
-                        data.push(color);
-                    }
-
                     print!("{} ",a0);
                 },
                 Mode::Vl(n) => { 
                     print!("Vl{} ",n);
-                    if pre_codes.len() > code_num {
-                        let b1 = if pre_codes.len() > code_num {pre_codes[code_num]} else {width}; 
-                        code_num += 1;
-                        let run_len = if a0 < n {b1 - a0} else {b1 - a0 - n};  //a1 - a0
-                        let run_len = run_len.min(width - a0);
-                        a0 += run_len as usize;
-                        codes.push(a0-n);
-                        let mut ptr = data.len() - width + n;   // b0
-                        for _ in 0..run_len {
-                            let color = data[ptr];
-                            ptr += 1;
-                            data.push(color);
-                        } 
+                    b1 += if pre_codes.len() > code_num {pre_codes[code_num]} else {width}; 
+                    code_num += 1;
+                    if a0 > n {
+                        codes.push(b1 - a0 - n);
+                    } else {
+                        codes.push(b1 - n);
                     }
+                    a0 = b1 - n;
                     print!("{} ",a0);
                 },
 
                 Mode::Pass => {
-                    let b2 = if pre_codes.len() > code_num + 1{
-                        pre_codes[code_num + 1]
-                    } else {
-                         width
-                    };
-                    let run_len = b2 - a0;
+                    b1 += pre_codes[code_num] + pre_codes[code_num + 1];
                     code_num += 2;
-                    let run_len = run_len.min(width - a0);
-                    a0 += run_len as usize;
-
-                    for _ in 0..run_len {
-                        data.push(0x00);
-                    }
+                    a0 = b1;
                     print!("Ps {} ",a0);
                 },
                 Mode::D2Ext(val) => {
                     print!("2D Ext ({}) ",val );   
-                    if val != 0x7 { // no compression
-                        break;
-//                        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, "CCITT 3G 2D Ext is not support".to_string())))
-                    }
-                    let mut buf = uncompress(&mut reader)?;
-                    a0 += buf.len();
-                    codes.push(a0);
-
-                    data.append(&mut buf);
-                    print!("{} ",a0);   
-
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, "CCITT 3G 2D Ext is not support".to_string())))
                 }
                 Mode::D1Ext(val) => {
                     print!("1D Ext ({}) ",val );
@@ -518,18 +467,45 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
 //                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, "CCITT 3G 2D decodes error".to_string())))
                 },
                 Mode::EOL => {
+                    print!("EOL ");
                     eol = true;
+                    break;
                 }
             }
         }
 
-        y += 1;
-        for _ in a0..width {
-            data.push(0x00);
+        if a0 < width  {
+            codes.push(width - a0);
         }
+        codes.push(0);
+
+
+        let mut sum = 0;
+
+        let mut ptr = y * width; 
+        for (i,code) in codes.iter().enumerate() {
+            let code = if sum + code >= width {width - sum} else {*code};
+            sum += code;
+            if i & 0x1 == 1 {
+                for _ in 0..code {
+                    data[ptr] = 0;
+                    ptr += 1;
+                }
+            } else {
+                for _ in 0..code {
+                    data[ptr] = 0xff;
+                    ptr += 1;
+                }
+            }
+        }
+        println!("");
+
+        y += 1;
+        if y > height {break;}
 
         if header.compression == Compression::CCITTGroup3Fax && !eol {
             let mut code1;
+            print!("eol search");
             loop {
                 code1 = reader.look_bits(12)?;
                 if code1 == 1 {     // skip left 
@@ -542,17 +518,12 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
 
         if encoding == 2 && header.compression == Compression::CCITTGroup3Fax {
             is2d = if reader.get_bits(1)? == 0 { true } else { false };
-            if is2d == false {
-                codes.clear();
-            }
+            print!(" is2d {} ",is2d);
         }
-        print!(" is2d {} ",is2d);
  
         if header.compression == Compression::CCITTHuffmanRLE {
             reader.flush();
         }
-
-
     }
 
     Ok((data,reader.warning))    

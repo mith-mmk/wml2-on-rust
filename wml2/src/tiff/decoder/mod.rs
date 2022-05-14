@@ -4,6 +4,8 @@
 //! 
 
 type Error = Box<dyn std::error::Error>;
+use crate::tiff::warning::TiffWarning;
+use bin_rs::reader::BinaryReader;
 use bin_rs::io::read_u32;
 use bin_rs::io::read_u16;
 use crate::color::RGBA;
@@ -11,8 +13,7 @@ use crate::decoder::lzw::Lzwdecode;
 use crate::metadata::DataMap;
 use crate::tiff::header::*;
 use crate::warning::ImgWarnings;
-use crate::draw::DecodeOptions;
-use bin_rs::reader::BinaryReader;
+use crate::draw::*;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use self::jpeg::decode_jpeg_compresson;
@@ -536,12 +537,12 @@ pub fn decode_none_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut
 }
 
 
-pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &mut Tiff)-> Result<Option<ImgWarnings>,Error> {
+pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
     option.drawer.init(header.width as usize,header.height as usize,None)?;
     let warnings = None;
 
-    let bak_bitspersample = header.bitspersample;
-    let bak_bitspersamples = header.bitspersamples.to_vec();
+    let header = &mut header.clone();
+
     header.bitspersample = 8;
     header.bitspersamples = [8].to_vec();
 
@@ -569,29 +570,10 @@ pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mu
 
     }
 
-    header.bitspersample = bak_bitspersample;
-    header.bitspersamples = bak_bitspersamples.to_vec();
-
     Ok(warnings)
 }
 
-
-pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
-
-    let mut header = Tiff::new(reader)?;
-
-    option.drawer.set_metadata("Format",DataMap::Ascii("Tiff".to_owned()))?;
-//    let mut map = super::util::make_metadata(&header.tiff_headers);
-
-    option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
-    option.drawer.set_metadata("height",DataMap::UInt(header.height as u64))?;
-    option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bitspersample as u64))?;
-    option.drawer.set_metadata("Tiff headers",DataMap::Exif(header.tiff_headers.clone()))?;
-    option.drawer.set_metadata("compression",DataMap::Ascii(header.compression.to_string()))?;
-    if let Some(ref icc_profile) = header.icc_profile {
-        option.drawer.set_metadata("ICC Profile",DataMap::ICCProfile(icc_profile.to_vec()))?;
-    }
-
+fn compression_decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error> {
     match header.compression { 
         Compression::NoneCompression => {
             return decode_none_compresson(reader,option,&header);
@@ -608,13 +590,86 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
         Compression::AdobeDeflate => {
             return decode_deflate_compresson(reader,option,&header);
         },
-        // no debug
         Compression::CCITTHuffmanRLE | Compression::CCITTGroup3Fax | Compression::CCITTGroup4Fax => {
-            return decode_ccitt_compresson(reader, option, &mut header);
+            return decode_ccitt_compresson(reader, option, &header);
         },
-
         _ => {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not suport compression".to_string())));
         }
     }
+}
+
+pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
+
+    let mut header = Tiff::new(reader)?;
+
+    let mut count = 1;
+    if header.multi_page.len() > 0 {
+        for append in header.multi_page.iter() {
+            if append.newsubfiletype == 0 && append.subfiletype == 0 {
+                count += 1;
+            }
+        }
+    }
+    option.drawer.set_metadata("image pages",DataMap::UInt(count))?;
+
+
+    option.drawer.set_metadata("Format",DataMap::Ascii("Tiff".to_owned()))?;
+//    let mut map = super::util::make_metadata(&header.tiff_headers);
+
+    option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
+    option.drawer.set_metadata("height",DataMap::UInt(header.height as u64))?;
+    option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bitspersample as u64))?;
+    option.drawer.set_metadata("Tiff headers",DataMap::Exif(header.tiff_headers.clone()))?;
+    option.drawer.set_metadata("compression",DataMap::Ascii(header.compression.to_string()))?;
+    if let Some(ref icc_profile) = header.icc_profile {
+        option.drawer.set_metadata("ICC Profile",DataMap::ICCProfile(icc_profile.to_vec()))?;
+    }
+    let mut warnings = None;
+
+    let warn = compression_decode(reader,option,&mut header)?;
+
+    warnings = ImgWarnings::append(warnings, warn);
+
+    if count > 1 {
+        for append in header.multi_page.iter() {
+            if append.newsubfiletype == 0 && append.subfiletype == 0 {
+                let rect = ImageRect{
+                    width: append.width as usize,
+                    height:append.height as usize,
+                    start_x:append.startx as i32,
+                    start_y:append.starty as i32,
+                };
+                let opt = NextOptions{
+                    flag: NextOption::Next,
+                    await_time: 0,
+                    image_rect: Some(rect),
+                    dispose_option: None,
+                    blend: None,
+                };
+
+                let result = option.drawer.next(Some(opt))?;
+                if let Some(response) = result {
+                    if response.response == ResposeCommand::Abort {
+                        return Ok(warnings);
+                    }
+                }
+                let header = &mut append.clone();
+                let result = compression_decode(reader,option,header);
+                match result {
+                    Ok(warn) => {
+                        warnings = ImgWarnings::append(warnings, warn);
+                    },
+                    Err(error) => {
+                        let warning = TiffWarning::new(error.to_string());
+                        warnings = ImgWarnings::add(warnings, Box::new(warning));
+                    }
+                }
+
+            }
+        }
+    }
+
+    option.drawer.terminate(None)?;
+    Ok(warnings)
 }

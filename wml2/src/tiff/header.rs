@@ -123,6 +123,16 @@ impl TiffHeaders {
     pub fn to_string(&self) -> String {
         print_tags(self)
     }
+
+    pub fn empty(endian:Endian) -> Self {
+        Self {
+            version: 42,
+            headers: Vec::new(),
+            exif : None,
+            gps: None,
+            endian
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -134,7 +144,7 @@ enum IfdMode {
 }
 
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq,Clone)]
 pub enum Compression {
     NoneCompression = 1,
     CCITTHuffmanRLE = 2,
@@ -248,7 +258,7 @@ impl Compression {
 
 /// This struct is not use embed tiff tag,also EXIF.
 /// Use only tiff encoder/decoder
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Tiff {
     /// 0x00fe  also 0
     pub newsubfiletype:u32,
@@ -363,99 +373,111 @@ pub struct Tiff {
     pub extra_samples:Vec<u16>,     // 0x0152
     pub tiff_headers: TiffHeaders,
     pub icc_profile: Option<Vec<u8>>,       
-
+    pub multi_page: Box<Vec<Tiff>>,
     // pub predictor // if predictor is 2,pixels are horizontal differencing. not support
 }
 
 impl Tiff {
+    pub fn empty() -> Self {
+        Self{
+            newsubfiletype: 0,
+            subfiletype: 0,
+            width: 0,
+            height: 0,
+            bitspersample: 1,
+            bitspersamples: vec![],
+            photometric_interpretation: 2,
+            fill_order: 1,
+            strip_offsets: vec![],
+            orientation: 1,
+            samples_per_pixel: 1,
+            rows_per_strip: 0,
+            strip_byte_counts: vec![] ,
+            min_sample_values: vec![],
+            max_sample_values: vec![],
+            planar_config: 1,
+            compression: Compression::NoneCompression,
+            x_resolution: 0.0,
+            y_resolution: 0.0,
+            color_table: None,
+            startx: 0,
+            starty: 0,
+            predictor: 1,
+            extra_samples: vec![],
+            tiff_headers: TiffHeaders::empty(Endian::LittleEndian),
+            icc_profile: None,
+            multi_page: Box::new(Vec::new()),
+        }
+    }
+
     pub fn new(reader: &mut dyn BinaryReader) -> Result<Self,Error>{
         let tiff_headers = read_tags(reader)?;
-        //m ay        
-        let  mut newsubfiletype:u32 = 0;            
-        let  mut subfiletype:u32 = 0;               // 0x00ff  also 1              
 
-        // must
-        let  mut width: u32 = 0;                    // 0x0100
-        let  mut height: u32 = 0;                   // 0x0101
-        // If it does not have BitsPerSample tag,set default [1]
-        let  mut bitspersample: u16 = 1;             // 0x0102 data takes 1..N.
-        let  mut bitspersamples: Vec<u16> = vec![];
-        let  mut photometric_interpretation: u16 = 2; // 0x0106
-        let  mut fill_order:u16 = 1;
-        let  mut strip_offsets = vec![];                 // 0x111
-        let  orientation: u32 = 1;
-        let  mut samples_per_pixel:u16  = 0;        // 0x0115
-        let  mut rows_per_strip = 0_u32;           // 0x0116 also width * Bitspersample /8  <= row_per_strip
-        let  mut strip_byte_counts = vec![];        // 0x0117 For each strip;the number of bytes in the strip after compression.
-        let  mut min_sample_values = vec![];          // 0x0118 also no use
-        let  mut max_sample_values = vec![];          // 0x0119 default 2**(BitsPerSample) - 1
-        let  mut planar_config: u16 = 1;            // 0x011c also 1
-        let  mut compression: Compression =Compression::Unknown;      // 0x0103 see enum Compression
-        // may
-        let  x_resolution:f32 = 0.0;              // 0x011A also for DTP
-        let  y_resolution:f32 = 0.0;              // 0x0112 also for DTP
-        let  mut predictor = 1;                   // 1 = none 2 = Horizontal differencing
-        let  mut extra_samples = vec![];          // RGB + A 
-        let  mut color_table: Option<Vec<RGBA>> = None; // 0x0140 use only bitperpixel <= 8
+        let mut max_id = 0;
 
-        // no baseline
-        let  startx: u32 = 0;               // 0x011E
-        let  starty: u32 = 0;               // 0x011F
-        let mut icc_profile = None;
-
+        let mut this = Self::empty();
+        let mut current = &mut this;
+        let mut append = vec![];
 
         for header in &tiff_headers.headers {
             // skip thumbnail or multi page images
-            if newsubfiletype > 0 || subfiletype > 0 {
-                continue;
+
+            if max_id < header.tagid {
+                max_id = header.tagid;
+            } else {
+                max_id = header.tagid;
+                if current.bitspersamples.len() == 0 {
+                    current.bitspersamples.push(current.bitspersample);
+                }        
+                append.push(Self::empty());
+                current = append.last_mut().unwrap();
+                current.tiff_headers.endian = tiff_headers.endian;
             }
             match header.tagid {
                 0xff => {
                     if let DataPack::Long(d) = &header.data {
-                        subfiletype = d[0]
+                        current.subfiletype = d[0]
                     }
                 },
 			    0xfe =>{
                     if let DataPack::Long(d) = &header.data {
-                        newsubfiletype = d[0];
+                        current.newsubfiletype = d[0];
                     }
                 },
                 0x100 => {
                     if let DataPack::Long(d) = &header.data {
-                        width = d[0]
+                        current.width = d[0]
                     } else if let DataPack::Short(d) = &header.data {
-                        width = d[0] as u32;
+                        current.width = d[0] as u32;
                     }
                 },
                 0x101 => {
                     if let DataPack::Long(d) = &header.data {
-                        height = d[0]
+                        current.height = d[0]
                     } else if let DataPack::Short(d) = &header.data {
-                        height = d[0] as u32;
+                        current.height = d[0] as u32;
                     }
                 },
                 0x102 => {
                     if header.length == 1 {
                         if let DataPack::Short(d) = &header.data {
-                            bitspersample = d[0] as u16;
+                            current.bitspersample = d[0] as u16;
+                            current.bitspersamples.push(d[0] as u16);
                         } 
                     } else {
                         let mut bpm = 0;
                         for i in 0..header.length {
                             if let DataPack::Short(d) = &header.data {
                                 bpm += d[i] as u16;
-                                bitspersamples.push(d[i] as u16);
+                                current.bitspersamples.push(d[i] as u16);
                             } 
                         }
-                        bitspersample = bpm;
+                        current.bitspersample = bpm;
                     }
                 },
                 0x103 => {
     				if let DataPack::Short(d) = &header.data {
-                        if compression != Compression::Unknown {
-                            break;
-                        }
-                        compression =
+                        current.compression =
                             match d[0] {
                                 1 => {
                                     Compression::NoneCompression
@@ -538,65 +560,69 @@ impl Tiff {
                 }, 
                 0x106 => {
                     if let DataPack::Short(d) = &header.data {
-                        photometric_interpretation =  d[0];
+                        current.photometric_interpretation =  d[0];
                     } 
                 },
                 0x10A => {
                     if let DataPack::Short(d) = &header.data {
-                        fill_order =  d[0];
+                        current.fill_order =  d[0];
                     }
                 },
                 0x115 =>{
                     if let DataPack::Short(d) = &header.data {
-                        samples_per_pixel =  d[0];
+                        current.samples_per_pixel =  d[0];
                     }
                 },
                 0x111 => {
+                    let mut strip_offsets = vec![];
                     if let DataPack::Short(d) = &header.data {
-                        for v in d {
-                            strip_offsets.push(*v as u32);
+                        for i in 0..d.len() {
+                            strip_offsets.push(d[i] as u32);
                         }
                     } else if let DataPack::Long(d) = &header.data {
-                        for v in d {
-                            strip_offsets.push(*v as u32);
+                        for i in 0..d.len() {
+                            strip_offsets.push(d[i] as u32);
                         }
                     }
+                    current.strip_offsets = strip_offsets;
                 },
                 0x116 => {
                     if let DataPack::Short(d) = &header.data {
-                        rows_per_strip = d[0] as u32;
+                        current.rows_per_strip = d[0] as u32;
                     } else if let DataPack::Long(d) = &header.data {
-                        rows_per_strip = d[0] as u32;
+                        current.rows_per_strip = d[0] as u32;
                     }
                 },
                 0x117 => {
+                    let mut strip_byte_counts = vec![];
                     if let DataPack::Short(d) = &header.data {
-                        for v in d {
-                            strip_byte_counts.push(*v as u32);
+                        for i in 0..d.len() {
+                            strip_byte_counts.push(d[i] as u32);
                         }
                     } else if let DataPack::Long(d) = &header.data {
-                        for v in d {
-                            strip_byte_counts.push(*v as u32);
+                        for i in 0..d.len() {
+                            strip_byte_counts.push(d[i] as u32);
                         }
                     }
+                    current.strip_byte_counts = strip_byte_counts;
                 },
                 0x118 => {
                     for i in 0..header.length {
                         if let DataPack::Short(d) = &header.data {
-                            min_sample_values.push(d[i]);
+                            current.min_sample_values.push(d[i]);
                         }
                     }
                 },
                 0x119 => {
                     for i in 0..header.length {
                         if let DataPack::Short(d) = &header.data {
-                            max_sample_values.push(d[i]);
+                            current.max_sample_values.push(d[i]);
                         }
                     }
                 },
                 0x11c => {
                     if let DataPack::Short(d) = &header.data {
-                        planar_config =  d[0];
+                        current.planar_config =  d[0];
                     }
                 },
                 0x140 => {
@@ -616,61 +642,34 @@ impl Tiff {
                             };
                             table.push(color);
                         }
-                        color_table = Some(table)
+                        current.color_table = Some(table)
                     }
                 },
                 0x013d => { // predictor
                     if let DataPack::Short(d) = &header.data {
-                        predictor = d[0];
+                        current.predictor = d[0];
                     }                    
                 },
                 0x0152 => { // ExtraSamples
                     if let DataPack::Short(d) = &header.data {
-                        extra_samples = d.to_vec();
+                        current.extra_samples = d.to_vec();
                     }                    
                 },
                 0x8773 => { //ICC Profile
                     if let DataPack::Undef(d) = &header.data {
-                        icc_profile = Some(d.to_vec());
+                        current.icc_profile = Some(d.to_vec());
                     }
                 }
                 _ => {},
             }
-
         }
 
-        if bitspersamples.len() == 0 {
-            bitspersamples.push(bitspersample);
+        if current.bitspersamples.len() == 0 {
+            current.bitspersamples.push(current.bitspersample);
         }
-
-        Ok(Self{
-            newsubfiletype,
-            subfiletype,
-            width,
-            height,
-            bitspersample,
-            bitspersamples,
-            photometric_interpretation,
-            fill_order,
-            strip_offsets,
-            orientation,
-            samples_per_pixel,
-            rows_per_strip,
-            strip_byte_counts ,
-            min_sample_values,
-            max_sample_values,
-            planar_config,
-            compression,
-            x_resolution,
-            y_resolution,
-            color_table,
-            startx,
-            starty,
-            predictor,
-            extra_samples,
-            tiff_headers,
-            icc_profile,
-        })
+        this.tiff_headers = tiff_headers;
+        this.multi_page = Box::new(append);
+        Ok(this)
     }
 }
 

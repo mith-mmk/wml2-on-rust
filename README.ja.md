@@ -144,7 +144,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.10 Progressive JPEG YUV=4,1,1 fix
 - 0.0.11 
   - ICCProfileパーサの除去 -> see https://github.com/mith-mmk/icc_profile に移行
-  - TIFF 3G/4G FAXサポート
+  - TIFF 3G/4G FAXデコードサポート/Multipage Tiffサポート
 
 # todo
 - Formated Header writer

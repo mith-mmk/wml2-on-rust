@@ -44,4 +44,13 @@ impl ImgWarnings {
             }
         }
     }
+
+    pub fn append(mut warnings:Option<ImgWarnings>,warnings2: Option<ImgWarnings>) -> Option<Self> {
+        if let Some(ws) = warnings2 {
+            for w in ws.warnings {
+                warnings = ImgWarnings::add(warnings, w);
+            } 
+        }
+        warnings
+    }
 }

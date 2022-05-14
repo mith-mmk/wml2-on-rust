@@ -528,7 +528,9 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                     // error
                 },
                 Mode::EOL =>  {
-                    print!("EOL ");
+                    if cfg!(debug_assertions) {
+                        print!("EOL ");
+                    }
                     eol = true;
                     break;
                 }

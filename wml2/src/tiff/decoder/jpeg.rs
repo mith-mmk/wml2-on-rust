@@ -1,16 +1,9 @@
 type Error = Box<dyn std::error::Error>;
-use crate::draw::CallbackResponse;
 use crate::draw::ImageBuffer;
 use crate::tiff::header::*;
 use crate::warning::ImgWarnings;
 use crate::draw::DecodeOptions;
 use bin_rs::reader::BinaryReader;
-
-fn write_log(str: &str) -> Result<Option<CallbackResponse>,Error> {
-    println!("{}", str);
-    Ok(None)
-}
-
 
 // Tiff in JPEG is a multi parts image.
 pub fn decode_jpeg_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
@@ -57,11 +50,7 @@ pub fn decode_jpeg_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut
 
         y += header.rows_per_strip as usize;
 
-        if let Some(ws) = ws {
-            for w in ws.warnings {
-                warnings = ImgWarnings::add(warnings, w);
-            }        
-        }
+        warnings = ImgWarnings::append(warnings,ws);
     }
 
     Ok(warnings)

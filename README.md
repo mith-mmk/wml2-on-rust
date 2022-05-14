@@ -150,7 +150,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.10 Progressive Bug(4,1,1) fix
 - 0.0.11 
   - obsolete ICCProfile parse in verbose -> use metadata - see https://github.com/mith-mmk/icc_profile Tiff G3 Fax
-  - TIFF 3G/4G FAX support
+  - TIFF 3G/4G FAX and multi page tiff decode support
 
 
 # todo

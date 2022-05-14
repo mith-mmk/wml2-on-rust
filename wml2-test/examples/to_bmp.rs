@@ -23,6 +23,7 @@ fn loader(filename: &String) ->Result<ImageBuffer,Box<dyn Error>> {
     let f = File::open(&filename)?;
     let reader = BufReader::new(f);
     let mut image = ImageBuffer::new();
+    image.set_animation(true);
     let mut option = DecodeOptions {
         debug_flag: 0x0,
         drawer: &mut image,

@@ -18,79 +18,24 @@ pub struct HuffmanTree{
     pub append: Vec<(i32,i32)>,
 }
 
-/*
+
 #[derive(Debug)]
 #[derive(PartialEq)]
+#[derive(Clone)]
 pub enum Mode {
     Pass,
     Horiz,
     V,
     Vr(usize),
     Vl(usize),
-    D2Ext(usize),
-    D1Ext(usize),
+    Ext2D(usize),
+    Ext1D(usize),
     EOL,
     None
 }
-*/
 
-/*
-impl Mode {
-    fn get(reader:&mut BitReader) -> Result<Mode,Error> {
-        if reader.look_bits(12)? == 1 {
-            reader.skip_bits(12);
-            return Ok(Mode::EOL)
-        }
-        if reader.get_bits(1)? == 1 {
-            return Ok(Mode::V(0))        // 1
-        }
-        let mode = reader.get_bits(2)?;
 
-        match mode {
-            0b01 => {   // 001
-                return Ok(Mode::Horiz)
-            },
-            0b10 => {   // 010
-                return Ok(Mode::V(-1))
-            },
-            0b11 => {   // 011
-                return Ok(Mode::V(1))
-            }
-            _ => {}
-        }
 
-        if reader.get_bits(1)? == 1 {
-            return Ok(Mode::Pass)   // 0001
-        }
-        if reader.get_bits(1)? == 1 {
-            if reader.get_bits(1)? == 0 {
-                return Ok(Mode::V(-2))  // 000010
-            } else {
-                return Ok(Mode::V(2))   // 000011
-            }
-        }
-        if reader.get_bits(1)? == 1 {
-            if reader.get_bits(1)? == 0 {
-                return Ok(Mode::V(-3))  // 0000010
-            } else {
-                return Ok(Mode::V(3))   // 0000011
-            }
-        }
-
-        // 0000001
-        if reader.get_bits(1)? == 1 {
-            let val = reader.get_bits(3)?;
-            return Ok(Mode::D2Ext(val))  // 0000001xxx
-        }
-        
-        if reader.get_bits(2)? == 1 {
-            let val = reader.get_bits(3)?;
-            return Ok(Mode::D1Ext(val))  // 00000001xxx
-        }
-        Ok(Mode::None)
-    }
-}
-*/
 
 
 
@@ -191,19 +136,11 @@ impl BitReader {
 
     }
 
-    /*
-    fn get_bits_msb(&mut self,size:usize) -> Result<usize,Error> {
-        let bits = self.look_bits_msb(size);
+    fn get_bits(&mut self,size:usize) -> Result<usize,Error> {
+        let bits = self.look_bits(size);
         self.skip_bits(size);
         bits
     }
-
-    fn get_bits_lsb(&mut self,size:usize) -> Result<usize,Error> {
-        let bits = self.look_bits_lsb(size);
-        self.skip_bits(size);
-        bits
-    }
-    */
 
     fn value(&mut self,tree:&HuffmanTree) -> Result<i32,Error> {
         let pos = self.look_bits(tree.working_bits)?;
@@ -232,12 +169,116 @@ impl BitReader {
         }
         Ok(tolal_run)
     }
+
+    fn mode(&mut self) -> Result<Mode,Error> {
+        let array:[(usize,Mode);128] = [
+            // 0000000
+            (12,Mode::None), 
+            // 0000001
+            (10,Mode::Ext2D(0)),
+            // 0000010
+            (7,Mode::Vl(3)),
+            // 0000011
+            (7,Mode::Vr(3)),
+            // 000010x
+            (6,Mode::Vl(2)),(6,Mode::Vl(2)),
+            // 000011x
+            (6,Mode::Vr(2)),(6,Mode::Vr(2)),
+            // 0001xxx
+            (4,Mode::Pass),(4,Mode::Pass),(4,Mode::Pass),(4,Mode::Pass),
+            (4,Mode::Pass),(4,Mode::Pass),(4,Mode::Pass),(4,Mode::Pass),
+
+            // 001xxxx
+            (3,Mode::Horiz), (3,Mode::Horiz), (3,Mode::Horiz), (3,Mode::Horiz), 
+            (3,Mode::Horiz), (3,Mode::Horiz), (3,Mode::Horiz), (3,Mode::Horiz), 
+            (3,Mode::Horiz), (3,Mode::Horiz), (3,Mode::Horiz), (3,Mode::Horiz), 
+            (3,Mode::Horiz), (3,Mode::Horiz), (3,Mode::Horiz), (3,Mode::Horiz), 
+            // 010xxxx
+            (3,Mode::Vl(1)), (3,Mode::Vl(1)), (3,Mode::Vl(1)), (3,Mode::Vl(1)), 
+            (3,Mode::Vl(1)), (3,Mode::Vl(1)), (3,Mode::Vl(1)), (3,Mode::Vl(1)), 
+            (3,Mode::Vl(1)), (3,Mode::Vl(1)), (3,Mode::Vl(1)), (3,Mode::Vl(1)), 
+            (3,Mode::Vl(1)), (3,Mode::Vl(1)), (3,Mode::Vl(1)), (3,Mode::Vl(1)), 
+            // 011xxxx 16
+            (3,Mode::Vr(1)), (3,Mode::Vr(1)), (3,Mode::Vr(1)), (3,Mode::Vr(1)), 
+            (3,Mode::Vr(1)), (3,Mode::Vr(1)), (3,Mode::Vr(1)), (3,Mode::Vr(1)), 
+            (3,Mode::Vr(1)), (3,Mode::Vr(1)), (3,Mode::Vr(1)), (3,Mode::Vr(1)), 
+            (3,Mode::Vr(1)), (3,Mode::Vr(1)), (3,Mode::Vr(1)), (3,Mode::Vr(1)), 
+            // 1xxxxxx 64
+            (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),
+            (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),
+            (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),
+            (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),
+            (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),
+            (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),
+            (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),
+            (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),  (1,Mode::V), (1,Mode::V),
+        ];
+        if self.look_bits(12)? == 1 {
+            self.skip_bits(12);
+            return Ok(Mode::EOL)
+        }
+        let (bits,mode) = array[self.look_bits(7)?].clone();
+
+        if bits <= 7 {
+            self.skip_bits(bits);
+            return Ok(mode)
+        }
+
+        if bits == 10 {
+            self.skip_bits(10);
+            let n = self.look_bits(3)?;
+            self.skip_bits(3);
+            return Ok(Mode::Ext2D(n))
+        }
+        self.skip_bits(bits);
+
+        if bits == 12 {
+            if self.look_bits(9)? == 1 {
+                self.skip_bits(9);
+                let n = self.look_bits(3)?;
+                self.skip_bits(3);
+                return Ok(Mode::Ext1D(n))
+            }
+        }
+        Ok(Mode::None)        
+    }
  
-    // skip next byte
+// skip next byte
 //    fn flush(&mut self) {
 //        self.left_bits -= self.left_bits % 8;
 //    }
 }
+
+fn search_b1(codes:&[u8],a0:usize,color:u8) -> usize {
+    let mut i = a0 ;
+    for _ in i..codes.len() {
+        if codes[i] == color {
+            break;
+        }
+        i += 1;
+    }
+    for _ in i..codes.len() {
+        if codes[i] != color {
+            break;
+        }
+        i += 1;
+    }
+    print!("b1:{} ",i);
+    return i;
+}
+
+fn search_b2(codes:&[u8],a0:usize,color:u8) -> usize {
+    let b1 = search_b1(codes, a0, color);
+    let color = color ^ 0xff;
+    search_b1(codes, b1, color)
+}
+
+const WHITE:u8 = 0;
+const UNDEF:u8 = 1;
+const TERMINATE:u8 = 2;
+const BLACK:u8 = 0xff;
+
+
   
 
 pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
@@ -260,24 +301,20 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
         }
     }
 
-    /*
     let mut encoding = 1;   //1D
 
     if header.compression == Compression::CCITTGroup4Fax {
-        encoding = 2;
-    }*/
+        encoding = 3;
+    }
 
     if t4_options & 0x01 > 0 {
-//        encoding = 2;   //2D
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, "CCITT uncompress is no support".to_string())))
+        encoding = 2;   //2D
+//        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, "CCITT uncompress is no support".to_string())))
     }
     if t4_options & 0x2 > 0 || t6_options & 0x2 > 0 {
 //        encoding = 0;   // UNCOMPRESSED
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, "CCITT uncompress is no support".to_string())))
-
     }
-
-
 
     let width = header.width.clone() as usize;
     let height = header.height.clone() as usize;
@@ -294,7 +331,7 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
     let mut code1;
 
     // seek first EOL
-    if header.compression == Compression::CCITTGroup3Fax {
+    if encoding <= 2 {
         loop {
             code1 = reader.look_bits(12)?;
             if code1 != 0 { break };
@@ -305,89 +342,227 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
         }    
     }
 
-//    let mut next_line_2d = if header.compression == Compression::CCITTGroup4Fax {true} else {false};
+    let mut is2d = if encoding == 3 {true} else {false};
 
-    let mut x = 0;
     let mut y = 0;
-    let mut eol = true;
-    /*
-    if encoding == 2 && header.compression == Compression::CCITTGroup3Fax {
+    
+    if encoding == 2 {
         if reader.get_bits(1)? == 0 {
-            next_line_2d = true
+            is2d = true
         }
     }
+
+    /* const
+    let white = 0;
+    let unknown = 1;
+    let terminate =2;
+    let black = 0xff;
     */
 
-//    let mut mode = if next_line_2d { Mode::get(&mut reader)? } else { Mode::Horiz }; 
-//    let mut mode = Mode::Horiz; 
-//    let mut codes = vec![];
-//    let mut code_num = 0;
+    //    let mut mode = Mode::Horiz; 
+    let mut ref_codes = vec![WHITE;width];
+    ref_codes.push(TERMINATE);
+    let mut cur_codes = Vec::with_capacity(width+1);
+    for _ in 0..width {cur_codes.push(UNDEF);}
+    cur_codes.push(TERMINATE);
 
-    while y < height {
-        while x < width && !eol {
-            let run_len = reader.run_len(&white)?;
-            if run_len == -2 {  // EOL
-                eol = true
-            }
-            let run_len = run_len.min((width - x) as i32);
 
-            for _ in 0..run_len {
-                data.push(0x00);
-                x += 1;
-            }
-            let run_len = reader.run_len(&black)?;
+    loop {
+        let mut a0 = 0;
+        let mut eol = false;
+
+        if encoding >= 2{
+            print!("y {} {} ",y,is2d);
+        }
+        while a0 < width && !eol {
+            let mode = if is2d { reader.mode()? } else { Mode::Horiz }; 
+            match mode {
+                Mode::Horiz => {
+                    let mut color = if is2d {cur_codes[a0]} else {WHITE};
+                    if color == UNDEF {
+                        color = ref_codes[a0];
+                    }
+
+                    let (mut len1, mut len2);
+                    if color == WHITE {
+                        if encoding >= 2 {
+                            print!("Hw ");
+                        }
+
+                        len1 = reader.run_len(&white)?;
+                        if len1 == -2 {  // EOL
+                            eol = true;
+                            len1 = 0;
+                        }
+                        len2 = reader.run_len(&black)?;                        
+                        if len2 == -2 {  // EOL
+                            eol = true;
+                            len2 = 0;
+                        }    
+                    } else {
+                        if encoding >= 2 {
+                            print!("Hb ");
+                        }
+                        len1 = reader.run_len(&black)?;
+                        if len1 == -2 {  // EOL
+                            eol = true;
+                            len1 = 0;
+                        }
             
-            let run_len = run_len.min((width - x) as i32);
-            if run_len == -2 {  // EOL
-                eol = true;
-            }
+                        len2 = reader.run_len(&white)?;                        
+                        if len2 == -2 {  // EOL
+                            eol = true;
+                            len2 = 0;
+                        }    
+                    }
 
-            for _ in 0..run_len {
+//                    let mut color = color ^ 0xff;
+                    for i in a0..(a0 + len1 as usize).min(width) {
+                        cur_codes[i] = color;
+                    }
+
+                    a0 += len1 as usize;
+
+                    color ^= 0xff;
+
+                    for i in a0..(a0 + len2 as usize).min(width) {
+                        cur_codes[i] = color;
+                    }
+                    a0 += len2 as usize;
+
+                    if a0 < width && cur_codes[a0] == UNDEF {
+                        cur_codes[a0] = color^BLACK;
+                    }
+
+                    if encoding >= 2{
+                        print!("{} {} {} ",len1,len2,a0);
+                    }
+                },
+                Mode::Pass => {
+                    print!("Ps ");
+                    let color = if cur_codes[a0] == UNDEF {ref_codes[a0]} else {cur_codes[a0]};
+                    let b1 = search_b1(&ref_codes, a0, color);
+                    let b2 = search_b1(&ref_codes, b1, color^BLACK);
+                    for i in a0..=b2 {
+                        cur_codes[i] = color;
+                    }
+                    a0 = b2;
+                    print!("{} ",a0);
+                },
+                Mode::V => {
+                    print!("V ");
+                    let color = if a0 == 0 {WHITE} else {cur_codes[a0]};
+                    let a1 = search_b1(&ref_codes, a0, color);
+                    for i in a0..a1 {
+                        cur_codes[i] = color;
+                    }
+                    if a1 < cur_codes.len() && cur_codes[a1] == UNDEF {
+                        cur_codes[a1] = color^BLACK;
+                    }
+                    a0 = a1;
+                    print!("{} ",a0);
+                },
+                Mode::Vr(n) => {
+                    print!("Vr({}) ",n);
+                    let color = if a0 == 0 {WHITE} else {cur_codes[a0]};
+                    let b1 = search_b1(&ref_codes, a0, color);
+                    let a1 = (b1 + n).min(width);
+                    for i in a0..a1 {
+                        cur_codes[i] = color;
+                    }
+                    if a1 < cur_codes.len() && cur_codes[a1] == UNDEF {
+                        cur_codes[a1] = color^BLACK;
+                    }
+                    a0 = a1;
+                    print!("{} ",a0);
+                },
+                Mode::Vl(n) => {
+                    print!("Vl({}) ",n);
+                    let color = if a0 == 0 {WHITE} else {cur_codes[a0]};
+                    let b1 = search_b1(&ref_codes, a0, color);
+                    let a1 = b1.checked_sub(n).unwrap_or(0);
+                    for i in a0..a1 {
+                        cur_codes[i] = color;
+                    }
+                    if a1 < cur_codes.len() && cur_codes[a1] == UNDEF {
+                        cur_codes[a1] = color^BLACK;
+                    }
+                    a0 = a1;
+                    print!("{} ",a0);
+                },
+                Mode::Ext1D(n) => {
+                    let ptr = reader.ptr - 32;
+                    println!("");
+                    for i in 0..64 {
+                        print!("{:08b} ",reader.buffer[ptr + i].reverse_bits());
+                        if i % 8 == 7 {
+                            println!("");
+                        }
+                    }
+                    let message = format!("not support 1D Ext({}) for CCITT decoder",n);
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, message)));                    
+                },
+                Mode::Ext2D(n) => {
+                    let ptr = reader.ptr - 32;
+                    println!("");
+                    for i in 0..64 {
+                        print!("{:08b} ",reader.buffer[ptr + i].reverse_bits());
+                        if i % 8 == 7 {
+                            println!("");
+                        }
+                    }
+                    let message = format!("not support 2D Ext({}) for CCITT decoder",n);
+                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, message)));
+                },
+                Mode::None =>  {    // fill?
+                    print!("None ");
+                    reader.get_bits(1)?;
+                    // error
+                },
+                Mode::EOL =>  {
+                    print!("EOL ");
+                    eol = true;
+                    break;
+                }
+            }
+        }
+        if encoding >= 2 {
+            println!("\n");
+            if y < 122 && y >= 115 {
+                println!("{:?}",cur_codes);
+            }
+        }
+
+        for i in 0..width {
+            if cur_codes[i] == BLACK {
                 data.push(0xff);
-                x += 1;
+            } else {
+                data.push(0);
             }
         }
 
-        for _ in x..width {
-            data.push(0x00);
-        }
 
-//        code_num = 0;
-        x = 0;
         y += 1;
-        /*
-        if encoding == 2 {
-            if reader.look_bits(12)? == 1 {  // EOL?
-                reader.skip_bits(12);
-            }
-            if header.compression == Compression::CCITTGroup3Fax {
-                let v = reader.get_bits(1)?;
-                if v == 0 {
-                    next_line_2d = true
-                } else {
-                    next_line_2d = false
-                }    
-            }
-        }*/
-        
-            /*
-            mode = if next_line_2d { Mode::get(&mut reader)? } else { Mode::Horiz }; 
+        ref_codes = cur_codes.clone();
+        cur_codes = vec![UNDEF;width];
+        cur_codes.push(TERMINATE);
+    
+        if y >= height { break;}
 
-            if !next_line_2d {
-                codes.clear();
+        if encoding <=2 && !eol {
+            loop {
+                if reader.look_bits(12)? == 1 {  // EOL?
+                    reader.skip_bits(12);
+                    break;
+                }
+                reader.skip_bits(1);    // fill
             }
-            */
-            eol = false;
-            /*
-            if header.compression == Compression::CCITTHuffmanRLE {
-                reader.flush();
-            }
-
-        } else {
-           if next_line_2d { mode =  Mode::get(&mut reader)? }; 
         }
-        */
 
+        if encoding == 2{
+            let v = reader.get_bits(1)?;
+            is2d = if v == 0 { true } else { false };
+        }
     }
 
     Ok((data,reader.warning))    

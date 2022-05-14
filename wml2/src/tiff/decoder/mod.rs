@@ -580,7 +580,7 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
             return decode_deflate_compresson(reader,option,&header);
         },
         // no debug
-        Compression::CCITTHuffmanRLE | Compression::CCITTGroup3Fax => {
+        Compression::CCITTHuffmanRLE | Compression::CCITTGroup3Fax /* | Compression::CCITTGroup4Fax */ => {
             return decode_ccitt_compresson(reader, option, &mut header);
         },
 

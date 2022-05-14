@@ -7,7 +7,7 @@ authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
 description = "WML2 - Web graphic Multi format Library"
 edition = "2021"
 license = "MIT"
-tags = ["image","jpeg","gif","png","bmp","exif"]
+keywords = ["image","jpeg","gif","png","bmp","exif","tiff"]
 
 [lib]
 crate-type = ["rlib"] 

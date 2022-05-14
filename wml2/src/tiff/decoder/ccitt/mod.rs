@@ -9,6 +9,14 @@ use crate::error::ImgErrorKind;
 pub use white::white_tree;
 pub use black::black_tree;
 
+const EOL:i32 = -2;
+
+const WHITE:u8 = 0;
+const UNDEF:u8 = 1;
+const TERMINATE:u8 = 2;
+const BLACK:u8 = 0xff;
+
+
 #[derive(Debug)]
 pub struct HuffmanTree{
     pub working_bits: usize,
@@ -33,11 +41,6 @@ pub enum Mode {
     EOL,
     None
 }
-
-
-
-
-
 
 pub struct BitReader {
     pub buffer: Vec<u8>,
@@ -159,8 +162,8 @@ impl BitReader {
 
     fn run_len(&mut self,tree: &HuffmanTree) -> Result<i32,Error> {
         let mut run_len = self.value(&tree)?;
-        if run_len == -2 {
-            return Ok(-2);
+        if run_len == EOL {
+            return Ok(EOL);
         }
         let mut tolal_run = run_len;
         while run_len >= 64 {
@@ -263,23 +266,10 @@ fn search_b1(codes:&[u8],a0:usize,color:u8) -> usize {
         }
         i += 1;
     }
-    print!("b1:{} ",i);
     return i;
 }
 
-fn search_b2(codes:&[u8],a0:usize,color:u8) -> usize {
-    let b1 = search_b1(codes, a0, color);
-    let color = color ^ 0xff;
-    search_b1(codes, b1, color)
-}
 
-const WHITE:u8 = 0;
-const UNDEF:u8 = 1;
-const TERMINATE:u8 = 2;
-const BLACK:u8 = 0xff;
-
-
-  
 
 pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
     let mut t4_options = 0;
@@ -304,12 +294,11 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
     let mut encoding = 1;   //1D
 
     if header.compression == Compression::CCITTGroup4Fax {
-        encoding = 3;
+        encoding = 3;   // G4
     }
 
     if t4_options & 0x01 > 0 {
         encoding = 2;   //2D
-//        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, "CCITT uncompress is no support".to_string())))
     }
     if t4_options & 0x2 > 0 || t6_options & 0x2 > 0 {
 //        encoding = 0;   // UNCOMPRESSED
@@ -324,9 +313,7 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
     let white = if photometric_interpretation == 0 {white_tree()} else {black_tree()};
     let black = if photometric_interpretation == 1 {white_tree()} else {black_tree()};
 
-
     let mut reader = BitReader::new(buf,is_lsb);
-
 
     let mut code1;
 
@@ -352,14 +339,6 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
         }
     }
 
-    /* const
-    let white = 0;
-    let unknown = 1;
-    let terminate =2;
-    let black = 0xff;
-    */
-
-    //    let mut mode = Mode::Horiz; 
     let mut ref_codes = vec![WHITE;width];
     ref_codes.push(TERMINATE);
     let mut cur_codes = Vec::with_capacity(width+1);
@@ -371,9 +350,10 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
         let mut a0 = 0;
         let mut eol = false;
 
-        if encoding >= 2{
+        if cfg!(debug_assertions) {
             print!("y {} {} ",y,is2d);
         }
+
         while a0 < width && !eol {
             let mode = if is2d { reader.mode()? } else { Mode::Horiz }; 
             match mode {
@@ -385,36 +365,27 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
 
                     let (mut len1, mut len2);
                     if color == WHITE {
-                        if encoding >= 2 {
+                        if cfg!(debug_assertions) {
                             print!("Hw ");
                         }
-
                         len1 = reader.run_len(&white)?;
-                        if len1 == -2 {  // EOL
-                            eol = true;
-                            len1 = 0;
-                        }
-                        len2 = reader.run_len(&black)?;                        
-                        if len2 == -2 {  // EOL
-                            eol = true;
-                            len2 = 0;
-                        }    
+                        len2 = reader.run_len(&black)?;
                     } else {
-                        if encoding >= 2 {
+                        if cfg!(debug_assertions) {
                             print!("Hb ");
                         }
                         len1 = reader.run_len(&black)?;
-                        if len1 == -2 {  // EOL
-                            eol = true;
-                            len1 = 0;
-                        }
-            
-                        len2 = reader.run_len(&white)?;                        
-                        if len2 == -2 {  // EOL
-                            eol = true;
-                            len2 = 0;
-                        }    
+                        len2 = reader.run_len(&white)?;                  
+
                     }
+                    if len1 == EOL {  // EOL
+                        eol = true;
+                        len1 = 0;
+                    }
+                    if len2 == EOL {  // EOL
+                        eol = true;
+                        len2 = 0;
+                    }    
 
 //                    let mut color = color ^ 0xff;
                     for i in a0..(a0 + len1 as usize).min(width) {
@@ -434,25 +405,41 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                         cur_codes[a0] = color^BLACK;
                     }
 
-                    if encoding >= 2{
+                    if cfg!(debug_assertions){
                         print!("{} {} {} ",len1,len2,a0);
                     }
                 },
                 Mode::Pass => {
-                    print!("Ps ");
+                    if cfg!(debug_assertions) {
+                        print!("Ps ");
+                    }
                     let color = if cur_codes[a0] == UNDEF {ref_codes[a0]} else {cur_codes[a0]};
                     let b1 = search_b1(&ref_codes, a0, color);
+                    if cfg!(debug_assertions) {
+                        print!("b1:{} ",b1);
+                    }
                     let b2 = search_b1(&ref_codes, b1, color^BLACK);
+                    if cfg!(debug_assertions) {
+                        print!("b1:{} ",b2);
+                    }
                     for i in a0..=b2 {
                         cur_codes[i] = color;
                     }
                     a0 = b2;
-                    print!("{} ",a0);
+                    if cfg!(debug_assertions) {
+                        print!("{} ",a0);
+                    }
                 },
                 Mode::V => {
-                    print!("V ");
+                    if cfg!(debug_assertions) {
+                        print!("V ");
+                    }
                     let color = if a0 == 0 {WHITE} else {cur_codes[a0]};
                     let a1 = search_b1(&ref_codes, a0, color);
+                    if cfg!(debug_assertions) {
+                        print!("b1:{} ",a1);
+                    }
+
                     for i in a0..a1 {
                         cur_codes[i] = color;
                     }
@@ -460,12 +447,20 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                         cur_codes[a1] = color^BLACK;
                     }
                     a0 = a1;
-                    print!("{} ",a0);
+                    if cfg!(debug_assertions) {
+                        print!("{} ",a0);
+                    }
                 },
                 Mode::Vr(n) => {
-                    print!("Vr({}) ",n);
+                    if cfg!(debug_assertions) {
+                        print!("Vr({}) ",n);
+                    }
                     let color = if a0 == 0 {WHITE} else {cur_codes[a0]};
                     let b1 = search_b1(&ref_codes, a0, color);
+                    if cfg!(debug_assertions) {
+                        print!("b1:{} ",b1);
+                    }
+
                     let a1 = (b1 + n).min(width);
                     for i in a0..a1 {
                         cur_codes[i] = color;
@@ -474,12 +469,19 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                         cur_codes[a1] = color^BLACK;
                     }
                     a0 = a1;
-                    print!("{} ",a0);
+                    if cfg!(debug_assertions) {
+                        print!("{} ",a0);
+                    }
                 },
                 Mode::Vl(n) => {
-                    print!("Vl({}) ",n);
+                    if cfg!(debug_assertions) {
+                        print!("Vl({}) ",n);
+                    }
                     let color = if a0 == 0 {WHITE} else {cur_codes[a0]};
                     let b1 = search_b1(&ref_codes, a0, color);
+                    if cfg!(debug_assertions) {
+                        print!("b1:{} ",b1);
+                    }
                     let a1 = b1.checked_sub(n).unwrap_or(0);
                     for i in a0..a1 {
                         cur_codes[i] = color;
@@ -488,27 +490,33 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                         cur_codes[a1] = color^BLACK;
                     }
                     a0 = a1;
-                    print!("{} ",a0);
+                    if cfg!(debug_assertions) {
+                        print!("{} ",a0);
+                    }
                 },
                 Mode::Ext1D(n) => {
-                    let ptr = reader.ptr - 32;
-                    println!("");
-                    for i in 0..64 {
-                        print!("{:08b} ",reader.buffer[ptr + i].reverse_bits());
-                        if i % 8 == 7 {
-                            println!("");
+                    if cfg!(debug_assertions) {
+                        let ptr = reader.ptr - 32;
+                        println!("");
+                        for i in 0..64 {
+                            print!("{:08b} ",reader.buffer[ptr + i].reverse_bits());
+                            if i % 8 == 7 {
+                                println!("");
+                            }
                         }
                     }
                     let message = format!("not support 1D Ext({}) for CCITT decoder",n);
                     return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, message)));                    
                 },
                 Mode::Ext2D(n) => {
-                    let ptr = reader.ptr - 32;
-                    println!("");
-                    for i in 0..64 {
-                        print!("{:08b} ",reader.buffer[ptr + i].reverse_bits());
-                        if i % 8 == 7 {
-                            println!("");
+                    if cfg!(debug_assertions) {
+                        let ptr = reader.ptr - 32;
+                        println!("");
+                        for i in 0..64 {
+                            print!("{:08b} ",reader.buffer[ptr + i].reverse_bits());
+                            if i % 8 == 7 {
+                                println!("");
+                            }
                         }
                     }
                     let message = format!("not support 2D Ext({}) for CCITT decoder",n);
@@ -526,11 +534,18 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                 }
             }
         }
-        if encoding >= 2 {
-            println!("\n");
-            if y < 122 && y >= 115 {
-                println!("{:?}",cur_codes);
+        if encoding == 3 {
+            if eol == true { // EOBF uncheck
+                break;
             }
+            /*
+                if reader.look_bits(12)? == 1 {  // EOL?
+                    reader.skip_bits(12);
+                } else {
+                    warning!("unexcept eol");
+                }
+                reader.flush();
+            */
         }
 
         for i in 0..width {
@@ -559,7 +574,7 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
             }
         }
 
-        if encoding == 2{
+        if encoding == 2 {
             let v = reader.get_bits(1)?;
             is2d = if v == 0 { true } else { false };
         }

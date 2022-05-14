@@ -40,11 +40,16 @@ fn create_pallet(bits:usize,is_black_zero:bool) -> Vec<RGBA>{
 
 fn planar_to_chuncky(data:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
     let mut buf = vec![];
-    let length = header.height as usize * header.width as usize * header.bitspersamples[0] as usize / 8;
-    if buf.len() < length * header.samples_per_pixel as usize {
+    let mut total_length = 0;
+    for bits in &header.bitspersamples {
+        total_length += header.height as usize * header.width as usize * ((*bits as usize + 7) / 8);
+    }
+
+    if data.len() < total_length as usize {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data shotage.".to_string())));
     }
 
+    let length = header.height as usize * header.width as usize * ((header.bitspersamples[0] as usize + 7) / 8);
     for i in 0..length {
         for j in 0..header.samples_per_pixel as usize {
             buf.push(data[i + j * length]);
@@ -113,18 +118,28 @@ pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,heade
         }
     }
 
-    let mut i = 0;
+    let mut row_len = ((header.width as usize * header.bitspersample as usize) + 7) / 8;
+    if header.bitspersample == 4 {
+        row_len *= 2;
+    } else if header.bitspersample == 2 {
+        row_len *= 4;
+    } else if header.bitspersample == 1 {
+        row_len *= 8;
+    }
 
-    for y in y..(y+strip) {
+    for (l,y) in (y..(y+strip)).enumerate() {
         let mut buf = vec![];
         let mut prevs = vec![0_u8;header.samples_per_pixel as usize];
-        for _ in 0..header.width as usize {
+        let mut i = l * row_len;
 
+
+        for _ in 0..header.width as usize {
             match header.photometric_interpretation {
                 0 | 1 | 3 => {
                     match header.bitspersamples[0] {
                         16 => { // Illegal tiff(TOWNS TIFF)
-                            if header.max_sample_values[0] == 32767 && header.tiff_headers.endian == bin_rs::Endian::LittleEndian {
+                            if header.max_sample_values.len() == 1 && header.max_sample_values[0] == 32767 
+                                                && header.tiff_headers.endian == bin_rs::Endian::LittleEndian {
                                 let color = read_u16(&data,i,header.tiff_headers.endian) >> 8;
                                 let temp_r = (color >> 5 & 0x1f) as u8;
                                 let r = (temp_r <<3 | temp_r >>2) as u8;
@@ -147,7 +162,7 @@ pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,heade
                                 buf.push(color);
                                 buf.push(color);
                                 buf.push(color);
-                                i += header.samples_per_pixel as usize;
+                                i += header.bitspersamples[0] as usize / 8;
                             }
                         },
                         8 => {
@@ -176,13 +191,13 @@ pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,heade
                                 if header.fill_order == 1 {
                                     c = (color >> 4) as usize;
                                 } else {
-                                    c = (color & 0xf) as usize;
+                                    c = (color.reverse_bits() & 0xf) as usize;
                                 }
                             } else {
                                 if header.fill_order == 1 {
                                     c = (color & 0xf) as usize;
                                 } else {
-                                    c = (color >> 4) as usize;
+                                    c = (color.reverse_bits() >> 4) as usize;
                                 }
                             }
                             
@@ -199,9 +214,9 @@ pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,heade
                             let color = data[i/4];
                             let shift = (i % 4) * 2;
                             if header.fill_order == 1 {
-                                    c = ((color >> (6 - shift)) & 0x3) as usize;
+                                c = ((color >> (6 - shift)) & 0x3) as usize;
                             } else {
-                                    c = ((color >> shift)& 0x3) as usize;
+                                c = ((color.reverse_bits() >> (6 - shift)) & 0x3) as usize;
                             }
                             
                             let rgba = &color_table.as_ref().unwrap()[c];
@@ -217,11 +232,11 @@ pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,heade
                             let color = data[i/8];
                             let shift = i % 8;
                             if header.fill_order == 1 {
-                                    c = ((color >> (7 - shift)) & 0x1) as usize;
+                                c = ((color >> (7 - shift)) & 0x1) as usize;
                             } else {
-                                    c = ((color >> shift)& 0x1) as usize;
+                                c = ((color.reverse_bits() >> (7 - shift)) & 0x1) as usize;
                             }
-                            
+
                             let rgba = &color_table.as_ref().unwrap()[c];
         
                             buf.push(rgba.red);
@@ -427,10 +442,8 @@ pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,heade
                 }
             }           
         }
+
         option.drawer.draw(0,y,header.width as usize,1,&buf,None)?;
-        if i > data.len() {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Buffer overrun in draw.".to_string())));
-        }
     }
     Ok(None)
 
@@ -524,25 +537,41 @@ pub fn decode_none_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut
 
 
 pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &mut Tiff)-> Result<Option<ImgWarnings>,Error> {
-//    let buf = read_strips(reader, header)?;
-
     option.drawer.init(header.width as usize,header.height as usize,None)?;
-//    let mut y = 0;
-//    let mut strip = header.rows_per_strip as usize;
-//    let mut warnings = None;
+    let warnings = None;
 
     let bak_bitspersample = header.bitspersample;
     let bak_bitspersamples = header.bitspersamples.to_vec();
     header.bitspersample = 8;
     header.bitspersamples = [8].to_vec();
 
-    let buf = read_strips(reader, header)?;
-    let (data,_warning) = ccitt::decode(&buf, header)?;
+    if header.compression == Compression::CCITTGroup3Fax {
+        let buf = read_strips(reader, header)?;
+        let (data,_warning) = ccitt::decode(&buf, header)?;
+    
+        draw(&data,option,header)?;    
+    } else {    // CCITGroup4FAX
+        let mut y = 0;
+        let mut strip = header.rows_per_strip as usize;
+        for (i,offset) in header.strip_offsets.iter().enumerate() {
+            reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
+            let buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
+            let (data,_warning) = ccitt::decode(&buf, header)?;
+            draw_strip(&data, y, strip, option, header)?;
+            y += strip;
+            if y >= header.height as usize {
+                break;
+            }
+            if y + strip >= header.height as usize {
+                strip = header.height as usize - y;
+            }
+        }
 
-    let warnings = draw(&data,option,header)?;
+    }
 
     header.bitspersample = bak_bitspersample;
     header.bitspersamples = bak_bitspersamples.to_vec();
+
     Ok(warnings)
 }
 
@@ -580,7 +609,7 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
             return decode_deflate_compresson(reader,option,&header);
         },
         // no debug
-        Compression::CCITTHuffmanRLE | Compression::CCITTGroup3Fax /* | Compression::CCITTGroup4Fax */ => {
+        Compression::CCITTHuffmanRLE | Compression::CCITTGroup3Fax | Compression::CCITTGroup4Fax => {
             return decode_ccitt_compresson(reader, option, &mut header);
         },
 

@@ -299,7 +299,7 @@ pub struct Tiff {
     pub photometric_interpretation: u16,
 
     /// 0x010A FillOrder
-    /// 1 = msb ,2 = lsb. usualy msb.
+    /// 1 = msb ,2 = lsb. usualy msb. lsb is using FAX G3/G4 compressions.
     pub fill_order:u16,
     /// Image data start offsets. strip_offsets length need equal strip_byte_counts length
     pub strip_offsets:Vec<u32>,             
@@ -313,9 +313,11 @@ pub struct Tiff {
     /// 7 = RIGHTBOTTOM rotate 90 BOTTOMRIGHT
     /// 8 = LEFTBOTTOM  rotate 90 BOTTOMLEFT
     pub orientation: u32,               
-    /// 0x0115
+    /// 0x0115 samples per pixel
     /// 1 grayscale or Index color
-    /// 3 RGB Image
+    /// 2 also gralscale + alpha channel
+    /// 3 RGB Image/YCbCr Image...
+    /// 4 RGB + alpha/YMCK...
     pub samples_per_pixel:u16,          
     /// 0x0116 also width * Bitspersample /8
     pub rows_per_strip: u32,
@@ -331,8 +333,8 @@ pub struct Tiff {
     // 0x0103 Compression
     /// NoneCompression = 1,    supported
     /// CCITTHuffmanRE = 2,
-    /// CCITTGroup3Fax = 3,
-    /// CCITTGroup4Fax = 4,
+    /// CCITTGroup3Fax = 3, suppoted
+    /// CCITTGroup4Fax = 4, suppoted
     /// LZW = 5,    supported
     /// OldJpeg = 6,
     /// Jpeg = 7,   supported
@@ -361,9 +363,9 @@ pub struct Tiff {
     /// 0x011B y dot per inch
     pub y_resolution:f32,
 
-    // 0x0140 use only bitperpixel <= 8
-    // if color_table is empty,
-    // use standard color pallte or grayscale
+    /// 0x0140 use only bitperpixel <= 8
+    /// if color_table is empty,
+    /// use standard color pallte or grayscale
     pub color_table: Option<Vec<RGBA>>, 
 
     // no baseline
@@ -371,8 +373,25 @@ pub struct Tiff {
     pub starty: u32,                // 0x011F
     pub predictor: u16,             // 0x013D
     pub extra_samples:Vec<u16>,     // 0x0152
+
+    /// TileWidth/TileLength/TileOffsets/TileByteCOunts are using tiled image
+    /// TIFF 6.0 Section 15
+    pub tile_width: u32,            // 0x0142
+    pub tile_length:u32,            // 0x0143
+    pub tile_offsets:Vec<u32>,      // 0x0144
+    pub tile_byte_counts:Vec<u32>,  // 0x0145
+
+    // compression option 
+    // t4_options // G3
+    pub t4_options:u32,
+    pub t6_options:u32,             // G4
+    pub jpeg_tables:Vec<u8>,        // jpeg(new)
+
+    // metadata
     pub tiff_headers: TiffHeaders,
     pub icc_profile: Option<Vec<u8>>,       
+
+    // multi page tiff
     pub multi_page: Box<Vec<Tiff>>,
     // pub predictor // if predictor is 2,pixels are horizontal differencing. not support
 }
@@ -404,6 +423,13 @@ impl Tiff {
             starty: 0,
             predictor: 1,
             extra_samples: vec![],
+            tile_width: 0,
+            tile_length:0,
+            tile_offsets:vec![],
+            tile_byte_counts:vec![],
+            t4_options: 0,
+            t6_options: 0,
+            jpeg_tables: vec![],
             tiff_headers: TiffHeaders::empty(Endian::LittleEndian),
             icc_profile: None,
             multi_page: Box::new(Vec::new()),
@@ -625,7 +651,22 @@ impl Tiff {
                         current.planar_config =  d[0];
                     }
                 },
-                0x140 => {
+                0x013d => { // predictor
+                    if let DataPack::Short(d) = &header.data {
+                        current.predictor = d[0];
+                    }                    
+                },
+                0x0124 => { // T4Options
+                    if let DataPack::Long(d) = &header.data {
+                        current.t4_options = d[0];
+                    }
+                },
+                0x0125 => { // T6Options
+                    if let DataPack::Long(d) = &header.data {
+                        current.t6_options = d[0];
+                    }
+                },
+                0x0140 => {  // color table
                     if let DataPack::Short(d) = &header.data {
                         let mut table :Vec<RGBA> = Vec::new();
                         let offset = header.length / 3;
@@ -645,15 +686,51 @@ impl Tiff {
                         current.color_table = Some(table)
                     }
                 },
-                0x013d => { // predictor
+                0x142 => { // TileWidth
                     if let DataPack::Short(d) = &header.data {
-                        current.predictor = d[0];
-                    }                    
+                        current.tile_width = d[0] as u32;
+                    } else if let DataPack::Long(d) = &header.data {
+                        current.tile_width = d[0] as u32;
+                    }
+                },
+                0x143 => { // TileWidth
+                    if let DataPack::Short(d) = &header.data {
+                        current.tile_length = d[0] as u32;
+                    } else if let DataPack::Long(d) = &header.data {
+                        current.tile_length = d[0] as u32;
+                    }
+                },
+                0x144 => { // TileOffsets
+                   let mut tile_offsets = vec![];
+                    if let DataPack::Long(d) = &header.data {
+                        for i in 0..d.len() {
+                            tile_offsets.push(d[i] as u32);
+                        }
+                    }
+                    current.tile_offsets = tile_offsets;
+                },
+                0x145 => {
+                    let mut tile_byte_counts = vec![];
+                    if let DataPack::Short(d) = &header.data {
+                        for i in 0..d.len() {
+                            tile_byte_counts.push(d[i] as u32);
+                        }
+                    } else if let DataPack::Long(d) = &header.data {
+                        for i in 0..d.len() {
+                            tile_byte_counts.push(d[i] as u32);
+                        }
+                    }
+                    current.tile_byte_counts = tile_byte_counts;
                 },
                 0x0152 => { // ExtraSamples
                     if let DataPack::Short(d) = &header.data {
                         current.extra_samples = d.to_vec();
                     }                    
+                },
+                0x015b => { //Jpeg Tables
+                    if let DataPack::Undef(d) = &header.data {
+                        current.jpeg_tables = d.to_vec();
+                    }
                 },
                 0x8773 => { //ICC Profile
                     if let DataPack::Undef(d) = &header.data {

@@ -6,6 +6,7 @@ homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
 description = "WML2 - Web graphic Multi format Library"
 edition = "2021"
+rust-version = "1.60"
 license = "MIT"
 keywords = ["image","jpeg","gif","png","bmp","exif","tiff"]
 

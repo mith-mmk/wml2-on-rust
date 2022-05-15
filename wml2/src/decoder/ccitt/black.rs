@@ -1,5 +1,5 @@
 
-use crate::tiff::decoder::ccitt::HuffmanTree;
+use crate::decoder::ccitt::HuffmanTree;
 
 pub fn black_tree() -> HuffmanTree {
     let working_bits = 6;

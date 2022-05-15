@@ -1,9 +1,7 @@
+// need rust 1.60 +
 mod white;
 mod black;
 type Error = Box<dyn std::error::Error>;
-use crate::tiff::decoder::Tiff;
-use crate::tiff::header::Compression;
-use crate::tiff::header::DataPack;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 pub use white::white_tree;
@@ -16,6 +14,14 @@ const UNDEF:u8 = 1;
 const TERMINATE:u8 = 2;
 const BLACK:u8 = 0xff;
 
+#[derive(PartialEq,Debug)]
+pub enum Encoder {
+    HuffmanRLE,
+    G31d,
+    G32d,
+    G4,
+}
+
 
 #[derive(Debug)]
 pub struct HuffmanTree{
@@ -27,9 +33,7 @@ pub struct HuffmanTree{
 }
 
 
-#[derive(Debug)]
-#[derive(PartialEq)]
-#[derive(Clone)]
+#[derive(Debug,PartialEq,Clone)]
 pub enum Mode {
     Pass,
     Horiz,
@@ -109,8 +113,6 @@ impl BitReader {
         Ok(bits as usize)
     }
 
-
-
     fn skip_bits(&mut self,size:usize) {
         self.left_bits -= size;
     }
@@ -150,6 +152,7 @@ impl BitReader {
         let (mut bits, mut val) = tree.matrix[pos];
         if bits == -1 {
             let pos = self.look_bits(tree.max_bits)?;
+            // need rust 1.60
             (bits,val) = tree.append[pos];
             if bits == -1 { //fill
                 self.skip_bits(1);
@@ -247,9 +250,9 @@ impl BitReader {
     }
  
 // skip next byte
-//    fn flush(&mut self) {
-//        self.left_bits -= self.left_bits % 8;
-//    }
+    fn flush(&mut self) {
+        self.left_bits -= self.left_bits % 8;
+    }
 }
 
 fn search_b1(codes:&[u8],a0:usize,color:u8) -> usize {
@@ -269,56 +272,19 @@ fn search_b1(codes:&[u8],a0:usize,color:u8) -> usize {
     return i;
 }
 
+// Tiff independ
+pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) -> Result<(Vec<u8>,bool),Error> {
 
-
-pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
-    let mut t4_options = 0;
-    for header in &header.tiff_headers.headers {
-        if header.tagid == 0x0124 {
-            if let DataPack::Long(option) = &header.data {
-                t4_options = option[0];
-                break;
-            }
-        }
-    }
-    let mut t6_options = 0;
-    for header in &header.tiff_headers.headers {
-        if header.tagid == 0x0124 {
-            if let DataPack::Long(option) = &header.data {
-                t6_options = option[0];
-                break;
-            }
-        }
-    }
-
-    let mut encoding = 1;   //1D
-
-    if header.compression == Compression::CCITTGroup4Fax {
-        encoding = 3;   // G4
-    }
-
-    if t4_options & 0x01 > 0 {
-        encoding = 2;   //2D
-    }
-    if t4_options & 0x2 > 0 || t6_options & 0x2 > 0 {
-//        encoding = 0;   // UNCOMPRESSED
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, "CCITT uncompress is no support".to_string())))
-    }
-
-    let width = header.width.clone() as usize;
-    let height = header.height.clone() as usize;
-    let photometric_interpretation = header.photometric_interpretation.clone();
-    let is_lsb = if header.fill_order == 2 {true} else {false};
-    let mut data = vec![];
-    let white = if photometric_interpretation == 0 {white_tree()} else {black_tree()};
-    let black = if photometric_interpretation == 1 {white_tree()} else {black_tree()};
+    let mut data = Vec::with_capacity(width*height);
+    let white = white_tree();
+    let black = black_tree();
 
     let mut reader = BitReader::new(buf,is_lsb);
 
     let mut code1;
 
     // seek first EOL
-    if encoding <= 2 {
+    if encoding == Encoder::G31d || encoding == Encoder::G32d {
         loop {
             code1 = reader.look_bits(12)?;
             if code1 != 0 { break };
@@ -329,11 +295,11 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
         }    
     }
 
-    let mut is2d = if encoding == 3 {true} else {false};
+    let mut is2d = if encoding == Encoder::G4 {true} else {false};
 
     let mut y = 0;
     
-    if encoding == 2 {
+    if encoding == Encoder::G32d {
         if reader.get_bits(1)? == 0 {
             is2d = true
         }
@@ -345,13 +311,12 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
     for _ in 0..width {cur_codes.push(UNDEF);}
     cur_codes.push(TERMINATE);
 
-
     loop {
         let mut a0 = 0;
         let mut eol = false;
 
         if cfg!(debug_assertions) {
-            print!("y {} {} ",y,is2d);
+            print!("\ny {} {} ",y,is2d);
         }
 
         while a0 < width && !eol {
@@ -385,16 +350,15 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                     if len2 == EOL {  // EOL
                         eol = true;
                         len2 = 0;
-                    }    
+                    }
 
-//                    let mut color = color ^ 0xff;
                     for i in a0..(a0 + len1 as usize).min(width) {
                         cur_codes[i] = color;
                     }
 
                     a0 += len1 as usize;
 
-                    color ^= 0xff;
+                    color ^= BLACK;
 
                     for i in a0..(a0 + len2 as usize).min(width) {
                         cur_codes[i] = color;
@@ -536,7 +500,7 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
                 }
             }
         }
-        if encoding == 3 {
+        if encoding == Encoder::G4 {
             if eol == true { // EOBF uncheck
                 break;
             }
@@ -552,12 +516,11 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
 
         for i in 0..width {
             if cur_codes[i] == BLACK {
-                data.push(0xff);
+                data.push(BLACK);
             } else {
                 data.push(0);
             }
         }
-
 
         y += 1;
         ref_codes = cur_codes.clone();
@@ -566,7 +529,7 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
     
         if y >= height { break;}
 
-        if encoding <=2 && !eol {
+        if (encoding == Encoder::G31d || encoding == Encoder::G32d) && !eol {
             loop {
                 if reader.look_bits(12)? == 1 {  // EOL?
                     reader.skip_bits(12);
@@ -576,9 +539,13 @@ pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {
             }
         }
 
-        if encoding == 2 {
+        if encoding == Encoder::G32d {
             let v = reader.get_bits(1)?;
             is2d = if v == 0 { true } else { false };
+        }
+
+        if encoding == Encoder::HuffmanRLE {
+            reader.flush();
         }
     }
 

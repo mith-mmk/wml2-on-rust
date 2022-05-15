@@ -8,21 +8,13 @@ use bin_rs::reader::BinaryReader;
 // Tiff in JPEG is a multi parts image.
 pub fn decode_jpeg_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
 
-    let mut jpeg_tables:Option<Vec<u8>> = None;
-    for header in &header.tiff_headers.headers {
-        if header.tagid == 0x015b {
-            if let DataPack::Undef(data) = &header.data {
-                jpeg_tables = Some(data.to_vec());
-                break;
-            }
-        }
-    }
+    let jpeg_tables = &header.jpeg_tables;
     let metadata;
-    if jpeg_tables.is_none() {
+    if jpeg_tables.len() == 0 {
         metadata = vec![0xff,0xd8]; // SOI
     } else {
-        let len = jpeg_tables.as_ref().unwrap().len() - 2;
-        metadata = (&jpeg_tables.as_ref().unwrap()[..len]).to_vec();  // remove EOI
+        let len = jpeg_tables.len() - 2;
+        metadata = (&jpeg_tables[..len]).to_vec();  // remove EOI
     }
     let mut warnings:Option<ImgWarnings> = None;
     let mut y = 0;

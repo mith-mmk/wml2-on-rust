@@ -1,4 +1,4 @@
-use crate::tiff::decoder::ccitt::HuffmanTree;
+use crate::decoder::ccitt::HuffmanTree;
 
 pub fn white_tree() -> HuffmanTree{
     let working_bits = 9;

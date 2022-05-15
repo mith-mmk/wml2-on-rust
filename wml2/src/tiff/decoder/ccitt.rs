@@ -3,7 +3,6 @@ type Error = Box<dyn std::error::Error>;
 use crate::error::*;
 use crate::tiff::decoder::Tiff;
 use crate::tiff::header::Compression;
-use crate::tiff::header::DataPack;
 use crate::decoder::ccitt::{decoder, Encoder};
 
 pub fn decode(buf:&[u8],header: &Tiff) -> Result<(Vec<u8>,bool),Error> {

@@ -61,6 +61,10 @@ fn planar_to_chuncky(data:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
 }
 
 pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error>  {
+    draw_tile(data, y, strip,0,header.width as usize, option, header)
+}
+
+pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error>  {
     if data.len() == 0 {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data empty.".to_string())));
     }
@@ -444,7 +448,7 @@ pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,heade
             }           
         }
 
-        option.drawer.draw(0,y,header.width as usize,1,&buf,None)?;
+        option.drawer.draw(x,y,width as usize,1,&buf,None)?;
     }
     Ok(None)
 
@@ -549,7 +553,6 @@ pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mu
     if header.compression == Compression::CCITTGroup3Fax {
         let buf = read_strips(reader, header)?;
         let (data,_warning) = ccitt::decode(&buf, header)?;
-    
         draw(&data,option,header)?;    
     } else {    // CCITGroup4FAX
         let mut y = 0;
@@ -615,8 +618,6 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
 
 
     option.drawer.set_metadata("Format",DataMap::Ascii("Tiff".to_owned()))?;
-//    let mut map = super::util::make_metadata(&header.tiff_headers);
-
     option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
     option.drawer.set_metadata("height",DataMap::UInt(header.height as u64))?;
     option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bitspersample as u64))?;

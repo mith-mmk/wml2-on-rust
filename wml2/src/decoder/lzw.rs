@@ -5,6 +5,7 @@ use crate::error::ImgErrorKind;
 
 
 const MAX_TABLE:usize = 4096;
+const MAX_CBL:usize = 12;
 
 pub struct Lzwdecode {
     buffer: Vec<u8>,
@@ -155,7 +156,6 @@ impl Lzwdecode {
                 for p in &self.dic[self.prev_code] {
                     data.push(*p);
                 }
-
                 self.clear_dic();
             } else if code == self.end {
                 let mut table :Vec<u8> = Vec::new();
@@ -167,7 +167,8 @@ impl Lzwdecode {
                 table.push(append_code);
                 return Ok(data)
             } else if code > self.dic.len() {
-                return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData, "Over table in LZW".to_string())));
+                let message = format!("Over table in LZW.Table size is {},but code is {}",self.dic.len(),code);
+                return Err(Box::new(ImgError::new_const(ImgErrorKind::IllegalData, message)));
             } else {
                 let append_code;
                 if code == self.dic.len() {
@@ -186,8 +187,10 @@ impl Lzwdecode {
                     // Tiff LZW is increment entry value before next loop.
                     let next = self.dic.len() + self.is_tiff as usize;
                     if next == self.bit_mask as usize + 1 && next < self.max_table { 
-                        self.cbl += 1;
-                        self.bit_mask = (self.bit_mask << 1) | 1;
+                        if self.cbl < MAX_CBL {
+                            self.cbl += 1;
+                            self.bit_mask = (self.bit_mask << 1) | 1;    
+                        }
                     }
                 }
             }

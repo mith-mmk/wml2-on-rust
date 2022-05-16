@@ -453,7 +453,22 @@ impl PickCallback for ImageBuffer {
                 data.push(buffer[offset_src + 2]);
                 data.push(buffer[offset_src + 3]);
             }
+            for _ in w..width { // 0 fill
+                data.push(0x00);
+                data.push(0x00);
+                data.push(0x00);
+                data.push(0x00);
+            }
         }
+        for _ in h..height {    // 0 fill
+            for _ in 0..width {
+                data.push(0x00);
+                data.push(0x00);
+                data.push(0x00);
+                data.push(0x00);
+            }
+        }
+
         Ok(Some(data))
     }
 

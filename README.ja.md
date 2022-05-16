@@ -29,7 +29,7 @@ $ cargo run --example metadata --release <inputfile>
 |JPEG|x|O|算術符号には対応していない|
 |GIF|x|O|アニメーションGIF対応|
 |PNG|O|O|APNG対応|
-|TIFF|x|o|無圧縮/LZW/Packbits/Jpeg(new)/3G Fax(1Dのみ)に対応|
+|TIFF|x|o|無圧縮/LZW/Packbits/Jpeg(new)/3G/4G Faxに対応|
 |WEBP|x|x|not support|
 
 # 使い方

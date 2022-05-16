@@ -66,8 +66,6 @@ impl BitReader {
             is_lsb: is_lsb,
             warning: false,
         };
-//        this.fill_bits();
-
         this
     }
 
@@ -79,16 +77,6 @@ impl BitReader {
             return self.look_bits_msb(size)
         }
     }
-
-    /*
-    fn get_bits(&mut self,size:usize) -> Result<usize,Error> {
-        if self.is_lsb {
-            return self.get_bits_lsb(size)
-        } else {
-            return self.get_bits_msb(size)
-        }
-    }
-    */
 
     fn look_bits_msb(&mut self,size:usize) -> Result<usize,Error> {
         while self.left_bits <= 24 {
@@ -292,7 +280,7 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
         }
         if code1 == 1 {
             reader.skip_bits(12);
-        }    
+        }
     }
 
     let mut is2d = if encoding == Encoder::G4 {true} else {false};
@@ -460,7 +448,7 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                 },
                 Mode::Ext1D(n) => {
                     if cfg!(debug_assertions) {
-                        let ptr = reader.ptr - 32;
+                        let ptr = reader.ptr.checked_sub(32).unwrap_or(0);
                         println!("");
                         for i in 0..64 {
                             print!("{:08b} ",reader.buffer[ptr + i].reverse_bits());
@@ -474,7 +462,7 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                 },
                 Mode::Ext2D(n) => {
                     if cfg!(debug_assertions) {
-                        let ptr = reader.ptr - 32;
+                        let ptr = reader.ptr.checked_sub(32).unwrap_or(0);
                         println!("");
                         for i in 0..64 {
                             print!("{:08b} ",reader.buffer[ptr + i].reverse_bits());

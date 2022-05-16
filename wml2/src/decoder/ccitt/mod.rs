@@ -10,8 +10,10 @@ pub use black::black_tree;
 const EOL:i32 = -2;
 
 const WHITE:u8 = 0;
+/*
 const UNDEF:u8 = 1;
 const TERMINATE:u8 = 2;
+*/
 const BLACK:u8 = 0xff;
 
 #[derive(PartialEq,Debug)]
@@ -102,7 +104,16 @@ impl BitReader {
     }
 
     fn skip_bits(&mut self,size:usize) {
-        self.left_bits -= size;
+        if self.left_bits > size {
+            self.left_bits -= size;
+        } else {
+            let r = self.look_bits(size);
+            if r.is_ok() {
+                self.left_bits -= size;
+            } else {
+                self.left_bits = 0;
+            }
+        }
     }
 
     fn look_bits_lsb(&mut self,size:usize) -> Result<usize,Error> {
@@ -243,23 +254,6 @@ impl BitReader {
     }
 }
 
-fn search_b1(codes:&[u8],a0:usize,color:u8) -> usize {
-    let mut i = a0 ;
-    for _ in i..codes.len() {
-        if codes[i] == color {
-            break;
-        }
-        i += 1;
-    }
-    for _ in i..codes.len() {
-        if codes[i] != color {
-            break;
-        }
-        i += 1;
-    }
-    return i;
-}
-
 // Tiff independ
 pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) -> Result<(Vec<u8>,bool),Error> {
 
@@ -292,16 +286,26 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
             is2d = true
         }
     }
-
+    // slow code
+    /*
     let mut ref_codes = vec![WHITE;width];
     ref_codes.push(TERMINATE);
     let mut cur_codes = Vec::with_capacity(width+1);
     for _ in 0..width {cur_codes.push(UNDEF);}
     cur_codes.push(TERMINATE);
+    */
+    // fast code
+    let mut codes = vec![0,width];
 
     loop {
         let mut a0 = 0;
         let mut eol = false;
+
+        // test code
+        let pre_codes = codes;
+        codes = Vec::with_capacity(width);
+        codes.push(0);
+        let mut codes_ptr = 0;
 
         if cfg!(debug_assertions) {
             print!("\ny {} {} ",y,is2d);
@@ -311,13 +315,9 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
             let mode = if is2d { reader.mode()? } else { Mode::Horiz }; 
             match mode {
                 Mode::Horiz => {
-                    let mut color = if is2d {cur_codes[a0]} else {WHITE};
-                    if color == UNDEF {
-                        color = ref_codes[a0];
-                    }
 
                     let (mut len1, mut len2);
-                    if color == WHITE {
+                    if codes.len() & 0x1 > 0 {
                         if cfg!(debug_assertions) {
                             print!("Hw ");
                         }
@@ -328,8 +328,7 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                             print!("Hb ");
                         }
                         len1 = reader.run_len(&black)?;
-                        len2 = reader.run_len(&white)?;                  
-
+                        len2 = reader.run_len(&white)?;
                     }
                     if len1 == EOL {  // EOL
                         eol = true;
@@ -340,22 +339,10 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                         len2 = 0;
                     }
 
-                    for i in a0..(a0 + len1 as usize).min(width) {
-                        cur_codes[i] = color;
-                    }
-
                     a0 += len1 as usize;
-
-                    color ^= BLACK;
-
-                    for i in a0..(a0 + len2 as usize).min(width) {
-                        cur_codes[i] = color;
-                    }
+                    codes.push(a0);
                     a0 += len2 as usize;
-
-                    if a0 < width && cur_codes[a0] == UNDEF {
-                        cur_codes[a0] = color^BLACK;
-                    }
+                    codes.push(a0);
 
                     if cfg!(debug_assertions){
                         print!("{} {} {} ",len1,len2,a0);
@@ -365,18 +352,12 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                     if cfg!(debug_assertions) {
                         print!("Ps ");
                     }
-                    let color = if cur_codes[a0] == UNDEF {ref_codes[a0]} else {cur_codes[a0]};
-                    let b1 = search_b1(&ref_codes, a0, color);
-                    if cfg!(debug_assertions) {
-                        print!("b1:{} ",b1);
+                    codes_ptr += 1;
+                    while a0 >= pre_codes[codes_ptr] {
+                        codes_ptr += 2;
                     }
-                    let b2 = search_b1(&ref_codes, b1, color^BLACK);
-                    if cfg!(debug_assertions) {
-                        print!("b1:{} ",b2);
-                    }
-                    for i in a0..=b2 {
-                        cur_codes[i] = color;
-                    }
+                    codes_ptr += 1;
+                    let b2 = pre_codes[codes_ptr];
                     a0 = b2;
                     if cfg!(debug_assertions) {
                         print!("{} ",a0);
@@ -386,19 +367,17 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                     if cfg!(debug_assertions) {
                         print!("V ");
                     }
-                    let color = if a0 == 0 {WHITE} else {cur_codes[a0]};
-                    let a1 = search_b1(&ref_codes, a0, color);
-                    if cfg!(debug_assertions) {
-                        print!("b1:{} ",a1);
+                    codes_ptr += 1;
+
+                    while a0 >= pre_codes[codes_ptr] {
+                        codes_ptr += 2;
                     }
 
-                    for i in a0..a1 {
-                        cur_codes[i] = color;
-                    }
-                    if a1 < cur_codes.len() && cur_codes[a1] == UNDEF {
-                        cur_codes[a1] = color^BLACK;
-                    }
+                    let a1 = pre_codes[codes_ptr];
                     a0 = a1;
+
+                    codes.push(a0);
+
                     if cfg!(debug_assertions) {
                         print!("{} ",a0);
                     }
@@ -407,20 +386,18 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                     if cfg!(debug_assertions) {
                         print!("Vr({}) ",n);
                     }
-                    let color = if a0 == 0 {WHITE} else {cur_codes[a0]};
-                    let b1 = search_b1(&ref_codes, a0, color);
-                    if cfg!(debug_assertions) {
-                        print!("b1:{} ",b1);
+                    codes_ptr += 1;
+
+                    while a0 >= pre_codes[codes_ptr] {
+                        codes_ptr += 2;
                     }
 
+                    let b1 = pre_codes[codes_ptr];
+
                     let a1 = (b1 + n).min(width);
-                    for i in a0..a1 {
-                        cur_codes[i] = color;
-                    }
-                    if a1 < cur_codes.len() && cur_codes[a1] == UNDEF {
-                        cur_codes[a1] = color^BLACK;
-                    }
                     a0 = a1;
+                    codes.push(a0);
+
                     if cfg!(debug_assertions) {
                         print!("{} ",a0);
                     }
@@ -429,19 +406,20 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                     if cfg!(debug_assertions) {
                         print!("Vl({}) ",n);
                     }
-                    let color = if a0 == 0 {WHITE} else {cur_codes[a0]};
-                    let b1 = search_b1(&ref_codes, a0, color);
-                    if cfg!(debug_assertions) {
-                        print!("b1:{} ",b1);
+                    codes_ptr += 1;
+
+                    while a0 >= pre_codes[codes_ptr] {
+                        codes_ptr += 2;
                     }
+                    let b1 = pre_codes[codes_ptr];
                     let a1 = b1.checked_sub(n).unwrap_or(0);
-                    for i in a0..a1 {
-                        cur_codes[i] = color;
-                    }
-                    if a1 < cur_codes.len() && cur_codes[a1] == UNDEF {
-                        cur_codes[a1] = color^BLACK;
-                    }
                     a0 = a1;
+                    codes.push(a0);
+
+                    if codes_ptr > 2 {
+                        codes_ptr -= 2;
+                    }
+
                     if cfg!(debug_assertions) {
                         print!("{} ",a0);
                     }
@@ -488,7 +466,7 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                 }
             }
         }
-        if encoding == Encoder::G4 {
+        if encoding == Encoder::G4 {    // G4 Tiff encoding does have eight EOLs at the end.
             if eol == true { // EOBF uncheck
                 break;
             }
@@ -502,6 +480,18 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
             */
         }
 
+        codes.push(width);
+
+        let mut color = WHITE;
+
+        for i in 1..codes.len() {
+            for _ in codes[i-1]..codes[i] {
+                data.push(color);
+            }
+            color ^= BLACK;
+        }
+        // slow code
+/*
         for i in 0..width {
             if cur_codes[i] == BLACK {
                 data.push(BLACK);
@@ -509,13 +499,13 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                 data.push(0);
             }
         }
-
-        y += 1;
         ref_codes = cur_codes.clone();
         cur_codes = vec![UNDEF;width];
         cur_codes.push(TERMINATE);
-    
-        if y >= height { break;}
+*/  
+    y += 1;
+
+    if y >= height { break; }    // G3 Tiff encoding does not have EOL at the end.
 
         if (encoding == Encoder::G31d || encoding == Encoder::G32d) && !eol {
             loop {

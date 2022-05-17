@@ -295,7 +295,7 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
     cur_codes.push(TERMINATE);
     */
     // fast code
-    let mut codes = vec![0,width];
+    let mut codes = vec![0,0,width];
 
     loop {
         let mut a0 = 0;
@@ -303,9 +303,10 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
 
         // test code
         let pre_codes = codes;
-        codes = Vec::with_capacity(width);
+        codes = Vec::with_capacity(width+2);
         codes.push(0);
-        let mut codes_ptr = 0;
+        codes.push(0);
+        let mut codes_ptr = 1;
 
         if cfg!(debug_assertions) {
             print!("\ny {} {} ",y,is2d);
@@ -317,7 +318,7 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                 Mode::Horiz => {
 
                     let (mut len1, mut len2);
-                    if codes.len() & 0x1 > 0 {
+                    if codes.len() & 0x1 == 0 {
                         if cfg!(debug_assertions) {
                             print!("Hw ");
                         }
@@ -416,9 +417,7 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                     a0 = a1;
                     codes.push(a0);
 
-                    if codes_ptr > 2 {
-                        codes_ptr -= 2;
-                    }
+                    codes_ptr -= 2;
 
                     if cfg!(debug_assertions) {
                         print!("{} ",a0);
@@ -484,7 +483,7 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
 
         let mut color = WHITE;
 
-        for i in 1..codes.len() {
+        for i in 2..codes.len() {
             for _ in codes[i-1]..codes[i] {
                 data.push(color);
             }

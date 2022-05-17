@@ -43,7 +43,6 @@ pub enum Mode {
     Vr(usize),
     Vl(usize),
     Ext2D(usize),
-    Ext1D(usize),
     EOL,
     None
 }
@@ -236,15 +235,6 @@ impl BitReader {
             return Ok(Mode::Ext2D(n))
         }
         self.skip_bits(bits);
-
-        if bits == 12 {
-            if self.look_bits(9)? == 1 {
-                self.skip_bits(9);
-                let n = self.look_bits(3)?;
-                self.skip_bits(3);
-                return Ok(Mode::Ext1D(n))
-            }
-        }
         Ok(Mode::None)        
     }
  
@@ -422,20 +412,6 @@ pub fn decoder(buf:&[u8],width:usize,height:usize,encoding:Encoder,is_lsb:bool) 
                     if cfg!(debug_assertions) {
                         print!("{} ",a0);
                     }
-                },
-                Mode::Ext1D(n) => {
-                    if cfg!(debug_assertions) {
-                        let ptr = reader.ptr.checked_sub(32).unwrap_or(0);
-                        println!("");
-                        for i in 0..64 {
-                            print!("{:08b} ",reader.buffer[ptr + i].reverse_bits());
-                            if i % 8 == 7 {
-                                println!("");
-                            }
-                        }
-                    }
-                    let message = format!("not support 1D Ext({}) for CCITT decoder",n);
-                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError, message)));                    
                 },
                 Mode::Ext2D(n) => {
                     if cfg!(debug_assertions) {

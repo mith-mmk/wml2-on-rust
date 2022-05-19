@@ -85,24 +85,23 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
             match r {
                 Ok(..) => {
                     println! ("{:?} {} ms",filename,eslaped_time.as_millis());
-                    let metadata = image.metadata();
-                    if let Ok(metadata) = metadata {
-                        if let Some(metadata) = metadata {
-                            print_metadata(&metadata); 
-                        }
-                    }
+//                    let metadata = image.metadata();
+//                    if let Ok(metadata) = metadata {
+//                        if let Some(metadata) = metadata {
+//                            print_metadata(&metadata); 
+//                        }
+//                    }
 
                     return Some(image);
                 },
                 Err(err) => {
                     println! ("{:?} {}",filename,err);
-                    let metadata = image.metadata();
-                    if let Ok(metadata) = metadata {
-                        if let Some(metadata) = metadata {
-                            print_metadata(&metadata); 
-                        }
-                    }
-
+//                    let metadata = image.metadata();
+//                    if let Ok(metadata) = metadata {
+//                        if let Some(metadata) = metadata {
+//                            print_metadata(&metadata); 
+//                        }
+//                    }
                 }
             }
         },

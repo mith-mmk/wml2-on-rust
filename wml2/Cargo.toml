@@ -17,9 +17,15 @@ crate-type = ["rlib"]
 #bmp = []
 #gif = []
 #jpeg = []
+#use LL&M for IDCT
+idct_llm = []   
+#use Slower for IDCT
+idct_slowerm = [] 
+#default use AAN for IDCT
 #png = []
 #tiff = []
 #all = []
+# use multithread
 multithread = []
 
 [dependencies]

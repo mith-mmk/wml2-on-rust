@@ -3,6 +3,8 @@
  * use MIT License
  */
 type Error = Box<dyn std::error::Error>;
+#[cfg(feature="idct_slower")]
+use std::f32::consts::PI;
 use crate::jpeg::util::make_metadata;
 use bin_rs::reader::BinaryReader;
 use crate::warning::*;
@@ -227,8 +229,8 @@ pub(crate) fn extend(v:i32,t: usize) -> i32 {
     v
 }
 
-/* fast idct is change fast alogrythm from orthodox idct
-fn idct(f :&[i32]) -> Vec<u8> {
+#[cfg(feature="idct_slower")]
+pub(crate) fn idct(f :&[i32]) -> Vec<u8> {
     let vals :Vec<u8> = (0..64).map(|i| {
         let (x,y) = ((i%8) as f32,(i/8) as f32);
         // IDCT from CCITT Rec. T.81 (1992 E) p.27 A3.3
@@ -250,11 +252,143 @@ fn idct(f :&[i32]) -> Vec<u8> {
     }).collect();
     vals
 }
-*/
+
+#[cfg(feature="idct_llm")]
+pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
+    let m1 = 0.5411961;   // α √2cos(3π/8)
+    let m2 = 1.306562965; // β √2cos(3π/8)
+    let m3 = 1.414213562; // γ v2
+    let m4 = 0.831469612; // η cos(3π/16)
+    let m5 = 0.555570233; // θ sin(3π/16)
+    let m6 = 0.98078528;  // δ cos(π/16)
+    let m7 = 0.195090322; // ε sin(π/16)
+    let m0 = 0.125; // √2/4 * √2/4
+
+    let mut ff = [0_f32;64];
+    for j in 0..8 {
+        let i = j * 8;
+        let f0 = f[0 + i] as f32;  // X0
+        let f1 = f[1 + i] as f32;  // X1
+        let f2 = f[2 + i] as f32;  // X2
+        let f3 = f[3 + i] as f32;  // X3
+        let f4 = f[4 + i] as f32;  // X4
+        let f6 = f[6 + i] as f32;  // X5
+        let f5 = f[5 + i] as f32;  // X6
+        let f7 = f[7 + i] as f32;  // X7
+
+        // implement batterfly mutilply
+
+        // even part
+        // part 2
+
+        let y0 = f0 + f4;
+        let y1 = f0 - f4;
+        let y2 = m1 * f2 - m2 * f6;
+        let y3 = m1 * f6 + m2 * f2;
+
+        // part3
+
+        let x0 = y0 + y3;
+        let x1 = y1 + y2;
+        let x2 = y1 - y2;
+        let x3 = y0 - y3;
+
+        // odds part
+
+        // part 1
+        let z4 = f1 - f7;
+        let z5 = f3 * m3;
+        let z6 = f5 * m3;
+        let z7 = f1 + f7;
+
+        // part 2
+        let y4 = z4 + z6;
+        let y5 = z7 - z5;
+        let y6 = z4 - z6;
+        let y7 = z7 + z5;
+
+        // part 3
+        let x4 = y4 * m4 - y7 * m5;
+        let x5 = y5 * m6 - y6 * m7;
+        let x6 = y6 * m6 + y5 * m7;
+        let x7 = y7 * m4 + y4 * m5;
+
+        // last part  multiply √2 / 4 after parts
+
+        ff[0 + i] = x0 + x7;   // x0
+        ff[7 + i] = x0 - x7;   // x1
+        ff[1 + i] = x1 + x6;   // x2
+        ff[6 + i] = x1 - x6;   // x3
+        ff[2 + i] = x2 + x5;   // x4
+        ff[5 + i] = x2 - x5;   // x5
+        ff[3 + i] = x3 + x4;   // x6
+        ff[4 + i] = x3 - x4;   // x7
+    }
+    for i in 0..8 {
+        let f0 = ff[0 * 8 + i];
+        let f1 = ff[1 * 8 + i];
+        let f2 = ff[2 * 8 + i];
+        let f3 = ff[3 * 8 + i];
+        let f4 = ff[4 * 8 + i];
+        let f5 = ff[5 * 8 + i];
+        let f6 = ff[6 * 8 + i];
+        let f7 = ff[7 * 8 + i];
+
+        // odds part
+        // part 1
+
+        // even part
+        // part 2
+
+        let y0 = f0 + f4;
+        let y1 = f0 - f4;
+        let y2 = m1 * f2 - m2 * f6;
+        let y3 = m1 * f6 + m2 * f2;
+
+        // part3
+
+        let x0 = y0 + y3;
+        let x1 = y1 + y2;
+        let x2 = y1 - y2;
+        let x3 = y0 - y3;
+
+        // odds part
+        // part 1
+        let z4 = f1 - f7;
+        let z5 = f3 * m3;
+        let z6 = f5 * m3;
+        let z7 = f1 + f7;
+
+        // part 2
+        let y4 = z4 + z6;
+        let y5 = z7 - z5;
+        let y6 = z4 - z6;
+        let y7 = z7 + z5;
+
+
+        let x4 = y4 * m4 - y7 * m5;
+        let x5 = y5 * m6 - y6 * m7;
+        let x6 = y6 * m6 + y5 * m7;
+        let x7 = y7 * m4 + y4 * m5;
+
+        ff[0 * 8 + i] = (x0 + x7) * m0;
+        ff[7 * 8 + i] = (x0 - x7) * m0;
+        ff[1 * 8 + i] = (x1 + x6) * m0; 
+        ff[6 * 8 + i] = (x1 - x6) * m0;
+        ff[2 * 8 + i] = (x2 + x5) * m0;
+        ff[5 * 8 + i] = (x2 - x5) * m0;
+        ff[3 * 8 + i] = (x3 + x4) * m0; 
+        ff[4 * 8 + i] = (x3 - x4) * m0;  
+    }
+    
+    let val = ff.iter().map(|i| ((*i + 128.5) as i32).clamp(0,255) as u8).collect();
+    val
+}
 
 #[inline]
 // AAN algorythm
-pub fn fast_idct(f: &[i32]) -> Vec<u8> {
+#[cfg(not(any(feature="idct_llm",feture="idct_slower")))]
+pub(crate)  fn idct(f: &[i32]) -> Vec<u8> {
     let mut _f  = [0_f32;64];
     let mut vals = [0_u8;64];
     let m0 = 1.847759;
@@ -832,7 +966,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
                 let _ = tx3.send((com,vec![],mcu_x,mcu_y));
                 break;
             }
-            let ff = fast_idct(&zz);
+            let ff = idct(&zz);
             let _ = tx3.send((com,ff,mcu_x,mcu_y));
         }
     });
@@ -1033,7 +1167,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
                 let sq = &super::util::ZIG_ZAG_SEQUENCE;
                 let q = quantization_tables[tq].q.clone();
                 let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
-                let ff = fast_idct(&zz);
+                let ff = idct(&zz);
                  mcu_units.push(ff);
             }
 

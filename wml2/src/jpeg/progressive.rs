@@ -18,6 +18,7 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
     let component = fh.component.clone().unwrap();
     let plane = fh.plane;
     let mut _huffman_scan_header;
+
     // decode
     option.drawer.init(width,height,InitOptions::new())?;
 
@@ -196,7 +197,7 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                     let q = quantization_tables[tq].q.clone();
                     let sq = &super::util::ZIG_ZAG_SEQUENCE;
                     let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
-                    let ff = fast_idct(&zz);
+                    let ff = idct(&zz);
                     mcu_units.push(ff);
                 }
                 let data = convert_rgb(plane,&mcu_units,&component,header.adobe_color_transform,(h_max,v_max));
@@ -222,7 +223,7 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                                         let q = quantization_tables[tq].q.clone();
                                         let sq = &super::util::ZIG_ZAG_SEQUENCE;
                                         let zz :Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
-                                        let ff = fast_idct(&zz);
+                                        let ff = idct(&zz);
                                         mcu_units.push(ff);
                                     }
                                     let data = convert_rgb(plane,&mcu_units,&component,fh.color_space.to_string(),(h_max,v_max));

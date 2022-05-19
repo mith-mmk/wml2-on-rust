@@ -8,8 +8,7 @@ use std::collections::HashMap;
 use crate::metadata::DataMap;
 use crate::jpeg::header::HuffmanTables;
 use crate::jpeg::header::HuffmanTable;
-use super::header::JpegAppHeaders::{Adobe, Ducky, Exif,  Jfif, Unknown};
-use super::header::JpegAppHeaders::ICCProfile as JpegICCProfile;
+use super::header::JpegAppHeaders::*;
 use super::header::JpegHaeder;
 
 
@@ -147,10 +146,13 @@ pub fn print_header(header: &JpegHaeder,option: usize) -> Box<String> {
                                     1 => {"YCbCr"}, 2 => {"YCCK"}, _ =>{"Unknown"}});
 
                     },
-                    JpegICCProfile(icc_profile) => {
+                    ICCProfile(icc_profile) => {
                         str = str + &format!(
                             "ICC Profile {} of {}\n",icc_profile.number,icc_profile.total);
 
+                    },
+                    Xmp((tag,string)) => {
+                        str = str + tag + ":\n" + string + "\n";
                     }
                     Unknown(app) => {
                         str = str + &format!("App{} {} {}bytes is unknown\n",app.number,app.tag,app.length);
@@ -351,6 +353,9 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String,DataMap> {
                                     1 => {"YCbCr"}, 2 => {"YCCK"}, _ =>{"Unknown"}});
                         map.insert("Adobe".to_string(), DataMap::Ascii(str));
 
+                    },
+                    Xmp((tag,string)) => {
+                        map.insert(tag.to_string(), DataMap::Ascii(string.to_string()));
                     },
                     
                     Unknown(app) => {

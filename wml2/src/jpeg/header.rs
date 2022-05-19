@@ -269,7 +269,6 @@ pub struct UnknownApp {
     pub raw: Vec<u8>,
 }
 
-
 pub struct JpegHaeder {
     pub width : usize,
     pub height: usize,
@@ -292,6 +291,8 @@ pub enum JpegAppHeaders {
     Jfif(Jfif),
     Exif(Exif),
     Ducky(Ducky),
+    Xmp((String,String)),
+//    XmpExtend((String,String,u32,String))
     Adobe(AdobeApp14),
     ICCProfile(ICCProfilePacker),
     Unknown(UnknownApp),
@@ -338,7 +339,14 @@ fn read_app(num: usize,tag :&String,buffer :&[u8]) -> Result<JpegAppHeaders,Erro
                     let exif = read_tags(&mut reader)?;
                     return Ok(JpegAppHeaders::Exif(exif))
                 },
+                "http://ns.adobe.com/xap/1.0/" => {
+                    let len = "http://ns.adobe.com/xap/1.0/".len() + 1;
+                    let buf = &buffer[len..];
+                    let xml = bin_rs::io::read_ascii_string(buf, 0, buf.len());
+                    return Ok(JpegAppHeaders::Xmp(("http://ns.adobe.com/xap/1.0/".to_owned(),xml)))
+                },
                 _ => {
+
                 }
             }
         },

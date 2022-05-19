@@ -8,8 +8,6 @@ use crate::jpeg::decoder::*;
 use crate::jpeg::header::*;
 use crate::jpeg::warning::*;
 
-// y4 u1 v1 Progressive Jpeg decoder has bugs
-
 pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut JpegHaeder,option:&mut DecodeOptions,mut warnings:Option<ImgWarnings>) -> Result<Option<ImgWarnings>,Error> {
     let width = header.width;
     let height = header.height;
@@ -153,7 +151,7 @@ pub fn decode_progressive<'decode,B: BinaryReader>(reader:&mut B,header: &mut Jp
                     for mcu_x in 0..mcu_x_max {
                         let mcu_block = &mut mcu_blocks[mcu_y*mcu_x_max+mcu_x];
                         for mcu_x_fix in 0..component[i].h {
-                            if mcu_x * dx + mcu_x_fix * 8 >= width { break;}
+                            if mcu_x * dx + mcu_x_fix * 8 >= width { break; }
                             let scannumber = scanfirst + mcu_y_fix * component[i].h +  mcu_x_fix;
                             let (dc_current,ac_current,i,_,cs,_) = scan[scannumber];
                             if cs == false { continue }

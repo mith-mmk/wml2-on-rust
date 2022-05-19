@@ -1,8 +1,6 @@
-use wml2::metadata::Metadata;
-use icc_profile::utils::decoded_print;
-use icc_profile::DecodedICCProfile;
 use std::io::Write;
 use std::time::Instant;
+use wml2::metadata::Metadata;
 use wml2::draw::*;
 use wml2::metadata::DataMap;
 use std::io::BufReader;
@@ -42,10 +40,10 @@ fn print_metadata(metadata:&Metadata) {
             },
             DataMap::ICCProfile(data) => {
                 println!("{}: {}bytes",key,data.len());
-                let decoded = DecodedICCProfile::new(&data).unwrap();
-                println!("=========== ICC Profile START ===========");
-                println!("{}",decoded_print(&decoded, 0).unwrap());
-                println!("============= ICC Profile END ===========");
+//                let decoded = DecodedICCProfile::new(&data).unwrap();
+//                println!("=========== ICC Profile START ===========");
+//                println!("{}",decoded_print(&decoded, 0).unwrap());
+//                println!("============= ICC Profile END ===========");
 
             /*
                 let out_path = dotenv::var("RESULTPATH");
@@ -85,23 +83,23 @@ fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
             match r {
                 Ok(..) => {
                     println! ("{:?} {} ms",filename,eslaped_time.as_millis());
-//                    let metadata = image.metadata();
-//                    if let Ok(metadata) = metadata {
-//                        if let Some(metadata) = metadata {
-//                            print_metadata(&metadata); 
-//                        }
-//                    }
+                    let metadata = image.metadata();
+                    if let Ok(metadata) = metadata {
+                        if let Some(metadata) = metadata {
+                            print_metadata(&metadata); 
+                        }
+                    }
 
                     return Some(image);
                 },
                 Err(err) => {
                     println! ("{:?} {}",filename,err);
-//                    let metadata = image.metadata();
-//                    if let Ok(metadata) = metadata {
-//                        if let Some(metadata) = metadata {
-//                            print_metadata(&metadata); 
-//                        }
-//                    }
+                    let metadata = image.metadata();
+                    if let Ok(metadata) = metadata {
+                        if let Some(metadata) = metadata {
+                            print_metadata(&metadata); 
+                        }
+                    }
                 }
             }
         },

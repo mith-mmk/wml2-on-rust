@@ -857,7 +857,6 @@ pub(crate) fn huffman_extend(huffman_tables:&HuffmanTables) -> (Vec<Option<Huffm
         }
     }
 
-
     (dc_decode,ac_decode)
 }
 
@@ -1138,7 +1137,6 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
 
     let mut mcu_interval = if header.interval > 0 { header.interval as isize} else {-1};
 
-
     for mcu_y in 0..mcu_y_max {
         for mcu_x in 0..mcu_x_max {
             let mut mcu_units :Vec<Vec<u8>> = Vec::new();
@@ -1175,7 +1173,6 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
             let data = convert_rgb(plane,&mcu_units,&component,color_space.to_string(),(h_max,v_max));
 
             option.drawer.draw(mcu_x*dx,mcu_y*dy,dx,dy,&data,None)?;
-
 
             if header.interval > 0 {
                 mcu_interval = mcu_interval - 1;
@@ -1260,7 +1257,7 @@ pub(crate) fn decode_baseline<'decode,B: BinaryReader>(reader:&mut B,header: &Jp
 pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
 
     let mut warnings: Option<ImgWarnings> = None;
-        // Make Huffman Table
+    // Make Huffman Table
     // Scan Header
     let mut header = JpegHaeder::new(reader,0)?;
 
@@ -1286,7 +1283,6 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     if fh.component.is_none() {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Frame Header Component".to_string())));
     }
-
 
     if header.quantization_tables.is_none() {
             return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not undefined Quantization Tables".to_string())));
@@ -1318,7 +1314,6 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
     }
 
     if fh.is_progressive {
-        // in debug
         decode_progressive(reader, &mut header, option,warnings)
     } else {
         decode_baseline(reader, &header, option,warnings)

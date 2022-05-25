@@ -60,7 +60,7 @@ pub fn print_data(data: &DataPack,length:usize) -> String{
                 s += &format!("{}/{} ",d[i].n,d[i].d);
             }
         },
-        DataPack::RationalU64(d) => {
+        DataPack::SRational(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
             for i in 0..length {
                 s += &format!("{}/{} ",d[i].n,d[i].d);
@@ -191,7 +191,7 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
             }
             return DataMap::FloatAllay(data);
         },
-        DataPack::RationalU64(d) => {
+        DataPack::SRational(d) => {
             if length == 1 {
                 return DataMap::Float(d[0].n as f64/d[0].d as f64);
             }

@@ -7,6 +7,7 @@ type Error = Box<dyn std::error::Error>;
 
 /* for EXIF */
 
+use bin_rs::io::*;
 use crate::tiff::util::print_tags;
 use crate::color::RGBA;
 use crate::error::ImgError;
@@ -55,12 +56,12 @@ impl RationalNumber for Rational {
 }
 
 #[derive(Debug,Clone,PartialEq)]
-pub struct RationalU64 {
-    pub n: u64,
-    pub d: u64,
+pub struct SRational {
+    pub n: i32,
+    pub d: i32,
 }
 
-impl RationalNumber for RationalU64 {
+impl RationalNumber for SRational {
     fn as_f32(&self) -> f32 {
         let n = self.n as f64;
         let d = self.d as f64;
@@ -90,7 +91,7 @@ pub enum DataPack {
     Short(Vec<u16>),
     Long(Vec<u32>),
     Rational(Vec<Rational>),
-    RationalU64(Vec<RationalU64>),
+    SRational(Vec<SRational>),
     Float(Vec<f32>),
     Double(Vec<f64>),
     SShort(Vec<i16>),
@@ -751,6 +752,213 @@ impl Tiff {
 }
 
 
+pub fn write_tags(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
+    let endian = tags.endian;
+    match endian {
+        Endian::BigEndian => {
+            write_string("MM".to_string(), buf)
+        },
+        Endian::LittleEndian => {
+            write_string("II".to_string(), buf)
+        },
+    }
+    write_u16(42,buf,endian);
+    write_u32(8,buf,endian);    // 2 + 2 + 4
+    let mut last_offset = tags.headers.len() * 12 + 8;
+    let mut append :Vec<u8> = vec![];
+    write_u16(tags.headers.len() as u16, buf, endian);
+    let mut image_offset = 0;
+    let mut offset = 8;
+
+    for tag in &tags.headers {
+        if tag.tagid == 0x273 {    // StripOffsets
+            image_offset = offset + 8;
+        }
+        write_u16(tag.tagid as u16, buf , endian);
+        match &tag.data {
+            DataPack::Bytes(data) => {
+                write_u16(1,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 4 {
+                    write_u32(last_offset as u32, buf,endian);
+                    write_bytes(data, &mut append);
+                    last_offset += data.len();
+                } else {
+                    write_bytes(data, buf);
+                    for _ in 0..(4 - data.len() as i32) {
+                        write_byte(0,buf);
+                    }
+                }
+            },
+            DataPack::Ascii(data) => {
+                write_u16(2,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 4 {
+                    write_u32(last_offset as u32, buf,endian);
+                    write_string(data.to_string(), &mut append);
+                    last_offset += data.len();
+                } else {
+                    write_string(data.to_string(), buf);
+                    for _ in 0..(4 - data.len() as i32) {
+                        write_byte(0,buf);
+                    }
+                }
+            },
+            DataPack::Short(data) => {
+                write_u16(3,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 2 {
+                    write_u32(last_offset as u32, buf,endian);
+                    for d in data {
+                        write_u16(*d, &mut append,endian);
+                    }
+                    last_offset += data.len() * 2;
+                } else {
+                    for d in data {
+                        write_u16(*d, buf,endian);
+                    }
+                    for _ in 0..(2 - data.len() as i32) {
+                        write_u16(0,buf,endian);
+                    }
+                }
+            },
+            DataPack::Long(data) => {
+                write_u16(4,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 1 {
+                    write_u32(last_offset as u32, buf,endian);
+                    for d in data {
+                        write_u32(*d, &mut append,endian);
+                    }
+                    last_offset += data.len() * 4;
+                } else {
+                    write_u32(data[0], buf,endian);
+                }
+            },
+            DataPack::Rational(data) => {
+                write_u16(5,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                write_u32(last_offset as u32, buf,endian);
+                for d in data {
+                    write_u32(d.n , &mut append,endian);
+                    write_u32(d.d , &mut append,endian);
+                }
+                last_offset += data.len() * 4;
+            },
+            DataPack::SRational(data) => {
+                write_u32(last_offset as u32, buf,endian);
+                for d in data {
+                    write_i32(d.n , &mut append,endian);
+                    write_i32(d.d , &mut append,endian);
+                }
+                last_offset += data.len() * 4;
+
+            },
+            DataPack::Undef(data) => {
+                write_u16(7,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 4 {
+                    write_u32(last_offset as u32, buf,endian);
+                    write_bytes(data, &mut append);
+                    last_offset += data.len();
+                } else {
+                    write_bytes(data, buf);
+                    for _ in 0..(4 - data.len() as i32) {
+                        write_byte(0,buf);
+                    }
+                }
+            },
+            DataPack::Unkown(data) => {
+                write_u16(7,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 4 {
+                    write_u32(last_offset as u32, buf,endian);
+                    write_bytes(data, &mut append);
+                    last_offset += data.len();
+                } else {
+                    write_bytes(data, buf);
+                    for _ in 0..(4 - data.len() as i32) {
+                        write_byte(0,buf);
+                    }
+                }
+            },
+            DataPack::Float(data) => {
+                write_u16(11,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 1 {
+                    write_u32(last_offset as u32, buf,endian);
+                    for d in data {
+                        write_f32(*d, &mut append,endian);
+                    }
+                    last_offset += data.len() * 4;
+                } else {
+                    write_f32(data[0], buf,endian);
+                }
+            },
+            DataPack::Double(data) => {
+                write_u16(12,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                write_u32(last_offset as u32, buf,endian);
+                for d in data {
+                    write_f64(*d, &mut append,endian);
+                }
+            },
+            DataPack::SByte(data) => {
+                write_u16(6,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 4 {
+                    write_u32(last_offset as u32, buf,endian);
+                    for d in data {
+                        write_i8(*d, &mut append);
+                    }
+                    last_offset += data.len();
+                } else {
+                    for d in data {
+                        write_i8(*d, &mut append);
+                    }
+                    for _ in 0..(4 - data.len() as i32) {
+                        write_byte(0,buf);
+                    }
+                }
+            },
+            DataPack::SShort(data) => {
+                write_u16(8,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 2 {
+                    write_u32(last_offset as u32, buf,endian);
+                    for d in data {
+                        write_i16(*d, &mut append,endian);
+                    }
+                    last_offset += data.len() * 2;
+                } else {
+                    for d in data {
+                        write_i16(*d, buf,endian);
+                    }
+                    for _ in 0..(2 - data.len() as i32) {
+                        write_u16(0,buf,endian);
+                    }
+                }
+            },
+            DataPack::SLong(data) => {
+                write_u16(9,buf,endian);
+                write_u32(data.len() as u32,buf,endian);
+                if data.len() > 1 {
+                    write_u32(last_offset as u32, buf,endian);
+                    for d in data {
+                        write_i32(*d, &mut append,endian);
+                    }
+                    last_offset += data.len() * 4;
+                } else {
+                    write_i32(data[0], buf,endian);
+                }
+            },
+        }
+        offset += 12;
+    }
+    Ok(image_offset)
+}
+
+
 pub fn read_tags(reader: &mut dyn bin_rs::reader::BinaryReader) -> Result<TiffHeaders,Error>{
     let b0 = reader.read_byte()?;
     let b1 = reader.read_byte()?;
@@ -936,17 +1144,17 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
         },
         // 7 undefined 8 s16 9 s32 10 srational u64/u64 11 float 12 double
         10 => {  //RATIONAL u64/u64
-            let mut d :Vec<RationalU64> = Vec::with_capacity(datalen);
+            let mut d :Vec<SRational> = Vec::with_capacity(datalen);
             let offset = reader.read_u32()? as u64;
             let current = reader.offset()?;
             reader.seek(SeekFrom::Start(offset))?;
             for _ in 0.. datalen { 
-                let n_u64 = reader.read_u64()?;
-                let d_u64 = reader.read_u64()?;
-                d.push(RationalU64{n:n_u64,d:d_u64});
+                let n_i32 = reader.read_i32()?;
+                let d_i32 = reader.read_i32()?;
+                d.push(SRational{n:n_i32,d:d_i32});
             }
             reader.seek(SeekFrom::Start(current))?;
-            data = DataPack::RationalU64(d);
+            data = DataPack::SRational(d);
 
         },
         11 => {  // f32 

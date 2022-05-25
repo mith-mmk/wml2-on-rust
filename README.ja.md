@@ -142,7 +142,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.8 add Jpeg multithread(pipelined),Progressive Jpeg has bugs(4,1,1) / BMP saver / Animation GIF(alpha)
 - 0.0.9 Png Saver
 - 0.0.10 Progressive JPEG YUV=4,1,1 fix
-- 0.0.11 
+- 0.0.11 2022/05/25 fix
   - ICCProfileパーサの除去 -> see https://github.com/mith-mmk/icc_profile に移行
   - TIFF 3G/4G FAXデコードサポート/Multipage Tiffサポート/Tiled image(JPEGのみ)
 

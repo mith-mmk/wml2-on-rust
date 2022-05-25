@@ -196,6 +196,7 @@ pub struct ImageProfiles {
     pub width: usize,
     pub height: usize,
     pub background: Option<RGBA>,
+//    pub metadata: Option<HashMap<String,DataMap>>,
 }
 
 /// Using for Animation GIF/PNG/other
@@ -424,6 +425,7 @@ impl PickCallback for ImageBuffer {
             width: self.width,
             height: self.height,
             background: self.background_color.clone(),
+//            metadata: None,
         };
         Ok(Some(init))
     }

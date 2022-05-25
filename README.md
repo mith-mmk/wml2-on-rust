@@ -151,7 +151,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.11  2022/05/25 fix
   - obsolete ICCProfile parse in verbose -> use metadata - see https://github.com/mith-mmk/icc_profile Tiff G3 Fax
   - TIFF 3G/4G FAX and multi page tiff decode support, Tiled image is support,but new Jpeg Tiff only.
-
+- 0.0.12 encode option change
 
 # todo
 - Formated Header writer

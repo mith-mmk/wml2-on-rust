@@ -196,7 +196,8 @@ pub struct ImageProfiles {
     pub width: usize,
     pub height: usize,
     pub background: Option<RGBA>,
-//    pub metadata: Option<HashMap<String,DataMap>>,
+    /// Image Buffer depend metadatas
+    pub metadata: Option<HashMap<String,DataMap>>,
 }
 
 /// Using for Animation GIF/PNG/other
@@ -425,7 +426,7 @@ impl PickCallback for ImageBuffer {
             width: self.width,
             height: self.height,
             background: self.background_color.clone(),
-//            metadata: None,
+            metadata: None,
         };
         Ok(Some(init))
     }
@@ -498,6 +499,11 @@ pub struct DecodeOptions<'a> {
 pub struct EncodeOptions<'a> {
     pub debug_flag: usize,
     pub drawer: &'a mut dyn PickCallback,
+    /// Endocer depend Options
+    /// ex.)
+    ///  "quality",DataMap::INT(80) // for JPEG
+    ///  "compression",DataMap::ASCII("LZW") for TIFF
+    ///  "color model",ASCII::ASCII("index") for TIFF/GIF/BMP
     pub options: Option<HashMap<String,DataMap>>,
 }
 

@@ -750,6 +750,7 @@ impl Tiff {
         Ok(this)
     }
 }
+
 pub fn write_tag(buf:&mut Vec<u8>,append:&mut Vec<u8>,tag:&TiffHeader,last_offset:&mut usize,endian:&Endian) -> Result<(),Error> {
     let endian = *endian;
     write_u16(tag.tagid as u16, buf , endian);

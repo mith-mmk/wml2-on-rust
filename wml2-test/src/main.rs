@@ -132,10 +132,11 @@ fn wml_test() -> Result<(),Box<dyn Error>>{
                 options: None,
             };
 //            let data = wml2::bmp::encoder::encode(&mut option);
-            let data = wml2::png::encoder::encode(&mut option);
+//            let data = wml2::png::encoder::encode(&mut option);
+            let data = wml2::tiff::encoder::encode(&mut option);
             if let Ok(data) = data {
                 let filename = filename.file_name().unwrap().to_str().unwrap();
-                let filename = format!("{}/{}.png",out_path,filename);
+                let filename = format!("{}/{}.tif",out_path,filename);
                 println!("{}", filename);
                 let mut f = File::create(&filename).unwrap();
                 f.write_all(&data).unwrap();

@@ -6,7 +6,6 @@ use crate::error::*;
 use crate::draw::*;
 
 pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
-    let mut buf = vec![];
     let profile = image.drawer.encode_start(None)?;
     let width;
     let height;
@@ -18,6 +17,7 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
     } else {
         return Err(Box::new(ImgError::new_const(ImgErrorKind::OutboundIndex,"Image profiles nothing".to_string())))
     }
+    let mut buf = Vec::with_capacity(0x80 + width as usize * height as usize * 3);
     
     let mut endian = Endian::LittleEndian;
 
@@ -103,22 +103,20 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
     // offset 160
     
     for y in 0..height {
-        let data = image.drawer.encode_pick(0,y as usize ,width as usize,height as usize,None)?;
-        if let Some(data) = data {
-            let mut ptr = 0;
-            for _ in 0..width {
-                let red  = data[ptr];
-                let green= data[ptr+1];
-                let blue = data[ptr+2];
-    //            let alpha = buf[ptr+3];
+        let data = image.drawer.encode_pick(0,y as usize ,width as usize,1,None)?.unwrap_or(vec![0;width as usize *3]);
+        let mut ptr = 0;
+        for _ in 0..width {
+            let red  = data[ptr];
+            let green= data[ptr+1];
+            let blue = data[ptr+2];
+    //        let alpha = buf[ptr+3];
     
-                buf.push(red);
-                buf.push(green);
-                buf.push(blue);
-    //            data.push(alpha);
-                ptr += 4;
-            }    
-        }
+            buf.push(red);
+            buf.push(green);
+            buf.push(blue);
+    //        data.push(alpha);
+            ptr += 4;
+        }    
     }
     image.drawer.encode_end(None)?;
     Ok(buf)

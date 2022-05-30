@@ -935,8 +935,9 @@ pub fn write_tag(buf:&mut Vec<u8>,append:&mut Vec<u8>,tag:&TiffHeader,last_offse
     Ok(())
 }
 
-pub fn write_tags(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
+pub fn write_header(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<(),Error> {
     let endian = tags.endian;
+    // First 2bytes are endian flag,If big endian is "MM",little endian is "II".
     match endian {
         Endian::BigEndian => {
             write_string("MM".to_string(), buf)
@@ -945,23 +946,45 @@ pub fn write_tags(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
             write_string("II".to_string(), buf)
         },
     }
-    write_u16(42,buf,endian);
-    write_u32(8,buf,endian);    // 2 + 2 + 4
+    // Version number is 42
+    write_u16(42, buf, endian);
+    // IFD offsets is unknown yet.
+    write_u32(8, buf, endian);
+    Ok(())
+}
+
+/* An IFD offset is after or before image data */
+
+pub fn write_ifd(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
+    let endian = tags.endian;
+    let mut offset = buf.len();
+
+    let bytes = if endian == Endian::BigEndian {
+            (offset as u32).to_be_bytes() } else {
+            (offset as u32).to_le_bytes() };
+
+    // Set IFD offset
+    buf[4] = bytes[0];
+    buf[5] = bytes[1];
+    buf[6] = bytes[2];
+    buf[7] = bytes[3];
+
     let mut add_num = if tags.exif.is_some() {1} else {0};
     add_num += if tags.gps.is_some() {1} else {0};
 
-    let mut last_offset = 8 + (tags.headers.len() + add_num) * 12 + 4;
+    let mut last_offset = offset + (tags.headers.len() + add_num) * 12 + 4;
     let mut append :Vec<u8> = vec![];
     write_u16(tags.headers.len() as u16, buf, endian);
     let mut image_offset = 0;
-    let mut offset = 8;
     let mut exif_write = false;
     let mut gps_write = false;
 
     for tag in &tags.headers {
-        if tag.tagid == 0x273 {    // StripOffsets
-            image_offset = offset + 8;
+        if tag.tagid == 0x0111 {    // StripOffsets
+            image_offset = offset + 8; // 2(tag) + 2(type) + 4(count)
         }
+
+        // Exif
         if tag.tagid > 0x8769 && ! exif_write {
             if let Some(exif) = &tags.exif {
                 let extra_offset = last_offset.clone();
@@ -985,6 +1008,7 @@ pub fn write_tags(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
             exif_write = true;
         }
 
+        // GPS
         if tag.tagid > 0x8825 && ! gps_write {
             if let Some(exif) = &tags.exif {
                 let extra_offset = last_offset.clone();
@@ -1007,6 +1031,8 @@ pub fn write_tags(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
             }
             gps_write = true;
         }
+
+        // append tag
         if tag.tagid != 0x8825 || tag.tagid != 0x8769 {
             write_tag(buf,&mut append,tag,&mut last_offset,&endian)?;
         }

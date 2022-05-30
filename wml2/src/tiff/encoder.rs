@@ -95,12 +95,12 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
 
     write_u32(0,&mut buf,endian);        // idf end
 
-    // offset 152
+    // offset +007A
     write_u16(8,&mut buf,endian);        // BitPerSample[0]
     write_u16(8,&mut buf,endian);        // BitPerSample[1]
     write_u16(8,&mut buf,endian);        // BitPerSample[2]
     
-    // offset 160
+    // offset +0080
     
     for y in 0..height {
         let data = image.drawer.encode_pick(0,y as usize ,width as usize,1,None)?.unwrap_or(vec![0;width as usize *3]);

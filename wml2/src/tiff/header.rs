@@ -972,7 +972,7 @@ pub fn write_ifd(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
     let mut add_num = if tags.exif.is_some() {1} else {0};
     add_num += if tags.gps.is_some() {1} else {0};
 
-    let mut last_offset = offset + (tags.headers.len() + add_num) * 12 + 4;
+    let mut last_offset = offset + (tags.headers.len() + add_num) * 12 + 6;
     let mut append :Vec<u8> = vec![];
     write_u16(tags.headers.len() as u16, buf, endian);
     let mut image_offset = 0;
@@ -981,7 +981,7 @@ pub fn write_ifd(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
 
     for tag in &tags.headers {
         if tag.tagid == 0x0111 {    // StripOffsets
-            image_offset = offset + 8; // 2(tag) + 2(type) + 4(count)
+            image_offset = buf.len() + 8; // 2(tag) + 2(type) + 4(count)
         }
 
         // Exif
@@ -1039,6 +1039,19 @@ pub fn write_ifd(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
         offset += 12;
     }
     write_u32(0,buf,endian);   //IFD end
+    buf.append(&mut append);
+    let offset = buf.len();
+    
+    let bytes = if endian == Endian::BigEndian {
+        (offset as u32).to_be_bytes() } else {
+        (offset as u32).to_le_bytes() };
+
+    // Set StripOffsets
+    buf[image_offset + 0] = bytes[0];
+    buf[image_offset + 1] = bytes[1];
+    buf[image_offset + 2] = bytes[2];
+    buf[image_offset + 3] = bytes[3];
+
     Ok(image_offset)
 }
 

@@ -1,4 +1,9 @@
 type Error = Box<dyn std::error::Error>;
+use crate::tiff::header::write_ifd;
+use crate::tiff::header::DataPack;
+use crate::tiff::header::TiffHeader;
+use crate::tiff::header::write_header;
+use crate::tiff::header::TiffHeaders;
 use crate::metadata::DataMap;
 use bin_rs::io::*;
 use bin_rs::Endian;
@@ -30,77 +35,74 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
         }
     }
 
-    if endian == Endian::LittleEndian {
-        buf.push(b'I');
-        buf.push(b'I');
-    } else {
-        buf.push(b'M');
-        buf.push(b'M');
-    }
+    let mut tiff =TiffHeaders{version:42,headers:Vec::new(),exif:None,gps:None,endian};
 
-    write_u16(42,&mut buf,endian);       // 0002 version
-    write_u32(8,&mut buf,endian);        // 0004 IFD Offset
+    write_header(&mut buf,&tiff)?;
 
-    write_u16(9,&mut buf,endian);      // 0008 Tag number 
+    let header = TiffHeader{
+        tagid: 0x0100,
+        data: DataPack::Long([width as u32].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
 
-    write_u16(0x0100,&mut buf,endian);   // Tag ImageWidth
-    write_u16(3,&mut buf,endian);        // data type Long
-    write_u32(1,&mut buf,endian);        // count
-    write_u16(width as u16,&mut buf,endian);    // Value or offset
-    write_u16(0,&mut buf,endian);       // padding
+    let header = TiffHeader{
+        tagid: 0x0101,
+        data: DataPack::Long([height as u32].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
 
-    write_u16(0x0101,&mut buf,endian);   // Tag ImageHeight
-    write_u16(3,&mut buf,endian);        // data type Long
-    write_u32(1,&mut buf,endian);        // count
-    write_u16(height as u16,&mut buf,endian);    // Value or offset
-    write_u16(0,&mut buf,endian);       // padding
+    let header = TiffHeader{
+        tagid: 0x0102,
+        data: DataPack::Short([8,8,8].to_vec()),
+        length: 3,
+    };
+    tiff.headers.push(header);
 
-    write_u16(0x0102,&mut buf,endian);   // BitsPerSample
-    write_u16(3,&mut buf,endian);        // data type Short
-    write_u32(3,&mut buf,endian);        // count
-    write_u32(0x007a,&mut buf,endian);      // offset
+    let header = TiffHeader{
+        tagid: 0x0103,
+        data: DataPack::Short([1].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
 
-    write_u16(0x0103,&mut buf,endian);   // Compression
-    write_u16(3,&mut buf,endian);        // data type Short
-    write_u32(1,&mut buf,endian);        // count
-    write_u16(1,&mut buf,endian);        // Compression None
-    write_u16(0,&mut buf,endian);        // Padding
+    let header = TiffHeader{
+        tagid: 0x0106,
+        data: DataPack::Short([2].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
 
-    write_u16(0x0106,&mut buf,endian);   // PhotometricInterpretation
-    write_u16(3,&mut buf,endian);        // data type Short
-    write_u32(1,&mut buf,endian);        // count
-    write_u16(2,&mut buf,endian);        // RGB Full color
-    write_u16(0,&mut buf,endian);        // Padding
+    let header = TiffHeader{
+        tagid: 0x0111,
+        data: DataPack::Short([0].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
 
-    write_u16(0x0111,&mut buf,endian);   // StripOffsets
-    write_u16(3,&mut buf,endian);        // data type Short
-    write_u32(1,&mut buf,endian);        // count
-    write_u32(0x80,&mut buf,endian);      // offset
+    let header = TiffHeader{
+        tagid: 0x0115,
+        data: DataPack::Short([3].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
 
-    write_u16(0x0115,&mut buf,endian);   // SamplesPerPixel
-    write_u16(3,&mut buf,endian);        // data type Short
-    write_u32(1,&mut buf,endian);        // 
-    write_u32(3,&mut buf,endian);        // 3
+    let header = TiffHeader{
+        tagid: 0x0116,
+        data: DataPack::Long([height as u32].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
 
-    write_u16(0x0116,&mut buf,endian);   // RowsPerStrip
-    write_u16(4,&mut buf,endian);        // data type Long
-    write_u32(1,&mut buf,endian);        // 
-    write_u32(height,&mut buf,endian);   // height
+    let header = TiffHeader{
+        tagid: 0x0117,
+        data: DataPack::Long([(height * width * 3) as u32].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
 
-    write_u16(0x0117,&mut buf,endian);   // StripsByCount
-    write_u16(4,&mut buf,endian);        // data type Long
-    write_u32(1,&mut buf,endian);        // 
-    let size = height * width * 3;
-    write_u32(size,&mut buf,endian);     // height * width * 3
-
-    write_u32(0,&mut buf,endian);        // idf end
-
-    // offset +007A
-    write_u16(8,&mut buf,endian);        // BitPerSample[0]
-    write_u16(8,&mut buf,endian);        // BitPerSample[1]
-    write_u16(8,&mut buf,endian);        // BitPerSample[2]
-    
-    // offset +0080
+    write_ifd(&mut buf,&tiff)?;
     
     for y in 0..height {
         let data = image.drawer.encode_pick(0,y as usize ,width as usize,1,None)?.unwrap_or(vec![0;width as usize *3]);

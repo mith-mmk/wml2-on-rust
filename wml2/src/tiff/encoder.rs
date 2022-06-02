@@ -110,6 +110,27 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
     };
     tiff.headers.push(header);
 
+    let header = TiffHeader{
+        tagid: 0x011a,
+        data: DataPack::Rational([Rational{n:72,d:1}].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
+
+    let header = TiffHeader{
+        tagid: 0x011b,
+        data: DataPack::Rational([Rational{n:72,d:1}].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
+
+    let header = TiffHeader{
+        tagid: 0x0128,
+        data: DataPack::Short([2].to_vec()),
+        length: 1,
+    };
+    tiff.headers.push(header);
+
     write_ifd(&mut buf,&tiff)?;
     
     for y in 0..height {

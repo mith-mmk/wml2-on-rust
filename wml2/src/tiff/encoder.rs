@@ -140,12 +140,10 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
             let red  = data[ptr];
             let green= data[ptr+1];
             let blue = data[ptr+2];
-    //        let alpha = buf[ptr+3];
     
             buf.push(red);
             buf.push(green);
             buf.push(blue);
-    //        data.push(alpha);
             ptr += 4;
         }    
     }

@@ -1,12 +1,7 @@
 type Error = Box<dyn std::error::Error>;
-use crate::tiff::header::write_ifd;
-use crate::tiff::header::DataPack;
-use crate::tiff::header::TiffHeader;
-use crate::tiff::header::write_header;
-use crate::tiff::header::TiffHeaders;
-use crate::metadata::DataMap;
-use bin_rs::io::*;
 use bin_rs::Endian;
+use crate::tiff::header::*;
+use crate::metadata::DataMap;
 use crate::error::*;
 use crate::draw::*;
 
@@ -25,17 +20,30 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>,Error> {
     let mut buf = Vec::with_capacity(0x80 + width as usize * height as usize * 3);
     
     let mut endian = Endian::LittleEndian;
+    let mut meta_tiff:Option<&TiffHeaders> = None;
 
     if let Some(metadata) = &image.options {
-        let meta_endian = metadata.get("endian");
-        if let Some(meta_endian) = meta_endian {
+        let meta = metadata.get("endian");
+        if let Some(meta_endian) = meta {
             if meta_endian == &DataMap::Ascii("Big Endian".to_string()) {
                 endian = Endian::BigEndian;
             }
         }
+        let meta = metadata.get("EXIF");
+        if let Some(meta_exif) = meta {
+            if let DataMap::Exif(tiff) = meta_exif {
+                meta_tiff = Some(tiff);
+            }
+        }
+
     }
 
     let mut tiff =TiffHeaders{version:42,headers:Vec::new(),exif:None,gps:None,endian};
+
+    if let Some(meta_tiff) = meta_tiff {
+        tiff.exif = meta_tiff.exif.clone();
+        tiff.gps = meta_tiff.gps.clone();
+    }
 
     write_header(&mut buf,&tiff)?;
 

@@ -760,8 +760,7 @@ pub fn write_tag(buf:&mut Vec<u8>,append:&mut Vec<u8>,tag:&TiffHeader,last_offse
             write_u32(data.len() as u32,buf,endian);
             if data.len() > 4 {
                 write_u32(*last_offset as u32, buf,endian);
-                write_bytes(data, append);
-                *last_offset += data.len();
+                write_bytes(data, buf);
             } else {
                 write_bytes(data, buf);
                 for _ in 0..(4 - data.len() as i32) {
@@ -771,11 +770,13 @@ pub fn write_tag(buf:&mut Vec<u8>,append:&mut Vec<u8>,tag:&TiffHeader,last_offse
         },
         DataPack::Ascii(data) => {
             write_u16(2,buf,endian);
-            write_u32(data.len() as u32,buf,endian);
-            if data.len() > 4 {
+            let size = data.len() + 1;
+            write_u32(size as u32,buf,endian);
+            if data.len() > 3 {
                 write_u32(*last_offset as u32, buf,endian);
                 write_string(data.to_string(), append);
-                *last_offset += data.len();
+                write_byte(0,append);  // NULL \0
+                *last_offset += size;
             } else {
                 write_string(data.to_string(), buf);
                 for _ in 0..(4 - data.len() as i32) {
@@ -822,15 +823,17 @@ pub fn write_tag(buf:&mut Vec<u8>,append:&mut Vec<u8>,tag:&TiffHeader,last_offse
                 write_u32(d.n ,append, endian);
                 write_u32(d.d ,append, endian);
             }
-            *last_offset += data.len() * 4;
+            *last_offset += data.len() * 8;
         },
         DataPack::SRational(data) => {
+            write_u16(10,buf,endian);
+            write_u32(data.len() as u32,buf,endian);
             write_u32(*last_offset as u32, buf,endian);
             for d in data {
                 write_i32(d.n ,append, endian);
                 write_i32(d.d ,append, endian);
             }
-            *last_offset += data.len() * 4;
+            *last_offset += data.len() * 8;
 
         },
         DataPack::Undef(data) => {
@@ -881,6 +884,7 @@ pub fn write_tag(buf:&mut Vec<u8>,append:&mut Vec<u8>,tag:&TiffHeader,last_offse
             for d in data {
                 write_f64(*d, append, endian);
             }
+            *last_offset += data.len() * 8;
         },
         DataPack::SByte(data) => {
             write_u16(6,buf,endian);
@@ -953,6 +957,32 @@ pub fn write_header(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<(),Error> {
     Ok(())
 }
 
+fn write_child_ifd(buf: &mut Vec<u8>,append: &mut Vec<u8>,tags: &Option<Vec<TiffHeader>>,tag_id: usize,offset: &mut usize,last_offset: &mut usize,endian: Endian) -> Result<(),Error> {
+    if let Some(child_ifd) = &tags {
+        let mut extra_offset = last_offset.clone() + child_ifd.len() * 12 + 2;
+        let mut buf_extra = vec![];
+        let mut append_extra = vec![];
+        write_u16(child_ifd.len() as u16, &mut buf_extra, endian);
+        for tag in child_ifd {
+            println!("{:04x} {:?}",tag.tagid,tag);
+            write_tag(&mut buf_extra,&mut append_extra,tag,&mut extra_offset,&endian)?;
+        }
+        let tag = TiffHeader {
+            tagid: tag_id,
+            data: DataPack::Long([*last_offset as u32].to_vec()),
+            length: 1
+        };
+        write_tag(buf,append,&tag,offset,&endian)?;
+        buf_extra.append(&mut append_extra);
+        let length = buf_extra.len();
+        append.append(&mut buf_extra);
+        *last_offset += length;
+        *offset += 12;
+    }
+    Ok(())
+}
+
+
 /* An IFD offset is after or before image data */
 
 pub fn write_ifd(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
@@ -974,7 +1004,7 @@ pub fn write_ifd(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
 
     let mut last_offset = offset + (tags.headers.len() + add_num) * 12 + 6;
     let mut append :Vec<u8> = vec![];
-    write_u16(tags.headers.len() as u16, buf, endian);
+    write_u16((tags.headers.len() + add_num) as u16, buf, endian);
     let mut image_offset = 0;
     let mut exif_write = false;
     let mut gps_write = false;
@@ -986,49 +1016,13 @@ pub fn write_ifd(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
 
         // Exif
         if tag.tagid > 0x8769 && ! exif_write {
-            if let Some(exif) = &tags.exif {
-                let extra_offset = last_offset.clone();
-                let mut buf_extra = vec![];
-                let mut append_extra = vec![];
-                write_u16(exif.len() as u16, &mut buf_extra, endian);
-                for tag in exif {
-                    write_tag(&mut buf_extra,&mut append_extra,tag,&mut last_offset,&endian)?;
-                }
-                last_offset = extra_offset + buf.len() + append_extra.len() + 2;
-                buf_extra.append(&mut append_extra);
-                let length = buf_extra.len();
-                let tag = TiffHeader {
-                    tagid: 0x8769,
-                    data: DataPack::Undef(buf_extra),
-                    length
-                };
-                write_tag(buf,&mut append,&tag,&mut last_offset,&endian)?;
-                offset += 12;
-            }
+            write_child_ifd(buf,&mut append,&tags.exif,0x8769,&mut offset,&mut last_offset,endian)?;
             exif_write = true;
         }
 
         // GPS
         if tag.tagid > 0x8825 && ! gps_write {
-            if let Some(exif) = &tags.exif {
-                let extra_offset = last_offset.clone();
-                let mut buf_extra = vec![];
-                let mut append_extra = vec![];
-                write_u16(exif.len() as u16, &mut buf_extra, endian);
-                for tag in exif {
-                    write_tag(&mut buf_extra,&mut append_extra,tag,&mut last_offset,&endian)?;
-                }
-                last_offset = extra_offset + buf.len() + append_extra.len() + 2;
-                buf_extra.append(&mut append_extra);
-                let length = buf_extra.len();
-                let tag = TiffHeader {
-                    tagid: 0x8769,
-                    data: DataPack::Undef(buf_extra),
-                    length
-                };
-                write_tag(buf,&mut append,&tag,&mut last_offset,&endian)?;
-                offset += 12;
-            }
+            write_child_ifd(buf,&mut append,&tags.gps,0x8825,&mut offset,&mut last_offset,endian)?;
             gps_write = true;
         }
 
@@ -1038,6 +1032,14 @@ pub fn write_ifd(buf: &mut Vec<u8>,tags: &TiffHeaders) -> Result<usize,Error> {
         }
         offset += 12;
     }
+
+    if !exif_write {
+        write_child_ifd(buf,&mut append,&tags.exif,0x8769,&mut offset,&mut last_offset,endian)?;
+    }
+    if !gps_write {
+        write_child_ifd(buf,&mut append,&tags.gps,0x8825,&mut offset,&mut last_offset,endian)?;
+    }
+
     write_u32(0,buf,endian);   //IFD end
     buf.append(&mut append);
     let offset = buf.len();
@@ -1319,7 +1321,7 @@ fn read_tag (reader: &mut dyn BinaryReader, mut offset_ifd: usize,mode: IfdMode)
         let next_ifd = bin_rs::io::read_u32(&buf,tag*12,reader.endian());
 
         if cfg!(debug_assertions) {
-            println!("Tiff ifd {} {} {}",tag,offset_ifd,next_ifd);
+            println!("Tiff ifd {} {} {:08x}",tag,offset_ifd,next_ifd);
         }
     
         for _i in 0..tag {

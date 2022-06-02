@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Write;
 use std::time::Instant;
 use wml2::metadata::Metadata;
@@ -126,10 +127,22 @@ fn wml_test() -> Result<(),Box<dyn Error>>{
                     println!("{}: {} {} {}x{} {}ms",i,layer.start_x,layer.start_y,layer.width,layer.height,layer.control.await_time);
                 }
             }
+            let metadata = image.metadata();
+            let mut opt: Metadata = HashMap::new();
+            if let Ok(metadata) = metadata {
+                if let Some(metadata) = metadata {
+                    let meta = metadata.get("EXIF");
+                    if let Some(meta_exif) = meta {
+                        if let DataMap::Exif(tiff) = meta_exif {
+                            opt.insert("EXIF".to_string(),DataMap::Exif(tiff.clone()));
+                        }
+                    }
+                }
+            }
             let mut option = EncodeOptions {
                 debug_flag: 0x01,
                 drawer: &mut image,
-                options: None,
+                options: Some(opt),
             };
 //            let data = wml2::bmp::encoder::encode(&mut option);
 //            let data = wml2::png::encoder::encode(&mut option);

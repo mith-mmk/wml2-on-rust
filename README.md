@@ -133,9 +133,9 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 -  0x04 with Extract Huffman Table 
 -  0x08 with Define Quatization Table
 -  0x10 with Exif
--  0x20 with IIC Profile(header)
--  0x40 with IIC Profile(more infomation)
--  0x60 with IIC Profile(all)
+-  0x20 with ICC Profile(header)
+-  0x40 with ICC Profile(more infomation)
+-  0x60 with ICC Profile(all)
 -  0x80 ...
 # update
 - 0.0.1 baseline jpeg

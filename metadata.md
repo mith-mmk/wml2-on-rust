@@ -16,6 +16,7 @@
 |ICC Profile|ICCProfile|ICCProfile(raw data)|
 |bmp:negative height|Ascii("ture")|Bmp ois if height < 0 top to bottom BMP|
 |gif:animation|Ascii|Animation GIF metadata|
+|endian|Ascii|endian for Bi-endian image format(tiff)|
 
 - compression  compression type of image
     - NONE - RAW IMAGE 

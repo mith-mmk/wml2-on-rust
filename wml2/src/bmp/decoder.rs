@@ -418,7 +418,7 @@ pub fn decode<'decode, B:BinaryReader>(reader:&mut B ,option:&mut DecodeOptions)
     }
 
     if header.height < 0 {
-        option.drawer.set_metadata("negative height",DataMap::Ascii("true".to_string()))?;
+        option.drawer.set_metadata("bmp:negative height",DataMap::Ascii("true".to_string()))?;
     }
     option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bit_count as u64))?;
     option.drawer.set_metadata("Format",DataMap::Ascii("BMP".to_owned()))?;

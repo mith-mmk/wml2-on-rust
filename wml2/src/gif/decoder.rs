@@ -38,6 +38,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
         option.drawer.verbose(&format!("{:?}",&header),None)?;
     }
     option.drawer.set_metadata("Format",DataMap::Ascii("GIF".to_string()))?;
+    option.drawer.set_metadata("compression",DataMap::Ascii("LZW".to_string()))?;
     option.drawer.set_metadata("version",DataMap::Ascii(header.version.to_string()))?;
     option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
     option.drawer.set_metadata("heigth",DataMap::UInt(header.height as u64))?;
@@ -106,7 +107,7 @@ pub fn decode<'decode, B: BinaryReader>(reader:&mut B ,option:&mut DecodeOptions
                             let id =  reader.read_byte()?;
 
                             if s == "NETSCAPE2.0" {
-                                option.drawer.set_metadata("Animation GIF",DataMap::Ascii("NETSCAPE2.0".to_string()))?;
+                                option.drawer.set_metadata("gif:animation",DataMap::Ascii("NETSCAPE2.0".to_string()))?;
                                 if option.debug_flag > 0 {
                                     option.drawer.verbose(&("Animation tag: ".to_owned() + &s),None)?;
                                 }

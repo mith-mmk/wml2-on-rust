@@ -25,3 +25,10 @@
     - PNG - BMP PNG
     - LZW - GIF
     - etc.. - TIFF
+
+# todo
+- Colormodel - WhiteBlack/Glayscale/RGB/YUV/HSV/XYZ/Lab/...
+- Entropy coding - huffman/arithmetic codic/binary coding/Range coding
+- lossless - true/false
+- quolity - quolity of lossy compression
+- 

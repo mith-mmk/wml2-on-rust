@@ -10,6 +10,42 @@ use crate::tiff::tags::tag_mapper;
 use crate::tiff::header::TiffHeaders;
 use bin_rs::Endian;
 
+
+fn print_util(tag_name: String, data: DataMap, string: &str) -> String {
+    match data {
+        DataMap::UInt(d) => {
+            tag_name + " : " + &d.to_string() + "\n"
+        },
+        DataMap::SInt(d) => {
+            tag_name + " : " + &d.to_string() + "\n"
+        },
+        DataMap::Float(d) => {
+            tag_name + " : " + &d.to_string() + "\n"
+        },
+        DataMap::FloatAllay(d) => {
+            let array = format!("{:?}",d);
+            tag_name + " :\n" + &array + "\n"
+        },  
+        DataMap::UIntAllay(d) => {
+            let array = format!("{:?}",d);
+            tag_name + " :\n" + &array + "\n"
+        },
+        DataMap::SIntAllay(d) => {
+            let array = format!("{:?}",d);
+            tag_name + " :\n" + &array + "\n"
+        },                   
+        DataMap::Ascii(d) => {
+            tag_name + " :\n" + &d + "\n"
+        },
+        DataMap::I18NString(d) => {
+            tag_name + " :\n" + &d + "\n"
+        },
+        _ => {
+            tag_name + " :\n" + &string + "\n"
+        }
+    }
+}
+
 pub fn print_tags(header: &TiffHeaders) -> String {
     let endian = match header.endian {
         Endian::BigEndian => {"Big Endian"},
@@ -19,9 +55,9 @@ pub fn print_tags(header: &TiffHeaders) -> String {
     let mut s :String = format!("TIFF Ver{} {}\n",header.version,endian);
 
     for tag in &header.headers {
-        let (tag_name,_) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
+        let (tag_name, data) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
         let string = print_data(&tag.data,tag.length);
-        s += &(tag_name + " : " + &string + "\n");
+        s +=  &(print_util(tag_name, data, string.as_str()));
     }
     match &header.exif {
         Some(exif) => {
@@ -29,40 +65,7 @@ pub fn print_tags(header: &TiffHeaders) -> String {
             for tag in exif {
                 let (tag_name,data) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
                 let string = print_data(&tag.data,tag.length);
-                let a = match data {
-                    DataMap::UInt(d) => {
-                        tag_name + " : " + &d.to_string() + "\n"
-                    },
-                    DataMap::SInt(d) => {
-                        tag_name + " : " + &d.to_string() + "\n"
-                    },
-                    DataMap::Float(d) => {
-                        tag_name + " : " + &d.to_string() + "\n"
-                    },
-                    DataMap::FloatAllay(d) => {
-                        let array = format!("{:?}",d);
-                        tag_name + " :\n" + &array + "\n"
-                    },  
-                    DataMap::UIntAllay(d) => {
-                        let array = format!("{:?}",d);
-                        tag_name + " :\n" + &array + "\n"
-                    },
-                    DataMap::SIntAllay(d) => {
-                        let array = format!("{:?}",d);
-                        tag_name + " :\n" + &array + "\n"
-                    },                   
-                    DataMap::Ascii(d) => {
-                        tag_name + " :\n" + &d + "\n"
-                    },
-                    DataMap::I18NString(d) => {
-                        tag_name + " :\n" + &d + "\n"
-                    },
-                    _ => {
-                        tag_name + " :\n" + &string + "\n"
-                    }
-                };
-                s += &a;
-
+                s +=  &(print_util(tag_name, data, string.as_str()));
             }
         },
         _ => {},
@@ -71,9 +74,9 @@ pub fn print_tags(header: &TiffHeaders) -> String {
         Some(gps) => {
             s += "\nIFD GPS \n";
             for tag in gps {
-                let (tag_name,_) = gps_mapper(tag.tagid as u16,&tag.data,tag.length);
+                let (tag_name,data) = gps_mapper(tag.tagid as u16,&tag.data,tag.length);
                 let string = print_data(&tag.data,tag.length);
-                s += &(tag_name + " : " + &string + "\n");
+                s +=  &(print_util(tag_name, data, string.as_str()));
             }
         },
         _ => {},
@@ -209,6 +212,40 @@ pub fn make_metadata(header: &TiffHeaders) -> HashMap<String,DataMap> {
     map
 }
 */
+
+pub(super) fn convert_utf16_be(data: Vec<u8>) -> String {
+    let mut s = String::new();
+    let mut i = 0;
+    while i < data.len() {
+        let c = ((data[i] as u16) << 8) + data[i+1] as u16;
+        s.push(std::char::from_u32(c as u32).unwrap());
+        i += 2;
+    }
+    s
+
+}
+
+pub(super) fn convert_utf16_le(data: Vec<u8>) -> String {
+    let mut s = String::new();
+    let mut i = 0;
+    while i < data.len() {
+        let c = ((data[i+1] as u16) << 8) + data[i] as u16;
+        s.push(std::char::from_u32(c as u32).unwrap());
+        i += 2;
+    }
+    s
+}
+
+pub(super) fn convert_utf16(data: Vec<u8>, endien: Endian) -> String {
+    match endien {
+        Endian::BigEndian => {
+            convert_utf16_be(data)
+        },
+        Endian::LittleEndian => {
+            convert_utf16_le(data)
+        }
+    }
+}
 
 pub fn convert(data: &DataPack,length:usize) -> DataMap {
     match data {

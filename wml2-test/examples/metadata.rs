@@ -29,7 +29,6 @@ pub fn main()-> Result<(),Box<dyn Error>> {
                 },
                 DataMap::Exif(value) => {
                     println!("=============== EXIF START ==============");
-                    print!("{:?}: ", value);
                     let string = value.to_string();
                     println!("{}", string);
                     println!("================ EXIF END ===============");

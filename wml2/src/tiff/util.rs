@@ -29,7 +29,6 @@ pub fn print_tags(header: &TiffHeaders) -> String {
             for tag in exif {
                 let (tag_name,data) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
                 let string = print_data(&tag.data,tag.length);
-                print!("{:?}: ", data);
                 let a = match data {
                     DataMap::UInt(d) => {
                         tag_name + " : " + &d.to_string() + "\n"

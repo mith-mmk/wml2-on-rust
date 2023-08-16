@@ -27,10 +27,44 @@ pub fn print_tags(header: &TiffHeaders) -> String {
         Some(exif) => {
             s += "\nIFD Exif \n";
             for tag in exif {
-                let (tag_name,_) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
+                let (tag_name,data) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
                 let string = print_data(&tag.data,tag.length);
-                s += &(tag_name + " : " + &string + "\n");
+                print!("{:?}: ", data);
+                let a = match data {
+                    DataMap::UInt(d) => {
+                        tag_name + " : " + &d.to_string() + "\n"
+                    },
+                    DataMap::SInt(d) => {
+                        tag_name + " : " + &d.to_string() + "\n"
+                    },
+                    DataMap::Float(d) => {
+                        tag_name + " : " + &d.to_string() + "\n"
+                    },
+                    DataMap::FloatAllay(d) => {
+                        let array = format!("{:?}",d);
+                        tag_name + " :\n" + &array + "\n"
+                    },  
+                    DataMap::UIntAllay(d) => {
+                        let array = format!("{:?}",d);
+                        tag_name + " :\n" + &array + "\n"
+                    },
+                    DataMap::SIntAllay(d) => {
+                        let array = format!("{:?}",d);
+                        tag_name + " :\n" + &array + "\n"
+                    },                   
+                    DataMap::Ascii(d) => {
+                        tag_name + " :\n" + &d + "\n"
+                    },
+                    DataMap::I18NString(d) => {
+                        tag_name + " :\n" + &d + "\n"
+                    },
+                    _ => {
+                        tag_name + " :\n" + &string + "\n"
                     }
+                };
+                s += &a;
+
+            }
         },
         _ => {},
     }
@@ -79,7 +113,7 @@ pub fn print_data(data: &DataPack,length:usize) -> String{
             }
 
         },
-        DataPack::Undef(d) => {
+        DataPack::Undef(d,_) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
             for i in 0..length {
                 s += &format!("{:02x} ",d[i]);
@@ -223,7 +257,7 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
             }
             return DataMap::SIntAllay(data);
         },
-        DataPack::Undef(d) => {
+        DataPack::Undef(d, _) => {
             return DataMap::Raw(d.to_vec())
         },
 

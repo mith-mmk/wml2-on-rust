@@ -16,10 +16,6 @@ use bin_rs::reader::BinaryReader;
 use bin_rs::Endian;
 use std::io::SeekFrom;
 
-
-
-
-
 trait RationalNumber {
     fn as_f32(&self) -> f32;
     fn as_f64(&self) -> f64;
@@ -97,7 +93,7 @@ pub enum DataPack {
     SShort(Vec<i16>),
     SLong(Vec<i32>),
     Unkown(Vec<u8>),
-    Undef(Vec<u8>),
+    Undef(Vec<u8>, Endian),
 }
 
 
@@ -729,12 +725,12 @@ impl Tiff {
                     }                    
                 },
                 0x015b => { //Jpeg Tables
-                    if let DataPack::Undef(d) = &header.data {
+                    if let DataPack::Undef(d, _) = &header.data {
                         current.jpeg_tables = d.to_vec();
                     }
                 },
                 0x8773 => { //ICC Profile
-                    if let DataPack::Undef(d) = &header.data {
+                    if let DataPack::Undef(d, _) = &header.data {
                         current.icc_profile = Some(d.to_vec());
                     }
                 }
@@ -836,7 +832,7 @@ pub fn write_tag(buf:&mut Vec<u8>,append:&mut Vec<u8>,tag:&TiffHeader,last_offse
             *last_offset += data.len() * 8;
 
         },
-        DataPack::Undef(data) => {
+        DataPack::Undef(data, _) => {
             write_u16(7,buf,endian);
             write_u32(data.len() as u32,buf,endian);
             if data.len() > 4 {
@@ -1201,7 +1197,8 @@ fn get_data (reader: &mut dyn BinaryReader,datatype: usize, datalen: usize) -> R
                 }
                 reader.seek(SeekFrom::Start(current))?;
             }
-            data = DataPack::Undef(d);
+            let endien = reader.endian();
+            data = DataPack::Undef(d, endien);
 
         },
         8 => {  // 6 i16

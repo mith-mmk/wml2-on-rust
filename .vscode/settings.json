@@ -1,0 +1,11 @@
+{
+  "rust-analyzer.linkedProjects": [
+    ".\\wml2\\Cargo.toml",
+    ".\\wml2\\Cargo.toml",
+    ".\\wml2\\Cargo.toml",
+    ".\\wml2\\Cargo.toml",
+    ".\\wml2\\Cargo.toml",
+    ".\\wml2\\Cargo.toml"
+  ],
+  "rust-analyzer.showUnlinkedFileNotification": false
+}

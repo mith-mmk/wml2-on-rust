@@ -3,6 +3,7 @@
  * use MIT License
  */
 
+use bin_rs::Endian;
 use bin_rs::io::read_string;
 use crate::metadata::DataMap;
 use super::header::DataPack;
@@ -1114,7 +1115,7 @@ pub fn tag_mapper(tag :u16, data: &DataPack,length: usize) -> (String,DataMap) {
         },
         0x8773 => {
             tagname = "ICC_Profile";
-            if let DataPack::Undef(data) = data {
+            if let DataPack::Undef(data,_) = data {
                 s = DataMap::ICCProfile(data.to_vec())
             } else {
                 s = convert(&data,length);
@@ -1444,7 +1445,7 @@ pub fn tag_mapper(tag :u16, data: &DataPack,length: usize) -> (String,DataMap) {
         0x927c => {
             tagname = "MakerNoteApple";
             match data {
-                DataPack::Undef(d) => {
+                DataPack::Undef(d,_) => {
                     s = DataMap::Ascii(read_string(d, 0, d.len()));
                 },
                 _ => {
@@ -1454,7 +1455,51 @@ pub fn tag_mapper(tag :u16, data: &DataPack,length: usize) -> (String,DataMap) {
         },
         0x9286 => {
             tagname = "UserComment";
-            s = convert(&data,length);
+            // get endien?
+            
+            match data {
+                DataPack::Undef(d, endien) => {
+                    // get 8byte
+                    let d = d.to_vec();
+                    let mut d8 = vec![0;8];
+                    d8.copy_from_slice(&d[0..8]);
+                    let d8 = String::from_utf8(d8).unwrap();
+                    s = match d8.as_str() {
+                        "ASCII\0\0\0" => {
+                            DataMap::Ascii(read_string(&d, 8, d.len()))
+                        },
+                        "UNICODE\0" => {
+                            let mut d = d.to_vec();
+                            d.drain(0..8);
+                            // utf16 to utf8
+                            let mut d16 = vec![0; d.len()/2];
+                            for i in 0..d.len()/2 {
+                                d16[i] = match endien {
+                                    Endian::BigEndian => (d[i*2] as u16) << 8 | (d[i*2 + 1] as u16),
+                                    Endian::LittleEndian => (d[i*2 + 1] as u16) << 8 | (d[i*2] as u16),
+                                };
+                            }
+                            let d16 = {
+                                let v: &[u16] = &d16;
+                                char::decode_utf16(v.iter().cloned())
+                                    .map(|r| r.unwrap_or(char::REPLACEMENT_CHARACTER))
+                                    .collect()
+                            };
+                            // print!("{}", d16);        
+                            DataMap::I18NString(d16)
+                        },
+                        // "JIS\0\0\0\0\0" => {
+                        // noimpl
+                        // },
+                        _ => {
+                            convert(&data,length)
+                        }
+                    };
+                },
+                _ => {
+                    s = convert(&data,length);
+                }   
+            }
         },
         0x9290 => {
             tagname = "SubSecTime";

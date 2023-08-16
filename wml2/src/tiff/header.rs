@@ -960,7 +960,9 @@ fn write_child_ifd(buf: &mut Vec<u8>,append: &mut Vec<u8>,tags: &Option<Vec<Tiff
         let mut append_extra = vec![];
         write_u16(child_ifd.len() as u16, &mut buf_extra, endian);
         for tag in child_ifd {
-            println!("{:04x} {:?}",tag.tagid,tag);
+            if cfg!(debug_assertions) {
+                println!("{:04x} {:?}",tag.tagid,tag);
+            }
             write_tag(&mut buf_extra,&mut append_extra,tag,&mut extra_offset,&endian)?;
         }
         let tag = TiffHeader {

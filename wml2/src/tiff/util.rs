@@ -24,24 +24,24 @@ fn print_util(tag_name: String, data: DataMap, string: &str) -> String {
         },
         DataMap::FloatAllay(d) => {
             let array = format!("{:?}",d);
-            tag_name + " :\n" + &array + "\n"
+            tag_name + " : " + &array + "\n"
         },  
         DataMap::UIntAllay(d) => {
             let array = format!("{:?}",d);
-            tag_name + " :\n" + &array + "\n"
+            tag_name + " : " + &array + "\n"
         },
         DataMap::SIntAllay(d) => {
             let array = format!("{:?}",d);
-            tag_name + " :\n" + &array + "\n"
+            tag_name + " : " + &array + "\n"
         },                   
         DataMap::Ascii(d) => {
-            tag_name + " :\n" + &d + "\n"
+            tag_name + " : " + &d + "\n"
         },
         DataMap::I18NString(d) => {
-            tag_name + " :\n" + &d + "\n"
+            tag_name + " : " + &d + "\n"
         },
         _ => {
-            tag_name + " :\n" + &string + "\n"
+            tag_name + " : " + &string + "\n"
         }
     }
 }
@@ -86,38 +86,40 @@ pub fn print_tags(header: &TiffHeaders) -> String {
 }
 
 pub fn print_data(data: &DataPack,length:usize) -> String{
+    const MAX_LENGTH:usize = 100;
     let mut s = "".to_string();
+    let len = if length < 100 {length} else {MAX_LENGTH};
     
     match data {
         DataPack::Rational(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
 
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{}/{} ",d[i].n,d[i].d);
             }
         },
         DataPack::SRational(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{}/{} ",d[i].n,d[i].d);
             }
         },
         DataPack::Bytes(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{} ",d[i]);
             }
         },
         DataPack::SByte(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{} ",d[i]);
             }
 
         },
         DataPack::Undef(d,_) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{:02x} ",d[i]);
             }
 
@@ -128,42 +130,42 @@ pub fn print_data(data: &DataPack,length:usize) -> String{
         },
         DataPack::Short(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{} ",d[i]);
             }
 
         },
         DataPack::Long(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{} ",d[i]);
             }
 
         },
         DataPack::SShort(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{} ",d[i]);
             }
 
         },
         DataPack::SLong(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{} ",d[i]);
             }
 
         },
         DataPack::Float(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{}",d[i]);
             }
 
         },
         DataPack::Double(d) => {
             if length > 1 { s = format!("\nlength {}\n",length) };
-            for i in 0..length {
+            for i in 0..len {
                 s += &format!("{} ",d[i]);
             }
 
@@ -171,6 +173,9 @@ pub fn print_data(data: &DataPack,length:usize) -> String{
         _ => {
 
         },
+    }
+    if length > MAX_LENGTH {
+        s += "\n...";
     }
     s
 }

@@ -101,6 +101,53 @@ pub enum DataPack {
 }
 
 
+impl DataPack {
+    pub fn to_string(self) -> String {
+        match self {
+            DataPack::Bytes(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::Ascii(d) => {
+                d
+            },
+            DataPack::SByte(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::Short(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::Long(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::Rational(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::SRational(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::Float(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::Double(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::SShort(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::SLong(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::Unkown(d) => {
+                format!("{:?}",d)
+            },
+            DataPack::Undef(d,_) => {
+                format!("{:?}",d)
+            },
+        }
+    }
+    
+}
+
 #[allow(unused)]
 #[derive(Debug,Clone,PartialEq)]
 pub struct TiffHeader {

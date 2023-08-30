@@ -3,3 +3,4 @@ target
 .env
 /wml2-win
 Cargo.lock
+.vscode

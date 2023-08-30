@@ -49,8 +49,9 @@ pub fn print_tags(header: &TiffHeaders) -> String {
     s
 }
 
-pub fn print_data(data: &DataPack,length:usize) -> String{
+pub fn print_data_with_max_size(data: &DataPack, length:usize, max_size: usize) -> String {
     let mut s = "".to_string();
+    let len = if length < 100 {length} else {MAX_LENGTH};
     
     match data {
         DataPack::Rational(d) => {
@@ -136,7 +137,16 @@ pub fn print_data(data: &DataPack,length:usize) -> String{
 
         },
     }
+    if length > MAX_LENGTH {
+        s += "\n...";
+    }
     s
+
+}
+
+pub fn print_data(data: &DataPack,length:usize) -> String{
+    const MAX_LENGTH:usize = 100;
+    print_data_with_max_size(data, length, MAX_LENGTH)
 }
 
 /*

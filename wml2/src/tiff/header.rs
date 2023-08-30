@@ -140,7 +140,7 @@ impl DataPack {
             DataPack::Unkown(d) => {
                 format!("{:?}",d)
             },
-            DataPack::Undef(d,_) => {
+            DataPack::Undef(d) => {
                 format!("{:?}",d)
             },
         }

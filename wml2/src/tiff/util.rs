@@ -3,6 +3,8 @@
  * use MIT License
  */
 
+const MAX_LENGTH:usize = 100;
+
 use crate::metadata::DataMap;
 use crate::tiff::header::DataPack;
 use crate::tiff::tags::gps_mapper;
@@ -137,7 +139,7 @@ pub fn print_data_with_max_size(data: &DataPack, length:usize, max_size: usize) 
 
         },
     }
-    if length > MAX_LENGTH {
+    if length > len {
         s += "\n...";
     }
     s

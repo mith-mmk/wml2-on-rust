@@ -1,7 +1,7 @@
 /*
  * WML2 - Web graphic Multi format Library To Rust
  *  (C)Mith@mmk 2022
- * 
+ *
  *  use MIT Licnce
  */
 //! Sample
@@ -10,14 +10,14 @@
 //! use wml2::metadata::DataMap;
 //! use std::error::Error;
 //! use std::env;
-//! 
+//!
 //! pub fn main()-> Result<(),Box<dyn Error>> {
 //!     let args: Vec<String> = env::args().collect();
 //!     if args.len() < 2 {
 //!         println!("usage: metadata <inputfilename>");
 //!         return Ok(())
 //!     }
-//! 
+//!
 //!     let filename = &args[1];
 //!     let mut image = image_from_file(filename.to_string())?;
 //!     let metadata = image.metadata()?;
@@ -52,17 +52,16 @@
 //! }
 //! ```
 
-
 //pub(crate) mod io; // move bin_rs crate
-pub mod draw;
-pub mod jpeg;
-pub mod tiff;
 pub mod bmp;
-pub mod gif;
-pub mod png;
+pub mod draw;
 pub mod error;
-pub mod warning;
+pub mod gif;
+pub mod jpeg;
+pub mod png;
+pub mod tiff;
 pub mod util;
+pub mod warning;
 //pub mod iccprofile;
 pub mod color;
 pub mod decoder;

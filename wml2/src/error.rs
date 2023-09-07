@@ -1,17 +1,15 @@
-use std::fmt::*;
 use std::error::Error;
+use std::fmt::*;
 
 pub struct ImgError {
     repr: Repr,
 }
 
-impl Error for ImgError {
-
-}
+impl Error for ImgError {}
 
 impl Display for ImgError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f,"{:?}",&self.repr)
+        write!(f, "{:?}", &self.repr)
     }
 }
 
@@ -20,7 +18,6 @@ impl Debug for ImgError {
         Debug::fmt(&self.repr, f)
     }
 }
-
 
 impl ImgError {
     pub fn new<E>(kind: ImgErrorKind, error: E) -> ImgError
@@ -31,12 +28,16 @@ impl ImgError {
     }
 
     fn _new(kind: ImgErrorKind, error: Box<dyn std::error::Error + Send + Sync>) -> ImgError {
-        ImgError { repr: Repr::Custom(Box::new(Custom { kind, error })) }
+        ImgError {
+            repr: Repr::Custom(Box::new(Custom { kind, error })),
+        }
     }
 
     #[inline]
     pub const fn new_const(kind: ImgErrorKind, message: String) -> ImgError {
-        Self { repr: Repr::SimpleMessage(kind, message) }
+        Self {
+            repr: Repr::SimpleMessage(kind, message),
+        }
     }
 
     #[must_use]
@@ -108,25 +109,25 @@ impl ImgErrorKind {
     pub(crate) fn as_str(&self) -> &'static str {
         use ImgErrorKind::*;
         match &*self {
-            UnknownFormat => {"Unknown format"},
-            OutOfMemory => {"Out of memory"},
-            CannotDecode => {"Cannot decode this decoder"},
-            CannotEncode => {"Cannot encode this encoder"},
-            MemoryOfShortage => {"Memroy shortage"},
-            SizeZero => {"size is zero"},
-            NoSupportFormat => {"No Support format"},
-            UnimprimentFormat => {"Unimplement format"},
-            IllegalData => {"Illegal data"},
-            DecodeError => {"decode error"},
-            EncodeError => {"encode error"},
-            WriteError => {"write error"},
-            IOError => {"IO error"},
-            Reset => {"Decoder Reset command"},
-            OutboundIndex => {"Outbound index"},
-            IllegalCallback => {"Illegal Callback"},
-            NotInitializedImageBuffer => {"Not initialized Image Buffer"},
-            OSError => {"OS error"},
-            UnknownError => {"Unkonw error"}            
+            UnknownFormat => "Unknown format",
+            OutOfMemory => "Out of memory",
+            CannotDecode => "Cannot decode this decoder",
+            CannotEncode => "Cannot encode this encoder",
+            MemoryOfShortage => "Memroy shortage",
+            SizeZero => "size is zero",
+            NoSupportFormat => "No Support format",
+            UnimprimentFormat => "Unimplement format",
+            IllegalData => "Illegal data",
+            DecodeError => "decode error",
+            EncodeError => "encode error",
+            WriteError => "write error",
+            IOError => "IO error",
+            Reset => "Decoder Reset command",
+            OutboundIndex => "Outbound index",
+            IllegalCallback => "Illegal Callback",
+            NotInitializedImageBuffer => "Not initialized Image Buffer",
+            OSError => "OS error",
+            UnknownError => "Unkonw error",
         }
     }
 }

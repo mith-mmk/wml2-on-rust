@@ -1,2 +1,2 @@
-pub mod lzw;
 pub mod ccitt;
+pub mod lzw;

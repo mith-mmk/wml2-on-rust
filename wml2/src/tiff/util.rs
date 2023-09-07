@@ -3,151 +3,161 @@
  * use MIT License
  */
 
-const MAX_LENGTH:usize = 100;
+const MAX_LENGTH: usize = 100;
 
 use crate::metadata::DataMap;
 use crate::tiff::header::DataPack;
+use crate::tiff::header::TiffHeaders;
 use crate::tiff::tags::gps_mapper;
 use crate::tiff::tags::tag_mapper;
-use crate::tiff::header::TiffHeaders;
 use bin_rs::Endian;
 
 pub fn print_tags(header: &TiffHeaders) -> String {
     let endian = match header.endian {
-        Endian::BigEndian => {"Big Endian"},
-        Endian::LittleEndian => {"Little Endian"}
+        Endian::BigEndian => "Big Endian",
+        Endian::LittleEndian => "Little Endian",
     };
 
-    let mut s :String = format!("TIFF Ver{} {}\n",header.version,endian);
+    let mut s: String = format!("TIFF Ver{} {}\n", header.version, endian);
 
     for tag in &header.headers {
-        let (tag_name,_) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
-        let string = print_data(&tag.data,tag.length);
+        let (tag_name, _) = tag_mapper(tag.tagid as u16, &tag.data, tag.length);
+        let string = print_data(&tag.data, tag.length);
         s += &(tag_name + " : " + &string + "\n");
     }
     match &header.exif {
         Some(exif) => {
             s += "\nIFD Exif \n";
             for tag in exif {
-                let (tag_name,_) = tag_mapper(tag.tagid as u16,&tag.data,tag.length);
-                let string = print_data(&tag.data,tag.length);
+                let (tag_name, _) = tag_mapper(tag.tagid as u16, &tag.data, tag.length);
+                let string = print_data(&tag.data, tag.length);
                 s += &(tag_name + " : " + &string + "\n");
-                    }
-        },
-        _ => {},
+            }
+        }
+        _ => {}
     }
     match &header.gps {
         Some(gps) => {
             s += "\nIFD GPS \n";
             for tag in gps {
-                let (tag_name,_) = gps_mapper(tag.tagid as u16,&tag.data,tag.length);
-                let string = print_data(&tag.data,tag.length);
+                let (tag_name, _) = gps_mapper(tag.tagid as u16, &tag.data, tag.length);
+                let string = print_data(&tag.data, tag.length);
                 s += &(tag_name + " : " + &string + "\n");
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
-    
+
     s
 }
 
-pub fn print_data_with_max_size(data: &DataPack, length:usize, max_size: usize) -> String {
+pub fn print_data_with_max_size(data: &DataPack, length: usize, max_size: usize) -> String {
     let mut s = "".to_string();
-    let len = if length < 100 {length} else {MAX_LENGTH};
-    
+    let len = if length < 100 { length } else { MAX_LENGTH };
+
     match data {
         DataPack::Rational(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
 
             for i in 0..length {
-                s += &format!("{}/{} ",d[i].n,d[i].d);
+                s += &format!("{}/{} ", d[i].n, d[i].d);
             }
-        },
+        }
         DataPack::SRational(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{}/{} ",d[i].n,d[i].d);
+                s += &format!("{}/{} ", d[i].n, d[i].d);
             }
-        },
+        }
         DataPack::Bytes(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{} ",d[i]);
+                s += &format!("{} ", d[i]);
             }
-        },
+        }
         DataPack::SByte(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{} ",d[i]);
+                s += &format!("{} ", d[i]);
             }
-
-        },
+        }
         DataPack::Undef(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{:02x} ",d[i]);
+                s += &format!("{:02x} ", d[i]);
             }
-
-        },
+        }
         DataPack::Ascii(ss) => {
-            s = format!("{}",ss);
-
-        },
+            s = format!("{}", ss);
+        }
         DataPack::Short(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{} ",d[i]);
+                s += &format!("{} ", d[i]);
             }
-
-        },
+        }
         DataPack::Long(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{} ",d[i]);
+                s += &format!("{} ", d[i]);
             }
-
-        },
+        }
         DataPack::SShort(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{} ",d[i]);
+                s += &format!("{} ", d[i]);
             }
-
-        },
+        }
         DataPack::SLong(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{} ",d[i]);
+                s += &format!("{} ", d[i]);
             }
-
-        },
+        }
         DataPack::Float(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{}",d[i]);
+                s += &format!("{}", d[i]);
             }
-
-        },
+        }
         DataPack::Double(d) => {
-            if length > 1 { s = format!("\nlength {}\n",length) };
+            if length > 1 {
+                s = format!("\nlength {}\n", length)
+            };
             for i in 0..length {
-                s += &format!("{} ",d[i]);
+                s += &format!("{} ", d[i]);
             }
-
-        },
-        _ => {
-
-        },
+        }
+        _ => {}
     }
     if length > len {
         s += "\n...";
     }
     s
-
 }
 
-pub fn print_data(data: &DataPack,length:usize) -> String{
-    const MAX_LENGTH:usize = 100;
+pub fn print_data(data: &DataPack, length: usize) -> String {
+    const MAX_LENGTH: usize = 100;
     print_data_with_max_size(data, length, MAX_LENGTH)
 }
 
@@ -184,37 +194,37 @@ pub fn make_metadata(header: &TiffHeaders) -> HashMap<String,DataMap> {
         },
         _ => {},
     }
-    
+
     map
 }
 */
 
-pub fn convert(data: &DataPack,length:usize) -> DataMap {
+pub fn convert(data: &DataPack, length: usize) -> DataMap {
     match data {
         DataPack::Rational(d) => {
             if length == 1 {
-                return DataMap::Float(d[0].n as f64/d[0].d as f64);
+                return DataMap::Float(d[0].n as f64 / d[0].d as f64);
             }
             let mut data = vec![];
 
             for val in d {
-                let val = val.n as f64/ val.d as f64;
+                let val = val.n as f64 / val.d as f64;
                 data.push(val);
             }
             return DataMap::FloatAllay(data);
-        },
+        }
         DataPack::SRational(d) => {
             if length == 1 {
-                return DataMap::Float(d[0].n as f64/d[0].d as f64);
+                return DataMap::Float(d[0].n as f64 / d[0].d as f64);
             }
             let mut data = vec![];
 
             for val in d {
-                let val = val.n as f64/ val.d as f64;
+                let val = val.n as f64 / val.d as f64;
                 data.push(val);
             }
             return DataMap::FloatAllay(data);
-        },
+        }
         DataPack::Bytes(d) => {
             if length == 1 {
                 return DataMap::UInt(d[0] as u64);
@@ -224,7 +234,7 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
                 data.push(*val as u64);
             }
             return DataMap::UIntAllay(data);
-        },
+        }
         DataPack::SByte(d) => {
             if length == 1 {
                 return DataMap::SInt(d[0] as i64);
@@ -234,14 +244,10 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
                 data.push(*val as i64);
             }
             return DataMap::SIntAllay(data);
-        },
-        DataPack::Undef(d) => {
-            return DataMap::Raw(d.to_vec())
-        },
+        }
+        DataPack::Undef(d) => return DataMap::Raw(d.to_vec()),
 
-        DataPack::Ascii(ss) => {
-            return DataMap::Ascii(ss.to_string())
-        },
+        DataPack::Ascii(ss) => return DataMap::Ascii(ss.to_string()),
         DataPack::Short(d) => {
             if length == 1 {
                 return DataMap::UInt(d[0] as u64);
@@ -251,8 +257,7 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
                 data.push(*val as u64);
             }
             return DataMap::UIntAllay(data);
-
-        },
+        }
         DataPack::Long(d) => {
             if length == 1 {
                 return DataMap::UInt(d[0] as u64);
@@ -262,8 +267,7 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
                 data.push(*val as u64);
             }
             return DataMap::UIntAllay(data);
-
-        },
+        }
         DataPack::SShort(d) => {
             if length == 1 {
                 return DataMap::SInt(d[0] as i64);
@@ -273,8 +277,7 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
                 data.push(*val as i64);
             }
             return DataMap::SIntAllay(data);
-
-        },
+        }
         DataPack::SLong(d) => {
             if length == 1 {
                 return DataMap::SInt(d[0] as i64);
@@ -284,8 +287,7 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
                 data.push(*val as i64);
             }
             return DataMap::SIntAllay(data);
-
-        },
+        }
         DataPack::Float(d) => {
             if length == 1 {
                 return DataMap::Float(d[0] as f64);
@@ -295,7 +297,7 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
                 data.push(*val as f64);
             }
             return DataMap::FloatAllay(data);
-        },
+        }
         DataPack::Double(d) => {
             if length == 1 {
                 return DataMap::Float(d[0] as f64);
@@ -305,9 +307,7 @@ pub fn convert(data: &DataPack,length:usize) -> DataMap {
                 data.push(*val as f64);
             }
             return DataMap::FloatAllay(data);
-        },
-        DataPack::Unkown(d) => {
-            return DataMap::Raw(d.to_vec())
         }
+        DataPack::Unkown(d) => return DataMap::Raw(d.to_vec()),
     }
 }

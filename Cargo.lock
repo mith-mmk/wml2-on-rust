@@ -15,6 +15,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e62e12dae19127152eee5b5ff249a86100a01e388abbac4c22e9f97eb33d9c3d"
 
 [[package]]
+name = "bin-rs"
+version = "0.0.8"
+source = "git+https://github.com/mith-mmk/bin-rs#4928d230eb0c6c45723d8059cf3a1ef1d44ff723"
+
+[[package]]
 name = "dotenv"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -25,7 +30,7 @@ name = "icc-profile"
 version = "0.0.1"
 source = "git+https://github.com/mith-mmk/icc_profile#eae2707c1cdbf9d6a75aa2a2c05760c125405206"
 dependencies = [
- "bin-rs",
+ "bin-rs 0.0.7",
 ]
 
 [[package]]
@@ -41,7 +46,7 @@ dependencies = [
 name = "wml2"
 version = "0.0.11"
 dependencies = [
- "bin-rs",
+ "bin-rs 0.0.8",
  "miniz_oxide",
 ]
 

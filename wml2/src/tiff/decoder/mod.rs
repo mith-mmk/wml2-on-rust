@@ -1,45 +1,55 @@
 //!
 //! TIFF Decoder is support No Compress,LZW,Pack bits,JPEG(new style),Adobe Deflate images.
-//! 
-//! 
+//!
+//!
 
 type Error = Box<dyn std::error::Error>;
-use crate::tiff::warning::TiffWarning;
-use bin_rs::reader::BinaryReader;
-use bin_rs::io::read_u32;
-use bin_rs::io::read_u16;
+use self::jpeg::decode_jpeg_compresson;
 use crate::color::RGBA;
 use crate::decoder::lzw::Lzwdecode;
-use crate::metadata::DataMap;
-use crate::tiff::header::*;
-use crate::warning::ImgWarnings;
 use crate::draw::*;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
-use self::jpeg::decode_jpeg_compresson;
-mod packbits;
-mod jpeg;
+use crate::metadata::DataMap;
+use crate::tiff::header::*;
+use crate::tiff::warning::TiffWarning;
+use crate::warning::ImgWarnings;
+use bin_rs::io::read_u16;
+use bin_rs::io::read_u32;
+use bin_rs::reader::BinaryReader;
 mod ccitt;
+mod jpeg;
+mod packbits;
 
-fn create_pallet(bits:usize,is_black_zero:bool) -> Vec<RGBA>{
+fn create_pallet(bits: usize, is_black_zero: bool) -> Vec<RGBA> {
     let color_max = 1 << bits;
     let mut pallet = Vec::with_capacity(color_max);
 
     if is_black_zero {
         for i in 0..color_max {
             let gray = (i * 255 / (color_max - 1)) as u8;
-            pallet.push(RGBA{red:gray,green:gray,blue:gray,alpha:0xff});
+            pallet.push(RGBA {
+                red: gray,
+                green: gray,
+                blue: gray,
+                alpha: 0xff,
+            });
         }
     } else {
         for i in 0..color_max {
             let gray = 255 - ((i * 255 / (color_max - 1)) as u8);
-            pallet.push(RGBA{red:gray,green:gray,blue:gray,alpha:0xff});
+            pallet.push(RGBA {
+                red: gray,
+                green: gray,
+                blue: gray,
+                alpha: 0xff,
+            });
         }
     }
     pallet
 }
 
-fn planar_to_chuncky(data:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
+fn planar_to_chuncky(data: &[u8], header: &Tiff) -> Result<Vec<u8>, Error> {
     let mut buf = vec![];
     let mut total_length = 0;
     for bits in &header.bitspersamples {
@@ -47,10 +57,15 @@ fn planar_to_chuncky(data:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
     }
 
     if data.len() < total_length as usize {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data shotage.".to_string())));
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::DecodeError,
+            "Data shotage.".to_string(),
+        )));
     }
 
-    let length = header.height as usize * header.width as usize * ((header.bitspersamples[0] as usize + 7) / 8);
+    let length = header.height as usize
+        * header.width as usize
+        * ((header.bitspersamples[0] as usize + 7) / 8);
     for i in 0..length {
         for j in 0..header.samples_per_pixel as usize {
             buf.push(data[i + j * length]);
@@ -60,66 +75,104 @@ fn planar_to_chuncky(data:&[u8],header: &Tiff) -> Result<Vec<u8>,Error> {
     Ok(buf)
 }
 
-pub fn draw_strip(data:&[u8],y:usize,strip:usize,option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error>  {
-    draw_tile(data, y, strip,0,header.width as usize, option, header)
+pub fn draw_strip(
+    data: &[u8],
+    y: usize,
+    strip: usize,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+) -> Result<Option<ImgWarnings>, Error> {
+    draw_tile(data, y, strip, 0, header.width as usize, option, header)
 }
 
-pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error>  {
+pub fn draw_tile(
+    data: &[u8],
+    y: usize,
+    strip: usize,
+    x: usize,
+    width: usize,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+) -> Result<Option<ImgWarnings>, Error> {
     if data.len() == 0 {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data empty.".to_string())));
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::DecodeError,
+            "Data empty.".to_string(),
+        )));
     }
 
     let mut data = data.to_owned();
 
     // no debug
     if header.planar_config == 2 && header.samples_per_pixel > 1 {
-        data = planar_to_chuncky(&data,header)?;
+        data = planar_to_chuncky(&data, header)?;
     }
-    
-    let color_table: Option<Vec<RGBA>> = 
-        if let Some(color_table) = header.color_table.as_ref() {
-            Some(color_table.to_vec())
+
+    let color_table: Option<Vec<RGBA>> = if let Some(color_table) = header.color_table.as_ref() {
+        Some(color_table.to_vec())
+    } else {
+        let bitspersample = if header.bitspersample >= 8 {
+            8
         } else {
-            let bitspersample = if header.bitspersample >= 8 { 8 } else { header.bitspersample };
-            match header.photometric_interpretation {
-                0 => {  // WhiteIsZero
-                    Some(create_pallet(bitspersample as usize, false))
-                },
-                1 => {  // BlackIsZero
-                    Some(create_pallet(bitspersample as usize, true))
-                },
-                2 => {
-                    if header.samples_per_pixel < 3 {
-                        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"RGB image needs Sample per pixel >=3.".to_string())));
-                    } else {
-                        None
-                    }
-                },
-                3 => {  // RGB Palette
-                    Some(create_pallet(bitspersample as usize, true))
-                },
-                5 => {
-                    if header.samples_per_pixel < 4 {
-                        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"YMCK image needs Sample per pixel >=4.".to_string())));
-                    } else {
-                        None
-                    }
-                },
-                6 => {
-                    if header.samples_per_pixel < 3 {
-                        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"YCbCr image needs Sample per pixel >=3.".to_string())));
-                    } else {
-                        None
-                    }
-                },
-                _ => {
-                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not Supprt Color model.".to_string())));
+            header.bitspersample
+        };
+        match header.photometric_interpretation {
+            0 => {
+                // WhiteIsZero
+                Some(create_pallet(bitspersample as usize, false))
+            }
+            1 => {
+                // BlackIsZero
+                Some(create_pallet(bitspersample as usize, true))
+            }
+            2 => {
+                if header.samples_per_pixel < 3 {
+                    return Err(Box::new(ImgError::new_const(
+                        ImgErrorKind::DecodeError,
+                        "RGB image needs Sample per pixel >=3.".to_string(),
+                    )));
+                } else {
+                    None
                 }
             }
-        };
+            3 => {
+                // RGB Palette
+                Some(create_pallet(bitspersample as usize, true))
+            }
+            5 => {
+                if header.samples_per_pixel < 4 {
+                    return Err(Box::new(ImgError::new_const(
+                        ImgErrorKind::DecodeError,
+                        "YMCK image needs Sample per pixel >=4.".to_string(),
+                    )));
+                } else {
+                    None
+                }
+            }
+            6 => {
+                if header.samples_per_pixel < 3 {
+                    return Err(Box::new(ImgError::new_const(
+                        ImgErrorKind::DecodeError,
+                        "YCbCr image needs Sample per pixel >=3.".to_string(),
+                    )));
+                } else {
+                    None
+                }
+            }
+            _ => {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    "Not Supprt Color model.".to_string(),
+                )));
+            }
+        }
+    };
     if header.bitspersample <= 8 {
         if color_table.is_none() {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This is an index color image,but A color table is empty.".to_string())));
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::DecodeError,
+                "This is an index color image,but A color table is empty.".to_string(),
+            )));
         }
     }
 
@@ -132,36 +185,39 @@ pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut
         row_len *= 8;
     }
 
-    for (l,y) in (y..(y+strip)).enumerate() {
+    for (l, y) in (y..(y + strip)).enumerate() {
         let mut buf = vec![];
-        let mut prevs = vec![0_u8;header.samples_per_pixel as usize];
+        let mut prevs = vec![0_u8; header.samples_per_pixel as usize];
         let mut i = l * row_len;
-
 
         for _ in 0..header.width as usize {
             match header.photometric_interpretation {
                 0 | 1 | 3 => {
                     match header.bitspersamples[0] {
-                        16 => { // Illegal tiff(TOWNS TIFF)
-                            if header.max_sample_values.len() == 1 && header.max_sample_values[0] == 32767 
-                                                && header.tiff_headers.endian == bin_rs::Endian::LittleEndian {
-                                let color = read_u16(&data,i,header.tiff_headers.endian) >> 8;
+                        16 => {
+                            // Illegal tiff(TOWNS TIFF)
+                            if header.max_sample_values.len() == 1
+                                && header.max_sample_values[0] == 32767
+                                && header.tiff_headers.endian == bin_rs::Endian::LittleEndian
+                            {
+                                let color = read_u16(&data, i, header.tiff_headers.endian) >> 8;
                                 let temp_r = (color >> 5 & 0x1f) as u8;
-                                let r = (temp_r <<3 | temp_r >>2) as u8;
+                                let r = (temp_r << 3 | temp_r >> 2) as u8;
                                 let temp_g = (color >> 10 & 0x1f) as u8;
-                                let g = (temp_g <<3 | temp_g>>2) as u8;
+                                let g = (temp_g << 3 | temp_g >> 2) as u8;
                                 let temp_b = (color & 0x1f) as u8;
-                                let b = (temp_b <<3 | temp_b>>2) as u8;
+                                let b = (temp_b << 3 | temp_b >> 2) as u8;
                                 buf.push(r);
                                 buf.push(g);
                                 buf.push(b);
                                 buf.push(0xff);
                                 i += 2;
-                            } else {    // 16 bit glayscale
+                            } else {
+                                // 16 bit glayscale
                                 let mut color = data[i];
                                 if header.predictor == 2 {
                                     color += prevs[0];
-                                    prevs[0] = color; 
+                                    prevs[0] = color;
                                 }
                                 buf.push(color);
                                 buf.push(color);
@@ -169,20 +225,20 @@ pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut
                                 buf.push(color);
                                 i += header.bitspersamples[0] as usize / 8;
                             }
-                        },
+                        }
                         8 => {
                             if i >= data.len() {
                                 //return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Buffer shotage".to_string())));
-                                return Ok(None)
+                                return Ok(None);
                             }
                             let mut color = data[i];
                             if header.predictor == 2 {
                                 color += prevs[0];
-                                prevs[0] = color; 
+                                prevs[0] = color;
                             }
-        
+
                             let rgba = &color_table.as_ref().unwrap()[color as usize];
-        
+
                             buf.push(rgba.red);
                             buf.push(rgba.green);
                             buf.push(rgba.blue);
@@ -191,7 +247,7 @@ pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut
                         }
                         4 => {
                             let c;
-                            let color = data[i/2];
+                            let color = data[i / 2];
                             if i % 2 == 0 {
                                 if header.fill_order == 1 {
                                     c = (color >> 4) as usize;
@@ -205,36 +261,37 @@ pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut
                                     c = (color.reverse_bits() >> 4) as usize;
                                 }
                             }
-                            
+
                             let rgba = &color_table.as_ref().unwrap()[c];
-        
+
                             buf.push(rgba.red);
                             buf.push(rgba.green);
                             buf.push(rgba.blue);
                             buf.push(rgba.alpha);
                             i += 1; //  i += header.samples_per_pixel as usize; ?
-                        },
-                        2 => {  // usually illegal
+                        }
+                        2 => {
+                            // usually illegal
                             let c;
-                            let color = data[i/4];
+                            let color = data[i / 4];
                             let shift = (i % 4) * 2;
                             if header.fill_order == 1 {
                                 c = ((color >> (6 - shift)) & 0x3) as usize;
                             } else {
                                 c = ((color.reverse_bits() >> (6 - shift)) & 0x3) as usize;
                             }
-                            
+
                             let rgba = &color_table.as_ref().unwrap()[c];
-        
+
                             buf.push(rgba.red);
                             buf.push(rgba.green);
                             buf.push(rgba.blue);
                             buf.push(rgba.alpha);
                             i += 1;
-                        },
+                        }
                         1 => {
                             let c;
-                            let color = data[i/8];
+                            let color = data[i / 8];
                             let shift = i % 8;
                             if header.fill_order == 1 {
                                 c = ((color >> (7 - shift)) & 0x1) as usize;
@@ -243,69 +300,91 @@ pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut
                             }
 
                             let rgba = &color_table.as_ref().unwrap()[c];
-        
+
                             buf.push(rgba.red);
                             buf.push(rgba.green);
                             buf.push(rgba.blue);
                             buf.push(rgba.alpha);
                             i += 1;
-                        },
-        
+                        }
+
                         _ => {
-                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This bit per sample is not support.".to_string())));
+                            return Err(Box::new(ImgError::new_const(
+                                ImgErrorKind::DecodeError,
+                                "This bit per sample is not support.".to_string(),
+                            )));
                         }
                     }
-                
-                },
-                2 => {  //RGB
-                    let (mut r, mut g, mut b, mut a) = (0,0,0,0xff);
-                    match header.bitspersamples[0] {  //bit per samples same (8,8,8), but also (8,16,8) pattern 
+                }
+                2 => {
+                    //RGB
+                    let (mut r, mut g, mut b, mut a) = (0, 0, 0, 0xff);
+                    match header.bitspersamples[0] {
+                        //bit per samples same (8,8,8), but also (8,16,8) pattern
                         8 => {
                             if i + 2 >= data.len() {
-//                                return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Buffer shotage".to_string())));
-                                return Ok(None)
+                                //                                return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Buffer shotage".to_string())));
+                                return Ok(None);
                             }
                             r = data[i];
-                            g = data[i+1];
-                            b = data[i+2];
-                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
-                                        && header.samples_per_pixel > 3 {
-                                data[i+3] } else { 0xff };
+                            g = data[i + 1];
+                            b = data[i + 2];
+                            a = if header.extra_samples.len() > 0
+                                && header.extra_samples[0] == 2
+                                && header.samples_per_pixel > 3
+                            {
+                                data[i + 3]
+                            } else {
+                                0xff
+                            };
                             i += header.samples_per_pixel as usize;
-                        },
+                        }
                         16 => {
                             if header.samples_per_pixel >= 3 {
-                                r = (read_u16(&data,i,header.tiff_headers.endian) >> 8) as u8;
-                                g = (read_u16(&data,i+2,header.tiff_headers.endian) >> 8) as u8;
-                                b = (read_u16(&data,i+4,header.tiff_headers.endian) >> 8) as u8;
-                                a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
-                                            && header.samples_per_pixel > 3 {
-                                        (read_u16(&data,i+6,header.tiff_headers.endian) >> 8) as u8 } else { 0xff };
+                                r = (read_u16(&data, i, header.tiff_headers.endian) >> 8) as u8;
+                                g = (read_u16(&data, i + 2, header.tiff_headers.endian) >> 8) as u8;
+                                b = (read_u16(&data, i + 4, header.tiff_headers.endian) >> 8) as u8;
+                                a = if header.extra_samples.len() > 0
+                                    && header.extra_samples[0] == 2
+                                    && header.samples_per_pixel > 3
+                                {
+                                    (read_u16(&data, i + 6, header.tiff_headers.endian) >> 8) as u8
+                                } else {
+                                    0xff
+                                };
                                 i += header.samples_per_pixel as usize * 2;
                             }
-                        },
+                        }
                         32 => {
-                            r = (read_u32(&data,i,header.tiff_headers.endian) >> 24) as u8;
-                            g = (read_u32(&data,i+4,header.tiff_headers.endian) >> 24) as u8;
-                            b = (read_u32(&data,i+8,header.tiff_headers.endian) >> 24) as u8;
-                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
-                                        && header.samples_per_pixel > 3 {
-                                    (read_u32(&data,i+12,header.tiff_headers.endian) >> 24) as u8 } else { 0xff };
+                            r = (read_u32(&data, i, header.tiff_headers.endian) >> 24) as u8;
+                            g = (read_u32(&data, i + 4, header.tiff_headers.endian) >> 24) as u8;
+                            b = (read_u32(&data, i + 8, header.tiff_headers.endian) >> 24) as u8;
+                            a = if header.extra_samples.len() > 0
+                                && header.extra_samples[0] == 2
+                                && header.samples_per_pixel > 3
+                            {
+                                (read_u32(&data, i + 12, header.tiff_headers.endian) >> 24) as u8
+                            } else {
+                                0xff
+                            };
                             i += header.samples_per_pixel as usize * 4;
-                        },
+                        }
                         _ => {
-                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This bit per sample is not support.".to_string())));
+                            return Err(Box::new(ImgError::new_const(
+                                ImgErrorKind::DecodeError,
+                                "This bit per sample is not support.".to_string(),
+                            )));
                         }
                     }
 
                     if header.predictor == 2 {
                         r += prevs[0];
-                        prevs[0] = r; 
+                        prevs[0] = r;
                         g += prevs[1];
-                        prevs[1] = g; 
+                        prevs[1] = g;
                         b += prevs[2];
                         prevs[2] = b;
-                        if header.extra_samples.len() > 0 && header.extra_samples[0]  == 2 {
+                        if header.extra_samples.len() > 0 && header.extra_samples[0] == 2 {
                             a += prevs[3];
                             prevs[3] = a;
                         }
@@ -314,56 +393,76 @@ pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut
                     buf.push(g);
                     buf.push(b);
                     buf.push(a);
- 
                 }
                 // 4 : Transparentary musk is not support
-                5 => {  //CMYK
-                    let (mut c, mut m, mut y, mut k,mut a);
-                    match header.bitspersamples[0] {  //bit per samples same (8,8,8), but also (8,16,8) pattern 
+                5 => {
+                    //CMYK
+                    let (mut c, mut m, mut y, mut k, mut a);
+                    match header.bitspersamples[0] {
+                        //bit per samples same (8,8,8), but also (8,16,8) pattern
                         8 => {
                             c = data[i];
-                            m = data[i+1];
-                            y = data[i+2];
-                            k = data[i+3];
-                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
-                                && header.samples_per_pixel > 4 { data[i+4] } else { 0xff };
+                            m = data[i + 1];
+                            y = data[i + 2];
+                            k = data[i + 3];
+                            a = if header.extra_samples.len() > 0
+                                && header.extra_samples[0] == 2
+                                && header.samples_per_pixel > 4
+                            {
+                                data[i + 4]
+                            } else {
+                                0xff
+                            };
                             i += header.samples_per_pixel as usize;
-                        },
+                        }
                         16 => {
-                            c = (read_u16(&data,i,header.tiff_headers.endian) >> 8) as u8;
-                            m = (read_u16(&data,i+2,header.tiff_headers.endian) >> 8) as u8;
-                            y = (read_u16(&data,i+4,header.tiff_headers.endian) >> 8) as u8;
-                            k = (read_u16(&data,i+6,header.tiff_headers.endian) >> 8) as u8;
-                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
-                                        && header.samples_per_pixel > 4 {
-                                    (read_u16(&data,i+8,header.tiff_headers.endian) >> 8) as u8 } else { 0xff };
+                            c = (read_u16(&data, i, header.tiff_headers.endian) >> 8) as u8;
+                            m = (read_u16(&data, i + 2, header.tiff_headers.endian) >> 8) as u8;
+                            y = (read_u16(&data, i + 4, header.tiff_headers.endian) >> 8) as u8;
+                            k = (read_u16(&data, i + 6, header.tiff_headers.endian) >> 8) as u8;
+                            a = if header.extra_samples.len() > 0
+                                && header.extra_samples[0] == 2
+                                && header.samples_per_pixel > 4
+                            {
+                                (read_u16(&data, i + 8, header.tiff_headers.endian) >> 8) as u8
+                            } else {
+                                0xff
+                            };
                             i += header.samples_per_pixel as usize * 2;
-                        },
+                        }
                         32 => {
-                            c = (read_u32(&data,i,header.tiff_headers.endian) >> 24) as u8;
-                            m = (read_u32(&data,i+4,header.tiff_headers.endian) >> 24) as u8;
-                            y = (read_u32(&data,i+8,header.tiff_headers.endian) >> 24) as u8;
-                            k = (read_u32(&data,i+12,header.tiff_headers.endian) >> 24) as u8;
-                            a = if header.extra_samples.len() > 0 && header.extra_samples[0] == 2
-                                        && header.samples_per_pixel > 4 {
-                                    (read_u32(&data,i+16,header.tiff_headers.endian) >> 24) as u8 } else { 0xff };
+                            c = (read_u32(&data, i, header.tiff_headers.endian) >> 24) as u8;
+                            m = (read_u32(&data, i + 4, header.tiff_headers.endian) >> 24) as u8;
+                            y = (read_u32(&data, i + 8, header.tiff_headers.endian) >> 24) as u8;
+                            k = (read_u32(&data, i + 12, header.tiff_headers.endian) >> 24) as u8;
+                            a = if header.extra_samples.len() > 0
+                                && header.extra_samples[0] == 2
+                                && header.samples_per_pixel > 4
+                            {
+                                (read_u32(&data, i + 16, header.tiff_headers.endian) >> 24) as u8
+                            } else {
+                                0xff
+                            };
                             i += header.samples_per_pixel as usize * 4;
-                        },
+                        }
                         _ => {
-                            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This bit per sample is not support.".to_string())));
+                            return Err(Box::new(ImgError::new_const(
+                                ImgErrorKind::DecodeError,
+                                "This bit per sample is not support.".to_string(),
+                            )));
                         }
                     }
 
                     if header.predictor == 2 {
                         y += prevs[0];
-                        prevs[0] = y; 
+                        prevs[0] = y;
                         m += prevs[1];
-                        prevs[1] = m; 
+                        prevs[1] = m;
                         c += prevs[2];
                         prevs[2] = c;
                         k += prevs[3];
                         prevs[3] = k;
-                        if header.extra_samples.len() > 0 && header.extra_samples[0]  == 2 {
+                        if header.extra_samples.len() > 0 && header.extra_samples[0] == 2 {
                             a += prevs[4];
                             prevs[4] = a;
                         }
@@ -376,12 +475,12 @@ pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut
                     buf.push(g);
                     buf.push(b);
                     buf.push(a);
-                },
-                // not support 
+                }
+                // not support
                 /*
                 6 => {  // YCbCr ... this function is not suport YCbCrCoficients,positioning...,yet.  ....4:1:1 sampling
                     let (mut y, mut cb, mut cr, mut a);
-                    match header.bitspersamples[0] {  //bit per samples same (8,8,8), but also (8,16,8) pattern 
+                    match header.bitspersamples[0] {  //bit per samples same (8,8,8), but also (8,16,8) pattern
                         8 => {
                             y = data[i];
                             cb = data[i+1];
@@ -416,9 +515,9 @@ pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut
 
                     if header.predictor == 2 {
                         y += prevs[0];
-                        prevs[0] = y; 
+                        prevs[0] = y;
                         cb += prevs[1];
-                        prevs[1] = cb; 
+                        prevs[1] = cb;
                         cr += prevs[2];
                         prevs[2] = cr;
                         if header.extra_samples.len() > 0 && header.extra_samples[0]  == 2 {
@@ -439,33 +538,44 @@ pub fn draw_tile(data:&[u8],y:usize,strip:usize,x: usize,width:usize,option:&mut
                     buf.push(g);
                     buf.push(b);
                     buf.push(a);
- 
+
                 }
                 */
                 _ => {
-//                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support color space.".to_string())));
+                    //                    return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not support color space.".to_string())));
                 }
-            }           
+            }
         }
 
-        option.drawer.draw(x,y,width as usize,1,&buf,None)?;
+        option.drawer.draw(x, y, width as usize, 1, &buf, None)?;
     }
     Ok(None)
-
 }
 
-pub fn draw(data:&[u8],option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error> {
+pub fn draw(
+    data: &[u8],
+    option: &mut DecodeOptions,
+    header: &Tiff,
+) -> Result<Option<ImgWarnings>, Error> {
     if data.len() == 0 {
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Data empty.".to_string())));
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::DecodeError,
+            "Data empty.".to_string(),
+        )));
     }
-    option.drawer.init(header.width as usize,header.height as usize,None)?;
+    option
+        .drawer
+        .init(header.width as usize, header.height as usize, None)?;
     draw_strip(data, 0, header.height as usize, option, header)
 }
 
-fn read_strips<'decode,B: BinaryReader>(reader:&mut B,header: &Tiff) -> Result<Vec<u8>,Error> {
+fn read_strips<'decode, B: BinaryReader>(reader: &mut B, header: &Tiff) -> Result<Vec<u8>, Error> {
     let mut data = vec![];
     if header.strip_offsets.len() != header.strip_byte_counts.len() {
-        if header.strip_offsets.len() == 1 && header.strip_byte_counts.len() == 0 && header.compression == Compression::NoneCompression {
+        if header.strip_offsets.len() == 1
+            && header.strip_byte_counts.len() == 0
+            && header.compression == Compression::NoneCompression
+        {
             let offset = header.strip_offsets[0] as u64;
             reader.seek(std::io::SeekFrom::Start(offset))?;
             let mut byte = 0;
@@ -475,11 +585,14 @@ fn read_strips<'decode,B: BinaryReader>(reader:&mut B,header: &Tiff) -> Result<V
 
             let strip_byte_counts = header.width * header.height * byte;
             let buf = reader.read_bytes_as_vec(strip_byte_counts as usize)?;
-            return Ok(buf)
+            return Ok(buf);
         }
-        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Mismach length, image strip offsets and strib byte counts.".to_string())));
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::DecodeError,
+            "Mismach length, image strip offsets and strib byte counts.".to_string(),
+        )));
     }
-    for (i,offset) in header.strip_offsets.iter().enumerate() {
+    for (i, offset) in header.strip_offsets.iter().enumerate() {
         reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
         let mut buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
         data.append(&mut buf);
@@ -487,12 +600,18 @@ fn read_strips<'decode,B: BinaryReader>(reader:&mut B,header: &Tiff) -> Result<V
     Ok(data)
 }
 
-pub fn decode_lzw_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
-    let is_lsb = if header.fill_order == 2 { true } else {false}; // 1: MSB 2: LSB
-    option.drawer.init(header.width as usize,header.height as usize,None)?;
+pub fn decode_lzw_compresson<'decode, B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+) -> Result<Option<ImgWarnings>, Error> {
+    let is_lsb = if header.fill_order == 2 { true } else { false }; // 1: MSB 2: LSB
+    option
+        .drawer
+        .init(header.width as usize, header.height as usize, None)?;
     let mut y = 0;
     let mut strip = header.rows_per_strip as usize;
-    for (i,offset) in header.strip_offsets.iter().enumerate() {
+    for (i, offset) in header.strip_offsets.iter().enumerate() {
         reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
         let buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
         let mut decoder = Lzwdecode::tiff(is_lsb);
@@ -506,43 +625,61 @@ pub fn decode_lzw_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut 
             strip = header.height as usize - y;
         }
     }
-    
+
     Ok(None)
 }
 
-
-pub fn decode_packbits_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
+pub fn decode_packbits_compresson<'decode, B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+) -> Result<Option<ImgWarnings>, Error> {
     let data = read_strips(reader, header)?;
     let data = packbits::decode(&data)?;
-    let warnings = draw(&data,option,header)?;
+    let warnings = draw(&data, option, header)?;
     Ok(warnings)
 }
 
-pub fn decode_deflate_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
+pub fn decode_deflate_compresson<'decode, B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+) -> Result<Option<ImgWarnings>, Error> {
     let data = read_strips(reader, header)?;
     let res = miniz_oxide::inflate::decompress_to_vec_zlib(&data);
     match res {
         Ok(data) => {
-            let warnings = draw(&data,option,header)?;
-            Ok(warnings)    
-        },
+            let warnings = draw(&data, option, header)?;
+            Ok(warnings)
+        }
         Err(err) => {
-            let deflate_err = format!("{:?}",err);
-            Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,deflate_err)))
+            let deflate_err = format!("{:?}", err);
+            Err(Box::new(ImgError::new_const(
+                ImgErrorKind::DecodeError,
+                deflate_err,
+            )))
         }
     }
 }
 
-pub fn decode_none_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
-
+pub fn decode_none_compresson<'decode, B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+) -> Result<Option<ImgWarnings>, Error> {
     let data = read_strips(reader, header)?;
-    let warnings = draw(&data,option,header)?;
+    let warnings = draw(&data, option, header)?;
     Ok(warnings)
 }
 
-
-pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff)-> Result<Option<ImgWarnings>,Error> {
-    option.drawer.init(header.width as usize,header.height as usize,None)?;
+pub fn decode_ccitt_compresson<'decode, B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+) -> Result<Option<ImgWarnings>, Error> {
+    option
+        .drawer
+        .init(header.width as usize, header.height as usize, None)?;
     let warnings = None;
 
     let header = &mut header.clone();
@@ -552,15 +689,16 @@ pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mu
 
     if header.compression == Compression::CCITTGroup3Fax {
         let buf = read_strips(reader, header)?;
-        let (data,_warning) = ccitt::decode(&buf, header)?;
-        draw(&data,option,header)?;    
-    } else {    // CCITGroup4FAX
+        let (data, _warning) = ccitt::decode(&buf, header)?;
+        draw(&data, option, header)?;
+    } else {
+        // CCITGroup4FAX
         let mut y = 0;
         let mut strip = header.rows_per_strip as usize;
-        for (i,offset) in header.strip_offsets.iter().enumerate() {
+        for (i, offset) in header.strip_offsets.iter().enumerate() {
             reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
             let buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
-            let (data,_warning) = ccitt::decode(&buf, header)?;
+            let (data, _warning) = ccitt::decode(&buf, header)?;
             draw_strip(&data, y, strip, option, header)?;
             y += strip;
             if y >= header.height as usize {
@@ -570,40 +708,50 @@ pub fn decode_ccitt_compresson<'decode,B: BinaryReader>(reader:&mut B,option:&mu
                 strip = header.height as usize - y;
             }
         }
-
     }
 
     Ok(warnings)
 }
 
-fn compression_decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions,header: &Tiff) -> Result<Option<ImgWarnings>,Error> {
-    match header.compression { 
+fn compression_decode<'decode, B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+) -> Result<Option<ImgWarnings>, Error> {
+    match header.compression {
         Compression::NoneCompression => {
-            return decode_none_compresson(reader,option,&header);
-        },
+            return decode_none_compresson(reader, option, &header);
+        }
         Compression::LZW => {
-            return decode_lzw_compresson(reader,option,&header);
-        },
+            return decode_lzw_compresson(reader, option, &header);
+        }
         Compression::Jpeg => {
-            return decode_jpeg_compresson(reader,option,&header);
-        },
+            return decode_jpeg_compresson(reader, option, &header);
+        }
         Compression::Packbits => {
-            return decode_packbits_compresson(reader,option,&header);
-        },
+            return decode_packbits_compresson(reader, option, &header);
+        }
         Compression::AdobeDeflate => {
-            return decode_deflate_compresson(reader,option,&header);
-        },
-        Compression::CCITTHuffmanRLE | Compression::CCITTGroup3Fax | Compression::CCITTGroup4Fax => {
+            return decode_deflate_compresson(reader, option, &header);
+        }
+        Compression::CCITTHuffmanRLE
+        | Compression::CCITTGroup3Fax
+        | Compression::CCITTGroup4Fax => {
             return decode_ccitt_compresson(reader, option, &header);
-        },
+        }
         _ => {
-            return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Not suport compression".to_string())));
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::DecodeError,
+                "Not suport compression".to_string(),
+            )));
         }
     }
 }
 
-pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) -> Result<Option<ImgWarnings>,Error> {
-
+pub fn decode<'decode, B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
     let mut header = Tiff::new(reader)?;
 
     let mut count = 1;
@@ -614,34 +762,50 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
             }
         }
     }
-    option.drawer.set_metadata("image pages",DataMap::UInt(count))?;
+    option
+        .drawer
+        .set_metadata("image pages", DataMap::UInt(count))?;
 
-
-    option.drawer.set_metadata("Format",DataMap::Ascii("Tiff".to_owned()))?;
-    option.drawer.set_metadata("width",DataMap::UInt(header.width as u64))?;
-    option.drawer.set_metadata("height",DataMap::UInt(header.height as u64))?;
-    option.drawer.set_metadata("bits per pixel",DataMap::UInt(header.bitspersample as u64))?;
-    option.drawer.set_metadata("Tiff headers",DataMap::Exif(header.tiff_headers.clone()))?;
-    option.drawer.set_metadata("compression",DataMap::Ascii(header.compression.to_string()))?;
+    option
+        .drawer
+        .set_metadata("Format", DataMap::Ascii("Tiff".to_owned()))?;
+    option
+        .drawer
+        .set_metadata("width", DataMap::UInt(header.width as u64))?;
+    option
+        .drawer
+        .set_metadata("height", DataMap::UInt(header.height as u64))?;
+    option
+        .drawer
+        .set_metadata("bits per pixel", DataMap::UInt(header.bitspersample as u64))?;
+    option
+        .drawer
+        .set_metadata("Tiff headers", DataMap::Exif(header.tiff_headers.clone()))?;
+    option.drawer.set_metadata(
+        "compression",
+        DataMap::Ascii(header.compression.to_string()),
+    )?;
     if let Some(ref icc_profile) = header.icc_profile {
-        option.drawer.set_metadata("ICC Profile",DataMap::ICCProfile(icc_profile.to_vec()))?;
+        option
+            .drawer
+            .set_metadata("ICC Profile", DataMap::ICCProfile(icc_profile.to_vec()))?;
     }
     let mut warnings = None;
 
-    let warn = compression_decode(reader,option,&mut header)?;
+    let warn = compression_decode(reader, option, &mut header)?;
 
     warnings = ImgWarnings::append(warnings, warn);
 
     if count > 1 {
         for append in header.multi_page.iter() {
             if append.newsubfiletype == 0 && append.subfiletype == 0 {
-                let rect = ImageRect{
+                let rect = ImageRect {
                     width: append.width as usize,
-                    height:append.height as usize,
-                    start_x:append.startx as i32,
-                    start_y:append.starty as i32,
+                    height: append.height as usize,
+                    start_x: append.startx as i32,
+                    start_y: append.starty as i32,
                 };
-                let opt = NextOptions{
+                let opt = NextOptions {
                     flag: NextOption::Next,
                     await_time: 0,
                     image_rect: Some(rect),
@@ -656,17 +820,16 @@ pub fn decode<'decode,B: BinaryReader>(reader:&mut B,option:&mut DecodeOptions) 
                     }
                 }
                 let header = &mut append.clone();
-                let result = compression_decode(reader,option,header);
+                let result = compression_decode(reader, option, header);
                 match result {
                     Ok(warn) => {
                         warnings = ImgWarnings::append(warnings, warn);
-                    },
+                    }
                     Err(error) => {
                         let warning = TiffWarning::new(error.to_string());
                         warnings = ImgWarnings::add(warnings, Box::new(warning));
                     }
                 }
-
             }
         }
     }

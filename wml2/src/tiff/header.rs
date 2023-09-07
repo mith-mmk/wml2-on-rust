@@ -418,7 +418,7 @@ impl Tiff {
             jpeg_tables: vec![],
             tiff_headers: TiffHeaders::empty(Endian::LittleEndian),
             icc_profile: None,
-            multi_page: Box::new(Vec::new()),
+            multi_page: Box::<Vec<Tiff>>::default(),
         }
     }
 
@@ -438,7 +438,7 @@ impl Tiff {
                 max_id = header.tagid;
             } else {
                 max_id = header.tagid;
-                if current.bitspersamples.len() == 0 {
+                if current.bitspersamples.is_empty() {
                     current.bitspersamples.push(current.bitspersample);
                 }
                 append.push(Self::empty());
@@ -473,15 +473,15 @@ impl Tiff {
                 0x102 => {
                     if header.length == 1 {
                         if let DataPack::Short(d) = &header.data {
-                            current.bitspersample = d[0] as u16;
-                            current.bitspersamples.push(d[0] as u16);
+                            current.bitspersample = d[0];
+                            current.bitspersamples.push(d[0]);
                         }
                     } else {
                         let mut bpm = 0;
                         for i in 0..header.length {
                             if let DataPack::Short(d) = &header.data {
-                                bpm += d[i] as u16;
-                                current.bitspersamples.push(d[i] as u16);
+                                bpm += d[i];
+                                current.bitspersamples.push(d[i]);
                             }
                         }
                         current.bitspersample = bpm;
@@ -542,7 +542,7 @@ impl Tiff {
                         }
                     } else if let DataPack::Long(d) = &header.data {
                         for i in 0..d.len() {
-                            strip_offsets.push(d[i] as u32);
+                            strip_offsets.push(d[i]);
                         }
                     }
                     current.strip_offsets = strip_offsets;
@@ -551,7 +551,7 @@ impl Tiff {
                     if let DataPack::Short(d) = &header.data {
                         current.rows_per_strip = d[0] as u32;
                     } else if let DataPack::Long(d) = &header.data {
-                        current.rows_per_strip = d[0] as u32;
+                        current.rows_per_strip = d[0];
                     }
                 }
                 0x117 => {
@@ -562,7 +562,7 @@ impl Tiff {
                         }
                     } else if let DataPack::Long(d) = &header.data {
                         for i in 0..d.len() {
-                            strip_byte_counts.push(d[i] as u32);
+                            strip_byte_counts.push(d[i]);
                         }
                     }
                     current.strip_byte_counts = strip_byte_counts;
@@ -630,7 +630,7 @@ impl Tiff {
                     if let DataPack::Short(d) = &header.data {
                         current.tile_width = d[0] as u32;
                     } else if let DataPack::Long(d) = &header.data {
-                        current.tile_width = d[0] as u32;
+                        current.tile_width = d[0];
                     }
                 }
                 0x143 => {
@@ -638,7 +638,7 @@ impl Tiff {
                     if let DataPack::Short(d) = &header.data {
                         current.tile_length = d[0] as u32;
                     } else if let DataPack::Long(d) = &header.data {
-                        current.tile_length = d[0] as u32;
+                        current.tile_length = d[0];
                     }
                 }
                 0x144 => {
@@ -646,7 +646,7 @@ impl Tiff {
                     let mut tile_offsets = vec![];
                     if let DataPack::Long(d) = &header.data {
                         for i in 0..d.len() {
-                            tile_offsets.push(d[i] as u32);
+                            tile_offsets.push(d[i]);
                         }
                     }
                     current.tile_offsets = tile_offsets;
@@ -659,7 +659,7 @@ impl Tiff {
                         }
                     } else if let DataPack::Long(d) = &header.data {
                         for i in 0..d.len() {
-                            tile_byte_counts.push(d[i] as u32);
+                            tile_byte_counts.push(d[i]);
                         }
                     }
                     current.tile_byte_counts = tile_byte_counts;
@@ -686,7 +686,7 @@ impl Tiff {
             }
         }
 
-        if current.bitspersamples.len() == 0 {
+        if current.bitspersamples.is_empty() {
             current.bitspersamples.push(current.bitspersample);
         }
         this.tiff_headers = tiff_headers;
@@ -910,7 +910,7 @@ pub fn write_tags(buf: &mut Vec<u8>, tags: &TiffHeaders) -> Result<usize, Error>
         }
         if tag.tagid > 0x8769 && !exif_write {
             if let Some(exif) = &tags.exif {
-                let extra_offset = last_offset.clone();
+                let extra_offset = last_offset;
                 let mut buf_extra = vec![];
                 let mut append_extra = vec![];
                 write_u16(exif.len() as u16, &mut buf_extra, endian);
@@ -939,7 +939,7 @@ pub fn write_tags(buf: &mut Vec<u8>, tags: &TiffHeaders) -> Result<usize, Error>
 
         if tag.tagid > 0x8825 && !gps_write {
             if let Some(exif) = &tags.exif {
-                let extra_offset = last_offset.clone();
+                let extra_offset = last_offset;
                 let mut buf_extra = vec![];
                 let mut append_extra = vec![];
                 write_u16(exif.len() as u16, &mut buf_extra, endian);
@@ -985,10 +985,10 @@ pub fn read_tags(reader: &mut dyn bin_rs::reader::BinaryReader) -> Result<TiffHe
         )));
     }
 
-    if b0 == 'I' as u8 {
+    if b0 == b'I' {
         // Little Endian
         reader.set_endian(Endian::LittleEndian);
-    } else if b0 == 'M' as u8 {
+    } else if b0 == b'M' {
         // Big Eindian
         reader.set_endian(Endian::BigEndian);
     } else {
@@ -1097,7 +1097,7 @@ fn get_data(
             for _ in 0..datalen {
                 let n = reader.read_u32()?;
                 let denomi = reader.read_u32()?;
-                d.push(Rational { n: n, d: denomi });
+                d.push(Rational { n, d: denomi });
             }
             reader.seek(SeekFrom::Start(current))?;
             data = DataPack::Rational(d);
@@ -1319,7 +1319,7 @@ fn read_tag(
             }
             headers.headers.push(TiffHeader {
                 tagid: tagid as usize,
-                data: data,
+                data,
                 length: datalen,
             });
         }

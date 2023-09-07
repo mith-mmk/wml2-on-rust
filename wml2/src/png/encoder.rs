@@ -96,7 +96,7 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
                 alpha_a = 0;
             }
             let (red_b, green_b, blue_b, alpha_b);
-            if prev_buf.len() > 0 {
+            if !prev_buf.is_empty() {
                 red_b = prev_buf[inptr] as i32;
                 green_b = prev_buf[inptr + 1] as i32;
                 blue_b = prev_buf[inptr + 2] as i32;
@@ -108,7 +108,7 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
                 alpha_b = 0;
             }
             let (red_c, green_c, blue_c, alpha_c);
-            if prev_buf.len() > 0 && inptr > 0 {
+            if !prev_buf.is_empty() && inptr > 0 {
                 red_c = prev_buf[inptr - 4] as i32;
                 green_c = prev_buf[inptr - 3] as i32;
                 blue_c = prev_buf[inptr - 2] as i32;

@@ -66,7 +66,7 @@ fn print_metadata(metadata: &Metadata) {
 fn loader(filename: &std::path::PathBuf) -> Option<ImageBuffer> {
     println!("decode {:?}", filename);
 
-    let f = File::open(&filename);
+    let f = File::open(filename);
     match f {
         Ok(f) => {
             let reader = BufReader::new(f);
@@ -149,7 +149,7 @@ fn wml_test() -> Result<(), Box<dyn Error>> {
                 f.flush().unwrap();
             }
         }
-        println!("");
+        println!();
     }
     Ok(())
 }

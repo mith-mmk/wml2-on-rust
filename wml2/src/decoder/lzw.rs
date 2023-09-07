@@ -42,7 +42,7 @@ impl Lzwdecode {
         let is_tiff = if is_tiff { 1 } else { 0 };
         Self {
             buffer: Vec::new(),
-            cbl: cbl,
+            cbl,
             recovery_cbl: cbl,
             bit_mask: (1 << cbl) - 1,
             last_byte: 0,
@@ -50,12 +50,12 @@ impl Lzwdecode {
             ptr: 0,
             clear: clear_code,
             end: clear_code + 1,
-            max_table: max_table,
+            max_table,
             dic: Vec::with_capacity(max_table),
             prev_code: clear_code,
             is_init: false,
-            is_lsb: is_lsb,   // GIF Must True
-            is_tiff: is_tiff, // if tiff set 1
+            is_lsb,   // GIF Must True
+            is_tiff, // if tiff set 1
         }
     }
 
@@ -149,7 +149,7 @@ impl Lzwdecode {
     // Multi chuck image data decoding is not debug.
     pub fn decode(&mut self, buf: &[u8]) -> Result<Vec<u8>, Error> {
         self.buffer = buf.to_vec();
-        if self.is_init == false {
+        if !self.is_init {
             self.fill_bits();
             self.is_init = true;
         } else {
@@ -208,12 +208,10 @@ impl Lzwdecode {
                     table.push(append_code);
                     self.dic.push(table);
                     // Tiff LZW is increment entry value before next loop.
-                    let next = self.dic.len() + self.is_tiff as usize;
-                    if next == self.bit_mask as usize + 1 && next < self.max_table {
-                        if self.cbl < MAX_CBL {
-                            self.cbl += 1;
-                            self.bit_mask = (self.bit_mask << 1) | 1;
-                        }
+                    let next = self.dic.len() + self.is_tiff;
+                    if next == self.bit_mask as usize + 1 && next < self.max_table && self.cbl < MAX_CBL {
+                        self.cbl += 1;
+                        self.bit_mask = (self.bit_mask << 1) | 1;
                     }
                 }
             }

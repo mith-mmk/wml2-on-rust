@@ -273,8 +273,8 @@ impl ImageBuffer {
 
     pub fn from_buffer(width: usize, height: usize, buf: Vec<u8>) -> Self {
         Self {
-            width: width,
-            height: height,
+            width,
+            height,
             background_color: None,
             buffer: Some(buf),
             animation: None,
@@ -449,11 +449,11 @@ impl DrawCallback for ImageBuffer {
                 let buffersize = width * height * 4;
                 let buffer: Vec<u8> = (0..buffersize).map(|_| 0).collect();
                 let layer = AnimationLayer {
-                    width: width,
-                    height: height,
-                    start_x: start_x,
-                    start_y: start_y,
-                    buffer: buffer,
+                    width,
+                    height,
+                    start_x,
+                    start_y,
+                    buffer,
                     control: opt,
                 };
 
@@ -471,7 +471,7 @@ impl DrawCallback for ImageBuffer {
         str: &str,
         _: Option<VerboseOptions>,
     ) -> Result<Option<CallbackResponse>, Error> {
-        return (self.fnverbose)(str);
+        (self.fnverbose)(str)
     }
 
     /// Decoder set metadata to ImageBuffer
@@ -488,7 +488,7 @@ impl DrawCallback for ImageBuffer {
         };
         hashmap.insert(key.to_string(), value);
 
-        return Ok(None);
+        Ok(None)
     }
 }
 
@@ -610,7 +610,7 @@ pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer, Error> {
 
 /// load image from file
 pub fn image_from_file(filename: String) -> Result<ImageBuffer, Error> {
-    let f = std::fs::File::open(&filename)?;
+    let f = std::fs::File::open(filename)?;
     let reader = BufReader::new(f);
     let mut image = ImageBuffer::new();
     let mut option = DecodeOptions {
@@ -627,7 +627,7 @@ pub fn image_to_file(
     image: &mut dyn PickCallback,
     format: ImageFormat,
 ) -> Result<(), Error> {
-    let f = std::fs::File::create(&filename)?;
+    let f = std::fs::File::create(filename)?;
     let mut option = EncodeOptions {
         debug_flag: 0x00,
         drawer: image,
@@ -706,7 +706,7 @@ pub fn image_decoder<B: BinaryReader>(
             return crate::tiff::decoder::decode(reader, option);
         }
         _ => {
-            return Err(Box::new(ImgError::new_const(
+            Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
                 "This buffer can not decode".to_string(),
             )))
@@ -725,7 +725,7 @@ pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<
             return crate::png::encoder::encode(option);
         }
         _ => {
-            return Err(Box::new(ImgError::new_const(
+            Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
                 "This encoder no impl".to_string(),
             )))

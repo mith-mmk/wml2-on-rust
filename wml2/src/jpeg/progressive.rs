@@ -41,12 +41,12 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
     }
 
     let quantization_tables = header.quantization_tables.clone().unwrap();
-    let mut huffman_tables = &mut header.huffman_tables;
+    let huffman_tables = &mut header.huffman_tables;
     let mut loop_count = 1;
     let mut eobrun: usize = 0;
 
     loop {
-        let (dc_decode, ac_decode) = huffman_extend(&huffman_tables);
+        let (dc_decode, ac_decode) = huffman_extend(huffman_tables);
 
         let (ss, se, ah, al) = (
             huffman_scan_header.ss,
@@ -68,7 +68,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
             option.drawer.verbose(&boxstr, None)?;
             loop_count += 1;
         }
-        let scan = calc_scan(&component, &huffman_scan_header);
+        let scan = calc_scan(&component, huffman_scan_header);
         let mut preds: Vec<i32> = (0..component.len()).map(|_| 0).collect();
 
         let mut mcu_interval = if header.interval > 0 {
@@ -83,7 +83,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                     let mcu_block = &mut mcu_blocks[mcu_y * mcu_x_max + mcu_x];
                     for scannumber in 0..mcu_size {
                         let (dc_current, ac_current, i, _, cs, _) = scan[scannumber];
-                        if cs == false {
+                        if !cs {
                             continue;
                         }
 
@@ -94,15 +94,13 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                 let pred = preds[i];
                                 let val = dc_read(
                                     &mut bitread,
-                                    &dc_decode[dc_current].as_ref().unwrap(),
+                                    dc_decode[dc_current].as_ref().unwrap(),
                                     pred,
                                 )?;
-                                zz[0] = val << al as usize;
+                                zz[0] = val << al;
                                 preds[i] = val;
-                            } else {
-                                if bitread.get_bit()? == 1 {
-                                    zz[0] |= 1 << al as usize;
-                                }
+                            } else if bitread.get_bit()? == 1 {
+                                zz[0] |= 1 << al;
                             }
                         }
                         if se > 0 {
@@ -110,7 +108,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                             if ah == 0 {
                                 eobrun = progressive_ac_read(
                                     &mut bitread,
-                                    &ac_decode[ac_current].as_ref().unwrap(),
+                                    ac_decode[ac_current].as_ref().unwrap(),
                                     zz,
                                     start,
                                     se,
@@ -120,7 +118,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                             } else {
                                 eobrun = successive_approximation_read(
                                     &mut bitread,
-                                    &ac_decode[ac_current].as_ref().unwrap(),
+                                    ac_decode[ac_current].as_ref().unwrap(),
                                     zz,
                                     start,
                                     se,
@@ -131,9 +129,9 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                         }
                     }
                     if header.interval > 0 {
-                        mcu_interval = mcu_interval - 1;
+                        mcu_interval -= 1;
                         if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
-                            if bitread.rst()? == true {
+                            if bitread.rst()? {
                                 if cfg!(debug_assertions) {
                                     println!(
                                         "strange reset interval {},{} {} {}",
@@ -148,7 +146,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                             } else {
                                 // Reset Interval
                                 let r = bitread.next_marker()?;
-                                if r >= 0xd0 && r <= 0xd7 {
+                                if (0xd0..=0xd7).contains(&r) {
                                     mcu_interval = header.interval as isize;
                                     for i in 0..preds.len() {
                                         preds[i] = 0;
@@ -167,7 +165,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                     return Ok(warnings);
                                 }
                             }
-                        } else if bitread.rst()? == true {
+                        } else if bitread.rst()? {
                             warnings = ImgWarnings::add(
                                 warnings,
                                 Box::new(JpegWarning::new_const(
@@ -211,7 +209,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                             }
                             let scannumber = scanfirst + mcu_y_fix * component[i].h + mcu_x_fix;
                             let (dc_current, ac_current, i, _, cs, _) = scan[scannumber];
-                            if cs == false {
+                            if !cs {
                                 continue;
                             }
 
@@ -222,15 +220,13 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                     let pred = preds[i];
                                     let val = dc_read(
                                         &mut bitread,
-                                        &dc_decode[dc_current].as_ref().unwrap(),
+                                        dc_decode[dc_current].as_ref().unwrap(),
                                         pred,
                                     )?;
-                                    zz[0] = val << al as usize;
+                                    zz[0] = val << al;
                                     preds[i] = val;
-                                } else {
-                                    if bitread.get_bit()? == 1 {
-                                        zz[0] |= 1 << al as usize;
-                                    }
+                                } else if bitread.get_bit()? == 1 {
+                                    zz[0] |= 1 << al;
                                 }
                             }
                             if se > 0 {
@@ -238,7 +234,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                 if ah == 0 {
                                     eobrun = progressive_ac_read(
                                         &mut bitread,
-                                        &ac_decode[ac_current].as_ref().unwrap(),
+                                        ac_decode[ac_current].as_ref().unwrap(),
                                         zz,
                                         start,
                                         se,
@@ -248,7 +244,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                 } else {
                                     eobrun = successive_approximation_read(
                                         &mut bitread,
-                                        &ac_decode[ac_current].as_ref().unwrap(),
+                                        ac_decode[ac_current].as_ref().unwrap(),
                                         zz,
                                         start,
                                         se,
@@ -326,10 +322,10 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                         }
                         0xc4 => {
                             // DHT
-                            JpegHaeder::dht_read(bitread.reader, &mut huffman_tables)?;
+                            JpegHaeder::dht_read(bitread.reader, huffman_tables)?;
 
                             if option.debug_flag & 0x04 > 0 {
-                                let str = print_huffman_tables(&huffman_tables);
+                                let str = print_huffman_tables(huffman_tables);
                                 option.drawer.verbose(&str, None)?;
                             }
                         }
@@ -392,7 +388,7 @@ fn progressive_ac_read<B: BinaryReader>(
     let mut zigzag = ss;
     loop {
         // F2.2.2
-        let ac = huffman_read(bitread, &ac_decode)?;
+        let ac = huffman_read(bitread, ac_decode)?;
         let ssss = ac & 0xf;
         let rrrr = ac >> 4;
         if ssss == 0 {
@@ -420,7 +416,7 @@ fn progressive_ac_read<B: BinaryReader>(
         if zigzag >= se {
             return Ok(0);
         }
-        zigzag = zigzag + 1;
+        zigzag += 1;
     }
 }
 
@@ -434,12 +430,12 @@ fn successive_approximation_read<B: BinaryReader>(
     al: usize,
     mut eob: usize,
 ) -> Result<usize, Error> {
-    let mut zigzag = ss as usize;
+    let mut zigzag = ss;
     let val = 1 << al;
 
     if eob == 0 {
         while zigzag <= se {
-            let ac = huffman_read(bitread, &ac_decode)?;
+            let ac = huffman_read(bitread, ac_decode)?;
             let ssss = ac & 0xf;
             let mut rrrr = ac >> 4;
             let mut bits = 0;
@@ -485,10 +481,8 @@ fn successive_approximation_read<B: BinaryReader>(
                 }
                 zigzag += 1;
             }
-            if zigzag <= se {
-                if bits != 0 {
-                    zz[zigzag] = bits;
-                }
+            if zigzag <= se && bits != 0 {
+                zz[zigzag] = bits;
             }
             zigzag += 1;
         }
@@ -496,13 +490,11 @@ fn successive_approximation_read<B: BinaryReader>(
 
     if eob > 0 {
         while zigzag <= se {
-            if zz[zigzag] != 0 {
-                if bitread.get_bit()? == 1 {
-                    if zz[zigzag] > 0 && zz[zigzag] & val == 0 {
-                        zz[zigzag] += val;
-                    } else {
-                        zz[zigzag] -= val;
-                    }
+            if zz[zigzag] != 0 && bitread.get_bit()? == 1 {
+                if zz[zigzag] > 0 && zz[zigzag] & val == 0 {
+                    zz[zigzag] += val;
+                } else {
+                    zz[zigzag] -= val;
                 }
             }
             zigzag += 1;

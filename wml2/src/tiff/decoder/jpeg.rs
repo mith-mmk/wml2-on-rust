@@ -38,11 +38,11 @@ pub fn decode_jpeg_compresson<'decode, B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let jpeg_tables = &header.jpeg_tables;
     let metadata;
-    if jpeg_tables.len() == 0 {
+    if jpeg_tables.is_empty() {
         metadata = vec![0xff, 0xd8]; // SOI
     } else {
         let len = jpeg_tables.len() - 2;
-        metadata = (&jpeg_tables[..len]).to_vec(); // remove EOI
+        metadata = jpeg_tables[..len].to_vec(); // remove EOI
     }
     let mut warnings: Option<ImgWarnings> = None;
     let mut x = 0;
@@ -53,8 +53,8 @@ pub fn decode_jpeg_compresson<'decode, B: BinaryReader>(
 
     if header.tile_width != 0
         && header.tile_length != 0
-        && header.tile_byte_counts.len() > 0
-        && header.tile_offsets.len() > 0
+        && !header.tile_byte_counts.is_empty()
+        && !header.tile_offsets.is_empty()
     {
         for (i, offset) in header.tile_offsets.iter().enumerate() {
             reader.seek(std::io::SeekFrom::Start(*offset as u64))?;

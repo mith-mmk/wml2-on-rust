@@ -12,17 +12,19 @@ pub struct ImgWarnings {
 
 impl Debug for ImgWarnings {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        Ok(for warning in &self.warnings {
+        for warning in &self.warnings {
             std::fmt::Display::fmt(&warning, f)?;
-        })
+        };
+        Ok(())
     }
 }
 
 impl Display for ImgWarnings {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        Ok(for warning in &self.warnings {
+        for warning in &self.warnings {
             write!(f, "{}", &warning)?;
-        })
+        };
+        Ok(())
     }
 }
 

@@ -23,7 +23,7 @@ fn convert_rgba32(
     bit_count: usize,
 ) -> Result<(), Error> {
     let mut offset = 0;
-    let width = header.width.abs() as usize;
+    let width = header.width.unsigned_abs() as usize;
     match bit_count {
         32 => {
             // bgra
@@ -65,9 +65,9 @@ fn convert_rgba32(
         8 => {
             for x in 0..width {
                 let color = read_byte(buffer, offset) as usize;
-                let r = header.color_table.as_ref().unwrap()[color].red.clone();
-                let g = header.color_table.as_ref().unwrap()[color].green.clone();
-                let b = header.color_table.as_ref().unwrap()[color].blue.clone();
+                let r = header.color_table.as_ref().unwrap()[color].red;
+                let g = header.color_table.as_ref().unwrap()[color].green;
+                let b = header.color_table.as_ref().unwrap()[color].blue;
                 line[x * 4] = r;
                 line[x * 4 + 1] = g;
                 line[x * 4 + 2] = b;
@@ -79,17 +79,17 @@ fn convert_rgba32(
                 let mut x = x_ * 2;
                 let color_ = read_byte(buffer, offset) as usize;
                 let color = color_ >> 4;
-                let r = header.color_table.as_ref().unwrap()[color].red.clone();
-                let g = header.color_table.as_ref().unwrap()[color].green.clone();
-                let b = header.color_table.as_ref().unwrap()[color].blue.clone();
+                let r = header.color_table.as_ref().unwrap()[color].red;
+                let g = header.color_table.as_ref().unwrap()[color].green;
+                let b = header.color_table.as_ref().unwrap()[color].blue;
                 line[x * 4] = r;
                 line[x * 4 + 1] = g;
                 line[x * 4 + 2] = b;
                 x += 1;
                 let color = color_ & 0xf;
-                let r = header.color_table.as_ref().unwrap()[color].red.clone();
-                let g = header.color_table.as_ref().unwrap()[color].green.clone();
-                let b = header.color_table.as_ref().unwrap()[color].blue.clone();
+                let r = header.color_table.as_ref().unwrap()[color].red;
+                let g = header.color_table.as_ref().unwrap()[color].green;
+                let b = header.color_table.as_ref().unwrap()[color].blue;
                 line[x * 4] = r;
                 line[x * 4 + 1] = g;
                 line[x * 4 + 2] = b;
@@ -102,10 +102,10 @@ fn convert_rgba32(
                 let mut x = x_ * 8;
                 let color_ = read_byte(buffer, offset) as usize;
                 for i in [7, 6, 5, 4, 3, 2, 1, 0] {
-                    let color = ((color_ >> i) & 0x1) as usize;
-                    let r = header.color_table.as_ref().unwrap()[color].red.clone();
-                    let g = header.color_table.as_ref().unwrap()[color].green.clone();
-                    let b = header.color_table.as_ref().unwrap()[color].blue.clone();
+                    let color = (color_ >> i) & 0x1;
+                    let r = header.color_table.as_ref().unwrap()[color].red;
+                    let g = header.color_table.as_ref().unwrap()[color].green;
+                    let b = header.color_table.as_ref().unwrap()[color].blue;
                     line[x * 4] = r;
                     line[x * 4 + 1] = g;
                     line[x * 4 + 2] = b;
@@ -129,8 +129,8 @@ fn decode_rgb<B: BinaryReader>(
     header: &BitmapHeader,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let width = header.width.abs() as usize;
-    let height = header.height.abs() as usize;
+    let width = header.width.unsigned_abs() as usize;
+    let height = header.height.unsigned_abs() as usize;
     option.drawer.init(width, height, InitOptions::new())?;
     let mut line: Vec<u8> = (0..width * 4)
         .map(|i| if i % 4 == 3 { 0xff } else { 0 })
@@ -142,7 +142,7 @@ fn decode_rgb<B: BinaryReader>(
         )));
     }
 
-    let line_size = ((width as usize * header.bit_count + 31) / 32) * 4;
+    let line_size = ((width * header.bit_count + 31) / 32) * 4;
     for y_ in 0..height {
         if cfg!(debug_assertions) {
             println!("{}", y_);
@@ -166,14 +166,14 @@ fn decode_rle<B: BinaryReader>(
     header: &BitmapHeader,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let width = header.width.abs() as usize;
-    let height = header.height.abs() as usize;
+    let width = header.width.unsigned_abs() as usize;
+    let height = header.height.unsigned_abs() as usize;
     option.drawer.init(width, height, InitOptions::new())?;
     let mut line: Vec<u8> = (0..header.width * 4)
         .map(|i| if i % 4 == 3 { 0xff } else { 0 })
         .collect();
     let mut y: usize = height - 1;
-    let rev_bytes = (8 / header.bit_count) as usize;
+    let rev_bytes = 8 / header.bit_count;
     'y: loop {
         let mut x: usize = 0;
         let mut buf: Vec<u8> = (0..(width + 1)).map(|_| 0).collect();
@@ -237,38 +237,36 @@ fn decode_rle<B: BinaryReader>(
                         "Unknwon".to_string(),
                     )));
                 }
-            } else {
-                if header.bit_count == 8 {
-                    for _ in 0..data0 {
-                        buf[x] = data1;
-                        x += 1;
-                        if x >= buf.len() {
-                            break 'x;
-                        }
+            } else if header.bit_count == 8 {
+                for _ in 0..data0 {
+                    buf[x] = data1;
+                    x += 1;
+                    if x >= buf.len() {
+                        break 'x;
                     }
-                } else if header.bit_count == 4 {
-                    for _ in 0..data0 as usize / rev_bytes {
-                        buf[x] = data1 >> 4;
-                        x += 1;
-                        if x >= buf.len() {
-                            break 'x;
-                        }
-                        buf[x] = data1 & 0xf;
-                        x += 1;
-                        if x >= buf.len() {
-                            break 'x;
-                        }
-                    }
-                    if data0 % 2 == 1 {
-                        buf[x] = data1 >> 4;
-                        x += 1;
-                    }
-                } else {
-                    return Err(Box::new(ImgError::new_const(
-                        ImgErrorKind::NoSupportFormat,
-                        "Unknwon".to_string(),
-                    )));
                 }
+            } else if header.bit_count == 4 {
+                for _ in 0..data0 as usize / rev_bytes {
+                    buf[x] = data1 >> 4;
+                    x += 1;
+                    if x >= buf.len() {
+                        break 'x;
+                    }
+                    buf[x] = data1 & 0xf;
+                    x += 1;
+                    if x >= buf.len() {
+                        break 'x;
+                    }
+                }
+                if data0 % 2 == 1 {
+                    buf[x] = data1 >> 4;
+                    x += 1;
+                }
+            } else {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::NoSupportFormat,
+                    "Unknwon".to_string(),
+                )));
             }
         }
         convert_rgba32(&buf, &mut line, header, 8)?;
@@ -285,7 +283,7 @@ fn decode_rle<B: BinaryReader>(
         y -= 1;
     }
     option.drawer.terminate(None)?;
-    return Ok(None);
+    Ok(None)
 }
 
 fn get_shift(mask: u32) -> (u32, u32) {
@@ -318,8 +316,8 @@ fn decode_bit_fileds<B: BinaryReader>(
     header: &BitmapHeader,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let width = header.width.abs() as usize;
-    let height = header.height.abs() as usize;
+    let width = header.width.unsigned_abs() as usize;
+    let height = header.height.unsigned_abs() as usize;
 
     let info;
 
@@ -383,7 +381,7 @@ fn decode_bit_fileds<B: BinaryReader>(
         .map(|i| if i % 4 == 3 { 0xff } else { 0 })
         .collect();
 
-    let line_size = ((width as usize * header.bit_count + 31) / 32) * 4;
+    let line_size = ((width * header.bit_count + 31) / 32) * 4;
 
     for y_ in 0..height {
         let buffer = reader.read_bytes_as_vec(line_size)?;
@@ -392,16 +390,16 @@ fn decode_bit_fileds<B: BinaryReader>(
 
         for x in 0..width {
             let color = if header.bit_count == 32 {
-                read_u32_le(&buffer, x * 4) as u32
+                read_u32_le(&buffer, x * 4)
             } else {
                 read_u16_le(&buffer, x * 2) as u32
             };
-            let red = ((color & red_mask) >> red_shift) as u32;
-            let green = ((color & green_mask) >> green_shift) as u32;
-            let blue = ((color & blue_mask) >> blue_shift) as u32;
+            let red = (color & red_mask) >> red_shift;
+            let green = (color & green_mask) >> green_shift;
+            let blue = (color & blue_mask) >> blue_shift;
 
             let alpha = if alpha_mask != 0 {
-                ((color & alpha_mask) >> alpha_shift) as u32
+                (color & alpha_mask) >> alpha_shift
             } else {
                 0xff
             };
@@ -522,7 +520,7 @@ pub fn decode<'decode, B: BinaryReader>(
         .set_metadata("width", DataMap::UInt(header.width as u64))?;
     option
         .drawer
-        .set_metadata("height", DataMap::UInt(header.height.abs() as u64))?;
+        .set_metadata("height", DataMap::UInt(header.height.unsigned_abs() as u64))?;
 
     result
 }

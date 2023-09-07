@@ -94,11 +94,7 @@ pub fn decode<'decode, B: BinaryReader>(
                             header.color_table[transperarent_color].alpha = 0xff;
                         }
 
-                        if flag & 0x1 == 1 {
-                            is_transpearent = true
-                        } else {
-                            is_transpearent = false
-                        }
+                        is_transpearent = flag & 0x1 == 1;
 
                         transperarent_color = reader.read_byte()? as usize;
                         if option.debug_flag > 0 {
@@ -202,7 +198,7 @@ pub fn decode<'decode, B: BinaryReader>(
                         }
                     }
                 }
-                ptr = ptr + 9;
+                ptr += 9;
                 let has_local_pallet;
                 let mut local_color_table = Vec::new();
                 if lscd.field & 0x80 == 0x80 {
@@ -265,16 +261,12 @@ pub fn decode<'decode, B: BinaryReader>(
                 let interlace_delta_y = [8, 8, 4, 2];
                 let mut interlace_mode = 0;
                 let mut interlace_y = interlace_start_y[interlace_mode];
-                let is_interlace = if (lscd.field & 0x40) == 0x40 {
-                    true
-                } else {
-                    false
-                };
+                let is_interlace = (lscd.field & 0x40) == 0x40;
 
                 for y in 0..height {
                     let mut line: Vec<u8> = vec![0; width * 4];
                     let offset = y * width;
-                    for x in 0..width as usize {
+                    for x in 0..width {
                         let color = data[offset + x] as usize;
                         line[x * 4] = color_table[color].red;
                         line[x * 4 + 1] = color_table[color].green;
@@ -302,15 +294,13 @@ pub fn decode<'decode, B: BinaryReader>(
                             }
                             interlace_y = interlace_start_y[interlace_mode];
                         }
+                    } else if is_first {
+                        let y = y + lscd.ystart as usize;
+                        option
+                            .drawer
+                            .draw(lscd.xstart as usize, y, width, 1, &line, None)?;
                     } else {
-                        if is_first {
-                            let y = y + lscd.ystart as usize;
-                            option
-                                .drawer
-                                .draw(lscd.xstart as usize, y, width, 1, &line, None)?;
-                        } else {
-                            option.drawer.draw(0, y, width, 1, &line, None)?;
-                        }
+                        option.drawer.draw(0, y, width, 1, &line, None)?;
                     }
                 }
 

@@ -56,15 +56,15 @@ pub struct BitReader {
 
 impl BitReader {
     pub fn new(data: &[u8], is_lsb: bool) -> Self {
-        let this = Self {
+        
+        Self {
             buffer: data.to_vec(),
             last_byte: 0,
             ptr: 0,
             left_bits: 0,
-            is_lsb: is_lsb,
+            is_lsb,
             warning: false,
-        };
-        this
+        }
     }
 
     fn look_bits(&mut self, size: usize) -> Result<usize, Error> {
@@ -77,14 +77,12 @@ impl BitReader {
 
     fn look_bits_msb(&mut self, size: usize) -> Result<usize, Error> {
         while self.left_bits <= 24 {
-            if self.ptr >= self.buffer.len() {
-                if self.left_bits <= 8 && self.left_bits < size {
-                    self.warning = true;
-                    if size >= 12 {
-                        return Ok(0x1); // send EOL
-                    } else {
-                        return Ok(0x0);
-                    }
+            if self.ptr >= self.buffer.len() && self.left_bits <= 8 && self.left_bits < size {
+                self.warning = true;
+                if size >= 12 {
+                    return Ok(0x1); // send EOL
+                } else {
+                    return Ok(0x0);
                 }
             }
 
@@ -158,13 +156,13 @@ impl BitReader {
     }
 
     fn run_len(&mut self, tree: &HuffmanTree) -> Result<i32, Error> {
-        let mut run_len = self.value(&tree)?;
+        let mut run_len = self.value(tree)?;
         if run_len == EOL {
             return Ok(EOL);
         }
         let mut tolal_run = run_len;
         while run_len >= 64 {
-            run_len = self.value(&tree)?;
+            run_len = self.value(tree)?;
             tolal_run += run_len;
         }
         Ok(tolal_run)
@@ -369,14 +367,12 @@ pub fn decoder(
         }
     }
 
-    let mut is2d = if encoding == Encoder::G4 { true } else { false };
+    let mut is2d = encoding == Encoder::G4;
 
     let mut y = 0;
 
-    if encoding == Encoder::G32d {
-        if reader.get_bits(1)? == 0 {
-            is2d = true
-        }
+    if encoding == Encoder::G32d && reader.get_bits(1)? == 0 {
+        is2d = true
     }
     // slow code
     /*
@@ -506,7 +502,7 @@ pub fn decoder(
                         codes_ptr += 2;
                     }
                     let b1 = pre_codes[codes_ptr];
-                    let a1 = b1.checked_sub(n).unwrap_or(0);
+                    let a1 = b1.saturating_sub(n);
                     a0 = a1;
                     codes.push(a0);
 
@@ -518,12 +514,12 @@ pub fn decoder(
                 }
                 Mode::Ext2D(n) => {
                     if cfg!(debug_assertions) {
-                        let ptr = reader.ptr.checked_sub(32).unwrap_or(0);
-                        println!("");
+                        let ptr = reader.ptr.saturating_sub(32);
+                        println!();
                         for i in 0..64 {
                             print!("{:08b} ", reader.buffer[ptr + i].reverse_bits());
                             if i % 8 == 7 {
-                                println!("");
+                                println!();
                             }
                         }
                     }
@@ -550,7 +546,7 @@ pub fn decoder(
         }
         if encoding == Encoder::G4 {
             // G4 Tiff encoding does have eight EOLs at the end.
-            if eol == true {
+            if eol {
                 // EOBF uncheck
                 break;
             }
@@ -606,7 +602,7 @@ pub fn decoder(
 
         if encoding == Encoder::G32d {
             let v = reader.get_bits(1)?;
-            is2d = if v == 0 { true } else { false };
+            is2d = v == 0;
         }
 
         if encoding == Encoder::HuffmanRLE {

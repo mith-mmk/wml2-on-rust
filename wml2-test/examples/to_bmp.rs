@@ -20,7 +20,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn loader(filename: &String) -> Result<ImageBuffer, Box<dyn Error>> {
-    let f = File::open(&filename)?;
+    let f = File::open(filename)?;
     let reader = BufReader::new(f);
     let mut image = ImageBuffer::new();
     image.set_animation(true);
@@ -29,7 +29,7 @@ fn loader(filename: &String) -> Result<ImageBuffer, Box<dyn Error>> {
         drawer: &mut image,
     };
     image_reader(reader, &mut option)?;
-    return Ok(image);
+    Ok(image)
 }
 
 fn wml_test(filename: String, out_path: String) -> Result<(), Box<dyn Error>> {
@@ -64,8 +64,8 @@ fn wml_test(filename: String, out_path: String) -> Result<(), Box<dyn Error>> {
                 layer.control.dispose_option
             );
             let mut image = ImageBuffer::from_buffer(
-                layer.width.clone(),
-                layer.height.clone(),
+                layer.width,
+                layer.height,
                 layer.buffer.to_vec(),
             );
 

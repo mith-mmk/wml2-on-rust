@@ -171,7 +171,7 @@ impl BitmapHeader {
             bitmap_info = BitmapInfo::Os2(os2header);
         } else {
             let mut info_header = BitmapWindowsInfo {
-                bi_size: bi_size,
+                bi_size,
                 bi_width: reader.read_u32_le()?,
                 bi_height: reader.read_u32_le()?,
                 bi_plane: reader.read_u16_le()?,
@@ -246,15 +246,15 @@ impl BitmapHeader {
                 }
 
                 Some(BitmapInfoV4 {
-                    b_v4_red_mask: b_v4_red_mask,
-                    b_v4_green_mask: b_v4_green_mask,
-                    b_v4_blue_mask: b_v4_blue_mask,
-                    b_v4_alpha_mask: b_v4_alpha_mask,
-                    b_v4_cstype: b_v4_cstype,
-                    b_v4_endpoints: b_v4_endpoints,
-                    b_v4_gamma_red: b_v4_gamma_red,
-                    b_v4_gamma_green: b_v4_gamma_green,
-                    b_v4_gamma_blue: b_v4_gamma_blue,
+                    b_v4_red_mask,
+                    b_v4_green_mask,
+                    b_v4_blue_mask,
+                    b_v4_alpha_mask,
+                    b_v4_cstype,
+                    b_v4_endpoints,
+                    b_v4_gamma_red,
+                    b_v4_gamma_green,
+                    b_v4_gamma_blue,
                 })
             } else {
                 None
@@ -329,7 +329,7 @@ impl BitmapHeader {
             }
         }
 
-        let color_table = if color_table.len() > 0 {
+        let color_table = if !color_table.is_empty() {
             Some(color_table)
         } else {
             None

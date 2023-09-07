@@ -66,7 +66,7 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
             }
         }
         _ => {
-            str = str + "SOF is nothing!";
+            str += "SOF is nothing!";
         }
     }
 
@@ -79,13 +79,13 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
             str = str + &format!("Ss {} Se {} Ah {} Al {}\n", sos.ss, sos.se, sos.ah, sos.al);
         }
         _ => {
-            str = str + "SOS is nothing!";
+            str += "SOS is nothing!";
         }
     }
 
     match &header.comment {
         Some(comment) => {
-            str = str + "\nCOM\n" + &comment + "\n";
+            str = str + "\nCOM\n" + comment + "\n";
         }
         _ => {}
     }
@@ -124,8 +124,8 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
                     Exif(exif) => {
                         if option & 0x10 == 0x10 {
                             // Exif tag full display flag
-                            str = str + "Exif\n";
-                            str = str + &crate::tiff::util::print_tags(&exif);
+                            str += "Exif\n";
+                            str = str + &crate::tiff::util::print_tags(exif);
                         } else {
                             str = str + &format!("Exif has{} tags\n", exif.headers.len());
                         }
@@ -181,21 +181,21 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
         // Define Quatization Table Flags
         match &(header.quantization_tables) {
             Some(qts) => {
-                str = str + "DQT\n";
+                str += "DQT\n";
                 for qt in qts.iter() {
                     str = str + &format!("Pq{}(bytes) Tq{}\n", qt.presision + 1, qt.no);
                     for (i, q) in qt.q.iter().enumerate() {
                         str = str + &format!("{:3}", q);
                         if i % 8 == 7 {
-                            str = str + "\n"
+                            str += "\n"
                         } else {
-                            str = str + ","
+                            str += ","
                         }
                     }
                 }
             }
             _ => {
-                str = str + "DQT in nothing!\n\n";
+                str += "DQT in nothing!\n\n";
             }
         }
     }
@@ -203,33 +203,33 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
     if option & 0x02 == 0x02 {
         // Define Huffman Table Flags
         let hts = &header.huffman_tables;
-        str = str + "DHT\n";
+        str += "DHT\n";
         for ht in hts.dc_tables.iter() {
             if let Some(ht) = ht {
                 str = str + &format!("DC Table{}\n", ht.no);
-                str = str + "L ";
+                str += "L ";
                 for l in ht.len.iter() {
                     str = str + &l.to_string() + " ";
                 }
-                str = str + "\n V ";
+                str += "\n V ";
                 for v in ht.val.iter() {
                     str = str + &v.to_string() + " ";
                 }
-                str = str + "\n";
+                str += "\n";
             }
         }
         for ht in hts.ac_tables.iter() {
             if let Some(ht) = ht {
                 str = str + &format!("AC Table{}\n", ht.no);
-                str = str + "L ";
+                str += "L ";
                 for l in ht.len.iter() {
                     str = str + &l.to_string() + " ";
                 }
-                str = str + "\n V ";
+                str += "\n V ";
                 for v in ht.val.iter() {
                     str = str + &v.to_string() + " ";
                 }
-                str = str + "\n";
+                str += "\n";
             }
         }
     }
@@ -277,11 +277,11 @@ fn print_huffman(i: usize, huffman_table: &HuffmanTable) -> String {
                     break;
                 }
                 str = str + &format!("{:>02b}  {:>02x}\n", code, huffman_table.val[pos]);
-                pos = pos + 1;
-                code = code + 1;
+                pos += 1;
+                code += 1;
             }
         }
-        code = code << 1;
+        code <<= 1;
     }
 
     str

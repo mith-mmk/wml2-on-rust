@@ -31,7 +31,7 @@ impl Debug for JpegWarning {
         match &self.message {
             None => s = self.kind.as_str().to_owned(),
             Some(message) => {
-                s = self.kind.as_str().to_owned() + ":" + &message;
+                s = self.kind.as_str().to_owned() + ":" + message;
             }
         }
         std::fmt::Display::fmt(&s, f)
@@ -44,7 +44,7 @@ impl Display for JpegWarning {
         match &self.message {
             None => s = self.kind.as_str().to_owned(),
             Some(message) => {
-                s = self.kind.as_str().to_owned() + ":" + &message;
+                s = self.kind.as_str().to_owned() + ":" + message;
             }
         }
         write!(f, "{}", &s)

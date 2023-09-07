@@ -15,7 +15,7 @@ const STEP_Y: [usize; 7] = [8, 8, 8, 4, 4, 2, 2];
 const STEP_X: [usize; 7] = [8, 8, 4, 4, 2, 2, 1];
 
 fn draw_rect(header: &PngHeader) -> (u32, u32) {
-    if header.frame_controls.len() == 0 {
+    if header.frame_controls.is_empty() {
         (header.width, header.height)
     } else {
         let last = header.frame_controls.len() - 1;
@@ -77,7 +77,7 @@ fn load_grayscale(
                 }
                 2 => {
                     // Up
-                    if prev_buf.len() > 0 {
+                    if !prev_buf.is_empty() {
                         gray += prev_buf[outptr];
                         alpha += prev_buf[outptr + 3];
                     }
@@ -92,7 +92,7 @@ fn load_grayscale(
                         gray_ = 0;
                         alpha_ = 0;
                     }
-                    if prev_buf.len() > 0 {
+                    if !prev_buf.is_empty() {
                         gray_ += prev_buf[outptr] as u32;
                         alpha_ += prev_buf[outptr + 3] as u32;
                     } else {
@@ -116,7 +116,7 @@ fn load_grayscale(
                         alpha_a = 0;
                     }
                     let (gray_b, alpha_b);
-                    if prev_buf.len() > 0 {
+                    if !prev_buf.is_empty() {
                         gray_b = prev_buf[outptr] as i32;
                         alpha_b = prev_buf[outptr + 3] as i32;
                     } else {
@@ -124,7 +124,7 @@ fn load_grayscale(
                         alpha_b = 0;
                     }
                     let (gray_c, alpha_c);
-                    if prev_buf.len() > 0 && outptr > 0 {
+                    if !prev_buf.is_empty() && outptr > 0 {
                         gray_c = prev_buf[outptr - 4] as i32;
                         alpha_c = prev_buf[outptr - 1] as i32;
                     } else {
@@ -149,7 +149,7 @@ fn load_grayscale(
         option.drawer.draw(0, y, width as usize, 1, &outbuf, None)?;
         prev_buf = outbuf;
     }
-    return Ok(None);
+    Ok(None)
 }
 
 fn load_grayscale_progressive(
@@ -210,7 +210,7 @@ fn load_grayscale_progressive(
                     }
                     2 => {
                         // Up
-                        if prev_buf.len() > 0 {
+                        if !prev_buf.is_empty() {
                             gray += prev_buf[outptr];
                             alpha += prev_buf[outptr + 3];
                         }
@@ -225,7 +225,7 @@ fn load_grayscale_progressive(
                             gray_ = 0;
                             alpha_ = 0;
                         }
-                        if prev_buf.len() > 0 {
+                        if !prev_buf.is_empty() {
                             gray_ += prev_buf[outptr] as u32;
                             alpha_ += prev_buf[outptr + 3] as u32;
                         } else {
@@ -249,7 +249,7 @@ fn load_grayscale_progressive(
                             alpha_a = 0;
                         }
                         let (gray_b, alpha_b);
-                        if prev_buf.len() > 0 {
+                        if !prev_buf.is_empty() {
                             gray_b = prev_buf[outptr] as i32;
                             alpha_b = prev_buf[outptr + 3] as i32;
                         } else {
@@ -257,7 +257,7 @@ fn load_grayscale_progressive(
                             alpha_b = 0;
                         }
                         let (gray_c, alpha_c);
-                        if prev_buf.len() > 0 && outptr > 0 {
+                        if !prev_buf.is_empty() && outptr > 0 {
                             gray_c = prev_buf[outptr - 4] as i32;
                             alpha_c = prev_buf[outptr - 1] as i32;
                         } else {
@@ -282,7 +282,7 @@ fn load_grayscale_progressive(
             prev_buf = outbuf;
         }
     }
-    return Ok(None);
+    Ok(None)
 }
 
 fn load_truecolor(
@@ -347,7 +347,7 @@ fn load_truecolor(
                 }
                 2 => {
                     // Up
-                    if prev_buf.len() > 0 {
+                    if !prev_buf.is_empty() {
                         red += prev_buf[outptr];
                         green += prev_buf[outptr + 1];
                         blue += prev_buf[outptr + 2];
@@ -368,7 +368,7 @@ fn load_truecolor(
                         blue_ = 0;
                         alpha_ = 0;
                     }
-                    if prev_buf.len() > 0 {
+                    if !prev_buf.is_empty() {
                         red_ += prev_buf[outptr] as u32;
                         green_ += prev_buf[outptr + 1] as u32;
                         blue_ += prev_buf[outptr + 2] as u32;
@@ -404,7 +404,7 @@ fn load_truecolor(
                         alpha_a = 0;
                     }
                     let (red_b, green_b, blue_b, alpha_b);
-                    if prev_buf.len() > 0 {
+                    if !prev_buf.is_empty() {
                         red_b = prev_buf[outptr] as i32;
                         green_b = prev_buf[outptr + 1] as i32;
                         blue_b = prev_buf[outptr + 2] as i32;
@@ -416,7 +416,7 @@ fn load_truecolor(
                         alpha_b = 0;
                     }
                     let (red_c, green_c, blue_c, alpha_c);
-                    if prev_buf.len() > 0 && outptr > 0 {
+                    if !prev_buf.is_empty() && outptr > 0 {
                         red_c = prev_buf[outptr - 4] as i32;
                         green_c = prev_buf[outptr - 3] as i32;
                         blue_c = prev_buf[outptr - 2] as i32;
@@ -447,7 +447,7 @@ fn load_truecolor(
         option.drawer.draw(0, y, width as usize, 1, &outbuf, None)?;
         prev_buf = outbuf;
     }
-    return Ok(None);
+    Ok(None)
 }
 
 fn load_truecolor_progressive(
@@ -513,7 +513,7 @@ fn load_truecolor_progressive(
                     }
                     2 => {
                         // Up
-                        if prev_buf.len() > 0 {
+                        if !prev_buf.is_empty() {
                             red += prev_buf[outptr];
                             green += prev_buf[outptr + 1];
                             blue += prev_buf[outptr + 2];
@@ -534,7 +534,7 @@ fn load_truecolor_progressive(
                             blue_ = 0;
                             alpha_ = 0;
                         }
-                        if prev_buf.len() > 0 {
+                        if !prev_buf.is_empty() {
                             red_ += prev_buf[outptr] as u32;
                             green_ += prev_buf[outptr + 1] as u32;
                             blue_ += prev_buf[outptr + 2] as u32;
@@ -570,7 +570,7 @@ fn load_truecolor_progressive(
                             alpha_a = 0;
                         }
                         let (red_b, green_b, blue_b, alpha_b);
-                        if prev_buf.len() > 0 {
+                        if !prev_buf.is_empty() {
                             red_b = prev_buf[outptr] as i32;
                             green_b = prev_buf[outptr + 1] as i32;
                             blue_b = prev_buf[outptr + 2] as i32;
@@ -582,7 +582,7 @@ fn load_truecolor_progressive(
                             alpha_b = 0;
                         }
                         let (red_c, green_c, blue_c, alpha_c);
-                        if prev_buf.len() > 0 && outptr > 0 {
+                        if !prev_buf.is_empty() && outptr > 0 {
                             red_c = prev_buf[outptr - 4] as i32;
                             green_c = prev_buf[outptr - 3] as i32;
                             blue_c = prev_buf[outptr - 2] as i32;
@@ -616,7 +616,7 @@ fn load_truecolor_progressive(
             prev_buf = outbuf;
         }
     }
-    return Ok(None);
+    Ok(None)
 }
 
 fn load_index_color(
@@ -682,7 +682,7 @@ fn load_index_color(
         }
         option.drawer.draw(0, y, width as usize, 1, &outbuf, None)?;
     }
-    return Ok(None);
+    Ok(None)
 }
 
 fn load_index_color_progressive(
@@ -759,7 +759,7 @@ fn load_index_color_progressive(
             y += step_y;
         }
     }
-    return Ok(None);
+    Ok(None)
 }
 
 fn load(
@@ -771,9 +771,9 @@ fn load(
         0 | 4 => {
             if header.bitpersample >= 8 {
                 if header.interace_method == 0 {
-                    return load_grayscale(&header, &buffer, option);
+                    return load_grayscale(header, buffer, option);
                 } else {
-                    return load_grayscale_progressive(&header, &buffer, option);
+                    return load_grayscale_progressive(header, buffer, option);
                 }
             } else {
                 let color_max = 1 << header.bitpersample;
@@ -789,32 +789,32 @@ fn load(
                 }
                 header.pallete = Some(pallet);
                 if header.interace_method == 0 {
-                    return load_index_color(&header, &buffer, option);
+                    return load_index_color(header, buffer, option);
                 } else {
-                    return load_index_color_progressive(&header, &buffer, option);
+                    return load_index_color_progressive(header, buffer, option);
                 }
             }
         }
         2 | 6 => {
             if header.interace_method == 0 {
-                return load_truecolor(&header, &buffer, option);
+                return load_truecolor(header, buffer, option);
             } else {
-                return load_truecolor_progressive(&header, &buffer, option);
+                return load_truecolor_progressive(header, buffer, option);
             }
         }
         3 => {
             if header.interace_method == 0 {
-                return load_index_color(&header, &buffer, option);
+                return load_index_color(header, buffer, option);
             } else {
-                return load_index_color_progressive(&header, &buffer, option);
+                return load_index_color_progressive(header, buffer, option);
             }
         }
         _ => {
             let string = format!("Color type {} is unknown", header.color_type);
-            return Err(Box::new(ImgError::new_const(
+            Err(Box::new(ImgError::new_const(
                 ImgErrorKind::IllegalData,
                 string,
-            )));
+            )))
         }
     }
 }
@@ -923,7 +923,7 @@ pub fn decode<'decode, B: BinaryReader>(
             6 => "Color type: Truecolor with alpha\n",
             _ => "Color type: unkwon\n",
         };
-        s += &s_.to_string();
+        s += s_;
         let s_ = format!("Transparency {:?}\n", header.transparency);
         s += &s_;
         let s_ = format!("Backgroud color {:?}\n", header.background_color);
@@ -938,7 +938,7 @@ pub fn decode<'decode, B: BinaryReader>(
             s += &s_;
         }
         option.drawer.verbose(&s, None)?;
-        if header.frame_controls.len() > 0 {
+        if !header.frame_controls.is_empty() {
             let s = format!("{:?}", header.frame_controls[0]);
             option.drawer.verbose(&s, None)?;
         }
@@ -967,7 +967,7 @@ pub fn decode<'decode, B: BinaryReader>(
                         match decomressed {
                             Ok(debuffer) => {
                                 load(&mut header.clone(), &debuffer, option)?;
-                                if header.frame_controls.len() > 0 {
+                                if !header.frame_controls.is_empty() {
                                     let frame_control = &header.frame_controls[0];
                                     let next = next_options(frame_control);
                                     let result = option.drawer.next(Some(next))?;
@@ -993,7 +993,7 @@ pub fn decode<'decode, B: BinaryReader>(
                         buffer = vec![];
                     }
                     if chunck == IMAGE_END {
-                        if buffer.len() > 0 {
+                        if !buffer.is_empty() {
                             let decomressed = miniz_oxide::inflate::decompress_to_vec_zlib(&buffer);
                             match decomressed {
                                 Ok(debuffer) => {
@@ -1035,7 +1035,7 @@ pub fn decode<'decode, B: BinaryReader>(
                             dispose_op: reader.read_byte()?,
                             blend_op: reader.read_byte()?,
                         };
-                        if buffer.len() > 0 && allow_multi_image {
+                        if !buffer.is_empty() && allow_multi_image {
                             let decomressed = miniz_oxide::inflate::decompress_to_vec_zlib(&buffer);
                             match decomressed {
                                 Ok(debuffer) => {

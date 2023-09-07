@@ -130,11 +130,11 @@ impl FrameHeader {
         let mut is_progressive: bool = false;
         let mut is_lossress: bool = false;
         let mut is_differential: bool = false;
-        let is_huffman;
-        let width: usize;
-        let height: usize;
-        let bitperpixel: usize;
-        let plane: usize;
+        
+        
+        
+        
+        
         let mut component: Vec<Component>;
         let mut color_space = "YUV".to_string();
 
@@ -150,11 +150,7 @@ impl FrameHeader {
         if num & 0x03 == 0x03 {
             is_lossress = true;
         }
-        if num & 0x08 == 0x00 {
-            is_huffman = true;
-        } else {
-            is_huffman = false;
-        }
+        let is_huffman = num & 0x08 == 0x00;
         if num & 0x04 == 0x00 {
             is_differential = false;
         }
@@ -162,23 +158,23 @@ impl FrameHeader {
             is_differential = true;
         }
 
-        let p = read_byte(&buffer, 0) as i32;
-        bitperpixel = p as usize;
-        height = read_u16_be(&buffer, 1) as usize;
-        width = read_u16_be(&buffer, 3) as usize;
-        let nf = read_byte(&buffer, 5) as i32;
-        plane = nf as usize;
+        let p = read_byte(buffer, 0) as i32;
+        let bitperpixel: usize = p as usize;
+        let height: usize = read_u16_be(buffer, 1) as usize;
+        let width: usize = read_u16_be(buffer, 3) as usize;
+        let nf = read_byte(buffer, 5) as i32;
+        let plane: usize = nf as usize;
 
         let mut ptr = 6;
 
         component = Vec::new();
 
         for _ in 0..nf {
-            let c = read_byte(&buffer, ptr) as usize;
-            let h = (read_byte(&buffer, ptr + 1) >> 4) as usize;
-            let v = (read_byte(&buffer, ptr + 1) & 0x07) as usize;
-            let tq = read_byte(&buffer, ptr + 2) as usize;
-            ptr = ptr + 3;
+            let c = read_byte(buffer, ptr) as usize;
+            let h = (read_byte(buffer, ptr + 1) >> 4) as usize;
+            let v = (read_byte(buffer, ptr + 1) & 0x07) as usize;
+            let tq = read_byte(buffer, ptr + 2) as usize;
+            ptr += 3;
             component.push(Component { c, h, v, tq });
         }
 
@@ -194,7 +190,7 @@ impl FrameHeader {
             }
         }
 
-        if id != "" {
+        if !id.is_empty() {
             color_space = id;
         } else if plane == 4 {
             color_space = "CMYK".to_string();
@@ -307,20 +303,20 @@ fn read_app(num: usize, tag: &String, buffer: &[u8]) -> Result<JpegAppHeaders, E
             match tag.as_str() {
                 "JFIF" => {
                     ptr = 5;
-                    let version = read_u16_be(&buffer, ptr) as u16;
-                    let unit = read_byte(&buffer, ptr + 2) as usize;
-                    let xr = read_u16_be(&buffer, ptr + 3) as usize;
-                    let yr = read_u16_be(&buffer, ptr + 5) as usize;
-                    let width = read_byte(&buffer, ptr + 7) as usize;
-                    let height = read_byte(&buffer, ptr + 8) as usize;
+                    let version = read_u16_be(buffer, ptr);
+                    let unit = read_byte(buffer, ptr + 2) as usize;
+                    let xr = read_u16_be(buffer, ptr + 3) as usize;
+                    let yr = read_u16_be(buffer, ptr + 5) as usize;
+                    let width = read_byte(buffer, ptr + 7) as usize;
+                    let height = read_byte(buffer, ptr + 8) as usize;
 
                     let jfif: Jfif = Jfif {
-                        version: version,
+                        version,
                         resolusion_unit: unit,
                         x_resolusion: xr,
                         y_resolusion: yr,
-                        width: width,
-                        height: height,
+                        width,
+                        height,
                         thumnail: None, // (width*height*3)  + tag
                     };
 
@@ -349,15 +345,15 @@ fn read_app(num: usize, tag: &String, buffer: &[u8]) -> Result<JpegAppHeaders, E
         },
         2 => match tag.as_str() {
             "ICC_PROFILE" => {
-                let number = read_byte(&buffer, ptr) as usize;
-                ptr = ptr + 1;
-                let total = read_byte(&buffer, ptr) as usize;
-                ptr = ptr + 1;
+                let number = read_byte(buffer, ptr) as usize;
+                ptr += 1;
+                let total = read_byte(buffer, ptr) as usize;
+                ptr += 1;
                 let data = buffer[ptr..].to_vec();
                 let icc_profile = ICCProfilePacker {
-                    number: number,
-                    total: total,
-                    data: data,
+                    number,
+                    total,
+                    data,
                 };
 
                 return Ok(JpegAppHeaders::ICCProfile(icc_profile));
@@ -366,31 +362,31 @@ fn read_app(num: usize, tag: &String, buffer: &[u8]) -> Result<JpegAppHeaders, E
         },
         12 => match tag.as_str() {
             "Ducky" => {
-                let q = read_u32_be(&buffer, ptr) as usize;
-                ptr = ptr + 4;
-                len = len - 4;
-                let comment = read_string(&buffer, ptr, len);
+                let q = read_u32_be(buffer, ptr) as usize;
+                ptr += 4;
+                len -= 4;
+                let comment = read_string(buffer, ptr, len);
                 ptr = ptr + comment.len() + 1;
                 len = len - comment.len() + 1;
-                let copyright = read_string(&buffer, ptr, len);
+                let copyright = read_string(buffer, ptr, len);
                 return Ok(JpegAppHeaders::Ducky(Ducky {
                     quality: q,
-                    comment: comment,
-                    copyright: copyright,
+                    comment,
+                    copyright,
                 }));
             }
             _ => {}
         },
         14 => match tag.as_str() {
             "Adobe" => {
-                let ver = read_byte(&buffer, ptr) as usize;
-                let flag1 = read_u16_be(&buffer, ptr + 1) as usize;
-                let flag2 = read_u16_be(&buffer, ptr + 3) as usize;
-                let ct = read_byte(&buffer, ptr + 5) as usize;
+                let ver = read_byte(buffer, ptr) as usize;
+                let flag1 = read_u16_be(buffer, ptr + 1) as usize;
+                let flag2 = read_u16_be(buffer, ptr + 3) as usize;
+                let ct = read_byte(buffer, ptr + 5) as usize;
                 return Ok(JpegAppHeaders::Adobe(AdobeApp14 {
                     dct_encode_version: ver,
-                    flag1: flag1,
-                    flag2: flag2,
+                    flag1,
+                    flag2,
                     color_transform: ct,
                 }));
             }
@@ -416,7 +412,7 @@ impl JpegHaeder {
             if soi == 0xffd8 {
                 break;
             };
-            offset = offset + 1;
+            offset += 1;
         }
 
         if offset >= 16 {
@@ -440,16 +436,16 @@ impl JpegHaeder {
             let tc = t >> 4;
             let th = t & 0x0f;
 
-            let ac = if tc == 0 { false } else { true };
+            let ac = tc != 0;
             let no = th as usize;
-            size = size + 1;
+            size += 1;
             let mut len: Vec<usize> = Vec::with_capacity(16);
             let mut p: Vec<usize> = Vec::with_capacity(16);
             let mut val: Vec<usize> = Vec::new();
             let mut vlen = 0;
             for _ in 0..16 {
                 let l = reader.read_byte()? as usize;
-                vlen = vlen + l;
+                vlen += l;
                 len.push(l);
             }
             let mut pss: usize = 0;
@@ -460,7 +456,7 @@ impl JpegHaeder {
                 p.push(pss);
                 pss += len[i];
             }
-            size = size + 16;
+            size += 16;
 
             if no > 3 {
                 return Err(Box::new(ImgError::new_const(
@@ -473,7 +469,7 @@ impl JpegHaeder {
             } else {
                 huffman_tables.dc_tables[no] = Some(HuffmanTable::new(ac, no, len, p, val))
             }
-            size = size + vlen;
+            size += vlen;
         }
         Ok(())
     }
@@ -512,18 +508,18 @@ impl JpegHaeder {
             let b = reader.read_byte()?;
             let p = b >> 4;
             let no = (b & 0x0f) as usize;
-            pos = pos + 1;
+            pos += 1;
             if p == 0 {
                 presision = 8;
                 for _ in 0..64 {
                     quantizations.push(reader.read_byte()? as usize);
-                    pos = pos + 1;
+                    pos += 1;
                 }
             } else {
                 presision = 16;
                 for _ in 0..64 {
                     quantizations.push(reader.read_u16_be()? as usize);
-                    pos = pos + 2;
+                    pos += 2;
                 }
             }
             quantization_tables.push(QuantizationTable::new(presision, no, quantizations));
@@ -565,7 +561,7 @@ impl JpegHaeder {
             if byte == 0xff {
                 // header head
                 let nextbyte: u8 = reader.read_byte()?;
-                offset = offset + 2;
+                offset += 2;
                 match nextbyte {
                     0xc4 => {
                         // DHT maker
@@ -593,7 +589,7 @@ impl JpegHaeder {
                             height = fh.height;
                             bpp = fh.bitperpixel * fh.plane;
                             frame_header = Some(fh);
-                            offset = offset + length; //skip
+                            offset += length; //skip
                         } else {
                             return Err(Box::new(ImgError::new_const(
                                 ImgErrorKind::DecodeError,
@@ -722,7 +718,7 @@ impl JpegHaeder {
                             _ => {}
                         }
                         _jpeg_app_headers.push(result);
-                        offset = offset + length; // skip
+                        offset += length; // skip
                     }
                     0xff => { // padding
                          // offset = offset + 1;
@@ -746,14 +742,14 @@ impl JpegHaeder {
             }
         }
 
-        if _sof_flag && _sos_flag && _dht_flag && _dqt_flag == false {
+        if _sof_flag && _sos_flag && _dht_flag && !_dqt_flag {
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::IllegalData,
                 "Maker is shortage".to_string(),
             )));
         }
 
-        if _jpeg_app_headers.len() > 0 {
+        if !_jpeg_app_headers.is_empty() {
             jpeg_app_headers = Some(_jpeg_app_headers);
         } else {
             jpeg_app_headers = None;

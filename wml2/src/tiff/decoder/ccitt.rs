@@ -42,7 +42,7 @@ pub fn decode(buf: &[u8], header: &Tiff) -> Result<(Vec<u8>, bool), Error> {
 
     let width = header.width as usize;
     let height = header.height as usize;
-    let is_lsb = if header.fill_order == 2 { true } else { false };
+    let is_lsb = header.fill_order == 2;
 
     decoder(buf, width, height, encoding, is_lsb)
 }

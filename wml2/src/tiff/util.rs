@@ -51,7 +51,7 @@ pub fn print_tags(header: &TiffHeaders) -> String {
     s
 }
 
-pub fn print_data_with_max_size(data: &DataPack, length: usize, max_size: usize) -> String {
+pub fn print_data_with_max_size(data: &DataPack, length: usize, _max_size: usize) -> String {
     let mut s = "".to_string();
     let len = if length < 100 { length } else { MAX_LENGTH };
 
@@ -98,7 +98,7 @@ pub fn print_data_with_max_size(data: &DataPack, length: usize, max_size: usize)
             }
         }
         DataPack::Ascii(ss) => {
-            s = format!("{}", ss);
+            s = ss.to_string();
         }
         DataPack::Short(d) => {
             if length > 1 {
@@ -211,7 +211,7 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
                 let val = val.n as f64 / val.d as f64;
                 data.push(val);
             }
-            return DataMap::FloatAllay(data);
+            DataMap::FloatAllay(data)
         }
         DataPack::SRational(d) => {
             if length == 1 {
@@ -223,7 +223,7 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
                 let val = val.n as f64 / val.d as f64;
                 data.push(val);
             }
-            return DataMap::FloatAllay(data);
+            DataMap::FloatAllay(data)
         }
         DataPack::Bytes(d) => {
             if length == 1 {
@@ -233,7 +233,7 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
             for val in d {
                 data.push(*val as u64);
             }
-            return DataMap::UIntAllay(data);
+            DataMap::UIntAllay(data)
         }
         DataPack::SByte(d) => {
             if length == 1 {
@@ -243,11 +243,11 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
             for val in d {
                 data.push(*val as i64);
             }
-            return DataMap::SIntAllay(data);
+            DataMap::SIntAllay(data)
         }
-        DataPack::Undef(d) => return DataMap::Raw(d.to_vec()),
+        DataPack::Undef(d) => DataMap::Raw(d.to_vec()),
 
-        DataPack::Ascii(ss) => return DataMap::Ascii(ss.to_string()),
+        DataPack::Ascii(ss) => DataMap::Ascii(ss.to_string()),
         DataPack::Short(d) => {
             if length == 1 {
                 return DataMap::UInt(d[0] as u64);
@@ -256,7 +256,7 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
             for val in d {
                 data.push(*val as u64);
             }
-            return DataMap::UIntAllay(data);
+            DataMap::UIntAllay(data)
         }
         DataPack::Long(d) => {
             if length == 1 {
@@ -266,7 +266,7 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
             for val in d {
                 data.push(*val as u64);
             }
-            return DataMap::UIntAllay(data);
+            DataMap::UIntAllay(data)
         }
         DataPack::SShort(d) => {
             if length == 1 {
@@ -276,7 +276,7 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
             for val in d {
                 data.push(*val as i64);
             }
-            return DataMap::SIntAllay(data);
+            DataMap::SIntAllay(data)
         }
         DataPack::SLong(d) => {
             if length == 1 {
@@ -286,7 +286,7 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
             for val in d {
                 data.push(*val as i64);
             }
-            return DataMap::SIntAllay(data);
+            DataMap::SIntAllay(data)
         }
         DataPack::Float(d) => {
             if length == 1 {
@@ -296,18 +296,18 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
             for val in d {
                 data.push(*val as f64);
             }
-            return DataMap::FloatAllay(data);
+            DataMap::FloatAllay(data)
         }
         DataPack::Double(d) => {
             if length == 1 {
-                return DataMap::Float(d[0] as f64);
+                return DataMap::Float(d[0]);
             }
             let mut data = vec![];
             for val in d {
-                data.push(*val as f64);
+                data.push(*val);
             }
-            return DataMap::FloatAllay(data);
+            DataMap::FloatAllay(data)
         }
-        DataPack::Unkown(d) => return DataMap::Raw(d.to_vec()),
+        DataPack::Unkown(d) => DataMap::Raw(d.to_vec()),
     }
 }

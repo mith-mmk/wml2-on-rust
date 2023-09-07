@@ -108,7 +108,7 @@ pub enum ImgErrorKind {
 impl ImgErrorKind {
     pub(crate) fn as_str(&self) -> &'static str {
         use ImgErrorKind::*;
-        match &*self {
+        match self {
             UnknownFormat => "Unknown format",
             OutOfMemory => "Out of memory",
             CannotDecode => "Cannot decode this decoder",

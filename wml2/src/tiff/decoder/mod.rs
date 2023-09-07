@@ -56,7 +56,7 @@ fn planar_to_chuncky(data: &[u8], header: &Tiff) -> Result<Vec<u8>, Error> {
         total_length += header.height as usize * header.width as usize * ((*bits as usize + 7) / 8);
     }
 
-    if data.len() < total_length as usize {
+    if data.len() < total_length {
         return Err(Box::new(ImgError::new_const(
             ImgErrorKind::DecodeError,
             "Data shotage.".to_string(),
@@ -94,7 +94,7 @@ pub fn draw_tile(
     option: &mut DecodeOptions,
     header: &Tiff,
 ) -> Result<Option<ImgWarnings>, Error> {
-    if data.len() == 0 {
+    if data.is_empty() {
         return Err(Box::new(ImgError::new_const(
             ImgErrorKind::DecodeError,
             "Data empty.".to_string(),
@@ -167,13 +167,11 @@ pub fn draw_tile(
             }
         }
     };
-    if header.bitspersample <= 8 {
-        if color_table.is_none() {
-            return Err(Box::new(ImgError::new_const(
-                ImgErrorKind::DecodeError,
-                "This is an index color image,but A color table is empty.".to_string(),
-            )));
-        }
+    if header.bitspersample <= 8 && color_table.is_none() {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::DecodeError,
+            "This is an index color image,but A color table is empty.".to_string(),
+        )));
     }
 
     let mut row_len = ((header.width as usize * header.bitspersample as usize) + 7) / 8;
@@ -202,11 +200,11 @@ pub fn draw_tile(
                             {
                                 let color = read_u16(&data, i, header.tiff_headers.endian) >> 8;
                                 let temp_r = (color >> 5 & 0x1f) as u8;
-                                let r = (temp_r << 3 | temp_r >> 2) as u8;
+                                let r = temp_r << 3 | temp_r >> 2;
                                 let temp_g = (color >> 10 & 0x1f) as u8;
-                                let g = (temp_g << 3 | temp_g >> 2) as u8;
+                                let g = temp_g << 3 | temp_g >> 2;
                                 let temp_b = (color & 0x1f) as u8;
-                                let b = (temp_b << 3 | temp_b >> 2) as u8;
+                                let b = temp_b << 3 | temp_b >> 2;
                                 buf.push(r);
                                 buf.push(g);
                                 buf.push(b);
@@ -254,12 +252,10 @@ pub fn draw_tile(
                                 } else {
                                     c = (color.reverse_bits() & 0xf) as usize;
                                 }
+                            } else if header.fill_order == 1 {
+                                c = (color & 0xf) as usize;
                             } else {
-                                if header.fill_order == 1 {
-                                    c = (color & 0xf) as usize;
-                                } else {
-                                    c = (color.reverse_bits() >> 4) as usize;
-                                }
+                                c = (color.reverse_bits() >> 4) as usize;
                             }
 
                             let rgba = &color_table.as_ref().unwrap()[c];
@@ -329,7 +325,7 @@ pub fn draw_tile(
                             r = data[i];
                             g = data[i + 1];
                             b = data[i + 2];
-                            a = if header.extra_samples.len() > 0
+                            a = if !header.extra_samples.is_empty()
                                 && header.extra_samples[0] == 2
                                 && header.samples_per_pixel > 3
                             {
@@ -344,7 +340,7 @@ pub fn draw_tile(
                                 r = (read_u16(&data, i, header.tiff_headers.endian) >> 8) as u8;
                                 g = (read_u16(&data, i + 2, header.tiff_headers.endian) >> 8) as u8;
                                 b = (read_u16(&data, i + 4, header.tiff_headers.endian) >> 8) as u8;
-                                a = if header.extra_samples.len() > 0
+                                a = if !header.extra_samples.is_empty()
                                     && header.extra_samples[0] == 2
                                     && header.samples_per_pixel > 3
                                 {
@@ -359,7 +355,7 @@ pub fn draw_tile(
                             r = (read_u32(&data, i, header.tiff_headers.endian) >> 24) as u8;
                             g = (read_u32(&data, i + 4, header.tiff_headers.endian) >> 24) as u8;
                             b = (read_u32(&data, i + 8, header.tiff_headers.endian) >> 24) as u8;
-                            a = if header.extra_samples.len() > 0
+                            a = if !header.extra_samples.is_empty()
                                 && header.extra_samples[0] == 2
                                 && header.samples_per_pixel > 3
                             {
@@ -384,7 +380,7 @@ pub fn draw_tile(
                         prevs[1] = g;
                         b += prevs[2];
                         prevs[2] = b;
-                        if header.extra_samples.len() > 0 && header.extra_samples[0] == 2 {
+                        if !header.extra_samples.is_empty() && header.extra_samples[0] == 2 {
                             a += prevs[3];
                             prevs[3] = a;
                         }
@@ -405,7 +401,7 @@ pub fn draw_tile(
                             m = data[i + 1];
                             y = data[i + 2];
                             k = data[i + 3];
-                            a = if header.extra_samples.len() > 0
+                            a = if !header.extra_samples.is_empty()
                                 && header.extra_samples[0] == 2
                                 && header.samples_per_pixel > 4
                             {
@@ -420,7 +416,7 @@ pub fn draw_tile(
                             m = (read_u16(&data, i + 2, header.tiff_headers.endian) >> 8) as u8;
                             y = (read_u16(&data, i + 4, header.tiff_headers.endian) >> 8) as u8;
                             k = (read_u16(&data, i + 6, header.tiff_headers.endian) >> 8) as u8;
-                            a = if header.extra_samples.len() > 0
+                            a = if !header.extra_samples.is_empty()
                                 && header.extra_samples[0] == 2
                                 && header.samples_per_pixel > 4
                             {
@@ -435,7 +431,7 @@ pub fn draw_tile(
                             m = (read_u32(&data, i + 4, header.tiff_headers.endian) >> 24) as u8;
                             y = (read_u32(&data, i + 8, header.tiff_headers.endian) >> 24) as u8;
                             k = (read_u32(&data, i + 12, header.tiff_headers.endian) >> 24) as u8;
-                            a = if header.extra_samples.len() > 0
+                            a = if !header.extra_samples.is_empty()
                                 && header.extra_samples[0] == 2
                                 && header.samples_per_pixel > 4
                             {
@@ -462,7 +458,7 @@ pub fn draw_tile(
                         prevs[2] = c;
                         k += prevs[3];
                         prevs[3] = k;
-                        if header.extra_samples.len() > 0 && header.extra_samples[0] == 2 {
+                        if !header.extra_samples.is_empty() && header.extra_samples[0] == 2 {
                             a += prevs[4];
                             prevs[4] = a;
                         }
@@ -547,7 +543,7 @@ pub fn draw_tile(
             }
         }
 
-        option.drawer.draw(x, y, width as usize, 1, &buf, None)?;
+        option.drawer.draw(x, y, width, 1, &buf, None)?;
     }
     Ok(None)
 }
@@ -557,7 +553,7 @@ pub fn draw(
     option: &mut DecodeOptions,
     header: &Tiff,
 ) -> Result<Option<ImgWarnings>, Error> {
-    if data.len() == 0 {
+    if data.is_empty() {
         return Err(Box::new(ImgError::new_const(
             ImgErrorKind::DecodeError,
             "Data empty.".to_string(),
@@ -573,7 +569,7 @@ fn read_strips<'decode, B: BinaryReader>(reader: &mut B, header: &Tiff) -> Resul
     let mut data = vec![];
     if header.strip_offsets.len() != header.strip_byte_counts.len() {
         if header.strip_offsets.len() == 1
-            && header.strip_byte_counts.len() == 0
+            && header.strip_byte_counts.is_empty()
             && header.compression == Compression::NoneCompression
         {
             let offset = header.strip_offsets[0] as u64;
@@ -605,7 +601,7 @@ pub fn decode_lzw_compresson<'decode, B: BinaryReader>(
     option: &mut DecodeOptions,
     header: &Tiff,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let is_lsb = if header.fill_order == 2 { true } else { false }; // 1: MSB 2: LSB
+    let is_lsb = header.fill_order == 2; // 1: MSB 2: LSB
     option
         .drawer
         .init(header.width as usize, header.height as usize, None)?;
@@ -720,30 +716,30 @@ fn compression_decode<'decode, B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     match header.compression {
         Compression::NoneCompression => {
-            return decode_none_compresson(reader, option, &header);
+            return decode_none_compresson(reader, option, header);
         }
         Compression::LZW => {
-            return decode_lzw_compresson(reader, option, &header);
+            return decode_lzw_compresson(reader, option, header);
         }
         Compression::Jpeg => {
-            return decode_jpeg_compresson(reader, option, &header);
+            return decode_jpeg_compresson(reader, option, header);
         }
         Compression::Packbits => {
-            return decode_packbits_compresson(reader, option, &header);
+            return decode_packbits_compresson(reader, option, header);
         }
         Compression::AdobeDeflate => {
-            return decode_deflate_compresson(reader, option, &header);
+            return decode_deflate_compresson(reader, option, header);
         }
         Compression::CCITTHuffmanRLE
         | Compression::CCITTGroup3Fax
         | Compression::CCITTGroup4Fax => {
-            return decode_ccitt_compresson(reader, option, &header);
+            return decode_ccitt_compresson(reader, option, header);
         }
         _ => {
-            return Err(Box::new(ImgError::new_const(
+            Err(Box::new(ImgError::new_const(
                 ImgErrorKind::DecodeError,
                 "Not suport compression".to_string(),
-            )));
+            )))
         }
     }
 }

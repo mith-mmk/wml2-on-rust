@@ -44,7 +44,7 @@ impl CRC32 {
                 if c & 0x01 == 0x01 {
                     c = 0xedb8_8320_u32 ^ (c >> 1);
                 } else {
-                    c = c >> 1;
+                    c >>= 1;
                 }
                 crc_table[n] = c;
             }

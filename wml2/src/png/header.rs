@@ -49,7 +49,7 @@ pub(crate) const FRAME_DATA: [u8; 4] = [b'f', b'd', b'A', b'T'];
 
 pub(crate) fn to_string<'a>(text: &[u8], compressed: bool) -> (String, String) {
     let mut split = 0;
-    let keyword = read_ascii_string(&text, 0, text.len());
+    let keyword = read_ascii_string(text, 0, text.len());
     for i in 0..text.len() {
         if text[i] == 0 {
             split = i + 1;

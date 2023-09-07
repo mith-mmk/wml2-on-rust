@@ -29,19 +29,19 @@ impl<'decode, B: BinaryReader> BitReader<'decode, B> {
         let bptr: usize = 0;
         let b: u8 = 0;
         Self {
-            reader: reader,
-            bptr: bptr,
-            b: b,
+            reader,
+            bptr,
+            b,
             rst: false,
             prev_rst: 7,
         }
     }
 
-    pub fn rst(self: &mut Self) -> Result<bool, Error> {
+    pub fn rst(&mut self) -> Result<bool, Error> {
         Ok(self.rst)
     }
 
-    pub fn next_marker(self: &mut Self) -> Result<u8, Error> {
+    pub fn next_marker(&mut self) -> Result<u8, Error> {
         let buf = self.reader.read_bytes_no_move(2)?;
         if buf[0] != 0xff {
             let s = format!(
@@ -66,7 +66,7 @@ impl<'decode, B: BinaryReader> BitReader<'decode, B> {
     }
 
     #[inline]
-    pub fn next_byte(self: &mut Self) -> Result<u8, Error> {
+    pub fn next_byte(&mut self) -> Result<u8, Error> {
         let mut b = self.reader.read_byte()?;
         if b == 0xff {
             let mut marker = self.reader.read_byte()?;
@@ -123,7 +123,7 @@ impl<'decode, B: BinaryReader> BitReader<'decode, B> {
     }
 
     #[inline]
-    pub fn get_bit(self: &mut Self) -> Result<usize, Error> {
+    pub fn get_bit(&mut self) -> Result<usize, Error> {
         if self.bptr == 0 {
             self.b = self.next_byte()?;
             self.bptr = 8;
@@ -134,7 +134,7 @@ impl<'decode, B: BinaryReader> BitReader<'decode, B> {
     }
 
     #[inline]
-    pub fn get_bits(self: &mut Self, mut bits: usize) -> Result<i32, Error> {
+    pub fn get_bits(&mut self, mut bits: usize) -> Result<i32, Error> {
         if bits == 0 {
             return Ok(0);
         }
@@ -159,7 +159,7 @@ impl<'decode, B: BinaryReader> BitReader<'decode, B> {
         Ok(v)
     }
 
-    pub fn reset(self: &mut Self) {
+    pub fn reset(&mut self) {
         self.bptr = 0;
         self.b = 0;
     }
@@ -203,7 +203,7 @@ pub(crate) fn dc_read<B: BinaryReader>(
     dc_decode: &HuffmanDecodeTable,
     pred: i32,
 ) -> Result<i32, Error> {
-    let ssss = huffman_read(bitread, &dc_decode)?;
+    let ssss = huffman_read(bitread, dc_decode)?;
     let v = bitread.get_bits(ssss as usize)?;
     let diff = extend(v, ssss as usize);
     let dc = diff + pred;
@@ -219,7 +219,7 @@ pub(crate) fn ac_read<B: BinaryReader>(
     let mut zz = [0_i32; 64];
     loop {
         // F2.2.2
-        let ac = huffman_read(bitread, &ac_decode)?;
+        let ac = huffman_read(bitread, ac_decode)?;
 
         let ssss = ac & 0xf;
         let rrrr = ac >> 4;
@@ -230,12 +230,12 @@ pub(crate) fn ac_read<B: BinaryReader>(
             }
             if rrrr == 15 {
                 //ZRL
-                zigzag = zigzag + 16;
+                zigzag += 16;
                 continue;
             }
             return Ok(zz.to_vec()); // N/A
         } else {
-            zigzag = zigzag + rrrr as usize;
+            zigzag += rrrr as usize;
             let v = bitread.get_bits(ssss as usize)?;
             let z = extend(v, ssss as usize);
             if zigzag <= 63 {
@@ -245,7 +245,7 @@ pub(crate) fn ac_read<B: BinaryReader>(
         if zigzag >= 63 {
             return Ok(zz.to_vec());
         }
-        zigzag = zigzag + 1;
+        zigzag += 1;
     }
 }
 
@@ -264,7 +264,7 @@ pub(crate) fn baseline_read<B: BinaryReader>(
 
 #[inline]
 pub(crate) fn extend(v: i32, t: usize) -> i32 {
-    let mut v = v as i32;
+    let mut v = v;
     if t == 0 {
         return v;
     }
@@ -312,18 +312,18 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
 #[cfg(feature = "idct_llm")]
 pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
     let m1 = 0.5411961; // α √2cos(3π/8)
-    let m2 = 1.306562965; // β √2cos(3π/8)
-    let m3 = 1.414213562; // γ v2
-    let m4 = 0.831469612; // η cos(3π/16)
-    let m5 = 0.555570233; // θ sin(3π/16)
+    let m2 = 1.306_563; // β √2cos(3π/8)
+    let m3 = 1.414_213_5; // γ v2
+    let m4 = 0.831_469_6; // η cos(3π/16)
+    let m5 = 0.555_570_24; // θ sin(3π/16)
     let m6 = 0.98078528; // δ cos(π/16)
-    let m7 = 0.195090322; // ε sin(π/16)
+    let m7 = 0.195_090_32; // ε sin(π/16)
     let m0 = 0.125; // √2/4 * √2/4
 
     let mut ff = [0_f32; 64];
     for j in 0..8 {
         let i = j * 8;
-        let f0 = f[0 + i] as f32; // X0
+        let f0 = f[i] as f32; // X0
         let f1 = f[1 + i] as f32; // X1
         let f2 = f[2 + i] as f32; // X2
         let f3 = f[3 + i] as f32; // X3
@@ -371,7 +371,7 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
 
         // last part  multiply √2 / 4 after parts
 
-        ff[0 + i] = x0 + x7; // x0
+        ff[i] = x0 + x7; // x0
         ff[7 + i] = x0 - x7; // x1
         ff[1 + i] = x1 + x6; // x2
         ff[6 + i] = x1 - x6; // x3
@@ -381,8 +381,8 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
         ff[4 + i] = x3 - x4; // x7
     }
     for i in 0..8 {
-        let f0 = ff[0 * 8 + i];
-        let f1 = ff[1 * 8 + i];
+        let f0 = ff[i];
+        let f1 = ff[8 + i];
         let f2 = ff[2 * 8 + i];
         let f3 = ff[3 * 8 + i];
         let f4 = ff[4 * 8 + i];
@@ -426,9 +426,9 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
         let x6 = y6 * m6 + y5 * m7;
         let x7 = y7 * m4 + y4 * m5;
 
-        ff[0 * 8 + i] = (x0 + x7) * m0;
+        ff[i] = (x0 + x7) * m0;
         ff[7 * 8 + i] = (x0 - x7) * m0;
-        ff[1 * 8 + i] = (x1 + x6) * m0;
+        ff[8 + i] = (x1 + x6) * m0;
         ff[6 * 8 + i] = (x1 - x6) * m0;
         ff[2 * 8 + i] = (x2 + x5) * m0;
         ff[5 * 8 + i] = (x2 - x5) * m0;
@@ -610,29 +610,29 @@ pub(crate) fn convert_rgb(
     color_space: String,
     (h_max, v_max): (usize, usize),
 ) -> Vec<u8> {
-    let data = if plane == 3 {
+     // g / ga
+    if plane == 3 {
         if &color_space == "RGB" {
-            rgb_to_rgb(&mcu_units, &component, (h_max, v_max))
+            rgb_to_rgb(mcu_units, component, (h_max, v_max))
         }
         // RGB
         else {
-            yuv_to_rgb(&mcu_units, &component, (h_max, v_max))
+            yuv_to_rgb(mcu_units, component, (h_max, v_max))
         }
     } else if plane == 4 {
         // hasBug
         if &color_space == "YCcK" {
-            ycck_to_rgb(&mcu_units, &component, (h_max, v_max))
+            ycck_to_rgb(mcu_units, component, (h_max, v_max))
         }
         // YCcK Spec Unknown
         else if &color_space == "CMYK" {
-            cmyk_to_rgb(&mcu_units, &component, (h_max, v_max))
+            cmyk_to_rgb(mcu_units, component, (h_max, v_max))
         } else {
-            yuv_to_rgb(&mcu_units, &component, (h_max, v_max))
+            yuv_to_rgb(mcu_units, component, (h_max, v_max))
         }
     } else {
-        y_to_rgb(&mcu_units, &component)
-    }; // g / ga
-    data
+        y_to_rgb(mcu_units, component)
+    }
 }
 
 // Glayscale
@@ -669,10 +669,10 @@ pub(crate) fn yuv_to_rgb(
     let u_map = y_map + hv_maps[0].h * hv_maps[0].v;
     let v_map = u_map + hv_maps[1].h * hv_maps[1].v;
 
-    let uy = v_max / hv_maps[1].v as usize;
-    let vy = v_max / hv_maps[2].v as usize;
-    let ux = h_max / hv_maps[1].h as usize;
-    let vx = h_max / hv_maps[2].h as usize;
+    let uy = v_max / hv_maps[1].v;
+    let vy = v_max / hv_maps[2].v;
+    let ux = h_max / hv_maps[1].h;
+    let vx = h_max / hv_maps[2].h;
 
     for v in 0..v_max {
         let mut u_map_cur = u_map + v / v_max;
@@ -680,8 +680,8 @@ pub(crate) fn yuv_to_rgb(
 
         for h in 0..h_max {
             let gray = &yuv[v * h_max + h];
-            u_map_cur = u_map_cur + h / h_max;
-            v_map_cur = v_map_cur + h / h_max;
+            u_map_cur += h / h_max;
+            v_map_cur += h / h_max;
 
             for y in 0..8 {
                 let offset = ((y + v * 8) * (8 * h_max)) * 4;
@@ -729,12 +729,12 @@ pub(crate) fn rgb_to_rgb(
     let g_map = r_map + hv_maps[0].h * hv_maps[0].v;
     let b_map = g_map + hv_maps[1].h * hv_maps[1].v;
 
-    let ry = v_max / hv_maps[0].v as usize;
-    let gy = v_max / hv_maps[1].v as usize;
-    let by = v_max / hv_maps[2].v as usize;
-    let rx = h_max / hv_maps[0].h as usize;
-    let gx = h_max / hv_maps[1].h as usize;
-    let bx = h_max / hv_maps[2].h as usize;
+    let ry = v_max / hv_maps[0].v;
+    let gy = v_max / hv_maps[1].v;
+    let by = v_max / hv_maps[2].v;
+    let rx = h_max / hv_maps[0].h;
+    let gx = h_max / hv_maps[1].h;
+    let bx = h_max / hv_maps[2].h;
 
     for v in 0..v_max {
         let mut r_map_cur = r_map + v / v_max;
@@ -742,9 +742,9 @@ pub(crate) fn rgb_to_rgb(
         let mut b_map_cur = b_map + v / v_max;
 
         for h in 0..h_max {
-            r_map_cur = r_map_cur + h / h_max;
-            g_map_cur = g_map_cur + h / h_max;
-            b_map_cur = b_map_cur + h / h_max;
+            r_map_cur += h / h_max;
+            g_map_cur += h / h_max;
+            b_map_cur += h / h_max;
 
             for y in 0..8 {
                 let offset = ((y + v * 8) * (8 * h_max)) * 4;
@@ -779,15 +779,15 @@ pub(crate) fn ycck_to_rgb(
     let c2_map = c1_map + hv_maps[1].h * hv_maps[1].v;
     let k_map = c2_map + hv_maps[2].h * hv_maps[2].v;
 
-    let _yy = v_max / hv_maps[0].v as usize;
-    let c1y = v_max / hv_maps[1].v as usize;
-    let c2y = v_max / hv_maps[2].v as usize;
-    let _ky = v_max / hv_maps[3].v as usize;
+    let _yy = v_max / hv_maps[0].v;
+    let c1y = v_max / hv_maps[1].v;
+    let c2y = v_max / hv_maps[2].v;
+    let _ky = v_max / hv_maps[3].v;
 
-    let _yx = h_max / hv_maps[0].h as usize;
-    let c1x = h_max / hv_maps[1].h as usize;
-    let c2x = h_max / hv_maps[2].h as usize;
-    let _kx = h_max / hv_maps[3].h as usize;
+    let _yx = h_max / hv_maps[0].h;
+    let c1x = h_max / hv_maps[1].h;
+    let c2x = h_max / hv_maps[2].h;
+    let _kx = h_max / hv_maps[3].h;
 
     for v in 0..v_max {
         let y_map_cur = y_map + v / v_max;
@@ -866,15 +866,15 @@ pub(crate) fn cmyk_to_rgb(
     let y_map = m_map + hv_maps[1].h * hv_maps[1].v;
     let k_map = y_map + hv_maps[2].h * hv_maps[2].v;
 
-    let cy = v_max / hv_maps[0].v as usize;
-    let my = v_max / hv_maps[1].v as usize;
-    let yy = v_max / hv_maps[2].v as usize;
-    let ky = v_max / hv_maps[3].v as usize;
+    let cy = v_max / hv_maps[0].v;
+    let my = v_max / hv_maps[1].v;
+    let yy = v_max / hv_maps[2].v;
+    let ky = v_max / hv_maps[3].v;
 
-    let cx = h_max / hv_maps[0].h as usize;
-    let mx = h_max / hv_maps[1].h as usize;
-    let yx = h_max / hv_maps[2].h as usize;
-    let kx = h_max / hv_maps[3].h as usize;
+    let cx = h_max / hv_maps[0].h;
+    let mx = h_max / hv_maps[1].h;
+    let yx = h_max / hv_maps[2].h;
+    let kx = h_max / hv_maps[3].h;
 
     for v in 0..v_max {
         let mut c_map_cur = c_map + v / cy;
@@ -883,10 +883,10 @@ pub(crate) fn cmyk_to_rgb(
         let mut k_map_cur = k_map + v / ky;
 
         for h in 0..h_max {
-            c_map_cur = c_map_cur + h / cx;
-            m_map_cur = m_map_cur + h / mx;
-            y_map_cur = y_map_cur + h / yx;
-            k_map_cur = k_map_cur + h / kx;
+            c_map_cur += h / cx;
+            m_map_cur += h / mx;
+            y_map_cur += h / yx;
+            k_map_cur += h / kx;
 
             for y in 0..8 {
                 let offset = ((y + v * 8) * (8 * h_max)) * 4;
@@ -936,15 +936,15 @@ pub(crate) fn expand_huffman_table(huffman_table: &HuffmanTable) -> Option<Huffm
             current_min.push(-1);
             current_max.push(-1);
         }
-        code = code << 1;
+        code <<= 1;
     }
 
-    let val: Vec<usize> = huffman_table.val.iter().map(|i| *i).collect();
-    let pos: Vec<usize> = huffman_table.pos.iter().map(|i| *i).collect();
+    let val: Vec<usize> = huffman_table.val.to_vec();
+    let pos: Vec<usize> = huffman_table.pos.to_vec();
 
     Some(HuffmanDecodeTable {
-        val: val,
-        pos: pos,
+        val,
+        pos,
         max: current_max,
         min: current_min,
     })
@@ -1059,7 +1059,7 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
 
     let mut bitread = BitReader::new(reader);
     let (mcu_size, h_max, v_max, dx, dy) = calc_mcu(&component);
-    let scan = calc_scan(&component, &huffman_scan_header);
+    let scan = calc_scan(&component, huffman_scan_header);
 
     let mut preds: Vec<i32> = (0..component.len()).map(|_| 0).collect();
 
@@ -1135,8 +1135,8 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                 let (dc_current, ac_current, i, tq, _, _) = scan[scannumber];
                 let ret = baseline_read(
                     &mut bitread,
-                    &dc_decode[dc_current].as_ref().unwrap(),
-                    &ac_decode[ac_current].as_ref().unwrap(),
+                    dc_decode[dc_current].as_ref().unwrap(),
+                    ac_decode[ac_current].as_ref().unwrap(),
                     preds[i],
                 );
                 let (zz, pred);
@@ -1160,9 +1160,9 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                 let _ = tx1.send((ThreadCommand::Run, zz, mcu_x, mcu_y, tq));
             }
             if header.interval > 0 {
-                mcu_interval = mcu_interval - 1;
+                mcu_interval -= 1;
                 if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
-                    if bitread.rst()? == true {
+                    if bitread.rst()? {
                         if cfg!(debug_assertions) {
                             println!(
                                 "strange reset interval {},{} {} {}",
@@ -1176,7 +1176,7 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                     } else {
                         // Reset Interval
                         let r = bitread.next_marker()?;
-                        if r >= 0xd0 && r <= 0xd7 {
+                        if (0xd0..=0xd7).contains(&r) {
                             mcu_interval = header.interval as isize;
                             for i in 0..preds.len() {
                                 preds[i] = 0;
@@ -1195,7 +1195,7 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                             return Ok(warnings);
                         }
                     }
-                } else if bitread.rst()? == true {
+                } else if bitread.rst()? {
                     warnings = ImgWarnings::add(
                         warnings,
                         Box::new(JpegWarning::new_const(
@@ -1510,7 +1510,7 @@ pub fn decode<'decode, B: BinaryReader>(
         )));
     }
 
-    if fh.is_huffman == false {
+    if !fh.is_huffman {
         return Err(Box::new(ImgError::new_const(
             ImgErrorKind::DecodeError,
             "This decoder suport huffman only".to_string(),
@@ -1521,7 +1521,7 @@ pub fn decode<'decode, B: BinaryReader>(
     //        return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"This Decoder is not support progressive".to_string())));
     //    }
 
-    if fh.is_differential == true {
+    if fh.is_differential {
         return Err(Box::new(ImgError::new_const(
             ImgErrorKind::DecodeError,
             "This Decoder not support differential".to_string(),

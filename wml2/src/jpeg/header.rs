@@ -554,14 +554,12 @@ impl JpegHaeder {
         let mut _jpeg_app_headers: Vec<JpegAppHeaders> = Vec::new();
         let jpeg_app_headers: Option<Vec<JpegAppHeaders>>;
         let mut adobe_color_transform = 0;
-        let mut offset = 0;
 
         'header: loop {
             let byte = reader.read_byte()?; // read byte
             if byte == 0xff {
                 // header head
                 let nextbyte: u8 = reader.read_byte()?;
-                offset += 2;
                 match nextbyte {
                     0xc4 => {
                         // DHT maker
@@ -589,7 +587,6 @@ impl JpegHaeder {
                             height = fh.height;
                             bpp = fh.bitperpixel * fh.plane;
                             frame_header = Some(fh);
-                            offset += length; //skip
                         } else {
                             return Err(Box::new(ImgError::new_const(
                                 ImgErrorKind::DecodeError,
@@ -718,7 +715,6 @@ impl JpegHaeder {
                             _ => {}
                         }
                         _jpeg_app_headers.push(result);
-                        offset += length; // skip
                     }
                     0xff => { // padding
                          // offset = offset + 1;

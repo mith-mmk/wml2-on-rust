@@ -23,7 +23,6 @@ pub fn decode<'decode, B: BinaryReader>(
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
     let mut header = GifHeader::new(reader, option.debug_flag)?;
-    let mut ptr = header.header_size;
     let mut comment = "".to_string();
     let mut is_transpearent = false;
     let mut transperarent_color = 0x00;
@@ -72,7 +71,6 @@ pub fn decode<'decode, B: BinaryReader>(
                                 let comment = reader.read_ascii_string(len)?;
                                 s = s.to_owned() + &comment;
                             }
-                            ptr += len;
                         }
                         if option.debug_flag > 0 {
                             option
@@ -146,7 +144,6 @@ pub fn decode<'decode, B: BinaryReader>(
                         if len == 0 {
                             break;
                         }
-                        ptr += len;
                     },
                 }
             }
@@ -198,7 +195,6 @@ pub fn decode<'decode, B: BinaryReader>(
                         }
                     }
                 }
-                ptr += 9;
                 let has_local_pallet;
                 let mut local_color_table = Vec::new();
                 if lscd.field & 0x80 == 0x80 {

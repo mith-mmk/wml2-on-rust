@@ -189,26 +189,26 @@ impl NextOptions {
 }
 
 #[derive(std::cmp::PartialEq, Debug)]
-pub enum ResposeCommand {
+pub enum ResponseCommand {
     Abort,
     Continue,
 }
 
 #[derive(Debug)]
 pub struct CallbackResponse {
-    pub response: ResposeCommand,
+    pub response: ResponseCommand,
 }
 
 impl CallbackResponse {
     pub fn abort() -> Self {
         Self {
-            response: ResposeCommand::Abort,
+            response: ResponseCommand::Abort,
         }
     }
 
     pub fn cont() -> Self {
         Self {
-            response: ResposeCommand::Continue,
+            response: ResponseCommand::Continue,
         }
     }
 }

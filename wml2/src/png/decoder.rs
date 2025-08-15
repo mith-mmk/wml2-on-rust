@@ -972,7 +972,7 @@ pub fn decode<'decode, B: BinaryReader>(
                                     let next = next_options(frame_control);
                                     let result = option.drawer.next(Some(next))?;
                                     if let Some(response) = result {
-                                        if response.response == ResposeCommand::Continue {
+                                        if response.response == ResponseCommand::Continue {
                                             allow_multi_image = true;
                                             load(&mut header.clone(), &debuffer, option)?;
                                             // Image = Animation Frame 0
@@ -1055,7 +1055,7 @@ pub fn decode<'decode, B: BinaryReader>(
                         let next = next_options(&frame_control);
                         let result = option.drawer.next(Some(next))?;
                         if let Some(response) = result {
-                            if response.response == ResposeCommand::Continue {
+                            if response.response == ResponseCommand::Continue {
                                 allow_multi_image = true;
                             }
                             if option.debug_flag > 0 {

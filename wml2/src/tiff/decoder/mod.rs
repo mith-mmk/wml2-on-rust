@@ -811,7 +811,7 @@ pub fn decode<'decode, B: BinaryReader>(
 
                 let result = option.drawer.next(Some(opt))?;
                 if let Some(response) = result {
-                    if response.response == ResposeCommand::Abort {
+                    if response.response == ResponseCommand::Abort {
                         return Ok(warnings);
                     }
                 }

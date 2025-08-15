@@ -11,7 +11,7 @@ use crate::warning::ImgWarnings;
 use bin_rs::io::read_ascii_string;
 use bin_rs::reader::BinaryReader;
 
-const SEPARATER: u8 = b','; // 0x2c
+const SEPARATOR: u8 = b','; // 0x2c
 const EXTEND_BLOCK: u8 = b'!'; // 0x21
 const COMMENT_LABEL: u8 = 0xfe;
 const GRAPHIC_CONTROLE: u8 = 0xf9;
@@ -24,8 +24,8 @@ pub fn decode<'decode, B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let mut header = GifHeader::new(reader, option.debug_flag)?;
     let mut comment = "".to_string();
-    let mut is_transpearent = false;
-    let mut transperarent_color = 0x00;
+    let mut is_transparent = false;
+    let mut transparent_color = 0x00;
     let mut delay_time = 0;
     let mut loop_count = 0;
     let mut is_inited = false;
@@ -88,17 +88,17 @@ pub fn decode<'decode, B: BinaryReader>(
                         let flag = reader.read_byte()?;
                         delay_time = reader.read_u16_le()?;
 
-                        if is_transpearent {
-                            header.color_table[transperarent_color].alpha = 0xff;
+                        if is_transparent {
+                            header.color_table[transparent_color].alpha = 0xff;
                         }
 
-                        is_transpearent = flag & 0x1 == 1;
+                        is_transparent = flag & 0x1 == 1;
 
-                        transperarent_color = reader.read_byte()? as usize;
+                        transparent_color = reader.read_byte()? as usize;
                         if option.debug_flag > 0 {
                             let s = format!(
-                                "Grahic Controle {} delay {}ms  transpearent {:?}",
-                                flag, delay_time, is_transpearent
+                                "Grahic Control {} delay {}ms  transpearent {:?}",
+                                flag, delay_time, is_transparent
                             );
                             option.drawer.verbose(&s, None)?;
                         }
@@ -148,7 +148,7 @@ pub fn decode<'decode, B: BinaryReader>(
                 }
             }
 
-            SEPARATER => {
+            SEPARATOR => {
                 let lscd = GifLscd::new(reader)?;
                 if !is_inited {
                     let init = InitOptions {
@@ -190,15 +190,15 @@ pub fn decode<'decode, B: BinaryReader>(
 
                     let result = option.drawer.next(Some(opt))?;
                     if let Some(response) = result {
-                        if response.response == ResposeCommand::Abort {
+                        if response.response == ResponseCommand::Abort {
                             return Ok(None);
                         }
                     }
                 }
-                let has_local_pallet;
+                let has_local_palette;
                 let mut local_color_table = Vec::new();
                 if lscd.field & 0x80 == 0x80 {
-                    has_local_pallet = true;
+                    has_local_palette = true;
                     let color_table_size = (1 << ((lscd.field & 0x07) + 1)) as usize;
                     for _ in 0..color_table_size {
                         let color = RGBA {
@@ -209,15 +209,15 @@ pub fn decode<'decode, B: BinaryReader>(
                         };
                         local_color_table.push(color);
                     }
-                    if is_transpearent {
-                        local_color_table[transperarent_color].alpha = 0x00;
+                    if is_transparent {
+                        local_color_table[transparent_color].alpha = 0x00;
                     }
                 } else {
-                    has_local_pallet = false;
-                    if is_transpearent {
-                        header.color_table[transperarent_color].alpha = 0x00;
+                    has_local_palette = false;
+                    if is_transparent {
+                        header.color_table[transparent_color].alpha = 0x00;
                     }
-                    header.color_table[transperarent_color].alpha = 0xff;
+                    // header.color_table[transparent_color].alpha = 0xff;
                 }
                 // LZW block
                 let lzw_min_bits = reader.read_byte()? as usize;
@@ -231,7 +231,7 @@ pub fn decode<'decode, B: BinaryReader>(
                 }
                 let mut decoder = Lzwdecode::gif(lzw_min_bits);
                 let data = decoder.decode(&buf)?;
-                let color_table = if has_local_pallet {
+                let color_table = if has_local_palette {
                     &local_color_table
                 } else {
                     &header.color_table

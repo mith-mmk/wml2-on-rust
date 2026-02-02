@@ -445,7 +445,7 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
 
 #[inline]
 // AAN algorythm
-#[cfg(not(any(feature = "idct_llm", feture = "idct_slower")))]
+#[cfg(not(any(feature = "idct_llm", feature = "idct_slower")))]
 pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
     let mut _f = [0_f32; 64];
     let mut vals = [0_u8; 64];

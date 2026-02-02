@@ -20,7 +20,7 @@ crate-type = ["rlib"]
 #use LL&M for IDCT
 idct_llm = []   
 #use Slower for IDCT
-idct_slowerm = [] 
+idct_slower = [] 
 #default use AAN for IDCT
 #png = []
 #tiff = []

@@ -31,7 +31,36 @@ pub fn print_tags(header: &TiffHeaders) -> String {
             for tag in exif {
                 let (tag_name, _) = tag_mapper(tag.tagid as u16, &tag.data, tag.length);
                 let string = print_data(&tag.data, tag.length);
-                s += &(tag_name + " : " + &string + "\n");
+                if tag_name == "UserComment" {
+                    // parse user comment
+                    // ASCII\0\0\0xxxxxxxxxx...
+                    // tag.data : Undef<Vec<u8>>
+                   let bytes = tag.data.get_bytes().unwrap();
+                    // print head   
+                    let head: Vec<u8> = bytes[0..8].to_vec();
+                    let body: Vec<u8> = bytes[8..].to_vec();
+                    let comment = if head == b"ASCII\0\0\0" {
+                        String::from_utf8_lossy(&body).to_string()
+                    } else if head == b"JIS\0\0\0\0" {
+                        // not supported
+                        "[JIS encoding not supported]".to_string()
+                    } else if head == b"Unicode\0" {
+                        // UTF-16BE
+                        let u16_data: Vec<u16> = 
+                            body
+                            .chunks(2)
+                            .map(|b| u16::from_be_bytes([b[0], b[1]]))
+                            .collect();
+                            String::from_utf16_lossy(&u16_data)
+                    } else {
+                        let u8_data: Vec<u8> = body.clone();
+                        String::from_utf8_lossy(&u8_data).to_string()
+                    };
+                    //let comment = parse_exif_user_comment(&tag.data);
+                    s += &(tag_name + " : " + &comment + "\n");
+                } else {
+                    s += &(tag_name + " : " + &string + "\n");
+                }
             }
         }
         _ => {}

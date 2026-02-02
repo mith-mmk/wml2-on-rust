@@ -23,6 +23,7 @@ trait RationalNumber {
     fn numerator(&self) -> u64;
 }
 
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rational {
     pub n: u32,
@@ -138,6 +139,17 @@ impl DataPack {
             }
         }
     }
+
+    pub fn get_bytes(&self) -> Option<&Vec<u8>> {
+        match self {
+            DataPack::Bytes(d) => Some(d),
+            DataPack::Undef(d) => Some(d),
+
+            _ => None,
+        } 
+
+    }
+
 }
 
 #[allow(unused)]
@@ -1006,7 +1018,7 @@ pub fn read_tags(reader: &mut dyn bin_rs::reader::BinaryReader) -> Result<TiffHe
             "not Tiff".to_string(),
         )));
     }
-    let offset_ifd = reader.read_u32()? as usize;
+    let offset_ifd = reader.read_u32()? as u64;
     read_tag(reader, offset_ifd, IfdMode::BaseTiff)
 }
 
@@ -1246,7 +1258,7 @@ fn get_data(
 
 fn read_tag(
     reader: &mut dyn BinaryReader,
-    mut offset_ifd: usize,
+    mut offset_ifd: u64,
     mode: IfdMode,
 ) -> Result<TiffHeaders, Error> {
     let endian = reader.endian();
@@ -1288,7 +1300,7 @@ fn read_tag(
                             DataPack::Long(d) => {
                                 let current = reader.offset()?;
                                 reader.seek(SeekFrom::Start(d[0] as u64))?;
-                                let r = read_tag(reader, d[0] as usize, IfdMode::Exif)?; // read exif
+                                let r = read_tag(reader, d[0] as u64, IfdMode::Exif)?; // read exif
                                 headers.exif = Some(r.headers);
                                 reader.seek(SeekFrom::Start(current))?;
                             }
@@ -1301,7 +1313,7 @@ fn read_tag(
                             DataPack::Long(d) => {
                                 let current = reader.offset()?;
                                 reader.seek(SeekFrom::Start(d[0] as u64))?;
-                                let r = read_tag(reader, d[0] as usize, IfdMode::Gps)?; // read gps
+                                let r = read_tag(reader, d[0] as u64, IfdMode::Gps)?; // read gps
                                 reader.seek(SeekFrom::Start(current))?;
                                 headers.gps = Some(r.headers);
                             }
@@ -1326,7 +1338,7 @@ fn read_tag(
         if next_ifd == 0 || mode != IfdMode::BaseTiff {
             break;
         }
-        offset_ifd = next_ifd as usize;
+        offset_ifd = next_ifd as u64;
     }
 
     Ok(headers)

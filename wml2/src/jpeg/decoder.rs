@@ -610,7 +610,7 @@ pub(crate) fn convert_rgb(
     color_space: String,
     (h_max, v_max): (usize, usize),
 ) -> Vec<u8> {
-     // g / ga
+    // g / ga
     if plane == 3 {
         if &color_space == "RGB" {
             rgb_to_rgb(mcu_units, component, (h_max, v_max))

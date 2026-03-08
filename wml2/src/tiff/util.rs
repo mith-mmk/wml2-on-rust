@@ -35,8 +35,8 @@ pub fn print_tags(header: &TiffHeaders) -> String {
                     // parse user comment
                     // ASCII\0\0\0xxxxxxxxxx...
                     // tag.data : Undef<Vec<u8>>
-                   let bytes = tag.data.get_bytes().unwrap();
-                    // print head   
+                    let bytes = tag.data.get_bytes().unwrap();
+                    // print head
                     let head: Vec<u8> = bytes[0..8].to_vec();
                     let body: Vec<u8> = bytes[8..].to_vec();
                     let comment = if head == b"ASCII\0\0\0" {
@@ -46,12 +46,11 @@ pub fn print_tags(header: &TiffHeaders) -> String {
                         "[JIS encoding not supported]".to_string()
                     } else if head == b"Unicode\0" {
                         // UTF-16BE
-                        let u16_data: Vec<u16> = 
-                            body
+                        let u16_data: Vec<u16> = body
                             .chunks(2)
                             .map(|b| u16::from_be_bytes([b[0], b[1]]))
                             .collect();
-                            String::from_utf16_lossy(&u16_data)
+                        String::from_utf16_lossy(&u16_data)
                     } else {
                         let u8_data: Vec<u8> = body.clone();
                         String::from_utf8_lossy(&u8_data).to_string()

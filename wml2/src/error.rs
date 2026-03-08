@@ -9,7 +9,7 @@ impl Error for ImgError {}
 
 impl Display for ImgError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{:?}", &self.repr)
+        Display::fmt(&self.repr, f)
     }
 }
 
@@ -66,11 +66,35 @@ impl ImgError {
     }
 }
 
-#[derive(Debug)]
 pub(crate) enum Repr {
-    // &str is a fat pointer, but &&str is a thin pointer.
     SimpleMessage(ImgErrorKind, String),
     Custom(Box<Custom>),
+}
+
+impl Display for Repr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Self::SimpleMessage(kind, message) => write!(f, "{}: {}", kind.as_str(), message),
+            Self::Custom(custom) => write!(f, "{}: {}", custom.kind.as_str(), custom.error),
+        }
+    }
+}
+
+impl Debug for Repr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Self::SimpleMessage(kind, message) => f
+                .debug_struct("SimpleMessage")
+                .field("kind", kind)
+                .field("message", message)
+                .finish(),
+            Self::Custom(custom) => f
+                .debug_struct("Custom")
+                .field("kind", &custom.kind)
+                .field("error", &custom.error)
+                .finish(),
+        }
+    }
 }
 
 #[allow(unused)]

@@ -16,38 +16,30 @@ use bin_rs::reader::BinaryReader;
 use bin_rs::Endian;
 use std::io::SeekFrom;
 
-trait RationalNumber {
-    fn as_f32(&self) -> f32;
-    fn as_f64(&self) -> f64;
-    fn denominator(&self) -> u64;
-    fn numerator(&self) -> u64;
-}
-
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rational {
     pub n: u32,
     pub d: u32,
 }
 
-impl RationalNumber for Rational {
-    fn as_f32(&self) -> f32 {
+impl Rational {
+    pub fn as_f32(&self) -> f32 {
         let n = self.n as f32;
         let d = self.d as f32;
         n / d
     }
 
-    fn as_f64(&self) -> f64 {
+    pub fn as_f64(&self) -> f64 {
         let n = self.n as f64;
         let d = self.d as f64;
         n / d
     }
 
-    fn denominator(&self) -> u64 {
+    pub fn denominator(&self) -> u64 {
         self.d as u64
     }
 
-    fn numerator(&self) -> u64 {
+    pub fn numerator(&self) -> u64 {
         self.n as u64
     }
 }
@@ -58,24 +50,24 @@ pub struct SRational {
     pub d: i32,
 }
 
-impl RationalNumber for SRational {
-    fn as_f32(&self) -> f32 {
+impl SRational {
+    pub fn as_f32(&self) -> f32 {
         let n = self.n as f64;
         let d = self.d as f64;
         (n / d) as f32
     }
 
-    fn as_f64(&self) -> f64 {
+    pub fn as_f64(&self) -> f64 {
         let n = self.n as f64;
         let d = self.d as f64;
         n / d
     }
 
-    fn denominator(&self) -> u64 {
+    pub fn denominator(&self) -> u64 {
         self.d as u64
     }
 
-    fn numerator(&self) -> u64 {
+    pub fn numerator(&self) -> u64 {
         self.n as u64
     }
 }
@@ -146,10 +138,8 @@ impl DataPack {
             DataPack::Undef(d) => Some(d),
 
             _ => None,
-        } 
-
+        }
     }
-
 }
 
 #[allow(unused)]

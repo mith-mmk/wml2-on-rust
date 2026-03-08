@@ -20,6 +20,3 @@ features = ["multithread","idct_llm"]
 
 [dependencies.icc-profile]
 git = "https://github.com/mith-mmk/icc_profile"
-
-[profile.release]
-opt-level = 3

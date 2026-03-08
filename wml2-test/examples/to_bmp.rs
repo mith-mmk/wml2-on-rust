@@ -63,11 +63,8 @@ fn wml_test(filename: String, out_path: String) -> Result<(), Box<dyn Error>> {
                 layer.control.blend,
                 layer.control.dispose_option
             );
-            let mut image = ImageBuffer::from_buffer(
-                layer.width,
-                layer.height,
-                layer.buffer.to_vec(),
-            );
+            let mut image =
+                ImageBuffer::from_buffer(layer.width, layer.height, layer.buffer.to_vec());
 
             let mut option = EncodeOptions {
                 debug_flag: 0x01,

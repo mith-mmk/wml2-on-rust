@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 members = [
     "wml2",
     "wml2-test",
@@ -7,3 +8,6 @@ members = [
 exclude = [
     "wml2-win"
 ]
+
+[profile.release]
+opt-level = 3

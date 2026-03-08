@@ -735,12 +735,10 @@ fn compression_decode<'decode, B: BinaryReader>(
         | Compression::CCITTGroup4Fax => {
             return decode_ccitt_compresson(reader, option, header);
         }
-        _ => {
-            Err(Box::new(ImgError::new_const(
-                ImgErrorKind::DecodeError,
-                "Not suport compression".to_string(),
-            )))
-        }
+        _ => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::DecodeError,
+            "Not suport compression".to_string(),
+        ))),
     }
 }
 

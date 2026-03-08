@@ -72,7 +72,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
  - next -> 複数イメージが存在する場合、次の処理を要求します。
   - アニメーション(GIF/APNG)もしくはマルチイメージフォーマット（Tiffなど）をサポートするときに利用。
  - terminate -> デコーダが終了したときに呼び出され、後処理をおこなう関数
- - set_metadata -> メタデータをセットする(0.0.10移行)
+ - set_metadata -> メタデータをセットする(0.0.10以降) 0.0.12でexif User Commentのデコードを追加
 
 # using saver
 ```rust

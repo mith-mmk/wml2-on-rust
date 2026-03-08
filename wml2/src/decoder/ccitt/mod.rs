@@ -56,7 +56,6 @@ pub struct BitReader {
 
 impl BitReader {
     pub fn new(data: &[u8], is_lsb: bool) -> Self {
-        
         Self {
             buffer: data.to_vec(),
             last_byte: 0,

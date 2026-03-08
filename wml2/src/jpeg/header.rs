@@ -130,11 +130,7 @@ impl FrameHeader {
         let mut is_progressive: bool = false;
         let mut is_lossress: bool = false;
         let mut is_differential: bool = false;
-        
-        
-        
-        
-        
+
         let mut component: Vec<Component>;
         let mut color_space = "YUV".to_string();
 

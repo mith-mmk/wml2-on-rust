@@ -705,12 +705,10 @@ pub fn image_decoder<B: BinaryReader>(
         Tiff => {
             return crate::tiff::decoder::decode(reader, option);
         }
-        _ => {
-            Err(Box::new(ImgError::new_const(
-                ImgErrorKind::NoSupportFormat,
-                "This buffer can not decode".to_string(),
-            )))
-        }
+        _ => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            "This buffer can not decode".to_string(),
+        ))),
     }
 }
 
@@ -724,11 +722,9 @@ pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<
         Png => {
             return crate::png::encoder::encode(option);
         }
-        _ => {
-            Err(Box::new(ImgError::new_const(
-                ImgErrorKind::NoSupportFormat,
-                "This encoder no impl".to_string(),
-            )))
-        }
+        _ => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            "This encoder no impl".to_string(),
+        ))),
     }
 }

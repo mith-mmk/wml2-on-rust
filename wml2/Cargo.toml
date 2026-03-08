@@ -32,7 +32,3 @@ multithread = []
 #bin-rs = {version = "0.0.9",features = ["util"]}
 bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"] }
 miniz_oxide = {version = "0.5.1"}
-
-[profile.release]
-opt-level = 3
-

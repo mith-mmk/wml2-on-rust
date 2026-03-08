@@ -54,7 +54,7 @@ impl Lzwdecode {
             dic: Vec::with_capacity(max_table),
             prev_code: clear_code,
             is_init: false,
-            is_lsb,   // GIF Must True
+            is_lsb,  // GIF Must True
             is_tiff, // if tiff set 1
         }
     }
@@ -209,7 +209,10 @@ impl Lzwdecode {
                     self.dic.push(table);
                     // Tiff LZW is increment entry value before next loop.
                     let next = self.dic.len() + self.is_tiff;
-                    if next == self.bit_mask as usize + 1 && next < self.max_table && self.cbl < MAX_CBL {
+                    if next == self.bit_mask as usize + 1
+                        && next < self.max_table
+                        && self.cbl < MAX_CBL
+                    {
                         self.cbl += 1;
                         self.bit_mask = (self.bit_mask << 1) | 1;
                     }

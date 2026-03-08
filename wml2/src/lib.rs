@@ -60,6 +60,7 @@ pub mod gif;
 pub mod jpeg;
 pub mod png;
 pub mod tiff;
+pub mod mag;
 pub mod util;
 pub mod warning;
 //pub mod iccprofile;

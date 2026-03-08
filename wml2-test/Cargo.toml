@@ -13,6 +13,7 @@ default = []
 
 [dependencies]
 dotenv = "0.15"
+encoding_rs = "0.8"
 
 [dependencies.wml2]
 path = "../wml2"

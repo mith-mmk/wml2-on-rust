@@ -16,6 +16,7 @@ pub enum DataMap {
     Raw(Vec<u8>),
     Ascii(String),
     I18NString(String),
+    SJISString(Vec<u8>),
     Exif(TiffHeaders),
     ICCProfile(Vec<u8>),
     None,
@@ -41,6 +42,9 @@ impl DataMap {
             }
             DataMap::Ascii(d) => d.to_string(),
             DataMap::I18NString(d) => d.to_string(),
+            DataMap::SJISString(d) => {
+                format!("{:?}", d)
+            },
             DataMap::Exif(header) => header.to_string(),
             DataMap::ICCProfile(iccprofile) => {
                 format!("{:?}", iccprofile)

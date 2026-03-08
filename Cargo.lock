@@ -20,10 +20,25 @@ version = "0.0.8"
 source = "git+https://github.com/mith-mmk/bin-rs#4928d230eb0c6c45723d8059cf3a1ef1d44ff723"
 
 [[package]]
+name = "cfg-if"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
+
+[[package]]
 name = "dotenv"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
+name = "encoding_rs"
+version = "0.8.35"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75030f3c4f45dafd7586dd6780965a8c7e8e285a5ecb86713e63a79c5b2766f3"
+dependencies = [
+ "cfg-if",
+]
 
 [[package]]
 name = "icc-profile"
@@ -55,6 +70,7 @@ name = "wml2-test"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "encoding_rs",
  "icc-profile",
  "wml2",
 ]

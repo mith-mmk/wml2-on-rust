@@ -29,8 +29,9 @@ $ cargo run --example metadata --release <inputfile>
 |JPEG|x|O|算術符号には対応していない|
 |GIF|x|O|アニメーションGIF対応|
 |PNG|O|O|APNG対応|
-|TIFF|x|o|無圧縮/LZW/Packbits/Jpeg(new)/3G/4G Faxに対応|
+|TIFF|x|O|無圧縮/LZW/Packbits/Jpeg(new)/3G/4G Faxに対応|
 |WEBP|x|x|not support|
+|MAG|x|O||
 
 # 使い方
 - バッファ上にあるイメージをロードする
@@ -145,6 +146,11 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.11 2022/05/25 fix
   - ICCProfileパーサの除去 -> see https://github.com/mith-mmk/icc_profile に移行
   - TIFF 3G/4G FAXデコードサポート/Multipage Tiffサポート/Tiled image(JPEGのみ)
+- 0.0.12 No released
+  - encode option change
+  - metadataにexifのUsercommentを表示させる変更
+- 0.0.13 2026/03/08
+  - MAG画像のサポート
 
 # todo
 - Formated Header writer
@@ -153,7 +159,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - jpeg encoder
 
 #　License
- MIT License (C) 2022
+ MIT License (C) 2022-2026
 
 # Author
  MITH@mmk https://mith-mmk.github.io/

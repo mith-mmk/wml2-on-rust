@@ -29,6 +29,7 @@ $ cargo run --example metadata --release <inputfile>
 |PNG|O|O|APNG not supprt/encode Truecolor + alpha only|
 |TIFF|x|o|no compression/LZW/Packbits/Jpeg(new)/G3 Fax/G4 Fax|
 |WEBP|x|x|not support|
+|MAG|x|O|Japanese legasy image format|
 
 # using loader
 - an on-memory compress buffered image or an image file 
@@ -152,6 +153,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
   - obsolete ICCProfile parse in verbose -> use metadata - see https://github.com/mith-mmk/icc_profile Tiff G3 Fax
   - TIFF 3G/4G FAX and multi page tiff decode support, Tiled image is support,but new Jpeg Tiff only.
 - 0.0.12 encode option change
+- 0.0.13 MAG Format supppot
 
 # todo
 - Formated Header writer

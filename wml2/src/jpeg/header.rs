@@ -696,10 +696,10 @@ impl JpegHaeder {
                         }
                         let result = read_app(num, &tag, &buffer)?;
                         match &result {
-                            JpegAppHeaders::Adobe(ref app) => {
+                            JpegAppHeaders::Adobe( app) => {
                                 adobe_color_transform = app.color_transform;
                             }
-                            JpegAppHeaders::ICCProfile(ref icc_profile_data) => {
+                            JpegAppHeaders::ICCProfile( icc_profile_data) => {
                                 if let Some(ref mut data) = icc_profile {
                                     data.extend(&icc_profile_data.data);
                                 } else {

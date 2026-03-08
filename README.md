@@ -19,7 +19,7 @@ $ cargo run --example to_bmp --release <inputfile> <output_dir>
 $ cargo run --example metadata --release <inputfile>
 ```
 
-# Support Format 0.0.11
+# Support Format 0.0.13
 
 |format|enc|dec|  |
 |------|---|---|--|
@@ -162,7 +162,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - jpeg encoder
 
 #　License
- MIT License (C) 2022
+ MIT License (C) 2022-2026
 
 # Author
  MITH@mmk https://mith-mmk.github.io/

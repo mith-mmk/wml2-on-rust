@@ -21,7 +21,7 @@ $ cargo run --example to_bmp --release <inputfile> <output_dir>
 $ cargo run --example metadata --release <inputfile>
 ```
 
-# サポートフォーマット 0.0.11
+# サポートフォーマット 0.0.13
 
 |フォーマット|エンコード|デコード|  |
 |------|---|---|--|

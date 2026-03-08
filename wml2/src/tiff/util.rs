@@ -42,8 +42,19 @@ pub fn print_tags(header: &TiffHeaders) -> String {
                     let comment = if head == b"ASCII\0\0\0" {
                         String::from_utf8_lossy(&body).to_string()
                     } else if head == b"JIS\0\0\0\0" {
-                        // not supported
-                        "[JIS encoding not supported]".to_string()
+                        #[cfg(not(feature = "SJIS"))]
+                        {
+                            "[JIS encoding not supported]".to_string()
+                        }
+                        #[cfg(feature = "SJIS")]
+                         {
+                            let (cow, _, had_errors) = encoding_rs::SHIFT_JIS.decode(&body);
+                            if had_errors {
+                                "[JIS decoding error]".to_string()
+                            } else {
+                                cow.into_owned()
+                            }
+                        }
                     } else if head == b"Unicode\0" {
                         // UTF-16BE
                         let u16_data: Vec<u16> = body

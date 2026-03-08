@@ -1,4 +1,5 @@
-use icc_profile::DecodedICCProfile; // use icc_profile crate from "https://github.com/mith-mmk/icc_profile"
+use icc_profile::DecodedICCProfile;
+// use icc_profile crate from "https://github.com/mith-mmk/icc_profile"
 use std::env;
 use std::error::Error;
 use wml2::draw::*;
@@ -20,14 +21,25 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
     let metadata = metadata.unwrap();
-
-    let format = metadata.get("Format").cloned().unwrap_or(DataMap::None);
-    println!("Format: {:?}", format); 
-    for (key, value) in metadata {
+    // key sorted output
+    let mut keys: Vec<&String> = metadata.keys().collect();
+    keys.sort();
+    for key in keys {
+        let value = metadata.get(key).unwrap();
         match value {
             DataMap::None => {
                 println!("{}", key);
             }
+            DataMap::SInt(value) => {
+                println!("{}: {}", key, value);
+            }
+            DataMap::UInt(value) => {
+                println!("{}: {}", key, value);
+            }
+            DataMap::Float(value) => {
+                println!("{}: {}", key, value);
+            }
+            
             DataMap::Raw(value) => {
                 println!("{}: {}bytes", key, value.len());
             }

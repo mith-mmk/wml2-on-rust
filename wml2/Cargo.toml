@@ -27,6 +27,7 @@ idct_slower = []
 #all = []
 # use multithread
 multithread = []
+SJIS = []
 
 [dependencies]
 #bin-rs = {version = "0.0.9",features = ["util"]}

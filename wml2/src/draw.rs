@@ -739,7 +739,7 @@ pub fn image_decoder<B: BinaryReader>(
     let pcd = (|| -> Result<bool, Error> {
         reader.seek(std::io::SeekFrom::Start(0x800))?;
         let mut id = [0u8; 7];
-        reader.read_bytes(&mut id)?;
+        reader.read_exact(&mut id)?;
         Ok(&id == b"PCD_IPI")
     })();
     reader.seek(std::io::SeekFrom::Start(current))?;

@@ -31,28 +31,6 @@ impl<'a> EncodeOptions<'a> {
     }
 }
 
-pub(crate) fn rgba_to_yuv_planner(buf: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
-    let mut i = 0;
-    let mut yout = Vec::with_capacity(buf.len() / 4);
-    let mut uout = Vec::with_capacity(buf.len() / 4);
-    let mut vout = Vec::with_capacity(buf.len() / 4);
-    while i + 3 < buf.len() {
-        let r = buf[i] as f32;
-        let g = buf[i + 1] as f32;
-        let b = buf[i + 2] as f32;
-        i += 4;
-
-        let y = 0.29900 * r + 0.58700 * g + 0.11400 * b;
-        let u = -0.16874 * r - 0.33126 * g + 0.50000 * b;
-        let v = 0.50000 * r - 0.41869 * g - 0.081 * b;
-        yout.push((y.round() as i32).clamp(0, 255) as u8);
-        uout.push((u.round() as i32).clamp(0, 255) as u8);
-        vout.push((v.round() as i32).clamp(0, 255) as u8);
-    }
-
-    (yout, uout, vout)
-}
-
 fn rgb_to_ycbcr(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
     let r = r as f32;
     let g = g as f32;

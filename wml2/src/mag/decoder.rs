@@ -44,7 +44,7 @@ impl ChunckStream {
         self.chunk.fill(0);
 
         if copy_size > 0 {
-            reader.read_bytes(&mut self.chunk[..copy_size])?;
+            reader.read_exact(&mut self.chunk[..copy_size])?;
         }
 
         self.xpoint += self.chunk_size;

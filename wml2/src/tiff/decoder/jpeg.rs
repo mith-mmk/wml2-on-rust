@@ -16,7 +16,7 @@ fn draw_jpeg(
         debug_flag: option.debug_flag,
         drawer: &mut image,
     };
-    let mut reader = bin_rs::reader::BytesReader::from_vec(data);
+    let mut reader = bin_rs::reader::BytesReader::from(data);
     let ws = crate::jpeg::decoder::decode(&mut reader, &mut part_option)?;
     let width = image.width;
     let height = image.height;

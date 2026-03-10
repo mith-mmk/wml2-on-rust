@@ -180,6 +180,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.13 MAG Format supppot
 - 0.0.14 add MAKI/PI/PIC/VSP(DAT)/PCD decoders
 - 0.0.14 add `noretoro` feature to disable legacy decoders
+- 0.0.15 add JPEG encoder(only baseline)
 
 # todo
 - Formated Header writer

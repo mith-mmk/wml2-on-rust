@@ -33,11 +33,11 @@ pub struct MAGHeader {
 impl MAGFileHeader {
   pub fn new<B: BinaryReader>(reader: &mut B) -> Result<Self, Error> {
     let mut header = [0;8];
-    reader.read_bytes(&mut header)?;
+    reader.read_exact(&mut header)?;
     let mut machine = [0;4];
-    reader.read_bytes(&mut machine)?;
+    reader.read_exact(&mut machine)?;
     let mut user = [0;18];
-    reader.read_bytes(&mut user)?;
+    reader.read_exact(&mut user)?;
     // Scan comment Area until 0x1A
     let mut comment = Vec::new();
     loop {

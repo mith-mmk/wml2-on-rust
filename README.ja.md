@@ -178,7 +178,9 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.14
   - MAKI/PI/PIC/VSP(DAT)/PCD デコーダを追加
   - `noretoro` feature で旧フォーマットデコーダを無効化できるように変更
-
+- 0.0.15
+  - jpegエンコード（ベースライン）のみを追加
+   
 # todo
 - Formated Header writer
 - other decoder

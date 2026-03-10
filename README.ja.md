@@ -21,7 +21,7 @@ $ cargo run --example to_bmp --release <inputfile> <output_dir>
 $ cargo run --example metadata --release <inputfile>
 ```
 
-# サポートフォーマット 0.0.13
+# サポートフォーマット 0.0.14
 
 |フォーマット|エンコード|デコード|  |
 |------|---|---|--|
@@ -32,6 +32,30 @@ $ cargo run --example metadata --release <inputfile>
 |TIFF|x|O|無圧縮/LZW/Packbits/Jpeg(new)/3G/4G Faxに対応|
 |WEBP|x|x|not support|
 |MAG|x|O||
+|MAKI|x|O|`noretoro` 指定時は無効|
+|PI|x|O|`noretoro` 指定時は無効|
+|PIC|x|O|`noretoro` 指定時は無効|
+|PCD|x|O|Photo CD の base4 をデコード。`noretoro` 指定時は無効|
+
+# Feature
+
+- デフォルトでは旧フォーマットデコーダは有効
+- `noretoro` を指定すると旧フォーマットデコーダ（`MAKI`, `PI`, `PIC`, `VSP/DAT`, `PCD`）を無効化
+
+```toml
+[dependencies]
+wml2 = "0.0.14"
+```
+
+```toml
+[dependencies]
+wml2 = { version = "0.0.14", features = ["noretoro"] }
+```
+
+# テストサンプル
+
+- 統合テストでは `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat` などの汎用名を利用
+- 著作権上の理由で元のサンプル名は公開向けテストコードでは参照しない
 
 # 使い方
 - バッファ上にあるイメージをロードする
@@ -151,6 +175,9 @@ pub fn main()-> Result<(),Box<dyn Error>> {
   - metadataにexifのUsercommentを表示させる変更
 - 0.0.13 2026/03/08
   - MAG画像のサポート
+- 0.0.14
+  - MAKI/PI/PIC/VSP(DAT)/PCD デコーダを追加
+  - `noretoro` feature で旧フォーマットデコーダを無効化できるように変更
 
 # todo
 - Formated Header writer

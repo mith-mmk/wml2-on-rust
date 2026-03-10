@@ -19,7 +19,7 @@ $ cargo run --example to_bmp --release <inputfile> <output_dir>
 $ cargo run --example metadata --release <inputfile>
 ```
 
-# Support Format 0.0.13
+# Support Format 0.0.14
 
 |format|enc|dec|  |
 |------|---|---|--|
@@ -30,6 +30,30 @@ $ cargo run --example metadata --release <inputfile>
 |TIFF|x|o|no compression/LZW/Packbits/Jpeg(new)/G3 Fax/G4 Fax|
 |WEBP|x|x|not support|
 |MAG|x|O|Japanese legasy image format|
+|MAKI|x|O|Japanese legacy image format, disabled by `noretoro`|
+|PI|x|O|Japanese legacy image format, disabled by `noretoro`|
+|PIC|x|O|Japanese legacy image format, disabled by `noretoro`|
+|PCD|x|O|Photo CD base4 decode, disabled by `noretoro`|
+
+# Features
+
+- default: retro decoders are enabled
+- `noretoro`: disable legacy decoders (`MAKI`, `PI`, `PIC`, `VSP/DAT`, `PCD`)
+
+```toml
+[dependencies]
+wml2 = "0.0.14"
+```
+
+```toml
+[dependencies]
+wml2 = { version = "0.0.14", features = ["noretoro"] }
+```
+
+# Test samples
+
+- integration tests use generic filenames such as `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat`
+- the original sample filenames are intentionally not referenced in public-facing test code
 
 # using loader
 - an on-memory compress buffered image or an image file 
@@ -154,6 +178,8 @@ pub fn main()-> Result<(),Box<dyn Error>> {
   - TIFF 3G/4G FAX and multi page tiff decode support, Tiled image is support,but new Jpeg Tiff only.
 - 0.0.12 encode option change
 - 0.0.13 MAG Format supppot
+- 0.0.14 add MAKI/PI/PIC/VSP(DAT)/PCD decoders
+- 0.0.14 add `noretoro` feature to disable legacy decoders
 
 # todo
 - Formated Header writer
@@ -166,4 +192,3 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
 # Author
  MITH@mmk https://mith-mmk.github.io/
-

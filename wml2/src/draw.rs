@@ -12,8 +12,11 @@ use crate::util::ImageFormat;
 use crate::warning::ImgWarnings;
 use bin_rs::reader::*;
 use std::collections::HashMap;
+#[cfg(not(target_family = "wasm"))]
 use std::io::BufRead;
+#[cfg(not(target_family = "wasm"))]
 use std::io::BufReader;
+#[cfg(not(target_family = "wasm"))]
 use std::io::Seek;
 use std::io::Write;
 
@@ -609,6 +612,7 @@ pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer, Error> {
 }
 
 /// load image from file
+#[cfg(not(target_family = "wasm"))]
 pub fn image_from_file(filename: String) -> Result<ImageBuffer, Error> {
     let f = std::fs::File::open(filename)?;
     let reader = BufReader::new(f);
@@ -622,6 +626,7 @@ pub fn image_from_file(filename: String) -> Result<ImageBuffer, Error> {
 }
 
 /// save image to file
+#[cfg(not(target_family = "wasm"))]
 pub fn image_to_file(
     filename: String,
     image: &mut dyn PickCallback,
@@ -660,6 +665,7 @@ pub fn image_loader(
     Ok(r)
 }
 
+#[cfg(not(target_family = "wasm"))]
 pub fn image_reader<R: BufRead + Seek>(
     reader: R,
     option: &mut DecodeOptions,

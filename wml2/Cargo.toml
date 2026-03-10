@@ -1,6 +1,6 @@
 [package]
 name = "wml2"
-version = "0.0.13"
+version = "0.0.14"
 repository = "https://github.com/mith-mmk/wml2-on-rust"
 homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
@@ -28,6 +28,7 @@ idct_slower = []
 # use multithread
 multithread = []
 SJIS = []
+noretoro = []
 
 [dependencies]
 #bin-rs = {version = "0.0.9",features = ["util"]}

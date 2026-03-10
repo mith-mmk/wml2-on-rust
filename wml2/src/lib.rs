@@ -61,7 +61,19 @@ pub mod jpeg;
 pub mod png;
 pub mod tiff;
 pub mod mag;
+#[cfg(not(feature = "noretoro"))]
+pub mod maki;
+#[cfg(not(feature = "noretoro"))]
+pub mod pcd;
+#[cfg(not(feature = "noretoro"))]
+pub mod pi;
+#[cfg(not(feature = "noretoro"))]
+pub mod pic;
+#[cfg(not(feature = "noretoro"))]
+mod retro;
 pub mod util;
+#[cfg(not(feature = "noretoro"))]
+pub mod vsp;
 pub mod warning;
 //pub mod iccprofile;
 pub mod color;

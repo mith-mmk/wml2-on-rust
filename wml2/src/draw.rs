@@ -708,11 +708,44 @@ pub fn image_decoder<B: BinaryReader>(
         Mag => {
             return crate::mag::decoder::decode(reader, option);
         }
-        _ => Err(Box::new(ImgError::new_const(
-            ImgErrorKind::NoSupportFormat,
-            "This buffer can not decode".to_string(),
-        ))),
+        #[cfg(not(feature = "noretoro"))]
+        Maki => {
+            return crate::maki::decoder::decode(reader, option);
+        }
+        #[cfg(not(feature = "noretoro"))]
+        Pi => {
+            return crate::pi::decoder::decode(reader, option);
+        }
+        #[cfg(not(feature = "noretoro"))]
+        Pic => {
+            return crate::pic::decoder::decode(reader, option);
+        }
+        #[cfg(not(feature = "noretoro"))]
+        Vsp => {
+            return crate::vsp::decoder::decode(reader, option);
+        }
+        _ => {}
     }
+
+    #[cfg(not(feature = "noretoro"))]
+    {
+    let current = reader.seek(std::io::SeekFrom::Current(0))?;
+    let pcd = (|| -> Result<bool, Error> {
+        reader.seek(std::io::SeekFrom::Start(0x800))?;
+        let mut id = [0u8; 7];
+        reader.read_bytes(&mut id)?;
+        Ok(&id == b"PCD_IPI")
+    })();
+    reader.seek(std::io::SeekFrom::Start(current))?;
+    if matches!(pcd, Ok(true)) {
+        return crate::pcd::decoder::decode(reader, option);
+    }
+    }
+
+    Err(Box::new(ImgError::new_const(
+        ImgErrorKind::NoSupportFormat,
+        "This buffer can not decode".to_string(),
+    )))
 }
 
 pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<Vec<u8>, Error> {

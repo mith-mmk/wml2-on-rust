@@ -10,15 +10,25 @@ pub enum ImageFormat {
     //
     // Japanse old format
     Mag,
+    #[cfg(not(feature = "noretoro"))]
     Maki,
+    #[cfg(not(feature = "noretoro"))]
     Pi,
+    #[cfg(not(feature = "noretoro"))]
     Pic,
     Pic2,
+    #[cfg(not(feature = "noretoro"))]
+    Vsp,
+    #[cfg(not(feature = "noretoro"))]
+    Pcd,
     RiffFormat(String),
     Unknown,
 }
 
 pub fn format_check(buffer: &[u8]) -> ImageFormat {
+    if buffer.len() < 8 {
+        return ImageFormat::Unknown;
+    }
     match buffer[0] {
         b'G' => {
             if buffer[1] == b'I'
@@ -54,6 +64,26 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
             if buffer[1] == b'A' && buffer[2] == b'K' && buffer[3] == b'I' && buffer[4] == b'0' && buffer[5] == b'2' {
                 return ImageFormat::Mag;
             }
+            #[cfg(not(feature = "noretoro"))]
+            if buffer.len() >= 7
+                && buffer[1] == b'A'
+                && buffer[2] == b'K'
+                && buffer[3] == b'I'
+                && buffer[4] == b'0'
+                && buffer[5] == b'1'
+            {
+                return ImageFormat::Maki;
+            }
+        }
+        b'P' => {
+            #[cfg(not(feature = "noretoro"))]
+            if buffer[1] == b'i' {
+                return ImageFormat::Pi;
+            }
+            #[cfg(not(feature = "noretoro"))]
+            if buffer[1] == b'I' && buffer[2] == b'C' {
+                return ImageFormat::Pic;
+            }
         }
         b'R' => {
             if buffer[1] == b'I' && buffer[2] == b'F' && buffer[3] == b'F' {
@@ -88,7 +118,22 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
             }
         }
 
-        _ => return ImageFormat::Unknown,
+        _ => {}
+    }
+
+    #[cfg(not(feature = "noretoro"))]
+    if buffer.len() >= 10 {
+        let pixel = buffer[8];
+        let start_x = bin_rs::io::read_u16_le(buffer, 0);
+        let end_x = bin_rs::io::read_u16_le(buffer, 4);
+        if (pixel == 0 || pixel == 1 || pixel == 8) && start_x <= 80 && (end_x <= 80 || pixel == 1)
+        {
+            return ImageFormat::Vsp;
+        }
+        let page_count = bin_rs::io::read_u16_le(buffer, 0);
+        if page_count > 0 && page_count <= 0x10 {
+            return ImageFormat::Vsp;
+        }
     }
     ImageFormat::Unknown
 }

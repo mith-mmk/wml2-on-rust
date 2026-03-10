@@ -16,8 +16,8 @@ checksum = "e62e12dae19127152eee5b5ff249a86100a01e388abbac4c22e9f97eb33d9c3d"
 
 [[package]]
 name = "bin-rs"
-version = "0.0.8"
-source = "git+https://github.com/mith-mmk/bin-rs#4928d230eb0c6c45723d8059cf3a1ef1d44ff723"
+version = "0.0.10"
+source = "git+https://github.com/mith-mmk/bin-rs#3fb43f72915b03e7fb3f33d4f3af8becf215f4a8"
 
 [[package]]
 name = "cfg-if"
@@ -61,7 +61,7 @@ dependencies = [
 name = "wml2"
 version = "0.0.14"
 dependencies = [
- "bin-rs 0.0.8",
+ "bin-rs 0.0.10",
  "miniz_oxide",
 ]
 

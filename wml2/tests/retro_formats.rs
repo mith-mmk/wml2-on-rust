@@ -2,7 +2,9 @@
 
 use std::path::PathBuf;
 
-use wml2::draw::image_from_file;
+use std::fs;
+
+use wml2::draw::{image_from_file, image_load};
 
 fn sample_path(name: &str) -> String {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -15,9 +17,21 @@ fn sample_path(name: &str) -> String {
         .into_owned()
 }
 
+fn sample_bytes(name: &str) -> Vec<u8> {
+    fs::read(sample_path(name)).unwrap()
+}
+
 #[test]
 fn decode_maki_sample() {
     let image = image_from_file(sample_path("sample.mki")).unwrap();
+    assert!(image.width > 0);
+    assert!(image.height > 0);
+}
+
+#[test]
+fn decode_maki_sample_from_bytes() {
+    let bytes = sample_bytes("sample.mki");
+    let image = image_load(&bytes).unwrap();
     assert!(image.width > 0);
     assert!(image.height > 0);
 }
@@ -30,8 +44,24 @@ fn decode_pi_sample() {
 }
 
 #[test]
+fn decode_pi_sample_from_bytes() {
+    let bytes = sample_bytes("sample.pi");
+    let image = image_load(&bytes).unwrap();
+    assert!(image.width > 0);
+    assert!(image.height > 0);
+}
+
+#[test]
 fn decode_pi_second_sample() {
     let image = image_from_file(sample_path("sample2.pi")).unwrap();
+    assert!(image.width > 0);
+    assert!(image.height > 0);
+}
+
+#[test]
+fn decode_pi_second_sample_from_bytes() {
+    let bytes = sample_bytes("sample2.pi");
+    let image = image_load(&bytes).unwrap();
     assert!(image.width > 0);
     assert!(image.height > 0);
 }
@@ -44,8 +74,25 @@ fn decode_pic_sample() {
 }
 
 #[test]
+fn decode_pic_sample_from_bytes() {
+    let bytes = sample_bytes("sample.pic");
+    let image = image_load(&bytes).unwrap();
+    assert!(image.width > 0);
+    assert!(image.height > 0);
+}
+
+#[test]
 fn decode_vsp_dat_sample() {
     let image = image_from_file(sample_path("sample.dat")).unwrap();
+    assert!(image.width > 0);
+    assert!(image.height > 0);
+    assert!(image.animation.as_ref().map(|frames| !frames.is_empty()).unwrap_or(false));
+}
+
+#[test]
+fn decode_vsp_dat_sample_from_bytes() {
+    let bytes = sample_bytes("sample.dat");
+    let image = image_load(&bytes).unwrap();
     assert!(image.width > 0);
     assert!(image.height > 0);
     assert!(image.animation.as_ref().map(|frames| !frames.is_empty()).unwrap_or(false));

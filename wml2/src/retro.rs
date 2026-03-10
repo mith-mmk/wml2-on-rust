@@ -1,5 +1,3 @@
-use std::io::SeekFrom;
-
 use bin_rs::reader::BinaryReader;
 
 use crate::draw::DecodeOptions;
@@ -12,11 +10,10 @@ pub(crate) fn err(kind: ImgErrorKind, message: &str) -> Error {
 }
 
 pub(crate) fn read_all<B: BinaryReader>(reader: &mut B) -> Result<Vec<u8>, Error> {
-    let current = reader.seek(SeekFrom::Current(0))?;
-    let end = reader.seek(SeekFrom::End(0))?;
-    reader.seek(SeekFrom::Start(0))?;
-    let buffer = reader.read_bytes_as_vec(end as usize)?;
-    reader.seek(SeekFrom::Start(current))?;
+    let mut buffer = Vec::new();
+    while let Ok(byte) = reader.read_byte() {
+        buffer.push(byte);
+    }
     Ok(buffer)
 }
 

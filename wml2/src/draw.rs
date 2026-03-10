@@ -761,6 +761,9 @@ pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<
         Bmp => {
             return crate::bmp::encoder::encode(option);
         }
+        Jpeg => {
+            return crate::jpeg::encoder::encode(option);
+        }
         Png => {
             return crate::png::encoder::encode(option);
         }

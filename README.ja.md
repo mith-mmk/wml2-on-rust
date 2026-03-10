@@ -26,7 +26,7 @@ $ cargo run --example metadata --release <inputfile>
 |フォーマット|エンコード|デコード|  |
 |------|---|---|--|
 |BMP|O|O|エンコーダは無圧縮のみ|
-|JPEG|x|O|算術符号には対応していない|
+|JPEG|O|O|エンコードはベースラインのみ。デコードは算術符号非対応|
 |GIF|x|O|アニメーションGIF対応|
 |PNG|O|O|APNG対応|
 |TIFF|x|O|無圧縮/LZW/Packbits/Jpeg(new)/3G/4G Faxに対応|
@@ -183,7 +183,6 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - Formated Header writer
 - other decoder
 - color translation
-- jpeg encoder
 
 #　License
  MIT License (C) 2022-2026

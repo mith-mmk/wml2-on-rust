@@ -24,7 +24,7 @@ $ cargo run --example metadata --release <inputfile>
 |format|enc|dec|  |
 |------|---|---|--|
 |BMP|O|O|encode only no compress|
-|JPEG|x|O|Baseline and huffman progressive|
+|JPEG|O|O|Baseline encode / Baseline and huffman progressive decode|
 |GIF|x|O|with Animation GIF|
 |PNG|O|O|APNG not supprt/encode Truecolor + alpha only|
 |TIFF|x|o|no compression/LZW/Packbits/Jpeg(new)/G3 Fax/G4 Fax|
@@ -185,7 +185,6 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - Formated Header writer
 - other decoder
 - color translation
-- jpeg encoder
 
 #　License
  MIT License (C) 2022-2026

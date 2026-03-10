@@ -59,7 +59,7 @@ dependencies = [
 
 [[package]]
 name = "wml2"
-version = "0.0.14"
+version = "0.0.15"
 dependencies = [
  "bin-rs 0.0.10",
  "miniz_oxide",

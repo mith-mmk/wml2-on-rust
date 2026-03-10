@@ -21,7 +21,7 @@ $ cargo run --example to_bmp --release <inputfile> <output_dir>
 $ cargo run --example metadata --release <inputfile>
 ```
 
-# サポートフォーマット 0.0.14
+# サポートフォーマット 0.0.15
 
 |フォーマット|エンコード|デコード|  |
 |------|---|---|--|
@@ -44,12 +44,12 @@ $ cargo run --example metadata --release <inputfile>
 
 ```toml
 [dependencies]
-wml2 = "0.0.14"
+wml2 = "0.0.15"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.14", features = ["noretoro"] }
+wml2 = { version = "0.0.15", features = ["noretoro"] }
 ```
 
 # テストサンプル

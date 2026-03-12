@@ -42,12 +42,12 @@ $ cargo run --example metadata --release <inputfile>
 
 ```toml
 [dependencies]
-wml2 = "0.0.16"
+wml2 = "0.0.17"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.16", features = ["noretoro"] }
+wml2 = { version = "0.0.17", features = ["noretoro"] }
 ```
 
 # Test samples
@@ -181,7 +181,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.14 add MAKI/PI/PIC/VSP(DAT)/PCD decoders
 - 0.0.14 add `noretoro` feature to disable legacy decoders
 - 0.0.15 add JPEG encoder(only baseline)
-- 0.0.16 add native rust Webp decoder, APNG encoder
+- 0.0.17 add native rust Webp decoder, APNG encoder
 
 # todo
 - Formated Header writer

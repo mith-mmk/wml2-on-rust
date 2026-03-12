@@ -44,12 +44,12 @@ $ cargo run --example metadata --release <inputfile>
 
 ```toml
 [dependencies]
-wml2 = "0.0.16"
+wml2 = "0.0.17"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.16", features = ["noretoro"] }
+wml2 = { version = "0.0.17", features = ["noretoro"] }
 ```
 
 # テストサンプル
@@ -180,7 +180,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
   - `noretoro` feature で旧フォーマットデコーダを無効化できるように変更
 - 0.0.15
   - jpegエンコード（ベースライン）のみを追加
-- 0.0.16
+- 0.0.17
   - webpデコーダ、APNGエンコーダーの追加
 
 # todo

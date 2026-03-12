@@ -33,7 +33,7 @@ SJIS = []
 noretoro = []
 
 [dependencies]
-#bin-rs = {version = "0.0.10",features = ["util"]}
-bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
+bin-rs = {version = "0.0.10",features = ["util"]}
+#bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
 
 miniz_oxide = {version = "0.5.1"}

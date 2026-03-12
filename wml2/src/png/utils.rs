@@ -122,4 +122,3 @@ pub(crate) fn make_metadata(header: &super::header::PngHeader) -> HashMap<String
 
     map
 }
-

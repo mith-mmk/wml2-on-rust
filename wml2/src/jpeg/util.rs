@@ -47,9 +47,16 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
     let mut str: String = "JPEG\n".to_string();
     match &header.frame_header {
         Some(fh) => {
-            str = str + &format!(
-            "SOF\nBaseline {} Progressive {} Huffman {} Diffelensial {} Sequensial {} Lossless {} \n",
-            fh.is_baseline,fh.is_progressive,fh.is_huffman,fh.is_differential,fh.is_sequential,fh.is_lossress);
+            str = str
+                + &format!(
+                    "SOF\nBaseline {} Progressive {} Huffman {} Diffelensial {} Sequensial {} Lossless {} \n",
+                    fh.is_baseline,
+                    fh.is_progressive,
+                    fh.is_huffman,
+                    fh.is_differential,
+                    fh.is_sequential,
+                    fh.is_lossress
+                );
 
             str = str
                 + &format!(
@@ -140,11 +147,25 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
                             );
                     }
                     Adobe(adobe) => {
-                        str = str + &format!(
-                            "Adobe App14 DCTEncodeVersion:{} Flag1:{} Flag2:{} ColorTransform {} {}\n"
-                            ,adobe.dct_encode_version
-                            ,adobe.flag1,adobe.flag2,adobe.color_transform,match adobe.color_transform {
-                                    1 => {"YCbCr"}, 2 => {"YCCK"}, _ =>{"Unknown"}});
+                        str = str
+                            + &format!(
+                                "Adobe App14 DCTEncodeVersion:{} Flag1:{} Flag2:{} ColorTransform {} {}\n",
+                                adobe.dct_encode_version,
+                                adobe.flag1,
+                                adobe.flag2,
+                                adobe.color_transform,
+                                match adobe.color_transform {
+                                    1 => {
+                                        "YCbCr"
+                                    }
+                                    2 => {
+                                        "YCCK"
+                                    }
+                                    _ => {
+                                        "Unknown"
+                                    }
+                                }
+                            );
                     }
                     ICCProfile(icc_profile) => {
                         str = str
@@ -188,11 +209,7 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
                     str = str + &format!("Pq{}(bytes) Tq{}\n", qt.presision + 1, qt.no);
                     for (i, q) in qt.q.iter().enumerate() {
                         str = str + &format!("{:3}", q);
-                        if i % 8 == 7 {
-                            str += "\n"
-                        } else {
-                            str += ","
-                        }
+                        if i % 8 == 7 { str += "\n" } else { str += "," }
                     }
                 }
             }
@@ -397,10 +414,23 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String, DataMap> {
                     }
                     Adobe(adobe) => {
                         let str = format!(
-                            "Adobe App14 DCTEncode Version:{} Flag1:{} Flag2:{} ColorTransform {} {}\n"
-                            ,adobe.dct_encode_version
-                            ,adobe.flag1,adobe.flag2,adobe.color_transform,match adobe.color_transform {
-                                    1 => {"YCbCr"}, 2 => {"YCCK"}, _ =>{"Unknown"}});
+                            "Adobe App14 DCTEncode Version:{} Flag1:{} Flag2:{} ColorTransform {} {}\n",
+                            adobe.dct_encode_version,
+                            adobe.flag1,
+                            adobe.flag2,
+                            adobe.color_transform,
+                            match adobe.color_transform {
+                                1 => {
+                                    "YCbCr"
+                                }
+                                2 => {
+                                    "YCCK"
+                                }
+                                _ => {
+                                    "Unknown"
+                                }
+                            }
+                        );
                         map.insert("Adobe".to_string(), DataMap::Ascii(str));
                     }
                     Xmp((tag, string)) => {
@@ -419,4 +449,3 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String, DataMap> {
     }
     map
 }
-

@@ -4,7 +4,7 @@ use bin_rs::reader::BinaryReader;
 
 use crate::draw::DecodeOptions;
 use crate::metadata::DataMap;
-use crate::retro::{clamp8, draw_rgb, err, read_all, ByteCursor};
+use crate::retro::{ByteCursor, clamp8, draw_rgb, err, read_all};
 use crate::warning::ImgWarnings;
 
 type Error = Box<dyn std::error::Error>;
@@ -88,7 +88,10 @@ pub fn decode<B: BinaryReader>(
     let size = &PCD_SIZES[1];
     let mut cursor = ByteCursor::new(&data, 0x800);
     if cursor.read_bytes(7)? != b"PCD_IPI" {
-        return Err(err(crate::error::ImgErrorKind::IllegalData, "Not a PhotoCD image"));
+        return Err(err(
+            crate::error::ImgErrorKind::IllegalData,
+            "Not a PhotoCD image",
+        ));
     }
     let _version = cursor.read_u8()?;
     cursor.seek(0xe02)?;
@@ -151,4 +154,3 @@ pub fn decode<B: BinaryReader>(
     draw_rgb(option, out_width, out_height, &rotated)?;
     Ok(None)
 }
-

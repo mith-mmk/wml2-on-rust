@@ -27,6 +27,13 @@ pub struct Lzwdecode {
 }
 
 impl Lzwdecode {
+    fn insufficient_bits_error() -> Error {
+        Box::new(ImgError::new_const(
+            ImgErrorKind::IOError,
+            "data shortage".to_string(),
+        ))
+    }
+
     /// for GIF LZW
     pub fn gif(lzw_min_bits: usize) -> Self {
         Self::new(lzw_min_bits, true, false)
@@ -91,11 +98,8 @@ impl Lzwdecode {
         let size = self.cbl;
         while self.left_bits <= 16 {
             if self.ptr >= self.buffer.len() {
-                if self.left_bits <= 8 && self.left_bits < size {
-                    return Err(Box::new(ImgError::new_const(
-                        ImgErrorKind::IOError,
-                        "data shortage".to_string(),
-                    )));
+                if self.left_bits < size {
+                    return Err(Self::insufficient_bits_error());
                 }
                 break;
             }
@@ -103,6 +107,9 @@ impl Lzwdecode {
             self.last_byte = (self.last_byte << 8) | (self.buffer[self.ptr] as u32);
             self.ptr += 1;
             self.left_bits += 8;
+        }
+        if self.left_bits < size {
+            return Err(Self::insufficient_bits_error());
         }
         let bits = (self.last_byte >> (self.left_bits - size)) & self.bit_mask;
 
@@ -114,11 +121,8 @@ impl Lzwdecode {
         let size = self.cbl;
         while self.left_bits <= 16 {
             if self.ptr >= self.buffer.len() {
-                if self.left_bits <= 8 && self.left_bits < size {
-                    return Err(Box::new(ImgError::new_const(
-                        ImgErrorKind::IOError,
-                        "data shortage".to_string(),
-                    )));
+                if self.left_bits < size {
+                    return Err(Self::insufficient_bits_error());
                 }
                 break;
             }
@@ -127,6 +131,9 @@ impl Lzwdecode {
 
             self.ptr += 1;
             self.left_bits += 8;
+        }
+        if self.left_bits < size {
+            return Err(Self::insufficient_bits_error());
         }
         let bits = (self.last_byte >> (24 - self.left_bits)) & self.bit_mask;
 
@@ -163,7 +170,7 @@ impl Lzwdecode {
 
         loop {
             let res = self.get_bits(); // GIF Lsb only Tiff use Lsb or Msb
-                                       // If data is shotage,it returns values and waits a next buffer.
+            // If data is shotage,it returns values and waits a next buffer.
             let code = if let Ok(code) = res {
                 code
             } else {
@@ -176,13 +183,15 @@ impl Lzwdecode {
                 }
                 self.clear_dic();
             } else if code == self.end {
-                let mut table: Vec<u8> = Vec::new();
-                for p in &self.dic[self.prev_code] {
+                let prev = self.dic.get(self.prev_code).ok_or_else(|| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::IllegalData,
+                        "invalid previous LZW code".to_string(),
+                    )) as Error
+                })?;
+                for p in prev {
                     data.push(*p);
-                    table.push(*p);
                 }
-                let append_code = self.dic[self.prev_code][0];
-                table.push(append_code);
                 return Ok(data);
             } else if code > self.dic.len() {
                 let message = format!(
@@ -197,13 +206,37 @@ impl Lzwdecode {
             } else {
                 let append_code;
                 if code == self.dic.len() {
-                    append_code = self.dic[self.prev_code][0];
+                    append_code = *self
+                        .dic
+                        .get(self.prev_code)
+                        .and_then(|value| value.first())
+                        .ok_or_else(|| {
+                            Box::new(ImgError::new_const(
+                                ImgErrorKind::IllegalData,
+                                "invalid previous LZW code".to_string(),
+                            )) as Error
+                        })?;
                 } else {
-                    append_code = self.dic[code][0];
+                    append_code = *self
+                        .dic
+                        .get(code)
+                        .and_then(|value| value.first())
+                        .ok_or_else(|| {
+                            Box::new(ImgError::new_const(
+                                ImgErrorKind::IllegalData,
+                                "invalid LZW code".to_string(),
+                            )) as Error
+                        })?;
                 }
                 if self.prev_code != self.end && self.prev_code != self.clear {
                     let mut table: Vec<u8> = Vec::new();
-                    for p in &self.dic[self.prev_code] {
+                    let prev = self.dic.get(self.prev_code).ok_or_else(|| {
+                        Box::new(ImgError::new_const(
+                            ImgErrorKind::IllegalData,
+                            "invalid previous LZW code".to_string(),
+                        )) as Error
+                    })?;
+                    for p in prev {
                         data.push(*p);
                         table.push(*p);
                     }
@@ -224,4 +257,3 @@ impl Lzwdecode {
         }
     }
 }
-

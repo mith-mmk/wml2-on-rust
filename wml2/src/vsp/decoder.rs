@@ -7,7 +7,7 @@ use crate::draw::{
 };
 use crate::error::ImgErrorKind;
 use crate::metadata::DataMap;
-use crate::retro::{draw_indexed, err, read_all, ByteCursor};
+use crate::retro::{ByteCursor, draw_indexed, err, read_all};
 use crate::warning::ImgWarnings;
 
 type Error = Box<dyn std::error::Error>;
@@ -67,7 +67,10 @@ fn list_dat_entries(data: &[u8]) -> Result<Vec<DatEntry>, Error> {
     let mut page_reader = ByteCursor::new(data, 0);
     let page_count = page_reader.read_u16_le()? as usize;
     if page_count == 0 || page_count > 0x10 {
-        return Err(err(ImgErrorKind::IllegalData, "Invalid VSP DAT index table"));
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "Invalid VSP DAT index table",
+        ));
     }
 
     let mut offsets = vec![0u16; page_count * 128];
@@ -83,7 +86,10 @@ fn list_dat_entries(data: &[u8]) -> Result<Vec<DatEntry>, Error> {
             if x != 0 {
                 offsets[fnum] = x;
                 if fnum != 0 && offsets[fnum - 1] > offsets[fnum] {
-                    return Err(err(ImgErrorKind::IllegalData, "Invalid VSP DAT entry order"));
+                    return Err(err(
+                        ImgErrorKind::IllegalData,
+                        "Invalid VSP DAT entry order",
+                    ));
                 }
             }
             fnum += 1;
@@ -186,18 +192,31 @@ fn decode_vsp16(
             let g = planes[2][xw][y];
             let e = planes[3][xw][y];
             let row = y * width + x * 8;
-            pixels[row] = ((b >> 7) & 0x01) | ((r >> 6) & 0x02) | ((g >> 5) & 0x04) | ((e >> 4) & 0x08);
-            pixels[row + 1] = ((b >> 6) & 0x01) | ((r >> 5) & 0x02) | ((g >> 4) & 0x04) | ((e >> 3) & 0x08);
-            pixels[row + 2] = ((b >> 5) & 0x01) | ((r >> 4) & 0x02) | ((g >> 3) & 0x04) | ((e >> 2) & 0x08);
-            pixels[row + 3] = ((b >> 4) & 0x01) | ((r >> 3) & 0x02) | ((g >> 2) & 0x04) | ((e >> 1) & 0x08);
-            pixels[row + 4] = ((b >> 3) & 0x01) | ((r >> 2) & 0x02) | ((g >> 1) & 0x04) | (e & 0x08);
-            pixels[row + 5] = ((b >> 2) & 0x01) | ((r >> 1) & 0x02) | (g & 0x04) | ((e << 1) & 0x08);
-            pixels[row + 6] = ((b >> 1) & 0x01) | (r & 0x02) | ((g << 1) & 0x04) | ((e << 2) & 0x08);
-            pixels[row + 7] = (b & 0x01) | ((r << 1) & 0x02) | ((g << 2) & 0x04) | ((e << 3) & 0x08);
+            pixels[row] =
+                ((b >> 7) & 0x01) | ((r >> 6) & 0x02) | ((g >> 5) & 0x04) | ((e >> 4) & 0x08);
+            pixels[row + 1] =
+                ((b >> 6) & 0x01) | ((r >> 5) & 0x02) | ((g >> 4) & 0x04) | ((e >> 3) & 0x08);
+            pixels[row + 2] =
+                ((b >> 5) & 0x01) | ((r >> 4) & 0x02) | ((g >> 3) & 0x04) | ((e >> 2) & 0x08);
+            pixels[row + 3] =
+                ((b >> 4) & 0x01) | ((r >> 3) & 0x02) | ((g >> 2) & 0x04) | ((e >> 1) & 0x08);
+            pixels[row + 4] =
+                ((b >> 3) & 0x01) | ((r >> 2) & 0x02) | ((g >> 1) & 0x04) | (e & 0x08);
+            pixels[row + 5] =
+                ((b >> 2) & 0x01) | ((r >> 1) & 0x02) | (g & 0x04) | ((e << 1) & 0x08);
+            pixels[row + 6] =
+                ((b >> 1) & 0x01) | (r & 0x02) | ((g << 1) & 0x04) | ((e << 2) & 0x08);
+            pixels[row + 7] =
+                (b & 0x01) | ((r << 1) & 0x02) | ((g << 2) & 0x04) | ((e << 3) & 0x08);
         }
     }
 
-    Ok((width, height, pixels, build_vsp16_palette(&header.palette_raw)))
+    Ok((
+        width,
+        height,
+        pixels,
+        build_vsp16_palette(&header.palette_raw),
+    ))
 }
 
 fn decode_vsp256(
@@ -229,20 +248,26 @@ fn decode_vsp256(
             match flag {
                 0xff => {
                     let count = reader.read_u8()? as usize + 3;
-                    let span = count.min(width.saturating_sub(x)).min(row.len().saturating_sub(x));
+                    let span = count
+                        .min(width.saturating_sub(x))
+                        .min(row.len().saturating_sub(x));
                     row[x..x + span].copy_from_slice(&row_prev[x..x + span]);
                     x += span;
                 }
                 0xfe => {
                     let count = reader.read_u8()? as usize + 3;
-                    let span = count.min(width.saturating_sub(x)).min(row.len().saturating_sub(x));
+                    let span = count
+                        .min(width.saturating_sub(x))
+                        .min(row.len().saturating_sub(x));
                     row[x..x + span].copy_from_slice(&row_prev2[x..x + span]);
                     x += span;
                 }
                 0xfd => {
                     let count = reader.read_u8()? as usize + 4;
                     let value = reader.read_u8()?;
-                    let span = count.min(width.saturating_sub(x)).min(row.len().saturating_sub(x));
+                    let span = count
+                        .min(width.saturating_sub(x))
+                        .min(row.len().saturating_sub(x));
                     row[x..x + span].fill(value);
                     x += span;
                 }
@@ -301,10 +326,17 @@ fn decode_vsp_at(
 }
 
 fn is_probable_dat(data: &[u8]) -> bool {
-    list_dat_entries(data).map(|entries| !entries.is_empty()).unwrap_or(false)
+    list_dat_entries(data)
+        .map(|entries| !entries.is_empty())
+        .unwrap_or(false)
 }
 
-fn indexed_to_rgba(width: usize, height: usize, pixels: &[u8], palette: &[(u8, u8, u8)]) -> Vec<u8> {
+fn indexed_to_rgba(
+    width: usize,
+    height: usize,
+    pixels: &[u8],
+    palette: &[(u8, u8, u8)],
+) -> Vec<u8> {
     let mut rgba = vec![0u8; width * height * 4];
     for (i, &index) in pixels.iter().enumerate().take(width * height) {
         let (r, g, b) = palette.get(index as usize).copied().unwrap_or((0, 0, 0));
@@ -326,12 +358,16 @@ pub fn decode<B: BinaryReader>(
         let entries = list_dat_entries(&data)?;
         let mut decoded_entries = Vec::new();
         for entry in entries {
-            if let Ok((header, width, height, pixels, palette)) = decode_vsp_at(&data, entry.offset) {
+            if let Ok((header, width, height, pixels, palette)) = decode_vsp_at(&data, entry.offset)
+            {
                 decoded_entries.push((entry.index, header, width, height, pixels, palette));
             }
         }
         if decoded_entries.is_empty() {
-            return Err(err(ImgErrorKind::IllegalData, "No decodable VSP entry found in DAT"));
+            return Err(err(
+                ImgErrorKind::IllegalData,
+                "No decodable VSP entry found in DAT",
+            ));
         }
 
         let (_, first_header, first_width, first_height, first_pixels, first_palette) =
@@ -342,9 +378,10 @@ pub fn decode<B: BinaryReader>(
         option
             .drawer
             .set_metadata("container", DataMap::Ascii("DAT".to_string()))?;
-        option
-            .drawer
-            .set_metadata("image pages", DataMap::UInt((decoded_entries.len() + 1) as u64))?;
+        option.drawer.set_metadata(
+            "image pages",
+            DataMap::UInt((decoded_entries.len() + 1) as u64),
+        )?;
         option
             .drawer
             .set_metadata("width", DataMap::UInt(first_width as u64))?;
@@ -427,4 +464,3 @@ pub fn decode<B: BinaryReader>(
     draw_indexed(option, width, height, &pixels, &palette)?;
     Ok(None)
 }
-

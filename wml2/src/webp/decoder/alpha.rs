@@ -1,7 +1,7 @@
 //! Alpha-plane parsing and reconstruction helpers.
 
-use super::lossless::decode_lossless_vp8l_to_argb;
 use super::DecoderError;
+use super::lossless::decode_lossless_vp8l_to_argb;
 
 const ALPHA_HEADER_LEN: usize = 1;
 const ALPHA_NO_COMPRESSION: u8 = 0;
@@ -193,7 +193,7 @@ pub fn apply_alpha_plane(rgba: &mut [u8], alpha: &[u8]) -> Result<(), DecoderErr
 
 #[cfg(test)]
 mod tests {
-    use super::{decode_alpha_plane, ALPHA_FILTER_HORIZONTAL};
+    use super::{ALPHA_FILTER_HORIZONTAL, decode_alpha_plane};
 
     #[test]
     fn decode_alpha_plane_unfilters_horizontal_rows() {

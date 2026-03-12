@@ -55,4 +55,3 @@ impl WarningKind for WebpWarningKind {
         }
     }
 }
-

@@ -1,7 +1,7 @@
 //! JPEG encoder implementation.
 
 use super::fdct::fdct_block;
-use super::huffman::{default_huffman_writer, encode_block, write_dht, HuffmanWriteTables};
+use super::huffman::{HuffmanWriteTables, default_huffman_writer, encode_block, write_dht};
 use super::quantize_table::scaled_quant_tables;
 
 type Error = Box<dyn std::error::Error>;
@@ -250,4 +250,3 @@ pub fn encode(image: &EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
 
     Ok(data)
 }
-

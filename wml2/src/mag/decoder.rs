@@ -156,12 +156,20 @@ pub fn decode<B: BinaryReader>(
 
     let chunk_size = 0x8000;
 
-    let mut flag_b_stream =
-        ChunckStream::new(start_offset, header.flag_b_offset, header.flag_b_size, chunk_size);
+    let mut flag_b_stream = ChunckStream::new(
+        start_offset,
+        header.flag_b_offset,
+        header.flag_b_size,
+        chunk_size,
+    );
     flag_b_stream.refill(reader)?;
 
-    let mut pixel_stream =
-        ChunckStream::new(start_offset, header.pixel_d_offset, header.pixel_d_size, chunk_size);
+    let mut pixel_stream = ChunckStream::new(
+        start_offset,
+        header.pixel_d_offset,
+        header.pixel_d_size,
+        chunk_size,
+    );
     pixel_stream.refill(reader)?;
 
     let mut flag_b_map = vec![0u8; x_blocks + 1];
@@ -266,8 +274,7 @@ pub fn decode<B: BinaryReader>(
                 expanded[m * 2 + 1] = c & 0x0F;
             }
             let pix_off = header.start_x as usize - aligned_start_x;
-            pixels[row_out..row_out + width]
-                .copy_from_slice(&expanded[pix_off..pix_off + width]);
+            pixels[row_out..row_out + width].copy_from_slice(&expanded[pix_off..pix_off + width]);
         }
     }
 

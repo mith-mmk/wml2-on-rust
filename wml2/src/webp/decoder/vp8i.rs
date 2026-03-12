@@ -46,4 +46,3 @@ pub enum WebpFormat {
     Lossy = 1,
     Lossless = 2,
 }
-

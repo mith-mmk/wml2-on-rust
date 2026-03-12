@@ -679,4 +679,3 @@ pub fn white_tree() -> HuffmanTree {
         append: append.to_vec(),
     }
 }
-

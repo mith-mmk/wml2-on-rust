@@ -20,4 +20,3 @@ impl WarningKind for BMPWarningKind {
         }
     }
 }
-

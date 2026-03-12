@@ -168,4 +168,3 @@ impl<'a> BitReaderWordMsb<'a> {
         value
     }
 }
-

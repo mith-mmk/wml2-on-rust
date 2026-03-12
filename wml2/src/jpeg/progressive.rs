@@ -354,13 +354,13 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                             JpegHaeder::dqt_reader(bitread.reader,&mut quantization_tables)?;
                         },*/
                         0xff => { // padding
-                             // offset = offset + 1;
+                            // offset = offset + 1;
                         }
                         0x00 => { //data
-                             // skip
+                            // skip
                         }
                         0xd0..=0xd7 => { // REST0-7
-                             // skip
+                            // skip
                         }
                         _ => {
                             let length = bitread.reader.read_u16_be()? as usize;
@@ -447,7 +447,7 @@ fn successive_approximation_read<B: BinaryReader>(
                     eob = 1;
                     break;
                 } else if rrrr == 15 { //ZRL
-                     // Nil
+                    // Nil
                 } else {
                     // G.1.2.2
                     let e = 1 << rrrr as usize;
@@ -506,4 +506,3 @@ fn successive_approximation_read<B: BinaryReader>(
         Ok(0)
     }
 }
-

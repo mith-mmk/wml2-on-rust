@@ -78,18 +78,29 @@ impl BitReader {
 
     fn look_bits_msb(&mut self, size: usize) -> Result<usize, Error> {
         while self.left_bits <= 24 {
-            if self.ptr >= self.buffer.len() && self.left_bits <= 8 && self.left_bits < size {
-                self.warning = true;
-                if size >= 12 {
-                    return Ok(0x1); // send EOL
-                } else {
-                    return Ok(0x0);
+            if self.ptr >= self.buffer.len() {
+                if self.left_bits < size {
+                    self.warning = true;
+                    if size >= 12 {
+                        return Ok(0x1); // send EOL
+                    } else {
+                        return Ok(0x0);
+                    }
                 }
+                break;
             }
 
             self.last_byte = (self.last_byte << 8) | (self.buffer[self.ptr] as u32);
             self.ptr += 1;
             self.left_bits += 8;
+        }
+        if self.left_bits < size {
+            self.warning = true;
+            if size >= 12 {
+                return Ok(0x1);
+            } else {
+                return Ok(0x0);
+            }
         }
 
         let bits = (self.last_byte >> (self.left_bits - size)) & ((1 << size) - 1);
@@ -98,12 +109,12 @@ impl BitReader {
     }
 
     fn skip_bits(&mut self, size: usize) {
-        if self.left_bits > size {
+        if self.left_bits >= size {
             self.left_bits -= size;
         } else {
             let r = self.look_bits(size);
             if r.is_ok() {
-                self.left_bits -= size;
+                self.left_bits = self.left_bits.saturating_sub(size);
             } else {
                 self.left_bits = 0;
             }
@@ -113,7 +124,7 @@ impl BitReader {
     fn look_bits_lsb(&mut self, size: usize) -> Result<usize, Error> {
         while self.left_bits <= 24 {
             if self.ptr >= self.buffer.len() {
-                if self.left_bits <= 8 && self.left_bits < size {
+                if self.left_bits < size {
                     self.warning = true;
                     if size >= 12 {
                         return Ok(0x1); // send EOL
@@ -126,6 +137,14 @@ impl BitReader {
             self.last_byte = (self.last_byte << 8) | (self.buffer[self.ptr].reverse_bits() as u32);
             self.ptr += 1;
             self.left_bits += 8;
+        }
+        if self.left_bits < size {
+            self.warning = true;
+            if size >= 12 {
+                return Ok(0x1);
+            } else {
+                return Ok(0x0);
+            }
         }
 
         let bits = (self.last_byte >> (self.left_bits - size)) & ((1 << size) - 1);
@@ -140,20 +159,25 @@ impl BitReader {
     }
 
     fn value(&mut self, tree: &HuffmanTree) -> Result<i32, Error> {
-        let pos = self.look_bits(tree.working_bits)?;
-        let (mut bits, mut val) = tree.matrix[pos];
-        if bits == -1 {
-            let pos = self.look_bits(tree.max_bits)?;
-            // need rust 1.60
-            (bits, val) = tree.append[pos];
+        loop {
+            let pos = self.look_bits(tree.working_bits)?;
+            let (mut bits, mut val) = tree.matrix[pos];
             if bits == -1 {
-                //fill
-                self.skip_bits(1);
-                return self.value(tree);
+                let pos = self.look_bits(tree.max_bits)?;
+                // need rust 1.60
+                (bits, val) = tree.append[pos];
+                if bits == -1 {
+                    // fill bits can be arbitrarily long, so handle them iteratively.
+                    self.skip_bits(1);
+                    if self.warning {
+                        return Ok(EOL);
+                    }
+                    continue;
+                }
             }
+            self.skip_bits(bits as usize);
+            return Ok(val);
         }
-        self.skip_bits(bits as usize);
-        Ok(val)
     }
 
     fn run_len(&mut self, tree: &HuffmanTree) -> Result<i32, Error> {
@@ -444,11 +468,14 @@ pub fn decoder(
                         print!("Ps ");
                     }
                     codes_ptr += 1;
-                    while a0 >= pre_codes[codes_ptr] {
+                    while codes_ptr < pre_codes.len() && a0 >= pre_codes[codes_ptr] {
                         codes_ptr += 2;
                     }
                     codes_ptr += 1;
-                    let b2 = pre_codes[codes_ptr];
+                    let b2 = pre_codes.get(codes_ptr).copied().unwrap_or_else(|| {
+                        reader.warning = true;
+                        width
+                    });
                     a0 = b2;
                     if cfg!(debug_assertions) {
                         print!("{} ", a0);
@@ -460,11 +487,14 @@ pub fn decoder(
                     }
                     codes_ptr += 1;
 
-                    while a0 >= pre_codes[codes_ptr] {
+                    while codes_ptr < pre_codes.len() && a0 >= pre_codes[codes_ptr] {
                         codes_ptr += 2;
                     }
 
-                    let a1 = pre_codes[codes_ptr];
+                    let a1 = pre_codes.get(codes_ptr).copied().unwrap_or_else(|| {
+                        reader.warning = true;
+                        width
+                    });
                     a0 = a1;
 
                     codes.push(a0);
@@ -479,11 +509,14 @@ pub fn decoder(
                     }
                     codes_ptr += 1;
 
-                    while a0 >= pre_codes[codes_ptr] {
+                    while codes_ptr < pre_codes.len() && a0 >= pre_codes[codes_ptr] {
                         codes_ptr += 2;
                     }
 
-                    let b1 = pre_codes[codes_ptr];
+                    let b1 = pre_codes.get(codes_ptr).copied().unwrap_or_else(|| {
+                        reader.warning = true;
+                        width
+                    });
 
                     let a1 = (b1 + n).min(width);
                     a0 = a1;
@@ -499,15 +532,18 @@ pub fn decoder(
                     }
                     codes_ptr += 1;
 
-                    while a0 >= pre_codes[codes_ptr] {
+                    while codes_ptr < pre_codes.len() && a0 >= pre_codes[codes_ptr] {
                         codes_ptr += 2;
                     }
-                    let b1 = pre_codes[codes_ptr];
+                    let b1 = pre_codes.get(codes_ptr).copied().unwrap_or_else(|| {
+                        reader.warning = true;
+                        width
+                    });
                     let a1 = b1.saturating_sub(n);
                     a0 = a1;
                     codes.push(a0);
 
-                    codes_ptr -= 2;
+                    codes_ptr = codes_ptr.saturating_sub(2);
 
                     if cfg!(debug_assertions) {
                         print!("{} ", a0);
@@ -614,3 +650,16 @@ pub fn decoder(
     Ok((data, reader.warning))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn value_handles_long_fill_without_recursing() {
+        let mut reader = BitReader::new(&vec![0; 4096], false);
+        let value = reader.value(&white_tree()).unwrap();
+
+        assert_eq!(value, EOL);
+        assert!(reader.warning);
+    }
+}

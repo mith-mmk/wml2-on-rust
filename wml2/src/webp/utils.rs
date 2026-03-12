@@ -108,7 +108,13 @@ pub(crate) fn make_metadata(
         );
         map.insert(
             "Animation frame durations".to_string(),
-            DataMap::UIntAllay(parsed.frames.iter().map(|frame| frame.duration as u64).collect()),
+            DataMap::UIntAllay(
+                parsed
+                    .frames
+                    .iter()
+                    .map(|frame| frame.duration as u64)
+                    .collect(),
+            ),
         );
     }
 
@@ -164,4 +170,3 @@ pub(crate) fn make_metadata(
 
     Ok((map, warnings))
 }
-

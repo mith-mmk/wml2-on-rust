@@ -72,6 +72,13 @@ fn planar_to_chuncky(data: &[u8], header: &Tiff) -> Result<Vec<u8>, Error> {
     Ok(buf)
 }
 
+fn has_bytes(data: &[u8], offset: usize, count: usize) -> bool {
+    offset
+        .checked_add(count)
+        .map(|end| end <= data.len())
+        .unwrap_or(false)
+}
+
 pub fn draw_strip(
     data: &[u8],
     y: usize,
@@ -195,6 +202,9 @@ pub fn draw_tile(
                                 && header.max_sample_values[0] == 32767
                                 && header.tiff_headers.endian == bin_rs::Endian::LittleEndian
                             {
+                                if !has_bytes(&data, i, 2) {
+                                    return Ok(None);
+                                }
                                 let color = read_u16(&data, i, header.tiff_headers.endian) >> 8;
                                 let temp_r = (color >> 5 & 0x1f) as u8;
                                 let r = temp_r << 3 | temp_r >> 2;
@@ -209,6 +219,9 @@ pub fn draw_tile(
                                 i += 2;
                             } else {
                                 // 16 bit glayscale
+                                if !has_bytes(&data, i, 1) {
+                                    return Ok(None);
+                                }
                                 let mut color = data[i];
                                 if header.predictor == 2 {
                                     color += prevs[0];
@@ -241,6 +254,9 @@ pub fn draw_tile(
                             i += header.samples_per_pixel as usize;
                         }
                         4 => {
+                            if i / 2 >= data.len() {
+                                return Ok(None);
+                            }
                             let c;
                             let color = data[i / 2];
                             if i % 2 == 0 {
@@ -265,6 +281,9 @@ pub fn draw_tile(
                         }
                         2 => {
                             // usually illegal
+                            if i / 4 >= data.len() {
+                                return Ok(None);
+                            }
                             let c;
                             let color = data[i / 4];
                             let shift = (i % 4) * 2;
@@ -283,6 +302,9 @@ pub fn draw_tile(
                             i += 1;
                         }
                         1 => {
+                            if i / 8 >= data.len() {
+                                return Ok(None);
+                            }
                             let c;
                             let color = data[i / 8];
                             let shift = i % 8;
@@ -334,6 +356,10 @@ pub fn draw_tile(
                         }
                         16 => {
                             if header.samples_per_pixel >= 3 {
+                                let bytes = header.samples_per_pixel as usize * 2;
+                                if !has_bytes(&data, i, bytes) {
+                                    return Ok(None);
+                                }
                                 r = (read_u16(&data, i, header.tiff_headers.endian) >> 8) as u8;
                                 g = (read_u16(&data, i + 2, header.tiff_headers.endian) >> 8) as u8;
                                 b = (read_u16(&data, i + 4, header.tiff_headers.endian) >> 8) as u8;
@@ -349,6 +375,10 @@ pub fn draw_tile(
                             }
                         }
                         32 => {
+                            let bytes = header.samples_per_pixel as usize * 4;
+                            if !has_bytes(&data, i, bytes) {
+                                return Ok(None);
+                            }
                             r = (read_u32(&data, i, header.tiff_headers.endian) >> 24) as u8;
                             g = (read_u32(&data, i + 4, header.tiff_headers.endian) >> 24) as u8;
                             b = (read_u32(&data, i + 8, header.tiff_headers.endian) >> 24) as u8;
@@ -394,6 +424,9 @@ pub fn draw_tile(
                     match header.bitspersamples[0] {
                         //bit per samples same (8,8,8), but also (8,16,8) pattern
                         8 => {
+                            if !has_bytes(&data, i, header.samples_per_pixel as usize) {
+                                return Ok(None);
+                            }
                             c = data[i];
                             m = data[i + 1];
                             y = data[i + 2];
@@ -409,6 +442,10 @@ pub fn draw_tile(
                             i += header.samples_per_pixel as usize;
                         }
                         16 => {
+                            let bytes = header.samples_per_pixel as usize * 2;
+                            if !has_bytes(&data, i, bytes) {
+                                return Ok(None);
+                            }
                             c = (read_u16(&data, i, header.tiff_headers.endian) >> 8) as u8;
                             m = (read_u16(&data, i + 2, header.tiff_headers.endian) >> 8) as u8;
                             y = (read_u16(&data, i + 4, header.tiff_headers.endian) >> 8) as u8;
@@ -424,6 +461,10 @@ pub fn draw_tile(
                             i += header.samples_per_pixel as usize * 2;
                         }
                         32 => {
+                            let bytes = header.samples_per_pixel as usize * 4;
+                            if !has_bytes(&data, i, bytes) {
+                                return Ok(None);
+                            }
                             c = (read_u32(&data, i, header.tiff_headers.endian) >> 24) as u8;
                             m = (read_u32(&data, i + 4, header.tiff_headers.endian) >> 24) as u8;
                             y = (read_u32(&data, i + 8, header.tiff_headers.endian) >> 24) as u8;
@@ -828,4 +869,3 @@ pub fn decode<'decode, B: BinaryReader>(
     option.drawer.terminate(None)?;
     Ok(warnings)
 }
-

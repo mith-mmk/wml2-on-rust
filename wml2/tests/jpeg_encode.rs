@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 
-use wml2::draw::{image_encoder, image_load, EncodeOptions, ImageBuffer};
+use wml2::draw::{EncodeOptions, ImageBuffer, image_encoder, image_load};
 use wml2::metadata::DataMap;
 use wml2::util::ImageFormat;
 
 #[test]
 fn encode_jpeg_via_public_api() {
     let rgba = vec![
-        255, 0, 0, 255, 0, 255, 0, 255,
-        0, 0, 255, 255, 255, 255, 255, 255,
+        255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255,
     ];
     let mut image = ImageBuffer::from_buffer(2, 2, rgba);
     let mut options = HashMap::new();

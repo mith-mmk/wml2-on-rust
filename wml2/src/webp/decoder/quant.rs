@@ -2,9 +2,9 @@
 
 use std::array::from_fn;
 
+use super::DecoderError;
 use super::vp8::Vp8BoolDecoder;
 use super::vp8i::NUM_MB_SEGMENTS;
-use super::DecoderError;
 
 use super::vp8::SegmentHeader;
 
@@ -129,4 +129,3 @@ pub fn parse_quantization(
 
     Ok(Quantization { indices, matrices })
 }
-

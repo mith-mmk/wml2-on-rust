@@ -86,7 +86,13 @@ fn decode_vsp_dat_sample() {
     let image = image_from_file(sample_path("sample.dat")).unwrap();
     assert!(image.width > 0);
     assert!(image.height > 0);
-    assert!(image.animation.as_ref().map(|frames| !frames.is_empty()).unwrap_or(false));
+    assert!(
+        image
+            .animation
+            .as_ref()
+            .map(|frames| !frames.is_empty())
+            .unwrap_or(false)
+    );
 }
 
 #[test]
@@ -95,5 +101,11 @@ fn decode_vsp_dat_sample_from_bytes() {
     let image = image_load(&bytes).unwrap();
     assert!(image.width > 0);
     assert!(image.height > 0);
-    assert!(image.animation.as_ref().map(|frames| !frames.is_empty()).unwrap_or(false));
+    assert!(
+        image
+            .animation
+            .as_ref()
+            .map(|frames| !frames.is_empty())
+            .unwrap_or(false)
+    );
 }

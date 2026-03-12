@@ -65,7 +65,12 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
                 }
                 return ImageFormat::Tiff;
             }
-            if buffer[1] == b'A' && buffer[2] == b'K' && buffer[3] == b'I' && buffer[4] == b'0' && buffer[5] == b'2' {
+            if buffer[1] == b'A'
+                && buffer[2] == b'K'
+                && buffer[3] == b'I'
+                && buffer[4] == b'0'
+                && buffer[5] == b'2'
+            {
                 return ImageFormat::Mag;
             }
             #[cfg(not(feature = "noretoro"))]
@@ -141,4 +146,3 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
     }
     ImageFormat::Unknown
 }
-

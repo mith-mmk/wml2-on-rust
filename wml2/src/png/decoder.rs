@@ -1117,4 +1117,3 @@ pub fn decode<'decode, B: BinaryReader>(
     option.drawer.terminate(None)?;
     Ok(None)
 }
-

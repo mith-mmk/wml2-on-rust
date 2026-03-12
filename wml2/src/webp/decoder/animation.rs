@@ -1,9 +1,9 @@
 //! Animated WebP decode and compositing helpers.
 
+use super::DecoderError;
 use super::header::{ParsedAnimationFrame, parse_animation_webp};
 use super::lossless::decode_lossless_vp8l_to_rgba;
 use super::lossy::{DecodedImage, decode_lossy_vp8_frame_to_rgba};
-use super::DecoderError;
 
 /// One fully composited animation frame.
 #[derive(Debug, Clone, PartialEq, Eq)]

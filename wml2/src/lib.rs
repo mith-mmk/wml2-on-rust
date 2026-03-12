@@ -65,8 +65,6 @@ pub mod draw;
 pub mod error;
 pub mod gif;
 pub mod jpeg;
-pub mod png;
-pub mod tiff;
 pub mod mag;
 #[cfg(not(feature = "noretoro"))]
 pub mod maki;
@@ -76,8 +74,10 @@ pub mod pcd;
 pub mod pi;
 #[cfg(not(feature = "noretoro"))]
 pub mod pic;
+pub mod png;
 #[cfg(not(feature = "noretoro"))]
 mod retro;
+pub mod tiff;
 pub mod util;
 #[cfg(not(feature = "noretoro"))]
 pub mod vsp;

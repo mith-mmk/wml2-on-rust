@@ -25,4 +25,3 @@ impl TiffWarning {
         Self { message }
     }
 }
-

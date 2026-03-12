@@ -5,7 +5,7 @@ use bin_rs::reader::BinaryReader;
 use crate::draw::DecodeOptions;
 use crate::error::ImgErrorKind;
 use crate::metadata::DataMap;
-use crate::retro::{draw_indexed, err, read_all, ByteCursor};
+use crate::retro::{ByteCursor, draw_indexed, err, read_all};
 use crate::warning::ImgWarnings;
 
 type Error = Box<dyn std::error::Error>;
@@ -181,7 +181,12 @@ pub fn decode<B: BinaryReader>(
         .drawer
         .set_metadata("comment", DataMap::SJISString(header.text))?;
 
-    draw_indexed(option, header.width, header.height, &pixels, &header.palette)?;
+    draw_indexed(
+        option,
+        header.width,
+        header.height,
+        &pixels,
+        &header.palette,
+    )?;
     Ok(None)
 }
-

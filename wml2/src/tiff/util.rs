@@ -49,7 +49,7 @@ pub fn print_tags(header: &TiffHeaders) -> String {
                             "[JIS encoding not supported]".to_string()
                         }
                         #[cfg(feature = "SJIS")]
-                         {
+                        {
                             let (cow, _, had_errors) = encoding_rs::SHIFT_JIS.decode(&body);
                             if had_errors {
                                 "[JIS decoding error]".to_string()
@@ -351,4 +351,3 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
         DataPack::Unkown(d) => DataMap::Raw(d.to_vec()),
     }
 }
-

@@ -13,9 +13,9 @@ use crate::color::RGBA;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use crate::tiff::util::print_tags;
+use bin_rs::Endian;
 use bin_rs::io::*;
 use bin_rs::reader::BinaryReader;
-use bin_rs::Endian;
 use std::io::SeekFrom;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -1335,4 +1335,3 @@ fn read_tag(
 
     Ok(headers)
 }
-

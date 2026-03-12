@@ -1,12 +1,12 @@
 //! WebP RIFF container and chunk parsing helpers.
 
+use super::DecoderError;
 use super::alpha::{AlphaHeader, parse_alpha_header};
 use super::vp8::{get_info, get_lossless_info};
 use super::vp8i::{
-    WebpFormat, ALPHA_FLAG, ANIMATION_FLAG, CHUNK_HEADER_SIZE, MAX_CHUNK_PAYLOAD, MAX_IMAGE_AREA,
-    RIFF_HEADER_SIZE, TAG_SIZE, VP8X_CHUNK_SIZE,
+    ALPHA_FLAG, ANIMATION_FLAG, CHUNK_HEADER_SIZE, MAX_CHUNK_PAYLOAD, MAX_IMAGE_AREA,
+    RIFF_HEADER_SIZE, TAG_SIZE, VP8X_CHUNK_SIZE, WebpFormat,
 };
-use super::DecoderError;
 
 /// Common metadata for a RIFF chunk.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

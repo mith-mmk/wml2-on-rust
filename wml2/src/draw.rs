@@ -9,8 +9,8 @@ use crate::color::RGBA;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
 use crate::metadata::DataMap;
-use crate::util::format_check;
 use crate::util::ImageFormat;
+use crate::util::format_check;
 use crate::warning::ImgWarnings;
 use bin_rs::reader::*;
 use std::collections::HashMap;
@@ -944,17 +944,17 @@ pub fn image_decoder<B: BinaryReader>(
 
     #[cfg(not(feature = "noretoro"))]
     {
-    let current = reader.seek(std::io::SeekFrom::Current(0))?;
-    let pcd = (|| -> Result<bool, Error> {
-        reader.seek(std::io::SeekFrom::Start(0x800))?;
-        let mut id = [0u8; 7];
-        reader.read_exact(&mut id)?;
-        Ok(&id == b"PCD_IPI")
-    })();
-    reader.seek(std::io::SeekFrom::Start(current))?;
-    if matches!(pcd, Ok(true)) {
-        return crate::pcd::decoder::decode(reader, option);
-    }
+        let current = reader.seek(std::io::SeekFrom::Current(0))?;
+        let pcd = (|| -> Result<bool, Error> {
+            reader.seek(std::io::SeekFrom::Start(0x800))?;
+            let mut id = [0u8; 7];
+            reader.read_exact(&mut id)?;
+            Ok(&id == b"PCD_IPI")
+        })();
+        reader.seek(std::io::SeekFrom::Start(current))?;
+        if matches!(pcd, Ok(true)) {
+            return crate::pcd::decoder::decode(reader, option);
+        }
     }
 
     Err(Box::new(ImgError::new_const(

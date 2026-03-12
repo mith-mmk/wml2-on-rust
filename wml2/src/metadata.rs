@@ -47,7 +47,7 @@ impl DataMap {
             DataMap::I18NString(d) => d.to_string(),
             DataMap::SJISString(d) => {
                 format!("{:?}", d)
-            },
+            }
             DataMap::Exif(header) => header.to_string(),
             DataMap::ICCProfile(iccprofile) => {
                 format!("{:?}", iccprofile)

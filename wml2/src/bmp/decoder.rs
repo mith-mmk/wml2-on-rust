@@ -120,7 +120,7 @@ fn convert_rgba32(
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
                 "Not Support bit count".to_string(),
-            )))
+            )));
         }
     }
     Ok(())
@@ -526,4 +526,3 @@ pub fn decode<'decode, B: BinaryReader>(
 
     result
 }
-

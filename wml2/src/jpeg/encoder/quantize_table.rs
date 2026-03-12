@@ -53,4 +53,3 @@ pub(crate) fn scaled_quant_tables(quality: usize) -> ([u8; 64], [u8; 64]) {
 
     (luma, chroma)
 }
-

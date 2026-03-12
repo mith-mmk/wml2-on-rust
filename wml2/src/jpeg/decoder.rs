@@ -1081,54 +1081,60 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
 
     let sq = &super::util::ZIG_ZAG_SEQUENCE;
 
-    std::thread::spawn(move || loop {
-        let (com, zz, mcu_x, mcu_y, tq) =
-            rx1.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0, 0));
-        if com == ThreadCommand::Stop {
+    std::thread::spawn(move || {
+        loop {
+            let (com, zz, mcu_x, mcu_y, tq) =
+                rx1.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0, 0));
+            if com == ThreadCommand::Stop {
+                let _ = tx2.send((com, zz, mcu_x, mcu_y));
+                break;
+            }
+            let q = quantization_tables[tq].q.clone();
+            let zz: Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
             let _ = tx2.send((com, zz, mcu_x, mcu_y));
-            break;
         }
-        let q = quantization_tables[tq].q.clone();
-        let zz: Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
-        let _ = tx2.send((com, zz, mcu_x, mcu_y));
     });
 
-    std::thread::spawn(move || loop {
-        let (com, zz, mcu_x, mcu_y) = rx2.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0));
-        if com == ThreadCommand::Stop {
-            let _ = tx3.send((com, vec![], mcu_x, mcu_y));
-            break;
+    std::thread::spawn(move || {
+        loop {
+            let (com, zz, mcu_x, mcu_y) = rx2.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0));
+            if com == ThreadCommand::Stop {
+                let _ = tx3.send((com, vec![], mcu_x, mcu_y));
+                break;
+            }
+            let ff = idct(&zz);
+            let _ = tx3.send((com, ff, mcu_x, mcu_y));
         }
-        let ff = idct(&zz);
-        let _ = tx3.send((com, ff, mcu_x, mcu_y));
     });
 
-    std::thread::spawn(move || loop {
-        let mut mcu_units: Vec<Vec<u8>> = Vec::new();
-        let mut com = ThreadCommand::Run;
-        let mut mcu_x = 0;
-        let mut mcu_y = 0;
-        for _ in 0..mcu_size {
-            let (_com, ff, _mcu_x, _mcu_y) =
-                rx3.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0));
-            mcu_units.push(ff);
-            com = _com;
-            mcu_x = _mcu_x;
-            mcu_y = _mcu_y
-        }
-        if com == ThreadCommand::Stop {
-            let _ = tx4.send((com, vec![], mcu_x, mcu_y));
-            break;
-        }
-        let data = convert_rgb(
-            plane,
-            &mcu_units,
-            &component,
-            color_space.to_string(),
-            (h_max, v_max),
-        );
+    std::thread::spawn(move || {
+        loop {
+            let mut mcu_units: Vec<Vec<u8>> = Vec::new();
+            let mut com = ThreadCommand::Run;
+            let mut mcu_x = 0;
+            let mut mcu_y = 0;
+            for _ in 0..mcu_size {
+                let (_com, ff, _mcu_x, _mcu_y) =
+                    rx3.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0));
+                mcu_units.push(ff);
+                com = _com;
+                mcu_x = _mcu_x;
+                mcu_y = _mcu_y
+            }
+            if com == ThreadCommand::Stop {
+                let _ = tx4.send((com, vec![], mcu_x, mcu_y));
+                break;
+            }
+            let data = convert_rgb(
+                plane,
+                &mcu_units,
+                &component,
+                color_space.to_string(),
+                (h_max, v_max),
+            );
 
-        let _ = tx4.send((com, data, mcu_x, mcu_y));
+            let _ = tx4.send((com, data, mcu_x, mcu_y));
+        }
     });
 
     for mcu_y in 0..mcu_y_max {
@@ -1551,4 +1557,3 @@ pub fn decode<'decode, B: BinaryReader>(
         decode_baseline(reader, &header, option, warnings)
     }
 }
-

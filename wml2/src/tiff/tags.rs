@@ -2162,4 +2162,3 @@ pub fn tag_mapper(tag: u16, data: &DataPack, length: usize) -> (String, DataMap)
     }
     (tagname.to_string(), s)
 }
-

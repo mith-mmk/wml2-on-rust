@@ -5,7 +5,7 @@ use bin_rs::reader::BinaryReader;
 use crate::draw::DecodeOptions;
 use crate::error::ImgErrorKind;
 use crate::metadata::DataMap;
-use crate::retro::{draw_indexed, draw_rgb, err, read_all, BitReaderWordMsb};
+use crate::retro::{BitReaderWordMsb, draw_indexed, draw_rgb, err, read_all};
 use crate::warning::ImgWarnings;
 
 type Error = Box<dyn std::error::Error>;
@@ -135,7 +135,12 @@ fn parse_header(data: &[u8]) -> Result<(BitReaderWordMsb<'_>, PicParsed), Error>
             };
         }
         24 => decode_mode = "24",
-        _ => return Err(err(ImgErrorKind::IllegalData, "Unsupported PIC color depth")),
+        _ => {
+            return Err(err(
+                ImgErrorKind::IllegalData,
+                "Unsupported PIC color depth",
+            ));
+        }
     }
 
     match c & 0x0f {
@@ -524,7 +529,11 @@ fn decode_direct(bits: &mut BitReaderWordMsb<'_>, parsed: &PicParsed) -> PicDeco
     }
 }
 
-fn scale_indexed_nearest(image: PicDecoded, target_width: usize, target_height: usize) -> PicDecoded {
+fn scale_indexed_nearest(
+    image: PicDecoded,
+    target_width: usize,
+    target_height: usize,
+) -> PicDecoded {
     let mut pixels = vec![0u8; target_width * target_height];
     for y in 0..target_height {
         let src_y = (y * image.height / target_height).min(image.height.saturating_sub(1));
@@ -621,8 +630,13 @@ pub fn decode<B: BinaryReader>(
         let palette = decoded
             .palette
             .ok_or_else(|| err(ImgErrorKind::IllegalData, "PIC palette is missing"))?;
-        draw_indexed(option, decoded.width, decoded.height, &decoded.pixels, &palette)?;
+        draw_indexed(
+            option,
+            decoded.width,
+            decoded.height,
+            &decoded.pixels,
+            &palette,
+        )?;
     }
     Ok(None)
 }
-

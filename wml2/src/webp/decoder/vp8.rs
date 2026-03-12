@@ -1,15 +1,15 @@
 //! VP8 bitstream parsing for WebP decoding.
 
+use super::DecoderError;
 use super::quant::{Quantization, parse_quantization};
 use super::tree::{
-    parse_intra_mode_row, parse_probability_tables, parse_probability_updates, MacroBlockHeader,
-    ProbabilityTables, ProbabilityUpdateSummary,
+    MacroBlockHeader, ProbabilityTables, ProbabilityUpdateSummary, parse_intra_mode_row,
+    parse_probability_tables, parse_probability_updates,
 };
 use super::vp8i::{
     B_DC_PRED, MAX_NUM_PARTITIONS, MB_FEATURE_TREE_PROBS, NUM_MB_SEGMENTS, NUM_MODE_LF_DELTAS,
-    NUM_REF_LF_DELTAS, VP8L_FRAME_HEADER_SIZE, VP8_FRAME_HEADER_SIZE,
+    NUM_REF_LF_DELTAS, VP8_FRAME_HEADER_SIZE, VP8L_FRAME_HEADER_SIZE,
 };
-use super::DecoderError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Vp8FrameHeader {
@@ -174,19 +174,11 @@ impl<'a> Vp8BoolDecoder<'a> {
 
     pub fn get_signed_value(&mut self, num_bits: usize) -> i32 {
         let value = self.get_value(num_bits) as i32;
-        if self.get() == 1 {
-            -value
-        } else {
-            value
-        }
+        if self.get() == 1 { -value } else { value }
     }
 
     pub fn get_signed(&mut self, value: i32) -> i32 {
-        if self.get() == 1 {
-            -value
-        } else {
-            value
-        }
+        if self.get() == 1 { -value } else { value }
     }
 
     pub fn get_bit(&mut self, prob: u8) -> u32 {
@@ -807,4 +799,3 @@ pub fn parse_macroblock_data(data: &[u8]) -> Result<MacroBlockDataFrame, Decoder
 
     Ok(MacroBlockDataFrame { frame, macroblocks })
 }
-

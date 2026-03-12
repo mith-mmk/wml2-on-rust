@@ -710,4 +710,3 @@ pub fn black_tree() -> HuffmanTree {
         append: append.to_vec(),
     }
 }
-

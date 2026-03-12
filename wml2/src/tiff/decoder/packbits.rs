@@ -24,4 +24,3 @@ pub fn decode(data: &[u8]) -> Result<Vec<u8>, Error> {
     }
     Ok(buf)
 }
-

@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use wml2::draw::{
-    image_encoder, image_from_file, image_load, AnimationLayer, EncodeOptions, ImageBuffer,
-    ImageRect, NextBlend, NextDispose, NextOption, NextOptions,
+    AnimationLayer, EncodeOptions, ImageBuffer, ImageRect, NextBlend, NextDispose, NextOption,
+    NextOptions, image_encoder, image_from_file, image_load,
 };
 use wml2::util::ImageFormat;
 
@@ -136,15 +136,25 @@ fn encode_apng_via_public_api() {
     assert_eq!(decoded.height, 2);
     assert_eq!(decoded.loop_count, Some(2));
     assert_eq!(decoded.first_wait_time, Some(120));
-    assert_eq!(decoded.animation.as_ref().map(|frames| frames.len()), Some(2));
-    assert_eq!(decoded.animation.as_ref().unwrap()[1].control.await_time, 240);
+    assert_eq!(
+        decoded.animation.as_ref().map(|frames| frames.len()),
+        Some(2)
+    );
+    assert_eq!(
+        decoded.animation.as_ref().unwrap()[1].control.await_time,
+        240
+    );
     assert_eq!(decoded.animation.as_ref().unwrap()[1].buffer, second);
 }
 
 #[test]
 fn encode_apng_from_gif_public_api() {
     let mut image = image_from_file(sample_path("bird-wings-flying-feature.gif")).unwrap();
-    let original_frame_count = image.animation.as_ref().map(|frames| frames.len()).unwrap_or(0);
+    let original_frame_count = image
+        .animation
+        .as_ref()
+        .map(|frames| frames.len())
+        .unwrap_or(0);
 
     assert!(original_frame_count > 1);
     assert!(image.first_wait_time.is_some());

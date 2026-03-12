@@ -389,4 +389,3 @@ impl PngHeader {
         Ok(header)
     }
 }
-

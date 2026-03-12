@@ -215,4 +215,3 @@ fn write_u16_be(buf: &mut Vec<u8>, value: u16) {
     buf.push((value >> 8) as u8);
     buf.push((value & 0xff) as u8);
 }
-

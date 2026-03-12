@@ -1,13 +1,13 @@
 //! Lossy `VP8` decode helpers.
 
+use super::DecoderError;
 use super::alpha::{apply_alpha_plane, decode_alpha_plane};
 use super::header::parse_still_webp;
 use super::vp8::{FilterType, MacroBlockData, MacroBlockDataFrame, parse_macroblock_data};
 use super::vp8i::{
-    WebpFormat, B_DC_PRED, B_HD_PRED, B_HE_PRED, B_HU_PRED, B_LD_PRED, B_RD_PRED, B_TM_PRED,
-    B_VE_PRED, B_VL_PRED, B_VR_PRED, DC_PRED, H_PRED, TM_PRED, V_PRED,
+    B_DC_PRED, B_HD_PRED, B_HE_PRED, B_HU_PRED, B_LD_PRED, B_RD_PRED, B_TM_PRED, B_VE_PRED,
+    B_VL_PRED, B_VR_PRED, DC_PRED, H_PRED, TM_PRED, V_PRED, WebpFormat,
 };
-use super::DecoderError;
 
 const VP8_TRANSFORM_AC3_C1: i32 = 20_091;
 const VP8_TRANSFORM_AC3_C2: i32 = 35_468;

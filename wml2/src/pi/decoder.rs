@@ -5,7 +5,7 @@ use bin_rs::reader::BinaryReader;
 use crate::draw::DecodeOptions;
 use crate::error::ImgErrorKind;
 use crate::metadata::DataMap;
-use crate::retro::{draw_indexed, err, read_all, BitReaderWordMsb, ByteCursor};
+use crate::retro::{BitReaderWordMsb, ByteCursor, draw_indexed, err, read_all};
 use crate::warning::ImgWarnings;
 
 type Error = Box<dyn std::error::Error>;
@@ -58,12 +58,19 @@ fn create_mtf_tables(color_count: usize) -> Vec<Vec<u8>> {
     tables
 }
 
-fn take_from_table(tables: &mut [Vec<u8>], row_index: usize, color_index: usize) -> Result<u8, Error> {
+fn take_from_table(
+    tables: &mut [Vec<u8>],
+    row_index: usize,
+    color_index: usize,
+) -> Result<u8, Error> {
     let row = tables
         .get_mut(row_index)
         .ok_or_else(|| err(ImgErrorKind::IllegalData, "PI table row out of range"))?;
     if color_index >= row.len() {
-        return Err(err(ImgErrorKind::IllegalData, "PI color index out of range"));
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "PI color index out of range",
+        ));
     }
     let value = row[color_index];
     for i in (1..=color_index).rev() {
@@ -342,7 +349,12 @@ pub fn decode<B: BinaryReader>(
         .drawer
         .set_metadata("dummy comment", DataMap::SJISString(header.dummy_comment))?;
 
-    draw_indexed(option, header.width, header.height, &pixels, &header.palette)?;
+    draw_indexed(
+        option,
+        header.width,
+        header.height,
+        &pixels,
+        &header.palette,
+    )?;
     Ok(None)
 }
-

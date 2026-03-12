@@ -1,10 +1,10 @@
 use icc_profile::DecodedICCProfile;
 // use icc_profile crate from "https://github.com/mith-mmk/icc_profile"
+use encoding_rs::SHIFT_JIS;
 use std::env;
 use std::error::Error;
 use wml2::draw::*;
 use wml2::metadata::DataMap;
-use encoding_rs::SHIFT_JIS;
 
 pub fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
@@ -39,7 +39,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
             DataMap::Float(value) => {
                 println!("{}: {}", key, value);
             }
-            
+
             DataMap::Raw(value) => {
                 println!("{}: {}bytes", key, value.len());
             }

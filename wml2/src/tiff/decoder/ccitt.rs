@@ -2,7 +2,7 @@
 
 // Tiff depend
 type Error = Box<dyn std::error::Error>;
-use crate::decoder::ccitt::{decoder, Encoder};
+use crate::decoder::ccitt::{Encoder, decoder};
 use crate::error::*;
 use crate::tiff::decoder::Tiff;
 use crate::tiff::header::Compression;
@@ -28,7 +28,7 @@ pub fn decode(buf: &[u8], header: &Tiff) -> Result<(Vec<u8>, bool), Error> {
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::DecodeError,
                 "This encoding is not CCITT".to_string(),
-            )))
+            )));
         }
     };
 
@@ -48,4 +48,3 @@ pub fn decode(buf: &[u8], header: &Tiff) -> Result<(Vec<u8>, bool), Error> {
 
     decoder(buf, width, height, encoding, is_lsb)
 }
-

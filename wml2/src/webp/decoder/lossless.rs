@@ -2,11 +2,11 @@
 
 use std::collections::HashMap;
 
+use super::DecoderError;
 use super::header::parse_still_webp;
 use super::lossy::DecodedImage;
 use super::vp8::get_lossless_info;
 use super::vp8i::WebpFormat;
-use super::DecoderError;
 
 const ARGB_BLACK: u32 = 0xff00_0000;
 const MAX_ALLOWED_CODE_LENGTH: usize = 15;

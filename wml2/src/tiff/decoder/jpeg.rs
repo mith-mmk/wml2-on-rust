@@ -92,4 +92,3 @@ pub fn decode_jpeg_compresson<'decode, B: BinaryReader>(
 
     Ok(warnings)
 }
-

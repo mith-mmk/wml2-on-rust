@@ -80,11 +80,7 @@ impl BitReader {
     fn get_signed_bits(&mut self, size: usize) -> Result<isize, Error> {
         let bits = self.get_bits(size - 1)? as isize;
         let sign = self.get_bits(1)?;
-        if sign == 1 {
-            Ok(bits)
-        } else {
-            Ok(-bits)
-        }
+        if sign == 1 { Ok(bits) } else { Ok(-bits) }
     }
 }
 
@@ -258,7 +254,7 @@ pub fn image_from_bytes(data: &[u8]) -> Result<ImageBuffer, decoder::DecoderErro
         decoder::WebpFormat::Undefined => {
             return Err(decoder::DecoderError::Unsupported(
                 "unsupported WebP format",
-            ))
+            ));
         }
     };
 
@@ -560,4 +556,3 @@ pub fn read_header<B: BinaryReader>(reader: &mut B) -> Result<WebpHeader, Error>
     }
     Ok(webp_header)
 }
-

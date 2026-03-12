@@ -23,20 +23,20 @@ use bin_rs::io::read_u32_le;
 use bin_rs::reader::BinaryReader;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-pub use alpha::{apply_alpha_plane, decode_alpha_plane, AlphaHeader};
-pub use animation::{decode_animation_webp, DecodedAnimation, DecodedAnimationFrame};
+pub use alpha::{AlphaHeader, apply_alpha_plane, decode_alpha_plane};
+pub use animation::{DecodedAnimation, DecodedAnimationFrame, decode_animation_webp};
 pub use header::{
-    get_features, parse_animation_webp, parse_still_webp, AnimationHeader, ChunkHeader,
-    ParsedAnimationFrame, ParsedAnimationWebp, ParsedWebp, Vp8xHeader, WebpFeatures,
+    AnimationHeader, ChunkHeader, ParsedAnimationFrame, ParsedAnimationWebp, ParsedWebp,
+    Vp8xHeader, WebpFeatures, get_features, parse_animation_webp, parse_still_webp,
 };
 pub use lossless::{decode_lossless_vp8l_to_rgba, decode_lossless_webp_to_rgba};
 pub use lossy::{
-    decode_lossy_vp8_to_rgba, decode_lossy_vp8_to_yuv, decode_lossy_webp_to_rgba,
-    decode_lossy_webp_to_yuv, DecodedImage, DecodedYuvImage,
+    DecodedImage, DecodedYuvImage, decode_lossy_vp8_to_rgba, decode_lossy_vp8_to_yuv,
+    decode_lossy_webp_to_rgba, decode_lossy_webp_to_yuv,
 };
 pub use vp8::{
-    parse_lossy_headers, parse_macroblock_data, parse_macroblock_headers, LosslessInfo,
-    LossyHeader, MacroBlockData, MacroBlockDataFrame, MacroBlockHeaders,
+    LosslessInfo, LossyHeader, MacroBlockData, MacroBlockDataFrame, MacroBlockHeaders,
+    parse_lossy_headers, parse_macroblock_data, parse_macroblock_headers,
 };
 pub use vp8i::WebpFormat;
 
@@ -114,11 +114,7 @@ fn decode_frame_rgba(frame: &ParsedAnimationFrame<'_>) -> Result<DecodedImage, D
             lossless::decode_lossless_vp8l_to_rgba(frame.image_data)?
         }
         b"VP8 " => lossy::decode_lossy_vp8_frame_to_rgba(frame.image_data, frame.alpha_data)?,
-        _ => {
-            return Err(DecoderError::Bitstream(
-                "unsupported animation frame chunk",
-            ))
-        }
+        _ => return Err(DecoderError::Bitstream("unsupported animation frame chunk")),
     };
 
     if image.width != frame.width || image.height != frame.height {
@@ -207,7 +203,7 @@ pub fn decode<B: BinaryReader>(
                 return Err(Box::new(ImgError::new_const(
                     ImgErrorKind::UnsupportedFeature,
                     "unsupported WebP format".to_string(),
-                )))
+                )));
             }
         };
 

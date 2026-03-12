@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
-use wml2::draw::{convert, image_from_file, image_to_file, ImageBuffer};
+use wml2::draw::{ImageBuffer, convert, image_from_file, image_to_file};
 use wml2::metadata::DataMap;
 use wml2::util::ImageFormat;
 
@@ -39,6 +39,11 @@ struct Config {
     format: OutputFormat,
     quality: u64,
     split: bool,
+}
+
+struct ExpandedInputs {
+    files: Vec<PathBuf>,
+    failures: Vec<String>,
 }
 
 impl Config {
@@ -126,13 +131,19 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     };
 
     fs::create_dir_all(&config.output_dir)?;
-    let input_files = expand_inputs(&config.inputs)?;
-    if input_files.is_empty() {
+    let expanded = expand_inputs(&config.inputs)?;
+    let mut failed = expanded.failures.len();
+    for failure in expanded.failures {
+        eprintln!("{}", failure);
+    }
+    if expanded.files.is_empty() {
+        if failed > 0 {
+            return Err(format!("{} input pattern(s) failed", failed).into());
+        }
         return Err("no input files matched".into());
     }
 
-    let mut failed = 0usize;
-    for input_file in input_files {
+    for input_file in expanded.files {
         if let Err(error) = convert_one(&config, &input_file) {
             failed += 1;
             eprintln!("{}: {}", input_file.display(), error);
@@ -149,16 +160,12 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 fn convert_one(config: &Config, input_file: &Path) -> Result<(), Box<dyn Error>> {
     if matches!(config.format, OutputFormat::Png) {
         let image = image_from_file(input_file.to_string_lossy().into_owned())?;
-        if config.split || should_split_png(&image) {
+        if config.split || should_split_png(input_file, &image) {
             return write_split_pngs(config, input_file, image);
         }
     }
 
-    let output_file = output_path(
-        &config.output_dir,
-        input_file,
-        config.format.extension(),
-    )?;
+    let output_file = output_path(&config.output_dir, input_file, config.format.extension())?;
     println!("{}", output_file.display());
     convert(
         input_file.to_string_lossy().into_owned(),
@@ -168,7 +175,18 @@ fn convert_one(config: &Config, input_file: &Path) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-fn should_split_png(image: &ImageBuffer) -> bool {
+fn should_split_png(input_file: &Path, image: &ImageBuffer) -> bool {
+    if matches!(
+        input_file
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .map(|extension| extension.to_ascii_lowercase())
+            .as_deref(),
+        Some("dat")
+    ) {
+        return true;
+    }
+
     if let Some(metadata) = &image.metadata {
         if matches!(
             metadata.get("container"),
@@ -249,7 +267,11 @@ fn write_split_pngs(
     Ok(())
 }
 
-fn output_path(output_dir: &Path, input_file: &Path, extension: &str) -> Result<PathBuf, Box<dyn Error>> {
+fn output_path(
+    output_dir: &Path,
+    input_file: &Path,
+    extension: &str,
+) -> Result<PathBuf, Box<dyn Error>> {
     let file_name = input_file
         .file_name()
         .ok_or("input file has no file name")?
@@ -258,22 +280,31 @@ fn output_path(output_dir: &Path, input_file: &Path, extension: &str) -> Result<
     Ok(output_dir.join(format!("{}.{}", file_name, extension)))
 }
 
-fn expand_inputs(patterns: &[String]) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+fn expand_inputs(patterns: &[String]) -> Result<ExpandedInputs, Box<dyn Error>> {
     let mut files = Vec::new();
+    let mut failures = Vec::new();
     for pattern in patterns {
-        let expanded = expand_pattern(pattern)?;
-        if expanded.is_empty() {
-            return Err(format!("no files matched {}", pattern).into());
-        }
-        for path in expanded {
-            if path.is_file() {
-                files.push(path);
+        match expand_pattern(pattern) {
+            Ok(expanded) => {
+                let mut matched = false;
+                for path in expanded {
+                    if path.is_file() {
+                        files.push(path);
+                        matched = true;
+                    }
+                }
+                if !matched {
+                    failures.push(format!("{}: no input files matched", pattern));
+                }
+            }
+            Err(error) => {
+                failures.push(format!("{}: {}", pattern, error));
             }
         }
     }
     files.sort();
     files.dedup();
-    Ok(files)
+    Ok(ExpandedInputs { files, failures })
 }
 
 fn expand_pattern(pattern: &str) -> Result<Vec<PathBuf>, Box<dyn Error>> {
@@ -317,7 +348,12 @@ fn expand_component(
 
     let component = &components[index];
     if component.contains('*') || component.contains('?') {
-        for entry in fs::read_dir(base)? {
+        let entries = match fs::read_dir(base) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(Box::new(error)),
+        };
+        for entry in entries {
             let entry = entry?;
             let file_name = entry.file_name().to_string_lossy().into_owned();
             if wildcard_match(component, &file_name) {
@@ -359,4 +395,63 @@ fn wildcard_match(pattern: &str, text: &str) -> bool {
         p += 1;
     }
     p == pattern.len()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+    use wml2::draw::{AnimationLayer, NextOptions};
+
+    fn unique_temp_path(name: &str) -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "wml2-converter-{name}-{}-{unique}.tmp",
+            std::process::id()
+        ))
+    }
+
+    #[test]
+    fn dat_inputs_always_split_for_png_output() {
+        let image = ImageBuffer::from_buffer(1, 1, vec![0, 0, 0, 0xff]);
+        assert!(should_split_png(Path::new("sample.dat"), &image));
+    }
+
+    #[test]
+    fn out_of_canvas_animation_frames_split_for_png_output() {
+        let mut image = ImageBuffer::from_buffer(16, 16, vec![0; 16 * 16 * 4]);
+        image.animation = Some(vec![AnimationLayer {
+            width: 4,
+            height: 4,
+            start_x: 20,
+            start_y: 0,
+            buffer: vec![0; 4 * 4 * 4],
+            control: NextOptions::new(),
+        }]);
+
+        assert!(should_split_png(Path::new("frame.gif"), &image));
+    }
+
+    #[test]
+    fn expand_inputs_keeps_matching_files_when_some_patterns_fail() {
+        let temp_file = unique_temp_path("expand-inputs");
+        fs::write(&temp_file, b"ok").unwrap();
+
+        let existing = temp_file.to_string_lossy().into_owned();
+        let missing = unique_temp_path("missing-input")
+            .to_string_lossy()
+            .into_owned();
+        let expanded = expand_inputs(&[existing.clone(), missing.clone()]).unwrap();
+
+        assert_eq!(expanded.files, vec![PathBuf::from(existing)]);
+        assert_eq!(
+            expanded.failures,
+            vec![format!("{missing}: no input files matched")]
+        );
+
+        let _ = fs::remove_file(temp_file);
+    }
 }

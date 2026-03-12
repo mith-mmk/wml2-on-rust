@@ -1,12 +1,12 @@
 //! Huffman tree helpers for WebP decoding.
 
+use super::DecoderError;
 use super::vp8::Vp8BoolDecoder;
 use super::vp8i::{
     B_DC_PRED, B_HD_PRED, B_HE_PRED, B_HU_PRED, B_LD_PRED, B_PRED, B_RD_PRED, B_TM_PRED, B_VE_PRED,
     B_VL_PRED, B_VR_PRED, DC_PRED, H_PRED, NUM_BANDS, NUM_BMODES, NUM_CTX, NUM_PROBAS, NUM_TYPES,
     TM_PRED, V_PRED,
 };
-use super::DecoderError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProbabilityUpdateSummary {
@@ -673,4 +673,3 @@ pub fn parse_probability_updates(
 ) -> Result<ProbabilityUpdateSummary, DecoderError> {
     parse_probability_tables(br).map(|tables| tables.summary)
 }
-

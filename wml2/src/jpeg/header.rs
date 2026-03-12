@@ -698,10 +698,10 @@ impl JpegHaeder {
                         }
                         let result = read_app(num, &tag, &buffer)?;
                         match &result {
-                            JpegAppHeaders::Adobe( app) => {
+                            JpegAppHeaders::Adobe(app) => {
                                 adobe_color_transform = app.color_transform;
                             }
-                            JpegAppHeaders::ICCProfile( icc_profile_data) => {
+                            JpegAppHeaders::ICCProfile(icc_profile_data) => {
                                 if let Some(ref mut data) = icc_profile {
                                     data.extend(&icc_profile_data.data);
                                 } else {
@@ -715,10 +715,10 @@ impl JpegHaeder {
                         _jpeg_app_headers.push(result);
                     }
                     0xff => { // padding
-                         // offset = offset + 1;
+                        // offset = offset + 1;
                     }
                     0x00 => { //data
-                         // skip
+                        // skip
                     }
                     0xd0..=0xd7 => { // REST0-7
                     }
@@ -773,4 +773,3 @@ impl JpegHaeder {
         })
     }
 }
-

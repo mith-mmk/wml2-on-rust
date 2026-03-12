@@ -85,4 +85,3 @@ impl WarningKind for JpegWarningKind {
         }
     }
 }
-

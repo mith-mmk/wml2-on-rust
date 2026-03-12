@@ -1,8 +1,8 @@
 //! PNG and APNG encoder implementation.
 
 use crate::draw::{
-    encode_animation_frame_key, EncodeOptions, ImageProfiles, ENCODE_ANIMATION_FRAMES_KEY,
-    ENCODE_ANIMATION_LOOP_COUNT_KEY,
+    ENCODE_ANIMATION_FRAMES_KEY, ENCODE_ANIMATION_LOOP_COUNT_KEY, EncodeOptions, ImageProfiles,
+    encode_animation_frame_key,
 };
 use crate::error::*;
 use crate::metadata::DataMap;
@@ -28,12 +28,7 @@ struct ApngInfo {
     frames: Vec<ApngFrame>,
 }
 
-fn write_chunk(
-    write_buffer: &mut Vec<u8>,
-    crc32: &CRC32,
-    chunk_type: &[u8; 4],
-    data: &[u8],
-) {
+fn write_chunk(write_buffer: &mut Vec<u8>, crc32: &CRC32, chunk_type: &[u8; 4], data: &[u8]) {
     write_u32_be(data.len() as u32, write_buffer);
     let mut temp_buffer = Vec::with_capacity(4 + data.len());
     write_bytes(chunk_type, &mut temp_buffer);
@@ -112,7 +107,7 @@ fn parse_apng_info(profile: &ImageProfiles) -> Result<Option<ApngInfo>, Error> {
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::EncodeError,
                 "wml2.animation.loop_count is not UInt metadata".to_string(),
-            )))
+            )));
         }
         None => 0,
     };
@@ -249,7 +244,11 @@ where
     Ok(miniz_oxide::deflate::compress_to_vec_zlib(&data, 8))
 }
 
-fn encode_main_idat(image: &mut EncodeOptions<'_>, width: u32, height: u32) -> Result<Vec<u8>, Error> {
+fn encode_main_idat(
+    image: &mut EncodeOptions<'_>,
+    width: u32,
+    height: u32,
+) -> Result<Vec<u8>, Error> {
     filtered_scanlines(width, height, |y| {
         Ok(image
             .drawer
@@ -355,7 +354,12 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     }
 
     if let Some(apng) = apng_info {
-        write_actl(&mut write_buffer, &crc32, apng.frames.len() as u32, apng.loop_count);
+        write_actl(
+            &mut write_buffer,
+            &crc32,
+            apng.frames.len() as u32,
+            apng.loop_count,
+        );
 
         let mut sequence_number = 0;
         let first_frame = &apng.frames[0];
@@ -415,4 +419,3 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     image.drawer.encode_end(None)?;
     Ok(write_buffer)
 }
-

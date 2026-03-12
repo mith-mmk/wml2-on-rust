@@ -3,7 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use wml2::draw::{convert, image_encoder, image_load, EncodeOptions, ImageBuffer};
+use wml2::draw::{EncodeOptions, ImageBuffer, convert, image_encoder, image_load};
 use wml2::metadata::DataMap;
 use wml2::util::ImageFormat;
 
@@ -87,7 +87,14 @@ fn convert_gif_file_to_apng_via_public_api() {
     assert!(png.windows(4).any(|window| window == b"acTL"));
 
     let decoded = image_load(&png).unwrap();
-    assert!(decoded.animation.as_ref().map(|frames| frames.len()).unwrap_or(0) > 1);
+    assert!(
+        decoded
+            .animation
+            .as_ref()
+            .map(|frames| frames.len())
+            .unwrap_or(0)
+            > 1
+    );
 
     let _ = fs::remove_file(output_path);
 }

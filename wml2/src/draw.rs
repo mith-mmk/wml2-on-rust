@@ -21,6 +21,8 @@ use std::io::BufReader;
 #[cfg(not(target_family = "wasm"))]
 use std::io::Seek;
 use std::io::Write;
+#[cfg(not(target_family = "wasm"))]
+use std::path::Path;
 
 /* Dynamic Select Callback System */
 
@@ -792,6 +794,53 @@ pub fn image_to_file(
         options: None,
     };
     image_writer(f, &mut option, format)?;
+    Ok(())
+}
+
+#[cfg(not(target_family = "wasm"))]
+fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
+    let extension = Path::new(output_file)
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(|extension| extension.to_ascii_lowercase());
+
+    match extension.as_deref() {
+        Some("png") | Some("apng") => Ok(ImageFormat::Png),
+        Some("jpg") | Some("jpeg") => Ok(ImageFormat::Jpeg),
+        Some("bmp") => Ok(ImageFormat::Bmp),
+        Some(extension) => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            format!("unsupported output extension: {extension}"),
+        ))),
+        None => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "output file has no extension".to_string(),
+        ))),
+    }
+}
+
+/// Converts an input image file to the format implied by `output_file`.
+///
+/// The output format is selected from the destination extension:
+/// `.png` and `.apng` use the PNG/APNG encoder, `.jpg`/`.jpeg` use the JPEG
+/// encoder, and `.bmp` uses the BMP encoder. Encoder-specific settings can be
+/// passed in `options`.
+#[cfg(not(target_family = "wasm"))]
+pub fn convert(
+    input_file: String,
+    output_file: String,
+    options: Option<HashMap<String, DataMap>>,
+) -> Result<(), Error> {
+    let format = format_from_output_path(&output_file)?;
+    let f = std::fs::File::create(&output_file)?;
+    let mut image = image_from_file(input_file)?;
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options,
+    };
+
+    image_writer(f, &mut encode, format)?;
     Ok(())
 }
 

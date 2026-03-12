@@ -79,3 +79,4 @@ pub mod warning;
 pub mod color;
 pub mod decoder;
 pub mod metadata;
+pub mod webp;

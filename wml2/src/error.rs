@@ -124,6 +124,9 @@ pub enum ImgErrorKind {
     Reset,
     IllegalCallback,
     NotInitializedImageBuffer,
+    InvalidParameter,
+    UnexpectedEof,
+    UnsupportedFeature,
     OSError,
     UnknownError,
 }
@@ -150,6 +153,9 @@ impl ImgErrorKind {
             OutboundIndex => "Outbound index",
             IllegalCallback => "Illegal Callback",
             NotInitializedImageBuffer => "Not initialized Image Buffer",
+            InvalidParameter => "Invalid parameter",
+            UnexpectedEof => "Unexpected EOF",
+            UnsupportedFeature => "Unsupported feature",
             OSError => "OS error",
             UnknownError => "Unkonw error",
         }

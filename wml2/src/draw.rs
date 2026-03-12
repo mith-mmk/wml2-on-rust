@@ -329,7 +329,7 @@ impl DrawCallback for ImageBuffer {
                         0 => background.red,
                         1 => background.green,
                         2 => background.blue,
-                        _ => 0xff,
+                        _ => background.alpha,
                     })
                     .collect(),
             );
@@ -707,6 +707,9 @@ pub fn image_decoder<B: BinaryReader>(
         }
         Png => {
             return crate::png::decoder::decode(reader, option);
+        }
+        Webp => {
+            return crate::webp::decoder::decode(reader, option);
         }
         Tiff => {
             return crate::tiff::decoder::decode(reader, option);

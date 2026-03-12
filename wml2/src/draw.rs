@@ -225,6 +225,78 @@ pub struct ImageProfiles {
     pub metadata: Option<HashMap<String, DataMap>>,
 }
 
+pub(crate) const ENCODE_ANIMATION_FRAMES_KEY: &str = "wml2.animation.frames";
+pub(crate) const ENCODE_ANIMATION_LOOP_COUNT_KEY: &str = "wml2.animation.loop_count";
+
+pub(crate) fn encode_animation_frame_key(index: usize, field: &str) -> String {
+    format!("wml2.animation.frame.{index}.{field}")
+}
+
+fn encode_animation_dispose(dispose: &Option<NextDispose>) -> u64 {
+    match dispose {
+        Some(NextDispose::Background) => 1,
+        Some(NextDispose::Previous) => 2,
+        _ => 0,
+    }
+}
+
+fn encode_animation_blend(blend: &Option<NextBlend>) -> u64 {
+    match blend {
+        Some(NextBlend::Source) => 1,
+        _ => 0,
+    }
+}
+
+fn append_animation_metadata(
+    metadata: &mut HashMap<String, DataMap>,
+    animation: &[AnimationLayer],
+    loop_count: u32,
+) {
+    metadata.insert(
+        ENCODE_ANIMATION_FRAMES_KEY.to_string(),
+        DataMap::UInt(animation.len() as u64),
+    );
+    metadata.insert(
+        ENCODE_ANIMATION_LOOP_COUNT_KEY.to_string(),
+        DataMap::UInt(loop_count as u64),
+    );
+
+    for (index, layer) in animation.iter().enumerate() {
+        metadata.insert(
+            encode_animation_frame_key(index, "width"),
+            DataMap::UInt(layer.width as u64),
+        );
+        metadata.insert(
+            encode_animation_frame_key(index, "height"),
+            DataMap::UInt(layer.height as u64),
+        );
+        metadata.insert(
+            encode_animation_frame_key(index, "start_x"),
+            DataMap::SInt(layer.start_x as i64),
+        );
+        metadata.insert(
+            encode_animation_frame_key(index, "start_y"),
+            DataMap::SInt(layer.start_y as i64),
+        );
+        metadata.insert(
+            encode_animation_frame_key(index, "delay_ms"),
+            DataMap::UInt(layer.control.await_time),
+        );
+        metadata.insert(
+            encode_animation_frame_key(index, "dispose"),
+            DataMap::UInt(encode_animation_dispose(&layer.control.dispose_option)),
+        );
+        metadata.insert(
+            encode_animation_frame_key(index, "blend"),
+            DataMap::UInt(encode_animation_blend(&layer.control.blend)),
+        );
+        metadata.insert(
+            encode_animation_frame_key(index, "buffer"),
+            DataMap::Raw(layer.buffer.clone()),
+        );
+    }
+}
+
 /// Using for Animation GIF/PNG/other
 pub struct AnimationLayer {
     pub width: usize,
@@ -498,11 +570,23 @@ impl DrawCallback for ImageBuffer {
 impl PickCallback for ImageBuffer {
     /// Encoder tell start ImageBuffer
     fn encode_start(&mut self, _: Option<EncoderOptions>) -> Result<Option<ImageProfiles>, Error> {
+        let mut metadata = self.metadata.clone();
+        if let Some(animation) = &self.animation {
+            if !animation.is_empty() {
+                let hashmap = if let Some(ref mut metadata) = metadata {
+                    metadata
+                } else {
+                    metadata = Some(HashMap::new());
+                    metadata.as_mut().unwrap()
+                };
+                append_animation_metadata(hashmap, animation, self.loop_count.unwrap_or(0));
+            }
+        }
         let init = ImageProfiles {
             width: self.width,
             height: self.height,
             background: self.background_color.clone(),
-            metadata: None,
+            metadata,
         };
         Ok(Some(init))
     }

@@ -215,7 +215,8 @@ pub fn decode<'decode, B: BinaryReader>(
                         start_y: lscd.ystart as i32,
                     };
 
-                    let await_time = (delay_time * 10) as u64;
+
+                    let await_time = (if delay_time <= 1 {100} else {delay_time * 10}) as u64;
 
                     let opt = NextOptions {
                         flag: NextOption::Next,

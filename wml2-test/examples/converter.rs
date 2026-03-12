@@ -116,11 +116,12 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
     let config = match Config::parse(&args) {
         Ok(config) => config,
-        Err(_) => {
-            println!(
+        Err(error) => {
+            eprintln!("{}", error);
+            eprintln!(
                 "usage: converter [inputfiles...] -o <outputfolder> [-f png|jpeg|bmp] [-q <quality>] [--split]"
             );
-            return Ok(());
+            return Err(error);
         }
     };
 
@@ -130,16 +131,27 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         return Err("no input files matched".into());
     }
 
+    let mut failed = 0usize;
     for input_file in input_files {
-        convert_one(&config, &input_file)?;
+        if let Err(error) = convert_one(&config, &input_file) {
+            failed += 1;
+            eprintln!("{}: {}", input_file.display(), error);
+        }
+    }
+
+    if failed > 0 {
+        return Err(format!("{} file(s) failed", failed).into());
     }
 
     Ok(())
 }
 
 fn convert_one(config: &Config, input_file: &Path) -> Result<(), Box<dyn Error>> {
-    if config.split && write_split_pngs(config, input_file)? {
-        return Ok(());
+    if matches!(config.format, OutputFormat::Png) {
+        let image = image_from_file(input_file.to_string_lossy().into_owned())?;
+        if config.split || should_split_png(&image) {
+            return write_split_pngs(config, input_file, image);
+        }
     }
 
     let output_file = output_path(
@@ -156,8 +168,33 @@ fn convert_one(config: &Config, input_file: &Path) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-fn write_split_pngs(config: &Config, input_file: &Path) -> Result<bool, Box<dyn Error>> {
-    let mut image = image_from_file(input_file.to_string_lossy().into_owned())?;
+fn should_split_png(image: &ImageBuffer) -> bool {
+    if let Some(metadata) = &image.metadata {
+        if matches!(
+            metadata.get("container"),
+            Some(DataMap::Ascii(container)) if container == "DAT"
+        ) {
+            return true;
+        }
+    }
+
+    let Some(animation) = &image.animation else {
+        return false;
+    };
+    animation.iter().any(|frame| {
+        if frame.start_x < 0 || frame.start_y < 0 {
+            return true;
+        }
+        frame.start_x as usize + frame.width > image.width
+            || frame.start_y as usize + frame.height > image.height
+    })
+}
+
+fn write_split_pngs(
+    config: &Config,
+    input_file: &Path,
+    mut image: ImageBuffer,
+) -> Result<(), Box<dyn Error>> {
     let Some(animation) = &image.animation else {
         let output_file = output_path(&config.output_dir, input_file, "png")?;
         println!("{}", output_file.display());
@@ -166,7 +203,7 @@ fn write_split_pngs(config: &Config, input_file: &Path) -> Result<bool, Box<dyn 
             &mut image,
             ImageFormat::Png,
         )?;
-        return Ok(true);
+        return Ok(());
     };
 
     if animation.is_empty() {
@@ -177,7 +214,7 @@ fn write_split_pngs(config: &Config, input_file: &Path) -> Result<bool, Box<dyn 
             &mut image,
             ImageFormat::Png,
         )?;
-        return Ok(true);
+        return Ok(());
     }
 
     let base_name = input_file
@@ -209,7 +246,7 @@ fn write_split_pngs(config: &Config, input_file: &Path) -> Result<bool, Box<dyn 
             ImageFormat::Png,
         )?;
     }
-    Ok(true)
+    Ok(())
 }
 
 fn output_path(output_dir: &Path, input_file: &Path, extension: &str) -> Result<PathBuf, Box<dyn Error>> {

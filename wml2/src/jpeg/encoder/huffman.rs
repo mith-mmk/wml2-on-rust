@@ -1,3 +1,5 @@
+//! Huffman table construction for JPEG encoding.
+
 use super::bitwriter::BitWriter;
 
 type Error = Box<dyn std::error::Error>;
@@ -213,3 +215,4 @@ fn write_u16_be(buf: &mut Vec<u8>, value: u16) {
     buf.push((value >> 8) as u8);
     buf.push((value & 0xff) as u8);
 }
+

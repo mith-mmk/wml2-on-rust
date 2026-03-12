@@ -1,3 +1,5 @@
+//! JPEG-specific warning types.
+
 /*
  * jpeg/Warning.rs  Mith@mmk (C) 2022
  * use MIT License
@@ -83,3 +85,4 @@ impl WarningKind for JpegWarningKind {
         }
     }
 }
+

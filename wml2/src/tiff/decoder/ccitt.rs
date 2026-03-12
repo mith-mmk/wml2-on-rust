@@ -1,3 +1,5 @@
+//! CCITT-compressed TIFF decoding helpers.
+
 // Tiff depend
 type Error = Box<dyn std::error::Error>;
 use crate::decoder::ccitt::{decoder, Encoder};
@@ -46,3 +48,4 @@ pub fn decode(buf: &[u8], header: &Tiff) -> Result<(Vec<u8>, bool), Error> {
 
     decoder(buf, width, height, encoding, is_lsb)
 }
+

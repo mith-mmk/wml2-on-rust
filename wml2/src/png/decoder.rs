@@ -1,3 +1,5 @@
+//! PNG and APNG decoder implementation.
+
 use crate::color::RGBA;
 use crate::draw::*;
 use crate::error::*;
@@ -1115,3 +1117,4 @@ pub fn decode<'decode, B: BinaryReader>(
     option.drawer.terminate(None)?;
     Ok(None)
 }
+

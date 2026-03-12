@@ -1,3 +1,5 @@
+//! TIFF-specific warning types.
+
 use crate::warning::ImgWarning;
 use std::fmt::*;
 
@@ -23,3 +25,4 @@ impl TiffWarning {
         Self { message }
     }
 }
+

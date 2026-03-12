@@ -1,3 +1,5 @@
+//! BMP encoder implementation.
+
 type Error = Box<dyn std::error::Error>;
 use super::header::*;
 use crate::draw::*;
@@ -94,3 +96,4 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     image.drawer.encode_end(None)?;
     Ok(data)
 }
+

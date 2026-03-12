@@ -1,3 +1,5 @@
+//! PIC decoder implementation.
+
 use bin_rs::reader::BinaryReader;
 
 use crate::draw::DecodeOptions;
@@ -623,3 +625,4 @@ pub fn decode<B: BinaryReader>(
     }
     Ok(None)
 }
+

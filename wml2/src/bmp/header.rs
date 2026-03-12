@@ -1,3 +1,5 @@
+//! BMP header parsing and constants.
+
 /*
  *  bmp/header.rs (C) 2022 Mith@mmk
  *
@@ -349,3 +351,4 @@ impl BitmapHeader {
         })
     }
 }
+

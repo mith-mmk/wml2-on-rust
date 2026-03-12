@@ -1,3 +1,5 @@
+//! Forward DCT routines for JPEG encoding.
+
 #[cfg(feature = "fdct_slower")]
 pub(crate) fn fdct_block(input: &[f32; 64]) -> [f32; 64] {
     let mut out = [0.0_f32; 64];
@@ -225,3 +227,4 @@ mod tests {
         assert_close(&reference, &actual, 0.001);
     }
 }
+

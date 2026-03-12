@@ -1,3 +1,5 @@
+//! TIFF utility helpers.
+
 /*
  * tiff/util.rs  Mith@mmk (C) 2022
  * use MIT License
@@ -349,3 +351,4 @@ pub fn convert(data: &DataPack, length: usize) -> DataMap {
         DataPack::Unkown(d) => DataMap::Raw(d.to_vec()),
     }
 }
+

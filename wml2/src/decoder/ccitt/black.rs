@@ -1,3 +1,5 @@
+//! CCITT black run tables.
+
 use crate::decoder::ccitt::HuffmanTree;
 
 pub fn black_tree() -> HuffmanTree {
@@ -708,3 +710,4 @@ pub fn black_tree() -> HuffmanTree {
         append: append.to_vec(),
     }
 }
+

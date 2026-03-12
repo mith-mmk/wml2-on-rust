@@ -1,3 +1,5 @@
+//! Quantization helpers for WebP VP8 decoding.
+
 use std::array::from_fn;
 
 use super::vp8::Vp8BoolDecoder;
@@ -127,3 +129,4 @@ pub fn parse_quantization(
 
     Ok(Quantization { indices, matrices })
 }
+

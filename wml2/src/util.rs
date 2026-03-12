@@ -1,5 +1,8 @@
+//! Format detection helpers and shared image format identifiers.
+
 use bin_rs::io::read_string;
 
+/// Image formats recognized by [`format_check`].
 pub enum ImageFormat {
     Gif,  // GIF87a , GIF89a
     Jpeg, // 0xfffe
@@ -25,6 +28,7 @@ pub enum ImageFormat {
     Unknown,
 }
 
+/// Detects an image format from the leading bytes of `buffer`.
 pub fn format_check(buffer: &[u8]) -> ImageFormat {
     if buffer.len() < 8 {
         return ImageFormat::Unknown;
@@ -137,3 +141,4 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
     }
     ImageFormat::Unknown
 }
+

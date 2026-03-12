@@ -1,3 +1,5 @@
+//! MAKI decoder implementation.
+
 use bin_rs::reader::BinaryReader;
 
 use crate::draw::DecodeOptions;
@@ -182,3 +184,4 @@ pub fn decode<B: BinaryReader>(
     draw_indexed(option, header.width, header.height, &pixels, &header.palette)?;
     Ok(None)
 }
+

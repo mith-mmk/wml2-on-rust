@@ -1,3 +1,5 @@
+//! CCITT fax decoder tables and helpers.
+
 // need rust 1.60 +
 mod black;
 mod white;
@@ -611,3 +613,4 @@ pub fn decoder(
 
     Ok((data, reader.warning))
 }
+

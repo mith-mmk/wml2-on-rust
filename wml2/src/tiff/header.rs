@@ -1,3 +1,5 @@
+//! TIFF header and IFD parsing structures.
+
 /*
  * tiff/header.rs  Mith@mmk (C) 2022
  * use MIT License
@@ -1333,3 +1335,4 @@ fn read_tag(
 
     Ok(headers)
 }
+

@@ -1,3 +1,5 @@
+//! GIF decoder implementation.
+
 type Error = Box<dyn std::error::Error>;
 
 use super::header::*;
@@ -376,3 +378,4 @@ pub fn decode<'decode, B: BinaryReader>(
 
     Ok(warnings)
 }
+

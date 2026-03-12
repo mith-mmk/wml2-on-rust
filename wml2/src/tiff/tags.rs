@@ -1,3 +1,5 @@
+//! TIFF tag identifiers and helpers.
+
 /*
  * tiff/tags.rs  Mith@mmk (C) 2022
  * use MIT License
@@ -2160,3 +2162,4 @@ pub fn tag_mapper(tag: u16, data: &DataPack, length: usize) -> (String, DataMap)
     }
     (tagname.to_string(), s)
 }
+

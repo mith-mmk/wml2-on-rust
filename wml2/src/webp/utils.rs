@@ -1,3 +1,5 @@
+//! WebP metadata extraction helpers.
+
 use crate::metadata::DataMap;
 use crate::tiff::header::read_tags;
 use crate::warning::ImgWarnings;
@@ -162,3 +164,4 @@ pub(crate) fn make_metadata(
 
     Ok((map, warnings))
 }
+

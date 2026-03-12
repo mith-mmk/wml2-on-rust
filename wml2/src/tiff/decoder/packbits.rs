@@ -1,3 +1,5 @@
+//! PackBits decoder for TIFF.
+
 type Error = Box<dyn std::error::Error>;
 
 pub fn decode(data: &[u8]) -> Result<Vec<u8>, Error> {
@@ -22,3 +24,4 @@ pub fn decode(data: &[u8]) -> Result<Vec<u8>, Error> {
     }
     Ok(buf)
 }
+

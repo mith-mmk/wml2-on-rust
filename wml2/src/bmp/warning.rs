@@ -1,3 +1,5 @@
+//! BMP-specific warning types.
+
 use crate::warning::WarningKind;
 
 #[derive(Debug)]
@@ -18,3 +20,4 @@ impl WarningKind for BMPWarningKind {
         }
     }
 }
+

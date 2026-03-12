@@ -1,3 +1,5 @@
+//! JPEG utility helpers.
+
 /*
  * jpeg/util.rs  Mith@mmk (C) 2022
  * use MIT License
@@ -417,3 +419,4 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String, DataMap> {
     }
     map
 }
+

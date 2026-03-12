@@ -1,3 +1,5 @@
+//! Quantization tables for JPEG encoding.
+
 const FDCT_DIV: f32 = 8.0;
 
 pub(crate) const LUMA_QTABLE: [u8; 64] = [
@@ -51,3 +53,4 @@ pub(crate) fn scaled_quant_tables(quality: usize) -> ([u8; 64], [u8; 64]) {
 
     (luma, chroma)
 }
+

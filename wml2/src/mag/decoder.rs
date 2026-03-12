@@ -1,3 +1,5 @@
+//! MAG decoder implementation.
+
 use bin_rs::reader::BinaryReader;
 
 use crate::color::RGBA;
@@ -133,7 +135,7 @@ pub fn decode<B: BinaryReader>(
 
     let ncolors = header.get_number_of_colors();
 
-    // JS版と同じ _startx / Xsize を使う
+    // Use the same `_startx` / `Xsize` alignment as the JS implementation.
     let (aligned_start_x, xsize) = if ncolors == 256 {
         let s = (header.start_x / 4) * 4;
         let xs = ((header.end_x + 4) / 4) * 4 - s;
@@ -164,7 +166,7 @@ pub fn decode<B: BinaryReader>(
 
     let mut flag_b_map = vec![0u8; x_blocks + 1];
 
-    // JSの ArrayBuffer(Xsize * 16) 相当
+    // Equivalent to the JS implementation's `ArrayBuffer(Xsize * 16)`.
     let mut line_buf = vec![0u8; xsize * 16];
 
     let flag_x = [0, -1, -2, -4, 0, -1, 0, -1, -2, 0, -1, -2, 0, -1, -2, 0];

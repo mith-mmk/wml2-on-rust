@@ -1,3 +1,5 @@
+//! LZW decoder used by GIF and TIFF.
+
 type Error = Box<dyn std::error::Error>;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
@@ -222,3 +224,4 @@ impl Lzwdecode {
         }
     }
 }
+

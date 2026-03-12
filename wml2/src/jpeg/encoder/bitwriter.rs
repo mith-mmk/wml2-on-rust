@@ -1,3 +1,5 @@
+//! Bitstream writer for JPEG encoding.
+
 type Error = Box<dyn std::error::Error>;
 
 pub(crate) struct BitWriter {
@@ -61,3 +63,4 @@ impl BitWriter {
         Ok(())
     }
 }
+

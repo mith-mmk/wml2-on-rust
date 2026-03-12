@@ -1,15 +1,26 @@
+//! RGB and RGBA color primitives used across decoders and encoders.
+
+/// An RGB color without alpha.
 #[derive(Debug, Clone)]
 pub struct RGB {
+    /// Red channel.
     pub red: u8,
+    /// Green channel.
     pub green: u8,
+    /// Blue channel.
     pub blue: u8,
 }
 
+/// An RGBA color with 8-bit channels.
 #[derive(Debug, Clone)]
 pub struct RGBA {
+    /// Red channel.
     pub red: u8,
+    /// Green channel.
     pub green: u8,
+    /// Blue channel.
     pub blue: u8,
+    /// Alpha channel.
     pub alpha: u8,
 }
 

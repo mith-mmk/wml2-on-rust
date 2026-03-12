@@ -1,3 +1,5 @@
+//! PNG utility helpers.
+
 use crate::metadata::DataMap;
 use bin_rs::io::read_ascii_string;
 use bin_rs::io::read_byte;
@@ -120,3 +122,4 @@ pub(crate) fn make_metadata(header: &super::header::PngHeader) -> HashMap<String
 
     map
 }
+

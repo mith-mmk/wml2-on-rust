@@ -1,7 +1,9 @@
-//! Images load to Buffer or save to buffer library
-//! This library uses callback and decoder callbacks response initialize, draw, next, terminate function.
-//! Drawer will use callback, flexisble drawing.
-//! 0.0.10 using color space RGBA32 only
+//! Callback-based image I/O primitives and the default RGBA image buffer.
+//!
+//! Decoders push pixels into a [`DrawCallback`] implementation. Encoders pull
+//! pixels from a [`PickCallback`] implementation. [`ImageBuffer`] provides the
+//! default in-memory implementation for both directions and stores animation
+//! frames as RGBA sub-rectangles.
 type Error = Box<dyn std::error::Error>;
 use crate::color::RGBA;
 use crate::error::ImgError;
@@ -22,7 +24,7 @@ use std::io::Write;
 
 /* Dynamic Select Callback System */
 
-/// Drawing Next Options using for Multi images format/ Animation images
+/// Legacy multi-image control values kept for compatibility.
 #[derive(Debug)]
 pub enum DrawNextOptions {
     Continue,
@@ -34,14 +36,16 @@ pub enum DrawNextOptions {
 
 pub type Response = Result<Option<CallbackResponse>, Error>;
 
+/// Receives decoded image data from format decoders.
 pub trait DrawCallback: Sync + Send {
-    /// DrawCallback trait is callback template
+    /// Initializes the target for a new image or animation canvas.
     fn init(
         &mut self,
         width: usize,
         height: usize,
         option: Option<InitOptions>,
     ) -> Result<Option<CallbackResponse>, Error>;
+    /// Writes RGBA pixels into a rectangle.
     fn draw(
         &mut self,
         start_x: usize,
@@ -55,13 +59,15 @@ pub trait DrawCallback: Sync + Send {
         &mut self,
         _term: Option<TerminateOptions>,
     ) -> Result<Option<CallbackResponse>, Error>;
+    /// Signals a new animation frame or image boundary.
     fn next(&mut self, _next: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error>;
+    /// Emits verbose decoder output.
     fn verbose(
         &mut self,
         _verbose: &str,
         _: Option<VerboseOptions>,
     ) -> Result<Option<CallbackResponse>, Error>;
-    /// fn set_metadata after 0.0.10
+    /// Stores decoded metadata.
     fn set_metadata(
         &mut self,
         key: &str,
@@ -69,12 +75,14 @@ pub trait DrawCallback: Sync + Send {
     ) -> Result<Option<CallbackResponse>, Error>;
 }
 
+/// Supplies image data to encoders.
 pub trait PickCallback: Sync + Send {
-    /// PickCallback trait is callback template for saver
+    /// Returns the base image profile used for encoding.
     fn encode_start(
         &mut self,
         option: Option<EncoderOptions>,
     ) -> Result<Option<ImageProfiles>, Error>;
+    /// Reads an RGBA rectangle from the image source.
     fn encode_pick(
         &mut self,
         start_x: usize,
@@ -83,32 +91,38 @@ pub trait PickCallback: Sync + Send {
         height: usize,
         option: Option<PickOptions>,
     ) -> Result<Option<Vec<u8>>, Error>;
+    /// Finalizes encoding.
     fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(), Error>;
-    /// fn metadata is after 0.0.10
+    /// Returns source metadata, if available.
     fn metadata(&mut self) -> Result<Option<HashMap<String, DataMap>>, Error>;
 }
 
+/// Encoder-specific startup options.
 #[derive(Debug)]
 pub struct EncoderOptions {}
 
+/// Encoder read options for partial pixel fetches.
 #[derive(Debug)]
 pub struct PickOptions {}
 
+/// Encoder shutdown options.
 #[derive(Debug)]
 pub struct EndOptions {}
 
 #[allow(unused)]
-/// InitOptions added infomations send for drawer allback function
-/// loop_count uses animation images (not impl)
-/// background if uses background with alpha channel images;
+/// Canvas initialization options passed to [`DrawCallback::init`].
 #[derive(Debug)]
 pub struct InitOptions {
+    /// Animation loop count when known.
     pub loop_count: u32,
-    pub background: Option<RGBA>, // RGBA
+    /// Optional RGBA background color for the canvas.
+    pub background: Option<RGBA>,
+    /// Whether the decoded source is animated.
     pub animation: bool,
 }
 
 impl InitOptions {
+    /// Creates default initialization options.
     pub fn new() -> Option<Self> {
         Some(Self {
             loop_count: 1,
@@ -118,32 +132,51 @@ impl InitOptions {
     }
 }
 
+/// Decoder-specific draw options.
 #[derive(Debug)]
 pub struct DrawOptions {}
 
+/// Decoder termination options.
 #[derive(Debug)]
 pub struct TerminateOptions {}
 
+/// Verbose logging options.
 #[derive(Debug)]
 pub struct VerboseOptions {}
 
+/// Frame transition commands used by animated decoders.
 #[derive(Debug)]
 pub enum NextOption {
+    /// Continue the current animation.
     Continue,
+    /// Start a new frame or image.
     Next,
+    /// Dispose the previous frame.
     Dispose,
+    /// Clear the current frame and abort.
     ClearAbort,
+    /// End the current animation stream.
     Terminate,
 }
 
+/// Disposal mode for an animation frame.
 #[derive(Debug)]
 pub enum NextDispose {
+    /// Leave the previous frame as-is.
     None,
+    /// Compatibility value retained from older callers.
     Override,
+    /// Clear the frame area to the background color.
     Background,
+    /// Restore the previous composited canvas.
     Previous,
 }
 
+/// Blend mode for an animation frame.
+///
+/// `Source` means "alpha-blend onto the existing canvas". For APNG this maps to
+/// `OVER`, and for animated WebP it matches alpha blending. `Override` replaces
+/// the covered destination pixels.
 #[derive(Debug)]
 pub enum NextBlend {
     Source,
@@ -151,6 +184,7 @@ pub enum NextBlend {
 }
 
 #[allow(unused)]
+/// A rectangle on the destination canvas.
 #[derive(Debug)]
 pub struct ImageRect {
     pub start_x: i32,
@@ -160,16 +194,23 @@ pub struct ImageRect {
 }
 
 #[allow(unused)]
+/// Per-frame animation control values.
 #[derive(Debug)]
 pub struct NextOptions {
+    /// Transition command for this frame.
     pub flag: NextOption,
+    /// Delay before advancing to the next frame, in milliseconds.
     pub await_time: u64,
+    /// Frame rectangle on the animation canvas.
     pub image_rect: Option<ImageRect>,
+    /// Frame disposal method.
     pub dispose_option: Option<NextDispose>,
+    /// Frame blending method.
     pub blend: Option<NextBlend>,
 }
 
 impl NextOptions {
+    /// Creates default frame options.
     pub fn new() -> Self {
         NextOptions {
             flag: NextOption::Continue,
@@ -180,6 +221,7 @@ impl NextOptions {
         }
     }
 
+    /// Creates a frame option with only a delay.
     pub fn wait(ms_time: u64) -> Self {
         NextOptions {
             flag: NextOption::Continue,
@@ -191,24 +233,28 @@ impl NextOptions {
     }
 }
 
+/// Decoder response command.
 #[derive(std::cmp::PartialEq, Debug)]
 pub enum ResponseCommand {
     Abort,
     Continue,
 }
 
+/// Response returned by callbacks.
 #[derive(Debug)]
 pub struct CallbackResponse {
     pub response: ResponseCommand,
 }
 
 impl CallbackResponse {
+    /// Builds an abort response.
     pub fn abort() -> Self {
         Self {
             response: ResponseCommand::Abort,
         }
     }
 
+    /// Builds a continue response.
     pub fn cont() -> Self {
         Self {
             response: ResponseCommand::Continue,
@@ -216,12 +262,19 @@ impl CallbackResponse {
     }
 }
 
+/// Static image properties returned from [`PickCallback::encode_start`].
 #[derive(Debug)]
 pub struct ImageProfiles {
+    /// Canvas width in pixels.
     pub width: usize,
+    /// Canvas height in pixels.
     pub height: usize,
+    /// Optional background color for formats that support it.
     pub background: Option<RGBA>,
-    /// Image Buffer depend metadatas
+    /// Source metadata.
+    ///
+    /// Built-in encoders may also consume reserved keys inserted by built-in
+    /// `PickCallback` implementations for animation transport.
     pub metadata: Option<HashMap<String, DataMap>>,
 }
 
@@ -297,32 +350,43 @@ fn append_animation_metadata(
     }
 }
 
-/// Using for Animation GIF/PNG/other
+/// One decoded animation frame stored as an RGBA sub-rectangle.
 pub struct AnimationLayer {
+    /// Frame width in pixels.
     pub width: usize,
+    /// Frame height in pixels.
     pub height: usize,
+    /// Frame x offset on the canvas.
     pub start_x: i32,
+    /// Frame y offset on the canvas.
     pub start_y: i32,
+    /// RGBA frame pixels in row-major order.
     pub buffer: Vec<u8>,
+    /// Frame timing and composition settings.
     pub control: NextOptions,
 }
 
 #[allow(unused)]
+/// Default in-memory RGBA image store used by decoders and encoders.
 pub struct ImageBuffer {
-    /// ImageBuffer is default drawer
-    /// Excample callback impliment
-    /// ImageBuffer use only RGBA8888 color space model
-    /// buffersize = width * height * 4 (8+8+8+8)/8
-    /// other color space is implement feature.
+    /// Canvas width in pixels.
     pub width: usize,
+    /// Canvas height in pixels.
     pub height: usize,
+    /// Optional background color.
     pub background_color: Option<RGBA>,
+    /// Base canvas RGBA pixels.
     pub buffer: Option<Vec<u8>>,
+    /// Animation frames, if present.
     pub animation: Option<Vec<AnimationLayer>>,
+    /// Current animation frame index while decoding.
     pub current: Option<usize>,
+    /// Animation loop count, if known.
     pub loop_count: Option<u32>,
+    /// Delay of the first frame, if known.
     pub first_wait_time: Option<u64>,
     fnverbose: fn(&str) -> Result<Option<CallbackResponse>, Error>,
+    /// Arbitrary metadata collected during decode.
     pub metadata: Option<HashMap<String, DataMap>>,
 }
 
@@ -331,6 +395,7 @@ fn default_verbose(_: &str) -> Result<Option<CallbackResponse>, Error> {
 }
 
 impl ImageBuffer {
+    /// Creates an empty image buffer.
     pub fn new() -> Self {
         Self {
             width: 0,
@@ -346,6 +411,7 @@ impl ImageBuffer {
         }
     }
 
+    /// Creates an image buffer from an RGBA pixel buffer.
     pub fn from_buffer(width: usize, height: usize, buf: Vec<u8>) -> Self {
         Self {
             width,
@@ -361,7 +427,7 @@ impl ImageBuffer {
         }
     }
 
-    /// ImageBuffer allow animation
+    /// Enables or disables animation storage.
     pub fn set_animation(&mut self, flag: bool) {
         if flag {
             self.animation = Some(Vec::new())
@@ -370,14 +436,14 @@ impl ImageBuffer {
         }
     }
 
-    /// A funtion set_verbose uses also debug.
+    /// Installs a verbose logging callback used by decoders.
     pub fn set_verbose(&mut self, verbose: fn(&str) -> Result<Option<CallbackResponse>, Error>) {
         self.fnverbose = verbose;
     }
 }
 
 impl DrawCallback for ImageBuffer {
-    /// initialized Image Buffer
+    /// Initializes the in-memory canvas.
     fn init(
         &mut self,
         width: usize,
@@ -412,7 +478,7 @@ impl DrawCallback for ImageBuffer {
         Ok(None)
     }
 
-    /// draw a part of image
+    /// Draws part of the current image or animation frame.
     fn draw(
         &mut self,
         start_x: usize,
@@ -491,7 +557,7 @@ impl DrawCallback for ImageBuffer {
         Ok(None)
     }
 
-    /// terminate ImageBuffer
+    /// Finalizes decoding.
     fn terminate(
         &mut self,
         _: Option<TerminateOptions>,
@@ -499,7 +565,7 @@ impl DrawCallback for ImageBuffer {
         Ok(None)
     }
 
-    /// Decoders tell ImageBuffer had next an image/images.
+    /// Starts a new animation frame in the buffer.
     fn next(&mut self, opt: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error> {
         if self.animation.is_some() {
             if let Some(opt) = opt {
@@ -540,7 +606,7 @@ impl DrawCallback for ImageBuffer {
         Ok(Some(CallbackResponse::abort()))
     }
 
-    /// Decoder tell ImageBuffer verbose
+    /// Passes through verbose decoder output.
     fn verbose(
         &mut self,
         str: &str,
@@ -549,7 +615,7 @@ impl DrawCallback for ImageBuffer {
         (self.fnverbose)(str)
     }
 
-    /// Decoder set metadata to ImageBuffer
+    /// Stores decoded metadata on the buffer.
     fn set_metadata(
         &mut self,
         key: &str,
@@ -568,7 +634,7 @@ impl DrawCallback for ImageBuffer {
 }
 
 impl PickCallback for ImageBuffer {
-    /// Encoder tell start ImageBuffer
+    /// Exposes the image profile to encoders.
     fn encode_start(&mut self, _: Option<EncoderOptions>) -> Result<Option<ImageProfiles>, Error> {
         let mut metadata = self.metadata.clone();
         if let Some(animation) = &self.animation {
@@ -591,7 +657,7 @@ impl PickCallback for ImageBuffer {
         Ok(Some(init))
     }
 
-    /// Encoder pick a part of image from ImageBuffer
+    /// Reads an RGBA rectangle from the base canvas.
     fn encode_pick(
         &mut self,
         start_x: usize,
@@ -660,12 +726,12 @@ impl PickCallback for ImageBuffer {
         Ok(Some(data))
     }
 
-    /// Encoder tell ending encode to ImageBuffer
+    /// Finalizes encoding.
     fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(), Error> {
         Ok(())
     }
 
-    /// Encoder get metadata from ImageBuffer
+    /// Returns stored metadata.
     fn metadata(&mut self) -> Result<Option<HashMap<String, DataMap>>, Error> {
         if let Some(hashmap) = &self.metadata {
             Ok(Some(hashmap.clone()))
@@ -675,27 +741,30 @@ impl PickCallback for ImageBuffer {
     }
 }
 
+/// Decoder configuration.
 pub struct DecodeOptions<'a> {
+    /// Enables format-specific verbose output when non-zero.
     pub debug_flag: usize,
+    /// Destination callback implementation.
     pub drawer: &'a mut dyn DrawCallback,
 }
 
+/// Encoder configuration.
 pub struct EncodeOptions<'a> {
+    /// Enables encoder-specific verbose output when non-zero.
     pub debug_flag: usize,
+    /// Source callback implementation.
     pub drawer: &'a mut dyn PickCallback,
-    /// Endocer depend Options
-    /// ex.)
-    ///  "quality",DataMap::INT(80) // for JPEG
-    ///  "compression",DataMap::ASCII("LZW") for TIFF
-    ///  "color model",ASCII::ASCII("index") for TIFF/GIF/BMP
+    /// Encoder-specific options such as JPEG quality.
     pub options: Option<HashMap<String, DataMap>>,
 }
 
+/// Decodes an image from memory into an [`ImageBuffer`].
 pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer, Error> {
     image_load(buffer)
 }
 
-/// load image from file
+/// Decodes an image from a file into an [`ImageBuffer`].
 #[cfg(not(target_family = "wasm"))]
 pub fn image_from_file(filename: String) -> Result<ImageBuffer, Error> {
     let f = std::fs::File::open(filename)?;
@@ -709,7 +778,7 @@ pub fn image_from_file(filename: String) -> Result<ImageBuffer, Error> {
     Ok(image)
 }
 
-/// save image to file
+/// Encodes an image source and writes it to a file.
 #[cfg(not(target_family = "wasm"))]
 pub fn image_to_file(
     filename: String,
@@ -726,7 +795,7 @@ pub fn image_to_file(
     Ok(())
 }
 
-/// load image from buffer
+/// Decodes an image from memory into an [`ImageBuffer`].
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
     let mut ib = ImageBuffer::new();
     let mut option = DecodeOptions {
@@ -739,6 +808,7 @@ pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
     Ok(ib)
 }
 
+/// Decodes an in-memory image into a custom [`DrawCallback`].
 pub fn image_loader(
     buffer: &[u8],
     option: &mut DecodeOptions,
@@ -749,6 +819,7 @@ pub fn image_loader(
     Ok(r)
 }
 
+/// Decodes an image stream into a custom [`DrawCallback`].
 #[cfg(not(target_family = "wasm"))]
 pub fn image_reader<R: BufRead + Seek>(
     reader: R,
@@ -760,6 +831,7 @@ pub fn image_reader<R: BufRead + Seek>(
     Ok(r)
 }
 
+/// Encodes an image source to an arbitrary writer.
 pub fn image_writer<W: Write>(
     mut writer: W,
     option: &mut EncodeOptions,
@@ -771,6 +843,7 @@ pub fn image_writer<W: Write>(
     Ok(None)
 }
 
+/// Detects the input format and dispatches to the matching decoder.
 pub fn image_decoder<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -841,6 +914,7 @@ pub fn image_decoder<B: BinaryReader>(
     )))
 }
 
+/// Dispatches to the matching encoder for `format`.
 pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<Vec<u8>, Error> {
     use crate::util::ImageFormat::*;
 

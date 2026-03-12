@@ -1,3 +1,5 @@
+//! BMP decoder implementation.
+
 /*
  *  bmp/decorder.rs (C) 2022 Mith@mmk
  *
@@ -524,3 +526,4 @@ pub fn decode<'decode, B: BinaryReader>(
 
     result
 }
+

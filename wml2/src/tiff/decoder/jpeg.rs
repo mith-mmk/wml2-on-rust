@@ -1,3 +1,5 @@
+//! JPEG-compressed TIFF decoding helpers.
+
 type Error = Box<dyn std::error::Error>;
 use crate::draw::DecodeOptions;
 use crate::draw::ImageBuffer;
@@ -90,3 +92,4 @@ pub fn decode_jpeg_compresson<'decode, B: BinaryReader>(
 
     Ok(warnings)
 }
+

@@ -1,3 +1,5 @@
+//! GIF utility helpers.
+
 pub fn make_metadata(header: &GifHaeder) -> HashMap<String,DataMap> {
     let mut map :HashMap<String,DataMap> = HashMap::new();
     map.insert("Format".to_string(),DataMap::Ascii("GIF".to_string()));

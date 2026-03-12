@@ -1,3 +1,5 @@
+//! Photo CD decoder implementation.
+
 use bin_rs::reader::BinaryReader;
 
 use crate::draw::DecodeOptions;
@@ -149,3 +151,4 @@ pub fn decode<B: BinaryReader>(
     draw_rgb(option, out_width, out_height, &rotated)?;
     Ok(None)
 }
+

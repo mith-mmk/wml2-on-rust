@@ -1,7 +1,4 @@
-//!
-//! TIFF Decoder is support No Compress,LZW,Pack bits,JPEG(new style),Adobe Deflate images.
-//!
-//!
+//! TIFF decoder implementation.
 
 type Error = Box<dyn std::error::Error>;
 use self::jpeg::decode_jpeg_compresson;
@@ -831,3 +828,4 @@ pub fn decode<'decode, B: BinaryReader>(
     option.drawer.terminate(None)?;
     Ok(warnings)
 }
+

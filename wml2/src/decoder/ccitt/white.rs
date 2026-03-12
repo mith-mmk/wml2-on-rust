@@ -1,3 +1,5 @@
+//! CCITT white run tables.
+
 use crate::decoder::ccitt::HuffmanTree;
 
 pub fn white_tree() -> HuffmanTree {
@@ -677,3 +679,4 @@ pub fn white_tree() -> HuffmanTree {
         append: append.to_vec(),
     }
 }
+

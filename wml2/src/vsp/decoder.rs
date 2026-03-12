@@ -1,3 +1,5 @@
+//! VSP decoder implementation.
+
 use bin_rs::reader::BinaryReader;
 
 use crate::draw::{
@@ -425,3 +427,4 @@ pub fn decode<B: BinaryReader>(
     draw_indexed(option, width, height, &pixels, &palette)?;
     Ok(None)
 }
+

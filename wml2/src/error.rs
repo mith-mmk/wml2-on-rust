@@ -1,6 +1,9 @@
+//! Error types returned by decoders, encoders, and helpers.
+
 use std::error::Error;
 use std::fmt::*;
 
+/// Library error type with a stable high-level kind.
 pub struct ImgError {
     repr: Repr,
 }
@@ -20,6 +23,7 @@ impl Debug for ImgError {
 }
 
 impl ImgError {
+    /// Creates an error from another error value and an [`ImgErrorKind`].
     pub fn new<E>(kind: ImgErrorKind, error: E) -> ImgError
     where
         E: Into<Box<dyn std::error::Error + Send + Sync>>,
@@ -34,6 +38,7 @@ impl ImgError {
     }
 
     #[inline]
+    /// Creates a message-only error.
     pub const fn new_const(kind: ImgErrorKind, message: String) -> ImgError {
         Self {
             repr: Repr::SimpleMessage(kind, message),
@@ -42,6 +47,7 @@ impl ImgError {
 
     #[must_use]
     #[inline]
+    /// Returns the OS error code when one is available.
     pub fn raw_os_error(&self) -> Option<i32> {
         match self.repr {
             Repr::Custom(..) => None,
@@ -51,6 +57,7 @@ impl ImgError {
 
     #[must_use]
     #[inline]
+    /// Returns a shared reference to the wrapped source error.
     pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
         match self.repr {
             Repr::SimpleMessage(..) => None,
@@ -58,6 +65,7 @@ impl ImgError {
         }
     }
 
+    /// Consumes the error and returns the wrapped source error, if any.
     pub fn into_inner(self) -> Option<Box<dyn std::error::Error + Send + Sync>> {
         match self.repr {
             Repr::SimpleMessage(..) => None,
@@ -106,6 +114,7 @@ pub(crate) struct Custom {
 
 #[allow(unused)]
 #[derive(Debug)]
+/// High-level error categories used by `wml2`.
 pub enum ImgErrorKind {
     UnknownFormat,
     OutOfMemory,

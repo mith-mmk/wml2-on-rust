@@ -1,3 +1,5 @@
+//! JPEG decoder implementation.
+
 /*
  * jpeg/decoder.rs  Mith@mmk (C) 2022
  * use MIT License
@@ -311,14 +313,14 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
 
 #[cfg(feature = "idct_llm")]
 pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
-    let m1 = 0.5411961; // α √2cos(3π/8)
-    let m2 = 1.306_563; // β √2cos(3π/8)
+    let m1 = 0.5411961; // α ∁Ecos(3π/8)
+    let m2 = 1.306_563; // β ∁Ecos(3π/8)
     let m3 = 1.414_213_5; // γ v2
     let m4 = 0.831_469_6; // η cos(3π/16)
     let m5 = 0.555_570_24; // θ sin(3π/16)
     let m6 = 0.98078528; // δ cos(π/16)
     let m7 = 0.195_090_32; // ε sin(π/16)
-    let m0 = 0.125; // √2/4 * √2/4
+    let m0 = 0.125; // ∁E/4 * ∁E/4
 
     let mut ff = [0_f32; 64];
     for j in 0..8 {
@@ -369,7 +371,7 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
         let x6 = y6 * m6 + y5 * m7;
         let x7 = y7 * m4 + y4 * m5;
 
-        // last part  multiply √2 / 4 after parts
+        // last part  multiply ∁E / 4 after parts
 
         ff[i] = x0 + x7; // x0
         ff[7 + i] = x0 - x7; // x1
@@ -1549,3 +1551,4 @@ pub fn decode<'decode, B: BinaryReader>(
         decode_baseline(reader, &header, option, warnings)
     }
 }
+

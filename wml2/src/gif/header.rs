@@ -1,3 +1,5 @@
+//! GIF header parsing structures.
+
 use crate::color::RGBA;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
@@ -111,3 +113,4 @@ impl GifLscd {
         })
     }
 }
+

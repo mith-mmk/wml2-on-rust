@@ -1,10 +1,12 @@
-//
+//! Metadata value types shared by image decoders and encoders.
 
 use crate::tiff::header::TiffHeaders;
 use std::collections::HashMap;
 
+/// A map of metadata keys to typed values.
 pub type Metadata = HashMap<String, DataMap>;
 
+/// A typed metadata value.
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataMap {
     UInt(u64),
@@ -23,6 +25,7 @@ pub enum DataMap {
 }
 
 impl DataMap {
+    /// Converts the metadata value to a display-oriented string.
     pub fn to_string(&self) -> String {
         match self {
             DataMap::UInt(d) => d.to_string(),

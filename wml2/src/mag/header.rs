@@ -1,3 +1,5 @@
+//! MAG header parsing.
+
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;
 

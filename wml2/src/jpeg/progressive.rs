@@ -1,3 +1,5 @@
+//! Progressive JPEG scan decoding helpers.
+
 type Error = Box<dyn std::error::Error>;
 use crate::draw::*;
 use crate::error::*;
@@ -504,3 +506,4 @@ fn successive_approximation_read<B: BinaryReader>(
         Ok(0)
     }
 }
+

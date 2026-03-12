@@ -1,3 +1,5 @@
+//! VP8 bitstream parsing for WebP decoding.
+
 use super::quant::{Quantization, parse_quantization};
 use super::tree::{
     parse_intra_mode_row, parse_probability_tables, parse_probability_updates, MacroBlockHeader,
@@ -805,3 +807,4 @@ pub fn parse_macroblock_data(data: &[u8]) -> Result<MacroBlockDataFrame, Decoder
 
     Ok(MacroBlockDataFrame { frame, macroblocks })
 }
+

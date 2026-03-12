@@ -1,5 +1,4 @@
-//! PNG encoder has Bug some case
-//!
+//! PNG and APNG encoder implementation.
 
 use crate::draw::{
     encode_animation_frame_key, EncodeOptions, ImageProfiles, ENCODE_ANIMATION_FRAMES_KEY,
@@ -416,3 +415,4 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     image.drawer.encode_end(None)?;
     Ok(write_buffer)
 }
+

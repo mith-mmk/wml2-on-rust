@@ -1,3 +1,5 @@
+//! WebP-specific warning types.
+
 use crate::warning::{ImgWarning, WarningKind};
 use std::fmt::*;
 
@@ -53,3 +55,4 @@ impl WarningKind for WebpWarningKind {
         }
     }
 }
+

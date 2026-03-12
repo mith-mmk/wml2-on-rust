@@ -1,3 +1,5 @@
+//! JPEG marker and header parsing types.
+
 /*
  * jpeg/header.rs  Mith@mmk (C) 2022
  * use MIT License
@@ -771,3 +773,4 @@ impl JpegHaeder {
         })
     }
 }
+

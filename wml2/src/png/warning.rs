@@ -1,3 +1,5 @@
+//! PNG-specific warning types.
+
 use crate::warning::ImgWarning;
 use std::fmt::*;
 
@@ -25,3 +27,4 @@ impl PngWarning {
         Self { message }
     }
 }
+

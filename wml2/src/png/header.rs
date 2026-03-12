@@ -1,3 +1,5 @@
+//! PNG chunk and header parsing types.
+
 use crate::color::RGBA;
 use crate::error::*;
 use bin_rs::io::*;
@@ -387,3 +389,4 @@ impl PngHeader {
         Ok(header)
     }
 }
+

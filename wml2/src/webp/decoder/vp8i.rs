@@ -1,3 +1,5 @@
+//! Shared VP8 decoder constants and structures.
+
 pub const MB_FEATURE_TREE_PROBS: usize = 3;
 pub const NUM_MB_SEGMENTS: usize = 4;
 pub const NUM_REF_LF_DELTAS: usize = 4;
@@ -44,3 +46,4 @@ pub enum WebpFormat {
     Lossy = 1,
     Lossless = 2,
 }
+

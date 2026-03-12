@@ -1,3 +1,5 @@
+//! Legacy retro-format module toggles.
+
 use bin_rs::reader::BinaryReader;
 
 use crate::draw::DecodeOptions;
@@ -166,3 +168,4 @@ impl<'a> BitReaderWordMsb<'a> {
         value
     }
 }
+

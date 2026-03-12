@@ -90,12 +90,12 @@ pub enum DataPack {
 }
 
 impl DataPack {
-    pub fn to_string(self) -> String {
+    pub fn to_string(&self) -> String {
         match self {
             DataPack::Bytes(d) => {
                 format!("{:?}", d)
             }
-            DataPack::Ascii(d) => d,
+            DataPack::Ascii(d) => d.clone(),
             DataPack::SByte(d) => {
                 format!("{:?}", d)
             }

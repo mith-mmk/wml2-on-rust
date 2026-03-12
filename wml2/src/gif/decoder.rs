@@ -18,6 +18,44 @@ const GRAPHIC_CONTROLE: u8 = 0xf9;
 const END_MARKER: u8 = b';'; // 0x3c
 const END: u8 = 0x00;
 
+fn gif_dispose_option(dispose_method: u8) -> NextDispose {
+    match dispose_method {
+        2 => NextDispose::Background,
+        3 => NextDispose::Previous,
+        _ => NextDispose::None,
+    }
+}
+
+fn gif_blend_option(is_transparent: bool) -> NextBlend {
+    if is_transparent {
+        NextBlend::Source
+    } else {
+        NextBlend::Override
+    }
+}
+
+fn draw_frame(
+    option: &mut DecodeOptions,
+    start_x: usize,
+    start_y: usize,
+    width: usize,
+    height: usize,
+    frame_buffer: &[u8],
+) -> Result<(), Error> {
+    for y in 0..height {
+        let offset = y * width * 4;
+        option.drawer.draw(
+            start_x,
+            start_y + y,
+            width,
+            1,
+            &frame_buffer[offset..offset + width * 4],
+            None,
+        )?;
+    }
+    Ok(())
+}
+
 pub fn decode<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -27,6 +65,7 @@ pub fn decode<'decode, B: BinaryReader>(
     let mut is_transparent = false;
     let mut transparent_color = 0x00;
     let mut delay_time = 0;
+    let mut dispose_method = 0;
     let mut loop_count = 0;
     let mut is_inited = false;
     let mut is_first = true;
@@ -93,6 +132,7 @@ pub fn decode<'decode, B: BinaryReader>(
                         }
 
                         is_transparent = flag & 0x1 == 1;
+                        dispose_method = (flag >> 2) & 0x07;
 
                         transparent_color = reader.read_byte()? as usize;
                         if option.debug_flag > 0 {
@@ -151,9 +191,14 @@ pub fn decode<'decode, B: BinaryReader>(
             SEPARATOR => {
                 let lscd = GifLscd::new(reader)?;
                 if !is_inited {
+                    let background = if header.color_table.is_empty() {
+                        None
+                    } else {
+                        Some(header.color_table[header.scd.color_index as usize].clone())
+                    };
                     let init = InitOptions {
                         loop_count,
-                        background: None,
+                        background,
                         animation: true,
                     };
                     option
@@ -172,20 +217,12 @@ pub fn decode<'decode, B: BinaryReader>(
 
                     let await_time = (delay_time * 10) as u64;
 
-                    let dispose_option: NextDispose = match lscd.field {
-                        0 => NextDispose::None,
-                        1 => NextDispose::Override,
-                        2 => NextDispose::Background,
-                        3 => NextDispose::Previous,
-                        _ => NextDispose::None,
-                    };
-
                     let opt = NextOptions {
                         flag: NextOption::Next,
                         await_time,
                         image_rect: Some(rect),
-                        dispose_option: Some(dispose_option),
-                        blend: Some(NextBlend::Override),
+                        dispose_option: Some(gif_dispose_option(dispose_method)),
+                        blend: Some(gif_blend_option(is_transparent)),
                     };
 
                     let result = option.drawer.next(Some(opt))?;
@@ -258,6 +295,7 @@ pub fn decode<'decode, B: BinaryReader>(
                 let mut interlace_mode = 0;
                 let mut interlace_y = interlace_start_y[interlace_mode];
                 let is_interlace = (lscd.field & 0x40) == 0x40;
+                let mut frame_buffer = vec![0_u8; width * height * 4];
 
                 for y in 0..height {
                     let mut line: Vec<u8> = vec![0; width * 4];
@@ -270,14 +308,8 @@ pub fn decode<'decode, B: BinaryReader>(
                         line[x * 4 + 3] = color_table[color].alpha;
                     }
                     if is_interlace {
-                        if is_first {
-                            let y = interlace_y + lscd.ystart as usize;
-                            option
-                                .drawer
-                                .draw(lscd.xstart as usize, y, width, 1, &line, None)?;
-                        } else {
-                            option.drawer.draw(0, interlace_y, width, 1, &line, None)?;
-                        }
+                        let offset = interlace_y * width * 4;
+                        frame_buffer[offset..offset + width * 4].copy_from_slice(&line);
                         if interlace_y == 16 {
                             interlace_y += 8;
                         } else {
@@ -290,18 +322,43 @@ pub fn decode<'decode, B: BinaryReader>(
                             }
                             interlace_y = interlace_start_y[interlace_mode];
                         }
-                    } else if is_first {
-                        let y = y + lscd.ystart as usize;
-                        option
-                            .drawer
-                            .draw(lscd.xstart as usize, y, width, 1, &line, None)?;
                     } else {
-                        option.drawer.draw(0, y, width, 1, &line, None)?;
+                        let offset = y * width * 4;
+                        frame_buffer[offset..offset + width * 4].copy_from_slice(&line);
                     }
                 }
 
                 if is_first {
+                    draw_frame(
+                        option,
+                        lscd.xstart as usize,
+                        lscd.ystart as usize,
+                        width,
+                        height,
+                        &frame_buffer,
+                    )?;
+
+                    let opt = NextOptions {
+                        flag: NextOption::Continue,
+                        await_time: (delay_time * 10) as u64,
+                        image_rect: Some(ImageRect {
+                            width,
+                            height,
+                            start_x: lscd.xstart as i32,
+                            start_y: lscd.ystart as i32,
+                        }),
+                        dispose_option: Some(gif_dispose_option(dispose_method)),
+                        blend: Some(gif_blend_option(is_transparent)),
+                    };
+                    let result = option.drawer.next(Some(opt))?;
+                    if let Some(response) = result {
+                        if response.response == ResponseCommand::Continue {
+                            draw_frame(option, 0, 0, width, height, &frame_buffer)?;
+                        }
+                    }
                     is_first = false;
+                } else {
+                    draw_frame(option, 0, 0, width, height, &frame_buffer)?;
                 }
             }
             END_MARKER => {

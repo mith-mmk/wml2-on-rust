@@ -26,9 +26,9 @@ $ cargo run --example metadata --release <inputfile>
 |BMP|O|O|encode only no compress|
 |JPEG|O|O|Baseline encode / Baseline and huffman progressive decode|
 |GIF|x|O|with Animation GIF|
-|PNG|O|O|APNG not supprt/encode Truecolor + alpha only|
-|TIFF|x|o|no compression/LZW/Packbits/Jpeg(new)/G3 Fax/G4 Fax|
-|WEBP|x|x|not support|
+|PNG|O|O|encode Truecolor + alpha only|
+|TIFF|x|O|no compression/LZW/Packbits/Jpeg(new)/G3 Fax/G4 Fax|
+|WEBP|x|O|decoder full support|
 |MAG|x|O|Japanese legasy image format|
 |MAKI|x|O|Japanese legacy image format, disabled by `noretoro`|
 |PI|x|O|Japanese legacy image format, disabled by `noretoro`|
@@ -42,12 +42,12 @@ $ cargo run --example metadata --release <inputfile>
 
 ```toml
 [dependencies]
-wml2 = "0.0.15"
+wml2 = "0.0.16"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.15", features = ["noretoro"] }
+wml2 = { version = "0.0.16", features = ["noretoro"] }
 ```
 
 # Test samples
@@ -181,6 +181,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.14 add MAKI/PI/PIC/VSP(DAT)/PCD decoders
 - 0.0.14 add `noretoro` feature to disable legacy decoders
 - 0.0.15 add JPEG encoder(only baseline)
+- 0.0.16 add native rust Webp decoder, APNG encoder
 
 # todo
 - Formated Header writer

@@ -59,6 +59,27 @@ struct ExpandedInputs {
 }
 
 impl Config {
+    fn validate_compression(
+        format: &OutputFormat,
+        compression: Option<&str>,
+    ) -> Result<(), Box<dyn Error>> {
+        let Some(compression) = compression else {
+            return Ok(());
+        };
+
+        match format {
+            OutputFormat::Tiff => match compression {
+                "none" | "lzw" | "lzw_msb" | "lzw_lsb" | "jpeg" => Ok(()),
+                value => Err(format!("unsupported TIFF compression: {}", value).into()),
+            },
+            OutputFormat::Webp => match compression {
+                "lossy" | "lossless" => Ok(()),
+                value => Err(format!("unsupported WebP compression: {}", value).into()),
+            },
+            _ => Err("-c is only supported for TIFF/WebP output".into()),
+        }
+    }
+
     fn parse(args: &[String]) -> Result<Self, Box<dyn Error>> {
         let mut inputs = Vec::new();
         let mut output_dir = None;
@@ -139,9 +160,7 @@ impl Config {
         if split && matches!(format, OutputFormat::Jpeg | OutputFormat::Bmp) {
             return Err("--split is currently supported for GIF/PNG/TIFF/WebP output".into());
         }
-        if compression.is_some() && !matches!(format, OutputFormat::Tiff) {
-            return Err("-c is only supported for TIFF output".into());
-        }
+        Self::validate_compression(&format, compression.as_deref())?;
         if exif_copy && matches!(format, OutputFormat::Gif | OutputFormat::Bmp) {
             return Err("--exif copy is only supported for PNG/JPEG/TIFF/WebP output".into());
         }
@@ -171,8 +190,20 @@ impl Config {
                 );
             }
             OutputFormat::Webp => {
-                if let Some(quality) = self.quality {
-                    options.insert("quality".to_string(), DataMap::UInt(quality));
+                match self.compression.as_deref() {
+                    Some("lossy") => {
+                        options.insert(
+                            "quality".to_string(),
+                            DataMap::UInt(self.quality.unwrap_or(80)),
+                        );
+                    }
+                    Some("lossless") => {}
+                    None => {
+                        if let Some(quality) = self.quality {
+                            options.insert("quality".to_string(), DataMap::UInt(quality));
+                        }
+                    }
+                    Some(_) => unreachable!("validated in parse"),
                 }
                 if let Some(optimize) = self.optimize {
                     options.insert("optimize".to_string(), DataMap::UInt(optimize));
@@ -215,7 +246,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => {
             eprintln!("{}", error);
             eprintln!(
-                "usage: converter [inputfiles...] -o <outputfolder> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg>] [--exif copy] [--split]"
+                "usage: converter [inputfiles...] -o <outputfolder> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]"
             );
             return Err(error);
         }
@@ -601,6 +632,51 @@ mod tests {
     }
 
     #[test]
+    fn webp_lossy_compression_option_is_forwarded() {
+        let config = Config {
+            inputs: Vec::new(),
+            output_dir: PathBuf::new(),
+            format: OutputFormat::Webp,
+            compression: Some("lossy".to_string()),
+            exif_copy: false,
+            quality: None,
+            optimize: Some(6),
+            split: false,
+        };
+
+        let options = config.encode_options().unwrap();
+        assert!(matches!(
+            options.get("quality"),
+            Some(DataMap::UInt(80))
+        ));
+        assert!(matches!(
+            options.get("optimize"),
+            Some(DataMap::UInt(6))
+        ));
+    }
+
+    #[test]
+    fn webp_lossless_compression_option_omits_quality() {
+        let config = Config {
+            inputs: Vec::new(),
+            output_dir: PathBuf::new(),
+            format: OutputFormat::Webp,
+            compression: Some("lossless".to_string()),
+            exif_copy: false,
+            quality: Some(92),
+            optimize: Some(4),
+            split: false,
+        };
+
+        let options = config.encode_options().unwrap();
+        assert!(matches!(
+            options.get("optimize"),
+            Some(DataMap::UInt(4))
+        ));
+        assert!(!options.contains_key("quality"));
+    }
+
+    #[test]
     fn expand_inputs_keeps_matching_files_when_some_patterns_fail() {
         let temp_file = unique_temp_path("expand-inputs");
         fs::write(&temp_file, b"ok").unwrap();
@@ -642,7 +718,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_rejects_compression_for_non_tiff_output() {
+    fn parse_rejects_compression_for_unsupported_output() {
         let args = vec![
             "converter".to_string(),
             "input.png".to_string(),
@@ -655,7 +731,24 @@ mod tests {
         ];
 
         let error = Config::parse(&args).err().unwrap().to_string();
-        assert_eq!(error, "-c is only supported for TIFF output");
+        assert_eq!(error, "-c is only supported for TIFF/WebP output");
+    }
+
+    #[test]
+    fn parse_rejects_unknown_webp_compression() {
+        let args = vec![
+            "converter".to_string(),
+            "input.png".to_string(),
+            "-o".to_string(),
+            "out".to_string(),
+            "-f".to_string(),
+            "webp".to_string(),
+            "-c".to_string(),
+            "jpeg".to_string(),
+        ];
+
+        let error = Config::parse(&args).err().unwrap().to_string();
+        assert_eq!(error, "unsupported WebP compression: jpeg");
     }
 
     #[test]

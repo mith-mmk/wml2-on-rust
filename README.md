@@ -25,7 +25,7 @@ $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f png|jpeg|bmp|webp] [-q <quality>] [-z <0-9>] [--split]
 ```
 
-# Support Format 0.0.17
+# Support Format 0.0.18
 
 |format|enc|dec|  |
 |------|---|---|--|
@@ -48,12 +48,12 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ```toml
 [dependencies]
-wml2 = "0.0.17"
+wml2 = "0.0.18"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.17", features = ["noretoro"] }
+wml2 = { version = "0.0.18", features = ["noretoro"] }
 ```
 
 # Test samples
@@ -209,11 +209,11 @@ pub fn main()-> Result<(),Box<dyn Error>> {
   - TIFF 3G/4G FAX and multi page tiff decode support, Tiled image is support,but new Jpeg Tiff only.
 - 0.0.12 encode option change
 - 0.0.13 MAG Format supppot
-- 0.0.14 add MAKI/PI/PIC/VSP(DAT)/PCD decoders
-- 0.0.14 add `noretoro` feature to disable legacy decoders
+- 0.0.14 add MAKI/PI/PIC/VSP(DAT)/PCD decoders, add `noretoro` feature to disable legacy decoders
 - 0.0.15 add JPEG encoder(only baseline)
 - 0.0.16 add pure rust Webp decoder, APNG encoder
 - 0.0.17 add pure rust Webp encoder / animated WebP encode / converter WebP options
+- 0.0.18 add GIF encoder / add TIFF encoder / add Exif writer
 
 # todo
 - Formated Header writer

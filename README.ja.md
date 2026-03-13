@@ -27,7 +27,7 @@ $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f png|jpeg|bmp|webp] [-q <quality>] [-z <0-9>] [--split]
 ```
 
-# サポートフォーマット 0.0.17
+# サポートフォーマット 0.0.18
 
 |フォーマット|エンコード|デコード|  |
 |------|---|---|--|
@@ -50,12 +50,12 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ```toml
 [dependencies]
-wml2 = "0.0.17"
+wml2 = "0.0.18"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.17", features = ["noretoro"] }
+wml2 = { version = "0.0.18", features = ["noretoro"] }
 ```
 
 # テストサンプル
@@ -215,6 +215,8 @@ pub fn main()-> Result<(),Box<dyn Error>> {
   - webpデコーダ、APNGエンコーダーの追加
 - 0.0.17
   - webpエンコーダ、animated WebP encode、converter の WebP option を追加
+- 0.0.18
+  - GIFエンコーダ、TIFFエンコーダ、Exifサポート
 
 # todo
 - Formated Header writer

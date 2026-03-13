@@ -33,7 +33,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 |------|---|---|--|
 |BMP|O|O|エンコーダは無圧縮のみ|
 |JPEG|O|O|エンコードはベースラインのみ。デコードは算術符号非対応|
-|GIF|x|O|アニメーションGIF対応|
+|GIF|O|O|アニメーションGIF対応|
 |PNG|O|O|APNG対応|
 |TIFF|O|O|encode: 無圧縮/LZW/JPEG(new)、decode: 無圧縮/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3 Fax/CCITT Group 4 Fax に対応|
 |WEBP|O|O|Pure Rust の静止画/アニメーション decode、静止画/アニメーション encode、lossless/lossy 出力に対応|

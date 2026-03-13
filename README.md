@@ -31,7 +31,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 |------|---|---|--|
 |BMP|O|O|encode only no compress|
 |JPEG|O|O|Baseline encode / Baseline and huffman progressive decode|
-|GIF|x|O|with Animation GIF|
+|GIF|O|O|with Animation GIF|
 |PNG|O|O|encode Truecolor + alpha only|
 |TIFF|O|O|encode: no compression/LZW/JPEG(new), decode: no compression/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3 Fax/CCITT Group 4 Fax|
 |WEBP|O|O|pure Rust still/animated decoder, still/animated encoder, lossless/lossy output|

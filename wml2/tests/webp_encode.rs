@@ -1,8 +1,11 @@
+mod common;
+
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use common::{sample_config_hint, sample_path};
 use wml2::draw::{
     AnimationLayer, EncodeOptions, ImageBuffer, ImageRect, NextBlend, NextDispose, NextOption,
     NextOptions, convert, image_encoder, image_load,
@@ -321,5 +324,41 @@ fn convert_apng_file_to_webp_via_public_api() {
     );
 
     let _ = fs::remove_file(input_path);
+    let _ = fs::remove_file(output_path);
+}
+
+#[test]
+fn convert_gif_file_to_webp_preserves_animation_when_first_delay_is_zero() {
+    let Some(input_path) = sample_path("bird-wings-flying-feature.gif") else {
+        eprintln!(
+            "skipping missing sample: bird-wings-flying-feature.gif (configure {})",
+            sample_config_hint().display()
+        );
+        return;
+    };
+    let output_path = temp_path("convert-gif-animation-output", "webp");
+
+    convert(
+        input_path.to_string_lossy().into_owned(),
+        output_path.to_string_lossy().into_owned(),
+        None,
+    )
+    .unwrap();
+
+    let webp = fs::read(&output_path).unwrap();
+    let features = get_features(&webp).unwrap();
+    assert!(features.has_animation);
+
+    let decoded = image_load(&webp).unwrap();
+    assert_eq!(decoded.first_wait_time, Some(100));
+    assert!(
+        decoded
+            .animation
+            .as_ref()
+            .map(|frames| frames.len())
+            .unwrap_or(0)
+            > 1
+    );
+
     let _ = fs::remove_file(output_path);
 }

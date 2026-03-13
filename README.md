@@ -28,7 +28,7 @@ $ cargo run --example metadata --release <inputfile>
 |GIF|x|O|with Animation GIF|
 |PNG|O|O|encode Truecolor + alpha only|
 |TIFF|x|O|no compression/LZW/Packbits/Jpeg(new)/G3 Fax/G4 Fax|
-|WEBP|x|O|decoder full support|
+|WEBP|O|O|decoder full support|
 |MAG|x|O|Japanese legasy image format|
 |MAKI|x|O|Japanese legacy image format, disabled by `noretoro`|
 |PI|x|O|Japanese legacy image format, disabled by `noretoro`|
@@ -181,7 +181,8 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.14 add MAKI/PI/PIC/VSP(DAT)/PCD decoders
 - 0.0.14 add `noretoro` feature to disable legacy decoders
 - 0.0.15 add JPEG encoder(only baseline)
-- 0.0.17 add native rust Webp decoder, APNG encoder
+- 0.0.16 add pure rust Webp decoder, APNG encoder
+- 0.0.17 add pure rust Webp encoder
 
 # todo
 - Formated Header writer

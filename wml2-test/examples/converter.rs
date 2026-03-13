@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
-use wml2::draw::{ImageBuffer, convert, image_from_file, image_to_file};
+use wml2::draw::{EncodeOptions, ImageBuffer, convert, image_encoder, image_from_file};
 use wml2::metadata::DataMap;
 use wml2::util::ImageFormat;
 
@@ -41,6 +41,7 @@ struct Config {
     output_dir: PathBuf,
     format: OutputFormat,
     quality: Option<u64>,
+    optimize: Option<u64>,
     split: bool,
 }
 
@@ -55,6 +56,7 @@ impl Config {
         let mut output_dir = None;
         let mut format = OutputFormat::Png;
         let mut quality = None;
+        let mut optimize = None;
         let mut split = false;
 
         let mut index = 1;
@@ -81,6 +83,13 @@ impl Config {
                     }
                     format = OutputFormat::parse(&args[index])?;
                 }
+                "-z" => {
+                    index += 1;
+                    if index >= args.len() {
+                        return Err("missing value for -z".into());
+                    }
+                    optimize = Some(args[index].parse::<u64>()?);
+                }
                 "--split" => {
                     split = true;
                 }
@@ -96,8 +105,8 @@ impl Config {
             return Err("no input files".into());
         }
         let output_dir = output_dir.ok_or("missing -o <outputfolder>")?;
-        if split && !matches!(format, OutputFormat::Png) {
-            return Err("--split is currently supported only for PNG output".into());
+        if split && matches!(format, OutputFormat::Jpeg | OutputFormat::Bmp) {
+            return Err("--split is currently supported only for PNG and WebP output".into());
         }
 
         Ok(Self {
@@ -105,6 +114,7 @@ impl Config {
             output_dir,
             format,
             quality,
+            optimize,
             split,
         })
     }
@@ -122,10 +132,22 @@ impl Config {
                 if let Some(quality) = self.quality {
                     options.insert("quality".to_string(), DataMap::UInt(quality));
                 }
+                if let Some(optimize) = self.optimize {
+                    options.insert("optimize".to_string(), DataMap::UInt(optimize));
+                }
             }
             _ => {}
         }
         (!options.is_empty()).then_some(options)
+    }
+
+    fn image_format(&self) -> ImageFormat {
+        match self.format {
+            OutputFormat::Png => ImageFormat::Png,
+            OutputFormat::Jpeg => ImageFormat::Jpeg,
+            OutputFormat::Bmp => ImageFormat::Bmp,
+            OutputFormat::Webp => ImageFormat::Webp,
+        }
     }
 }
 
@@ -136,7 +158,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => {
             eprintln!("{}", error);
             eprintln!(
-                "usage: converter [inputfiles...] -o <outputfolder> [-f png|jpeg|bmp|webp] [-q <quality>] [--split]"
+                "usage: converter [inputfiles...] -o <outputfolder> [-f png|jpeg|bmp|webp] [-q <quality>] [-z <0-9>] [--split]"
             );
             return Err(error);
         }
@@ -170,10 +192,10 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn convert_one(config: &Config, input_file: &Path) -> Result<(), Box<dyn Error>> {
-    if matches!(config.format, OutputFormat::Png) {
+    if matches!(config.format, OutputFormat::Png | OutputFormat::Webp) {
         let image = image_from_file(input_file.to_string_lossy().into_owned())?;
-        if config.split || should_split_png(input_file, &image) {
-            return write_split_pngs(config, input_file, image);
+        if should_split_output(config, input_file, &image) {
+            return write_split_images(config, input_file, image);
         }
     }
 
@@ -187,7 +209,15 @@ fn convert_one(config: &Config, input_file: &Path) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-fn should_split_png(input_file: &Path, image: &ImageBuffer) -> bool {
+fn should_split_output(config: &Config, input_file: &Path, image: &ImageBuffer) -> bool {
+    if config.split {
+        return true;
+    }
+
+    if !matches!(config.format, OutputFormat::Png) {
+        return false;
+    }
+
     if matches!(
         input_file
             .extension()
@@ -220,29 +250,48 @@ fn should_split_png(input_file: &Path, image: &ImageBuffer) -> bool {
     })
 }
 
-fn write_split_pngs(
+fn write_encoded_image(
+    output_file: &Path,
+    image: &mut ImageBuffer,
+    format: ImageFormat,
+    options: Option<HashMap<String, DataMap>>,
+) -> Result<(), Box<dyn Error>> {
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: image,
+        options,
+    };
+    let data = image_encoder(&mut encode, format)?;
+    fs::write(output_file, data)?;
+    Ok(())
+}
+
+fn write_split_images(
     config: &Config,
     input_file: &Path,
     mut image: ImageBuffer,
 ) -> Result<(), Box<dyn Error>> {
+    let extension = config.format.extension();
     let Some(animation) = &image.animation else {
-        let output_file = output_path(&config.output_dir, input_file, "png")?;
+        let output_file = output_path(&config.output_dir, input_file, extension)?;
         println!("{}", output_file.display());
-        image_to_file(
-            output_file.to_string_lossy().into_owned(),
+        write_encoded_image(
+            &output_file,
             &mut image,
-            ImageFormat::Png,
+            config.image_format(),
+            config.encode_options(),
         )?;
         return Ok(());
     };
 
     if animation.is_empty() {
-        let output_file = output_path(&config.output_dir, input_file, "png")?;
+        let output_file = output_path(&config.output_dir, input_file, extension)?;
         println!("{}", output_file.display());
-        image_to_file(
-            output_file.to_string_lossy().into_owned(),
+        write_encoded_image(
+            &output_file,
             &mut image,
-            ImageFormat::Png,
+            config.image_format(),
+            config.encode_options(),
         )?;
         return Ok(());
     }
@@ -268,12 +317,13 @@ fn write_split_pngs(
         let mut frame = ImageBuffer::from_buffer(layer.width, layer.height, layer.buffer.clone());
         let output_file = config
             .output_dir
-            .join(format!("{}_{:03}.png", base_name, index));
+            .join(format!("{}_{:03}.{}", base_name, index, extension));
         println!("{}", output_file.display());
-        image_to_file(
-            output_file.to_string_lossy().into_owned(),
+        write_encoded_image(
+            &output_file,
             &mut frame,
-            ImageFormat::Png,
+            config.image_format(),
+            config.encode_options(),
         )?;
     }
     Ok(())
@@ -429,7 +479,19 @@ mod tests {
     #[test]
     fn dat_inputs_always_split_for_png_output() {
         let image = ImageBuffer::from_buffer(1, 1, vec![0, 0, 0, 0xff]);
-        assert!(should_split_png(Path::new("sample.dat"), &image));
+        let config = Config {
+            inputs: Vec::new(),
+            output_dir: PathBuf::new(),
+            format: OutputFormat::Png,
+            quality: None,
+            optimize: None,
+            split: false,
+        };
+        assert!(should_split_output(
+            &config,
+            Path::new("sample.dat"),
+            &image
+        ));
     }
 
     #[test]
@@ -444,7 +506,32 @@ mod tests {
             control: NextOptions::new(),
         }]);
 
-        assert!(should_split_png(Path::new("frame.gif"), &image));
+        let config = Config {
+            inputs: Vec::new(),
+            output_dir: PathBuf::new(),
+            format: OutputFormat::Png,
+            quality: None,
+            optimize: None,
+            split: false,
+        };
+        assert!(should_split_output(&config, Path::new("frame.gif"), &image));
+    }
+
+    #[test]
+    fn explicit_split_is_available_for_webp_output() {
+        let image = ImageBuffer::from_buffer(1, 1, vec![0, 0, 0, 0xff]);
+        let config = Config {
+            inputs: Vec::new(),
+            output_dir: PathBuf::new(),
+            format: OutputFormat::Webp,
+            quality: None,
+            optimize: Some(7),
+            split: true,
+        };
+
+        assert!(should_split_output(&config, Path::new("frame.gif"), &image));
+        let options = config.encode_options().unwrap();
+        assert!(matches!(options.get("optimize"), Some(DataMap::UInt(7))));
     }
 
     #[test]

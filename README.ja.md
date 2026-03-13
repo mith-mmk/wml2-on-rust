@@ -30,7 +30,7 @@ $ cargo run --example metadata --release <inputfile>
 |GIF|x|O|アニメーションGIF対応|
 |PNG|O|O|APNG対応|
 |TIFF|x|O|無圧縮/LZW/Packbits/Jpeg(new)/3G/4G Faxに対応|
-|WEBP|x|x|not support|
+|WEBP|O|O|not support|
 |MAG|x|O||
 |MAKI|x|O|`noretoro` 指定時は無効|
 |PI|x|O|`noretoro` 指定時は無効|
@@ -180,8 +180,10 @@ pub fn main()-> Result<(),Box<dyn Error>> {
   - `noretoro` feature で旧フォーマットデコーダを無効化できるように変更
 - 0.0.15
   - jpegエンコード（ベースライン）のみを追加
-- 0.0.17
+- 0.0.16
   - webpデコーダ、APNGエンコーダーの追加
+- 0.0.17
+  - webpエンコーダの追加
 
 # todo
 - Formated Header writer

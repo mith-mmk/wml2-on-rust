@@ -1,50 +1,55 @@
-Notice: Specification of this library is not decision.
-
 # WML2 - Web graphic Multi format Library To Rust
-- Rust writing graphic loader for WASM
-- only on memory use
-- callback system
-- not use multithreding
-- No need to force use - becouse You can use Javascript Image.
 
-# run example
-See `wml2-test/examples`
-## decode bmp reader
-```
+`wml2` is a callback-based image I/O library for Rust.
+
+- decodes and encodes images in memory
+- works with the built-in RGBA `ImageBuffer` or custom callbacks
+- supports still images and selected animation / multi-page formats
+- includes native file helpers on non-WASM targets
+
+## Examples
+
+See `wml2-test/examples`.
+
+### Decode to BMP
+
+```console
 $ cargo run -p wml2-test --example to_bmp --release -- <inputfile> <output_dir>
 ```
-## metadata reader
 
-```
+### Read metadata
+
+```console
 $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 ```
 
-## converter
+### Convert formats
 
+```console
+$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]
 ```
-$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f png|jpeg|bmp|webp] [-q <quality>] [-z <0-9>] [--split]
-```
 
-# Support Format 0.0.18
+## Supported formats (`0.0.18`)
 
-|format|enc|dec|  |
-|------|---|---|--|
-|BMP|O|O|encode only no compress|
-|JPEG|O|O|Baseline encode / Baseline and huffman progressive decode|
-|GIF|O|O|with Animation GIF|
-|PNG|O|O|encode Truecolor + alpha only|
-|TIFF|O|O|encode: no compression/LZW/JPEG(new), decode: no compression/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3 Fax/CCITT Group 4 Fax|
-|WEBP|O|O|pure Rust still/animated decoder, still/animated encoder, lossless/lossy output|
-|MAG|x|O|Japanese legasy image format|
-|MAKI|x|O|Japanese legacy image format, disabled by `noretoro`|
-|PI|x|O|Japanese legacy image format, disabled by `noretoro`|
-|PIC|x|O|Japanese legacy image format, disabled by `noretoro`|
-|PCD|x|O|Photo CD base4 decode, disabled by `noretoro`|
+| format | enc | dec | notes |
+| --- | --- | --- | --- |
+| BMP | O | O | encoder writes uncompressed BMP |
+| JPEG | O | O | baseline encoder; baseline and Huffman progressive decoder |
+| GIF | O | O | palette/LZW encoder, animation supported |
+| PNG | O | O | PNG/APNG; encoder writes RGBA truecolor |
+| TIFF | O | O | encode: none/LZW/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
+| WEBP | O | O | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output |
+| MAG | x | O | Japanese legacy image format |
+| MAKI | x | O | Japanese legacy image format, disabled by `noretoro` |
+| PI | x | O | Japanese legacy image format, disabled by `noretoro` |
+| PIC | x | O | Japanese legacy image format, disabled by `noretoro` |
+| VSP/DAT | x | O | Japanese legacy image format/container, disabled by `noretoro` |
+| PCD | x | O | Photo CD base4 decode, disabled by `noretoro` |
 
-# Features
+## Features
 
-- default: retro decoders are enabled
-- `noretoro`: disable legacy decoders (`MAKI`, `PI`, `PIC`, `VSP/DAT`, `PCD`)
+- default: legacy decoders are enabled
+- `noretoro`: disables `MAKI`, `PI`, `PIC`, `VSP/DAT`, and `PCD`
 
 ```toml
 [dependencies]
@@ -56,166 +61,183 @@ wml2 = "0.0.18"
 wml2 = { version = "0.0.18", features = ["noretoro"] }
 ```
 
-# Test samples
+## Encode and convert options
 
-- integration tests use generic filenames such as `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat`
-- the original sample filenames are intentionally not referenced in public-facing test code
-- optional external sample paths can be configured in `wml2/tests/test_samples.txt`
-- `wml2/tests/test_samples.txt` is ignored by git; use `wml2/tests/test_samples.example.txt` as the template
+`draw::image_to()` encodes an `ImageBuffer` directly into a `Vec<u8>`.
 
-# Encode options
+`draw::convert()` chooses the encoder from the output extension:
+`.gif`, `.png`, `.apng`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp`.
+
+Supported option keys in `EncodeOptions::options` / `draw::convert(..., options)`:
 
 - JPEG: `quality`
-- WebP: `optimize` (`0..=9`) and `quality` (`0..=100`, lossy only)
-- `draw::image_to()` encodes an `ImageBuffer` directly into a `Vec<u8>`
-- `draw::convert()` selects the encoder from the output extension, including `.webp`
-- `wml2-test/examples/converter` supports `-z` for WebP optimize and `--split` for PNG/WebP animation frame export
+- TIFF: `compression = none|lzw|lzw_msb|lzw_lsb|jpeg`
+- TIFF with `compression=jpeg`: `quality`
+- WebP: `optimize` (`0..=9`)
+- WebP lossy: `quality`
+- PNG/JPEG/TIFF/WebP: `exif`
+  - raw EXIF bytes via `DataMap::Raw`
+  - TIFF-style EXIF via `DataMap::Exif`
+  - `DataMap::Ascii("copy".to_string())` to preserve decoded EXIF during `convert()`
 
-# TIFF
+`wml2-test/examples/converter` options:
 
-- Encode supports these TIFF compression formats:
-  - no compression
-  - LZW
-  - JPEG (new-style TIFF JPEG, RGB only)
-- Decode supports these TIFF compression formats:
-  - no compression
-  - LZW
-  - PackBits
-  - JPEG (new-style TIFF JPEG)
-  - Adobe Deflate
-  - CCITT Huffman RLE
-  - CCITT Group 3 Fax
-  - CCITT Group 4 Fax
+- `-q`: JPEG quality, WebP lossy quality, or TIFF JPEG quality
+- `-z`: WebP optimize level
+- `-c`: TIFF compression or WebP `lossy|lossless`
+- `--exif copy`: copy source EXIF to PNG/JPEG/TIFF/WebP output
+- `--split`: split animation / multi-frame output for GIF/PNG/TIFF/WebP
 
-# using loader
-- an on-memory compress buffered image or an image file 
-- output memory buffer and callback (defalt use ImageBuffer)
+## TIFF compression details
 
-```rust
-  let image = new ImageBuffer();
-  let verbose = 0;
-  let mut option = DecodeOptions{
-    debug_flag: verbose,  // depended decoder
-    drawer: image,
-  };
+Encode supports:
 
-  let r = wml2::jpeg::decoder::decode(data, &mut option);
-```
+- no compression
+- LZW
+- JPEG (new-style TIFF JPEG, RGB only)
 
-## Symple Reader
+Decode supports:
+
+- no compression
+- LZW
+- PackBits
+- JPEG (new-style TIFF JPEG)
+- Adobe Deflate
+- CCITT Huffman RLE
+- CCITT Group 3 Fax
+- CCITT Group 4 Fax
+
+## Basic decoding
+
+For simple in-memory decoding, use `draw::image_load()`. For native file I/O,
+use `draw::image_from_file()`.
 
 ```rust
 use std::error::Error;
-use wml2::draw::ImageBuffer;
+use wml2::draw::{PickCallback, image_from_file};
 
-pub fn main()-> Result<(),Box<dyn Error>> {
-    println!("read");
-    let filename = "foo.bmp";
-    let mut image = image_from_file(filename.to_string())?;
-    let _metadata = image.metadata()?.unwrap();
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut image = image_from_file("foo.webp".to_string())?;
+    println!("{}x{}", image.width, image.height);
+
+    if let Some(metadata) = image.metadata()? {
+        if let Some(format) = metadata.get("Format") {
+            println!("format: {:?}", format);
+        }
+    }
 
     Ok(())
 }
-
-
 ```
- ImageBuffer impl DrawCallback trait, 5 function.
 
- - init -> callback initialize.Decoder return width and height (and more...).You must get buffers or resours for use.
- - draw -> callback draw.Decoder return a part of image.You must draw or other process.
- - verbose -> callback verbose. for debug use
- - next -> If the image has more frame or rewrite(ex.progressive jpeg),next function return value DrawNextOptions,
-    - Continue,             -- continue image draw 
-    - NextImage,            -- this image has other images
-    - ClearNext,            -- You may next image draw before clear
-    - WaitTime(usize),      -- You may wait time(ms)
-    - None,                 -- none option
-    - and other...(no impl)
-   You may impl animation,slice images and more.
+Use `draw::image_loader()` or `draw::image_reader()` when you want decoders to
+write into a custom `DrawCallback`.
 
- - terminate -> You can impl terminate process
- - set_metadata -> 0.0.10 after 
+`ImageBuffer` implements `DrawCallback` and receives:
 
-# using saver
+- `init`: initialize the canvas
+- `draw`: write RGBA pixels into a rectangle
+- `next`: receive `NextOptions` for animation or multi-image transitions
+- `terminate`: finalize decoding
+- `verbose`: decoder-specific debug output
+- `set_metadata`: decoded metadata
+
+## Basic encoding
+
+Use `draw::image_to()` for `ImageBuffer`, or `draw::image_encoder()` /
+`draw::image_writer()` when you want to encode a custom `PickCallback`.
+
 ```rust
+use std::collections::HashMap;
+use std::error::Error;
 use wml2::draw::{ImageBuffer, image_to};
+use wml2::metadata::DataMap;
 use wml2::util::ImageFormat;
 
-let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
-let png = image_to(&mut image, ImageFormat::Png, None)?;
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+    let mut options = HashMap::new();
+    options.insert("quality".to_string(), DataMap::UInt(90));
+
+    let jpeg = image_to(&mut image, ImageFormat::Jpeg, Some(options))?;
+    assert!(jpeg.starts_with(&[0xff, 0xd8]));
+    Ok(())
+}
 ```
 
-Use `draw::image_encoder()` when you want to encode a custom `PickCallback`
-implementation instead of `ImageBuffer`.
+`ImageBuffer` implements `PickCallback` and provides:
 
- ImageBuffer encoder impl PickCallback trait, 4 function.
+- `encode_start`
+- `encode_pick`
+- `encode_end`
+- `metadata`
 
-- encode_start encoder start
-- encode_pick  encoder pick image data from Image Buffer
-- encode_end   terminate encode
-- metadata // 0.0.10 after
+## Metadata
 
-# Metadata
- Metadatas is had by (Key Value) HashMap.
- Metadata key is String.value is into DataMap.
+Metadata is stored as `HashMap<String, DataMap>`.
 
 ```rust
+use std::error::Error;
+use wml2::draw::{PickCallback, image_from_file};
+use wml2::metadata::DataMap;
 
-// Get ICC Profile
-    let filename = "foo.bmp";
-    let mut image = image_from_file(filename.to_string())?;
-    let metadata = image.metadata()?.unwrap();
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut image = image_from_file("foo.jpg".to_string())?;
+    let metadata = image.metadata()?.unwrap_or_default();
 
-    if let Some(icc_profile_data) = metadata.get(&"ICC Profile") {
-      if let DataMap::ICCProfile(icc_profile) = icc_profile_data {
-        // Read ICC Profile
-      }
+    if let Some(DataMap::ICCProfile(profile)) = metadata.get("ICC Profile") {
+        println!("ICC profile: {} bytes", profile.len());
     }
 
-  
-
+    Ok(())
+}
 ```
 
-# debug flag
-## JPEG
--  0x01 basic header
--  0x02 with Huffman Table
--  0x04 with Extract Huffman Table 
--  0x08 with Define Quatization Table
--  0x10 with Exif
--  0x20 with IIC Profile(header)
--  0x40 with IIC Profile(more infomation)
--  0x60 with IIC Profile(all)
--  0x80 ...
-# update
-- 0.0.1 baseline jpeg
-- 0.0.2 bmp OS2/Windows RGB/RLE4/RLE8/bit fields/baseline JPEG
-- 0.0.3 add GIF
-- 0.0.4 change error message
-- 0.0.5 reader change/Error delagation change
-- 0.0.6 issue RST maker read bug fix
-- 0.0.7 add PNG
-- 0.0.8 add Jpeg multithread(pipelined),Progressive Jpeg has bugs(4,1,1) / BMP saver / Animation GIF(alpha)
-- 0.0.9 Png Saver
-- 0.0.10 Progressive Bug(4,1,1) fix
-- 0.0.11  2022/05/25 fix
-  - obsolete ICCProfile parse in verbose -> use metadata - see https://github.com/mith-mmk/icc_profile Tiff G3 Fax
-  - TIFF 3G/4G FAX and multi page tiff decode support, Tiled image is support,but new Jpeg Tiff only.
-- 0.0.12 encode option change
-- 0.0.13 MAG Format supppot
-- 0.0.14 add MAKI/PI/PIC/VSP(DAT)/PCD decoders, add `noretoro` feature to disable legacy decoders
-- 0.0.15 add JPEG encoder(only baseline)
-- 0.0.16 add pure rust Webp decoder, APNG encoder
-- 0.0.17 add pure rust Webp encoder / animated WebP encode / converter WebP options
-- 0.0.18 add GIF encoder / add TIFF encoder / add Exif writer
+## Test samples
 
-# todo
-- Formated Header writer
-- other decoder
-- color translation
+- integration tests use generic names such as `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat`
+- original sample filenames are intentionally not referenced in public test code
+- optional external sample paths can be configured in `wml2/tests/test_samples.txt`
+- `wml2/tests/test_samples.txt` is ignored by git; use `wml2/tests/test_samples.example.txt` as a template
 
-#　License
- MIT License (C) 2022-2026
+## Debug flags
 
-# Author
- MITH@mmk https://mith-mmk.github.io/
+### JPEG
+
+- `0x01`: basic header
+- `0x02`: Huffman table
+- `0x04`: extracted Huffman table
+- `0x08`: quantization table
+- `0x10`: EXIF
+- `0x20`: ICC profile header
+- `0x40`: ICC profile detail
+- `0x60`: ICC profile all
+
+## Release history
+
+- `0.0.1`: baseline JPEG
+- `0.0.2`: BMP OS/2 and Windows RGB/RLE4/RLE8/bit fields, baseline JPEG
+- `0.0.3`: GIF decoder
+- `0.0.4`: error message updates
+- `0.0.5`: reader and error propagation changes
+- `0.0.6`: RST marker read bug fix
+- `0.0.7`: PNG decoder
+- `0.0.8`: pipelined JPEG, BMP saver, animation GIF work
+- `0.0.9`: PNG saver
+- `0.0.10`: progressive JPEG fix
+- `0.0.11`: TIFF Group 3/4 Fax and multipage TIFF decode improvements
+- `0.0.12`: encode option changes
+- `0.0.13`: MAG decoder
+- `0.0.14`: MAKI/PI/PIC/VSP(DAT)/PCD decoders and `noretoro`
+- `0.0.15`: baseline JPEG encoder
+- `0.0.16`: pure Rust WebP decoder and APNG encoder
+- `0.0.17`: pure Rust WebP encoder and animated WebP encode
+- `0.0.18`: GIF encoder, TIFF encoder, EXIF writer
+
+## License
+
+MIT License (C) 2022-2026
+
+## Author
+
+MITH@mmk https://mith-mmk.github.io/

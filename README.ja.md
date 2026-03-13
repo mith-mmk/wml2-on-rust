@@ -1,52 +1,55 @@
-Notice: Specification of this library is not decision.
-
 # WML2 - Web graphic Multi format Library To Rust
-- 名前はただのこじつけ
-- WASMで動作可能 https://github.com/mith-mmk/wasm-paint
-- メモリーバッファで動作可能
-- callback 関数を使った拡張が可能
-- UIはまだない
 
-# 実装例
-`wml2-test/examples` を参照
+`wml2` は callback ベースの画像 I/O ライブラリです。
 
-## BMPリーダーのサンプル
-```
+- メモリ上で画像を decode / encode
+- 組み込みの RGBA `ImageBuffer` と独自 callback の両方に対応
+- 静止画に加えて、一部のアニメーション / マルチページ形式にも対応
+- 非 WASM ターゲットではファイル I/O helper も利用可能
+
+## 実装例
+
+`wml2-test/examples` を参照してください。
+
+### BMP へ変換する例
+
+```console
 $ cargo run -p wml2-test --example to_bmp --release -- <inputfile> <output_dir>
 ```
 
-## メタデータリーダーのサンプル
+### メタデータ表示の例
 
-```
+```console
 $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 ```
 
-## converter
+### converter の例
 
+```console
+$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]
 ```
-$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f png|jpeg|bmp|webp] [-q <quality>] [-z <0-9>] [--split]
-```
 
-# サポートフォーマット 0.0.18
+## サポートフォーマット (`0.0.18`)
 
-|フォーマット|エンコード|デコード|  |
-|------|---|---|--|
-|BMP|O|O|エンコーダは無圧縮のみ|
-|JPEG|O|O|エンコードはベースラインのみ。デコードは算術符号非対応|
-|GIF|O|O|アニメーションGIF対応|
-|PNG|O|O|APNG対応|
-|TIFF|O|O|encode: 無圧縮/LZW/JPEG(new)、decode: 無圧縮/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3 Fax/CCITT Group 4 Fax に対応|
-|WEBP|O|O|Pure Rust の静止画/アニメーション decode、静止画/アニメーション encode、lossless/lossy 出力に対応|
-|MAG|x|O||
-|MAKI|x|O|`noretoro` 指定時は無効|
-|PI|x|O|`noretoro` 指定時は無効|
-|PIC|x|O|`noretoro` 指定時は無効|
-|PCD|x|O|Photo CD の base4 をデコード。`noretoro` 指定時は無効|
+| フォーマット | enc | dec | 備考 |
+| --- | --- | --- | --- |
+| BMP | O | O | encoder は無圧縮 BMP を出力 |
+| JPEG | O | O | encoder は baseline のみ、decoder は baseline と Huffman progressive に対応 |
+| GIF | O | O | パレット/LZW encoder、animation 対応 |
+| PNG | O | O | PNG/APNG 対応、encoder は RGBA truecolor を出力 |
+| TIFF | O | O | encode: none/LZW/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
+| WEBP | O | O | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応 |
+| MAG | x | O | 日本の旧画像形式 |
+| MAKI | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
+| PI | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
+| PIC | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
+| VSP/DAT | x | O | 日本の旧画像形式/コンテナ。`noretoro` 指定時は無効 |
+| PCD | x | O | Photo CD base4 decode。`noretoro` 指定時は無効 |
 
-# Feature
+## Feature
 
-- デフォルトでは旧フォーマットデコーダは有効
-- `noretoro` を指定すると旧フォーマットデコーダ（`MAKI`, `PI`, `PIC`, `VSP/DAT`, `PCD`）を無効化
+- デフォルトでは旧フォーマット decoder は有効
+- `noretoro`: `MAKI`, `PI`, `PIC`, `VSP/DAT`, `PCD` を無効化
 
 ```toml
 [dependencies]
@@ -58,166 +61,184 @@ wml2 = "0.0.18"
 wml2 = { version = "0.0.18", features = ["noretoro"] }
 ```
 
-# テストサンプル
+## エンコードと変換オプション
 
-- 統合テストでは `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat` などの汎用名を利用
-- 著作権上の理由で元のサンプル名は公開向けテストコードでは参照しない
-- 外部 sample のパスは `wml2/tests/test_samples.txt` で任意に指定可能
-- `wml2/tests/test_samples.txt` は `.gitignore` 対象。書式は `wml2/tests/test_samples.example.txt` を参照
+`draw::image_to()` は `ImageBuffer` を直接 `Vec<u8>` に encode します。
 
-# エンコードオプション
+`draw::convert()` は出力拡張子から encoder を選択します。
+対応拡張子は `.gif`, `.png`, `.apng`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp` です。
+
+`EncodeOptions::options` / `draw::convert(..., options)` で使える主なキー:
 
 - JPEG: `quality`
-- WebP: `optimize` (`0..=9`) と `quality` (`0..=100`, lossy のみ)
-- `draw::image_to()` は `ImageBuffer` をそのまま `Vec<u8>` にエンコード可能
-- `draw::convert()` は出力拡張子から encoder を選び、`.webp` も利用可能
-- `wml2-test/examples/converter` は WebP 向け `-z` と、PNG/WebP 向け `--split` をサポート
+- TIFF: `compression = none|lzw|lzw_msb|lzw_lsb|jpeg`
+- TIFF で `compression=jpeg`: `quality`
+- WebP: `optimize` (`0..=9`)
+- WebP lossy: `quality`
+- PNG/JPEG/TIFF/WebP: `exif`
+  - `DataMap::Raw` で生 EXIF バイト列
+  - `DataMap::Exif` で TIFF 形式の EXIF
+  - `DataMap::Ascii("copy".to_string())` で `convert()` 時に入力 EXIF をコピー
 
-# TIFF
+`wml2-test/examples/converter` の主なオプション:
 
-- encode は以下の TIFF 圧縮形式に対応
-  - 無圧縮
-  - LZW
-  - JPEG (new-style TIFF JPEG, RGBのみ)
-- decode は以下の TIFF 圧縮形式に対応
-  - 無圧縮
-  - LZW
-  - PackBits
-  - JPEG (new-style TIFF JPEG)
-  - Adobe Deflate
-  - CCITT Huffman RLE
-  - CCITT Group 3 Fax
-  - CCITT Group 4 Fax
+- `-q`: JPEG quality、WebP lossy quality、または TIFF JPEG quality
+- `-z`: WebP optimize level
+- `-c`: TIFF compression または WebP `lossy|lossless`
+- `--exif copy`: PNG/JPEG/TIFF/WebP 出力へ入力 EXIF をコピー
+- `--split`: GIF/PNG/TIFF/WebP の animation / multi-frame を分割出力
 
-# 使い方
-- バッファ上にあるイメージをロードする
-- Callbackを実装することで拡張が可能 (デフォルトで ImageBufferが装備)
+## TIFF 圧縮
 
-```rust
-  let image = new ImageBuffer();
-  let verbose = 0;
-  let mut option = DecodeOptions{
-    debug_flag: verbose,  // depended decoder
-    drawer: image,
-  };
+encode 対応:
 
-  let r = wml2::jpeg::decoder::decode(data, &mut option);
-```
+- 無圧縮
+- LZW
+- JPEG (new-style TIFF JPEG, RGB のみ)
 
-## シンプルデコーダ
+decode 対応:
+
+- 無圧縮
+- LZW
+- PackBits
+- JPEG (new-style TIFF JPEG)
+- Adobe Deflate
+- CCITT Huffman RLE
+- CCITT Group 3 Fax
+- CCITT Group 4 Fax
+
+## 基本的な decode
+
+メモリ上の画像をそのまま decode するなら `draw::image_load()`、
+ネイティブ環境でファイルから読むなら `draw::image_from_file()` を使います。
 
 ```rust
 use std::error::Error;
-use wml2::draw::ImageBuffer;
+use wml2::draw::{PickCallback, image_from_file};
 
-pub fn main()-> Result<(),Box<dyn Error>> {
-    println!("read");
-    let filename = "foo.bmp";
-    let mut image = image_from_file(filename.to_string())?;
-    let _metadata = image.metadata()?.unwrap();
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut image = image_from_file("foo.webp".to_string())?;
+    println!("{}x{}", image.width, image.height);
+
+    if let Some(metadata) = image.metadata()? {
+        if let Some(format) = metadata.get("Format") {
+            println!("format: {:?}", format);
+        }
+    }
 
     Ok(())
 }
-
-
 ```
- ImageBufferはDrawCallback トレイトを実装して作成されている。
 
- - init -> デコーダが最初に呼び出す。関数は引数をみてからバッファを確保することが可能。
- - draw -> デコーダがデータを書き出す時に呼び出す。画像全体とは限らず一部だけ書き出すことが可能
- - verbose -> デバッグ用の詳細情報を返します
- - next -> 複数イメージが存在する場合、次の処理を要求します。
-  - アニメーション(GIF/APNG)もしくはマルチイメージフォーマット（Tiffなど）をサポートするときに利用。
- - terminate -> デコーダが終了したときに呼び出され、後処理をおこなう関数
- - set_metadata -> メタデータをセットする(0.0.10以降) 0.0.12でexif User Commentのデコードを追加
+独自の `DrawCallback` を使いたい場合は `draw::image_loader()` または
+`draw::image_reader()` を使います。
 
-# using saver
+`ImageBuffer` は `DrawCallback` を実装しており、decoder から次を受け取れます。
+
+- `init`: canvas 初期化
+- `draw`: RGBA 矩形の書き込み
+- `next`: animation / multi-image の切り替え情報 (`NextOptions`)
+- `terminate`: decode 終了処理
+- `verbose`: decoder 固有の debug 出力
+- `set_metadata`: decode 済み metadata
+
+## 基本的な encode
+
+`ImageBuffer` を encode するだけなら `draw::image_to()`、
+独自の `PickCallback` を使うなら `draw::image_encoder()` /
+`draw::image_writer()` を使います。
+
 ```rust
+use std::collections::HashMap;
+use std::error::Error;
 use wml2::draw::{ImageBuffer, image_to};
+use wml2::metadata::DataMap;
 use wml2::util::ImageFormat;
 
-let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
-let png = image_to(&mut image, ImageFormat::Png, None)?;
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+    let mut options = HashMap::new();
+    options.insert("quality".to_string(), DataMap::UInt(90));
+
+    let jpeg = image_to(&mut image, ImageFormat::Jpeg, Some(options))?;
+    assert!(jpeg.starts_with(&[0xff, 0xd8]));
+    Ok(())
+}
 ```
 
-独自の `PickCallback` 実装を使う場合は `draw::image_encoder()` を使います。
+`ImageBuffer` は `PickCallback` も実装しており、encoder から次が呼ばれます。
 
- ImageBufferのエンコーダはPickCallbackトレイトを実装している
- 
-- encode_start エンコーダが開始された時呼び出される
-- encode_pick  エンコーダが画像の一部のデータを読み取る時に呼び出れる関数
-- encode_end   エンコーダが終了したときに呼び出される関数
-- metadata メタデータを要求した時に呼び出される関数。0.0.10移行
+- `encode_start`
+- `encode_pick`
+- `encode_end`
+- `metadata`
 
-# Metadata
- Metadatasは、(Key Value)のHashMapになっている。KeyはString型、ValueはDataMap型で実装されている。.
+## Metadata
+
+metadata は `HashMap<String, DataMap>` で表現されます。
 
 ```rust
+use std::error::Error;
+use wml2::draw::{PickCallback, image_from_file};
+use wml2::metadata::DataMap;
 
-// Get ICC Profile
-    let filename = "foo.bmp";
-    let mut image = image_from_file(filename.to_string())?;
-    let metadata = image.metadata()?.unwrap();
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut image = image_from_file("foo.jpg".to_string())?;
+    let metadata = image.metadata()?.unwrap_or_default();
 
-    if let Some(icc_profile_data) = metadata.get(&"ICC Profile") {
-      if let DataMap::ICCProfile(icc_profile) = icc_profile_data {
-        // Read ICC Profile
-      }
+    if let Some(DataMap::ICCProfile(profile)) = metadata.get("ICC Profile") {
+        println!("ICC profile: {} bytes", profile.len());
     }
 
-  
-
+    Ok(())
+}
 ```
 
-# debug flag
-## JPEG
--  0x01 basic header
--  0x02 with Huffman Table
--  0x04 with Extract Huffman Table 
--  0x08 with Define Quatization Table
--  0x10 with Exif
--  0x20 with IIC Profile(header)
--  0x40 with IIC Profile(more infomation)
--  0x60 with IIC Profile(all)
--  0x80 ...
-# update
-- 0.0.1 baseline jpeg
-- 0.0.2 bmp OS2/Windows RGB/RLE4/RLE8/bit fields/baseline JPEG
-- 0.0.3 add GIF
-- 0.0.4 change error message
-- 0.0.5 reader change/Error delagation change
-- 0.0.6 issue RST maker read bug fix
-- 0.0.7 add PNG
-- 0.0.8 add Jpeg multithread(pipelined),Progressive Jpeg has bugs(4,1,1) / BMP saver / Animation GIF(alpha)
-- 0.0.9 Png Saver
-- 0.0.10 Progressive JPEG YUV=4,1,1 fix
-- 0.0.11 2022/05/25 fix
-  - ICCProfileパーサの除去 -> see https://github.com/mith-mmk/icc_profile に移行
-  - TIFF 3G/4G FAXデコードサポート/Multipage Tiffサポート/Tiled image(JPEGのみ)
-- 0.0.12 No released
-  - encode option change
-  - metadataにexifのUsercommentを表示させる変更
-- 0.0.13 2026/03/08
-  - MAG画像のサポート
-- 0.0.14
-  - MAKI/PI/PIC/VSP(DAT)/PCD デコーダを追加
-  - `noretoro` feature で旧フォーマットデコーダを無効化できるように変更
-- 0.0.15
-  - jpegエンコード（ベースライン）のみを追加
-- 0.0.16
-  - webpデコーダ、APNGエンコーダーの追加
-- 0.0.17
-  - webpエンコーダ、animated WebP encode、converter の WebP option を追加
-- 0.0.18
-  - GIFエンコーダ、TIFFエンコーダ、Exifサポート
+## テストサンプル
 
-# todo
-- Formated Header writer
-- other decoder
-- color translation
+- 統合テストでは `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat` などの汎用名を使います
+- 元の sample 名は公開テストコードでは直接参照しません
+- 外部 sample のパスは `wml2/tests/test_samples.txt` に設定できます
+- `wml2/tests/test_samples.txt` は `.gitignore` 対象で、雛形は `wml2/tests/test_samples.example.txt` です
 
-#　License
- MIT License (C) 2022-2026
+## debug flag
 
-# Author
- MITH@mmk https://mith-mmk.github.io/
+### JPEG
+
+- `0x01`: basic header
+- `0x02`: Huffman table
+- `0x04`: extracted Huffman table
+- `0x08`: quantization table
+- `0x10`: EXIF
+- `0x20`: ICC profile header
+- `0x40`: ICC profile detail
+- `0x60`: ICC profile all
+
+## 更新履歴
+
+- `0.0.1`: baseline JPEG
+- `0.0.2`: BMP OS/2 / Windows RGB/RLE4/RLE8/bit fields、baseline JPEG
+- `0.0.3`: GIF decoder
+- `0.0.4`: error message 更新
+- `0.0.5`: reader と error propagation の変更
+- `0.0.6`: RST marker read bug fix
+- `0.0.7`: PNG decoder
+- `0.0.8`: pipelined JPEG、BMP saver、animation GIF 周辺
+- `0.0.9`: PNG saver
+- `0.0.10`: progressive JPEG fix
+- `0.0.11`: TIFF Group 3/4 Fax と multipage TIFF decode 改善
+- `0.0.12`: encode option 変更
+- `0.0.13`: MAG decoder
+- `0.0.14`: MAKI/PI/PIC/VSP(DAT)/PCD decoder と `noretoro`
+- `0.0.15`: baseline JPEG encoder
+- `0.0.16`: Pure Rust WebP decoder と APNG encoder
+- `0.0.17`: Pure Rust WebP encoder と animated WebP encode
+- `0.0.18`: GIF encoder、TIFF encoder、EXIF writer
+
+## License
+
+MIT License (C) 2022-2026
+
+## Author
+
+MITH@mmk https://mith-mmk.github.io/

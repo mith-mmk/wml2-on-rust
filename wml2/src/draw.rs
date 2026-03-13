@@ -766,11 +766,34 @@ pub struct EncodeOptions<'a> {
 }
 
 /// Decodes an image from memory into an [`ImageBuffer`].
+///
+/// # Examples
+/// ```rust
+/// use wml2::draw::{ImageBuffer, image_from, image_to};
+/// use wml2::util::ImageFormat;
+///
+/// let mut source = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+/// let png = image_to(&mut source, ImageFormat::Png, None).unwrap();
+///
+/// let image = image_from(&png).unwrap();
+/// assert_eq!(image.width, 1);
+/// assert_eq!(image.height, 1);
+/// ```
 pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer, Error> {
     image_load(buffer)
 }
 
 /// Decodes an image from a file into an [`ImageBuffer`].
+///
+/// # Examples
+/// ```no_run
+/// use wml2::draw::image_from_file;
+///
+/// let image = image_from_file("input.webp".to_string())?;
+/// assert!(image.width > 0);
+/// assert!(image.height > 0);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[cfg(not(target_family = "wasm"))]
 pub fn image_from_file(filename: String) -> Result<ImageBuffer, Error> {
     let f = std::fs::File::open(filename)?;
@@ -785,6 +808,16 @@ pub fn image_from_file(filename: String) -> Result<ImageBuffer, Error> {
 }
 
 /// Encodes an image source and writes it to a file.
+///
+/// # Examples
+/// ```no_run
+/// use wml2::draw::{ImageBuffer, image_to_file};
+/// use wml2::util::ImageFormat;
+///
+/// let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+/// image_to_file("output.png".to_string(), &mut image, ImageFormat::Png)?;
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[cfg(not(target_family = "wasm"))]
 pub fn image_to_file(
     filename: String,
@@ -835,6 +868,23 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
 /// Encoder-specific settings can be passed in `options`, for example JPEG
 /// `quality`, TIFF `compression`, WebP `quality` and `optimize`, or
 /// `exif = Ascii("copy")` to preserve source EXIF metadata.
+///
+/// # Examples
+/// ```no_run
+/// use std::collections::HashMap;
+/// use wml2::draw::convert;
+/// use wml2::metadata::DataMap;
+///
+/// let mut options = HashMap::new();
+/// options.insert("quality".to_string(), DataMap::UInt(90));
+///
+/// convert(
+///     "input.png".to_string(),
+///     "output.jpg".to_string(),
+///     Some(options),
+/// )?;
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[cfg(not(target_family = "wasm"))]
 pub fn convert(
     input_file: String,
@@ -855,6 +905,19 @@ pub fn convert(
 }
 
 /// Decodes an image from memory into an [`ImageBuffer`].
+///
+/// # Examples
+/// ```rust
+/// use wml2::draw::{ImageBuffer, image_load, image_to};
+/// use wml2::util::ImageFormat;
+///
+/// let mut source = ImageBuffer::from_buffer(2, 1, vec![255, 0, 0, 255, 0, 0, 255, 255]);
+/// let png = image_to(&mut source, ImageFormat::Png, None).unwrap();
+///
+/// let image = image_load(&png).unwrap();
+/// assert_eq!(image.width, 2);
+/// assert_eq!(image.height, 1);
+/// ```
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
     let mut ib = ImageBuffer::new();
     let mut option = DecodeOptions {
@@ -868,6 +931,24 @@ pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
 }
 
 /// Decodes an in-memory image into a custom [`DrawCallback`].
+///
+/// # Examples
+/// ```rust
+/// use wml2::draw::{DecodeOptions, ImageBuffer, image_loader, image_to};
+/// use wml2::util::ImageFormat;
+///
+/// let mut source = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+/// let png = image_to(&mut source, ImageFormat::Png, None).unwrap();
+///
+/// let mut target = ImageBuffer::new();
+/// let mut options = DecodeOptions {
+///     debug_flag: 0,
+///     drawer: &mut target,
+/// };
+/// image_loader(&png, &mut options).unwrap();
+/// assert_eq!(target.width, 1);
+/// assert_eq!(target.height, 1);
+/// ```
 pub fn image_loader(
     buffer: &[u8],
     option: &mut DecodeOptions,
@@ -879,6 +960,25 @@ pub fn image_loader(
 }
 
 /// Decodes an image stream into a custom [`DrawCallback`].
+///
+/// # Examples
+/// ```rust
+/// use std::io::Cursor;
+/// use wml2::draw::{DecodeOptions, ImageBuffer, image_reader, image_to};
+/// use wml2::util::ImageFormat;
+///
+/// let mut source = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+/// let png = image_to(&mut source, ImageFormat::Png, None).unwrap();
+///
+/// let mut target = ImageBuffer::new();
+/// let mut options = DecodeOptions {
+///     debug_flag: 0,
+///     drawer: &mut target,
+/// };
+/// image_reader(Cursor::new(png), &mut options).unwrap();
+/// assert_eq!(target.width, 1);
+/// assert_eq!(target.height, 1);
+/// ```
 #[cfg(not(target_family = "wasm"))]
 pub fn image_reader<R: BufRead + Seek>(
     reader: R,
@@ -891,6 +991,22 @@ pub fn image_reader<R: BufRead + Seek>(
 }
 
 /// Encodes an image source to an arbitrary writer.
+///
+/// # Examples
+/// ```rust
+/// use wml2::draw::{EncodeOptions, ImageBuffer, image_writer};
+/// use wml2::util::ImageFormat;
+///
+/// let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+/// let mut options = EncodeOptions {
+///     debug_flag: 0,
+///     drawer: &mut image,
+///     options: None,
+/// };
+/// let mut buffer = Vec::new();
+/// image_writer(&mut buffer, &mut options, ImageFormat::Png).unwrap();
+/// assert!(buffer.starts_with(&[0x89, b'P', b'N', b'G']));
+/// ```
 pub fn image_writer<W: Write>(
     mut writer: W,
     option: &mut EncodeOptions,
@@ -903,6 +1019,26 @@ pub fn image_writer<W: Write>(
 }
 
 /// Detects the input format and dispatches to the matching decoder.
+///
+/// # Examples
+/// ```rust
+/// use bin_rs::reader::BytesReader;
+/// use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder, image_to};
+/// use wml2::util::ImageFormat;
+///
+/// let mut source = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+/// let png = image_to(&mut source, ImageFormat::Png, None).unwrap();
+///
+/// let mut reader = BytesReader::new(&png);
+/// let mut target = ImageBuffer::new();
+/// let mut options = DecodeOptions {
+///     debug_flag: 0,
+///     drawer: &mut target,
+/// };
+/// image_decoder(&mut reader, &mut options).unwrap();
+/// assert_eq!(target.width, 1);
+/// assert_eq!(target.height, 1);
+/// ```
 pub fn image_decoder<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -983,6 +1119,21 @@ pub fn image_decoder<B: BinaryReader>(
 }
 
 /// Dispatches to the matching encoder for `format`.
+///
+/// # Examples
+/// ```rust
+/// use wml2::draw::{EncodeOptions, ImageBuffer, image_encoder};
+/// use wml2::util::ImageFormat;
+///
+/// let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+/// let mut options = EncodeOptions {
+///     debug_flag: 0,
+///     drawer: &mut image,
+///     options: None,
+/// };
+/// let png = image_encoder(&mut options, ImageFormat::Png).unwrap();
+/// assert!(png.starts_with(&[0x89, b'P', b'N', b'G']));
+/// ```
 pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<Vec<u8>, Error> {
     use crate::util::ImageFormat::*;
 

@@ -18,8 +18,8 @@ use std::collections::HashMap;
 use std::io::BufRead;
 #[cfg(not(target_family = "wasm"))]
 use std::io::BufReader;
-#[cfg(not(target_family = "wasm"))]
 use std::io::Seek;
+use std::io::SeekFrom;
 use std::io::Write;
 #[cfg(not(target_family = "wasm"))]
 use std::path::Path;
@@ -757,8 +757,8 @@ pub struct EncodeOptions<'a> {
     pub debug_flag: usize,
     /// Source callback implementation.
     pub drawer: &'a mut dyn PickCallback,
-    /// Encoder-specific options such as JPEG `quality`, or WebP `quality` and
-    /// `optimize`.
+    /// Encoder-specific options such as JPEG `quality`, TIFF `compression`,
+    /// or WebP `quality` and `optimize`.
     pub options: Option<HashMap<String, DataMap>>,
 }
 
@@ -806,6 +806,7 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
         .map(|extension| extension.to_ascii_lowercase());
 
     match extension.as_deref() {
+        Some("gif") => Ok(ImageFormat::Gif),
         Some("png") | Some("apng") => Ok(ImageFormat::Png),
         Some("jpg") | Some("jpeg") => Ok(ImageFormat::Jpeg),
         Some("bmp") => Ok(ImageFormat::Bmp),
@@ -825,11 +826,11 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
 /// Converts an input image file to the format implied by `output_file`.
 ///
 /// The output format is selected from the destination extension:
-/// `.png` and `.apng` use the PNG/APNG encoder, `.jpg`/`.jpeg` use the JPEG
-/// encoder, `.bmp` uses the BMP encoder, `.tif`/`.tiff` use the TIFF encoder,
-/// and `.webp` uses the WebP encoder. Encoder-specific settings can be passed
-/// in `options`, for example JPEG `quality`, or WebP `quality` and
-/// `optimize`.
+/// `.gif` uses the GIF encoder, `.png` and `.apng` use the PNG/APNG encoder,
+/// `.jpg`/`.jpeg` use the JPEG encoder, `.bmp` uses the BMP encoder,
+/// `.tif`/`.tiff` use the TIFF encoder, and `.webp` uses the WebP encoder.
+/// Encoder-specific settings can be passed in `options`, for example JPEG
+/// `quality`, TIFF `compression`, or WebP `quality` and `optimize`.
 #[cfg(not(target_family = "wasm"))]
 pub fn convert(
     input_file: String,
@@ -902,7 +903,16 @@ pub fn image_decoder<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let buffer = reader.read_bytes_no_move(128)?;
+    let current = reader.offset()?;
+    let end = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(current))?;
+    let sample_len = usize::try_from((end - current).min(128)).map_err(|_| {
+        Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "input sample size overflow".to_string(),
+        )) as Error
+    })?;
+    let buffer = reader.read_bytes_no_move(sample_len)?;
     let format = format_check(&buffer);
 
     use crate::util::ImageFormat::*;
@@ -973,6 +983,9 @@ pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<
     use crate::util::ImageFormat::*;
 
     match format {
+        Gif => {
+            return crate::gif::encoder::encode(option);
+        }
         Bmp => {
             return crate::bmp::encoder::encode(option);
         }

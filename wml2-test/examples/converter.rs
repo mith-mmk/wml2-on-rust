@@ -9,18 +9,22 @@ use wml2::metadata::DataMap;
 use wml2::util::ImageFormat;
 
 enum OutputFormat {
+    Gif,
     Png,
     Jpeg,
     Bmp,
+    Tiff,
     Webp,
 }
 
 impl OutputFormat {
     fn parse(value: &str) -> Result<Self, Box<dyn Error>> {
         match value.to_ascii_lowercase().as_str() {
+            "gif" => Ok(Self::Gif),
             "png" | "apng" => Ok(Self::Png),
             "jpg" | "jpeg" => Ok(Self::Jpeg),
             "bmp" => Ok(Self::Bmp),
+            "tif" | "tiff" => Ok(Self::Tiff),
             "webp" => Ok(Self::Webp),
             _ => Err(format!("unknown output format: {}", value).into()),
         }
@@ -28,9 +32,11 @@ impl OutputFormat {
 
     fn extension(&self) -> &'static str {
         match self {
+            Self::Gif => "gif",
             Self::Png => "png",
             Self::Jpeg => "jpg",
             Self::Bmp => "bmp",
+            Self::Tiff => "tiff",
             Self::Webp => "webp",
         }
     }
@@ -106,7 +112,7 @@ impl Config {
         }
         let output_dir = output_dir.ok_or("missing -o <outputfolder>")?;
         if split && matches!(format, OutputFormat::Jpeg | OutputFormat::Bmp) {
-            return Err("--split is currently supported only for PNG and WebP output".into());
+            return Err("--split is currently supported for GIF/PNG/TIFF/WebP output".into());
         }
 
         Ok(Self {
@@ -143,9 +149,11 @@ impl Config {
 
     fn image_format(&self) -> ImageFormat {
         match self.format {
+            OutputFormat::Gif => ImageFormat::Gif,
             OutputFormat::Png => ImageFormat::Png,
             OutputFormat::Jpeg => ImageFormat::Jpeg,
             OutputFormat::Bmp => ImageFormat::Bmp,
+            OutputFormat::Tiff => ImageFormat::Tiff,
             OutputFormat::Webp => ImageFormat::Webp,
         }
     }
@@ -158,7 +166,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => {
             eprintln!("{}", error);
             eprintln!(
-                "usage: converter [inputfiles...] -o <outputfolder> [-f png|jpeg|bmp|webp] [-q <quality>] [-z <0-9>] [--split]"
+                "usage: converter [inputfiles...] -o <outputfolder> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [--split]"
             );
             return Err(error);
         }
@@ -192,7 +200,10 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn convert_one(config: &Config, input_file: &Path) -> Result<(), Box<dyn Error>> {
-    if matches!(config.format, OutputFormat::Png | OutputFormat::Webp) {
+    if matches!(
+        config.format,
+        OutputFormat::Gif | OutputFormat::Png | OutputFormat::Tiff | OutputFormat::Webp
+    ) {
         let image = image_from_file(input_file.to_string_lossy().into_owned())?;
         if should_split_output(config, input_file, &image) {
             return write_split_images(config, input_file, image);

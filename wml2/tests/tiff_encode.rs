@@ -346,6 +346,40 @@ fn encode_tiff_via_public_api_roundtrips_pixels_and_metadata() {
 }
 
 #[test]
+fn encode_lzw_tiff_via_public_api_roundtrips_pixels() {
+    let mut rgba = Vec::with_capacity(13 * 9 * 4);
+    for y in 0..9 {
+        for x in 0..13 {
+            rgba.push((x * 19 + y * 3) as u8);
+            rgba.push((x * 7 + y * 23) as u8);
+            rgba.push((x * 29 + y * 11) as u8);
+            rgba.push(255);
+        }
+    }
+
+    let mut image = ImageBuffer::from_buffer(13, 9, rgba.clone());
+    let mut options = HashMap::new();
+    options.insert("compression".to_string(), DataMap::Ascii("lzw".to_string()));
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(options),
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+
+    let decoded = image_load(&data).unwrap();
+    assert_eq!(decoded.width, 13);
+    assert_eq!(decoded.height, 9);
+    assert_eq!(decoded.buffer.as_ref().unwrap(), &rgba);
+
+    let metadata = decoded.metadata.as_ref().unwrap();
+    match metadata.get("compression").unwrap() {
+        DataMap::Ascii(value) => assert_eq!(value, "LZW(Tiff)"),
+        other => panic!("unexpected compression metadata: {other:?}"),
+    }
+}
+
+#[test]
 fn encode_animated_tiff_via_public_api() {
     let expected = expected_animation_pages();
     let mut image = animated_image();

@@ -137,7 +137,7 @@ pub fn decode<'decode, B: BinaryReader>(
                         let flag = reader.read_byte()?;
                         delay_time = reader.read_u16_le()?;
 
-                        if is_transparent {
+                        if is_transparent && transparent_color < header.color_table.len() {
                             header.color_table[transparent_color].alpha = 0xff;
                         }
 
@@ -261,7 +261,7 @@ pub fn decode<'decode, B: BinaryReader>(
                     }
                 } else {
                     has_local_palette = false;
-                    if is_transparent {
+                    if is_transparent && transparent_color < header.color_table.len() {
                         header.color_table[transparent_color].alpha = 0x00;
                     }
                     // header.color_table[transparent_color].alpha = 0xff;

@@ -5,6 +5,7 @@ use crate::draw::{
     ENCODE_ANIMATION_FRAMES_KEY, EncodeOptions as DrawEncodeOptions, ImageProfiles,
     encode_animation_frame_key,
 };
+use crate::encoder::lzw::encode_tiff;
 use crate::error::{ImgError, ImgErrorKind};
 use crate::metadata::DataMap;
 use crate::tiff::header::{DataPack, Rational, TiffHeader, TiffHeaders, tiff_pages_to_bytes};
@@ -37,6 +38,28 @@ struct AnimationInfo {
 struct PagePlan {
     headers: TiffHeaders,
     pixel_data: Vec<u8>,
+}
+
+#[derive(Clone, Copy)]
+enum TiffCompressionMode {
+    None,
+    Lzw { is_lsb: bool },
+}
+
+impl TiffCompressionMode {
+    fn code(self) -> u16 {
+        match self {
+            Self::None => 1,
+            Self::Lzw { .. } => 5,
+        }
+    }
+
+    fn fill_order(self) -> u16 {
+        match self {
+            Self::Lzw { is_lsb: true } => 2,
+            _ => 1,
+        }
+    }
 }
 
 fn as_u64(value: Option<&DataMap>, key: &str) -> Result<u64, Error> {
@@ -84,6 +107,30 @@ fn as_raw(value: Option<&DataMap>, key: &str) -> Result<Vec<u8>, Error> {
         None => Err(Box::new(ImgError::new_const(
             ImgErrorKind::EncodeError,
             format!("{key} metadata not found"),
+        ))),
+    }
+}
+
+fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMode, Error> {
+    let Some(value) = option.options.as_ref().and_then(|map| map.get("compression")) else {
+        return Ok(TiffCompressionMode::None);
+    };
+
+    match value {
+        DataMap::Ascii(value) => match value.to_ascii_lowercase().as_str() {
+            "none" | "uncompressed" => Ok(TiffCompressionMode::None),
+            "lzw" | "lzw_msb" => Ok(TiffCompressionMode::Lzw { is_lsb: false }),
+            "lzw_lsb" => Ok(TiffCompressionMode::Lzw { is_lsb: true }),
+            _ => Err(Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                format!("unsupported TIFF compression: {value}"),
+            ))),
+        },
+        DataMap::UInt(1) | DataMap::SInt(1) => Ok(TiffCompressionMode::None),
+        DataMap::UInt(5) | DataMap::SInt(5) => Ok(TiffCompressionMode::Lzw { is_lsb: false }),
+        _ => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "TIFF compression must be `none`, `lzw`, `lzw_msb`, `lzw_lsb`, 1, or 5".to_string(),
         ))),
     }
 }
@@ -440,6 +487,7 @@ fn build_page_headers(
     height: usize,
     pixel_data_len: usize,
     with_alpha: bool,
+    compression: TiffCompressionMode,
     source: Option<&TiffHeaders>,
     icc_profile: Option<&[u8]>,
 ) -> Result<TiffHeaders, Error> {
@@ -480,8 +528,9 @@ fn build_page_headers(
         &mut headers.headers,
         short_array_tag(0x0102, vec![8; samples_per_pixel]),
     );
-    upsert_tag(&mut headers.headers, short_tag(0x0103, 1));
+    upsert_tag(&mut headers.headers, short_tag(0x0103, compression.code()));
     upsert_tag(&mut headers.headers, short_tag(0x0106, 2));
+    upsert_tag(&mut headers.headers, short_tag(0x010a, compression.fill_order()));
     upsert_tag(&mut headers.headers, long_tag(0x0111, 0));
     upsert_tag(&mut headers.headers, short_tag(0x0112, 1));
     upsert_tag(
@@ -528,6 +577,7 @@ fn build_page_plan(
     width: usize,
     height: usize,
     rgba: &[u8],
+    compression: TiffCompressionMode,
     source: Option<&TiffHeaders>,
     icc_profile: Option<&[u8]>,
 ) -> Result<PagePlan, Error> {
@@ -548,13 +598,26 @@ fn build_page_plan(
     }
 
     let with_alpha = rgba_has_alpha(rgba);
-    let pixel_data = rgba_to_tiff_samples(rgba, with_alpha);
-    let headers = build_page_headers(width, height, pixel_data.len(), with_alpha, source, icc_profile)?;
+    let raw_pixel_data = rgba_to_tiff_samples(rgba, with_alpha);
+    let pixel_data = match compression {
+        TiffCompressionMode::None => raw_pixel_data,
+        TiffCompressionMode::Lzw { is_lsb } => encode_tiff(&raw_pixel_data, is_lsb)?,
+    };
+    let headers = build_page_headers(
+        width,
+        height,
+        pixel_data.len(),
+        with_alpha,
+        compression,
+        source,
+        icc_profile,
+    )?;
     Ok(PagePlan { headers, pixel_data })
 }
 
 fn build_animation_pages(
     profile: &ImageProfiles,
+    compression: TiffCompressionMode,
     source: Option<&TiffHeaders>,
     icc_profile: Option<&[u8]>,
     animation: AnimationInfo,
@@ -566,6 +629,7 @@ fn build_animation_pages(
             profile.width,
             profile.height,
             canvas,
+            compression,
             if index == 0 { source } else { None },
             if index == 0 { icc_profile } else { None },
         )?);
@@ -586,12 +650,19 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
             "Image profiles nothing".to_string(),
         )) as Error
     })?;
+    let compression = tiff_compression(image)?;
 
     let source = source_headers(&profile);
     let icc_profile = source_icc_profile(&profile, source.as_ref());
 
     let mut pages = if let Some(animation) = parse_animation_info(&profile)? {
-        build_animation_pages(&profile, source.as_ref(), icc_profile.as_deref(), animation)?
+        build_animation_pages(
+            &profile,
+            compression,
+            source.as_ref(),
+            icc_profile.as_deref(),
+            animation,
+        )?
     } else {
         let rgba = image
             .drawer
@@ -606,6 +677,7 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
             profile.width,
             profile.height,
             &rgba,
+            compression,
             source.as_ref(),
             icc_profile.as_deref(),
         )?]

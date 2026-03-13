@@ -1,0 +1,29 @@
+name: build
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: build examples
+        run: cargo build --release --examples
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: examples-${{ matrix.os }}
+          path: target/release/examples/*

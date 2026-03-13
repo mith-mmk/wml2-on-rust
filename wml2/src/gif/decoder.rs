@@ -36,6 +36,14 @@ fn gif_blend_option(is_transparent: bool) -> NextBlend {
     }
 }
 
+fn gif_delay_ms(delay_time_cs: usize) -> u64 {
+    if delay_time_cs <= 1 {
+        100
+    } else {
+        (delay_time_cs * 10) as u64
+    }
+}
+
 fn draw_frame(
     option: &mut DecodeOptions,
     start_x: usize,
@@ -217,11 +225,7 @@ pub fn decode<'decode, B: BinaryReader>(
                         start_y: lscd.ystart as i32,
                     };
 
-                    let await_time = (if delay_time <= 1 {
-                        100
-                    } else {
-                        delay_time * 10
-                    }) as u64;
+                    let await_time = gif_delay_ms(delay_time as usize);
 
                     let opt = NextOptions {
                         flag: NextOption::Next,
@@ -346,7 +350,7 @@ pub fn decode<'decode, B: BinaryReader>(
 
                     let opt = NextOptions {
                         flag: NextOption::Continue,
-                        await_time: (delay_time * 10) as u64,
+                        await_time: gif_delay_ms(delay_time as usize),
                         image_rect: Some(ImageRect {
                             width,
                             height,
@@ -380,4 +384,16 @@ pub fn decode<'decode, B: BinaryReader>(
     }
 
     Ok(warnings)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::gif_delay_ms;
+
+    #[test]
+    fn zero_and_one_centisecond_delays_are_normalized() {
+        assert_eq!(gif_delay_ms(0), 100);
+        assert_eq!(gif_delay_ms(1), 100);
+        assert_eq!(gif_delay_ms(2), 20);
+    }
 }

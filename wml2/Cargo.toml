@@ -1,6 +1,6 @@
 [package]
 name = "wml2"
-version = "0.0.16"
+version = "0.0.17"
 repository = "https://github.com/mith-mmk/wml2-on-rust"
 homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
@@ -33,7 +33,7 @@ SJIS = []
 noretoro = []
 
 [dependencies]
-#bin-rs = {version = "0.0.10",features = ["util"]}
-bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
+bin-rs = {version = "0.0.10",features = ["util"]}
+#bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
 
 miniz_oxide = {version = "0.5.1"}

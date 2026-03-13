@@ -44,7 +44,7 @@ pub struct MacroBlockHeader {
     pub uv_mode: u8,
 }
 
-const Y_MODES_INTRA4: [i8; 18] = [
+pub(crate) const Y_MODES_INTRA4: [i8; 18] = [
     -(B_DC_PRED as i8),
     1,
     -(B_TM_PRED as i8),
@@ -65,7 +65,7 @@ const Y_MODES_INTRA4: [i8; 18] = [
     -(B_HU_PRED as i8),
 ];
 
-const BMODES_PROBA: [[[u8; NUM_BMODES - 1]; NUM_BMODES]; NUM_BMODES] = [
+pub(crate) const BMODES_PROBA: [[[u8; NUM_BMODES - 1]; NUM_BMODES]; NUM_BMODES] = [
     [
         [231, 120, 48, 89, 115, 113, 120, 152, 112],
         [152, 179, 64, 126, 170, 118, 46, 70, 95],
@@ -188,7 +188,7 @@ const BMODES_PROBA: [[[u8; NUM_BMODES - 1]; NUM_BMODES]; NUM_BMODES] = [
     ],
 ];
 
-const COEFFS_PROBA0: [[[[u8; NUM_PROBAS]; NUM_CTX]; NUM_BANDS]; NUM_TYPES] = [
+pub(crate) const COEFFS_PROBA0: [[[[u8; NUM_PROBAS]; NUM_CTX]; NUM_BANDS]; NUM_TYPES] = [
     [
         [
             [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128],
@@ -455,7 +455,7 @@ pub fn parse_intra_mode_row(
     Ok(row)
 }
 
-const COEFFS_UPDATE_PROBA: [[[[u8; NUM_PROBAS]; NUM_CTX]; NUM_BANDS]; NUM_TYPES] = [
+pub(crate) const COEFFS_UPDATE_PROBA: [[[[u8; NUM_PROBAS]; NUM_CTX]; NUM_BANDS]; NUM_TYPES] = [
     [
         [
             [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255],

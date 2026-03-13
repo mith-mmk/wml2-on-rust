@@ -17,7 +17,8 @@ checksum = "e62e12dae19127152eee5b5ff249a86100a01e388abbac4c22e9f97eb33d9c3d"
 [[package]]
 name = "bin-rs"
 version = "0.0.10"
-source = "git+https://github.com/mith-mmk/bin-rs#3fb43f72915b03e7fb3f33d4f3af8becf215f4a8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23f756521115a60a84bc45722261eaf03aa6a59d886c9c3b41d08ac1c39e3e24"
 
 [[package]]
 name = "cfg-if"
@@ -59,7 +60,7 @@ dependencies = [
 
 [[package]]
 name = "wml2"
-version = "0.0.16"
+version = "0.0.17"
 dependencies = [
  "bin-rs 0.0.10",
  "miniz_oxide",

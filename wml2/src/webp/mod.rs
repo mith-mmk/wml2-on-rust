@@ -1,14 +1,16 @@
-//! Pure Rust WebP decoder.
+//! Pure Rust WebP decoding and encoding support.
 //!
-//! The crate exposes a small top-level API for decoding still images to RGBA
-//! and a lower-level [`decoder`] module for container parsing and animation
-//! decoding.
+//! The crate exposes a small top-level API for decoding still images to RGBA,
+//! plus lower-level [`decoder`] and [`encoder`] modules for container parsing,
+//! animation decode, and WebP encode helpers.
 
 type Error = Box<dyn std::error::Error>;
 use bin_rs::reader::{BinaryReader, BytesReader};
 
 /// Lower-level WebP parsing and decoding APIs.
 pub mod decoder;
+/// Lower-level WebP encoding APIs.
+pub mod encoder;
 pub mod utils;
 pub mod warning;
 

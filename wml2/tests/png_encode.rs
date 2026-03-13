@@ -1,8 +1,6 @@
-use std::path::PathBuf;
-
 use wml2::draw::{
     AnimationLayer, EncodeOptions, ImageBuffer, ImageRect, NextBlend, NextDispose, NextOption,
-    NextOptions, image_encoder, image_from_file, image_load,
+    NextOptions, image_encoder, image_load,
 };
 use wml2::util::ImageFormat;
 
@@ -40,17 +38,6 @@ fn frame_control(width: usize, height: usize, delay_ms: u64) -> NextOptions {
         dispose_option: Some(NextDispose::None),
         blend: Some(NextBlend::Override),
     }
-}
-
-fn sample_path(name: &str) -> String {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("test")
-        .join("samples")
-        .join(name)
-        .to_string_lossy()
-        .into_owned()
 }
 
 fn apng_blend_ops(data: &[u8]) -> Vec<u8> {
@@ -148,23 +135,48 @@ fn encode_apng_via_public_api() {
 }
 
 #[test]
-fn encode_apng_from_gif_public_api() {
-    let mut image = image_from_file(sample_path("bird-wings-flying-feature.gif")).unwrap();
-    let original_frame_count = image
-        .animation
-        .as_ref()
-        .map(|frames| frames.len())
-        .unwrap_or(0);
+fn encode_apng_preserves_over_blend_for_transparent_frames() {
+    let first = solid_rgba(2, 2, [255, 0, 0, 255]);
+    let second = solid_rgba(2, 2, [0, 0, 255, 128]);
+    let third = solid_rgba(2, 2, [0, 255, 0, 64]);
 
-    assert!(original_frame_count > 1);
-    assert!(image.first_wait_time.is_some());
-    let original_frames = image.animation.as_ref().unwrap();
-    assert!(
-        original_frames
-            .iter()
-            .skip(1)
-            .all(|frame| frame.buffer.chunks_exact(4).any(|pixel| pixel[3] == 0))
-    );
+    let mut image = ImageBuffer::from_buffer(2, 2, first.clone());
+    image.loop_count = Some(1);
+    image.animation = Some(vec![
+        AnimationLayer {
+            width: 2,
+            height: 2,
+            start_x: 0,
+            start_y: 0,
+            buffer: first,
+            control: NextOptions {
+                blend: Some(NextBlend::Source),
+                ..frame_control(2, 2, 60)
+            },
+        },
+        AnimationLayer {
+            width: 2,
+            height: 2,
+            start_x: 0,
+            start_y: 0,
+            buffer: second,
+            control: NextOptions {
+                blend: Some(NextBlend::Source),
+                ..frame_control(2, 2, 90)
+            },
+        },
+        AnimationLayer {
+            width: 2,
+            height: 2,
+            start_x: 0,
+            start_y: 0,
+            buffer: third,
+            control: NextOptions {
+                blend: Some(NextBlend::Source),
+                ..frame_control(2, 2, 120)
+            },
+        },
+    ]);
 
     let mut encode = EncodeOptions {
         debug_flag: 0,
@@ -175,12 +187,12 @@ fn encode_apng_from_gif_public_api() {
 
     assert!(data.windows(4).any(|window| window == b"acTL"));
     assert!(data.windows(4).any(|window| window == b"fdAT"));
-    assert_eq!(apng_blend_ops(&data), vec![1, 1, 1, 1]);
+    assert_eq!(apng_blend_ops(&data), vec![1, 1, 1]);
 
     let decoded = image_load(&data).unwrap();
+    assert_eq!(decoded.first_wait_time, Some(60));
     assert_eq!(
         decoded.animation.as_ref().map(|frames| frames.len()),
-        Some(original_frame_count)
+        Some(3)
     );
-    assert!(decoded.first_wait_time.is_some());
 }

@@ -8,18 +8,24 @@ Notice: Specification of this library is not decision.
 - No need to force use - becouse You can use Javascript Image.
 
 # run example
-See wml-test/examples
+See `wml2-test/examples`
 ## decode bmp reader
 ```
-$ cargo run --example to_bmp --release <inputfile> <output_dir>
+$ cargo run -p wml2-test --example to_bmp --release -- <inputfile> <output_dir>
 ```
 ## metadata reader
 
 ```
-$ cargo run --example metadata --release <inputfile>
+$ cargo run -p wml2-test --example metadata --release -- <inputfile>
 ```
 
-# Support Format 0.0.16
+## converter
+
+```
+$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f png|jpeg|bmp|webp] [-q <quality>] [-z <0-9>] [--split]
+```
+
+# Support Format 0.0.17
 
 |format|enc|dec|  |
 |------|---|---|--|
@@ -28,7 +34,7 @@ $ cargo run --example metadata --release <inputfile>
 |GIF|x|O|with Animation GIF|
 |PNG|O|O|encode Truecolor + alpha only|
 |TIFF|x|O|no compression/LZW/Packbits/Jpeg(new)/G3 Fax/G4 Fax|
-|WEBP|x|O|decoder full support|
+|WEBP|O|O|pure Rust still/animated decoder, still/animated encoder, lossless/lossy output|
 |MAG|x|O|Japanese legasy image format|
 |MAKI|x|O|Japanese legacy image format, disabled by `noretoro`|
 |PI|x|O|Japanese legacy image format, disabled by `noretoro`|
@@ -54,6 +60,15 @@ wml2 = { version = "0.0.17", features = ["noretoro"] }
 
 - integration tests use generic filenames such as `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat`
 - the original sample filenames are intentionally not referenced in public-facing test code
+- optional external sample paths can be configured in `wml2/tests/test_samples.txt`
+- `wml2/tests/test_samples.txt` is ignored by git; use `wml2/tests/test_samples.example.txt` as the template
+
+# Encode options
+
+- JPEG: `quality`
+- WebP: `optimize` (`0..=9`) and `quality` (`0..=100`, lossy only)
+- `draw::convert()` selects the encoder from the output extension, including `.webp`
+- `wml2-test/examples/converter` supports `-z` for WebP optimize and `--split` for PNG/WebP animation frame export
 
 # using loader
 - an on-memory compress buffered image or an image file 
@@ -181,7 +196,8 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.14 add MAKI/PI/PIC/VSP(DAT)/PCD decoders
 - 0.0.14 add `noretoro` feature to disable legacy decoders
 - 0.0.15 add JPEG encoder(only baseline)
-- 0.0.16 add native rust Webp decoder, APNG encoder
+- 0.0.16 add pure rust Webp decoder, APNG encoder
+- 0.0.17 add pure rust Webp encoder / animated WebP encode / converter WebP options
 
 # todo
 - Formated Header writer

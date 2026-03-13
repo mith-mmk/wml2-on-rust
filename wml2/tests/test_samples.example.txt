@@ -1,0 +1,17 @@
+# Local test sample mappings.
+# Format:
+# sample-name=absolute-or-relative-path
+#
+# Relative paths are resolved from this file's directory.
+
+sample.mki=~/data/samples/images/maki01A/sample.MKI
+sample.pi=~/data/samples/images/pi/sample1.PI
+sample2.pi=~/data/samples/images/pi/sample1.PI
+sample.pic=~/data/samples/images/pic/SAMPLE1.PIC
+sample.dat=~/data/samples/images/DAT/sample.DAT
+bird-wings-flying-feature.gif=~/data/samples/images/gif/bird-wings-flying-feature.gif
+sample.webp=~/data/samples/images/webp/sample.webp
+sample_lossy.webp=~/data/samples/images/webp/sample_lossy.webp
+sample_lossless.webp=~/data/samples/images/webp/sample_lossless.webp
+G31D.tiff=~/data/samples/images/tiff/G3/G31D.tiff
+G32DS.tiff=~/data/samples/images/tiff/G3/G32DS.tiff

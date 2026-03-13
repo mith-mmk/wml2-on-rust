@@ -151,6 +151,7 @@ pub(crate) fn wrap_animated_webp(
     loop_count: u16,
     has_alpha: bool,
     frames: &[AnimationFrameChunk],
+    exif: Option<&[u8]>,
 ) -> Result<Vec<u8>, EncoderError> {
     if frames.is_empty() {
         return Err(EncoderError::InvalidParam(
@@ -167,6 +168,9 @@ pub(crate) fn wrap_animated_webp(
     let mut flags = ANIMATION_FLAG;
     if has_alpha {
         flags |= ALPHA_FLAG;
+    }
+    if exif.is_some() {
+        flags |= EXIF_FLAG;
     }
     let mut vp8x_payload = ByteWriter::with_capacity(10);
     vp8x_payload.write_u32_le(flags);
@@ -200,6 +204,10 @@ pub(crate) fn wrap_animated_webp(
         frame_payload.write_byte(frame_flags);
         append_chunk(&mut frame_payload, &frame.fourcc, &frame.payload)?;
         append_chunk(&mut body, b"ANMF", &frame_payload.into_bytes())?;
+    }
+
+    if let Some(exif) = exif {
+        append_chunk(&mut body, b"EXIF", exif)?;
     }
 
     extend_riff(body)

@@ -758,7 +758,10 @@ pub struct EncodeOptions<'a> {
     /// Source callback implementation.
     pub drawer: &'a mut dyn PickCallback,
     /// Encoder-specific options such as JPEG `quality`, TIFF `compression`,
-    /// or WebP `quality` and `optimize`.
+    /// WebP `quality` and `optimize`, or `exif`.
+    ///
+    /// `exif` accepts raw serialized EXIF bytes, TIFF-style EXIF headers, or
+    /// `Ascii("copy")` to reuse decoded source EXIF during [`convert`].
     pub options: Option<HashMap<String, DataMap>>,
 }
 
@@ -830,7 +833,8 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
 /// `.jpg`/`.jpeg` use the JPEG encoder, `.bmp` uses the BMP encoder,
 /// `.tif`/`.tiff` use the TIFF encoder, and `.webp` uses the WebP encoder.
 /// Encoder-specific settings can be passed in `options`, for example JPEG
-/// `quality`, TIFF `compression`, or WebP `quality` and `optimize`.
+/// `quality`, TIFF `compression`, WebP `quality` and `optimize`, or
+/// `exif = Ascii("copy")` to preserve source EXIF metadata.
 #[cfg(not(target_family = "wasm"))]
 pub fn convert(
     input_file: String,

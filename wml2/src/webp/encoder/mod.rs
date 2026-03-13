@@ -28,7 +28,7 @@ use crate::draw::{
     EncodeOptions as DrawEncodeOptions, ImageProfiles, encode_animation_frame_key,
 };
 use crate::error::{ImgError, ImgErrorKind};
-use crate::metadata::DataMap;
+use crate::metadata::{DataMap, get_exif_option};
 
 use self::container::{AnimationFrameChunk, wrap_animated_webp};
 pub use error::EncoderError;
@@ -425,6 +425,7 @@ fn encode_still(
     rgba: &[u8],
     quality: Option<u8>,
     optimize: Option<u8>,
+    exif: Option<&[u8]>,
 ) -> Result<Vec<u8>, Error> {
     if let Some(quality) = quality {
         let mut options = LossyEncodingOptions::default();
@@ -432,13 +433,15 @@ fn encode_still(
         if let Some(optimize) = optimize {
             options.optimization_level = optimize;
         }
-        encode_lossy_rgba_to_webp_with_options(width, height, rgba, &options).map_err(map_error)
+        encode_lossy_rgba_to_webp_with_options_and_exif(width, height, rgba, &options, exif)
+            .map_err(map_error)
     } else {
         let mut options = LosslessEncodingOptions::default();
         if let Some(optimize) = optimize {
             options.optimization_level = optimize;
         }
-        encode_lossless_rgba_to_webp_with_options(width, height, rgba, &options).map_err(map_error)
+        encode_lossless_rgba_to_webp_with_options_and_exif(width, height, rgba, &options, exif)
+            .map_err(map_error)
     }
 }
 
@@ -447,6 +450,7 @@ fn encode_animation(
     animation: AnimationInfo,
     quality: Option<u8>,
     optimize: Option<u8>,
+    exif: Option<&[u8]>,
 ) -> Result<Vec<u8>, Error> {
     let mut canvas = fill_canvas(profile.width, profile.height, &animation.background);
     let mut has_alpha = canvas.chunks_exact(4).any(|pixel| pixel[3] != 0xff);
@@ -506,6 +510,7 @@ fn encode_animation(
         animation.loop_count,
         has_alpha,
         &encoded_frames,
+        exif,
     )
     .map_err(map_error)
 }
@@ -515,6 +520,7 @@ fn encode_animation(
 /// Supported `EncodeOptions.options` keys:
 /// - `quality`: lossy quality in `0..=100`
 /// - `optimize`: search effort in `0..=9`
+/// - `exif`: `Raw(bytes)`, `Exif(headers)`, or `Ascii("copy")`
 ///
 /// If animation metadata is present, this emits animated WebP; otherwise it
 /// encodes a still image.
@@ -528,9 +534,10 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     })?;
     let quality = webp_quality(image)?;
     let optimize = webp_optimize(image)?;
+    let exif = get_exif_option(image.options.as_ref(), profile.metadata.as_ref())?;
 
     let data = if let Some(animation) = parse_animation_info(&profile)? {
-        encode_animation(&profile, animation, quality, optimize)?
+        encode_animation(&profile, animation, quality, optimize, exif.as_deref())?
     } else {
         let rgba = image
             .drawer
@@ -541,7 +548,7 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
                     "Image buffer nothing".to_string(),
                 )) as Error
             })?;
-        encode_still(profile.width, profile.height, &rgba, quality, optimize)?
+        encode_still(profile.width, profile.height, &rgba, quality, optimize, exif.as_deref())?
     };
 
     image.drawer.encode_end(None)?;

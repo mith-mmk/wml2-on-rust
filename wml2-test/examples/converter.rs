@@ -47,6 +47,7 @@ struct Config {
     output_dir: PathBuf,
     format: OutputFormat,
     compression: Option<String>,
+    exif_copy: bool,
     quality: Option<u64>,
     optimize: Option<u64>,
     split: bool,
@@ -63,6 +64,7 @@ impl Config {
         let mut output_dir = None;
         let mut format = OutputFormat::Png;
         let mut compression = None;
+        let mut exif_copy = false;
         let mut quality = None;
         let mut optimize = None;
         let mut split = false;
@@ -90,6 +92,20 @@ impl Config {
                         return Err("missing value for -c".into());
                     }
                     compression = Some(args[index].to_ascii_lowercase());
+                }
+                "--exif" => {
+                    index += 1;
+                    if index >= args.len() {
+                        return Err("missing value for --exif".into());
+                    }
+                    match args[index].to_ascii_lowercase().as_str() {
+                        "copy" => exif_copy = true,
+                        value => {
+                            return Err(
+                                format!("unsupported value for --exif: {}", value).into()
+                            );
+                        }
+                    }
                 }
                 "-f" | "--format" => {
                     index += 1;
@@ -126,12 +142,16 @@ impl Config {
         if compression.is_some() && !matches!(format, OutputFormat::Tiff) {
             return Err("-c is only supported for TIFF output".into());
         }
+        if exif_copy && matches!(format, OutputFormat::Gif | OutputFormat::Bmp) {
+            return Err("--exif copy is only supported for PNG/JPEG/TIFF/WebP output".into());
+        }
 
         Ok(Self {
             inputs,
             output_dir,
             format,
             compression,
+            exif_copy,
             quality,
             optimize,
             split,
@@ -140,6 +160,9 @@ impl Config {
 
     fn encode_options(&self) -> Option<HashMap<String, DataMap>> {
         let mut options = HashMap::new();
+        if self.exif_copy {
+            options.insert("exif".to_string(), DataMap::Ascii("copy".to_string()));
+        }
         match self.format {
             OutputFormat::Jpeg => {
                 options.insert(
@@ -192,7 +215,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => {
             eprintln!("{}", error);
             eprintln!(
-                "usage: converter [inputfiles...] -o <outputfolder> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg>] [--split]"
+                "usage: converter [inputfiles...] -o <outputfolder> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg>] [--exif copy] [--split]"
             );
             return Err(error);
         }
@@ -521,6 +544,7 @@ mod tests {
             output_dir: PathBuf::new(),
             format: OutputFormat::Png,
             compression: None,
+            exif_copy: false,
             quality: None,
             optimize: None,
             split: false,
@@ -549,6 +573,7 @@ mod tests {
             output_dir: PathBuf::new(),
             format: OutputFormat::Png,
             compression: None,
+            exif_copy: false,
             quality: None,
             optimize: None,
             split: false,
@@ -564,6 +589,7 @@ mod tests {
             output_dir: PathBuf::new(),
             format: OutputFormat::Webp,
             compression: None,
+            exif_copy: false,
             quality: None,
             optimize: Some(7),
             split: true,
@@ -601,6 +627,7 @@ mod tests {
             output_dir: PathBuf::new(),
             format: OutputFormat::Tiff,
             compression: Some("jpeg".to_string()),
+            exif_copy: false,
             quality: Some(87),
             optimize: None,
             split: false,
@@ -629,5 +656,60 @@ mod tests {
 
         let error = Config::parse(&args).err().unwrap().to_string();
         assert_eq!(error, "-c is only supported for TIFF output");
+    }
+
+    #[test]
+    fn exif_copy_option_is_forwarded() {
+        let config = Config {
+            inputs: Vec::new(),
+            output_dir: PathBuf::new(),
+            format: OutputFormat::Png,
+            compression: None,
+            exif_copy: true,
+            quality: None,
+            optimize: None,
+            split: false,
+        };
+
+        let options = config.encode_options().unwrap();
+        assert!(matches!(
+            options.get("exif"),
+            Some(DataMap::Ascii(value)) if value == "copy"
+        ));
+    }
+
+    #[test]
+    fn parse_rejects_unknown_exif_mode() {
+        let args = vec![
+            "converter".to_string(),
+            "input.png".to_string(),
+            "-o".to_string(),
+            "out".to_string(),
+            "--exif".to_string(),
+            "keep".to_string(),
+        ];
+
+        let error = Config::parse(&args).err().unwrap().to_string();
+        assert_eq!(error, "unsupported value for --exif: keep");
+    }
+
+    #[test]
+    fn parse_rejects_exif_copy_for_unsupported_output() {
+        let args = vec![
+            "converter".to_string(),
+            "input.png".to_string(),
+            "-o".to_string(),
+            "out".to_string(),
+            "-f".to_string(),
+            "gif".to_string(),
+            "--exif".to_string(),
+            "copy".to_string(),
+        ];
+
+        let error = Config::parse(&args).err().unwrap().to_string();
+        assert_eq!(
+            error,
+            "--exif copy is only supported for PNG/JPEG/TIFF/WebP output"
+        );
     }
 }

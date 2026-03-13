@@ -5,7 +5,7 @@ use crate::draw::{
     encode_animation_frame_key,
 };
 use crate::error::*;
-use crate::metadata::DataMap;
+use crate::metadata::{DataMap, get_exif_option};
 use crate::png::header::*;
 use crate::png::utils::*;
 use bin_rs::io::*;
@@ -326,15 +326,21 @@ fn write_fctl(
     write_chunk(write_buffer, crc32, &FRAME_CONTROLE, &temp_buffer);
 }
 
+/// Encodes a still PNG or APNG stream.
+///
+/// Supported `EncodeOptions.options` keys:
+/// - `exif`: `Raw(bytes)`, `Exif(headers)`, or `Ascii("copy")`
 pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     let profile = image.drawer.encode_start(None)?;
-    let (width, height, background, apng_info) = if let Some(profile) = profile {
+    let (width, height, background, apng_info, exif) = if let Some(profile) = profile {
         let apng_info = parse_apng_info(&profile)?;
+        let exif = get_exif_option(image.options.as_ref(), profile.metadata.as_ref())?;
         (
             profile.width as u32,
             profile.height as u32,
             profile.background,
             apng_info,
+            exif,
         )
     } else {
         return Err(Box::new(ImgError::new_const(
@@ -348,6 +354,9 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     write_bytes(&SIGNATURE, &mut write_buffer);
 
     write_ihdr(&mut write_buffer, &crc32, width, height);
+    if let Some(exif) = exif {
+        write_chunk(&mut write_buffer, &crc32, &EXIF_PROFILE, &exif);
+    }
 
     if let Some(background) = background {
         write_background(&mut write_buffer, &crc32, background);

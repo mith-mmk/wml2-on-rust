@@ -3,11 +3,13 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use bin_rs::Endian;
 use wml2::draw::{
     AnimationLayer, EncodeOptions, ImageBuffer, ImageRect, NextBlend, NextDispose, NextOption,
     NextOptions, convert, image_encoder, image_load,
 };
 use wml2::metadata::DataMap;
+use wml2::tiff::header::{DataPack, TiffHeader, TiffHeaders, exif_to_bytes};
 use wml2::util::ImageFormat;
 
 fn temp_path(name: &str, extension: &str) -> PathBuf {
@@ -75,6 +77,16 @@ fn animated_png_bytes() -> Vec<u8> {
         options: None,
     };
     image_encoder(&mut encode, ImageFormat::Png).unwrap()
+}
+
+fn exif_bytes() -> Vec<u8> {
+    let mut headers = TiffHeaders::empty(Endian::LittleEndian);
+    headers.headers.push(TiffHeader {
+        tagid: 0x010f,
+        data: DataPack::Ascii("wml2".to_string()),
+        length: 4,
+    });
+    exif_to_bytes(&headers).unwrap()
 }
 
 #[test]
@@ -145,6 +157,43 @@ fn convert_animated_png_file_to_apng_via_public_api() {
             .unwrap_or(0)
             > 1
     );
+
+    let _ = fs::remove_file(input_path);
+    let _ = fs::remove_file(output_path);
+}
+
+#[test]
+fn convert_jpeg_file_to_png_with_exif_copy_via_public_api() {
+    let rgba = solid_rgba(4, 4, [10, 20, 30, 255]);
+    let mut image = ImageBuffer::from_buffer(4, 4, rgba);
+    let mut jpeg_options = HashMap::new();
+    jpeg_options.insert("quality".to_string(), DataMap::UInt(90));
+    jpeg_options.insert("exif".to_string(), DataMap::Raw(exif_bytes()));
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(jpeg_options),
+    };
+    let jpeg = image_encoder(&mut encode, ImageFormat::Jpeg).unwrap();
+
+    let input_path = temp_path("convert-exif-input", "jpg");
+    let output_path = temp_path("convert-exif-output", "png");
+    fs::write(&input_path, jpeg).unwrap();
+
+    let mut options = HashMap::new();
+    options.insert("exif".to_string(), DataMap::Ascii("copy".to_string()));
+    convert(
+        input_path.to_string_lossy().into_owned(),
+        output_path.to_string_lossy().into_owned(),
+        Some(options),
+    )
+    .unwrap();
+
+    let png = fs::read(&output_path).unwrap();
+    let decoded = image_load(&png).unwrap();
+    let metadata = decoded.metadata.as_ref().unwrap();
+    assert!(matches!(metadata.get("EXIF"), Some(DataMap::Exif(_))));
+    assert!(matches!(metadata.get("EXIF Raw"), Some(DataMap::Raw(_))));
 
     let _ = fs::remove_file(input_path);
     let _ = fs::remove_file(output_path);

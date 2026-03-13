@@ -19,6 +19,7 @@ const COLOR_HMR:[u8;4] = [b'c',b'H',b'R',b'M'];
 */
 const SRGB: [u8; 4] = [b's', b'R', b'G', b'B'];
 const ICC_PROFILE: [u8; 4] = [b'i', b'C', b'C', b'P'];
+pub(crate) const EXIF_PROFILE: [u8; 4] = [b'e', b'X', b'I', b'f'];
 
 pub(crate) const TEXTDATA: [u8; 4] = [b't', b'E', b'X', b't'];
 pub(crate) const COMPRESSED_TEXTUAL_DATA: [u8; 4] = [b'z', b'T', b'X', b't'];
@@ -108,6 +109,7 @@ pub struct PngHeader {
     pub transparency: Option<Vec<u8>>,
     pub srgb: Option<u8>,
     pub iccprofile: Option<Vec<u8>>,
+    pub exif: Option<Vec<u8>>,
     pub background_color: Option<BacgroundColor>,
     pub sbit: Option<Vec<u8>>,
     pub text: Vec<(String, String)>,
@@ -143,6 +145,7 @@ impl PngHeader {
             transparency: None,
             srgb: None,
             iccprofile: None,
+            exif: None,
             background_color: None,
             sbit: None,
             text: Vec::new(),
@@ -378,6 +381,11 @@ impl PngHeader {
                 reader.skip_ptr(8)?;
                 let icc_profile = reader.read_bytes_as_vec(length as usize)?;
                 header.iccprofile = Some(icc_profile);
+                let _crc = reader.read_u32_be()?;
+            } else if chunck == EXIF_PROFILE {
+                reader.skip_ptr(8)?;
+                let exif = reader.read_bytes_as_vec(length as usize)?;
+                header.exif = Some(exif);
                 let _crc = reader.read_u32_be()?;
             } else {
                 // no impl...

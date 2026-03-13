@@ -302,6 +302,33 @@ fn exif_writer_roundtrips_tiff_headers() {
 }
 
 #[test]
+fn encode_tiff_via_public_api_accepts_raw_exif_option() {
+    let rgba = solid_rgba(4, 4, [12, 34, 56, 255]);
+    let mut image = ImageBuffer::from_buffer(4, 4, rgba);
+    let mut options = HashMap::new();
+    options.insert(
+        "exif".to_string(),
+        DataMap::Raw(exif_to_bytes(&exif_fixture()).unwrap()),
+    );
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(options),
+    };
+
+    let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+    let decoded = image_load(&data).unwrap();
+    let headers = match decoded.metadata.as_ref().unwrap().get("Tiff headers").unwrap() {
+        DataMap::Exif(headers) => headers,
+        other => panic!("unexpected TIFF metadata: {other:?}"),
+    };
+    assert!(first_ifd_tags(&headers.headers)
+        .iter()
+        .any(|tag| tag.tagid == 0x010f));
+    assert!(headers.exif.as_ref().unwrap().iter().any(|tag| tag.tagid == 0x9000));
+}
+
+#[test]
 fn encode_tiff_via_public_api_roundtrips_pixels_and_metadata() {
     let mut rgba = Vec::with_capacity(7 * 5 * 4);
     for y in 0..5 {

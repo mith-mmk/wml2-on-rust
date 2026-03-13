@@ -8,9 +8,12 @@ use crate::draw::{
 use crate::encoder::lzw::encode_tiff;
 use crate::error::{ImgError, ImgErrorKind};
 use crate::jpeg::encoder::{encode_rgba as encode_jpeg_rgba, quality_from_draw_options};
-use crate::metadata::DataMap;
-use crate::tiff::header::{DataPack, Rational, TiffHeader, TiffHeaders, tiff_pages_to_bytes};
+use crate::metadata::{DataMap, get_exif_option};
+use crate::tiff::header::{
+    DataPack, Rational, TiffHeader, TiffHeaders, read_tags, tiff_pages_to_bytes,
+};
 use bin_rs::Endian;
+use bin_rs::reader::BytesReader;
 
 type Error = Box<dyn std::error::Error>;
 
@@ -388,6 +391,11 @@ fn source_headers(profile: &ImageProfiles) -> Option<TiffHeaders> {
     }
 }
 
+fn exif_headers_from_bytes(bytes: &[u8]) -> Result<TiffHeaders, Error> {
+    let mut reader = BytesReader::new(bytes);
+    read_tags(&mut reader)
+}
+
 fn source_icc_profile(profile: &ImageProfiles, source: Option<&TiffHeaders>) -> Option<Vec<u8>> {
     if let Some(metadata) = &profile.metadata {
         if let Some(DataMap::ICCProfile(profile)) = metadata.get(ICC_PROFILE_METADATA_KEY) {
@@ -731,6 +739,11 @@ fn build_animation_pages(
 /// into full-canvas multi-page TIFF output so it can be round-tripped through
 /// [`crate::draw::convert`]. JPEG-compressed TIFF pages reuse the JPEG encoder
 /// and therefore store RGB only.
+///
+/// Supported `EncodeOptions.options` keys:
+/// - `compression`: `none`, `lzw`, `lzw_msb`, `lzw_lsb`, or `jpeg`
+/// - `quality`: JPEG quality when `compression=jpeg`
+/// - `exif`: `Raw(bytes)`, `Exif(headers)`, or `Ascii("copy")`
 pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     let profile = image.drawer.encode_start(None)?;
     let profile = profile.ok_or_else(|| {
@@ -741,7 +754,11 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     })?;
     let compression = tiff_compression(image)?;
 
-    let source = source_headers(&profile);
+    let source = if let Some(exif) = get_exif_option(image.options.as_ref(), profile.metadata.as_ref())? {
+        Some(exif_headers_from_bytes(&exif)?)
+    } else {
+        source_headers(&profile)
+    };
     let icc_profile = source_icc_profile(&profile, source.as_ref());
 
     let mut pages = if let Some(animation) = parse_animation_info(&profile)? {

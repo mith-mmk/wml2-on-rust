@@ -1,8 +1,10 @@
 //! PNG utility helpers.
 
 use crate::metadata::DataMap;
+use crate::tiff::header::read_tags;
 use bin_rs::io::read_ascii_string;
 use bin_rs::io::read_byte;
+use bin_rs::reader::BytesReader;
 use std::collections::HashMap;
 
 pub(crate) fn paeth_dec(d: u8, a: i32, b: i32, c: i32) -> u8 {
@@ -113,6 +115,13 @@ pub(crate) fn make_metadata(header: &super::header::PngHeader) -> HashMap<String
             );
             map.insert("ICC Profile".to_string(), DataMap::ICCProfile(icc_profile));
         }
+    }
+    if let Some(exif) = &header.exif {
+        let mut reader = BytesReader::new(exif);
+        if let Ok(headers) = read_tags(&mut reader) {
+            map.insert("EXIF".to_string(), DataMap::Exif(headers));
+        }
+        map.insert("EXIF Raw".to_string(), DataMap::Raw(exif.clone()));
     }
     /*
         pub transparency: Option<Vec<u8>>,

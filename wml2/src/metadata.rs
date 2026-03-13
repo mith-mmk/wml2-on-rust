@@ -100,3 +100,45 @@ pub fn get_exif(metadata: Option<&Metadata>) -> Result<Option<Vec<u8>>, Box<dyn 
         None => Ok(None),
     }
 }
+
+fn find_exif_option<'a>(options: Option<&'a Metadata>) -> Option<&'a DataMap> {
+    let options = options?;
+    options
+        .get("exif")
+        .or_else(|| options.get("exif "))
+        .or_else(|| {
+            options
+                .iter()
+                .find(|(key, _)| key.trim().eq_ignore_ascii_case("exif"))
+                .map(|(_, value)| value)
+        })
+}
+
+/// Resolves an EXIF payload from encoder options.
+///
+/// Supported option forms:
+/// - `{"exif": Raw(bytes)}`: use serialized EXIF/TIFF bytes directly
+/// - `{"exif": Exif(headers)}`: serialize [`TiffHeaders`] on demand
+/// - `{"exif": Ascii("copy")}`: copy EXIF from source metadata
+pub fn get_exif_option(
+    options: Option<&Metadata>,
+    metadata: Option<&Metadata>,
+) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
+    let Some(value) = find_exif_option(options) else {
+        return Ok(None);
+    };
+
+    match value {
+        DataMap::Raw(bytes) => Ok(Some(bytes.clone())),
+        DataMap::Exif(headers) => exif_to_bytes(headers).map(Some),
+        DataMap::Ascii(value) if value.trim().eq_ignore_ascii_case("copy") => get_exif(metadata),
+        DataMap::Ascii(_) => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "exif option must be Raw(bytes), Exif(headers), or Ascii(\"copy\")".to_string(),
+        ))),
+        _ => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "exif option must be Raw(bytes), Exif(headers), or Ascii(\"copy\")".to_string(),
+        ))),
+    }
+}

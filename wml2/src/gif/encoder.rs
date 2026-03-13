@@ -117,13 +117,14 @@ fn parse_animation_info(profile: &ImageProfiles) -> Result<Option<AnimationInfo>
                 "animation loop_count must fit in u32".to_string(),
             )) as Error
         })?,
-        Some(DataMap::SInt(loop_count)) if *loop_count >= 0 => u32::try_from(*loop_count)
-            .map_err(|_| {
+        Some(DataMap::SInt(loop_count)) if *loop_count >= 0 => {
+            u32::try_from(*loop_count).map_err(|_| {
                 Box::new(ImgError::new_const(
                     ImgErrorKind::InvalidParameter,
                     "animation loop_count must fit in u32".to_string(),
                 )) as Error
-            })?,
+            })?
+        }
         Some(_) => {
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::InvalidParameter,
@@ -414,11 +415,7 @@ fn exact_palette_quantization(
     })
 }
 
-fn histogram_palette(
-    rgba: &[u8],
-    background: &RGBA,
-    has_transparency: bool,
-) -> Vec<[u8; 3]> {
+fn histogram_palette(rgba: &[u8], background: &RGBA, has_transparency: bool) -> Vec<[u8; 3]> {
     let palette_limit = if has_transparency { 255 } else { 256 };
     let mut bins = vec![HistogramBin::default(); 32 * 32 * 32];
     for pixel in rgba.chunks_exact(4) {
@@ -435,10 +432,7 @@ fn histogram_palette(
         bin.sum_b += rgb[2] as u64;
     }
 
-    let mut entries: Vec<_> = bins
-        .into_iter()
-        .filter(|bin| bin.count > 0)
-        .collect();
+    let mut entries: Vec<_> = bins.into_iter().filter(|bin| bin.count > 0).collect();
     entries.sort_by(|left, right| right.count.cmp(&left.count));
 
     let mut palette = Vec::with_capacity(palette_limit + has_transparency as usize);
@@ -546,7 +540,9 @@ fn quantize_frame(
     if let Some(frame) = exact_palette_quantization(rgba, width, height, background) {
         return Ok(frame);
     }
-    Ok(dithered_palette_quantization(rgba, width, height, background))
+    Ok(dithered_palette_quantization(
+        rgba, width, height, background,
+    ))
 }
 
 fn write_sub_blocks(buf: &mut Vec<u8>, data: &[u8]) {
@@ -571,7 +567,11 @@ fn write_graphic_control_extension(
     buf.push(0x21);
     buf.push(0xf9);
     buf.push(0x04);
-    let packed = if transparent_index.is_some() { 0x01 } else { 0x00 };
+    let packed = if transparent_index.is_some() {
+        0x01
+    } else {
+        0x00
+    };
     buf.push(packed);
     write_u16_le(delay_cs as u16, buf);
     buf.push(transparent_index.unwrap_or(0));
@@ -679,7 +679,14 @@ fn encode_still(
     write_u16_le(width, &mut data);
     write_u16_le(height, &mut data);
     data.extend_from_slice(&[0x00, 0x00, 0x00]);
-    encode_frame(&mut data, rgba, width as usize, height as usize, background, 0)?;
+    encode_frame(
+        &mut data,
+        rgba,
+        width as usize,
+        height as usize,
+        background,
+        0,
+    )?;
     data.push(0x3b);
     Ok(data)
 }

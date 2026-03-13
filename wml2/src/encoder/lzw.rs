@@ -58,7 +58,8 @@ impl BitPacker {
             if self.is_lsb {
                 self.bytes.push((self.bit_buffer & 0xff) as u8);
             } else {
-                self.bytes.push((self.bit_buffer << (8 - self.bit_count)) as u8);
+                self.bytes
+                    .push((self.bit_buffer << (8 - self.bit_count)) as u8);
             }
         }
         self.bytes

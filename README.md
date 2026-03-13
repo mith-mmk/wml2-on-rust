@@ -67,6 +67,7 @@ wml2 = { version = "0.0.18", features = ["noretoro"] }
 
 - JPEG: `quality`
 - WebP: `optimize` (`0..=9`) and `quality` (`0..=100`, lossy only)
+- `draw::image_to()` encodes an `ImageBuffer` directly into a `Vec<u8>`
 - `draw::convert()` selects the encoder from the output extension, including `.webp`
 - `wml2-test/examples/converter` supports `-z` for WebP optimize and `--split` for PNG/WebP animation frame export
 
@@ -137,22 +138,15 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
 # using saver
 ```rust
-  let image = new ImageBuffer(width,height);
+use wml2::draw::{ImageBuffer, image_to};
+use wml2::util::ImageFormat;
 
-  if let Some(image) = image {
-      let option = EncodeOptions {
-          debug_flag: 0,
-          drawer: &mut image,    
-      };
-      let data = wml2::bmp::encoder(option);
-      if let Ok(data) = data {
-          let filename = format!("{}.bmp",filename);
-          let f = File::create(&filename).unwrap();
-          f.write_all(data).unwrap();
-          f.flush().unwrap();
-      }
-  }
+let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+let png = image_to(&mut image, ImageFormat::Png, None)?;
 ```
+
+Use `draw::image_encoder()` when you want to encode a custom `PickCallback`
+implementation instead of `ImageBuffer`.
 
  ImageBuffer encoder impl PickCallback trait, 4 function.
 

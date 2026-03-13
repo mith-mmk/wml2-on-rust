@@ -69,6 +69,7 @@ wml2 = { version = "0.0.18", features = ["noretoro"] }
 
 - JPEG: `quality`
 - WebP: `optimize` (`0..=9`) と `quality` (`0..=100`, lossy のみ)
+- `draw::image_to()` は `ImageBuffer` をそのまま `Vec<u8>` にエンコード可能
 - `draw::convert()` は出力拡張子から encoder を選び、`.webp` も利用可能
 - `wml2-test/examples/converter` は WebP 向け `-z` と、PNG/WebP 向け `--split` をサポート
 
@@ -132,22 +133,14 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 
 # using saver
 ```rust
-  let image = new ImageBuffer(width,height);
+use wml2::draw::{ImageBuffer, image_to};
+use wml2::util::ImageFormat;
 
-  if let Some(image) = image {
-      let option = EncodeOptions {
-          debug_flag: 0,
-          drawer: &mut image,    
-      };
-      let data = wml2::bmp::encoder(option);
-      if let Ok(data) = data {
-          let filename = format!("{}.bmp",filename);
-          let f = File::create(&filename).unwrap();
-          f.write_all(data).unwrap();
-          f.flush().unwrap();
-      }
-  }
+let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+let png = image_to(&mut image, ImageFormat::Png, None)?;
 ```
+
+独自の `PickCallback` 実装を使う場合は `draw::image_encoder()` を使います。
 
  ImageBufferのエンコーダはPickCallbackトレイトを実装している
  

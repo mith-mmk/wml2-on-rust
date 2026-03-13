@@ -1011,3 +1011,33 @@ pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<
         ))),
     }
 }
+
+/// Encodes an [`ImageBuffer`] into a memory buffer.
+///
+/// This is a convenience wrapper around [`image_encoder`] for callers that
+/// already use the built-in [`ImageBuffer`] instead of a custom
+/// [`PickCallback`] implementation. `options` accepts the same encoder-specific
+/// keys as [`EncodeOptions::options`], such as JPEG `quality`, TIFF
+/// `compression`, WebP `quality`/`optimize`, or `exif`.
+///
+/// # Examples
+/// ```rust
+/// use wml2::draw::{ImageBuffer, image_to};
+/// use wml2::util::ImageFormat;
+///
+/// let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
+/// let png = image_to(&mut image, ImageFormat::Png, None).unwrap();
+/// assert!(png.starts_with(&[0x89, b'P', b'N', b'G']));
+/// ```
+pub fn image_to(
+    image: &mut ImageBuffer,
+    format: ImageFormat,
+    options: Option<HashMap<String, DataMap>>,
+) -> Result<Vec<u8>, Error> {
+    let mut option = EncodeOptions {
+        debug_flag: 0,
+        drawer: image,
+        options,
+    };
+    image_encoder(&mut option, format)
+}

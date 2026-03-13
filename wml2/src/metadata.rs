@@ -1,8 +1,8 @@
 //! Metadata value types shared by image decoders and encoders.
 
 use crate::error::{ImgError, ImgErrorKind};
-use crate::tiff::header::exif_to_bytes;
 use crate::tiff::header::TiffHeaders;
+use crate::tiff::header::exif_to_bytes;
 use std::collections::HashMap;
 
 /// A map of metadata keys to typed values.
@@ -63,7 +63,9 @@ impl DataMap {
 ///
 /// This accepts decoded TIFF-style metadata (`"Tiff headers"`), generic EXIF
 /// metadata (`"EXIF"`), or an already serialized fallback (`"EXIF Raw"`).
-pub fn get_exif(metadata: Option<&Metadata>) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
+pub fn get_exif(
+    metadata: Option<&Metadata>,
+) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
     let Some(metadata) = metadata else {
         return Ok(None);
     };

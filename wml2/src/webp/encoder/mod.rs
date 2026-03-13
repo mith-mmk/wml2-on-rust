@@ -548,7 +548,14 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
                     "Image buffer nothing".to_string(),
                 )) as Error
             })?;
-        encode_still(profile.width, profile.height, &rgba, quality, optimize, exif.as_deref())?
+        encode_still(
+            profile.width,
+            profile.height,
+            &rgba,
+            quality,
+            optimize,
+            exif.as_deref(),
+        )?
     };
 
     image.drawer.encode_end(None)?;

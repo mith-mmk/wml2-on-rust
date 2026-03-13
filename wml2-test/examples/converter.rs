@@ -122,9 +122,7 @@ impl Config {
                     match args[index].to_ascii_lowercase().as_str() {
                         "copy" => exif_copy = true,
                         value => {
-                            return Err(
-                                format!("unsupported value for --exif: {}", value).into()
-                            );
+                            return Err(format!("unsupported value for --exif: {}", value).into());
                         }
                     }
                 }
@@ -645,14 +643,8 @@ mod tests {
         };
 
         let options = config.encode_options().unwrap();
-        assert!(matches!(
-            options.get("quality"),
-            Some(DataMap::UInt(80))
-        ));
-        assert!(matches!(
-            options.get("optimize"),
-            Some(DataMap::UInt(6))
-        ));
+        assert!(matches!(options.get("quality"), Some(DataMap::UInt(80))));
+        assert!(matches!(options.get("optimize"), Some(DataMap::UInt(6))));
     }
 
     #[test]
@@ -669,10 +661,7 @@ mod tests {
         };
 
         let options = config.encode_options().unwrap();
-        assert!(matches!(
-            options.get("optimize"),
-            Some(DataMap::UInt(4))
-        ));
+        assert!(matches!(options.get("optimize"), Some(DataMap::UInt(4))));
         assert!(!options.contains_key("quality"));
     }
 

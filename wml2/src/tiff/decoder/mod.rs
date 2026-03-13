@@ -600,11 +600,7 @@ pub fn draw(
     draw_strip(data, 0, header.height as usize, option, header)
 }
 
-fn init_canvas(
-    option: &mut DecodeOptions,
-    header: &Tiff,
-    animation: bool,
-) -> Result<(), Error> {
+fn init_canvas(option: &mut DecodeOptions, header: &Tiff, animation: bool) -> Result<(), Error> {
     let init = if animation {
         Some(InitOptions {
             loop_count: 1,

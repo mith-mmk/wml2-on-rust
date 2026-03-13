@@ -122,7 +122,11 @@ fn as_raw(value: Option<&DataMap>, key: &str) -> Result<Vec<u8>, Error> {
 }
 
 fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMode, Error> {
-    let Some(value) = option.options.as_ref().and_then(|map| map.get("compression")) else {
+    let Some(value) = option
+        .options
+        .as_ref()
+        .and_then(|map| map.get("compression"))
+    else {
         return Ok(TiffCompressionMode::None);
     };
 
@@ -584,7 +588,10 @@ fn build_page_headers(
         &mut headers.headers,
         short_tag(0x0106, if is_jpeg { 6 } else { 2 }),
     );
-    upsert_tag(&mut headers.headers, short_tag(0x010a, compression.fill_order()));
+    upsert_tag(
+        &mut headers.headers,
+        short_tag(0x010a, compression.fill_order()),
+    );
     upsert_tag(&mut headers.headers, long_tag(0x0111, 0));
     upsert_tag(&mut headers.headers, short_tag(0x0112, 1));
     upsert_tag(
@@ -614,7 +621,9 @@ fn build_page_headers(
         upsert_tag(&mut headers.headers, undef_tag(0x8773, profile.to_vec()));
     }
 
-    for tagid in [0x01b5, 0x0200, 0x0201, 0x0202, 0x0203, 0x0205, 0x0206, 0x0207, 0x0208, 0x0209] {
+    for tagid in [
+        0x01b5, 0x0200, 0x0201, 0x0202, 0x0203, 0x0205, 0x0206, 0x0207, 0x0208, 0x0209,
+    ] {
         remove_tag(&mut headers.headers, tagid);
     }
 
@@ -707,7 +716,10 @@ fn build_page_plan(
         source,
         icc_profile,
     )?;
-    Ok(PagePlan { headers, pixel_data })
+    Ok(PagePlan {
+        headers,
+        pixel_data,
+    })
 }
 
 fn build_animation_pages(
@@ -754,11 +766,12 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     })?;
     let compression = tiff_compression(image)?;
 
-    let source = if let Some(exif) = get_exif_option(image.options.as_ref(), profile.metadata.as_ref())? {
-        Some(exif_headers_from_bytes(&exif)?)
-    } else {
-        source_headers(&profile)
-    };
+    let source =
+        if let Some(exif) = get_exif_option(image.options.as_ref(), profile.metadata.as_ref())? {
+            Some(exif_headers_from_bytes(&exif)?)
+        } else {
+            source_headers(&profile)
+        };
     let icc_profile = source_icc_profile(&profile, source.as_ref());
 
     let mut pages = if let Some(animation) = parse_animation_info(&profile)? {
@@ -789,7 +802,8 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
         )?]
     };
 
-    let provisional_headers: Vec<TiffHeaders> = pages.iter().map(|page| page.headers.clone()).collect();
+    let provisional_headers: Vec<TiffHeaders> =
+        pages.iter().map(|page| page.headers.clone()).collect();
     let provisional_len = tiff_pages_to_bytes(&provisional_headers)?.len();
     let mut strip_offset = u32::try_from(provisional_len).map_err(|_| {
         Box::new(ImgError::new_const(

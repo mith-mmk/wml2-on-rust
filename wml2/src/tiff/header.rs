@@ -907,11 +907,7 @@ fn clone_ifd_tags(tags: &[TiffHeader]) -> Vec<TiffHeader> {
     tags.to_vec()
 }
 
-fn filter_base_ifd_tags(
-    tags: &[TiffHeader],
-    has_exif: bool,
-    has_gps: bool,
-) -> Vec<TiffHeader> {
+fn filter_base_ifd_tags(tags: &[TiffHeader], has_exif: bool, has_gps: bool) -> Vec<TiffHeader> {
     let mut tags = clone_ifd_tags(tags);
     if has_exif {
         tags.retain(|tag| tag.tagid != 0x8769);
@@ -966,7 +962,14 @@ fn serialize_ifd(
         if exif.is_empty() {
             None
         } else {
-            Some(serialize_ifd(exif, None, None, exif_offset.unwrap(), 0, endian)?)
+            Some(serialize_ifd(
+                exif,
+                None,
+                None,
+                exif_offset.unwrap(),
+                0,
+                endian,
+            )?)
         }
     } else {
         None
@@ -980,7 +983,14 @@ fn serialize_ifd(
         if gps.is_empty() {
             None
         } else {
-            Some(serialize_ifd(gps, None, None, gps_offset.unwrap(), 0, endian)?)
+            Some(serialize_ifd(
+                gps,
+                None,
+                None,
+                gps_offset.unwrap(),
+                0,
+                endian,
+            )?)
         }
     } else {
         None
@@ -991,14 +1001,12 @@ fn serialize_ifd(
             tagid: 0x8769,
             type_id: 4,
             count: 1,
-            payload: u32::to_ne_bytes(
-                u32::try_from(offset).map_err(|_| {
-                    Box::new(ImgError::new_const(
-                        ImgErrorKind::InvalidParameter,
-                        "TIFF EXIF offset exceeds 32-bit range".to_string(),
-                    )) as Error
-                })?,
-            )
+            payload: u32::to_ne_bytes(u32::try_from(offset).map_err(|_| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::InvalidParameter,
+                    "TIFF EXIF offset exceeds 32-bit range".to_string(),
+                )) as Error
+            })?)
             .to_vec(),
         });
     }
@@ -1007,14 +1015,12 @@ fn serialize_ifd(
             tagid: 0x8825,
             type_id: 4,
             count: 1,
-            payload: u32::to_ne_bytes(
-                u32::try_from(offset).map_err(|_| {
-                    Box::new(ImgError::new_const(
-                        ImgErrorKind::InvalidParameter,
-                        "TIFF GPS offset exceeds 32-bit range".to_string(),
-                    )) as Error
-                })?,
-            )
+            payload: u32::to_ne_bytes(u32::try_from(offset).map_err(|_| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::InvalidParameter,
+                    "TIFF GPS offset exceeds 32-bit range".to_string(),
+                )) as Error
+            })?)
             .to_vec(),
         });
     }

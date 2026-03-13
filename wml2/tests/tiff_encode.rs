@@ -318,14 +318,29 @@ fn encode_tiff_via_public_api_accepts_raw_exif_option() {
 
     let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
     let decoded = image_load(&data).unwrap();
-    let headers = match decoded.metadata.as_ref().unwrap().get("Tiff headers").unwrap() {
+    let headers = match decoded
+        .metadata
+        .as_ref()
+        .unwrap()
+        .get("Tiff headers")
+        .unwrap()
+    {
         DataMap::Exif(headers) => headers,
         other => panic!("unexpected TIFF metadata: {other:?}"),
     };
-    assert!(first_ifd_tags(&headers.headers)
-        .iter()
-        .any(|tag| tag.tagid == 0x010f));
-    assert!(headers.exif.as_ref().unwrap().iter().any(|tag| tag.tagid == 0x9000));
+    assert!(
+        first_ifd_tags(&headers.headers)
+            .iter()
+            .any(|tag| tag.tagid == 0x010f)
+    );
+    assert!(
+        headers
+            .exif
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|tag| tag.tagid == 0x9000)
+    );
 }
 
 #[test]
@@ -381,8 +396,22 @@ fn encode_tiff_via_public_api_roundtrips_pixels_and_metadata() {
         DataPack::Ascii(value) => assert_eq!(value.trim_end_matches('\0'), "wml2"),
         other => panic!("unexpected Make tag: {other:?}"),
     }
-    assert!(headers.exif.as_ref().unwrap().iter().any(|tag| tag.tagid == 0x9000));
-    assert!(headers.gps.as_ref().unwrap().iter().any(|tag| tag.tagid == 0x0000));
+    assert!(
+        headers
+            .exif
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|tag| tag.tagid == 0x9000)
+    );
+    assert!(
+        headers
+            .gps
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|tag| tag.tagid == 0x0000)
+    );
 }
 
 #[test]
@@ -435,7 +464,10 @@ fn encode_jpeg_tiff_via_public_api_matches_standalone_jpeg() {
 
     let mut image = ImageBuffer::from_buffer(11, 7, rgba);
     let mut options = HashMap::new();
-    options.insert("compression".to_string(), DataMap::Ascii("jpeg".to_string()));
+    options.insert(
+        "compression".to_string(),
+        DataMap::Ascii("jpeg".to_string()),
+    );
     options.insert("quality".to_string(), DataMap::UInt(91));
     let mut encode = EncodeOptions {
         debug_flag: 0,
@@ -487,7 +519,10 @@ fn encode_animated_jpeg_tiff_via_public_api_matches_standalone_jpeg_pages() {
 
     let mut image = animated_image();
     let mut options = HashMap::new();
-    options.insert("compression".to_string(), DataMap::Ascii("jpeg".to_string()));
+    options.insert(
+        "compression".to_string(),
+        DataMap::Ascii("jpeg".to_string()),
+    );
     options.insert("quality".to_string(), DataMap::UInt(88));
     let mut encode = EncodeOptions {
         debug_flag: 0,

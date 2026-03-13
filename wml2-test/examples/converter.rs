@@ -12,6 +12,7 @@ enum OutputFormat {
     Png,
     Jpeg,
     Bmp,
+    Webp,
 }
 
 impl OutputFormat {
@@ -20,6 +21,7 @@ impl OutputFormat {
             "png" | "apng" => Ok(Self::Png),
             "jpg" | "jpeg" => Ok(Self::Jpeg),
             "bmp" => Ok(Self::Bmp),
+            "webp" => Ok(Self::Webp),
             _ => Err(format!("unknown output format: {}", value).into()),
         }
     }
@@ -29,6 +31,7 @@ impl OutputFormat {
             Self::Png => "png",
             Self::Jpeg => "jpg",
             Self::Bmp => "bmp",
+            Self::Webp => "webp",
         }
     }
 }
@@ -37,7 +40,7 @@ struct Config {
     inputs: Vec<String>,
     output_dir: PathBuf,
     format: OutputFormat,
-    quality: u64,
+    quality: Option<u64>,
     split: bool,
 }
 
@@ -51,7 +54,7 @@ impl Config {
         let mut inputs = Vec::new();
         let mut output_dir = None;
         let mut format = OutputFormat::Png;
-        let mut quality = 80;
+        let mut quality = None;
         let mut split = false;
 
         let mut index = 1;
@@ -69,7 +72,7 @@ impl Config {
                     if index >= args.len() {
                         return Err("missing value for -q".into());
                     }
-                    quality = args[index].parse::<u64>()?;
+                    quality = Some(args[index].parse::<u64>()?);
                 }
                 "-f" | "--format" => {
                     index += 1;
@@ -107,13 +110,22 @@ impl Config {
     }
 
     fn encode_options(&self) -> Option<HashMap<String, DataMap>> {
-        if matches!(self.format, OutputFormat::Jpeg) {
-            let mut options = HashMap::new();
-            options.insert("quality".to_string(), DataMap::UInt(self.quality));
-            Some(options)
-        } else {
-            None
+        let mut options = HashMap::new();
+        match self.format {
+            OutputFormat::Jpeg => {
+                options.insert(
+                    "quality".to_string(),
+                    DataMap::UInt(self.quality.unwrap_or(80)),
+                );
+            }
+            OutputFormat::Webp => {
+                if let Some(quality) = self.quality {
+                    options.insert("quality".to_string(), DataMap::UInt(quality));
+                }
+            }
+            _ => {}
         }
+        (!options.is_empty()).then_some(options)
     }
 }
 
@@ -124,7 +136,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => {
             eprintln!("{}", error);
             eprintln!(
-                "usage: converter [inputfiles...] -o <outputfolder> [-f png|jpeg|bmp] [-q <quality>] [--split]"
+                "usage: converter [inputfiles...] -o <outputfolder> [-f png|jpeg|bmp|webp] [-q <quality>] [--split]"
             );
             return Err(error);
         }

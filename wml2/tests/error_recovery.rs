@@ -1,7 +1,10 @@
+mod common;
+
 use std::fs;
 use std::panic;
 use std::path::PathBuf;
 
+use common::{sample_config_hint, sample_path};
 use wml2::draw::image_from_file;
 
 fn error_dir() -> PathBuf {
@@ -10,10 +13,6 @@ fn error_dir() -> PathBuf {
         .unwrap()
         .join("test")
         .join("errors")
-}
-
-fn local_g3_path(name: &str) -> PathBuf {
-    PathBuf::from(r"D:\data\samples\images\tiff\G3").join(name)
 }
 
 #[test]
@@ -39,10 +38,9 @@ fn critical_tiff_samples_do_not_panic() {
 fn local_g3_regressions_decode_when_samples_are_available() {
     let mut found = 0usize;
     for name in ["G31D.tiff", "G32DS.tiff"] {
-        let path = local_g3_path(name);
-        if !path.is_file() {
+        let Some(path) = sample_path(name) else {
             continue;
-        }
+        };
 
         found += 1;
         let path = path.to_string_lossy().into_owned();
@@ -52,6 +50,9 @@ fn local_g3_regressions_decode_when_samples_are_available() {
     }
 
     if found == 0 {
-        eprintln!("skipping local G3 regression samples");
+        eprintln!(
+            "skipping local G3 regression samples (configure {})",
+            sample_config_hint().display()
+        );
     }
 }

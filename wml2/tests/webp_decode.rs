@@ -1,23 +1,8 @@
-use std::fs;
-use std::path::PathBuf;
+mod common;
 
+use common::{sample_bytes, sample_config_hint, sample_path};
 use wml2::draw::{image_from_file, image_load};
 use wml2::metadata::DataMap;
-
-fn sample_path(name: &str) -> String {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("test")
-        .join("samples")
-        .join(name)
-        .to_string_lossy()
-        .into_owned()
-}
-
-fn sample_bytes(name: &str) -> Vec<u8> {
-    fs::read(sample_path(name)).unwrap()
-}
 
 fn animated_sample_bytes() -> Vec<u8> {
     vec![
@@ -62,7 +47,14 @@ fn decode_webp_still_samples_from_file() {
     ];
 
     for (name, width, height, codec) in cases {
-        let image = image_from_file(sample_path(name)).unwrap();
+        let Some(path) = sample_path(name) else {
+            eprintln!(
+                "skipping missing sample: {name} (configure {})",
+                sample_config_hint().display()
+            );
+            continue;
+        };
+        let image = image_from_file(path.to_string_lossy().into_owned()).unwrap();
         assert_eq!(image.width, width);
         assert_eq!(image.height, height);
         assert!(
@@ -85,7 +77,13 @@ fn decode_webp_still_samples_from_bytes() {
     ];
 
     for (name, width, height, codec) in cases {
-        let bytes = sample_bytes(name);
+        let Some(bytes) = sample_bytes(name) else {
+            eprintln!(
+                "skipping missing sample: {name} (configure {})",
+                sample_config_hint().display()
+            );
+            continue;
+        };
         let image = image_load(&bytes).unwrap();
         assert_eq!(image.width, width);
         assert_eq!(image.height, height);

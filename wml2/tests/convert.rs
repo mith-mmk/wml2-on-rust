@@ -3,20 +3,12 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use wml2::draw::{EncodeOptions, ImageBuffer, convert, image_encoder, image_load};
+use wml2::draw::{
+    AnimationLayer, EncodeOptions, ImageBuffer, ImageRect, NextBlend, NextDispose, NextOption,
+    NextOptions, convert, image_encoder, image_load,
+};
 use wml2::metadata::DataMap;
 use wml2::util::ImageFormat;
-
-fn sample_path(name: &str) -> String {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("test")
-        .join("samples")
-        .join(name)
-        .to_string_lossy()
-        .into_owned()
-}
 
 fn temp_path(name: &str, extension: &str) -> PathBuf {
     let unique = SystemTime::now()
@@ -27,6 +19,62 @@ fn temp_path(name: &str, extension: &str) -> PathBuf {
         "wml2-{name}-{}-{unique}.{extension}",
         std::process::id()
     ))
+}
+
+fn solid_rgba(width: usize, height: usize, rgba: [u8; 4]) -> Vec<u8> {
+    let mut buffer = Vec::with_capacity(width * height * 4);
+    for _ in 0..(width * height) {
+        buffer.extend_from_slice(&rgba);
+    }
+    buffer
+}
+
+fn frame_control(width: usize, height: usize, delay_ms: u64) -> NextOptions {
+    NextOptions {
+        flag: NextOption::Continue,
+        await_time: delay_ms,
+        image_rect: Some(ImageRect {
+            start_x: 0,
+            start_y: 0,
+            width,
+            height,
+        }),
+        dispose_option: Some(NextDispose::None),
+        blend: Some(NextBlend::Override),
+    }
+}
+
+fn animated_png_bytes() -> Vec<u8> {
+    let first = solid_rgba(2, 2, [255, 0, 0, 255]);
+    let second = solid_rgba(2, 2, [0, 0, 255, 255]);
+
+    let mut image = ImageBuffer::from_buffer(2, 2, first.clone());
+    image.loop_count = Some(2);
+    image.animation = Some(vec![
+        AnimationLayer {
+            width: 2,
+            height: 2,
+            start_x: 0,
+            start_y: 0,
+            buffer: first,
+            control: frame_control(2, 2, 120),
+        },
+        AnimationLayer {
+            width: 2,
+            height: 2,
+            start_x: 0,
+            start_y: 0,
+            buffer: second,
+            control: frame_control(2, 2, 240),
+        },
+    ]);
+
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: None,
+    };
+    image_encoder(&mut encode, ImageFormat::Png).unwrap()
 }
 
 #[test]
@@ -72,11 +120,13 @@ fn convert_png_file_to_jpeg_via_public_api() {
 }
 
 #[test]
-fn convert_gif_file_to_apng_via_public_api() {
-    let output_path = temp_path("convert-animation", "png");
+fn convert_animated_png_file_to_apng_via_public_api() {
+    let input_path = temp_path("convert-animation-input", "png");
+    let output_path = temp_path("convert-animation-output", "png");
+    fs::write(&input_path, animated_png_bytes()).unwrap();
 
     convert(
-        sample_path("bird-wings-flying-feature.gif"),
+        input_path.to_string_lossy().into_owned(),
         output_path.to_string_lossy().into_owned(),
         None,
     )
@@ -96,5 +146,6 @@ fn convert_gif_file_to_apng_via_public_api() {
             > 1
     );
 
+    let _ = fs::remove_file(input_path);
     let _ = fs::remove_file(output_path);
 }

@@ -808,6 +808,7 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
         Some("png") | Some("apng") => Ok(ImageFormat::Png),
         Some("jpg") | Some("jpeg") => Ok(ImageFormat::Jpeg),
         Some("bmp") => Ok(ImageFormat::Bmp),
+        Some("webp") => Ok(ImageFormat::Webp),
         Some(extension) => Err(Box::new(ImgError::new_const(
             ImgErrorKind::NoSupportFormat,
             format!("unsupported output extension: {extension}"),
@@ -823,8 +824,8 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
 ///
 /// The output format is selected from the destination extension:
 /// `.png` and `.apng` use the PNG/APNG encoder, `.jpg`/`.jpeg` use the JPEG
-/// encoder, and `.bmp` uses the BMP encoder. Encoder-specific settings can be
-/// passed in `options`.
+/// encoder, `.bmp` uses the BMP encoder, and `.webp` uses the WebP encoder.
+/// Encoder-specific settings can be passed in `options`.
 #[cfg(not(target_family = "wasm"))]
 pub fn convert(
     input_file: String,
@@ -976,6 +977,9 @@ pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<
         }
         Png => {
             return crate::png::encoder::encode(option);
+        }
+        Webp => {
+            return crate::webp::encoder::encode(option);
         }
         _ => Err(Box::new(ImgError::new_const(
             ImgErrorKind::NoSupportFormat,

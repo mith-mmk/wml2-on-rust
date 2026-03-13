@@ -46,6 +46,7 @@ struct Config {
     inputs: Vec<String>,
     output_dir: PathBuf,
     format: OutputFormat,
+    compression: Option<String>,
     quality: Option<u64>,
     optimize: Option<u64>,
     split: bool,
@@ -61,6 +62,7 @@ impl Config {
         let mut inputs = Vec::new();
         let mut output_dir = None;
         let mut format = OutputFormat::Png;
+        let mut compression = None;
         let mut quality = None;
         let mut optimize = None;
         let mut split = false;
@@ -81,6 +83,13 @@ impl Config {
                         return Err("missing value for -q".into());
                     }
                     quality = Some(args[index].parse::<u64>()?);
+                }
+                "-c" => {
+                    index += 1;
+                    if index >= args.len() {
+                        return Err("missing value for -c".into());
+                    }
+                    compression = Some(args[index].to_ascii_lowercase());
                 }
                 "-f" | "--format" => {
                     index += 1;
@@ -114,11 +123,15 @@ impl Config {
         if split && matches!(format, OutputFormat::Jpeg | OutputFormat::Bmp) {
             return Err("--split is currently supported for GIF/PNG/TIFF/WebP output".into());
         }
+        if compression.is_some() && !matches!(format, OutputFormat::Tiff) {
+            return Err("-c is only supported for TIFF output".into());
+        }
 
         Ok(Self {
             inputs,
             output_dir,
             format,
+            compression,
             quality,
             optimize,
             split,
@@ -140,6 +153,19 @@ impl Config {
                 }
                 if let Some(optimize) = self.optimize {
                     options.insert("optimize".to_string(), DataMap::UInt(optimize));
+                }
+            }
+            OutputFormat::Tiff => {
+                if let Some(compression) = &self.compression {
+                    options.insert(
+                        "compression".to_string(),
+                        DataMap::Ascii(compression.clone()),
+                    );
+                    if compression == "jpeg" {
+                        if let Some(quality) = self.quality {
+                            options.insert("quality".to_string(), DataMap::UInt(quality));
+                        }
+                    }
                 }
             }
             _ => {}
@@ -166,7 +192,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => {
             eprintln!("{}", error);
             eprintln!(
-                "usage: converter [inputfiles...] -o <outputfolder> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [--split]"
+                "usage: converter [inputfiles...] -o <outputfolder> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg>] [--split]"
             );
             return Err(error);
         }
@@ -494,6 +520,7 @@ mod tests {
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Png,
+            compression: None,
             quality: None,
             optimize: None,
             split: false,
@@ -521,6 +548,7 @@ mod tests {
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Png,
+            compression: None,
             quality: None,
             optimize: None,
             split: false,
@@ -535,6 +563,7 @@ mod tests {
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Webp,
+            compression: None,
             quality: None,
             optimize: Some(7),
             split: true,
@@ -563,5 +592,42 @@ mod tests {
         );
 
         let _ = fs::remove_file(temp_file);
+    }
+
+    #[test]
+    fn tiff_compression_option_is_forwarded() {
+        let config = Config {
+            inputs: Vec::new(),
+            output_dir: PathBuf::new(),
+            format: OutputFormat::Tiff,
+            compression: Some("jpeg".to_string()),
+            quality: Some(87),
+            optimize: None,
+            split: false,
+        };
+
+        let options = config.encode_options().unwrap();
+        assert!(matches!(
+            options.get("compression"),
+            Some(DataMap::Ascii(value)) if value == "jpeg"
+        ));
+        assert!(matches!(options.get("quality"), Some(DataMap::UInt(87))));
+    }
+
+    #[test]
+    fn parse_rejects_compression_for_non_tiff_output() {
+        let args = vec![
+            "converter".to_string(),
+            "input.png".to_string(),
+            "-o".to_string(),
+            "out".to_string(),
+            "-f".to_string(),
+            "png".to_string(),
+            "-c".to_string(),
+            "lzw".to_string(),
+        ];
+
+        let error = Config::parse(&args).err().unwrap().to_string();
+        assert_eq!(error, "-c is only supported for TIFF output");
     }
 }

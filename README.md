@@ -33,7 +33,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 |JPEG|O|O|Baseline encode / Baseline and huffman progressive decode|
 |GIF|x|O|with Animation GIF|
 |PNG|O|O|encode Truecolor + alpha only|
-|TIFF|O|O|encode: no compression, decode: no compression/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3 Fax/CCITT Group 4 Fax|
+|TIFF|O|O|encode: no compression/LZW/JPEG(new), decode: no compression/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3 Fax/CCITT Group 4 Fax|
 |WEBP|O|O|pure Rust still/animated decoder, still/animated encoder, lossless/lossy output|
 |MAG|x|O|Japanese legasy image format|
 |MAKI|x|O|Japanese legacy image format, disabled by `noretoro`|
@@ -72,7 +72,10 @@ wml2 = { version = "0.0.17", features = ["noretoro"] }
 
 # TIFF
 
-- Encode supports uncompressed baseline TIFF only
+- Encode supports these TIFF compression formats:
+  - no compression
+  - LZW
+  - JPEG (new-style TIFF JPEG, RGB only)
 - Decode supports these TIFF compression formats:
   - no compression
   - LZW

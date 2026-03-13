@@ -35,7 +35,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 |JPEG|O|O|エンコードはベースラインのみ。デコードは算術符号非対応|
 |GIF|x|O|アニメーションGIF対応|
 |PNG|O|O|APNG対応|
-|TIFF|O|O|encode: 無圧縮のみ、decode: 無圧縮/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3 Fax/CCITT Group 4 Fax に対応|
+|TIFF|O|O|encode: 無圧縮/LZW/JPEG(new)、decode: 無圧縮/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3 Fax/CCITT Group 4 Fax に対応|
 |WEBP|O|O|Pure Rust の静止画/アニメーション decode、静止画/アニメーション encode、lossless/lossy 出力に対応|
 |MAG|x|O||
 |MAKI|x|O|`noretoro` 指定時は無効|
@@ -74,7 +74,10 @@ wml2 = { version = "0.0.17", features = ["noretoro"] }
 
 # TIFF
 
-- encode は無圧縮の baseline TIFF のみ対応
+- encode は以下の TIFF 圧縮形式に対応
+  - 無圧縮
+  - LZW
+  - JPEG (new-style TIFF JPEG, RGBのみ)
 - decode は以下の TIFF 圧縮形式に対応
   - 無圧縮
   - LZW

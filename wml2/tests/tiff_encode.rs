@@ -241,6 +241,19 @@ fn animated_png_bytes() -> Vec<u8> {
     image_encoder(&mut encode, ImageFormat::Png).unwrap()
 }
 
+fn jpeg_roundtrip(width: usize, height: usize, rgba: Vec<u8>, quality: u64) -> Vec<u8> {
+    let mut image = ImageBuffer::from_buffer(width, height, rgba);
+    let mut options = HashMap::new();
+    options.insert("quality".to_string(), DataMap::UInt(quality));
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(options),
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Jpeg).unwrap();
+    image_load(&data).unwrap().buffer.unwrap()
+}
+
 #[test]
 fn exif_writer_roundtrips_tiff_headers() {
     let headers = exif_fixture();
@@ -377,6 +390,96 @@ fn encode_lzw_tiff_via_public_api_roundtrips_pixels() {
         DataMap::Ascii(value) => assert_eq!(value, "LZW(Tiff)"),
         other => panic!("unexpected compression metadata: {other:?}"),
     }
+}
+
+#[test]
+fn encode_jpeg_tiff_via_public_api_matches_standalone_jpeg() {
+    let mut rgba = Vec::with_capacity(11 * 7 * 4);
+    for y in 0..7 {
+        for x in 0..11 {
+            rgba.push((x * 17 + y * 9) as u8);
+            rgba.push((x * 5 + y * 21) as u8);
+            rgba.push((x * 29 + y * 13) as u8);
+            rgba.push(255);
+        }
+    }
+
+    let expected = jpeg_roundtrip(11, 7, rgba.clone(), 91);
+
+    let mut image = ImageBuffer::from_buffer(11, 7, rgba);
+    let mut options = HashMap::new();
+    options.insert("compression".to_string(), DataMap::Ascii("jpeg".to_string()));
+    options.insert("quality".to_string(), DataMap::UInt(91));
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(options),
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+
+    let decoded = image_load(&data).unwrap();
+    assert_eq!(decoded.width, 11);
+    assert_eq!(decoded.height, 7);
+    assert_eq!(decoded.buffer.as_ref().unwrap(), &expected);
+
+    let metadata = decoded.metadata.as_ref().unwrap();
+    match metadata.get("compression").unwrap() {
+        DataMap::Ascii(value) => assert_eq!(value, "Jpeg"),
+        other => panic!("unexpected compression metadata: {other:?}"),
+    }
+    let headers = match metadata.get("Tiff headers").unwrap() {
+        DataMap::Exif(headers) => headers,
+        other => panic!("unexpected TIFF metadata: {other:?}"),
+    };
+    let tags = first_ifd_tags(&headers.headers);
+    let photometric = tags.iter().find(|tag| tag.tagid == 0x0106).unwrap();
+    match &photometric.data {
+        DataPack::Short(values) => assert_eq!(values, &vec![6]),
+        other => panic!("unexpected PhotometricInterpretation tag: {other:?}"),
+    }
+    let subsampling = tags.iter().find(|tag| tag.tagid == 0x0212).unwrap();
+    match &subsampling.data {
+        DataPack::Short(values) => assert_eq!(values, &vec![1, 1]),
+        other => panic!("unexpected YCbCrSubSampling tag: {other:?}"),
+    }
+    let positioning = tags.iter().find(|tag| tag.tagid == 0x0213).unwrap();
+    match &positioning.data {
+        DataPack::Short(values) => assert_eq!(values, &vec![1]),
+        other => panic!("unexpected YCbCrPositioning tag: {other:?}"),
+    }
+    assert!(tags.iter().all(|tag| tag.tagid != 0x0152));
+    assert!(tags.iter().all(|tag| tag.tagid != 0x01b5));
+}
+
+#[test]
+fn encode_animated_jpeg_tiff_via_public_api_matches_standalone_jpeg_pages() {
+    let expected_pages = expected_animation_pages()
+        .into_iter()
+        .map(|page| jpeg_roundtrip(4, 4, page, 88))
+        .collect::<Vec<_>>();
+
+    let mut image = animated_image();
+    let mut options = HashMap::new();
+    options.insert("compression".to_string(), DataMap::Ascii("jpeg".to_string()));
+    options.insert("quality".to_string(), DataMap::UInt(88));
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(options),
+    };
+
+    let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+    let decoded = image_load(&data).unwrap();
+    assert_eq!(decoded.width, 4);
+    assert_eq!(decoded.height, 4);
+    assert_eq!(decoded.buffer.as_ref().unwrap(), &expected_pages[0]);
+    assert_eq!(
+        decoded.animation.as_ref().map(|frames| frames.len()),
+        Some(2)
+    );
+    let frames = decoded.animation.as_ref().unwrap();
+    assert_eq!(frames[0].buffer, expected_pages[1]);
+    assert_eq!(frames[1].buffer, expected_pages[2]);
 }
 
 #[test]

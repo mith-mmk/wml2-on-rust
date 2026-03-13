@@ -7,6 +7,7 @@ use crate::draw::{
 };
 use crate::encoder::lzw::encode_tiff;
 use crate::error::{ImgError, ImgErrorKind};
+use crate::jpeg::encoder::{encode_rgba as encode_jpeg_rgba, quality_from_draw_options};
 use crate::metadata::DataMap;
 use crate::tiff::header::{DataPack, Rational, TiffHeader, TiffHeaders, tiff_pages_to_bytes};
 use bin_rs::Endian;
@@ -44,6 +45,7 @@ struct PagePlan {
 enum TiffCompressionMode {
     None,
     Lzw { is_lsb: bool },
+    Jpeg { quality: usize },
 }
 
 impl TiffCompressionMode {
@@ -51,6 +53,7 @@ impl TiffCompressionMode {
         match self {
             Self::None => 1,
             Self::Lzw { .. } => 5,
+            Self::Jpeg { .. } => 7,
         }
     }
 
@@ -59,6 +62,10 @@ impl TiffCompressionMode {
             Self::Lzw { is_lsb: true } => 2,
             _ => 1,
         }
+    }
+
+    fn supports_alpha(self) -> bool {
+        !matches!(self, Self::Jpeg { .. })
     }
 }
 
@@ -121,6 +128,9 @@ fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMod
             "none" | "uncompressed" => Ok(TiffCompressionMode::None),
             "lzw" | "lzw_msb" => Ok(TiffCompressionMode::Lzw { is_lsb: false }),
             "lzw_lsb" => Ok(TiffCompressionMode::Lzw { is_lsb: true }),
+            "jpeg" | "jpg" => Ok(TiffCompressionMode::Jpeg {
+                quality: quality_from_draw_options(option),
+            }),
             _ => Err(Box::new(ImgError::new_const(
                 ImgErrorKind::InvalidParameter,
                 format!("unsupported TIFF compression: {value}"),
@@ -128,9 +138,13 @@ fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMod
         },
         DataMap::UInt(1) | DataMap::SInt(1) => Ok(TiffCompressionMode::None),
         DataMap::UInt(5) | DataMap::SInt(5) => Ok(TiffCompressionMode::Lzw { is_lsb: false }),
+        DataMap::UInt(7) | DataMap::SInt(7) => Ok(TiffCompressionMode::Jpeg {
+            quality: quality_from_draw_options(option),
+        }),
         _ => Err(Box::new(ImgError::new_const(
             ImgErrorKind::InvalidParameter,
-            "TIFF compression must be `none`, `lzw`, `lzw_msb`, `lzw_lsb`, 1, or 5".to_string(),
+            "TIFF compression must be `none`, `lzw`, `lzw_msb`, `lzw_lsb`, `jpeg`, 1, 5, or 7"
+                .to_string(),
         ))),
     }
 }
@@ -419,6 +433,20 @@ fn should_copy_source_tag(tagid: usize) -> bool {
             | 0x0144
             | 0x0145
             | 0x0152
+            | 0x01b5
+            | 0x0200
+            | 0x0201
+            | 0x0202
+            | 0x0203
+            | 0x0205
+            | 0x0206
+            | 0x0207
+            | 0x0208
+            | 0x0209
+            | 0x0211
+            | 0x0212
+            | 0x0213
+            | 0x0214
             | 0x8769
             | 0x8773
             | 0x8825
@@ -439,6 +467,12 @@ fn ensure_tag(tags: &mut Vec<TiffHeader>, tag: TiffHeader) {
     }
 }
 
+fn remove_tag(tags: &mut Vec<TiffHeader>, tagid: usize) {
+    if let Some(index) = tags.iter().position(|existing| existing.tagid == tagid) {
+        tags.remove(index);
+    }
+}
+
 fn short_tag(tagid: usize, value: u16) -> TiffHeader {
     TiffHeader {
         tagid,
@@ -452,6 +486,14 @@ fn short_array_tag(tagid: usize, values: Vec<u16>) -> TiffHeader {
         tagid,
         length: values.len(),
         data: DataPack::Short(values),
+    }
+}
+
+fn rational_array_tag(tagid: usize, values: Vec<Rational>) -> TiffHeader {
+    TiffHeader {
+        tagid,
+        length: values.len(),
+        data: DataPack::Rational(values),
     }
 }
 
@@ -522,6 +564,7 @@ fn build_page_headers(
     }
 
     let samples_per_pixel = if with_alpha { 4 } else { 3 };
+    let is_jpeg = matches!(compression, TiffCompressionMode::Jpeg { .. });
     upsert_tag(&mut headers.headers, long_tag(0x0100, width));
     upsert_tag(&mut headers.headers, long_tag(0x0101, height));
     upsert_tag(
@@ -529,7 +572,10 @@ fn build_page_headers(
         short_array_tag(0x0102, vec![8; samples_per_pixel]),
     );
     upsert_tag(&mut headers.headers, short_tag(0x0103, compression.code()));
-    upsert_tag(&mut headers.headers, short_tag(0x0106, 2));
+    upsert_tag(
+        &mut headers.headers,
+        short_tag(0x0106, if is_jpeg { 6 } else { 2 }),
+    );
     upsert_tag(&mut headers.headers, short_tag(0x010a, compression.fill_order()));
     upsert_tag(&mut headers.headers, long_tag(0x0111, 0));
     upsert_tag(&mut headers.headers, short_tag(0x0112, 1));
@@ -553,9 +599,49 @@ fn build_page_headers(
 
     if with_alpha {
         upsert_tag(&mut headers.headers, short_array_tag(0x0152, vec![2]));
+    } else {
+        remove_tag(&mut headers.headers, 0x0152);
     }
     if let Some(profile) = icc_profile {
         upsert_tag(&mut headers.headers, undef_tag(0x8773, profile.to_vec()));
+    }
+
+    for tagid in [0x01b5, 0x0200, 0x0201, 0x0202, 0x0203, 0x0205, 0x0206, 0x0207, 0x0208, 0x0209] {
+        remove_tag(&mut headers.headers, tagid);
+    }
+
+    if is_jpeg {
+        upsert_tag(
+            &mut headers.headers,
+            rational_array_tag(
+                0x0211,
+                vec![
+                    Rational { n: 299, d: 1000 },
+                    Rational { n: 587, d: 1000 },
+                    Rational { n: 114, d: 1000 },
+                ],
+            ),
+        );
+        upsert_tag(&mut headers.headers, short_array_tag(0x0212, vec![1, 1]));
+        upsert_tag(&mut headers.headers, short_tag(0x0213, 1));
+        upsert_tag(
+            &mut headers.headers,
+            rational_array_tag(
+                0x0214,
+                vec![
+                    Rational { n: 0, d: 1 },
+                    Rational { n: 255, d: 1 },
+                    Rational { n: 128, d: 1 },
+                    Rational { n: 255, d: 1 },
+                    Rational { n: 128, d: 1 },
+                    Rational { n: 255, d: 1 },
+                ],
+            ),
+        );
+    } else {
+        for tagid in [0x0211, 0x0212, 0x0213, 0x0214] {
+            remove_tag(&mut headers.headers, tagid);
+        }
     }
 
     Ok(headers)
@@ -597,11 +683,12 @@ fn build_page_plan(
         )));
     }
 
-    let with_alpha = rgba_has_alpha(rgba);
+    let with_alpha = compression.supports_alpha() && rgba_has_alpha(rgba);
     let raw_pixel_data = rgba_to_tiff_samples(rgba, with_alpha);
     let pixel_data = match compression {
         TiffCompressionMode::None => raw_pixel_data,
         TiffCompressionMode::Lzw { is_lsb } => encode_tiff(&raw_pixel_data, is_lsb)?,
+        TiffCompressionMode::Jpeg { quality } => encode_jpeg_rgba(width, height, rgba, quality)?,
     };
     let headers = build_page_headers(
         width,
@@ -637,11 +724,13 @@ fn build_animation_pages(
     Ok(pages)
 }
 
-/// Encodes an image source to baseline TIFF.
+/// Encodes an image source to TIFF.
 ///
-/// Still images are written as a single uncompressed RGB/RGBA TIFF page.
-/// Animated input is flattened into full-canvas multi-page TIFF output so it
-/// can be round-tripped through [`crate::draw::convert`].
+/// Still images are written as a single TIFF page using uncompressed, LZW, or
+/// JPEG compression depending on `compression`. Animated input is flattened
+/// into full-canvas multi-page TIFF output so it can be round-tripped through
+/// [`crate::draw::convert`]. JPEG-compressed TIFF pages reuse the JPEG encoder
+/// and therefore store RGB only.
 pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     let profile = image.drawer.encode_start(None)?;
     let profile = profile.ok_or_else(|| {

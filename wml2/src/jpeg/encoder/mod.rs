@@ -14,7 +14,7 @@ type Error = Box<dyn std::error::Error>;
 
 pub use self::encoder::create_qt;
 
-fn jpeg_quality(option: &DrawEncodeOptions<'_>) -> usize {
+pub(crate) fn quality_from_draw_options(option: &DrawEncodeOptions<'_>) -> usize {
     option
         .options
         .as_ref()
@@ -26,6 +26,16 @@ fn jpeg_quality(option: &DrawEncodeOptions<'_>) -> usize {
         })
         .unwrap_or(80)
         .clamp(1, 100)
+}
+
+pub(crate) fn encode_rgba(
+    width: usize,
+    height: usize,
+    rgba: &[u8],
+    quality: usize,
+) -> Result<Vec<u8>, Error> {
+    let inner = self::encoder::EncodeOptions::new(width, height, rgba, quality.clamp(1, 100));
+    self::encoder::encode(&inner)
 }
 
 pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
@@ -47,13 +57,12 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
             )) as Error
         })?;
 
-    let inner = self::encoder::EncodeOptions::new(
+    let data = encode_rgba(
         profile.width,
         profile.height,
         &rgba,
-        jpeg_quality(image),
-    );
-    let data = self::encoder::encode(&inner)?;
+        quality_from_draw_options(image),
+    )?;
     image.drawer.encode_end(None)?;
     Ok(data)
 }

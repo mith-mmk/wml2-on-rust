@@ -1,5 +1,7 @@
 //! Metadata value types shared by image decoders and encoders.
 
+use crate::error::{ImgError, ImgErrorKind};
+use crate::tiff::header::exif_to_bytes;
 use crate::tiff::header::TiffHeaders;
 use std::collections::HashMap;
 
@@ -54,5 +56,47 @@ impl DataMap {
             }
             DataMap::None => "none".to_owned(),
         }
+    }
+}
+
+/// Extracts a serialized EXIF payload from metadata when present.
+///
+/// This accepts decoded TIFF-style metadata (`"Tiff headers"`), generic EXIF
+/// metadata (`"EXIF"`), or an already serialized fallback (`"EXIF Raw"`).
+pub fn get_exif(metadata: Option<&Metadata>) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
+    let Some(metadata) = metadata else {
+        return Ok(None);
+    };
+
+    match metadata.get("EXIF") {
+        Some(DataMap::Exif(headers)) => return exif_to_bytes(headers).map(Some),
+        Some(DataMap::Raw(bytes)) => return Ok(Some(bytes.clone())),
+        Some(_) => {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "EXIF metadata is not serializable".to_string(),
+            )));
+        }
+        None => {}
+    }
+
+    match metadata.get("Tiff headers") {
+        Some(DataMap::Exif(headers)) => return exif_to_bytes(headers).map(Some),
+        Some(_) => {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "Tiff headers metadata is not serializable".to_string(),
+            )));
+        }
+        None => {}
+    }
+
+    match metadata.get("EXIF Raw") {
+        Some(DataMap::Raw(bytes)) => Ok(Some(bytes.clone())),
+        Some(_) => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "EXIF Raw metadata is not raw bytes".to_string(),
+        ))),
+        None => Ok(None),
     }
 }

@@ -3,6 +3,7 @@
 type Error = Box<dyn std::error::Error>;
 use crate::draw::DecodeOptions;
 use crate::draw::ImageBuffer;
+use crate::draw::InitOptions;
 use crate::tiff::header::*;
 use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
@@ -37,6 +38,8 @@ pub fn decode_jpeg_compresson<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
     header: &Tiff,
+    initialize: bool,
+    animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
     let jpeg_tables = &header.jpeg_tables;
     let metadata;
@@ -49,9 +52,20 @@ pub fn decode_jpeg_compresson<'decode, B: BinaryReader>(
     let mut warnings: Option<ImgWarnings> = None;
     let mut x = 0;
     let mut y = 0;
-    option
-        .drawer
-        .init(header.width as usize, header.height as usize, None)?;
+    if initialize {
+        let init = if animation {
+            Some(InitOptions {
+                loop_count: 1,
+                background: None,
+                animation: true,
+            })
+        } else {
+            None
+        };
+        option
+            .drawer
+            .init(header.width as usize, header.height as usize, init)?;
+    }
 
     if header.tile_width != 0
         && header.tile_length != 0

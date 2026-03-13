@@ -809,6 +809,7 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
         Some("png") | Some("apng") => Ok(ImageFormat::Png),
         Some("jpg") | Some("jpeg") => Ok(ImageFormat::Jpeg),
         Some("bmp") => Ok(ImageFormat::Bmp),
+        Some("tif") | Some("tiff") => Ok(ImageFormat::Tiff),
         Some("webp") => Ok(ImageFormat::Webp),
         Some(extension) => Err(Box::new(ImgError::new_const(
             ImgErrorKind::NoSupportFormat,
@@ -825,9 +826,10 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
 ///
 /// The output format is selected from the destination extension:
 /// `.png` and `.apng` use the PNG/APNG encoder, `.jpg`/`.jpeg` use the JPEG
-/// encoder, `.bmp` uses the BMP encoder, and `.webp` uses the WebP encoder.
-/// Encoder-specific settings can be passed in `options`, for example JPEG
-/// `quality`, or WebP `quality` and `optimize`.
+/// encoder, `.bmp` uses the BMP encoder, `.tif`/`.tiff` use the TIFF encoder,
+/// and `.webp` uses the WebP encoder. Encoder-specific settings can be passed
+/// in `options`, for example JPEG `quality`, or WebP `quality` and
+/// `optimize`.
 #[cfg(not(target_family = "wasm"))]
 pub fn convert(
     input_file: String,
@@ -979,6 +981,9 @@ pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<
         }
         Png => {
             return crate::png::encoder::encode(option);
+        }
+        Tiff => {
+            return crate::tiff::encoder::encode(option);
         }
         Webp => {
             return crate::webp::encoder::encode(option);

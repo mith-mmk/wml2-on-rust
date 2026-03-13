@@ -699,6 +699,361 @@ impl Tiff {
     }
 }
 
+#[derive(Debug, Clone)]
+struct EncodedTag {
+    tagid: u16,
+    type_id: u16,
+    count: u32,
+    payload: Vec<u8>,
+}
+
+fn even_padded_len(length: usize) -> usize {
+    length + (length & 1)
+}
+
+fn append_even_padding(buf: &mut Vec<u8>) {
+    if buf.len() & 1 == 1 {
+        buf.push(0);
+    }
+}
+
+fn validate_count(count: usize) -> Result<u32, Error> {
+    u32::try_from(count).map_err(|_| {
+        Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "TIFF tag count is too large".to_string(),
+        )) as Error
+    })
+}
+
+fn encode_ascii_bytes(data: &str) -> Vec<u8> {
+    let mut payload = data.as_bytes().to_vec();
+    if payload.last().copied() != Some(0) {
+        payload.push(0);
+    }
+    payload
+}
+
+fn encode_tag_data(tag: &TiffHeader, endian: Endian) -> Result<EncodedTag, Error> {
+    let tagid = tag.tagid as u16;
+    match &tag.data {
+        DataPack::Bytes(data) => Ok(EncodedTag {
+            tagid,
+            type_id: 1,
+            count: validate_count(data.len())?,
+            payload: data.clone(),
+        }),
+        DataPack::Ascii(data) => {
+            let payload = encode_ascii_bytes(data);
+            Ok(EncodedTag {
+                tagid,
+                type_id: 2,
+                count: validate_count(payload.len())?,
+                payload,
+            })
+        }
+        DataPack::Short(data) => {
+            let mut payload = Vec::with_capacity(data.len() * 2);
+            for value in data {
+                write_u16(*value, &mut payload, endian);
+            }
+            Ok(EncodedTag {
+                tagid,
+                type_id: 3,
+                count: validate_count(data.len())?,
+                payload,
+            })
+        }
+        DataPack::Long(data) => {
+            let mut payload = Vec::with_capacity(data.len() * 4);
+            for value in data {
+                write_u32(*value, &mut payload, endian);
+            }
+            Ok(EncodedTag {
+                tagid,
+                type_id: 4,
+                count: validate_count(data.len())?,
+                payload,
+            })
+        }
+        DataPack::Rational(data) => {
+            let mut payload = Vec::with_capacity(data.len() * 8);
+            for value in data {
+                write_u32(value.n, &mut payload, endian);
+                write_u32(value.d, &mut payload, endian);
+            }
+            Ok(EncodedTag {
+                tagid,
+                type_id: 5,
+                count: validate_count(data.len())?,
+                payload,
+            })
+        }
+        DataPack::SByte(data) => {
+            let mut payload = Vec::with_capacity(data.len());
+            for value in data {
+                write_i8(*value, &mut payload);
+            }
+            Ok(EncodedTag {
+                tagid,
+                type_id: 6,
+                count: validate_count(data.len())?,
+                payload,
+            })
+        }
+        DataPack::Undef(data) | DataPack::Unkown(data) => Ok(EncodedTag {
+            tagid,
+            type_id: 7,
+            count: validate_count(data.len())?,
+            payload: data.clone(),
+        }),
+        DataPack::SShort(data) => {
+            let mut payload = Vec::with_capacity(data.len() * 2);
+            for value in data {
+                write_i16(*value, &mut payload, endian);
+            }
+            Ok(EncodedTag {
+                tagid,
+                type_id: 8,
+                count: validate_count(data.len())?,
+                payload,
+            })
+        }
+        DataPack::SLong(data) => {
+            let mut payload = Vec::with_capacity(data.len() * 4);
+            for value in data {
+                write_i32(*value, &mut payload, endian);
+            }
+            Ok(EncodedTag {
+                tagid,
+                type_id: 9,
+                count: validate_count(data.len())?,
+                payload,
+            })
+        }
+        DataPack::SRational(data) => {
+            let mut payload = Vec::with_capacity(data.len() * 8);
+            for value in data {
+                write_i32(value.n, &mut payload, endian);
+                write_i32(value.d, &mut payload, endian);
+            }
+            Ok(EncodedTag {
+                tagid,
+                type_id: 10,
+                count: validate_count(data.len())?,
+                payload,
+            })
+        }
+        DataPack::Float(data) => {
+            let mut payload = Vec::with_capacity(data.len() * 4);
+            for value in data {
+                write_f32(*value, &mut payload, endian);
+            }
+            Ok(EncodedTag {
+                tagid,
+                type_id: 11,
+                count: validate_count(data.len())?,
+                payload,
+            })
+        }
+        DataPack::Double(data) => {
+            let mut payload = Vec::with_capacity(data.len() * 8);
+            for value in data {
+                write_f64(*value, &mut payload, endian);
+            }
+            Ok(EncodedTag {
+                tagid,
+                type_id: 12,
+                count: validate_count(data.len())?,
+                payload,
+            })
+        }
+    }
+}
+
+fn serialize_encoded_tag(
+    buf: &mut Vec<u8>,
+    append: &mut Vec<u8>,
+    tag: &EncodedTag,
+    next_data_offset: &mut usize,
+    endian: Endian,
+) -> Result<(), Error> {
+    write_u16(tag.tagid, buf, endian);
+    write_u16(tag.type_id, buf, endian);
+    write_u32(tag.count, buf, endian);
+
+    if tag.payload.len() <= 4 {
+        write_bytes(&tag.payload, buf);
+        for _ in tag.payload.len()..4 {
+            write_byte(0, buf);
+        }
+        return Ok(());
+    }
+
+    let data_offset = u32::try_from(*next_data_offset).map_err(|_| {
+        Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "TIFF data offset exceeds 32-bit range".to_string(),
+        )) as Error
+    })?;
+    write_u32(data_offset, buf, endian);
+    append.extend_from_slice(&tag.payload);
+    append_even_padding(append);
+    *next_data_offset += even_padded_len(tag.payload.len());
+    Ok(())
+}
+
+fn clone_ifd_tags(tags: &[TiffHeader]) -> Vec<TiffHeader> {
+    tags.to_vec()
+}
+
+fn filter_base_ifd_tags(
+    tags: &[TiffHeader],
+    has_exif: bool,
+    has_gps: bool,
+) -> Vec<TiffHeader> {
+    let mut tags = clone_ifd_tags(tags);
+    if has_exif {
+        tags.retain(|tag| tag.tagid != 0x8769);
+    }
+    if has_gps {
+        tags.retain(|tag| tag.tagid != 0x8825);
+    }
+    tags.sort_by_key(|tag| tag.tagid);
+    tags
+}
+
+fn serialize_ifd(
+    tags: &[TiffHeader],
+    exif: Option<&Vec<TiffHeader>>,
+    gps: Option<&Vec<TiffHeader>>,
+    absolute_offset: usize,
+    next_ifd_offset: u32,
+    endian: Endian,
+) -> Result<Vec<u8>, Error> {
+    let has_exif = exif.map(|tags| !tags.is_empty()).unwrap_or(false);
+    let has_gps = gps.map(|tags| !tags.is_empty()).unwrap_or(false);
+    let tags = filter_base_ifd_tags(tags, has_exif, has_gps);
+
+    let mut encoded = Vec::with_capacity(tags.len());
+    let mut local_payload_len = 0usize;
+    for tag in &tags {
+        let encoded_tag = encode_tag_data(tag, endian)?;
+        if encoded_tag.payload.len() > 4 {
+            local_payload_len += even_padded_len(encoded_tag.payload.len());
+        }
+        encoded.push(encoded_tag);
+    }
+
+    let entry_count = encoded.len() + has_exif as usize + has_gps as usize;
+    let ifd_size = 2usize
+        .checked_add(entry_count * 12)
+        .and_then(|size| size.checked_add(4))
+        .and_then(|size| size.checked_add(local_payload_len))
+        .ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "TIFF IFD is too large".to_string(),
+            )) as Error
+        })?;
+
+    let exif_offset = if has_exif {
+        Some(absolute_offset + ifd_size)
+    } else {
+        None
+    };
+    let exif_bytes = if let Some(exif) = exif {
+        if exif.is_empty() {
+            None
+        } else {
+            Some(serialize_ifd(exif, None, None, exif_offset.unwrap(), 0, endian)?)
+        }
+    } else {
+        None
+    };
+    let gps_offset = if has_gps {
+        Some(absolute_offset + ifd_size + exif_bytes.as_ref().map(|buf| buf.len()).unwrap_or(0))
+    } else {
+        None
+    };
+    let gps_bytes = if let Some(gps) = gps {
+        if gps.is_empty() {
+            None
+        } else {
+            Some(serialize_ifd(gps, None, None, gps_offset.unwrap(), 0, endian)?)
+        }
+    } else {
+        None
+    };
+
+    if let Some(offset) = exif_offset {
+        encoded.push(EncodedTag {
+            tagid: 0x8769,
+            type_id: 4,
+            count: 1,
+            payload: u32::to_ne_bytes(
+                u32::try_from(offset).map_err(|_| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::InvalidParameter,
+                        "TIFF EXIF offset exceeds 32-bit range".to_string(),
+                    )) as Error
+                })?,
+            )
+            .to_vec(),
+        });
+    }
+    if let Some(offset) = gps_offset {
+        encoded.push(EncodedTag {
+            tagid: 0x8825,
+            type_id: 4,
+            count: 1,
+            payload: u32::to_ne_bytes(
+                u32::try_from(offset).map_err(|_| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::InvalidParameter,
+                        "TIFF GPS offset exceeds 32-bit range".to_string(),
+                    )) as Error
+                })?,
+            )
+            .to_vec(),
+        });
+    }
+    encoded.sort_by_key(|tag| tag.tagid);
+
+    let mut buf = Vec::with_capacity(ifd_size);
+    let mut append = Vec::with_capacity(local_payload_len);
+    let mut next_data_offset = absolute_offset + 2 + entry_count * 12 + 4;
+
+    write_u16(entry_count as u16, &mut buf, endian);
+    for tag in &encoded {
+        if tag.tagid == 0x8769 || tag.tagid == 0x8825 {
+            write_u16(tag.tagid, &mut buf, endian);
+            write_u16(4, &mut buf, endian);
+            write_u32(1, &mut buf, endian);
+            let offset = if tag.tagid == 0x8769 {
+                exif_offset.unwrap()
+            } else {
+                gps_offset.unwrap()
+            };
+            write_u32(offset as u32, &mut buf, endian);
+            continue;
+        }
+
+        serialize_encoded_tag(&mut buf, &mut append, tag, &mut next_data_offset, endian)?;
+    }
+    write_u32(next_ifd_offset, &mut buf, endian);
+    buf.append(&mut append);
+    if let Some(mut exif_bytes) = exif_bytes {
+        buf.append(&mut exif_bytes);
+    }
+    if let Some(mut gps_bytes) = gps_bytes {
+        buf.append(&mut gps_bytes);
+    }
+    Ok(buf)
+}
+
+/// Serializes one TIFF/EXIF tag into an IFD entry plus optional out-of-line
+/// payload bytes.
 pub fn write_tag(
     buf: &mut Vec<u8>,
     append: &mut Vec<u8>,
@@ -706,275 +1061,112 @@ pub fn write_tag(
     last_offset: &mut usize,
     endian: &Endian,
 ) -> Result<(), Error> {
-    let endian = *endian;
-    write_u16(tag.tagid as u16, buf, endian);
-    match &tag.data {
-        DataPack::Bytes(data) => {
-            write_u16(1, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 4 {
-                write_u32(*last_offset as u32, buf, endian);
-                write_bytes(data, append);
-                *last_offset += data.len();
-            } else {
-                write_bytes(data, buf);
-                for _ in 0..(4 - data.len() as i32) {
-                    write_byte(0, buf);
-                }
-            }
-        }
-        DataPack::Ascii(data) => {
-            write_u16(2, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 4 {
-                write_u32(*last_offset as u32, buf, endian);
-                write_string(data.to_string(), append);
-                *last_offset += data.len();
-            } else {
-                write_string(data.to_string(), buf);
-                for _ in 0..(4 - data.len() as i32) {
-                    write_byte(0, buf);
-                }
-            }
-        }
-        DataPack::Short(data) => {
-            write_u16(3, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 2 {
-                write_u32(*last_offset as u32, buf, endian);
-                for d in data {
-                    write_u16(*d, append, endian);
-                }
-                *last_offset += data.len() * 2;
-            } else {
-                for d in data {
-                    write_u16(*d, buf, endian);
-                }
-                for _ in 0..(2 - data.len() as i32) {
-                    write_u16(0, buf, endian);
-                }
-            }
-        }
-        DataPack::Long(data) => {
-            write_u16(4, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 1 {
-                write_u32(*last_offset as u32, buf, endian);
-                for d in data {
-                    write_u32(*d, append, endian);
-                }
-                *last_offset += data.len() * 4;
-            } else {
-                write_u32(data[0], buf, endian);
-            }
-        }
-        DataPack::Rational(data) => {
-            write_u16(5, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            write_u32(*last_offset as u32, buf, endian);
-            for d in data {
-                write_u32(d.n, append, endian);
-                write_u32(d.d, append, endian);
-            }
-            *last_offset += data.len() * 4;
-        }
-        DataPack::SRational(data) => {
-            write_u32(*last_offset as u32, buf, endian);
-            for d in data {
-                write_i32(d.n, append, endian);
-                write_i32(d.d, append, endian);
-            }
-            *last_offset += data.len() * 4;
-        }
-        DataPack::Undef(data) => {
-            write_u16(7, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 4 {
-                write_u32(*last_offset as u32, buf, endian);
-                write_bytes(data, append);
-                *last_offset += data.len();
-            } else {
-                write_bytes(data, buf);
-                for _ in 0..(4 - data.len() as i32) {
-                    write_byte(0, buf);
-                }
-            }
-        }
-        DataPack::Unkown(data) => {
-            write_u16(7, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 4 {
-                write_u32(*last_offset as u32, buf, endian);
-                write_bytes(data, append);
-                *last_offset += data.len();
-            } else {
-                write_bytes(data, buf);
-                for _ in 0..(4 - data.len() as i32) {
-                    write_byte(0, buf);
-                }
-            }
-        }
-        DataPack::Float(data) => {
-            write_u16(11, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 1 {
-                write_u32(*last_offset as u32, buf, endian);
-                for d in data {
-                    write_f32(*d, append, endian);
-                }
-                *last_offset += data.len() * 4;
-            } else {
-                write_f32(data[0], buf, endian);
-            }
-        }
-        DataPack::Double(data) => {
-            write_u16(12, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            write_u32(*last_offset as u32, buf, endian);
-            for d in data {
-                write_f64(*d, append, endian);
-            }
-        }
-        DataPack::SByte(data) => {
-            write_u16(6, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 4 {
-                write_u32(*last_offset as u32, buf, endian);
-                for d in data {
-                    write_i8(*d, append);
-                }
-                *last_offset += data.len();
-            } else {
-                for d in data {
-                    write_i8(*d, append);
-                }
-                for _ in 0..(4 - data.len() as i32) {
-                    write_byte(0, buf);
-                }
-            }
-        }
-        DataPack::SShort(data) => {
-            write_u16(8, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 2 {
-                write_u32(*last_offset as u32, buf, endian);
-                for d in data {
-                    write_i16(*d, append, endian);
-                }
-                *last_offset += data.len() * 2;
-            } else {
-                for d in data {
-                    write_i16(*d, buf, endian);
-                }
-                for _ in 0..(2 - data.len() as i32) {
-                    write_u16(0, buf, endian);
-                }
-            }
-        }
-        DataPack::SLong(data) => {
-            write_u16(9, buf, endian);
-            write_u32(data.len() as u32, buf, endian);
-            if data.len() > 1 {
-                write_u32(*last_offset as u32, buf, endian);
-                for d in data {
-                    write_i32(*d, append, endian);
-                }
-                *last_offset += data.len() * 4;
-            } else {
-                write_i32(data[0], buf, endian);
-            }
-        }
-    }
-    Ok(())
+    let encoded = encode_tag_data(tag, *endian)?;
+    serialize_encoded_tag(buf, append, &encoded, last_offset, *endian)
 }
 
-pub fn write_tags(buf: &mut Vec<u8>, tags: &TiffHeaders) -> Result<usize, Error> {
-    let endian = tags.endian;
+/// Serializes a [`TiffHeaders`] tree to a complete TIFF byte stream.
+pub fn tiff_headers_to_bytes(tags: &TiffHeaders) -> Result<Vec<u8>, Error> {
+    tiff_pages_to_bytes(std::slice::from_ref(tags))
+}
+
+pub(crate) fn tiff_pages_to_bytes(pages: &[TiffHeaders]) -> Result<Vec<u8>, Error> {
+    let Some(first) = pages.first() else {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "TIFF requires at least one page".to_string(),
+        )));
+    };
+
+    let endian = first.endian;
+    let version = first.version;
+    let mut offsets = Vec::with_capacity(pages.len());
+    let mut next_offset = 8usize;
+    for page in pages {
+        if page.endian != endian {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "all TIFF pages must use the same endian".to_string(),
+            )));
+        }
+        if page.version != version {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "all TIFF pages must use the same version".to_string(),
+            )));
+        }
+
+        offsets.push(next_offset);
+        let ifd = serialize_ifd(
+            &page.headers,
+            page.exif.as_ref(),
+            page.gps.as_ref(),
+            next_offset,
+            0,
+            endian,
+        )?;
+        next_offset = next_offset.checked_add(ifd.len()).ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "TIFF header size overflow".to_string(),
+            )) as Error
+        })?;
+    }
+
+    let mut buf = Vec::new();
     match endian {
-        Endian::BigEndian => write_string("MM".to_string(), buf),
-        Endian::LittleEndian => write_string("II".to_string(), buf),
+        Endian::BigEndian => write_bytes(b"MM", &mut buf),
+        Endian::LittleEndian => write_bytes(b"II", &mut buf),
     }
-    write_u16(42, buf, endian);
-    write_u32(8, buf, endian); // 2 + 2 + 4
-    let mut add_num = if tags.exif.is_some() { 1 } else { 0 };
-    add_num += if tags.gps.is_some() { 1 } else { 0 };
+    write_u16(version, &mut buf, endian);
+    write_u32(8, &mut buf, endian);
 
-    let mut last_offset = 8 + (tags.headers.len() + add_num) * 12 + 4;
-    let mut append: Vec<u8> = vec![];
-    write_u16(tags.headers.len() as u16, buf, endian);
-    let mut image_offset = 0;
-    let mut offset = 8;
-    let mut exif_write = false;
-    let mut gps_write = false;
-
-    for tag in &tags.headers {
-        if tag.tagid == 0x273 {
-            // StripOffsets
-            image_offset = offset + 8;
-        }
-        if tag.tagid > 0x8769 && !exif_write {
-            if let Some(exif) = &tags.exif {
-                let extra_offset = last_offset;
-                let mut buf_extra = vec![];
-                let mut append_extra = vec![];
-                write_u16(exif.len() as u16, &mut buf_extra, endian);
-                for tag in exif {
-                    write_tag(
-                        &mut buf_extra,
-                        &mut append_extra,
-                        tag,
-                        &mut last_offset,
-                        &endian,
-                    )?;
-                }
-                last_offset = extra_offset + buf.len() + append_extra.len() + 2;
-                buf_extra.append(&mut append_extra);
-                let length = buf_extra.len();
-                let tag = TiffHeader {
-                    tagid: 0x8769,
-                    data: DataPack::Undef(buf_extra),
-                    length,
-                };
-                write_tag(buf, &mut append, &tag, &mut last_offset, &endian)?;
-                offset += 12;
-            }
-            exif_write = true;
-        }
-
-        if tag.tagid > 0x8825 && !gps_write {
-            if let Some(exif) = &tags.exif {
-                let extra_offset = last_offset;
-                let mut buf_extra = vec![];
-                let mut append_extra = vec![];
-                write_u16(exif.len() as u16, &mut buf_extra, endian);
-                for tag in exif {
-                    write_tag(
-                        &mut buf_extra,
-                        &mut append_extra,
-                        tag,
-                        &mut last_offset,
-                        &endian,
-                    )?;
-                }
-                last_offset = extra_offset + buf.len() + append_extra.len() + 2;
-                buf_extra.append(&mut append_extra);
-                let length = buf_extra.len();
-                let tag = TiffHeader {
-                    tagid: 0x8769,
-                    data: DataPack::Undef(buf_extra),
-                    length,
-                };
-                write_tag(buf, &mut append, &tag, &mut last_offset, &endian)?;
-                offset += 12;
-            }
-            gps_write = true;
-        }
-        if tag.tagid != 0x8825 || tag.tagid != 0x8769 {
-            write_tag(buf, &mut append, tag, &mut last_offset, &endian)?;
-        }
-        offset += 12;
+    for (index, page) in pages.iter().enumerate() {
+        let next_ifd_offset = if let Some(next) = offsets.get(index + 1) {
+            u32::try_from(*next).map_err(|_| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::InvalidParameter,
+                    "TIFF next IFD offset exceeds 32-bit range".to_string(),
+                )) as Error
+            })?
+        } else {
+            0
+        };
+        let mut ifd = serialize_ifd(
+            &page.headers,
+            page.exif.as_ref(),
+            page.gps.as_ref(),
+            offsets[index],
+            next_ifd_offset,
+            endian,
+        )?;
+        buf.append(&mut ifd);
     }
-    write_u32(0, buf, endian); //IFD end
+
+    Ok(buf)
+}
+
+/// Serializes a [`TiffHeaders`] tree to an EXIF-compatible TIFF byte stream.
+pub fn exif_to_bytes(tags: &TiffHeaders) -> Result<Vec<u8>, Error> {
+    tiff_headers_to_bytes(tags)
+}
+
+/// Serializes a [`TiffHeaders`] tree into `buf` and returns the first
+/// `StripOffsets` value when present.
+pub fn write_tags(buf: &mut Vec<u8>, tags: &TiffHeaders) -> Result<usize, Error> {
+    let image_offset = tags
+        .headers
+        .iter()
+        .find(|tag| tag.tagid == 0x0111)
+        .and_then(|tag| match &tag.data {
+            DataPack::Short(values) => values.first().map(|value| *value as usize),
+            DataPack::Long(values) => values.first().map(|value| *value as usize),
+            _ => None,
+        })
+        .unwrap_or(0);
+
+    let mut bytes = tiff_headers_to_bytes(tags)?;
+    buf.append(&mut bytes);
     Ok(image_offset)
 }
 
@@ -1274,9 +1466,6 @@ fn read_tag(
 
         for _i in 0..tag {
             let tagid = reader.read_u16()?;
-            if tagid == 0x0 {
-                break;
-            }
             let datatype = reader.read_u16()? as usize;
             let datalen = reader.read_u32()? as usize;
             if cfg!(debug_assertions) {

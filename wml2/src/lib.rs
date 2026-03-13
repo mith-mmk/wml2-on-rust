@@ -9,7 +9,7 @@
 //! `wml2` exposes a callback-based decoding API in [`draw`] and built-in
 //! buffer-backed helpers via [`draw::ImageBuffer`]. The crate can decode still
 //! images and animations into RGBA buffers, preserve metadata, and encode BMP,
-//! JPEG, PNG/APNG, and WebP output.
+//! JPEG, PNG/APNG, TIFF, and WebP output.
 //!
 //! # Example
 //! ```rust

@@ -597,10 +597,27 @@ pub fn draw(
             "Data empty.".to_string(),
         )));
     }
+    draw_strip(data, 0, header.height as usize, option, header)
+}
+
+fn init_canvas(
+    option: &mut DecodeOptions,
+    header: &Tiff,
+    animation: bool,
+) -> Result<(), Error> {
+    let init = if animation {
+        Some(InitOptions {
+            loop_count: 1,
+            background: None,
+            animation: true,
+        })
+    } else {
+        None
+    };
     option
         .drawer
-        .init(header.width as usize, header.height as usize, None)?;
-    draw_strip(data, 0, header.height as usize, option, header)
+        .init(header.width as usize, header.height as usize, init)?;
+    Ok(())
 }
 
 fn read_strips<'decode, B: BinaryReader>(reader: &mut B, header: &Tiff) -> Result<Vec<u8>, Error> {
@@ -638,11 +655,13 @@ pub fn decode_lzw_compresson<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
     header: &Tiff,
+    initialize: bool,
+    animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
     let is_lsb = header.fill_order == 2; // 1: MSB 2: LSB
-    option
-        .drawer
-        .init(header.width as usize, header.height as usize, None)?;
+    if initialize {
+        init_canvas(option, header, animation)?;
+    }
     let mut y = 0;
     let mut strip = header.rows_per_strip as usize;
     for (i, offset) in header.strip_offsets.iter().enumerate() {
@@ -667,7 +686,12 @@ pub fn decode_packbits_compresson<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
     header: &Tiff,
+    initialize: bool,
+    animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
+    if initialize {
+        init_canvas(option, header, animation)?;
+    }
     let data = read_strips(reader, header)?;
     let data = packbits::decode(&data)?;
     let warnings = draw(&data, option, header)?;
@@ -678,7 +702,12 @@ pub fn decode_deflate_compresson<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
     header: &Tiff,
+    initialize: bool,
+    animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
+    if initialize {
+        init_canvas(option, header, animation)?;
+    }
     let data = read_strips(reader, header)?;
     let res = miniz_oxide::inflate::decompress_to_vec_zlib(&data);
     match res {
@@ -700,7 +729,12 @@ pub fn decode_none_compresson<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
     header: &Tiff,
+    initialize: bool,
+    animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
+    if initialize {
+        init_canvas(option, header, animation)?;
+    }
     let data = read_strips(reader, header)?;
     let warnings = draw(&data, option, header)?;
     Ok(warnings)
@@ -710,10 +744,12 @@ pub fn decode_ccitt_compresson<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
     header: &Tiff,
+    initialize: bool,
+    animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
-    option
-        .drawer
-        .init(header.width as usize, header.height as usize, None)?;
+    if initialize {
+        init_canvas(option, header, animation)?;
+    }
     let warnings = None;
 
     let header = &mut header.clone();
@@ -751,27 +787,29 @@ fn compression_decode<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
     header: &Tiff,
+    initialize: bool,
+    animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
     match header.compression {
         Compression::NoneCompression => {
-            return decode_none_compresson(reader, option, header);
+            return decode_none_compresson(reader, option, header, initialize, animation);
         }
         Compression::LZW => {
-            return decode_lzw_compresson(reader, option, header);
+            return decode_lzw_compresson(reader, option, header, initialize, animation);
         }
         Compression::Jpeg => {
-            return decode_jpeg_compresson(reader, option, header);
+            return decode_jpeg_compresson(reader, option, header, initialize, animation);
         }
         Compression::Packbits => {
-            return decode_packbits_compresson(reader, option, header);
+            return decode_packbits_compresson(reader, option, header, initialize, animation);
         }
         Compression::AdobeDeflate => {
-            return decode_deflate_compresson(reader, option, header);
+            return decode_deflate_compresson(reader, option, header, initialize, animation);
         }
         Compression::CCITTHuffmanRLE
         | Compression::CCITTGroup3Fax
         | Compression::CCITTGroup4Fax => {
-            return decode_ccitt_compresson(reader, option, header);
+            return decode_ccitt_compresson(reader, option, header, initialize, animation);
         }
         _ => Err(Box::new(ImgError::new_const(
             ImgErrorKind::DecodeError,
@@ -824,7 +862,7 @@ pub fn decode<'decode, B: BinaryReader>(
     }
     let mut warnings = None;
 
-    let warn = compression_decode(reader, option, &mut header)?;
+    let warn = compression_decode(reader, option, &mut header, true, count > 1)?;
 
     warnings = ImgWarnings::append(warnings, warn);
 
@@ -852,7 +890,7 @@ pub fn decode<'decode, B: BinaryReader>(
                     }
                 }
                 let header = &mut append.clone();
-                let result = compression_decode(reader, option, header);
+                let result = compression_decode(reader, option, header, false, false);
                 match result {
                     Ok(warn) => {
                         warnings = ImgWarnings::append(warnings, warn);

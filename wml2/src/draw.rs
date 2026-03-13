@@ -757,7 +757,8 @@ pub struct EncodeOptions<'a> {
     pub debug_flag: usize,
     /// Source callback implementation.
     pub drawer: &'a mut dyn PickCallback,
-    /// Encoder-specific options such as JPEG quality.
+    /// Encoder-specific options such as JPEG `quality`, or WebP `quality` and
+    /// `optimize`.
     pub options: Option<HashMap<String, DataMap>>,
 }
 
@@ -825,7 +826,8 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
 /// The output format is selected from the destination extension:
 /// `.png` and `.apng` use the PNG/APNG encoder, `.jpg`/`.jpeg` use the JPEG
 /// encoder, `.bmp` uses the BMP encoder, and `.webp` uses the WebP encoder.
-/// Encoder-specific settings can be passed in `options`.
+/// Encoder-specific settings can be passed in `options`, for example JPEG
+/// `quality`, or WebP `quality` and `optimize`.
 #[cfg(not(target_family = "wasm"))]
 pub fn convert(
     input_file: String,

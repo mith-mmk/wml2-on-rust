@@ -8,20 +8,26 @@ Notice: Specification of this library is not decision.
 - UIはまだない
 
 # 実装例
-wml-test/examplesを参考
+`wml2-test/examples` を参照
 
 ## BMPリーダーのサンプル
 ```
-$ cargo run --example to_bmp --release <inputfile> <output_dir>
+$ cargo run -p wml2-test --example to_bmp --release -- <inputfile> <output_dir>
 ```
 
 ## メタデータリーダーのサンプル
 
 ```
-$ cargo run --example metadata --release <inputfile>
+$ cargo run -p wml2-test --example metadata --release -- <inputfile>
 ```
 
-# サポートフォーマット 0.0.15
+## converter
+
+```
+$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f png|jpeg|bmp|webp] [-q <quality>] [-z <0-9>] [--split]
+```
+
+# サポートフォーマット 0.0.17
 
 |フォーマット|エンコード|デコード|  |
 |------|---|---|--|
@@ -30,7 +36,7 @@ $ cargo run --example metadata --release <inputfile>
 |GIF|x|O|アニメーションGIF対応|
 |PNG|O|O|APNG対応|
 |TIFF|x|O|無圧縮/LZW/Packbits/Jpeg(new)/3G/4G Faxに対応|
-|WEBP|O|O|not support|
+|WEBP|O|O|Pure Rust の静止画/アニメーション decode、静止画/アニメーション encode、lossless/lossy 出力に対応|
 |MAG|x|O||
 |MAKI|x|O|`noretoro` 指定時は無効|
 |PI|x|O|`noretoro` 指定時は無効|
@@ -56,6 +62,15 @@ wml2 = { version = "0.0.17", features = ["noretoro"] }
 
 - 統合テストでは `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat` などの汎用名を利用
 - 著作権上の理由で元のサンプル名は公開向けテストコードでは参照しない
+- 外部 sample のパスは `wml2/tests/test_samples.txt` で任意に指定可能
+- `wml2/tests/test_samples.txt` は `.gitignore` 対象。書式は `wml2/tests/test_samples.example.txt` を参照
+
+# エンコードオプション
+
+- JPEG: `quality`
+- WebP: `optimize` (`0..=9`) と `quality` (`0..=100`, lossy のみ)
+- `draw::convert()` は出力拡張子から encoder を選び、`.webp` も利用可能
+- `wml2-test/examples/converter` は WebP 向け `-z` と、PNG/WebP 向け `--split` をサポート
 
 # 使い方
 - バッファ上にあるイメージをロードする
@@ -183,7 +198,7 @@ pub fn main()-> Result<(),Box<dyn Error>> {
 - 0.0.16
   - webpデコーダ、APNGエンコーダーの追加
 - 0.0.17
-  - webpエンコーダの追加
+  - webpエンコーダ、animated WebP encode、converter の WebP option を追加
 
 # todo
 - Formated Header writer

@@ -5,6 +5,13 @@
 //! coding, simple backward references, and an optional color cache.
 //! The lossy path targets opaque still images and emits a minimal
 //! intra-only `VP8` bitstream.
+//!
+//! When used through [`crate::draw::image_encoder`] or [`crate::draw::convert`],
+//! the built-in adapter reads `quality` and `optimize` from
+//! [`crate::draw::EncodeOptions::options`]. Setting `quality` selects lossy
+//! WebP; omitting it keeps the default lossless path. Animated input is encoded
+//! as animated WebP by consuming the reserved animation metadata produced by
+//! [`crate::draw::ImageBuffer`].
 
 mod bit_writer;
 mod container;
@@ -504,6 +511,13 @@ fn encode_animation(
 }
 
 /// Encodes an image source to still or animated WebP.
+///
+/// Supported `EncodeOptions.options` keys:
+/// - `quality`: lossy quality in `0..=100`
+/// - `optimize`: search effort in `0..=9`
+///
+/// If animation metadata is present, this emits animated WebP; otherwise it
+/// encodes a still image.
 pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     let profile = image.drawer.encode_start(None)?;
     let profile = profile.ok_or_else(|| {

@@ -4,11 +4,12 @@ version = "0.0.18"
 repository = "https://github.com/mith-mmk/wml2-on-rust"
 homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
-description = "WML2 - Web graphic Multi format Library"
+description = "Pure Rust multi-format image decoding and encoding library supporting JPEG, PNG, GIF, WebP, TIFF, and PC-98 legacy formats (MAG, MAKI, PI, PIC)
 edition = "2024"
 rust-version = "1.91"
 license = "MIT"
-keywords = ["image","jpeg","gif","png","bmp","exif","tiff"]
+keywords = ["image","codec","jpeg","codec","png"]
+categories = ["multimedia::images","encoding"]
 
 [lib]
 crate-type = ["rlib"] 

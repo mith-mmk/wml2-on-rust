@@ -29,6 +29,10 @@ pub enum FilesystemCommand {
         request_id: u64,
         path: PathBuf,
     },
+    SetCurrent {
+        request_id: u64,
+        path: PathBuf,
+    },
     Next {
         request_id: u64,
         policy: EndOfFolderOption,
@@ -47,6 +51,7 @@ pub enum FilesystemCommand {
 
 pub enum FilesystemResult {
     NavigatorReady { request_id: u64 },
+    CurrentSet,
     PathResolved { request_id: u64, path: PathBuf },
     NoPath { request_id: u64 },
 }
@@ -72,6 +77,12 @@ impl FileNavigator {
             .unwrap_or(0);
 
         Self { files, current }
+    }
+
+    pub fn from_directory(path: &Path) -> Option<(Self, PathBuf)> {
+        let files = collect_supported_files(path);
+        let first = files.first()?.clone();
+        Some((Self { files, current: 0 }, first))
     }
 
     pub fn current(&self) -> &Path {
@@ -189,6 +200,21 @@ impl FileNavigator {
     }
 }
 
+pub fn resolve_start_path(path: &Path) -> Option<PathBuf> {
+    if path.is_file() {
+        return path
+            .canonicalize()
+            .ok()
+            .or_else(|| Some(path.to_path_buf()));
+    }
+
+    if path.is_dir() {
+        return FileNavigator::from_directory(path).map(|(_, first)| first);
+    }
+
+    None
+}
+
 impl RecursiveIndex {
     fn new(path: &Path) -> Self {
         let current = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
@@ -279,9 +305,23 @@ pub fn spawn_filesystem_worker() -> (Sender<FilesystemCommand>, Receiver<Filesys
             match command_rx.recv_timeout(Duration::from_millis(10)) {
                 Ok(command) => match command {
                     FilesystemCommand::Init { request_id, path } => {
-                        navigator = Some(FileNavigator::from_path(&path));
-                        recursive_index = Some(RecursiveIndex::new(&path));
+                        let start_path = resolve_start_path(&path).unwrap_or(path.clone());
+                        navigator = Some(if path.is_dir() {
+                            FileNavigator::from_directory(&path)
+                                .map(|(nav, _)| nav)
+                                .unwrap_or_else(|| FileNavigator::from_path(&start_path))
+                        } else {
+                            FileNavigator::from_path(&start_path)
+                        });
+                        recursive_index = Some(RecursiveIndex::new(&start_path));
                         let _ = result_tx.send(FilesystemResult::NavigatorReady { request_id });
+                    }
+                    FilesystemCommand::SetCurrent { request_id, path } => {
+                        let start_path = resolve_start_path(&path).unwrap_or(path.clone());
+                        navigator = Some(FileNavigator::from_path(&start_path));
+                        recursive_index = Some(RecursiveIndex::new(&start_path));
+                        let _ = request_id;
+                        let _ = result_tx.send(FilesystemResult::CurrentSet);
                     }
                     FilesystemCommand::Next { request_id, policy } => {
                         let _ = send_nav_result(

@@ -335,6 +335,9 @@ impl ViewerApp {
         self.active_fs_request_id = Some(request_id);
         command = match command {
             FilesystemCommand::Init { path, .. } => FilesystemCommand::Init { request_id, path },
+            FilesystemCommand::SetCurrent { path, .. } => {
+                FilesystemCommand::SetCurrent { request_id, path }
+            }
             FilesystemCommand::Next { policy, .. } => {
                 FilesystemCommand::Next { request_id, policy }
             }
@@ -369,7 +372,12 @@ impl ViewerApp {
                         continue;
                     }
                     if let Some(path) = path {
-                        self.current_path = path;
+                        let request_id = self.alloc_fs_request_id();
+                        self.current_path = path.clone();
+                        let _ = self.fs_tx.send(FilesystemCommand::SetCurrent {
+                            request_id,
+                            path,
+                        });
                     }
                     self.source = source;
                     self.rendered = rendered;
@@ -423,6 +431,7 @@ impl ViewerApp {
                         self.active_fs_request_id = None;
                     }
                 }
+                Ok(FilesystemResult::CurrentSet) => {}
                 Ok(FilesystemResult::PathResolved { request_id, path }) => {
                     if self.active_fs_request_id == Some(request_id) {
                         let _ = self.request_load_path(path);

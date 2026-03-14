@@ -1,4 +1,5 @@
 use crate::drawers::image::{LoadedImage, load_canvas_from_file, resize_loaded_image};
+use crate::filesystem::resolve_start_path;
 use crate::options::*;
 use crate::ui::viewer::ViewerApp;
 use eframe::egui::{self};
@@ -12,9 +13,15 @@ fn load_image(path: &Path) -> Result<LoadedImage, Box<dyn Error>> {
 pub fn run(image_path: PathBuf) -> Result<(), Box<dyn Error>> {
     // todo! configの初期化
     let config = AppConfig::default();
-    let image = load_image(&image_path)?;
+    let start_path = resolve_start_path(&image_path).ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("No supported image found for {}", image_path.display()),
+        )
+    })?;
+    let image = load_image(&start_path)?;
     let rendered = resize_loaded_image(&image, 1.0, config.render.zoom_method)?;
-    let title = format!("wml2viewer - {}", image_path.display());
+    let title = format!("wml2viewer - {}", start_path.display());
 
     // ui::viewer::set_canvas_size(&str);
     // ui::menu::set_title(&str);
@@ -58,7 +65,7 @@ pub fn run(image_path: PathBuf) -> Result<(), Box<dyn Error>> {
                 .send_viewport_cmd(egui::ViewportCommand::InnerSize(window_size));
 
             Ok(Box::new(ViewerApp::new(
-                cc, image_path, image, rendered, config,
+                cc, start_path, image, rendered, config,
             )))
         }),
     )?;

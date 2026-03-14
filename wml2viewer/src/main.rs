@@ -33,6 +33,6 @@ fn usage_error(program: &OsString) -> Box<dyn Error> {
         .to_string_lossy();
     Box::new(io::Error::new(
         io::ErrorKind::InvalidInput,
-        format!("Usage: {program} <filename>"),
+        format!("Usage: {program} <path>"),
     ))
 }

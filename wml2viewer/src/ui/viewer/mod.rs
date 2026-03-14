@@ -1,8 +1,9 @@
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{ImageAlign, LoadedImage, resize_loaded_image};
+use crate::filesystem::FileNavigator;
 use crate::options::AppConfig;
-use crate::ui::viewer::options::{RenderOptions, ViewerOptions};
-use eframe::egui::{self, ColorImage, TextureHandle, TextureOptions, vec2};
+use crate::ui::viewer::options::{BackgroundStyle, RenderOptions, ViewerOptions};
+use eframe::egui::{self, Color32, ColorImage, TextureHandle, TextureOptions, vec2};
 use std::error::Error;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -21,6 +22,8 @@ pub(crate) struct ViewerApp {
     last_frame_at: Instant,
     completed_loops: u32,
 
+    fit_zoom: f32,
+    navigator: FileNavigator,
     last_viewport_size: egui::Vec2,
     frame_counter: usize,
 
@@ -57,6 +60,7 @@ impl ViewerApp {
         path: PathBuf,
         source: LoadedImage,
         rendered: LoadedImage,
+        navigator: FileNavigator,
         config: AppConfig,
     ) -> Self {
         /* todo! Windowのx,y座標を固定 */
@@ -84,6 +88,8 @@ impl ViewerApp {
             last_frame_at: Instant::now(),
             completed_loops: 0,
 
+            fit_zoom: 1.0,
+            navigator,
             last_viewport_size: egui::Vec2::ZERO,
             frame_counter: 0,
 
@@ -113,6 +119,15 @@ impl ViewerApp {
         self.completed_loops = 0;
         self.upload_current_frame();
         Ok(())
+    }
+
+    fn toggle_zoom(&mut self) -> Result<(), Box<dyn Error>> {
+        let target_zoom = if (self.zoom - 1.0).abs() < 0.01 {
+            self.fit_zoom
+        } else {
+            1.0
+        };
+        self.set_zoom(target_zoom)
     }
 
     fn animation_enabled(&self) -> bool {
@@ -173,33 +188,91 @@ impl ViewerApp {
             }
         }
     }
-    /*
-    fn next_image(&mut self) {
-        if let Some(next) = self.image_list.next() {
-            self.load_image(next);
-        }
+
+    fn load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
+        let source = crate::drawers::image::load_canvas_from_file(&path)?;
+        let rendered = resize_loaded_image(&source, self.zoom, self.render_options.zoom_method)?;
+        self.source = source;
+        self.rendered = rendered;
+        self.current_frame = 0;
+        self.completed_loops = 0;
+        self.last_frame_at = Instant::now();
+        self.upload_current_frame();
+        Ok(())
     }
 
-    fn prev_image(&mut self) {
-        if let Some(prev) = self.image_list.prev() {
-            self.load_image(prev);
+    fn reload_current(&mut self) -> Result<(), Box<dyn Error>> {
+        self.load_path(self.navigator.current().to_path_buf())
+    }
+
+    fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
+        if let Some(path) = self.navigator.next() {
+            self.load_path(path)?;
+        }
+        Ok(())
+    }
+
+    fn prev_image(&mut self) -> Result<(), Box<dyn Error>> {
+        if let Some(path) = self.navigator.prev() {
+            self.load_path(path)?;
+        }
+        Ok(())
+    }
+
+    fn first_image(&mut self) -> Result<(), Box<dyn Error>> {
+        if let Some(path) = self.navigator.first() {
+            self.load_path(path)?;
+        }
+        Ok(())
+    }
+
+    fn last_image(&mut self) -> Result<(), Box<dyn Error>> {
+        if let Some(path) = self.navigator.last() {
+            self.load_path(path)?;
+        }
+        Ok(())
+    }
+
+    fn handle_keyboard(&mut self, ctx: &egui::Context) {
+        if ctx.input(|i| i.key_pressed(egui::Key::Plus)) {
+            let _ = self.set_zoom(self.zoom * 1.25);
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::Minus)) {
+            let _ = self.set_zoom(self.zoom / 1.25);
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::Num0) && i.modifiers.shift) {
+            let _ = self.set_zoom(1.0);
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
+            let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
+        }
+        if ctx.input(|i| i.modifiers.shift && i.key_pressed(egui::Key::R)) {
+            let _ = self.reload_current();
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::ArrowRight))
+            || ctx.input(|i| !i.modifiers.shift && i.key_pressed(egui::Key::Space))
+        {
+            let _ = self.next_image();
+        }
+        if ctx.input(|i| {
+            i.key_pressed(egui::Key::ArrowLeft)
+                || (i.modifiers.shift && i.key_pressed(egui::Key::Space))
+        }) {
+            let _ = self.prev_image();
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::Home)) {
+            let _ = self.first_image();
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::End)) {
+            let _ = self.last_image();
         }
     }
-    */
 }
 
 impl eframe::App for ViewerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        /*
-        if ctx.input(|i| i.key_pressed(egui::Key::Space)) {
-           self.next_image();
-        }
-        if ctx.input(|i| i.modifiers.shift && i.key_pressed(egui::Key::Space)) {
-            self.prev_image();
-        }
-
-
-        */
+        self.handle_keyboard(ctx);
 
         let zoom_delta = ctx.input(|i| i.zoom_delta());
 
@@ -210,14 +283,15 @@ impl eframe::App for ViewerApp {
         self.frame_counter += 1;
         self.update_animation(ctx);
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        let panel = egui::CentralPanel::default()
+            .frame(egui::Frame::default().fill(background_color(&self.options.background)));
+        panel.show(ctx, |ui| {
             // inputに引っ越し
             if ui.input(|i| {
                 i.pointer
                     .button_double_clicked(egui::PointerButton::Primary)
             }) {
-                // toggle で 100% -> ScreenFit
-                let _ = self.set_zoom(1.0);
+                let _ = self.toggle_zoom();
             }
 
             let viewport = ui.available_size();
@@ -232,7 +306,7 @@ impl eframe::App for ViewerApp {
                     self.source_size(),
                     &self.render_options.zoom_option,
                 );
-
+                self.fit_zoom = new_zoom.clamp(0.1, 16.0);
                 let _ = self.set_zoom(new_zoom);
             }
 
@@ -287,4 +361,10 @@ fn aligned_offset(viewport: egui::Vec2, draw_size: egui::Vec2, align: ImageAlign
     };
 
     egui::vec2(horizontal, vertical)
+}
+
+fn background_color(style: &BackgroundStyle) -> Color32 {
+    match style {
+        BackgroundStyle::Solid([r, g, b, a]) => Color32::from_rgba_unmultiplied(*r, *g, *b, *a),
+    }
 }

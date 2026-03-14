@@ -1,5 +1,6 @@
 mod app;
 mod drawers;
+mod filesystem;
 pub mod options;
 mod ui;
 use std::env;

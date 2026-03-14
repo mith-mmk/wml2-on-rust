@@ -3,7 +3,7 @@
 */
 
 pub use crate::ui::viewer::options::{
-    RenderOptions, ViewerOptions, WindowOptions, WindowSize, ZoomOption,
+    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, ZoomOption,
 };
 
 #[derive(Clone, Default)]

@@ -6,6 +6,7 @@ use crate::drawers::image::ImageAlign;
 #[derive(Clone)]
 pub struct ViewerOptions {
     pub align: ImageAlign,
+    pub background: BackgroundStyle,
     pub fade: bool,
     pub animation: bool,
 }
@@ -14,10 +15,16 @@ impl Default for ViewerOptions {
     fn default() -> Self {
         Self {
             align: ImageAlign::Center,
+            background: BackgroundStyle::Solid([0, 0, 0, 255]),
             fade: false,
             animation: true,
         }
     }
+}
+
+#[derive(Clone)]
+pub enum BackgroundStyle {
+    Solid([u8; 4]),
 }
 
 #[derive(Clone)]

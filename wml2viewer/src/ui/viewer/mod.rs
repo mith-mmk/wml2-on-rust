@@ -205,6 +205,13 @@ impl ViewerApp {
             .set(canvas_to_color_image(canvas), TextureOptions::LINEAR);
     }
 
+    fn update_window_title(&self, ctx: &egui::Context) {
+        ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
+            "wml2viewer - {}",
+            self.current_path.display()
+        )));
+    }
+
     pub(crate) fn update_animation(&mut self, ctx: &egui::Context) {
         if !self.animation_enabled() {
             return;
@@ -374,10 +381,9 @@ impl ViewerApp {
                     if let Some(path) = path {
                         let request_id = self.alloc_fs_request_id();
                         self.current_path = path.clone();
-                        let _ = self.fs_tx.send(FilesystemCommand::SetCurrent {
-                            request_id,
-                            path,
-                        });
+                        let _ = self
+                            .fs_tx
+                            .send(FilesystemCommand::SetCurrent { request_id, path });
                     }
                     self.source = source;
                     self.rendered = rendered;
@@ -568,6 +574,7 @@ impl ViewerApp {
 
 impl eframe::App for ViewerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.update_window_title(ctx);
         self.poll_worker();
         self.poll_filesystem();
         self.handle_keyboard(ctx);

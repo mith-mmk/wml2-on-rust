@@ -5,4 +5,3 @@ target
 Cargo.lock
 .vscode
 /wml2/tests/test_samples.txt
-wmlviewer

@@ -83,6 +83,8 @@ pub(crate) struct ViewerApp {
     show_settings: bool,
     max_texture_side: usize,
     texture_display_scale: f32,
+    pending_resize_after_load: bool,
+    pending_fit_recalc: bool,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -164,6 +166,8 @@ impl ViewerApp {
             show_settings: false,
             max_texture_side: cc.egui_ctx.input(|i| i.max_texture_side),
             texture_display_scale: 1.0,
+            pending_resize_after_load: false,
+            pending_fit_recalc: false,
         };
 
         let _ = this.init_filesystem(path);
@@ -342,6 +346,7 @@ impl ViewerApp {
 
     fn request_resize_current(&mut self) -> Result<(), Box<dyn Error>> {
         if matches!(self.active_request, Some(ActiveRenderRequest::Load(_))) {
+            self.pending_resize_after_load = true;
             return Ok(());
         }
         let request_id = self.alloc_request_id();
@@ -440,6 +445,10 @@ impl ViewerApp {
                         self.loading_message = None;
                     }
                     self.active_request = None;
+                    if self.pending_resize_after_load {
+                        self.pending_resize_after_load = false;
+                        let _ = self.request_resize_current();
+                    }
                 }
                 Ok(RenderResult::Failed {
                     request_id,
@@ -769,7 +778,7 @@ impl ViewerApp {
             });
         self.show_settings = open;
         if zoom_option_changed {
-            self.last_viewport_size = egui::Vec2::ZERO;
+            self.pending_fit_recalc = true;
         }
         if rerender_requested {
             let _ = self.request_resize_current();
@@ -807,10 +816,11 @@ impl eframe::App for ViewerApp {
 
             let viewport = ui.available_size();
 
-            if viewport != self.last_viewport_size
+            if (viewport != self.last_viewport_size || self.pending_fit_recalc)
                 && !matches!(self.render_options.zoom_option, ZoomOption::None)
             {
                 self.last_viewport_size = viewport;
+                self.pending_fit_recalc = false;
 
                 let new_zoom = calc_fit_zoom(
                     viewport,

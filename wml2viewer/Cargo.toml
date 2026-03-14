@@ -1,0 +1,13 @@
+[package]
+name = "wml2viewer"
+version = "0.0.1"
+edition = "2024"
+
+license = "MIT"
+description = "Minimal native image viewer built with egui and wml2"
+authors = ["MITH@mmk"]
+publish = false
+
+[dependencies]
+eframe = "0.33"
+wml2 = { path = "../wml2", features = ["multithread", "idct_llm"] }

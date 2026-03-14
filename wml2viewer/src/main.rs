@@ -1,5 +1,6 @@
 mod app;
 mod drawers;
+pub mod options;
 mod ui;
 use std::env;
 use std::error::Error;

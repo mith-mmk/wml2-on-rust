@@ -1,26 +1,15 @@
 use crate::drawers::canvas::Canvas;
-use crate::drawers::image::LoadedImage;
-use std::time::{Duration, Instant};
-
+use crate::drawers::image::{ImageAlign, LoadedImage, resize_loaded_image};
+use crate::options::AppConfig;
+use crate::ui::viewer::options::{RenderOptions, ViewerOptions};
 use eframe::egui::{self, ColorImage, TextureHandle, TextureOptions, vec2};
 use std::error::Error;
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
+pub mod options;
+use options::ZoomOption;
 
 #[derive(Clone)]
-pub(crate) struct ViewerOptions {
-    pub(crate) zoom_option: ZoomOption,
-}
-
-#[derive(Clone)]
-pub(crate) enum ZoomOption {
-    None,
-    FitWidth,
-    FitHeight,
-    FitScreen,
-    FitScreenIncludeSmaller,
-    FitScreenOnlySmaller,
-}
-
 pub(crate) struct ViewerApp {
     source: LoadedImage,
     rendered: LoadedImage,
@@ -35,6 +24,7 @@ pub(crate) struct ViewerApp {
     last_viewport_size: egui::Vec2,
     frame_counter: usize,
 
+    render_options: RenderOptions,
     options: ViewerOptions,
 }
 
@@ -53,10 +43,10 @@ fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOpti
         ZoomOption::FitWidth => zoom_w,
         ZoomOption::FitHeight => zoom_h,
         ZoomOption::FitScreen => zoom_w.min(zoom_h),
-        ZoomOption::FitScreenIncludeSmaller => zoom_w.min(zoom_h).min(1.0),
+        ZoomOption::FitScreenIncludeSmaller => zoom_w.min(zoom_h),
         ZoomOption::FitScreenOnlySmaller => {
             let fit = zoom_w.min(zoom_h);
-            if fit > 1.0 { fit } else { 1.0 }
+            if fit < 1.0 { fit } else { 1.0 }
         }
     }
 }
@@ -67,19 +57,12 @@ impl ViewerApp {
         path: PathBuf,
         source: LoadedImage,
         rendered: LoadedImage,
-        options: Option<ViewerOptions>,
+        config: AppConfig,
     ) -> Self {
+        /* todo! Windowのx,y座標を固定 */
         let color_image = canvas_to_color_image(rendered.frame_canvas(0));
 
-        //let source_size = vec2(source.canvas.width() as f32, source.canvas.height() as f32);
-
-        let zoom_option = options
-            .as_ref()
-            .map(|o| o.zoom_option.clone())
-            .unwrap_or(ZoomOption::FitScreen);
-
         let zoom = 1.0;
-
         let texture_name = path
             .file_name()
             .and_then(|name| name.to_str())
@@ -104,7 +87,8 @@ impl ViewerApp {
             last_viewport_size: egui::Vec2::ZERO,
             frame_counter: 0,
 
-            options: options.unwrap_or(ViewerOptions { zoom_option }),
+            render_options: config.render,
+            options: config.viewer,
         }
     }
 
@@ -115,19 +99,43 @@ impl ViewerApp {
         )
     }
     pub(crate) fn set_zoom(&mut self, zoom: f32) -> Result<(), Box<dyn Error>> {
-        self.zoom = zoom.clamp(0.1, 16.0);
+        let zoom = zoom.clamp(0.1, 16.0);
+        if (zoom - self.zoom).abs() < f32::EPSILON {
+            return Ok(());
+        }
+
+        self.rendered = resize_loaded_image(&self.source, zoom, self.render_options.zoom_method)?;
+        self.current_frame = self
+            .current_frame
+            .min(self.rendered.frame_count().saturating_sub(1));
+        self.zoom = zoom;
+        self.last_frame_at = Instant::now();
+        self.completed_loops = 0;
+        self.upload_current_frame();
         Ok(())
     }
 
+    fn animation_enabled(&self) -> bool {
+        self.options.animation && self.rendered.is_animated()
+    }
+
+    fn current_canvas(&self) -> &Canvas {
+        if self.animation_enabled() {
+            self.rendered.frame_canvas(self.current_frame)
+        } else {
+            &self.rendered.canvas
+        }
+    }
+
     pub(crate) fn upload_current_frame(&mut self) {
-        let canvas = self.rendered.frame_canvas(self.current_frame);
+        let canvas = self.current_canvas();
 
         self.texture
             .set(canvas_to_color_image(canvas), TextureOptions::LINEAR);
     }
 
     pub(crate) fn update_animation(&mut self, ctx: &egui::Context) {
-        if !self.rendered.is_animated() {
+        if !self.animation_enabled() {
             return;
         }
 
@@ -178,7 +186,6 @@ impl ViewerApp {
         }
     }
     */
-
 }
 
 impl eframe::App for ViewerApp {
@@ -197,36 +204,46 @@ impl eframe::App for ViewerApp {
         let zoom_delta = ctx.input(|i| i.zoom_delta());
 
         if zoom_delta != 1.0 {
-            self.set_zoom(self.zoom * zoom_delta);
+            let _ = self.set_zoom(self.zoom * zoom_delta);
         }
 
         self.frame_counter += 1;
         self.update_animation(ctx);
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            // inputに引っ越し
             if ui.input(|i| {
                 i.pointer
                     .button_double_clicked(egui::PointerButton::Primary)
             }) {
-                self.set_zoom(1.0);
+                // toggle で 100% -> ScreenFit
+                let _ = self.set_zoom(1.0);
             }
 
             let viewport = ui.available_size();
 
-            if viewport != self.last_viewport_size {
+            if viewport != self.last_viewport_size
+                && !matches!(self.render_options.zoom_option, ZoomOption::None)
+            {
                 self.last_viewport_size = viewport;
 
-                let new_zoom =
-                    calc_fit_zoom(viewport, self.source_size(), &self.options.zoom_option);
+                let new_zoom = calc_fit_zoom(
+                    viewport,
+                    self.source_size(),
+                    &self.render_options.zoom_option,
+                );
 
                 let _ = self.set_zoom(new_zoom);
             }
 
-            let draw_size = self.source_size() * self.zoom;
+            let draw_size = vec2(
+                self.current_canvas().width() as f32,
+                self.current_canvas().height() as f32,
+            );
             egui::ScrollArea::both()
                 .auto_shrink([false, false])
                 .show(ui, |ui| {
-                    let offset = (viewport - draw_size) * 0.5;
+                    let offset = aligned_offset(viewport, draw_size, self.options.align);
 
                     ui.add_space(offset.y.max(0.0));
 
@@ -240,7 +257,6 @@ impl eframe::App for ViewerApp {
                 });
         });
     }
-
 }
 
 fn canvas_to_color_image(canvas: &Canvas) -> ColorImage {
@@ -248,4 +264,27 @@ fn canvas_to_color_image(canvas: &Canvas) -> ColorImage {
         [canvas.width() as usize, canvas.height() as usize],
         canvas.buffer(),
     )
+}
+
+fn aligned_offset(viewport: egui::Vec2, draw_size: egui::Vec2, align: ImageAlign) -> egui::Vec2 {
+    let horizontal = match align {
+        ImageAlign::Center | ImageAlign::Up | ImageAlign::Bottom => {
+            (viewport.x - draw_size.x) * 0.5
+        }
+        ImageAlign::Right | ImageAlign::RightUp | ImageAlign::RightBottom => {
+            viewport.x - draw_size.x
+        }
+        _ => 0.0,
+    };
+    let vertical = match align {
+        ImageAlign::Center | ImageAlign::Left | ImageAlign::Right => {
+            (viewport.y - draw_size.y) * 0.5
+        }
+        ImageAlign::LeftBottom | ImageAlign::RightBottom | ImageAlign::Bottom => {
+            viewport.y - draw_size.y
+        }
+        _ => 0.0,
+    };
+
+    egui::vec2(horizontal, vertical)
 }

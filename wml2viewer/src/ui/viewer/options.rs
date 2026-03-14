@@ -1,0 +1,67 @@
+//! Viewer option models derived from `SPEC.md`.
+
+use crate::drawers::affine::InterpolationAlgorithm;
+use crate::drawers::image::ImageAlign;
+
+#[derive(Clone)]
+pub struct ViewerOptions {
+    pub align: ImageAlign,
+    pub fade: bool,
+    pub animation: bool,
+}
+
+impl Default for ViewerOptions {
+    fn default() -> Self {
+        Self {
+            align: ImageAlign::Center,
+            fade: false,
+            animation: true,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct RenderOptions {
+    pub zoom_option: ZoomOption,
+    pub zoom_method: InterpolationAlgorithm,
+}
+
+impl Default for RenderOptions {
+    fn default() -> Self {
+        Self {
+            zoom_option: ZoomOption::FitScreen,
+            zoom_method: InterpolationAlgorithm::Bilinear,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct WindowOptions {
+    pub fullscreen: bool,
+    pub size: WindowSize,
+}
+
+impl Default for WindowOptions {
+    fn default() -> Self {
+        Self {
+            fullscreen: false,
+            size: WindowSize::Relative(0.8),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum WindowSize {
+    Relative(f32),
+    Exact { width: f32, height: f32 },
+}
+
+#[derive(Clone)]
+pub enum ZoomOption {
+    None,
+    FitWidth,
+    FitHeight,
+    FitScreen,
+    FitScreenIncludeSmaller,
+    FitScreenOnlySmaller,
+}

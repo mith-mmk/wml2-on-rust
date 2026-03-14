@@ -25,6 +25,11 @@ impl Default for ViewerOptions {
 #[derive(Clone)]
 pub enum BackgroundStyle {
     Solid([u8; 4]),
+    Tile {
+        color1: [u8; 4],
+        color2: [u8; 4],
+        size: u32,
+    },
 }
 
 #[derive(Clone)]

@@ -1,9 +1,10 @@
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{ImageAlign, LoadedImage, resize_loaded_image};
 use crate::filesystem::FileNavigator;
-use crate::options::AppConfig;
+use crate::options::{AppConfig, KeyBinding, ViewerAction};
 use crate::ui::viewer::options::{BackgroundStyle, RenderOptions, ViewerOptions};
 use eframe::egui::{self, Color32, ColorImage, TextureHandle, TextureOptions, vec2};
+use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -29,6 +30,7 @@ pub(crate) struct ViewerApp {
 
     render_options: RenderOptions,
     options: ViewerOptions,
+    keymap: HashMap<KeyBinding, ViewerAction>,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -95,6 +97,7 @@ impl ViewerApp {
 
             render_options: config.render,
             options: config.viewer,
+            keymap: config.input.merged_with_defaults(),
         }
     }
 
@@ -234,38 +237,111 @@ impl ViewerApp {
     }
 
     fn handle_keyboard(&mut self, ctx: &egui::Context) {
-        if ctx.input(|i| i.key_pressed(egui::Key::Plus)) {
-            let _ = self.set_zoom(self.zoom * 1.25);
+        let triggered = self.collect_triggered_actions(ctx);
+        for action in triggered {
+            match action {
+                ViewerAction::ZoomIn => {
+                    let _ = self.set_zoom(self.zoom * 1.25);
+                }
+                ViewerAction::ZoomOut => {
+                    let _ = self.set_zoom(self.zoom / 1.25);
+                }
+                ViewerAction::ZoomReset => {
+                    let _ = self.set_zoom(1.0);
+                }
+                ViewerAction::ZoomToggle => {
+                    let _ = self.toggle_zoom();
+                }
+                ViewerAction::ToggleFullscreen => {
+                    let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
+                }
+                ViewerAction::Reload => {
+                    let _ = self.reload_current();
+                }
+                ViewerAction::NextImage => {
+                    let _ = self.next_image();
+                }
+                ViewerAction::PrevImage => {
+                    let _ = self.prev_image();
+                }
+                ViewerAction::FirstImage => {
+                    let _ = self.first_image();
+                }
+                ViewerAction::LastImage => {
+                    let _ = self.last_image();
+                }
+                ViewerAction::ToggleAnimation => {
+                    self.options.animation = !self.options.animation;
+                    self.current_frame = 0;
+                    self.last_frame_at = Instant::now();
+                    self.upload_current_frame();
+                }
+            }
         }
-        if ctx.input(|i| i.key_pressed(egui::Key::Minus)) {
-            let _ = self.set_zoom(self.zoom / 1.25);
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::Num0) && i.modifiers.shift) {
-            let _ = self.set_zoom(1.0);
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
-            let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
-            ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
-        }
-        if ctx.input(|i| i.modifiers.shift && i.key_pressed(egui::Key::R)) {
-            let _ = self.reload_current();
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::ArrowRight))
-            || ctx.input(|i| !i.modifiers.shift && i.key_pressed(egui::Key::Space))
-        {
-            let _ = self.next_image();
-        }
-        if ctx.input(|i| {
-            i.key_pressed(egui::Key::ArrowLeft)
-                || (i.modifiers.shift && i.key_pressed(egui::Key::Space))
-        }) {
-            let _ = self.prev_image();
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::Home)) {
-            let _ = self.first_image();
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::End)) {
-            let _ = self.last_image();
+    }
+
+    fn collect_triggered_actions(&self, ctx: &egui::Context) -> Vec<ViewerAction> {
+        self.keymap
+            .iter()
+            .filter_map(|(binding, action)| {
+                self.binding_pressed(ctx, binding).then(|| action.clone())
+            })
+            .collect()
+    }
+
+    fn binding_pressed(&self, ctx: &egui::Context, binding: &KeyBinding) -> bool {
+        ctx.input(|i| {
+            let modifiers = i.modifiers;
+            if modifiers.shift != binding.shift
+                || modifiers.ctrl != binding.ctrl
+                || modifiers.alt != binding.alt
+            {
+                return false;
+            }
+            match key_name_to_egui(&binding.key) {
+                Some(key) => i.key_pressed(key),
+                None => false,
+            }
+        })
+    }
+
+    fn paint_background(&self, ui: &mut egui::Ui, rect: egui::Rect) {
+        match &self.options.background {
+            BackgroundStyle::Solid(color) => {
+                ui.painter().rect_filled(rect, 0.0, rgba_to_color32(*color));
+            }
+            BackgroundStyle::Tile {
+                color1,
+                color2,
+                size,
+            } => {
+                let size = (*size).max(1) as f32;
+                let color1 = rgba_to_color32(*color1);
+                let color2 = rgba_to_color32(*color2);
+                let mut y = rect.top();
+                let mut row = 0_u32;
+                while y < rect.bottom() {
+                    let mut x = rect.left();
+                    let mut col = 0_u32;
+                    while x < rect.right() {
+                        let color = if (row + col).is_multiple_of(2) {
+                            color1
+                        } else {
+                            color2
+                        };
+                        let tile = egui::Rect::from_min_size(
+                            egui::pos2(x, y),
+                            egui::vec2(size.min(rect.right() - x), size.min(rect.bottom() - y)),
+                        );
+                        ui.painter().rect_filled(tile, 0.0, color);
+                        x += size;
+                        col += 1;
+                    }
+                    y += size;
+                    row += 1;
+                }
+            }
         }
     }
 }
@@ -283,9 +359,9 @@ impl eframe::App for ViewerApp {
         self.frame_counter += 1;
         self.update_animation(ctx);
 
-        let panel = egui::CentralPanel::default()
-            .frame(egui::Frame::default().fill(background_color(&self.options.background)));
+        let panel = egui::CentralPanel::default().frame(egui::Frame::NONE);
         panel.show(ctx, |ui| {
+            self.paint_background(ui, ui.max_rect());
             // inputに引っ越し
             if ui.input(|i| {
                 i.pointer
@@ -363,8 +439,24 @@ fn aligned_offset(viewport: egui::Vec2, draw_size: egui::Vec2, align: ImageAlign
     egui::vec2(horizontal, vertical)
 }
 
-fn background_color(style: &BackgroundStyle) -> Color32 {
-    match style {
-        BackgroundStyle::Solid([r, g, b, a]) => Color32::from_rgba_unmultiplied(*r, *g, *b, *a),
+fn rgba_to_color32([r, g, b, a]: [u8; 4]) -> Color32 {
+    Color32::from_rgba_unmultiplied(r, g, b, a)
+}
+
+fn key_name_to_egui(key: &str) -> Option<egui::Key> {
+    match key {
+        "Plus" => Some(egui::Key::Plus),
+        "Minus" => Some(egui::Key::Minus),
+        "Num0" => Some(egui::Key::Num0),
+        "Enter" => Some(egui::Key::Enter),
+        "R" => Some(egui::Key::R),
+        "Space" => Some(egui::Key::Space),
+        "ArrowRight" => Some(egui::Key::ArrowRight),
+        "ArrowLeft" => Some(egui::Key::ArrowLeft),
+        "Home" => Some(egui::Key::Home),
+        "End" => Some(egui::Key::End),
+        "G" => Some(egui::Key::G),
+        "C" => Some(egui::Key::C),
+        _ => None,
     }
 }

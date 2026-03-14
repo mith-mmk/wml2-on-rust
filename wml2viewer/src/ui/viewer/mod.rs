@@ -60,6 +60,7 @@ fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOpti
         }
     }
 }
+
 impl ViewerApp {
     pub(crate) fn new(
         cc: &eframe::CreationContext<'_>,
@@ -164,14 +165,52 @@ impl ViewerApp {
             }
         }
     }
+    /*
+    fn next_image(&mut self) {
+        if let Some(next) = self.image_list.next() {
+            self.load_image(next);
+        }
+    }
+
+    fn prev_image(&mut self) {
+        if let Some(prev) = self.image_list.prev() {
+            self.load_image(prev);
+        }
+    }
+    */
+
 }
 
 impl eframe::App for ViewerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        /*
+        if ctx.input(|i| i.key_pressed(egui::Key::Space)) {
+           self.next_image();
+        }
+        if ctx.input(|i| i.modifiers.shift && i.key_pressed(egui::Key::Space)) {
+            self.prev_image();
+        }
+
+
+        */
+
+        let zoom_delta = ctx.input(|i| i.zoom_delta());
+
+        if zoom_delta != 1.0 {
+            self.set_zoom(self.zoom * zoom_delta);
+        }
+
         self.frame_counter += 1;
         self.update_animation(ctx);
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            if ui.input(|i| {
+                i.pointer
+                    .button_double_clicked(egui::PointerButton::Primary)
+            }) {
+                self.set_zoom(1.0);
+            }
+
             let viewport = ui.available_size();
 
             if viewport != self.last_viewport_size {
@@ -201,6 +240,7 @@ impl eframe::App for ViewerApp {
                 });
         });
     }
+
 }
 
 fn canvas_to_color_image(canvas: &Canvas) -> ColorImage {

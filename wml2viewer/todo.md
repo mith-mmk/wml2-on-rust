@@ -36,7 +36,9 @@
 - [x] filesystem worker 分離
 - [x] render worker 分離
 - [x] ディレクトリ単位 cache
-- [ ] ネットワークフォルダでの待ち時間をさらに短縮
+- [x] ネットワークフォルダでの待ち時間(～100)
+- [x] ネットワークフォルダでの待ち時間(～1000)
+- [ ] ネットワークフォルダでの待ち時間をさらに短縮(1000～1万) 後回し
 
 ### viewer / render
 - [x] `viewer.align`
@@ -66,10 +68,17 @@
 - [x] `input.key_mapping` 用の内部 action を作る
 - [x] デフォルトキー設定を定義する
 - [x] egui input から action dispatch する
+- [ ] SPACEをプレスしたままの状態だと画像が表示されないので適度なWAITを入れる
+- [ ] シングルクリックで次の画面を表示
 - [ ] 未実装 action を no-op として整理する
 - [ ] `PageUp` / `PageDown` のフォルダ移動
 - [ ] `F1` help
 - [ ] `P` setting
+
+### 1-3. 設定画面の先行タスク
+- [ ] option menu の土台
+- [ ] viewer / render / window の編集 UI
+- [ ] 適用とキャンセル
 
 ## 2. viewer / render
 
@@ -127,9 +136,7 @@
 
 ## 8. 設定画面
 
-- [ ] option menu の土台
-- [ ] viewer / render / window の編集 UI
-- [ ] 適用とキャンセル
+- [ ] 1-3 が終わったら config import/export と接続する
 
 ## 9. 設定に付随する機能
 
@@ -154,6 +161,6 @@
 
 ## 次に着手する候補
 
-1. network share での `RECURSIVE` / `NEXT` の実測ログ追加
-2. `navigation.sort` 実装
-3. ListedFile parser
+1. SPACE長押し時の wait / repeat 制御
+2. シングルクリックで次の画面を表示
+3. 設定画面の土台

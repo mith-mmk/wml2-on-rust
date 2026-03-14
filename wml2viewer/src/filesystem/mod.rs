@@ -1,7 +1,9 @@
+use std::collections::VecDeque;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::thread;
+use std::time::Duration;
 
 use crate::options::EndOfFolderOption;
 
@@ -13,6 +15,13 @@ const SUPPORTED_EXTENSIONS: &[&str] = &[
 pub struct FileNavigator {
     files: Vec<PathBuf>,
     current: usize,
+}
+
+struct RecursiveIndex {
+    files: Vec<PathBuf>,
+    pending_dirs: VecDeque<PathBuf>,
+    complete: bool,
+    batch_size: usize,
 }
 
 pub enum FilesystemCommand {
@@ -101,7 +110,11 @@ impl FileNavigator {
         Some(self.files[self.current].clone())
     }
 
-    pub fn next_with_policy(&mut self, policy: EndOfFolderOption) -> Option<PathBuf> {
+    fn next_with_policy(
+        &mut self,
+        policy: EndOfFolderOption,
+        recursive_index: Option<&mut RecursiveIndex>,
+    ) -> Option<PathBuf> {
         if let Some(path) = self.next() {
             return Some(path);
         }
@@ -110,11 +123,21 @@ impl FileNavigator {
             EndOfFolderOption::Stop => None,
             EndOfFolderOption::Loop => self.first(),
             EndOfFolderOption::Next => self.jump_to_adjacent_directory(true),
-            EndOfFolderOption::Recursive => self.jump_recursive(true),
+            EndOfFolderOption::Recursive => {
+                let current = self.current().to_path_buf();
+                let index = recursive_index?;
+                index
+                    .find_next_after(&current)
+                    .inspect(|path| self.reset_to_path(path.clone()))
+            }
         }
     }
 
-    pub fn prev_with_policy(&mut self, policy: EndOfFolderOption) -> Option<PathBuf> {
+    fn prev_with_policy(
+        &mut self,
+        policy: EndOfFolderOption,
+        recursive_index: Option<&mut RecursiveIndex>,
+    ) -> Option<PathBuf> {
         if let Some(path) = self.prev() {
             return Some(path);
         }
@@ -123,7 +146,13 @@ impl FileNavigator {
             EndOfFolderOption::Stop => None,
             EndOfFolderOption::Loop => self.last(),
             EndOfFolderOption::Next => self.jump_to_adjacent_directory(false),
-            EndOfFolderOption::Recursive => self.jump_recursive(false),
+            EndOfFolderOption::Recursive => {
+                let current = self.current().to_path_buf();
+                let index = recursive_index?;
+                index
+                    .find_prev_before(&current)
+                    .inspect(|path| self.reset_to_path(path.clone()))
+            }
         }
     }
 
@@ -149,24 +178,6 @@ impl FileNavigator {
         Some(self.files[self.current].clone())
     }
 
-    fn jump_recursive(&mut self, forward: bool) -> Option<PathBuf> {
-        let current = self.current().to_path_buf();
-        let current_dir = current.parent()?;
-        let root = current_dir.parent().unwrap_or(current_dir);
-        let files = collect_supported_files_recursive(root);
-        let index = files.iter().position(|path| path == &current)?;
-
-        let next_index = if forward {
-            index.checked_add(1)?
-        } else {
-            index.checked_sub(1)?
-        };
-
-        let target = files.get(next_index)?.clone();
-        self.reset_to_path(target.clone());
-        Some(target)
-    }
-
     fn reset_to_path(&mut self, path: PathBuf) {
         let dir = path.parent().unwrap_or(Path::new("."));
         self.files = collect_supported_files(dir);
@@ -178,51 +189,139 @@ impl FileNavigator {
     }
 }
 
+impl RecursiveIndex {
+    fn new(path: &Path) -> Self {
+        let current = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+        let current_dir = current.parent().unwrap_or(Path::new("."));
+        let root = current_dir.parent().unwrap_or(current_dir).to_path_buf();
+
+        let mut pending_dirs = VecDeque::new();
+        pending_dirs.push_back(root.clone());
+
+        let mut files = collect_supported_files(current_dir);
+        files.sort_by_cached_key(|path| path.to_string_lossy().to_lowercase());
+
+        Self {
+            files,
+            pending_dirs,
+            complete: false,
+            batch_size: 10,
+        }
+    }
+
+    fn advance(&mut self) {
+        if self.complete {
+            return;
+        }
+
+        let mut processed = 0;
+        while processed < self.batch_size {
+            let Some(dir) = self.pending_dirs.pop_front() else {
+                self.complete = true;
+                break;
+            };
+
+            let mut subdirs = collect_child_directories(&dir);
+            subdirs.sort_by_cached_key(|path| path.to_string_lossy().to_lowercase());
+            for subdir in subdirs {
+                self.pending_dirs.push_back(subdir);
+            }
+
+            let mut files = collect_supported_files(&dir);
+            self.files.append(&mut files);
+            self.files
+                .sort_by_cached_key(|path| path.to_string_lossy().to_lowercase());
+            self.files.dedup();
+            processed += 1;
+        }
+
+        self.batch_size = (self.batch_size.saturating_mul(2)).min(4096);
+    }
+
+    fn find_next_after(&mut self, current: &Path) -> Option<PathBuf> {
+        loop {
+            if let Some(index) = self.files.iter().position(|path| path == current) {
+                if let Some(path) = self.files.get(index + 1) {
+                    return Some(path.clone());
+                }
+            }
+            if self.complete {
+                return None;
+            }
+            self.advance();
+        }
+    }
+
+    fn find_prev_before(&mut self, current: &Path) -> Option<PathBuf> {
+        loop {
+            if let Some(index) = self.files.iter().position(|path| path == current) {
+                if index > 0 {
+                    return Some(self.files[index - 1].clone());
+                }
+            }
+            if self.complete {
+                return None;
+            }
+            self.advance();
+        }
+    }
+}
+
 pub fn spawn_filesystem_worker() -> (Sender<FilesystemCommand>, Receiver<FilesystemResult>) {
     let (command_tx, command_rx) = mpsc::channel::<FilesystemCommand>();
     let (result_tx, result_rx) = mpsc::channel::<FilesystemResult>();
 
     thread::spawn(move || {
         let mut navigator: Option<FileNavigator> = None;
+        let mut recursive_index: Option<RecursiveIndex> = None;
 
-        while let Ok(command) = command_rx.recv() {
-            match command {
-                FilesystemCommand::Init { request_id, path } => {
-                    navigator = Some(FileNavigator::from_path(&path));
-                    let _ = result_tx.send(FilesystemResult::NavigatorReady { request_id });
+        loop {
+            match command_rx.recv_timeout(Duration::from_millis(10)) {
+                Ok(command) => match command {
+                    FilesystemCommand::Init { request_id, path } => {
+                        navigator = Some(FileNavigator::from_path(&path));
+                        recursive_index = Some(RecursiveIndex::new(&path));
+                        let _ = result_tx.send(FilesystemResult::NavigatorReady { request_id });
+                    }
+                    FilesystemCommand::Next { request_id, policy } => {
+                        let _ = send_nav_result(
+                            &result_tx,
+                            request_id,
+                            navigator.as_mut().and_then(|nav| {
+                                nav.next_with_policy(policy, recursive_index.as_mut())
+                            }),
+                        );
+                    }
+                    FilesystemCommand::Prev { request_id, policy } => {
+                        let _ = send_nav_result(
+                            &result_tx,
+                            request_id,
+                            navigator.as_mut().and_then(|nav| {
+                                nav.prev_with_policy(policy, recursive_index.as_mut())
+                            }),
+                        );
+                    }
+                    FilesystemCommand::First { request_id } => {
+                        let _ = send_nav_result(
+                            &result_tx,
+                            request_id,
+                            navigator.as_mut().and_then(FileNavigator::first),
+                        );
+                    }
+                    FilesystemCommand::Last { request_id } => {
+                        let _ = send_nav_result(
+                            &result_tx,
+                            request_id,
+                            navigator.as_mut().and_then(FileNavigator::last),
+                        );
+                    }
+                },
+                Err(RecvTimeoutError::Timeout) => {
+                    if let Some(index) = &mut recursive_index {
+                        index.advance();
+                    }
                 }
-                FilesystemCommand::Next { request_id, policy } => {
-                    let _ = send_nav_result(
-                        &result_tx,
-                        request_id,
-                        navigator
-                            .as_mut()
-                            .and_then(|nav| nav.next_with_policy(policy)),
-                    );
-                }
-                FilesystemCommand::Prev { request_id, policy } => {
-                    let _ = send_nav_result(
-                        &result_tx,
-                        request_id,
-                        navigator
-                            .as_mut()
-                            .and_then(|nav| nav.prev_with_policy(policy)),
-                    );
-                }
-                FilesystemCommand::First { request_id } => {
-                    let _ = send_nav_result(
-                        &result_tx,
-                        request_id,
-                        navigator.as_mut().and_then(FileNavigator::first),
-                    );
-                }
-                FilesystemCommand::Last { request_id } => {
-                    let _ = send_nav_result(
-                        &result_tx,
-                        request_id,
-                        navigator.as_mut().and_then(FileNavigator::last),
-                    );
-                }
+                Err(RecvTimeoutError::Disconnected) => break,
             }
         }
     });
@@ -259,17 +358,6 @@ fn collect_supported_files(dir: &Path) -> Vec<PathBuf> {
     files
 }
 
-fn collect_supported_files_recursive(dir: &Path) -> Vec<PathBuf> {
-    let mut files = Vec::new();
-    visit_directories(dir, &mut |path| {
-        if path.is_file() && is_supported_image(path) {
-            files.push(path.canonicalize().unwrap_or_else(|_| path.to_path_buf()));
-        }
-    });
-    files.sort_by_cached_key(|path| path.to_string_lossy().to_lowercase());
-    files
-}
-
 fn collect_child_directories(dir: &Path) -> Vec<PathBuf> {
     let mut directories: Vec<PathBuf> = fs::read_dir(dir)
         .ok()
@@ -282,19 +370,6 @@ fn collect_child_directories(dir: &Path) -> Vec<PathBuf> {
 
     directories.sort_by_cached_key(|path| path.to_string_lossy().to_lowercase());
     directories
-}
-
-fn visit_directories(dir: &Path, visitor: &mut dyn FnMut(&Path)) {
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.filter_map(Result::ok) {
-            let path = entry.path();
-            if path.is_dir() {
-                visit_directories(&path, visitor);
-            } else {
-                visitor(&path);
-            }
-        }
-    }
 }
 
 fn is_supported_image(path: &Path) -> bool {

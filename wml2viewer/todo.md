@@ -12,6 +12,8 @@
 - [x]  ダブルクリックで 100% <-> Fit のトグル
 - [ ] 起動時の表示位置ずれ修正
 - [x] スクロール
+- [x] wml2viewer ファイル名
+- [ ] wml2viewer フォルダ名
 
 ## 1. 最優先: キー操作
 
@@ -63,6 +65,9 @@
 - [ ] `filesystem` モジュールに `file` protocol を実装
 - [ ] 単一ファイル起動時に親ディレクトリの画像一覧を取得
 - [ ] sort order を `os_name` / `name` で切り替えられる形にする
+- [ ] async ロード基盤
+- [ ] 待ち時間の最短化
+- [ ] Waitキャッシュ
 
 ### 3-2. ListedFile
 - [ ] `.txt` / listed file parser を作る

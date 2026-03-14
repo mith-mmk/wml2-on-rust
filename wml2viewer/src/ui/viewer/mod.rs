@@ -40,6 +40,12 @@ enum RenderResult {
     },
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ActiveRenderRequest {
+    Load(u64),
+    Resize(u64),
+}
+
 pub(crate) struct ViewerApp {
     current_path: PathBuf,
     source: LoadedImage,
@@ -63,7 +69,7 @@ pub(crate) struct ViewerApp {
     worker_tx: Sender<RenderCommand>,
     worker_rx: Receiver<RenderResult>,
     next_request_id: u64,
-    active_request_id: Option<u64>,
+    active_request: Option<ActiveRenderRequest>,
     fs_tx: Sender<FilesystemCommand>,
     fs_rx: Receiver<FilesystemResult>,
     next_fs_request_id: u64,
@@ -142,7 +148,7 @@ impl ViewerApp {
             worker_tx,
             worker_rx,
             next_request_id: 0,
-            active_request_id: None,
+            active_request: None,
             fs_tx,
             fs_rx,
             next_fs_request_id: 0,
@@ -271,7 +277,7 @@ impl ViewerApp {
 
     fn request_load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
         let request_id = self.alloc_request_id();
-        self.active_request_id = Some(request_id);
+        self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.loading_message = Some(format!("Loading {}", path.display()));
         self.worker_tx
             .send(RenderCommand::LoadPath {
@@ -285,8 +291,11 @@ impl ViewerApp {
     }
 
     fn request_resize_current(&mut self) -> Result<(), Box<dyn Error>> {
+        if matches!(self.active_request, Some(ActiveRenderRequest::Load(_))) {
+            return Ok(());
+        }
         let request_id = self.alloc_request_id();
-        self.active_request_id = Some(request_id);
+        self.active_request = Some(ActiveRenderRequest::Resize(request_id));
         self.loading_message = Some(format!("Rendering {:.0}%", self.zoom * 100.0));
         self.worker_tx
             .send(RenderCommand::ResizeCurrent {
@@ -349,7 +358,14 @@ impl ViewerApp {
                     source,
                     rendered,
                 }) => {
-                    if self.active_request_id != Some(request_id) {
+                    let Some(active_request) = self.active_request else {
+                        continue;
+                    };
+                    let request_matches = match active_request {
+                        ActiveRenderRequest::Load(active_id)
+                        | ActiveRenderRequest::Resize(active_id) => active_id == request_id,
+                    };
+                    if !request_matches {
                         continue;
                     }
                     if let Some(path) = path {
@@ -363,23 +379,32 @@ impl ViewerApp {
                     self.completed_loops = 0;
                     self.last_frame_at = Instant::now();
                     self.upload_current_frame();
-                    self.loading_message = None;
-                    self.active_request_id = None;
+                    if self.active_fs_request_id.is_none() {
+                        self.loading_message = None;
+                    }
+                    self.active_request = None;
                 }
                 Ok(RenderResult::Failed {
                     request_id,
                     message,
                 }) => {
-                    if self.active_request_id != Some(request_id) {
+                    let Some(active_request) = self.active_request else {
+                        continue;
+                    };
+                    let request_matches = match active_request {
+                        ActiveRenderRequest::Load(active_id)
+                        | ActiveRenderRequest::Resize(active_id) => active_id == request_id,
+                    };
+                    if !request_matches {
                         continue;
                     }
                     self.loading_message = Some(message);
-                    self.active_request_id = None;
+                    self.active_request = None;
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
                     self.loading_message = Some("render worker disconnected".to_string());
-                    self.active_request_id = None;
+                    self.active_request = None;
                     break;
                 }
             }
@@ -392,7 +417,7 @@ impl ViewerApp {
                 Ok(FilesystemResult::NavigatorReady { request_id }) => {
                     if self.active_fs_request_id == Some(request_id) {
                         self.navigator_ready = true;
-                        if self.active_request_id.is_none() {
+                        if self.active_request.is_none() {
                             self.loading_message = None;
                         }
                         self.active_fs_request_id = None;
@@ -406,7 +431,7 @@ impl ViewerApp {
                 }
                 Ok(FilesystemResult::NoPath { request_id }) => {
                     if self.active_fs_request_id == Some(request_id) {
-                        if self.active_request_id.is_none() {
+                        if self.active_request.is_none() {
                             self.loading_message = None;
                         }
                         self.active_fs_request_id = None;
@@ -550,7 +575,7 @@ impl eframe::App for ViewerApp {
         let panel = egui::CentralPanel::default().frame(egui::Frame::NONE);
         panel.show(ctx, |ui| {
             self.paint_background(ui, ui.max_rect());
-            if self.active_request_id.is_some() || self.active_fs_request_id.is_some() {
+            if self.active_request.is_some() || self.active_fs_request_id.is_some() {
                 ctx.request_repaint_after(Duration::from_millis(16));
             }
             // inputに引っ越し

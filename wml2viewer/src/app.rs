@@ -1,5 +1,4 @@
 use crate::drawers::image::{LoadedImage, load_canvas_from_file, resize_loaded_image};
-use crate::filesystem::FileNavigator;
 use crate::options::*;
 use crate::ui::viewer::ViewerApp;
 use eframe::egui::{self};
@@ -15,7 +14,6 @@ pub fn run(image_path: PathBuf) -> Result<(), Box<dyn Error>> {
     let config = AppConfig::default();
     let image = load_image(&image_path)?;
     let rendered = resize_loaded_image(&image, 1.0, config.render.zoom_method)?;
-    let navigator = FileNavigator::from_path(&image_path);
     let title = format!("wml2viewer - {}", image_path.display());
 
     // ui::viewer::set_canvas_size(&str);
@@ -60,7 +58,7 @@ pub fn run(image_path: PathBuf) -> Result<(), Box<dyn Error>> {
                 .send_viewport_cmd(egui::ViewportCommand::InnerSize(window_size));
 
             Ok(Box::new(ViewerApp::new(
-                cc, image_path, image, rendered, navigator, config,
+                cc, image_path, image, rendered, config,
             )))
         }),
     )?;

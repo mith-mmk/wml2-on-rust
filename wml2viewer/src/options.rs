@@ -14,6 +14,7 @@ pub struct AppConfig {
     pub window: WindowOptions,
     pub render: RenderOptions,
     pub input: InputOptions,
+    pub navigation: NavigationOptions,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -90,6 +91,27 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
     map.insert(KeyBinding::new("Home"), ViewerAction::FirstImage);
     map.insert(KeyBinding::new("End"), ViewerAction::LastImage);
     map
+}
+
+#[derive(Clone)]
+pub struct NavigationOptions {
+    pub end_of_folder: EndOfFolderOption,
+}
+
+impl Default for NavigationOptions {
+    fn default() -> Self {
+        Self {
+            end_of_folder: EndOfFolderOption::Recursive,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EndOfFolderOption {
+    Stop,
+    Next,
+    Loop,
+    Recursive,
 }
 
 // pub(crate) reading: ReadingOptions,

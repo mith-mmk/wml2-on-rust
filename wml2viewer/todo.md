@@ -42,7 +42,7 @@
 - [ ] フォルダの直下に画像ファイルが無いとき終了する（"RECURCIVE"の場合は探してください）
 
 #### 優先度中
-- [ ] ネットワークフォルダでの待ち時間をさらに短縮(1000～1万) 後回し
+- [ ] ネットワークフォルダでの待ち時間をさらに短縮(1000～1万)
 
 ### viewer / render
 - [x] `viewer.align`
@@ -81,6 +81,7 @@
 - [x] `PageUp` / `PageDown` のフォルダ移動
 - [ ] `F1` help
 - [x] `P` setting
+- [ ] 左クリックで簡単なメニュー
 
 ### 1-3. 設定画面の先行タスク
 - [x] option menu の土台
@@ -173,8 +174,14 @@
 - [ ] 日本語/英語 resource のキー設計
 - [ ] 外部 resource 読み込み
 
-## 11. 以降
+## 11. OSサポート
+- [x] Windows Support
+- [ ] Linux Support
+- [ ] Mac OS Support
+- [ ] Android Support
+- [ ] iOS Support(先にMAC買わないと行けない) 
 
+## 12. 以降
 - [ ] filer
 - [ ] network protocol (`http`, `smb`, `cloud`)
 - [ ] OS dependent
@@ -185,6 +192,7 @@
 ## 次に着手する候補
 
 1. config load/save
-2. `navigation.sort`
-3. ListedFile parser
-4. ZippedFile の最小版（zip）
+2. Windowの表示位置の固定化
+3. `navigation.sort`
+4. ListedFile parser
+5. ZippedFile の最小版（zip）

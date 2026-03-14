@@ -6,7 +6,7 @@ members = [
 ]
 
 exclude = [
-    "wml2-win"
+    "wml2viewer"
 ]
 
 [profile.release]

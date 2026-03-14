@@ -12,6 +12,7 @@
 - [x] ダブルクリックで `100% <-> Fit` トグル
 - [x] ウィンドウタイトルを現在画像に追従
 - [ ] 起動時の表示位置ずれ修正
+- [ ] 動作時のウィンドウサイズのズレ
 - [ ] VSP の読み込み
 
 ### 入力
@@ -38,6 +39,9 @@
 - [x] ディレクトリ単位 cache
 - [x] ネットワークフォルダでの待ち時間(～100)
 - [x] ネットワークフォルダでの待ち時間(～1000)
+- [ ] フォルダの直下に画像ファイルが無いとき終了する（"RECURCIVE"の場合は探してください）
+
+#### 優先度中
 - [ ] ネットワークフォルダでの待ち時間をさらに短縮(1000～1万) 後回し
 
 ### viewer / render
@@ -46,14 +50,17 @@
 - [x] `viewer.background.tile`
 - [x] `viewer.animation`
 - [x] `render.zoom`
-- [x] `render.zoomMethod`
-- [ ] 縮小時 pixel minimize
+- [ ] `render.zoomMethod`
+- [-] 縮小時 pixel minimize
 - [ ] `render.orientation`
+- [ ] `render.transpearent`
+- [ ] 巨大な画像で落ちる問題（分割テクスチャなどで回避）
+
+#### 優先度低
 - [ ] `render.rotation`
 - [ ] `render.flap`
 - [ ] `render.flip`
 - [ ] `render.monochrome`
-- [ ] `render.transpearent`
 
 ## 1. 最優先
 
@@ -68,15 +75,15 @@
 - [x] `input.key_mapping` 用の内部 action を作る
 - [x] デフォルトキー設定を定義する
 - [x] egui input から action dispatch する
-- [ ] SPACEをプレスしたままの状態だと画像が表示されないので適度なWAITを入れる
-- [ ] シングルクリックで次の画面を表示
+- [x] SPACEをプレスしたままの状態だと画像が表示されないので適度なWAITを入れる
+- [-] シングルクリックで次の画面を表示
 - [ ] 未実装 action を no-op として整理する
-- [ ] `PageUp` / `PageDown` のフォルダ移動
+- [x] `PageUp` / `PageDown` のフォルダ移動
 - [ ] `F1` help
-- [ ] `P` setting
+- [x] `P` setting
 
 ### 1-3. 設定画面の先行タスク
-- [ ] option menu の土台
+- [x] option menu の土台
 - [ ] viewer / render / window の編集 UI
 - [ ] 適用とキャンセル
 

@@ -68,7 +68,7 @@ pub enum WindowSize {
     Exact { width: f32, height: f32 },
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum ZoomOption {
     None,
     FitWidth,

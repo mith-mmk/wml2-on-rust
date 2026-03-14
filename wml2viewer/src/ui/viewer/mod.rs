@@ -1,5 +1,6 @@
 use crate::drawers::canvas::Canvas;
-use crate::drawers::image::{ImageAlign, LoadedImage, resize_loaded_image};
+use crate::drawers::image::{ImageAlign, LoadedImage, resize_canvas, resize_loaded_image};
+use crate::drawers::affine::InterpolationAlgorithm;
 use crate::filesystem::{FilesystemCommand, FilesystemResult, spawn_filesystem_worker};
 use crate::options::{AppConfig, EndOfFolderOption, KeyBinding, ViewerAction};
 use crate::ui::viewer::options::{BackgroundStyle, RenderOptions, ViewerOptions};
@@ -12,6 +13,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 pub mod options;
 use options::ZoomOption;
+
+const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(180);
 
 enum RenderCommand {
     LoadPath {
@@ -76,6 +79,10 @@ pub(crate) struct ViewerApp {
     active_fs_request_id: Option<u64>,
     navigator_ready: bool,
     loading_message: Option<String>,
+    last_navigation_at: Option<Instant>,
+    show_settings: bool,
+    max_texture_side: usize,
+    texture_display_scale: f32,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -87,17 +94,15 @@ fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOpti
 
     let zoom_w = canvas_width / image_width;
     let zoom_h = canvas_height / image_height;
+    let fit = zoom_w.min(zoom_h);
 
     match option {
         ZoomOption::None => 1.0,
-        ZoomOption::FitWidth => zoom_w,
-        ZoomOption::FitHeight => zoom_h,
-        ZoomOption::FitScreen => zoom_w.min(zoom_h),
-        ZoomOption::FitScreenIncludeSmaller => zoom_w.min(zoom_h),
-        ZoomOption::FitScreenOnlySmaller => {
-            let fit = zoom_w.min(zoom_h);
-            if fit < 1.0 { fit } else { 1.0 }
-        }
+        ZoomOption::FitWidth => zoom_w.min(1.0),
+        ZoomOption::FitHeight => zoom_h.min(1.0),
+        ZoomOption::FitScreen => fit.min(1.0),
+        ZoomOption::FitScreenIncludeSmaller => fit,
+        ZoomOption::FitScreenOnlySmaller => fit.min(1.0),
     }
 }
 
@@ -155,6 +160,10 @@ impl ViewerApp {
             active_fs_request_id: None,
             navigator_ready: false,
             loading_message: None,
+            last_navigation_at: None,
+            show_settings: false,
+            max_texture_side: cc.egui_ctx.input(|i| i.max_texture_side),
+            texture_display_scale: 1.0,
         };
 
         let _ = this.init_filesystem(path);
@@ -199,10 +208,19 @@ impl ViewerApp {
     }
 
     pub(crate) fn upload_current_frame(&mut self) {
-        let canvas = self.current_canvas();
+        let (image, display_scale) = {
+            let canvas = self.current_canvas();
+            let (canvas, display_scale) = downscale_for_texture_limit(
+                canvas,
+                self.max_texture_side,
+                self.render_options.zoom_method,
+            );
+            (canvas_to_color_image(&canvas), display_scale)
+        };
 
+        self.texture_display_scale = display_scale;
         self.texture
-            .set(canvas_to_color_image(canvas), TextureOptions::LINEAR);
+            .set(image, TextureOptions::LINEAR);
     }
 
     fn update_window_title(&self, ctx: &egui::Context) {
@@ -257,29 +275,54 @@ impl ViewerApp {
     }
 
     fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
+        if !self.can_trigger_navigation() {
+            return Ok(());
+        }
         self.request_navigation(FilesystemCommand::Next {
             request_id: 0,
             policy: self.end_of_folder,
         })?;
+        self.last_navigation_at = Some(Instant::now());
         Ok(())
     }
 
     fn prev_image(&mut self) -> Result<(), Box<dyn Error>> {
+        if !self.can_trigger_navigation() {
+            return Ok(());
+        }
         self.request_navigation(FilesystemCommand::Prev {
             request_id: 0,
             policy: self.end_of_folder,
         })?;
+        self.last_navigation_at = Some(Instant::now());
         Ok(())
     }
 
     fn first_image(&mut self) -> Result<(), Box<dyn Error>> {
+        if !self.can_trigger_navigation() {
+            return Ok(());
+        }
         self.request_navigation(FilesystemCommand::First { request_id: 0 })?;
+        self.last_navigation_at = Some(Instant::now());
         Ok(())
     }
 
     fn last_image(&mut self) -> Result<(), Box<dyn Error>> {
+        if !self.can_trigger_navigation() {
+            return Ok(());
+        }
         self.request_navigation(FilesystemCommand::Last { request_id: 0 })?;
+        self.last_navigation_at = Some(Instant::now());
         Ok(())
+    }
+
+    fn can_trigger_navigation(&self) -> bool {
+        if self.active_request.is_some() || self.active_fs_request_id.is_some() {
+            return false;
+        }
+        self.last_navigation_at
+            .map(|last| last.elapsed() >= NAVIGATION_REPEAT_INTERVAL)
+            .unwrap_or(true)
     }
 
     fn request_load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
@@ -503,6 +546,9 @@ impl ViewerApp {
                     self.last_frame_at = Instant::now();
                     self.upload_current_frame();
                 }
+                ViewerAction::ToggleSettings => {
+                    self.show_settings = !self.show_settings;
+                }
             }
         }
     }
@@ -570,6 +616,168 @@ impl ViewerApp {
             }
         }
     }
+
+    fn handle_pointer_input(&mut self, ctx: &egui::Context) {
+        let double_clicked = ctx.input(|i| {
+            i.pointer
+                .button_double_clicked(egui::PointerButton::Primary)
+        });
+        if double_clicked {
+            let _ = self.toggle_zoom();
+        }
+    }
+
+    fn settings_ui(&mut self, ctx: &egui::Context) {
+        if !self.show_settings {
+            return;
+        }
+
+        let mut open = self.show_settings;
+        let mut reload_requested = false;
+        let mut rerender_requested = false;
+        let mut zoom_option_changed = false;
+        egui::Window::new("Settings")
+            .open(&mut open)
+            .resizable(true)
+            .show(ctx, |ui| {
+                ui.heading("Viewer");
+                ui.checkbox(&mut self.options.animation, "Animation");
+
+                ui.horizontal(|ui| {
+                    ui.label("End of folder");
+                    egui::ComboBox::from_id_salt("end_of_folder")
+                        .selected_text(end_of_folder_label(self.end_of_folder))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.end_of_folder,
+                                EndOfFolderOption::Stop,
+                                "STOP",
+                            );
+                            ui.selectable_value(
+                                &mut self.end_of_folder,
+                                EndOfFolderOption::Loop,
+                                "LOOP",
+                            );
+                            ui.selectable_value(
+                                &mut self.end_of_folder,
+                                EndOfFolderOption::Next,
+                                "NEXT",
+                            );
+                            ui.selectable_value(
+                                &mut self.end_of_folder,
+                                EndOfFolderOption::Recursive,
+                                "RECURSIVE",
+                            );
+                        });
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("Zoom mode");
+                    let before = self.render_options.zoom_option.clone();
+                    egui::ComboBox::from_id_salt("zoom_option")
+                        .selected_text(zoom_option_label(&self.render_options.zoom_option))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_option,
+                                ZoomOption::None,
+                                "None",
+                            );
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_option,
+                                ZoomOption::FitWidth,
+                                "FitWidth",
+                            );
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_option,
+                                ZoomOption::FitHeight,
+                                "FitHeight",
+                            );
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_option,
+                                ZoomOption::FitScreen,
+                                "FitScreen",
+                            );
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_option,
+                                ZoomOption::FitScreenIncludeSmaller,
+                                "FitScreenIncludeSmaller",
+                            );
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_option,
+                                ZoomOption::FitScreenOnlySmaller,
+                                "FitScreenOnlySmaller",
+                            );
+                        });
+                    if self.render_options.zoom_option != before {
+                        zoom_option_changed = true;
+                    }
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("Resize");
+                    let before = self.render_options.zoom_method;
+                    egui::ComboBox::from_id_salt("zoom_method")
+                        .selected_text(interpolation_label(self.render_options.zoom_method))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_method,
+                                InterpolationAlgorithm::NearestNeighber,
+                                "Nearest",
+                            );
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_method,
+                                InterpolationAlgorithm::Bilinear,
+                                "Bilinear",
+                            );
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_method,
+                                InterpolationAlgorithm::BicubicAlpha(None),
+                                "Bicubic",
+                            );
+                            ui.selectable_value(
+                                &mut self.render_options.zoom_method,
+                                InterpolationAlgorithm::Lanzcos3,
+                                "Lanczos3",
+                            );
+                        });
+                    if self.render_options.zoom_method != before {
+                        rerender_requested = true;
+                    }
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("Background");
+                    if ui.button("Black").clicked() {
+                        self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
+                    }
+                    if ui.button("Gray").clicked() {
+                        self.options.background = BackgroundStyle::Solid([48, 48, 48, 255]);
+                    }
+                    if ui.button("Tile").clicked() {
+                        self.options.background = BackgroundStyle::Tile {
+                            color1: [32, 32, 32, 255],
+                            color2: [80, 80, 80, 255],
+                            size: 16,
+                        };
+                    }
+                });
+
+                ui.separator();
+                if ui.button("Reload current").clicked() {
+                    reload_requested = true;
+                }
+            });
+        self.show_settings = open;
+        if zoom_option_changed {
+            self.last_viewport_size = egui::Vec2::ZERO;
+        }
+        if rerender_requested {
+            let _ = self.request_resize_current();
+        }
+        if reload_requested {
+            let _ = self.reload_current();
+        }
+    }
 }
 
 impl eframe::App for ViewerApp {
@@ -578,6 +786,8 @@ impl eframe::App for ViewerApp {
         self.poll_worker();
         self.poll_filesystem();
         self.handle_keyboard(ctx);
+        self.handle_pointer_input(ctx);
+        self.settings_ui(ctx);
 
         let zoom_delta = ctx.input(|i| i.zoom_delta());
 
@@ -593,13 +803,6 @@ impl eframe::App for ViewerApp {
             self.paint_background(ui, ui.max_rect());
             if self.active_request.is_some() || self.active_fs_request_id.is_some() {
                 ctx.request_repaint_after(Duration::from_millis(16));
-            }
-            // inputに引っ越し
-            if ui.input(|i| {
-                i.pointer
-                    .button_double_clicked(egui::PointerButton::Primary)
-            }) {
-                let _ = self.toggle_zoom();
             }
 
             let viewport = ui.available_size();
@@ -619,8 +822,8 @@ impl eframe::App for ViewerApp {
             }
 
             let draw_size = vec2(
-                self.current_canvas().width() as f32,
-                self.current_canvas().height() as f32,
+                self.current_canvas().width() as f32 * self.texture_display_scale,
+                self.current_canvas().height() as f32 * self.texture_display_scale,
             );
             egui::ScrollArea::both()
                 .auto_shrink([false, false])
@@ -651,6 +854,25 @@ fn canvas_to_color_image(canvas: &Canvas) -> ColorImage {
         [canvas.width() as usize, canvas.height() as usize],
         canvas.buffer(),
     )
+}
+
+fn downscale_for_texture_limit<'a>(
+    canvas: &'a Canvas,
+    max_texture_side: usize,
+    method: InterpolationAlgorithm,
+) -> (std::borrow::Cow<'a, Canvas>, f32) {
+    let width = canvas.width() as usize;
+    let height = canvas.height() as usize;
+    let max_side = width.max(height);
+    if max_side <= max_texture_side || max_texture_side == 0 {
+        return (std::borrow::Cow::Borrowed(canvas), 1.0);
+    }
+
+    let scale = max_texture_side as f32 / max_side as f32;
+    match resize_canvas(canvas, scale, method) {
+        Ok(resized) => (std::borrow::Cow::Owned(resized), scale),
+        Err(_) => (std::borrow::Cow::Borrowed(canvas), 1.0),
+    }
 }
 
 fn aligned_offset(viewport: egui::Vec2, draw_size: egui::Vec2, align: ImageAlign) -> egui::Vec2 {
@@ -694,7 +916,39 @@ fn key_name_to_egui(key: &str) -> Option<egui::Key> {
         "End" => Some(egui::Key::End),
         "G" => Some(egui::Key::G),
         "C" => Some(egui::Key::C),
+        "P" => Some(egui::Key::P),
         _ => None,
+    }
+}
+
+fn end_of_folder_label(option: EndOfFolderOption) -> &'static str {
+    match option {
+        EndOfFolderOption::Stop => "STOP",
+        EndOfFolderOption::Next => "NEXT",
+        EndOfFolderOption::Loop => "LOOP",
+        EndOfFolderOption::Recursive => "RECURSIVE",
+    }
+}
+
+fn zoom_option_label(option: &ZoomOption) -> &'static str {
+    match option {
+        ZoomOption::None => "None",
+        ZoomOption::FitWidth => "FitWidth",
+        ZoomOption::FitHeight => "FitHeight",
+        ZoomOption::FitScreen => "FitScreen",
+        ZoomOption::FitScreenIncludeSmaller => "FitScreenIncludeSmaller",
+        ZoomOption::FitScreenOnlySmaller => "FitScreenOnlySmaller",
+    }
+}
+
+fn interpolation_label(method: InterpolationAlgorithm) -> &'static str {
+    match method {
+        InterpolationAlgorithm::NearestNeighber => "Nearest",
+        InterpolationAlgorithm::Bilinear => "Bilinear",
+        InterpolationAlgorithm::Bicubic => "Bicubic",
+        InterpolationAlgorithm::BicubicAlpha(_) => "Bicubic",
+        InterpolationAlgorithm::Lanzcos3 => "Lanczos3",
+        InterpolationAlgorithm::Lanzcos(_) => "Lanczos",
     }
 }
 

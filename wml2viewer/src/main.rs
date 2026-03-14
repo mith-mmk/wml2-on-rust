@@ -1,11 +1,11 @@
-mod drawers;
 mod app;
+mod drawers;
 mod ui;
 use std::env;
 use std::error::Error;
 use std::ffi::OsString;
-use std::path::{Path, PathBuf};
 use std::io;
+use std::path::{Path, PathBuf};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let image_path = parse_image_path()?;

@@ -50,7 +50,7 @@
 - [x] `viewer.background.tile`
 - [x] `viewer.animation`
 - [x] `render.zoom`
-- [ ] `render.zoomMethod`
+- [x] `render.zoomMethod`
 - [-] 縮小時 pixel minimize
 - [ ] `render.orientation`
 - [ ] `render.transpearent`
@@ -87,6 +87,14 @@
 - [ ] viewer / render / window の編集 UI
 - [ ] 適用とキャンセル
 
+### 1-4. config 永続化
+- [ ] `configs/config.rs` を実装に接続
+- [ ] config load
+- [ ] config save
+- [ ] 設定画面と config を接続
+- [ ] keep window state
+- [ ] runtime current file snapshot
+
 ## 2. viewer / render
 
 ### 2-1. viewer
@@ -111,6 +119,17 @@
 - [ ] コメント行 `#` を無視
 - [ ] path 行を file entry として読む
 - [ ] `@command` / `@(...)` は予約語として parse
+
+### 3-3. ZippedFile
+- [ ] feature で有効/無効を切り替えられるようにする
+- [ ] まず `zip` を読む
+- [ ] `navigation` / `filesystem` から folder 相当として扱えるようにする
+- [ ] zip entry sort
+- [ ] zip encoding option
+- [ ] `gzip`
+- [ ] `lzh`
+- [ ] `7z`
+- [ ] `rar`（最低限）
 
 ## 4. 非同期実装の整理
 
@@ -143,14 +162,11 @@
 
 ## 8. 設定画面
 
-- [ ] 1-3 が終わったら config import/export と接続する
+- [ ] 1-3 / 1-4 が終わったら import/export をつなぐ
 
 ## 9. 設定に付随する機能
 
 - [ ] config import/export
-- [ ] keep window state
-- [ ] runtime current file snapshot
-- [ ] `configs/config.rs` を実装に接続
 
 ## 10. リソース
 
@@ -168,6 +184,7 @@
 
 ## 次に着手する候補
 
-1. SPACE長押し時の wait / repeat 制御
-2. シングルクリックで次の画面を表示
-3. 設定画面の土台
+1. config load/save
+2. `navigation.sort`
+3. ListedFile parser
+4. ZippedFile の最小版（zip）

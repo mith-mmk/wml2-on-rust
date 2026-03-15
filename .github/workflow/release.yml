@@ -19,6 +19,9 @@ jobs:
       - name: install rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
+
       - name: build examples
         run: cargo build --release --examples
 
@@ -26,4 +29,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: examples-${{ matrix.os }}
-          path: target/release/examples/*
+          path: |
+            target/release/examples/*
+            target/release/examples/*.exe

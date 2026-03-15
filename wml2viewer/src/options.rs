@@ -5,7 +5,8 @@
 use std::collections::HashMap;
 
 pub use crate::ui::viewer::options::{
-    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, ZoomOption,
+    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize,
+    WindowStartPosition, ZoomOption,
 };
 
 #[derive(Clone, Default)]
@@ -98,12 +99,14 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
 #[derive(Clone)]
 pub struct NavigationOptions {
     pub end_of_folder: EndOfFolderOption,
+    pub sort: NavigationSortOption,
 }
 
 impl Default for NavigationOptions {
     fn default() -> Self {
         Self {
             end_of_folder: EndOfFolderOption::Recursive,
+            sort: NavigationSortOption::OsName,
         }
     }
 }
@@ -114,6 +117,14 @@ pub enum EndOfFolderOption {
     Next,
     Loop,
     Recursive,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NavigationSortOption {
+    OsName,
+    Name,
+    Date,
+    Size,
 }
 
 // pub(crate) reading: ReadingOptions,

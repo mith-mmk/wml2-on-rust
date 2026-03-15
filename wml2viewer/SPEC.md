@@ -141,6 +141,7 @@
   "runtime": {
     "resource_path": null, // リソースファイルの場所　デフォルトは実行ファイルの中 指定がある場合、外部リソースを優先（基本は言語リソース？）
     "current_file": "", // path like string, 現在のファイルの場所（スナップショット）
+    "startup_file": true, // true current_file, false ./(デフォルト) ただしコマンドラインで上書きされる
     "external ": { // 【要注意】 外部コマンドを利用する（pngを経由する） // 通常は無効
         "external_tmp": null, // 受け渡しに使うtmpフォルダ 無い場合は、環境変数 TMP -> TEMP の順で探す
         "external_cmd": [] // 外部コマンドのコマンドライン %i(入力名) %O(フォルダ) ...
@@ -151,7 +152,9 @@
   ```
 
 ListedFile 以下の様なファイル
+拡張子 .wml
 ```txt
+#!WMLViewer2 ListedFile (version)
 https://example.org/test.webp
 \\pi4\data\images\sample.png
 d:\data\images\sample.jpg

@@ -1,4 +1,5 @@
 mod app;
+mod configs;
 mod drawers;
 mod filesystem;
 pub mod options;
@@ -8,22 +9,86 @@ use std::error::Error;
 use std::ffi::OsString;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::process::ExitCode;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let image_path = parse_image_path()?;
-    app::run(image_path)
+fn main() -> ExitCode {
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            ExitCode::FAILURE
+        }
+    }
 }
 
-fn parse_image_path() -> Result<PathBuf, Box<dyn Error>> {
+fn run() -> Result<(), Box<dyn Error>> {
+    let args = parse_args()?;
+    app::run(args.image_path, args.config_path)
+}
+
+struct CliArgs {
+    image_path: Option<PathBuf>,
+    config_path: Option<PathBuf>,
+}
+
+fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
     let mut args = env::args_os();
     let program = args.next().unwrap_or_else(|| OsString::from("wml2viewer"));
-    let filename = args.next().ok_or_else(|| usage_error(&program))?;
+    let mut positional_args = Vec::new();
+    let mut config_path = None;
 
-    if args.next().is_some() {
-        return Err(usage_error(&program));
+    while let Some(arg) = args.next() {
+        if let Some(path) = parse_config_equals(&arg) {
+            config_path = Some(path);
+            continue;
+        }
+
+        if arg == "--config" {
+            let Some(path) = args.next() else {
+                return Err(usage_error(&program));
+            };
+            config_path = Some(PathBuf::from(path));
+            continue;
+        }
+
+        if is_ignorable_shell_argument(&arg) {
+            continue;
+        }
+
+        positional_args.push(PathBuf::from(arg));
     }
 
-    Ok(PathBuf::from(filename))
+    let image_path = pick_image_path(positional_args);
+
+    Ok(CliArgs {
+        image_path,
+        config_path,
+    })
+}
+
+fn parse_config_equals(arg: &OsString) -> Option<PathBuf> {
+    let text = arg.to_string_lossy();
+    text.strip_prefix("--config=")
+        .map(PathBuf::from)
+}
+
+fn is_ignorable_shell_argument(arg: &OsString) -> bool {
+    matches!(
+        arg.to_string_lossy().as_ref(),
+        "/dde" | "-Embedding" | "--"
+    )
+}
+
+fn pick_image_path(args: Vec<PathBuf>) -> Option<PathBuf> {
+    if args.is_empty() {
+        return None;
+    }
+
+    args.iter()
+        .rev()
+        .find(|path| path.exists())
+        .cloned()
+        .or_else(|| args.into_iter().next())
 }
 
 fn usage_error(program: &OsString) -> Box<dyn Error> {
@@ -33,6 +98,6 @@ fn usage_error(program: &OsString) -> Box<dyn Error> {
         .to_string_lossy();
     Box::new(io::Error::new(
         io::ErrorKind::InvalidInput,
-        format!("Usage: {program} <path>"),
+        format!("Usage: {program} [--config <path>] [path]"),
     ))
 }

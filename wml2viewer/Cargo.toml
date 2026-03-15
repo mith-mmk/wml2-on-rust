@@ -10,4 +10,6 @@ publish = false
 
 [dependencies]
 eframe = "0.33"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
 wml2 = { path = "../wml2", features = ["multithread", "idct_llm"] }

@@ -11,8 +11,8 @@
 - [x] ScreenFit / zoom 表示
 - [x] ダブルクリックで `100% <-> Fit` トグル
 - [x] ウィンドウタイトルを現在画像に追従
-- [ ] 起動時の表示位置ずれ修正
-- [ ] 動作時のウィンドウサイズのズレ
+- [x] 起動時の表示位置ずれ修正
+- [-] 動作時のウィンドウサイズのズレ
 - [ ] VSP の読み込み
 
 ### 入力
@@ -89,11 +89,11 @@
 - [ ] 適用とキャンセル
 
 ### 1-4. config 永続化
-- [ ] `configs/config.rs` を実装に接続
-- [ ] config load
-- [ ] config save
-- [ ] 設定画面と config を接続
-- [ ] keep window state
+- [x] `configs/config.rs` を実装に接続
+- [x] config load
+- [x] config save
+- [x] 設定画面の現在項目を config に接続
+- [x] keep window state
 - [ ] runtime current file snapshot
 
 ## 2. viewer / render
@@ -111,15 +111,21 @@
 
 ### 3-1. filesystem 基盤
 - [x] `file` protocol
-- [ ] sort order を `os_name` / `name` / `date` / `size` で切り替えられるようにする
+- [x] sort order を `os_name` / `name` / `date` / `size` で切り替えられるようにする
 - [ ] filter 条件
-- [ ] archive option (`FOLDER` / `SKIP` / `ARCHIVER`)
+- [-] archive option (`FOLDER` / `SKIP` / `ARCHIVER`)
+- [x] directory scan を openable entry 前提にして `.wml` を拾う
+- [ ] 仮想化ファイルシステム(ListedFile, zip用)
+- [ ] `.zip` も同じ openable/archive mode に接続
 
 ### 3-2. ListedFile
-- [ ] `.txt` / ListedFile parser
-- [ ] コメント行 `#` を無視
-- [ ] path 行を file entry として読む
-- [ ] `@command` / `@(...)` は予約語として parse
+- [-] `.txt` / ListedFile parser
+- [x] `.wml` + `#!WMLViewer2 ListedFile 1.0` を判定
+- [x] フォルダ区切り `\\` / `/` を許可
+- [x] 相対 path 行を file entry として読む
+- [x] 相対 path の基準を ListedFile 親ディレクトリにする
+- [x] コメント行 `#` を無視
+- [-] `@command` / `@(...)` は予約語として parse
 
 ### 3-3. ZippedFile
 - [ ] feature で有効/無効を切り替えられるようにする
@@ -167,7 +173,9 @@
 
 ## 9. 設定に付随する機能
 
-- [ ] config import/export
+- [x] config import/export
+- [x] config option --config [path] 
+- [ ] config保存フォルダ ~/.wml2/config か？
 
 ## 10. リソース
 
@@ -191,8 +199,8 @@
 
 ## 次に着手する候補
 
-1. config load/save
-2. Windowの表示位置の固定化
-3. `navigation.sort`
-4. ListedFile parser
-5. ZippedFile の最小版（zip）
+1. ZippedFile の最小版（zip）
+2. 動作時のウィンドウサイズずれの詰め
+3. viewer / render / window の編集 UI
+4. 左クリックメニュー
+5. 形式を選択して保存(左クリックメニュー), ショートカット

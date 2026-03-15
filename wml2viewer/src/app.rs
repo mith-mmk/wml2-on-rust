@@ -1,3 +1,4 @@
+use crate::configs::config::{load_app_config, load_startup_path};
 use crate::drawers::image::{LoadedImage, load_canvas_from_file, resize_loaded_image};
 use crate::filesystem::resolve_start_path;
 use crate::options::*;
@@ -10,9 +11,11 @@ fn load_image(path: &Path) -> Result<LoadedImage, Box<dyn Error>> {
     Ok(load_canvas_from_file(path)?)
 }
 
-pub fn run(image_path: PathBuf) -> Result<(), Box<dyn Error>> {
-    // todo! configの初期化
-    let config = AppConfig::default();
+pub fn run(image_path: Option<PathBuf>, config_path: Option<PathBuf>) -> Result<(), Box<dyn Error>> {
+    let config = load_app_config(config_path.as_deref()).unwrap_or_default();
+    let image_path = image_path.unwrap_or(
+        load_startup_path(config_path.as_deref()).unwrap_or(std::env::current_dir()?),
+    );
     let start_path = resolve_start_path(&image_path).ok_or_else(|| {
         std::io::Error::new(
             std::io::ErrorKind::NotFound,
@@ -63,9 +66,31 @@ pub fn run(image_path: PathBuf) -> Result<(), Box<dyn Error>> {
 
             cc.egui_ctx
                 .send_viewport_cmd(egui::ViewportCommand::InnerSize(window_size));
+            match &config.window.start_position {
+                WindowStartPosition::Center => {
+                    let centered = egui::pos2(
+                        ((screen.x - window_size.x) * 0.5).max(0.0),
+                        ((screen.y - window_size.y) * 0.5).max(0.0),
+                    );
+                    cc.egui_ctx
+                        .send_viewport_cmd(egui::ViewportCommand::OuterPosition(centered));
+                }
+                WindowStartPosition::Exact { x, y } => {
+                    cc.egui_ctx
+                        .send_viewport_cmd(egui::ViewportCommand::OuterPosition(egui::pos2(
+                            *x, *y,
+                        )));
+                }
+            }
 
             Ok(Box::new(ViewerApp::new(
-                cc, start_path, image, rendered, config,
+                cc,
+                image_path.clone(),
+                start_path,
+                image,
+                rendered,
+                config,
+                config_path.clone(),
             )))
         }),
     )?;

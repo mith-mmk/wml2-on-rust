@@ -1,9 +1,15 @@
+use crate::configs::config::save_app_config;
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{ImageAlign, LoadedImage, resize_canvas, resize_loaded_image};
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::filesystem::{FilesystemCommand, FilesystemResult, spawn_filesystem_worker};
-use crate::options::{AppConfig, EndOfFolderOption, KeyBinding, ViewerAction};
-use crate::ui::viewer::options::{BackgroundStyle, RenderOptions, ViewerOptions};
+use crate::options::{
+    AppConfig, EndOfFolderOption, KeyBinding, NavigationOptions, NavigationSortOption,
+    ViewerAction,
+};
+use crate::ui::viewer::options::{
+    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowStartPosition,
+};
 use eframe::egui::{self, Color32, ColorImage, TextureHandle, TextureOptions, vec2};
 use std::collections::HashMap;
 use std::error::Error;
@@ -50,6 +56,7 @@ enum ActiveRenderRequest {
 }
 
 pub(crate) struct ViewerApp {
+    current_navigation_path: PathBuf,
     current_path: PathBuf,
     source: LoadedImage,
     rendered: LoadedImage,
@@ -67,8 +74,10 @@ pub(crate) struct ViewerApp {
 
     render_options: RenderOptions,
     options: ViewerOptions,
+    window_options: WindowOptions,
     keymap: HashMap<KeyBinding, ViewerAction>,
     end_of_folder: EndOfFolderOption,
+    navigation_sort: NavigationSortOption,
     worker_tx: Sender<RenderCommand>,
     worker_rx: Receiver<RenderResult>,
     next_request_id: u64,
@@ -85,6 +94,7 @@ pub(crate) struct ViewerApp {
     texture_display_scale: f32,
     pending_resize_after_load: bool,
     pending_fit_recalc: bool,
+    config_path: Option<PathBuf>,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -111,12 +121,13 @@ fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOpti
 impl ViewerApp {
     pub(crate) fn new(
         cc: &eframe::CreationContext<'_>,
+        navigation_path: PathBuf,
         path: PathBuf,
         source: LoadedImage,
         rendered: LoadedImage,
         config: AppConfig,
+        config_path: Option<PathBuf>,
     ) -> Self {
-        /* todo! Windowのx,y座標を固定 */
         let color_image = canvas_to_color_image(rendered.frame_canvas(0));
 
         let zoom = 1.0;
@@ -130,9 +141,10 @@ impl ViewerApp {
             .egui_ctx
             .load_texture(texture_name, color_image, TextureOptions::LINEAR);
         let (worker_tx, worker_rx) = spawn_render_worker(source.clone());
-        let (fs_tx, fs_rx) = spawn_filesystem_worker();
+        let (fs_tx, fs_rx) = spawn_filesystem_worker(config.navigation.sort);
 
         let mut this = Self {
+            current_navigation_path: navigation_path.clone(),
             current_path: path.clone(),
             source,
             rendered,
@@ -150,8 +162,10 @@ impl ViewerApp {
 
             render_options: config.render,
             options: config.viewer,
+            window_options: config.window,
             keymap: config.input.merged_with_defaults(),
             end_of_folder: config.navigation.end_of_folder,
+            navigation_sort: config.navigation.sort,
             worker_tx,
             worker_rx,
             next_request_id: 0,
@@ -168,9 +182,10 @@ impl ViewerApp {
             texture_display_scale: 1.0,
             pending_resize_after_load: false,
             pending_fit_recalc: false,
+            config_path,
         };
 
-        let _ = this.init_filesystem(path);
+        let _ = this.init_filesystem(navigation_path);
         this
     }
 
@@ -275,7 +290,7 @@ impl ViewerApp {
     }
 
     fn reload_current(&mut self) -> Result<(), Box<dyn Error>> {
-        self.request_load_path(self.current_path.clone())
+        self.request_load_path(self.current_navigation_path.clone())
     }
 
     fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
@@ -330,13 +345,14 @@ impl ViewerApp {
     }
 
     fn request_load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
+        let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path.clone());
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
-        self.loading_message = Some(format!("Loading {}", path.display()));
+        self.loading_message = Some(format!("Loading {}", load_path.display()));
         self.worker_tx
             .send(RenderCommand::LoadPath {
                 request_id,
-                path,
+                path: load_path,
                 zoom: self.zoom,
                 method: self.render_options.zoom_method,
             })
@@ -431,7 +447,10 @@ impl ViewerApp {
                         self.current_path = path.clone();
                         let _ = self
                             .fs_tx
-                            .send(FilesystemCommand::SetCurrent { request_id, path });
+                            .send(FilesystemCommand::SetCurrent {
+                                request_id,
+                                path: self.current_navigation_path.clone(),
+                            });
                     }
                     self.source = source;
                     self.rendered = rendered;
@@ -490,9 +509,14 @@ impl ViewerApp {
                     }
                 }
                 Ok(FilesystemResult::CurrentSet) => {}
-                Ok(FilesystemResult::PathResolved { request_id, path }) => {
+                Ok(FilesystemResult::PathResolved {
+                    request_id,
+                    navigation_path,
+                    load_path,
+                }) => {
                     if self.active_fs_request_id == Some(request_id) {
-                        let _ = self.request_load_path(path);
+                        self.current_navigation_path = navigation_path;
+                        let _ = self.request_load_path(load_path);
                         self.active_fs_request_id = None;
                     }
                 }
@@ -532,6 +556,7 @@ impl ViewerApp {
                 }
                 ViewerAction::ToggleFullscreen => {
                     let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
+                    self.window_options.fullscreen = !fullscreen;
                     ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
                 }
                 ViewerAction::Reload => {
@@ -645,15 +670,19 @@ impl ViewerApp {
         let mut reload_requested = false;
         let mut rerender_requested = false;
         let mut zoom_option_changed = false;
+        let mut config_changed = false;
         egui::Window::new("Settings")
             .open(&mut open)
             .resizable(true)
             .show(ctx, |ui| {
                 ui.heading("Viewer");
-                ui.checkbox(&mut self.options.animation, "Animation");
+                if ui.checkbox(&mut self.options.animation, "Animation").changed() {
+                    config_changed = true;
+                }
 
                 ui.horizontal(|ui| {
                     ui.label("End of folder");
+                    let before = self.end_of_folder;
                     egui::ComboBox::from_id_salt("end_of_folder")
                         .selected_text(end_of_folder_label(self.end_of_folder))
                         .show_ui(ui, |ui| {
@@ -678,6 +707,9 @@ impl ViewerApp {
                                 "RECURSIVE",
                             );
                         });
+                    if self.end_of_folder != before {
+                        config_changed = true;
+                    }
                 });
 
                 ui.horizontal(|ui| {
@@ -719,6 +751,7 @@ impl ViewerApp {
                         });
                     if self.render_options.zoom_option != before {
                         zoom_option_changed = true;
+                        config_changed = true;
                     }
                 });
 
@@ -751,6 +784,7 @@ impl ViewerApp {
                         });
                     if self.render_options.zoom_method != before {
                         rerender_requested = true;
+                        config_changed = true;
                     }
                 });
 
@@ -758,9 +792,11 @@ impl ViewerApp {
                     ui.label("Background");
                     if ui.button("Black").clicked() {
                         self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
+                        config_changed = true;
                     }
                     if ui.button("Gray").clicked() {
                         self.options.background = BackgroundStyle::Solid([48, 48, 48, 255]);
+                        config_changed = true;
                     }
                     if ui.button("Tile").clicked() {
                         self.options.background = BackgroundStyle::Tile {
@@ -768,6 +804,7 @@ impl ViewerApp {
                             color2: [80, 80, 80, 255],
                             size: 16,
                         };
+                        config_changed = true;
                     }
                 });
 
@@ -786,11 +823,58 @@ impl ViewerApp {
         if reload_requested {
             let _ = self.reload_current();
         }
+        if config_changed {
+            let _ = save_app_config(
+                &self.current_config(),
+                Some(&self.current_path),
+                self.config_path.as_deref(),
+            );
+        }
+    }
+
+    fn current_config(&self) -> AppConfig {
+        AppConfig {
+            viewer: self.options.clone(),
+            window: self.window_options.clone(),
+            render: self.render_options.clone(),
+            input: Default::default(),
+            navigation: NavigationOptions {
+                end_of_folder: self.end_of_folder,
+                sort: self.navigation_sort,
+            },
+        }
+    }
+
+    fn sync_window_state(&mut self, ctx: &egui::Context) {
+        let viewport = ctx.input(|i| i.viewport().clone());
+
+        if let Some(fullscreen) = viewport.fullscreen {
+            self.window_options.fullscreen = fullscreen;
+        }
+
+        if self.window_options.fullscreen {
+            return;
+        }
+
+        if let Some(inner_rect) = viewport.inner_rect {
+            self.window_options.size = crate::ui::viewer::options::WindowSize::Exact {
+                width: inner_rect.width(),
+                height: inner_rect.height(),
+            };
+        }
+
+        if let Some(outer_rect) = viewport.outer_rect {
+            self.window_options.start_position = WindowStartPosition::Exact {
+                x: outer_rect.min.x,
+                y: outer_rect.min.y,
+            };
+        }
     }
 }
 
 impl eframe::App for ViewerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.sync_window_state(ctx);
         self.update_window_title(ctx);
         self.poll_worker();
         self.poll_filesystem();
@@ -856,6 +940,14 @@ impl eframe::App for ViewerApp {
                     }
                 });
         });
+    }
+
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        let _ = save_app_config(
+            &self.current_config(),
+            Some(&self.current_path),
+            self.config_path.as_deref(),
+        );
     }
 }
 

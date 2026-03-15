@@ -51,6 +51,7 @@ impl Default for RenderOptions {
 pub struct WindowOptions {
     pub fullscreen: bool,
     pub size: WindowSize,
+    pub start_position: WindowStartPosition,
 }
 
 impl Default for WindowOptions {
@@ -58,6 +59,7 @@ impl Default for WindowOptions {
         Self {
             fullscreen: false,
             size: WindowSize::Relative(0.8),
+            start_position: WindowStartPosition::Center,
         }
     }
 }
@@ -66,6 +68,12 @@ impl Default for WindowOptions {
 pub enum WindowSize {
     Relative(f32),
     Exact { width: f32, height: f32 },
+}
+
+#[derive(Clone)]
+pub enum WindowStartPosition {
+    Center,
+    Exact { x: f32, y: f32 },
 }
 
 #[derive(Clone, PartialEq, Eq)]

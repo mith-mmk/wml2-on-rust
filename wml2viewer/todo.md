@@ -82,6 +82,8 @@
 - [ ] `F1` help
 - [x] `P` setting
 - [ ] 左クリックで簡単なメニュー
+- [ ] タッチパネルUI（低優先度）
+
 
 ### 1-3. 設定画面の先行タスク
 - [x] option menu の土台
@@ -95,6 +97,28 @@
 - [x] 設定画面の現在項目を config に接続
 - [x] keep window state
 - [ ] runtime current file snapshot
+
+### 1-5. ファイラー
+ - [ ] OS非依存のファイラー
+ - [ ] サムネイル表示機能、ソート機能
+ - [ ] レスポンシブ対応デザイン
+ - [ ] ネットワークマウント(モバイル待ち)
+
+### 1-6. CI/CD
+- [ ] Auto Builder
+- [ ] Windows x86/x84
+- [ ] MacOS Intel/Arm
+- [ ] Linux Win/Arm
+- [ ] Android
+- [ ] iOS
+- [ ] iPad
+
+### 1-7. サムネイル
+ - [ ] 独自サムネイル index作成（Bloom filter方式を検討　サムネイルのローカル保存は保留）
+ - [ ] OS Indexキャプチャ
+ - [ ] サムネイルのクリア機能（設定画面）
+
+
 
 ## 2. viewer / render
 
@@ -117,6 +141,7 @@
 - [x] directory scan を openable entry 前提にして `.wml` を拾う
 - [ ] 仮想化ファイルシステム(ListedFile, zip用)
 - [ ] `.zip` も同じ openable/archive mode に接続
+- [ ] （検討中）キャッシュのシリアライズ
 
 ### 3-2. ListedFile
 - [-] `.txt` / ListedFile parser
@@ -169,7 +194,10 @@
 
 ## 8. 設定画面
 
-- [ ] 1-3 / 1-4 が終わったら import/export をつなぐ
+- [x] 1-3 / 1-4 が終わったら import/export をつなぐ
+- [ ] 左クリックメニュー
+- [ ] 設定画面表示時のメインペインへのイベント貫通防止
+- [ ] キーバインドUI
 
 ## 9. 設定に付随する機能
 
@@ -198,9 +226,12 @@
 - [ ] command / external command
 
 ## 次に着手する候補
+　停止しないで一括で実装
 
 1. ZippedFile の最小版（zip）
 2. 動作時のウィンドウサイズずれの詰め
 3. viewer / render / window の編集 UI
 4. 左クリックメニュー
 5. 形式を選択して保存(左クリックメニュー), ショートカット
+6. デフォルトの設定フォルダを~/.wml2   Windowsは%USER_PROFILE%/.wml2
+7. 

@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{AppConfig, EndOfFolderOption, NavigationSortOption};
 use crate::ui::viewer::options::{
-    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize,
-    WindowStartPosition, ZoomOption,
+    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
+    ZoomOption,
 };
 
 type ConfigResult<T> = Result<T, Box<dyn Error>>;
@@ -218,7 +218,11 @@ pub fn save_app_config(
 fn resolve_config_path(config_override: Option<&Path>) -> PathBuf {
     config_override
         .map(|path| path.to_path_buf())
-        .or_else(|| std::env::current_dir().ok().map(|dir| dir.join("wml2viewer.toml")))
+        .or_else(|| {
+            std::env::current_dir()
+                .ok()
+                .map(|dir| dir.join("wml2viewer.toml"))
+        })
         .unwrap_or_else(|| PathBuf::from("wml2viewer.toml"))
 }
 
@@ -429,9 +433,7 @@ impl From<InterpolationAlgorithm> for ZoomMethodConfigFile {
             InterpolationAlgorithm::Bicubic | InterpolationAlgorithm::BicubicAlpha(_) => {
                 Self::Bicubic
             }
-            InterpolationAlgorithm::Lanzcos3 | InterpolationAlgorithm::Lanzcos(_) => {
-                Self::Lanczos3
-            }
+            InterpolationAlgorithm::Lanzcos3 | InterpolationAlgorithm::Lanzcos(_) => Self::Lanczos3,
         }
     }
 }

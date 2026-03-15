@@ -11,11 +11,13 @@ fn load_image(path: &Path) -> Result<LoadedImage, Box<dyn Error>> {
     Ok(load_canvas_from_file(path)?)
 }
 
-pub fn run(image_path: Option<PathBuf>, config_path: Option<PathBuf>) -> Result<(), Box<dyn Error>> {
+pub fn run(
+    image_path: Option<PathBuf>,
+    config_path: Option<PathBuf>,
+) -> Result<(), Box<dyn Error>> {
     let config = load_app_config(config_path.as_deref()).unwrap_or_default();
-    let image_path = image_path.unwrap_or(
-        load_startup_path(config_path.as_deref()).unwrap_or(std::env::current_dir()?),
-    );
+    let image_path = image_path
+        .unwrap_or(load_startup_path(config_path.as_deref()).unwrap_or(std::env::current_dir()?));
     let start_path = resolve_start_path(&image_path).ok_or_else(|| {
         std::io::Error::new(
             std::io::ErrorKind::NotFound,

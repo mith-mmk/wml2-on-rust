@@ -83,20 +83,27 @@ pub enum FilesystemCommand {
 }
 
 pub enum FilesystemResult {
-    NavigatorReady { request_id: u64 },
+    NavigatorReady {
+        request_id: u64,
+    },
     CurrentSet,
     PathResolved {
         request_id: u64,
         navigation_path: PathBuf,
         load_path: PathBuf,
     },
-    NoPath { request_id: u64 },
+    NoPath {
+        request_id: u64,
+    },
 }
 
 impl FileNavigator {
     fn from_current_path(path: PathBuf, cache: &mut FilesystemCache) -> Self {
         let files = flat_container_entries(&path, cache).unwrap_or_else(|| vec![path.clone()]);
-        let current = files.iter().position(|candidate| candidate == &path).unwrap_or(0);
+        let current = files
+            .iter()
+            .position(|candidate| candidate == &path)
+            .unwrap_or(0);
 
         Self {
             current_path: path,
@@ -262,11 +269,15 @@ impl FileNavigator {
 
         let target = if forward {
             directories.iter().skip(current_index + 1).find_map(|dir| {
-                cache.first_supported_file(dir).map(|path| (dir.clone(), path))
+                cache
+                    .first_supported_file(dir)
+                    .map(|path| (dir.clone(), path))
             })
         } else {
             directories[..current_index].iter().rev().find_map(|dir| {
-                cache.last_supported_file(dir).map(|path| (dir.clone(), path))
+                cache
+                    .last_supported_file(dir)
+                    .map(|path| (dir.clone(), path))
             })
         }?;
 
@@ -361,14 +372,22 @@ pub fn spawn_filesystem_worker(
                         .as_mut()
                         .and_then(|nav| nav.first(&mut cache).map(|_| nav.current_target()))
                         .unwrap_or(NavigationOutcome::NoPath);
-                    let _ = send_nav_result(&result_tx, request_id, navigation_outcome_to_target(outcome));
+                    let _ = send_nav_result(
+                        &result_tx,
+                        request_id,
+                        navigation_outcome_to_target(outcome),
+                    );
                 }
                 FilesystemCommand::Last { request_id } => {
                     let outcome = navigator
                         .as_mut()
                         .and_then(|nav| nav.last(&mut cache).map(|_| nav.current_target()))
                         .unwrap_or(NavigationOutcome::NoPath);
-                    let _ = send_nav_result(&result_tx, request_id, navigation_outcome_to_target(outcome));
+                    let _ = send_nav_result(
+                        &result_tx,
+                        request_id,
+                        navigation_outcome_to_target(outcome),
+                    );
                 }
             }
         }
@@ -616,7 +635,8 @@ fn build_listed_virtual_children(listed_file: &Path) -> Vec<PathBuf> {
         .into_iter()
         .enumerate()
         .filter_map(|(index, entry_path)| {
-            resolve_start_path(&entry_path).map(|_| listed_virtual_child_path(listed_file, index, &entry_path))
+            resolve_start_path(&entry_path)
+                .map(|_| listed_virtual_child_path(listed_file, index, &entry_path))
         })
         .collect()
 }
@@ -660,7 +680,10 @@ fn resolve_navigation_leaf(path: PathBuf) -> Option<PathBuf> {
 
 fn listed_virtual_child_info(path: &Path) -> Option<(PathBuf, usize)> {
     let file_name = path.file_name()?.to_string_lossy();
-    let index_text = file_name.split_once("__").map(|(index, _)| index).unwrap_or(file_name.as_ref());
+    let index_text = file_name
+        .split_once("__")
+        .map(|(index, _)| index)
+        .unwrap_or(file_name.as_ref());
     let index = index_text.parse::<usize>().ok()?;
 
     let marker_dir = path.parent()?;
@@ -681,7 +704,9 @@ fn is_supported_image(path: &Path) -> bool {
         .and_then(|ext| ext.to_str())
         .map(|ext| {
             let ext = ext.to_ascii_lowercase();
-            SUPPORTED_EXTENSIONS.iter().any(|supported| *supported == ext)
+            SUPPORTED_EXTENSIONS
+                .iter()
+                .any(|supported| *supported == ext)
         })
         .unwrap_or(false)
 }
@@ -722,7 +747,8 @@ fn sort_paths(paths: &mut [PathBuf], sort: NavigationSortOption) {
             paths.sort_by_cached_key(|path| file_name_sort_key(path));
         }
         NavigationSortOption::Date => {
-            paths.sort_by_cached_key(|path| (metadata_modified_key(path), file_name_sort_key(path)));
+            paths
+                .sort_by_cached_key(|path| (metadata_modified_key(path), file_name_sort_key(path)));
         }
         NavigationSortOption::Size => {
             paths.sort_by_cached_key(|path| (metadata_size_key(path), file_name_sort_key(path)));
@@ -828,7 +854,10 @@ mod tests {
             panic!("expected first listed child from next");
         };
         assert!(is_virtual_listed_child(&target.navigation_path));
-        assert_eq!(listed_virtual_root(&target.navigation_path), Some(listed.clone()));
+        assert_eq!(
+            listed_virtual_root(&target.navigation_path),
+            Some(listed.clone())
+        );
         assert_eq!(target.load_path, listed_1);
 
         nav.set_current_input(target.navigation_path.clone(), &mut cache);

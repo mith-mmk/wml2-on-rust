@@ -5,8 +5,8 @@
 use std::collections::HashMap;
 
 pub use crate::ui::viewer::options::{
-    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize,
-    WindowStartPosition, ZoomOption,
+    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
+    ZoomOption,
 };
 
 #[derive(Clone, Default)]

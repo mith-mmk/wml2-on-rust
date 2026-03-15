@@ -1,11 +1,10 @@
 use crate::configs::config::save_app_config;
+use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{ImageAlign, LoadedImage, resize_canvas, resize_loaded_image};
-use crate::drawers::affine::InterpolationAlgorithm;
 use crate::filesystem::{FilesystemCommand, FilesystemResult, spawn_filesystem_worker};
 use crate::options::{
-    AppConfig, EndOfFolderOption, KeyBinding, NavigationOptions, NavigationSortOption,
-    ViewerAction,
+    AppConfig, EndOfFolderOption, KeyBinding, NavigationOptions, NavigationSortOption, ViewerAction,
 };
 use crate::ui::viewer::options::{
     BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowStartPosition,
@@ -238,8 +237,7 @@ impl ViewerApp {
         };
 
         self.texture_display_scale = display_scale;
-        self.texture
-            .set(image, TextureOptions::LINEAR);
+        self.texture.set(image, TextureOptions::LINEAR);
     }
 
     fn update_window_title(&self, ctx: &egui::Context) {
@@ -445,12 +443,10 @@ impl ViewerApp {
                     if let Some(path) = path {
                         let request_id = self.alloc_fs_request_id();
                         self.current_path = path.clone();
-                        let _ = self
-                            .fs_tx
-                            .send(FilesystemCommand::SetCurrent {
-                                request_id,
-                                path: self.current_navigation_path.clone(),
-                            });
+                        let _ = self.fs_tx.send(FilesystemCommand::SetCurrent {
+                            request_id,
+                            path: self.current_navigation_path.clone(),
+                        });
                     }
                     self.source = source;
                     self.rendered = rendered;
@@ -676,7 +672,10 @@ impl ViewerApp {
             .resizable(true)
             .show(ctx, |ui| {
                 ui.heading("Viewer");
-                if ui.checkbox(&mut self.options.animation, "Animation").changed() {
+                if ui
+                    .checkbox(&mut self.options.animation, "Animation")
+                    .changed()
+                {
                     config_changed = true;
                 }
 

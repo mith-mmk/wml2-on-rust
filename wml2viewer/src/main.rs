@@ -12,6 +12,10 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    println!(
+        "wml2viewer {}",
+        env!("CARGO_PKG_VERSION")
+    );
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
@@ -68,15 +72,11 @@ fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
 
 fn parse_config_equals(arg: &OsString) -> Option<PathBuf> {
     let text = arg.to_string_lossy();
-    text.strip_prefix("--config=")
-        .map(PathBuf::from)
+    text.strip_prefix("--config=").map(PathBuf::from)
 }
 
 fn is_ignorable_shell_argument(arg: &OsString) -> bool {
-    matches!(
-        arg.to_string_lossy().as_ref(),
-        "/dde" | "-Embedding" | "--"
-    )
+    matches!(arg.to_string_lossy().as_ref(), "/dde" | "-Embedding" | "--")
 }
 
 fn pick_image_path(args: Vec<PathBuf>) -> Option<PathBuf> {

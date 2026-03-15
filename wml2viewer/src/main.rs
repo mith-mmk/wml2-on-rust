@@ -13,8 +13,10 @@ use std::process::ExitCode;
 
 fn main() -> ExitCode {
     println!(
-        "wml2viewer {}",
-        env!("CARGO_PKG_VERSION")
+        "wml2viewer version {}-lib{} Copyright (C) 2026 {}",
+        env!("CARGO_PKG_VERSION"),
+        wml2::get_version(),
+        env!("CARGO_PKG_AUTHORS")
     );
     match run() {
         Ok(()) => ExitCode::SUCCESS,

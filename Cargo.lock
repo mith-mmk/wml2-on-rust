@@ -4199,7 +4199,7 @@ dependencies = [
 
 [[package]]
 name = "wml2viewer"
-version = "0.0.1"
+version = "0.0.18-v1"
 dependencies = [
  "eframe",
  "serde",

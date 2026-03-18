@@ -266,7 +266,7 @@
 
 ## 次に着手する候補
 　途中で停止しないこと。一括で実装。
-  デフォルトconfigパスは、create directoryで実装しなおしました
+  デフォルトconfigパスは、create directoryで実装しなおしました dependent/thirdpartyのした
 
 1. リソースの追加(システムfontの切り替え)
    1. system言語を検出

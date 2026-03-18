@@ -1,21 +1,5 @@
-use directories::{BaseDirs,ProjectDirs};
-use std::path::PathBuf;
-
-#[cfg(any(target_os = "windows", target_os = "macos",  unix))]
-pub fn default_config_dir() -> Option<PathBuf> {
-    ProjectDirs::from("io.github", "mith-mmk", "wml2")
-        .map(|proj| proj.config_dir().to_path_buf())
-}
-
-#[cfg(any(target_os = "windows", target_os = "macos",  unix))]
-pub fn available_roots() -> Vec<PathBuf> {
-    let mut roots = vec![PathBuf::from("/")];
-
-    if let Some(base) = BaseDirs::new() {
-        roots.push(base.home_dir().to_path_buf());
-    }
-    roots
-}
+mod thirdparty;
+pub use thirdparty::*;
 
 #[cfg(target_os = "windows")]
 mod windows;
@@ -38,11 +22,11 @@ mod other;
 
 //use eframe::egui::Direction;
 #[cfg(target_os = "windows")]
-//pub use windows::*;
+pub use windows::*;
 #[cfg(unix)]
-//pub use linux::*;
+pub use linux::*;
 #[cfg(target_os = "macos")]
-//pub use darwin::*;
+pub use darwin::*;
 #[cfg(target_os = "android")]
 pub use android::*;
 #[cfg(target_os = "ios")]

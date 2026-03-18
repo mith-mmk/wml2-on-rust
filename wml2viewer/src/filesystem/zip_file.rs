@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 
 use zip::ZipArchive;
 
@@ -13,6 +14,13 @@ pub(crate) struct ZipEntryRecord {
 }
 
 pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
+    static ZIP_INDEX_CACHE: OnceLock<Mutex<std::collections::HashMap<PathBuf, Vec<ZipEntryRecord>>>> =
+        OnceLock::new();
+    let cache = ZIP_INDEX_CACHE.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
+    if let Some(entries) = cache.lock().ok()?.get(path).cloned() {
+        return Some(entries);
+    }
+
     let file = File::open(path).ok()?;
     let mut archive = ZipArchive::new(file).ok()?;
     let mut entries = Vec::new();
@@ -35,6 +43,9 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
     }
 
     entries.sort_by(|left, right| left.name.to_lowercase().cmp(&right.name.to_lowercase()));
+    if let Ok(mut cache) = cache.lock() {
+        cache.insert(path.to_path_buf(), entries.clone());
+    }
     Some(entries)
 }
 

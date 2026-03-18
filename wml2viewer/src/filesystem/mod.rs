@@ -340,6 +340,59 @@ pub fn list_openable_entries(dir: &Path, sort: NavigationSortOption) -> Vec<Path
     cache.supported_entries(dir)
 }
 
+pub fn list_browser_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathBuf> {
+    let mut entries = Vec::new();
+    let Ok(read_dir) = fs::read_dir(dir) else {
+        return entries;
+    };
+
+    let mut dirs = Vec::new();
+    let mut files = Vec::new();
+    for entry in read_dir.filter_map(Result::ok) {
+        let path = entry.path();
+        if path.is_dir() {
+            dirs.push(path);
+        } else if is_supported_image(&path) || is_listed_file_path(&path) || is_zip_file_path(&path) {
+            files.push(path);
+        }
+    }
+
+    sort_paths(&mut dirs, sort);
+    sort_paths(&mut files, sort);
+    entries.extend(dirs);
+    entries.extend(files);
+    entries
+}
+
+pub fn adjacent_entry(
+    path: &Path,
+    sort: NavigationSortOption,
+    step: isize,
+) -> Option<PathBuf> {
+    let mut cache = FilesystemCache {
+        listings_by_dir: HashMap::new(),
+        sort,
+    };
+    let start_path = resolve_navigation_path(path, &mut cache)?;
+    let mut navigator = FileNavigator::from_current_path(start_path, &mut cache);
+
+    if step == 0 {
+        return Some(navigator.current().to_path_buf());
+    }
+
+    let count = step.unsigned_abs();
+    let mut result = None;
+    for _ in 0..count {
+        result = if step > 0 {
+            navigator.next(&mut cache)
+        } else {
+            navigator.prev(&mut cache)
+        };
+        result.as_ref()?;
+    }
+    result
+}
+
 pub fn spawn_filesystem_worker(
     sort: NavigationSortOption,
 ) -> (Sender<FilesystemCommand>, Receiver<FilesystemResult>) {
@@ -630,7 +683,11 @@ fn scan_listed_virtual_directory(listed_file: &Path) -> DirectoryListing {
 }
 
 fn scan_zip_virtual_directory(zip_file: &Path) -> DirectoryListing {
-    let files = build_zip_virtual_children(zip_file);
+    let entries = load_zip_entries(zip_file).unwrap_or_default();
+    let files = entries
+        .iter()
+        .map(|entry| zip_virtual_child_path(zip_file, entry.index, &entry.name))
+        .collect::<Vec<_>>();
 
     DirectoryListing {
         first_file: files.first().cloned(),

@@ -1,4 +1,5 @@
 use crate::configs::config::save_app_config;
+use crate::dependent::available_roots;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{
@@ -6,8 +7,8 @@ use crate::drawers::image::{
     resize_loaded_image, save_loaded_image,
 };
 use crate::filesystem::{
-    FilesystemCommand, FilesystemResult, list_openable_entries, load_virtual_image_bytes,
-    spawn_filesystem_worker,
+    FilesystemCommand, FilesystemResult, adjacent_entry, list_browser_entries,
+    list_openable_entries, load_virtual_image_bytes, spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationOptions, NavigationSortOption, ViewerAction,
@@ -66,6 +67,7 @@ pub(crate) struct ViewerApp {
     source: LoadedImage,
     rendered: LoadedImage,
     texture: TextureHandle,
+    egui_ctx: egui::Context,
 
     zoom: f32,
 
@@ -106,9 +108,19 @@ pub(crate) struct ViewerApp {
     save_message: Option<String>,
     show_filer: bool,
     filer_entries: Vec<PathBuf>,
+    navigation_entries: Vec<PathBuf>,
     filer_directory: Option<PathBuf>,
     filer_selected: Option<PathBuf>,
+    filer_roots: Vec<PathBuf>,
     startup_window_sync_frames: usize,
+    empty_mode: bool,
+    companion_tx: Sender<RenderCommand>,
+    companion_rx: Receiver<RenderResult>,
+    companion_active_request: Option<ActiveRenderRequest>,
+    companion_navigation_path: Option<PathBuf>,
+    companion_rendered: Option<LoadedImage>,
+    companion_texture: Option<TextureHandle>,
+    companion_texture_display_scale: f32,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -141,6 +153,7 @@ impl ViewerApp {
         rendered: LoadedImage,
         config: AppConfig,
         config_path: Option<PathBuf>,
+        show_filer_on_start: bool,
     ) -> Self {
         let color_image = canvas_to_color_image(rendered.frame_canvas(0));
 
@@ -155,6 +168,7 @@ impl ViewerApp {
             .egui_ctx
             .load_texture(texture_name, color_image, TextureOptions::LINEAR);
         let (worker_tx, worker_rx) = spawn_render_worker(source.clone());
+        let (companion_tx, companion_rx) = spawn_render_worker(source.clone());
         let (fs_tx, fs_rx) = spawn_filesystem_worker(config.navigation.sort);
 
         let mut this = Self {
@@ -163,6 +177,7 @@ impl ViewerApp {
             source,
             rendered,
             texture,
+            egui_ctx: cc.egui_ctx.clone(),
 
             zoom,
 
@@ -201,11 +216,21 @@ impl ViewerApp {
             left_menu_pos: Pos2::ZERO,
             save_format: SaveFormat::Png,
             save_message: None,
-            show_filer: false,
+            show_filer: show_filer_on_start,
             filer_entries: Vec::new(),
+            navigation_entries: Vec::new(),
             filer_directory: None,
             filer_selected: None,
+            filer_roots: available_roots(),
             startup_window_sync_frames: 0,
+            empty_mode: show_filer_on_start,
+            companion_tx,
+            companion_rx,
+            companion_active_request: None,
+            companion_navigation_path: None,
+            companion_rendered: None,
+            companion_texture: None,
+            companion_texture_display_scale: 1.0,
         };
 
         let _ = this.init_filesystem(navigation_path);
@@ -317,6 +342,9 @@ impl ViewerApp {
     }
 
     fn current_directory(&self) -> Option<PathBuf> {
+        if self.current_navigation_path.is_dir() {
+            return Some(self.current_navigation_path.clone());
+        }
         if let Some(parent) = self.current_navigation_path.parent() {
             let marker = parent.file_name().and_then(|name| name.to_str());
             if matches!(marker, Some("__wmlv__" | "__zipv__")) {
@@ -330,13 +358,21 @@ impl ViewerApp {
     fn refresh_filer_entries(&mut self) {
         let Some(dir) = self.current_directory() else {
             self.filer_entries.clear();
+            self.navigation_entries.clear();
             self.filer_directory = None;
             return;
         };
 
-        self.filer_entries = list_openable_entries(&dir, self.navigation_sort);
+        self.filer_entries = list_browser_entries(&dir, self.navigation_sort);
+        self.navigation_entries = list_openable_entries(&dir, self.navigation_sort);
         self.filer_directory = Some(dir);
         self.filer_selected = Some(self.current_navigation_path.clone());
+    }
+
+    fn set_filer_directory(&mut self, dir: PathBuf) {
+        self.filer_directory = Some(dir.clone());
+        self.filer_entries = list_browser_entries(&dir, self.navigation_sort);
+        self.navigation_entries = list_openable_entries(&dir, self.navigation_sort);
     }
 
     fn save_current_as(&mut self, format: SaveFormat) {
@@ -361,8 +397,82 @@ impl ViewerApp {
         }
     }
 
+    fn is_current_portrait_page(&self) -> bool {
+        self.source.canvas.height() >= self.source.canvas.width()
+    }
+
+    fn desired_manga_companion_path(&self) -> Option<PathBuf> {
+        if !self.options.manga_mode || self.empty_mode || !self.is_current_portrait_page() {
+            return None;
+        }
+
+        adjacent_entry(&self.current_navigation_path, self.navigation_sort, 1)
+    }
+
+    fn manga_spread_active(&self) -> bool {
+        self.options.manga_mode
+            && self.is_current_portrait_page()
+            && self.companion_navigation_path.is_some()
+            && self
+                .companion_rendered
+                .as_ref()
+                .map(|image| image.canvas.height() >= image.canvas.width())
+                .unwrap_or(false)
+    }
+
+    fn request_companion_load(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
+        let request_id = self.alloc_request_id();
+        self.companion_active_request = Some(ActiveRenderRequest::Load(request_id));
+        self.companion_navigation_path = Some(path.clone());
+        let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path);
+        self.companion_tx
+            .send(RenderCommand::LoadPath {
+                request_id,
+                path: load_path,
+                zoom: self.zoom,
+                method: self.render_options.zoom_method,
+            })
+            .map_err(worker_send_error)?;
+        Ok(())
+    }
+
+    fn sync_manga_companion(&mut self, ctx: &egui::Context) {
+        let desired = self.desired_manga_companion_path();
+        if desired == self.companion_navigation_path && self.companion_rendered.is_some() {
+            return;
+        }
+
+        if desired.is_none() {
+            self.companion_navigation_path = None;
+            self.companion_rendered = None;
+            self.companion_texture = None;
+            self.companion_active_request = None;
+            return;
+        }
+
+        if self.companion_active_request.is_none() {
+            let _ = self.request_companion_load(desired.unwrap());
+            ctx.request_repaint();
+        }
+    }
+
+    fn manga_navigation_target(&self, forward: bool) -> Option<PathBuf> {
+        if !self.manga_spread_active() {
+            return None;
+        }
+
+        let step = if forward { 2 } else { -2 };
+        adjacent_entry(&self.current_navigation_path, self.navigation_sort, step)
+    }
+
     fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
         if !self.can_trigger_navigation() {
+            return Ok(());
+        }
+        if let Some(target) = self.manga_navigation_target(true) {
+            self.current_navigation_path = target.clone();
+            self.request_load_path(target)?;
+            self.last_navigation_at = Some(Instant::now());
             return Ok(());
         }
         self.request_navigation(FilesystemCommand::Next {
@@ -375,6 +485,12 @@ impl ViewerApp {
 
     fn prev_image(&mut self) -> Result<(), Box<dyn Error>> {
         if !self.can_trigger_navigation() {
+            return Ok(());
+        }
+        if let Some(target) = self.manga_navigation_target(false) {
+            self.current_navigation_path = target.clone();
+            self.request_load_path(target)?;
+            self.last_navigation_at = Some(Instant::now());
             return Ok(());
         }
         self.request_navigation(FilesystemCommand::Prev {
@@ -443,6 +559,9 @@ impl ViewerApp {
                 method: self.render_options.zoom_method,
             })
             .map_err(worker_send_error)?;
+        if let Some(path) = self.companion_navigation_path.clone() {
+            let _ = self.request_companion_load(path);
+        }
         Ok(())
     }
 
@@ -563,6 +682,69 @@ impl ViewerApp {
         }
     }
 
+    fn poll_companion_worker(&mut self) {
+        loop {
+            match self.companion_rx.try_recv() {
+                Ok(RenderResult::Loaded {
+                    request_id,
+                    path: _,
+                    source: _,
+                    rendered,
+                }) => {
+                    let Some(active_request) = self.companion_active_request else {
+                        continue;
+                    };
+                    let request_matches = match active_request {
+                        ActiveRenderRequest::Load(active_id)
+                        | ActiveRenderRequest::Resize(active_id) => active_id == request_id,
+                    };
+                    if !request_matches {
+                        continue;
+                    }
+
+                    let (canvas, display_scale) = downscale_for_texture_limit(
+                        rendered.frame_canvas(0),
+                        self.max_texture_side,
+                        self.render_options.zoom_method,
+                    );
+                    let image = canvas_to_color_image(&canvas);
+                    let texture = if let Some(texture) = &mut self.companion_texture {
+                        texture.set(image, TextureOptions::LINEAR);
+                        texture.clone()
+                    } else {
+                        self.egui_ctx
+                            .load_texture("manga_companion", image, TextureOptions::LINEAR)
+                    };
+                    self.companion_texture = Some(texture);
+                    self.companion_rendered = Some(rendered);
+                    self.companion_texture_display_scale = display_scale;
+                    self.companion_active_request = None;
+                }
+                Ok(RenderResult::Failed { request_id, .. }) => {
+                    let Some(active_request) = self.companion_active_request else {
+                        continue;
+                    };
+                    let request_matches = match active_request {
+                        ActiveRenderRequest::Load(active_id)
+                        | ActiveRenderRequest::Resize(active_id) => active_id == request_id,
+                    };
+                    if request_matches {
+                        self.companion_rendered = None;
+                        self.companion_texture = None;
+                        self.companion_active_request = None;
+                    }
+                }
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => {
+                    self.companion_rendered = None;
+                    self.companion_texture = None;
+                    self.companion_active_request = None;
+                    break;
+                }
+            }
+        }
+    }
+
     fn poll_filesystem(&mut self) {
         loop {
             match self.fs_rx.try_recv() {
@@ -589,9 +771,8 @@ impl ViewerApp {
                 }
                 Ok(FilesystemResult::NoPath { request_id }) => {
                     if self.active_fs_request_id == Some(request_id) {
-                        if self.active_request.is_none() {
-                            self.loading_message = None;
-                        }
+                        self.loading_message = Some("No displayable file found".to_string());
+                        self.show_filer = true;
                         self.active_fs_request_id = None;
                     }
                 }
@@ -840,6 +1021,12 @@ impl ViewerApp {
                         ));
                         config_changed = true;
                     }
+                    config_changed |= ui
+                        .checkbox(&mut self.window_options.remember_size, "Remember size")
+                        .changed();
+                    config_changed |= ui
+                        .checkbox(&mut self.window_options.remember_position, "Remember position")
+                        .changed();
                     match &mut self.window_options.size {
                         crate::ui::viewer::options::WindowSize::Relative(ratio) => {
                             ui.label("Window size: relative");
@@ -978,8 +1165,36 @@ impl ViewerApp {
             .default_width(260.0)
             .show(ctx, |ui| {
                 ui.heading("Filer");
+                let current_root = self
+                    .filer_directory
+                    .as_ref()
+                    .and_then(|dir| self.filer_roots.iter().find(|root| dir.starts_with(root)))
+                    .cloned()
+                    .or_else(|| self.filer_roots.first().cloned());
+                egui::ComboBox::from_id_salt("filer_roots")
+                    .selected_text(
+                        current_root
+                            .as_ref()
+                            .map(|path| path.display().to_string())
+                            .unwrap_or_else(|| "(root)".to_string()),
+                    )
+                    .show_ui(ui, |ui| {
+                        for root in self.filer_roots.clone() {
+                            if ui
+                                .selectable_label(current_root.as_ref() == Some(&root), root.display().to_string())
+                                .clicked()
+                            {
+                                self.set_filer_directory(root);
+                            }
+                        }
+                    });
                 if let Some(dir) = &self.filer_directory {
                     ui.label(dir.display().to_string());
+                    if let Some(parent) = dir.parent() {
+                        if ui.button("..").clicked() {
+                            self.set_filer_directory(parent.to_path_buf());
+                        }
+                    }
                 }
                 ui.separator();
                 egui::ScrollArea::vertical().show(ui, |ui| {
@@ -992,8 +1207,13 @@ impl ViewerApp {
                         let selected = self.filer_selected.as_ref() == Some(&entry)
                             || self.current_navigation_path == entry;
                         if ui.selectable_label(selected, label).clicked() {
+                            if entry.is_dir() {
+                                self.set_filer_directory(entry);
+                                continue;
+                            }
                             self.filer_selected = Some(entry.clone());
                             self.current_navigation_path = entry.clone();
+                            self.empty_mode = false;
                             let _ = self.request_load_path(entry);
                         }
                     }
@@ -1013,18 +1233,22 @@ impl ViewerApp {
             return;
         }
 
-        if let Some(inner_rect) = viewport.inner_rect {
-            self.window_options.size = crate::ui::viewer::options::WindowSize::Exact {
-                width: inner_rect.width(),
-                height: inner_rect.height(),
-            };
+        if self.window_options.remember_size {
+            if let Some(inner_rect) = viewport.inner_rect {
+                self.window_options.size = crate::ui::viewer::options::WindowSize::Exact {
+                    width: inner_rect.width(),
+                    height: inner_rect.height(),
+                };
+            }
         }
 
-        if let Some(outer_rect) = viewport.outer_rect {
-            self.window_options.start_position = WindowStartPosition::Exact {
-                x: outer_rect.min.x,
-                y: outer_rect.min.y,
-            };
+        if self.window_options.remember_position {
+            if let Some(outer_rect) = viewport.outer_rect {
+                self.window_options.start_position = WindowStartPosition::Exact {
+                    x: outer_rect.min.x,
+                    y: outer_rect.min.y,
+                };
+            }
         }
     }
 }
@@ -1034,7 +1258,9 @@ impl eframe::App for ViewerApp {
         self.sync_window_state(ctx);
         self.update_window_title(ctx);
         self.poll_worker();
+        self.poll_companion_worker();
         self.poll_filesystem();
+        self.sync_manga_companion(ctx);
         self.handle_keyboard(ctx);
         self.settings_ui(ctx);
         self.left_click_menu_ui(ctx);
@@ -1058,7 +1284,8 @@ impl eframe::App for ViewerApp {
 
             let viewport = ui.available_size();
 
-            if (viewport != self.last_viewport_size || self.pending_fit_recalc)
+            if !self.empty_mode
+                && (viewport != self.last_viewport_size || self.pending_fit_recalc)
                 && !matches!(self.render_options.zoom_option, ZoomOption::None)
             {
                 self.last_viewport_size = viewport;
@@ -1084,30 +1311,50 @@ impl eframe::App for ViewerApp {
 
                     ui.add_space(offset.y.max(0.0));
 
+                    let spread_active = self.manga_spread_active();
+                    let companion = self
+                        .companion_rendered
+                        .as_ref()
+                        .zip(self.companion_texture.as_ref());
+
                     let inner = ui.horizontal(|ui| {
                         ui.add_space(offset.x.max(0.0));
-                        if self.options.manga_mode && self.current_canvas().width() > self.current_canvas().height() {
-                            let half_width = (draw_size.x * 0.5).max(1.0);
-                            let halves = if self.options.manga_right_to_left {
-                                [(0.5, 1.0), (0.0, 0.5)]
-                            } else {
-                                [(0.0, 0.5), (0.5, 1.0)]
-                            };
-                            let mut first = None;
-                            for (index, (u0, u1)) in halves.into_iter().enumerate() {
-                                let response = ui.add(
-                                    egui::Image::from_texture(&self.texture)
-                                        .uv(egui::Rect::from_min_max(
-                                            egui::pos2(u0, 0.0),
-                                            egui::pos2(u1, 1.0),
-                                        ))
-                                        .fit_to_exact_size(vec2(half_width, draw_size.y)),
+                        if spread_active {
+                            if let Some((companion_rendered, companion_texture)) = companion {
+                                let companion_draw_size = vec2(
+                                    companion_rendered.canvas.width() as f32
+                                        * self.companion_texture_display_scale,
+                                    companion_rendered.canvas.height() as f32
+                                        * self.companion_texture_display_scale,
                                 );
-                                if index == 0 {
-                                    first = Some(response);
+                                let draw_companion_first = self.options.manga_right_to_left;
+                                if draw_companion_first {
+                                    let first = ui.add(
+                                        egui::Image::from_texture(companion_texture)
+                                            .fit_to_exact_size(companion_draw_size),
+                                    );
+                                    ui.add(
+                                        egui::Image::from_texture(&self.texture)
+                                            .fit_to_exact_size(draw_size),
+                                    );
+                                    Some(first)
+                                } else {
+                                    let first = ui.add(
+                                        egui::Image::from_texture(&self.texture)
+                                            .fit_to_exact_size(draw_size),
+                                    );
+                                    ui.add(
+                                        egui::Image::from_texture(companion_texture)
+                                            .fit_to_exact_size(companion_draw_size),
+                                    );
+                                    Some(first)
                                 }
+                            } else {
+                                Some(ui.add(
+                                    egui::Image::from_texture(&self.texture)
+                                        .fit_to_exact_size(draw_size),
+                                ))
                             }
-                            first
                         } else {
                             Some(ui.add(
                                 egui::Image::from_texture(&self.texture).fit_to_exact_size(draw_size),
@@ -1121,6 +1368,10 @@ impl eframe::App for ViewerApp {
                     if let Some(message) = &self.loading_message {
                         ui.add_space(8.0);
                         ui.label(message);
+                    }
+                    if self.empty_mode {
+                        ui.add_space(8.0);
+                        ui.label("No displayable file found. Open a directory or file from the filer.");
                     }
                     if let Some(message) = &self.save_message {
                         ui.add_space(4.0);
@@ -1206,6 +1457,7 @@ fn key_name_to_egui(key: &str) -> Option<egui::Key> {
         "End" => Some(egui::Key::End),
         "G" => Some(egui::Key::G),
         "C" => Some(egui::Key::C),
+        "F" => Some(egui::Key::F),
         "P" => Some(egui::Key::P),
         _ => None,
     }

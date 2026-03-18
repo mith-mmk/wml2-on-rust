@@ -74,6 +74,8 @@ struct WindowConfigFile {
     fullscreen: bool,
     size: WindowSizeConfigFile,
     start_position: WindowStartPositionConfigFile,
+    remember_size: bool,
+    remember_position: bool,
 }
 
 impl Default for WindowConfigFile {
@@ -82,6 +84,8 @@ impl Default for WindowConfigFile {
             fullscreen: false,
             size: WindowSizeConfigFile::Relative(0.8),
             start_position: WindowStartPositionConfigFile::Center,
+            remember_size: true,
+            remember_position: true,
         }
     }
 }
@@ -325,6 +329,8 @@ impl From<WindowConfigFile> for WindowOptions {
             fullscreen: value.fullscreen,
             size: value.size.into(),
             start_position: value.start_position.into(),
+            remember_size: value.remember_size,
+            remember_position: value.remember_position,
         }
     }
 }
@@ -335,6 +341,8 @@ impl From<WindowOptions> for WindowConfigFile {
             fullscreen: value.fullscreen,
             size: value.size.into(),
             start_position: value.start_position.into(),
+            remember_size: value.remember_size,
+            remember_position: value.remember_position,
         }
     }
 }

@@ -56,6 +56,8 @@ pub struct WindowOptions {
     pub fullscreen: bool,
     pub size: WindowSize,
     pub start_position: WindowStartPosition,
+    pub remember_size: bool,
+    pub remember_position: bool,
 }
 
 impl Default for WindowOptions {
@@ -64,6 +66,8 @@ impl Default for WindowOptions {
             fullscreen: false,
             size: WindowSize::Relative(0.8),
             start_position: WindowStartPosition::Center,
+            remember_size: true,
+            remember_position: true,
         }
     }
 }

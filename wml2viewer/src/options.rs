@@ -96,6 +96,7 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
     map.insert(KeyBinding::new("Home"), ViewerAction::FirstImage);
     map.insert(KeyBinding::new("End"), ViewerAction::LastImage);
     map.insert(KeyBinding::new("C").with_shift(), ViewerAction::ToggleMangaMode);
+    map.insert(KeyBinding::new("F"), ViewerAction::ToggleFiler);
     map.insert(KeyBinding::new("P"), ViewerAction::ToggleSettings);
     map
 }

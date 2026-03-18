@@ -1,4 +1,5 @@
 use crate::configs::config::{load_app_config, load_startup_path};
+use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{
     LoadedImage, load_canvas_from_bytes, load_canvas_from_file, resize_loaded_image,
 };
@@ -24,14 +25,16 @@ pub fn run(
     let config = load_app_config(config_path.as_deref()).unwrap_or_default();
     let image_path = image_path
         .unwrap_or(load_startup_path(config_path.as_deref()).unwrap_or(std::env::current_dir()?));
-    let start_path = resolve_start_path(&image_path).ok_or_else(|| {
-        std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            format!("No supported image found for {}", image_path.display()),
-        )
-    })?;
-    let image = load_image(&start_path)?;
-    let rendered = resize_loaded_image(&image, 1.0, config.render.zoom_method)?;
+    let (start_path, image, rendered, show_filer_on_start) =
+        if let Some(start_path) = resolve_start_path(&image_path) {
+            let image = load_image(&start_path)?;
+            let rendered = resize_loaded_image(&image, 1.0, config.render.zoom_method)?;
+            (start_path, image, rendered, false)
+        } else {
+            let image = blank_image();
+            let rendered = image.clone();
+            (image_path.clone(), image, rendered, true)
+        };
     let title = format!("wml2viewer - {}", start_path.display());
 
     // ui::viewer::set_canvas_size(&str);
@@ -41,8 +44,7 @@ pub fn run(
         viewport: egui::ViewportBuilder::default()
             .with_title(title)
             .with_inner_size([320.0, 240.0])
-            .with_min_inner_size([320.0, 240.0])
-            .with_fullscreen(config.window.fullscreen),
+            .with_min_inner_size([320.0, 240.0]),
         ..Default::default()
     };
 
@@ -72,22 +74,26 @@ pub fn run(
                     .min(screen.y),
             );
 
-            cc.egui_ctx
-                .send_viewport_cmd(egui::ViewportCommand::InnerSize(window_size));
-            match &config.window.start_position {
-                WindowStartPosition::Center => {
-                    let centered = egui::pos2(
-                        ((screen.x - window_size.x) * 0.5).max(0.0),
-                        ((screen.y - window_size.y) * 0.5).max(0.0),
-                    );
-                    cc.egui_ctx
-                        .send_viewport_cmd(egui::ViewportCommand::OuterPosition(centered));
-                }
-                WindowStartPosition::Exact { x, y } => {
-                    cc.egui_ctx
-                        .send_viewport_cmd(egui::ViewportCommand::OuterPosition(egui::pos2(
-                            *x, *y,
-                        )));
+            if config.window.remember_size {
+                cc.egui_ctx
+                    .send_viewport_cmd(egui::ViewportCommand::InnerSize(window_size));
+            }
+            if config.window.remember_position {
+                match &config.window.start_position {
+                    WindowStartPosition::Center => {
+                        let centered = egui::pos2(
+                            ((screen.x - window_size.x) * 0.5).max(0.0),
+                            ((screen.y - window_size.y) * 0.5).max(0.0),
+                        );
+                        cc.egui_ctx
+                            .send_viewport_cmd(egui::ViewportCommand::OuterPosition(centered));
+                    }
+                    WindowStartPosition::Exact { x, y } => {
+                        cc.egui_ctx
+                            .send_viewport_cmd(egui::ViewportCommand::OuterPosition(egui::pos2(
+                                *x, *y,
+                            )));
+                    }
                 }
             }
 
@@ -99,9 +105,19 @@ pub fn run(
                 rendered,
                 config,
                 config_path.clone(),
+                show_filer_on_start,
             )))
         }),
     )?;
 
     Ok(())
+}
+
+fn blank_image() -> LoadedImage {
+    let canvas = Canvas::new(1, 1);
+    LoadedImage {
+        canvas,
+        animation: Vec::new(),
+        loop_count: None,
+    }
 }

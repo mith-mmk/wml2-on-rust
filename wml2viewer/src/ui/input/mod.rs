@@ -1,4 +1,7 @@
-use crate::options::{KeyBinding, ViewerAction};
+pub(crate) mod dispatch;
+
+use crate::options::ViewerAction;
+use crate::ui::input::dispatch::collect_triggered_actions;
 use crate::ui::viewer::ViewerApp;
 use eframe::egui;
 use std::time::Instant;
@@ -13,7 +16,7 @@ impl ViewerApp {
             return;
         }
 
-        let triggered = self.collect_triggered_actions(ctx);
+        let triggered = collect_triggered_actions(ctx, &self.keymap);
         for action in triggered {
             match action {
                 ViewerAction::ZoomIn => {
@@ -70,31 +73,6 @@ impl ViewerApp {
         }
     }
 
-    fn collect_triggered_actions(&self, ctx: &egui::Context) -> Vec<ViewerAction> {
-        self.keymap
-            .iter()
-            .filter_map(|(binding, action)| {
-                self.binding_pressed(ctx, binding).then(|| action.clone())
-            })
-            .collect()
-    }
-
-    fn binding_pressed(&self, ctx: &egui::Context, binding: &KeyBinding) -> bool {
-        ctx.input(|i| {
-            let modifiers = i.modifiers;
-            if modifiers.shift != binding.shift
-                || modifiers.ctrl != binding.ctrl
-                || modifiers.alt != binding.alt
-            {
-                return false;
-            }
-            match key_name_to_egui(&binding.key) {
-                Some(key) => i.key_pressed(key),
-                None => false,
-            }
-        })
-    }
-
     pub(crate) fn handle_pointer_input(&mut self, response: &egui::Response) {
         if self.show_settings {
             return;
@@ -111,25 +89,5 @@ impl ViewerApp {
                 .unwrap_or_else(|| response.rect.left_top());
             self.show_left_menu = true;
         }
-    }
-}
-
-fn key_name_to_egui(key: &str) -> Option<egui::Key> {
-    match key {
-        "Plus" => Some(egui::Key::Plus),
-        "Minus" => Some(egui::Key::Minus),
-        "Num0" => Some(egui::Key::Num0),
-        "Enter" => Some(egui::Key::Enter),
-        "R" => Some(egui::Key::R),
-        "Space" => Some(egui::Key::Space),
-        "ArrowRight" => Some(egui::Key::ArrowRight),
-        "ArrowLeft" => Some(egui::Key::ArrowLeft),
-        "Home" => Some(egui::Key::Home),
-        "End" => Some(egui::Key::End),
-        "G" => Some(egui::Key::G),
-        "C" => Some(egui::Key::C),
-        "F" => Some(egui::Key::F),
-        "P" => Some(egui::Key::P),
-        _ => None,
     }
 }

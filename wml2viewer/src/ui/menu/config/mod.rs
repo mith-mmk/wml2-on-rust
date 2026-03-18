@@ -2,6 +2,7 @@ use crate::configs::config::save_app_config;
 use crate::configs::resourses::{FontSizePreset, apply_resources};
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions};
+use crate::ui::i18n::UiTextKey;
 use crate::ui::render::interpolation_label;
 use crate::ui::viewer::ViewerApp;
 use crate::ui::viewer::options::BackgroundStyle;
@@ -20,23 +21,48 @@ impl ViewerApp {
         let mut zoom_option_changed = false;
         let mut config_changed = false;
         let mut close_requested = false;
-        egui::Window::new("Settings")
+        let settings_text = self.text(UiTextKey::Settings);
+        let viewer_text = self.text(UiTextKey::Viewer);
+        let resources_text = self.text(UiTextKey::Resources);
+        let render_text = self.text(UiTextKey::Render);
+        let window_text = self.text(UiTextKey::Window);
+        let navigation_text = self.text(UiTextKey::Navigation);
+        let animation_text = self.text(UiTextKey::Animation);
+        let manga_mode_text = self.text(UiTextKey::MangaMode);
+        let manga_rtl_text = self.text(UiTextKey::MangaRightToLeft);
+        let background_text = self.text(UiTextKey::Background);
+        let locale_text = self.text(UiTextKey::Locale);
+        let fonts_text = self.text(UiTextKey::Fonts);
+        let font_size_text = self.text(UiTextKey::FontSize);
+        let zoom_mode_text = self.text(UiTextKey::ZoomMode);
+        let resize_text = self.text(UiTextKey::Resize);
+        let fullscreen_text = self.text(UiTextKey::Fullscreen);
+        let remember_size_text = self.text(UiTextKey::RememberSize);
+        let remember_position_text = self.text(UiTextKey::RememberPosition);
+        let window_relative_text = self.text(UiTextKey::WindowSizeRelative);
+        let window_exact_text = self.text(UiTextKey::WindowSizeExact);
+        let use_exact_size_text = self.text(UiTextKey::UseExactSize);
+        let use_relative_size_text = self.text(UiTextKey::UseRelativeSize);
+        let end_of_folder_text = self.text(UiTextKey::EndOfFolder);
+        let reload_current_text = self.text(UiTextKey::ReloadCurrent);
+        let close_text = self.text(UiTextKey::Close);
+        egui::Window::new(settings_text)
             .open(&mut open)
             .resizable(true)
             .show(ctx, |ui| {
-                ui.collapsing("Viewer", |ui| {
+                ui.collapsing(viewer_text, |ui| {
                     config_changed |= ui
-                        .checkbox(&mut self.options.animation, "Animation")
+                        .checkbox(&mut self.options.animation, animation_text)
                         .changed();
                     config_changed |= ui
-                        .checkbox(&mut self.options.manga_mode, "Manga mode")
+                        .checkbox(&mut self.options.manga_mode, manga_mode_text)
                         .changed();
                     config_changed |= ui
-                        .checkbox(&mut self.options.manga_right_to_left, "Manga right-to-left")
+                        .checkbox(&mut self.options.manga_right_to_left, manga_rtl_text)
                         .changed();
 
                     ui.horizontal(|ui| {
-                        ui.label("Background");
+                        ui.label(background_text);
                         if ui.button("Black").clicked() {
                             self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
                             config_changed = true;
@@ -56,13 +82,17 @@ impl ViewerApp {
                     });
                 });
 
-                ui.collapsing("Resources", |ui| {
-                    ui.label(format!("Locale: {}", self.applied_locale));
+                ui.collapsing(resources_text, |ui| {
+                    ui.label(format!("{}: {}", locale_text, self.applied_locale));
                     if !self.loaded_font_names.is_empty() {
-                        ui.label(format!("Fonts: {}", self.loaded_font_names.join(", ")));
+                        ui.label(format!(
+                            "{}: {}",
+                            fonts_text,
+                            self.loaded_font_names.join(", ")
+                        ));
                     }
                     ui.horizontal(|ui| {
-                        ui.label("Font size");
+                        ui.label(font_size_text);
                         egui::ComboBox::from_id_salt("font_size")
                             .selected_text(font_size_label(self.resources.font_size))
                             .show_ui(ui, |ui| {
@@ -105,9 +135,9 @@ impl ViewerApp {
                     });
                 });
 
-                ui.collapsing("Render", |ui| {
+                ui.collapsing(render_text, |ui| {
                     ui.horizontal(|ui| {
-                        ui.label("Zoom mode");
+                        ui.label(zoom_mode_text);
                         let before = self.render_options.zoom_option.clone();
                         egui::ComboBox::from_id_salt("zoom_option")
                             .selected_text(zoom_option_label(&self.render_options.zoom_option))
@@ -150,7 +180,7 @@ impl ViewerApp {
                     });
 
                     ui.horizontal(|ui| {
-                        ui.label("Resize");
+                        ui.label(resize_text);
                         let before = self.render_options.zoom_method;
                         egui::ComboBox::from_id_salt("zoom_method")
                             .selected_text(interpolation_label(self.render_options.zoom_method))
@@ -183,9 +213,9 @@ impl ViewerApp {
                     });
                 });
 
-                ui.collapsing("Window", |ui| {
+                ui.collapsing(window_text, |ui| {
                     if ui
-                        .checkbox(&mut self.window_options.fullscreen, "Fullscreen")
+                        .checkbox(&mut self.window_options.fullscreen, fullscreen_text)
                         .changed()
                     {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(
@@ -194,21 +224,21 @@ impl ViewerApp {
                         config_changed = true;
                     }
                     config_changed |= ui
-                        .checkbox(&mut self.window_options.remember_size, "Remember size")
+                        .checkbox(&mut self.window_options.remember_size, remember_size_text)
                         .changed();
                     config_changed |= ui
                         .checkbox(
                             &mut self.window_options.remember_position,
-                            "Remember position",
+                            remember_position_text,
                         )
                         .changed();
                     match &mut self.window_options.size {
                         crate::ui::viewer::options::WindowSize::Relative(ratio) => {
-                            ui.label("Window size: relative");
+                            ui.label(window_relative_text);
                             config_changed |= ui
                                 .add(egui::Slider::new(ratio, 0.2..=1.0).text("ratio"))
                                 .changed();
-                            if ui.button("Use exact size").clicked() {
+                            if ui.button(use_exact_size_text).clicked() {
                                 self.window_options.size =
                                     crate::ui::viewer::options::WindowSize::Exact {
                                         width: self.last_viewport_size.x.max(320.0),
@@ -218,14 +248,14 @@ impl ViewerApp {
                             }
                         }
                         crate::ui::viewer::options::WindowSize::Exact { width, height } => {
-                            ui.label("Window size: exact");
+                            ui.label(window_exact_text);
                             config_changed |= ui
                                 .add(egui::DragValue::new(width).speed(1.0).prefix("W "))
                                 .changed();
                             config_changed |= ui
                                 .add(egui::DragValue::new(height).speed(1.0).prefix("H "))
                                 .changed();
-                            if ui.button("Use relative size").clicked() {
+                            if ui.button(use_relative_size_text).clicked() {
                                 self.window_options.size =
                                     crate::ui::viewer::options::WindowSize::Relative(0.8);
                                 config_changed = true;
@@ -234,9 +264,9 @@ impl ViewerApp {
                     }
                 });
 
-                ui.collapsing("Navigation", |ui| {
+                ui.collapsing(navigation_text, |ui| {
                     ui.horizontal(|ui| {
-                        ui.label("End of folder");
+                        ui.label(end_of_folder_text);
                         let before = self.end_of_folder;
                         egui::ComboBox::from_id_salt("end_of_folder")
                             .selected_text(end_of_folder_label(self.end_of_folder))
@@ -270,10 +300,10 @@ impl ViewerApp {
 
                 ui.separator();
                 ui.horizontal(|ui| {
-                    if ui.button("Reload current").clicked() {
+                    if ui.button(reload_current_text).clicked() {
                         reload_requested = true;
                     }
-                    if ui.button("Close").clicked() {
+                    if ui.button(close_text).clicked() {
                         close_requested = true;
                     }
                 });

@@ -1,20 +1,20 @@
 use crate::configs::config::save_app_config;
 use crate::configs::resourses::{AppliedResources, apply_resources};
-use crate::dependent::available_roots;
-use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::canvas::Canvas;
-use crate::drawers::image::{
-    LoadedImage, SaveFormat, load_canvas_from_bytes, resize_canvas, resize_loaded_image,
-    save_loaded_image,
-};
+use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
-    FilesystemCommand, FilesystemResult, adjacent_entry, list_browser_entries,
-    list_openable_entries, load_virtual_image_bytes, spawn_filesystem_worker,
+    FilesystemCommand, FilesystemResult, adjacent_entry, spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, ResourceOptions, ViewerAction,
 };
-use crate::ui::render::{aligned_offset, canvas_to_color_image};
+use crate::ui::i18n::{UiTextKey, tr};
+use crate::ui::menu::fileviewer::state::FilerState;
+use crate::ui::menu::fileviewer::worker::{FilerCommand, FilerResult, spawn_filer_worker};
+use crate::ui::render::{
+    ActiveRenderRequest, RenderCommand, RenderResult, aligned_offset, canvas_to_color_image,
+    downscale_for_texture_limit, spawn_render_worker, worker_send_error,
+};
 use crate::ui::viewer::options::{
     RenderOptions, ViewerOptions, WindowOptions, WindowStartPosition,
 };
@@ -23,45 +23,11 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
-use std::thread;
 use std::time::{Duration, Instant};
 pub mod options;
 use options::ZoomOption;
 
 const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(180);
-
-pub(crate) enum RenderCommand {
-    LoadPath {
-        request_id: u64,
-        path: PathBuf,
-        zoom: f32,
-        method: crate::drawers::affine::InterpolationAlgorithm,
-    },
-    ResizeCurrent {
-        request_id: u64,
-        zoom: f32,
-        method: crate::drawers::affine::InterpolationAlgorithm,
-    },
-}
-
-pub(crate) enum RenderResult {
-    Loaded {
-        request_id: u64,
-        path: Option<PathBuf>,
-        source: LoadedImage,
-        rendered: LoadedImage,
-    },
-    Failed {
-        request_id: u64,
-        message: String,
-    },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum ActiveRenderRequest {
-    Load(u64),
-    Resize(u64),
-}
 
 pub(crate) struct ViewerApp {
     pub(crate) current_navigation_path: PathBuf,
@@ -98,6 +64,9 @@ pub(crate) struct ViewerApp {
     pub(crate) fs_rx: Receiver<FilesystemResult>,
     pub(crate) next_fs_request_id: u64,
     pub(crate) active_fs_request_id: Option<u64>,
+    pub(crate) filer_tx: Sender<FilerCommand>,
+    pub(crate) filer_rx: Receiver<FilerResult>,
+    pub(crate) next_filer_request_id: u64,
     pub(crate) navigator_ready: bool,
     pub(crate) loading_message: Option<String>,
     pub(crate) last_navigation_at: Option<Instant>,
@@ -112,11 +81,7 @@ pub(crate) struct ViewerApp {
     pub(crate) save_format: SaveFormat,
     pub(crate) save_message: Option<String>,
     pub(crate) show_filer: bool,
-    pub(crate) filer_entries: Vec<PathBuf>,
-    pub(crate) navigation_entries: Vec<PathBuf>,
-    pub(crate) filer_directory: Option<PathBuf>,
-    pub(crate) filer_selected: Option<PathBuf>,
-    pub(crate) filer_roots: Vec<PathBuf>,
+    pub(crate) filer: FilerState,
     pub(crate) startup_window_sync_frames: usize,
     pub(crate) empty_mode: bool,
     pub(crate) companion_tx: Sender<RenderCommand>,
@@ -179,6 +144,7 @@ impl ViewerApp {
         let (worker_tx, worker_rx) = spawn_render_worker(source.clone());
         let (companion_tx, companion_rx) = spawn_render_worker(source.clone());
         let (fs_tx, fs_rx) = spawn_filesystem_worker(config.navigation.sort);
+        let (filer_tx, filer_rx) = spawn_filer_worker();
 
         let mut this = Self {
             current_navigation_path: navigation_path.clone(),
@@ -215,6 +181,9 @@ impl ViewerApp {
             fs_rx,
             next_fs_request_id: 0,
             active_fs_request_id: None,
+            filer_tx,
+            filer_rx,
+            next_filer_request_id: 0,
             navigator_ready: false,
             loading_message: None,
             last_navigation_at: None,
@@ -229,11 +198,7 @@ impl ViewerApp {
             save_format: SaveFormat::Png,
             save_message: None,
             show_filer: show_filer_on_start,
-            filer_entries: Vec::new(),
-            navigation_entries: Vec::new(),
-            filer_directory: None,
-            filer_selected: None,
-            filer_roots: available_roots(),
+            filer: FilerState::default(),
             startup_window_sync_frames: 0,
             empty_mode: show_filer_on_start,
             companion_tx,
@@ -246,7 +211,9 @@ impl ViewerApp {
         };
 
         let _ = this.init_filesystem(navigation_path);
-        this.refresh_filer_entries();
+        if let Some(dir) = this.current_directory() {
+            this.request_filer_directory(dir, Some(this.current_navigation_path.clone()));
+        }
         this
     }
 
@@ -256,6 +223,11 @@ impl ViewerApp {
             self.source.canvas.height() as f32,
         )
     }
+
+    pub(crate) fn text(&self, key: UiTextKey) -> &'static str {
+        tr(&self.applied_locale, key)
+    }
+
     pub(crate) fn set_zoom(&mut self, zoom: f32) -> Result<(), Box<dyn Error>> {
         let zoom = zoom.clamp(0.1, 16.0);
         if (zoom - self.zoom).abs() < f32::EPSILON {
@@ -370,24 +342,15 @@ impl ViewerApp {
         self.current_path.parent().map(|path| path.to_path_buf())
     }
 
-    fn refresh_filer_entries(&mut self) {
-        let Some(dir) = self.current_directory() else {
-            self.filer_entries.clear();
-            self.navigation_entries.clear();
-            self.filer_directory = None;
-            return;
-        };
-
-        self.filer_entries = list_browser_entries(&dir, self.navigation_sort);
-        self.navigation_entries = list_openable_entries(&dir, self.navigation_sort);
-        self.filer_directory = Some(dir);
-        self.filer_selected = Some(self.current_navigation_path.clone());
-    }
-
-    pub(crate) fn set_filer_directory(&mut self, dir: PathBuf) {
-        self.filer_directory = Some(dir.clone());
-        self.filer_entries = list_browser_entries(&dir, self.navigation_sort);
-        self.navigation_entries = list_openable_entries(&dir, self.navigation_sort);
+    pub(crate) fn request_filer_directory(&mut self, dir: PathBuf, selected: Option<PathBuf>) {
+        let request_id = self.alloc_filer_request_id();
+        self.filer.pending_request_id = Some(request_id);
+        let _ = self.filer_tx.send(FilerCommand::OpenDirectory {
+            request_id,
+            dir,
+            sort: self.navigation_sort,
+            selected,
+        });
     }
 
     pub(crate) fn save_current_as(&mut self, format: SaveFormat) {
@@ -590,6 +553,11 @@ impl ViewerApp {
         self.next_fs_request_id
     }
 
+    fn alloc_filer_request_id(&mut self) -> u64 {
+        self.next_filer_request_id += 1;
+        self.next_filer_request_id
+    }
+
     fn init_filesystem(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
         let request_id = self.alloc_fs_request_id();
         self.active_fs_request_id = Some(request_id);
@@ -651,7 +619,12 @@ impl ViewerApp {
                             request_id,
                             path: self.current_navigation_path.clone(),
                         });
-                        self.refresh_filer_entries();
+                        if let Some(dir) = self.current_directory() {
+                            self.request_filer_directory(
+                                dir,
+                                Some(self.current_navigation_path.clone()),
+                            );
+                        }
                     }
                     self.source = source;
                     self.rendered = rendered;
@@ -801,6 +774,34 @@ impl ViewerApp {
         }
     }
 
+    fn poll_filer_worker(&mut self) {
+        loop {
+            match self.filer_rx.try_recv() {
+                Ok(FilerResult::Snapshot {
+                    request_id,
+                    directory,
+                    entries,
+                    navigation_entries,
+                    selected,
+                }) => {
+                    if self.filer.pending_request_id != Some(request_id) {
+                        continue;
+                    }
+                    self.filer.pending_request_id = None;
+                    self.filer.directory = Some(directory);
+                    self.filer.entries = entries;
+                    self.filer.navigation_entries = navigation_entries;
+                    self.filer.selected = selected;
+                }
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => {
+                    self.filer.pending_request_id = None;
+                    break;
+                }
+            }
+        }
+    }
+
     fn sync_window_state(&mut self, ctx: &egui::Context) {
         let viewport = ctx.input(|i| i.viewport().clone());
         self.startup_window_sync_frames += 1;
@@ -840,6 +841,7 @@ impl eframe::App for ViewerApp {
         self.poll_worker();
         self.poll_companion_worker();
         self.poll_filesystem();
+        self.poll_filer_worker();
         self.sync_manga_companion(ctx);
         self.handle_keyboard(ctx);
         self.settings_ui(ctx);
@@ -971,9 +973,11 @@ impl eframe::App for ViewerApp {
                     }
                     if self.empty_mode {
                         ui.add_space(8.0);
-                        ui.label(
-                            "No displayable file found. Open a directory or file from the filer.",
-                        );
+                        ui.label(format!(
+                            "{} {}",
+                            self.text(UiTextKey::NoDisplayableFileFound),
+                            self.text(UiTextKey::OpenDirectoryOrFileFromFiler)
+                        ));
                     }
                     if let Some(message) = &self.save_message {
                         ui.add_space(4.0);
@@ -990,100 +994,6 @@ impl eframe::App for ViewerApp {
             self.config_path.as_deref(),
         );
     }
-}
-
-fn downscale_for_texture_limit<'a>(
-    canvas: &'a Canvas,
-    max_texture_side: usize,
-    method: InterpolationAlgorithm,
-) -> (std::borrow::Cow<'a, Canvas>, f32) {
-    let width = canvas.width() as usize;
-    let height = canvas.height() as usize;
-    let max_side = width.max(height);
-    if max_side <= max_texture_side || max_texture_side == 0 {
-        return (std::borrow::Cow::Borrowed(canvas), 1.0);
-    }
-
-    let scale = max_texture_side as f32 / max_side as f32;
-    match resize_canvas(canvas, scale, method) {
-        Ok(resized) => (std::borrow::Cow::Owned(resized), scale),
-        Err(_) => (std::borrow::Cow::Borrowed(canvas), 1.0),
-    }
-}
-
-fn spawn_render_worker(
-    initial_source: LoadedImage,
-) -> (Sender<RenderCommand>, Receiver<RenderResult>) {
-    let (command_tx, command_rx) = mpsc::channel::<RenderCommand>();
-    let (result_tx, result_rx) = mpsc::channel::<RenderResult>();
-
-    thread::spawn(move || {
-        let mut current_source = initial_source;
-        while let Ok(command) = command_rx.recv() {
-            match command {
-                RenderCommand::LoadPath {
-                    request_id,
-                    path,
-                    zoom,
-                    method,
-                } => {
-                    let result = (|| -> Result<(LoadedImage, LoadedImage), Box<dyn Error>> {
-                        let source = if let Some(bytes) = load_virtual_image_bytes(&path) {
-                            load_canvas_from_bytes(&bytes)?
-                        } else {
-                            crate::drawers::image::load_canvas_from_file(&path)?
-                        };
-                        let rendered = resize_loaded_image(&source, zoom, method)?;
-                        Ok((source, rendered))
-                    })();
-
-                    match result {
-                        Ok((source, rendered)) => {
-                            current_source = source.clone();
-                            let _ = result_tx.send(RenderResult::Loaded {
-                                request_id,
-                                path: Some(path),
-                                source,
-                                rendered,
-                            });
-                        }
-                        Err(err) => {
-                            let _ = result_tx.send(RenderResult::Failed {
-                                request_id,
-                                message: err.to_string(),
-                            });
-                        }
-                    }
-                }
-                RenderCommand::ResizeCurrent {
-                    request_id,
-                    zoom,
-                    method,
-                } => match resize_loaded_image(&current_source, zoom, method) {
-                    Ok(rendered) => {
-                        let _ = result_tx.send(RenderResult::Loaded {
-                            request_id,
-                            path: None,
-                            source: current_source.clone(),
-                            rendered,
-                        });
-                    }
-                    Err(err) => {
-                        let _ = result_tx.send(RenderResult::Failed {
-                            request_id,
-                            message: err.to_string(),
-                        });
-                    }
-                },
-            }
-        }
-    });
-
-    (command_tx, result_rx)
-}
-
-fn worker_send_error(err: mpsc::SendError<RenderCommand>) -> Box<dyn Error> {
-    Box::new(std::io::Error::other(err.to_string()))
 }
 
 fn filesystem_send_error(err: mpsc::SendError<FilesystemCommand>) -> Box<dyn Error> {

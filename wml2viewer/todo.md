@@ -115,8 +115,9 @@
 
 ### 1-5. ファイラー
  - [*] OS非依存のファイラー（最小版）
- - [+] フォントファミリー(i18n対応)
- - [+] フォントサイズの選択
+ - [*] フォントファミリー
+ - [ ] i18n対応
+ - [x] フォントサイズの選択
  - [ ] サムネイル表示機能、ソート機能
  - [ ] サムネイルの永続化 crate dirctoryで設定
  - [ ] レスポンシブ対応デザイン
@@ -215,11 +216,11 @@
 
 ## 7. マンガモード
 
-- [+] 横長時 2 ページ表示条件
-- [+] `r2l` / `l2r`
+- [x] 横長時 2 ページ表示条件
+- [x] `r2l` / `l2r`
 - [ ] partition 描画
 - [ ] サムネイル起点のページ移動
-- [+] `Shift+C` toggle
+- [x] `Shift+C` toggle
 - [ ] @ script
 
 ## 8. 設定画面
@@ -264,30 +265,57 @@
 - [ ] command / external command
 - [ ] WMLScripts
 
-## 次に着手する候補
-　途中で停止しないこと。一括で実装。
-  デフォルトconfigパスは、create directoryで実装しなおしました dependent/thirdpartyのした
+## 次に着手する順
+### 原則
+- モジュール分離で責務を分割する
+- 最終的には機能単位でクレート分割する可能性あるので最初から意識すること
+- マルチスレッディング、aysn io パフォーマンスと後の改良のため意識してください
+
+1. ViewerApp を composition root に縮めます。ViewerApp は「各 state と worker を束ねて update() で配線するだけ」にして、画像表示 state、ファイラー state、render state を別 struct に分けます。
+2. ファイラーを完全に別系統にします。FilerCommand / FilerResult を作り、ディレクトリ列挙・ソート・メタデータ収集は worker 側で実行、UI には snapshot だけ返します。これで filer に引きずられる viewer の重さをまず止めます。
+3. render を ui/render に寄せ切ります。少なくとも layout.rs、texture.rs、worker.rs に分けて、aligned_offset、背景描画、texture upload、downscale、render worker をここへ集約します。viewer 側には「何を表示するか」だけ残します。
+4. input は ui/input を dispatcher 化します。今は ViewerApp に直接触る形ですが、次は InputAction -> ControllerAction に寄せて、viewer/filer/config へ直接依存しないようにします。
+5. i18n は 2 段で進めます。まず UiTextKey を enum 化して tr(key) に置換、次に ja/en リソース表を追加します。既存のフォント設定はそのまま土台にして、文字列リソースを上に載せる形が安全です。
+
+### 具体的な分割案
+
+1. ui/viewer/app.rs
+   eframe::App 実装と composition root のみ
+2. ui/viewer/state.rs
+   現在画像、zoom、animation、manga の state
+3. ui/menu/fileviewer/state.rs
+   現在ディレクトリ、選択項目、表示モード、ソート条件
+4. ui/menu/fileviewer/worker.rs
+   directory scan、metadata、thumbnail 入口
+5. ui/render/layout.rs
+   背景、中央寄せ、見開きレイアウト
+6. ui/render/worker.rs
+   画像 load/resize/texture 用 worker
+7. ui/input/dispatch.rs
+   key/pointer から action を作るだけ
+8. ui/i18n/mod.rs
+   UiTextKey と Translator
+9. ui/i18n/　-> 日本語と英語は、resources/*.rs をみて参照 => jsonでロケールを読み込めるローダーを追加し多言語対応する
+10. todo.mdの整理 todo.mdと実装を比較して終了しているタスクには[+]を付ける
+
+※ 文言テーブル
+この順にすると、次回はまず「filer を UI スレッドから外す」と「render の重複除去」を同時に進められます。優先度としては 2 -> 3 -> 1 -> 5 -> 4 が一番リスクが低いです。
+
+### 次回以降
 
 1. リソースの追加(システムfontの切り替え)
    1. system言語を検出
    2. locale fontを設定
    3. fallbackを設定(絵文字フォントも指定)
    4. 例：日本語の場合、Windows10は"Yu Gothic UI"、 Macは"ヒラギノ角ゴシック" -> NotoSansJP -> NotoSansCJK -> 英語デフォルトにフォールバック
-   5. フォントサイズの設定 Auto(画面サイズとDPIから計算), S, M, L, LL (現在のフォントサイズはS相当)
 2. Issueの修正, ファイラー：日本語が化けるバグ（Fontの問題）
-3. viwerに含まれているファイラー部分をui/menu/fileviewerに、設定部分をui/menu/configに分離、入力関係はui/inputに分離
-   画像表示部分はui/renderに分離
-4. Issueの修正, ファイラー：表示が遅い問題
-5. Issueの修正, viewer：遅くなっている問題（ファイラーに引きずられている可能性、ファイラーのUIもしくはバックエンドをワーカー分離）
-6. Issueの修正, ZIP：二枚目以降が表示されない場合がある
-7. Issueの修正, ZIP：FitScreenなどの指示が無視されるケースがある
-8. Issueの修正, マンガモード:表示が中央にアラインされない（右端にアラインされる）
-9.  Issueの修正, Viewer:ワークアラウンド：フルスクリーンモードで起動すると表示がおかしい。起動時は無効化
-10. todo.mdの整理 todo.mdと実装を比較して終了しているタスクには[+]を付ける
-11. ファイラー：一覧表示、サムネイル表示（大・中・小）、詳細表示、の追加と切り替えボタン
-12. ファイラー：UIにメタデータも表示出来る様にして、ソートボタンにする
-13. 設定：閉じるボタンの実装
-14. CTRL+S でファイル保存（保存用ディレクトリを選べる様にする）
-15. 外部プラグインの実装：susie plugin の実装とplugin conifigの実装
+3. Issueの修正, ファイラー：表示が遅い問題(長いファイル名で重くなる)
+4. Issueの修正, viewer：遅くなっている問題
+5. Issueの修正, ZIP：二枚目以降が表示されない場合がある
+6. ファイラー：一覧表示、サムネイル表示（大・中・小）、詳細表示、の追加と切り替えボタン
+7.  ファイラー：UIにメタデータも表示出来る様にして、ソートボタンにする
+8.  設定：閉じるボタンの実装
+9.  CTRL+S でファイル保存（保存用ディレクトリを選べる様にする）
+10. 外部プラグインの実装：susie plugin の実装とplugin conifigの実装
     1. プラグインの有効化
     2. プラグインの優先順位（内部より上、下）

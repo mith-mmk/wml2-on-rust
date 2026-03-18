@@ -35,7 +35,7 @@
   "render": {
     "zoom": "FitScreen",　// ZoomOption
     "zoomMethpod": "bilinear", // "bicubic", "bilinear", "nearest neighbor", "lancos3"
-    // 縮小は、基本pixel minimize
+    "minimize": "pixel mixing",   // 縮小は、pixel mixingのみ
     "orientation": true, // メタデータの回転情報を反映させるか
     "roatation": 0, // 画像を回転(degree)
     "flap": false, // 上下反転
@@ -66,7 +66,7 @@
     "end_of_folder": "RECURSIVE", //FolderOption, // フォルダの最後の時の挙動、 "STOP", "NEXT", "LOOP", "RECURSIVE"
     "archive": "FOLDER",// ArchiverOption "FOLDER"（フォルダの用に扱う）, "SKIP"（読まない）, "ARCHIVER"（複数画面の画像フォーマットの用に扱う）
   },
-  "thumbnail": { // サムネイル
+  "thumbnails": { // サムネイル
       "enable": false,
       "os_thumbnail": false, // OSのサムネイルがあれば横取りする
       "cache": { // サムネイルキャッシュ
@@ -147,8 +147,41 @@
         "external_cmd": [] // 外部コマンドのコマンドライン %i(入力名) %O(フォルダ) ...
     },
     "os_depend": { // OS依存の設定
+    },
+  },
+  "plugins" : {
+    "susie64": { // windowsのみ, 他のOSでは無視
+      "enable": false,
+      "search_path": ["./"], // exeと同じ場所
+      "modules":
+      [ {
+        "enable" : false, //
+        "path": "", // 省略可
+        "plugin_name": "", //
+        "type": "image", // or "archiver"
+        "ext": [  // 対応するフォーマット
+          {
+            "enable": false,
+            "type": "avif",  //例
+            "modules": {
+              "type": "decode", // "decode", "encode", "filter" 
+              "priority": 2, // 2 = low,1 = middle 0 = high (プラグインが複数ある場合どれを優先するか決める、lowは内製を再優先, middleは他のプラグインが無い場合、 highは最優先)
+            }
+          } // , {}...
+        ],
+        "":
+      }]
+    },
+    "system": { // OSバンドル系 windowsは WIC APIベース Windowsは一部Codecがオプションで存在しない場合があるので注意
+      "enable": false,
+      "search_path": "", // OSに依存するため設定不可
+      // 以下同じ
+    },
+    "ffmpeg": { // ffmpegの動的ライブラリを呼ぶ linuxはシステムの変わり
+
     }
   }
+}
   ```
 
 ListedFile 以下の様なファイル

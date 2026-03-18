@@ -100,7 +100,7 @@
 ### 1-3. 設定画面の先行タスク
 - [x] option menu の土台
 - [x] viewer / render / window の編集 UI
-- [-] 適用とキャンセル
+- [ ] 適用とキャンセルボタン
 
 ### 1-4. config 永続化
 - [x] `configs/config.rs` を実装に接続
@@ -110,15 +110,15 @@
 - [x] keep window state
 - [x] config import/export
 - [x] config option --config [path] 
-- [+] デフォルトパスの設定 ~/.wml2/config.toml
-- [x] Windowsの場合 %APPDATA%/wml2/config.toml
-- [+] MAC ~/Library/Application Support/wml2/config.toml 
+- [x] デフォルトパスの設定 macos, linux, windowsは、crate dirctoryで設定
+- [-] デフォルトパス、それ以外
 
 ### 1-5. ファイラー
- - [+] OS非依存のファイラー（最小版）
- - [ ] フォントの選択
+ - [*] OS非依存のファイラー（最小版）
+ - [ ] フォントファミリー(i18n対応)
+ - [ ] フォントサイズの選択
  - [ ] サムネイル表示機能、ソート機能
- - [ ] サムネイルの永続化 %CSIDL_LOCAL_APPDATA%\wml2viewer (windows), .wml2/cache (linux), Mac は~/Library/Caches/wml2viewer ？
+ - [ ] サムネイルの永続化 crate dirctoryで設定
  - [ ] レスポンシブ対応デザイン
  - [ ] Function Copy File
  - [ ] Function Move File
@@ -266,6 +266,7 @@
 
 ## 次に着手する候補
 　途中で停止しないこと。一括で実装。
+  デフォルトconfigパスは、create directoryで実装しなおしました
 
 1. リソースの追加(システムfontの切り替え)
    1. system言語を検出

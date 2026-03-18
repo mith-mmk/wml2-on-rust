@@ -1,6 +1,8 @@
 use crate::configs::config::{load_app_config, load_startup_path};
-use crate::drawers::image::{LoadedImage, load_canvas_from_file, resize_loaded_image};
-use crate::filesystem::resolve_start_path;
+use crate::drawers::image::{
+    LoadedImage, load_canvas_from_bytes, load_canvas_from_file, resize_loaded_image,
+};
+use crate::filesystem::{load_virtual_image_bytes, resolve_start_path};
 use crate::options::*;
 use crate::ui::viewer::ViewerApp;
 use eframe::egui::{self};
@@ -8,6 +10,10 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 
 fn load_image(path: &Path) -> Result<LoadedImage, Box<dyn Error>> {
+    if let Some(bytes) = load_virtual_image_bytes(path) {
+        return Ok(load_canvas_from_bytes(&bytes)?);
+    }
+
     Ok(load_canvas_from_file(path)?)
 }
 

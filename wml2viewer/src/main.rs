@@ -1,5 +1,6 @@
 mod app;
 mod configs;
+mod dependent;
 mod drawers;
 mod filesystem;
 pub mod options;

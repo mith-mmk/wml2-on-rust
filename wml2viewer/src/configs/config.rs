@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::dependent::default_config_dir;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{AppConfig, EndOfFolderOption, NavigationSortOption};
 use crate::ui::viewer::options::{
@@ -28,6 +29,8 @@ struct ConfigFile {
 #[serde(default)]
 struct ViewerConfigFile {
     animation: bool,
+    manga_mode: bool,
+    manga_right_to_left: bool,
     background: BackgroundConfigFile,
 }
 
@@ -35,6 +38,8 @@ impl Default for ViewerConfigFile {
     fn default() -> Self {
         Self {
             animation: true,
+            manga_mode: false,
+            manga_right_to_left: true,
             background: BackgroundConfigFile::Solid {
                 rgba: [0, 0, 0, 255],
             },
@@ -218,11 +223,7 @@ pub fn save_app_config(
 fn resolve_config_path(config_override: Option<&Path>) -> PathBuf {
     config_override
         .map(|path| path.to_path_buf())
-        .or_else(|| {
-            std::env::current_dir()
-                .ok()
-                .map(|dir| dir.join("wml2viewer.toml"))
-        })
+        .or_else(|| default_config_dir().map(|dir| dir.join("config.toml")))
         .unwrap_or_else(|| PathBuf::from("wml2viewer.toml"))
 }
 
@@ -245,6 +246,8 @@ impl From<ConfigFile> for AppConfig {
             background: value.viewer.background.into(),
             fade: config.viewer.fade,
             animation: value.viewer.animation,
+            manga_mode: value.viewer.manga_mode,
+            manga_right_to_left: value.viewer.manga_right_to_left,
         };
         config.window = value.window.into();
         config.render = value.render.into();
@@ -265,6 +268,8 @@ impl ConfigFile {
         Self {
             viewer: ViewerConfigFile {
                 animation: value.viewer.animation,
+                manga_mode: value.viewer.manga_mode,
+                manga_right_to_left: value.viewer.manga_right_to_left,
                 background: value.viewer.background.into(),
             },
             window: value.window.into(),

@@ -1,4 +1,10 @@
 # wml2viewer TODO
+ステータス
+- [x] チェック済み（人力修正）
+- [+] 実装済み（タスクを行ったら修正すること） 
+- [-] 実装遅延
+- [*] issues(実装されているがバグがある) 
+- [ ] 未実装
 
 ## 0. 現在の到達点
 
@@ -12,7 +18,7 @@
 - [x] ダブルクリックで `100% <-> Fit` トグル
 - [x] ウィンドウタイトルを現在画像に追従
 - [x] 起動時の表示サイズ
-- [ ] 起動時の表示位置ずれ修正
+- [+] 起動時の表示位置ずれ修正
 - [ ] 前回の表示サイズ保存（設定で切り替え）
 - [ ] VSP の読み込み(DATの判別できない、ファイル構造まで見る必要あり)
 
@@ -26,7 +32,7 @@
 - [x] `Home` で先頭画像
 - [x] `End` で末尾画像
 - [ ] `Shift+G` で grayscale toggle
-- [ ] `Shift+C` で comic mode toggle
+- [+] `Shift+C` で comic mode toggle
 
 ### navigation / filesystem
 - [x] 単一ファイル起動時に親ディレクトリの画像一覧を取得
@@ -40,7 +46,7 @@
 - [x] ディレクトリ単位 cache
 - [x] ネットワークフォルダでの待ち時間(～100)
 - [x] ネットワークフォルダでの待ち時間(～1000)
-- [ ] フォルダの直下に画像ファイルが無いとき終了する（"RECURCIVE"の場合は探してください）
+- [ ] フォルダの直下に画像ファイルが無いとき終了する問題の修正（"RECURCIVE"の場合は探してください）
 
 #### 優先度中
 - [ ] ネットワークフォルダでの待ち時間をさらに短縮(1000～1万)
@@ -80,18 +86,18 @@
 - [x] デフォルトキー設定を定義する
 - [x] egui input から action dispatch する
 - [x] SPACEをプレスしたままの状態だと画像が表示されないので適度なWAITを入れる
-- [-] シングルクリックで次の画面を表示
+- [+] メニュー表示中にビューアーイベントが透過しないようにする
+- [-] シングルクリックで次の画面を表示（上が実装された後）
 - [ ] 未実装 action を no-op として整理する
 - [x] `PageUp` / `PageDown` のフォルダ移動
 - [ ] `F1` help
 - [x] `P` setting
-- [ ] 左クリックで簡単なメニュー
+- [+] 左クリックで簡単なメニュー
 - [ ] タッチパネルUI（低優先度）
-
 
 ### 1-3. 設定画面の先行タスク
 - [x] option menu の土台
-- [ ] viewer / render / window の編集 UI
+- [+] viewer / render / window の編集 UI
 - [ ] 適用とキャンセル
 
 ### 1-4. config 永続化
@@ -100,19 +106,35 @@
 - [x] config save
 - [x] 設定画面の現在項目を config に接続
 - [x] keep window state
-- [ ] runtime current file snapshot
+- [x] config import/export
+- [x] config option --config [path] 
+- [+] デフォルトパスの設定 ~/.wml2/config.toml
+- [+] Windowsの場合 %APPDATA%/wml2/config.toml
+- [+] MAC ~/Library/Application Support/wml2/config.toml 
 
 ### 1-5. ファイラー
- - [ ] OS非依存のファイラー
+ - [-] OS非依存のファイラー
  - [ ] サムネイル表示機能、ソート機能
+ - [ ] サムネイルの永続化 %CSIDL_LOCAL_APPDATA%\wml2viewer (windows), .wml2/cache (linux), Mac は~/Library/Caches/wml2viewer ？
  - [ ] レスポンシブ対応デザイン
- - [ ] ネットワークマウント(モバイル待ち)
+ - [ ] Function Copy File
+ - [ ] Function Move File
+ - [ ] Function Trushed File
+ - [ ] function convert format
+### 1-5-1. サブファイラー
+ - [ ] 画面の下側に表示されるサブファイラー（ページ移動用）
+
+### 1-5-2. クラウドファイラー(Android, iOS専用)
+ - [ ] ネットワークマウント
+
 
 ### 1-6. CI/CD
 - [ ] Auto Builder
-- [ ] Windows x86/x84
-- [ ] MacOS Intel/Arm
-- [ ] Linux Win/Arm
+- [ ] Windows x64(Win10/11)
+- [ ] MacOS Intel
+- [ ] MacOS Arm
+- [ ] Linux Win
+- [ ] Linux Arm
 - [ ] Android
 - [ ] iOS
 - [ ] iPad
@@ -143,8 +165,8 @@
 - [ ] filter 条件
 - [-] archive option (`FOLDER` / `SKIP` / `ARCHIVER`)
 - [x] directory scan を openable entry 前提にして `.wml` を拾う
-- [ ] 仮想化ファイルシステム(ListedFile, zip用)
-- [ ] `.zip` も同じ openable/archive mode に接続
+- [+] 仮想化ファイルシステム(ListedFile, zip用)
+- [+] `.zip` も同じ openable/archive mode に接続
 - [ ] （検討中）キャッシュのシリアライズ
 
 ### 3-2. ListedFile
@@ -157,9 +179,9 @@
 - [-] `@command` / `@(...)` は予約語として parse
 
 ### 3-3. ZippedFile
-- [ ] feature で有効/無効を切り替えられるようにする
-- [ ] まず `zip` を読む
-- [ ] `navigation` / `filesystem` から folder 相当として扱えるようにする
+- [-] feature で有効/無効を切り替えられるようにする
+- [+] まず `zip` を読む
+- [+] `navigation` / `filesystem` から folder 相当として扱えるようにする
 - [ ] zip entry sort
 - [ ] zip encoding option
 - [ ] `gzip`
@@ -168,12 +190,12 @@
 - [ ] `rar`（最低限）
 
 ## 4. 非同期実装の整理
-
 - [x] render worker
 - [x] filesystem worker
 - [ ] app 起動時の初回 decode も完全に worker 化する
 - [ ] load / resize / filesystem request の state 管理を整理する
 - [ ] preload queue と連携できる構造にする
+- [ ] ライブラリの分割(coreとuiに分ける)
 
 ## 5. 画像表示とディレクトリ操作の分離
 
@@ -190,24 +212,20 @@
 
 ## 7. マンガモード
 
-- [ ] 横長時 2 ページ表示条件
-- [ ] `r2l` / `l2r`
+- [+] 横長時 2 ページ表示条件
+- [+] `r2l` / `l2r`
 - [ ] partition 描画
 - [ ] サムネイル起点のページ移動
-- [ ] `Shift+C` toggle
+- [+] `Shift+C` toggle
+- [ ] @ script
 
 ## 8. 設定画面
 
 - [x] 1-3 / 1-4 が終わったら import/export をつなぐ
-- [ ] 左クリックメニュー
-- [ ] 設定画面表示時のメインペインへのイベント貫通防止
+- [+] 左クリックメニュー
+- [+] 設定画面表示時のメインペインへのイベント貫通防止
 - [ ] キーバインドUI
 
-## 9. 設定に付随する機能
-
-- [x] config import/export
-- [x] config option --config [path] 
-- [ ] config保存フォルダ ~/.wml2/config か？
 
 ## 10. リソース
 
@@ -219,26 +237,43 @@
 - [ ] Linux Support
 - [ ] Mac OS Support
 - [ ] Android Support
-- [ ] iOS Support(先にMAC買わないと行けない) 
+- [ ] iOS Support 
+- [ ] インスーラー(windows)
+- [ ] アンインストーラ(windows)
 
 ## 12. 以降
-- [ ] filer
-- [ ] network protocol (`http`, `smb`, `cloud`)
-- [ ] OS dependent
-- [ ] plugin
+
+- [ ] OS dependent encoder/decoder(about avif, hfif, GPU enc/dec)
+- [ ] plugin encoder/decoder
+- [ ] offline cache
+- [ ] filter function search similar images
+- [ ] filter function datetime
+- [ ] filter function filename
+- [ ] filter function extentions
+- [ ] metadata cache
+- [ ] filter function metadata
+- [ ] network protocol `http`
+- [ ] `smb`
+- [ ]  `cloud` cloud drives
 - [ ] key remap UI
+- [ ] OS dependent function
 - [ ] command / external command
+- [ ] WMLScripts
 
 ## 次に着手する候補
 　途中で停止しないこと。一括で実装。
 
-1. ZippedFile の最小版（zip）
-2. 動作時のウィンドウサイズずれの詰め
-3. viewer / render / window の編集 UI
-4. 左クリックメニュー
-5. 設定メニュー時にマウスイベントが画像ペインに貫通するのを防止
-6. 形式を選択して保存(左クリックメニュー), ショートカット
-7. デフォルトの設定フォルダを~/.wml2   Windowsは%USER_PROFILE%/.wml2　
-8. 設定ファイルを~/wml2/config.toml に
-9. マンガモードの実装
+1. 左クリックメニュー
+2. Fキーでファイラー起動
+3. zip表示の高速化(indexだけ読んで先読み表示)
+4. 前回の表示サイズ保存（設定で切り替え）
+5. 設定：終了時のウィンドウサイズの位置とサイズの記憶。
+6. マンガモードのバグ修正
+   1. 判定基準がおかしい。
+   2. 二枚表示ではなく縦半分に表示される。
+   3. 次のページで元に戻ってしまう
+   4. 切り替えが遅い
+7. フルスクリーンモードからの復帰バグがある。起動時にはフルスクリーンにしないことで回避
+8. 表示出来るファイルがない場合エラーで止まるのを禁止、適切なファイルがない場合ファイラーを開く
+9. 形式を選択して保存(左クリックメニュー), ショートカット
 10. ファイラー

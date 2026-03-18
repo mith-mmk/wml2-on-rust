@@ -41,6 +41,15 @@ pub struct LoadedImage {
     pub loop_count: Option<u32>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SaveFormat {
+    Png,
+    Jpeg,
+    Bmp,
+    Gif,
+    Webp,
+}
+
 impl LoadedImage {
     pub fn is_animated(&self) -> bool {
         !self.animation.is_empty()
@@ -64,6 +73,41 @@ impl LoadedImage {
         } else {
             self.animation[index.min(self.animation.len() - 1)].delay_ms
         }
+    }
+}
+
+impl SaveFormat {
+    pub fn extension(self) -> &'static str {
+        match self {
+            SaveFormat::Png => "png",
+            SaveFormat::Jpeg => "jpg",
+            SaveFormat::Bmp => "bmp",
+            SaveFormat::Gif => "gif",
+            SaveFormat::Webp => "webp",
+        }
+    }
+
+    pub fn all() -> [SaveFormat; 5] {
+        [
+            SaveFormat::Png,
+            SaveFormat::Jpeg,
+            SaveFormat::Bmp,
+            SaveFormat::Gif,
+            SaveFormat::Webp,
+        ]
+    }
+}
+
+impl std::fmt::Display for SaveFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = match self {
+            SaveFormat::Png => "PNG",
+            SaveFormat::Jpeg => "JPEG",
+            SaveFormat::Bmp => "BMP",
+            SaveFormat::Gif => "GIF",
+            SaveFormat::Webp => "WebP",
+        };
+        write!(f, "{text}")
     }
 }
 
@@ -110,6 +154,46 @@ pub fn resize_loaded_image(
         animation,
         loop_count: source.loop_count,
     })
+}
+
+pub fn save_loaded_image(path: &Path, image: &LoadedImage, format: SaveFormat) -> Result<()> {
+    let mut buffer = image_to_buffer(image);
+    let encoded = wml2::draw::image_to(&mut buffer, save_format_to_image_format(format), None)?;
+    std::fs::write(path, encoded)?;
+    Ok(())
+}
+
+fn image_to_buffer(image: &LoadedImage) -> ImageBuffer {
+    let mut buffer = ImageBuffer::from_buffer(
+        image.canvas.width() as usize,
+        image.canvas.height() as usize,
+        image.canvas.buffer().to_vec(),
+    );
+    if !image.animation.is_empty() {
+        buffer.set_animation(true);
+        buffer.loop_count = image.loop_count;
+        for frame in &image.animation {
+            buffer.animation.as_mut().unwrap().push(WmlAnimationLayer {
+                width: frame.canvas.width() as usize,
+                height: frame.canvas.height() as usize,
+                start_x: 0,
+                start_y: 0,
+                buffer: frame.canvas.buffer().to_vec(),
+                control: wml2::draw::NextOptions::wait(frame.delay_ms),
+            });
+        }
+    }
+    buffer
+}
+
+fn save_format_to_image_format(format: SaveFormat) -> wml2::util::ImageFormat {
+    match format {
+        SaveFormat::Png => wml2::util::ImageFormat::Png,
+        SaveFormat::Jpeg => wml2::util::ImageFormat::Jpeg,
+        SaveFormat::Bmp => wml2::util::ImageFormat::Bmp,
+        SaveFormat::Gif => wml2::util::ImageFormat::Gif,
+        SaveFormat::Webp => wml2::util::ImageFormat::Webp,
+    }
 }
 
 fn normalized_scale(scale: f32) -> f32 {

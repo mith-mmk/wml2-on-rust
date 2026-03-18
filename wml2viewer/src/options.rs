@@ -31,7 +31,10 @@ pub enum ViewerAction {
     FirstImage,
     LastImage,
     ToggleAnimation,
+    ToggleMangaMode,
     ToggleSettings,
+    ToggleFiler,
+    SaveAs,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -92,6 +95,7 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
     map.insert(KeyBinding::new("ArrowLeft"), ViewerAction::PrevImage);
     map.insert(KeyBinding::new("Home"), ViewerAction::FirstImage);
     map.insert(KeyBinding::new("End"), ViewerAction::LastImage);
+    map.insert(KeyBinding::new("C").with_shift(), ViewerAction::ToggleMangaMode);
     map.insert(KeyBinding::new("P"), ViewerAction::ToggleSettings);
     map
 }

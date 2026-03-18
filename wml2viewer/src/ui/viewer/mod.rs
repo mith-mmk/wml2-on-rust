@@ -1,15 +1,21 @@
 use crate::configs::config::save_app_config;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::canvas::Canvas;
-use crate::drawers::image::{ImageAlign, LoadedImage, resize_canvas, resize_loaded_image};
-use crate::filesystem::{FilesystemCommand, FilesystemResult, spawn_filesystem_worker};
+use crate::drawers::image::{
+    ImageAlign, LoadedImage, SaveFormat, load_canvas_from_bytes, resize_canvas,
+    resize_loaded_image, save_loaded_image,
+};
+use crate::filesystem::{
+    FilesystemCommand, FilesystemResult, list_openable_entries, load_virtual_image_bytes,
+    spawn_filesystem_worker,
+};
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationOptions, NavigationSortOption, ViewerAction,
 };
 use crate::ui::viewer::options::{
     BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowStartPosition,
 };
-use eframe::egui::{self, Color32, ColorImage, TextureHandle, TextureOptions, vec2};
+use eframe::egui::{self, Color32, ColorImage, Pos2, TextureHandle, TextureOptions, vec2};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
@@ -94,6 +100,15 @@ pub(crate) struct ViewerApp {
     pending_resize_after_load: bool,
     pending_fit_recalc: bool,
     config_path: Option<PathBuf>,
+    show_left_menu: bool,
+    left_menu_pos: Pos2,
+    save_format: SaveFormat,
+    save_message: Option<String>,
+    show_filer: bool,
+    filer_entries: Vec<PathBuf>,
+    filer_directory: Option<PathBuf>,
+    filer_selected: Option<PathBuf>,
+    startup_window_sync_frames: usize,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -182,9 +197,19 @@ impl ViewerApp {
             pending_resize_after_load: false,
             pending_fit_recalc: false,
             config_path,
+            show_left_menu: false,
+            left_menu_pos: Pos2::ZERO,
+            save_format: SaveFormat::Png,
+            save_message: None,
+            show_filer: false,
+            filer_entries: Vec::new(),
+            filer_directory: None,
+            filer_selected: None,
+            startup_window_sync_frames: 0,
         };
 
         let _ = this.init_filesystem(navigation_path);
+        this.refresh_filer_entries();
         this
     }
 
@@ -289,6 +314,51 @@ impl ViewerApp {
 
     fn reload_current(&mut self) -> Result<(), Box<dyn Error>> {
         self.request_load_path(self.current_navigation_path.clone())
+    }
+
+    fn current_directory(&self) -> Option<PathBuf> {
+        if let Some(parent) = self.current_navigation_path.parent() {
+            let marker = parent.file_name().and_then(|name| name.to_str());
+            if matches!(marker, Some("__wmlv__" | "__zipv__")) {
+                return parent.parent().and_then(|path| path.parent()).map(|path| path.to_path_buf());
+            }
+            return Some(parent.to_path_buf());
+        }
+        self.current_path.parent().map(|path| path.to_path_buf())
+    }
+
+    fn refresh_filer_entries(&mut self) {
+        let Some(dir) = self.current_directory() else {
+            self.filer_entries.clear();
+            self.filer_directory = None;
+            return;
+        };
+
+        self.filer_entries = list_openable_entries(&dir, self.navigation_sort);
+        self.filer_directory = Some(dir);
+        self.filer_selected = Some(self.current_navigation_path.clone());
+    }
+
+    fn save_current_as(&mut self, format: SaveFormat) {
+        let Some(parent) = self.current_path.parent() else {
+            self.save_message = Some("Cannot determine save directory".to_string());
+            return;
+        };
+
+        let stem = self
+            .current_path
+            .file_stem()
+            .and_then(|name| name.to_str())
+            .unwrap_or("image");
+        let output = parent.join(format!("{stem}.{}", format.extension()));
+        match save_loaded_image(&output, &self.source, format) {
+            Ok(()) => {
+                self.save_message = Some(format!("Saved {}", output.display()));
+            }
+            Err(err) => {
+                self.save_message = Some(format!("Save failed: {err}"));
+            }
+        }
     }
 
     fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
@@ -447,6 +517,7 @@ impl ViewerApp {
                             request_id,
                             path: self.current_navigation_path.clone(),
                         });
+                        self.refresh_filer_entries();
                     }
                     self.source = source;
                     self.rendered = rendered;
@@ -535,6 +606,14 @@ impl ViewerApp {
     }
 
     fn handle_keyboard(&mut self, ctx: &egui::Context) {
+        if ctx.input(|i| i.modifiers.ctrl && i.key_pressed(egui::Key::S)) {
+            self.save_current_as(self.save_format);
+        }
+
+        if self.show_settings {
+            return;
+        }
+
         let triggered = self.collect_triggered_actions(ctx);
         for action in triggered {
             match action {
@@ -576,8 +655,17 @@ impl ViewerApp {
                     self.last_frame_at = Instant::now();
                     self.upload_current_frame();
                 }
+                ViewerAction::ToggleMangaMode => {
+                    self.options.manga_mode = !self.options.manga_mode;
+                }
                 ViewerAction::ToggleSettings => {
                     self.show_settings = !self.show_settings;
+                }
+                ViewerAction::ToggleFiler => {
+                    self.show_filer = !self.show_filer;
+                }
+                ViewerAction::SaveAs => {
+                    self.save_current_as(self.save_format);
                 }
             }
         }
@@ -647,13 +735,21 @@ impl ViewerApp {
         }
     }
 
-    fn handle_pointer_input(&mut self, ctx: &egui::Context) {
-        let double_clicked = ctx.input(|i| {
-            i.pointer
-                .button_double_clicked(egui::PointerButton::Primary)
-        });
-        if double_clicked {
+    fn handle_pointer_input(&mut self, response: &egui::Response) {
+        if self.show_settings {
+            return;
+        }
+
+        if response.double_clicked() {
             let _ = self.toggle_zoom();
+            return;
+        }
+
+        if response.clicked() {
+            self.left_menu_pos = response
+                .interact_pointer_pos()
+                .unwrap_or_else(|| response.rect.left_top());
+            self.show_left_menu = true;
         }
     }
 
@@ -671,140 +767,119 @@ impl ViewerApp {
             .open(&mut open)
             .resizable(true)
             .show(ctx, |ui| {
-                ui.heading("Viewer");
-                if ui
-                    .checkbox(&mut self.options.animation, "Animation")
-                    .changed()
-                {
-                    config_changed = true;
-                }
+                ui.collapsing("Viewer", |ui| {
+                    config_changed |= ui.checkbox(&mut self.options.animation, "Animation").changed();
+                    config_changed |= ui.checkbox(&mut self.options.manga_mode, "Manga mode").changed();
+                    config_changed |= ui
+                        .checkbox(&mut self.options.manga_right_to_left, "Manga right-to-left")
+                        .changed();
 
-                ui.horizontal(|ui| {
-                    ui.label("End of folder");
-                    let before = self.end_of_folder;
-                    egui::ComboBox::from_id_salt("end_of_folder")
-                        .selected_text(end_of_folder_label(self.end_of_folder))
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.end_of_folder,
-                                EndOfFolderOption::Stop,
-                                "STOP",
-                            );
-                            ui.selectable_value(
-                                &mut self.end_of_folder,
-                                EndOfFolderOption::Loop,
-                                "LOOP",
-                            );
-                            ui.selectable_value(
-                                &mut self.end_of_folder,
-                                EndOfFolderOption::Next,
-                                "NEXT",
-                            );
-                            ui.selectable_value(
-                                &mut self.end_of_folder,
-                                EndOfFolderOption::Recursive,
-                                "RECURSIVE",
-                            );
-                        });
-                    if self.end_of_folder != before {
+                    ui.horizontal(|ui| {
+                        ui.label("Background");
+                        if ui.button("Black").clicked() {
+                            self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
+                            config_changed = true;
+                        }
+                        if ui.button("Gray").clicked() {
+                            self.options.background = BackgroundStyle::Solid([48, 48, 48, 255]);
+                            config_changed = true;
+                        }
+                        if ui.button("Tile").clicked() {
+                            self.options.background = BackgroundStyle::Tile {
+                                color1: [32, 32, 32, 255],
+                                color2: [80, 80, 80, 255],
+                                size: 16,
+                            };
+                            config_changed = true;
+                        }
+                    });
+                });
+
+                ui.collapsing("Render", |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Zoom mode");
+                        let before = self.render_options.zoom_option.clone();
+                        egui::ComboBox::from_id_salt("zoom_option")
+                            .selected_text(zoom_option_label(&self.render_options.zoom_option))
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::None, "None");
+                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitWidth, "FitWidth");
+                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitHeight, "FitHeight");
+                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitScreen, "FitScreen");
+                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitScreenIncludeSmaller, "FitScreenIncludeSmaller");
+                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitScreenOnlySmaller, "FitScreenOnlySmaller");
+                            });
+                        if self.render_options.zoom_option != before {
+                            zoom_option_changed = true;
+                            config_changed = true;
+                        }
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label("Resize");
+                        let before = self.render_options.zoom_method;
+                        egui::ComboBox::from_id_salt("zoom_method")
+                            .selected_text(interpolation_label(self.render_options.zoom_method))
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut self.render_options.zoom_method, InterpolationAlgorithm::NearestNeighber, "Nearest");
+                                ui.selectable_value(&mut self.render_options.zoom_method, InterpolationAlgorithm::Bilinear, "Bilinear");
+                                ui.selectable_value(&mut self.render_options.zoom_method, InterpolationAlgorithm::BicubicAlpha(None), "Bicubic");
+                                ui.selectable_value(&mut self.render_options.zoom_method, InterpolationAlgorithm::Lanzcos3, "Lanczos3");
+                            });
+                        if self.render_options.zoom_method != before {
+                            rerender_requested = true;
+                            config_changed = true;
+                        }
+                    });
+                });
+
+                ui.collapsing("Window", |ui| {
+                    if ui.checkbox(&mut self.window_options.fullscreen, "Fullscreen").changed() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(
+                            self.window_options.fullscreen,
+                        ));
                         config_changed = true;
+                    }
+                    match &mut self.window_options.size {
+                        crate::ui::viewer::options::WindowSize::Relative(ratio) => {
+                            ui.label("Window size: relative");
+                            config_changed |= ui.add(egui::Slider::new(ratio, 0.2..=1.0).text("ratio")).changed();
+                            if ui.button("Use exact size").clicked() {
+                                self.window_options.size = crate::ui::viewer::options::WindowSize::Exact {
+                                    width: self.last_viewport_size.x.max(320.0),
+                                    height: self.last_viewport_size.y.max(240.0),
+                                };
+                                config_changed = true;
+                            }
+                        }
+                        crate::ui::viewer::options::WindowSize::Exact { width, height } => {
+                            ui.label("Window size: exact");
+                            config_changed |= ui.add(egui::DragValue::new(width).speed(1.0).prefix("W ")).changed();
+                            config_changed |= ui.add(egui::DragValue::new(height).speed(1.0).prefix("H ")).changed();
+                            if ui.button("Use relative size").clicked() {
+                                self.window_options.size = crate::ui::viewer::options::WindowSize::Relative(0.8);
+                                config_changed = true;
+                            }
+                        }
                     }
                 });
 
-                ui.horizontal(|ui| {
-                    ui.label("Zoom mode");
-                    let before = self.render_options.zoom_option.clone();
-                    egui::ComboBox::from_id_salt("zoom_option")
-                        .selected_text(zoom_option_label(&self.render_options.zoom_option))
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_option,
-                                ZoomOption::None,
-                                "None",
-                            );
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_option,
-                                ZoomOption::FitWidth,
-                                "FitWidth",
-                            );
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_option,
-                                ZoomOption::FitHeight,
-                                "FitHeight",
-                            );
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_option,
-                                ZoomOption::FitScreen,
-                                "FitScreen",
-                            );
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_option,
-                                ZoomOption::FitScreenIncludeSmaller,
-                                "FitScreenIncludeSmaller",
-                            );
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_option,
-                                ZoomOption::FitScreenOnlySmaller,
-                                "FitScreenOnlySmaller",
-                            );
-                        });
-                    if self.render_options.zoom_option != before {
-                        zoom_option_changed = true;
-                        config_changed = true;
-                    }
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label("Resize");
-                    let before = self.render_options.zoom_method;
-                    egui::ComboBox::from_id_salt("zoom_method")
-                        .selected_text(interpolation_label(self.render_options.zoom_method))
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_method,
-                                InterpolationAlgorithm::NearestNeighber,
-                                "Nearest",
-                            );
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_method,
-                                InterpolationAlgorithm::Bilinear,
-                                "Bilinear",
-                            );
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_method,
-                                InterpolationAlgorithm::BicubicAlpha(None),
-                                "Bicubic",
-                            );
-                            ui.selectable_value(
-                                &mut self.render_options.zoom_method,
-                                InterpolationAlgorithm::Lanzcos3,
-                                "Lanczos3",
-                            );
-                        });
-                    if self.render_options.zoom_method != before {
-                        rerender_requested = true;
-                        config_changed = true;
-                    }
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label("Background");
-                    if ui.button("Black").clicked() {
-                        self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
-                        config_changed = true;
-                    }
-                    if ui.button("Gray").clicked() {
-                        self.options.background = BackgroundStyle::Solid([48, 48, 48, 255]);
-                        config_changed = true;
-                    }
-                    if ui.button("Tile").clicked() {
-                        self.options.background = BackgroundStyle::Tile {
-                            color1: [32, 32, 32, 255],
-                            color2: [80, 80, 80, 255],
-                            size: 16,
-                        };
-                        config_changed = true;
-                    }
+                ui.collapsing("Navigation", |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("End of folder");
+                        let before = self.end_of_folder;
+                        egui::ComboBox::from_id_salt("end_of_folder")
+                            .selected_text(end_of_folder_label(self.end_of_folder))
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut self.end_of_folder, EndOfFolderOption::Stop, "STOP");
+                                ui.selectable_value(&mut self.end_of_folder, EndOfFolderOption::Loop, "LOOP");
+                                ui.selectable_value(&mut self.end_of_folder, EndOfFolderOption::Next, "NEXT");
+                                ui.selectable_value(&mut self.end_of_folder, EndOfFolderOption::Recursive, "RECURSIVE");
+                            });
+                        if self.end_of_folder != before {
+                            config_changed = true;
+                        }
+                    });
                 });
 
                 ui.separator();
@@ -844,14 +919,97 @@ impl ViewerApp {
         }
     }
 
+    fn left_click_menu_ui(&mut self, ctx: &egui::Context) {
+        if !self.show_left_menu {
+            return;
+        }
+
+        let mut open = true;
+        egui::Window::new("Menu")
+            .title_bar(false)
+            .resizable(false)
+            .collapsible(false)
+            .fixed_pos(self.left_menu_pos)
+            .open(&mut open)
+            .show(ctx, |ui| {
+                if ui.button("Next").clicked() {
+                    let _ = self.next_image();
+                    self.show_left_menu = false;
+                }
+                if ui.button("Previous").clicked() {
+                    let _ = self.prev_image();
+                    self.show_left_menu = false;
+                }
+                if ui.button("Toggle Settings").clicked() {
+                    self.show_settings = !self.show_settings;
+                    self.show_left_menu = false;
+                }
+                if ui.button("Toggle Filer").clicked() {
+                    self.show_filer = !self.show_filer;
+                    self.show_left_menu = false;
+                }
+                if ui.button("Toggle Manga").clicked() {
+                    self.options.manga_mode = !self.options.manga_mode;
+                    self.show_left_menu = false;
+                }
+                ui.separator();
+                ui.label("Save As");
+                for format in SaveFormat::all() {
+                    if ui
+                        .selectable_label(self.save_format == format, format.to_string())
+                        .clicked()
+                    {
+                        self.save_format = format;
+                        self.save_current_as(format);
+                        self.show_left_menu = false;
+                    }
+                }
+            });
+        self.show_left_menu = open;
+    }
+
+    fn filer_ui(&mut self, ctx: &egui::Context) {
+        if !self.show_filer {
+            return;
+        }
+
+        egui::SidePanel::left("filer_panel")
+            .resizable(true)
+            .default_width(260.0)
+            .show(ctx, |ui| {
+                ui.heading("Filer");
+                if let Some(dir) = &self.filer_directory {
+                    ui.label(dir.display().to_string());
+                }
+                ui.separator();
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    let entries = self.filer_entries.clone();
+                    for entry in entries {
+                        let label = entry
+                            .file_name()
+                            .and_then(|name| name.to_str())
+                            .unwrap_or("(entry)");
+                        let selected = self.filer_selected.as_ref() == Some(&entry)
+                            || self.current_navigation_path == entry;
+                        if ui.selectable_label(selected, label).clicked() {
+                            self.filer_selected = Some(entry.clone());
+                            self.current_navigation_path = entry.clone();
+                            let _ = self.request_load_path(entry);
+                        }
+                    }
+                });
+            });
+    }
+
     fn sync_window_state(&mut self, ctx: &egui::Context) {
         let viewport = ctx.input(|i| i.viewport().clone());
+        self.startup_window_sync_frames += 1;
 
         if let Some(fullscreen) = viewport.fullscreen {
             self.window_options.fullscreen = fullscreen;
         }
 
-        if self.window_options.fullscreen {
+        if self.window_options.fullscreen || self.startup_window_sync_frames < 20 {
             return;
         }
 
@@ -878,12 +1036,13 @@ impl eframe::App for ViewerApp {
         self.poll_worker();
         self.poll_filesystem();
         self.handle_keyboard(ctx);
-        self.handle_pointer_input(ctx);
         self.settings_ui(ctx);
+        self.left_click_menu_ui(ctx);
+        self.filer_ui(ctx);
 
         let zoom_delta = ctx.input(|i| i.zoom_delta());
 
-        if zoom_delta != 1.0 {
+        if zoom_delta != 1.0 && !self.show_settings {
             let _ = self.set_zoom(self.zoom * zoom_delta);
         }
 
@@ -925,16 +1084,46 @@ impl eframe::App for ViewerApp {
 
                     ui.add_space(offset.y.max(0.0));
 
-                    ui.horizontal(|ui| {
+                    let inner = ui.horizontal(|ui| {
                         ui.add_space(offset.x.max(0.0));
-
-                        ui.add(
-                            egui::Image::from_texture(&self.texture).fit_to_exact_size(draw_size),
-                        );
+                        if self.options.manga_mode && self.current_canvas().width() > self.current_canvas().height() {
+                            let half_width = (draw_size.x * 0.5).max(1.0);
+                            let halves = if self.options.manga_right_to_left {
+                                [(0.5, 1.0), (0.0, 0.5)]
+                            } else {
+                                [(0.0, 0.5), (0.5, 1.0)]
+                            };
+                            let mut first = None;
+                            for (index, (u0, u1)) in halves.into_iter().enumerate() {
+                                let response = ui.add(
+                                    egui::Image::from_texture(&self.texture)
+                                        .uv(egui::Rect::from_min_max(
+                                            egui::pos2(u0, 0.0),
+                                            egui::pos2(u1, 1.0),
+                                        ))
+                                        .fit_to_exact_size(vec2(half_width, draw_size.y)),
+                                );
+                                if index == 0 {
+                                    first = Some(response);
+                                }
+                            }
+                            first
+                        } else {
+                            Some(ui.add(
+                                egui::Image::from_texture(&self.texture).fit_to_exact_size(draw_size),
+                            ))
+                        }
                     });
+                    if let Some(response) = inner.inner {
+                        self.handle_pointer_input(&response);
+                    }
 
                     if let Some(message) = &self.loading_message {
                         ui.add_space(8.0);
+                        ui.label(message);
+                    }
+                    if let Some(message) = &self.save_message {
+                        ui.add_space(4.0);
                         ui.label(message);
                     }
                 });
@@ -1070,7 +1259,11 @@ fn spawn_render_worker(
                     method,
                 } => {
                     let result = (|| -> Result<(LoadedImage, LoadedImage), Box<dyn Error>> {
-                        let source = crate::drawers::image::load_canvas_from_file(&path)?;
+                        let source = if let Some(bytes) = load_virtual_image_bytes(&path) {
+                            load_canvas_from_bytes(&bytes)?
+                        } else {
+                            crate::drawers::image::load_canvas_from_file(&path)?
+                        };
                         let rendered = resize_loaded_image(&source, zoom, method)?;
                         Ok((source, rendered))
                     })();

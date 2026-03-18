@@ -1,22 +1,24 @@
 use crate::configs::config::save_app_config;
+use crate::configs::resourses::{AppliedResources, apply_resources};
 use crate::dependent::available_roots;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{
-    ImageAlign, LoadedImage, SaveFormat, load_canvas_from_bytes, resize_canvas,
-    resize_loaded_image, save_loaded_image,
+    LoadedImage, SaveFormat, load_canvas_from_bytes, resize_canvas, resize_loaded_image,
+    save_loaded_image,
 };
 use crate::filesystem::{
     FilesystemCommand, FilesystemResult, adjacent_entry, list_browser_entries,
     list_openable_entries, load_virtual_image_bytes, spawn_filesystem_worker,
 };
 use crate::options::{
-    AppConfig, EndOfFolderOption, KeyBinding, NavigationOptions, NavigationSortOption, ViewerAction,
+    AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, ResourceOptions, ViewerAction,
 };
+use crate::ui::render::{aligned_offset, canvas_to_color_image};
 use crate::ui::viewer::options::{
-    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowStartPosition,
+    RenderOptions, ViewerOptions, WindowOptions, WindowStartPosition,
 };
-use eframe::egui::{self, Color32, ColorImage, Pos2, TextureHandle, TextureOptions, vec2};
+use eframe::egui::{self, Pos2, TextureHandle, TextureOptions, vec2};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
@@ -28,7 +30,7 @@ use options::ZoomOption;
 
 const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(180);
 
-enum RenderCommand {
+pub(crate) enum RenderCommand {
     LoadPath {
         request_id: u64,
         path: PathBuf,
@@ -42,7 +44,7 @@ enum RenderCommand {
     },
 }
 
-enum RenderResult {
+pub(crate) enum RenderResult {
     Loaded {
         request_id: u64,
         path: Option<PathBuf>,
@@ -56,71 +58,74 @@ enum RenderResult {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum ActiveRenderRequest {
+pub(crate) enum ActiveRenderRequest {
     Load(u64),
     Resize(u64),
 }
 
 pub(crate) struct ViewerApp {
-    current_navigation_path: PathBuf,
-    current_path: PathBuf,
-    source: LoadedImage,
-    rendered: LoadedImage,
-    texture: TextureHandle,
-    egui_ctx: egui::Context,
+    pub(crate) current_navigation_path: PathBuf,
+    pub(crate) current_path: PathBuf,
+    pub(crate) source: LoadedImage,
+    pub(crate) rendered: LoadedImage,
+    pub(crate) texture: TextureHandle,
+    pub(crate) egui_ctx: egui::Context,
 
-    zoom: f32,
+    pub(crate) zoom: f32,
 
-    current_frame: usize,
-    last_frame_at: Instant,
-    completed_loops: u32,
+    pub(crate) current_frame: usize,
+    pub(crate) last_frame_at: Instant,
+    pub(crate) completed_loops: u32,
 
-    fit_zoom: f32,
-    last_viewport_size: egui::Vec2,
-    frame_counter: usize,
+    pub(crate) fit_zoom: f32,
+    pub(crate) last_viewport_size: egui::Vec2,
+    pub(crate) frame_counter: usize,
 
-    render_options: RenderOptions,
-    options: ViewerOptions,
-    window_options: WindowOptions,
-    keymap: HashMap<KeyBinding, ViewerAction>,
-    end_of_folder: EndOfFolderOption,
-    navigation_sort: NavigationSortOption,
-    worker_tx: Sender<RenderCommand>,
-    worker_rx: Receiver<RenderResult>,
-    next_request_id: u64,
-    active_request: Option<ActiveRenderRequest>,
-    fs_tx: Sender<FilesystemCommand>,
-    fs_rx: Receiver<FilesystemResult>,
-    next_fs_request_id: u64,
-    active_fs_request_id: Option<u64>,
-    navigator_ready: bool,
-    loading_message: Option<String>,
-    last_navigation_at: Option<Instant>,
-    show_settings: bool,
-    max_texture_side: usize,
-    texture_display_scale: f32,
-    pending_resize_after_load: bool,
-    pending_fit_recalc: bool,
-    config_path: Option<PathBuf>,
-    show_left_menu: bool,
-    left_menu_pos: Pos2,
-    save_format: SaveFormat,
-    save_message: Option<String>,
-    show_filer: bool,
-    filer_entries: Vec<PathBuf>,
-    navigation_entries: Vec<PathBuf>,
-    filer_directory: Option<PathBuf>,
-    filer_selected: Option<PathBuf>,
-    filer_roots: Vec<PathBuf>,
-    startup_window_sync_frames: usize,
-    empty_mode: bool,
-    companion_tx: Sender<RenderCommand>,
-    companion_rx: Receiver<RenderResult>,
-    companion_active_request: Option<ActiveRenderRequest>,
-    companion_navigation_path: Option<PathBuf>,
-    companion_rendered: Option<LoadedImage>,
-    companion_texture: Option<TextureHandle>,
-    companion_texture_display_scale: f32,
+    pub(crate) render_options: RenderOptions,
+    pub(crate) options: ViewerOptions,
+    pub(crate) window_options: WindowOptions,
+    pub(crate) resources: ResourceOptions,
+    pub(crate) applied_locale: String,
+    pub(crate) loaded_font_names: Vec<String>,
+    pub(crate) keymap: HashMap<KeyBinding, ViewerAction>,
+    pub(crate) end_of_folder: EndOfFolderOption,
+    pub(crate) navigation_sort: NavigationSortOption,
+    pub(crate) worker_tx: Sender<RenderCommand>,
+    pub(crate) worker_rx: Receiver<RenderResult>,
+    pub(crate) next_request_id: u64,
+    pub(crate) active_request: Option<ActiveRenderRequest>,
+    pub(crate) fs_tx: Sender<FilesystemCommand>,
+    pub(crate) fs_rx: Receiver<FilesystemResult>,
+    pub(crate) next_fs_request_id: u64,
+    pub(crate) active_fs_request_id: Option<u64>,
+    pub(crate) navigator_ready: bool,
+    pub(crate) loading_message: Option<String>,
+    pub(crate) last_navigation_at: Option<Instant>,
+    pub(crate) show_settings: bool,
+    pub(crate) max_texture_side: usize,
+    pub(crate) texture_display_scale: f32,
+    pub(crate) pending_resize_after_load: bool,
+    pub(crate) pending_fit_recalc: bool,
+    pub(crate) config_path: Option<PathBuf>,
+    pub(crate) show_left_menu: bool,
+    pub(crate) left_menu_pos: Pos2,
+    pub(crate) save_format: SaveFormat,
+    pub(crate) save_message: Option<String>,
+    pub(crate) show_filer: bool,
+    pub(crate) filer_entries: Vec<PathBuf>,
+    pub(crate) navigation_entries: Vec<PathBuf>,
+    pub(crate) filer_directory: Option<PathBuf>,
+    pub(crate) filer_selected: Option<PathBuf>,
+    pub(crate) filer_roots: Vec<PathBuf>,
+    pub(crate) startup_window_sync_frames: usize,
+    pub(crate) empty_mode: bool,
+    pub(crate) companion_tx: Sender<RenderCommand>,
+    pub(crate) companion_rx: Receiver<RenderResult>,
+    pub(crate) companion_active_request: Option<ActiveRenderRequest>,
+    pub(crate) companion_navigation_path: Option<PathBuf>,
+    pub(crate) companion_rendered: Option<LoadedImage>,
+    pub(crate) companion_texture: Option<TextureHandle>,
+    pub(crate) companion_texture_display_scale: f32,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -167,6 +172,10 @@ impl ViewerApp {
         let texture = cc
             .egui_ctx
             .load_texture(texture_name, color_image, TextureOptions::LINEAR);
+        let AppliedResources {
+            locale,
+            loaded_fonts,
+        } = apply_resources(&cc.egui_ctx, &config.resources);
         let (worker_tx, worker_rx) = spawn_render_worker(source.clone());
         let (companion_tx, companion_rx) = spawn_render_worker(source.clone());
         let (fs_tx, fs_rx) = spawn_filesystem_worker(config.navigation.sort);
@@ -192,6 +201,9 @@ impl ViewerApp {
             render_options: config.render,
             options: config.viewer,
             window_options: config.window,
+            resources: config.resources,
+            applied_locale: locale,
+            loaded_font_names: loaded_fonts,
             keymap: config.input.merged_with_defaults(),
             end_of_folder: config.navigation.end_of_folder,
             navigation_sort: config.navigation.sort,
@@ -254,7 +266,7 @@ impl ViewerApp {
         Ok(())
     }
 
-    fn toggle_zoom(&mut self) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn toggle_zoom(&mut self) -> Result<(), Box<dyn Error>> {
         let target_zoom = if (self.zoom - 1.0).abs() < 0.01 {
             self.fit_zoom
         } else {
@@ -337,7 +349,7 @@ impl ViewerApp {
         }
     }
 
-    fn reload_current(&mut self) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn reload_current(&mut self) -> Result<(), Box<dyn Error>> {
         self.request_load_path(self.current_navigation_path.clone())
     }
 
@@ -348,7 +360,10 @@ impl ViewerApp {
         if let Some(parent) = self.current_navigation_path.parent() {
             let marker = parent.file_name().and_then(|name| name.to_str());
             if matches!(marker, Some("__wmlv__" | "__zipv__")) {
-                return parent.parent().and_then(|path| path.parent()).map(|path| path.to_path_buf());
+                return parent
+                    .parent()
+                    .and_then(|path| path.parent())
+                    .map(|path| path.to_path_buf());
             }
             return Some(parent.to_path_buf());
         }
@@ -369,13 +384,13 @@ impl ViewerApp {
         self.filer_selected = Some(self.current_navigation_path.clone());
     }
 
-    fn set_filer_directory(&mut self, dir: PathBuf) {
+    pub(crate) fn set_filer_directory(&mut self, dir: PathBuf) {
         self.filer_directory = Some(dir.clone());
         self.filer_entries = list_browser_entries(&dir, self.navigation_sort);
         self.navigation_entries = list_openable_entries(&dir, self.navigation_sort);
     }
 
-    fn save_current_as(&mut self, format: SaveFormat) {
+    pub(crate) fn save_current_as(&mut self, format: SaveFormat) {
         let Some(parent) = self.current_path.parent() else {
             self.save_message = Some("Cannot determine save directory".to_string());
             return;
@@ -465,7 +480,7 @@ impl ViewerApp {
         adjacent_entry(&self.current_navigation_path, self.navigation_sort, step)
     }
 
-    fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
         if !self.can_trigger_navigation() {
             return Ok(());
         }
@@ -483,7 +498,7 @@ impl ViewerApp {
         Ok(())
     }
 
-    fn prev_image(&mut self) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn prev_image(&mut self) -> Result<(), Box<dyn Error>> {
         if !self.can_trigger_navigation() {
             return Ok(());
         }
@@ -501,7 +516,7 @@ impl ViewerApp {
         Ok(())
     }
 
-    fn first_image(&mut self) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn first_image(&mut self) -> Result<(), Box<dyn Error>> {
         if !self.can_trigger_navigation() {
             return Ok(());
         }
@@ -510,7 +525,7 @@ impl ViewerApp {
         Ok(())
     }
 
-    fn last_image(&mut self) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn last_image(&mut self) -> Result<(), Box<dyn Error>> {
         if !self.can_trigger_navigation() {
             return Ok(());
         }
@@ -528,7 +543,7 @@ impl ViewerApp {
             .unwrap_or(true)
     }
 
-    fn request_load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn request_load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
         let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path.clone());
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
@@ -544,7 +559,7 @@ impl ViewerApp {
         Ok(())
     }
 
-    fn request_resize_current(&mut self) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn request_resize_current(&mut self) -> Result<(), Box<dyn Error>> {
         if matches!(self.active_request, Some(ActiveRenderRequest::Load(_))) {
             self.pending_resize_after_load = true;
             return Ok(());
@@ -786,441 +801,6 @@ impl ViewerApp {
         }
     }
 
-    fn handle_keyboard(&mut self, ctx: &egui::Context) {
-        if ctx.input(|i| i.modifiers.ctrl && i.key_pressed(egui::Key::S)) {
-            self.save_current_as(self.save_format);
-        }
-
-        if self.show_settings {
-            return;
-        }
-
-        let triggered = self.collect_triggered_actions(ctx);
-        for action in triggered {
-            match action {
-                ViewerAction::ZoomIn => {
-                    let _ = self.set_zoom(self.zoom * 1.25);
-                }
-                ViewerAction::ZoomOut => {
-                    let _ = self.set_zoom(self.zoom / 1.25);
-                }
-                ViewerAction::ZoomReset => {
-                    let _ = self.set_zoom(1.0);
-                }
-                ViewerAction::ZoomToggle => {
-                    let _ = self.toggle_zoom();
-                }
-                ViewerAction::ToggleFullscreen => {
-                    let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
-                    self.window_options.fullscreen = !fullscreen;
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
-                }
-                ViewerAction::Reload => {
-                    let _ = self.reload_current();
-                }
-                ViewerAction::NextImage => {
-                    let _ = self.next_image();
-                }
-                ViewerAction::PrevImage => {
-                    let _ = self.prev_image();
-                }
-                ViewerAction::FirstImage => {
-                    let _ = self.first_image();
-                }
-                ViewerAction::LastImage => {
-                    let _ = self.last_image();
-                }
-                ViewerAction::ToggleAnimation => {
-                    self.options.animation = !self.options.animation;
-                    self.current_frame = 0;
-                    self.last_frame_at = Instant::now();
-                    self.upload_current_frame();
-                }
-                ViewerAction::ToggleMangaMode => {
-                    self.options.manga_mode = !self.options.manga_mode;
-                }
-                ViewerAction::ToggleSettings => {
-                    self.show_settings = !self.show_settings;
-                }
-                ViewerAction::ToggleFiler => {
-                    self.show_filer = !self.show_filer;
-                }
-                ViewerAction::SaveAs => {
-                    self.save_current_as(self.save_format);
-                }
-            }
-        }
-    }
-
-    fn collect_triggered_actions(&self, ctx: &egui::Context) -> Vec<ViewerAction> {
-        self.keymap
-            .iter()
-            .filter_map(|(binding, action)| {
-                self.binding_pressed(ctx, binding).then(|| action.clone())
-            })
-            .collect()
-    }
-
-    fn binding_pressed(&self, ctx: &egui::Context, binding: &KeyBinding) -> bool {
-        ctx.input(|i| {
-            let modifiers = i.modifiers;
-            if modifiers.shift != binding.shift
-                || modifiers.ctrl != binding.ctrl
-                || modifiers.alt != binding.alt
-            {
-                return false;
-            }
-            match key_name_to_egui(&binding.key) {
-                Some(key) => i.key_pressed(key),
-                None => false,
-            }
-        })
-    }
-
-    fn paint_background(&self, ui: &mut egui::Ui, rect: egui::Rect) {
-        match &self.options.background {
-            BackgroundStyle::Solid(color) => {
-                ui.painter().rect_filled(rect, 0.0, rgba_to_color32(*color));
-            }
-            BackgroundStyle::Tile {
-                color1,
-                color2,
-                size,
-            } => {
-                let size = (*size).max(1) as f32;
-                let color1 = rgba_to_color32(*color1);
-                let color2 = rgba_to_color32(*color2);
-                let mut y = rect.top();
-                let mut row = 0_u32;
-                while y < rect.bottom() {
-                    let mut x = rect.left();
-                    let mut col = 0_u32;
-                    while x < rect.right() {
-                        let color = if (row + col).is_multiple_of(2) {
-                            color1
-                        } else {
-                            color2
-                        };
-                        let tile = egui::Rect::from_min_size(
-                            egui::pos2(x, y),
-                            egui::vec2(size.min(rect.right() - x), size.min(rect.bottom() - y)),
-                        );
-                        ui.painter().rect_filled(tile, 0.0, color);
-                        x += size;
-                        col += 1;
-                    }
-                    y += size;
-                    row += 1;
-                }
-            }
-        }
-    }
-
-    fn handle_pointer_input(&mut self, response: &egui::Response) {
-        if self.show_settings {
-            return;
-        }
-
-        if response.double_clicked() {
-            let _ = self.toggle_zoom();
-            return;
-        }
-
-        if response.clicked() {
-            self.left_menu_pos = response
-                .interact_pointer_pos()
-                .unwrap_or_else(|| response.rect.left_top());
-            self.show_left_menu = true;
-        }
-    }
-
-    fn settings_ui(&mut self, ctx: &egui::Context) {
-        if !self.show_settings {
-            return;
-        }
-
-        let mut open = self.show_settings;
-        let mut reload_requested = false;
-        let mut rerender_requested = false;
-        let mut zoom_option_changed = false;
-        let mut config_changed = false;
-        egui::Window::new("Settings")
-            .open(&mut open)
-            .resizable(true)
-            .show(ctx, |ui| {
-                ui.collapsing("Viewer", |ui| {
-                    config_changed |= ui.checkbox(&mut self.options.animation, "Animation").changed();
-                    config_changed |= ui.checkbox(&mut self.options.manga_mode, "Manga mode").changed();
-                    config_changed |= ui
-                        .checkbox(&mut self.options.manga_right_to_left, "Manga right-to-left")
-                        .changed();
-
-                    ui.horizontal(|ui| {
-                        ui.label("Background");
-                        if ui.button("Black").clicked() {
-                            self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
-                            config_changed = true;
-                        }
-                        if ui.button("Gray").clicked() {
-                            self.options.background = BackgroundStyle::Solid([48, 48, 48, 255]);
-                            config_changed = true;
-                        }
-                        if ui.button("Tile").clicked() {
-                            self.options.background = BackgroundStyle::Tile {
-                                color1: [32, 32, 32, 255],
-                                color2: [80, 80, 80, 255],
-                                size: 16,
-                            };
-                            config_changed = true;
-                        }
-                    });
-                });
-
-                ui.collapsing("Render", |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Zoom mode");
-                        let before = self.render_options.zoom_option.clone();
-                        egui::ComboBox::from_id_salt("zoom_option")
-                            .selected_text(zoom_option_label(&self.render_options.zoom_option))
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::None, "None");
-                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitWidth, "FitWidth");
-                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitHeight, "FitHeight");
-                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitScreen, "FitScreen");
-                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitScreenIncludeSmaller, "FitScreenIncludeSmaller");
-                                ui.selectable_value(&mut self.render_options.zoom_option, ZoomOption::FitScreenOnlySmaller, "FitScreenOnlySmaller");
-                            });
-                        if self.render_options.zoom_option != before {
-                            zoom_option_changed = true;
-                            config_changed = true;
-                        }
-                    });
-
-                    ui.horizontal(|ui| {
-                        ui.label("Resize");
-                        let before = self.render_options.zoom_method;
-                        egui::ComboBox::from_id_salt("zoom_method")
-                            .selected_text(interpolation_label(self.render_options.zoom_method))
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut self.render_options.zoom_method, InterpolationAlgorithm::NearestNeighber, "Nearest");
-                                ui.selectable_value(&mut self.render_options.zoom_method, InterpolationAlgorithm::Bilinear, "Bilinear");
-                                ui.selectable_value(&mut self.render_options.zoom_method, InterpolationAlgorithm::BicubicAlpha(None), "Bicubic");
-                                ui.selectable_value(&mut self.render_options.zoom_method, InterpolationAlgorithm::Lanzcos3, "Lanczos3");
-                            });
-                        if self.render_options.zoom_method != before {
-                            rerender_requested = true;
-                            config_changed = true;
-                        }
-                    });
-                });
-
-                ui.collapsing("Window", |ui| {
-                    if ui.checkbox(&mut self.window_options.fullscreen, "Fullscreen").changed() {
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(
-                            self.window_options.fullscreen,
-                        ));
-                        config_changed = true;
-                    }
-                    config_changed |= ui
-                        .checkbox(&mut self.window_options.remember_size, "Remember size")
-                        .changed();
-                    config_changed |= ui
-                        .checkbox(&mut self.window_options.remember_position, "Remember position")
-                        .changed();
-                    match &mut self.window_options.size {
-                        crate::ui::viewer::options::WindowSize::Relative(ratio) => {
-                            ui.label("Window size: relative");
-                            config_changed |= ui.add(egui::Slider::new(ratio, 0.2..=1.0).text("ratio")).changed();
-                            if ui.button("Use exact size").clicked() {
-                                self.window_options.size = crate::ui::viewer::options::WindowSize::Exact {
-                                    width: self.last_viewport_size.x.max(320.0),
-                                    height: self.last_viewport_size.y.max(240.0),
-                                };
-                                config_changed = true;
-                            }
-                        }
-                        crate::ui::viewer::options::WindowSize::Exact { width, height } => {
-                            ui.label("Window size: exact");
-                            config_changed |= ui.add(egui::DragValue::new(width).speed(1.0).prefix("W ")).changed();
-                            config_changed |= ui.add(egui::DragValue::new(height).speed(1.0).prefix("H ")).changed();
-                            if ui.button("Use relative size").clicked() {
-                                self.window_options.size = crate::ui::viewer::options::WindowSize::Relative(0.8);
-                                config_changed = true;
-                            }
-                        }
-                    }
-                });
-
-                ui.collapsing("Navigation", |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("End of folder");
-                        let before = self.end_of_folder;
-                        egui::ComboBox::from_id_salt("end_of_folder")
-                            .selected_text(end_of_folder_label(self.end_of_folder))
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut self.end_of_folder, EndOfFolderOption::Stop, "STOP");
-                                ui.selectable_value(&mut self.end_of_folder, EndOfFolderOption::Loop, "LOOP");
-                                ui.selectable_value(&mut self.end_of_folder, EndOfFolderOption::Next, "NEXT");
-                                ui.selectable_value(&mut self.end_of_folder, EndOfFolderOption::Recursive, "RECURSIVE");
-                            });
-                        if self.end_of_folder != before {
-                            config_changed = true;
-                        }
-                    });
-                });
-
-                ui.separator();
-                if ui.button("Reload current").clicked() {
-                    reload_requested = true;
-                }
-            });
-        self.show_settings = open;
-        if zoom_option_changed {
-            self.pending_fit_recalc = true;
-        }
-        if rerender_requested {
-            let _ = self.request_resize_current();
-        }
-        if reload_requested {
-            let _ = self.reload_current();
-        }
-        if config_changed {
-            let _ = save_app_config(
-                &self.current_config(),
-                Some(&self.current_path),
-                self.config_path.as_deref(),
-            );
-        }
-    }
-
-    fn current_config(&self) -> AppConfig {
-        AppConfig {
-            viewer: self.options.clone(),
-            window: self.window_options.clone(),
-            render: self.render_options.clone(),
-            input: Default::default(),
-            navigation: NavigationOptions {
-                end_of_folder: self.end_of_folder,
-                sort: self.navigation_sort,
-            },
-        }
-    }
-
-    fn left_click_menu_ui(&mut self, ctx: &egui::Context) {
-        if !self.show_left_menu {
-            return;
-        }
-
-        let mut open = true;
-        egui::Window::new("Menu")
-            .title_bar(false)
-            .resizable(false)
-            .collapsible(false)
-            .fixed_pos(self.left_menu_pos)
-            .open(&mut open)
-            .show(ctx, |ui| {
-                if ui.button("Next").clicked() {
-                    let _ = self.next_image();
-                    self.show_left_menu = false;
-                }
-                if ui.button("Previous").clicked() {
-                    let _ = self.prev_image();
-                    self.show_left_menu = false;
-                }
-                if ui.button("Toggle Settings").clicked() {
-                    self.show_settings = !self.show_settings;
-                    self.show_left_menu = false;
-                }
-                if ui.button("Toggle Filer").clicked() {
-                    self.show_filer = !self.show_filer;
-                    self.show_left_menu = false;
-                }
-                if ui.button("Toggle Manga").clicked() {
-                    self.options.manga_mode = !self.options.manga_mode;
-                    self.show_left_menu = false;
-                }
-                ui.separator();
-                ui.label("Save As");
-                for format in SaveFormat::all() {
-                    if ui
-                        .selectable_label(self.save_format == format, format.to_string())
-                        .clicked()
-                    {
-                        self.save_format = format;
-                        self.save_current_as(format);
-                        self.show_left_menu = false;
-                    }
-                }
-            });
-        self.show_left_menu = open;
-    }
-
-    fn filer_ui(&mut self, ctx: &egui::Context) {
-        if !self.show_filer {
-            return;
-        }
-
-        egui::SidePanel::left("filer_panel")
-            .resizable(true)
-            .default_width(260.0)
-            .show(ctx, |ui| {
-                ui.heading("Filer");
-                let current_root = self
-                    .filer_directory
-                    .as_ref()
-                    .and_then(|dir| self.filer_roots.iter().find(|root| dir.starts_with(root)))
-                    .cloned()
-                    .or_else(|| self.filer_roots.first().cloned());
-                egui::ComboBox::from_id_salt("filer_roots")
-                    .selected_text(
-                        current_root
-                            .as_ref()
-                            .map(|path| path.display().to_string())
-                            .unwrap_or_else(|| "(root)".to_string()),
-                    )
-                    .show_ui(ui, |ui| {
-                        for root in self.filer_roots.clone() {
-                            if ui
-                                .selectable_label(current_root.as_ref() == Some(&root), root.display().to_string())
-                                .clicked()
-                            {
-                                self.set_filer_directory(root);
-                            }
-                        }
-                    });
-                if let Some(dir) = &self.filer_directory {
-                    ui.label(dir.display().to_string());
-                    if let Some(parent) = dir.parent() {
-                        if ui.button("..").clicked() {
-                            self.set_filer_directory(parent.to_path_buf());
-                        }
-                    }
-                }
-                ui.separator();
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    let entries = self.filer_entries.clone();
-                    for entry in entries {
-                        let label = entry
-                            .file_name()
-                            .and_then(|name| name.to_str())
-                            .unwrap_or("(entry)");
-                        let selected = self.filer_selected.as_ref() == Some(&entry)
-                            || self.current_navigation_path == entry;
-                        if ui.selectable_label(selected, label).clicked() {
-                            if entry.is_dir() {
-                                self.set_filer_directory(entry);
-                                continue;
-                            }
-                            self.filer_selected = Some(entry.clone());
-                            self.current_navigation_path = entry.clone();
-                            self.empty_mode = false;
-                            let _ = self.request_load_path(entry);
-                        }
-                    }
-                });
-            });
-    }
-
     fn sync_window_state(&mut self, ctx: &egui::Context) {
         let viewport = ctx.input(|i| i.viewport().clone());
         self.startup_window_sync_frames += 1;
@@ -1307,26 +887,41 @@ impl eframe::App for ViewerApp {
             egui::ScrollArea::both()
                 .auto_shrink([false, false])
                 .show(ui, |ui| {
-                    let offset = aligned_offset(viewport, draw_size, self.options.align);
-
-                    ui.add_space(offset.y.max(0.0));
-
                     let spread_active = self.manga_spread_active();
                     let companion = self
                         .companion_rendered
                         .as_ref()
                         .zip(self.companion_texture.as_ref());
 
+                    let companion_draw_size = companion.map(|(companion_rendered, _)| {
+                        vec2(
+                            companion_rendered.canvas.width() as f32
+                                * self.companion_texture_display_scale,
+                            companion_rendered.canvas.height() as f32
+                                * self.companion_texture_display_scale,
+                        )
+                    });
+                    let total_draw_size = if spread_active {
+                        if let Some(companion_draw_size) = companion_draw_size {
+                            vec2(
+                                draw_size.x + companion_draw_size.x,
+                                draw_size.y.max(companion_draw_size.y),
+                            )
+                        } else {
+                            draw_size
+                        }
+                    } else {
+                        draw_size
+                    };
+                    let offset = aligned_offset(viewport, total_draw_size, self.options.align);
+
+                    ui.add_space(offset.y.max(0.0));
+
                     let inner = ui.horizontal(|ui| {
                         ui.add_space(offset.x.max(0.0));
                         if spread_active {
-                            if let Some((companion_rendered, companion_texture)) = companion {
-                                let companion_draw_size = vec2(
-                                    companion_rendered.canvas.width() as f32
-                                        * self.companion_texture_display_scale,
-                                    companion_rendered.canvas.height() as f32
-                                        * self.companion_texture_display_scale,
-                                );
+                            if let Some((_, companion_texture)) = companion {
+                                let companion_draw_size = companion_draw_size.unwrap_or(draw_size);
                                 let draw_companion_first = self.options.manga_right_to_left;
                                 if draw_companion_first {
                                     let first = ui.add(
@@ -1350,15 +945,20 @@ impl eframe::App for ViewerApp {
                                     Some(first)
                                 }
                             } else {
-                                Some(ui.add(
-                                    egui::Image::from_texture(&self.texture)
-                                        .fit_to_exact_size(draw_size),
-                                ))
+                                Some(
+                                    ui.add(
+                                        egui::Image::from_texture(&self.texture)
+                                            .fit_to_exact_size(draw_size),
+                                    ),
+                                )
                             }
                         } else {
-                            Some(ui.add(
-                                egui::Image::from_texture(&self.texture).fit_to_exact_size(draw_size),
-                            ))
+                            Some(
+                                ui.add(
+                                    egui::Image::from_texture(&self.texture)
+                                        .fit_to_exact_size(draw_size),
+                                ),
+                            )
                         }
                     });
                     if let Some(response) = inner.inner {
@@ -1371,7 +971,9 @@ impl eframe::App for ViewerApp {
                     }
                     if self.empty_mode {
                         ui.add_space(8.0);
-                        ui.label("No displayable file found. Open a directory or file from the filer.");
+                        ui.label(
+                            "No displayable file found. Open a directory or file from the filer.",
+                        );
                     }
                     if let Some(message) = &self.save_message {
                         ui.add_space(4.0);
@@ -1390,13 +992,6 @@ impl eframe::App for ViewerApp {
     }
 }
 
-fn canvas_to_color_image(canvas: &Canvas) -> ColorImage {
-    ColorImage::from_rgba_unmultiplied(
-        [canvas.width() as usize, canvas.height() as usize],
-        canvas.buffer(),
-    )
-}
-
 fn downscale_for_texture_limit<'a>(
     canvas: &'a Canvas,
     max_texture_side: usize,
@@ -1413,84 +1008,6 @@ fn downscale_for_texture_limit<'a>(
     match resize_canvas(canvas, scale, method) {
         Ok(resized) => (std::borrow::Cow::Owned(resized), scale),
         Err(_) => (std::borrow::Cow::Borrowed(canvas), 1.0),
-    }
-}
-
-fn aligned_offset(viewport: egui::Vec2, draw_size: egui::Vec2, align: ImageAlign) -> egui::Vec2 {
-    let horizontal = match align {
-        ImageAlign::Center | ImageAlign::Up | ImageAlign::Bottom => {
-            (viewport.x - draw_size.x) * 0.5
-        }
-        ImageAlign::Right | ImageAlign::RightUp | ImageAlign::RightBottom => {
-            viewport.x - draw_size.x
-        }
-        _ => 0.0,
-    };
-    let vertical = match align {
-        ImageAlign::Center | ImageAlign::Left | ImageAlign::Right => {
-            (viewport.y - draw_size.y) * 0.5
-        }
-        ImageAlign::LeftBottom | ImageAlign::RightBottom | ImageAlign::Bottom => {
-            viewport.y - draw_size.y
-        }
-        _ => 0.0,
-    };
-
-    egui::vec2(horizontal, vertical)
-}
-
-fn rgba_to_color32([r, g, b, a]: [u8; 4]) -> Color32 {
-    Color32::from_rgba_unmultiplied(r, g, b, a)
-}
-
-fn key_name_to_egui(key: &str) -> Option<egui::Key> {
-    match key {
-        "Plus" => Some(egui::Key::Plus),
-        "Minus" => Some(egui::Key::Minus),
-        "Num0" => Some(egui::Key::Num0),
-        "Enter" => Some(egui::Key::Enter),
-        "R" => Some(egui::Key::R),
-        "Space" => Some(egui::Key::Space),
-        "ArrowRight" => Some(egui::Key::ArrowRight),
-        "ArrowLeft" => Some(egui::Key::ArrowLeft),
-        "Home" => Some(egui::Key::Home),
-        "End" => Some(egui::Key::End),
-        "G" => Some(egui::Key::G),
-        "C" => Some(egui::Key::C),
-        "F" => Some(egui::Key::F),
-        "P" => Some(egui::Key::P),
-        _ => None,
-    }
-}
-
-fn end_of_folder_label(option: EndOfFolderOption) -> &'static str {
-    match option {
-        EndOfFolderOption::Stop => "STOP",
-        EndOfFolderOption::Next => "NEXT",
-        EndOfFolderOption::Loop => "LOOP",
-        EndOfFolderOption::Recursive => "RECURSIVE",
-    }
-}
-
-fn zoom_option_label(option: &ZoomOption) -> &'static str {
-    match option {
-        ZoomOption::None => "None",
-        ZoomOption::FitWidth => "FitWidth",
-        ZoomOption::FitHeight => "FitHeight",
-        ZoomOption::FitScreen => "FitScreen",
-        ZoomOption::FitScreenIncludeSmaller => "FitScreenIncludeSmaller",
-        ZoomOption::FitScreenOnlySmaller => "FitScreenOnlySmaller",
-    }
-}
-
-fn interpolation_label(method: InterpolationAlgorithm) -> &'static str {
-    match method {
-        InterpolationAlgorithm::NearestNeighber => "Nearest",
-        InterpolationAlgorithm::Bilinear => "Bilinear",
-        InterpolationAlgorithm::Bicubic => "Bicubic",
-        InterpolationAlgorithm::BicubicAlpha(_) => "Bicubic",
-        InterpolationAlgorithm::Lanzcos3 => "Lanczos3",
-        InterpolationAlgorithm::Lanzcos(_) => "Lanczos",
     }
 }
 

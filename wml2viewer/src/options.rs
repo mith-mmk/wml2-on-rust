@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 
+pub use crate::configs::resourses::{FontSizePreset, ResourceOptions};
 pub use crate::ui::viewer::options::{
     BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
     ZoomOption,
@@ -14,6 +15,7 @@ pub struct AppConfig {
     pub viewer: ViewerOptions,
     pub window: WindowOptions,
     pub render: RenderOptions,
+    pub resources: ResourceOptions,
     pub input: InputOptions,
     pub navigation: NavigationOptions,
 }
@@ -95,7 +97,10 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
     map.insert(KeyBinding::new("ArrowLeft"), ViewerAction::PrevImage);
     map.insert(KeyBinding::new("Home"), ViewerAction::FirstImage);
     map.insert(KeyBinding::new("End"), ViewerAction::LastImage);
-    map.insert(KeyBinding::new("C").with_shift(), ViewerAction::ToggleMangaMode);
+    map.insert(
+        KeyBinding::new("C").with_shift(),
+        ViewerAction::ToggleMangaMode,
+    );
     map.insert(KeyBinding::new("F"), ViewerAction::ToggleFiler);
     map.insert(KeyBinding::new("P"), ViewerAction::ToggleSettings);
     map

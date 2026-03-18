@@ -329,7 +329,8 @@ pub fn resolve_start_path(path: &Path) -> Option<PathBuf> {
 }
 
 pub fn load_virtual_image_bytes(path: &Path) -> Option<Vec<u8>> {
-    resolve_virtual_zip_child(path).and_then(|(archive, index)| load_zip_entry_bytes(&archive, index))
+    resolve_virtual_zip_child(path)
+        .and_then(|(archive, index)| load_zip_entry_bytes(&archive, index))
 }
 
 pub fn list_openable_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathBuf> {
@@ -352,7 +353,8 @@ pub fn list_browser_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathB
         let path = entry.path();
         if path.is_dir() {
             dirs.push(path);
-        } else if is_supported_image(&path) || is_listed_file_path(&path) || is_zip_file_path(&path) {
+        } else if is_supported_image(&path) || is_listed_file_path(&path) || is_zip_file_path(&path)
+        {
             files.push(path);
         }
     }
@@ -364,11 +366,7 @@ pub fn list_browser_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathB
     entries
 }
 
-pub fn adjacent_entry(
-    path: &Path,
-    sort: NavigationSortOption,
-    step: isize,
-) -> Option<PathBuf> {
+pub fn adjacent_entry(path: &Path, sort: NavigationSortOption, step: isize) -> Option<PathBuf> {
     let mut cache = FilesystemCache {
         listings_by_dir: HashMap::new(),
         sort,
@@ -956,7 +954,9 @@ fn metadata_modified_key(path: &Path) -> SystemTime {
 
 fn metadata_size_key(path: &Path) -> u64 {
     if let Some((archive, _)) = resolve_virtual_zip_child(path) {
-        return fs::metadata(archive).map(|metadata| metadata.len()).unwrap_or(0);
+        return fs::metadata(archive)
+            .map(|metadata| metadata.len())
+            .unwrap_or(0);
     }
 
     let metadata_path = resolve_virtual_listed_child(path).unwrap_or_else(|| path.to_path_buf());

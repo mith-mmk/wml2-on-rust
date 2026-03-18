@@ -7,3 +7,18 @@ pub fn default_config_dir() -> Option<PathBuf> {
 pub fn available_roots() -> Vec<PathBuf> {
     std::env::current_dir().ok().into_iter().collect()
 }
+
+pub fn system_locale() -> Option<String> {
+    std::env::var("LC_ALL")
+        .ok()
+        .or_else(|| std::env::var("LC_MESSAGES").ok())
+        .or_else(|| std::env::var("LANG").ok())
+}
+
+pub fn locale_font_candidates(_locale: &str) -> Vec<PathBuf> {
+    Vec::new()
+}
+
+pub fn emoji_font_candidates() -> Vec<PathBuf> {
+    Vec::new()
+}

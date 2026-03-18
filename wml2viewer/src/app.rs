@@ -1,4 +1,5 @@
 use crate::configs::config::{load_app_config, load_startup_path};
+use crate::configs::resourses::apply_resources;
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{
     LoadedImage, load_canvas_from_bytes, load_canvas_from_file, resize_loaded_image,
@@ -52,6 +53,7 @@ pub fn run(
         "wml2viewer",
         native_options,
         Box::new(move |cc| {
+            let _ = apply_resources(&cc.egui_ctx, &config.resources);
             let screen = cc.egui_ctx.input(|i| i.viewport().monitor_size.unwrap());
 
             let image_size = egui::vec2(image.canvas.width() as f32, image.canvas.height() as f32);
@@ -96,6 +98,10 @@ pub fn run(
                     }
                 }
             }
+
+            // Work around broken first-frame layout when the app starts in fullscreen.
+            cc.egui_ctx
+                .send_viewport_cmd(egui::ViewportCommand::Fullscreen(false));
 
             Ok(Box::new(ViewerApp::new(
                 cc,

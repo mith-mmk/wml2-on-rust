@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::dependent::default_config_dir;
 use crate::drawers::affine::InterpolationAlgorithm;
-use crate::options::{AppConfig, EndOfFolderOption, NavigationSortOption};
+use crate::options::{
+    AppConfig, EndOfFolderOption, FontSizePreset, NavigationSortOption, ResourceOptions,
+};
 use crate::ui::viewer::options::{
     BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
     ZoomOption,
@@ -21,6 +23,7 @@ struct ConfigFile {
     viewer: ViewerConfigFile,
     window: WindowConfigFile,
     render: RenderConfigFile,
+    resources: ResourceConfigFile,
     navigation: NavigationConfigFile,
     runtime: RuntimeConfigFile,
 }
@@ -154,6 +157,32 @@ enum ZoomMethodConfigFile {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
+struct ResourceConfigFile {
+    locale: Option<String>,
+    font_size: FontSizeConfigFile,
+}
+
+impl Default for ResourceConfigFile {
+    fn default() -> Self {
+        Self {
+            locale: None,
+            font_size: FontSizeConfigFile::S,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum FontSizeConfigFile {
+    Auto,
+    S,
+    M,
+    L,
+    Ll,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
 struct NavigationConfigFile {
     end_of_folder: EndOfFolderConfigFile,
     sort: NavigationSortConfigFile,
@@ -255,6 +284,7 @@ impl From<ConfigFile> for AppConfig {
         };
         config.window = value.window.into();
         config.render = value.render.into();
+        config.resources = value.resources.into();
         config.navigation.end_of_folder = value.navigation.end_of_folder.into();
         config.navigation.sort = value.navigation.sort.into();
         config
@@ -278,6 +308,7 @@ impl ConfigFile {
             },
             window: value.window.into(),
             render: value.render.into(),
+            resources: value.resources.into(),
             navigation: NavigationConfigFile {
                 end_of_folder: value.navigation.end_of_folder.into(),
                 sort: value.navigation.sort.into(),
@@ -397,6 +428,48 @@ impl From<RenderOptions> for RenderConfigFile {
         Self {
             zoom_option: value.zoom_option.into(),
             zoom_method: value.zoom_method.into(),
+        }
+    }
+}
+
+impl From<ResourceConfigFile> for ResourceOptions {
+    fn from(value: ResourceConfigFile) -> Self {
+        Self {
+            locale: value.locale,
+            font_size: value.font_size.into(),
+        }
+    }
+}
+
+impl From<ResourceOptions> for ResourceConfigFile {
+    fn from(value: ResourceOptions) -> Self {
+        Self {
+            locale: value.locale,
+            font_size: value.font_size.into(),
+        }
+    }
+}
+
+impl From<FontSizeConfigFile> for FontSizePreset {
+    fn from(value: FontSizeConfigFile) -> Self {
+        match value {
+            FontSizeConfigFile::Auto => FontSizePreset::Auto,
+            FontSizeConfigFile::S => FontSizePreset::S,
+            FontSizeConfigFile::M => FontSizePreset::M,
+            FontSizeConfigFile::L => FontSizePreset::L,
+            FontSizeConfigFile::Ll => FontSizePreset::LL,
+        }
+    }
+}
+
+impl From<FontSizePreset> for FontSizeConfigFile {
+    fn from(value: FontSizePreset) -> Self {
+        match value {
+            FontSizePreset::Auto => Self::Auto,
+            FontSizePreset::S => Self::S,
+            FontSizePreset::M => Self::M,
+            FontSizePreset::L => Self::L,
+            FontSizePreset::LL => Self::Ll,
         }
     }
 }

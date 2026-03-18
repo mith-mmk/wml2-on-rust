@@ -14,8 +14,9 @@ pub(crate) struct ZipEntryRecord {
 }
 
 pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
-    static ZIP_INDEX_CACHE: OnceLock<Mutex<std::collections::HashMap<PathBuf, Vec<ZipEntryRecord>>>> =
-        OnceLock::new();
+    static ZIP_INDEX_CACHE: OnceLock<
+        Mutex<std::collections::HashMap<PathBuf, Vec<ZipEntryRecord>>>,
+    > = OnceLock::new();
     let cache = ZIP_INDEX_CACHE.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
     if let Some(entries) = cache.lock().ok()?.get(path).cloned() {
         return Some(entries);

@@ -57,17 +57,22 @@ pub fn download_http_url(url: &str) -> Option<std::path::PathBuf> {
         return None;
     }
 
-    let response = reqwest::blocking::get(url).ok()?;
+    let client = reqwest::blocking::Client::builder()
+        .user_agent("wml2viewer/0.0.1")
+        .build()
+        .ok()?;
+    let response = client.get(url).send().ok()?;
     if !response.status().is_success() {
         return None;
     }
+    let final_url = response.url().to_string();
+    let content_type = response
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_ascii_lowercase);
     let bytes = response.bytes().ok()?;
-    let extension = url
-        .rsplit_once('.')
-        .map(|(_, ext)| ext)
-        .and_then(|ext| ext.split('?').next())
-        .filter(|ext| !ext.is_empty())
-        .unwrap_or("bin");
+    let extension = infer_http_extension(&final_url, content_type.as_deref()).unwrap_or("bin");
     let path = std::env::temp_dir().join(format!(
         "wml2viewer_url_{}.{}",
         std::time::SystemTime::now()
@@ -78,4 +83,26 @@ pub fn download_http_url(url: &str) -> Option<std::path::PathBuf> {
     ));
     std::fs::write(&path, &bytes).ok()?;
     Some(path)
+}
+
+fn infer_http_extension<'a>(url: &'a str, content_type: Option<&str>) -> Option<&'a str> {
+    let from_url = url
+        .rsplit_once('.')
+        .map(|(_, ext)| ext)
+        .and_then(|ext| ext.split('?').next())
+        .filter(|ext| !ext.is_empty() && ext.len() <= 8);
+    if from_url.is_some() {
+        return from_url;
+    }
+
+    match content_type.unwrap_or_default() {
+        value if value.contains("png") => Some("png"),
+        value if value.contains("jpeg") || value.contains("jpg") => Some("jpg"),
+        value if value.contains("webp") => Some("webp"),
+        value if value.contains("gif") => Some("gif"),
+        value if value.contains("bmp") => Some("bmp"),
+        value if value.contains("tiff") => Some("tif"),
+        value if value.contains("avif") => Some("avif"),
+        _ => None,
+    }
 }

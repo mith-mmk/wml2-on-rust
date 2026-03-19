@@ -4785,6 +4785,7 @@ version = "0.0.1"
 dependencies = [
  "directories",
  "eframe",
+ "encoding_rs",
  "reqwest",
  "serde",
  "toml",

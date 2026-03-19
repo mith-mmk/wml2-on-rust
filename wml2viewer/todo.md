@@ -102,10 +102,10 @@
 - [x] その他 OS 向け最低限の fallback
 
 ## src/dependent/plugins/mod.rs
-- [+] plugin config 構造体
-- [+] provider 別 default 設定
-- [+] plugin 設定 UI 向けの土台
-- [+] search path からの module 走査
+- [x] plugin config 構造体
+- [x] provider 別 default 設定
+- [x] plugin 設定 UI 向けの土台
+- [x] search path からの module 走査
 - [ ] plugin 優先順位の実行ロジック
 - [ ] MIME / wildcard 判定
 - [ ] decoder / encoder / filter の実行ロジック
@@ -145,6 +145,8 @@
 ## src/filesystem/zip_file.rs
 - [x] zip 読み込み
 - [x] zip virtual child path
+- [x] 途中 entry エラーを飛ばして継続
+- [x] zip 名の SJIS fallback decode
 - [ ] zip entry sort option
 - [ ] zip encoding option
 - [ ] `7z` / `rar` / `lzh` / `gzip`
@@ -187,7 +189,7 @@
 - [+] plugin search path 編集
 - [+] plugin module load test ボタン
 - [x] save path 記録設定
-- [+] 適用/undo/初期化ボタン
+- [x] 適用/undo/初期化ボタン
 - [ ] キーバインド編集 UI
 
 ## src/ui/menu/fileviewer/state.rs
@@ -226,6 +228,7 @@
 - [x] ドライブ選択
 - [x] zip / archive の内容表示
 - [x] URL 入力欄（http/https は reqwest ダウンロードで表示）
+- [x] SVG アイコン素材を resources/icons に生成
 - [x] サブファイラー下部表示
 - [x] サブファイラー閉じるボタン
 - [x] 詳細表示で更新日時とサイズを表示
@@ -331,28 +334,36 @@
 - [-] 役割の再整理
 
 ## 次に着手
-- issue:【優先】保存: キャンセルボタンが効かない
-- issue:【優先】zip内で次の画像表示が止まる画像がある(大きめのファイルが挟まる止まる。Filerで選択すれば移動可能)
-- issue:ファイラー:http/httpsからロード出来ない
-- ファイラー: SVG表示 resources/icons/icons.mdにテンプレが置いてあるのでそれでsvg iconをまず生成してください
-- ファイラー: 文字をsvgに置き換えてください
-- ファイラー: サムネイル 「フォルダ/アーカイブ」が大きくてフォルダ名が読めない
-- ファイラー: サムネイル 真ん中を不要なペインがサムネイルを隠ぺいしているので削除
-- zip: 日本語が文字化けする(恐らくエンコードがsjisのケースなので自動判別して変換/それでも化けるなら諦める)
-  - crate encoding_rsを利用
-- ファイラー: サムネイル ペインが小さい。可変にするか全画面表示
+- コードの整理 モジュール境界をハッキリさせる
+  - app 起動時の初回 decode 完全 worker 化
+  - preload queue 連携
+  - 未実装 action の no-op 整理
+- ヘルプを設定画面から出せる様にする 
+- [重要] issue:マンガモード：左右のサイズが一致しない場合にリサイズが繰り返される
+- [重要] ファイラー: 生成済み svg icon を UI に実表示し、文字を置き換える(iconの色はバックグラウンドの反転に設定)
+- [重要] ファイラー: サムネイル 「フォルダ/アーカイブ」が大きくてフォルダ名が読めない
+- [重要] ファイラー: サムネイル 真ん中を不要なペインがサムネイルを隠ぺいしているので削除
+- [重要] ファイラー: サムネイル ペインが小さい。可変にする
+- [重要] ファイラー: ソート osのソートがファイル名の中にある数字もソートに組み込んでいるのでそのロジックも入れてください
+  - 例1． テスト10.jpg テスト2.jpgの名前順ソートは  テスト2.jpg テスト10.jpgの順になる
+  - 例2．テスト(5).jpg テスト(43).jpgの名前順ソートは、 テスト(5).jpg テスト(43).jpgの順になる
+  - 以上は大文字数字でも適用される
+- 巨大かつネットワークファイルの対応
+  - ファイラー: zipされたbmpの展開が固まる
+  - viwer: zipされたファイルの次の表示ができないケースがあり（ネットワークかつファイルが巨大なケース 確認したら1.53GB）
 - プラグイン: 実装続き
-    - load moduleで止まっている jpeg2000/avifが開けない ./samplesにサンプルあり
-    - search path ファイルダイアログが欲しい(保存と同じで良い)
+    - jpeg2000/avifは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
+    - search path: フォルダ選択ダイアログが欲しい(保存と同じで良い)
     - test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
     - ffmpegのリンクはcrate ffmpeg-sysを考慮(自力実装の方が安定する可能性あり)
     - systemにserach pathは不要 OS APIを叩くため
-- 設定：OSに拡張子を登録できる機能
 - 設定：適用/undo/初期化ボタンの本格化
+- [重要] 設定：OSに拡張子を登録できる機能
   windows は crate winreg を使う
   ProgID / open command / OpenWithProgids / OpenWithList / `--clean system`
 - `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - `src/ui/menu/fileviewer/worker.rs` に lazy load / incremental snapshot を入れて大規模フォルダを高速化する
 - `src/ui/i18n/mod.rs` を JSON resource loader に拡張し、未ローカライズ文言を全面移行する
 - `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
+- issue:セパレーター：shadowがshadowになっていない。グラデーションをかける
 - todo.mdの更新

@@ -694,6 +694,7 @@ impl ViewerApp {
         }
 
         let mut open = self.show_save_dialog;
+        let mut close_requested = false;
         egui::Window::new(self.text(UiTextKey::Save))
             .open(&mut open)
             .resizable(false)
@@ -753,10 +754,13 @@ impl ViewerApp {
                         self.save_current_as(self.save_format);
                     }
                     if ui.button(self.text(UiTextKey::Cancel)).clicked() {
-                        self.show_save_dialog = false;
+                        close_requested = true;
                     }
                 });
             });
+        if close_requested {
+            open = false;
+        }
         self.show_save_dialog = open;
     }
 

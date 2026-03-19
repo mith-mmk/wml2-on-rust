@@ -3,6 +3,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
+use encoding_rs::SHIFT_JIS;
 use zip::ZipArchive;
 
 use super::is_supported_image;
@@ -27,19 +28,22 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
     let mut entries = Vec::new();
 
     for index in 0..archive.len() {
-        let file = archive.by_index(index).ok()?;
+        let Ok(file) = archive.by_index(index) else {
+            continue;
+        };
         if file.is_dir() {
             continue;
         }
 
-        let entry_path = PathBuf::from(file.name().replace('\\', "/"));
+        let name = decode_zip_name(&file);
+        let entry_path = PathBuf::from(name.replace('\\', "/"));
         if !is_supported_image(&entry_path) {
             continue;
         }
 
         entries.push(ZipEntryRecord {
             index,
-            name: file.name().replace('\\', "/"),
+            name: name.replace('\\', "/"),
         });
     }
 
@@ -57,4 +61,16 @@ pub(crate) fn load_zip_entry_bytes(path: &Path, entry_index: usize) -> Option<Ve
     let mut buf = Vec::new();
     entry.read_to_end(&mut buf).ok()?;
     Some(buf)
+}
+
+fn decode_zip_name(file: &zip::read::ZipFile<'_>) -> String {
+    let raw = file.name_raw();
+    if let Ok(utf8) = std::str::from_utf8(raw) {
+        return utf8.to_string();
+    }
+    let (decoded, _, had_errors) = SHIFT_JIS.decode(raw);
+    if !had_errors {
+        return decoded.into_owned();
+    }
+    String::from_utf8_lossy(raw).into_owned()
 }

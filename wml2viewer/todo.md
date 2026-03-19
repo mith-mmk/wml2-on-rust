@@ -19,6 +19,7 @@
 - [x] 起動時 fullscreen を無効化するワークアラウンド
 - [x] アプリアイコン設定
 - [x] `resources/help.html` 出力の土台
+- [+] app 起動時の初回 decode worker 化
 - [*] フルスクリーン復帰時の安定性確認
 
 ## src/options.rs
@@ -187,6 +188,7 @@
 - [x] window theme 設定
 - [+] plugin 設定画面の土台
 - [+] plugin search path 編集
+- [+] plugin search path フォルダ選択ダイアログ
 - [+] plugin module load test ボタン
 - [x] save path 記録設定
 - [x] 適用/undo/初期化ボタン
@@ -196,13 +198,20 @@
 - [x] filer state の分離
 - [x] root drive 管理
 - [x] view mode / sort / filter / URL input state
+- [+] thumbnail size 可変 state
 - [x] `available_roots` の曖昧 import 解消
+
+## src/ui/menu/fileviewer/icons.rs
+- [x] resources/icons の SVG を UI 描画へ接続
+- [x] background 反転色での icon 描画
+- [ ] SVG icon の共通化と他 menu への展開
 
 ## src/ui/menu/fileviewer/worker.rs
 - [x] `FilerCommand / FilerResult`
 - [x] directory scan の worker 分離
 - [x] metadata 収集
 - [x] sort / filter / ext filter / dir separate
+- [x] 数値を含む自然順ソート
 - [ ] lazy load の段階化
 - [ ] OS 準拠 name collation の強化
 
@@ -229,12 +238,16 @@
 - [x] zip / archive の内容表示
 - [x] URL 入力欄（http/https は reqwest ダウンロードで表示）
 - [x] SVG アイコン素材を resources/icons に生成
+- [x] SVG アイコンを UI に実表示
+- [x] toolbar 文字ボタンの icon 置換
 - [x] サブファイラー下部表示
 - [x] サブファイラー閉じるボタン
 - [x] 詳細表示で更新日時とサイズを表示
 - [x] ファイル選択時に filer を閉じる
+- [x] サムネイルのフォルダ/アーカイブ icon 縮小
+- [x] サムネイル中央の不要な button chrome 削減
+- [x] サムネイルペインサイズ可変
 - [*] filer 表示時のさらなる高速化
-- [ ] SVG アイコン化
 - [ ] Copy / Move / Trash / Convert
 
 
@@ -251,7 +264,7 @@
 ## src/ui/render/worker.rs
 - [x] render worker
 - [x] load / resize request 分離
-- [ ] preload queue 連携
+- [+] preload queue 連携
 
 ## src/ui/render/mod.rs
 - [x] viewer から render 責務を切り出し
@@ -286,10 +299,10 @@
 - [x] grayscale 表示トグル
 - [x] subfiler の明示トグル
 - [x] manga separator 描画
-- [*] 起動時の manga Fit 再計算の実機確認
+- [+] 起動時の manga Fit 再計算ループの抑制
 - [*] filer 表示時の manga レイアウトは実機で継続確認
-- [ ] app 起動時の初回 decode 完全 worker 化
-- [ ] preload queue
+- [+] app 起動時の初回 decode 完全 worker 化
+- [+] preload queue
 - [ ] message UI 整理
 
 ## src/drawers/affine.rs
@@ -334,36 +347,37 @@
 - [-] 役割の再整理
 
 ## 次に着手
-- コードの整理 モジュール境界をハッキリさせる
-  - app 起動時の初回 decode 完全 worker 化
-  - preload queue 連携
-  - 未実装 action の no-op 整理
-- ヘルプを設定画面から出せる様にする 
-- [重要] issue:マンガモード：左右のサイズが一致しない場合にリサイズが繰り返される
-- [重要] ファイラー: 生成済み svg icon を UI に実表示し、文字を置き換える(iconの色はバックグラウンドの反転に設定)
-- [重要] ファイラー: サムネイル 「フォルダ/アーカイブ」が大きくてフォルダ名が読めない
-- [重要] ファイラー: サムネイル 真ん中を不要なペインがサムネイルを隠ぺいしているので削除
-- [重要] ファイラー: サムネイル ペインが小さい。可変にする
-- [重要] ファイラー: ソート osのソートがファイル名の中にある数字もソートに組み込んでいるのでそのロジックも入れてください
-  - 例1． テスト10.jpg テスト2.jpgの名前順ソートは  テスト2.jpg テスト10.jpgの順になる
-  - 例2．テスト(5).jpg テスト(43).jpgの名前順ソートは、 テスト(5).jpg テスト(43).jpgの順になる
-  - 以上は大文字数字でも適用される
-- 巨大かつネットワークファイルの対応
-  - ファイラー: zipされたbmpの展開が固まる
-  - viwer: zipされたファイルの次の表示ができないケースがあり（ネットワークかつファイルが巨大なケース 確認したら1.53GB）
-- プラグイン: 実装続き
-    - jpeg2000/avifは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
-    - search path: フォルダ選択ダイアログが欲しい(保存と同じで良い)
-    - test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
-    - ffmpegのリンクはcrate ffmpeg-sysを考慮(自力実装の方が安定する可能性あり)
-    - systemにserach pathは不要 OS APIを叩くため
-- 設定：適用/undo/初期化ボタンの本格化
-- [重要] 設定：OSに拡張子を登録できる機能
+中断せずやりきる
+
+- [ ] [再重要] 設定：OSに拡張子を登録できる機能
   windows は crate winreg を使う
   ProgID / open command / OpenWithProgids / OpenWithList / `--clean system`
 - `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - `src/ui/menu/fileviewer/worker.rs` に lazy load / incremental snapshot を入れて大規模フォルダを高速化する
 - `src/ui/i18n/mod.rs` を JSON resource loader に拡張し、未ローカライズ文言を全面移行する
 - `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
-- issue:セパレーター：shadowがshadowになっていない。グラデーションをかける
+- [+] issue:マンガモード：左右のサイズが一致しない場合にリサイズが繰り返される
+- [ ] ファイラー/サブファイラー/viwerのファイル表示順が一致していない
+- [ ] 数字入りファイルのソート順(Windowsのexplorerと一致していない) 特に数字入りファイル
+- [重要] [ ] zip内のファイルソート（viewerとファイラー/サブファイラーの表示が同期していない）
+- [重要] [ ] 巨大かつネットワークファイルのアーカイブ対応
+  - [ ] ファイラー: zipされたbmpの展開が固まる
+  - [ ] ファイラー: zipされたファイルの次の表示ができないケースがあり（ネットワークかつファイルが巨大なケース 確認したら1.53GB）
+  - [ ] viewer: deocodeエラーになる（画像のオフセットが狂っている）
+- [ ] コードの整理 モジュール境界をハッキリさせる
+  - [ ]未実装 action の no-op 整理
+- [*] ファイラー: OS name collation の最終調整
+- [ ]
+- [ ] メッセージの表示位置の調整（Windowの一番下に表示させる）
+- [ ] ライトモードの時svgの線は黒で
+- プラグイン: 実装続き
+  - [ ] ffmpegプラグイン
+  - [ ] susie64プラグイン
+    - jpeg2000/avifは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
+    - test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
+    - ffmpegのリンクはcrate ffmpeg-sysを考慮(自力実装の方が安定する可能性あり)
+    - systemにserach pathは不要 OS APIを叩くため
+- [ ] 設定：適用/undo/初期化ボタンの本格化
+- 設定：追加設定用の日本語リソース
+- [ ] issue:セパレーター：shadowがshadowになっていない。グラデーションをかける
 - todo.mdの更新

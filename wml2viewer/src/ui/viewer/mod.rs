@@ -111,9 +111,19 @@ pub(crate) struct ViewerApp {
     pub(crate) companion_rx: Receiver<RenderResult>,
     pub(crate) companion_active_request: Option<ActiveRenderRequest>,
     pub(crate) companion_navigation_path: Option<PathBuf>,
+    pub(crate) companion_source: Option<LoadedImage>,
     pub(crate) companion_rendered: Option<LoadedImage>,
     pub(crate) companion_texture: Option<TextureHandle>,
     pub(crate) companion_texture_display_scale: f32,
+    pub(crate) preload_tx: Sender<RenderCommand>,
+    pub(crate) preload_rx: Receiver<RenderResult>,
+    pub(crate) next_preload_request_id: u64,
+    pub(crate) active_preload_request_id: Option<u64>,
+    pub(crate) pending_preload_navigation_path: Option<PathBuf>,
+    pub(crate) preloaded_navigation_path: Option<PathBuf>,
+    pub(crate) preloaded_load_path: Option<PathBuf>,
+    pub(crate) preloaded_source: Option<LoadedImage>,
+    pub(crate) preloaded_rendered: Option<LoadedImage>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -203,6 +213,7 @@ impl ViewerApp {
         config: AppConfig,
         config_path: Option<PathBuf>,
         show_filer_on_start: bool,
+        startup_load_path: Option<PathBuf>,
     ) -> Self {
         let color_image = canvas_to_color_image(rendered.frame_canvas(0));
 
@@ -222,6 +233,7 @@ impl ViewerApp {
         } = apply_resources(&cc.egui_ctx, &config.resources);
         let (worker_tx, worker_rx) = spawn_render_worker(source.clone());
         let (companion_tx, companion_rx) = spawn_render_worker(source.clone());
+        let (preload_tx, preload_rx) = spawn_render_worker(source.clone());
         let (fs_tx, fs_rx) = spawn_filesystem_worker(config.navigation.sort);
         let (filer_tx, filer_rx) = spawn_filer_worker();
         let (thumbnail_tx, thumbnail_rx) = spawn_thumbnail_worker();
@@ -302,9 +314,19 @@ impl ViewerApp {
             companion_rx,
             companion_active_request: None,
             companion_navigation_path: None,
+            companion_source: None,
             companion_rendered: None,
             companion_texture: None,
             companion_texture_display_scale: 1.0,
+            preload_tx,
+            preload_rx,
+            next_preload_request_id: 0,
+            active_preload_request_id: None,
+            pending_preload_navigation_path: None,
+            preloaded_navigation_path: None,
+            preloaded_load_path: None,
+            preloaded_source: None,
+            preloaded_rendered: None,
         };
 
         this.save_output_dir = this
@@ -322,6 +344,9 @@ impl ViewerApp {
         if let Some(dir) = this.current_directory() {
             this.request_filer_directory(dir, Some(this.current_navigation_path.clone()));
         }
+        if let Some(path) = startup_load_path {
+            let _ = this.request_load_path(path);
+        }
         this
     }
 
@@ -334,7 +359,7 @@ impl ViewerApp {
 
     fn fit_target_size(&self) -> egui::Vec2 {
         if self.manga_spread_active() {
-            if let Some(companion) = &self.companion_rendered {
+            if let Some(companion) = &self.companion_source {
                 let separator = self.options.manga_separator.pixels.max(0.0);
                 return vec2(
                     self.source.canvas.width() as f32 + companion.canvas.width() as f32 + separator,
@@ -470,6 +495,7 @@ impl ViewerApp {
             return Ok(());
         }
         self.zoom = zoom;
+        self.invalidate_preload();
         self.request_resize_current()?;
         Ok(())
     }
@@ -781,7 +807,7 @@ impl ViewerApp {
             && self.is_current_portrait_page()
             && self.companion_navigation_path.is_some()
             && self
-                .companion_rendered
+                .companion_source
                 .as_ref()
                 .map(|image| image.canvas.height() >= image.canvas.width())
                 .unwrap_or(false)
@@ -803,6 +829,22 @@ impl ViewerApp {
         Ok(())
     }
 
+    fn request_companion_resize(&mut self) -> Result<(), Box<dyn Error>> {
+        if self.companion_source.is_none() {
+            return Ok(());
+        }
+        let request_id = self.alloc_request_id();
+        self.companion_active_request = Some(ActiveRenderRequest::Resize(request_id));
+        self.companion_tx
+            .send(RenderCommand::ResizeCurrent {
+                request_id,
+                zoom: self.zoom,
+                method: self.render_options.zoom_method,
+            })
+            .map_err(worker_send_error)?;
+        Ok(())
+    }
+
     fn sync_manga_companion(&mut self, ctx: &egui::Context) {
         let desired = self.desired_manga_companion_path();
         if desired == self.companion_navigation_path && self.companion_rendered.is_some() {
@@ -811,6 +853,7 @@ impl ViewerApp {
 
         if desired.is_none() {
             self.companion_navigation_path = None;
+            self.companion_source = None;
             self.companion_rendered = None;
             self.companion_texture = None;
             self.companion_active_request = None;
@@ -898,6 +941,9 @@ impl ViewerApp {
 
     pub(crate) fn request_load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
         let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path.clone());
+        if self.try_take_preloaded(&path, &load_path) {
+            return Ok(());
+        }
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.pending_fit_recalc = !matches!(self.render_options.zoom_option, ZoomOption::None);
@@ -918,6 +964,7 @@ impl ViewerApp {
             self.pending_resize_after_load = true;
             return Ok(());
         }
+        self.invalidate_preload();
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Resize(request_id));
         self.loading_message = Some(format!("Rendering {:.0}%", self.zoom * 100.0));
@@ -929,7 +976,11 @@ impl ViewerApp {
             })
             .map_err(worker_send_error)?;
         if let Some(path) = self.companion_navigation_path.clone() {
-            let _ = self.request_companion_load(path);
+            if self.companion_source.is_some() {
+                let _ = self.request_companion_resize();
+            } else {
+                let _ = self.request_companion_load(path);
+            }
         }
         Ok(())
     }
@@ -952,6 +1003,20 @@ impl ViewerApp {
     fn alloc_thumbnail_request_id(&mut self) -> u64 {
         self.next_thumbnail_request_id += 1;
         self.next_thumbnail_request_id
+    }
+
+    fn alloc_preload_request_id(&mut self) -> u64 {
+        self.next_preload_request_id += 1;
+        self.next_preload_request_id
+    }
+
+    fn invalidate_preload(&mut self) {
+        self.active_preload_request_id = None;
+        self.pending_preload_navigation_path = None;
+        self.preloaded_navigation_path = None;
+        self.preloaded_load_path = None;
+        self.preloaded_source = None;
+        self.preloaded_rendered = None;
     }
 
     fn init_filesystem(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
@@ -989,6 +1054,101 @@ impl ViewerApp {
         Ok(())
     }
 
+    fn apply_loaded_result(
+        &mut self,
+        path: Option<PathBuf>,
+        source: LoadedImage,
+        rendered: LoadedImage,
+    ) {
+        if let Some(path) = path {
+            let request_id = self.alloc_fs_request_id();
+            self.current_path = path.clone();
+            self.save_file_name = default_save_file_name(&path);
+            let _ = self.fs_tx.send(FilesystemCommand::SetCurrent {
+                request_id,
+                path: self.current_navigation_path.clone(),
+            });
+            if let Some(dir) = self.current_directory() {
+                self.request_filer_directory(dir, Some(self.current_navigation_path.clone()));
+            }
+        }
+        self.source = source;
+        self.rendered = rendered;
+        self.pending_fit_recalc |= !matches!(self.render_options.zoom_option, ZoomOption::None);
+        self.current_frame = self
+            .current_frame
+            .min(self.rendered.frame_count().saturating_sub(1));
+        self.completed_loops = 0;
+        self.last_frame_at = Instant::now();
+        self.upload_current_frame();
+        if self.active_fs_request_id.is_none() {
+            self.loading_message = None;
+        }
+        self.active_request = None;
+        self.schedule_preload();
+        if self.pending_resize_after_load {
+            self.pending_resize_after_load = false;
+            let _ = self.request_resize_current();
+        }
+    }
+
+    fn next_preload_candidate(&self) -> Option<PathBuf> {
+        let step = if self.manga_spread_active() { 2 } else { 1 };
+        adjacent_entry(&self.current_navigation_path, self.navigation_sort, step)
+    }
+
+    fn schedule_preload(&mut self) {
+        if self.empty_mode || self.active_request.is_some() {
+            return;
+        }
+        let Some(path) = self.next_preload_candidate() else {
+            return;
+        };
+        if self.preloaded_navigation_path.as_ref() == Some(&path)
+            || self.pending_preload_navigation_path.as_ref() == Some(&path)
+        {
+            return;
+        }
+        let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path.clone());
+        let request_id = self.alloc_preload_request_id();
+        self.active_preload_request_id = Some(request_id);
+        self.pending_preload_navigation_path = Some(path);
+        let _ = self.preload_tx.send(RenderCommand::LoadPath {
+            request_id,
+            path: load_path,
+            zoom: self.zoom,
+            method: self.render_options.zoom_method,
+        });
+    }
+
+    fn try_take_preloaded(&mut self, path: &std::path::Path, load_path: &std::path::Path) -> bool {
+        let matches_navigation = self
+            .preloaded_navigation_path
+            .as_ref()
+            .map(|cached| cached == path)
+            .unwrap_or(false);
+        let matches_load = self
+            .preloaded_load_path
+            .as_ref()
+            .map(|cached| cached == load_path)
+            .unwrap_or(false);
+        if !matches_navigation && !matches_load {
+            return false;
+        }
+
+        let source = self.preloaded_source.take();
+        let rendered = self.preloaded_rendered.take();
+        let load_path = self.preloaded_load_path.take();
+        self.preloaded_navigation_path = None;
+        self.pending_preload_navigation_path = None;
+        if let (Some(source), Some(rendered)) = (source, rendered) {
+            self.loading_message = None;
+            self.apply_loaded_result(load_path, source, rendered);
+            return true;
+        }
+        false
+    }
+
     fn poll_worker(&mut self) {
         loop {
             match self.worker_rx.try_recv() {
@@ -1008,39 +1168,7 @@ impl ViewerApp {
                     if !request_matches {
                         continue;
                     }
-                    if let Some(path) = path {
-                        let request_id = self.alloc_fs_request_id();
-                        self.current_path = path.clone();
-                        self.save_file_name = default_save_file_name(&path);
-                        let _ = self.fs_tx.send(FilesystemCommand::SetCurrent {
-                            request_id,
-                            path: self.current_navigation_path.clone(),
-                        });
-                        if let Some(dir) = self.current_directory() {
-                            self.request_filer_directory(
-                                dir,
-                                Some(self.current_navigation_path.clone()),
-                            );
-                        }
-                    }
-                    self.source = source;
-                    self.rendered = rendered;
-                    self.pending_fit_recalc |=
-                        !matches!(self.render_options.zoom_option, ZoomOption::None);
-                    self.current_frame = self
-                        .current_frame
-                        .min(self.rendered.frame_count().saturating_sub(1));
-                    self.completed_loops = 0;
-                    self.last_frame_at = Instant::now();
-                    self.upload_current_frame();
-                    if self.active_fs_request_id.is_none() {
-                        self.loading_message = None;
-                    }
-                    self.active_request = None;
-                    if self.pending_resize_after_load {
-                        self.pending_resize_after_load = false;
-                        let _ = self.request_resize_current();
-                    }
+                    self.apply_loaded_result(path, source, rendered);
                 }
                 Ok(RenderResult::Failed {
                     request_id,
@@ -1069,13 +1197,50 @@ impl ViewerApp {
         }
     }
 
+    fn poll_preload_worker(&mut self) {
+        loop {
+            match self.preload_rx.try_recv() {
+                Ok(RenderResult::Loaded {
+                    request_id,
+                    path,
+                    source,
+                    rendered,
+                }) => {
+                    if self.active_preload_request_id != Some(request_id) {
+                        continue;
+                    }
+                    self.active_preload_request_id = None;
+                    self.preloaded_navigation_path = self.pending_preload_navigation_path.take();
+                    self.preloaded_load_path = path;
+                    self.preloaded_source = Some(source);
+                    self.preloaded_rendered = Some(rendered);
+                }
+                Ok(RenderResult::Failed { request_id, .. }) => {
+                    if self.active_preload_request_id == Some(request_id) {
+                        self.active_preload_request_id = None;
+                        self.pending_preload_navigation_path = None;
+                        self.preloaded_navigation_path = None;
+                        self.preloaded_load_path = None;
+                        self.preloaded_source = None;
+                        self.preloaded_rendered = None;
+                    }
+                }
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => {
+                    self.invalidate_preload();
+                    break;
+                }
+            }
+        }
+    }
+
     fn poll_companion_worker(&mut self) {
         loop {
             match self.companion_rx.try_recv() {
                 Ok(RenderResult::Loaded {
                     request_id,
-                    path: _,
-                    source: _,
+                    path,
+                    source,
                     rendered,
                 }) => {
                     let Some(active_request) = self.companion_active_request else {
@@ -1088,6 +1253,15 @@ impl ViewerApp {
                     if !request_matches {
                         continue;
                     }
+                    let layout_changed = path.is_some()
+                        || self
+                            .companion_source
+                            .as_ref()
+                            .map(|image| {
+                                image.canvas.width() != source.canvas.width()
+                                    || image.canvas.height() != source.canvas.height()
+                            })
+                            .unwrap_or(true);
 
                     let (canvas, display_scale) = downscale_for_texture_limit(
                         rendered.frame_canvas(0),
@@ -1103,10 +1277,13 @@ impl ViewerApp {
                             .load_texture("manga_companion", image, TextureOptions::LINEAR)
                     };
                     self.companion_texture = Some(texture);
+                    self.companion_source = Some(source);
                     self.companion_rendered = Some(rendered);
                     self.companion_texture_display_scale = display_scale;
-                    self.pending_fit_recalc |=
-                        !matches!(self.render_options.zoom_option, ZoomOption::None);
+                    if layout_changed {
+                        self.pending_fit_recalc |=
+                            !matches!(self.render_options.zoom_option, ZoomOption::None);
+                    }
                     self.companion_active_request = None;
                 }
                 Ok(RenderResult::Failed { request_id, .. }) => {
@@ -1118,6 +1295,7 @@ impl ViewerApp {
                         | ActiveRenderRequest::Resize(active_id) => active_id == request_id,
                     };
                     if request_matches {
+                        self.companion_source = None;
                         self.companion_rendered = None;
                         self.companion_texture = None;
                         self.companion_active_request = None;
@@ -1125,6 +1303,7 @@ impl ViewerApp {
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
+                    self.companion_source = None;
                     self.companion_rendered = None;
                     self.companion_texture = None;
                     self.companion_active_request = None;
@@ -1281,6 +1460,7 @@ impl eframe::App for ViewerApp {
         self.poll_filesystem();
         self.poll_filer_worker();
         self.poll_thumbnail_worker();
+        self.poll_preload_worker();
         self.poll_save_result();
         self.sync_manga_companion(ctx);
         self.handle_keyboard(ctx);

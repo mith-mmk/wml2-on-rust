@@ -1,3 +1,4 @@
+mod icons;
 pub(crate) mod state;
 pub(crate) mod thumbnail;
 pub(crate) mod worker;
@@ -5,6 +6,7 @@ pub(crate) mod worker;
 use crate::dependent::download_http_url;
 use crate::drawers::image::SaveFormat;
 use crate::ui::i18n::UiTextKey;
+use crate::ui::menu::fileviewer::icons::{SvgIcon, paint_svg_icon};
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerSortField, FilerViewMode, NameSortMode};
 use crate::ui::viewer::ViewerApp;
 use eframe::egui;
@@ -69,9 +71,13 @@ impl ViewerApp {
 
         egui::SidePanel::left("filer_panel")
             .resizable(true)
-            .default_width(260.0)
-            .min_width(220.0)
-            .max_width(480.0)
+            .default_width(match self.filer.view_mode {
+                FilerViewMode::ThumbnailLarge => 420.0,
+                FilerViewMode::ThumbnailMedium => 360.0,
+                _ => 300.0,
+            })
+            .min_width(240.0)
+            .max_width(900.0)
             .show(ctx, |ui| {
                 let mut refresh_requested = false;
                 let list_text = self.text(UiTextKey::List);
@@ -94,88 +100,138 @@ impl ViewerApp {
                 let url_text = self.text(UiTextKey::Url);
                 let open_url_text = self.text(UiTextKey::OpenUrl);
                 let up_text = self.text(UiTextKey::Up);
+                let icon_color = filer_icon_color(&self.options.background);
                 ui.heading(self.text(UiTextKey::Filer));
                 ui.horizontal_wrapped(|ui| {
-                    if toolbar_button(ui, list_text, self.filer.view_mode == FilerViewMode::List) {
+                    if icon_toolbar_button(
+                        ui,
+                        SvgIcon::ThumbnailGrid,
+                        self.filer.view_mode == FilerViewMode::List,
+                        list_text,
+                        icon_color,
+                    ) {
                         self.filer.view_mode = FilerViewMode::List;
                         refresh_requested = true;
                     }
-                    if toolbar_button(
+                    if icon_toolbar_button(
                         ui,
-                        thumb_small_text,
+                        SvgIcon::ThumbnailSmall,
                         self.filer.view_mode == FilerViewMode::ThumbnailSmall,
+                        thumb_small_text,
+                        icon_color,
                     ) {
                         self.filer.view_mode = FilerViewMode::ThumbnailSmall;
                         refresh_requested = true;
                     }
-                    if toolbar_button(
+                    if icon_toolbar_button(
                         ui,
-                        thumb_medium_text,
+                        SvgIcon::ThumbnailMedium,
                         self.filer.view_mode == FilerViewMode::ThumbnailMedium,
+                        thumb_medium_text,
+                        icon_color,
                     ) {
                         self.filer.view_mode = FilerViewMode::ThumbnailMedium;
                         refresh_requested = true;
                     }
-                    if toolbar_button(
+                    if icon_toolbar_button(
                         ui,
-                        thumb_large_text,
+                        SvgIcon::ThumbnailLarge,
                         self.filer.view_mode == FilerViewMode::ThumbnailLarge,
+                        thumb_large_text,
+                        icon_color,
                     ) {
                         self.filer.view_mode = FilerViewMode::ThumbnailLarge;
                         refresh_requested = true;
                     }
-                    if toolbar_button(
+                    if icon_toolbar_button(
                         ui,
-                        detail_text,
+                        SvgIcon::Detail,
                         self.filer.view_mode == FilerViewMode::Detail,
+                        detail_text,
+                        icon_color,
                     ) {
                         self.filer.view_mode = FilerViewMode::Detail;
                         refresh_requested = true;
                     }
+                    if matches!(
+                        self.filer.view_mode,
+                        FilerViewMode::ThumbnailSmall
+                            | FilerViewMode::ThumbnailMedium
+                            | FilerViewMode::ThumbnailLarge
+                    ) {
+                        ui.add(
+                            egui::Slider::new(&mut self.filer.thumbnail_scale, 0.75..=2.5)
+                                .show_value(false)
+                                .text("thumb"),
+                        );
+                    }
                 });
                 ui.horizontal_wrapped(|ui| {
                     ui.label(sort_text);
-                    if toolbar_button(ui, name_text, self.filer.sort_field == FilerSortField::Name)
-                    {
+                    if icon_toolbar_button(
+                        ui,
+                        SvgIcon::Sort,
+                        self.filer.sort_field == FilerSortField::Name,
+                        name_text,
+                        icon_color,
+                    ) {
                         self.filer.sort_field = FilerSortField::Name;
                         refresh_requested = true;
                     }
-                    if toolbar_button(
+                    if icon_toolbar_button(
                         ui,
-                        date_text,
+                        SvgIcon::SortByDate,
                         self.filer.sort_field == FilerSortField::Modified,
+                        date_text,
+                        icon_color,
                     ) {
                         self.filer.sort_field = FilerSortField::Modified;
                         refresh_requested = true;
                     }
-                    if toolbar_button(ui, size_text, self.filer.sort_field == FilerSortField::Size)
-                    {
+                    if icon_toolbar_button(
+                        ui,
+                        SvgIcon::SortBySize,
+                        self.filer.sort_field == FilerSortField::Size,
+                        size_text,
+                        icon_color,
+                    ) {
                         self.filer.sort_field = FilerSortField::Size;
                         refresh_requested = true;
                     }
-                    if ui
-                        .button(if self.filer.ascending {
+                    if icon_toolbar_button(
+                        ui,
+                        if self.filer.ascending {
+                            SvgIcon::SortAsc
+                        } else {
+                            SvgIcon::SortDesc
+                        },
+                        false,
+                        if self.filer.ascending {
                             asc_text
                         } else {
                             desc_text
-                        })
-                        .clicked()
-                    {
+                        },
+                        icon_color,
+                    ) {
                         self.filer.ascending = !self.filer.ascending;
                         refresh_requested = true;
                     }
                 });
                 ui.horizontal_wrapped(|ui| {
-                    if toolbar_button(ui, separate_text, self.filer.separate_dirs) {
+                    if simple_toolbar_button(ui, separate_text, self.filer.separate_dirs) {
                         self.filer.separate_dirs = !self.filer.separate_dirs;
                         refresh_requested = true;
                     }
                     ui.label(name_text);
-                    if toolbar_button(ui, os_text, self.filer.name_sort_mode == NameSortMode::Os) {
+                    if simple_toolbar_button(
+                        ui,
+                        os_text,
+                        self.filer.name_sort_mode == NameSortMode::Os,
+                    ) {
                         self.filer.name_sort_mode = NameSortMode::Os;
                         refresh_requested = true;
                     }
-                    if toolbar_button(
+                    if simple_toolbar_button(
                         ui,
                         case_text,
                         self.filer.name_sort_mode == NameSortMode::CaseSensitive,
@@ -183,7 +239,7 @@ impl ViewerApp {
                         self.filer.name_sort_mode = NameSortMode::CaseSensitive;
                         refresh_requested = true;
                     }
-                    if toolbar_button(
+                    if simple_toolbar_button(
                         ui,
                         no_case_text,
                         self.filer.name_sort_mode == NameSortMode::CaseInsensitive,
@@ -193,7 +249,8 @@ impl ViewerApp {
                     }
                 });
                 ui.horizontal(|ui| {
-                    ui.label(filter_text);
+                    let _ =
+                        icon_toolbar_button(ui, SvgIcon::Filter, false, filter_text, icon_color);
                     refresh_requested |= ui
                         .text_edit_singleline(&mut self.filer.filter_text)
                         .changed();
@@ -246,7 +303,7 @@ impl ViewerApp {
                 if let Some(dir) = &self.filer.directory {
                     ui.label(dir.display().to_string());
                     if let Some(parent) = dir.parent() {
-                        if ui.button(up_text).clicked() {
+                        if icon_toolbar_button(ui, SvgIcon::Up, false, up_text, icon_color) {
                             self.request_filer_directory(parent.to_path_buf(), None);
                         }
                     }
@@ -271,7 +328,7 @@ impl ViewerApp {
                                 FilerViewMode::ThumbnailMedium => 112.0,
                                 FilerViewMode::ThumbnailLarge => 160.0,
                                 _ => 96.0,
-                            };
+                            } * self.filer.thumbnail_scale;
                             self.filer_thumbnail_grid(ui, entries, item_width);
                         }
                     }
@@ -341,38 +398,85 @@ impl ViewerApp {
     }
 
     fn filer_thumbnail_tile(&mut self, ui: &mut egui::Ui, entry: FilerEntry, item_width: f32) {
+        let entry_label = entry.label.clone();
         let selected = self.filer.selected.as_ref() == Some(&entry.path)
             || self.current_navigation_path == entry.path;
-        let mut frame = egui::Frame::group(ui.style());
-        if selected {
-            frame.stroke = egui::Stroke::new(2.0, ui.visuals().selection.stroke.color);
-        }
-        frame.show(ui, |ui| {
-            ui.set_width(item_width);
-            let thumb_size = egui::vec2(item_width - 12.0, item_width - 20.0);
-            let clicked = if entry.is_container {
-                ui.add_sized(
-                    thumb_size,
-                    egui::Button::new(self.text(UiTextKey::FolderArchive)),
-                )
-                .clicked()
-            } else {
-                self.ensure_thumbnail(&entry.path, thumb_size.x.max(32.0) as u32);
-                if let Some(texture) = self.thumbnail_cache.get(&entry.path) {
-                    ui.add(egui::Button::image(
-                        egui::Image::from_texture(texture).fit_to_exact_size(thumb_size),
-                    ))
-                    .clicked()
+        ui.allocate_ui_with_layout(
+            egui::vec2(item_width, item_width + 56.0),
+            egui::Layout::top_down(egui::Align::Center),
+            |ui| {
+                let thumb_side = (item_width - 16.0).max(48.0);
+                let thumb_size = egui::vec2(thumb_side, thumb_side);
+                let response = if entry.is_container {
+                    let icon_side = thumb_side * 0.58;
+                    let (rect, response) = ui.allocate_exact_size(thumb_size, egui::Sense::click());
+                    if selected {
+                        ui.painter().rect_stroke(
+                            rect.expand(2.0),
+                            8.0,
+                            egui::Stroke::new(2.0, ui.visuals().selection.stroke.color),
+                            egui::StrokeKind::Outside,
+                        );
+                    }
+                    paint_svg_icon(
+                        ui.painter(),
+                        egui::Rect::from_center_size(
+                            rect.center(),
+                            egui::vec2(icon_side, icon_side),
+                        ),
+                        SvgIcon::Folder,
+                        filer_icon_color(&self.options.background),
+                    );
+                    response.on_hover_text(self.text(UiTextKey::FolderArchive))
                 } else {
-                    ui.add_sized(thumb_size, egui::Button::new(self.text(UiTextKey::Loading)))
-                        .clicked()
+                    self.ensure_thumbnail(&entry.path, thumb_size.x.max(32.0) as u32);
+                    if let Some(texture) = self.thumbnail_cache.get(&entry.path) {
+                        let response = ui.add(
+                            egui::Image::from_texture(texture)
+                                .fit_to_exact_size(thumb_size)
+                                .sense(egui::Sense::click()),
+                        );
+                        if selected {
+                            ui.painter().rect_stroke(
+                                response.rect.expand(2.0),
+                                8.0,
+                                egui::Stroke::new(2.0, ui.visuals().selection.stroke.color),
+                                egui::StrokeKind::Outside,
+                            );
+                        }
+                        response
+                    } else {
+                        let response = ui.add_sized(
+                            thumb_size,
+                            egui::Label::new(self.text(UiTextKey::Loading))
+                                .sense(egui::Sense::click()),
+                        );
+                        if selected {
+                            ui.painter().rect_stroke(
+                                response.rect.expand(2.0),
+                                8.0,
+                                egui::Stroke::new(2.0, ui.visuals().selection.stroke.color),
+                                egui::StrokeKind::Outside,
+                            );
+                        }
+                        response
+                    }
+                };
+                if response.clicked() {
+                    self.activate_filer_entry(entry.clone());
                 }
-            };
-            if clicked {
-                self.activate_filer_entry(entry.clone());
-            }
-            ui.label(egui::RichText::new(entry.label).small());
-        });
+                let label_height = if item_width >= 180.0 { 48.0 } else { 40.0 };
+                ui.add_sized(
+                    [item_width - 8.0, label_height],
+                    egui::Label::new(
+                        egui::RichText::new(entry_label)
+                            .small()
+                            .color(ui.visuals().text_color()),
+                    )
+                    .wrap(),
+                );
+            },
+        );
     }
 
     pub(crate) fn subfiler_ui(&mut self, ctx: &egui::Context) {
@@ -458,7 +562,47 @@ impl ViewerApp {
     }
 }
 
-fn toolbar_button(ui: &mut egui::Ui, text: &str, selected: bool) -> bool {
+fn icon_toolbar_button(
+    ui: &mut egui::Ui,
+    icon: SvgIcon,
+    selected: bool,
+    tooltip: &str,
+    color: egui::Color32,
+) -> bool {
+    let size = egui::vec2(30.0, 30.0);
+    let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
+    let visuals = if selected {
+        &ui.style().visuals.widgets.active
+    } else if response.hovered() {
+        &ui.style().visuals.widgets.hovered
+    } else {
+        &ui.style().visuals.widgets.inactive
+    };
+    ui.painter().rect(
+        rect,
+        4.0,
+        visuals.bg_fill,
+        visuals.bg_stroke,
+        egui::StrokeKind::Outside,
+    );
+    paint_svg_icon(ui.painter(), rect.shrink(6.0), icon, color);
+    response.on_hover_text(tooltip).clicked()
+}
+
+fn filer_icon_color(background: &crate::ui::viewer::options::BackgroundStyle) -> egui::Color32 {
+    let rgba = match background {
+        crate::ui::viewer::options::BackgroundStyle::Solid(color) => *color,
+        crate::ui::viewer::options::BackgroundStyle::Tile { color1, color2, .. } => [
+            ((color1[0] as u16 + color2[0] as u16) / 2) as u8,
+            ((color1[1] as u16 + color2[1] as u16) / 2) as u8,
+            ((color1[2] as u16 + color2[2] as u16) / 2) as u8,
+            255,
+        ],
+    };
+    egui::Color32::from_rgba_unmultiplied(255 - rgba[0], 255 - rgba[1], 255 - rgba[2], 255)
+}
+
+fn simple_toolbar_button(ui: &mut egui::Ui, text: &str, selected: bool) -> bool {
     ui.add(egui::Button::new(text).selected(selected)).clicked()
 }
 

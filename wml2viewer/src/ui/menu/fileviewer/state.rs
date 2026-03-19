@@ -55,6 +55,7 @@ pub(crate) struct FilerState {
     pub(crate) extension_filter: String,
     pub(crate) name_sort_mode: NameSortMode,
     pub(crate) url_input: String,
+    pub(crate) thumbnail_scale: f32,
 }
 
 impl Default for FilerState {
@@ -73,6 +74,7 @@ impl Default for FilerState {
             extension_filter: String::new(),
             name_sort_mode: NameSortMode::Os,
             url_input: String::new(),
+            thumbnail_scale: 1.0,
         }
     }
 }

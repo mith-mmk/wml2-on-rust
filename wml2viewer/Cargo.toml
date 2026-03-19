@@ -1,6 +1,6 @@
 [package]
 name = "wml2viewer"
-version = "0.0.1"
+version = "0.0.10"
 edition = "2024"
 
 license = "MIT"

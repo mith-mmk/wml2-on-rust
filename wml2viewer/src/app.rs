@@ -1,25 +1,15 @@
 use crate::configs::config::{load_app_config, load_startup_path};
 use crate::configs::resourses::apply_resources;
 use crate::drawers::canvas::Canvas;
-use crate::drawers::image::{
-    LoadedImage, load_canvas_from_bytes, load_canvas_from_file, resize_loaded_image,
-};
-use crate::filesystem::{load_virtual_image_bytes, resolve_start_path};
+use crate::drawers::image::LoadedImage;
+use crate::filesystem::resolve_start_path;
 use crate::options::*;
 use crate::ui::viewer::ViewerApp;
 use eframe::egui::{self};
 use std::error::Error;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 const APP_ICON_PNG: &[u8] = include_bytes!("../resources/wml2viwer.png");
-
-fn load_image(path: &Path) -> Result<LoadedImage, Box<dyn Error>> {
-    if let Some(bytes) = load_virtual_image_bytes(path) {
-        return Ok(load_canvas_from_bytes(&bytes)?);
-    }
-
-    Ok(load_canvas_from_file(path)?)
-}
 
 pub fn run(
     image_path: Option<PathBuf>,
@@ -28,16 +18,19 @@ pub fn run(
     let config = load_app_config(config_path.as_deref()).unwrap_or_default();
     let image_path = image_path
         .unwrap_or(load_startup_path(config_path.as_deref()).unwrap_or(std::env::current_dir()?));
-    let (start_path, image, rendered, show_filer_on_start) =
+    let (navigation_path, start_path, startup_load_path, show_filer_on_start) =
         if let Some(start_path) = resolve_start_path(&image_path) {
-            let image = load_image(&start_path)?;
-            let rendered = resize_loaded_image(&image, 1.0, config.render.zoom_method)?;
-            (start_path, image, rendered, false)
+            (
+                start_path.clone(),
+                start_path.clone(),
+                Some(start_path),
+                false,
+            )
         } else {
-            let image = blank_image();
-            let rendered = image.clone();
-            (image_path.clone(), image, rendered, true)
+            (image_path.clone(), image_path.clone(), None, true)
         };
+    let image = blank_image();
+    let rendered = image.clone();
     let title = format!("wml2viewer - {}", start_path.display());
 
     // ui::viewer::set_canvas_size(&str);
@@ -67,8 +60,6 @@ pub fn run(
                     .unwrap_or(egui::vec2(1280.0, 720.0))
             });
 
-            let image_size = egui::vec2(image.canvas.width() as f32, image.canvas.height() as f32);
-            let padding = egui::vec2(32.0, 96.0);
             let window_size = match config.window.size.clone() {
                 WindowSize::Relative(ratio) => {
                     let ratio = ratio.clamp(0.1, 1.0);
@@ -77,14 +68,8 @@ pub fn run(
                 WindowSize::Exact { width, height } => egui::vec2(width, height),
             };
             let window_size = egui::vec2(
-                window_size
-                    .x
-                    .max((image_size.x + padding.x).min(screen.x * 0.9))
-                    .min(screen.x),
-                window_size
-                    .y
-                    .max((image_size.y + padding.y).min(screen.y * 0.9))
-                    .min(screen.y),
+                window_size.x.clamp(320.0, screen.x),
+                window_size.y.clamp(240.0, screen.y),
             );
 
             cc.egui_ctx
@@ -113,13 +98,14 @@ pub fn run(
 
             Ok(Box::new(ViewerApp::new(
                 cc,
-                image_path.clone(),
+                navigation_path.clone(),
                 start_path,
                 image,
                 rendered,
                 config,
                 config_path.clone(),
                 show_filer_on_start,
+                startup_load_path.clone(),
             )))
         }),
     )?;

@@ -1,7 +1,7 @@
 use crate::configs::config::{load_app_config, save_app_config};
 use crate::configs::resourses::{FontSizePreset, apply_resources};
-use crate::dependent::default_download_dir;
 use crate::dependent::plugins::discover_plugin_modules;
+use crate::dependent::{default_download_dir, pick_save_directory};
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions};
 use crate::ui::i18n::UiTextKey;
@@ -57,6 +57,7 @@ impl ViewerApp {
         let end_of_folder_text = self.text(UiTextKey::EndOfFolder);
         let reload_current_text = self.text(UiTextKey::ReloadCurrent);
         let close_text = self.text(UiTextKey::Close);
+        let help_text = "Help";
         let black_text = self.text(UiTextKey::Black);
         let gray_text = self.text(UiTextKey::Gray);
         let tile_text = self.text(UiTextKey::Tile);
@@ -194,6 +195,14 @@ impl ViewerApp {
                                 parse_search_paths(&self.susie64_search_paths_input);
                             config_changed = true;
                         }
+                        if ui.button("Browse...").clicked() {
+                            if let Some(path) = pick_save_directory() {
+                                self.plugins.susie64.search_path = vec![path];
+                                self.susie64_search_paths_input =
+                                    join_search_paths(&self.plugins.susie64.search_path);
+                                config_changed = true;
+                            }
+                        }
                         if ui.button("Load modules").clicked() {
                             self.plugins.susie64.modules =
                                 discover_plugin_modules("susie64", &self.plugins.susie64);
@@ -205,15 +214,7 @@ impl ViewerApp {
                         config_changed |= ui
                             .checkbox(&mut self.plugins.system.enable, "enable")
                             .changed();
-                        ui.label("search_path");
-                        if ui
-                            .text_edit_singleline(&mut self.system_search_paths_input)
-                            .changed()
-                        {
-                            self.plugins.system.search_path =
-                                parse_search_paths(&self.system_search_paths_input);
-                            config_changed = true;
-                        }
+                        ui.label("search_path: OS API");
                         ui.label(format!("modules: {}", self.plugins.system.modules.len()));
                         ui.separator();
                         ui.heading("ffmpeg");
@@ -228,6 +229,14 @@ impl ViewerApp {
                             self.plugins.ffmpeg.search_path =
                                 parse_search_paths(&self.ffmpeg_search_paths_input);
                             config_changed = true;
+                        }
+                        if ui.button("Browse...").clicked() {
+                            if let Some(path) = pick_save_directory() {
+                                self.plugins.ffmpeg.search_path = vec![path];
+                                self.ffmpeg_search_paths_input =
+                                    join_search_paths(&self.plugins.ffmpeg.search_path);
+                                config_changed = true;
+                            }
                         }
                         if ui.button("Load modules").clicked() {
                             self.plugins.ffmpeg.modules =
@@ -510,6 +519,9 @@ impl ViewerApp {
                     }
                     if ui.button(reload_current_text).clicked() {
                         reload_requested = true;
+                    }
+                    if ui.button(help_text).clicked() {
+                        self.open_help();
                     }
                     if ui.button(close_text).clicked() {
                         close_requested = true;

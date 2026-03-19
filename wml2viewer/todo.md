@@ -21,7 +21,7 @@
 - [x] `resources/help.html` 出力の土台
 - [+] app 起動時の初回 decode worker 化
 - [x] `--clean system`
-- [x] 二重起動の簡易制限
+- [-] 二重起動の制限は一旦取り下げ
 - [*] フルスクリーン復帰時の安定性確認
 
 ## src/options.rs
@@ -167,12 +167,7 @@
 - [x] viewer / render / input / menu / i18n の分離
 
 ## src/ui/i18n/mod.rs
-- [x] `UiTextKey` ベースの翻訳経路
-- [x] settings menu のローカライズ
-- [x] filer menu の主要文言ローカライズ
-- [x] save dialog の主要文言ローカライズ
-- [x] JSON resource loader の参照経路
-- [ ] status message / zoom option / detailed menu 文言の全面移行
+- [-] `configs/resourses` への shim のみ
 
 ## src/ui/input/dispatch.rs
 - [x] key/pointer から action 解決
@@ -325,7 +320,7 @@
 - [+] filer 表示時の manga レイアウトは実機で継続確認
 - [+] app 起動時の初回 decode 完全 worker 化
 - [+] preload queue
-- [*] message UI 整理
+- [+] message UI 整理
 
 ## src/drawers/affine.rs
 - [x] resize / interpolation 実装
@@ -370,10 +365,10 @@
 
 ## 次に着手
 中断せずやりきる
-- [ ] issue: メッセージoverlayの自己主張が強すぎです。一番下にこっそり表示してください
+- [x] issue: メッセージoverlayの自己主張が強すぎです。一番下にこっそり表示してください
 - [*] issue: 二重起動の制限 
-  - [ ] 起動しなくなりました。ファイルでロックをするのは禁止 二重起動の制限はpidを見てください。
-  - [ ] windowsの場合は下を参考(crate windows-sysを利用)　他のosも仮実装してください
+  - [-] 一旦取りやめ
+  - [-] windowsの場合は下を参考(crate windows-sysを利用)　他のosも仮実装してください
 ```rs
 use windows_sys::Win32::System::Threading::{
     OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION
@@ -391,10 +386,10 @@ fn is_alive(pid: u32) -> bool {
     }
 }
 ```
-- [　] issue: uiのi18n実装は`src/ui/i18n/mod.rs`ではなく、`src/configs/resoures/`の下に再実装してください。
+- [x] issue: uiのi18n実装は`src/ui/i18n/mod.rs`ではなく、`src/configs/resoures/`の下に再実装してください。
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
-- [ ] `src/ui/i18n/mod.rs` JSON resource loaderは`src/configs/resoures/`に移動してください。未ローカライズ文言を全面移行する
+- [+] `src/ui/i18n/mod.rs` JSON resource loaderは`src/configs/resoures/`に移動してください。未ローカライズ文言を全面移行する
 - [ ] `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
 - 確認中: [*] zip 内ファイルソートの実機確認
 - プラグイン: 実装続き
@@ -410,5 +405,5 @@ fn is_alive(pid: u32) -> bool {
 - [ ] コードの整理 モジュール境界をハッキリさせる
   - [ ]未実装 action の no-op 整理
 - [*] ファイラー: OS name collation の最終調整(確認中)
-- [ ] wml2viewerのREADME.ja.mdとREADME.mdを作成
+- [x] wml2viewerのREADME.ja.mdとREADME.mdを作成
 - todo.mdの更新

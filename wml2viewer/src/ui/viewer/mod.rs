@@ -800,10 +800,18 @@ impl ViewerApp {
             return;
         };
 
-        egui::TopBottomPanel::bottom("status_panel")
-            .resizable(false)
+        egui::Area::new("status_overlay".into())
+            .anchor(egui::Align2::LEFT_BOTTOM, egui::vec2(12.0, -10.0))
+            .interactable(false)
             .show(ctx, |ui| {
-                ui.label(message);
+                egui::Frame::new()
+                    .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 104))
+                    .corner_radius(6.0)
+                    .inner_margin(egui::Margin::symmetric(8, 4))
+                    .show(ui, |ui| {
+                        ui.visuals_mut().override_text_color = Some(ui.visuals().weak_text_color());
+                        ui.label(egui::RichText::new(message).small());
+                    });
             });
     }
 
@@ -811,22 +819,23 @@ impl ViewerApp {
         let Some(message) = &self.loading_message else {
             return;
         };
+        let bottom_offset = if self.save_message.is_some() {
+            -34.0
+        } else {
+            -10.0
+        };
 
         egui::Area::new("loading_overlay".into())
-            .anchor(egui::Align2::CENTER_TOP, egui::vec2(0.0, 12.0))
+            .anchor(egui::Align2::LEFT_BOTTOM, egui::vec2(12.0, bottom_offset))
             .interactable(false)
             .show(ctx, |ui| {
                 egui::Frame::new()
-                    .corner_radius(8.0)
-                    .fill(egui::Color32::from_rgba_unmultiplied(16, 16, 16, 196))
-                    .stroke(egui::Stroke::new(
-                        1.0,
-                        egui::Color32::from_rgba_unmultiplied(255, 255, 255, 48),
-                    ))
-                    .inner_margin(egui::Margin::symmetric(12, 8))
+                    .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 88))
+                    .corner_radius(6.0)
+                    .inner_margin(egui::Margin::symmetric(8, 4))
                     .show(ui, |ui| {
-                        ui.visuals_mut().override_text_color = Some(egui::Color32::WHITE);
-                        ui.label(message);
+                        ui.visuals_mut().override_text_color = Some(ui.visuals().weak_text_color());
+                        ui.label(egui::RichText::new(message).small());
                     });
             });
     }

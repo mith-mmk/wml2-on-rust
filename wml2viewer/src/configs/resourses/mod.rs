@@ -1,3 +1,5 @@
+mod text;
+
 use crate::dependent::{
     emoji_font_candidates, locale_font_candidates, normalize_locale_tag, resource_locale_fallbacks,
     system_locale,
@@ -8,6 +10,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
+
+pub(crate) use text::{UiTextKey, tr};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum FontSizePreset {

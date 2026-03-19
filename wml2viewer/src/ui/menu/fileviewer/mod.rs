@@ -198,6 +198,7 @@ impl ViewerApp {
                         self.filer.sort_field = FilerSortField::Size;
                         refresh_requested = true;
                     }
+                    ui.add_space(12.0);
                     if icon_toolbar_button(
                         ui,
                         if self.filer.ascending {
@@ -313,26 +314,28 @@ impl ViewerApp {
                     self.refresh_current_filer_directory();
                 }
                 let panel_width = ui.available_width();
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    ui.set_width(panel_width.max(160.0));
-                    let entries = self.filer.entries.clone();
-                    match self.filer.view_mode {
-                        FilerViewMode::List | FilerViewMode::Detail => {
-                            for entry in entries {
-                                self.filer_entry_row(ui, entry);
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        ui.set_min_width(panel_width.max(160.0));
+                        let entries = self.filer.entries.clone();
+                        match self.filer.view_mode {
+                            FilerViewMode::List | FilerViewMode::Detail => {
+                                for entry in entries {
+                                    self.filer_entry_row(ui, entry);
+                                }
+                            }
+                            _ => {
+                                let item_width = match self.filer.view_mode {
+                                    FilerViewMode::ThumbnailSmall => 72.0,
+                                    FilerViewMode::ThumbnailMedium => 112.0,
+                                    FilerViewMode::ThumbnailLarge => 160.0,
+                                    _ => 96.0,
+                                } * self.filer.thumbnail_scale;
+                                self.filer_thumbnail_grid(ui, entries, item_width);
                             }
                         }
-                        _ => {
-                            let item_width = match self.filer.view_mode {
-                                FilerViewMode::ThumbnailSmall => 72.0,
-                                FilerViewMode::ThumbnailMedium => 112.0,
-                                FilerViewMode::ThumbnailLarge => 160.0,
-                                _ => 96.0,
-                            } * self.filer.thumbnail_scale;
-                            self.filer_thumbnail_grid(ui, entries, item_width);
-                        }
-                    }
-                });
+                    });
             });
     }
 
@@ -383,10 +386,13 @@ impl ViewerApp {
         item_width: f32,
     ) {
         let available = ui.available_width().max(item_width);
-        let columns = (available / item_width.max(1.0)).floor().max(1.0) as usize;
+        let spacing = 8.0;
+        let columns = ((available + spacing) / (item_width.max(1.0) + spacing))
+            .floor()
+            .max(1.0) as usize;
         egui::Grid::new("filer_thumbnail_grid")
             .num_columns(columns)
-            .spacing(egui::vec2(8.0, 8.0))
+            .spacing(egui::vec2(spacing, spacing))
             .show(ui, |ui| {
                 for (index, entry) in entries.into_iter().enumerate() {
                     self.filer_thumbnail_tile(ui, entry, item_width);
@@ -424,7 +430,11 @@ impl ViewerApp {
                             rect.center(),
                             egui::vec2(icon_side, icon_side),
                         ),
-                        SvgIcon::Folder,
+                        if entry.path.is_dir() {
+                            SvgIcon::Folder
+                        } else {
+                            SvgIcon::Archive
+                        },
                         ui.visuals().text_color(),
                     );
                     response.on_hover_text(self.text(UiTextKey::FolderArchive))
@@ -466,10 +476,11 @@ impl ViewerApp {
                     self.activate_filer_entry(entry.clone());
                 }
                 let label_height = if item_width >= 180.0 { 48.0 } else { 40.0 };
+                let label = thumbnail_label(&entry_label, item_width);
                 ui.add_sized(
                     [item_width - 8.0, label_height],
                     egui::Label::new(
-                        egui::RichText::new(entry_label)
+                        egui::RichText::new(label)
                             .small()
                             .color(ui.visuals().text_color()),
                     )
@@ -591,6 +602,40 @@ fn icon_toolbar_button(
 
 fn simple_toolbar_button(ui: &mut egui::Ui, text: &str, selected: bool) -> bool {
     ui.add(egui::Button::new(text).selected(selected)).clicked()
+}
+
+fn thumbnail_label(label: &str, item_width: f32) -> String {
+    let max_chars = if item_width >= 180.0 {
+        26
+    } else if item_width >= 120.0 {
+        20
+    } else {
+        14
+    };
+    ellipsize_middle(label, max_chars)
+}
+
+fn ellipsize_middle(text: &str, max_chars: usize) -> String {
+    let chars: Vec<char> = text.chars().collect();
+    if chars.len() <= max_chars {
+        return text.to_string();
+    }
+
+    let desired_tail = 7usize.min(max_chars.saturating_sub(4));
+    let head = max_chars.saturating_sub(3 + desired_tail).max(4);
+    let tail = desired_tail.min(chars.len().saturating_sub(head + 3));
+
+    let prefix = chars.iter().take(head).collect::<String>();
+    let suffix = chars
+        .iter()
+        .rev()
+        .take(tail)
+        .copied()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<String>();
+    format!("{prefix}...{suffix}")
 }
 
 fn format_system_time(value: SystemTime) -> String {

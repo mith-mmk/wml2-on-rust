@@ -21,6 +21,7 @@
 - [x] `resources/help.html` 出力の土台
 - [+] app 起動時の初回 decode worker 化
 - [x] `--clean system`
+- [x] 二重起動の簡易制限
 - [*] フルスクリーン復帰時の安定性確認
 
 ## src/options.rs
@@ -41,6 +42,7 @@
 - [x] storage.path / storage.path_record の永続化
 - [x] manga separator / UI theme の永続化
 - [x] plugin config の永続化土台
+- [x] workaround.archive.zip の永続化
 - [ ] config schema のバージョニング
 
 ## src/configs/resourses/mod.rs
@@ -52,7 +54,7 @@
 - [x] emoji font fallback
 - [x] `Auto / S / M / L / LL` のフォントサイズ
 - [x] DPI / 画面サイズベースの Auto サイズ
-- [ ] 外部 JSON resource 読み込み
+- [x] 外部 JSON resource 読み込み
 
 ## src/configs/resourses/english.rs
 - [-] 外部 resource ローダ導入時に役割を再整理
@@ -73,6 +75,7 @@
 ## src/dependent/thirdparty/directories.rs
 - [x] 設定ディレクトリ解決
 - [x] 既定ダウンロードディレクトリ解決
+- [x] 共通 temp ディレクトリ解決
 
 ## src/dependent/windows/mod.rs
 - [x] Windows locale 取得
@@ -83,6 +86,7 @@
 - [x] PowerShell 依存 http ダウンロードからの離脱
 - [+] 拡張子関連付け登録
 - [+] 拡張子関連付け clean
+- [x] winres による exe icon resource 登録
 
 ## src/dependent/linux/mod.rs
 - [x] locale 環境変数取得
@@ -153,6 +157,8 @@
 - [x] zip 名の SJIS fallback decode
 - [+] zip entry 自然順ソート
 - [+] BufReader ベースの再読込
+- [+] 大容量 / ネットワーク zip の low-I/O workaround
+- [+] temp へのローカル archive cache
 - [ ] zip encoding option
 - [ ] `7z` / `rar` / `lzh` / `gzip`
 
@@ -164,7 +170,7 @@
 - [x] settings menu のローカライズ
 - [x] filer menu の主要文言ローカライズ
 - [x] save dialog の主要文言ローカライズ
-- [+] JSON resource loader
+- [x] JSON resource loader の参照経路
 - [ ] status message / zoom option / detailed menu 文言の全面移行
 
 ## src/ui/input/dispatch.rs
@@ -186,7 +192,7 @@
 
 ## src/ui/menu/config/mod.rs
 - [x] 設定画面の土台
-- [x] viewer / plugins / resources / render / window / navigation タブ
+- [x] viewer / render / window / navigation / plugins / resources タブ
 - [x] 閉じるボタン
 - [x] 即時適用
 - [x] manga separator 設定
@@ -198,6 +204,8 @@
 - [x] save path 記録設定
 - [x] 適用/undo/初期化ボタン
 - [+] 拡張子関連付けボタン
+- [x] 設定画面の主要文言リソース化
+- [+] workaround.archive.zip 設定 UI
 - [ ] キーバインド編集 UI
 
 ## src/ui/menu/fileviewer/state.rs
@@ -255,6 +263,7 @@
 - [x] サムネイルのフォルダ/アーカイブ icon 縮小
 - [x] サムネイル中央の不要な button chrome 削減
 - [x] サムネイルペインサイズ可変
+- [+] 長いファイル名の中間省略（末尾 7 文字優先）
 - [*] filer 表示時のさらなる高速化
 - [ ] Copy / Move / Trash / Convert
 
@@ -311,6 +320,7 @@
 - [x] ライトモード時の SVG 線色
 - [x] separator shadow gradient
 - [x] 起動時の manga Fit 再計算ループの抑制
+- [+] low-I/O archive 時は preload 抑制
 - [+] filer 表示時の manga レイアウトは実機で継続確認
 - [+] app 起動時の初回 decode 完全 worker 化
 - [+] preload queue
@@ -359,49 +369,24 @@
 
 ## 次に着手
 中断せずやりきる
-- issue::[重要]  [ ] メッセージ表示時に画面サイズが変わる Load関係のメッセージはoverlayで対処し、他のUIに干渉しないようにしてください
-- issue: [ ] dependent/windows winresを使ってexe用のiconリソースを登録する
-- issue: [ ] ファイラーを拡大すると半分近くから余計なペインで表示が隠れてしまいます
-- issue:[重要] [ ] issue: ネットワーク+zipは逆に遅くなった index取得とファイル取得を分離するなどで対処してください
-- issue:[重要] [ ] 巨大かつネットワークファイルのアーカイブ対応
-  - [*] ファイラー: zipされたbmpの展開が固まる対策(ネットワークかつファイルが巨大なケース) worker分離を試みて先行表示してください
-  - [ ] ファイラー: zipされたファイルの次の表示ができないケースがあり（ネットワークかつファイルが巨大なケース 確認したら1.53GB）
-  - [ ] viewer: deocodeエラーになる（画像のオフセットが狂っている）
-- [ ] zipのiconは foldersvgではなくarchive.svgを使ってください
-- [ ] issue: uiのi18nはui/i18nではなく、configs/resoures側で設定してください jsonからロードする時、この方がメンテしやすい
-- [ ] issue: ファイラー：サムネイル表示時に右側がみきれます
-- [ ] ファイラー：sortのasc /descは1ブロック開けて配置してください
-- [ ] issue: サムネイル：長いファイル名がはみ出ない様に省略を行ってください。その際unicodeのbyte境界に注意してください
-  　なんとかかんとか20250100-001.jpg -> なんとか...001.png 最大2行に納めてください
-- [ ] issue: ui/menu/config/mod.rsの 
-  ```rs
-                      if ui.button("Apply").clicked() {
-                        apply_requested = true;
-                    }
-                    if ui.button("Undo").clicked() {
-                        undo_requested = true;
-                    }
-                    if ui.button("Reset").clicked() {
-                        reset_requested = true;
-                    }
-  ```
-  がリソース化されていません。他にリソース化されていない場所があればリソース分離してください
-- 設定の順番はいかに並び変えてください
-  - viwer
-  - draw
-  - window
-  - navigation
-  - plugins
-  - resource
+- issue:[重要] [+] 巨大かつネットワークファイルのアーカイブ対応/bmpが固まる問題
+  - zip crateの制限で改善が見込めないため閾値を超えるファイルはシーケンシャルアクセスに限定するか（sort無効）もしくはtmpディレクトリに展開（tmp取得はdependent/thirdparty/directories.rs にコードを書いてください）するワークアラウンドを適用します
+    - 適用閾値とローカルキャッシュは設定：workaround.archive.zip で設定出来る様にします(defaultは調整)
+    - tmpはプラグインでも使う可能性があります
+    - zipの先行読み込みが原因？の可能性があるのでネットワークファイルはI/Oを減らす方向にチューニングしてください
+    - streaming未対応なのが原因なので　最終的にzipの独自実装を検討
+- [x] issue: 二重起動の制限 
+- [x] zipのiconは foldersvgではなくarchive.svgを使ってください
+- [+] issue: archive.svgの表示が想定と異なる
+- [x] issue: uiのi18nはui/i18nではなく、configs/resoures側で設定してください jsonからロードする時、この方がメンテしやすい
+- [+] issue: サムネイル：長いファイル名がはみ出ない様に省略を行ってください。その際unicodeのbyte境界に注意してください
+  　なんとかかんとか20250100-001.jpg -> なんとか...001.png
+  　- [x] 後ろは7文字にしてください
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
 - [ ] `src/ui/i18n/mod.rs` の JSON resource loader を広げて、未ローカライズ文言を全面移行する
 - [ ] `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
 - 確認中: [*] zip 内ファイルソートの実機確認
-- [*] ファイラー/サブファイラー/viewer のファイル表示順の実機確認(確認中)
-- [ ] コードの整理 モジュール境界をハッキリさせる
-  - [ ]未実装 action の no-op 整理
-- [*] ファイラー: OS name collation の最終調整(確認中)
 - プラグイン: 実装続き
   - [ ] ffmpegプラグイン
   - [ ] susie64プラグイン
@@ -411,4 +396,8 @@
     - systemにserach pathは不要 OS APIを叩くため
 - [ ] 設定：適用/undo/初期化ボタンの本格化
 - [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
+- [*] ファイラー/サブファイラー/viewer のファイル表示順の実機確認(確認中)
+- [ ] コードの整理 モジュール境界をハッキリさせる
+  - [ ]未実装 action の no-op 整理
+- [*] ファイラー: OS name collation の最終調整(確認中)
 - todo.mdの更新

@@ -1,6 +1,5 @@
+use crate::configs::resourses::resource_text_override;
 use crate::dependent::resource_locale_fallbacks;
-use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) enum UiTextKey {
@@ -91,12 +90,41 @@ pub(crate) enum UiTextKey {
     Solid,
     Shadow,
     RememberSavePath,
+    Help,
+    Apply,
+    Undo,
+    Reset,
+    Enable,
+    SearchPath,
+    Browse,
+    LoadModules,
+    Modules,
+    SearchPathOsApi,
+    FitWidth,
+    FitHeight,
+    FitScreen,
+    FitScreenIncludeSmaller,
+    FitScreenOnlySmaller,
+    Nearest,
+    Bilinear,
+    Bicubic,
+    Lanczos3,
+    Stop,
+    Loop,
+    Recursive,
+    RegisteredFileAssociations,
+    FailedFileAssociations,
+    CleanedSystemIntegration,
+    Workaround,
+    Archive,
+    ThresholdMb,
+    LocalCache,
 }
 
 pub(crate) fn tr(locale: &str, key: UiTextKey) -> &'static str {
     let key_name = format!("{key:?}");
     for candidate in resource_locale_fallbacks(locale) {
-        if let Some(value) = json_override(&candidate, &key_name) {
+        if let Some(value) = resource_text_override(&candidate, &key_name) {
             return value;
         }
         match candidate.as_str() {
@@ -106,34 +134,6 @@ pub(crate) fn tr(locale: &str, key: UiTextKey) -> &'static str {
         }
     }
     en(key)
-}
-
-fn json_override(locale: &str, key: &str) -> Option<&'static str> {
-    static CACHE: OnceLock<Mutex<HashMap<String, HashMap<String, &'static str>>>> = OnceLock::new();
-    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
-    let mut cache = cache.lock().ok()?;
-
-    if !cache.contains_key(locale) {
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("resources")
-            .join("i18n")
-            .join(format!("{locale}.json"));
-        let values = std::fs::read_to_string(path)
-            .ok()
-            .and_then(|text| serde_json::from_str::<HashMap<String, String>>(&text).ok())
-            .map(|values| {
-                values
-                    .into_iter()
-                    .map(|(name, value)| (name, Box::leak(value.into_boxed_str()) as &'static str))
-                    .collect::<HashMap<_, _>>()
-            })
-            .unwrap_or_default();
-        cache.insert(locale.to_string(), values);
-    }
-
-    cache
-        .get(locale)
-        .and_then(|values| values.get(key).copied())
 }
 
 fn en(key: UiTextKey) -> &'static str {
@@ -225,6 +225,35 @@ fn en(key: UiTextKey) -> &'static str {
         UiTextKey::Solid => "Solid",
         UiTextKey::Shadow => "Shadow",
         UiTextKey::RememberSavePath => "Remember save folder",
+        UiTextKey::Help => "Help",
+        UiTextKey::Apply => "Apply",
+        UiTextKey::Undo => "Undo",
+        UiTextKey::Reset => "Reset",
+        UiTextKey::Enable => "Enable",
+        UiTextKey::SearchPath => "Search path",
+        UiTextKey::Browse => "Browse...",
+        UiTextKey::LoadModules => "Load modules",
+        UiTextKey::Modules => "Modules",
+        UiTextKey::SearchPathOsApi => "Search path: OS API",
+        UiTextKey::FitWidth => "FitWidth",
+        UiTextKey::FitHeight => "FitHeight",
+        UiTextKey::FitScreen => "FitScreen",
+        UiTextKey::FitScreenIncludeSmaller => "FitScreenIncludeSmaller",
+        UiTextKey::FitScreenOnlySmaller => "FitScreenOnlySmaller",
+        UiTextKey::Nearest => "Nearest",
+        UiTextKey::Bilinear => "Bilinear",
+        UiTextKey::Bicubic => "Bicubic",
+        UiTextKey::Lanczos3 => "Lanczos3",
+        UiTextKey::Stop => "STOP",
+        UiTextKey::Loop => "LOOP",
+        UiTextKey::Recursive => "RECURSIVE",
+        UiTextKey::RegisteredFileAssociations => "Registered file associations",
+        UiTextKey::FailedFileAssociations => "Failed to register file associations",
+        UiTextKey::CleanedSystemIntegration => "Cleaned system integration",
+        UiTextKey::Workaround => "Workaround",
+        UiTextKey::Archive => "Archive",
+        UiTextKey::ThresholdMb => "Threshold (MB)",
+        UiTextKey::LocalCache => "Local cache",
     }
 }
 
@@ -319,5 +348,34 @@ fn ja(key: UiTextKey) -> &'static str {
         UiTextKey::Solid => "単色",
         UiTextKey::Shadow => "影",
         UiTextKey::RememberSavePath => "保存先を記憶",
+        UiTextKey::Help => "ヘルプ",
+        UiTextKey::Apply => "適用",
+        UiTextKey::Undo => "元に戻す",
+        UiTextKey::Reset => "初期化",
+        UiTextKey::Enable => "有効",
+        UiTextKey::SearchPath => "検索パス",
+        UiTextKey::Browse => "参照...",
+        UiTextKey::LoadModules => "モジュールを読み込む",
+        UiTextKey::Modules => "モジュール数",
+        UiTextKey::SearchPathOsApi => "検索パス: OS API",
+        UiTextKey::FitWidth => "幅に合わせる",
+        UiTextKey::FitHeight => "高さに合わせる",
+        UiTextKey::FitScreen => "画面に合わせる",
+        UiTextKey::FitScreenIncludeSmaller => "画面に合わせる（小さい画像も拡大）",
+        UiTextKey::FitScreenOnlySmaller => "小さい画像だけ画面に合わせる",
+        UiTextKey::Nearest => "ニアレスト",
+        UiTextKey::Bilinear => "バイリニア",
+        UiTextKey::Bicubic => "バイキュービック",
+        UiTextKey::Lanczos3 => "Lanczos3",
+        UiTextKey::Stop => "停止",
+        UiTextKey::Loop => "ループ",
+        UiTextKey::Recursive => "再帰",
+        UiTextKey::RegisteredFileAssociations => "拡張子を登録しました",
+        UiTextKey::FailedFileAssociations => "拡張子の登録に失敗しました",
+        UiTextKey::CleanedSystemIntegration => "システム登録を削除しました",
+        UiTextKey::Workaround => "ワークアラウンド",
+        UiTextKey::Archive => "アーカイブ",
+        UiTextKey::ThresholdMb => "閾値 (MB)",
+        UiTextKey::LocalCache => "ローカルキャッシュ",
     }
 }

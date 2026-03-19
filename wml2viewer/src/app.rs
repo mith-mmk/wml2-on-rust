@@ -2,7 +2,7 @@ use crate::configs::config::{load_app_config, load_startup_path};
 use crate::configs::resourses::apply_resources;
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::LoadedImage;
-use crate::filesystem::resolve_start_path;
+use crate::filesystem::{resolve_start_path, set_archive_zip_workaround};
 use crate::options::*;
 use crate::ui::viewer::ViewerApp;
 use eframe::egui::{self};
@@ -16,6 +16,7 @@ pub fn run(
     config_path: Option<PathBuf>,
 ) -> Result<(), Box<dyn Error>> {
     let config = load_app_config(config_path.as_deref()).unwrap_or_default();
+    set_archive_zip_workaround(config.runtime.workaround.archive.zip.clone());
     let image_path = image_path
         .unwrap_or(load_startup_path(config_path.as_deref()).unwrap_or(std::env::current_dir()?));
     let (navigation_path, start_path, startup_load_path, show_filer_on_start) =

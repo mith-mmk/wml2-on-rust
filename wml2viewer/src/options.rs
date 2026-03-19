@@ -22,6 +22,7 @@ pub struct AppConfig {
     pub storage: StorageOptions,
     pub input: InputOptions,
     pub navigation: NavigationOptions,
+    pub runtime: RuntimeOptions,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -124,6 +125,60 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
 pub struct StorageOptions {
     pub path_record: bool,
     pub path: Option<PathBuf>,
+}
+
+#[derive(Clone)]
+pub struct RuntimeOptions {
+    pub workaround: WorkaroundOptions,
+}
+
+impl Default for RuntimeOptions {
+    fn default() -> Self {
+        Self {
+            workaround: WorkaroundOptions::default(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct WorkaroundOptions {
+    pub archive: ArchiveWorkaroundOptions,
+}
+
+impl Default for WorkaroundOptions {
+    fn default() -> Self {
+        Self {
+            archive: ArchiveWorkaroundOptions::default(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct ArchiveWorkaroundOptions {
+    pub zip: ZipWorkaroundOptions,
+}
+
+impl Default for ArchiveWorkaroundOptions {
+    fn default() -> Self {
+        Self {
+            zip: ZipWorkaroundOptions::default(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct ZipWorkaroundOptions {
+    pub threshold_mb: u64,
+    pub local_cache: bool,
+}
+
+impl Default for ZipWorkaroundOptions {
+    fn default() -> Self {
+        Self {
+            threshold_mb: 256,
+            local_cache: true,
+        }
+    }
 }
 
 #[derive(Clone)]

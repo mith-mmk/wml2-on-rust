@@ -1,7 +1,8 @@
 pub mod plugins;
 mod thirdparty;
 pub use thirdparty::{
-    default_config_dir, default_download_dir, normalize_locale_tag, resource_locale_fallbacks,
+    default_config_dir, default_download_dir, default_temp_dir, normalize_locale_tag,
+    resource_locale_fallbacks,
 };
 
 #[cfg(target_os = "android")]
@@ -73,7 +74,9 @@ pub fn download_http_url(url: &str) -> Option<std::path::PathBuf> {
         .map(str::to_ascii_lowercase);
     let bytes = response.bytes().ok()?;
     let extension = infer_http_extension(&final_url, content_type.as_deref()).unwrap_or("bin");
-    let path = std::env::temp_dir().join(format!(
+    let temp_root = default_temp_dir().unwrap_or_else(std::env::temp_dir);
+    let _ = std::fs::create_dir_all(&temp_root);
+    let path = temp_root.join(format!(
         "wml2viewer_url_{}.{}",
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

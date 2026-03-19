@@ -4,8 +4,10 @@ use crate::dependent::{
 };
 use eframe::egui::{self, FontFamily, FontId, TextStyle};
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::{Mutex, OnceLock};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum FontSizePreset {
@@ -69,6 +71,34 @@ pub fn apply_resources(ctx: &egui::Context, options: &ResourceOptions) -> Applie
 
 pub fn normalized_locale(locale: Option<&str>) -> String {
     normalize_locale_tag(locale)
+}
+
+pub fn resource_text_override(locale: &str, key: &str) -> Option<&'static str> {
+    static CACHE: OnceLock<Mutex<HashMap<String, HashMap<String, &'static str>>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    let mut cache = cache.lock().ok()?;
+
+    if !cache.contains_key(locale) {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("i18n")
+            .join(format!("{locale}.json"));
+        let values = fs::read_to_string(path)
+            .ok()
+            .and_then(|text| serde_json::from_str::<HashMap<String, String>>(&text).ok())
+            .map(|values| {
+                values
+                    .into_iter()
+                    .map(|(name, value)| (name, Box::leak(value.into_boxed_str()) as &'static str))
+                    .collect::<HashMap<_, _>>()
+            })
+            .unwrap_or_default();
+        cache.insert(locale.to_string(), values);
+    }
+
+    cache
+        .get(locale)
+        .and_then(|values| values.get(key).copied())
 }
 
 fn candidate_font_paths(locale: &str) -> Vec<PathBuf> {

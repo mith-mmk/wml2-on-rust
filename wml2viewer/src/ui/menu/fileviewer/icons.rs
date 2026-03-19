@@ -16,6 +16,7 @@ pub(crate) enum SvgIcon {
     SortDesc,
     Filter,
     Folder,
+    Archive,
     Up,
 }
 
@@ -138,6 +139,10 @@ fn icon_shapes(icon: SvgIcon) -> &'static [SvgShape] {
                 (
                     Folder,
                     include_str!("../../../../resources/icons/folder.svg"),
+                ),
+                (
+                    Archive,
+                    include_str!("../../../../resources/icons/archive.svg"),
                 ),
                 (Up, include_str!("../../../../resources/icons/up.svg")),
             ]

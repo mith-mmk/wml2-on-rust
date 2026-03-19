@@ -12,7 +12,10 @@ use std::time::SystemTime;
 use crate::options::{EndOfFolderOption, NavigationSortOption};
 use listed_file::load_listed_file_entries;
 pub(crate) use sort::compare_natural_str;
-use zip_file::{load_zip_entries, load_zip_entry_bytes, zip_entry_record};
+use zip_file::{
+    load_zip_entries, load_zip_entry_bytes, set_zip_workaround_options, zip_entry_record,
+    zip_prefers_low_io,
+};
 
 const SUPPORTED_EXTENSIONS: &[&str] = &[
     "webp", "jpg", "jpeg", "bmp", "gif", "png", "tif", "tiff", "mag", "maki", "pi", "pic",
@@ -333,6 +336,20 @@ pub fn resolve_start_path(path: &Path) -> Option<PathBuf> {
 pub fn load_virtual_image_bytes(path: &Path) -> Option<Vec<u8>> {
     resolve_virtual_zip_child(path)
         .and_then(|(archive, index)| load_zip_entry_bytes(&archive, index))
+}
+
+pub fn set_archive_zip_workaround(options: crate::options::ZipWorkaroundOptions) {
+    set_zip_workaround_options(options);
+}
+
+pub fn archive_prefers_low_io(path: &Path) -> bool {
+    if let Some((archive, _)) = resolve_virtual_zip_child(path) {
+        return zip_prefers_low_io(&archive);
+    }
+    if is_zip_file_path(path) {
+        return zip_prefers_low_io(path);
+    }
+    false
 }
 
 pub fn virtual_image_size(path: &Path) -> Option<u64> {

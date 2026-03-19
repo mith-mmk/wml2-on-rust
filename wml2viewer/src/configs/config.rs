@@ -10,7 +10,7 @@ use crate::dependent::plugins::PluginConfig;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{
     AppConfig, EndOfFolderOption, FontSizePreset, MangaSeparatorOptions, MangaSeparatorStyle,
-    NavigationSortOption, ResourceOptions, StorageOptions, WindowUiTheme,
+    NavigationSortOption, ResourceOptions, RuntimeOptions, StorageOptions, WindowUiTheme,
 };
 use crate::ui::viewer::options::{
     BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
@@ -275,10 +275,64 @@ enum NavigationSortConfigFile {
     Size,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 struct RuntimeConfigFile {
     current_file: Option<PathBuf>,
+    workaround: WorkaroundConfigFile,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
+struct WorkaroundConfigFile {
+    archive: ArchiveWorkaroundConfigFile,
+}
+
+impl Default for WorkaroundConfigFile {
+    fn default() -> Self {
+        Self {
+            archive: ArchiveWorkaroundConfigFile::default(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
+struct ArchiveWorkaroundConfigFile {
+    zip: ZipWorkaroundConfigFile,
+}
+
+impl Default for ArchiveWorkaroundConfigFile {
+    fn default() -> Self {
+        Self {
+            zip: ZipWorkaroundConfigFile::default(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
+struct ZipWorkaroundConfigFile {
+    threshold_mb: u64,
+    local_cache: bool,
+}
+
+impl Default for ZipWorkaroundConfigFile {
+    fn default() -> Self {
+        Self {
+            threshold_mb: 256,
+            local_cache: true,
+        }
+    }
+}
+
+impl Default for RuntimeConfigFile {
+    fn default() -> Self {
+        Self {
+            current_file: None,
+            workaround: WorkaroundConfigFile::default(),
+        }
+    }
 }
 
 pub fn load_app_config(config_path: Option<&Path>) -> ConfigResult<AppConfig> {
@@ -351,6 +405,7 @@ impl From<ConfigFile> for AppConfig {
         config.storage = value.storage.into();
         config.navigation.end_of_folder = value.navigation.end_of_folder.into();
         config.navigation.sort = value.navigation.sort.into();
+        config.runtime = value.runtime.into();
         config
     }
 }
@@ -383,7 +438,72 @@ impl ConfigFile {
             },
             runtime: RuntimeConfigFile {
                 current_file: current_path.map(|path| path.to_path_buf()),
+                workaround: value.runtime.into(),
             },
+        }
+    }
+}
+
+impl From<RuntimeConfigFile> for RuntimeOptions {
+    fn from(value: RuntimeConfigFile) -> Self {
+        Self {
+            workaround: value.workaround.into(),
+        }
+    }
+}
+
+impl From<RuntimeOptions> for WorkaroundConfigFile {
+    fn from(value: RuntimeOptions) -> Self {
+        value.workaround.into()
+    }
+}
+
+impl From<WorkaroundConfigFile> for crate::options::WorkaroundOptions {
+    fn from(value: WorkaroundConfigFile) -> Self {
+        Self {
+            archive: value.archive.into(),
+        }
+    }
+}
+
+impl From<crate::options::WorkaroundOptions> for WorkaroundConfigFile {
+    fn from(value: crate::options::WorkaroundOptions) -> Self {
+        Self {
+            archive: value.archive.into(),
+        }
+    }
+}
+
+impl From<ArchiveWorkaroundConfigFile> for crate::options::ArchiveWorkaroundOptions {
+    fn from(value: ArchiveWorkaroundConfigFile) -> Self {
+        Self {
+            zip: value.zip.into(),
+        }
+    }
+}
+
+impl From<crate::options::ArchiveWorkaroundOptions> for ArchiveWorkaroundConfigFile {
+    fn from(value: crate::options::ArchiveWorkaroundOptions) -> Self {
+        Self {
+            zip: value.zip.into(),
+        }
+    }
+}
+
+impl From<ZipWorkaroundConfigFile> for crate::options::ZipWorkaroundOptions {
+    fn from(value: ZipWorkaroundConfigFile) -> Self {
+        Self {
+            threshold_mb: value.threshold_mb,
+            local_cache: value.local_cache,
+        }
+    }
+}
+
+impl From<crate::options::ZipWorkaroundOptions> for ZipWorkaroundConfigFile {
+    fn from(value: crate::options::ZipWorkaroundOptions) -> Self {
+        Self {
+            threshold_mb: value.threshold_mb,
+            local_cache: value.local_cache,
         }
     }
 }

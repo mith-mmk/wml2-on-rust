@@ -6,6 +6,7 @@ use crate::dependent::{
     register_system_file_associations,
 };
 use crate::drawers::affine::InterpolationAlgorithm;
+use crate::filesystem::set_archive_zip_workaround;
 use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions};
 use crate::ui::i18n::UiTextKey;
 use crate::ui::render::interpolation_label;
@@ -62,7 +63,7 @@ impl ViewerApp {
         let end_of_folder_text = self.text(UiTextKey::EndOfFolder);
         let reload_current_text = self.text(UiTextKey::ReloadCurrent);
         let close_text = self.text(UiTextKey::Close);
-        let help_text = "Help";
+        let help_text = self.text(UiTextKey::Help);
         let black_text = self.text(UiTextKey::Black);
         let gray_text = self.text(UiTextKey::Gray);
         let tile_text = self.text(UiTextKey::Tile);
@@ -74,24 +75,53 @@ impl ViewerApp {
         let solid_text = self.text(UiTextKey::Solid);
         let shadow_text = self.text(UiTextKey::Shadow);
         let remember_save_path_text = self.text(UiTextKey::RememberSavePath);
+        let apply_text = self.text(UiTextKey::Apply);
+        let undo_text = self.text(UiTextKey::Undo);
+        let reset_text = self.text(UiTextKey::Reset);
+        let enable_text = self.text(UiTextKey::Enable);
+        let search_path_text = self.text(UiTextKey::SearchPath);
+        let browse_text = self.text(UiTextKey::Browse);
+        let load_modules_text = self.text(UiTextKey::LoadModules);
+        let modules_text = self.text(UiTextKey::Modules);
+        let search_path_os_api_text = self.text(UiTextKey::SearchPathOsApi);
+        let registered_file_associations_text = self.text(UiTextKey::RegisteredFileAssociations);
+        let failed_file_associations_text = self.text(UiTextKey::FailedFileAssociations);
+        let cleaned_system_integration_text = self.text(UiTextKey::CleanedSystemIntegration);
+        let workaround_text = self.text(UiTextKey::Workaround);
+        let archive_text = self.text(UiTextKey::Archive);
+        let threshold_mb_text = self.text(UiTextKey::ThresholdMb);
+        let local_cache_text = self.text(UiTextKey::LocalCache);
+        let fit_width_text = self.text(UiTextKey::FitWidth);
+        let fit_height_text = self.text(UiTextKey::FitHeight);
+        let fit_screen_text = self.text(UiTextKey::FitScreen);
+        let fit_screen_include_smaller_text = self.text(UiTextKey::FitScreenIncludeSmaller);
+        let fit_screen_only_smaller_text = self.text(UiTextKey::FitScreenOnlySmaller);
+        let nearest_text = self.text(UiTextKey::Nearest);
+        let bilinear_text = self.text(UiTextKey::Bilinear);
+        let bicubic_text = self.text(UiTextKey::Bicubic);
+        let lanczos3_text = self.text(UiTextKey::Lanczos3);
+        let stop_text = self.text(UiTextKey::Stop);
+        let loop_text = self.text(UiTextKey::Loop);
+        let next_text = self.text(UiTextKey::Next);
+        let recursive_text = self.text(UiTextKey::Recursive);
         egui::Window::new(settings_text)
             .open(&mut open)
             .resizable(true)
             .show(ctx, |ui| {
                 ui.horizontal_wrapped(|ui| {
                     ui.selectable_value(&mut self.settings_tab, SettingsTab::Viewer, viewer_text);
-                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Plugins, plugins_text);
-                    ui.selectable_value(
-                        &mut self.settings_tab,
-                        SettingsTab::Resources,
-                        resources_text,
-                    );
                     ui.selectable_value(&mut self.settings_tab, SettingsTab::Render, render_text);
                     ui.selectable_value(&mut self.settings_tab, SettingsTab::Window, window_text);
                     ui.selectable_value(
                         &mut self.settings_tab,
                         SettingsTab::Navigation,
                         navigation_text,
+                    );
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Plugins, plugins_text);
+                    ui.selectable_value(
+                        &mut self.settings_tab,
+                        SettingsTab::Resources,
+                        resources_text,
                     );
                 });
                 ui.separator();
@@ -189,9 +219,9 @@ impl ViewerApp {
                     ui.group(|ui| {
                         ui.heading("susie64");
                         config_changed |= ui
-                            .checkbox(&mut self.plugins.susie64.enable, "enable")
+                            .checkbox(&mut self.plugins.susie64.enable, enable_text)
                             .changed();
-                        ui.label("search_path");
+                        ui.label(search_path_text);
                         if ui
                             .text_edit_singleline(&mut self.susie64_search_paths_input)
                             .changed()
@@ -200,7 +230,7 @@ impl ViewerApp {
                                 parse_search_paths(&self.susie64_search_paths_input);
                             config_changed = true;
                         }
-                        if ui.button("Browse...").clicked() {
+                        if ui.button(browse_text).clicked() {
                             if let Some(path) = pick_save_directory() {
                                 self.plugins.susie64.search_path = vec![path];
                                 self.susie64_search_paths_input =
@@ -208,25 +238,33 @@ impl ViewerApp {
                                 config_changed = true;
                             }
                         }
-                        if ui.button("Load modules").clicked() {
+                        if ui.button(load_modules_text).clicked() {
                             self.plugins.susie64.modules =
                                 discover_plugin_modules("susie64", &self.plugins.susie64);
                             config_changed = true;
                         }
-                        ui.label(format!("modules: {}", self.plugins.susie64.modules.len()));
+                        ui.label(format!(
+                            "{}: {}",
+                            modules_text,
+                            self.plugins.susie64.modules.len()
+                        ));
                         ui.separator();
                         ui.heading("system");
                         config_changed |= ui
-                            .checkbox(&mut self.plugins.system.enable, "enable")
+                            .checkbox(&mut self.plugins.system.enable, enable_text)
                             .changed();
-                        ui.label("search_path: OS API");
-                        ui.label(format!("modules: {}", self.plugins.system.modules.len()));
+                        ui.label(search_path_os_api_text);
+                        ui.label(format!(
+                            "{}: {}",
+                            modules_text,
+                            self.plugins.system.modules.len()
+                        ));
                         ui.separator();
                         ui.heading("ffmpeg");
                         config_changed |= ui
-                            .checkbox(&mut self.plugins.ffmpeg.enable, "enable")
+                            .checkbox(&mut self.plugins.ffmpeg.enable, enable_text)
                             .changed();
-                        ui.label("search_path");
+                        ui.label(search_path_text);
                         if ui
                             .text_edit_singleline(&mut self.ffmpeg_search_paths_input)
                             .changed()
@@ -235,7 +273,7 @@ impl ViewerApp {
                                 parse_search_paths(&self.ffmpeg_search_paths_input);
                             config_changed = true;
                         }
-                        if ui.button("Browse...").clicked() {
+                        if ui.button(browse_text).clicked() {
                             if let Some(path) = pick_save_directory() {
                                 self.plugins.ffmpeg.search_path = vec![path];
                                 self.ffmpeg_search_paths_input =
@@ -243,12 +281,16 @@ impl ViewerApp {
                                 config_changed = true;
                             }
                         }
-                        if ui.button("Load modules").clicked() {
+                        if ui.button(load_modules_text).clicked() {
                             self.plugins.ffmpeg.modules =
                                 discover_plugin_modules("ffmpeg", &self.plugins.ffmpeg);
                             config_changed = true;
                         }
-                        ui.label(format!("modules: {}", self.plugins.ffmpeg.modules.len()));
+                        ui.label(format!(
+                            "{}: {}",
+                            modules_text,
+                            self.plugins.ffmpeg.modules.len()
+                        ));
                     });
                 }
 
@@ -304,6 +346,25 @@ impl ViewerApp {
                                         .changed();
                                 });
                         });
+                        ui.separator();
+                        ui.label(workaround_text);
+                        ui.horizontal(|ui| {
+                            ui.label(format!("{archive_text} ZIP"));
+                            ui.label(threshold_mb_text);
+                            config_changed |= ui
+                                .add(
+                                    egui::DragValue::new(
+                                        &mut self.runtime.workaround.archive.zip.threshold_mb,
+                                    )
+                                    .range(16..=16_384)
+                                    .speed(8.0),
+                                )
+                                .changed();
+                            ui.checkbox(
+                                &mut self.runtime.workaround.archive.zip.local_cache,
+                                local_cache_text,
+                            );
+                        });
                     });
                 }
 
@@ -313,37 +374,40 @@ impl ViewerApp {
                             ui.label(zoom_mode_text);
                             let before = self.render_options.zoom_option.clone();
                             egui::ComboBox::from_id_salt("zoom_option")
-                                .selected_text(zoom_option_label(&self.render_options.zoom_option))
+                                .selected_text(zoom_option_label(
+                                    &self.applied_locale,
+                                    &self.render_options.zoom_option,
+                                ))
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_option,
                                         ZoomOption::None,
-                                        "None",
+                                        none_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_option,
                                         ZoomOption::FitWidth,
-                                        "FitWidth",
+                                        fit_width_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_option,
                                         ZoomOption::FitHeight,
-                                        "FitHeight",
+                                        fit_height_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_option,
                                         ZoomOption::FitScreen,
-                                        "FitScreen",
+                                        fit_screen_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_option,
                                         ZoomOption::FitScreenIncludeSmaller,
-                                        "FitScreenIncludeSmaller",
+                                        fit_screen_include_smaller_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_option,
                                         ZoomOption::FitScreenOnlySmaller,
-                                        "FitScreenOnlySmaller",
+                                        fit_screen_only_smaller_text,
                                     );
                                 });
                             if self.render_options.zoom_option != before {
@@ -361,22 +425,22 @@ impl ViewerApp {
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_method,
                                         InterpolationAlgorithm::NearestNeighber,
-                                        "Nearest",
+                                        nearest_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_method,
                                         InterpolationAlgorithm::Bilinear,
-                                        "Bilinear",
+                                        bilinear_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_method,
                                         InterpolationAlgorithm::BicubicAlpha(None),
-                                        "Bicubic",
+                                        bicubic_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.render_options.zoom_method,
                                         InterpolationAlgorithm::Lanzcos3,
-                                        "Lanczos3",
+                                        lanczos3_text,
                                     );
                                 });
                             if self.render_options.zoom_method != before {
@@ -478,12 +542,11 @@ impl ViewerApp {
                                 {
                                     Some(()) => {
                                         self.save_message =
-                                            Some("Registered file associations".to_string());
+                                            Some(registered_file_associations_text.to_string());
                                     }
                                     None => {
-                                        self.save_message = Some(
-                                            "Failed to register file associations".to_string(),
-                                        );
+                                        self.save_message =
+                                            Some(failed_file_associations_text.to_string());
                                     }
                                 }
                             }
@@ -491,7 +554,7 @@ impl ViewerApp {
                                 match clean_system_integration() {
                                     Ok(()) => {
                                         self.save_message =
-                                            Some("Cleaned system integration".to_string());
+                                            Some(cleaned_system_integration_text.to_string());
                                     }
                                     Err(err) => {
                                         self.save_message = Some(err.to_string());
@@ -508,27 +571,30 @@ impl ViewerApp {
                             ui.label(end_of_folder_text);
                             let before = self.end_of_folder;
                             egui::ComboBox::from_id_salt("end_of_folder")
-                                .selected_text(end_of_folder_label(self.end_of_folder))
+                                .selected_text(end_of_folder_label(
+                                    &self.applied_locale,
+                                    self.end_of_folder,
+                                ))
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
                                         &mut self.end_of_folder,
                                         EndOfFolderOption::Stop,
-                                        "STOP",
+                                        stop_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.end_of_folder,
                                         EndOfFolderOption::Loop,
-                                        "LOOP",
+                                        loop_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.end_of_folder,
                                         EndOfFolderOption::Next,
-                                        "NEXT",
+                                        next_text,
                                     );
                                     ui.selectable_value(
                                         &mut self.end_of_folder,
                                         EndOfFolderOption::Recursive,
-                                        "RECURSIVE",
+                                        recursive_text,
                                     );
                                 });
                             if self.end_of_folder != before {
@@ -543,13 +609,13 @@ impl ViewerApp {
 
                 ui.separator();
                 ui.horizontal(|ui| {
-                    if ui.button("Apply").clicked() {
+                    if ui.button(apply_text).clicked() {
                         apply_requested = true;
                     }
-                    if ui.button("Undo").clicked() {
+                    if ui.button(undo_text).clicked() {
                         undo_requested = true;
                     }
-                    if ui.button("Reset").clicked() {
+                    if ui.button(reset_text).clicked() {
                         reset_requested = true;
                     }
                     if ui.button(reload_current_text).clicked() {
@@ -586,6 +652,7 @@ impl ViewerApp {
         if config_changed || apply_requested {
             self.apply_window_theme(ctx);
             let applied = apply_resources(ctx, &self.resources);
+            set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
             self.applied_locale = applied.locale;
             self.loaded_font_names = applied.loaded_fonts;
             let _ = save_app_config(
@@ -603,6 +670,7 @@ impl ViewerApp {
         self.resources = config.resources;
         self.plugins = config.plugins;
         self.storage = config.storage;
+        self.runtime = config.runtime;
         self.keymap = config.input.merged_with_defaults();
         self.end_of_folder = config.navigation.end_of_folder;
         self.navigation_sort = config.navigation.sort;
@@ -617,6 +685,7 @@ impl ViewerApp {
         self.ffmpeg_search_paths_input = join_search_paths(&self.plugins.ffmpeg.search_path);
         self.apply_window_theme(ctx);
         let applied = apply_resources(ctx, &self.resources);
+        set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
         self.applied_locale = applied.locale;
         self.loaded_font_names = applied.loaded_fonts;
         self.pending_fit_recalc = true;
@@ -629,6 +698,7 @@ impl ViewerApp {
             render: self.render_options.clone(),
             plugins: self.plugins.clone(),
             storage: self.storage.clone(),
+            runtime: self.runtime.clone(),
             input: Default::default(),
             resources: self.resources.clone(),
             navigation: NavigationOptions {
@@ -639,23 +709,27 @@ impl ViewerApp {
     }
 }
 
-fn end_of_folder_label(option: EndOfFolderOption) -> &'static str {
+fn end_of_folder_label(locale: &str, option: EndOfFolderOption) -> &'static str {
     match option {
-        EndOfFolderOption::Stop => "STOP",
-        EndOfFolderOption::Next => "NEXT",
-        EndOfFolderOption::Loop => "LOOP",
-        EndOfFolderOption::Recursive => "RECURSIVE",
+        EndOfFolderOption::Stop => crate::ui::i18n::tr(locale, UiTextKey::Stop),
+        EndOfFolderOption::Next => crate::ui::i18n::tr(locale, UiTextKey::Next),
+        EndOfFolderOption::Loop => crate::ui::i18n::tr(locale, UiTextKey::Loop),
+        EndOfFolderOption::Recursive => crate::ui::i18n::tr(locale, UiTextKey::Recursive),
     }
 }
 
-fn zoom_option_label(option: &ZoomOption) -> &'static str {
+fn zoom_option_label(locale: &str, option: &ZoomOption) -> &'static str {
     match option {
-        ZoomOption::None => "None",
-        ZoomOption::FitWidth => "FitWidth",
-        ZoomOption::FitHeight => "FitHeight",
-        ZoomOption::FitScreen => "FitScreen",
-        ZoomOption::FitScreenIncludeSmaller => "FitScreenIncludeSmaller",
-        ZoomOption::FitScreenOnlySmaller => "FitScreenOnlySmaller",
+        ZoomOption::None => crate::ui::i18n::tr(locale, UiTextKey::None),
+        ZoomOption::FitWidth => crate::ui::i18n::tr(locale, UiTextKey::FitWidth),
+        ZoomOption::FitHeight => crate::ui::i18n::tr(locale, UiTextKey::FitHeight),
+        ZoomOption::FitScreen => crate::ui::i18n::tr(locale, UiTextKey::FitScreen),
+        ZoomOption::FitScreenIncludeSmaller => {
+            crate::ui::i18n::tr(locale, UiTextKey::FitScreenIncludeSmaller)
+        }
+        ZoomOption::FitScreenOnlySmaller => {
+            crate::ui::i18n::tr(locale, UiTextKey::FitScreenOnlySmaller)
+        }
     }
 }
 

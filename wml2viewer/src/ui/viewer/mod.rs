@@ -4,11 +4,12 @@ use crate::dependent::{default_download_dir, pick_save_directory};
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
-    FilesystemCommand, FilesystemResult, adjacent_entry, spawn_filesystem_worker,
+    FilesystemCommand, FilesystemResult, adjacent_entry, archive_prefers_low_io,
+    set_archive_zip_workaround, spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, PluginConfig, ResourceOptions,
-    ViewerAction,
+    RuntimeOptions, ViewerAction,
 };
 use crate::ui::i18n::{UiTextKey, tr};
 use crate::ui::menu::fileviewer::state::FilerState;
@@ -59,6 +60,7 @@ pub(crate) struct ViewerApp {
     pub(crate) resources: ResourceOptions,
     pub(crate) plugins: PluginConfig,
     pub(crate) storage: crate::options::StorageOptions,
+    pub(crate) runtime: RuntimeOptions,
     pub(crate) applied_locale: String,
     pub(crate) loaded_font_names: Vec<String>,
     pub(crate) keymap: HashMap<KeyBinding, ViewerAction>,
@@ -231,6 +233,7 @@ impl ViewerApp {
             locale,
             loaded_fonts,
         } = apply_resources(&cc.egui_ctx, &config.resources);
+        set_archive_zip_workaround(config.runtime.workaround.archive.zip.clone());
         let (worker_tx, worker_rx) = spawn_render_worker(source.clone());
         let (companion_tx, companion_rx) = spawn_render_worker(source.clone());
         let (preload_tx, preload_rx) = spawn_render_worker(source.clone());
@@ -262,6 +265,7 @@ impl ViewerApp {
             resources: config.resources,
             plugins: config.plugins,
             storage: config.storage,
+            runtime: config.runtime,
             applied_locale: locale,
             loaded_font_names: loaded_fonts,
             keymap: config.input.merged_with_defaults(),
@@ -792,23 +796,38 @@ impl ViewerApp {
     }
 
     fn status_panel_ui(&mut self, ctx: &egui::Context) {
-        let mut messages = Vec::new();
-        if let Some(message) = &self.loading_message {
-            messages.push(message.as_str());
-        }
-        if let Some(message) = &self.save_message {
-            messages.push(message.as_str());
-        }
-        if messages.is_empty() {
+        let Some(message) = &self.save_message else {
             return;
-        }
+        };
 
         egui::TopBottomPanel::bottom("status_panel")
             .resizable(false)
             .show(ctx, |ui| {
-                for message in messages {
-                    ui.label(message);
-                }
+                ui.label(message);
+            });
+    }
+
+    fn loading_overlay_ui(&mut self, ctx: &egui::Context) {
+        let Some(message) = &self.loading_message else {
+            return;
+        };
+
+        egui::Area::new("loading_overlay".into())
+            .anchor(egui::Align2::CENTER_TOP, egui::vec2(0.0, 12.0))
+            .interactable(false)
+            .show(ctx, |ui| {
+                egui::Frame::new()
+                    .corner_radius(8.0)
+                    .fill(egui::Color32::from_rgba_unmultiplied(16, 16, 16, 196))
+                    .stroke(egui::Stroke::new(
+                        1.0,
+                        egui::Color32::from_rgba_unmultiplied(255, 255, 255, 48),
+                    ))
+                    .inner_margin(egui::Margin::symmetric(12, 8))
+                    .show(ui, |ui| {
+                        ui.visuals_mut().override_text_color = Some(egui::Color32::WHITE);
+                        ui.label(message);
+                    });
             });
     }
 
@@ -1123,9 +1142,15 @@ impl ViewerApp {
         if self.empty_mode || self.active_request.is_some() {
             return;
         }
+        if archive_prefers_low_io(&self.current_navigation_path) {
+            return;
+        }
         let Some(path) = self.next_preload_candidate() else {
             return;
         };
+        if archive_prefers_low_io(&path) {
+            return;
+        }
         if self.preloaded_navigation_path.as_ref() == Some(&path)
             || self.pending_preload_navigation_path.as_ref() == Some(&path)
         {
@@ -1657,6 +1682,7 @@ impl eframe::App for ViewerApp {
                     }
                 });
         });
+        self.loading_overlay_ui(ctx);
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {

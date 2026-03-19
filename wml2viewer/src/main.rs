@@ -8,7 +8,9 @@ mod ui;
 use std::env;
 use std::error::Error;
 use std::ffi::OsString;
+use std::fs::OpenOptions;
 use std::io;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -34,6 +36,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         dependent::clean_system_integration()?;
         return Ok(());
     }
+    let _single_instance_guard = acquire_single_instance_guard()?;
     app::run(args.image_path, args.config_path)
 }
 
@@ -128,4 +131,36 @@ fn usage_error(program: &OsString) -> Box<dyn Error> {
         io::ErrorKind::InvalidInput,
         format!("Usage: {program} [--config <path>] [--clean system] [path]"),
     ))
+}
+
+struct SingleInstanceGuard {
+    path: PathBuf,
+}
+
+impl Drop for SingleInstanceGuard {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
+fn acquire_single_instance_guard() -> Result<SingleInstanceGuard, Box<dyn Error>> {
+    let lock_root = dependent::default_temp_dir().unwrap_or_else(std::env::temp_dir);
+    std::fs::create_dir_all(&lock_root)?;
+    let path = lock_root.join("single-instance.lock");
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+        .map_err(|err| {
+            if err.kind() == io::ErrorKind::AlreadyExists {
+                io::Error::new(
+                    io::ErrorKind::AlreadyExists,
+                    "wml2viewer is already running",
+                )
+            } else {
+                err
+            }
+        })?;
+    let _ = writeln!(file, "pid={}", std::process::id());
+    Ok(SingleInstanceGuard { path })
 }

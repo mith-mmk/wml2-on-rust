@@ -331,11 +331,16 @@
 - [-] 役割の再整理
 
 ## 次に着手
-- issue: コミックモード：最初の一回の処理が安定していない（サイズ変換が永久ループしている）
+- 【改善無し】issue: コミックモード：最初の一回の処理が安定していない（サイズ変換が永久ループしている）
+- zip内で次の画像表示が止まる画像がある(大きめのファイルが挟まるとなる感じp)
 - プラグイン: 実装続き
-  search path 編集の磨き込み
+  load moduleで止まっている jpeg2000/avifが開けない ./samplesにサンプルあり
+  search path ファイルダイアログが欲しい(保存と同じで良い)
   test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
+  systemにserach pathは不要 os APIを叩く
 - ファイラー: SVG表示 resources/icons/icons.mdにテンプレが置いてあるのでそれでiconを生成して使ってください
+- ファイラー: サムネイル 「フォルダ/アーカイブ」が大きくてフォルダ名が読めない
+- httpからロード出来ない
 - 設定：OSに拡張子を登録できる機能
 - 設定：適用/undo/初期化ボタンの本格化
   windows は crate winreg を使う

@@ -3,6 +3,10 @@
 ```
 <svg version="1.1" width="`size`" height="`size`" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
 ```
+- folder
+```
+
+```
 
 - zoom
 ```
@@ -106,4 +110,35 @@ size of thumnails
 - small
 ```
 <rect x="7" y="7" width="10" height="10"/>
+```
+
+- folder
+```
+  <path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H3z"/>
+  <path d="M3 7V5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v2"/>
+```
+
+- archive(`zip`などの拡張子で区別)
+```
+  <rect x="3" y="4" width="18" height="4" rx="1"/>
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/>
+  <line x1="10" y1="12" x2="14" y2="12"/>
+```
+
+- image(サムネイルローディング前/省略時)`jpg`などの拡張子
+
+```
+  <!-- image枠 -->
+  <rect x="3" y="3" width="18" height="14" rx="2"/>
+  
+  <!-- 山 -->
+  <polyline points="5 14 9 10 13 14"/>
+  
+  <!-- 太陽 -->
+  <circle cx="16" cy="7" r="1.5"/>
+
+  <!-- extension風 -->
+  <line x1="5" y1="19" x2="19" y2="19"/>
+  <line x1="5" y1="21" x2="19" y2="21"/>
+
 ```

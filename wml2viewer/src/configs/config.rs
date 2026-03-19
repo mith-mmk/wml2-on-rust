@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::dependent::default_config_dir;
+use crate::dependent::plugins::PluginConfig;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{
     AppConfig, EndOfFolderOption, FontSizePreset, NavigationSortOption, ResourceOptions,
@@ -24,6 +25,7 @@ struct ConfigFile {
     window: WindowConfigFile,
     render: RenderConfigFile,
     resources: ResourceConfigFile,
+    plugins: PluginConfig,
     navigation: NavigationConfigFile,
     runtime: RuntimeConfigFile,
 }
@@ -32,6 +34,7 @@ struct ConfigFile {
 #[serde(default)]
 struct ViewerConfigFile {
     animation: bool,
+    grayscale: bool,
     manga_mode: bool,
     manga_right_to_left: bool,
     background: BackgroundConfigFile,
@@ -41,6 +44,7 @@ impl Default for ViewerConfigFile {
     fn default() -> Self {
         Self {
             animation: true,
+            grayscale: false,
             manga_mode: false,
             manga_right_to_left: true,
             background: BackgroundConfigFile::Solid {
@@ -279,12 +283,14 @@ impl From<ConfigFile> for AppConfig {
             background: value.viewer.background.into(),
             fade: config.viewer.fade,
             animation: value.viewer.animation,
+            grayscale: value.viewer.grayscale,
             manga_mode: value.viewer.manga_mode,
             manga_right_to_left: value.viewer.manga_right_to_left,
         };
         config.window = value.window.into();
         config.render = value.render.into();
         config.resources = value.resources.into();
+        config.plugins = value.plugins;
         config.navigation.end_of_folder = value.navigation.end_of_folder.into();
         config.navigation.sort = value.navigation.sort.into();
         config
@@ -302,6 +308,7 @@ impl ConfigFile {
         Self {
             viewer: ViewerConfigFile {
                 animation: value.viewer.animation,
+                grayscale: value.viewer.grayscale,
                 manga_mode: value.viewer.manga_mode,
                 manga_right_to_left: value.viewer.manga_right_to_left,
                 background: value.viewer.background.into(),
@@ -309,6 +316,7 @@ impl ConfigFile {
             window: value.window.into(),
             render: value.render.into(),
             resources: value.resources.into(),
+            plugins: value.plugins,
             navigation: NavigationConfigFile {
                 end_of_folder: value.navigation.end_of_folder.into(),
                 sort: value.navigation.sort.into(),
@@ -435,7 +443,7 @@ impl From<RenderOptions> for RenderConfigFile {
 impl From<ResourceConfigFile> for ResourceOptions {
     fn from(value: ResourceConfigFile) -> Self {
         Self {
-            locale: value.locale,
+            locale: value.locale.or_else(crate::dependent::system_locale),
             font_size: value.font_size.into(),
         }
     }

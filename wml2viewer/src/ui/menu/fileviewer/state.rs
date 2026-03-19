@@ -1,4 +1,4 @@
-use crate::dependent::available_roots;
+use crate::dependent::ui_available_roots;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
@@ -12,8 +12,32 @@ pub(crate) struct FilerMetadata {
 pub(crate) struct FilerEntry {
     pub(crate) path: PathBuf,
     pub(crate) label: String,
-    pub(crate) is_dir: bool,
+    pub(crate) is_container: bool,
     pub(crate) metadata: FilerMetadata,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub(crate) enum FilerViewMode {
+    #[default]
+    List,
+    ThumbnailSmall,
+    ThumbnailMedium,
+    ThumbnailLarge,
+    Detail,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum FilerSortField {
+    Name,
+    Modified,
+    Size,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum NameSortMode {
+    Os,
+    CaseSensitive,
+    CaseInsensitive,
 }
 
 #[derive(Debug)]
@@ -23,6 +47,14 @@ pub(crate) struct FilerState {
     pub(crate) selected: Option<PathBuf>,
     pub(crate) roots: Vec<PathBuf>,
     pub(crate) pending_request_id: Option<u64>,
+    pub(crate) view_mode: FilerViewMode,
+    pub(crate) sort_field: FilerSortField,
+    pub(crate) ascending: bool,
+    pub(crate) separate_dirs: bool,
+    pub(crate) filter_text: String,
+    pub(crate) extension_filter: String,
+    pub(crate) name_sort_mode: NameSortMode,
+    pub(crate) url_input: String,
 }
 
 impl Default for FilerState {
@@ -31,8 +63,16 @@ impl Default for FilerState {
             entries: Vec::new(),
             directory: None,
             selected: None,
-            roots: available_roots(),
+            roots: ui_available_roots(),
             pending_request_id: None,
+            view_mode: FilerViewMode::List,
+            sort_field: FilerSortField::Name,
+            ascending: true,
+            separate_dirs: true,
+            filter_text: String::new(),
+            extension_filter: String::new(),
+            name_sort_mode: NameSortMode::Os,
+            url_input: String::new(),
         }
     }
 }

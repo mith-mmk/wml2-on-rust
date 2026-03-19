@@ -1,3 +1,4 @@
+pub mod plugins;
 mod thirdparty;
 pub use thirdparty::{default_config_dir, normalize_locale_tag, resource_locale_fallbacks};
 
@@ -39,3 +40,19 @@ pub use linux::*;
 pub use other::*;
 #[cfg(target_os = "windows")]
 pub use windows::*;
+
+pub fn ui_available_roots() -> Vec<std::path::PathBuf> {
+    available_roots()
+}
+
+pub fn pick_save_directory() -> Option<std::path::PathBuf> {
+    pick_directory_dialog()
+}
+
+pub fn download_http_url(url: &str) -> Option<std::path::PathBuf> {
+    let url = url.trim();
+    if !(url.starts_with("http://") || url.starts_with("https://")) {
+        return None;
+    }
+    download_url_to_temp(url)
+}

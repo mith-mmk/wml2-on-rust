@@ -1,337 +1,303 @@
 # wml2viewer TODO
+
 ステータス
-- [x] チェック済み（人力修正）
-- [+] 実装済み（タスクを行ったら修正すること） 
-- [-] 実装遅延
-- [*] issues(実装されているがバグがある) 
+- [x] 確認済み / 安定実装
+- [+] 実装済み / 今後の拡張余地あり
+- [*] 実装済みだが要再確認 or 既知の不具合あり
+- [-] 設計保留
 - [ ] 未実装
 
-## 0. 現在の到達点
+最終整理日: 2026-03-19
 
-### 基本表示
-- [x] `wml2viewer <file>`
-- [x] `wml2viewer <directory>`
-- [x] 静止画表示
-- [x] アニメーション表示
-- [x] スクロール表示
-- [x] ScreenFit / zoom 表示
-- [x] ダブルクリックで `100% <-> Fit` トグル
-- [x] ウィンドウタイトルを現在画像に追従
-- [x] 起動時の表示サイズ
-- [*] 起動時の表示位置ずれ修正
-- [x] 前回の表示サイズ保存（設定で切り替え）
-- [+] フルスクリーン時のワークアラウンド
-- [*] フルスクリーンモードの復帰
-- [ ] VSP の読み込み(DATの判別できない、ファイル構造まで見る必要あり)
+## src/main.rs / src/app.rs
+- [x] `wml2viewer <file>` 起動
+- [x] `wml2viewer <directory>` 起動
+- [x] 起動時に空表示の場合はファイラーを開く
+- [x] 起動時ウィンドウサイズを設定から復元
+- [x] 起動時ウィンドウ位置を設定から復元
+- [x] 設定未指定時は起動スクリーン基準で 60% サイズ + 中央寄せ
+- [x] 起動時 fullscreen を無効化するワークアラウンド
+- [*] フルスクリーン復帰時の安定性確認
 
-### 入力
-- [x] `+` / `-` で zoom in / out
-- [x] `Shift+0` で 100%
-- [x] `Enter` で fullscreen toggle
-- [x] `Shift+R` で reload
-- [x] `Space` / `Right` で次画像
-- [x] `Shift+Space` / `Left` で前画像
-- [x] `Home` で先頭画像
-- [x] `End` で末尾画像
-- [ ] `Shift+G` で grayscale toggle
-- [x] `Shift+C` で comic mode toggle
+## src/options.rs
+- [x] ViewerAction / KeyBinding の整理
+- [x] `Shift+G` grayscale toggle
+- [x] `Shift+C` manga mode toggle
+- [x] `Ctrl+S` 保存ダイアログ起動
+- [ ] キーリマップ UI
 
-### navigation / filesystem
-- [x] 単一ファイル起動時に親ディレクトリの画像一覧を取得
-- [x] `STOP`
-- [x] `LOOP`
-- [x] `NEXT`
-- [x] `RECURSIVE`
-- [x] `RECURSIVE`: 親へ登りながら次の枝を探す DFS 風探索
-- [x] filesystem worker 分離
-- [x] render worker 分離
-- [x] ディレクトリ単位 cache
-- [x] ネットワークフォルダでの待ち時間(～100)
-- [x] ネットワークフォルダでの待ち時間(～1000)
-- [ ] フォルダの直下に画像ファイルが無いとき終了する問題の修正（"RECURCIVE"の場合は探してください）
-
-#### 優先度中
-- [ ] ネットワークフォルダでの待ち時間をさらに短縮(1000～1万)
-
-### viewer / render
-- [x] `viewer.align`
-- [x] `viewer.background.color`
-- [x] `viewer.background.tile`
-- [x] `viewer.animation`
-- [x] `render.zoom`
-- [x] `render.zoomMethod`
-- [-] 縮小時 pixel minimize
-- [ ] `render.orientation`
-- [ ] `render.transpearent`
-- [ ] 巨大な画像で落ちる問題（分割テクスチャなどで回避）
-
-#### 優先度低
-- [ ] `render.rotation`
-- [ ] `render.flap`
-- [ ] `render.flip`
-- [ ] `render.monochrome`
-
-## 1. 最優先
-
-### 1-0. 最優先のIssue
-- [+] 動作時のウィンドウ表示位置のズレ
-
-### 1-1. ネットワークフォルダ高速化
-- [ ] `DirectoryListing` を clone 前提ではなく参照前提にして無駄コピーを減らす
-- [ ] `RECURSIVE` の subtree 探索で sibling ごとの深掘りを途中結果 cache できるようにする
-- [ ] `SetCurrent` 後の同一フォルダ一覧ロードを段階化する
-- [ ] `scan_directory_listing` の sort コストを再確認し、必要なら `os_name` 実装時に整理する
-- [ ] 実測用の簡易 timing log を入れて、network share の律速点を切り分ける
-
-### 1-2. キー入力の整理
-- [x] `input.key_mapping` 用の内部 action を作る
-- [x] デフォルトキー設定を定義する
-- [x] egui input から action dispatch する
-- [x] SPACEをプレスしたままの状態だと画像が表示されないので適度なWAITを入れる
-- [+] メニュー表示中にビューアーイベントが透過しないようにする
-- [-] シングルクリックで次の画面を表示（上が実装された後）
-- [ ] 未実装 action を no-op として整理する
-- [x] `PageUp` / `PageDown` のフォルダ移動
-- [ ] `F1` help
-- [x] `P` setting
-- [*] 左クリックで簡単なメニュー
-- [ ] タッチパネルUI（低優先度）
-
-### 1-3. 設定画面の先行タスク
-- [x] option menu の土台
-- [x] viewer / render / window の編集 UI
-- [ ] 適用とキャンセルボタン
-
-### 1-4. config 永続化
-- [x] `configs/config.rs` を実装に接続
-- [x] config load
-- [x] config save
-- [x] 設定画面の現在項目を config に接続
-- [x] keep window state
+## src/configs/config.rs
+- [x] config load/save
+- [x] startup path load/save
 - [x] config import/export
-- [x] config option --config [path] 
-- [x] デフォルトパスの設定 macos, linux, windowsは、crate dirctoryで設定
-- [-] デフォルトパス、それ以外
+- [x] `--config [path]`
+- [x] window / render / resources / navigation の永続化
+- [x] plugin config の永続化土台
+- [ ] config schema のバージョニング
 
-### 1-5. ファイラー
- - [*] OS非依存のファイラー（最小版）
- - [*] フォントファミリー
- - [ ] i18n対応
- - [x] フォントサイズの選択
- - [ ] サムネイル表示機能、ソート機能
- - [ ] サムネイルの永続化 crate dirctoryで設定
- - [ ] レスポンシブ対応デザイン
- - [ ] Function Copy File
- - [ ] Function Move File
- - [ ] Function Trushed File
- - [ ] function convert format
-### 1-5-1. サブファイラー
- - [ ] 画面の下側に表示されるサブファイラー（ページ移動用）
+## src/configs/resourses/mod.rs
+- [x] システムロケール検出結果を resources へ適用
+- [x] `ja_JP.UTF-8 -> ja_JP` 正規化
+- [x] `ja_JP -> ja -> en` フォールバック
+- [x] `zh_TW -> zh -> en` フォールバック
+- [x] locale 別の system font 候補
+- [x] emoji font fallback
+- [x] `Auto / S / M / L / LL` のフォントサイズ
+- [x] DPI / 画面サイズベースの Auto サイズ
+- [ ] 外部 JSON resource 読み込み
 
-### 1-5-2. クラウドファイラー(Android, iOS専用)
- - [ ] ネットワークマウント
+## src/configs/resourses/english.rs
+- [-] 外部 resource ローダ導入時に役割を再整理
 
-### 1-6. CI/CD
-- [ ] Auto Builder
-- [ ] Windows x64(Win10/11)
-- [ ] MacOS Intel
-- [ ] MacOS Arm
-- [ ] Linux Win
-- [ ] Linux Arm
-- [ ] Android
-- [ ] iOS
-- [ ] iPad
+## src/configs/resourses/japanese.rs
+- [-] 外部 resource ローダ導入時に役割を再整理
 
-### 1-7. サムネイル
- - [ ] 独自サムネイル index作成（Bloom filter方式を検討　サムネイルのローカル保存は保留）
- - [ ] OS Indexキャプチャ
- - [ ] サムネイルのクリア機能（設定画面）
- - [ ] --clear chache
+## src/dependent/mod.rs
+- [x] OS 依存 API の窓口整理
+- [x] root drive 一覧取得の UI 用ラッパ
+- [x] 保存先フォルダ選択ダイアログの窓口
+- [x] http/https 一時ダウンロード窓口
 
-## 2. viewer / render
+## src/dependent/thirdparty/locale_config.rs
+- [x] locale 正規化ヘルパ
+- [x] resource locale fallback ヘルパ
 
-### 2-1. viewer
-- [ ] `viewer.fade`
-- [ ] 背景描画と texture 表示の責務整理
+## src/dependent/thirdparty/directories.rs
+- [x] 設定ディレクトリ解決
 
-### 2-2. render
-- [ ] drawers に変換パイプライン入口を作る
-- [ ] 再描画時に毎回 full resize しない cache 方針
-- [ ] resize 品質と速度の切り替え方針
-- [ ] メッセージUI
+## src/dependent/windows/mod.rs
+- [x] Windows locale 取得
+- [x] Windows 向け日本語/繁体字フォント候補
+- [x] Windows emoji font 候補
+- [x] Windows drive 列挙
+- [x] フォルダ選択ダイアログ
+- [+] PowerShell を使った http/https ダウンロード
 
-## 3. ファイル探索 / ListedFile
+## src/dependent/linux/mod.rs
+- [x] locale 環境変数取得
+- [x] Linux font fallback 候補
+- [ ] フォルダ選択ダイアログ
+- [ ] http/https ダウンロード実装
 
-### 3-1. filesystem 基盤
-- [x] `file` protocol
-- [x] sort order を `os_name` / `name` / `date` / `size` で切り替えられるようにする
-- [ ] filter 条件
-- [-] archive option (`FOLDER` / `SKIP` / `ARCHIVER`)
-- [x] directory scan を openable entry 前提にして `.wml` を拾う
-- [x] 仮想化ファイルシステム(ListedFile, zip用)
-- [x] `.zip` も同じ openable/archive mode に接続
-- [ ] （検討中）キャッシュのシリアライズ
+## src/dependent/darwin/mod.rs
+- [x] locale 環境変数取得
+- [x] macOS font fallback 候補
+- [ ] フォルダ選択ダイアログ
+- [ ] http/https ダウンロード実装
 
-### 3-2. ListedFile
-- [-] `.txt` / ListedFile parser
-- [x] `.wml` + `#!WMLViewer2 ListedFile 1.0` を判定
-- [x] フォルダ区切り `\\` / `/` を許可
-- [x] 相対 path 行を file entry として読む
-- [x] 相対 path の基準を ListedFile 親ディレクトリにする
+## src/dependent/android/mod.rs
+- [ ] Android 依存実装
+
+## src/dependent/ios/mod.rs
+- [ ] iOS 依存実装
+
+## src/dependent/other/mod.rs
+- [x] その他 OS 向け最低限の fallback
+
+## src/dependent/plugins/mod.rs
+- [+] plugin config 構造体
+- [+] provider 別 default 設定
+- [ ] plugin 優先順位の実行ロジック
+- [ ] MIME / wildcard 判定
+- [ ] decoder / encoder / filter の実行ロジック
+
+## src/dependent/plugins/system.rs
+- [+] system provider の既定値
+- [ ] WIC / OS bundle codec 実装
+
+## src/dependent/plugins/ffmpeg.rs
+- [+] ffmpeg provider の既定値
+- [ ] 動的ライブラリ探索と呼び出し
+
+## src/dependent/plugins/susie64.rs
+- [+] susie64 provider の既定値
+- [ ] Windows 専用ロード
+- [ ] image / archiver plugin 実行
+
+## src/filesystem/mod.rs
+- [x] 単一ファイル起動時に親ディレクトリの画像一覧を取得
+- [x] `STOP` / `NEXT` / `LOOP` / `RECURSIVE`
+- [x] filesystem worker 分離
+- [x] directory 単位 cache
+- [x] `.wml` / `.zip` を browser container として扱う
+- [x] fileviewer から zip の中身を辿れる
+- [x] sort order `os_name` / `name` / `date` / `size`
+- [*] `RECURSIVE` の探索コスト最適化
+- [ ] filter 条件の filesystem 側統合
+- [ ] archive option (`FOLDER` / `SKIP` / `ARCHIVER`)
+- [ ] キャッシュのシリアライズ
+
+## src/filesystem/listed_file.rs
+- [x] `.wml` 判定
+- [x] 相対 path 基準を ListedFile 親ディレクトリにする
 - [x] コメント行 `#` を無視
-- [-] `@command` / `@(...)` は予約語として parse
+- [-] `@command` / `@(...)` の本実装
 
-### 3-3. ZippedFile
-- [-] feature で有効/無効を切り替えられるようにする
-- [x] まず `zip` を読む
-- [x] `navigation` / `filesystem` から folder 相当として扱えるようにする
-- [ ] index読み込みとファイル読み込みの分離
-- [ ] zip entry sort
+## src/filesystem/zip_file.rs
+- [x] zip 読み込み
+- [x] zip virtual child path
+- [ ] zip entry sort option
 - [ ] zip encoding option
-- [ ] `gzip`
-- [ ] `lzh`
-- [ ] `7z`
-- [ ] `rar`（最低限）
+- [ ] `7z` / `rar` / `lzh` / `gzip`
 
-## 4. 非同期実装の整理
-- [x] render worker
-- [x] filesystem worker
-- [ ] app 起動時の初回 decode も完全に worker 化する
-- [ ] load / resize / filesystem request の state 管理を整理する
-- [ ] preload queue と連携できる構造にする
-- [ ] ライブラリの分割(coreとuiに分ける)
+## src/ui/mod.rs
+- [x] viewer / render / input / menu / i18n の分離
 
-## 5. 画像表示とディレクトリ操作の分離
+## src/ui/i18n/mod.rs
+- [x] `UiTextKey` ベースの翻訳経路
+- [x] settings menu のローカライズ
+- [x] filer menu の主要文言ローカライズ
+- [x] save dialog の主要文言ローカライズ
+- [ ] status message / zoom option / detailed menu 文言の全面移行
 
-- [ ] 画像表示 state と file list state を別 struct に分ける
-- [ ] loader と filesystem の依存方向を一方向にする
-- [ ] `app.rs` を composition root にする
+## src/ui/input/dispatch.rs
+- [x] key/pointer から action 解決
+- [ ] 未実装 action の no-op 整理
 
-## 6. 先読みデコード
+## src/ui/input/mod.rs
+- [x] egui input から viewer action dispatch
+- [x] settings 表示中は viewer 入力を止める
+- [x] 左クリックで次画像
+- [x] 右クリックでメニュー
+- [ ] `F1` help
+- [ ] タッチ UI
 
-- [ ] 次画像 1 枚先読み
-- [ ] preload queue struct
-- [ ] UI thread と decode thread の受け渡し
-- [ ] animation を含む preload サイズ制御
+## src/ui/menu/mod.rs
+- [x] menu 名前空間の分離
 
-## 7. マンガモード
-
-- [x] 横長時 2 ページ表示条件
-- [x] `r2l` / `l2r`
-- [ ] partition 描画
-- [ ] サムネイル起点のページ移動
-- [x] `Shift+C` toggle
-- [ ] @ script
-
-## 8. 設定画面
-
-- [x] 1-3 / 1-4 が終わったら import/export をつなぐ
-- [*] 左クリックメニュー
-- [x] 設定画面表示時のメインペインへのイベント貫通防止
+## src/ui/menu/config/mod.rs
+- [x] 設定画面の土台
+- [x] viewer / resources / render / window / navigation タブ
 - [x] 閉じるボタン
-- [ ] キーバインドUI
+- [x] 即時適用
+- [ ] 適用ボタン
+- [ ] キーバインド編集 UI
 
+## src/ui/menu/fileviewer/state.rs
+- [x] filer state の分離
+- [x] root drive 管理
+- [x] view mode / sort / filter / URL input state
+- [x] `available_roots` の曖昧 import 解消
 
-## 10. リソース
+## src/ui/menu/fileviewer/worker.rs
+- [x] `FilerCommand / FilerResult`
+- [x] directory scan の worker 分離
+- [x] metadata 収集
+- [x] sort / filter / ext filter / dir separate
+- [ ] lazy load の段階化
+- [ ] OS 準拠 name collation の強化
 
-- [+] 日本語/英語 resource のキー設計
-- [ ] 外部 resource 読み込み
+## src/ui/menu/fileviewer/thumbnail.rs
+- [+] サムネイル worker
+- [x] virtual zip/listed file のサムネイル生成
+- [ ] 永続キャッシュ
+- [ ] 失敗キャッシュ
 
-## 11. OSサポート
-- [x] Windows Support
-- [ ] Linux Support
-- [ ] Mac OS Support
-- [ ] Android Support
-- [ ] iOS Support 
-- [ ] インスーラー(windows)
-- [ ] アンインストーラ(windows)
+## src/ui/menu/fileviewer/mod.rs
+- [x] 一覧表示
+- [x] サムネイル表示（小・中・大）
+- [x] 詳細表示
+- [x] 表示切り替えボタン
+- [x] metadata 表示
+- [x] 昇順/降順切り替え
+- [x] 名前/更新日時/サイズソート
+- [x] フォルダとファイルを混ぜる/分ける
+- [x] ファイル名部分一致フィルタ
+- [x] 拡張子フィルタ
+- [x] ドライブ選択
+- [x] zip / archive の内容表示
+- [x] URL 入力欄（http/https は一時ダウンロードで表示）
+- [x] サブファイラー下部表示
+- [*] filer 表示時のさらなる高速化
+- [ ] SVG アイコン化
+- [ ] Copy / Move / Trash / Convert
 
-## 12. 以降
+## src/ui/render/layout.rs
+- [x] 背景描画
+- [x] 中央寄せ offset 計算
+- [x] manga spread のレイアウト補助
 
-- [ ] OS dependent encoder/decoder(about avif, hfif, GPU enc/dec)
-- [ ] plugin encoder/decoder
-- [ ] offline cache
-- [ ] filter function search similar images
-- [ ] filter function datetime
-- [ ] filter function filename
-- [ ] filter function extentions
-- [ ] metadata cache
-- [ ] filter function metadata
-- [ ] network protocol `http`
-- [ ] `smb`
-- [ ]  `cloud` cloud drives
-- [ ] key remap UI
-- [ ] OS dependent function
-- [ ] command / external command
-- [ ] WMLScripts
+## src/ui/render/texture.rs
+- [x] texture upload 補助
+- [x] texture size 制限時の downscale
+- [ ] 分割 texture による巨大画像対応
 
-## 次に着手する順
-最後までやりきろう
+## src/ui/render/worker.rs
+- [x] render worker
+- [x] load / resize request 分離
+- [ ] preload queue 連携
 
-1. 【最優先】リソースの追加(システムfontの切り替え)
-   1. OSからsystem言語を検出(ロケール)　dependet/thirdpartyの下にlocale_configを使って実装
-      1. ja_JP.UTF-8 -> ja_JP
-      2. en_US -> en_US
-      3. 日本語リソースは ja_JP -> ja -> en の順でフォールバック
-      4. 繁体語は、zh-TW -> zh -> en の順でフォールバック
-   2. locale fontを設定(systemフォントを使用)
-   3. fallbackを設定(絵文字フォントも扱える様にする)
-   4. 例：日本語の場合、Windows10は"Yu Gothic UI"、 Macは"ヒラギノ角ゴシック" -> NotoSansJP -> NotoSansCJK -> 英語デフォルトにフォールバック
-2. Issueの修正, マンガモード：フォルダをまたぐとFitScreenが解除される問題
-3. Issueの修正, マンガモード：リサイズすると表示位置が追従しない問題
-4. Issueの修正, ファイラー：日本語が化けるバグ（Fontの問題）
-5. Issueの修正, ファイラー：ファイラーから画像を選択すると次の画像に移動出来ない問題
-6. Issueの修正, ファイラー：ファイラーからドライブ選択が出来ない問題
-7. Issueの修正, ファイラー：ファイラーからフォルダを移動する時、遅い問題（lazy loadを検討してください）
-8. Issueの修正, ファイラー：ファイラーから画像を選択するとFitScreenが効かない問題
-9. Issueの修正, UI: 起動時のWindowsの位置がずれる問題
-   1. 設定をみて位置決め
-   2. 指定が無い場合は、起動スクリーンの60% 中央に来るように調整 
-10. 設定の下位層が深すぎて探しにくいので複数の設定をまとめたりtab切り替えや横並びを検討してください
-11. シングルクリックで次の画面を表示（設定画面では反応しないようにする）
-12. サムネイル：サムネイルエンジン
-13. ファイラー：一覧表示、サムネイル表示（大・中・小）、詳細表示、の追加と切り替えボタン
-14. ファイラー：UIにメタデータも表示出来る様にする。昇順/降順ソート切り替えボタン、ソート [名前でソート、更新日時でソート、サイズでソート]、フォルダとファイルを混ぜる/分ける、フィルタ(ファイル名の一部、拡張子でフィルタ)
-    1.  アイコンはsvgベース
-    2.  名前でソートは、OS準拠、大文字小文字を区別する、大文字小文字をしないを設定で変えられる様にする
-15. サブファイラー：viwer下側に表示されるスクロール型サムネイル表示のページ切り替えエンジン（r2l, l2rに準拠, フォルダ、アーカイブの中だけ表示する）
-16. CTRL+S でファイル保存（保存用ディレクトリと保存フォーマットと設定を選べるメニューが表示される）
-17. http/httpsでの画像表示（ただし、移動には対応できません　変わりにファイラーにURL入力画面を追加）
-18. 外部プラグインの実装：susie plugin の実装とplugin conifigの実装
-    1. dependent/pluginsの下に実装(ffmpegは共通, system, susie64はOS依存)
-    2. configの設定一覧 
-    ```jsonc
-   "plugins" : {
-    "susie64": { // windowsのみ, 他のOSでは無視
-      "enable": false,
-      "search_path": ["./"], // exeと同じ場所
-      "modules":
-      [ {
-        "enable" : false, //
-        "path": "", // 省略可
-        "plugin_name": "", //
-        "type": "image", // or "archiver"
-        "ext": [  // 対応するフォーマット
-          {
-            "enable": false,
-            "mime": ["image/avif"],  //例 ["image/*] ワイルドカード可能
-            "modules": [{
-              "type": "decode", // "decode", "encode", "filter" 
-              "priority": "high", // "lowest", "low", "middle", "high" (プラグインが複数ある場合どれを優先するか決める、lowは内製を再優先, middleは他のプラグインが無い場合、 highは最優先，"lowest"は最後の手段, バッティングした場合は、順位が上にある方が優先)
-            }]
-          } // , {}...
-        ],
-        "":
-      }]
-    },
-    "system": { // OSバンドル系 windowsは WIC APIベース Windowsは一部Codecがオプションで存在しない場合があるので注意
-      "enable": false,
-      "search_path": "", // OSに依存するため設定不可
-      // 以下同じ
-    },
-    "ffmpeg": { // ffmpegの動的ライブラリを呼ぶ linuxはシステムの変わり
-      // 上と同じ
-    }
-  }
-  ```
-19.  todo.mdをチェックして整理する
+## src/ui/render/mod.rs
+- [x] viewer から render 責務を切り出し
+- [*] 変換パイプラインの追加整理
+
+## src/ui/viewer/options.rs
+- [x] viewer / render / window option struct
+- [x] grayscale option
+- [x] manga option
+
+## src/ui/viewer/animation.rs
+- [x] アニメーション表示の基礎
+- [ ] preload との統合
+
+## src/ui/viewer/mod.rs
+- [x] ViewerApp が composition root として worker を束ねる
+- [*] 画像 state と viewer state の完全分離
+- [x] render worker / filesystem worker / filer worker / thumbnail worker を統合
+- [x] filer に引きずられない viewer 更新
+- [x] manga mode の中央寄せ
+- [x] manga mode でフォルダ跨ぎ時の FitScreen 再計算
+- [x] resize イベントに寄せた FitScreen 再計算
+- [x] filer から画像選択後に次画像移動できる
+- [x] filer から画像選択後に FitScreen を再適用
+- [x] 保存ダイアログ（保存先フォルダ選択 + 形式選択）
+- [x] grayscale 表示トグル
+- [*] filer 表示時の manga レイアウトは実機で継続確認
+- [ ] app 起動時の初回 decode 完全 worker 化
+- [ ] preload queue
+- [ ] message UI 整理
+
+## src/drawers/affine.rs
+- [x] resize / interpolation 実装
+- [ ] resize 品質と速度の細かな切り替え
+
+## src/drawers/image.rs
+- [x] image load
+- [x] image save
+- [x] SaveFormat 選択
+- [ ] 保存オプションの詳細化
+
+## src/drawers/filter.rs
+- [+] grayscale 系 filter は存在
+- [ ] viewer のフィルタパイプライン統合
+
+## src/drawers/grayscale.rs
+- [+] グレースケール処理の基礎
+
+## src/drawers/canvas.rs
+- [x] Canvas 基盤
+
+## src/drawers/draw.rs
+- [x] 基本描画
+
+## src/drawers/clear.rs
+- [x] クリア処理
+
+## src/drawers/utils.rs
+- [x] 補助関数
+
+## src/drawers/error.rs
+- [x] 描画エラー型
+
+## src/error/mod.rs
+- [x] 共通 error module の土台
+
+## src/graphics/mod.rs
+- [-] 役割の再整理
+
+## 次に着手
+- issues: マンガモード、サイズ変更が反復実行されるバグ（サイズイベント検出時以外は変更しない用に変更）
+- `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
+- `src/ui/menu/fileviewer/worker.rs` に lazy load / incremental snapshot を入れて大規模フォルダを高速化する
+- `src/ui/i18n/mod.rs` を JSON resource loader に拡張し、未ローカライズ文言を全面移行する
+- `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する

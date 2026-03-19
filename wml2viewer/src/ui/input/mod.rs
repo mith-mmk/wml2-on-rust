@@ -9,7 +9,7 @@ use std::time::Instant;
 impl ViewerApp {
     pub(crate) fn handle_keyboard(&mut self, ctx: &egui::Context) {
         if ctx.input(|i| i.modifiers.ctrl && i.key_pressed(egui::Key::S)) {
-            self.save_current_as(self.save_format);
+            self.open_save_dialog();
         }
 
         if self.show_settings {
@@ -57,17 +57,26 @@ impl ViewerApp {
                     self.last_frame_at = Instant::now();
                     self.upload_current_frame();
                 }
+                ViewerAction::ToggleGrayscale => {
+                    self.options.grayscale = !self.options.grayscale;
+                    self.upload_current_frame();
+                    if self.companion_rendered.is_some() {
+                        self.pending_fit_recalc = true;
+                    }
+                }
                 ViewerAction::ToggleMangaMode => {
                     self.options.manga_mode = !self.options.manga_mode;
+                    self.pending_fit_recalc = true;
                 }
                 ViewerAction::ToggleSettings => {
                     self.show_settings = !self.show_settings;
                 }
                 ViewerAction::ToggleFiler => {
                     self.show_filer = !self.show_filer;
+                    self.pending_fit_recalc = true;
                 }
                 ViewerAction::SaveAs => {
-                    self.save_current_as(self.save_format);
+                    self.open_save_dialog();
                 }
             }
         }

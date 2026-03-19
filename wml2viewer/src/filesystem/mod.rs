@@ -343,6 +343,14 @@ pub fn list_openable_entries(dir: &Path, sort: NavigationSortOption) -> Vec<Path
 }
 
 pub fn list_browser_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathBuf> {
+    if is_zip_file_path(dir) {
+        return build_zip_virtual_children(dir);
+    }
+
+    if is_listed_file_path(dir) {
+        return build_listed_virtual_children(dir);
+    }
+
     let mut entries = Vec::new();
     let Ok(read_dir) = fs::read_dir(dir) else {
         return entries;
@@ -365,6 +373,10 @@ pub fn list_browser_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathB
     entries.extend(dirs);
     entries.extend(files);
     entries
+}
+
+pub fn is_browser_container(path: &Path) -> bool {
+    path.is_dir() || is_zip_file_path(path) || is_listed_file_path(path)
 }
 
 pub fn adjacent_entry(path: &Path, sort: NavigationSortOption, step: isize) -> Option<PathBuf> {

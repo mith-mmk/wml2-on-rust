@@ -28,12 +28,14 @@ impl ViewerApp {
         let window_text = self.text(UiTextKey::Window);
         let navigation_text = self.text(UiTextKey::Navigation);
         let animation_text = self.text(UiTextKey::Animation);
+        let grayscale_text = self.text(UiTextKey::Grayscale);
         let manga_mode_text = self.text(UiTextKey::MangaMode);
         let manga_rtl_text = self.text(UiTextKey::MangaRightToLeft);
         let background_text = self.text(UiTextKey::Background);
         let locale_text = self.text(UiTextKey::Locale);
         let fonts_text = self.text(UiTextKey::Fonts);
         let font_size_text = self.text(UiTextKey::FontSize);
+        let auto_text = self.text(UiTextKey::Auto);
         let zoom_mode_text = self.text(UiTextKey::ZoomMode);
         let resize_text = self.text(UiTextKey::Resize);
         let fullscreen_text = self.text(UiTextKey::Fullscreen);
@@ -46,6 +48,9 @@ impl ViewerApp {
         let end_of_folder_text = self.text(UiTextKey::EndOfFolder);
         let reload_current_text = self.text(UiTextKey::ReloadCurrent);
         let close_text = self.text(UiTextKey::Close);
+        let black_text = self.text(UiTextKey::Black);
+        let gray_text = self.text(UiTextKey::Gray);
+        let tile_text = self.text(UiTextKey::Tile);
         egui::Window::new(settings_text)
             .open(&mut open)
             .resizable(true)
@@ -73,6 +78,9 @@ impl ViewerApp {
                             .checkbox(&mut self.options.animation, animation_text)
                             .changed();
                         config_changed |= ui
+                            .checkbox(&mut self.options.grayscale, grayscale_text)
+                            .changed();
+                        config_changed |= ui
                             .checkbox(&mut self.options.manga_mode, manga_mode_text)
                             .changed();
                         config_changed |= ui
@@ -81,15 +89,15 @@ impl ViewerApp {
 
                         ui.horizontal(|ui| {
                             ui.label(background_text);
-                            if ui.button("Black").clicked() {
+                            if ui.button(black_text).clicked() {
                                 self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
                                 config_changed = true;
                             }
-                            if ui.button("Gray").clicked() {
+                            if ui.button(gray_text).clicked() {
                                 self.options.background = BackgroundStyle::Solid([48, 48, 48, 255]);
                                 config_changed = true;
                             }
-                            if ui.button("Tile").clicked() {
+                            if ui.button(tile_text).clicked() {
                                 self.options.background = BackgroundStyle::Tile {
                                     color1: [32, 32, 32, 255],
                                     color2: [80, 80, 80, 255],
@@ -120,7 +128,7 @@ impl ViewerApp {
                                         .selectable_value(
                                             &mut self.resources.font_size,
                                             FontSizePreset::Auto,
-                                            "Auto",
+                                            auto_text,
                                         )
                                         .changed();
                                     config_changed |= ui
@@ -365,6 +373,7 @@ impl ViewerApp {
             viewer: self.options.clone(),
             window: self.window_options.clone(),
             render: self.render_options.clone(),
+            plugins: self.plugins.clone(),
             input: Default::default(),
             resources: self.resources.clone(),
             navigation: NavigationOptions {

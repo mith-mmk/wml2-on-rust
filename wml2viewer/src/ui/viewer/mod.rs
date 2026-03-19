@@ -1,15 +1,20 @@
 use crate::configs::config::save_app_config;
 use crate::configs::resourses::{AppliedResources, apply_resources};
+use crate::dependent::pick_save_directory;
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
     FilesystemCommand, FilesystemResult, adjacent_entry, spawn_filesystem_worker,
 };
 use crate::options::{
-    AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, ResourceOptions, ViewerAction,
+    AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, PluginConfig, ResourceOptions,
+    ViewerAction,
 };
 use crate::ui::i18n::{UiTextKey, tr};
 use crate::ui::menu::fileviewer::state::FilerState;
+use crate::ui::menu::fileviewer::thumbnail::{
+    ThumbnailCommand, ThumbnailResult, spawn_thumbnail_worker,
+};
 use crate::ui::menu::fileviewer::worker::{FilerCommand, FilerResult, spawn_filer_worker};
 use crate::ui::render::{
     ActiveRenderRequest, RenderCommand, RenderResult, aligned_offset, canvas_to_color_image,
@@ -20,6 +25,7 @@ use crate::ui::viewer::options::{
 };
 use eframe::egui::{self, Pos2, TextureHandle, TextureOptions, vec2};
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::error::Error;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
@@ -51,6 +57,7 @@ pub(crate) struct ViewerApp {
     pub(crate) options: ViewerOptions,
     pub(crate) window_options: WindowOptions,
     pub(crate) resources: ResourceOptions,
+    pub(crate) plugins: PluginConfig,
     pub(crate) applied_locale: String,
     pub(crate) loaded_font_names: Vec<String>,
     pub(crate) keymap: HashMap<KeyBinding, ViewerAction>,
@@ -67,6 +74,11 @@ pub(crate) struct ViewerApp {
     pub(crate) filer_tx: Sender<FilerCommand>,
     pub(crate) filer_rx: Receiver<FilerResult>,
     pub(crate) next_filer_request_id: u64,
+    pub(crate) thumbnail_tx: Sender<ThumbnailCommand>,
+    pub(crate) thumbnail_rx: Receiver<ThumbnailResult>,
+    pub(crate) next_thumbnail_request_id: u64,
+    pub(crate) thumbnail_pending: HashSet<PathBuf>,
+    pub(crate) thumbnail_cache: HashMap<PathBuf, TextureHandle>,
     pub(crate) navigator_ready: bool,
     pub(crate) loading_message: Option<String>,
     pub(crate) last_navigation_at: Option<Instant>,
@@ -80,7 +92,9 @@ pub(crate) struct ViewerApp {
     pub(crate) show_left_menu: bool,
     pub(crate) left_menu_pos: Pos2,
     pub(crate) save_format: SaveFormat,
+    pub(crate) save_output_dir: Option<PathBuf>,
     pub(crate) save_message: Option<String>,
+    pub(crate) show_save_dialog: bool,
     pub(crate) show_filer: bool,
     pub(crate) filer: FilerState,
     pub(crate) startup_window_sync_frames: usize,
@@ -124,6 +138,13 @@ fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOpti
     }
 }
 
+fn viewport_size_changed(current: egui::Vec2, previous: egui::Vec2) -> bool {
+    if previous == egui::Vec2::ZERO {
+        return true;
+    }
+    (current.x - previous.x).abs() > 1.0 || (current.y - previous.y).abs() > 1.0
+}
+
 impl ViewerApp {
     pub(crate) fn new(
         cc: &eframe::CreationContext<'_>,
@@ -155,6 +176,7 @@ impl ViewerApp {
         let (companion_tx, companion_rx) = spawn_render_worker(source.clone());
         let (fs_tx, fs_rx) = spawn_filesystem_worker(config.navigation.sort);
         let (filer_tx, filer_rx) = spawn_filer_worker();
+        let (thumbnail_tx, thumbnail_rx) = spawn_thumbnail_worker();
 
         let mut this = Self {
             current_navigation_path: navigation_path.clone(),
@@ -178,6 +200,7 @@ impl ViewerApp {
             options: config.viewer,
             window_options: config.window,
             resources: config.resources,
+            plugins: config.plugins,
             applied_locale: locale,
             loaded_font_names: loaded_fonts,
             keymap: config.input.merged_with_defaults(),
@@ -194,6 +217,11 @@ impl ViewerApp {
             filer_tx,
             filer_rx,
             next_filer_request_id: 0,
+            thumbnail_tx,
+            thumbnail_rx,
+            next_thumbnail_request_id: 0,
+            thumbnail_pending: HashSet::new(),
+            thumbnail_cache: HashMap::new(),
             navigator_ready: false,
             loading_message: None,
             last_navigation_at: None,
@@ -207,7 +235,9 @@ impl ViewerApp {
             show_left_menu: false,
             left_menu_pos: Pos2::ZERO,
             save_format: SaveFormat::Png,
+            save_output_dir: path.parent().map(|parent| parent.to_path_buf()),
             save_message: None,
+            show_save_dialog: false,
             show_filer: show_filer_on_start,
             filer: FilerState::default(),
             startup_window_sync_frames: 0,
@@ -291,7 +321,7 @@ impl ViewerApp {
                 self.max_texture_side,
                 self.render_options.zoom_method,
             );
-            (canvas_to_color_image(&canvas), display_scale)
+            (self.color_image_from_canvas(&canvas), display_scale)
         };
 
         self.texture_display_scale = display_scale;
@@ -349,17 +379,14 @@ impl ViewerApp {
         self.request_load_path(self.current_navigation_path.clone())
     }
 
-    fn current_directory(&self) -> Option<PathBuf> {
+    pub(crate) fn current_directory(&self) -> Option<PathBuf> {
         if self.current_navigation_path.is_dir() {
             return Some(self.current_navigation_path.clone());
         }
         if let Some(parent) = self.current_navigation_path.parent() {
             let marker = parent.file_name().and_then(|name| name.to_str());
             if matches!(marker, Some("__wmlv__" | "__zipv__")) {
-                return parent
-                    .parent()
-                    .and_then(|path| path.parent())
-                    .map(|path| path.to_path_buf());
+                return parent.parent().map(|path| path.to_path_buf());
             }
             return Some(parent.to_path_buf());
         }
@@ -374,7 +401,24 @@ impl ViewerApp {
             dir,
             sort: self.navigation_sort,
             selected,
+            sort_field: self.filer.sort_field,
+            ascending: self.filer.ascending,
+            separate_dirs: self.filer.separate_dirs,
+            filter_text: self.filer.filter_text.clone(),
+            extension_filter: self.filer.extension_filter.clone(),
+            name_sort_mode: self.filer.name_sort_mode,
         });
+    }
+
+    pub(crate) fn refresh_current_filer_directory(&mut self) {
+        if let Some(dir) = self
+            .filer
+            .directory
+            .clone()
+            .or_else(|| self.current_directory())
+        {
+            self.request_filer_directory(dir, self.filer.selected.clone());
+        }
     }
 
     pub(crate) fn set_filesystem_current(&mut self, path: PathBuf) {
@@ -385,7 +429,11 @@ impl ViewerApp {
     }
 
     pub(crate) fn save_current_as(&mut self, format: SaveFormat) {
-        let Some(parent) = self.current_path.parent() else {
+        let Some(parent) = self
+            .save_output_dir
+            .clone()
+            .or_else(|| self.current_path.parent().map(|path| path.to_path_buf()))
+        else {
             self.save_message = Some("Cannot determine save directory".to_string());
             return;
         };
@@ -404,6 +452,75 @@ impl ViewerApp {
                 self.save_message = Some(format!("Save failed: {err}"));
             }
         }
+    }
+
+    fn color_image_from_canvas(&self, canvas: &Canvas) -> egui::ColorImage {
+        let mut image = canvas_to_color_image(canvas);
+        if self.options.grayscale {
+            for pixel in &mut image.pixels {
+                let luma = (0.299 * pixel.r() as f32
+                    + 0.587 * pixel.g() as f32
+                    + 0.114 * pixel.b() as f32)
+                    .round()
+                    .clamp(0.0, 255.0) as u8;
+                *pixel = egui::Color32::from_rgba_unmultiplied(luma, luma, luma, pixel.a());
+            }
+        }
+        image
+    }
+
+    pub(crate) fn open_save_dialog(&mut self) {
+        self.show_save_dialog = true;
+    }
+
+    fn save_dialog_ui(&mut self, ctx: &egui::Context) {
+        if !self.show_save_dialog {
+            return;
+        }
+
+        let mut open = self.show_save_dialog;
+        egui::Window::new(self.text(UiTextKey::Save))
+            .open(&mut open)
+            .resizable(false)
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label(self.text(UiTextKey::Directory));
+                    ui.label(
+                        self.save_output_dir
+                            .as_ref()
+                            .map(|path| path.display().to_string())
+                            .unwrap_or_else(|| self.text(UiTextKey::NotSelected).to_string()),
+                    );
+                });
+                if ui.button(self.text(UiTextKey::ChooseFolder)).clicked() {
+                    self.save_output_dir = pick_save_directory()
+                        .or_else(|| self.current_path.parent().map(|path| path.to_path_buf()));
+                }
+                ui.horizontal(|ui| {
+                    ui.label(self.text(UiTextKey::Format));
+                    egui::ComboBox::from_id_salt("save_format_dialog")
+                        .selected_text(self.save_format.to_string())
+                        .show_ui(ui, |ui| {
+                            for format in SaveFormat::all() {
+                                ui.selectable_value(
+                                    &mut self.save_format,
+                                    format,
+                                    format.to_string(),
+                                );
+                            }
+                        });
+                });
+                ui.horizontal(|ui| {
+                    if ui.button(self.text(UiTextKey::Save)).clicked() {
+                        self.save_current_as(self.save_format);
+                        self.show_save_dialog = false;
+                    }
+                    if ui.button(self.text(UiTextKey::Cancel)).clicked() {
+                        self.show_save_dialog = false;
+                    }
+                });
+            });
+        self.show_save_dialog = open;
     }
 
     fn is_current_portrait_page(&self) -> bool {
@@ -591,6 +708,11 @@ impl ViewerApp {
         self.next_filer_request_id
     }
 
+    fn alloc_thumbnail_request_id(&mut self) -> u64 {
+        self.next_thumbnail_request_id += 1;
+        self.next_thumbnail_request_id
+    }
+
     fn init_filesystem(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
         let request_id = self.alloc_fs_request_id();
         self.active_fs_request_id = Some(request_id);
@@ -730,7 +852,7 @@ impl ViewerApp {
                         self.max_texture_side,
                         self.render_options.zoom_method,
                     );
-                    let image = canvas_to_color_image(&canvas);
+                    let image = self.color_image_from_canvas(&canvas);
                     let texture = if let Some(texture) = &mut self.companion_texture {
                         texture.set(image, TextureOptions::LINEAR);
                         texture.clone()
@@ -837,6 +959,45 @@ impl ViewerApp {
         }
     }
 
+    fn poll_thumbnail_worker(&mut self) {
+        loop {
+            match self.thumbnail_rx.try_recv() {
+                Ok(ThumbnailResult::Ready {
+                    _request_id: _,
+                    path,
+                    image,
+                }) => {
+                    self.thumbnail_pending.remove(&path);
+                    let texture = self.egui_ctx.load_texture(
+                        format!("thumb:{}", path.display()),
+                        image,
+                        TextureOptions::LINEAR,
+                    );
+                    self.thumbnail_cache.insert(path, texture);
+                }
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => {
+                    self.thumbnail_pending.clear();
+                    break;
+                }
+            }
+        }
+    }
+
+    pub(crate) fn ensure_thumbnail(&mut self, path: &std::path::Path, max_side: u32) {
+        if self.thumbnail_cache.contains_key(path) || self.thumbnail_pending.contains(path) {
+            return;
+        }
+        let request_id = self.alloc_thumbnail_request_id();
+        let path = path.to_path_buf();
+        self.thumbnail_pending.insert(path.clone());
+        let _ = self.thumbnail_tx.send(ThumbnailCommand::Generate {
+            request_id,
+            path,
+            max_side,
+        });
+    }
+
     fn sync_window_state(&mut self, ctx: &egui::Context) {
         let viewport = ctx.input(|i| i.viewport().clone());
         self.startup_window_sync_frames += 1;
@@ -877,11 +1038,14 @@ impl eframe::App for ViewerApp {
         self.poll_companion_worker();
         self.poll_filesystem();
         self.poll_filer_worker();
+        self.poll_thumbnail_worker();
         self.sync_manga_companion(ctx);
         self.handle_keyboard(ctx);
         self.settings_ui(ctx);
+        self.save_dialog_ui(ctx);
         self.left_click_menu_ui(ctx);
         self.filer_ui(ctx);
+        self.subfiler_ui(ctx);
 
         let zoom_delta = ctx.input(|i| i.zoom_delta());
 
@@ -902,7 +1066,8 @@ impl eframe::App for ViewerApp {
             let viewport = ui.available_size();
 
             if !self.empty_mode
-                && (viewport != self.last_viewport_size || self.pending_fit_recalc)
+                && (viewport_size_changed(viewport, self.last_viewport_size)
+                    || self.pending_fit_recalc)
                 && !matches!(self.render_options.zoom_option, ZoomOption::None)
             {
                 self.last_viewport_size = viewport;

@@ -54,7 +54,11 @@ pub fn run(
         native_options,
         Box::new(move |cc| {
             let _ = apply_resources(&cc.egui_ctx, &config.resources);
-            let screen = cc.egui_ctx.input(|i| i.viewport().monitor_size.unwrap());
+            let screen = cc.egui_ctx.input(|i| {
+                i.viewport()
+                    .monitor_size
+                    .unwrap_or(egui::vec2(1280.0, 720.0))
+            });
 
             let image_size = egui::vec2(image.canvas.width() as f32, image.canvas.height() as f32);
             let padding = egui::vec2(32.0, 96.0);
@@ -76,26 +80,23 @@ pub fn run(
                     .min(screen.y),
             );
 
-            if config.window.remember_size {
-                cc.egui_ctx
-                    .send_viewport_cmd(egui::ViewportCommand::InnerSize(window_size));
-            }
-            if config.window.remember_position {
-                match &config.window.start_position {
-                    WindowStartPosition::Center => {
-                        let centered = egui::pos2(
-                            ((screen.x - window_size.x) * 0.5).max(0.0),
-                            ((screen.y - window_size.y) * 0.5).max(0.0),
-                        );
-                        cc.egui_ctx
-                            .send_viewport_cmd(egui::ViewportCommand::OuterPosition(centered));
-                    }
-                    WindowStartPosition::Exact { x, y } => {
-                        cc.egui_ctx
-                            .send_viewport_cmd(egui::ViewportCommand::OuterPosition(egui::pos2(
-                                *x, *y,
-                            )));
-                    }
+            cc.egui_ctx
+                .send_viewport_cmd(egui::ViewportCommand::InnerSize(window_size));
+
+            match &config.window.start_position {
+                WindowStartPosition::Center => {
+                    let centered = egui::pos2(
+                        ((screen.x - window_size.x) * 0.5).max(0.0),
+                        ((screen.y - window_size.y) * 0.5).max(0.0),
+                    );
+                    cc.egui_ctx
+                        .send_viewport_cmd(egui::ViewportCommand::OuterPosition(centered));
+                }
+                WindowStartPosition::Exact { x, y } => {
+                    cc.egui_ctx
+                        .send_viewport_cmd(egui::ViewportCommand::OuterPosition(egui::pos2(
+                            *x, *y,
+                        )));
                 }
             }
 

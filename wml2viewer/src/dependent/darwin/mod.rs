@@ -37,3 +37,11 @@ pub fn locale_font_candidates(locale: &str) -> Vec<PathBuf> {
 pub fn emoji_font_candidates() -> Vec<PathBuf> {
     vec![PathBuf::from("/System/Library/Fonts/Apple Color Emoji.ttc")]
 }
+
+pub fn pick_directory_dialog() -> Option<PathBuf> {
+    None
+}
+
+pub fn download_url_to_temp(_url: &str) -> Option<PathBuf> {
+    None
+}

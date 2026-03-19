@@ -9,6 +9,7 @@ pub struct ViewerOptions {
     pub background: BackgroundStyle,
     pub fade: bool,
     pub animation: bool,
+    pub grayscale: bool,
     pub manga_mode: bool,
     pub manga_right_to_left: bool,
 }
@@ -20,6 +21,7 @@ impl Default for ViewerOptions {
             background: BackgroundStyle::Solid([0, 0, 0, 255]),
             fade: false,
             animation: true,
+            grayscale: false,
             manga_mode: false,
             manga_right_to_left: true,
         }

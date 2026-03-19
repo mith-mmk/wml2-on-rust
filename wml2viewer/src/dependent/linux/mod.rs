@@ -37,3 +37,11 @@ pub fn emoji_font_candidates() -> Vec<PathBuf> {
         PathBuf::from("/usr/share/fonts/noto/NotoColorEmoji.ttf"),
     ]
 }
+
+pub fn pick_directory_dialog() -> Option<PathBuf> {
+    None
+}
+
+pub fn download_url_to_temp(_url: &str) -> Option<PathBuf> {
+    None
+}

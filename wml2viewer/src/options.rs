@@ -5,6 +5,7 @@
 use std::collections::HashMap;
 
 pub use crate::configs::resourses::{FontSizePreset, ResourceOptions};
+pub use crate::dependent::plugins::PluginConfig;
 pub use crate::ui::viewer::options::{
     BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
     ZoomOption,
@@ -16,6 +17,7 @@ pub struct AppConfig {
     pub window: WindowOptions,
     pub render: RenderOptions,
     pub resources: ResourceOptions,
+    pub plugins: PluginConfig,
     pub input: InputOptions,
     pub navigation: NavigationOptions,
 }
@@ -33,6 +35,7 @@ pub enum ViewerAction {
     FirstImage,
     LastImage,
     ToggleAnimation,
+    ToggleGrayscale,
     ToggleMangaMode,
     ToggleSettings,
     ToggleFiler,
@@ -97,6 +100,10 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
     map.insert(KeyBinding::new("ArrowLeft"), ViewerAction::PrevImage);
     map.insert(KeyBinding::new("Home"), ViewerAction::FirstImage);
     map.insert(KeyBinding::new("End"), ViewerAction::LastImage);
+    map.insert(
+        KeyBinding::new("G").with_shift(),
+        ViewerAction::ToggleGrayscale,
+    );
     map.insert(
         KeyBinding::new("C").with_shift(),
         ViewerAction::ToggleMangaMode,

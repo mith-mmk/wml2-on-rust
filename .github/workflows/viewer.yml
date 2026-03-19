@@ -26,21 +26,23 @@ jobs:
       - name: build wml2viewer
         run: cargo build --release -p wml2viewer
 
-      - name: prepare dist
+      - name: zip windows
+        if: matrix.os == 'windows-latest'
         run: |
           mkdir dist
+          copy target/release/wml2viewer.exe dist/
+          Compress-Archive -Path dist/wml2viewer.exe -DestinationPath dist/wml2viewer-windows.zip        
+            - name: prepare dist
+              run: |
+                mkdir dist
+        shell: pwsh
 
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp target/release/wml2viewer.exe dist/wml2viewer.exe
-            cd dist && zip wml2viewer-windows.zip wml2viewer.exe
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            cp target/release/wml2viewer dist/wml2viewer
-            cd dist && zip wml2viewer-macos.zip wml2viewer
-          else
-            cp target/release/wml2viewer dist/wml2viewer
-            cd dist && zip wml2viewer-linux.zip wml2viewer
-          fi
-        shell: bash
+      - name: zip (unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir dist
+          cp target/release/wml2viewer dist/
+          zip dist/wml2viewer-${{ matrix.os }}.zip dist/wml2viewer
 
       - name: create release
         uses: softprops/action-gh-release@v2

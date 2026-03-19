@@ -83,7 +83,6 @@
 - [x] Windows emoji font 候補
 - [x] Windows drive 列挙
 - [x] フォルダ選択ダイアログ
-- [x] PowerShell 依存 http ダウンロードからの離脱
 - [+] 拡張子関連付け登録
 - [+] 拡張子関連付け clean
 - [x] winres による exe icon resource 登録
@@ -91,14 +90,14 @@
 ## src/dependent/linux/mod.rs
 - [x] locale 環境変数取得
 - [x] Linux font fallback 候補
+- [*] build
 - [ ] フォルダ選択ダイアログ
-- [ ] http/https ダウンロード実装
 
 ## src/dependent/darwin/mod.rs
 - [x] locale 環境変数取得
 - [x] macOS font fallback 候補
+- [*] build
 - [ ] フォルダ選択ダイアログ
-- [ ] http/https ダウンロード実装
 
 ## src/dependent/android/mod.rs
 - [ ] Android 依存実装
@@ -172,6 +171,7 @@
 ## src/ui/input/dispatch.rs
 - [x] key/pointer から action 解決
 - [ ] 未実装 action の no-op 整理
+- [ ] 動的入力割当
 
 ## src/ui/input/mod.rs
 - [x] egui input から viewer action dispatch
@@ -230,6 +230,7 @@
 - [x] サムネイル worker
 - [x] virtual zip/listed file のサムネイル生成
 - [+] 巨大 zip bmp thumbnail の抑制
+- [ ] thumbnail抑制オプション(ALT=image.svgを代用)
 - [ ] 永続キャッシュ
 - [ ] 失敗キャッシュ
 
@@ -365,31 +366,9 @@
 
 ## 次に着手
 中断せずやりきる
-- [x] issue: メッセージoverlayの自己主張が強すぎです。一番下にこっそり表示してください
-- [*] issue: 二重起動の制限 
-  - [-] 一旦取りやめ
-  - [-] windowsの場合は下を参考(crate windows-sysを利用)　他のosも仮実装してください
-```rs
-use windows_sys::Win32::System::Threading::{
-    OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION
-};
-use windows_sys::Win32::Foundation::CloseHandle;
-
-fn is_alive(pid: u32) -> bool {
-    unsafe {
-        let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
-        if handle == 0 {
-            return false;
-        }
-        CloseHandle(handle);
-        true
-    }
-}
-```
-- [x] issue: uiのi18n実装は`src/ui/i18n/mod.rs`ではなく、`src/configs/resoures/`の下に再実装してください。
+- [ ] issue: LinuxとMacOS用がbuild出来ない問題
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
-- [+] `src/ui/i18n/mod.rs` JSON resource loaderは`src/configs/resoures/`に移動してください。未ローカライズ文言を全面移行する
 - [ ] `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
 - 確認中: [*] zip 内ファイルソートの実機確認
 - プラグイン: 実装続き

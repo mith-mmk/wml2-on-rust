@@ -26,7 +26,7 @@ jobs:
       - name: build wml2viewer
         run: cargo build --release -p wml2viewer
 
-      - name: zip windows
+      - name: zip (windows)
         if: matrix.os == 'windows-latest'
         run: |
           mkdir dist
@@ -34,7 +34,7 @@ jobs:
           copy LICENSE dist/
           copy wml2viewer/resources/help.html dist/
           copy target/release/wml2viewer.exe dist/
-          Compress-Archive -Path dist/wml2viewer.exe -DestinationPath dist/wml2viewer-windows.zip        
+          Compress-Archive -Path dist/*  -DestinationPath dist/wml2viewer-windows.zip        
         shell: pwsh
 
       - name: zip (unix)
@@ -42,6 +42,9 @@ jobs:
         run: |
           mkdir dist
           cp target/release/wml2viewer dist/
+          cp wml2viewer/README.* dist/
+          cp LICENSE dist/
+          cp wml2viewer/resources/help.html dist/
           zip dist/wml2viewer-${{ matrix.os }}.zip dist/wml2viewer
 
       - name: create release

@@ -85,6 +85,16 @@ pub fn download_http_url(url: &str) -> Option<std::path::PathBuf> {
     Some(path)
 }
 
+pub fn register_system_file_associations(
+    exe_path: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    register_file_associations(exe_path)
+}
+
+pub fn clean_system_integration() -> Result<(), Box<dyn std::error::Error>> {
+    clean_file_associations()
+}
+
 fn infer_http_extension<'a>(url: &'a str, content_type: Option<&str>) -> Option<&'a str> {
     let from_url = url
         .rsplit_once('.')
@@ -105,4 +115,16 @@ fn infer_http_extension<'a>(url: &'a str, content_type: Option<&str>) -> Option<
         value if value.contains("avif") => Some("avif"),
         _ => None,
     }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn register_file_associations(
+    _exe_path: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    Err(std::io::Error::other("system integration is only supported on Windows").into())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn clean_file_associations() -> Result<(), Box<dyn std::error::Error>> {
+    Err(std::io::Error::other("system integration is only supported on Windows").into())
 }

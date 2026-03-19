@@ -1,7 +1,10 @@
 use crate::configs::config::{load_app_config, save_app_config};
 use crate::configs::resourses::{FontSizePreset, apply_resources};
 use crate::dependent::plugins::discover_plugin_modules;
-use crate::dependent::{default_download_dir, pick_save_directory};
+use crate::dependent::{
+    clean_system_integration, default_download_dir, pick_save_directory,
+    register_system_file_associations,
+};
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions};
 use crate::ui::i18n::UiTextKey;
@@ -50,6 +53,8 @@ impl ViewerApp {
         let fullscreen_text = self.text(UiTextKey::Fullscreen);
         let remember_size_text = self.text(UiTextKey::RememberSize);
         let remember_position_text = self.text(UiTextKey::RememberPosition);
+        let register_system_text = self.text(UiTextKey::RegisterSystem);
+        let clean_system_text = self.text(UiTextKey::CleanSystem);
         let window_relative_text = self.text(UiTextKey::WindowSizeRelative);
         let window_exact_text = self.text(UiTextKey::WindowSizeExact);
         let use_exact_size_text = self.text(UiTextKey::UseExactSize);
@@ -464,6 +469,36 @@ impl ViewerApp {
                                 }
                             }
                         }
+                        ui.separator();
+                        ui.horizontal_wrapped(|ui| {
+                            if ui.button(register_system_text).clicked() {
+                                match std::env::current_exe()
+                                    .ok()
+                                    .and_then(|exe| register_system_file_associations(&exe).ok())
+                                {
+                                    Some(()) => {
+                                        self.save_message =
+                                            Some("Registered file associations".to_string());
+                                    }
+                                    None => {
+                                        self.save_message = Some(
+                                            "Failed to register file associations".to_string(),
+                                        );
+                                    }
+                                }
+                            }
+                            if ui.button(clean_system_text).clicked() {
+                                match clean_system_integration() {
+                                    Ok(()) => {
+                                        self.save_message =
+                                            Some("Cleaned system integration".to_string());
+                                    }
+                                    Err(err) => {
+                                        self.save_message = Some(err.to_string());
+                                    }
+                                }
+                            }
+                        });
                     });
                 }
 

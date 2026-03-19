@@ -100,7 +100,7 @@ impl ViewerApp {
                 let url_text = self.text(UiTextKey::Url);
                 let open_url_text = self.text(UiTextKey::OpenUrl);
                 let up_text = self.text(UiTextKey::Up);
-                let icon_color = filer_icon_color(&self.options.background);
+                let icon_color = ui.visuals().text_color();
                 ui.heading(self.text(UiTextKey::Filer));
                 ui.horizontal_wrapped(|ui| {
                     if icon_toolbar_button(
@@ -425,7 +425,7 @@ impl ViewerApp {
                             egui::vec2(icon_side, icon_side),
                         ),
                         SvgIcon::Folder,
-                        filer_icon_color(&self.options.background),
+                        ui.visuals().text_color(),
                     );
                     response.on_hover_text(self.text(UiTextKey::FolderArchive))
                 } else {
@@ -587,19 +587,6 @@ fn icon_toolbar_button(
     );
     paint_svg_icon(ui.painter(), rect.shrink(6.0), icon, color);
     response.on_hover_text(tooltip).clicked()
-}
-
-fn filer_icon_color(background: &crate::ui::viewer::options::BackgroundStyle) -> egui::Color32 {
-    let rgba = match background {
-        crate::ui::viewer::options::BackgroundStyle::Solid(color) => *color,
-        crate::ui::viewer::options::BackgroundStyle::Tile { color1, color2, .. } => [
-            ((color1[0] as u16 + color2[0] as u16) / 2) as u8,
-            ((color1[1] as u16 + color2[1] as u16) / 2) as u8,
-            ((color1[2] as u16 + color2[2] as u16) / 2) as u8,
-            255,
-        ],
-    };
-    egui::Color32::from_rgba_unmultiplied(255 - rgba[0], 255 - rgba[1], 255 - rgba[2], 255)
 }
 
 fn simple_toolbar_button(ui: &mut egui::Ui, text: &str, selected: bool) -> bool {

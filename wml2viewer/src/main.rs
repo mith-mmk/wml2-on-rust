@@ -30,12 +30,17 @@ fn main() -> ExitCode {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let args = parse_args()?;
+    if args.clean_target.as_deref() == Some("system") {
+        dependent::clean_system_integration()?;
+        return Ok(());
+    }
     app::run(args.image_path, args.config_path)
 }
 
 struct CliArgs {
     image_path: Option<PathBuf>,
     config_path: Option<PathBuf>,
+    clean_target: Option<String>,
 }
 
 fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
@@ -43,10 +48,16 @@ fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
     let program = args.next().unwrap_or_else(|| OsString::from("wml2viewer"));
     let mut positional_args = Vec::new();
     let mut config_path = None;
+    let mut clean_target = None;
 
     while let Some(arg) = args.next() {
         if let Some(path) = parse_config_equals(&arg) {
             config_path = Some(path);
+            continue;
+        }
+
+        if let Some(target) = parse_clean_equals(&arg) {
+            clean_target = Some(target);
             continue;
         }
 
@@ -55,6 +66,14 @@ fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
                 return Err(usage_error(&program));
             };
             config_path = Some(PathBuf::from(path));
+            continue;
+        }
+
+        if arg == "--clean" {
+            let Some(target) = args.next() else {
+                return Err(usage_error(&program));
+            };
+            clean_target = Some(target.to_string_lossy().into_owned());
             continue;
         }
 
@@ -70,12 +89,18 @@ fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
     Ok(CliArgs {
         image_path,
         config_path,
+        clean_target,
     })
 }
 
 fn parse_config_equals(arg: &OsString) -> Option<PathBuf> {
     let text = arg.to_string_lossy();
     text.strip_prefix("--config=").map(PathBuf::from)
+}
+
+fn parse_clean_equals(arg: &OsString) -> Option<String> {
+    let text = arg.to_string_lossy();
+    text.strip_prefix("--clean=").map(ToOwned::to_owned)
 }
 
 fn is_ignorable_shell_argument(arg: &OsString) -> bool {
@@ -101,6 +126,6 @@ fn usage_error(program: &OsString) -> Box<dyn Error> {
         .to_string_lossy();
     Box::new(io::Error::new(
         io::ErrorKind::InvalidInput,
-        format!("Usage: {program} [--config <path>] [path]"),
+        format!("Usage: {program} [--config <path>] [--clean system] [path]"),
     ))
 }

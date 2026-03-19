@@ -396,7 +396,8 @@ impl ViewerApp {
                 let base = self.options.manga_separator.color;
                 let steps = width.max(2.0) as usize;
                 for step in 0..steps {
-                    let alpha = ((steps - step) as f32 / steps as f32) * (base[3] as f32);
+                    let t = (step as f32 + 0.5) / steps as f32;
+                    let alpha = (1.0 - ((t - 0.5).abs() * 2.0)).max(0.0) * (base[3] as f32);
                     let x0 = rect.left() + (step as f32 / steps as f32) * rect.width();
                     let x1 = rect.left() + ((step + 1) as f32 / steps as f32) * rect.width();
                     let band = egui::Rect::from_min_max(
@@ -788,6 +789,27 @@ impl ViewerApp {
             open = false;
         }
         self.show_save_dialog = open;
+    }
+
+    fn status_panel_ui(&mut self, ctx: &egui::Context) {
+        let mut messages = Vec::new();
+        if let Some(message) = &self.loading_message {
+            messages.push(message.as_str());
+        }
+        if let Some(message) = &self.save_message {
+            messages.push(message.as_str());
+        }
+        if messages.is_empty() {
+            return;
+        }
+
+        egui::TopBottomPanel::bottom("status_panel")
+            .resizable(false)
+            .show(ctx, |ui| {
+                for message in messages {
+                    ui.label(message);
+                }
+            });
     }
 
     fn is_current_portrait_page(&self) -> bool {
@@ -1357,6 +1379,27 @@ impl ViewerApp {
     fn poll_filer_worker(&mut self) {
         loop {
             match self.filer_rx.try_recv() {
+                Ok(FilerResult::Reset {
+                    request_id,
+                    directory,
+                    selected,
+                }) => {
+                    if self.filer.pending_request_id != Some(request_id) {
+                        continue;
+                    }
+                    self.filer.directory = Some(directory);
+                    self.filer.entries.clear();
+                    self.filer.selected = selected;
+                }
+                Ok(FilerResult::Append {
+                    request_id,
+                    entries,
+                }) => {
+                    if self.filer.pending_request_id != Some(request_id) {
+                        continue;
+                    }
+                    self.filer.entries.extend(entries);
+                }
                 Ok(FilerResult::Snapshot {
                     request_id,
                     directory,
@@ -1469,6 +1512,7 @@ impl eframe::App for ViewerApp {
         self.left_click_menu_ui(ctx);
         self.filer_ui(ctx);
         self.subfiler_ui(ctx);
+        self.status_panel_ui(ctx);
 
         let zoom_delta = ctx.input(|i| i.zoom_delta());
 
@@ -1603,10 +1647,6 @@ impl eframe::App for ViewerApp {
                         self.handle_pointer_input(&response);
                     }
 
-                    if let Some(message) = &self.loading_message {
-                        ui.add_space(8.0);
-                        ui.label(message);
-                    }
                     if self.empty_mode {
                         ui.add_space(8.0);
                         ui.label(format!(
@@ -1614,10 +1654,6 @@ impl eframe::App for ViewerApp {
                             self.text(UiTextKey::NoDisplayableFileFound),
                             self.text(UiTextKey::OpenDirectoryOrFileFromFiler)
                         ));
-                    }
-                    if let Some(message) = &self.save_message {
-                        ui.add_space(4.0);
-                        ui.label(message);
                     }
                 });
         });

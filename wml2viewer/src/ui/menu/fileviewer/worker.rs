@@ -1,4 +1,6 @@
-use crate::filesystem::{is_browser_container, list_browser_entries};
+use crate::filesystem::{
+    compare_natural_str, is_browser_container, is_browser_entry, list_browser_entries,
+};
 use crate::options::NavigationSortOption;
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerMetadata, FilerSortField, NameSortMode};
 use std::fs;
@@ -22,6 +24,15 @@ pub(crate) enum FilerCommand {
 }
 
 pub(crate) enum FilerResult {
+    Reset {
+        request_id: u64,
+        directory: PathBuf,
+        selected: Option<PathBuf>,
+    },
+    Append {
+        request_id: u64,
+        entries: Vec<FilerEntry>,
+    },
     Snapshot {
         request_id: u64,
         directory: PathBuf,
@@ -49,30 +60,49 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                     extension_filter,
                     name_sort_mode,
                 } => {
-                    let mut entries = list_browser_entries(&dir, sort)
-                        .into_iter()
-                        .map(|path| {
-                            let metadata = fs::metadata(&path)
-                                .ok()
-                                .map(|metadata| FilerMetadata {
-                                    size: metadata.is_file().then_some(metadata.len()),
-                                    modified: metadata.modified().ok(),
-                                })
-                                .unwrap_or_default();
-                            let is_container = is_browser_container(&path);
-                            let label = path
-                                .file_name()
-                                .map(|name| name.to_string_lossy().into_owned())
-                                .unwrap_or_else(|| "(entry)".to_string());
-                            FilerEntry {
-                                path,
-                                label,
-                                is_container,
-                                metadata,
+                    let mut entries = if dir.is_dir() {
+                        let _ = result_tx.send(FilerResult::Reset {
+                            request_id,
+                            directory: dir.clone(),
+                            selected: selected.clone(),
+                        });
+                        let mut preview = Vec::new();
+                        let mut collected = Vec::new();
+                        let Ok(read_dir) = fs::read_dir(&dir) else {
+                            continue;
+                        };
+                        for entry in read_dir.filter_map(Result::ok) {
+                            let path = entry.path();
+                            if !is_browser_entry(&path) {
+                                continue;
                             }
-                        })
-                        .filter(|entry| matches_filters(entry, &filter_text, &extension_filter))
-                        .collect::<Vec<_>>();
+                            let entry = build_filer_entry(path);
+                            if !matches_filters(&entry, &filter_text, &extension_filter) {
+                                continue;
+                            }
+                            preview.push(entry.clone());
+                            collected.push(entry);
+                            if preview.len() >= 128 {
+                                let _ = result_tx.send(FilerResult::Append {
+                                    request_id,
+                                    entries: std::mem::take(&mut preview),
+                                });
+                            }
+                        }
+                        if !preview.is_empty() {
+                            let _ = result_tx.send(FilerResult::Append {
+                                request_id,
+                                entries: preview,
+                            });
+                        }
+                        collected
+                    } else {
+                        list_browser_entries(&dir, sort)
+                            .into_iter()
+                            .map(build_filer_entry)
+                            .filter(|entry| matches_filters(entry, &filter_text, &extension_filter))
+                            .collect::<Vec<_>>()
+                    };
                     sort_entries(
                         &mut entries,
                         sort_field,
@@ -92,6 +122,27 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
     });
 
     (command_tx, result_rx)
+}
+
+fn build_filer_entry(path: PathBuf) -> FilerEntry {
+    let metadata = fs::metadata(&path)
+        .ok()
+        .map(|metadata| FilerMetadata {
+            size: metadata.is_file().then_some(metadata.len()),
+            modified: metadata.modified().ok(),
+        })
+        .unwrap_or_default();
+    let is_container = is_browser_container(&path);
+    let label = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "(entry)".to_string());
+    FilerEntry {
+        path,
+        label,
+        is_container,
+        metadata,
+    }
 }
 
 fn matches_filters(entry: &FilerEntry, filter_text: &str, extension_filter: &str) -> bool {
@@ -141,77 +192,10 @@ fn sort_entries(
 
 fn compare_name(left: &str, right: &str, mode: NameSortMode) -> std::cmp::Ordering {
     match mode {
-        NameSortMode::Os => compare_natural(left, right, false),
-        NameSortMode::CaseSensitive => compare_natural(left, right, true),
-        NameSortMode::CaseInsensitive => compare_natural(left, right, false),
+        NameSortMode::Os => compare_natural_str(left, right, false),
+        NameSortMode::CaseSensitive => compare_natural_str(left, right, true),
+        NameSortMode::CaseInsensitive => compare_natural_str(left, right, false),
     }
-}
-
-fn compare_natural(left: &str, right: &str, case_sensitive: bool) -> std::cmp::Ordering {
-    let left = if case_sensitive {
-        left.to_string()
-    } else {
-        left.to_ascii_lowercase()
-    };
-    let right = if case_sensitive {
-        right.to_string()
-    } else {
-        right.to_ascii_lowercase()
-    };
-
-    let left_chars: Vec<char> = left.chars().collect();
-    let right_chars: Vec<char> = right.chars().collect();
-    let mut li = 0;
-    let mut ri = 0;
-
-    while li < left_chars.len() && ri < right_chars.len() {
-        let lc = left_chars[li];
-        let rc = right_chars[ri];
-        if lc.is_ascii_digit() && rc.is_ascii_digit() {
-            let lstart = li;
-            let rstart = ri;
-            while li < left_chars.len() && left_chars[li].is_ascii_digit() {
-                li += 1;
-            }
-            while ri < right_chars.len() && right_chars[ri].is_ascii_digit() {
-                ri += 1;
-            }
-            let lnum = &left_chars[lstart..li];
-            let rnum = &right_chars[rstart..ri];
-            let ltrim = trim_leading_zeros(lnum);
-            let rtrim = trim_leading_zeros(rnum);
-            let len_cmp = ltrim.len().cmp(&rtrim.len());
-            if len_cmp != std::cmp::Ordering::Equal {
-                return len_cmp;
-            }
-            let digit_cmp = ltrim.iter().cmp(rtrim.iter());
-            if digit_cmp != std::cmp::Ordering::Equal {
-                return digit_cmp;
-            }
-            let raw_len_cmp = lnum.len().cmp(&rnum.len());
-            if raw_len_cmp != std::cmp::Ordering::Equal {
-                return raw_len_cmp;
-            }
-            continue;
-        }
-
-        let cmp = lc.cmp(&rc);
-        if cmp != std::cmp::Ordering::Equal {
-            return cmp;
-        }
-        li += 1;
-        ri += 1;
-    }
-
-    left_chars.len().cmp(&right_chars.len())
-}
-
-fn trim_leading_zeros(chars: &[char]) -> &[char] {
-    let trimmed = chars
-        .iter()
-        .position(|ch| *ch != '0')
-        .unwrap_or(chars.len().saturating_sub(1));
-    &chars[trimmed..]
 }
 
 #[cfg(test)]

@@ -1,4 +1,5 @@
 mod listed_file;
+mod sort;
 mod zip_file;
 
 use std::collections::HashMap;
@@ -10,7 +11,8 @@ use std::time::SystemTime;
 
 use crate::options::{EndOfFolderOption, NavigationSortOption};
 use listed_file::load_listed_file_entries;
-use zip_file::{load_zip_entries, load_zip_entry_bytes};
+pub(crate) use sort::compare_natural_str;
+use zip_file::{load_zip_entries, load_zip_entry_bytes, zip_entry_record};
 
 const SUPPORTED_EXTENSIONS: &[&str] = &[
     "webp", "jpg", "jpeg", "bmp", "gif", "png", "tif", "tiff", "mag", "maki", "pi", "pic",
@@ -333,6 +335,12 @@ pub fn load_virtual_image_bytes(path: &Path) -> Option<Vec<u8>> {
         .and_then(|(archive, index)| load_zip_entry_bytes(&archive, index))
 }
 
+pub fn virtual_image_size(path: &Path) -> Option<u64> {
+    resolve_virtual_zip_child(path)
+        .and_then(|(archive, index)| zip_entry_record(&archive, index))
+        .map(|entry| entry.size)
+}
+
 #[allow(dead_code)]
 pub fn list_openable_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathBuf> {
     let mut cache = FilesystemCache {
@@ -373,6 +381,10 @@ pub fn list_browser_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathB
     entries.extend(dirs);
     entries.extend(files);
     entries
+}
+
+pub(crate) fn is_browser_entry(path: &Path) -> bool {
+    path.is_dir() || is_supported_image(path) || is_listed_file_path(path) || is_zip_file_path(path)
 }
 
 pub fn is_browser_container(path: &Path) -> bool {
@@ -937,10 +949,14 @@ fn os_name_sort_key(path: &Path) -> String {
 fn sort_paths(paths: &mut [PathBuf], sort: NavigationSortOption) {
     match sort {
         NavigationSortOption::OsName => {
-            paths.sort_by_cached_key(|path| os_name_sort_key(path));
+            paths.sort_by(|left, right| {
+                compare_natural_str(&os_name_sort_key(left), &os_name_sort_key(right), false)
+            });
         }
         NavigationSortOption::Name => {
-            paths.sort_by_cached_key(|path| file_name_sort_key(path));
+            paths.sort_by(|left, right| {
+                compare_natural_str(&file_name_sort_key(left), &file_name_sort_key(right), true)
+            });
         }
         NavigationSortOption::Date => {
             paths

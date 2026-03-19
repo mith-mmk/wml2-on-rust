@@ -1,6 +1,8 @@
 use crate::dependent::normalize_locale_tag;
 use std::path::PathBuf;
 use std::process::Command;
+use winreg::RegKey;
+use winreg::enums::{HKEY_CURRENT_USER, KEY_READ, KEY_WRITE};
 
 const LOCALE_NAME_MAX_LENGTH: i32 = 85;
 
@@ -57,6 +59,13 @@ pub fn emoji_font_candidates() -> Vec<PathBuf> {
     vec![PathBuf::from(r"C:\Windows\Fonts\seguiemj.ttf")]
 }
 
+const PROG_ID: &str = "wml2viewer.image";
+const APPLICATION_KEY: &str = r"Applications\wml2viewer.exe";
+const ASSOCIATED_EXTENSIONS: &[&str] = &[
+    ".webp", ".jpg", ".jpeg", ".bmp", ".gif", ".png", ".tif", ".tiff", ".mag", ".maki", ".pi",
+    ".pic", ".zip", ".wml",
+];
+
 pub fn available_roots() -> Vec<PathBuf> {
     let mut roots = Vec::new();
     for letter in b'A'..=b'Z' {
@@ -75,6 +84,61 @@ pub fn available_roots() -> Vec<PathBuf> {
     }
 
     roots
+}
+
+pub fn register_file_associations(
+    exe_path: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let (classes, _) = hkcu.create_subkey(r"Software\Classes")?;
+    let command_line = format!("\"{}\" \"%1\"", exe_path.display());
+
+    let (prog_id, _) = classes.create_subkey(PROG_ID)?;
+    prog_id.set_value("", &"wml2viewer image")?;
+    let (default_icon, _) = prog_id.create_subkey("DefaultIcon")?;
+    default_icon.set_value("", &format!("{},0", exe_path.display()))?;
+    let (prog_command, _) = prog_id.create_subkey(r"shell\open\command")?;
+    prog_command.set_value("", &command_line)?;
+
+    let (app_root, _) = classes.create_subkey(APPLICATION_KEY)?;
+    let (supported_types, _) = app_root.create_subkey("SupportedTypes")?;
+    let (open_command, _) = app_root.create_subkey(r"shell\open\command")?;
+    open_command.set_value("", &command_line)?;
+
+    for ext in ASSOCIATED_EXTENSIONS {
+        supported_types.set_value(*ext, &"")?;
+
+        let (open_with_progids, _) = classes.create_subkey(format!(r"{ext}\OpenWithProgids"))?;
+        open_with_progids.set_value(PROG_ID, &"")?;
+
+        let (open_with_list, _) = classes.create_subkey(format!(r"{ext}\OpenWithList"))?;
+        open_with_list.set_value("wml2viewer.exe", &"")?;
+    }
+
+    Ok(())
+}
+
+pub fn clean_file_associations() -> Result<(), Box<dyn std::error::Error>> {
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let classes = hkcu.open_subkey_with_flags(r"Software\Classes", KEY_READ | KEY_WRITE)?;
+
+    let _ = classes.delete_subkey_all(PROG_ID);
+    let _ = classes.delete_subkey_all(APPLICATION_KEY);
+
+    for ext in ASSOCIATED_EXTENSIONS {
+        if let Ok(key) =
+            classes.open_subkey_with_flags(format!(r"{ext}\OpenWithProgids"), KEY_READ | KEY_WRITE)
+        {
+            let _ = key.delete_value(PROG_ID);
+        }
+        if let Ok(key) =
+            classes.open_subkey_with_flags(format!(r"{ext}\OpenWithList"), KEY_READ | KEY_WRITE)
+        {
+            let _ = key.delete_value("wml2viewer.exe");
+        }
+    }
+
+    Ok(())
 }
 
 pub fn pick_directory_dialog() -> Option<PathBuf> {

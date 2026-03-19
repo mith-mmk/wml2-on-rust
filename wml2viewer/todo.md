@@ -20,6 +20,7 @@
 - [x] アプリアイコン設定
 - [x] `resources/help.html` 出力の土台
 - [+] app 起動時の初回 decode worker 化
+- [x] `--clean system`
 - [*] フルスクリーン復帰時の安定性確認
 
 ## src/options.rs
@@ -80,6 +81,8 @@
 - [x] Windows drive 列挙
 - [x] フォルダ選択ダイアログ
 - [x] PowerShell 依存 http ダウンロードからの離脱
+- [+] 拡張子関連付け登録
+- [+] 拡張子関連付け clean
 
 ## src/dependent/linux/mod.rs
 - [x] locale 環境変数取得
@@ -148,7 +151,8 @@
 - [x] zip virtual child path
 - [x] 途中 entry エラーを飛ばして継続
 - [x] zip 名の SJIS fallback decode
-- [ ] zip entry sort option
+- [+] zip entry 自然順ソート
+- [+] BufReader ベースの再読込
 - [ ] zip encoding option
 - [ ] `7z` / `rar` / `lzh` / `gzip`
 
@@ -160,6 +164,7 @@
 - [x] settings menu のローカライズ
 - [x] filer menu の主要文言ローカライズ
 - [x] save dialog の主要文言ローカライズ
+- [+] JSON resource loader
 - [ ] status message / zoom option / detailed menu 文言の全面移行
 
 ## src/ui/input/dispatch.rs
@@ -192,6 +197,7 @@
 - [+] plugin module load test ボタン
 - [x] save path 記録設定
 - [x] 適用/undo/初期化ボタン
+- [+] 拡張子関連付けボタン
 - [ ] キーバインド編集 UI
 
 ## src/ui/menu/fileviewer/state.rs
@@ -212,12 +218,14 @@
 - [x] metadata 収集
 - [x] sort / filter / ext filter / dir separate
 - [x] 数値を含む自然順ソート
-- [ ] lazy load の段階化
+- [+] incremental snapshot preview
+- [+] lazy load の段階化
 - [ ] OS 準拠 name collation の強化
 
 ## src/ui/menu/fileviewer/thumbnail.rs
 - [x] サムネイル worker
 - [x] virtual zip/listed file のサムネイル生成
+- [+] 巨大 zip bmp thumbnail の抑制
 - [ ] 永続キャッシュ
 - [ ] 失敗キャッシュ
 
@@ -299,11 +307,14 @@
 - [x] grayscale 表示トグル
 - [x] subfiler の明示トグル
 - [x] manga separator 描画
-- [+] 起動時の manga Fit 再計算ループの抑制
-- [*] filer 表示時の manga レイアウトは実機で継続確認
+- [x] status message の下部表示
+- [x] ライトモード時の SVG 線色
+- [x] separator shadow gradient
+- [x] 起動時の manga Fit 再計算ループの抑制
+- [+] filer 表示時の manga レイアウトは実機で継続確認
 - [+] app 起動時の初回 decode 完全 worker 化
 - [+] preload queue
-- [ ] message UI 整理
+- [*] message UI 整理
 
 ## src/drawers/affine.rs
 - [x] resize / interpolation 実装
@@ -348,28 +359,49 @@
 
 ## 次に着手
 中断せずやりきる
-
-- [ ] [再重要] 設定：OSに拡張子を登録できる機能
-  windows は crate winreg を使う
-  ProgID / open command / OpenWithProgids / OpenWithList / `--clean system`
-- `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
-- `src/ui/menu/fileviewer/worker.rs` に lazy load / incremental snapshot を入れて大規模フォルダを高速化する
-- `src/ui/i18n/mod.rs` を JSON resource loader に拡張し、未ローカライズ文言を全面移行する
-- `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
-- [+] issue:マンガモード：左右のサイズが一致しない場合にリサイズが繰り返される
-- [ ] ファイラー/サブファイラー/viwerのファイル表示順が一致していない
-- [ ] 数字入りファイルのソート順(Windowsのexplorerと一致していない) 特に数字入りファイル
-- [重要] [ ] zip内のファイルソート（viewerとファイラー/サブファイラーの表示が同期していない）
-- [重要] [ ] 巨大かつネットワークファイルのアーカイブ対応
-  - [ ] ファイラー: zipされたbmpの展開が固まる
+- issue::[重要]  [ ] メッセージ表示時に画面サイズが変わる Load関係のメッセージはoverlayで対処し、他のUIに干渉しないようにしてください
+- issue: [ ] dependent/windows winresを使ってexe用のiconリソースを登録する
+- issue: [ ] ファイラーを拡大すると半分近くから余計なペインで表示が隠れてしまいます
+- issue:[重要] [ ] issue: ネットワーク+zipは逆に遅くなった index取得とファイル取得を分離するなどで対処してください
+- issue:[重要] [ ] 巨大かつネットワークファイルのアーカイブ対応
+  - [*] ファイラー: zipされたbmpの展開が固まる対策(ネットワークかつファイルが巨大なケース) worker分離を試みて先行表示してください
   - [ ] ファイラー: zipされたファイルの次の表示ができないケースがあり（ネットワークかつファイルが巨大なケース 確認したら1.53GB）
   - [ ] viewer: deocodeエラーになる（画像のオフセットが狂っている）
+- [ ] zipのiconは foldersvgではなくarchive.svgを使ってください
+- [ ] issue: uiのi18nはui/i18nではなく、configs/resoures側で設定してください jsonからロードする時、この方がメンテしやすい
+- [ ] issue: ファイラー：サムネイル表示時に右側がみきれます
+- [ ] ファイラー：sortのasc /descは1ブロック開けて配置してください
+- [ ] issue: サムネイル：長いファイル名がはみ出ない様に省略を行ってください。その際unicodeのbyte境界に注意してください
+  　なんとかかんとか20250100-001.jpg -> なんとか...001.png 最大2行に納めてください
+- [ ] issue: ui/menu/config/mod.rsの 
+  ```rs
+                      if ui.button("Apply").clicked() {
+                        apply_requested = true;
+                    }
+                    if ui.button("Undo").clicked() {
+                        undo_requested = true;
+                    }
+                    if ui.button("Reset").clicked() {
+                        reset_requested = true;
+                    }
+  ```
+  がリソース化されていません。他にリソース化されていない場所があればリソース分離してください
+- 設定の順番はいかに並び変えてください
+  - viwer
+  - draw
+  - window
+  - navigation
+  - plugins
+  - resource
+- [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
+- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
+- [ ] `src/ui/i18n/mod.rs` の JSON resource loader を広げて、未ローカライズ文言を全面移行する
+- [ ] `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
+- 確認中: [*] zip 内ファイルソートの実機確認
+- [*] ファイラー/サブファイラー/viewer のファイル表示順の実機確認(確認中)
 - [ ] コードの整理 モジュール境界をハッキリさせる
   - [ ]未実装 action の no-op 整理
-- [*] ファイラー: OS name collation の最終調整
-- [ ]
-- [ ] メッセージの表示位置の調整（Windowの一番下に表示させる）
-- [ ] ライトモードの時svgの線は黒で
+- [*] ファイラー: OS name collation の最終調整(確認中)
 - プラグイン: 実装続き
   - [ ] ffmpegプラグイン
   - [ ] susie64プラグイン
@@ -378,6 +410,5 @@
     - ffmpegのリンクはcrate ffmpeg-sysを考慮(自力実装の方が安定する可能性あり)
     - systemにserach pathは不要 OS APIを叩くため
 - [ ] 設定：適用/undo/初期化ボタンの本格化
-- 設定：追加設定用の日本語リソース
-- [ ] issue:セパレーター：shadowがshadowになっていない。グラデーションをかける
+- [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
 - todo.mdの更新

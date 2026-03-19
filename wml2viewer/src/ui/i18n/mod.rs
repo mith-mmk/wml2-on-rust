@@ -1,4 +1,6 @@
 use crate::dependent::resource_locale_fallbacks;
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) enum UiTextKey {
@@ -29,6 +31,8 @@ pub(crate) enum UiTextKey {
     Fullscreen,
     RememberSize,
     RememberPosition,
+    RegisterSystem,
+    CleanSystem,
     WindowSizeRelative,
     WindowSizeExact,
     UseExactSize,
@@ -90,7 +94,11 @@ pub(crate) enum UiTextKey {
 }
 
 pub(crate) fn tr(locale: &str, key: UiTextKey) -> &'static str {
+    let key_name = format!("{key:?}");
     for candidate in resource_locale_fallbacks(locale) {
+        if let Some(value) = json_override(&candidate, &key_name) {
+            return value;
+        }
         match candidate.as_str() {
             "ja_JP" | "ja" => return ja(key),
             "en_US" | "en_GB" | "en" => return en(key),
@@ -98,6 +106,34 @@ pub(crate) fn tr(locale: &str, key: UiTextKey) -> &'static str {
         }
     }
     en(key)
+}
+
+fn json_override(locale: &str, key: &str) -> Option<&'static str> {
+    static CACHE: OnceLock<Mutex<HashMap<String, HashMap<String, &'static str>>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    let mut cache = cache.lock().ok()?;
+
+    if !cache.contains_key(locale) {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("i18n")
+            .join(format!("{locale}.json"));
+        let values = std::fs::read_to_string(path)
+            .ok()
+            .and_then(|text| serde_json::from_str::<HashMap<String, String>>(&text).ok())
+            .map(|values| {
+                values
+                    .into_iter()
+                    .map(|(name, value)| (name, Box::leak(value.into_boxed_str()) as &'static str))
+                    .collect::<HashMap<_, _>>()
+            })
+            .unwrap_or_default();
+        cache.insert(locale.to_string(), values);
+    }
+
+    cache
+        .get(locale)
+        .and_then(|values| values.get(key).copied())
 }
 
 fn en(key: UiTextKey) -> &'static str {
@@ -129,6 +165,8 @@ fn en(key: UiTextKey) -> &'static str {
         UiTextKey::Fullscreen => "Fullscreen",
         UiTextKey::RememberSize => "Remember size",
         UiTextKey::RememberPosition => "Remember position",
+        UiTextKey::RegisterSystem => "Register extensions",
+        UiTextKey::CleanSystem => "Clean system integration",
         UiTextKey::WindowSizeRelative => "Window size: relative",
         UiTextKey::WindowSizeExact => "Window size: exact",
         UiTextKey::UseExactSize => "Use exact size",
@@ -219,6 +257,8 @@ fn ja(key: UiTextKey) -> &'static str {
         UiTextKey::Fullscreen => "フルスクリーン",
         UiTextKey::RememberSize => "サイズを記憶",
         UiTextKey::RememberPosition => "位置を記憶",
+        UiTextKey::RegisterSystem => "拡張子を登録",
+        UiTextKey::CleanSystem => "システム登録を削除",
         UiTextKey::WindowSizeRelative => "ウィンドウサイズ: 相対",
         UiTextKey::WindowSizeExact => "ウィンドウサイズ: 固定",
         UiTextKey::UseExactSize => "固定サイズを使う",

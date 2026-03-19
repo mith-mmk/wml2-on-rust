@@ -1,6 +1,6 @@
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::image::{load_canvas_from_bytes, load_canvas_from_file, resize_loaded_image};
-use crate::filesystem::load_virtual_image_bytes;
+use crate::filesystem::{load_virtual_image_bytes, virtual_image_size};
 use crate::ui::render::canvas_to_color_image;
 use eframe::egui::ColorImage;
 use std::path::PathBuf;
@@ -35,6 +35,9 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                     path,
                     max_side,
                 } => {
+                    if should_skip_thumbnail(&path) {
+                        continue;
+                    }
                     let loaded = if let Some(bytes) = load_virtual_image_bytes(&path) {
                         load_canvas_from_bytes(&bytes)
                     } else {
@@ -64,4 +67,14 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
     });
 
     (command_tx, result_rx)
+}
+
+fn should_skip_thumbnail(path: &std::path::Path) -> bool {
+    let ext = path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.to_ascii_lowercase())
+        .unwrap_or_default();
+    let size = virtual_image_size(path).unwrap_or(0);
+    (ext == "bmp" && size > 8 * 1024 * 1024) || size > 128 * 1024 * 1024
 }

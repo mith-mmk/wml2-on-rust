@@ -1,17 +1,18 @@
 use std::fs::File;
-use std::io::Read;
+use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
 use encoding_rs::SHIFT_JIS;
 use zip::ZipArchive;
 
-use super::is_supported_image;
+use super::{compare_natural_str, is_supported_image};
 
 #[derive(Clone, Debug)]
 pub(crate) struct ZipEntryRecord {
     pub index: usize,
     pub name: String,
+    pub size: u64,
 }
 
 pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
@@ -23,8 +24,7 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
         return Some(entries);
     }
 
-    let file = File::open(path).ok()?;
-    let mut archive = ZipArchive::new(file).ok()?;
+    let mut archive = open_zip_archive(path).ok()?;
     let mut entries = Vec::new();
 
     for index in 0..archive.len() {
@@ -44,10 +44,11 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
         entries.push(ZipEntryRecord {
             index,
             name: name.replace('\\', "/"),
+            size: file.size(),
         });
     }
 
-    entries.sort_by(|left, right| left.name.to_lowercase().cmp(&right.name.to_lowercase()));
+    entries.sort_by(|left, right| compare_natural_str(&left.name, &right.name, false));
     if let Ok(mut cache) = cache.lock() {
         cache.insert(path.to_path_buf(), entries.clone());
     }
@@ -55,12 +56,35 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
 }
 
 pub(crate) fn load_zip_entry_bytes(path: &Path, entry_index: usize) -> Option<Vec<u8>> {
-    let file = File::open(path).ok()?;
-    let mut archive = ZipArchive::new(file).ok()?;
-    let mut entry = archive.by_index(entry_index).ok()?;
+    let fallback_name = load_zip_entries(path)?
+        .into_iter()
+        .find(|entry| entry.index == entry_index)
+        .map(|entry| entry.name);
+    let mut archive = open_zip_archive(path).ok()?;
+    let mut entry = if let Ok(entry) = archive.by_index(entry_index) {
+        entry
+    } else {
+        archive.by_name(fallback_name.as_deref()?).ok()?
+    };
     let mut buf = Vec::new();
+    let expected_size = entry.size().min(512 * 1024 * 1024) as usize;
+    if expected_size > 0 {
+        buf.reserve(expected_size);
+    }
     entry.read_to_end(&mut buf).ok()?;
     Some(buf)
+}
+
+pub(crate) fn zip_entry_record(path: &Path, entry_index: usize) -> Option<ZipEntryRecord> {
+    load_zip_entries(path)?
+        .into_iter()
+        .find(|entry| entry.index == entry_index)
+}
+
+fn open_zip_archive(path: &Path) -> std::io::Result<ZipArchive<BufReader<File>>> {
+    let file = File::open(path)?;
+    let reader = BufReader::with_capacity(1024 * 256, file);
+    ZipArchive::new(reader).map_err(std::io::Error::other)
 }
 
 fn decode_zip_name(file: &zip::read::ZipFile<'_>) -> String {

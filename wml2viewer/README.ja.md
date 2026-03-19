@@ -1,4 +1,4 @@
-# wml2viewer
+# wml2viewer 0.0.11 preview
 
 `egui` と `wml2` を使った軽量ネイティブ画像ビューアです。
 
@@ -6,7 +6,7 @@
 
 - 画像表示とマンガ見開きモード
 - 一覧 / サムネイル / 詳細を切り替えられるファイラー
-- ZIP / WML の仮想ブラウズ
+- ZIP / WML(ファイルリスト) の仮想ブラウズ
 - ロケール連動の UI リソースとフォントフォールバック
 - 保存形式を選べる保存ダイアログ
 
@@ -17,10 +17,13 @@ cargo run --manifest-path wml2viewer/Cargo.toml -- <path>
 ```
 
 ## コマンドライン
+- `wml2viewer` デフォルトのファイルを見ます
+- `wml2viewer [path]` 画像を指定して起動します
+- `wml2viewer --config <path> [path]` 設定ファイルを指定します
+- `wml2viewer --clean system`　設定を消します
 
-- `wml2viewer [path]`
-- `wml2viewer --config <path> [path]`
-- `wml2viewer --clean system`
+## ヘルプ
+- https://mith-mmk.github.io/wml2/help.html
 
 ## 設定
 

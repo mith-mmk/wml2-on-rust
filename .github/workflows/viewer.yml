@@ -1,0 +1,43 @@
+name: viewer
+
+on:
+  push:
+    tags:
+      - "wml*"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: build examples
+        run: cargo build --release --examples
+
+      - name: rename binary
+        run: |
+          mkdir dist
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp target/release/wml2viewer.exe dist/wml2viewer-windows.exe
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            cp target/release/wml2viewer dist/wml2viewer-macos
+          else
+            cp target/release/wml2viewer dist/wml2viewer-linux
+          fi
+        shell: bash
+
+      - name: create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

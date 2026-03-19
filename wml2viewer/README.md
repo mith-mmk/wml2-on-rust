@@ -1,4 +1,4 @@
-# wml2viewer
+# wml2viewer preview
 
 Minimal native image viewer built with `egui` and `wml2`.
 
@@ -6,7 +6,7 @@ Minimal native image viewer built with `egui` and `wml2`.
 
 - Image viewing with manga spread mode
 - Filer with list / thumbnail / detail views
-- ZIP and WML virtual browsing
+- ZIP and WML(listed files) virtual browsing
 - Locale-aware UI resources and font fallback
 - Save dialog with output format selection
 
@@ -17,10 +17,14 @@ cargo run --manifest-path wml2viewer/Cargo.toml -- <path>
 ```
 
 ## Command line
+- `wml2viewer` run default
+- `wml2viewer [path]` run with image 
+- `wml2viewer --config <path> [path]` run set conifg <path> toml file
+- `wml2viewer --clean system` clean system data
 
-- `wml2viewer [path]`
-- `wml2viewer --config <path> [path]`
-- `wml2viewer --clean system`
+## help
+- https://mith-mmk.github.io/wml2/help.html
+
 
 ## Config
 

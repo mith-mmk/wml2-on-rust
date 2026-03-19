@@ -64,7 +64,7 @@ impl Default for WindowOptions {
     fn default() -> Self {
         Self {
             fullscreen: false,
-            size: WindowSize::Relative(0.8),
+            size: WindowSize::Relative(0.6),
             start_position: WindowStartPosition::Center,
             remember_size: true,
             remember_position: true,

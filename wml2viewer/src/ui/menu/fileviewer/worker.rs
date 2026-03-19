@@ -1,4 +1,4 @@
-use crate::filesystem::{list_browser_entries, list_openable_entries};
+use crate::filesystem::list_browser_entries;
 use crate::options::NavigationSortOption;
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerMetadata};
 use std::fs;
@@ -20,7 +20,6 @@ pub(crate) enum FilerResult {
         request_id: u64,
         directory: PathBuf,
         entries: Vec<FilerEntry>,
-        navigation_entries: Vec<PathBuf>,
         selected: Option<PathBuf>,
     },
 }
@@ -61,12 +60,10 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                             }
                         })
                         .collect::<Vec<_>>();
-                    let navigation_entries = list_openable_entries(&dir, sort);
                     let _ = result_tx.send(FilerResult::Snapshot {
                         request_id,
                         directory: dir,
                         entries,
-                        navigation_entries,
                         selected,
                     });
                 }

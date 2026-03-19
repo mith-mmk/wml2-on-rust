@@ -266,62 +266,72 @@
 - [ ] WMLScripts
 
 ## 次に着手する順
-### 原則
-- モジュール分離で責務を分割する
-- 最終的には機能単位でクレート分割する可能性あるので最初から意識すること
-- マルチスレッディング、aysn io パフォーマンスと後の改良のため意識してください
-
-1. ViewerApp を composition root に縮めます。ViewerApp は「各 state と worker を束ねて update() で配線するだけ」にして、画像表示 state、ファイラー state、render state を別 struct に分けます。
-2. ファイラーを完全に別系統にします。FilerCommand / FilerResult を作り、ディレクトリ列挙・ソート・メタデータ収集は worker 側で実行、UI には snapshot だけ返します。これで filer に引きずられる viewer の重さをまず止めます。
-3. render を ui/render に寄せ切ります。少なくとも layout.rs、texture.rs、worker.rs に分けて、aligned_offset、背景描画、texture upload、downscale、render worker をここへ集約します。viewer 側には「何を表示するか」だけ残します。
-4. input は ui/input を dispatcher 化します。今は ViewerApp に直接触る形ですが、次は InputAction -> ControllerAction に寄せて、viewer/filer/config へ直接依存しないようにします。
-5. i18n は 2 段で進めます。まず UiTextKey を enum 化して tr(key) に置換、次に ja/en リソース表を追加します。既存のフォント設定はそのまま土台にして、文字列リソースを上に載せる形が安全です。
-
-### 具体的な分割案
-
-1. ui/viewer/app.rs
-   eframe::App 実装と composition root のみ
-2. ui/viewer/state.rs
-   現在画像、zoom、animation、manga の state
-3. ui/menu/fileviewer/state.rs
-   現在ディレクトリ、選択項目、表示モード、ソート条件
-4. ui/menu/fileviewer/worker.rs
-   directory scan、metadata、thumbnail 入口
-5. ui/render/layout.rs
-   背景、中央寄せ、見開きレイアウト
-6. ui/render/worker.rs
-   画像 load/resize/texture 用 worker
-7. ui/input/dispatch.rs
-   key/pointer から action を作るだけ
-8. ui/i18n/mod.rs
-   UiTextKey と Translator
-9. ui/i18n/　-> 日本語と英語は、resources/*.rs をみて参照 => jsonでロケールを読み込めるローダーを追加し多言語対応する
-10. todo.mdの整理 todo.mdと実装を比較して終了しているタスクには[+]を付ける
-
-※ 文言テーブル
-この順にすると、次回はまず「filer を UI スレッドから外す」と「render の重複除去」を同時に進められます。優先度としては 2 -> 3 -> 1 -> 5 -> 4 が一番リスクが低いです。
-
-### 次回以降
+最後までやりきろう
 
 1. 【最優先】リソースの追加(システムfontの切り替え)
-   1. OSからsystem言語を検出　dependetの下に実装
-   2. locale fontを設定
-   3. fallbackを設定(絵文字フォントも指定)
+   1. OSからsystem言語を検出(ロケール)　dependet/thirdpartyの下にlocale_configを使って実装
+      1. ja_JP.UTF-8 -> ja_JP
+      2. en_US -> en_US
+      3. 日本語リソースは ja_JP -> ja -> en の順でフォールバック
+      4. 繁体語は、zh-TW -> zh -> en の順でフォールバック
+   2. locale fontを設定(systemフォントを使用)
+   3. fallbackを設定(絵文字フォントも扱える様にする)
    4. 例：日本語の場合、Windows10は"Yu Gothic UI"、 Macは"ヒラギノ角ゴシック" -> NotoSansJP -> NotoSansCJK -> 英語デフォルトにフォールバック
 2. Issueの修正, マンガモード：フォルダをまたぐとFitScreenが解除される問題
-3. Issueの修正, ファイラー：日本語が化けるバグ（Fontの問題）
-4. Issueの修正, ファイラー：ファイラーから画像を選択すると次の画像に移動出来ない問題
-5. Issueの修正, ファイラー：ファイラーからドライブ選択が出来ない問題
-6. Issueの修正, ファイラー：ファイラーからフォルダを移動する時、遅い問題（lazy loadを検討してください）
-7. Issueの修正, ファイラー：ファイラーから画像を選択するとFitScreenが効かない問題
-8. Issueの修正, UI: 起動時のWindowsの位置がずれる問題
+3. Issueの修正, マンガモード：リサイズすると表示位置が追従しない問題
+4. Issueの修正, ファイラー：日本語が化けるバグ（Fontの問題）
+5. Issueの修正, ファイラー：ファイラーから画像を選択すると次の画像に移動出来ない問題
+6. Issueの修正, ファイラー：ファイラーからドライブ選択が出来ない問題
+7. Issueの修正, ファイラー：ファイラーからフォルダを移動する時、遅い問題（lazy loadを検討してください）
+8. Issueの修正, ファイラー：ファイラーから画像を選択するとFitScreenが効かない問題
+9. Issueの修正, UI: 起動時のWindowsの位置がずれる問題
    1. 設定をみて位置決め
    2. 指定が無い場合は、起動スクリーンの60% 中央に来るように調整 
-9.  シングルクリックで次の画面を表示（設定画面では反応しないようにする）
-10. ファイラー：一覧表示、サムネイル表示（大・中・小）、詳細表示、の追加と切り替えボタン
-11. ファイラー：UIにメタデータも表示出来る様にして、ソートボタンにする
-12. 設定：閉じるボタンの実装
-13. CTRL+S でファイル保存（保存用ディレクトリを選べる様にする）
-14. 外部プラグインの実装：susie plugin の実装とplugin conifigの実装
-    1. プラグインの有効化
-    2. プラグインの優先順位（内部より上、下）
+10. 設定の下位層が深すぎて探しにくいので複数の設定をまとめたりtab切り替えや横並びを検討してください
+11. シングルクリックで次の画面を表示（設定画面では反応しないようにする）
+12. サムネイル：サムネイルエンジン
+13. ファイラー：一覧表示、サムネイル表示（大・中・小）、詳細表示、の追加と切り替えボタン
+14. ファイラー：UIにメタデータも表示出来る様にする。昇順/降順ソート切り替えボタン、ソート [名前でソート、更新日時でソート、サイズでソート]、フォルダとファイルを混ぜる/分ける、フィルタ(ファイル名の一部、拡張子でフィルタ)
+    1.  アイコンはsvgベース
+    2.  名前でソートは、OS準拠、大文字小文字を区別する、大文字小文字をしないを設定で変えられる様にする
+15. サブファイラー：viwer下側に表示されるスクロール型サムネイル表示のページ切り替えエンジン（r2l, l2rに準拠, フォルダ、アーカイブの中だけ表示する）
+16. CTRL+S でファイル保存（保存用ディレクトリと保存フォーマットと設定を選べるメニューが表示される）
+17. http/httpsでの画像表示（ただし、移動には対応できません　変わりにファイラーにURL入力画面を追加）
+18. 外部プラグインの実装：susie plugin の実装とplugin conifigの実装
+    1. dependent/pluginsの下に実装(ffmpegは共通, system, susie64はOS依存)
+    2. configの設定一覧 
+    ```jsonc
+   "plugins" : {
+    "susie64": { // windowsのみ, 他のOSでは無視
+      "enable": false,
+      "search_path": ["./"], // exeと同じ場所
+      "modules":
+      [ {
+        "enable" : false, //
+        "path": "", // 省略可
+        "plugin_name": "", //
+        "type": "image", // or "archiver"
+        "ext": [  // 対応するフォーマット
+          {
+            "enable": false,
+            "mime": ["image/avif"],  //例 ["image/*] ワイルドカード可能
+            "modules": [{
+              "type": "decode", // "decode", "encode", "filter" 
+              "priority": "high", // "lowest", "low", "middle", "high" (プラグインが複数ある場合どれを優先するか決める、lowは内製を再優先, middleは他のプラグインが無い場合、 highは最優先，"lowest"は最後の手段, バッティングした場合は、順位が上にある方が優先)
+            }]
+          } // , {}...
+        ],
+        "":
+      }]
+    },
+    "system": { // OSバンドル系 windowsは WIC APIベース Windowsは一部Codecがオプションで存在しない場合があるので注意
+      "enable": false,
+      "search_path": "", // OSに依存するため設定不可
+      // 以下同じ
+    },
+    "ffmpeg": { // ffmpegの動的ライブラリを呼ぶ linuxはシステムの変わり
+      // 上と同じ
+    }
+  }
+  ```
+19.  todo.mdをチェックして整理する

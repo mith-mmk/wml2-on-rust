@@ -333,6 +333,7 @@ pub fn load_virtual_image_bytes(path: &Path) -> Option<Vec<u8>> {
         .and_then(|(archive, index)| load_zip_entry_bytes(&archive, index))
 }
 
+#[allow(dead_code)]
 pub fn list_openable_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathBuf> {
     let mut cache = FilesystemCache {
         listings_by_dir: HashMap::new(),

@@ -71,6 +71,7 @@ pub(crate) struct ViewerApp {
     pub(crate) loading_message: Option<String>,
     pub(crate) last_navigation_at: Option<Instant>,
     pub(crate) show_settings: bool,
+    pub(crate) settings_tab: SettingsTab,
     pub(crate) max_texture_side: usize,
     pub(crate) texture_display_scale: f32,
     pub(crate) pending_resize_after_load: bool,
@@ -91,6 +92,15 @@ pub(crate) struct ViewerApp {
     pub(crate) companion_rendered: Option<LoadedImage>,
     pub(crate) companion_texture: Option<TextureHandle>,
     pub(crate) companion_texture_display_scale: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SettingsTab {
+    Viewer,
+    Resources,
+    Render,
+    Window,
+    Navigation,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -188,6 +198,7 @@ impl ViewerApp {
             loading_message: None,
             last_navigation_at: None,
             show_settings: false,
+            settings_tab: SettingsTab::Viewer,
             max_texture_side: cc.egui_ctx.input(|i| i.max_texture_side),
             texture_display_scale: 1.0,
             pending_resize_after_load: false,
@@ -222,6 +233,19 @@ impl ViewerApp {
             self.source.canvas.width() as f32,
             self.source.canvas.height() as f32,
         )
+    }
+
+    fn fit_target_size(&self) -> egui::Vec2 {
+        if self.manga_spread_active() {
+            if let Some(companion) = &self.companion_rendered {
+                return vec2(
+                    self.source.canvas.width() as f32 + companion.canvas.width() as f32,
+                    self.source.canvas.height().max(companion.canvas.height()) as f32,
+                );
+            }
+        }
+
+        self.source_size()
     }
 
     pub(crate) fn text(&self, key: UiTextKey) -> &'static str {
@@ -353,6 +377,13 @@ impl ViewerApp {
         });
     }
 
+    pub(crate) fn set_filesystem_current(&mut self, path: PathBuf) {
+        let request_id = self.alloc_fs_request_id();
+        let _ = self
+            .fs_tx
+            .send(FilesystemCommand::SetCurrent { request_id, path });
+    }
+
     pub(crate) fn save_current_as(&mut self, format: SaveFormat) {
         let Some(parent) = self.current_path.parent() else {
             self.save_message = Some("Cannot determine save directory".to_string());
@@ -425,6 +456,7 @@ impl ViewerApp {
             self.companion_rendered = None;
             self.companion_texture = None;
             self.companion_active_request = None;
+            self.pending_fit_recalc |= !matches!(self.render_options.zoom_option, ZoomOption::None);
             return;
         }
 
@@ -510,6 +542,7 @@ impl ViewerApp {
         let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path.clone());
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
+        self.pending_fit_recalc = !matches!(self.render_options.zoom_option, ZoomOption::None);
         self.loading_message = Some(format!("Loading {}", load_path.display()));
         self.worker_tx
             .send(RenderCommand::LoadPath {
@@ -628,6 +661,8 @@ impl ViewerApp {
                     }
                     self.source = source;
                     self.rendered = rendered;
+                    self.pending_fit_recalc |=
+                        !matches!(self.render_options.zoom_option, ZoomOption::None);
                     self.current_frame = self
                         .current_frame
                         .min(self.rendered.frame_count().saturating_sub(1));
@@ -706,6 +741,8 @@ impl ViewerApp {
                     self.companion_texture = Some(texture);
                     self.companion_rendered = Some(rendered);
                     self.companion_texture_display_scale = display_scale;
+                    self.pending_fit_recalc |=
+                        !matches!(self.render_options.zoom_option, ZoomOption::None);
                     self.companion_active_request = None;
                 }
                 Ok(RenderResult::Failed { request_id, .. }) => {
@@ -781,7 +818,6 @@ impl ViewerApp {
                     request_id,
                     directory,
                     entries,
-                    navigation_entries,
                     selected,
                 }) => {
                     if self.filer.pending_request_id != Some(request_id) {
@@ -790,7 +826,6 @@ impl ViewerApp {
                     self.filer.pending_request_id = None;
                     self.filer.directory = Some(directory);
                     self.filer.entries = entries;
-                    self.filer.navigation_entries = navigation_entries;
                     self.filer.selected = selected;
                 }
                 Err(TryRecvError::Empty) => break,
@@ -875,7 +910,7 @@ impl eframe::App for ViewerApp {
 
                 let new_zoom = calc_fit_zoom(
                     viewport,
-                    self.source_size(),
+                    self.fit_target_size(),
                     &self.render_options.zoom_option,
                 );
                 self.fit_zoom = new_zoom.clamp(0.1, 16.0);

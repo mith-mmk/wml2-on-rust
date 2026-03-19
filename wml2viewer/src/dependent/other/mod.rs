@@ -1,3 +1,4 @@
+use crate::dependent::normalize_locale_tag;
 use std::path::PathBuf;
 
 pub fn default_config_dir() -> Option<PathBuf> {
@@ -13,6 +14,7 @@ pub fn system_locale() -> Option<String> {
         .ok()
         .or_else(|| std::env::var("LC_MESSAGES").ok())
         .or_else(|| std::env::var("LANG").ok())
+        .map(|locale| normalize_locale_tag(Some(&locale)))
 }
 
 pub fn locale_font_candidates(_locale: &str) -> Vec<PathBuf> {

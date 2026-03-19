@@ -7,6 +7,7 @@ pub fn default_config_dir() -> Option<PathBuf> {
 }
 
 #[cfg(any(target_os = "windows", target_os = "macos", unix))]
+#[allow(dead_code)]
 pub fn available_roots() -> Vec<PathBuf> {
     let mut roots = vec![PathBuf::from("/")];
 

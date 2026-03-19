@@ -4,9 +4,9 @@ use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions};
 use crate::ui::i18n::UiTextKey;
 use crate::ui::render::interpolation_label;
-use crate::ui::viewer::ViewerApp;
 use crate::ui::viewer::options::BackgroundStyle;
 use crate::ui::viewer::options::ZoomOption;
+use crate::ui::viewer::{SettingsTab, ViewerApp};
 use eframe::egui;
 
 impl ViewerApp {
@@ -50,253 +50,280 @@ impl ViewerApp {
             .open(&mut open)
             .resizable(true)
             .show(ctx, |ui| {
-                ui.collapsing(viewer_text, |ui| {
-                    config_changed |= ui
-                        .checkbox(&mut self.options.animation, animation_text)
-                        .changed();
-                    config_changed |= ui
-                        .checkbox(&mut self.options.manga_mode, manga_mode_text)
-                        .changed();
-                    config_changed |= ui
-                        .checkbox(&mut self.options.manga_right_to_left, manga_rtl_text)
-                        .changed();
-
-                    ui.horizontal(|ui| {
-                        ui.label(background_text);
-                        if ui.button("Black").clicked() {
-                            self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
-                            config_changed = true;
-                        }
-                        if ui.button("Gray").clicked() {
-                            self.options.background = BackgroundStyle::Solid([48, 48, 48, 255]);
-                            config_changed = true;
-                        }
-                        if ui.button("Tile").clicked() {
-                            self.options.background = BackgroundStyle::Tile {
-                                color1: [32, 32, 32, 255],
-                                color2: [80, 80, 80, 255],
-                                size: 16,
-                            };
-                            config_changed = true;
-                        }
-                    });
+                ui.horizontal_wrapped(|ui| {
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Viewer, viewer_text);
+                    ui.selectable_value(
+                        &mut self.settings_tab,
+                        SettingsTab::Resources,
+                        resources_text,
+                    );
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Render, render_text);
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Window, window_text);
+                    ui.selectable_value(
+                        &mut self.settings_tab,
+                        SettingsTab::Navigation,
+                        navigation_text,
+                    );
                 });
+                ui.separator();
 
-                ui.collapsing(resources_text, |ui| {
-                    ui.label(format!("{}: {}", locale_text, self.applied_locale));
-                    if !self.loaded_font_names.is_empty() {
-                        ui.label(format!(
-                            "{}: {}",
-                            fonts_text,
-                            self.loaded_font_names.join(", ")
-                        ));
-                    }
-                    ui.horizontal(|ui| {
-                        ui.label(font_size_text);
-                        egui::ComboBox::from_id_salt("font_size")
-                            .selected_text(font_size_label(self.resources.font_size))
-                            .show_ui(ui, |ui| {
-                                config_changed |= ui
-                                    .selectable_value(
-                                        &mut self.resources.font_size,
-                                        FontSizePreset::Auto,
-                                        "Auto",
-                                    )
-                                    .changed();
-                                config_changed |= ui
-                                    .selectable_value(
-                                        &mut self.resources.font_size,
-                                        FontSizePreset::S,
-                                        "S",
-                                    )
-                                    .changed();
-                                config_changed |= ui
-                                    .selectable_value(
-                                        &mut self.resources.font_size,
-                                        FontSizePreset::M,
-                                        "M",
-                                    )
-                                    .changed();
-                                config_changed |= ui
-                                    .selectable_value(
-                                        &mut self.resources.font_size,
-                                        FontSizePreset::L,
-                                        "L",
-                                    )
-                                    .changed();
-                                config_changed |= ui
-                                    .selectable_value(
-                                        &mut self.resources.font_size,
-                                        FontSizePreset::LL,
-                                        "LL",
-                                    )
-                                    .changed();
-                            });
-                    });
-                });
+                if self.settings_tab == SettingsTab::Viewer {
+                    ui.group(|ui| {
+                        config_changed |= ui
+                            .checkbox(&mut self.options.animation, animation_text)
+                            .changed();
+                        config_changed |= ui
+                            .checkbox(&mut self.options.manga_mode, manga_mode_text)
+                            .changed();
+                        config_changed |= ui
+                            .checkbox(&mut self.options.manga_right_to_left, manga_rtl_text)
+                            .changed();
 
-                ui.collapsing(render_text, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(zoom_mode_text);
-                        let before = self.render_options.zoom_option.clone();
-                        egui::ComboBox::from_id_salt("zoom_option")
-                            .selected_text(zoom_option_label(&self.render_options.zoom_option))
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_option,
-                                    ZoomOption::None,
-                                    "None",
-                                );
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_option,
-                                    ZoomOption::FitWidth,
-                                    "FitWidth",
-                                );
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_option,
-                                    ZoomOption::FitHeight,
-                                    "FitHeight",
-                                );
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_option,
-                                    ZoomOption::FitScreen,
-                                    "FitScreen",
-                                );
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_option,
-                                    ZoomOption::FitScreenIncludeSmaller,
-                                    "FitScreenIncludeSmaller",
-                                );
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_option,
-                                    ZoomOption::FitScreenOnlySmaller,
-                                    "FitScreenOnlySmaller",
-                                );
-                            });
-                        if self.render_options.zoom_option != before {
-                            zoom_option_changed = true;
-                            config_changed = true;
-                        }
-                    });
-
-                    ui.horizontal(|ui| {
-                        ui.label(resize_text);
-                        let before = self.render_options.zoom_method;
-                        egui::ComboBox::from_id_salt("zoom_method")
-                            .selected_text(interpolation_label(self.render_options.zoom_method))
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_method,
-                                    InterpolationAlgorithm::NearestNeighber,
-                                    "Nearest",
-                                );
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_method,
-                                    InterpolationAlgorithm::Bilinear,
-                                    "Bilinear",
-                                );
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_method,
-                                    InterpolationAlgorithm::BicubicAlpha(None),
-                                    "Bicubic",
-                                );
-                                ui.selectable_value(
-                                    &mut self.render_options.zoom_method,
-                                    InterpolationAlgorithm::Lanzcos3,
-                                    "Lanczos3",
-                                );
-                            });
-                        if self.render_options.zoom_method != before {
-                            rerender_requested = true;
-                            config_changed = true;
-                        }
-                    });
-                });
-
-                ui.collapsing(window_text, |ui| {
-                    if ui
-                        .checkbox(&mut self.window_options.fullscreen, fullscreen_text)
-                        .changed()
-                    {
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(
-                            self.window_options.fullscreen,
-                        ));
-                        config_changed = true;
-                    }
-                    config_changed |= ui
-                        .checkbox(&mut self.window_options.remember_size, remember_size_text)
-                        .changed();
-                    config_changed |= ui
-                        .checkbox(
-                            &mut self.window_options.remember_position,
-                            remember_position_text,
-                        )
-                        .changed();
-                    match &mut self.window_options.size {
-                        crate::ui::viewer::options::WindowSize::Relative(ratio) => {
-                            ui.label(window_relative_text);
-                            config_changed |= ui
-                                .add(egui::Slider::new(ratio, 0.2..=1.0).text("ratio"))
-                                .changed();
-                            if ui.button(use_exact_size_text).clicked() {
-                                self.window_options.size =
-                                    crate::ui::viewer::options::WindowSize::Exact {
-                                        width: self.last_viewport_size.x.max(320.0),
-                                        height: self.last_viewport_size.y.max(240.0),
-                                    };
+                        ui.horizontal(|ui| {
+                            ui.label(background_text);
+                            if ui.button("Black").clicked() {
+                                self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
                                 config_changed = true;
                             }
-                        }
-                        crate::ui::viewer::options::WindowSize::Exact { width, height } => {
-                            ui.label(window_exact_text);
-                            config_changed |= ui
-                                .add(egui::DragValue::new(width).speed(1.0).prefix("W "))
-                                .changed();
-                            config_changed |= ui
-                                .add(egui::DragValue::new(height).speed(1.0).prefix("H "))
-                                .changed();
-                            if ui.button(use_relative_size_text).clicked() {
-                                self.window_options.size =
-                                    crate::ui::viewer::options::WindowSize::Relative(0.8);
+                            if ui.button("Gray").clicked() {
+                                self.options.background = BackgroundStyle::Solid([48, 48, 48, 255]);
                                 config_changed = true;
                             }
-                        }
-                    }
-                });
+                            if ui.button("Tile").clicked() {
+                                self.options.background = BackgroundStyle::Tile {
+                                    color1: [32, 32, 32, 255],
+                                    color2: [80, 80, 80, 255],
+                                    size: 16,
+                                };
+                                config_changed = true;
+                            }
+                        });
+                    });
+                }
 
-                ui.collapsing(navigation_text, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(end_of_folder_text);
-                        let before = self.end_of_folder;
-                        egui::ComboBox::from_id_salt("end_of_folder")
-                            .selected_text(end_of_folder_label(self.end_of_folder))
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(
-                                    &mut self.end_of_folder,
-                                    EndOfFolderOption::Stop,
-                                    "STOP",
-                                );
-                                ui.selectable_value(
-                                    &mut self.end_of_folder,
-                                    EndOfFolderOption::Loop,
-                                    "LOOP",
-                                );
-                                ui.selectable_value(
-                                    &mut self.end_of_folder,
-                                    EndOfFolderOption::Next,
-                                    "NEXT",
-                                );
-                                ui.selectable_value(
-                                    &mut self.end_of_folder,
-                                    EndOfFolderOption::Recursive,
-                                    "RECURSIVE",
-                                );
-                            });
-                        if self.end_of_folder != before {
+                if self.settings_tab == SettingsTab::Resources {
+                    ui.group(|ui| {
+                        ui.label(format!("{}: {}", locale_text, self.applied_locale));
+                        if !self.loaded_font_names.is_empty() {
+                            ui.label(format!(
+                                "{}: {}",
+                                fonts_text,
+                                self.loaded_font_names.join(", ")
+                            ));
+                        }
+                        ui.horizontal(|ui| {
+                            ui.label(font_size_text);
+                            egui::ComboBox::from_id_salt("font_size")
+                                .selected_text(font_size_label(self.resources.font_size))
+                                .show_ui(ui, |ui| {
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.resources.font_size,
+                                            FontSizePreset::Auto,
+                                            "Auto",
+                                        )
+                                        .changed();
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.resources.font_size,
+                                            FontSizePreset::S,
+                                            "S",
+                                        )
+                                        .changed();
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.resources.font_size,
+                                            FontSizePreset::M,
+                                            "M",
+                                        )
+                                        .changed();
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.resources.font_size,
+                                            FontSizePreset::L,
+                                            "L",
+                                        )
+                                        .changed();
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.resources.font_size,
+                                            FontSizePreset::LL,
+                                            "LL",
+                                        )
+                                        .changed();
+                                });
+                        });
+                    });
+                }
+
+                if self.settings_tab == SettingsTab::Render {
+                    ui.group(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.label(zoom_mode_text);
+                            let before = self.render_options.zoom_option.clone();
+                            egui::ComboBox::from_id_salt("zoom_option")
+                                .selected_text(zoom_option_label(&self.render_options.zoom_option))
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_option,
+                                        ZoomOption::None,
+                                        "None",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_option,
+                                        ZoomOption::FitWidth,
+                                        "FitWidth",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_option,
+                                        ZoomOption::FitHeight,
+                                        "FitHeight",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_option,
+                                        ZoomOption::FitScreen,
+                                        "FitScreen",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_option,
+                                        ZoomOption::FitScreenIncludeSmaller,
+                                        "FitScreenIncludeSmaller",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_option,
+                                        ZoomOption::FitScreenOnlySmaller,
+                                        "FitScreenOnlySmaller",
+                                    );
+                                });
+                            if self.render_options.zoom_option != before {
+                                zoom_option_changed = true;
+                                config_changed = true;
+                            }
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.label(resize_text);
+                            let before = self.render_options.zoom_method;
+                            egui::ComboBox::from_id_salt("zoom_method")
+                                .selected_text(interpolation_label(self.render_options.zoom_method))
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_method,
+                                        InterpolationAlgorithm::NearestNeighber,
+                                        "Nearest",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_method,
+                                        InterpolationAlgorithm::Bilinear,
+                                        "Bilinear",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_method,
+                                        InterpolationAlgorithm::BicubicAlpha(None),
+                                        "Bicubic",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.render_options.zoom_method,
+                                        InterpolationAlgorithm::Lanzcos3,
+                                        "Lanczos3",
+                                    );
+                                });
+                            if self.render_options.zoom_method != before {
+                                rerender_requested = true;
+                                config_changed = true;
+                            }
+                        });
+                    });
+                }
+
+                if self.settings_tab == SettingsTab::Window {
+                    ui.group(|ui| {
+                        if ui
+                            .checkbox(&mut self.window_options.fullscreen, fullscreen_text)
+                            .changed()
+                        {
+                            ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(
+                                self.window_options.fullscreen,
+                            ));
                             config_changed = true;
                         }
+                        config_changed |= ui
+                            .checkbox(&mut self.window_options.remember_size, remember_size_text)
+                            .changed();
+                        config_changed |= ui
+                            .checkbox(
+                                &mut self.window_options.remember_position,
+                                remember_position_text,
+                            )
+                            .changed();
+                        match &mut self.window_options.size {
+                            crate::ui::viewer::options::WindowSize::Relative(ratio) => {
+                                ui.label(window_relative_text);
+                                config_changed |= ui
+                                    .add(egui::Slider::new(ratio, 0.2..=1.0).text("ratio"))
+                                    .changed();
+                                if ui.button(use_exact_size_text).clicked() {
+                                    self.window_options.size =
+                                        crate::ui::viewer::options::WindowSize::Exact {
+                                            width: self.last_viewport_size.x.max(320.0),
+                                            height: self.last_viewport_size.y.max(240.0),
+                                        };
+                                    config_changed = true;
+                                }
+                            }
+                            crate::ui::viewer::options::WindowSize::Exact { width, height } => {
+                                ui.label(window_exact_text);
+                                config_changed |= ui
+                                    .add(egui::DragValue::new(width).speed(1.0).prefix("W "))
+                                    .changed();
+                                config_changed |= ui
+                                    .add(egui::DragValue::new(height).speed(1.0).prefix("H "))
+                                    .changed();
+                                if ui.button(use_relative_size_text).clicked() {
+                                    self.window_options.size =
+                                        crate::ui::viewer::options::WindowSize::Relative(0.8);
+                                    config_changed = true;
+                                }
+                            }
+                        }
                     });
-                });
+                }
+
+                if self.settings_tab == SettingsTab::Navigation {
+                    ui.group(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.label(end_of_folder_text);
+                            let before = self.end_of_folder;
+                            egui::ComboBox::from_id_salt("end_of_folder")
+                                .selected_text(end_of_folder_label(self.end_of_folder))
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(
+                                        &mut self.end_of_folder,
+                                        EndOfFolderOption::Stop,
+                                        "STOP",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.end_of_folder,
+                                        EndOfFolderOption::Loop,
+                                        "LOOP",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.end_of_folder,
+                                        EndOfFolderOption::Next,
+                                        "NEXT",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.end_of_folder,
+                                        EndOfFolderOption::Recursive,
+                                        "RECURSIVE",
+                                    );
+                                });
+                            if self.end_of_folder != before {
+                                config_changed = true;
+                            }
+                        });
+                    });
+                }
 
                 ui.separator();
                 ui.horizontal(|ui| {

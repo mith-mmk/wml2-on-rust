@@ -83,11 +83,16 @@ impl ViewerApp {
             return;
         }
 
-        if response.clicked() {
+        if response.secondary_clicked() {
             self.left_menu_pos = response
                 .interact_pointer_pos()
                 .unwrap_or_else(|| response.rect.left_top());
             self.show_left_menu = true;
+            return;
+        }
+
+        if response.clicked() {
+            let _ = self.next_image();
         }
     }
 }

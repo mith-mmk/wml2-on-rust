@@ -1,5 +1,5 @@
 mod thirdparty;
-pub use thirdparty::*;
+pub use thirdparty::{default_config_dir, normalize_locale_tag, resource_locale_fallbacks};
 
 #[cfg(target_os = "android")]
 mod android;

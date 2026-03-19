@@ -126,6 +126,8 @@ impl ViewerApp {
                             self.filer.selected = Some(entry.path.clone());
                             self.current_navigation_path = entry.path.clone();
                             self.empty_mode = false;
+                            self.pending_fit_recalc = true;
+                            self.set_filesystem_current(self.current_navigation_path.clone());
                             let _ = self.request_load_path(entry.path);
                         }
                     }

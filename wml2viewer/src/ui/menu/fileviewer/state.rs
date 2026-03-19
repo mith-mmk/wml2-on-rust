@@ -19,7 +19,6 @@ pub(crate) struct FilerEntry {
 #[derive(Debug)]
 pub(crate) struct FilerState {
     pub(crate) entries: Vec<FilerEntry>,
-    pub(crate) navigation_entries: Vec<PathBuf>,
     pub(crate) directory: Option<PathBuf>,
     pub(crate) selected: Option<PathBuf>,
     pub(crate) roots: Vec<PathBuf>,
@@ -30,7 +29,6 @@ impl Default for FilerState {
     fn default() -> Self {
         Self {
             entries: Vec::new(),
-            navigation_entries: Vec::new(),
             directory: None,
             selected: None,
             roots: available_roots(),

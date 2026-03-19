@@ -37,8 +37,12 @@ pub(crate) enum UiTextKey {
 }
 
 pub(crate) fn tr(locale: &str, key: UiTextKey) -> &'static str {
-    if locale.starts_with("ja") {
-        return ja(key);
+    for candidate in resource_locale_fallbacks(locale) {
+        match candidate.as_str() {
+            "ja_JP" | "ja" => return ja(key),
+            "en_US" | "en_GB" | "en" => return en(key),
+            _ => {}
+        }
     }
     en(key)
 }
@@ -122,3 +126,4 @@ fn ja(key: UiTextKey) -> &'static str {
         }
     }
 }
+use crate::dependent::resource_locale_fallbacks;

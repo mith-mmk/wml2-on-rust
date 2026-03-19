@@ -1,4 +1,7 @@
-use crate::dependent::{emoji_font_candidates, locale_font_candidates, system_locale};
+use crate::dependent::{
+    emoji_font_candidates, locale_font_candidates, normalize_locale_tag, resource_locale_fallbacks,
+    system_locale,
+};
 use eframe::egui::{self, FontFamily, FontId, TextStyle};
 use std::collections::BTreeMap;
 use std::fs;
@@ -65,14 +68,14 @@ pub fn apply_resources(ctx: &egui::Context, options: &ResourceOptions) -> Applie
 }
 
 pub fn normalized_locale(locale: Option<&str>) -> String {
-    locale
-        .filter(|value| !value.trim().is_empty())
-        .map(|value| value.replace('_', "-").to_ascii_lowercase())
-        .unwrap_or_else(|| "en".to_string())
+    normalize_locale_tag(locale)
 }
 
 fn candidate_font_paths(locale: &str) -> Vec<PathBuf> {
-    let mut paths = locale_font_candidates(locale);
+    let mut paths = Vec::new();
+    for candidate in resource_locale_fallbacks(locale) {
+        paths.extend(locale_font_candidates(&candidate));
+    }
     paths.extend(emoji_font_candidates());
     paths
 }

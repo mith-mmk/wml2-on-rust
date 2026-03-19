@@ -85,7 +85,7 @@ impl Default for WindowConfigFile {
     fn default() -> Self {
         Self {
             fullscreen: false,
-            size: WindowSizeConfigFile::Relative(0.8),
+            size: WindowSizeConfigFile::Relative(0.6),
             start_position: WindowStartPositionConfigFile::Center,
             remember_size: true,
             remember_position: true,
@@ -102,7 +102,7 @@ enum WindowSizeConfigFile {
 
 impl Default for WindowSizeConfigFile {
     fn default() -> Self {
-        Self::Relative(0.8)
+        Self::Relative(0.6)
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::configs::config::save_app_config;
 use crate::configs::resourses::{AppliedResources, apply_resources};
-use crate::dependent::pick_save_directory;
+use crate::dependent::{default_download_dir, pick_save_directory};
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
@@ -21,7 +21,7 @@ use crate::ui::render::{
     downscale_for_texture_limit, spawn_render_worker, worker_send_error,
 };
 use crate::ui::viewer::options::{
-    RenderOptions, ViewerOptions, WindowOptions, WindowStartPosition,
+    RenderOptions, ViewerOptions, WindowOptions, WindowStartPosition, WindowUiTheme,
 };
 use eframe::egui::{self, Pos2, TextureHandle, TextureOptions, vec2};
 use std::collections::HashMap;
@@ -58,6 +58,7 @@ pub(crate) struct ViewerApp {
     pub(crate) window_options: WindowOptions,
     pub(crate) resources: ResourceOptions,
     pub(crate) plugins: PluginConfig,
+    pub(crate) storage: crate::options::StorageOptions,
     pub(crate) applied_locale: String,
     pub(crate) loaded_font_names: Vec<String>,
     pub(crate) keymap: HashMap<KeyBinding, ViewerAction>,
@@ -93,10 +94,17 @@ pub(crate) struct ViewerApp {
     pub(crate) left_menu_pos: Pos2,
     pub(crate) save_format: SaveFormat,
     pub(crate) save_output_dir: Option<PathBuf>,
+    pub(crate) save_file_name: String,
     pub(crate) save_message: Option<String>,
     pub(crate) show_save_dialog: bool,
+    pub(crate) save_in_progress: bool,
+    pub(crate) save_result_rx: Option<Receiver<Result<String, String>>>,
     pub(crate) show_filer: bool,
+    pub(crate) show_subfiler: bool,
     pub(crate) filer: FilerState,
+    pub(crate) susie64_search_paths_input: String,
+    pub(crate) system_search_paths_input: String,
+    pub(crate) ffmpeg_search_paths_input: String,
     pub(crate) startup_window_sync_frames: usize,
     pub(crate) empty_mode: bool,
     pub(crate) companion_tx: Sender<RenderCommand>,
@@ -111,6 +119,7 @@ pub(crate) struct ViewerApp {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum SettingsTab {
     Viewer,
+    Plugins,
     Resources,
     Render,
     Window,
@@ -143,6 +152,45 @@ fn viewport_size_changed(current: egui::Vec2, previous: egui::Vec2) -> bool {
         return true;
     }
     (current.x - previous.x).abs() > 1.0 || (current.y - previous.y).abs() > 1.0
+}
+
+fn default_save_file_name(path: &std::path::Path) -> String {
+    path.file_stem()
+        .and_then(|name| name.to_str())
+        .unwrap_or("image")
+        .to_string()
+}
+
+fn format_key_binding(binding: &KeyBinding) -> String {
+    let mut parts = Vec::new();
+    if binding.ctrl {
+        parts.push("Ctrl");
+    }
+    if binding.shift {
+        parts.push("Shift");
+    }
+    if binding.alt {
+        parts.push("Alt");
+    }
+    parts.push(&binding.key);
+    parts.join("+")
+}
+
+pub(crate) fn join_search_paths(paths: &[PathBuf]) -> String {
+    paths
+        .iter()
+        .map(|path| path.display().to_string())
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+pub(crate) fn parse_search_paths(input: &str) -> Vec<PathBuf> {
+    input
+        .split(';')
+        .map(str::trim)
+        .filter(|part| !part.is_empty())
+        .map(PathBuf::from)
+        .collect()
 }
 
 impl ViewerApp {
@@ -201,6 +249,7 @@ impl ViewerApp {
             window_options: config.window,
             resources: config.resources,
             plugins: config.plugins,
+            storage: config.storage,
             applied_locale: locale,
             loaded_font_names: loaded_fonts,
             keymap: config.input.merged_with_defaults(),
@@ -235,11 +284,18 @@ impl ViewerApp {
             show_left_menu: false,
             left_menu_pos: Pos2::ZERO,
             save_format: SaveFormat::Png,
-            save_output_dir: path.parent().map(|parent| parent.to_path_buf()),
+            save_output_dir: None,
+            save_file_name: default_save_file_name(&path),
             save_message: None,
             show_save_dialog: false,
+            save_in_progress: false,
+            save_result_rx: None,
             show_filer: show_filer_on_start,
+            show_subfiler: false,
             filer: FilerState::default(),
+            susie64_search_paths_input: String::new(),
+            system_search_paths_input: String::new(),
+            ffmpeg_search_paths_input: String::new(),
             startup_window_sync_frames: 0,
             empty_mode: show_filer_on_start,
             companion_tx,
@@ -250,6 +306,17 @@ impl ViewerApp {
             companion_texture: None,
             companion_texture_display_scale: 1.0,
         };
+
+        this.save_output_dir = this
+            .storage
+            .path
+            .clone()
+            .or_else(default_download_dir)
+            .or_else(|| path.parent().map(|parent| parent.to_path_buf()));
+        this.susie64_search_paths_input = join_search_paths(&this.plugins.susie64.search_path);
+        this.system_search_paths_input = join_search_paths(&this.plugins.system.search_path);
+        this.ffmpeg_search_paths_input = join_search_paths(&this.plugins.ffmpeg.search_path);
+        this.apply_window_theme(&cc.egui_ctx);
 
         let _ = this.init_filesystem(navigation_path);
         if let Some(dir) = this.current_directory() {
@@ -268,8 +335,9 @@ impl ViewerApp {
     fn fit_target_size(&self) -> egui::Vec2 {
         if self.manga_spread_active() {
             if let Some(companion) = &self.companion_rendered {
+                let separator = self.options.manga_separator.pixels.max(0.0);
                 return vec2(
-                    self.source.canvas.width() as f32 + companion.canvas.width() as f32,
+                    self.source.canvas.width() as f32 + companion.canvas.width() as f32 + separator,
                     self.source.canvas.height().max(companion.canvas.height()) as f32,
                 );
             }
@@ -278,8 +346,122 @@ impl ViewerApp {
         self.source_size()
     }
 
+    fn paint_manga_separator(&self, ui: &mut egui::Ui, height: f32) {
+        let width = self.options.manga_separator.pixels.max(0.0);
+        if width <= 0.0 {
+            return;
+        }
+
+        let (rect, _) = ui.allocate_exact_size(vec2(width, height.max(1.0)), egui::Sense::hover());
+        match self.options.manga_separator.style {
+            crate::ui::viewer::options::MangaSeparatorStyle::None => {}
+            crate::ui::viewer::options::MangaSeparatorStyle::Solid => {
+                ui.painter().rect_filled(
+                    rect,
+                    0.0,
+                    egui::Color32::from_rgba_unmultiplied(
+                        self.options.manga_separator.color[0],
+                        self.options.manga_separator.color[1],
+                        self.options.manga_separator.color[2],
+                        self.options.manga_separator.color[3],
+                    ),
+                );
+            }
+            crate::ui::viewer::options::MangaSeparatorStyle::Shadow => {
+                let base = self.options.manga_separator.color;
+                let steps = width.max(2.0) as usize;
+                for step in 0..steps {
+                    let alpha = ((steps - step) as f32 / steps as f32) * (base[3] as f32);
+                    let x0 = rect.left() + (step as f32 / steps as f32) * rect.width();
+                    let x1 = rect.left() + ((step + 1) as f32 / steps as f32) * rect.width();
+                    let band = egui::Rect::from_min_max(
+                        egui::pos2(x0, rect.top()),
+                        egui::pos2(x1, rect.bottom()),
+                    );
+                    ui.painter().rect_filled(
+                        band,
+                        0.0,
+                        egui::Color32::from_rgba_unmultiplied(
+                            base[0],
+                            base[1],
+                            base[2],
+                            alpha.round().clamp(0.0, 255.0) as u8,
+                        ),
+                    );
+                }
+            }
+        }
+    }
+
     pub(crate) fn text(&self, key: UiTextKey) -> &'static str {
         tr(&self.applied_locale, key)
+    }
+
+    pub(crate) fn apply_window_theme(&self, ctx: &egui::Context) {
+        match self.window_options.ui_theme {
+            WindowUiTheme::System => {}
+            WindowUiTheme::Light => ctx.set_visuals(egui::Visuals::light()),
+            WindowUiTheme::Dark => ctx.set_visuals(egui::Visuals::dark()),
+        }
+    }
+
+    pub(crate) fn open_help(&self) {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("help.html");
+        let _ = std::fs::create_dir_all(path.parent().unwrap_or_else(|| std::path::Path::new(".")));
+        let mut bindings = self
+            .keymap
+            .iter()
+            .map(|(binding, action)| (format_key_binding(binding), format!("{action:?}")))
+            .collect::<Vec<_>>();
+        bindings.sort_by(|left, right| left.0.cmp(&right.0));
+
+        let rows = bindings
+            .into_iter()
+            .map(|(binding, action)| format!("<tr><td>{binding}</td><td>{action}</td></tr>"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let html = format!(
+            r#"<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>wml2viewer Help</title>
+  <style>
+    body {{ font-family: sans-serif; margin: 32px; line-height: 1.5; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+    th, td {{ border: 1px solid #ccc; padding: 8px 10px; text-align: left; }}
+    code {{ background: #f4f4f4; padding: 2px 4px; border-radius: 4px; }}
+  </style>
+</head>
+<body>
+  <h1>wml2viewer Help</h1>
+  <h2>Key Bindings</h2>
+  <table>
+    <thead><tr><th>Key</th><th>Action</th></tr></thead>
+    <tbody>{rows}</tbody>
+  </table>
+  <h2>Startup Options</h2>
+  <ul>
+    <li><code>wml2viewer [path]</code></li>
+    <li><code>wml2viewer --config &lt;path&gt; [path]</code></li>
+    <li><code>wml2viewer --config=&lt;path&gt; [path]</code></li>
+    <li><code>wml2viewer --clean system</code> (planned)</li>
+  </ul>
+</body>
+</html>"#
+        );
+        let _ = std::fs::write(&path, html);
+
+        #[cfg(target_os = "windows")]
+        let _ = std::process::Command::new("cmd")
+            .args(["/C", "start", "", &path.display().to_string()])
+            .spawn();
+        #[cfg(target_os = "macos")]
+        let _ = std::process::Command::new("open").arg(&path).spawn();
+        #[cfg(target_os = "linux")]
+        let _ = std::process::Command::new("xdg-open").arg(&path).spawn();
     }
 
     pub(crate) fn set_zoom(&mut self, zoom: f32) -> Result<(), Box<dyn Error>> {
@@ -429,29 +611,37 @@ impl ViewerApp {
     }
 
     pub(crate) fn save_current_as(&mut self, format: SaveFormat) {
+        if self.save_in_progress {
+            return;
+        }
         let Some(parent) = self
             .save_output_dir
             .clone()
+            .or_else(|| self.storage.path.clone())
+            .or_else(default_download_dir)
             .or_else(|| self.current_path.parent().map(|path| path.to_path_buf()))
         else {
             self.save_message = Some("Cannot determine save directory".to_string());
             return;
         };
 
-        let stem = self
-            .current_path
-            .file_stem()
-            .and_then(|name| name.to_str())
-            .unwrap_or("image");
+        let file_name = self.save_file_name.trim();
+        let stem = if file_name.is_empty() {
+            default_save_file_name(&self.current_path)
+        } else {
+            file_name.to_string()
+        };
         let output = parent.join(format!("{stem}.{}", format.extension()));
-        match save_loaded_image(&output, &self.source, format) {
-            Ok(()) => {
-                self.save_message = Some(format!("Saved {}", output.display()));
-            }
-            Err(err) => {
-                self.save_message = Some(format!("Save failed: {err}"));
-            }
-        }
+        let source = self.source.clone();
+        let (tx, rx) = mpsc::channel();
+        self.save_in_progress = true;
+        self.save_result_rx = Some(rx);
+        std::thread::spawn(move || {
+            let result = save_loaded_image(&output, &source, format)
+                .map(|_| format!("Saved {}", output.display()))
+                .map_err(|err| format!("Save failed: {err}"));
+            let _ = tx.send(result);
+        });
     }
 
     fn color_image_from_canvas(&self, canvas: &Canvas) -> egui::ColorImage {
@@ -471,6 +661,31 @@ impl ViewerApp {
 
     pub(crate) fn open_save_dialog(&mut self) {
         self.show_save_dialog = true;
+    }
+
+    fn poll_save_result(&mut self) {
+        let Some(rx) = &self.save_result_rx else {
+            return;
+        };
+        match rx.try_recv() {
+            Ok(Ok(message)) => {
+                self.save_message = Some(message);
+                self.save_in_progress = false;
+                self.show_save_dialog = false;
+                self.save_result_rx = None;
+            }
+            Ok(Err(message)) => {
+                self.save_message = Some(message);
+                self.save_in_progress = false;
+                self.save_result_rx = None;
+            }
+            Err(TryRecvError::Empty) => {}
+            Err(TryRecvError::Disconnected) => {
+                self.save_message = Some("Save worker disconnected".to_string());
+                self.save_in_progress = false;
+                self.save_result_rx = None;
+            }
+        }
     }
 
     fn save_dialog_ui(&mut self, ctx: &egui::Context) {
@@ -493,27 +708,49 @@ impl ViewerApp {
                     );
                 });
                 if ui.button(self.text(UiTextKey::ChooseFolder)).clicked() {
-                    self.save_output_dir = pick_save_directory()
-                        .or_else(|| self.current_path.parent().map(|path| path.to_path_buf()));
+                    self.save_output_dir = pick_save_directory().or_else(default_download_dir);
+                    if self.storage.path_record {
+                        self.storage.path = self.save_output_dir.clone();
+                    }
                 }
                 ui.horizontal(|ui| {
-                    ui.label(self.text(UiTextKey::Format));
-                    egui::ComboBox::from_id_salt("save_format_dialog")
-                        .selected_text(self.save_format.to_string())
-                        .show_ui(ui, |ui| {
-                            for format in SaveFormat::all() {
-                                ui.selectable_value(
-                                    &mut self.save_format,
-                                    format,
-                                    format.to_string(),
-                                );
-                            }
-                        });
+                    ui.label(self.text(UiTextKey::NameLabel));
+                    ui.add_enabled_ui(!self.save_in_progress, |ui| {
+                        ui.text_edit_singleline(&mut self.save_file_name);
+                    });
                 });
                 ui.horizontal(|ui| {
-                    if ui.button(self.text(UiTextKey::Save)).clicked() {
+                    ui.label(self.text(UiTextKey::Format));
+                    ui.add_enabled_ui(!self.save_in_progress, |ui| {
+                        egui::ComboBox::from_id_salt("save_format_dialog")
+                            .selected_text(self.save_format.to_string())
+                            .show_ui(ui, |ui| {
+                                for format in SaveFormat::all() {
+                                    ui.selectable_value(
+                                        &mut self.save_format,
+                                        format,
+                                        format.to_string(),
+                                    );
+                                }
+                            });
+                    });
+                });
+                if self.save_in_progress {
+                    ui.horizontal(|ui| {
+                        ui.add(egui::Spinner::new());
+                        let dots = ".".repeat((self.frame_counter % 3) + 1);
+                        ui.label(format!("Waiting{dots}"));
+                    });
+                }
+                ui.horizontal(|ui| {
+                    if ui
+                        .add_enabled(
+                            !self.save_in_progress,
+                            egui::Button::new(self.text(UiTextKey::Save)),
+                        )
+                        .clicked()
+                    {
                         self.save_current_as(self.save_format);
-                        self.show_save_dialog = false;
                     }
                     if ui.button(self.text(UiTextKey::Cancel)).clicked() {
                         self.show_save_dialog = false;
@@ -770,6 +1007,7 @@ impl ViewerApp {
                     if let Some(path) = path {
                         let request_id = self.alloc_fs_request_id();
                         self.current_path = path.clone();
+                        self.save_file_name = default_save_file_name(&path);
                         let _ = self.fs_tx.send(FilesystemCommand::SetCurrent {
                             request_id,
                             path: self.current_navigation_path.clone(),
@@ -1039,6 +1277,7 @@ impl eframe::App for ViewerApp {
         self.poll_filesystem();
         self.poll_filer_worker();
         self.poll_thumbnail_worker();
+        self.poll_save_result();
         self.sync_manga_companion(ctx);
         self.handle_keyboard(ctx);
         self.settings_ui(ctx);
@@ -1063,9 +1302,13 @@ impl eframe::App for ViewerApp {
                 ctx.request_repaint_after(Duration::from_millis(16));
             }
 
-            let viewport = ui.available_size();
+            let viewport = ui.max_rect().size();
+            let startup_viewport_settling =
+                self.frame_counter < 8 && viewport_size_changed(viewport, self.last_viewport_size);
 
-            if !self.empty_mode
+            if startup_viewport_settling {
+                self.last_viewport_size = viewport;
+            } else if !self.empty_mode
                 && (viewport_size_changed(viewport, self.last_viewport_size)
                     || self.pending_fit_recalc)
                 && !matches!(self.render_options.zoom_option, ZoomOption::None)
@@ -1120,6 +1363,7 @@ impl eframe::App for ViewerApp {
                     ui.add_space(offset.y.max(0.0));
 
                     let inner = ui.horizontal(|ui| {
+                        ui.spacing_mut().item_spacing.x = 0.0;
                         ui.add_space(offset.x.max(0.0));
                         if spread_active {
                             if let Some((_, companion_texture)) = companion {
@@ -1130,6 +1374,10 @@ impl eframe::App for ViewerApp {
                                         egui::Image::from_texture(companion_texture)
                                             .fit_to_exact_size(companion_draw_size),
                                     );
+                                    self.paint_manga_separator(
+                                        ui,
+                                        draw_size.y.max(companion_draw_size.y),
+                                    );
                                     ui.add(
                                         egui::Image::from_texture(&self.texture)
                                             .fit_to_exact_size(draw_size),
@@ -1139,6 +1387,10 @@ impl eframe::App for ViewerApp {
                                     let first = ui.add(
                                         egui::Image::from_texture(&self.texture)
                                             .fit_to_exact_size(draw_size),
+                                    );
+                                    self.paint_manga_separator(
+                                        ui,
+                                        draw_size.y.max(companion_draw_size.y),
                                     );
                                     ui.add(
                                         egui::Image::from_texture(companion_texture)

@@ -3,6 +3,7 @@ mod susie64;
 mod system;
 
 use serde::{Deserialize, Serialize};
+use std::ffi::OsStr;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -66,4 +67,69 @@ pub fn discover_plugin_paths(config: &PluginProviderConfig) -> Vec<PathBuf> {
         .filter(|path| path.exists())
         .cloned()
         .collect()
+}
+
+pub fn discover_plugin_modules(
+    provider_name: &str,
+    config: &PluginProviderConfig,
+) -> Vec<PluginModuleConfig> {
+    let mut modules = Vec::new();
+    for root in discover_plugin_paths(config) {
+        let Ok(entries) = std::fs::read_dir(&root) else {
+            continue;
+        };
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            if !path.is_file() || !matches_provider(provider_name, &path) {
+                continue;
+            }
+            modules.push(PluginModuleConfig {
+                enable: true,
+                path: Some(path.clone()),
+                plugin_name: path
+                    .file_stem()
+                    .and_then(OsStr::to_str)
+                    .unwrap_or("plugin")
+                    .to_string(),
+                plugin_type: provider_default_type(provider_name).to_string(),
+                ext: Vec::new(),
+            });
+        }
+    }
+    modules.sort_by(|left, right| left.plugin_name.cmp(&right.plugin_name));
+    modules
+}
+
+fn matches_provider(provider_name: &str, path: &std::path::Path) -> bool {
+    let ext = path
+        .extension()
+        .and_then(OsStr::to_str)
+        .map(|value| value.to_ascii_lowercase())
+        .unwrap_or_default();
+    let name = path
+        .file_name()
+        .and_then(OsStr::to_str)
+        .map(|value| value.to_ascii_lowercase())
+        .unwrap_or_default();
+    match provider_name {
+        "susie64" => matches!(ext.as_str(), "spi" | "sph" | "dll"),
+        "ffmpeg" => {
+            matches!(ext.as_str(), "dll" | "so" | "dylib")
+                && (name.contains("ffmpeg")
+                    || name.contains("avcodec")
+                    || name.contains("avformat")
+                    || name.contains("avutil"))
+        }
+        "system" => false,
+        _ => false,
+    }
+}
+
+fn provider_default_type(provider_name: &str) -> &'static str {
+    match provider_name {
+        "susie64" => "image",
+        "ffmpeg" => "image",
+        "system" => "image",
+        _ => "image",
+    }
 }

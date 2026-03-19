@@ -17,13 +17,17 @@
 - [x] 起動時ウィンドウ位置を設定から復元
 - [x] 設定未指定時は起動スクリーン基準で 60% サイズ + 中央寄せ
 - [x] 起動時 fullscreen を無効化するワークアラウンド
+- [x] アプリアイコン設定
+- [x] `resources/help.html` 出力の土台
 - [*] フルスクリーン復帰時の安定性確認
 
 ## src/options.rs
 - [x] ViewerAction / KeyBinding の整理
 - [x] `Shift+G` grayscale toggle
 - [x] `Shift+C` manga mode toggle
+- [x] `Shift+V` subfiler toggle
 - [x] `Ctrl+S` 保存ダイアログ起動
+- [x] `F1` help 起動
 - [ ] キーリマップ UI
 
 ## src/configs/config.rs
@@ -32,6 +36,8 @@
 - [x] config import/export
 - [x] `--config [path]`
 - [x] window / render / resources / navigation の永続化
+- [x] storage.path / storage.path_record の永続化
+- [x] manga separator / UI theme の永続化
 - [x] plugin config の永続化土台
 - [ ] config schema のバージョニング
 
@@ -56,7 +62,7 @@
 - [x] OS 依存 API の窓口整理
 - [x] root drive 一覧取得の UI 用ラッパ
 - [x] 保存先フォルダ選択ダイアログの窓口
-- [x] http/https 一時ダウンロード窓口
+- [x] http/https 共通ダウンロード窓口（reqwest）
 
 ## src/dependent/thirdparty/locale_config.rs
 - [x] locale 正規化ヘルパ
@@ -64,6 +70,7 @@
 
 ## src/dependent/thirdparty/directories.rs
 - [x] 設定ディレクトリ解決
+- [x] 既定ダウンロードディレクトリ解決
 
 ## src/dependent/windows/mod.rs
 - [x] Windows locale 取得
@@ -71,7 +78,7 @@
 - [x] Windows emoji font 候補
 - [x] Windows drive 列挙
 - [x] フォルダ選択ダイアログ
-- [+] PowerShell を使った http/https ダウンロード
+- [x] PowerShell 依存 http ダウンロードからの離脱
 
 ## src/dependent/linux/mod.rs
 - [x] locale 環境変数取得
@@ -97,6 +104,8 @@
 ## src/dependent/plugins/mod.rs
 - [+] plugin config 構造体
 - [+] provider 別 default 設定
+- [+] plugin 設定 UI 向けの土台
+- [+] search path からの module 走査
 - [ ] plugin 優先順位の実行ロジック
 - [ ] MIME / wildcard 判定
 - [ ] decoder / encoder / filter の実行ロジック
@@ -157,9 +166,11 @@
 ## src/ui/input/mod.rs
 - [x] egui input から viewer action dispatch
 - [x] settings 表示中は viewer 入力を止める
+- [x] text input 中は viewer shortcut を止める
+- [x] `P` で settings を閉じる
 - [x] 左クリックで次画像
 - [x] 右クリックでメニュー
-- [ ] `F1` help
+- [x] `F1` help
 - [ ] タッチ UI
 
 ## src/ui/menu/mod.rs
@@ -167,10 +178,16 @@
 
 ## src/ui/menu/config/mod.rs
 - [x] 設定画面の土台
-- [x] viewer / resources / render / window / navigation タブ
+- [x] viewer / plugins / resources / render / window / navigation タブ
 - [x] 閉じるボタン
 - [x] 即時適用
-- [ ] 適用ボタン
+- [x] manga separator 設定
+- [x] window theme 設定
+- [+] plugin 設定画面の土台
+- [+] plugin search path 編集
+- [+] plugin module load test ボタン
+- [x] save path 記録設定
+- [+] 適用/undo/初期化ボタン
 - [ ] キーバインド編集 UI
 
 ## src/ui/menu/fileviewer/state.rs
@@ -188,7 +205,7 @@
 - [ ] OS 準拠 name collation の強化
 
 ## src/ui/menu/fileviewer/thumbnail.rs
-- [+] サムネイル worker
+- [x] サムネイル worker
 - [x] virtual zip/listed file のサムネイル生成
 - [ ] 永続キャッシュ
 - [ ] 失敗キャッシュ
@@ -196,8 +213,10 @@
 ## src/ui/menu/fileviewer/mod.rs
 - [x] 一覧表示
 - [x] サムネイル表示（小・中・大）
+- [x] サムネイル格子グリッド表示
 - [x] 詳細表示
 - [x] 表示切り替えボタン
+- [x] view / sort / dir separate をボタン化
 - [x] metadata 表示
 - [x] 昇順/降順切り替え
 - [x] 名前/更新日時/サイズソート
@@ -206,11 +225,15 @@
 - [x] 拡張子フィルタ
 - [x] ドライブ選択
 - [x] zip / archive の内容表示
-- [x] URL 入力欄（http/https は一時ダウンロードで表示）
+- [x] URL 入力欄（http/https は reqwest ダウンロードで表示）
 - [x] サブファイラー下部表示
+- [x] サブファイラー閉じるボタン
+- [x] 詳細表示で更新日時とサイズを表示
+- [x] ファイル選択時に filer を閉じる
 - [*] filer 表示時のさらなる高速化
 - [ ] SVG アイコン化
 - [ ] Copy / Move / Trash / Convert
+
 
 ## src/ui/render/layout.rs
 - [x] 背景描画
@@ -235,6 +258,8 @@
 - [x] viewer / render / window option struct
 - [x] grayscale option
 - [x] manga option
+- [x] manga separator option
+- [x] window ui theme option
 
 ## src/ui/viewer/animation.rs
 - [x] アニメーション表示の基礎
@@ -250,8 +275,15 @@
 - [x] resize イベントに寄せた FitScreen 再計算
 - [x] filer から画像選択後に次画像移動できる
 - [x] filer から画像選択後に FitScreen を再適用
-- [x] 保存ダイアログ（保存先フォルダ選択 + 形式選択）
+- [x] 保存ダイアログ（保存先フォルダ選択 + 形式選択 + 名前変更）
+- [x] 既定ダウンロードフォルダの利用
+- [x] 保存完了時に save dialog を閉じる
+- [x] 保存中 waiting 表示
+- [x] cancel で save dialog を閉じる
 - [x] grayscale 表示トグル
+- [x] subfiler の明示トグル
+- [x] manga separator 描画
+- [*] 起動時の manga Fit 再計算の実機確認
 - [*] filer 表示時の manga レイアウトは実機で継続確認
 - [ ] app 起動時の初回 decode 完全 worker 化
 - [ ] preload queue
@@ -268,11 +300,14 @@
 - [ ] 保存オプションの詳細化
 
 ## src/drawers/filter.rs
-- [+] grayscale 系 filter は存在
+- [x] grayscale 系 filter は存在
+- [ ] scaling系 filter
+- [ ] エッジ系filter
+- [ ] 色系filter
 - [ ] viewer のフィルタパイプライン統合
 
 ## src/drawers/grayscale.rs
-- [+] グレースケール処理の基礎
+- [x] グレースケール処理の基礎
 
 ## src/drawers/canvas.rs
 - [x] Canvas 基盤
@@ -296,8 +331,17 @@
 - [-] 役割の再整理
 
 ## 次に着手
-- issues: マンガモード、サイズ変更が反復実行されるバグ（サイズイベント検出時以外は変更しない用に変更）
+- issue: コミックモード：最初の一回の処理が安定していない（サイズ変換が永久ループしている）
+- プラグイン: 実装続き
+  search path 編集の磨き込み
+  test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
+- ファイラー: SVG表示 resources/icons/icons.mdにテンプレが置いてあるのでそれでiconを生成して使ってください
+- 設定：OSに拡張子を登録できる機能
+- 設定：適用/undo/初期化ボタンの本格化
+  windows は crate winreg を使う
+  ProgID / open command / OpenWithProgids / OpenWithList / `--clean system`
 - `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - `src/ui/menu/fileviewer/worker.rs` に lazy load / incremental snapshot を入れて大規模フォルダを高速化する
 - `src/ui/i18n/mod.rs` を JSON resource loader に拡張し、未ローカライズ文言を全面移行する
 - `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
+- todo.mdの更新

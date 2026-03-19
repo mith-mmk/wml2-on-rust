@@ -1,12 +1,13 @@
-use crate::configs::config::save_app_config;
+use crate::configs::config::{load_app_config, save_app_config};
 use crate::configs::resourses::{FontSizePreset, apply_resources};
+use crate::dependent::default_download_dir;
+use crate::dependent::plugins::discover_plugin_modules;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions};
 use crate::ui::i18n::UiTextKey;
 use crate::ui::render::interpolation_label;
-use crate::ui::viewer::options::BackgroundStyle;
-use crate::ui::viewer::options::ZoomOption;
-use crate::ui::viewer::{SettingsTab, ViewerApp};
+use crate::ui::viewer::options::{BackgroundStyle, MangaSeparatorStyle, WindowUiTheme, ZoomOption};
+use crate::ui::viewer::{SettingsTab, ViewerApp, join_search_paths, parse_search_paths};
 use eframe::egui;
 
 impl ViewerApp {
@@ -21,8 +22,12 @@ impl ViewerApp {
         let mut zoom_option_changed = false;
         let mut config_changed = false;
         let mut close_requested = false;
+        let mut apply_requested = false;
+        let mut undo_requested = false;
+        let mut reset_requested = false;
         let settings_text = self.text(UiTextKey::Settings);
         let viewer_text = self.text(UiTextKey::Viewer);
+        let plugins_text = self.text(UiTextKey::Plugins);
         let resources_text = self.text(UiTextKey::Resources);
         let render_text = self.text(UiTextKey::Render);
         let window_text = self.text(UiTextKey::Window);
@@ -36,6 +41,10 @@ impl ViewerApp {
         let fonts_text = self.text(UiTextKey::Fonts);
         let font_size_text = self.text(UiTextKey::FontSize);
         let auto_text = self.text(UiTextKey::Auto);
+        let theme_text = self.text(UiTextKey::Theme);
+        let system_text = self.text(UiTextKey::System);
+        let light_text = self.text(UiTextKey::Light);
+        let dark_text = self.text(UiTextKey::Dark);
         let zoom_mode_text = self.text(UiTextKey::ZoomMode);
         let resize_text = self.text(UiTextKey::Resize);
         let fullscreen_text = self.text(UiTextKey::Fullscreen);
@@ -51,12 +60,21 @@ impl ViewerApp {
         let black_text = self.text(UiTextKey::Black);
         let gray_text = self.text(UiTextKey::Gray);
         let tile_text = self.text(UiTextKey::Tile);
+        let separator_text = self.text(UiTextKey::Separator);
+        let separator_style_text = self.text(UiTextKey::SeparatorStyle);
+        let separator_color_text = self.text(UiTextKey::SeparatorColor);
+        let separator_pixels_text = self.text(UiTextKey::SeparatorPixels);
+        let none_text = self.text(UiTextKey::None);
+        let solid_text = self.text(UiTextKey::Solid);
+        let shadow_text = self.text(UiTextKey::Shadow);
+        let remember_save_path_text = self.text(UiTextKey::RememberSavePath);
         egui::Window::new(settings_text)
             .open(&mut open)
             .resizable(true)
             .show(ctx, |ui| {
                 ui.horizontal_wrapped(|ui| {
                     ui.selectable_value(&mut self.settings_tab, SettingsTab::Viewer, viewer_text);
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Plugins, plugins_text);
                     ui.selectable_value(
                         &mut self.settings_tab,
                         SettingsTab::Resources,
@@ -86,6 +104,58 @@ impl ViewerApp {
                         config_changed |= ui
                             .checkbox(&mut self.options.manga_right_to_left, manga_rtl_text)
                             .changed();
+                        ui.separator();
+                        ui.label(separator_text);
+                        ui.horizontal(|ui| {
+                            ui.label(separator_style_text);
+                            egui::ComboBox::from_id_salt("manga_separator_style")
+                                .selected_text(match self.options.manga_separator.style {
+                                    MangaSeparatorStyle::None => none_text,
+                                    MangaSeparatorStyle::Solid => solid_text,
+                                    MangaSeparatorStyle::Shadow => shadow_text,
+                                })
+                                .show_ui(ui, |ui| {
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.options.manga_separator.style,
+                                            MangaSeparatorStyle::None,
+                                            none_text,
+                                        )
+                                        .changed();
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.options.manga_separator.style,
+                                            MangaSeparatorStyle::Solid,
+                                            solid_text,
+                                        )
+                                        .changed();
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.options.manga_separator.style,
+                                            MangaSeparatorStyle::Shadow,
+                                            shadow_text,
+                                        )
+                                        .changed();
+                                });
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label(separator_pixels_text);
+                            config_changed |= ui
+                                .add(
+                                    egui::DragValue::new(&mut self.options.manga_separator.pixels)
+                                        .range(0.0..=64.0)
+                                        .speed(0.25),
+                                )
+                                .changed();
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label(separator_color_text);
+                            config_changed |= ui
+                                .color_edit_button_srgba_unmultiplied(
+                                    &mut self.options.manga_separator.color,
+                                )
+                                .changed();
+                        });
 
                         ui.horizontal(|ui| {
                             ui.label(background_text);
@@ -106,6 +176,65 @@ impl ViewerApp {
                                 config_changed = true;
                             }
                         });
+                    });
+                }
+
+                if self.settings_tab == SettingsTab::Plugins {
+                    ui.group(|ui| {
+                        ui.heading("susie64");
+                        config_changed |= ui
+                            .checkbox(&mut self.plugins.susie64.enable, "enable")
+                            .changed();
+                        ui.label("search_path");
+                        if ui
+                            .text_edit_singleline(&mut self.susie64_search_paths_input)
+                            .changed()
+                        {
+                            self.plugins.susie64.search_path =
+                                parse_search_paths(&self.susie64_search_paths_input);
+                            config_changed = true;
+                        }
+                        if ui.button("Load modules").clicked() {
+                            self.plugins.susie64.modules =
+                                discover_plugin_modules("susie64", &self.plugins.susie64);
+                            config_changed = true;
+                        }
+                        ui.label(format!("modules: {}", self.plugins.susie64.modules.len()));
+                        ui.separator();
+                        ui.heading("system");
+                        config_changed |= ui
+                            .checkbox(&mut self.plugins.system.enable, "enable")
+                            .changed();
+                        ui.label("search_path");
+                        if ui
+                            .text_edit_singleline(&mut self.system_search_paths_input)
+                            .changed()
+                        {
+                            self.plugins.system.search_path =
+                                parse_search_paths(&self.system_search_paths_input);
+                            config_changed = true;
+                        }
+                        ui.label(format!("modules: {}", self.plugins.system.modules.len()));
+                        ui.separator();
+                        ui.heading("ffmpeg");
+                        config_changed |= ui
+                            .checkbox(&mut self.plugins.ffmpeg.enable, "enable")
+                            .changed();
+                        ui.label("search_path");
+                        if ui
+                            .text_edit_singleline(&mut self.ffmpeg_search_paths_input)
+                            .changed()
+                        {
+                            self.plugins.ffmpeg.search_path =
+                                parse_search_paths(&self.ffmpeg_search_paths_input);
+                            config_changed = true;
+                        }
+                        if ui.button("Load modules").clicked() {
+                            self.plugins.ffmpeg.modules =
+                                discover_plugin_modules("ffmpeg", &self.plugins.ffmpeg);
+                            config_changed = true;
+                        }
+                        ui.label(format!("modules: {}", self.plugins.ffmpeg.modules.len()));
                     });
                 }
 
@@ -264,6 +393,38 @@ impl ViewerApp {
                                 remember_position_text,
                             )
                             .changed();
+                        ui.horizontal(|ui| {
+                            ui.label(theme_text);
+                            egui::ComboBox::from_id_salt("window_theme")
+                                .selected_text(match self.window_options.ui_theme {
+                                    WindowUiTheme::System => system_text,
+                                    WindowUiTheme::Light => light_text,
+                                    WindowUiTheme::Dark => dark_text,
+                                })
+                                .show_ui(ui, |ui| {
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.window_options.ui_theme,
+                                            WindowUiTheme::System,
+                                            system_text,
+                                        )
+                                        .changed();
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.window_options.ui_theme,
+                                            WindowUiTheme::Light,
+                                            light_text,
+                                        )
+                                        .changed();
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.window_options.ui_theme,
+                                            WindowUiTheme::Dark,
+                                            dark_text,
+                                        )
+                                        .changed();
+                                });
+                        });
                         match &mut self.window_options.size {
                             crate::ui::viewer::options::WindowSize::Relative(ratio) => {
                                 ui.label(window_relative_text);
@@ -330,11 +491,23 @@ impl ViewerApp {
                                 config_changed = true;
                             }
                         });
+                        config_changed |= ui
+                            .checkbox(&mut self.storage.path_record, remember_save_path_text)
+                            .changed();
                     });
                 }
 
                 ui.separator();
                 ui.horizontal(|ui| {
+                    if ui.button("Apply").clicked() {
+                        apply_requested = true;
+                    }
+                    if ui.button("Undo").clicked() {
+                        undo_requested = true;
+                    }
+                    if ui.button("Reset").clicked() {
+                        reset_requested = true;
+                    }
                     if ui.button(reload_current_text).clicked() {
                         reload_requested = true;
                     }
@@ -347,6 +520,13 @@ impl ViewerApp {
             open = false;
         }
         self.show_settings = open;
+        if reset_requested {
+            self.restore_config(AppConfig::default(), ctx);
+        }
+        if undo_requested {
+            let config = load_app_config(self.config_path.as_deref()).unwrap_or_default();
+            self.restore_config(config, ctx);
+        }
         if zoom_option_changed {
             self.pending_fit_recalc = true;
         }
@@ -356,7 +536,8 @@ impl ViewerApp {
         if reload_requested {
             let _ = self.reload_current();
         }
-        if config_changed {
+        if config_changed || apply_requested {
+            self.apply_window_theme(ctx);
             let applied = apply_resources(ctx, &self.resources);
             self.applied_locale = applied.locale;
             self.loaded_font_names = applied.loaded_fonts;
@@ -368,12 +549,39 @@ impl ViewerApp {
         }
     }
 
+    fn restore_config(&mut self, config: AppConfig, ctx: &egui::Context) {
+        self.options = config.viewer;
+        self.window_options = config.window;
+        self.render_options = config.render;
+        self.resources = config.resources;
+        self.plugins = config.plugins;
+        self.storage = config.storage;
+        self.keymap = config.input.merged_with_defaults();
+        self.end_of_folder = config.navigation.end_of_folder;
+        self.navigation_sort = config.navigation.sort;
+        self.save_output_dir = self
+            .storage
+            .path
+            .clone()
+            .or_else(default_download_dir)
+            .or_else(|| self.current_path.parent().map(|path| path.to_path_buf()));
+        self.susie64_search_paths_input = join_search_paths(&self.plugins.susie64.search_path);
+        self.system_search_paths_input = join_search_paths(&self.plugins.system.search_path);
+        self.ffmpeg_search_paths_input = join_search_paths(&self.plugins.ffmpeg.search_path);
+        self.apply_window_theme(ctx);
+        let applied = apply_resources(ctx, &self.resources);
+        self.applied_locale = applied.locale;
+        self.loaded_font_names = applied.loaded_fonts;
+        self.pending_fit_recalc = true;
+    }
+
     pub(crate) fn current_config(&self) -> AppConfig {
         AppConfig {
             viewer: self.options.clone(),
             window: self.window_options.clone(),
             render: self.render_options.clone(),
             plugins: self.plugins.clone(),
+            storage: self.storage.clone(),
             input: Default::default(),
             resources: self.resources.clone(),
             navigation: NavigationOptions {

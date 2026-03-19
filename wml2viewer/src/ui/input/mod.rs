@@ -12,12 +12,20 @@ impl ViewerApp {
             self.open_save_dialog();
         }
 
-        if self.show_settings {
+        if ctx.input(|i| i.key_pressed(egui::Key::F1)) {
+            self.open_help();
+            return;
+        }
+
+        if ctx.wants_keyboard_input() {
             return;
         }
 
         let triggered = collect_triggered_actions(ctx, &self.keymap);
         for action in triggered {
+            if self.show_settings && !matches!(action, ViewerAction::ToggleSettings) {
+                continue;
+            }
             match action {
                 ViewerAction::ZoomIn => {
                     let _ = self.set_zoom(self.zoom * 1.25);
@@ -75,6 +83,9 @@ impl ViewerApp {
                     self.show_filer = !self.show_filer;
                     self.pending_fit_recalc = true;
                 }
+                ViewerAction::ToggleSubfiler => {
+                    self.show_subfiler = !self.show_subfiler;
+                }
                 ViewerAction::SaveAs => {
                     self.open_save_dialog();
                 }
@@ -101,6 +112,11 @@ impl ViewerApp {
         }
 
         if response.clicked() {
+            if self.show_filer {
+                self.show_filer = false;
+                self.pending_fit_recalc = true;
+                return;
+            }
             let _ = self.next_image();
         }
     }

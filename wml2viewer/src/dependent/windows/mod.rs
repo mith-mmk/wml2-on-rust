@@ -99,6 +99,7 @@ pub fn pick_directory_dialog() -> Option<PathBuf> {
     (!path.is_empty()).then(|| PathBuf::from(path))
 }
 
+#[allow(dead_code)]
 pub fn download_url_to_temp(url: &str) -> Option<PathBuf> {
     let temp_path = std::env::temp_dir().join(format!(
         "wml2viewer_url_{}.bin",

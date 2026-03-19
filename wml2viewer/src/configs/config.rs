@@ -9,7 +9,8 @@ use crate::dependent::default_config_dir;
 use crate::dependent::plugins::PluginConfig;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{
-    AppConfig, EndOfFolderOption, FontSizePreset, NavigationSortOption, ResourceOptions,
+    AppConfig, EndOfFolderOption, FontSizePreset, MangaSeparatorOptions, MangaSeparatorStyle,
+    NavigationSortOption, ResourceOptions, StorageOptions, WindowUiTheme,
 };
 use crate::ui::viewer::options::{
     BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
@@ -26,6 +27,7 @@ struct ConfigFile {
     render: RenderConfigFile,
     resources: ResourceConfigFile,
     plugins: PluginConfig,
+    storage: StorageConfigFile,
     navigation: NavigationConfigFile,
     runtime: RuntimeConfigFile,
 }
@@ -37,6 +39,7 @@ struct ViewerConfigFile {
     grayscale: bool,
     manga_mode: bool,
     manga_right_to_left: bool,
+    manga_separator: MangaSeparatorConfigFile,
     background: BackgroundConfigFile,
 }
 
@@ -47,11 +50,38 @@ impl Default for ViewerConfigFile {
             grayscale: false,
             manga_mode: false,
             manga_right_to_left: true,
+            manga_separator: MangaSeparatorConfigFile::default(),
             background: BackgroundConfigFile::Solid {
                 rgba: [0, 0, 0, 255],
             },
         }
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
+struct MangaSeparatorConfigFile {
+    style: MangaSeparatorStyleConfigFile,
+    color: [u8; 4],
+    pixels: f32,
+}
+
+impl Default for MangaSeparatorConfigFile {
+    fn default() -> Self {
+        Self {
+            style: MangaSeparatorStyleConfigFile::None,
+            color: [24, 24, 24, 255],
+            pixels: 2.0,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum MangaSeparatorStyleConfigFile {
+    None,
+    Solid,
+    Shadow,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -83,6 +113,7 @@ struct WindowConfigFile {
     start_position: WindowStartPositionConfigFile,
     remember_size: bool,
     remember_position: bool,
+    ui_theme: WindowUiThemeConfigFile,
 }
 
 impl Default for WindowConfigFile {
@@ -93,8 +124,17 @@ impl Default for WindowConfigFile {
             start_position: WindowStartPositionConfigFile::Center,
             remember_size: true,
             remember_position: true,
+            ui_theme: WindowUiThemeConfigFile::Dark,
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum WindowUiThemeConfigFile {
+    System,
+    Light,
+    Dark,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -202,6 +242,22 @@ impl Default for NavigationConfigFile {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
+struct StorageConfigFile {
+    path_record: bool,
+    path: Option<PathBuf>,
+}
+
+impl Default for StorageConfigFile {
+    fn default() -> Self {
+        Self {
+            path_record: false,
+            path: None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum EndOfFolderConfigFile {
     Stop,
@@ -286,11 +342,13 @@ impl From<ConfigFile> for AppConfig {
             grayscale: value.viewer.grayscale,
             manga_mode: value.viewer.manga_mode,
             manga_right_to_left: value.viewer.manga_right_to_left,
+            manga_separator: value.viewer.manga_separator.into(),
         };
         config.window = value.window.into();
         config.render = value.render.into();
         config.resources = value.resources.into();
         config.plugins = value.plugins;
+        config.storage = value.storage.into();
         config.navigation.end_of_folder = value.navigation.end_of_folder.into();
         config.navigation.sort = value.navigation.sort.into();
         config
@@ -311,12 +369,14 @@ impl ConfigFile {
                 grayscale: value.viewer.grayscale,
                 manga_mode: value.viewer.manga_mode,
                 manga_right_to_left: value.viewer.manga_right_to_left,
+                manga_separator: value.viewer.manga_separator.into(),
                 background: value.viewer.background.into(),
             },
             window: value.window.into(),
             render: value.render.into(),
             resources: value.resources.into(),
             plugins: value.plugins,
+            storage: value.storage.into(),
             navigation: NavigationConfigFile {
                 end_of_folder: value.navigation.end_of_folder.into(),
                 sort: value.navigation.sort.into(),
@@ -370,6 +430,7 @@ impl From<WindowConfigFile> for WindowOptions {
             start_position: value.start_position.into(),
             remember_size: value.remember_size,
             remember_position: value.remember_position,
+            ui_theme: value.ui_theme.into(),
         }
     }
 }
@@ -382,6 +443,7 @@ impl From<WindowOptions> for WindowConfigFile {
             start_position: value.start_position.into(),
             remember_size: value.remember_size,
             remember_position: value.remember_position,
+            ui_theme: value.ui_theme.into(),
         }
     }
 }
@@ -422,6 +484,26 @@ impl From<WindowStartPosition> for WindowStartPositionConfigFile {
     }
 }
 
+impl From<WindowUiThemeConfigFile> for WindowUiTheme {
+    fn from(value: WindowUiThemeConfigFile) -> Self {
+        match value {
+            WindowUiThemeConfigFile::System => WindowUiTheme::System,
+            WindowUiThemeConfigFile::Light => WindowUiTheme::Light,
+            WindowUiThemeConfigFile::Dark => WindowUiTheme::Dark,
+        }
+    }
+}
+
+impl From<WindowUiTheme> for WindowUiThemeConfigFile {
+    fn from(value: WindowUiTheme) -> Self {
+        match value {
+            WindowUiTheme::System => Self::System,
+            WindowUiTheme::Light => Self::Light,
+            WindowUiTheme::Dark => Self::Dark,
+        }
+    }
+}
+
 impl From<RenderConfigFile> for RenderOptions {
     fn from(value: RenderConfigFile) -> Self {
         Self {
@@ -440,6 +522,46 @@ impl From<RenderOptions> for RenderConfigFile {
     }
 }
 
+impl From<MangaSeparatorConfigFile> for MangaSeparatorOptions {
+    fn from(value: MangaSeparatorConfigFile) -> Self {
+        Self {
+            style: value.style.into(),
+            color: value.color,
+            pixels: value.pixels,
+        }
+    }
+}
+
+impl From<MangaSeparatorOptions> for MangaSeparatorConfigFile {
+    fn from(value: MangaSeparatorOptions) -> Self {
+        Self {
+            style: value.style.into(),
+            color: value.color,
+            pixels: value.pixels,
+        }
+    }
+}
+
+impl From<MangaSeparatorStyleConfigFile> for MangaSeparatorStyle {
+    fn from(value: MangaSeparatorStyleConfigFile) -> Self {
+        match value {
+            MangaSeparatorStyleConfigFile::None => MangaSeparatorStyle::None,
+            MangaSeparatorStyleConfigFile::Solid => MangaSeparatorStyle::Solid,
+            MangaSeparatorStyleConfigFile::Shadow => MangaSeparatorStyle::Shadow,
+        }
+    }
+}
+
+impl From<MangaSeparatorStyle> for MangaSeparatorStyleConfigFile {
+    fn from(value: MangaSeparatorStyle) -> Self {
+        match value {
+            MangaSeparatorStyle::None => Self::None,
+            MangaSeparatorStyle::Solid => Self::Solid,
+            MangaSeparatorStyle::Shadow => Self::Shadow,
+        }
+    }
+}
+
 impl From<ResourceConfigFile> for ResourceOptions {
     fn from(value: ResourceConfigFile) -> Self {
         Self {
@@ -454,6 +576,24 @@ impl From<ResourceOptions> for ResourceConfigFile {
         Self {
             locale: value.locale,
             font_size: value.font_size.into(),
+        }
+    }
+}
+
+impl From<StorageConfigFile> for StorageOptions {
+    fn from(value: StorageConfigFile) -> Self {
+        Self {
+            path_record: value.path_record,
+            path: value.path.or_else(crate::dependent::default_download_dir),
+        }
+    }
+}
+
+impl From<StorageOptions> for StorageConfigFile {
+    fn from(value: StorageOptions) -> Self {
+        Self {
+            path_record: value.path_record,
+            path: value.path,
         }
     }
 }

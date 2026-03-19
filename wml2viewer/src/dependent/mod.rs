@@ -1,6 +1,8 @@
 pub mod plugins;
 mod thirdparty;
-pub use thirdparty::{default_config_dir, normalize_locale_tag, resource_locale_fallbacks};
+pub use thirdparty::{
+    default_config_dir, default_download_dir, normalize_locale_tag, resource_locale_fallbacks,
+};
 
 #[cfg(target_os = "android")]
 mod android;
@@ -54,5 +56,26 @@ pub fn download_http_url(url: &str) -> Option<std::path::PathBuf> {
     if !(url.starts_with("http://") || url.starts_with("https://")) {
         return None;
     }
-    download_url_to_temp(url)
+
+    let response = reqwest::blocking::get(url).ok()?;
+    if !response.status().is_success() {
+        return None;
+    }
+    let bytes = response.bytes().ok()?;
+    let extension = url
+        .rsplit_once('.')
+        .map(|(_, ext)| ext)
+        .and_then(|ext| ext.split('?').next())
+        .filter(|ext| !ext.is_empty())
+        .unwrap_or("bin");
+    let path = std::env::temp_dir().join(format!(
+        "wml2viewer_url_{}.{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .ok()?
+            .as_nanos(),
+        extension
+    ));
+    std::fs::write(&path, &bytes).ok()?;
+    Some(path)
 }

@@ -3,12 +3,13 @@
 */
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 pub use crate::configs::resourses::{FontSizePreset, ResourceOptions};
 pub use crate::dependent::plugins::PluginConfig;
 pub use crate::ui::viewer::options::{
-    BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
-    ZoomOption,
+    BackgroundStyle, MangaSeparatorOptions, MangaSeparatorStyle, RenderOptions, ViewerOptions,
+    WindowOptions, WindowSize, WindowStartPosition, WindowUiTheme, ZoomOption,
 };
 
 #[derive(Clone, Default)]
@@ -18,6 +19,7 @@ pub struct AppConfig {
     pub render: RenderOptions,
     pub resources: ResourceOptions,
     pub plugins: PluginConfig,
+    pub storage: StorageOptions,
     pub input: InputOptions,
     pub navigation: NavigationOptions,
 }
@@ -39,6 +41,7 @@ pub enum ViewerAction {
     ToggleMangaMode,
     ToggleSettings,
     ToggleFiler,
+    ToggleSubfiler,
     SaveAs,
 }
 
@@ -108,9 +111,19 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
         KeyBinding::new("C").with_shift(),
         ViewerAction::ToggleMangaMode,
     );
+    map.insert(
+        KeyBinding::new("V").with_shift(),
+        ViewerAction::ToggleSubfiler,
+    );
     map.insert(KeyBinding::new("F"), ViewerAction::ToggleFiler);
     map.insert(KeyBinding::new("P"), ViewerAction::ToggleSettings);
     map
+}
+
+#[derive(Clone, Default)]
+pub struct StorageOptions {
+    pub path_record: bool,
+    pub path: Option<PathBuf>,
 }
 
 #[derive(Clone)]
@@ -143,14 +156,3 @@ pub enum NavigationSortOption {
     Date,
     Size,
 }
-
-// pub(crate) reading: ReadingOptions,
-// pub(crate) slideshow: slideshowOptions,
-// pub(crate) navigation: navigationOptions,
-// pub(crate) thumbnail: thumbnailOptions,
-// pub(crate) loader: LoaderOptions,
-// pub(crate) storage: StrageOptions,
-// pub(crate) file_system: FileSystemOptions,
-// pub(crate) input: InputOptions,
-// pub(crate) runtime: RuntimeOptions,
-// pub(crate) os_depend: OSDependOptions

@@ -12,6 +12,7 @@ pub struct ViewerOptions {
     pub grayscale: bool,
     pub manga_mode: bool,
     pub manga_right_to_left: bool,
+    pub manga_separator: MangaSeparatorOptions,
 }
 
 impl Default for ViewerOptions {
@@ -24,8 +25,33 @@ impl Default for ViewerOptions {
             grayscale: false,
             manga_mode: false,
             manga_right_to_left: true,
+            manga_separator: MangaSeparatorOptions::default(),
         }
     }
+}
+
+#[derive(Clone)]
+pub struct MangaSeparatorOptions {
+    pub style: MangaSeparatorStyle,
+    pub color: [u8; 4],
+    pub pixels: f32,
+}
+
+impl Default for MangaSeparatorOptions {
+    fn default() -> Self {
+        Self {
+            style: MangaSeparatorStyle::None,
+            color: [24, 24, 24, 255],
+            pixels: 2.0,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MangaSeparatorStyle {
+    None,
+    Solid,
+    Shadow,
 }
 
 #[derive(Clone)]
@@ -60,6 +86,7 @@ pub struct WindowOptions {
     pub start_position: WindowStartPosition,
     pub remember_size: bool,
     pub remember_position: bool,
+    pub ui_theme: WindowUiTheme,
 }
 
 impl Default for WindowOptions {
@@ -70,8 +97,16 @@ impl Default for WindowOptions {
             start_position: WindowStartPosition::Center,
             remember_size: true,
             remember_position: true,
+            ui_theme: WindowUiTheme::Dark,
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WindowUiTheme {
+    System,
+    Light,
+    Dark,
 }
 
 #[derive(Clone)]

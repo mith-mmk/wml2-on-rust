@@ -8,6 +8,7 @@ use crate::ui::i18n::UiTextKey;
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerSortField, FilerViewMode, NameSortMode};
 use crate::ui::viewer::ViewerApp;
 use eframe::egui;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 impl ViewerApp {
     pub(crate) fn left_click_menu_ui(&mut self, ctx: &egui::Context) {
@@ -69,6 +70,8 @@ impl ViewerApp {
         egui::SidePanel::left("filer_panel")
             .resizable(true)
             .default_width(260.0)
+            .min_width(220.0)
+            .max_width(480.0)
             .show(ctx, |ui| {
                 let mut refresh_requested = false;
                 let list_text = self.text(UiTextKey::List);
@@ -93,61 +96,63 @@ impl ViewerApp {
                 let up_text = self.text(UiTextKey::Up);
                 ui.heading(self.text(UiTextKey::Filer));
                 ui.horizontal_wrapped(|ui| {
-                    refresh_requested |= ui
-                        .selectable_value(&mut self.filer.view_mode, FilerViewMode::List, list_text)
-                        .changed();
-                    refresh_requested |= ui
-                        .selectable_value(
-                            &mut self.filer.view_mode,
-                            FilerViewMode::ThumbnailSmall,
-                            thumb_small_text,
-                        )
-                        .changed();
-                    refresh_requested |= ui
-                        .selectable_value(
-                            &mut self.filer.view_mode,
-                            FilerViewMode::ThumbnailMedium,
-                            thumb_medium_text,
-                        )
-                        .changed();
-                    refresh_requested |= ui
-                        .selectable_value(
-                            &mut self.filer.view_mode,
-                            FilerViewMode::ThumbnailLarge,
-                            thumb_large_text,
-                        )
-                        .changed();
-                    refresh_requested |= ui
-                        .selectable_value(
-                            &mut self.filer.view_mode,
-                            FilerViewMode::Detail,
-                            detail_text,
-                        )
-                        .changed();
+                    if toolbar_button(ui, list_text, self.filer.view_mode == FilerViewMode::List) {
+                        self.filer.view_mode = FilerViewMode::List;
+                        refresh_requested = true;
+                    }
+                    if toolbar_button(
+                        ui,
+                        thumb_small_text,
+                        self.filer.view_mode == FilerViewMode::ThumbnailSmall,
+                    ) {
+                        self.filer.view_mode = FilerViewMode::ThumbnailSmall;
+                        refresh_requested = true;
+                    }
+                    if toolbar_button(
+                        ui,
+                        thumb_medium_text,
+                        self.filer.view_mode == FilerViewMode::ThumbnailMedium,
+                    ) {
+                        self.filer.view_mode = FilerViewMode::ThumbnailMedium;
+                        refresh_requested = true;
+                    }
+                    if toolbar_button(
+                        ui,
+                        thumb_large_text,
+                        self.filer.view_mode == FilerViewMode::ThumbnailLarge,
+                    ) {
+                        self.filer.view_mode = FilerViewMode::ThumbnailLarge;
+                        refresh_requested = true;
+                    }
+                    if toolbar_button(
+                        ui,
+                        detail_text,
+                        self.filer.view_mode == FilerViewMode::Detail,
+                    ) {
+                        self.filer.view_mode = FilerViewMode::Detail;
+                        refresh_requested = true;
+                    }
                 });
                 ui.horizontal_wrapped(|ui| {
                     ui.label(sort_text);
-                    refresh_requested |= ui
-                        .selectable_value(
-                            &mut self.filer.sort_field,
-                            FilerSortField::Name,
-                            name_text,
-                        )
-                        .changed();
-                    refresh_requested |= ui
-                        .selectable_value(
-                            &mut self.filer.sort_field,
-                            FilerSortField::Modified,
-                            date_text,
-                        )
-                        .changed();
-                    refresh_requested |= ui
-                        .selectable_value(
-                            &mut self.filer.sort_field,
-                            FilerSortField::Size,
-                            size_text,
-                        )
-                        .changed();
+                    if toolbar_button(ui, name_text, self.filer.sort_field == FilerSortField::Name)
+                    {
+                        self.filer.sort_field = FilerSortField::Name;
+                        refresh_requested = true;
+                    }
+                    if toolbar_button(
+                        ui,
+                        date_text,
+                        self.filer.sort_field == FilerSortField::Modified,
+                    ) {
+                        self.filer.sort_field = FilerSortField::Modified;
+                        refresh_requested = true;
+                    }
+                    if toolbar_button(ui, size_text, self.filer.sort_field == FilerSortField::Size)
+                    {
+                        self.filer.sort_field = FilerSortField::Size;
+                        refresh_requested = true;
+                    }
                     if ui
                         .button(if self.filer.ascending {
                             asc_text
@@ -161,27 +166,31 @@ impl ViewerApp {
                     }
                 });
                 ui.horizontal_wrapped(|ui| {
-                    refresh_requested |= ui
-                        .checkbox(&mut self.filer.separate_dirs, separate_text)
-                        .changed();
+                    if toolbar_button(ui, separate_text, self.filer.separate_dirs) {
+                        self.filer.separate_dirs = !self.filer.separate_dirs;
+                        refresh_requested = true;
+                    }
                     ui.label(name_text);
-                    refresh_requested |= ui
-                        .selectable_value(&mut self.filer.name_sort_mode, NameSortMode::Os, os_text)
-                        .changed();
-                    refresh_requested |= ui
-                        .selectable_value(
-                            &mut self.filer.name_sort_mode,
-                            NameSortMode::CaseSensitive,
-                            case_text,
-                        )
-                        .changed();
-                    refresh_requested |= ui
-                        .selectable_value(
-                            &mut self.filer.name_sort_mode,
-                            NameSortMode::CaseInsensitive,
-                            no_case_text,
-                        )
-                        .changed();
+                    if toolbar_button(ui, os_text, self.filer.name_sort_mode == NameSortMode::Os) {
+                        self.filer.name_sort_mode = NameSortMode::Os;
+                        refresh_requested = true;
+                    }
+                    if toolbar_button(
+                        ui,
+                        case_text,
+                        self.filer.name_sort_mode == NameSortMode::CaseSensitive,
+                    ) {
+                        self.filer.name_sort_mode = NameSortMode::CaseSensitive;
+                        refresh_requested = true;
+                    }
+                    if toolbar_button(
+                        ui,
+                        no_case_text,
+                        self.filer.name_sort_mode == NameSortMode::CaseInsensitive,
+                    ) {
+                        self.filer.name_sort_mode = NameSortMode::CaseInsensitive;
+                        refresh_requested = true;
+                    }
                 });
                 ui.horizontal(|ui| {
                     ui.label(filter_text);
@@ -246,7 +255,9 @@ impl ViewerApp {
                 if refresh_requested {
                     self.refresh_current_filer_directory();
                 }
+                let panel_width = ui.available_width();
                 egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.set_width(panel_width.max(160.0));
                     let entries = self.filer.entries.clone();
                     match self.filer.view_mode {
                         FilerViewMode::List | FilerViewMode::Detail => {
@@ -261,11 +272,7 @@ impl ViewerApp {
                                 FilerViewMode::ThumbnailLarge => 160.0,
                                 _ => 96.0,
                             };
-                            ui.horizontal_wrapped(|ui| {
-                                for entry in entries {
-                                    self.filer_thumbnail_tile(ui, entry, item_width);
-                                }
-                            });
+                            self.filer_thumbnail_grid(ui, entries, item_width);
                         }
                     }
                 });
@@ -276,15 +283,22 @@ impl ViewerApp {
         let selected = self.filer.selected.as_ref() == Some(&entry.path)
             || self.current_navigation_path == entry.path;
         let text = if self.filer.view_mode == FilerViewMode::Detail {
+            let modified = entry
+                .metadata
+                .modified
+                .map(format_system_time)
+                .unwrap_or_else(|| "-".to_string());
+            let size = entry
+                .metadata
+                .size
+                .map(|value| format!("{value} B"))
+                .unwrap_or_else(|| "-".to_string());
             format!(
-                "{} {}    {}",
+                "{} {}    {}    {}",
                 if entry.is_container { "[DIR]" } else { "    " },
                 entry.label,
-                entry
-                    .metadata
-                    .size
-                    .map(|size| format!("{size} B"))
-                    .unwrap_or_default()
+                modified,
+                size
             )
         } else {
             entry.label.clone()
@@ -303,6 +317,27 @@ impl ViewerApp {
         if response.clicked() {
             self.activate_filer_entry(entry);
         }
+    }
+
+    fn filer_thumbnail_grid(
+        &mut self,
+        ui: &mut egui::Ui,
+        entries: Vec<FilerEntry>,
+        item_width: f32,
+    ) {
+        let available = ui.available_width().max(item_width);
+        let columns = (available / item_width.max(1.0)).floor().max(1.0) as usize;
+        egui::Grid::new("filer_thumbnail_grid")
+            .num_columns(columns)
+            .spacing(egui::vec2(8.0, 8.0))
+            .show(ui, |ui| {
+                for (index, entry) in entries.into_iter().enumerate() {
+                    self.filer_thumbnail_tile(ui, entry, item_width);
+                    if (index + 1) % columns == 0 {
+                        ui.end_row();
+                    }
+                }
+            });
     }
 
     fn filer_thumbnail_tile(&mut self, ui: &mut egui::Ui, entry: FilerEntry, item_width: f32) {
@@ -341,6 +376,9 @@ impl ViewerApp {
     }
 
     pub(crate) fn subfiler_ui(&mut self, ctx: &egui::Context) {
+        if !self.show_subfiler {
+            return;
+        }
         let Some(current_dir) = self.current_directory() else {
             return;
         };
@@ -352,6 +390,7 @@ impl ViewerApp {
             .resizable(true)
             .default_height(110.0)
             .show(ctx, |ui| {
+                let mut close_requested = false;
                 ui.horizontal(|ui| {
                     ui.label(self.text(UiTextKey::Subfiler));
                     ui.label(if self.options.manga_right_to_left {
@@ -359,6 +398,9 @@ impl ViewerApp {
                     } else {
                         self.text(UiTextKey::LeftToRight)
                     });
+                    if ui.button(self.text(UiTextKey::Close)).clicked() {
+                        close_requested = true;
+                    }
                 });
                 egui::ScrollArea::horizontal().show(ui, |ui| {
                     ui.horizontal(|ui| {
@@ -395,6 +437,9 @@ impl ViewerApp {
                         }
                     });
                 });
+                if close_requested {
+                    self.show_subfiler = false;
+                }
             });
     }
 
@@ -406,8 +451,41 @@ impl ViewerApp {
         self.filer.selected = Some(entry.path.clone());
         self.current_navigation_path = entry.path.clone();
         self.empty_mode = false;
+        self.show_filer = false;
         self.pending_fit_recalc = true;
         self.set_filesystem_current(self.current_navigation_path.clone());
         let _ = self.request_load_path(entry.path);
     }
+}
+
+fn toolbar_button(ui: &mut egui::Ui, text: &str, selected: bool) -> bool {
+    ui.add(egui::Button::new(text).selected(selected)).clicked()
+}
+
+fn format_system_time(value: SystemTime) -> String {
+    let Ok(duration) = value.duration_since(UNIX_EPOCH) else {
+        return "-".to_string();
+    };
+    let total_secs = duration.as_secs() as i64;
+    let days = total_secs.div_euclid(86_400);
+    let secs_of_day = total_secs.rem_euclid(86_400);
+    let (year, month, day) = civil_from_days(days);
+    let hour = secs_of_day / 3_600;
+    let minute = (secs_of_day % 3_600) / 60;
+    let second = secs_of_day % 60;
+    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02} UTC")
+}
+
+fn civil_from_days(days: i64) -> (i64, i64, i64) {
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let year = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = mp + if mp < 10 { 3 } else { -9 };
+    let year = year + if month <= 2 { 1 } else { 0 };
+    (year, month, day)
 }

@@ -11,6 +11,8 @@ use eframe::egui::{self};
 use std::error::Error;
 use std::path::{Path, PathBuf};
 
+const APP_ICON_PNG: &[u8] = include_bytes!("../resources/wml2viwer.png");
+
 fn load_image(path: &Path) -> Result<LoadedImage, Box<dyn Error>> {
     if let Some(bytes) = load_virtual_image_bytes(path) {
         return Ok(load_canvas_from_bytes(&bytes)?);
@@ -44,6 +46,10 @@ pub fn run(
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title(title)
+            .with_icon(
+                eframe::icon_data::from_png_bytes(APP_ICON_PNG)
+                    .unwrap_or_else(|_| egui::IconData::default()),
+            )
             .with_inner_size([320.0, 240.0])
             .with_min_inner_size([320.0, 240.0]),
         ..Default::default()
@@ -53,6 +59,7 @@ pub fn run(
         "wml2viewer",
         native_options,
         Box::new(move |cc| {
+            apply_window_theme(&cc.egui_ctx, config.window.ui_theme);
             let _ = apply_resources(&cc.egui_ctx, &config.resources);
             let screen = cc.egui_ctx.input(|i| {
                 i.viewport()
@@ -118,6 +125,14 @@ pub fn run(
     )?;
 
     Ok(())
+}
+
+fn apply_window_theme(ctx: &egui::Context, theme: WindowUiTheme) {
+    match theme {
+        WindowUiTheme::System => {}
+        WindowUiTheme::Light => ctx.set_visuals(egui::Visuals::light()),
+        WindowUiTheme::Dark => ctx.set_visuals(egui::Visuals::dark()),
+    }
 }
 
 fn blank_image() -> LoadedImage {

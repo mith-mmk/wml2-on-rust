@@ -32,6 +32,7 @@
     // 起動時のwindowのサイズ
     "size": "80%",  // {"width": int,"hight": int}
     "keep": false, // 終了時の状態を維持する
+    "ui": "dark" // "dark", "system", "white"
   },
   "render": {
     "zoom": "FitScreen",　// ZoomOption
@@ -82,11 +83,11 @@
     "split_file": true, // 複数画面が入って居る画像を順番に読み込むか true, 最初だけ表示するか false, アニメーション"animation":falseの場合にチェック
     "preload": true, // 先読みするか
     // ここから先は後でインプリ
-    "os_decoder": false, // OSのデコーダを優先するか（後でインプリ）
     "plugin": false, // 外部プラグイン ffiで読み込む(winはsusie, macとlinuxはこれから考える)を有効にするか
-    "ffmpeg": false, // プラグインにffmpegを使うか(ffmpeg dll/soを使う)
   },
   "storage": {　// 保存オプション
+    "path_record": false, // 引き継ぐ（未設定の場合はOS既定のダウンロードパス）
+    "path": "", // ダウンロードパス
     "os_encoder": false, // OSのエンコーダを優先するか
     "plugin": false, // 外部プラグイン ffiで読み込む(winはsusie, macとlinuxはこれから考える)を有効にするか
     "ffmpeg": false, // 保存のプラグインにffmpegを使うか(ffmpeg dll/soを使う)

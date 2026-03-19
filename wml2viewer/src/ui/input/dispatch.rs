@@ -42,6 +42,7 @@ fn key_name_to_egui(key: &str) -> Option<egui::Key> {
         "End" => Some(egui::Key::End),
         "G" => Some(egui::Key::G),
         "C" => Some(egui::Key::C),
+        "V" => Some(egui::Key::V),
         "F" => Some(egui::Key::F),
         "P" => Some(egui::Key::P),
         _ => None,

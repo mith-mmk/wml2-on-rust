@@ -331,16 +331,22 @@
 - [-] 役割の再整理
 
 ## 次に着手
-- 【改善無し】issue: コミックモード：最初の一回の処理が安定していない（サイズ変換が永久ループしている）
-- zip内で次の画像表示が止まる画像がある(大きめのファイルが挟まるとなる感じp)
-- プラグイン: 実装続き
-  load moduleで止まっている jpeg2000/avifが開けない ./samplesにサンプルあり
-  search path ファイルダイアログが欲しい(保存と同じで良い)
-  test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
-  systemにserach pathは不要 os APIを叩く
-- ファイラー: SVG表示 resources/icons/icons.mdにテンプレが置いてあるのでそれでiconを生成して使ってください
+- issue:【優先】保存: キャンセルボタンが効かない
+- issue:【優先】zip内で次の画像表示が止まる画像がある(大きめのファイルが挟まる止まる。Filerで選択すれば移動可能)
+- issue:ファイラー:http/httpsからロード出来ない
+- ファイラー: SVG表示 resources/icons/icons.mdにテンプレが置いてあるのでそれでsvg iconをまず生成してください
+- ファイラー: 文字をsvgに置き換えてください
 - ファイラー: サムネイル 「フォルダ/アーカイブ」が大きくてフォルダ名が読めない
-- httpからロード出来ない
+- ファイラー: サムネイル 真ん中を不要なペインがサムネイルを隠ぺいしているので削除
+- zip: 日本語が文字化けする(恐らくエンコードがsjisのケースなので自動判別して変換/それでも化けるなら諦める)
+  - crate encoding_rsを利用
+- ファイラー: サムネイル ペインが小さい。可変にするか全画面表示
+- プラグイン: 実装続き
+    - load moduleで止まっている jpeg2000/avifが開けない ./samplesにサンプルあり
+    - search path ファイルダイアログが欲しい(保存と同じで良い)
+    - test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
+    - ffmpegのリンクはcrate ffmpeg-sysを考慮(自力実装の方が安定する可能性あり)
+    - systemにserach pathは不要 OS APIを叩くため
 - 設定：OSに拡張子を登録できる機能
 - 設定：適用/undo/初期化ボタンの本格化
   windows は crate winreg を使う

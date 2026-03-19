@@ -26,15 +26,16 @@ jobs:
       - name: build wml2viewer
         run: cargo build --release -p wml2viewer
 
+      - name: prepare dist
+        run: |
+          mkdir dist
+
       - name: zip windows
         if: matrix.os == 'windows-latest'
         run: |
           mkdir dist
           copy target/release/wml2viewer.exe dist/
           Compress-Archive -Path dist/wml2viewer.exe -DestinationPath dist/wml2viewer-windows.zip        
-            - name: prepare dist
-              run: |
-                mkdir dist
         shell: pwsh
 
       - name: zip (unix)

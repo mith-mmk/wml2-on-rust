@@ -161,6 +161,7 @@
 - [+] temp へのローカル archive cache
 - [ ] zip encoding option
 - [ ] `7z` / `rar` / `lzh` / `gzip`
+- [ ] ZipCacheReaderを実装し、ネットワークファイルに対処する。zipreader.mdを参照 
 
 ## src/ui/mod.rs
 - [x] viewer / render / input / menu / i18n の分離
@@ -369,22 +370,31 @@
 
 ## 次に着手
 中断せずやりきる
-- issue:[重要] [+] 巨大かつネットワークファイルのアーカイブ対応/bmpが固まる問題
-  - zip crateの制限で改善が見込めないため閾値を超えるファイルはシーケンシャルアクセスに限定するか（sort無効）もしくはtmpディレクトリに展開（tmp取得はdependent/thirdparty/directories.rs にコードを書いてください）するワークアラウンドを適用します
-    - 適用閾値とローカルキャッシュは設定：workaround.archive.zip で設定出来る様にします(defaultは調整)
-    - tmpはプラグインでも使う可能性があります
-    - zipの先行読み込みが原因？の可能性があるのでネットワークファイルはI/Oを減らす方向にチューニングしてください
-    - streaming未対応なのが原因なので　最終的にzipの独自実装を検討
-- [x] issue: 二重起動の制限 
-- [x] zipのiconは foldersvgではなくarchive.svgを使ってください
-- [+] issue: archive.svgの表示が想定と異なる
-- [x] issue: uiのi18nはui/i18nではなく、configs/resoures側で設定してください jsonからロードする時、この方がメンテしやすい
-- [+] issue: サムネイル：長いファイル名がはみ出ない様に省略を行ってください。その際unicodeのbyte境界に注意してください
-  　なんとかかんとか20250100-001.jpg -> なんとか...001.png
-  　- [x] 後ろは7文字にしてください
+- [ ] issue: メッセージoverlayの自己主張が強すぎです。一番下にこっそり表示してください
+- [*] issue: 二重起動の制限 
+  - [ ] 起動しなくなりました。ファイルでロックをするのは禁止 二重起動の制限はpidを見てください。
+  - [ ] windowsの場合は下を参考(crate windows-sysを利用)　他のosも仮実装してください
+```rs
+use windows_sys::Win32::System::Threading::{
+    OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION
+};
+use windows_sys::Win32::Foundation::CloseHandle;
+
+fn is_alive(pid: u32) -> bool {
+    unsafe {
+        let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+        if handle == 0 {
+            return false;
+        }
+        CloseHandle(handle);
+        true
+    }
+}
+```
+- [　] issue: uiのi18n実装は`src/ui/i18n/mod.rs`ではなく、`src/configs/resoures/`の下に再実装してください。
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
-- [ ] `src/ui/i18n/mod.rs` の JSON resource loader を広げて、未ローカライズ文言を全面移行する
+- [ ] `src/ui/i18n/mod.rs` JSON resource loaderは`src/configs/resoures/`に移動してください。未ローカライズ文言を全面移行する
 - [ ] `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
 - 確認中: [*] zip 内ファイルソートの実機確認
 - プラグイン: 実装続き
@@ -396,8 +406,9 @@
     - systemにserach pathは不要 OS APIを叩くため
 - [ ] 設定：適用/undo/初期化ボタンの本格化
 - [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
-- [*] ファイラー/サブファイラー/viewer のファイル表示順の実機確認(確認中)
+- [+] ファイラー/サブファイラー/viewer のファイル表示順の実機確認(確認中)
 - [ ] コードの整理 モジュール境界をハッキリさせる
   - [ ]未実装 action の no-op 整理
 - [*] ファイラー: OS name collation の最終調整(確認中)
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdを作成
 - todo.mdの更新

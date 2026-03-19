@@ -318,7 +318,7 @@
 - [x] separator shadow gradient
 - [x] 起動時の manga Fit 再計算ループの抑制
 - [+] low-I/O archive 時は preload 抑制
-- [+] filer 表示時の manga レイアウトは実機で継続確認
+- [x] filer 表示時の manga レイアウトは実機で継続確認
 - [+] app 起動時の初回 decode 完全 worker 化
 - [+] preload queue
 - [+] message UI 整理
@@ -371,6 +371,7 @@
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
 - [ ] `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
 - 確認中: [*] zip 内ファイルソートの実機確認
+- zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップする　zipreader.md 参照
 - プラグイン: 実装続き
   - [ ] ffmpegプラグイン
   - [ ] susie64プラグイン
@@ -384,5 +385,5 @@
 - [ ] コードの整理 モジュール境界をハッキリさせる
   - [ ]未実装 action の no-op 整理
 - [*] ファイラー: OS name collation の最終調整(確認中)
-- [x] wml2viewerのREADME.ja.mdとREADME.mdを作成
+- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
 - todo.mdの更新

@@ -2,6 +2,7 @@
 - Read + Seek 前提 Reader 
 - ZIP（ランダムアクセス前提）
 - ネットワーク（高レイテンシ）
+- [ZIP仕様書](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
 
 この問題により、固まる。
 
@@ -21,10 +22,11 @@ trait RandomAccessReader {
 
 
 ## 最低限の実装
--  末尾キャッシュ（必須）
+- 末尾キャッシュ（必須）
+  - end of central directory recordは完全にキャッシュ仕切る
 - Central Directory用
 - チャンクキャッシュ
-例: 1MB単位
+    - 1MB単位で最低でも可変メタデータがおさまるようにする
 LRU or simple ring buffer
 実装イメージ
 ```rs
@@ -47,6 +49,7 @@ for i in 0.. {
     seek(end - i)
     read(1)
 }
+```
 
 - 修正
 ```rs
@@ -80,3 +83,4 @@ ZipArchive<ZipCachedReader<RemoteReader>>
 - EOCDを一括読み
 - Central Directoryをまとめ読み
 - ソートは諦める or 遅延
+- Zip CrateはSeek最適はされている用だがIOPS多めに見える

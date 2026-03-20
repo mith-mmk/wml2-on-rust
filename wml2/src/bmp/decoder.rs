@@ -41,6 +41,7 @@ fn convert_rgba32(
 ) -> Result<(), Error> {
     let mut offset = 0;
     let width = header.width.unsigned_abs() as usize;
+    let buffer_size = buffer.len();
     match bit_count {
         32 => {
             // bgra
@@ -81,6 +82,9 @@ fn convert_rgba32(
         }
         8 => {
             for x in 0..width {
+                if offset >= buffer_size {
+                    break;
+                }
                 let color = read_byte(buffer, offset) as usize;
                 let color_tables = &header.color_table.as_ref();
                 let c= get_color(color_tables, color);
@@ -96,6 +100,9 @@ fn convert_rgba32(
         4 => {
             for x_ in 0..(width + 1) / 2 {
                 let mut x = x_ * 2;
+                if offset >= buffer_size {
+                    break;
+                }
                 let color_ = read_byte(buffer, offset) as usize;
                 let color = color_ >> 4;
                 let c = get_color(&header.color_table.as_ref(), color);
@@ -124,6 +131,9 @@ fn convert_rgba32(
         1 => {
             for x_ in 0..(width + 7) / 8 {
                 let mut x = x_ * 8;
+                if offset >= buffer_size {
+                    break;
+                }
                 let color_ = read_byte(buffer, offset) as usize;
                 for i in [7, 6, 5, 4, 3, 2, 1, 0] {
                     if x >= width {
@@ -278,11 +288,12 @@ fn decode_rle<B: BinaryReader>(
                 }
             } else if header.bit_count == 8 {
                 for _ in 0..data0 {
-                    buf[x] = data1;
-                    x += 1;
                     if x >= buf.len() {
+                        // broken bmp
                         break 'x;
                     }
+                    buf[x] = data1;
+                    x += 1;
                 }
             } else if header.bit_count == 4 {
                 for _ in 0..data0 as usize / rev_bytes {
@@ -478,6 +489,7 @@ pub fn decode<'decode, B: BinaryReader>(
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
     let header = BitmapHeader::new(reader, option.debug_flag)?;
+    print!("{:?}",header);
 
     if option.debug_flag > 0 {
         let s1 = format!(

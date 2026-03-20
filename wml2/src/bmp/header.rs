@@ -154,6 +154,15 @@ impl BitmapHeader {
         let compression;
         let mut clut_size;
         let clut_offset;
+        match bi_size {
+            12 | 40 | 108 | 124 => {}
+            _ => {
+                return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::DecodeError,
+                    "Broken Header Bitmap".to_string(),
+                )));
+            }
+        }
 
         if bi_size == 12 {
             let os2header = BitmapCore {
@@ -163,6 +172,7 @@ impl BitmapHeader {
                 bc_plane: reader.read_u16_le()?,
                 bc_bit_count: reader.read_u16_le()?,
             };
+
             read_size += 12 - 4;
             width = os2header.bc_width as i32;
             height = os2header.bc_height as i32;
@@ -187,6 +197,14 @@ impl BitmapHeader {
                 b_v4_header: None,
                 b_v5_header: None,
             };
+            // workaround
+            if info_header.bi_width > 32767 || info_header.bi_height > 32767 {               
+                    return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    "Too Large Bitmap".to_string(),
+                )));
+            }
+
             read_size += 40 - 4;
             bit_per_count = info_header.bi_bit_count as usize;
             clut_size = if bit_per_count <= 8 {
@@ -200,6 +218,7 @@ impl BitmapHeader {
             height = info_header.bi_height as i32;
 
             let b_v4_header = if header_size > 40 {
+                
                 // V4
                 let b_v4_red_mask = reader.read_u32_le()?;
                 let b_v4_green_mask = reader.read_u32_le()?;
@@ -306,6 +325,12 @@ impl BitmapHeader {
         let mut color_table: Vec<ColorTable> = Vec::with_capacity(clut_size);
 
         if clut_size > 0 {
+            if clut_offset >= bitmap_file_header.bf_offbits as u64 {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    "Broken pallet Bitmap".to_string(),
+                )));
+            }
             reader.seek(SeekFrom::Start(clut_offset))?;
             for _ in 0..clut_size {
                 match bitmap_info {

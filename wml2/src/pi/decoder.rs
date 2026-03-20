@@ -335,7 +335,7 @@ pub fn decode<B: BinaryReader>(
         .set_metadata("width", DataMap::UInt(header.width as u64))?;
     option
         .drawer
-        .set_metadata("heigth", DataMap::UInt(header.height as u64))?;
+        .set_metadata("height", DataMap::UInt(header.height as u64))?;
     option
         .drawer
         .set_metadata("start x", DataMap::UInt(header.start_x as u64))?;

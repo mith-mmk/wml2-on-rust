@@ -113,7 +113,7 @@ pub fn decode<B: BinaryReader>(
         DataMap::UInt((header.end_x - header.start_x + 1) as u64),
     )?;
     option.drawer.set_metadata(
-        "heigth",
+        "height",
         DataMap::UInt((header.end_y - header.start_y + 1) as u64),
     )?;
     option.drawer.set_metadata(

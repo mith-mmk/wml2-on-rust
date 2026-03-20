@@ -395,62 +395,34 @@
 
 ## 次に着手
 中断せずやりきる
-- [ ] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
-- [ ] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
-- [ ] issue: fontはconfigで変更できるようにしてください
-- [ ] fontのフォールバックシステムの実装（顔文字/CJK対策）
-- [ ] examplesに実装単位のベンチマークテストを実装する どのタスクがボトルネックか発見出来る出来るようにする
-- [ ] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
+- [+] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
+- [+] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
+- [ ] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
+- [ ] issue: ファイラー用のfontフォールバックシステム（ファイル名に外国語が出ない問題を回避）
+    - 基本的な順序 
+      - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
+      - user setting fontは、font-familyでまとめて指定出来る様にする
+- [ ] issue: 設定が、リアルタイムで適用されてしまう問題([適用]が押されるまでは遅延)
+- [ ] issue: Message Overlayが左下に固まっている問題。横幅をちゃんととってください
+- [ ] issue: マンガモードでフォルダをまたいだとき、前のフォルダの画像が残ってしまう問題
+- [+] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
 - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
-- [ ] zip さらに遅くなっている気がする
-  ```
-  cargo run --example bench_archive --release -- F:\benchmark\sample_1_6G_bmp.zip
-    Finished `release` profile [optimized] target(s) in 0.37s
-     Running `C:\Users\misir\rust-targets\wml2\release\examples\bench_archive.exe F:\benchmark\sample_1_6G_bmp.zip`
-    archive-read iterations=3 total_ms=1146 avg_ms=382
-  cargo run --example bench_archive --release -- F:\benchmark\sample_20M.zip
-    Finished `release` profile [optimized] target(s) in 0.38s
-     Running `C:\Users\misir\rust-targets\wml2\release\examples\bench_archive.exe F:\benchmark\sample_20M.zip`
-    archive-read iterations=3 total_ms=21 avg_ms=7
-  ```
-  なので、ファイラーかpreviewが悪さしている可能性
+- [ ] zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+Waiting画面など
 - [ ] issue: LinuxとMacOS用がbuild出来ない問題
-- [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
-- プラグイン: 実装続き
-  - [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
-  - [x] susie64プラグイン(動作:x avif o jp2 x heic)
-  - [x] Windows Codecプラグイン(動作: o avif x jp2 o heic)
-  - [x] 設定を変えた時、再起動を促すポップアップを出す 
-  - [ ] [重要度低] Arm MACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
-  - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
 - [ ] プラグインでViewerに画像が表示出来る様にする
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
-- MacはIntel MACの環境しかないので遅延 
-- LinuxはWSLでbuild。実行はVMで行う
-- [ ] issue: Linux build error
-```text
-
-error[E0425]: cannot find function `available_roots` in this scope
-  --> wml2viewer/src/dependent/mod.rs:48:5
-   |
-48 |     available_roots()
-   |     ^^^^^^^^^^^^^^^ not found in this scope
-   |
-help: consider importing this function through its public re-export
-   |
- 3 + use crate::dependent::thirdparty::available_roots;
-```
+- [-] MacはIntel MACの環境しかないので遅延 
+- [+] LinuxはWSLでbuild。実行はVMで行う buildは OK
 - [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 - [ ] todo.mdの更新
-
-
-- archive_benchmarkの実装を以下のファンクションでとってください
-  - archive(zip)のすべてのmetadata取得に要する時間
-  - archive(zip)ファイルの取得速度
-  - metadataのソート時間 
-  - ファイル1枚をデコードする時間
-  - 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
+- [ ] archive_benchmarkの実装を以下のファンクションでとってください
+  - [ ] archive(zip)のすべてのmetadata取得に要する時間
+  - [ ] archive(zip)ファイルの取得速度
+  - [ ] metadataのソート時間 
+  - [ ] ファイル1枚をデコードする時間
+  - [ ] methodを切り替えて計測(online cache, temp copy, default method)
+  - [ ] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
 
 ## レビュアーissue
 - [*] zip 内ファイルソートの実機確認
@@ -459,3 +431,12 @@ help: consider importing this function through its public re-export
 - [*] ファイラー: OS name collation の最終調整(確認中)
 - [ ] コードの整理 モジュール境界をハッキリさせる
   - [ ]未実装 action の no-op 整理
+
+- [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
+- プラグイン: 実装続き
+  - [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
+  - [x] susie64プラグイン(動作:x avif o jp2 x heic)
+  - [x] Windows Codecプラグイン(動作: o avif x jp2 o heic)
+  - [x] 設定を変えた時、再起動を促すポップアップを出す 
+  - [ ] [重要度低] Arm MACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
+  - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず

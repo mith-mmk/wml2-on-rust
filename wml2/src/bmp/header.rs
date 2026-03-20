@@ -197,13 +197,6 @@ impl BitmapHeader {
                 b_v4_header: None,
                 b_v5_header: None,
             };
-            // workaround
-            if info_header.bi_width > 32767 || info_header.bi_height > 32767 {               
-                    return Err(Box::new(ImgError::new_const(
-                    ImgErrorKind::DecodeError,
-                    "Too Large Bitmap".to_string(),
-                )));
-            }
 
             read_size += 40 - 4;
             bit_per_count = info_header.bi_bit_count as usize;
@@ -320,6 +313,13 @@ impl BitmapHeader {
         }
         if clut_size == 0 && bit_per_count <= 8 && bit_per_count > 0 {
             clut_size = 1 << bit_per_count;
+        }
+
+        if clut_size > 65536 {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::UnsupportedFeature,
+                    "Clut Size too large".to_string(),
+                )));            
         }
 
         let mut color_table: Vec<ColorTable> = Vec::with_capacity(clut_size);

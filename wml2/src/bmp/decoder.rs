@@ -489,7 +489,14 @@ pub fn decode<'decode, B: BinaryReader>(
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
     let header = BitmapHeader::new(reader, option.debug_flag)?;
-    print!("{:?}",header);
+
+    // workaround
+    if header.width > 32767 || header.height > 32767 {               
+            return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::CannotDecode,
+            "Too Large Bitmap".to_string(),
+        )));
+    }
 
     if option.debug_flag > 0 {
         let s1 = format!(

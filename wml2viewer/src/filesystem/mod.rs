@@ -19,7 +19,7 @@ use zip_file::{
 };
 
 const SUPPORTED_EXTENSIONS: &[&str] = &[
-    "webp", "jpg", "jpeg", "bmp", "gif", "png", "tif", "tiff", "mag", "maki", "pi", "pic",
+    "webp", "jpg", "jpeg", "bmp", "gif", "png", "tif", "tiff", "mag", "mki", "pi", "pic",
 ];
 const LISTED_FILE_EXTENSION: &str = "wml";
 const LISTED_VIRTUAL_MARKER: &str = "__wmlv__";

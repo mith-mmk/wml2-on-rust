@@ -396,6 +396,12 @@
 ## 次に着手
 中断せずやりきる
 - [ ] issue: Message Overlayが左下に固まってでる問題。横幅はWindowの幅に 長すぎる場合は...で省略
+- [ ] issue: viewer マンガモード? 画像が切り替わらないことがある（最初に表示した画像が戻ることが多い）
+- [x] issue: makiが表示出来ないバグ
+- [ ] issue: デコーダがErrorを起こしたときに次の画像が表示できなくなるバグ
+    ```
+    thread '<unnamed>' (73484) panicked at wml2\src\bmp\decoder.rs:111:25:
+    ```
 - [ ] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
 - [ ] oxiarc-lzhuf crateで、lzhアーカイブ対応
 - [ ] archive_benchmarkの実装を以下のファンクションでとってください

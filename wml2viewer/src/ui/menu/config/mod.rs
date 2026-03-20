@@ -349,6 +349,15 @@ impl ViewerApp {
                                         .changed();
                                 });
                         });
+                        ui.label(search_path_text);
+                        if ui
+                            .text_edit_singleline(&mut self.resource_font_paths_input)
+                            .changed()
+                        {
+                            self.resources.font_paths =
+                                parse_search_paths(&self.resource_font_paths_input);
+                            config_changed = true;
+                        }
                         ui.separator();
                         ui.label(workaround_text);
                         ui.horizontal(|ui| {
@@ -698,6 +707,7 @@ impl ViewerApp {
         self.susie64_search_paths_input = join_search_paths(&self.plugins.susie64.search_path);
         self.system_search_paths_input = join_search_paths(&self.plugins.system.search_path);
         self.ffmpeg_search_paths_input = join_search_paths(&self.plugins.ffmpeg.search_path);
+        self.resource_font_paths_input = join_search_paths(&self.resources.font_paths);
         self.apply_window_theme(ctx);
         let applied = apply_resources(ctx, &self.resources);
         set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());

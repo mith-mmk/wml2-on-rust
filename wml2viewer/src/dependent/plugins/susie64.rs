@@ -8,8 +8,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub(super) fn default_provider() -> PluginProviderConfig {
     let search_path = if cfg!(target_os = "windows") {
         vec![
-            PathBuf::from("./test/plugins/susie64"),
-            PathBuf::from("../test/plugins/susie64"),
+            PathBuf::from("./susie64/plugins"),
+            PathBuf::from("../susie64/plugins"),
             PathBuf::from("./"),
         ]
     } else {

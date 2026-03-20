@@ -37,8 +37,11 @@ cargo run --manifest-path wml2viewer/Cargo.toml -- <path>
 threshold_mb = 256
 local_cache = true
 
-[runtime.workaround.thumbnail]
+[filesystem.thumbnail]
 suppress_large_files = true
+
+[resources]
+font_paths = ["C:/Windows/Fonts/NotoSansJP-Regular.otf"]
 ```
 
 ### plugin
@@ -71,6 +74,8 @@ search_path = ["c:/susie64/plugins/"]
 - `system` は Windows では WIC decode まで入りました。macOS system codec は今後の拡張対象です。
 - provider を有効化すると、`avif` や `jp2` などの拡張子も filer / viewer の対象に入ります。
 - plugin 設定変更時は再起動推奨ポップアップを出します。
+- Windows のフォント探索順は `%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts` → `%WINDIR%\\Fonts` です。
+- ロケール既定の system font を先頭に使い、`resources.font_paths` で追加フォントを前置できます。
 
 ## ベンチマーク
 

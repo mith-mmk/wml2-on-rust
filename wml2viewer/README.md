@@ -38,8 +38,11 @@ Relevant runtime workaround example:
 threshold_mb = 256
 local_cache = true
 
-[runtime.workaround.thumbnail]
+[filesystem.thumbnail]
 suppress_large_files = true
+
+[resources]
+font_paths = ["C:/Windows/Fonts/NotoSansJP-Regular.otf"]
 ```
 
 Plugin config example:
@@ -64,6 +67,8 @@ search_path = ["../test/plugins/susie64"]
 - `system` decode now uses Windows WIC on Windows. macOS system codec runtime is still follow-up work.
 - Filer and viewer also expose plugin-enabled extensions such as `avif` and `jp2` when the provider is enabled.
 - Plugin setting changes show a restart recommendation popup.
+- Windows font lookup now follows `%LOCALAPPDATA%\Microsoft\Windows\Fonts` then `%WINDIR%\Fonts`.
+- Locale default system fonts stay first, and `resources.font_paths` lets you prepend custom fonts.
 
 ## Benchmarks
 

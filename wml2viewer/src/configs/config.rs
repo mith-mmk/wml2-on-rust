@@ -26,6 +26,7 @@ struct ConfigFile {
     window: WindowConfigFile,
     render: RenderConfigFile,
     resources: ResourceConfigFile,
+    filesystem: FilesystemConfigFile,
     plugins: PluginConfig,
     storage: StorageConfigFile,
     navigation: NavigationConfigFile,
@@ -204,6 +205,7 @@ enum ZoomMethodConfigFile {
 struct ResourceConfigFile {
     locale: Option<String>,
     font_size: FontSizeConfigFile,
+    font_paths: Vec<PathBuf>,
 }
 
 impl Default for ResourceConfigFile {
@@ -211,6 +213,7 @@ impl Default for ResourceConfigFile {
         Self {
             locale: None,
             font_size: FontSizeConfigFile::S,
+            font_paths: Vec::new(),
         }
     }
 }
@@ -277,6 +280,34 @@ enum NavigationSortConfigFile {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
+struct FilesystemConfigFile {
+    thumbnail: ThumbnailConfigFile,
+}
+
+impl Default for FilesystemConfigFile {
+    fn default() -> Self {
+        Self {
+            thumbnail: ThumbnailConfigFile::default(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
+struct ThumbnailConfigFile {
+    suppress_large_files: bool,
+}
+
+impl Default for ThumbnailConfigFile {
+    fn default() -> Self {
+        Self {
+            suppress_large_files: true,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
 struct RuntimeConfigFile {
     current_file: Option<PathBuf>,
     workaround: WorkaroundConfigFile,
@@ -286,14 +317,12 @@ struct RuntimeConfigFile {
 #[serde(default)]
 struct WorkaroundConfigFile {
     archive: ArchiveWorkaroundConfigFile,
-    thumbnail: ThumbnailWorkaroundConfigFile,
 }
 
 impl Default for WorkaroundConfigFile {
     fn default() -> Self {
         Self {
             archive: ArchiveWorkaroundConfigFile::default(),
-            thumbnail: ThumbnailWorkaroundConfigFile::default(),
         }
     }
 }
@@ -324,20 +353,6 @@ impl Default for ZipWorkaroundConfigFile {
         Self {
             threshold_mb: 256,
             local_cache: true,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(default)]
-struct ThumbnailWorkaroundConfigFile {
-    suppress_large_files: bool,
-}
-
-impl Default for ThumbnailWorkaroundConfigFile {
-    fn default() -> Self {
-        Self {
-            suppress_large_files: true,
         }
     }
 }
@@ -422,6 +437,7 @@ impl From<ConfigFile> for AppConfig {
         config.navigation.end_of_folder = value.navigation.end_of_folder.into();
         config.navigation.sort = value.navigation.sort.into();
         config.runtime = value.runtime.into();
+        config.runtime.workaround.thumbnail = value.filesystem.thumbnail.into();
         config
     }
 }
@@ -434,6 +450,7 @@ impl From<AppConfig> for ConfigFile {
 
 impl ConfigFile {
     fn from_parts(value: AppConfig, current_path: Option<&Path>) -> Self {
+        let thumbnail = value.runtime.workaround.thumbnail.clone();
         Self {
             viewer: ViewerConfigFile {
                 animation: value.viewer.animation,
@@ -446,6 +463,9 @@ impl ConfigFile {
             window: value.window.into(),
             render: value.render.into(),
             resources: value.resources.into(),
+            filesystem: FilesystemConfigFile {
+                thumbnail: thumbnail.into(),
+            },
             plugins: value.plugins,
             storage: value.storage.into(),
             navigation: NavigationConfigFile {
@@ -478,7 +498,7 @@ impl From<WorkaroundConfigFile> for crate::options::WorkaroundOptions {
     fn from(value: WorkaroundConfigFile) -> Self {
         Self {
             archive: value.archive.into(),
-            thumbnail: value.thumbnail.into(),
+            thumbnail: crate::options::ThumbnailWorkaroundOptions::default(),
         }
     }
 }
@@ -487,7 +507,6 @@ impl From<crate::options::WorkaroundOptions> for WorkaroundConfigFile {
     fn from(value: crate::options::WorkaroundOptions) -> Self {
         Self {
             archive: value.archive.into(),
-            thumbnail: value.thumbnail.into(),
         }
     }
 }
@@ -526,15 +545,15 @@ impl From<crate::options::ZipWorkaroundOptions> for ZipWorkaroundConfigFile {
     }
 }
 
-impl From<ThumbnailWorkaroundConfigFile> for crate::options::ThumbnailWorkaroundOptions {
-    fn from(value: ThumbnailWorkaroundConfigFile) -> Self {
+impl From<ThumbnailConfigFile> for crate::options::ThumbnailWorkaroundOptions {
+    fn from(value: ThumbnailConfigFile) -> Self {
         Self {
             suppress_large_files: value.suppress_large_files,
         }
     }
 }
 
-impl From<crate::options::ThumbnailWorkaroundOptions> for ThumbnailWorkaroundConfigFile {
+impl From<crate::options::ThumbnailWorkaroundOptions> for ThumbnailConfigFile {
     fn from(value: crate::options::ThumbnailWorkaroundOptions) -> Self {
         Self {
             suppress_large_files: value.suppress_large_files,
@@ -721,6 +740,7 @@ impl From<ResourceConfigFile> for ResourceOptions {
         Self {
             locale: value.locale.or_else(crate::dependent::system_locale),
             font_size: value.font_size.into(),
+            font_paths: value.font_paths,
         }
     }
 }
@@ -730,6 +750,7 @@ impl From<ResourceOptions> for ResourceConfigFile {
         Self {
             locale: value.locale,
             font_size: value.font_size.into(),
+            font_paths: value.font_paths,
         }
     }
 }

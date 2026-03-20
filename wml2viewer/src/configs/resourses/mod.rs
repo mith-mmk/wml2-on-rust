@@ -27,6 +27,7 @@ pub enum FontSizePreset {
 pub struct ResourceOptions {
     pub locale: Option<String>,
     pub font_size: FontSizePreset,
+    pub font_paths: Vec<PathBuf>,
 }
 
 impl Default for ResourceOptions {
@@ -34,6 +35,7 @@ impl Default for ResourceOptions {
         Self {
             locale: system_locale(),
             font_size: FontSizePreset::S,
+            font_paths: Vec::new(),
         }
     }
 }
@@ -49,7 +51,7 @@ pub fn apply_resources(ctx: &egui::Context, options: &ResourceOptions) -> Applie
     let mut fonts = egui::FontDefinitions::default();
     let mut loaded_fonts = Vec::new();
 
-    for (name, data) in load_font_data(candidate_font_paths(&locale)) {
+    for (name, data) in load_font_data(candidate_font_paths(&locale, &options.font_paths)) {
         fonts.font_data.insert(name.clone(), data.into());
         fonts
             .families
@@ -105,8 +107,9 @@ pub fn resource_text_override(locale: &str, key: &str) -> Option<&'static str> {
         .and_then(|values| values.get(key).copied())
 }
 
-fn candidate_font_paths(locale: &str) -> Vec<PathBuf> {
+fn candidate_font_paths(locale: &str, configured_paths: &[PathBuf]) -> Vec<PathBuf> {
     let mut paths = Vec::new();
+    paths.extend(configured_paths.iter().cloned());
     for candidate in resource_locale_fallbacks(locale) {
         paths.extend(locale_font_candidates(&candidate));
     }

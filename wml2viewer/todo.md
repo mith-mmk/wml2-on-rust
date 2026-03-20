@@ -40,11 +40,12 @@
 - [x] config import/export
 - [x] `--config [path]`
 - [x] window / render / resources / navigation の永続化
+- [+] resources.font_paths の永続化
 - [x] storage.path / storage.path_record の永続化
 - [x] manga separator / UI theme の永続化
 - [x] plugin config の永続化土台
 - [x] workaround.archive.zip の永続化
-- [+] workaround.thumbnail の永続化
+- [+] filesystem.thumbnail の永続化
 - [ ] config schema のバージョニング
 
 ## src/configs/resourses/mod.rs
@@ -53,7 +54,9 @@
 - [x] `ja_JP -> ja -> en` フォールバック
 - [x] `zh_TW -> zh -> en` フォールバック
 - [x] locale 別の system font 候補
+- [+] locale system font を最優先にしつつ override font を前置
 - [x] emoji font fallback
+- [+] CJK / 顔文字向け fallback 強化
 - [x] `Auto / S / M / L / LL` のフォントサイズ
 - [x] DPI / 画面サイズベースの Auto サイズ
 - [x] 外部 JSON resource 読み込み
@@ -83,6 +86,7 @@
 - [x] Windows locale 取得
 - [x] Windows 向け日本語/繁体字フォント候補
 - [x] Windows emoji font 候補
+- [+] `%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts -> %WINDIR%\\Fonts` の検索順
 - [x] Windows drive 列挙
 - [x] フォルダ選択ダイアログ
 - [+] 拡張子関連付け登録
@@ -92,12 +96,14 @@
 ## src/dependent/linux/mod.rs
 - [x] locale 環境変数取得
 - [x] Linux font fallback 候補
+- [+] `available_roots` 実装
 - [*] build
 - [ ] フォルダ選択ダイアログ
 
 ## src/dependent/darwin/mod.rs
 - [x] locale 環境変数取得
 - [x] macOS font fallback 候補
+- [+] `available_roots` 実装
 - [*] build
 - [ ] フォルダ選択ダイアログ
 
@@ -396,8 +402,18 @@
 - [ ] examplesに実装単位のベンチマークテストを実装する どのタスクがボトルネックか発見出来る出来るようにする
 - [ ] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
 - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
-- [ ] zip
-- [ ] 逆に遅くなっている気がする
+- [ ] zip さらに遅くなっている気がする
+  ```
+  cargo run --example bench_archive --release -- F:\benchmark\sample_1_6G_bmp.zip
+    Finished `release` profile [optimized] target(s) in 0.37s
+     Running `C:\Users\misir\rust-targets\wml2\release\examples\bench_archive.exe F:\benchmark\sample_1_6G_bmp.zip`
+    archive-read iterations=3 total_ms=1146 avg_ms=382
+  cargo run --example bench_archive --release -- F:\benchmark\sample_20M.zip
+    Finished `release` profile [optimized] target(s) in 0.38s
+     Running `C:\Users\misir\rust-targets\wml2\release\examples\bench_archive.exe F:\benchmark\sample_20M.zip`
+    archive-read iterations=3 total_ms=21 avg_ms=7
+  ```
+  なので、ファイラーかpreviewが悪さしている可能性
 - [ ] issue: LinuxとMacOS用がbuild出来ない問題
 - [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
 - プラグイン: 実装続き
@@ -405,12 +421,11 @@
   - [x] susie64プラグイン(動作:x avif o jp2 x heic)
   - [x] Windows Codecプラグイン(動作: o avif x jp2 o heic)
   - [x] 設定を変えた時、再起動を促すポップアップを出す 
-  - [ ] [重要度低] ArmMACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
+  - [ ] [重要度低] Arm MACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
   - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
 - [ ] プラグインでViewerに画像が表示出来る様にする
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
-- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 - MacはIntel MACの環境しかないので遅延 
 - LinuxはWSLでbuild。実行はVMで行う
 - [ ] issue: Linux build error
@@ -426,11 +441,16 @@ help: consider importing this function through its public re-export
    |
  3 + use crate::dependent::thirdparty::available_roots;
 ```
-
-
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 - [ ] todo.mdの更新
 
 
+- archive_benchmarkの実装を以下のファンクションでとってください
+  - archive(zip)のすべてのmetadata取得に要する時間
+  - archive(zip)ファイルの取得速度
+  - metadataのソート時間 
+  - ファイル1枚をデコードする時間
+  - 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
 
 ## レビュアーissue
 - [*] zip 内ファイルソートの実機確認

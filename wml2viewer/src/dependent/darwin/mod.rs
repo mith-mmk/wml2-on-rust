@@ -16,9 +16,9 @@ pub fn locale_font_candidates(locale: &str) -> Vec<PathBuf> {
             PathBuf::from("/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc"),
             PathBuf::from("/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc"),
             PathBuf::from("/System/Library/Fonts/ヒラギノ角ゴシック W5.ttc"),
+            PathBuf::from("/System/Library/Fonts/Hiragino Sans GB.ttc"),
             PathBuf::from("/Library/Fonts/NotoSansJP-Regular.otf"),
             PathBuf::from("/Library/Fonts/NotoSansCJK-Regular.ttc"),
-            PathBuf::from("/System/Library/Fonts/Hiragino Sans GB.ttc"),
         ]);
     } else if locale.starts_with("zh") {
         fonts.extend([
@@ -26,10 +26,17 @@ pub fn locale_font_candidates(locale: &str) -> Vec<PathBuf> {
             PathBuf::from("/Library/Fonts/NotoSansTC-Regular.otf"),
             PathBuf::from("/Library/Fonts/NotoSansCJK-Regular.ttc"),
         ]);
+    } else if locale.starts_with("ko") {
+        fonts.extend([
+            PathBuf::from("/System/Library/Fonts/AppleSDGothicNeo.ttc"),
+            PathBuf::from("/Library/Fonts/NotoSansCJK-Regular.ttc"),
+        ]);
     }
     fonts.extend([
+        PathBuf::from("/System/Library/Fonts/SFNS.ttf"),
         PathBuf::from("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
         PathBuf::from("/System/Library/Fonts/Supplemental/Arial.ttf"),
+        PathBuf::from("/System/Library/Fonts/Supplemental/Apple Symbols.ttf"),
     ]);
     fonts
 }
@@ -40,6 +47,14 @@ pub fn emoji_font_candidates() -> Vec<PathBuf> {
 
 pub fn pick_directory_dialog() -> Option<PathBuf> {
     None
+}
+
+pub fn available_roots() -> Vec<PathBuf> {
+    let mut roots = vec![PathBuf::from("/")];
+    if let Some(home) = std::env::var_os("HOME") {
+        roots.push(PathBuf::from(home));
+    }
+    roots
 }
 
 pub fn download_url_to_temp(_url: &str) -> Option<PathBuf> {

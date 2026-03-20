@@ -28,35 +28,61 @@ pub fn system_locale() -> Option<String> {
 }
 
 pub fn locale_font_candidates(locale: &str) -> Vec<PathBuf> {
-    let mut fonts = Vec::new();
+    let mut names = Vec::new();
     if locale.starts_with("ja") {
-        fonts.extend([
-            PathBuf::from(r"C:\Windows\Fonts\YuGothR.ttc"),
-            PathBuf::from(r"C:\Windows\Fonts\YuGothM.ttc"),
-            PathBuf::from(r"C:\Windows\Fonts\YuGothB.ttc"),
-            PathBuf::from(r"C:\Windows\Fonts\meiryo.ttc"),
-            PathBuf::from(r"C:\Windows\Fonts\msgothic.ttc"),
-            PathBuf::from(r"C:\Windows\Fonts\NotoSansJP-Regular.otf"),
-            PathBuf::from(r"C:\Windows\Fonts\NotoSansCJK-Regular.ttc"),
+        names.extend([
+            "YuGothM.ttc",
+            "YuGothR.ttc",
+            "YuGothB.ttc",
+            "meiryo.ttc",
+            "msgothic.ttc",
+            "NotoSansJP-Regular.otf",
+            "NotoSansCJK-Regular.ttc",
         ]);
     } else if locale.starts_with("zh") {
-        fonts.extend([
-            PathBuf::from(r"C:\Windows\Fonts\msjh.ttc"),
-            PathBuf::from(r"C:\Windows\Fonts\msyh.ttc"),
-            PathBuf::from(r"C:\Windows\Fonts\NotoSansTC-Regular.otf"),
-            PathBuf::from(r"C:\Windows\Fonts\NotoSansCJK-Regular.ttc"),
+        names.extend([
+            "msjh.ttc",
+            "msyh.ttc",
+            "NotoSansTC-Regular.otf",
+            "NotoSansCJK-Regular.ttc",
         ]);
+    } else if locale.starts_with("ko") {
+        names.extend(["malgun.ttf", "NotoSansCJK-Regular.ttc"]);
     }
-    fonts.extend([
-        PathBuf::from(r"C:\Windows\Fonts\segoeui.ttf"),
-        PathBuf::from(r"C:\Windows\Fonts\arialuni.ttf"),
-        PathBuf::from(r"C:\Windows\Fonts\arial.ttf"),
-    ]);
-    fonts
+    names.extend(["segoeui.ttf", "seguisym.ttf", "arialuni.ttf", "arial.ttf"]);
+    resolve_font_candidates(&names)
 }
 
 pub fn emoji_font_candidates() -> Vec<PathBuf> {
-    vec![PathBuf::from(r"C:\Windows\Fonts\seguiemj.ttf")]
+    resolve_font_candidates(&["seguiemj.ttf", "seguisym.ttf"])
+}
+
+fn resolve_font_candidates(file_names: &[&str]) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+    for root in windows_font_roots() {
+        for name in file_names {
+            paths.push(root.join(name));
+        }
+    }
+    paths
+}
+
+fn windows_font_roots() -> Vec<PathBuf> {
+    let mut roots = Vec::new();
+    if let Some(local) = std::env::var_os("LOCALAPPDATA") {
+        roots.push(
+            PathBuf::from(local)
+                .join("Microsoft")
+                .join("Windows")
+                .join("Fonts"),
+        );
+    }
+    if let Some(windir) = std::env::var_os("WINDIR") {
+        roots.push(PathBuf::from(windir).join("Fonts"));
+    } else {
+        roots.push(PathBuf::from(r"C:\Windows\Fonts"));
+    }
+    roots
 }
 
 const PROG_ID: &str = "wml2viewer.image";

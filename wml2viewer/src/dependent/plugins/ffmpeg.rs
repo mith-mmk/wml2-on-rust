@@ -11,8 +11,8 @@ pub(super) fn default_provider() -> PluginProviderConfig {
     PluginProviderConfig {
         enable: false,
         search_path: vec![
-            PathBuf::from("./test/plugins/ffmpeg"),
-            PathBuf::from("../test/plugins/ffmpeg"),
+            PathBuf::from("./plugins/ffmpeg"),
+            PathBuf::from("../plugins/ffmpeg"),
             PathBuf::from("./ffmpeg"),
             PathBuf::from("./"),
         ],

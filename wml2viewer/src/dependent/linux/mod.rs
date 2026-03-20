@@ -38,6 +38,14 @@ pub fn emoji_font_candidates() -> Vec<PathBuf> {
     ]
 }
 
+pub fn available_roots() -> Vec<PathBuf> {
+    let mut roots = vec![PathBuf::from("/")];
+    if let Some(home) = std::env::var_os("HOME") {
+        roots.push(PathBuf::from(home));
+    }
+    roots
+}
+
 pub fn pick_directory_dialog() -> Option<PathBuf> {
     None
 }

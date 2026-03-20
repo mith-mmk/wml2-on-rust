@@ -65,6 +65,7 @@ pub(crate) struct ViewerApp {
     pub(crate) runtime: RuntimeOptions,
     pub(crate) applied_locale: String,
     pub(crate) loaded_font_names: Vec<String>,
+    pub(crate) resource_font_paths_input: String,
     pub(crate) keymap: HashMap<KeyBinding, ViewerAction>,
     pub(crate) end_of_folder: EndOfFolderOption,
     pub(crate) navigation_sort: NavigationSortOption,
@@ -238,6 +239,7 @@ impl ViewerApp {
         let (fs_tx, fs_rx) = spawn_filesystem_worker(config.navigation.sort);
         let (filer_tx, filer_rx) = spawn_filer_worker();
         let (thumbnail_tx, thumbnail_rx) = spawn_thumbnail_worker();
+        let resource_font_paths_input = join_search_paths(&config.resources.font_paths);
 
         let mut this = Self {
             current_navigation_path: navigation_path.clone(),
@@ -266,6 +268,7 @@ impl ViewerApp {
             runtime: config.runtime,
             applied_locale: locale,
             loaded_font_names: loaded_fonts,
+            resource_font_paths_input,
             keymap: config.input.merged_with_defaults(),
             end_of_folder: config.navigation.end_of_folder,
             navigation_sort: config.navigation.sort,

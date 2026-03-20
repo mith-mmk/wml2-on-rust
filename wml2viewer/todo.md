@@ -7,7 +7,7 @@
 - [-] 設計保留
 - [ ] 未実装
 
-最終整理日: 2026-03-19
+最終整理日: 2026-03-20
 
 ## src/main.rs / src/app.rs
 - [x] `wml2viewer <file>` 起動
@@ -113,22 +113,24 @@
 - [x] provider 別 default 設定
 - [x] plugin 設定 UI 向けの土台
 - [x] search path からの module 走査
-- [ ] plugin 優先順位の実行ロジック
-- [ ] MIME / wildcard 判定
-- [ ] decoder / encoder / filter の実行ロジック
+- [+] plugin 優先順位の実行ロジック
+- [x] MIME / wildcard 判定
+- [+] decoder の実行ロジック
+- [ ] encoder / filter の実行ロジック
 
 ## src/dependent/plugins/system.rs
 - [+] system provider の既定値
-- [ ] WIC / OS bundle codec 実装
+- [*] WIC / OS bundle codec 実装
 
 ## src/dependent/plugins/ffmpeg.rs
 - [+] ffmpeg provider の既定値
-- [ ] 動的ライブラリ探索と呼び出し
+- [+] external ffmpeg 実行による decode
 
 ## src/dependent/plugins/susie64.rs
 - [+] susie64 provider の既定値
-- [ ] Windows 専用ロード
-- [ ] image / archiver plugin 実行
+- [+] Windows 専用ロード
+- [+] image plugin decode 実行
+- [ ] archiver plugin 実行
 
 ## src/filesystem/mod.rs
 - [x] 単一ファイル起動時に親ディレクトリの画像一覧を取得
@@ -158,9 +160,9 @@
 - [+] BufReader ベースの再読込
 - [+] 大容量 / ネットワーク zip の low-I/O workaround
 - [+] temp へのローカル archive cache
+- [+] ZipCacheReader を使った chunk cache
 - [ ] zip encoding option
 - [ ] `7z` / `rar` / `lzh` / `gzip`
-- [ ] ZipCacheReaderを実装し、ネットワークファイルに対処する。zipreader.mdを参照 
 
 ## src/ui/mod.rs
 - [x] viewer / render / input / menu / i18n の分離
@@ -203,6 +205,13 @@
 - [x] 設定画面の主要文言リソース化
 - [+] workaround.archive.zip 設定 UI
 - [ ] キーバインド編集 UI
+
+## src/ui/menu/fileviewer/functions.rs
+- [ ] Copy
+- [ ] Move
+- [ ] Trash
+- [ ] Convert
+- [ ] Similarity
 
 ## src/ui/menu/fileviewer/state.rs
 - [x] filer state の分離
@@ -262,7 +271,7 @@
 - [x] サムネイルペインサイズ可変
 - [+] 長いファイル名の中間省略（末尾 7 文字優先）
 - [*] filer 表示時のさらなる高速化
-- [ ] Copy / Move / Trash / Convert
+
 
 
 ## src/ui/render/layout.rs
@@ -298,6 +307,7 @@
 ## src/ui/viewer/mod.rs
 - [x] ViewerApp が composition root として worker を束ねる
 - [*] 画像 state と viewer state の完全分離
+- [+] save / overlay の transient state 分離
 - [x] render worker / filesystem worker / filer worker / thumbnail worker を統合
 - [x] filer に引きずられない viewer 更新
 - [x] manga mode の中央寄せ
@@ -366,12 +376,7 @@
 
 ## 次に着手
 中断せずやりきる
-- [ ] issue: LinuxとMacOS用がbuild出来ない問題
-- [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
-- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
-- [ ] `src/dependent/plugins/*` に実ランタイムを足して system / ffmpeg / susie64 の優先順位解決を実装する
-- 確認中: [*] zip 内ファイルソートの実機確認
-- zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップする　zipreader.md 参照
+- [ ] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
 - プラグイン: 実装続き
   - [ ] ffmpegプラグイン
   - [ ] susie64プラグイン
@@ -379,11 +384,21 @@
     - test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
     - ffmpegのリンクはcrate ffmpeg-sysを考慮(自力実装の方が安定する可能性あり)
     - systemにserach pathは不要 OS APIを叩くため
-- [ ] 設定：適用/undo/初期化ボタンの本格化
+- [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
+- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
+- [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップする　zipreader.md 参照
+- [ ] todo.mdの更新
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+
+## 優先度低
+- [ ] thumbnail抑制オプション
+- [ ] issue: LinuxとMacOS用がbuild出来ない問題
+- [ ] examplesに実装単位のベンチマークテストを実装する どのタスクがボトルネックか発見出来る出来るようにする
+
+## レビュアーissue
+- [*] zip 内ファイルソートの実機確認
 - [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
 - [+] ファイラー/サブファイラー/viewer のファイル表示順の実機確認(確認中)
+- [*] ファイラー: OS name collation の最終調整(確認中)
 - [ ] コードの整理 モジュール境界をハッキリさせる
   - [ ]未実装 action の no-op 整理
-- [*] ファイラー: OS name collation の最終調整(確認中)
-- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
-- todo.mdの更新

@@ -4875,7 +4875,7 @@ dependencies = [
 
 [[package]]
 name = "wml2viewer"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "directories",
  "eframe",
@@ -4884,6 +4884,7 @@ dependencies = [
  "serde",
  "serde_json",
  "toml 0.8.23",
+ "windows-sys 0.59.0",
  "winreg",
  "winres",
  "wml2",

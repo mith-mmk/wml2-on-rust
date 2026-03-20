@@ -1,6 +1,6 @@
 use crate::configs::config::{load_app_config, save_app_config};
 use crate::configs::resourses::{FontSizePreset, apply_resources};
-use crate::dependent::plugins::discover_plugin_modules;
+use crate::dependent::plugins::{discover_plugin_modules, set_runtime_plugin_config};
 use crate::dependent::{
     clean_system_integration, default_download_dir, pick_save_directory,
     register_system_file_associations,
@@ -541,11 +541,11 @@ impl ViewerApp {
                                     .and_then(|exe| register_system_file_associations(&exe).ok())
                                 {
                                     Some(()) => {
-                                        self.save_message =
+                                        self.save_dialog.message =
                                             Some(registered_file_associations_text.to_string());
                                     }
                                     None => {
-                                        self.save_message =
+                                        self.save_dialog.message =
                                             Some(failed_file_associations_text.to_string());
                                     }
                                 }
@@ -553,11 +553,11 @@ impl ViewerApp {
                             if ui.button(clean_system_text).clicked() {
                                 match clean_system_integration() {
                                     Ok(()) => {
-                                        self.save_message =
+                                        self.save_dialog.message =
                                             Some(cleaned_system_integration_text.to_string());
                                     }
                                     Err(err) => {
-                                        self.save_message = Some(err.to_string());
+                                        self.save_dialog.message = Some(err.to_string());
                                     }
                                 }
                             }
@@ -653,6 +653,7 @@ impl ViewerApp {
             self.apply_window_theme(ctx);
             let applied = apply_resources(ctx, &self.resources);
             set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
+            set_runtime_plugin_config(self.plugins.clone());
             self.applied_locale = applied.locale;
             self.loaded_font_names = applied.loaded_fonts;
             let _ = save_app_config(
@@ -674,7 +675,7 @@ impl ViewerApp {
         self.keymap = config.input.merged_with_defaults();
         self.end_of_folder = config.navigation.end_of_folder;
         self.navigation_sort = config.navigation.sort;
-        self.save_output_dir = self
+        self.save_dialog.output_dir = self
             .storage
             .path
             .clone()
@@ -686,6 +687,7 @@ impl ViewerApp {
         self.apply_window_theme(ctx);
         let applied = apply_resources(ctx, &self.resources);
         set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
+        set_runtime_plugin_config(self.plugins.clone());
         self.applied_locale = applied.locale;
         self.loaded_font_names = applied.loaded_fonts;
         self.pending_fit_recalc = true;

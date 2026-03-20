@@ -52,10 +52,10 @@ impl ViewerApp {
                 ui.label(self.text(UiTextKey::SaveAs));
                 for format in SaveFormat::all() {
                     if ui
-                        .selectable_label(self.save_format == format, format.to_string())
+                        .selectable_label(self.save_dialog.format == format, format.to_string())
                         .clicked()
                     {
-                        self.save_format = format;
+                        self.save_dialog.format = format;
                         self.open_save_dialog();
                         self.show_left_menu = false;
                     }

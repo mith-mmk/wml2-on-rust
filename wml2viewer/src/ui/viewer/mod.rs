@@ -32,7 +32,9 @@ use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::time::{Duration, Instant};
 pub mod options;
+mod state;
 use options::ZoomOption;
+use state::{SaveDialogState, ViewerOverlayState};
 
 const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(180);
 
@@ -83,7 +85,7 @@ pub(crate) struct ViewerApp {
     pub(crate) thumbnail_pending: HashSet<PathBuf>,
     pub(crate) thumbnail_cache: HashMap<PathBuf, TextureHandle>,
     pub(crate) navigator_ready: bool,
-    pub(crate) loading_message: Option<String>,
+    pub(crate) overlay: ViewerOverlayState,
     pub(crate) last_navigation_at: Option<Instant>,
     pub(crate) show_settings: bool,
     pub(crate) settings_tab: SettingsTab,
@@ -94,13 +96,7 @@ pub(crate) struct ViewerApp {
     pub(crate) config_path: Option<PathBuf>,
     pub(crate) show_left_menu: bool,
     pub(crate) left_menu_pos: Pos2,
-    pub(crate) save_format: SaveFormat,
-    pub(crate) save_output_dir: Option<PathBuf>,
-    pub(crate) save_file_name: String,
-    pub(crate) save_message: Option<String>,
-    pub(crate) show_save_dialog: bool,
-    pub(crate) save_in_progress: bool,
-    pub(crate) save_result_rx: Option<Receiver<Result<String, String>>>,
+    pub(crate) save_dialog: SaveDialogState,
     pub(crate) show_filer: bool,
     pub(crate) show_subfiler: bool,
     pub(crate) filer: FilerState,
@@ -288,7 +284,7 @@ impl ViewerApp {
             thumbnail_pending: HashSet::new(),
             thumbnail_cache: HashMap::new(),
             navigator_ready: false,
-            loading_message: None,
+            overlay: ViewerOverlayState::default(),
             last_navigation_at: None,
             show_settings: false,
             settings_tab: SettingsTab::Viewer,
@@ -299,13 +295,10 @@ impl ViewerApp {
             config_path,
             show_left_menu: false,
             left_menu_pos: Pos2::ZERO,
-            save_format: SaveFormat::Png,
-            save_output_dir: None,
-            save_file_name: default_save_file_name(&path),
-            save_message: None,
-            show_save_dialog: false,
-            save_in_progress: false,
-            save_result_rx: None,
+            save_dialog: SaveDialogState {
+                file_name: default_save_file_name(&path),
+                ..SaveDialogState::default()
+            },
             show_filer: show_filer_on_start,
             show_subfiler: false,
             filer: FilerState::default(),
@@ -333,7 +326,7 @@ impl ViewerApp {
             preloaded_rendered: None,
         };
 
-        this.save_output_dir = this
+        this.save_dialog.output_dir = this
             .storage
             .path
             .clone()
@@ -642,21 +635,22 @@ impl ViewerApp {
     }
 
     pub(crate) fn save_current_as(&mut self, format: SaveFormat) {
-        if self.save_in_progress {
+        if self.save_dialog.in_progress {
             return;
         }
         let Some(parent) = self
-            .save_output_dir
+            .save_dialog
+            .output_dir
             .clone()
             .or_else(|| self.storage.path.clone())
             .or_else(default_download_dir)
             .or_else(|| self.current_path.parent().map(|path| path.to_path_buf()))
         else {
-            self.save_message = Some("Cannot determine save directory".to_string());
+            self.save_dialog.message = Some("Cannot determine save directory".to_string());
             return;
         };
 
-        let file_name = self.save_file_name.trim();
+        let file_name = self.save_dialog.file_name.trim();
         let stem = if file_name.is_empty() {
             default_save_file_name(&self.current_path)
         } else {
@@ -665,8 +659,8 @@ impl ViewerApp {
         let output = parent.join(format!("{stem}.{}", format.extension()));
         let source = self.source.clone();
         let (tx, rx) = mpsc::channel();
-        self.save_in_progress = true;
-        self.save_result_rx = Some(rx);
+        self.save_dialog.in_progress = true;
+        self.save_dialog.result_rx = Some(rx);
         std::thread::spawn(move || {
             let result = save_loaded_image(&output, &source, format)
                 .map(|_| format!("Saved {}", output.display()))
@@ -691,40 +685,40 @@ impl ViewerApp {
     }
 
     pub(crate) fn open_save_dialog(&mut self) {
-        self.show_save_dialog = true;
+        self.save_dialog.open = true;
     }
 
     fn poll_save_result(&mut self) {
-        let Some(rx) = &self.save_result_rx else {
+        let Some(rx) = &self.save_dialog.result_rx else {
             return;
         };
         match rx.try_recv() {
             Ok(Ok(message)) => {
-                self.save_message = Some(message);
-                self.save_in_progress = false;
-                self.show_save_dialog = false;
-                self.save_result_rx = None;
+                self.save_dialog.message = Some(message);
+                self.save_dialog.in_progress = false;
+                self.save_dialog.open = false;
+                self.save_dialog.result_rx = None;
             }
             Ok(Err(message)) => {
-                self.save_message = Some(message);
-                self.save_in_progress = false;
-                self.save_result_rx = None;
+                self.save_dialog.message = Some(message);
+                self.save_dialog.in_progress = false;
+                self.save_dialog.result_rx = None;
             }
             Err(TryRecvError::Empty) => {}
             Err(TryRecvError::Disconnected) => {
-                self.save_message = Some("Save worker disconnected".to_string());
-                self.save_in_progress = false;
-                self.save_result_rx = None;
+                self.save_dialog.message = Some("Save worker disconnected".to_string());
+                self.save_dialog.in_progress = false;
+                self.save_dialog.result_rx = None;
             }
         }
     }
 
     fn save_dialog_ui(&mut self, ctx: &egui::Context) {
-        if !self.show_save_dialog {
+        if !self.save_dialog.open {
             return;
         }
 
-        let mut open = self.show_save_dialog;
+        let mut open = self.save_dialog.open;
         let mut close_requested = false;
         egui::Window::new(self.text(UiTextKey::Save))
             .open(&mut open)
@@ -733,33 +727,35 @@ impl ViewerApp {
                 ui.horizontal(|ui| {
                     ui.label(self.text(UiTextKey::Directory));
                     ui.label(
-                        self.save_output_dir
+                        self.save_dialog
+                            .output_dir
                             .as_ref()
                             .map(|path| path.display().to_string())
                             .unwrap_or_else(|| self.text(UiTextKey::NotSelected).to_string()),
                     );
                 });
                 if ui.button(self.text(UiTextKey::ChooseFolder)).clicked() {
-                    self.save_output_dir = pick_save_directory().or_else(default_download_dir);
+                    self.save_dialog.output_dir =
+                        pick_save_directory().or_else(default_download_dir);
                     if self.storage.path_record {
-                        self.storage.path = self.save_output_dir.clone();
+                        self.storage.path = self.save_dialog.output_dir.clone();
                     }
                 }
                 ui.horizontal(|ui| {
                     ui.label(self.text(UiTextKey::NameLabel));
-                    ui.add_enabled_ui(!self.save_in_progress, |ui| {
-                        ui.text_edit_singleline(&mut self.save_file_name);
+                    ui.add_enabled_ui(!self.save_dialog.in_progress, |ui| {
+                        ui.text_edit_singleline(&mut self.save_dialog.file_name);
                     });
                 });
                 ui.horizontal(|ui| {
                     ui.label(self.text(UiTextKey::Format));
-                    ui.add_enabled_ui(!self.save_in_progress, |ui| {
+                    ui.add_enabled_ui(!self.save_dialog.in_progress, |ui| {
                         egui::ComboBox::from_id_salt("save_format_dialog")
-                            .selected_text(self.save_format.to_string())
+                            .selected_text(self.save_dialog.format.to_string())
                             .show_ui(ui, |ui| {
                                 for format in SaveFormat::all() {
                                     ui.selectable_value(
-                                        &mut self.save_format,
+                                        &mut self.save_dialog.format,
                                         format,
                                         format.to_string(),
                                     );
@@ -767,7 +763,7 @@ impl ViewerApp {
                             });
                     });
                 });
-                if self.save_in_progress {
+                if self.save_dialog.in_progress {
                     ui.horizontal(|ui| {
                         ui.add(egui::Spinner::new());
                         let dots = ".".repeat((self.frame_counter % 3) + 1);
@@ -777,12 +773,12 @@ impl ViewerApp {
                 ui.horizontal(|ui| {
                     if ui
                         .add_enabled(
-                            !self.save_in_progress,
+                            !self.save_dialog.in_progress,
                             egui::Button::new(self.text(UiTextKey::Save)),
                         )
                         .clicked()
                     {
-                        self.save_current_as(self.save_format);
+                        self.save_current_as(self.save_dialog.format);
                     }
                     if ui.button(self.text(UiTextKey::Cancel)).clicked() {
                         close_requested = true;
@@ -792,11 +788,11 @@ impl ViewerApp {
         if close_requested {
             open = false;
         }
-        self.show_save_dialog = open;
+        self.save_dialog.open = open;
     }
 
     fn status_panel_ui(&mut self, ctx: &egui::Context) {
-        let Some(message) = &self.save_message else {
+        let Some(message) = &self.save_dialog.message else {
             return;
         };
 
@@ -816,10 +812,10 @@ impl ViewerApp {
     }
 
     fn loading_overlay_ui(&mut self, ctx: &egui::Context) {
-        let Some(message) = &self.loading_message else {
+        let Some(message) = &self.overlay.loading_message else {
             return;
         };
-        let bottom_offset = if self.save_message.is_some() {
+        let bottom_offset = if self.save_dialog.message.is_some() {
             -34.0
         } else {
             -10.0
@@ -997,7 +993,7 @@ impl ViewerApp {
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.pending_fit_recalc = !matches!(self.render_options.zoom_option, ZoomOption::None);
-        self.loading_message = Some(format!("Loading {}", load_path.display()));
+        self.overlay.loading_message = Some(format!("Loading {}", load_path.display()));
         self.worker_tx
             .send(RenderCommand::LoadPath {
                 request_id,
@@ -1017,7 +1013,7 @@ impl ViewerApp {
         self.invalidate_preload();
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Resize(request_id));
-        self.loading_message = Some(format!("Rendering {:.0}%", self.zoom * 100.0));
+        self.overlay.loading_message = Some(format!("Rendering {:.0}%", self.zoom * 100.0));
         self.worker_tx
             .send(RenderCommand::ResizeCurrent {
                 request_id,
@@ -1072,7 +1068,7 @@ impl ViewerApp {
     fn init_filesystem(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
         let request_id = self.alloc_fs_request_id();
         self.active_fs_request_id = Some(request_id);
-        self.loading_message = Some(format!("Scanning {}", path.display()));
+        self.overlay.loading_message = Some(format!("Scanning {}", path.display()));
         self.fs_tx
             .send(FilesystemCommand::Init { request_id, path })
             .map_err(filesystem_send_error)?;
@@ -1099,7 +1095,7 @@ impl ViewerApp {
             FilesystemCommand::First { .. } => FilesystemCommand::First { request_id },
             FilesystemCommand::Last { .. } => FilesystemCommand::Last { request_id },
         };
-        self.loading_message = Some("Scanning folder...".to_string());
+        self.overlay.loading_message = Some("Scanning folder...".to_string());
         self.fs_tx.send(command).map_err(filesystem_send_error)?;
         Ok(())
     }
@@ -1113,7 +1109,7 @@ impl ViewerApp {
         if let Some(path) = path {
             let request_id = self.alloc_fs_request_id();
             self.current_path = path.clone();
-            self.save_file_name = default_save_file_name(&path);
+            self.save_dialog.file_name = default_save_file_name(&path);
             let _ = self.fs_tx.send(FilesystemCommand::SetCurrent {
                 request_id,
                 path: self.current_navigation_path.clone(),
@@ -1132,7 +1128,7 @@ impl ViewerApp {
         self.last_frame_at = Instant::now();
         self.upload_current_frame();
         if self.active_fs_request_id.is_none() {
-            self.loading_message = None;
+            self.overlay.loading_message = None;
         }
         self.active_request = None;
         self.schedule_preload();
@@ -1198,7 +1194,7 @@ impl ViewerApp {
         self.preloaded_navigation_path = None;
         self.pending_preload_navigation_path = None;
         if let (Some(source), Some(rendered)) = (source, rendered) {
-            self.loading_message = None;
+            self.overlay.loading_message = None;
             self.apply_loaded_result(load_path, source, rendered);
             return true;
         }
@@ -1240,12 +1236,12 @@ impl ViewerApp {
                     if !request_matches {
                         continue;
                     }
-                    self.loading_message = Some(message);
+                    self.overlay.loading_message = Some(message);
                     self.active_request = None;
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    self.loading_message = Some("render worker disconnected".to_string());
+                    self.overlay.loading_message = Some("render worker disconnected".to_string());
                     self.active_request = None;
                     break;
                 }
@@ -1376,7 +1372,7 @@ impl ViewerApp {
                     if self.active_fs_request_id == Some(request_id) {
                         self.navigator_ready = true;
                         if self.active_request.is_none() {
-                            self.loading_message = None;
+                            self.overlay.loading_message = None;
                         }
                         self.active_fs_request_id = None;
                     }
@@ -1395,14 +1391,16 @@ impl ViewerApp {
                 }
                 Ok(FilesystemResult::NoPath { request_id }) => {
                     if self.active_fs_request_id == Some(request_id) {
-                        self.loading_message = Some("No displayable file found".to_string());
+                        self.overlay.loading_message =
+                            Some("No displayable file found".to_string());
                         self.show_filer = true;
                         self.active_fs_request_id = None;
                     }
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    self.loading_message = Some("filesystem worker disconnected".to_string());
+                    self.overlay.loading_message =
+                        Some("filesystem worker disconnected".to_string());
                     self.active_fs_request_id = None;
                     break;
                 }

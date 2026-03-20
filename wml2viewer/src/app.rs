@@ -1,5 +1,6 @@
 use crate::configs::config::{load_app_config, load_startup_path};
 use crate::configs::resourses::apply_resources;
+use crate::dependent::plugins::set_runtime_plugin_config;
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::LoadedImage;
 use crate::filesystem::{resolve_start_path, set_archive_zip_workaround};
@@ -16,6 +17,7 @@ pub fn run(
     config_path: Option<PathBuf>,
 ) -> Result<(), Box<dyn Error>> {
     let config = load_app_config(config_path.as_deref()).unwrap_or_default();
+    set_runtime_plugin_config(config.plugins.clone());
     set_archive_zip_workaround(config.runtime.workaround.archive.zip.clone());
     let image_path = image_path
         .unwrap_or(load_startup_path(config_path.as_deref()).unwrap_or(std::env::current_dir()?));

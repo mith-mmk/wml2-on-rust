@@ -76,12 +76,36 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                             if !is_browser_entry(&path) {
                                 continue;
                             }
-                            let entry = build_filer_entry(path);
+                            let entry = build_preview_entry(path.clone());
                             if !matches_filters(&entry, &filter_text, &extension_filter) {
                                 continue;
                             }
                             preview.push(entry.clone());
-                            collected.push(entry);
+                            collected.push(path);
+                            if preview.len() >= 128 {
+                                let _ = result_tx.send(FilerResult::Append {
+                                    request_id,
+                                    entries: std::mem::take(&mut preview),
+                                });
+                            }
+                        }
+                        if !preview.is_empty() {
+                            let _ = result_tx.send(FilerResult::Append {
+                                request_id,
+                                entries: preview,
+                            });
+                        }
+                        collected.into_iter().map(build_filer_entry).collect()
+                    } else {
+                        let mut preview = Vec::new();
+                        let mut collected = Vec::new();
+                        for path in list_browser_entries(&dir, sort) {
+                            let entry = build_preview_entry(path.clone());
+                            if !matches_filters(&entry, &filter_text, &extension_filter) {
+                                continue;
+                            }
+                            preview.push(entry);
+                            collected.push(path);
                             if preview.len() >= 128 {
                                 let _ = result_tx.send(FilerResult::Append {
                                     request_id,
@@ -96,11 +120,8 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                             });
                         }
                         collected
-                    } else {
-                        list_browser_entries(&dir, sort)
                             .into_iter()
                             .map(build_filer_entry)
-                            .filter(|entry| matches_filters(entry, &filter_text, &extension_filter))
                             .collect::<Vec<_>>()
                     };
                     sort_entries(
@@ -142,6 +163,20 @@ fn build_filer_entry(path: PathBuf) -> FilerEntry {
         label,
         is_container,
         metadata,
+    }
+}
+
+fn build_preview_entry(path: PathBuf) -> FilerEntry {
+    let is_container = is_browser_container(&path);
+    let label = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "(entry)".to_string());
+    FilerEntry {
+        path,
+        label,
+        is_container,
+        metadata: FilerMetadata::default(),
     }
 }
 

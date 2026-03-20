@@ -1,6 +1,6 @@
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::image::{
-    LoadedImage, load_canvas_from_bytes, load_canvas_from_file, resize_loaded_image,
+    LoadedImage, load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
 };
 use crate::filesystem::load_virtual_image_bytes;
 use std::error::Error;
@@ -59,7 +59,7 @@ pub(crate) fn spawn_render_worker(
                 } => {
                     let result = (|| -> Result<(LoadedImage, LoadedImage), Box<dyn Error>> {
                         let source = if let Some(bytes) = load_virtual_image_bytes(&path) {
-                            load_canvas_from_bytes(&bytes)?
+                            load_canvas_from_bytes_with_hint(&bytes, Some(&path))?
                         } else {
                             load_canvas_from_file(&path)?
                         };

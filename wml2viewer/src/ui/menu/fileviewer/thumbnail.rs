@@ -1,5 +1,7 @@
 use crate::drawers::affine::InterpolationAlgorithm;
-use crate::drawers::image::{load_canvas_from_bytes, load_canvas_from_file, resize_loaded_image};
+use crate::drawers::image::{
+    load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
+};
 use crate::filesystem::{load_virtual_image_bytes, virtual_image_size};
 use crate::ui::render::canvas_to_color_image;
 use eframe::egui::ColorImage;
@@ -39,7 +41,7 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                         continue;
                     }
                     let loaded = if let Some(bytes) = load_virtual_image_bytes(&path) {
-                        load_canvas_from_bytes(&bytes)
+                        load_canvas_from_bytes_with_hint(&bytes, Some(&path))
                     } else {
                         load_canvas_from_file(&path)
                     };

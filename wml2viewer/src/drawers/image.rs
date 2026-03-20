@@ -3,6 +3,9 @@
 use std::io;
 use std::path::Path;
 
+use crate::dependent::plugins::{
+    decode_image_from_bytes_with_plugins, decode_image_from_file_with_plugins,
+};
 use wml2::color::RGBA;
 use wml2::draw::{
     AnimationLayer as WmlAnimationLayer, ImageBuffer, NextBlend, NextDispose, image_from,
@@ -112,14 +115,45 @@ impl std::fmt::Display for SaveFormat {
 }
 
 pub fn load_canvas_from_file(path: &Path) -> Result<LoadedImage> {
-    let image = image_from_file(path.to_string_lossy().into_owned())?;
-    convert_image(image, Some(path))
+    load_canvas_from_file_internal(path).or_else(|_| {
+        decode_image_from_file_with_plugins(path)
+            .ok_or_else(|| Box::new(io::Error::other("no plugin decoder succeeded")) as _)
+    })
 }
 
 #[allow(dead_code)]
 pub fn load_canvas_from_bytes(data: &[u8]) -> Result<LoadedImage> {
+    load_canvas_from_bytes_with_hint(data, None)
+}
+
+pub fn load_canvas_from_bytes_with_hint(
+    data: &[u8],
+    path_hint: Option<&Path>,
+) -> Result<LoadedImage> {
+    load_canvas_from_bytes_internal(data).or_else(|_| {
+        decode_image_from_bytes_with_plugins(data, path_hint)
+            .ok_or_else(|| Box::new(io::Error::other("no plugin decoder succeeded")) as _)
+    })
+}
+
+pub(crate) fn load_canvas_from_file_internal(path: &Path) -> Result<LoadedImage> {
+    let image = image_from_file(path.to_string_lossy().into_owned())?;
+    convert_image(image, Some(path))
+}
+
+pub(crate) fn load_canvas_from_bytes_internal(data: &[u8]) -> Result<LoadedImage> {
     let image = image_from(data)?;
     convert_image(image, None)
+}
+
+pub(crate) fn load_canvas_from_path_or_bytes_internal(
+    data: &[u8],
+    path_hint: Option<&Path>,
+) -> Result<LoadedImage> {
+    if let Some(path) = path_hint {
+        return load_canvas_from_file_internal(path);
+    }
+    load_canvas_from_bytes_internal(data)
 }
 
 pub fn resize_canvas(

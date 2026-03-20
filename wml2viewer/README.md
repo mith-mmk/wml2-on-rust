@@ -57,4 +57,5 @@ search_path = ["../test/plugins/susie64"]
 - On Windows, file association registration is available from Settings.
 - `ffmpeg` decode currently shells out to `ffmpeg.exe`.
 - `susie64` decode is Windows-only and currently targets image plugins.
-- `system` has a priority slot and config surface, but native OS codec runtime still needs follow-up work.
+- `system` decode now uses Windows WIC on Windows. macOS system codec runtime is still follow-up work.
+- Filer and viewer also expose plugin-enabled extensions such as `avif` and `jp2` when the provider is enabled.

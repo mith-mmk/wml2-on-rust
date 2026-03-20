@@ -116,11 +116,13 @@
 - [+] plugin 優先順位の実行ロジック
 - [x] MIME / wildcard 判定
 - [+] decoder の実行ロジック
+- [+] plugin 有効拡張子の列挙
 - [ ] encoder / filter の実行ロジック
 
 ## src/dependent/plugins/system.rs
 - [+] system provider の既定値
-- [*] WIC / OS bundle codec 実装
+- [+] Windows WIC decode 実装
+- [ ] macOS system codec 実装
 
 ## src/dependent/plugins/ffmpeg.rs
 - [+] ffmpeg provider の既定値
@@ -140,6 +142,7 @@
 - [x] `.wml` / `.zip` を browser container として扱う
 - [x] fileviewer から zip の中身を辿れる
 - [x] sort order `os_name` / `name` / `date` / `size`
+- [+] plugin 有効拡張子を filer / viewer に反映
 - [*] `RECURSIVE` の探索コスト最適化
 - [ ] filter 条件の filesystem 側統合
 - [ ] archive option (`FOLDER` / `SKIP` / `ARCHIVER`)
@@ -339,6 +342,7 @@
 
 ## src/drawers/image.rs
 - [x] image load
+- [+] plugin fallback load
 - [x] image save
 - [x] SaveFormat 選択
 - [ ] 保存オプションの詳細化
@@ -376,24 +380,27 @@
 
 ## 次に着手
 中断せずやりきる
-- [ ] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
+- [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップする　`zipreader.md` 参照
+- [ ] thumbnail抑制オプション
+- [ ] issue: LinuxとMacOS用がbuild出来ない問題
+- [ ] examplesに実装単位のベンチマークテストを実装する どのタスクがボトルネックか発見出来る出来るようにする
+- [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
 - プラグイン: 実装続き
-  - [ ] ffmpegプラグイン
-  - [ ] susie64プラグイン
+  - [x] ffmpegプラグイン(動作:windows o avif  o jp2)
+  - [x] susie64プラグイン(動作:x avif  o jp2)
+  - [x] Windows Codecプラグイン(動作:windows o avif  x jp2)
+  - [ ] MacOS Codecプラグイン(o heif)
     - jpeg2000/avifは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
     - test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
     - ffmpegのリンクはcrate ffmpeg-sysを考慮(自力実装の方が安定する可能性あり)
     - systemにserach pathは不要 OS APIを叩くため
+  - [ ] 設定を変えた時、再起動を促すポップアップを出す 
+- [ ] プラグインでViewerに画像が表示出来る様にする
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
-- [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップする　zipreader.md 参照
-- [ ] todo.mdの更新
 - [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- [ ] todo.mdの更新
 
-## 優先度低
-- [ ] thumbnail抑制オプション
-- [ ] issue: LinuxとMacOS用がbuild出来ない問題
-- [ ] examplesに実装単位のベンチマークテストを実装する どのタスクがボトルネックか発見出来る出来るようにする
 
 ## レビュアーissue
 - [*] zip 内ファイルソートの実機確認

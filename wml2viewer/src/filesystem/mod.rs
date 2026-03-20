@@ -9,6 +9,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 use std::time::SystemTime;
 
+use crate::dependent::plugins::path_supported_by_plugins;
 use crate::options::{EndOfFolderOption, NavigationSortOption};
 use listed_file::load_listed_file_entries;
 pub(crate) use sort::compare_natural_str;
@@ -911,6 +912,7 @@ fn is_supported_image(path: &Path) -> bool {
             SUPPORTED_EXTENSIONS
                 .iter()
                 .any(|supported| *supported == ext)
+                || path_supported_by_plugins(path)
         })
         .unwrap_or(false)
 }
@@ -1014,6 +1016,10 @@ fn metadata_size_key(path: &Path) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dependent::plugins::{
+        PluginCapabilityConfig, PluginConfig, PluginExtensionConfig, PluginModuleConfig,
+        PluginProviderConfig, set_runtime_plugin_config,
+    };
     use std::io::Write;
     use std::time::{SystemTime, UNIX_EPOCH};
     use zip::write::SimpleFileOptions;
@@ -1226,5 +1232,32 @@ mod tests {
         assert!(entries.iter().any(|entry| is_virtual_zip_child(entry)));
 
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn plugin_enabled_extensions_are_visible_to_filer() {
+        set_runtime_plugin_config(PluginConfig {
+            ffmpeg: PluginProviderConfig {
+                enable: true,
+                search_path: Vec::new(),
+                modules: vec![PluginModuleConfig {
+                    enable: true,
+                    path: None,
+                    plugin_name: "ffmpeg".to_string(),
+                    plugin_type: "image".to_string(),
+                    ext: vec![PluginExtensionConfig {
+                        enable: true,
+                        mime: vec!["image/avif".to_string()],
+                        modules: vec![PluginCapabilityConfig {
+                            capability_type: "decode".to_string(),
+                            priority: "high".to_string(),
+                        }],
+                    }],
+                }],
+            },
+            ..PluginConfig::default()
+        });
+
+        assert!(is_supported_image(Path::new("sample.avif")));
     }
 }

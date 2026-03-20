@@ -38,22 +38,31 @@ threshold_mb = 256
 local_cache = true
 ```
 
-plugin 設定例:
+### plugin
+ Pluginを使う事で利用可能な画像形式を増やすことが可能です。基本ffmpegとSystemを有効にして置けば良いでしょう。
+
+- susie64はpluginを探して導入してください(Windowsのみ)
+- OS SystemはOSがサポートしているフォーマットをそのまま利用します(WindowsとMac OSのみ)
+- ffmpegはexeの入っているフォルダを指定してください
+
+ 設定例:
 
 ```toml
 [plugins.ffmpeg]
 enable = true
-search_path = ["../test/plugins/ffmpeg"]
+search_path = ["c:/bin/ffmpeg"]
 
 [plugins.susie64]
 enable = true
-search_path = ["../test/plugins/susie64"]
+search_path = ["c:/susie64/plugins/"]
 ```
 
 ## メモ
 
 - 大きい ZIP やネットワーク上の ZIP では low-I/O ワークアラウンドが有効になります。
 - Windows では設定画面から拡張子関連付けを操作できます。
+  - 登録する場合は、設定のウィンドウから [拡張子を登録]、消す場合は、[システム登録を削除]です。
 - `ffmpeg` は現状 `ffmpeg.exe` を起動して decode します。
 - `susie64` は Windows 専用で、今は image plugin decode まで入っています。
-- `system` は設定と優先順位スロットまで先に入り、OS codec 本体は今後の拡張対象です。
+- `system` は Windows では WIC decode まで入りました。macOS system codec は今後の拡張対象です。
+- provider を有効化すると、`avif` や `jp2` などの拡張子も filer / viewer の対象に入ります。

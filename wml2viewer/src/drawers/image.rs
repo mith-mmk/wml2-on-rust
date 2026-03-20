@@ -423,3 +423,35 @@ fn blend_rgba(src: [u8; 4], dst: [u8; 4]) -> [u8; 4] {
     out[3] = (out_alpha * 255.0).round().clamp(0.0, 255.0) as u8;
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::load_canvas_from_file;
+    use crate::dependent::plugins::{
+        PluginConfig, PluginProviderConfig, set_runtime_plugin_config,
+    };
+    use std::path::PathBuf;
+
+    fn repo_root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .to_path_buf()
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn plugin_decode_is_visible_from_viewer_load_path() {
+        set_runtime_plugin_config(PluginConfig {
+            ffmpeg: PluginProviderConfig {
+                enable: true,
+                search_path: vec![repo_root().join("test").join("plugins").join("ffmpeg")],
+                modules: Vec::new(),
+            },
+            ..PluginConfig::default()
+        });
+
+        let decoded = load_canvas_from_file(&repo_root().join("samples").join("WML2Viewer.avif"));
+        assert!(decoded.is_ok());
+    }
+}

@@ -4,6 +4,7 @@ mod system;
 
 use crate::drawers::image::LoadedImage;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
@@ -84,7 +85,10 @@ struct DecodeInput {
 pub fn set_runtime_plugin_config(config: PluginConfig) {
     let store = runtime_plugin_config();
     if let Ok(mut value) = store.lock() {
-        *value = config;
+        *value = config.clone();
+    }
+    if let Ok(mut value) = runtime_plugin_extensions().lock() {
+        *value = compute_enabled_plugin_extensions(&config);
     }
 }
 
@@ -143,6 +147,28 @@ pub fn decode_image_from_bytes_with_plugins(
         }
     }
     None
+}
+
+pub fn path_supported_by_plugins(path: &Path) -> bool {
+    let ext = path
+        .extension()
+        .and_then(OsStr::to_str)
+        .map(|ext| ext.to_ascii_lowercase());
+    let Some(ext) = ext else {
+        return false;
+    };
+    runtime_plugin_extensions()
+        .lock()
+        .map(|extensions| extensions.iter().any(|candidate| candidate == &ext))
+        .unwrap_or(false)
+}
+
+#[allow(dead_code)]
+pub fn enabled_plugin_extensions() -> Vec<String> {
+    runtime_plugin_extensions()
+        .lock()
+        .map(|extensions| extensions.clone())
+        .unwrap_or_default()
 }
 
 #[allow(dead_code)]
@@ -255,6 +281,40 @@ fn collect_provider_candidates(
             });
         }
     }
+}
+
+fn collect_provider_extensions(
+    provider_name: &str,
+    config: &PluginProviderConfig,
+    extensions: &mut BTreeSet<String>,
+) {
+    if !config.enable {
+        return;
+    }
+
+    let modules = active_modules(provider_name, config);
+    if modules.is_empty() {
+        for ext in default_provider_extensions(provider_name) {
+            extensions.insert(ext.to_string());
+        }
+        return;
+    }
+
+    for module in modules {
+        for pattern in module_patterns(provider_name, &module) {
+            for ext in extensions_for_mime_pattern(&pattern) {
+                extensions.insert(ext.to_string());
+            }
+        }
+    }
+}
+
+fn compute_enabled_plugin_extensions(config: &PluginConfig) -> Vec<String> {
+    let mut extensions = BTreeSet::new();
+    collect_provider_extensions("system", &config.system, &mut extensions);
+    collect_provider_extensions("ffmpeg", &config.ffmpeg, &mut extensions);
+    collect_provider_extensions("susie64", &config.susie64, &mut extensions);
+    extensions.into_iter().collect()
 }
 
 fn active_modules(provider_name: &str, config: &PluginProviderConfig) -> Vec<PluginModuleConfig> {
@@ -453,6 +513,28 @@ fn provider_default_type(provider_name: &str) -> &'static str {
     }
 }
 
+fn extensions_for_mime_pattern(pattern: &str) -> &'static [&'static str] {
+    match pattern {
+        "image/png" => &["png"],
+        "image/jpeg" => &["jpg", "jpeg"],
+        "image/gif" => &["gif"],
+        "image/bmp" => &["bmp"],
+        "image/webp" => &["webp"],
+        "image/avif" => &["avif"],
+        "image/jp2" => &["jp2", "j2k", "jpc", "j2c", "jpf"],
+        "image/tiff" => &["tif", "tiff"],
+        _ => &[],
+    }
+}
+
+fn default_provider_extensions(provider_name: &str) -> &'static [&'static str] {
+    match provider_name {
+        "system" => &["avif", "heic", "heif", "jxr", "wdp", "hdp"],
+        "ffmpeg" => &["avif", "jp2", "j2k", "jpc", "j2c", "jpf"],
+        _ => &[],
+    }
+}
+
 fn current_runtime_plugin_config() -> PluginConfig {
     runtime_plugin_config()
         .lock()
@@ -463,6 +545,11 @@ fn current_runtime_plugin_config() -> PluginConfig {
 fn runtime_plugin_config() -> &'static Mutex<PluginConfig> {
     static CONFIG: OnceLock<Mutex<PluginConfig>> = OnceLock::new();
     CONFIG.get_or_init(|| Mutex::new(PluginConfig::default()))
+}
+
+fn runtime_plugin_extensions() -> &'static Mutex<Vec<String>> {
+    static CONFIG: OnceLock<Mutex<Vec<String>>> = OnceLock::new();
+    CONFIG.get_or_init(|| Mutex::new(compute_enabled_plugin_extensions(&PluginConfig::default())))
 }
 
 #[cfg(test)]

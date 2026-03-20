@@ -396,6 +396,7 @@
 - [ ] examplesに実装単位のベンチマークテストを実装する どのタスクがボトルネックか発見出来る出来るようにする
 - [ ] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
 - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
+- [ ] zip
 - [ ] 逆に遅くなっている気がする
 - [ ] issue: LinuxとMacOS用がbuild出来ない問題
 - [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する

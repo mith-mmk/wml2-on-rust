@@ -394,38 +394,47 @@
 - [-] 役割の再整理
 
 ## 次に着手
-中断せずやりきる
-- [ ] issue: Message Overlayが左下に固まってでる問題。横幅はWindowの幅に 長すぎる場合は...で省略
-- [ ] issue: viewer マンガモード? 画像が切り替わらないことがある（最初に表示した画像が戻ることが多い）
+- [ ] UIの責任範囲と描画領域をハッキリさせる ダイアログは別Windowで処理出来るならば別Windowで処理する
+    - [ ] Viewer: ベース 
+        - [ ] マンガモード: ベースを画像表示部分を二分割する(windowサイズが width >= height*2 の時のみ有効)
+        - [ ] message: overlay viewerの下1行にOverlay
+           - [ ] issue: Message Overlayが左下に固まってでる問題。横幅はWindowの幅に 長すぎる場合は...で省略
+        - [ ] サブファイラー：ベースの下側にOverlay 
+      - [ ] ファイラー: 右ペイン（最大 Width MAX, width >= height*2の時はwidthの半分）縦長画面も考慮する
+    - [ ] 設定: ダイアログ。設定が閉じられるまでViewerは固定される
+    - [ ] アラート: ダイアログ。アラートに紐付いたUIは閉じるまで固定される
+- [ ] issue: viewer 画像が切り替わらないことがある（最初に表示した画像が戻ることが多い/恐らく画像のデコードかレンダリングが追いついていないケース）
 - [x] issue: makiが表示出来ないバグ
 - [ ] issue: デコーダがErrorを起こしたときにpanic!を起こし次の画像が表示できなくなるバグ
-  - [+] 壊れたbmp対策:decoderに緩和策を適用 
+    - [+] 壊れたbmp対策:decoderに緩和策を適用
 - [ ] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
-- [ ] oxiarc-lzhuf crateで、lzhアーカイブ対応
+- [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
 - [ ] archive_benchmarkの実装を以下のファンクションでとってください
-  - [ ] archive(zip)のすべてのmetadata取得に要する時間
-  - [ ] archive(zip)ファイルの取得速度
-  - [ ] metadataのソート時間 
-  - [ ] ファイル1枚をデコードする時間
-  - [ ] methodを切り替えて計測(online cache, temp copy, default method)
-  - [ ] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
+    - [ ] archive(zip)のすべてのmetadata取得に要する時間
+    - [ ] archive(zip)ファイルの取得速度
+    - [ ] metadataのソート時間 
+    - [ ] ファイル1枚をデコードする時間
+    - [ ] methodを切り替えて計測(online cache, temp copy, default method)
+    - [ ] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
 - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
 - [ ] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
 - [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
     - 基本的な順序 
-      - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
-      - user setting fontは、font-familyでまとめて指定出来る様にする sansserif, serif, monospaceをデフォルトで用意
+        - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
+        - user setting fontは、font-familyでまとめて指定出来る様にする sansserif, serif, monospaceをデフォルトで用意
 - [ ] issue: 設定が、リアルタイムで適用されてしまう問題([適用]が押されるまで遅延。確認したい時は[Preview]ボタン)
 - [ ] issue: マンガモードでフォルダをまたいだとき、前のフォルダの画像が残ってしまう問題
-- [ ] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+Waiting画面など
+- [ ] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
 - [ ] issue: LinuxとMacOS用がbuild出来ない問題
-- [ ] issue: ファイラーの時刻をシステムに併せる。
+- [ ] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
+    - [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
 - [ ] issue: ファイラーのサイズ表示を読みやすくする
     - 000,000 方式
     - 1024byte 未満は B
     - 1024byteから100,000KB は KB
     - 100MB ～ 100,000MB は MB
     - 100GB ～ は GB
+- [ ] plugin, 設定: プラグインと内製の優先順位の設定 
 - [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
@@ -434,7 +443,7 @@
 
 ## 優先度低
 - [-] MacはIntel MACの環境しかないので遅延 
-- [+] LinuxはWSLでbuild。実行はVMで行う buildは OK
+- [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK
 
 ## レビュアーissue
 - [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。

@@ -386,14 +386,11 @@
 - [ ] examplesに実装単位のベンチマークテストを実装する どのタスクがボトルネックか発見出来る出来るようにする
 - [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
 - プラグイン: 実装続き
-  - [x] ffmpegプラグイン(動作:windows o avif  o jp2)
-  - [x] susie64プラグイン(動作:x avif  o jp2)
-  - [x] Windows Codecプラグイン(動作:windows o avif  x jp2)
-  - [ ] MacOS Codecプラグイン(o heif)
-    - jpeg2000/avifは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
-    - test/plugins/susie64, test/plugins/ffmpeg の実ファイルに合わせた runtime 実装
-    - ffmpegのリンクはcrate ffmpeg-sysを考慮(自力実装の方が安定する可能性あり)
-    - systemにserach pathは不要 OS APIを叩くため
+  - [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
+  - [x] susie64プラグイン(動作:x avif o jp2 x heic)
+  - [x] Windows Codecプラグイン(動作: o avif x jp2 o heic)
+  - [ ] MacOS Codecプラグイン(動作: o avif x jp2 o heic)
+    - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
   - [ ] 設定を変えた時、再起動を促すポップアップを出す 
 - [ ] プラグインでViewerに画像が表示出来る様にする
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする

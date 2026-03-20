@@ -105,7 +105,7 @@ pub enum BitmapInfo {
     Os2(BitmapCore),
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone, Copy)]
 pub struct ColorTable {
     pub blue: u8,
     pub green: u8,

@@ -15,8 +15,23 @@ use crate::error::{ImgError, ImgErrorKind};
 use crate::warning::ImgWarnings;
 use bin_rs::io::*;
 
-use crate::bmp::header::BitmapHeader;
+use crate::bmp::header::{BitmapHeader, ColorTable};
 use crate::bmp::header::Compressions;
+
+fn get_color(c: &Option<&Vec<ColorTable>>, idx: usize) -> ColorTable {
+    if let Some(c) = c {
+        if idx < c.len() {
+            c[idx]
+        } else {
+            // todo get default color table
+            ColorTable { blue: idx as u8, green: idx as u8, red: idx as u8, reserved: 0 }
+        }
+    } else {
+        // todo get default color table
+        ColorTable { blue: idx as u8, green: idx as u8, red: idx as u8, reserved: 0 }
+    }
+
+}
 
 fn convert_rgba32(
     buffer: &[u8],
@@ -67,9 +82,11 @@ fn convert_rgba32(
         8 => {
             for x in 0..width {
                 let color = read_byte(buffer, offset) as usize;
-                let r = header.color_table.as_ref().unwrap()[color].red;
-                let g = header.color_table.as_ref().unwrap()[color].green;
-                let b = header.color_table.as_ref().unwrap()[color].blue;
+                let color_tables = &header.color_table.as_ref();
+                let c= get_color(color_tables, color);
+                let r = c.red;
+                let g = c.green;
+                let b = c.blue;
                 line[x * 4] = r;
                 line[x * 4 + 1] = g;
                 line[x * 4 + 2] = b;
@@ -81,17 +98,22 @@ fn convert_rgba32(
                 let mut x = x_ * 2;
                 let color_ = read_byte(buffer, offset) as usize;
                 let color = color_ >> 4;
-                let r = header.color_table.as_ref().unwrap()[color].red;
-                let g = header.color_table.as_ref().unwrap()[color].green;
-                let b = header.color_table.as_ref().unwrap()[color].blue;
+                let c = get_color(&header.color_table.as_ref(), color);
+                let r = c.red;
+                let g = c.green;
+                let b = c.blue;
                 line[x * 4] = r;
                 line[x * 4 + 1] = g;
                 line[x * 4 + 2] = b;
                 x += 1;
+                if x >= width {
+                    break;
+                }
                 let color = color_ & 0xf;
-                let r = header.color_table.as_ref().unwrap()[color].red;
-                let g = header.color_table.as_ref().unwrap()[color].green;
-                let b = header.color_table.as_ref().unwrap()[color].blue;
+                let c = get_color(&header.color_table.as_ref(), color);
+                let r = c.red;
+                let g = c.green;
+                let b = c.blue;
                 line[x * 4] = r;
                 line[x * 4 + 1] = g;
                 line[x * 4 + 2] = b;
@@ -104,10 +126,14 @@ fn convert_rgba32(
                 let mut x = x_ * 8;
                 let color_ = read_byte(buffer, offset) as usize;
                 for i in [7, 6, 5, 4, 3, 2, 1, 0] {
+                    if x >= width {
+                        break;
+                    }
                     let color = (color_ >> i) & 0x1;
-                    let r = header.color_table.as_ref().unwrap()[color].red;
-                    let g = header.color_table.as_ref().unwrap()[color].green;
-                    let b = header.color_table.as_ref().unwrap()[color].blue;
+                    let c = get_color(&header.color_table.as_ref(), color);
+                    let r = c.red;
+                    let g = c.green;
+                    let b = c.blue;
                     line[x * 4] = r;
                     line[x * 4 + 1] = g;
                     line[x * 4 + 2] = b;
@@ -224,14 +250,25 @@ fn decode_rle<B: BinaryReader>(
 
                 if header.bit_count == 8 {
                     for i in 0..bytes {
+                        if x >= buf.len() || i >= rbuf.len() {
+                            break;
+                        }
                         buf[x] = rbuf[i];
+                        if x >= width {
+                            break;
+                        }
                         x += 1;
                     }
                 } else if header.bit_count == 4 {
                     for i in 0..bytes {
+                        if x >= buf.len() || i >= rbuf.len() {
+                            break;
+                        }
                         buf[x] = rbuf[i] >> 4;
-                        buf[x + 1] = rbuf[i] & 0xf;
-                        x += 2;
+                        if x + 1 < width {
+                            buf[x + 1] = rbuf[i] & 0xf;
+                            x += 2;
+                        }
                     }
                 } else {
                     return Err(Box::new(ImgError::new_const(
@@ -249,6 +286,9 @@ fn decode_rle<B: BinaryReader>(
                 }
             } else if header.bit_count == 4 {
                 for _ in 0..data0 as usize / rev_bytes {
+                    if x >= buf.len() {
+                        break 'x;
+                    }
                     buf[x] = data1 >> 4;
                     x += 1;
                     if x >= buf.len() {
@@ -256,9 +296,6 @@ fn decode_rle<B: BinaryReader>(
                     }
                     buf[x] = data1 & 0xf;
                     x += 1;
-                    if x >= buf.len() {
-                        break 'x;
-                    }
                 }
                 if data0 % 2 == 1 {
                     buf[x] = data1 >> 4;

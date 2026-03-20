@@ -62,7 +62,7 @@
 // 0.0.19 new!
 /// get_version get WML2 crate version
 pub fn get_version() -> String {
-  env!("CARGO_PKG_VERSION").to_string()
+    env!("CARGO_PKG_VERSION").to_string()
 }
 
 //pub(crate) mod io; // move bin_rs crate

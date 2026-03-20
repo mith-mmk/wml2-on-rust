@@ -395,19 +395,19 @@
 
 ## 次に着手
 中断せずやりきる
-- [+] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
-- [+] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
+- [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
+- [x] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
 - [ ] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
-- [ ] issue: ファイラー用のfontフォールバックシステム（ファイル名に外国語が出ない問題を回避）
+- [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
     - 基本的な順序 
       - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
       - user setting fontは、font-familyでまとめて指定出来る様にする
-- [ ] issue: 設定が、リアルタイムで適用されてしまう問題([適用]が押されるまでは遅延)
+- [ ] issue: 設定が、リアルタイムで適用されてしまう問題([適用]が押されるまで遅延。確認したい時は[Preview]ボタン)
 - [ ] issue: Message Overlayが左下に固まっている問題。横幅をちゃんととってください
 - [ ] issue: マンガモードでフォルダをまたいだとき、前のフォルダの画像が残ってしまう問題
 - [+] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
 - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
-- [ ] zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+Waiting画面など
+- [ ] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+Waiting画面など
 - [ ] issue: LinuxとMacOS用がbuild出来ない問題
 - [ ] プラグインでViewerに画像が表示出来る様にする
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする

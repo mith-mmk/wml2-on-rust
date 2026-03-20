@@ -9,6 +9,7 @@ use crate::drawers::affine::InterpolationAlgorithm;
 use crate::filesystem::set_archive_zip_workaround;
 use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions};
 use crate::ui::i18n::UiTextKey;
+use crate::ui::menu::fileviewer::thumbnail::set_thumbnail_workaround;
 use crate::ui::render::interpolation_label;
 use crate::ui::viewer::options::{BackgroundStyle, MangaSeparatorStyle, WindowUiTheme, ZoomOption};
 use crate::ui::viewer::{SettingsTab, ViewerApp, join_search_paths, parse_search_paths};
@@ -25,6 +26,7 @@ impl ViewerApp {
         let mut rerender_requested = false;
         let mut zoom_option_changed = false;
         let mut config_changed = false;
+        let initial_plugins = self.plugins.clone();
         let mut close_requested = false;
         let mut apply_requested = false;
         let mut undo_requested = false;
@@ -91,6 +93,7 @@ impl ViewerApp {
         let archive_text = self.text(UiTextKey::Archive);
         let threshold_mb_text = self.text(UiTextKey::ThresholdMb);
         let local_cache_text = self.text(UiTextKey::LocalCache);
+        let thumbnail_suppression_text = self.text(UiTextKey::ThumbnailSuppression);
         let fit_width_text = self.text(UiTextKey::FitWidth);
         let fit_height_text = self.text(UiTextKey::FitHeight);
         let fit_screen_text = self.text(UiTextKey::FitScreen);
@@ -365,6 +368,12 @@ impl ViewerApp {
                                 local_cache_text,
                             );
                         });
+                        config_changed |= ui
+                            .checkbox(
+                                &mut self.runtime.workaround.thumbnail.suppress_large_files,
+                                thumbnail_suppression_text,
+                            )
+                            .changed();
                     });
                 }
 
@@ -649,10 +658,12 @@ impl ViewerApp {
         if reload_requested {
             let _ = self.reload_current();
         }
+        let plugin_changed = self.plugins != initial_plugins;
         if config_changed || apply_requested {
             self.apply_window_theme(ctx);
             let applied = apply_resources(ctx, &self.resources);
             set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
+            set_thumbnail_workaround(self.runtime.workaround.thumbnail.clone());
             set_runtime_plugin_config(self.plugins.clone());
             self.applied_locale = applied.locale;
             self.loaded_font_names = applied.loaded_fonts;
@@ -661,6 +672,9 @@ impl ViewerApp {
                 Some(&self.current_path),
                 self.config_path.as_deref(),
             );
+            if plugin_changed {
+                self.show_restart_prompt = true;
+            }
         }
     }
 
@@ -687,10 +701,34 @@ impl ViewerApp {
         self.apply_window_theme(ctx);
         let applied = apply_resources(ctx, &self.resources);
         set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
+        set_thumbnail_workaround(self.runtime.workaround.thumbnail.clone());
         set_runtime_plugin_config(self.plugins.clone());
         self.applied_locale = applied.locale;
         self.loaded_font_names = applied.loaded_fonts;
         self.pending_fit_recalc = true;
+    }
+
+    pub(crate) fn restart_prompt_ui(&mut self, ctx: &egui::Context) {
+        if !self.show_restart_prompt {
+            return;
+        }
+
+        let mut open = self.show_restart_prompt;
+        let mut close_requested = false;
+        egui::Window::new(self.text(UiTextKey::RestartRecommended))
+            .open(&mut open)
+            .resizable(false)
+            .collapsible(false)
+            .show(ctx, |ui| {
+                ui.label(self.text(UiTextKey::RestartToApplyPluginChanges));
+                if ui.button(self.text(UiTextKey::Close)).clicked() {
+                    close_requested = true;
+                }
+            });
+        if close_requested {
+            open = false;
+        }
+        self.show_restart_prompt = open;
     }
 
     pub(crate) fn current_config(&self) -> AppConfig {

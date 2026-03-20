@@ -120,6 +120,9 @@ pub(crate) enum UiTextKey {
     Archive,
     ThresholdMb,
     LocalCache,
+    ThumbnailSuppression,
+    RestartRecommended,
+    RestartToApplyPluginChanges,
 }
 
 pub(crate) fn tr(locale: &str, key: UiTextKey) -> &'static str {
@@ -255,6 +258,11 @@ fn en(key: UiTextKey) -> &'static str {
         UiTextKey::Archive => "Archive",
         UiTextKey::ThresholdMb => "Threshold (MB)",
         UiTextKey::LocalCache => "Local cache",
+        UiTextKey::ThumbnailSuppression => "Suppress heavy thumbnails",
+        UiTextKey::RestartRecommended => "Restart recommended",
+        UiTextKey::RestartToApplyPluginChanges => {
+            "Restart the app to fully reload plugin settings."
+        }
     }
 }
 
@@ -378,5 +386,10 @@ fn ja(key: UiTextKey) -> &'static str {
         UiTextKey::Archive => "アーカイブ",
         UiTextKey::ThresholdMb => "閾値 (MB)",
         UiTextKey::LocalCache => "ローカルキャッシュ",
+        UiTextKey::ThumbnailSuppression => "重いサムネイルを抑制",
+        UiTextKey::RestartRecommended => "再起動を推奨",
+        UiTextKey::RestartToApplyPluginChanges => {
+            "プラグイン設定を完全に反映するにはアプリの再起動が必要です。"
+        }
     }
 }

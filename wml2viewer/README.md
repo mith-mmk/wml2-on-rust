@@ -37,6 +37,9 @@ Relevant runtime workaround example:
 [runtime.workaround.archive.zip]
 threshold_mb = 256
 local_cache = true
+
+[runtime.workaround.thumbnail]
+suppress_large_files = true
 ```
 
 Plugin config example:
@@ -54,8 +57,18 @@ search_path = ["../test/plugins/susie64"]
 ## Notes
 
 - Very large or network ZIP files use a low-I/O workaround.
+- Large BMP/archive thumbnails can be suppressed from Settings.
 - On Windows, file association registration is available from Settings.
 - `ffmpeg` decode currently shells out to `ffmpeg.exe`.
 - `susie64` decode is Windows-only and currently targets image plugins.
 - `system` decode now uses Windows WIC on Windows. macOS system codec runtime is still follow-up work.
 - Filer and viewer also expose plugin-enabled extensions such as `avif` and `jp2` when the provider is enabled.
+- Plugin setting changes show a restart recommendation popup.
+
+## Benchmarks
+
+```powershell
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_decode -- .\samples\WML2Viewer.avif 5
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_browser -- .\samples 3
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip 3
+```

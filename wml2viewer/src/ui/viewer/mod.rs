@@ -14,7 +14,7 @@ use crate::options::{
 use crate::ui::i18n::{UiTextKey, tr};
 use crate::ui::menu::fileviewer::state::FilerState;
 use crate::ui::menu::fileviewer::thumbnail::{
-    ThumbnailCommand, ThumbnailResult, spawn_thumbnail_worker,
+    ThumbnailCommand, ThumbnailResult, set_thumbnail_workaround, spawn_thumbnail_worker,
 };
 use crate::ui::menu::fileviewer::worker::{FilerCommand, FilerResult, spawn_filer_worker};
 use crate::ui::render::{
@@ -88,6 +88,7 @@ pub(crate) struct ViewerApp {
     pub(crate) overlay: ViewerOverlayState,
     pub(crate) last_navigation_at: Option<Instant>,
     pub(crate) show_settings: bool,
+    pub(crate) show_restart_prompt: bool,
     pub(crate) settings_tab: SettingsTab,
     pub(crate) max_texture_side: usize,
     pub(crate) texture_display_scale: f32,
@@ -230,6 +231,7 @@ impl ViewerApp {
             loaded_fonts,
         } = apply_resources(&cc.egui_ctx, &config.resources);
         set_archive_zip_workaround(config.runtime.workaround.archive.zip.clone());
+        set_thumbnail_workaround(config.runtime.workaround.thumbnail.clone());
         let (worker_tx, worker_rx) = spawn_render_worker(source.clone());
         let (companion_tx, companion_rx) = spawn_render_worker(source.clone());
         let (preload_tx, preload_rx) = spawn_render_worker(source.clone());
@@ -287,6 +289,7 @@ impl ViewerApp {
             overlay: ViewerOverlayState::default(),
             last_navigation_at: None,
             show_settings: false,
+            show_restart_prompt: false,
             settings_tab: SettingsTab::Viewer,
             max_texture_side: cc.egui_ctx.input(|i| i.max_texture_side),
             texture_display_scale: 1.0,
@@ -1540,6 +1543,7 @@ impl eframe::App for ViewerApp {
         self.sync_manga_companion(ctx);
         self.handle_keyboard(ctx);
         self.settings_ui(ctx);
+        self.restart_prompt_ui(ctx);
         self.save_dialog_ui(ctx);
         self.left_click_menu_ui(ctx);
         self.filer_ui(ctx);

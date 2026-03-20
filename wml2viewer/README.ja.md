@@ -36,6 +36,9 @@ cargo run --manifest-path wml2viewer/Cargo.toml -- <path>
 [runtime.workaround.archive.zip]
 threshold_mb = 256
 local_cache = true
+
+[runtime.workaround.thumbnail]
+suppress_large_files = true
 ```
 
 ### plugin
@@ -60,9 +63,19 @@ search_path = ["c:/susie64/plugins/"]
 ## メモ
 
 - 大きい ZIP やネットワーク上の ZIP では low-I/O ワークアラウンドが有効になります。
+- 大きい BMP / アーカイブのサムネイルは設定から抑制できます。
 - Windows では設定画面から拡張子関連付けを操作できます。
   - 登録する場合は、設定のウィンドウから [拡張子を登録]、消す場合は、[システム登録を削除]です。
 - `ffmpeg` は現状 `ffmpeg.exe` を起動して decode します。
 - `susie64` は Windows 専用で、今は image plugin decode まで入っています。
 - `system` は Windows では WIC decode まで入りました。macOS system codec は今後の拡張対象です。
 - provider を有効化すると、`avif` や `jp2` などの拡張子も filer / viewer の対象に入ります。
+- plugin 設定変更時は再起動推奨ポップアップを出します。
+
+## ベンチマーク
+
+```powershell
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_decode -- .\samples\WML2Viewer.avif 5
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_browser -- .\samples 3
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip 3
+```

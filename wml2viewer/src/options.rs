@@ -143,12 +143,14 @@ impl Default for RuntimeOptions {
 #[derive(Clone)]
 pub struct WorkaroundOptions {
     pub archive: ArchiveWorkaroundOptions,
+    pub thumbnail: ThumbnailWorkaroundOptions,
 }
 
 impl Default for WorkaroundOptions {
     fn default() -> Self {
         Self {
             archive: ArchiveWorkaroundOptions::default(),
+            thumbnail: ThumbnailWorkaroundOptions::default(),
         }
     }
 }
@@ -177,6 +179,19 @@ impl Default for ZipWorkaroundOptions {
         Self {
             threshold_mb: 256,
             local_cache: true,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct ThumbnailWorkaroundOptions {
+    pub suppress_large_files: bool,
+}
+
+impl Default for ThumbnailWorkaroundOptions {
+    fn default() -> Self {
+        Self {
+            suppress_large_files: true,
         }
     }
 }

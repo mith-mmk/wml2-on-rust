@@ -9,7 +9,7 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PluginConfig {
     pub susie64: PluginProviderConfig,
@@ -27,7 +27,7 @@ impl Default for PluginConfig {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PluginProviderConfig {
     pub enable: bool,
@@ -35,7 +35,7 @@ pub struct PluginProviderConfig {
     pub modules: Vec<PluginModuleConfig>,
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PluginModuleConfig {
     pub enable: bool,
@@ -46,7 +46,7 @@ pub struct PluginModuleConfig {
     pub ext: Vec<PluginExtensionConfig>,
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PluginExtensionConfig {
     pub enable: bool,
@@ -54,7 +54,7 @@ pub struct PluginExtensionConfig {
     pub modules: Vec<PluginCapabilityConfig>,
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PluginCapabilityConfig {
     #[serde(rename = "type")]

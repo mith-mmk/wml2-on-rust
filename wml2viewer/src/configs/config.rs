@@ -286,12 +286,14 @@ struct RuntimeConfigFile {
 #[serde(default)]
 struct WorkaroundConfigFile {
     archive: ArchiveWorkaroundConfigFile,
+    thumbnail: ThumbnailWorkaroundConfigFile,
 }
 
 impl Default for WorkaroundConfigFile {
     fn default() -> Self {
         Self {
             archive: ArchiveWorkaroundConfigFile::default(),
+            thumbnail: ThumbnailWorkaroundConfigFile::default(),
         }
     }
 }
@@ -322,6 +324,20 @@ impl Default for ZipWorkaroundConfigFile {
         Self {
             threshold_mb: 256,
             local_cache: true,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
+struct ThumbnailWorkaroundConfigFile {
+    suppress_large_files: bool,
+}
+
+impl Default for ThumbnailWorkaroundConfigFile {
+    fn default() -> Self {
+        Self {
+            suppress_large_files: true,
         }
     }
 }
@@ -462,6 +478,7 @@ impl From<WorkaroundConfigFile> for crate::options::WorkaroundOptions {
     fn from(value: WorkaroundConfigFile) -> Self {
         Self {
             archive: value.archive.into(),
+            thumbnail: value.thumbnail.into(),
         }
     }
 }
@@ -470,6 +487,7 @@ impl From<crate::options::WorkaroundOptions> for WorkaroundConfigFile {
     fn from(value: crate::options::WorkaroundOptions) -> Self {
         Self {
             archive: value.archive.into(),
+            thumbnail: value.thumbnail.into(),
         }
     }
 }
@@ -504,6 +522,22 @@ impl From<crate::options::ZipWorkaroundOptions> for ZipWorkaroundConfigFile {
         Self {
             threshold_mb: value.threshold_mb,
             local_cache: value.local_cache,
+        }
+    }
+}
+
+impl From<ThumbnailWorkaroundConfigFile> for crate::options::ThumbnailWorkaroundOptions {
+    fn from(value: ThumbnailWorkaroundConfigFile) -> Self {
+        Self {
+            suppress_large_files: value.suppress_large_files,
+        }
+    }
+}
+
+impl From<crate::options::ThumbnailWorkaroundOptions> for ThumbnailWorkaroundConfigFile {
+    fn from(value: crate::options::ThumbnailWorkaroundOptions) -> Self {
+        Self {
+            suppress_large_files: value.suppress_large_files,
         }
     }
 }

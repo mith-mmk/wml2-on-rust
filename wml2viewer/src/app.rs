@@ -5,6 +5,7 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::LoadedImage;
 use crate::filesystem::{resolve_start_path, set_archive_zip_workaround};
 use crate::options::*;
+use crate::ui::menu::fileviewer::thumbnail::set_thumbnail_workaround;
 use crate::ui::viewer::ViewerApp;
 use eframe::egui::{self};
 use std::error::Error;
@@ -19,6 +20,7 @@ pub fn run(
     let config = load_app_config(config_path.as_deref()).unwrap_or_default();
     set_runtime_plugin_config(config.plugins.clone());
     set_archive_zip_workaround(config.runtime.workaround.archive.zip.clone());
+    set_thumbnail_workaround(config.runtime.workaround.thumbnail.clone());
     let image_path = image_path
         .unwrap_or(load_startup_path(config_path.as_deref()).unwrap_or(std::env::current_dir()?));
     let (navigation_path, start_path, startup_load_path, show_filer_on_start) =

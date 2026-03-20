@@ -3,10 +3,12 @@ use crate::drawers::image::{
     load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
 };
 use crate::filesystem::{load_virtual_image_bytes, virtual_image_size};
+use crate::options::ThumbnailWorkaroundOptions;
 use crate::ui::render::canvas_to_color_image;
 use eframe::egui::ColorImage;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Mutex, OnceLock};
 use std::thread;
 
 pub(crate) enum ThumbnailCommand {
@@ -71,7 +73,20 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
     (command_tx, result_rx)
 }
 
+pub(crate) fn set_thumbnail_workaround(options: ThumbnailWorkaroundOptions) {
+    if let Ok(mut config) = thumbnail_workaround_config().lock() {
+        *config = options;
+    }
+}
+
 fn should_skip_thumbnail(path: &std::path::Path) -> bool {
+    let options = thumbnail_workaround_config()
+        .lock()
+        .map(|config| config.clone())
+        .unwrap_or_default();
+    if !options.suppress_large_files {
+        return false;
+    }
     let ext = path
         .extension()
         .and_then(|ext| ext.to_str())
@@ -79,4 +94,9 @@ fn should_skip_thumbnail(path: &std::path::Path) -> bool {
         .unwrap_or_default();
     let size = virtual_image_size(path).unwrap_or(0);
     (ext == "bmp" && size > 8 * 1024 * 1024) || size > 128 * 1024 * 1024
+}
+
+fn thumbnail_workaround_config() -> &'static Mutex<ThumbnailWorkaroundOptions> {
+    static CONFIG: OnceLock<Mutex<ThumbnailWorkaroundOptions>> = OnceLock::new();
+    CONFIG.get_or_init(|| Mutex::new(ThumbnailWorkaroundOptions::default()))
 }

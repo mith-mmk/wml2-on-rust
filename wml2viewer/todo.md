@@ -23,6 +23,7 @@
 - [x] `--clean system`
 - [-] 二重起動の制限は一旦取り下げ
 - [*] フルスクリーン復帰時の安定性確認
+- [+] example / benchmark 用の lib 化
 
 ## src/options.rs
 - [x] ViewerAction / KeyBinding の整理
@@ -43,6 +44,7 @@
 - [x] manga separator / UI theme の永続化
 - [x] plugin config の永続化土台
 - [x] workaround.archive.zip の永続化
+- [+] workaround.thumbnail の永続化
 - [ ] config schema のバージョニング
 
 ## src/configs/resourses/mod.rs
@@ -164,6 +166,7 @@
 - [+] 大容量 / ネットワーク zip の low-I/O workaround
 - [+] temp へのローカル archive cache
 - [+] ZipCacheReader を使った chunk cache
+- [+] benchmark で計測できる形に整理
 - [ ] zip encoding option
 - [ ] `7z` / `rar` / `lzh` / `gzip`
 
@@ -202,11 +205,13 @@
 - [+] plugin search path 編集
 - [+] plugin search path フォルダ選択ダイアログ
 - [+] plugin module load test ボタン
+- [+] plugin 変更時の再起動推奨ポップアップ
 - [x] save path 記録設定
 - [x] 適用/undo/初期化ボタン
 - [+] 拡張子関連付けボタン
 - [x] 設定画面の主要文言リソース化
 - [+] workaround.archive.zip 設定 UI
+- [+] thumbnail 抑制オプション
 - [ ] キーバインド編集 UI
 
 ## src/ui/menu/fileviewer/functions.rs
@@ -242,7 +247,7 @@
 - [x] サムネイル worker
 - [x] virtual zip/listed file のサムネイル生成
 - [+] 巨大 zip bmp thumbnail の抑制
-- [ ] thumbnail抑制オプション(ALT=image.svgを代用)
+- [+] thumbnail抑制オプション
 - [ ] 永続キャッシュ
 - [ ] 失敗キャッシュ
 
@@ -345,6 +350,10 @@
 - [+] plugin fallback load
 - [x] image save
 - [x] SaveFormat 選択
+
+## src/bench.rs / examples/*
+- [+] decode / browser / archive ベンチマーク example
+- [ ] 実装単位の詳細 benchmark 拡張
 - [ ] 保存オプションの詳細化
 
 ## src/drawers/filter.rs
@@ -380,23 +389,46 @@
 
 ## 次に着手
 中断せずやりきる
-- [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップする　`zipreader.md` 参照
-- [ ] thumbnail抑制オプション
-- [ ] issue: LinuxとMacOS用がbuild出来ない問題
+- [ ] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
+- [ ] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
+- [ ] issue: fontはconfigで変更できるようにしてください
+- [ ] fontのフォールバックシステムの実装（顔文字/CJK対策）
 - [ ] examplesに実装単位のベンチマークテストを実装する どのタスクがボトルネックか発見出来る出来るようにする
+- [ ] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
+- [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
+- [ ] 逆に遅くなっている気がする
+- [ ] issue: LinuxとMacOS用がbuild出来ない問題
 - [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
 - プラグイン: 実装続き
   - [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
   - [x] susie64プラグイン(動作:x avif o jp2 x heic)
   - [x] Windows Codecプラグイン(動作: o avif x jp2 o heic)
-  - [ ] MacOS Codecプラグイン(動作: o avif x jp2 o heic)
-    - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
-  - [ ] 設定を変えた時、再起動を促すポップアップを出す 
+  - [x] 設定を変えた時、再起動を促すポップアップを出す 
+  - [ ] [重要度低] ArmMACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
+  - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
 - [ ] プラグインでViewerに画像が表示出来る様にする
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
 - [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- MacはIntel MACの環境しかないので遅延 
+- LinuxはWSLでbuild。実行はVMで行う
+- [ ] issue: Linux build error
+```text
+
+error[E0425]: cannot find function `available_roots` in this scope
+  --> wml2viewer/src/dependent/mod.rs:48:5
+   |
+48 |     available_roots()
+   |     ^^^^^^^^^^^^^^^ not found in this scope
+   |
+help: consider importing this function through its public re-export
+   |
+ 3 + use crate::dependent::thirdparty::available_roots;
+```
+
+
 - [ ] todo.mdの更新
+
 
 
 ## レビュアーissue

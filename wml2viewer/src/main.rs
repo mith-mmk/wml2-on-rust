@@ -1,16 +1,10 @@
-mod app;
-mod configs;
-mod dependent;
-mod drawers;
-mod filesystem;
-pub mod options;
-mod ui;
 use std::env;
 use std::error::Error;
 use std::ffi::OsString;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use wml2viewer::{app, dependent};
 
 fn main() -> ExitCode {
     println!(

@@ -395,22 +395,32 @@
 
 ## 次に着手
 中断せずに最後までやりきる
-- [*] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない（次のフォルダの初めからリスタート）
+- [ ] issue: cargo run --example bench_archive が以下のエラーで終了する問題
+  ```
+    thread 'main' (66796) panicked at wml2viewer\examples\bench_archive.rs:18:60:
+    archive benchmark failed: "failed to load archive metadata"
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+  ```
+- [ ] issue: 設定が即時適用されてしまう問題([モジュールを読み込む] [拡張子を登録] [システム登録を削除]以外の設定は[適用]が押されるまで遅延させてください その関係で[元に戻す]が効いていません)
+- [ ] issue: マンガモード:次のフォルダの画像を表示してしまう問題
+- [ ] issue: ファイラーがハングアップすることがある問題
+- [ ] issue: サムネイルが表示されない事がある問題
+- [ ] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
+- [ ] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
 - [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
 - [x] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
-- [ ] issue:マンガモード：画面がちらつく問題
+- [ ] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
 - [+] issue: viewer 画像が切り替わらないことがある
     - [ ] 初期指定時
-    - [+] scanning folderが出ている時？
+    - [x] issue: scanning folderが出ている時？
     - [ ] reading folderが出ているとき
-    - [+] フォルダが切り替わったとき
-    - [+] マンガモード：半分しか書き換わらない時がある
-- [x] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ
+    - [x] issue: フォルダが切り替わったとき
+    - [x] issue: マンガモード：半分しか書き換わらない時がある
 - [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
     - [+] zipではUI先行起動まで対応
 - [ ] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください
 - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
-- [+] archive_benchmarkの実装を以下のファンクションでとってください
+- [*] archive_benchmarkの実装を以下のファンクションでとってください
     - [x] archive(zip)のすべてのmetadata取得に要する時間
     - [x] archive(zip)ファイルの取得速度
     - [x] metadataのソート時間 
@@ -487,3 +497,6 @@
     - [x] 設定: ダイアログ。設定が閉じられるまでViewerは固定される
     - [+] アラート: ダイアログ。アラートに紐付いたUIは閉じるまで固定される
 - [+] issue: 設定：ナビゲーション→[保存先を記憶]を押すと固まりやすい
+- [x] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない（次のフォルダの初めからリスタート）
+- [x] issue:マンガモード：画面がちらつく問題
+- [x] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ

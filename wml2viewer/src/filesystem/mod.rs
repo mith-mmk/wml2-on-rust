@@ -1064,6 +1064,7 @@ mod tests {
         PluginProviderConfig, set_runtime_plugin_config,
     };
     use std::io::Write;
+    use std::sync::{Mutex, OnceLock};
     use std::time::{SystemTime, UNIX_EPOCH};
     use zip::write::SimpleFileOptions;
 
@@ -1075,6 +1076,11 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("wml2viewer_nav_{unique}"));
         fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    fn plugin_runtime_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
     }
 
     fn make_zip_with_entries(path: &Path, names: &[&str]) {
@@ -1326,6 +1332,9 @@ mod tests {
 
     #[test]
     fn plugin_enabled_extensions_are_visible_to_filer() {
+        let _guard = plugin_runtime_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
         set_runtime_plugin_config(PluginConfig {
             internal_priority: 300,
             ffmpeg: PluginProviderConfig {

@@ -18,6 +18,7 @@ Minimal native image viewer built with `egui` and `wml2`.
 - Locale `Auto` fills the staged value from the current system locale without applying immediately
 - Plugin decode pipeline with priority resolution across `internal`, `system`, `ffmpeg`, and `susie64`
 - ZIP startup now keeps the UI responsive by resolving archive contents after the window opens
+- ZIP metadata loading now falls back to plain `BufReader<File>` if the cached reader path fails
 - Navigation requests now keep a pending target, reducing stale-image state during folder/archive transitions
 - Render / filer / thumbnail workers automatically respawn if a worker thread disconnects
 
@@ -73,6 +74,7 @@ search_path = ["../test/plugins/susie64"]
 - Large BMP/archive thumbnails can be suppressed from Settings.
 - Thumbnail failures are cleared from the pending queue so the filer can retry.
 - Filer timestamps now use local system time instead of UTC.
+- Filer can switch whether ZIP is grouped with folders or files in separated sort mode.
 - On Windows, file association registration is available from `Settings -> System`.
 - `ffmpeg` decode currently shells out to `ffmpeg.exe`.
 - `susie64` decode is Windows-only and currently targets image plugins.
@@ -81,6 +83,7 @@ search_path = ["../test/plugins/susie64"]
 - Plugin setting changes show a restart recommendation popup.
 - Manga companion pages stay inside the current folder or virtual archive branch.
 - `bench_archive` continues even if some archive entries fail to decode, so ZIP metadata/read timing is still measurable.
+- `ZipCacheReader` now uses larger chunks plus tail prefetch to reduce startup I/O on large archives.
 - Windows font lookup now follows `%LOCALAPPDATA%\Microsoft\Windows\Fonts` then `%WINDIR%\Fonts`.
 - Locale default system fonts stay first, and `resources.font_paths` lets you prepend custom fonts.
 

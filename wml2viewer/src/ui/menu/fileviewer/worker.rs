@@ -18,6 +18,7 @@ pub(crate) enum FilerCommand {
         sort_field: FilerSortField,
         ascending: bool,
         separate_dirs: bool,
+        archive_as_container_in_sort: bool,
         filter_text: String,
         extension_filter: String,
         name_sort_mode: NameSortMode,
@@ -61,6 +62,7 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                     sort_field,
                     ascending,
                     separate_dirs,
+                    archive_as_container_in_sort,
                     filter_text,
                     extension_filter,
                     name_sort_mode,
@@ -81,7 +83,8 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                                 if !is_browser_entry(&path) {
                                     continue;
                                 }
-                                let preview_entry = build_preview_entry(path.clone());
+                                let preview_entry =
+                                    build_preview_entry(path.clone(), archive_as_container_in_sort);
                                 if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
                                     continue;
                                 }
@@ -90,7 +93,7 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                             let mut preview = collected
                                 .iter()
                                 .cloned()
-                                .map(build_preview_entry)
+                                .map(|path| build_preview_entry(path, archive_as_container_in_sort))
                                 .collect::<Vec<_>>();
                             sort_entries(
                                 &mut preview,
@@ -106,7 +109,10 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                                 });
                             }
                             let mut entries =
-                                collected.into_iter().map(build_filer_entry).collect::<Vec<_>>();
+                                collected
+                                    .into_iter()
+                                    .map(|path| build_filer_entry(path, archive_as_container_in_sort))
+                                    .collect::<Vec<_>>();
                             sort_entries(
                                 &mut entries,
                                 sort_field,
@@ -118,7 +124,8 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                         } else {
                             let mut collected = Vec::new();
                             for path in list_browser_entries(&dir, sort) {
-                                let preview_entry = build_preview_entry(path.clone());
+                                let preview_entry =
+                                    build_preview_entry(path.clone(), archive_as_container_in_sort);
                                 if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
                                     continue;
                                 }
@@ -127,7 +134,7 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                             let mut preview = collected
                                 .iter()
                                 .cloned()
-                                .map(build_preview_entry)
+                                .map(|path| build_preview_entry(path, archive_as_container_in_sort))
                                 .collect::<Vec<_>>();
                             sort_entries(
                                 &mut preview,
@@ -143,7 +150,10 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                                 });
                             }
                             let mut entries =
-                                collected.into_iter().map(build_filer_entry).collect::<Vec<_>>();
+                                collected
+                                    .into_iter()
+                                    .map(|path| build_filer_entry(path, archive_as_container_in_sort))
+                                    .collect::<Vec<_>>();
                             sort_entries(
                                 &mut entries,
                                 sort_field,
@@ -172,7 +182,7 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
     (command_tx, result_rx)
 }
 
-fn build_filer_entry(path: PathBuf) -> FilerEntry {
+fn build_filer_entry(path: PathBuf, archive_as_container_in_sort: bool) -> FilerEntry {
     let metadata = fs::metadata(&path)
         .ok()
         .map(|metadata| FilerMetadata {
@@ -181,6 +191,7 @@ fn build_filer_entry(path: PathBuf) -> FilerEntry {
         })
         .unwrap_or_default();
     let is_container = is_browser_container(&path);
+    let sort_as_container = sort_group_is_container(&path, archive_as_container_in_sort);
     let label = path
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
@@ -189,12 +200,14 @@ fn build_filer_entry(path: PathBuf) -> FilerEntry {
         path,
         label,
         is_container,
+        sort_as_container,
         metadata,
     }
 }
 
-fn build_preview_entry(path: PathBuf) -> FilerEntry {
+fn build_preview_entry(path: PathBuf, archive_as_container_in_sort: bool) -> FilerEntry {
     let is_container = is_browser_container(&path);
+    let sort_as_container = sort_group_is_container(&path, archive_as_container_in_sort);
     let label = path
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
@@ -203,8 +216,22 @@ fn build_preview_entry(path: PathBuf) -> FilerEntry {
         path,
         label,
         is_container,
+        sort_as_container,
         metadata: FilerMetadata::default(),
     }
+}
+
+fn sort_group_is_container(path: &std::path::Path, archive_as_container_in_sort: bool) -> bool {
+    if path.is_dir() {
+        return true;
+    }
+    if archive_as_container_in_sort {
+        return is_browser_container(path);
+    }
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.eq_ignore_ascii_case("wml"))
+        .unwrap_or(false)
 }
 
 fn matches_filters(entry: &FilerEntry, filter_text: &str, extension_filter: &str) -> bool {
@@ -258,12 +285,12 @@ fn sort_entries(
 
     let mut containers = entries
         .iter()
-        .filter(|entry| entry.is_container)
+        .filter(|entry| entry.sort_as_container)
         .cloned()
         .collect::<Vec<_>>();
     let mut files = entries
         .iter()
-        .filter(|entry| !entry.is_container)
+        .filter(|entry| !entry.sort_as_container)
         .cloned()
         .collect::<Vec<_>>();
     containers.sort_by(compare);
@@ -309,12 +336,14 @@ mod tests {
                 path: PathBuf::from("b.png"),
                 label: "b.png".to_string(),
                 is_container: false,
+                sort_as_container: false,
                 metadata: FilerMetadata::default(),
             },
             FilerEntry {
                 path: PathBuf::from("a"),
                 label: "a".to_string(),
                 is_container: true,
+                sort_as_container: true,
                 metadata: FilerMetadata::default(),
             },
         ];
@@ -338,12 +367,14 @@ mod tests {
                 path: PathBuf::from("a"),
                 label: "a".to_string(),
                 is_container: true,
+                sort_as_container: true,
                 metadata: FilerMetadata::default(),
             },
             FilerEntry {
                 path: PathBuf::from("b"),
                 label: "b".to_string(),
                 is_container: true,
+                sort_as_container: true,
                 metadata: FilerMetadata::default(),
             },
         ];

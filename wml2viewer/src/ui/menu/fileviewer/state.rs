@@ -13,6 +13,7 @@ pub(crate) struct FilerEntry {
     pub(crate) path: PathBuf,
     pub(crate) label: String,
     pub(crate) is_container: bool,
+    pub(crate) sort_as_container: bool,
     pub(crate) metadata: FilerMetadata,
 }
 
@@ -51,6 +52,7 @@ pub(crate) struct FilerState {
     pub(crate) sort_field: FilerSortField,
     pub(crate) ascending: bool,
     pub(crate) separate_dirs: bool,
+    pub(crate) archive_as_container_in_sort: bool,
     pub(crate) filter_text: String,
     pub(crate) extension_filter: String,
     pub(crate) name_sort_mode: NameSortMode,
@@ -70,6 +72,7 @@ impl Default for FilerState {
             sort_field: FilerSortField::Name,
             ascending: true,
             separate_dirs: true,
+            archive_as_container_in_sort: true,
             filter_text: String::new(),
             extension_filter: String::new(),
             name_sort_mode: NameSortMode::Os,

@@ -29,7 +29,7 @@ use eframe::egui::{self, Pos2, TextureHandle, TextureOptions, vec2};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::error::Error;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::time::{Duration, Instant};
 pub mod options;
@@ -224,6 +224,13 @@ fn locale_input_from_config(config: &AppConfig) -> String {
     config.resources.locale.clone().unwrap_or_default()
 }
 
+fn startup_requires_navigator(path: &Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.eq_ignore_ascii_case("zip") || ext.eq_ignore_ascii_case("wml"))
+        .unwrap_or(false)
+}
+
 pub(crate) fn build_settings_draft(config: &AppConfig) -> SettingsDraftState {
     SettingsDraftState {
         config: config.clone(),
@@ -381,6 +388,10 @@ impl ViewerApp {
         this.apply_window_theme(&cc.egui_ctx);
 
         if let Some(path) = startup_load_path {
+            if startup_requires_navigator(&path) {
+                let _ = this.init_filesystem(navigation_path);
+                return this;
+            }
             this.deferred_filesystem_init_path = Some(navigation_path.clone());
             let _ = this.request_load_path(path);
         } else if !show_filer_on_start {
@@ -683,6 +694,7 @@ impl ViewerApp {
             sort_field: self.filer.sort_field,
             ascending: self.filer.ascending,
             separate_dirs: self.filer.separate_dirs,
+            archive_as_container_in_sort: self.filer.archive_as_container_in_sort,
             filter_text: self.filer.filter_text.clone(),
             extension_filter: self.filer.extension_filter.clone(),
             name_sort_mode: self.filer.name_sort_mode,

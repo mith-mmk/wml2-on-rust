@@ -18,6 +18,7 @@
 - `自動` ボタンでシステムロケールを staged 値へ入れられます
 - `internal / system / ffmpeg / susie64` の優先順位で動く plugin decode 土台
 - ZIP 指定時もウィンドウを先に開いてから中身を解決する非同期起動
+- ZIP metadata 読み込みは必要に応じて plain `BufReader<File>` にフォールバックします
 - 読み込み中の遷移先を pending で保持し、フォルダ/アーカイブ跨ぎの古い表示を減らしています
 - render / filer / thumbnail worker が切断時に自動で再生成されます
 
@@ -79,6 +80,7 @@ search_path = ["c:/susie64/plugins/"]
 - 大きい BMP / アーカイブのサムネイルは設定から抑制できます。
 - サムネイル生成失敗時は pending を解放して再試行できるようにしています。
 - ファイラーの更新日時は UTC ではなくローカル時刻で表示します。
+- ファイラーの分離ソートで ZIP を folder 扱い / file 扱いに切り替えられます。
 - Windows では `設定 -> システム` から拡張子関連付けを操作できます。
 - `ffmpeg` は現状 `ffmpeg.exe` を起動して decode します。
 - `susie64` は Windows 専用で、今は image plugin decode まで入っています。
@@ -87,6 +89,7 @@ search_path = ["c:/susie64/plugins/"]
 - plugin 設定変更時は再起動推奨ポップアップを出します。
 - マンガモードの見開き相手は現在のフォルダ / 仮想アーカイブ枝の中だけに制限しています。
 - `bench_archive` は decode 失敗エントリが混ざっても metadata/read の計測を続けます。
+- `ZipCacheReader` は大きめの chunk と tail prefetch を使うようにしています。
 - Windows のフォント探索順は `%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts` → `%WINDIR%\\Fonts` です。
 - ロケール既定の system font を先頭に使い、`resources.font_paths` で追加フォントを前置できます。
 

@@ -173,6 +173,8 @@
 - [+] 大容量 / ネットワーク zip の low-I/O workaround
 - [+] temp へのローカル archive cache
 - [+] ZipCacheReader を使った chunk cache
+- [+] metadata 読み取り時の plain file fallback
+- [+] tail prefetch
 - [+] benchmark で計測できる形に整理
 - [ ] zip encoding option
 - [ ] `7z` / `rar` / `lzh` / `gzip`
@@ -270,6 +272,7 @@
 - [x] 昇順/降順切り替え
 - [x] 名前/更新日時/サイズソート
 - [x] フォルダとファイルを混ぜる/分ける
+- [+] zip を folder/file のどちらとして分離ソートするかの切り替え
 - [x] ファイル名部分一致フィルタ
 - [x] 拡張子フィルタ
 - [x] ドライブ選択
@@ -400,61 +403,40 @@
 
 ## 次に着手
 previewクォリティからbeta版に出来るまで頑張ろう
-- [x] plugin, 設定: プラグインと内製の優先順位の設定 
+- [ ] issue: system プラグイン実行時　強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
+- zip系
+    - [*] issue: bench_archive: 1.6Gはベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
+    - [*] issue: zipの展開が遅くなっている
+    - [*] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
+    - [+] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
+    - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
+    - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
+    - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
+    - [ ] benchの結果からネットワークファイルのzipのtmp_copyのdefaultを20MBぐらいに設定(IOPSがネックになっているようなので、帯域が細い場合は結果が変わりそう)
 - [*] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください
 - 起動
     - [*] issue: 起動時にzipが指定されると長時間待たされる
     - [*] issue: フォルダに引きずられて、最初の画像の表示が遅くなる 画像の表示を再優先にしてください
 - viewer
-    - [*] issue: マンガモード:次のフォルダの最初に前フォルダの画像を表示してしまう問題 [home]を押すと正しい表示になる
-- setting
-    - [+] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
-    - [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
+    - [ ] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける[残すのと消すのと仕様として正しいかUIとして適切なものをtodoに反映]
 - filer
-    - [+] issue: ファイラーがハングアップすることがある問題
-        - [ ] デフォルトではalertを抑制してください またalertにはファイル名を付けてください
-    - [x] issue: サムネイルが表示されない事がある問題
-    - [x] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
-    - [+] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
-      - [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
-    - [*] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
-      - issue: 数字のフォルダだけ前に来て、それ以外のフォルダが後に来たりと挙動がおかしい
-    - [+] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
-    - [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
-      - [*] zipではUI先行起動まで対応(ファイラーに引きずられて遅くなる模様)
+    - [ ] OSソート順 windowsの場合、平仮名と片仮名が同順に並びます
     - [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
-- zip系
-    - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
-    - [x] issue: cargo run --example bench_archive が以下のエラーで終了する問題
-        - test/sample.zip
-      ```
-        Error: archive benchmark failed: no plugin decoder succeeded
-      ```
-    - [ ] issue: zipの展開が遅くなっている
-
-    - [ ] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
-    - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
-    - [*] archive_benchmarkの実装を以下のファンクションでとってください
-      - [x] archive(zip)のすべてのmetadata取得に要する時間
-      - [x] archive(zip)ファイルの取得速度
-      - [x] metadataのソート時間 
-      - [x] ファイル1枚をデコードする時間
-      - [x] methodを切り替えて計測(online cache, temp copy, default method)
-      - [x] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
-
+    - [+] ファイラーの並び順をzipをファイルとしてソートする場合とフォルダとしてソートする場合を設定で切り替え
 - font
     - [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
         - 基本的な順序 
             - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
             - user setting fontは、font-familyでまとめて指定出来る様にする sansserif, serif, monospaceをデフォルトで用意
-- [ ] todo.mdの更新
-- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- [x] todo.mdの更新
+- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## 優先度低
 - [-] MacはIntel MACの環境しかないので遅延 
 - [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
+- [ ] リソースenで日本語が表示出来ない問題
 
 ## レビュアーissue
 - [ ] UIアイコンの洗練
@@ -516,3 +498,20 @@ previewクォリティからbeta版に出来るまで頑張ろう
 - [x] issue: マンガモード:次のフォルダの画像を表示してしまう問題
 - [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
 - [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
+    - [x] archive_benchmarkの実装を以下のファンクションでとってください
+- [x] plugin, 設定: プラグインと内製の優先順位の設定 
+    - [+] issue: マンガモード:次のフォルダの最初に前フォルダの画像を表示してしまう問題 [home]を押すと正しい表示になる
+    - [+] issue: ファイラーがハングアップすることがある問題
+        - [ ] デフォルトではalertを抑制してください またalertにはファイル名を付けてください
+    - [x] issue: サムネイルが表示されない事がある問題
+    - [x] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
+    - [+] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
+      - [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
+    - [*] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
+      - issue: 数字のフォルダだけ前に来て、それ以外のフォルダが後に来たりと挙動がおかしい
+    - [+] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
+    - [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
+      - [*] zipではUI先行起動まで対応(ファイラーに引きずられて遅くなる模様)
+- setting
+    - [x] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
+    - [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)

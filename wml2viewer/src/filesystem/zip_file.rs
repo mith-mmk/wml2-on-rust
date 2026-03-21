@@ -1,7 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::UNIX_EPOCH;
@@ -42,30 +42,13 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
 
 pub(crate) fn load_zip_entries_unsorted(path: &Path) -> Option<Vec<ZipEntryRecord>> {
     let access = resolve_zip_archive_access(path)?;
-    let mut archive = open_zip_archive(access.path()).ok()?;
-    let mut entries = Vec::new();
-
-    for index in 0..archive.len() {
-        let Ok(file) = archive.by_index(index) else {
-            continue;
-        };
-        if file.is_dir() {
-            continue;
+    try_load_zip_entries_from_path(access.path()).or_else(|| {
+        if access.path() != path {
+            try_load_zip_entries_from_path(path)
+        } else {
+            None
         }
-
-        let name = decode_zip_name(&file);
-        let entry_path = PathBuf::from(name.replace('\\', "/"));
-        if !is_supported_image(&entry_path) {
-            continue;
-        }
-
-        entries.push(ZipEntryRecord {
-            index,
-            name: name.replace('\\', "/"),
-            size: file.size(),
-        });
-    }
-    Some(entries)
+    })
 }
 
 pub(crate) fn sort_zip_entries(entries: &mut [ZipEntryRecord]) {
@@ -75,30 +58,18 @@ pub(crate) fn sort_zip_entries(entries: &mut [ZipEntryRecord]) {
 pub(crate) fn load_zip_entry_bytes(path: &Path, entry_index: usize) -> Option<Vec<u8>> {
     let access = resolve_zip_archive_access(path)?;
     let archive_path = access.path();
-    let mut archive = open_zip_archive(archive_path).ok()?;
-    if let Ok(mut entry) = archive.by_index(entry_index) {
-        let mut buf = Vec::new();
-        let expected_size = entry.size().min(512 * 1024 * 1024) as usize;
-        if expected_size > 0 {
-            buf.reserve(expected_size);
-        }
-        entry.read_to_end(&mut buf).ok()?;
-        return Some(buf);
-    }
 
     let fallback_name = load_zip_entries(path)?
         .into_iter()
         .find(|entry| entry.index == entry_index)
         .map(|entry| entry.name)?;
-    let mut archive = open_zip_archive(archive_path).ok()?;
-    let mut entry = archive.by_name(&fallback_name).ok()?;
-    let mut buf = Vec::new();
-    let expected_size = entry.size().min(512 * 1024 * 1024) as usize;
-    if expected_size > 0 {
-        buf.reserve(expected_size);
-    }
-    entry.read_to_end(&mut buf).ok()?;
-    Some(buf)
+    read_zip_entry_bytes_from_path(archive_path, entry_index, &fallback_name).or_else(|| {
+        if archive_path != path {
+            read_zip_entry_bytes_from_path(path, entry_index, &fallback_name)
+        } else {
+            None
+        }
+    })
 }
 
 pub(crate) fn zip_entry_record(path: &Path, entry_index: usize) -> Option<ZipEntryRecord> {
@@ -127,12 +98,83 @@ fn open_zip_archive(path: &Path) -> std::io::Result<ZipArchive<ZipCacheReader>> 
     ZipArchive::new(reader).map_err(std::io::Error::other)
 }
 
+fn open_plain_zip_archive(path: &Path) -> std::io::Result<ZipArchive<BufReader<File>>> {
+    let file = File::open(path)?;
+    ZipArchive::new(BufReader::new(file)).map_err(std::io::Error::other)
+}
+
 impl ZipArchiveAccess {
     fn path(&self) -> &Path {
         match self {
             Self::Direct(path) | Self::Sequential(path) => path.as_path(),
         }
     }
+}
+
+fn try_load_zip_entries_from_path(path: &Path) -> Option<Vec<ZipEntryRecord>> {
+    if let Ok(mut archive) = open_zip_archive(path) {
+        return Some(collect_zip_entries(&mut archive));
+    }
+    let mut archive = open_plain_zip_archive(path).ok()?;
+    Some(collect_zip_entries(&mut archive))
+}
+
+fn collect_zip_entries<R: Read + Seek>(archive: &mut ZipArchive<R>) -> Vec<ZipEntryRecord> {
+    let mut entries = Vec::new();
+    for index in 0..archive.len() {
+        let Ok(file) = archive.by_index(index) else {
+            continue;
+        };
+        if file.is_dir() {
+            continue;
+        }
+
+        let name = decode_zip_name(&file);
+        let normalized = name.replace('\\', "/");
+        let entry_path = PathBuf::from(&normalized);
+        if !is_supported_image(&entry_path) {
+            continue;
+        }
+
+        entries.push(ZipEntryRecord {
+            index,
+            name: normalized,
+            size: file.size(),
+        });
+    }
+    entries
+}
+
+fn read_zip_entry_bytes_from_path(
+    archive_path: &Path,
+    entry_index: usize,
+    fallback_name: &str,
+) -> Option<Vec<u8>> {
+    if let Ok(mut archive) = open_zip_archive(archive_path) {
+        if let Some(bytes) = read_entry_bytes(&mut archive, entry_index, fallback_name) {
+            return Some(bytes);
+        }
+    }
+    let mut archive = open_plain_zip_archive(archive_path).ok()?;
+    read_entry_bytes(&mut archive, entry_index, fallback_name)
+}
+
+fn read_entry_bytes<R: Read + Seek>(
+    archive: &mut ZipArchive<R>,
+    entry_index: usize,
+    fallback_name: &str,
+) -> Option<Vec<u8>> {
+    if let Ok(mut entry) = archive.by_index(entry_index) {
+        return read_zip_entry_to_end(&mut entry);
+    }
+    let mut entry = archive.by_name(fallback_name).ok()?;
+    read_zip_entry_to_end(&mut entry)
+}
+
+fn read_zip_entry_to_end<R: Read>(entry: &mut R) -> Option<Vec<u8>> {
+    let mut buf = Vec::new();
+    entry.read_to_end(&mut buf).ok()?;
+    Some(buf)
 }
 
 fn current_zip_workaround_options() -> ZipWorkaroundOptions {
@@ -242,15 +284,30 @@ struct ZipCacheReader {
 impl ZipCacheReader {
     fn new(inner: File) -> std::io::Result<Self> {
         let len = inner.metadata()?.len();
-        Ok(Self {
+        let mut this = Self {
             inner,
             pos: 0,
             len,
-            chunk_size: 2 * 1024 * 1024,
-            max_chunks: 16,
+            chunk_size: 8 * 1024 * 1024,
+            max_chunks: 32,
             cache: HashMap::new(),
             order: VecDeque::new(),
-        })
+        };
+        let _ = this.prefetch_tail(4 * 1024 * 1024);
+        Ok(this)
+    }
+
+    fn prefetch_tail(&mut self, bytes: u64) -> std::io::Result<()> {
+        if self.len == 0 {
+            return Ok(());
+        }
+        let start = self.len.saturating_sub(bytes.min(self.len));
+        let first_chunk = start / self.chunk_size;
+        let last_chunk = (self.len.saturating_sub(1)) / self.chunk_size;
+        for chunk_index in first_chunk..=last_chunk {
+            let _ = self.read_chunk(chunk_index)?;
+        }
+        Ok(())
     }
 
     fn read_chunk(&mut self, chunk_index: u64) -> std::io::Result<&[u8]> {

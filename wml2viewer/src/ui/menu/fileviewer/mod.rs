@@ -241,6 +241,19 @@ impl ViewerApp {
                         self.filer.separate_dirs = !self.filer.separate_dirs;
                         refresh_requested = true;
                     }
+                    if simple_toolbar_button(
+                        ui,
+                        if self.filer.archive_as_container_in_sort {
+                            "Zip=Folder"
+                        } else {
+                            "Zip=File"
+                        },
+                        self.filer.archive_as_container_in_sort,
+                    ) {
+                        self.filer.archive_as_container_in_sort =
+                            !self.filer.archive_as_container_in_sort;
+                        refresh_requested = true;
+                    }
                     ui.label(name_text);
                     if simple_toolbar_button(
                         ui,

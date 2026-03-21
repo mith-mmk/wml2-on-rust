@@ -394,20 +394,33 @@
 - [-] 役割の再整理
 
 ## 次に着手
+やりきる
+- [ ] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない
+- [ ] issue: 設定：ナビゲーション→[保存先を記憶]を押すと固まる
+- [ ] issue: 設定: 分かりにくいので[保存先を記憶] → [画像保存先を記憶]に変更
+- [ ] 設定: タブ[システム]を最後追加し[拡張子を登録]と[システム登録を削除]をウィンドウから移動
+- [ ] 設定: タブ[システム]: 
+    - get_prograname() ,get_version(), get_copyright(), get_auther() 取得したプログラム名、(C) 作者名 バージョン表記
+    - [拡張子を登録]と[システム登録を削除]
 - [ ] UIの責任範囲と描画領域をハッキリさせる ダイアログは別Windowで処理出来るならば別Windowで処理する
     - [ ] Viewer: ベース 
-        - [ ] マンガモード: ベースを画像表示部分を二分割する(windowサイズが width >= height*2 の時のみ有効)
-        - [ ] message: overlay viewerの下1行にOverlay
-           - [ ] issue: Message Overlayが左下に固まってでる問題。横幅はWindowの幅に 長すぎる場合は...で省略
-        - [ ] サブファイラー：ベースの下側にOverlay 
-      - [ ] ファイラー: 右ペイン（最大 Width MAX, width >= height*2の時はwidthの半分）縦長画面も考慮する
-    - [ ] 設定: ダイアログ。設定が閉じられるまでViewerは固定される
-    - [ ] アラート: ダイアログ。アラートに紐付いたUIは閉じるまで固定される
-- [ ] issue: viewer 画像が切り替わらないことがある（最初に表示した画像が戻ることが多い/恐らく画像のデコードかレンダリングが追いついていないケース）
+        - [x] マンガモード: ベースを画像表示部分を二分割する
+            - [x] A4の縦横比が1:√2のためwindowサイズを widt　h >= height*1.4に緩和
+        - [x] message: overlay viewerの下1行にOverlay
+           - [x] issue: Message Overlayが左下に固まってでる問題。横幅はWindowの幅に 長すぎる場合は...で省略
+        - [x] サブファイラー：ベースの下側にOverlay 
+      - [x] ファイラー: 左ペイン（最大 Width MAX, width >= height*1.5 緩和しましたの時はwidthの半分）縦長画面も考慮する
+      - [ ] ファイラー,設定: 左ペインと右ペインを切り替えられる様にする
+    - [x] 設定: ダイアログ。設定が閉じられるまでViewerは固定される
+    - [+] アラート: ダイアログ。アラートに紐付いたUIは閉じるまで固定される
+- [*] issue: viewer 画像が切り替わらないことがある
+    - [ ] scanning folderが出ている時？
+    - [ ] フォルダが切り替わったとき
+    - [ ] マンガモード：半分しか書き換わらない時がある
 - [x] issue: makiが表示出来ないバグ
-- [ ] issue: デコーダがErrorを起こしたときにpanic!を起こし次の画像が表示できなくなるバグ
+- [+] issue: デコーダがErrorを起こしたときにpanic!を起こし次の画像が表示できなくなるバグ
     - [+] 壊れたbmp対策:decoderに緩和策を適用
-- [ ] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
+- [x] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
 - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
 - [ ] archive_benchmarkの実装を以下のファンクションでとってください
     - [ ] archive(zip)のすべてのmetadata取得に要する時間
@@ -416,6 +429,7 @@
     - [ ] ファイル1枚をデコードする時間
     - [ ] methodを切り替えて計測(online cache, temp copy, default method)
     - [ ] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
+- [ ] issue: zipの展開が遅くなっている
 - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
 - [ ] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
 - [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
@@ -428,12 +442,6 @@
 - [ ] issue: LinuxとMacOS用がbuild出来ない問題
 - [ ] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
     - [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
-- [ ] issue: ファイラーのサイズ表示を読みやすくする
-    - 000,000 方式
-    - 1024byte 未満は B
-    - 1024byteから100,000KB は KB
-    - 100MB ～ 100,000MB は MB
-    - 100GB ～ は GB
 - [ ] plugin, 設定: プラグインと内製の優先順位の設定 
 - [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
@@ -464,3 +472,9 @@
   - [x] 設定を変えた時、再起動を促すポップアップを出す 
   - [ ] [重要度低] Arm MACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
   - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
+- [+] issue: ファイラーのサイズ表示を読みやすくする
+    - 000,000 方式
+    - 1024byte 未満は B
+    - 1024byteから100,000KB は KB
+    - 100MB ～ 100,000MB は MB
+    - 100GB ～ は GB

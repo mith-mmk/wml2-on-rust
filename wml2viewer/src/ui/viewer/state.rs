@@ -5,6 +5,7 @@ use std::sync::mpsc::Receiver;
 #[derive(Default)]
 pub(crate) struct ViewerOverlayState {
     pub(crate) loading_message: Option<String>,
+    pub(crate) alert_message: Option<String>,
 }
 
 pub(crate) struct SaveDialogState {

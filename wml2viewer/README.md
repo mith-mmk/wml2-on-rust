@@ -4,11 +4,13 @@ Minimal native image viewer built with `egui` and `wml2`.
 
 ## Features
 
-- Image viewing with manga spread mode
-- Filer with list / thumbnail / detail views
+- Async startup: the UI opens first and the initial image is decoded in the background
+- Viewer / filer / subfiler layout with bottom status overlay and separate dialogs
+- Manga spread mode for portrait pages when the viewport is wide enough
+- Filer with list / thumbnail / detail views and drive/root switching
 - ZIP and WML(listed files) virtual browsing
-- Locale-aware UI resources and font fallback
 - Save dialog with output format selection
+- Locale-aware UI resources and font fallback
 - Plugin decode pipeline with priority resolution across `internal`, `system`, `ffmpeg`, and `susie64`
 
 ## Run

@@ -17,6 +17,17 @@ impl ViewerApp {
             return;
         }
 
+        if self.show_settings || self.save_dialog.open || self.overlay.alert_message.is_some() {
+            if !ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+                if ctx.wants_keyboard_input() {
+                    return;
+                }
+            } else if self.overlay.alert_message.is_some() {
+                self.overlay.alert_message = None;
+                return;
+            }
+        }
+
         if ctx.wants_keyboard_input() {
             return;
         }
@@ -94,7 +105,7 @@ impl ViewerApp {
     }
 
     pub(crate) fn handle_pointer_input(&mut self, response: &egui::Response) {
-        if self.show_settings {
+        if self.show_settings || self.save_dialog.open || self.overlay.alert_message.is_some() {
             return;
         }
 

@@ -171,6 +171,15 @@ fn default_save_file_name(path: &std::path::Path) -> String {
         .to_string()
 }
 
+fn ellipsize_end(text: &str, max_chars: usize) -> String {
+    let chars: Vec<char> = text.chars().collect();
+    if chars.len() <= max_chars {
+        return text.to_string();
+    }
+    let head = chars.iter().take(max_chars.saturating_sub(3)).collect::<String>();
+    format!("{head}...")
+}
+
 fn format_key_binding(binding: &KeyBinding) -> String {
     let mut parts = Vec::new();
     if binding.ctrl {
@@ -802,18 +811,15 @@ impl ViewerApp {
             return;
         };
 
-        egui::Area::new("status_overlay".into())
-            .anchor(egui::Align2::LEFT_BOTTOM, egui::vec2(12.0, -10.0))
-            .interactable(false)
+        egui::TopBottomPanel::bottom("status_overlay")
+            .resizable(false)
+            .exact_height(24.0)
             .show(ctx, |ui| {
-                egui::Frame::new()
-                    .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 104))
-                    .corner_radius(6.0)
-                    .inner_margin(egui::Margin::symmetric(8, 4))
-                    .show(ui, |ui| {
-                        ui.visuals_mut().override_text_color = Some(ui.visuals().weak_text_color());
-                        ui.label(egui::RichText::new(message).small());
-                    });
+                let text = ellipsize_end(message, 160);
+                ui.horizontal(|ui| {
+                    ui.set_width(ui.available_width());
+                    ui.label(egui::RichText::new(text).small());
+                });
             });
     }
 
@@ -821,25 +827,39 @@ impl ViewerApp {
         let Some(message) = &self.overlay.loading_message else {
             return;
         };
-        let bottom_offset = if self.save_dialog.message.is_some() {
-            -34.0
-        } else {
-            -10.0
+        egui::TopBottomPanel::bottom("loading_overlay")
+            .resizable(false)
+            .exact_height(24.0)
+            .show(ctx, |ui| {
+                let text = ellipsize_end(message, 160);
+                ui.horizontal(|ui| {
+                    ui.set_width(ui.available_width());
+                    ui.label(egui::RichText::new(text).small());
+                });
+            });
+    }
+
+    fn alert_dialog_ui(&mut self, ctx: &egui::Context) {
+        let Some(message) = self.overlay.alert_message.clone() else {
+            return;
         };
 
-        egui::Area::new("loading_overlay".into())
-            .anchor(egui::Align2::LEFT_BOTTOM, egui::vec2(12.0, bottom_offset))
-            .interactable(false)
+        let mut open = true;
+        let mut close_requested = false;
+        egui::Window::new("Alert")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
+            .open(&mut open)
             .show(ctx, |ui| {
-                egui::Frame::new()
-                    .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 88))
-                    .corner_radius(6.0)
-                    .inner_margin(egui::Margin::symmetric(8, 4))
-                    .show(ui, |ui| {
-                        ui.visuals_mut().override_text_color = Some(ui.visuals().weak_text_color());
-                        ui.label(egui::RichText::new(message).small());
-                    });
+                ui.label(message);
+                if ui.button(self.text(UiTextKey::Close)).clicked() {
+                    close_requested = true;
+                }
             });
+        if close_requested || !open {
+            self.overlay.alert_message = None;
+        }
     }
 
     fn is_current_portrait_page(&self) -> bool {
@@ -856,6 +876,7 @@ impl ViewerApp {
 
     fn manga_spread_active(&self) -> bool {
         self.options.manga_mode
+            && self.last_viewport_size.x >= self.last_viewport_size.y * 1.4
             && self.is_current_portrait_page()
             && self.companion_navigation_path.is_some()
             && self
@@ -1185,12 +1206,8 @@ impl ViewerApp {
             .as_ref()
             .map(|cached| cached == path)
             .unwrap_or(false);
-        let matches_load = self
-            .preloaded_load_path
-            .as_ref()
-            .map(|cached| cached == load_path)
-            .unwrap_or(false);
-        if !matches_navigation && !matches_load {
+        let _ = load_path;
+        if !matches_navigation {
             return false;
         }
 
@@ -1242,12 +1259,19 @@ impl ViewerApp {
                     if !request_matches {
                         continue;
                     }
-                    self.overlay.loading_message = Some(message);
+                    let failed_during_load =
+                        matches!(active_request, ActiveRenderRequest::Load(_));
+                    self.overlay.alert_message = Some(message);
+                    self.overlay.loading_message = None;
                     self.active_request = None;
+                    if failed_during_load {
+                        let _ = self.next_image();
+                    }
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    self.overlay.loading_message = Some("render worker disconnected".to_string());
+                    self.overlay.alert_message = Some("render worker disconnected".to_string());
+                    self.overlay.loading_message = None;
                     self.active_request = None;
                     break;
                 }
@@ -1547,6 +1571,7 @@ impl eframe::App for ViewerApp {
         self.handle_keyboard(ctx);
         self.settings_ui(ctx);
         self.restart_prompt_ui(ctx);
+        self.alert_dialog_ui(ctx);
         self.save_dialog_ui(ctx);
         self.left_click_menu_ui(ctx);
         self.filer_ui(ctx);

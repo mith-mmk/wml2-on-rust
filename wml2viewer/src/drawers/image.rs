@@ -428,7 +428,7 @@ fn blend_rgba(src: [u8; 4], dst: [u8; 4]) -> [u8; 4] {
 mod tests {
     use super::load_canvas_from_file;
     use crate::dependent::plugins::{
-        PluginConfig, PluginProviderConfig, set_runtime_plugin_config,
+        PluginConfig, PluginProviderConfig, discover_plugin_modules, set_runtime_plugin_config,
     };
     use std::path::PathBuf;
 
@@ -442,14 +442,18 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn plugin_decode_is_visible_from_viewer_load_path() {
-        set_runtime_plugin_config(PluginConfig {
+        let config = PluginConfig {
             ffmpeg: PluginProviderConfig {
                 enable: true,
                 search_path: vec![repo_root().join("test").join("plugins").join("ffmpeg")],
                 modules: Vec::new(),
             },
             ..PluginConfig::default()
-        });
+        };
+        if discover_plugin_modules("ffmpeg", &config.ffmpeg).is_empty() {
+            return;
+        }
+        set_runtime_plugin_config(config);
 
         let decoded = load_canvas_from_file(&repo_root().join("samples").join("WML2Viewer.avif"));
         assert!(decoded.is_ok());

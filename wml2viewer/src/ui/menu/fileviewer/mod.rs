@@ -69,7 +69,14 @@ impl ViewerApp {
             return;
         }
 
-        egui::SidePanel::left("filer_panel")
+        let content = ctx.content_rect();
+        let max_width = if content.width() >= content.height() * 1.5 {
+            (content.width() * 0.5).max(280.0)
+        } else {
+            420.0
+        };
+
+        egui::SidePanel::right("filer_panel")
             .resizable(true)
             .default_width(match self.filer.view_mode {
                 FilerViewMode::ThumbnailLarge => 420.0,
@@ -77,7 +84,7 @@ impl ViewerApp {
                 _ => 300.0,
             })
             .min_width(240.0)
-            .max_width(900.0)
+            .max_width(max_width)
             .show(ctx, |ui| {
                 let mut refresh_requested = false;
                 let list_text = self.text(UiTextKey::List);
@@ -351,7 +358,7 @@ impl ViewerApp {
             let size = entry
                 .metadata
                 .size
-                .map(|value| format!("{value} B"))
+                .map(format_human_size)
                 .unwrap_or_else(|| "-".to_string());
             format!(
                 "{} {}    {}    {}",
@@ -650,6 +657,34 @@ fn format_system_time(value: SystemTime) -> String {
     let minute = (secs_of_day % 3_600) / 60;
     let second = secs_of_day % 60;
     format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02} UTC")
+}
+
+fn format_human_size(value: u64) -> String {
+    if value < 1024 {
+        return format!("{} B", format_grouped_u64(value));
+    }
+    let kb = value as f64 / 1024.0;
+    if kb < 100_000.0 {
+        return format!("{:.0} KB", kb);
+    }
+    let mb = kb / 1024.0;
+    if mb < 100_000.0 {
+        return format!("{:.1} MB", mb);
+    }
+    let gb = mb / 1024.0;
+    format!("{:.1} GB", gb)
+}
+
+fn format_grouped_u64(value: u64) -> String {
+    let text = value.to_string();
+    let mut out = String::new();
+    for (index, ch) in text.chars().rev().enumerate() {
+        if index != 0 && index % 3 == 0 {
+            out.push(',');
+        }
+        out.push(ch);
+    }
+    out.chars().rev().collect()
 }
 
 fn civil_from_days(days: i64) -> (i64, i64, i64) {

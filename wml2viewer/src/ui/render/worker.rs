@@ -4,6 +4,7 @@ use crate::drawers::image::{
 };
 use crate::filesystem::load_virtual_image_bytes;
 use std::error::Error;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -57,15 +58,22 @@ pub(crate) fn spawn_render_worker(
                     zoom,
                     method,
                 } => {
-                    let result = (|| -> Result<(LoadedImage, LoadedImage), Box<dyn Error>> {
-                        let source = if let Some(bytes) = load_virtual_image_bytes(&path) {
-                            load_canvas_from_bytes_with_hint(&bytes, Some(&path))?
-                        } else {
-                            load_canvas_from_file(&path)?
-                        };
-                        let rendered = resize_loaded_image(&source, zoom, method)?;
-                        Ok((source, rendered))
-                    })();
+                    let result = catch_unwind(AssertUnwindSafe(|| {
+                        (|| -> Result<(LoadedImage, LoadedImage), Box<dyn Error>> {
+                            let source = if let Some(bytes) = load_virtual_image_bytes(&path) {
+                                load_canvas_from_bytes_with_hint(&bytes, Some(&path))?
+                            } else {
+                                load_canvas_from_file(&path)?
+                            };
+                            let rendered = resize_loaded_image(&source, zoom, method)?;
+                            Ok((source, rendered))
+                        })()
+                    }))
+                    .unwrap_or_else(|_| {
+                        Err(Box::new(std::io::Error::other(
+                            "decoder panicked while loading image",
+                        )))
+                    });
 
                     match result {
                         Ok((source, rendered)) => {
@@ -89,7 +97,14 @@ pub(crate) fn spawn_render_worker(
                     request_id,
                     zoom,
                     method,
-                } => match resize_loaded_image(&current_source, zoom, method) {
+                } => match catch_unwind(AssertUnwindSafe(|| {
+                    resize_loaded_image(&current_source, zoom, method)
+                }))
+                .unwrap_or_else(|_| {
+                    Err(Box::new(std::io::Error::other(
+                        "renderer panicked while resizing image",
+                    )))
+                }) {
                     Ok(rendered) => {
                         let _ = result_tx.send(RenderResult::Loaded {
                             request_id,

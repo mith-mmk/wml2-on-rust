@@ -624,7 +624,9 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn ffmpeg_decodes_avif_sample() {
-        let _guard = runtime_lock().lock().unwrap();
+        let _guard = runtime_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
         let config = PluginConfig {
             ffmpeg: PluginProviderConfig {
                 enable: true,
@@ -633,6 +635,9 @@ mod tests {
             },
             ..PluginConfig::default()
         };
+        if discover_plugin_modules("ffmpeg", &config.ffmpeg).is_empty() {
+            return;
+        }
         set_runtime_plugin_config(config);
         let decoded = decode_image_from_file_with_plugins(&sample_path("WML2Viewer.avif"));
         assert!(decoded.is_some());
@@ -644,7 +649,9 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn susie64_decodes_jp2_sample() {
-        let _guard = runtime_lock().lock().unwrap();
+        let _guard = runtime_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
         let config = PluginConfig {
             susie64: PluginProviderConfig {
                 enable: true,
@@ -653,6 +660,9 @@ mod tests {
             },
             ..PluginConfig::default()
         };
+        if discover_plugin_modules("susie64", &config.susie64).is_empty() {
+            return;
+        }
         set_runtime_plugin_config(config);
         let decoded = decode_image_from_file_with_plugins(&sample_path("WML2Viewer.jp2"));
         assert!(decoded.is_some());

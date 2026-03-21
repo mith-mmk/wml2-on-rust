@@ -12,8 +12,9 @@ Minimal native image viewer built with `egui` and `wml2`.
 - Filer side can be switched left/right from Settings
 - ZIP and WML(listed files) virtual browsing
 - Save dialog with output format selection
-- Locale-aware UI resources and font fallback
+- Locale-aware UI resources and font fallback, with locale editable from Settings
 - Plugin decode pipeline with priority resolution across `internal`, `system`, `ffmpeg`, and `susie64`
+- ZIP startup now keeps the UI responsive by resolving archive contents after the window opens
 
 ## Run
 
@@ -79,5 +80,7 @@ search_path = ["../test/plugins/susie64"]
 ```powershell
 cargo run --manifest-path wml2viewer/Cargo.toml --example bench_decode -- .\samples\WML2Viewer.avif 5
 cargo run --manifest-path wml2viewer/Cargo.toml --example bench_browser -- .\samples 3
-cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip 3
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip default
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip online_cache
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip temp_copy
 ```

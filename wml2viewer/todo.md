@@ -396,8 +396,8 @@
 ## 次に着手
 中断せずに最後までやりきる
 - [*] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない（次のフォルダの初めからリスタート）
-- [ ] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
-- [ ] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
+- [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
+- [x] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
 - [ ] issue:マンガモード：画面がちらつく問題
 - [+] issue: viewer 画像が切り替わらないことがある
     - [ ] 初期指定時
@@ -405,22 +405,22 @@
     - [ ] reading folderが出ているとき
     - [+] フォルダが切り替わったとき
     - [+] マンガモード：半分しか書き換わらない時がある
-- [ ] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ
+- [x] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ
 - [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
-    - [ ] zipでは反映されない
+    - [+] zipではUI先行起動まで対応
 - [ ] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください
 - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
-- [ ] archive_benchmarkの実装を以下のファンクションでとってください
-    - [ ] archive(zip)のすべてのmetadata取得に要する時間
-    - [ ] archive(zip)ファイルの取得速度
-    - [ ] metadataのソート時間 
-    - [ ] ファイル1枚をデコードする時間
-    - [ ] methodを切り替えて計測(online cache, temp copy, default method)
-    - [ ] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
+- [+] archive_benchmarkの実装を以下のファンクションでとってください
+    - [x] archive(zip)のすべてのmetadata取得に要する時間
+    - [x] archive(zip)ファイルの取得速度
+    - [x] metadataのソート時間 
+    - [x] ファイル1枚をデコードする時間
+    - [x] methodを切り替えて計測(online cache, temp copy, default method)
+    - [x] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
 - [ ] issue: zipの展開が遅くなっている
 - [ ] issue: 起動時にzipが指定されると長時間待たされる
 - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
-- [ ] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
+- [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
 - [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
     - 基本的な順序 
         - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
@@ -432,8 +432,8 @@
     - [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
 - [ ] plugin, 設定: プラグインと内製の優先順位の設定 
 ダを高速化する
-- [ ] todo.mdの更新
-- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- [x] todo.mdの更新
+- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## 優先度低
 - [-] MacはIntel MACの環境しかないので遅延 
@@ -441,6 +441,7 @@
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
 ## レビュアーissue
+- [ ] UIアイコンの洗練
 - [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
 - [x] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
 - [*] zip 内ファイルソートの実機確認

@@ -32,6 +32,15 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
         return Some(entries);
     }
 
+    let mut entries = load_zip_entries_unsorted(path)?;
+    sort_zip_entries(&mut entries);
+    if let Ok(mut cache) = cache.lock() {
+        cache.insert(path.to_path_buf(), entries.clone());
+    }
+    Some(entries)
+}
+
+pub(crate) fn load_zip_entries_unsorted(path: &Path) -> Option<Vec<ZipEntryRecord>> {
     let access = resolve_zip_archive_access(path)?;
     let mut archive = open_zip_archive(access.path()).ok()?;
     let mut entries = Vec::new();
@@ -56,14 +65,11 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
             size: file.size(),
         });
     }
-
-    if !matches!(access, ZipArchiveAccess::Sequential(_)) {
-        entries.sort_by(|left, right| compare_natural_str(&left.name, &right.name, false));
-    }
-    if let Ok(mut cache) = cache.lock() {
-        cache.insert(path.to_path_buf(), entries.clone());
-    }
     Some(entries)
+}
+
+pub(crate) fn sort_zip_entries(entries: &mut [ZipEntryRecord]) {
+    entries.sort_by(|left, right| compare_natural_str(&left.name, &right.name, false));
 }
 
 pub(crate) fn load_zip_entry_bytes(path: &Path, entry_index: usize) -> Option<Vec<u8>> {
@@ -240,8 +246,8 @@ impl ZipCacheReader {
             inner,
             pos: 0,
             len,
-            chunk_size: 1024 * 1024,
-            max_chunks: 8,
+            chunk_size: 2 * 1024 * 1024,
+            max_chunks: 16,
             cache: HashMap::new(),
             order: VecDeque::new(),
         })

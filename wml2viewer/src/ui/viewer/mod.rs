@@ -5,6 +5,7 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
     FilesystemCommand, FilesystemResult, adjacent_entry, archive_prefers_low_io,
+    navigation_branch_path,
     set_archive_zip_workaround, spawn_filesystem_worker,
 };
 use crate::options::{
@@ -65,6 +66,7 @@ pub(crate) struct ViewerApp {
     pub(crate) runtime: RuntimeOptions,
     pub(crate) applied_locale: String,
     pub(crate) loaded_font_names: Vec<String>,
+    pub(crate) resource_locale_input: String,
     pub(crate) resource_font_paths_input: String,
     pub(crate) keymap: HashMap<KeyBinding, ViewerAction>,
     pub(crate) end_of_folder: EndOfFolderOption,
@@ -77,6 +79,7 @@ pub(crate) struct ViewerApp {
     pub(crate) fs_rx: Receiver<FilesystemResult>,
     pub(crate) next_fs_request_id: u64,
     pub(crate) active_fs_request_id: Option<u64>,
+    pub(crate) queued_navigation: Option<FilesystemCommand>,
     pub(crate) filer_tx: Sender<FilerCommand>,
     pub(crate) filer_rx: Receiver<FilerResult>,
     pub(crate) next_filer_request_id: u64,
@@ -249,6 +252,7 @@ impl ViewerApp {
         let (fs_tx, fs_rx) = spawn_filesystem_worker(config.navigation.sort);
         let (filer_tx, filer_rx) = spawn_filer_worker();
         let (thumbnail_tx, thumbnail_rx) = spawn_thumbnail_worker();
+        let resource_locale_input = config.resources.locale.clone().unwrap_or_default();
         let resource_font_paths_input = join_search_paths(&config.resources.font_paths);
 
         let mut this = Self {
@@ -278,6 +282,7 @@ impl ViewerApp {
             runtime: config.runtime,
             applied_locale: locale,
             loaded_font_names: loaded_fonts,
+            resource_locale_input,
             resource_font_paths_input,
             keymap: config.input.merged_with_defaults(),
             end_of_folder: config.navigation.end_of_folder,
@@ -290,6 +295,7 @@ impl ViewerApp {
             fs_rx,
             next_fs_request_id: 0,
             active_fs_request_id: None,
+            queued_navigation: None,
             filer_tx,
             filer_rx,
             next_filer_request_id: 0,
@@ -965,6 +971,17 @@ impl ViewerApp {
             return None;
         }
 
+        let boundary_target = adjacent_entry(
+            &self.current_navigation_path,
+            self.navigation_sort,
+            if forward { 1 } else { -1 },
+        )?;
+        let current_branch = navigation_branch_path(&self.current_navigation_path);
+        let boundary_branch = navigation_branch_path(&boundary_target);
+        if current_branch != boundary_branch {
+            return Some(boundary_target);
+        }
+
         let step = if forward { 2 } else { -2 };
         adjacent_entry(&self.current_navigation_path, self.navigation_sort, step)
     }
@@ -1024,9 +1041,6 @@ impl ViewerApp {
     }
 
     fn can_trigger_navigation(&self) -> bool {
-        if self.active_request.is_some() || self.active_fs_request_id.is_some() {
-            return false;
-        }
         self.last_navigation_at
             .map(|last| last.elapsed() >= NAVIGATION_REPEAT_INTERVAL)
             .unwrap_or(true)
@@ -1034,7 +1048,9 @@ impl ViewerApp {
 
     pub(crate) fn request_load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
         let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path.clone());
-        if load_path != self.current_path {
+        let branch_changed = navigation_branch_path(&self.current_path)
+            != navigation_branch_path(&path);
+        if branch_changed {
             self.clear_manga_companion();
         }
         if self.try_take_preloaded(&path, &load_path) {
@@ -1127,6 +1143,11 @@ impl ViewerApp {
 
     fn request_navigation(&mut self, mut command: FilesystemCommand) -> Result<(), Box<dyn Error>> {
         if !self.navigator_ready {
+            self.queued_navigation = Some(command);
+            return Ok(());
+        }
+        if self.active_fs_request_id.is_some() {
+            self.queued_navigation = Some(command);
             return Ok(());
         }
         let request_id = self.alloc_fs_request_id();
@@ -1158,12 +1179,8 @@ impl ViewerApp {
     ) {
         if let Some(path) = path {
             let request_id = self.alloc_fs_request_id();
-            let folder_changed = self
-                .current_path
-                .parent()
-                .zip(path.parent())
-                .map(|(left, right)| left != right)
-                .unwrap_or(true);
+            let folder_changed =
+                navigation_branch_path(&self.current_path) != navigation_branch_path(&path);
             self.current_path = path.clone();
             self.save_dialog.file_name = default_save_file_name(&path);
             if folder_changed {
@@ -1430,13 +1447,29 @@ impl ViewerApp {
     fn poll_filesystem(&mut self) {
         loop {
             match self.fs_rx.try_recv() {
-                Ok(FilesystemResult::NavigatorReady { request_id }) => {
+                Ok(FilesystemResult::NavigatorReady {
+                    request_id,
+                    navigation_path,
+                    load_path,
+                }) => {
                     if self.active_fs_request_id == Some(request_id) {
                         self.navigator_ready = true;
-                        if self.active_request.is_none() {
+                        self.active_fs_request_id = None;
+                        if let Some(navigation_path) = navigation_path {
+                            self.current_navigation_path = navigation_path;
+                        }
+                        if let Some(load_path) = load_path {
+                            self.empty_mode = false;
+                            let _ = self.request_load_path(load_path);
+                        } else {
+                            self.empty_mode = true;
+                            self.show_filer = true;
+                            self.overlay.loading_message =
+                                Some("No displayable file found".to_string());
+                        }
+                        if self.active_request.is_none() && !self.empty_mode {
                             self.overlay.loading_message = None;
                         }
-                        self.active_fs_request_id = None;
                     }
                 }
                 Ok(FilesystemResult::CurrentSet) => {}
@@ -1447,6 +1480,7 @@ impl ViewerApp {
                 }) => {
                     if self.active_fs_request_id == Some(request_id) {
                         self.current_navigation_path = navigation_path;
+                        self.empty_mode = false;
                         let _ = self.request_load_path(load_path);
                         self.active_fs_request_id = None;
                     }
@@ -1466,6 +1500,11 @@ impl ViewerApp {
                     self.active_fs_request_id = None;
                     break;
                 }
+            }
+        }
+        if self.active_fs_request_id.is_none() {
+            if let Some(command) = self.queued_navigation.take() {
+                let _ = self.request_navigation(command);
             }
         }
     }
@@ -1592,12 +1631,12 @@ impl eframe::App for ViewerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.sync_window_state(ctx);
         self.update_window_title(ctx);
+        self.poll_filesystem();
         self.poll_worker();
         self.poll_companion_worker();
-        self.poll_filesystem();
+        self.poll_preload_worker();
         self.poll_filer_worker();
         self.poll_thumbnail_worker();
-        self.poll_preload_worker();
         self.poll_save_result();
         self.sync_manga_companion(ctx);
         self.handle_keyboard(ctx);

@@ -319,6 +319,24 @@ impl ViewerApp {
                     let section_changed_before = config_changed;
                     ui.group(|ui| {
                         ui.label(format!("{}: {}", locale_text, self.applied_locale));
+                        ui.horizontal(|ui| {
+                            ui.label(locale_text);
+                            if ui
+                                .text_edit_singleline(&mut self.resource_locale_input)
+                                .changed()
+                            {
+                                let trimmed = self.resource_locale_input.trim();
+                                self.resources.locale =
+                                    if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("system")
+                                    {
+                                        None
+                                    } else {
+                                        Some(trimmed.to_string())
+                                    };
+                                config_changed = true;
+                            }
+                            ui.label(auto_text);
+                        });
                         if !self.loaded_font_names.is_empty() {
                             ui.label(format!(
                                 "{}: {}",
@@ -791,6 +809,7 @@ impl ViewerApp {
         self.susie64_search_paths_input = join_search_paths(&self.plugins.susie64.search_path);
         self.system_search_paths_input = join_search_paths(&self.plugins.system.search_path);
         self.ffmpeg_search_paths_input = join_search_paths(&self.plugins.ffmpeg.search_path);
+        self.resource_locale_input = self.resources.locale.clone().unwrap_or_default();
         self.resource_font_paths_input = join_search_paths(&self.resources.font_paths);
         self.apply_window_theme(ctx);
         let applied = apply_resources(ctx, &self.resources);

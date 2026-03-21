@@ -13,6 +13,7 @@ use crate::dependent::plugins::path_supported_by_plugins;
 use crate::options::{EndOfFolderOption, NavigationSortOption};
 use listed_file::load_listed_file_entries;
 pub(crate) use sort::compare_natural_str;
+pub(crate) use zip_file::{load_zip_entries_unsorted, sort_zip_entries};
 use zip_file::{
     load_zip_entries, load_zip_entry_bytes, set_zip_workaround_options, zip_entry_record,
     zip_prefers_low_io,
@@ -67,6 +68,7 @@ enum PendingDirection {
     Prev,
 }
 
+#[derive(Clone)]
 pub enum FilesystemCommand {
     Init {
         request_id: u64,
@@ -95,6 +97,8 @@ pub enum FilesystemCommand {
 pub enum FilesystemResult {
     NavigatorReady {
         request_id: u64,
+        navigation_path: Option<PathBuf>,
+        load_path: Option<PathBuf>,
     },
     CurrentSet,
     PathResolved {
@@ -175,25 +179,28 @@ impl FileNavigator {
     }
 
     fn first(&mut self, cache: &mut FilesystemCache) -> Option<PathBuf> {
-        let files = self.ensure_files(cache);
+        let files = edge_entries(self.current(), cache)?;
         if files.is_empty() {
             return None;
         }
 
         self.current = 0;
-        let path = self.files.as_ref()?.first()?.clone();
+        self.files = Some(files.clone());
+        let path = files.first()?.clone();
         self.current_path = path.clone();
         Some(path)
     }
 
     fn last(&mut self, cache: &mut FilesystemCache) -> Option<PathBuf> {
-        let len = self.ensure_files(cache).len();
+        let files = edge_entries(self.current(), cache)?;
+        let len = files.len();
         if len == 0 {
             return None;
         }
 
         self.current = len - 1;
-        let path = self.files.as_ref()?.get(self.current)?.clone();
+        self.files = Some(files.clone());
+        let path = files.get(self.current)?.clone();
         self.current_path = path.clone();
         Some(path)
     }
@@ -409,6 +416,10 @@ pub fn is_browser_container(path: &Path) -> bool {
     path.is_dir() || is_zip_file_path(path) || is_listed_file_path(path)
 }
 
+pub fn navigation_branch_path(path: &Path) -> Option<PathBuf> {
+    recursive_branch_dir(path)
+}
+
 pub fn adjacent_entry(path: &Path, sort: NavigationSortOption, step: isize) -> Option<PathBuf> {
     let mut cache = FilesystemCache {
         listings_by_dir: HashMap::new(),
@@ -456,7 +467,14 @@ pub fn spawn_filesystem_worker(
                     };
 
                     navigator = Some(FileNavigator::from_current_path(start_path, &mut cache));
-                    let _ = result_tx.send(FilesystemResult::NavigatorReady { request_id });
+                    let initial_target = navigator
+                        .as_ref()
+                        .and_then(|nav| navigation_outcome_to_target(nav.current_target()));
+                    let _ = result_tx.send(FilesystemResult::NavigatorReady {
+                        request_id,
+                        navigation_path: initial_target.as_ref().map(|target| target.navigation_path.clone()),
+                        load_path: initial_target.map(|target| target.load_path),
+                    });
                 }
                 FilesystemCommand::SetCurrent { request_id, path } => {
                     if let Some(nav) = navigator.as_mut() {
@@ -567,15 +585,32 @@ fn resolve_navigation_path(path: &Path, cache: &mut FilesystemCache) -> Option<P
     }
 
     if is_listed_file_path(path) || is_zip_file_path(path) || path.is_dir() {
-        return cache.first_supported_file(path);
+        return cache
+            .first_supported_file(path)
+            .or_else(|| Some(path.to_path_buf()));
     }
 
     resolve_start_path(path).map(|_| path.to_path_buf())
 }
 
 fn flat_container_entries(path: &Path, cache: &mut FilesystemCache) -> Option<Vec<PathBuf>> {
+    if path.is_dir() || is_zip_file_path(path) || is_listed_file_path(path) {
+        return Some(cache.supported_entries(path));
+    }
     let dir = flat_container_dir(path)?;
     Some(cache.supported_entries(&dir))
+}
+
+fn edge_entries(path: &Path, cache: &mut FilesystemCache) -> Option<Vec<PathBuf>> {
+    if let Some(zip_root) = zip_virtual_root(path) {
+        return Some(cache.supported_entries(&zip_root));
+    }
+
+    if let Some(listed_root) = listed_virtual_root(path) {
+        return Some(cache.supported_entries(&listed_root));
+    }
+
+    flat_container_entries(path, cache)
 }
 
 fn flat_container_dir(path: &Path) -> Option<PathBuf> {
@@ -591,6 +626,10 @@ fn flat_container_dir(path: &Path) -> Option<PathBuf> {
 }
 
 fn next_policy_directory(path: &Path) -> Option<PathBuf> {
+    if path.is_dir() || is_zip_file_path(path) || is_listed_file_path(path) {
+        return Some(path.to_path_buf());
+    }
+
     if let Some(zip_root) = zip_virtual_root(path) {
         return zip_root.parent().map(Path::to_path_buf);
     }
@@ -603,6 +642,10 @@ fn next_policy_directory(path: &Path) -> Option<PathBuf> {
 }
 
 fn recursive_branch_dir(path: &Path) -> Option<PathBuf> {
+    if path.is_dir() || is_zip_file_path(path) || is_listed_file_path(path) {
+        return Some(path.to_path_buf());
+    }
+
     if let Some(zip_root) = zip_virtual_root(path) {
         return Some(zip_root);
     }
@@ -1232,6 +1275,53 @@ mod tests {
         assert!(entries.iter().any(|entry| is_virtual_zip_child(entry)));
 
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn empty_folder_can_navigate_to_next_folder() {
+        let root = make_temp_dir();
+        let empty = root.join("000_empty");
+        let next = root.join("001_next");
+        let image = next.join("page01.png");
+
+        fs::create_dir_all(&empty).unwrap();
+        fs::create_dir_all(&next).unwrap();
+        fs::write(&image, []).unwrap();
+
+        let mut cache = FilesystemCache::default();
+        let mut nav = FileNavigator::from_current_path(empty.clone(), &mut cache);
+
+        let NavigationOutcome::Resolved(target) =
+            nav.next_with_policy(EndOfFolderOption::Next, &mut cache)
+        else {
+            panic!("expected next folder image");
+        };
+        assert_eq!(target.navigation_path, image);
+        assert_eq!(target.load_path, image);
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn home_and_end_stay_inside_current_zip_virtual_folder() {
+        let root = make_temp_dir();
+        let archive = root.join("images.zip");
+        make_zip_with_entries(&archive, &["001.png", "002.png", "003.png"]);
+
+        let mut cache = FilesystemCache::default();
+        let zip_children = build_zip_virtual_children(&archive);
+        assert_eq!(zip_children.len(), 3);
+
+        let mut nav = FileNavigator::from_current_path(zip_children[1].clone(), &mut cache);
+        let first = nav.first(&mut cache).expect("first zip entry");
+        let last = nav.last(&mut cache).expect("last zip entry");
+
+        assert_eq!(zip_virtual_root(&first), Some(archive.clone()));
+        assert_eq!(zip_virtual_root(&last), Some(archive.clone()));
+        assert_eq!(resolve_virtual_zip_child(&first), Some((archive.clone(), 0)));
+        assert_eq!(resolve_virtual_zip_child(&last), Some((archive.clone(), 2)));
+
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

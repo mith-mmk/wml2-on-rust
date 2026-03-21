@@ -60,13 +60,12 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                     extension_filter,
                     name_sort_mode,
                 } => {
-                    let mut entries = if dir.is_dir() {
+                    let entries = if dir.is_dir() {
                         let _ = result_tx.send(FilerResult::Reset {
                             request_id,
                             directory: dir.clone(),
                             selected: selected.clone(),
                         });
-                        let mut preview = Vec::new();
                         let mut collected = Vec::new();
                         let Ok(read_dir) = fs::read_dir(&dir) else {
                             continue;
@@ -76,61 +75,79 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                             if !is_browser_entry(&path) {
                                 continue;
                             }
-                            let entry = build_preview_entry(path.clone());
-                            if !matches_filters(&entry, &filter_text, &extension_filter) {
+                            let preview_entry = build_preview_entry(path.clone());
+                            if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
                                 continue;
                             }
-                            preview.push(entry.clone());
                             collected.push(path);
-                            if preview.len() >= 128 {
-                                let _ = result_tx.send(FilerResult::Append {
-                                    request_id,
-                                    entries: std::mem::take(&mut preview),
-                                });
-                            }
                         }
-                        if !preview.is_empty() {
+                        let mut preview = collected
+                            .iter()
+                            .cloned()
+                            .map(build_preview_entry)
+                            .collect::<Vec<_>>();
+                        sort_entries(
+                            &mut preview,
+                            sort_field,
+                            ascending,
+                            separate_dirs,
+                            name_sort_mode,
+                        );
+                        for chunk in preview.chunks(128) {
                             let _ = result_tx.send(FilerResult::Append {
                                 request_id,
-                                entries: preview,
+                                entries: chunk.to_vec(),
                             });
                         }
-                        collected.into_iter().map(build_filer_entry).collect()
+                        let mut entries = collected.into_iter().map(build_filer_entry).collect::<Vec<_>>();
+                        sort_entries(
+                            &mut entries,
+                            sort_field,
+                            ascending,
+                            separate_dirs,
+                            name_sort_mode,
+                        );
+                        entries
                     } else {
-                        let mut preview = Vec::new();
                         let mut collected = Vec::new();
                         for path in list_browser_entries(&dir, sort) {
-                            let entry = build_preview_entry(path.clone());
-                            if !matches_filters(&entry, &filter_text, &extension_filter) {
+                            let preview_entry = build_preview_entry(path.clone());
+                            if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
                                 continue;
                             }
-                            preview.push(entry);
                             collected.push(path);
-                            if preview.len() >= 128 {
-                                let _ = result_tx.send(FilerResult::Append {
-                                    request_id,
-                                    entries: std::mem::take(&mut preview),
-                                });
-                            }
                         }
-                        if !preview.is_empty() {
+                        let mut preview = collected
+                            .iter()
+                            .cloned()
+                            .map(build_preview_entry)
+                            .collect::<Vec<_>>();
+                        sort_entries(
+                            &mut preview,
+                            sort_field,
+                            ascending,
+                            separate_dirs,
+                            name_sort_mode,
+                        );
+                        for chunk in preview.chunks(128) {
                             let _ = result_tx.send(FilerResult::Append {
                                 request_id,
-                                entries: preview,
+                                entries: chunk.to_vec(),
                             });
                         }
-                        collected
+                        let mut entries = collected
                             .into_iter()
                             .map(build_filer_entry)
-                            .collect::<Vec<_>>()
+                            .collect::<Vec<_>>();
+                        sort_entries(
+                            &mut entries,
+                            sort_field,
+                            ascending,
+                            separate_dirs,
+                            name_sort_mode,
+                        );
+                        entries
                     };
-                    sort_entries(
-                        &mut entries,
-                        sort_field,
-                        ascending,
-                        separate_dirs,
-                        name_sort_mode,
-                    );
                     let _ = result_tx.send(FilerResult::Snapshot {
                         request_id,
                         directory: dir,
@@ -251,5 +268,34 @@ mod tests {
             compare_name("テスト(5).jpg", "テスト(43).jpg", NameSortMode::Os),
             std::cmp::Ordering::Less
         );
+    }
+
+    #[test]
+    fn separate_dirs_places_containers_before_files() {
+        let mut entries = vec![
+            FilerEntry {
+                path: PathBuf::from("b.png"),
+                label: "b.png".to_string(),
+                is_container: false,
+                metadata: FilerMetadata::default(),
+            },
+            FilerEntry {
+                path: PathBuf::from("a"),
+                label: "a".to_string(),
+                is_container: true,
+                metadata: FilerMetadata::default(),
+            },
+        ];
+
+        sort_entries(
+            &mut entries,
+            FilerSortField::Name,
+            true,
+            true,
+            NameSortMode::Os,
+        );
+
+        assert!(entries[0].is_container);
+        assert!(!entries[1].is_container);
     }
 }

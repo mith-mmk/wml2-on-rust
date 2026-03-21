@@ -12,8 +12,9 @@
 - 設定からファイラーの左右ペイン位置を切り替え可能
 - ZIP / WML(ファイルリスト) の仮想ブラウズ
 - 保存形式を選べる保存ダイアログ
-- ロケール連動の UI リソースとフォントフォールバック
+- ロケール連動の UI リソースとフォントフォールバック。設定から locale を変更可能
 - `internal / system / ffmpeg / susie64` の優先順位で動く plugin decode 土台
+- ZIP 指定時もウィンドウを先に開いてから中身を解決する非同期起動
 
 ## 起動
 
@@ -85,5 +86,7 @@ search_path = ["c:/susie64/plugins/"]
 ```powershell
 cargo run --manifest-path wml2viewer/Cargo.toml --example bench_decode -- .\samples\WML2Viewer.avif 5
 cargo run --manifest-path wml2viewer/Cargo.toml --example bench_browser -- .\samples 3
-cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip 3
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip default
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip online_cache
+cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip temp_copy
 ```

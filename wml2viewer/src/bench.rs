@@ -1,6 +1,9 @@
 use crate::drawers::image::load_canvas_from_file;
-use crate::filesystem::{list_browser_entries, load_virtual_image_bytes, resolve_start_path};
-use crate::options::NavigationSortOption;
+use crate::filesystem::{
+    is_browser_container, list_browser_entries, load_virtual_image_bytes, resolve_start_path,
+};
+use crate::options::{NavigationSortOption, ZipWorkaroundOptions};
+use crate::filesystem;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -10,6 +13,25 @@ pub struct BenchResult {
     pub iterations: usize,
     pub total: Duration,
     pub average: Duration,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ArchiveBenchmarkMethod {
+    Default,
+    OnlineCache,
+    TempCopy,
+}
+
+#[derive(Clone, Debug)]
+pub struct ArchiveBenchmarkResult {
+    pub method: ArchiveBenchmarkMethod,
+    pub images: usize,
+    pub metadata_scan: Duration,
+    pub metadata_sort: Duration,
+    pub archive_read: Duration,
+    pub decode_total: Duration,
+    pub total: Duration,
+    pub average_decode: Duration,
 }
 
 pub fn benchmark_decode(path: &Path, iterations: usize) -> Result<BenchResult, String> {
@@ -67,5 +89,78 @@ pub fn benchmark_archive_read(path: &Path, iterations: usize) -> Result<BenchRes
         iterations,
         average: total / iterations as u32,
         total,
+    })
+}
+
+pub fn benchmark_archive_detailed(
+    path: &Path,
+    method: ArchiveBenchmarkMethod,
+) -> Result<ArchiveBenchmarkResult, String> {
+    if !is_browser_container(path) {
+        return Err("archive benchmark expects a container path".to_string());
+    }
+
+    let workaround = match method {
+        ArchiveBenchmarkMethod::Default => ZipWorkaroundOptions {
+            threshold_mb: u64::MAX / (1024 * 1024),
+            local_cache: false,
+        },
+        ArchiveBenchmarkMethod::OnlineCache => ZipWorkaroundOptions {
+            threshold_mb: 1,
+            local_cache: false,
+        },
+        ArchiveBenchmarkMethod::TempCopy => ZipWorkaroundOptions {
+            threshold_mb: 1,
+            local_cache: true,
+        },
+    };
+    filesystem::set_archive_zip_workaround(workaround);
+
+    let started_total = Instant::now();
+    let started_scan = Instant::now();
+    let mut entries = filesystem::load_zip_entries_unsorted(path)
+        .ok_or_else(|| "failed to load archive metadata".to_string())?;
+    let metadata_scan = started_scan.elapsed();
+
+    let started_sort = Instant::now();
+    filesystem::sort_zip_entries(&mut entries);
+    let metadata_sort = started_sort.elapsed();
+
+    let images = entries.len();
+    if images == 0 {
+        return Err("no readable archive entries".to_string());
+    }
+
+    let browser_entries = list_browser_entries(path, NavigationSortOption::OsName);
+    let first_entry = browser_entries
+        .first()
+        .ok_or_else(|| "failed to list archive entries".to_string())?;
+
+    let started_read = Instant::now();
+    let load_path = resolve_start_path(first_entry)
+        .ok_or_else(|| "failed to resolve first archive entry".to_string())?;
+    if load_virtual_image_bytes(first_entry).is_none() && !load_path.exists() {
+        return Err("failed to read first archive entry".to_string());
+    }
+    let archive_read = started_read.elapsed();
+
+    let started_decode = Instant::now();
+    for entry in &browser_entries {
+        let load_path =
+            resolve_start_path(entry).ok_or_else(|| "failed to resolve archive entry".to_string())?;
+        load_canvas_from_file(&load_path).map_err(|err| err.to_string())?;
+    }
+    let decode_total = started_decode.elapsed();
+    let total = started_total.elapsed();
+
+    Ok(ArchiveBenchmarkResult {
+        method,
+        images,
+        metadata_scan,
+        metadata_sort,
+        archive_read,
+        decode_total,
+        total,
+        average_decode: decode_total / images as u32,
     })
 }

@@ -1,4 +1,4 @@
-use crate::configs::config::{load_app_config, save_app_config};
+use crate::configs::config::load_app_config;
 use crate::configs::resourses::{FontSizePreset, apply_resources};
 use crate::dependent::plugins::{discover_plugin_modules, set_runtime_plugin_config};
 use crate::dependent::{
@@ -7,7 +7,7 @@ use crate::dependent::{
 };
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::filesystem::set_archive_zip_workaround;
-use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions};
+use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions, PaneSide};
 use crate::ui::i18n::UiTextKey;
 use crate::ui::menu::fileviewer::thumbnail::set_thumbnail_workaround;
 use crate::ui::render::interpolation_label;
@@ -31,6 +31,13 @@ impl ViewerApp {
         let mut apply_requested = false;
         let mut undo_requested = false;
         let mut reset_requested = false;
+        let mut viewer_changed = false;
+        let mut render_changed = false;
+        let mut window_changed = false;
+        let mut resources_changed = false;
+        let mut navigation_changed = false;
+        let mut storage_changed = false;
+        let mut runtime_changed = false;
         let settings_text = self.text(UiTextKey::Settings);
         let viewer_text = self.text(UiTextKey::Viewer);
         let plugins_text = self.text(UiTextKey::Plugins);
@@ -38,6 +45,7 @@ impl ViewerApp {
         let render_text = self.text(UiTextKey::Render);
         let window_text = self.text(UiTextKey::Window);
         let navigation_text = self.text(UiTextKey::Navigation);
+        let system_tab_text = self.text(UiTextKey::System);
         let animation_text = self.text(UiTextKey::Animation);
         let grayscale_text = self.text(UiTextKey::Grayscale);
         let manga_mode_text = self.text(UiTextKey::MangaMode);
@@ -51,6 +59,13 @@ impl ViewerApp {
         let system_text = self.text(UiTextKey::System);
         let light_text = self.text(UiTextKey::Light);
         let dark_text = self.text(UiTextKey::Dark);
+        let left_text = self.text(UiTextKey::Left);
+        let right_text = self.text(UiTextKey::Right);
+        let pane_side_text = self.text(UiTextKey::PaneSide);
+        let program_name_text = self.text(UiTextKey::ProgramName);
+        let version_text = self.text(UiTextKey::Version);
+        let author_text = self.text(UiTextKey::Author);
+        let copyright_text = self.text(UiTextKey::Copyright);
         let zoom_mode_text = self.text(UiTextKey::ZoomMode);
         let resize_text = self.text(UiTextKey::Resize);
         let fullscreen_text = self.text(UiTextKey::Fullscreen);
@@ -126,10 +141,12 @@ impl ViewerApp {
                         SettingsTab::Resources,
                         resources_text,
                     );
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::System, system_tab_text);
                 });
                 ui.separator();
 
                 if self.settings_tab == SettingsTab::Viewer {
+                    let section_changed_before = config_changed;
                     ui.group(|ui| {
                         config_changed |= ui
                             .checkbox(&mut self.options.animation, animation_text)
@@ -216,6 +233,7 @@ impl ViewerApp {
                             }
                         });
                     });
+                    viewer_changed |= config_changed != section_changed_before;
                 }
 
                 if self.settings_tab == SettingsTab::Plugins {
@@ -298,6 +316,7 @@ impl ViewerApp {
                 }
 
                 if self.settings_tab == SettingsTab::Resources {
+                    let section_changed_before = config_changed;
                     ui.group(|ui| {
                         ui.label(format!("{}: {}", locale_text, self.applied_locale));
                         if !self.loaded_font_names.is_empty() {
@@ -384,9 +403,12 @@ impl ViewerApp {
                             )
                             .changed();
                     });
+                    resources_changed |= config_changed != section_changed_before;
+                    runtime_changed |= config_changed != section_changed_before;
                 }
 
                 if self.settings_tab == SettingsTab::Render {
+                    let section_changed_before = config_changed;
                     ui.group(|ui| {
                         ui.horizontal(|ui| {
                             ui.label(zoom_mode_text);
@@ -467,9 +489,11 @@ impl ViewerApp {
                             }
                         });
                     });
+                    render_changed |= config_changed != section_changed_before;
                 }
 
                 if self.settings_tab == SettingsTab::Window {
+                    let section_changed_before = config_changed;
                     ui.group(|ui| {
                         if ui
                             .checkbox(&mut self.window_options.fullscreen, fullscreen_text)
@@ -521,6 +545,30 @@ impl ViewerApp {
                                         .changed();
                                 });
                         });
+                        ui.horizontal(|ui| {
+                            ui.label(pane_side_text);
+                            egui::ComboBox::from_id_salt("pane_side")
+                                .selected_text(match self.window_options.pane_side {
+                                    PaneSide::Left => left_text,
+                                    PaneSide::Right => right_text,
+                                })
+                                .show_ui(ui, |ui| {
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.window_options.pane_side,
+                                            PaneSide::Left,
+                                            left_text,
+                                        )
+                                        .changed();
+                                    config_changed |= ui
+                                        .selectable_value(
+                                            &mut self.window_options.pane_side,
+                                            PaneSide::Right,
+                                            right_text,
+                                        )
+                                        .changed();
+                                });
+                        });
                         match &mut self.window_options.size {
                             crate::ui::viewer::options::WindowSize::Relative(ratio) => {
                                 ui.label(window_relative_text);
@@ -551,39 +599,13 @@ impl ViewerApp {
                                 }
                             }
                         }
-                        ui.separator();
-                        ui.horizontal_wrapped(|ui| {
-                            if ui.button(register_system_text).clicked() {
-                                match std::env::current_exe()
-                                    .ok()
-                                    .and_then(|exe| register_system_file_associations(&exe).ok())
-                                {
-                                    Some(()) => {
-                                        self.save_dialog.message =
-                                            Some(registered_file_associations_text.to_string());
-                                    }
-                                    None => {
-                                        self.save_dialog.message =
-                                            Some(failed_file_associations_text.to_string());
-                                    }
-                                }
-                            }
-                            if ui.button(clean_system_text).clicked() {
-                                match clean_system_integration() {
-                                    Ok(()) => {
-                                        self.save_dialog.message =
-                                            Some(cleaned_system_integration_text.to_string());
-                                    }
-                                    Err(err) => {
-                                        self.save_dialog.message = Some(err.to_string());
-                                    }
-                                }
-                            }
-                        });
                     });
+                    window_changed |= config_changed != section_changed_before;
                 }
 
                 if self.settings_tab == SettingsTab::Navigation {
+                    let mut navigation_section_changed = false;
+                    let mut storage_section_changed = false;
                     ui.group(|ui| {
                         ui.horizontal(|ui| {
                             ui.label(end_of_folder_text);
@@ -616,12 +638,65 @@ impl ViewerApp {
                                     );
                                 });
                             if self.end_of_folder != before {
+                                navigation_section_changed = true;
                                 config_changed = true;
                             }
                         });
-                        config_changed |= ui
+                        let remember_changed = ui
                             .checkbox(&mut self.storage.path_record, remember_save_path_text)
                             .changed();
+                        if remember_changed {
+                            if self.storage.path_record && self.storage.path.is_none() {
+                                self.storage.path = self
+                                    .save_dialog
+                                    .output_dir
+                                    .clone()
+                                    .or_else(default_download_dir)
+                                    .or_else(|| self.current_path.parent().map(|path| path.to_path_buf()));
+                            }
+                            storage_section_changed = true;
+                            config_changed = true;
+                        }
+                    });
+                    navigation_changed |= navigation_section_changed;
+                    storage_changed |= storage_section_changed;
+                }
+
+                if self.settings_tab == SettingsTab::System {
+                    ui.group(|ui| {
+                        ui.label(format!("{}: {}", program_name_text, crate::get_prograname()));
+                        ui.label(format!("{}: {}", version_text, crate::get_version()));
+                        ui.label(format!("{}: {}", author_text, crate::get_auther()));
+                        ui.label(format!("{}: {}", copyright_text, crate::get_copyright()));
+                        ui.separator();
+                        ui.horizontal_wrapped(|ui| {
+                            if ui.button(register_system_text).clicked() {
+                                match std::env::current_exe()
+                                    .ok()
+                                    .and_then(|exe| register_system_file_associations(&exe).ok())
+                                {
+                                    Some(()) => {
+                                        self.overlay.alert_message =
+                                            Some(registered_file_associations_text.to_string());
+                                    }
+                                    None => {
+                                        self.overlay.alert_message =
+                                            Some(failed_file_associations_text.to_string());
+                                    }
+                                }
+                            }
+                            if ui.button(clean_system_text).clicked() {
+                                match clean_system_integration() {
+                                    Ok(()) => {
+                                        self.overlay.alert_message =
+                                            Some(cleaned_system_integration_text.to_string());
+                                    }
+                                    Err(err) => {
+                                        self.overlay.alert_message = Some(err.to_string());
+                                    }
+                                }
+                            }
+                        });
                     });
                 }
 
@@ -669,18 +744,27 @@ impl ViewerApp {
         }
         let plugin_changed = self.plugins != initial_plugins;
         if config_changed || apply_requested {
-            self.apply_window_theme(ctx);
-            let applied = apply_resources(ctx, &self.resources);
-            set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
-            set_thumbnail_workaround(self.runtime.workaround.thumbnail.clone());
-            set_runtime_plugin_config(self.plugins.clone());
-            self.applied_locale = applied.locale;
-            self.loaded_font_names = applied.loaded_fonts;
-            let _ = save_app_config(
-                &self.current_config(),
-                Some(&self.current_path),
-                self.config_path.as_deref(),
-            );
+            if window_changed || apply_requested {
+                self.apply_window_theme(ctx);
+            }
+            if resources_changed || apply_requested {
+                let applied = apply_resources(ctx, &self.resources);
+                self.applied_locale = applied.locale;
+                self.loaded_font_names = applied.loaded_fonts;
+            }
+            if runtime_changed || apply_requested {
+                set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
+                set_thumbnail_workaround(self.runtime.workaround.thumbnail.clone());
+            }
+            if plugin_changed || apply_requested {
+                set_runtime_plugin_config(self.plugins.clone());
+            }
+            if navigation_changed {
+                self.refresh_current_filer_directory();
+            }
+            if config_changed || apply_requested {
+                self.persist_config_async();
+            }
             if plugin_changed {
                 self.show_restart_prompt = true;
             }

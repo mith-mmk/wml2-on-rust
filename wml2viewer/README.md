@@ -6,8 +6,10 @@ Minimal native image viewer built with `egui` and `wml2`.
 
 - Async startup: the UI opens first and the initial image is decoded in the background
 - Viewer / filer / subfiler layout with bottom status overlay and separate dialogs
+- Config dialog now keeps system integration actions in a dedicated `System` tab
 - Manga spread mode for portrait pages when the viewport is wide enough
 - Filer with list / thumbnail / detail views and drive/root switching
+- Filer side can be switched left/right from Settings
 - ZIP and WML(listed files) virtual browsing
 - Save dialog with output format selection
 - Locale-aware UI resources and font fallback
@@ -63,7 +65,7 @@ search_path = ["../test/plugins/susie64"]
 
 - Very large or network ZIP files use a low-I/O workaround.
 - Large BMP/archive thumbnails can be suppressed from Settings.
-- On Windows, file association registration is available from Settings.
+- On Windows, file association registration is available from `Settings -> System`.
 - `ffmpeg` decode currently shells out to `ffmpeg.exe`.
 - `susie64` decode is Windows-only and currently targets image plugins.
 - `system` decode now uses Windows WIC on Windows. macOS system codec runtime is still follow-up work.

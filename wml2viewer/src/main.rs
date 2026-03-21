@@ -6,30 +6,13 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use wml2viewer::{app, dependent};
 
-fn get_version() -> String {
-    format!(
-        "{}-lib{}",
-        env!("CARGO_PKG_VERSION"),
-        wml2::get_version()
-    ).to_string()
-}
-
-fn get_auther() -> String{
-    env!("CARGO_PKG_AUTHORS").to_string()
-}
-
-fn get_copyright() -> String {
-    "(C) 2026".to_string()
-}
-
-fn get_prograname() -> String {
-    env!("CARGO_PKG_NAME").to_string()
-}
-
-
 fn main() -> ExitCode {
     println!(
-        "{} version {} Copyright {} {}",get_prograname() ,get_version(), get_copyright(), get_auther()
+        "{} version {} Copyright {} {}",
+        wml2viewer::get_prograname(),
+        wml2viewer::get_version(),
+        wml2viewer::get_copyright(),
+        wml2viewer::get_auther()
     );
     match run() {
         Ok(()) => ExitCode::SUCCESS,

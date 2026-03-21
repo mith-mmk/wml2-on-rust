@@ -87,6 +87,7 @@ pub struct WindowOptions {
     pub remember_size: bool,
     pub remember_position: bool,
     pub ui_theme: WindowUiTheme,
+    pub pane_side: PaneSide,
 }
 
 impl Default for WindowOptions {
@@ -98,8 +99,15 @@ impl Default for WindowOptions {
             remember_size: true,
             remember_position: true,
             ui_theme: WindowUiTheme::Dark,
+            pane_side: PaneSide::Left,
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PaneSide {
+    Left,
+    Right,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

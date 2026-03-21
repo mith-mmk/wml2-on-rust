@@ -10,7 +10,8 @@ use crate::dependent::plugins::PluginConfig;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{
     AppConfig, EndOfFolderOption, FontSizePreset, MangaSeparatorOptions, MangaSeparatorStyle,
-    NavigationSortOption, ResourceOptions, RuntimeOptions, StorageOptions, WindowUiTheme,
+    NavigationSortOption, PaneSide, ResourceOptions, RuntimeOptions, StorageOptions,
+    WindowUiTheme,
 };
 use crate::ui::viewer::options::{
     BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
@@ -115,6 +116,7 @@ struct WindowConfigFile {
     remember_size: bool,
     remember_position: bool,
     ui_theme: WindowUiThemeConfigFile,
+    pane_side: PaneSideConfigFile,
 }
 
 impl Default for WindowConfigFile {
@@ -126,8 +128,16 @@ impl Default for WindowConfigFile {
             remember_size: true,
             remember_position: true,
             ui_theme: WindowUiThemeConfigFile::Dark,
+            pane_side: PaneSideConfigFile::Left,
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum PaneSideConfigFile {
+    Left,
+    Right,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -604,6 +614,7 @@ impl From<WindowConfigFile> for WindowOptions {
             remember_size: value.remember_size,
             remember_position: value.remember_position,
             ui_theme: value.ui_theme.into(),
+            pane_side: value.pane_side.into(),
         }
     }
 }
@@ -617,6 +628,25 @@ impl From<WindowOptions> for WindowConfigFile {
             remember_size: value.remember_size,
             remember_position: value.remember_position,
             ui_theme: value.ui_theme.into(),
+            pane_side: value.pane_side.into(),
+        }
+    }
+}
+
+impl From<PaneSideConfigFile> for PaneSide {
+    fn from(value: PaneSideConfigFile) -> Self {
+        match value {
+            PaneSideConfigFile::Left => PaneSide::Left,
+            PaneSideConfigFile::Right => PaneSide::Right,
+        }
+    }
+}
+
+impl From<PaneSide> for PaneSideConfigFile {
+    fn from(value: PaneSide) -> Self {
+        match value {
+            PaneSide::Left => Self::Left,
+            PaneSide::Right => Self::Right,
         }
     }
 }

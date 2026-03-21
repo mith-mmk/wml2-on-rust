@@ -134,6 +134,7 @@ pub(crate) enum SettingsTab {
     Render,
     Window,
     Navigation,
+    System,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -684,6 +685,15 @@ impl ViewerApp {
         });
     }
 
+    pub(crate) fn persist_config_async(&self) {
+        let config = self.current_config();
+        let current_path = self.current_path.clone();
+        let config_path = self.config_path.clone();
+        std::thread::spawn(move || {
+            let _ = save_app_config(&config, Some(&current_path), config_path.as_deref());
+        });
+    }
+
     fn color_image_from_canvas(&self, canvas: &Canvas) -> egui::ColorImage {
         let mut image = canvas_to_color_image(canvas);
         if self.options.grayscale {
@@ -754,6 +764,7 @@ impl ViewerApp {
                         pick_save_directory().or_else(default_download_dir);
                     if self.storage.path_record {
                         self.storage.path = self.save_dialog.output_dir.clone();
+                        self.persist_config_async();
                     }
                 }
                 ui.horizontal(|ui| {
@@ -872,6 +883,15 @@ impl ViewerApp {
         }
 
         adjacent_entry(&self.current_navigation_path, self.navigation_sort, 1)
+    }
+
+    fn clear_manga_companion(&mut self) {
+        self.companion_navigation_path = None;
+        self.companion_source = None;
+        self.companion_rendered = None;
+        self.companion_texture = None;
+        self.companion_active_request = None;
+        self.companion_texture_display_scale = 1.0;
     }
 
     fn manga_spread_active(&self) -> bool {
@@ -1014,6 +1034,9 @@ impl ViewerApp {
 
     pub(crate) fn request_load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
         let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path.clone());
+        if load_path != self.current_path {
+            self.clear_manga_companion();
+        }
         if self.try_take_preloaded(&path, &load_path) {
             return Ok(());
         }
@@ -1135,8 +1158,17 @@ impl ViewerApp {
     ) {
         if let Some(path) = path {
             let request_id = self.alloc_fs_request_id();
+            let folder_changed = self
+                .current_path
+                .parent()
+                .zip(path.parent())
+                .map(|(left, right)| left != right)
+                .unwrap_or(true);
             self.current_path = path.clone();
             self.save_dialog.file_name = default_save_file_name(&path);
+            if folder_changed {
+                self.clear_manga_companion();
+            }
             let _ = self.fs_tx.send(FilesystemCommand::SetCurrent {
                 request_id,
                 path: self.current_navigation_path.clone(),

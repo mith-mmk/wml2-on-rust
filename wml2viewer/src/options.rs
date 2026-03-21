@@ -8,8 +8,8 @@ use std::path::PathBuf;
 pub use crate::configs::resourses::{FontSizePreset, ResourceOptions};
 pub use crate::dependent::plugins::PluginConfig;
 pub use crate::ui::viewer::options::{
-    BackgroundStyle, MangaSeparatorOptions, MangaSeparatorStyle, RenderOptions, ViewerOptions,
-    WindowOptions, WindowSize, WindowStartPosition, WindowUiTheme, ZoomOption,
+    BackgroundStyle, MangaSeparatorOptions, MangaSeparatorStyle, PaneSide, RenderOptions,
+    ViewerOptions, WindowOptions, WindowSize, WindowStartPosition, WindowUiTheme, ZoomOption,
 };
 
 #[derive(Clone, Default)]

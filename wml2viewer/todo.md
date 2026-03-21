@@ -394,33 +394,21 @@
 - [-] 役割の再整理
 
 ## 次に着手
-やりきる
-- [ ] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない
-- [ ] issue: 設定：ナビゲーション→[保存先を記憶]を押すと固まる
-- [ ] issue: 設定: 分かりにくいので[保存先を記憶] → [画像保存先を記憶]に変更
-- [ ] 設定: タブ[システム]を最後追加し[拡張子を登録]と[システム登録を削除]をウィンドウから移動
-- [ ] 設定: タブ[システム]: 
-    - get_prograname() ,get_version(), get_copyright(), get_auther() 取得したプログラム名、(C) 作者名 バージョン表記
-    - [拡張子を登録]と[システム登録を削除]
-- [ ] UIの責任範囲と描画領域をハッキリさせる ダイアログは別Windowで処理出来るならば別Windowで処理する
-    - [ ] Viewer: ベース 
-        - [x] マンガモード: ベースを画像表示部分を二分割する
-            - [x] A4の縦横比が1:√2のためwindowサイズを widt　h >= height*1.4に緩和
-        - [x] message: overlay viewerの下1行にOverlay
-           - [x] issue: Message Overlayが左下に固まってでる問題。横幅はWindowの幅に 長すぎる場合は...で省略
-        - [x] サブファイラー：ベースの下側にOverlay 
-      - [x] ファイラー: 左ペイン（最大 Width MAX, width >= height*1.5 緩和しましたの時はwidthの半分）縦長画面も考慮する
-      - [ ] ファイラー,設定: 左ペインと右ペインを切り替えられる様にする
-    - [x] 設定: ダイアログ。設定が閉じられるまでViewerは固定される
-    - [+] アラート: ダイアログ。アラートに紐付いたUIは閉じるまで固定される
-- [*] issue: viewer 画像が切り替わらないことがある
-    - [ ] scanning folderが出ている時？
-    - [ ] フォルダが切り替わったとき
-    - [ ] マンガモード：半分しか書き換わらない時がある
-- [x] issue: makiが表示出来ないバグ
-- [+] issue: デコーダがErrorを起こしたときにpanic!を起こし次の画像が表示できなくなるバグ
-    - [+] 壊れたbmp対策:decoderに緩和策を適用
-- [x] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
+中断せずに最後までやりきる
+- [*] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない（次のフォルダの初めからリスタート）
+- [ ] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
+- [ ] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
+- [ ] issue:マンガモード：画面がちらつく問題
+- [+] issue: viewer 画像が切り替わらないことがある
+    - [ ] 初期指定時
+    - [+] scanning folderが出ている時？
+    - [ ] reading folderが出ているとき
+    - [+] フォルダが切り替わったとき
+    - [+] マンガモード：半分しか書き換わらない時がある
+- [ ] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ
+- [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
+    - [ ] zipでは反映されない
+- [ ] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください
 - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
 - [ ] archive_benchmarkの実装を以下のファンクションでとってください
     - [ ] archive(zip)のすべてのmetadata取得に要する時間
@@ -430,6 +418,7 @@
     - [ ] methodを切り替えて計測(online cache, temp copy, default method)
     - [ ] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
 - [ ] issue: zipの展開が遅くなっている
+- [ ] issue: 起動時にzipが指定されると長時間待たされる
 - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
 - [ ] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
 - [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
@@ -439,20 +428,18 @@
 - [ ] issue: 設定が、リアルタイムで適用されてしまう問題([適用]が押されるまで遅延。確認したい時は[Preview]ボタン)
 - [ ] issue: マンガモードでフォルダをまたいだとき、前のフォルダの画像が残ってしまう問題
 - [ ] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
-- [ ] issue: LinuxとMacOS用がbuild出来ない問題
 - [ ] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
     - [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
 - [ ] plugin, 設定: プラグインと内製の優先順位の設定 
-- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
-- [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
-- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォルダを高速化する
+ダを高速化する
 - [ ] todo.mdの更新
-- [ ] READNE.md, README.ja.mdの更新
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## 優先度低
 - [-] MacはIntel MACの環境しかないので遅延 
 - [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK
-
+- [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
+- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
 ## レビュアーissue
 - [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
 - [x] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
@@ -478,3 +465,24 @@
     - 1024byteから100,000KB は KB
     - 100MB ～ 100,000MB は MB
     - 100GB ～ は GB
+- [x] issue: makiが表示出来ないバグ
+- [+] issue: デコーダがErrorを起こしたときにpanic!を起こし次の画像が表示できなくなるバグ
+    - [+] 壊れたbmp対策:decoderに緩和策を適用
+- [x] issue: 設定: 分かりにくいので[保存先を記憶] → [画像保存先を記憶]に変更
+- [x] 名前でソートのicon(sort.svg)を差し替えました
+- [x] 設定: タブ[システム]を最後追加し[拡張子を登録]と[システム登録を削除]をウィンドウから移動
+- [x] 設定: タブ[システム]: 
+    - [x] get_prograname() ,get_version(), get_copyright(), get_auther() 取得したプログラム名、(C) 作者名 バージョン表記
+    - [x] [拡張子を登録]と[システム登録を削除]
+- [ ] UIの責任範囲と描画領域をハッキリさせる ダイアログは別Windowで処理出来るならば別Windowで処理する
+    - [ ] Viewer: ベース 
+        - [x] マンガモード: ベースを画像表示部分を二分割する
+            - [x] A4の縦横比が1:√2のためwindowサイズを widt　h >= height*1.4に緩和
+        - [x] message: overlay viewerの下1行にOverlay
+           - [x] issue: Message Overlayが左下に固まってでる問題。横幅はWindowの幅に 長すぎる場合は...で省略
+        - [x] サブファイラー：ベースの下側にOverlay 
+      - [x] ファイラー: 左ペイン（最大 Width MAX, width >= height*1.5 緩和しましたの時はwidthの半分）縦長画面も考慮する
+      - [x] ファイラー,設定: 左ペインと右ペインを切り替えられる様にする
+    - [x] 設定: ダイアログ。設定が閉じられるまでViewerは固定される
+    - [+] アラート: ダイアログ。アラートに紐付いたUIは閉じるまで固定される
+- [+] issue: 設定：ナビゲーション→[保存先を記憶]を押すと固まりやすい

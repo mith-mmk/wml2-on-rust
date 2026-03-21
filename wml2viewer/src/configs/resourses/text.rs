@@ -123,6 +123,13 @@ pub(crate) enum UiTextKey {
     ThumbnailSuppression,
     RestartRecommended,
     RestartToApplyPluginChanges,
+    PaneSide,
+    Left,
+    Right,
+    ProgramName,
+    Version,
+    Author,
+    Copyright,
 }
 
 pub(crate) fn tr(locale: &str, key: UiTextKey) -> &'static str {
@@ -263,6 +270,13 @@ fn en(key: UiTextKey) -> &'static str {
         UiTextKey::RestartToApplyPluginChanges => {
             "Restart the app to fully reload plugin settings."
         }
+        UiTextKey::PaneSide => "Pane side",
+        UiTextKey::Left => "Left",
+        UiTextKey::Right => "Right",
+        UiTextKey::ProgramName => "Program",
+        UiTextKey::Version => "Version",
+        UiTextKey::Author => "Author",
+        UiTextKey::Copyright => "Copyright",
     }
 }
 
@@ -391,5 +405,12 @@ fn ja(key: UiTextKey) -> &'static str {
         UiTextKey::RestartToApplyPluginChanges => {
             "プラグイン設定を完全に反映するにはアプリの再起動が必要です。"
         }
+        UiTextKey::PaneSide => "ペイン位置",
+        UiTextKey::Left => "左",
+        UiTextKey::Right => "右",
+        UiTextKey::ProgramName => "プログラム名",
+        UiTextKey::Version => "バージョン",
+        UiTextKey::Author => "作者",
+        UiTextKey::Copyright => "著作権",
     }
 }

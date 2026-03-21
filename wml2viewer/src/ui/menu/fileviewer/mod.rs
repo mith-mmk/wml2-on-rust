@@ -9,6 +9,7 @@ use crate::ui::i18n::UiTextKey;
 use crate::ui::menu::fileviewer::icons::{SvgIcon, paint_svg_icon};
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerSortField, FilerViewMode, NameSortMode};
 use crate::ui::viewer::ViewerApp;
+use crate::ui::viewer::options::PaneSide;
 use eframe::egui;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -76,7 +77,12 @@ impl ViewerApp {
             420.0
         };
 
-        egui::SidePanel::right("filer_panel")
+        let panel = match self.window_options.pane_side {
+            PaneSide::Left => egui::SidePanel::left("filer_panel"),
+            PaneSide::Right => egui::SidePanel::right("filer_panel"),
+        };
+
+        panel
             .resizable(true)
             .default_width(match self.filer.view_mode {
                 FilerViewMode::ThumbnailLarge => 420.0,

@@ -7,7 +7,7 @@
 - [-] 設計保留
 - [ ] 未実装
 
-最終整理日: 2026-03-20
+最終整理日: 2026-03-21
 
 ## src/main.rs / src/app.rs
 - [x] `wml2viewer <file>` 起動
@@ -120,6 +120,7 @@
 - [x] plugin config 構造体
 - [x] provider 別 default 設定
 - [x] plugin 設定 UI 向けの土台
+- [x] plugin / internal priority 設定
 - [x] search path からの module 走査
 - [+] plugin 優先順位の実行ロジック
 - [x] MIME / wildcard 判定
@@ -204,10 +205,11 @@
 - [x] 設定画面の土台
 - [x] viewer / render / window / navigation / plugins / resources タブ
 - [x] 閉じるボタン
-- [x] 即時適用
+- [x] staged apply
 - [x] manga separator 設定
 - [x] window theme 設定
 - [+] plugin 設定画面の土台
+- [x] plugin / internal priority 編集 UI
 - [+] plugin search path 編集
 - [+] plugin search path フォルダ選択ダイアログ
 - [+] plugin module load test ボタン
@@ -279,6 +281,7 @@
 - [x] サブファイラー下部表示
 - [x] サブファイラー閉じるボタン
 - [x] 詳細表示で更新日時とサイズを表示
+- [+] 更新日時のローカル時刻表示
 - [x] ファイル選択時に filer を閉じる
 - [x] サムネイルのフォルダ/アーカイブ icon 縮小
 - [x] サムネイル中央の不要な button chrome 削減
@@ -344,8 +347,10 @@
 - [+] low-I/O archive 時は preload 抑制
 - [x] filer 表示時の manga レイアウトは実機で継続確認
 - [+] app 起動時の初回 decode 完全 worker 化
+- [+] startup path 解決の render worker 側移動
 - [+] preload queue
 - [+] message UI 整理
+- [+] pending navigation 導入による event ordering 改善
 
 ## src/drawers/affine.rs
 - [x] resize / interpolation 実装
@@ -395,61 +400,62 @@
 
 ## 次に着手
 previewクォリティからbeta版に出来るまで頑張ろう
-- [x] issue: cargo run --example bench_archive が以下のエラーで終了する問題
-  ```
-    thread 'main' (66796) panicked at wml2viewer\examples\bench_archive.rs:18:60:
-    archive benchmark failed: "failed to load archive metadata"
-    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
-  ```
-- [x] issue: 設定が即時適用されてしまう問題([モジュールを読み込む] [拡張子を登録] [システム登録を削除]以外の設定は[適用]が押されるまで遅延させてください その関係で[元に戻す]が効いていません)
-- [x] issue: マンガモード:次のフォルダの画像を表示してしまう問題
-- [*] issue: ファイラーがハングアップすることがある問題
-- [x] issue: サムネイルが表示されない事がある問題
-- [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
-- [x] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
-- [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
-- [x] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
-- [x] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
-- [+] issue: viewer 画像が切り替わらないことがある
-    - [ ] 初期指定時
-    - [x] issue: scanning folderが出ている時？
-    - [ ] reading folderが出ているとき
-    - [x] issue: フォルダが切り替わったとき
-    - [x] issue: マンガモード：半分しか書き換わらない時がある
-- [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
-    - [+] zipではUI先行起動まで対応
-- [ ] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください
-- [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
-- [*] archive_benchmarkの実装を以下のファンクションでとってください
-    - [x] archive(zip)のすべてのmetadata取得に要する時間
-    - [x] archive(zip)ファイルの取得速度
-    - [x] metadataのソート時間 
-    - [x] ファイル1枚をデコードする時間
-    - [x] methodを切り替えて計測(online cache, temp copy, default method)
-    - [x] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
-- [ ] issue: zipの展開が遅くなっている
-- [ ] issue: 起動時にzipが指定されると長時間待たされる
-- [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
-- [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
-- [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
-    - 基本的な順序 
-        - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
-        - user setting fontは、font-familyでまとめて指定出来る様にする sansserif, serif, monospaceをデフォルトで用意
-- [ ] issue: 設定が、リアルタイムで適用されてしまう問題([適用]が押されるまで遅延。確認したい時は[Preview]ボタン)
-- [ ] issue: マンガモードでフォルダをまたいだとき、前のフォルダの画像が残ってしまう問題
-- [ ] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
-- [ ] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
-    - [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
-- [ ] plugin, 設定: プラグインと内製の優先順位の設定 
-ダを高速化する
-- [x] todo.mdの更新
-- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- [x] plugin, 設定: プラグインと内製の優先順位の設定 
+- [*] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください
+- 起動
+    - [*] issue: 起動時にzipが指定されると長時間待たされる
+    - [*] issue: フォルダに引きずられて、最初の画像の表示が遅くなる 画像の表示を再優先にしてください
+- viewer
+    - [*] issue: マンガモード:次のフォルダの最初に前フォルダの画像を表示してしまう問題 [home]を押すと正しい表示になる
+- setting
+    - [+] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
+    - [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
+- filer
+    - [+] issue: ファイラーがハングアップすることがある問題
+        - [ ] デフォルトではalertを抑制してください またalertにはファイル名を付けてください
+    - [x] issue: サムネイルが表示されない事がある問題
+    - [x] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
+    - [+] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
+      - [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
+    - [*] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
+      - issue: 数字のフォルダだけ前に来て、それ以外のフォルダが後に来たりと挙動がおかしい
+    - [+] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
+    - [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
+      - [*] zipではUI先行起動まで対応(ファイラーに引きずられて遅くなる模様)
+    - [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
+- zip系
+    - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
+    - [x] issue: cargo run --example bench_archive が以下のエラーで終了する問題
+        - test/sample.zip
+      ```
+        Error: archive benchmark failed: no plugin decoder succeeded
+      ```
+    - [ ] issue: zipの展開が遅くなっている
+
+    - [ ] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
+    - [ ] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
+    - [*] archive_benchmarkの実装を以下のファンクションでとってください
+      - [x] archive(zip)のすべてのmetadata取得に要する時間
+      - [x] archive(zip)ファイルの取得速度
+      - [x] metadataのソート時間 
+      - [x] ファイル1枚をデコードする時間
+      - [x] methodを切り替えて計測(online cache, temp copy, default method)
+      - [x] 形式は、time=デコード総時間, images=ファイル総数, avg デコード総時間/ファイル総数
+
+- font
+    - [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
+        - 基本的な順序 
+            - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
+            - user setting fontは、font-familyでまとめて指定出来る様にする sansserif, serif, monospaceをデフォルトで用意
+- [ ] todo.mdの更新
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## 優先度低
 - [-] MacはIntel MACの環境しかないので遅延 
 - [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
+
 ## レビュアーissue
 - [ ] UIアイコンの洗練
 - [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
@@ -500,3 +506,13 @@ previewクォリティからbeta版に出来るまで頑張ろう
 - [x] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない（次のフォルダの初めからリスタート）
 - [x] issue:マンガモード：画面がちらつく問題
 - [x] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ
+- [+] issue: viewer 画像が切り替わらないことがある
+    - [ ] 初期指定時
+    - [x] issue: scanning folderが出ている時？
+    - [ ] reading folderが出ているとき
+    - [x] issue: フォルダが切り替わったとき
+    - [x] issue: マンガモード：半分しか書き換わらない時がある
+- [x] issue: 設定が即時適用されてしまう問題([モジュールを読み込む] [拡張子を登録] [システム登録を削除]以外の設定は[適用]が押されるまで遅延させてください その関係で[元に戻す]が効いていません)
+- [x] issue: マンガモード:次のフォルダの画像を表示してしまう問題
+- [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
+- [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない

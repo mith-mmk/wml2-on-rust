@@ -10,6 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub(super) fn default_provider() -> PluginProviderConfig {
     PluginProviderConfig {
         enable: false,
+        priority: 100,
         search_path: vec![
             PathBuf::from("./plugins/ffmpeg"),
             PathBuf::from("../plugins/ffmpeg"),

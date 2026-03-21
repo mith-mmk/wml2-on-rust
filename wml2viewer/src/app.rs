@@ -3,7 +3,7 @@ use crate::configs::resourses::apply_resources;
 use crate::dependent::plugins::set_runtime_plugin_config;
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::LoadedImage;
-use crate::filesystem::{is_browser_container, resolve_start_path, set_archive_zip_workaround};
+use crate::filesystem::{is_browser_container, set_archive_zip_workaround};
 use crate::options::*;
 use crate::ui::menu::fileviewer::thumbnail::set_thumbnail_workaround;
 use crate::ui::viewer::ViewerApp;
@@ -23,19 +23,25 @@ pub fn run(
     set_thumbnail_workaround(config.runtime.workaround.thumbnail.clone());
     let image_path = image_path
         .unwrap_or(load_startup_path(config_path.as_deref()).unwrap_or(std::env::current_dir()?));
-    let (navigation_path, start_path, startup_load_path, show_filer_on_start) =
-        if is_browser_container(&image_path) {
-            (image_path.clone(), image_path.clone(), None, false)
-        } else if let Some(start_path) = resolve_start_path(&image_path) {
-            (
-                start_path.clone(),
-                start_path.clone(),
-                Some(start_path),
-                false,
-            )
-        } else {
-            (image_path.clone(), image_path.clone(), None, true)
-        };
+    let path_exists = image_path.exists();
+    let is_container = is_browser_container(&image_path);
+    let (navigation_path, start_path, startup_load_path, show_filer_on_start) = if path_exists {
+        (
+            image_path.clone(),
+            image_path.clone(),
+            Some(image_path.clone()),
+            false,
+        )
+    } else if is_container {
+        (
+            image_path.clone(),
+            image_path.clone(),
+            Some(image_path.clone()),
+            false,
+        )
+    } else {
+        (image_path.clone(), image_path.clone(), None, true)
+    };
     let image = blank_image();
     let rendered = image.clone();
     let title = format!("wml2viewer - {}", start_path.display());

@@ -237,11 +237,7 @@ fn sort_entries(
     separate_dirs: bool,
     name_sort_mode: NameSortMode,
 ) {
-    entries.sort_by(|left, right| {
-        if separate_dirs && left.is_container != right.is_container {
-            return right.is_container.cmp(&left.is_container);
-        }
-
+    let compare = |left: &FilerEntry, right: &FilerEntry| {
         let primary = match sort_field {
             FilerSortField::Name => compare_name(&left.label, &right.label, name_sort_mode),
             FilerSortField::Modified => left.metadata.modified.cmp(&right.metadata.modified),
@@ -252,9 +248,30 @@ fn sort_entries(
         } else {
             primary
         };
-
         if ascending { order } else { order.reverse() }
-    });
+    };
+
+    if !separate_dirs {
+        entries.sort_by(compare);
+        return;
+    }
+
+    let mut containers = entries
+        .iter()
+        .filter(|entry| entry.is_container)
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut files = entries
+        .iter()
+        .filter(|entry| !entry.is_container)
+        .cloned()
+        .collect::<Vec<_>>();
+    containers.sort_by(compare);
+    files.sort_by(compare);
+
+    for (index, entry) in containers.into_iter().chain(files.into_iter()).enumerate() {
+        entries[index] = entry;
+    }
 }
 
 fn compare_name(left: &str, right: &str, mode: NameSortMode) -> std::cmp::Ordering {

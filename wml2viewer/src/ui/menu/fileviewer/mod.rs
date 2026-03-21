@@ -10,8 +10,9 @@ use crate::ui::menu::fileviewer::icons::{SvgIcon, paint_svg_icon};
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerSortField, FilerViewMode, NameSortMode};
 use crate::ui::viewer::ViewerApp;
 use crate::ui::viewer::options::PaneSide;
+use chrono::{DateTime, Local};
 use eframe::egui;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 
 impl ViewerApp {
     pub(crate) fn left_click_menu_ui(&mut self, ctx: &egui::Context) {
@@ -284,7 +285,6 @@ impl ViewerApp {
                     ui.text_edit_singleline(&mut self.filer.url_input);
                     if ui.button(open_url_text).clicked() {
                         if let Some(path) = download_http_url(&self.filer.url_input) {
-                            self.current_navigation_path = path.clone();
                             self.empty_mode = false;
                             self.pending_fit_recalc = true;
                             let _ = self.request_load_path(path);
@@ -363,7 +363,7 @@ impl ViewerApp {
             let modified = entry
                 .metadata
                 .modified
-                .map(format_system_time)
+                .map(|value| format_system_time(value, &self.applied_locale))
                 .unwrap_or_else(|| "-".to_string());
             let size = entry
                 .metadata
@@ -385,7 +385,7 @@ impl ViewerApp {
             let modified = entry
                 .metadata
                 .modified
-                .map(|value| format!("\n{value:?}"))
+                .map(|value| format!("\n{}", format_system_time(value, &self.applied_locale)))
                 .unwrap_or_default();
             response
                 .clone()
@@ -581,11 +581,10 @@ impl ViewerApp {
             return;
         }
         self.filer.selected = Some(entry.path.clone());
-        self.current_navigation_path = entry.path.clone();
         self.empty_mode = false;
         self.show_filer = false;
         self.pending_fit_recalc = true;
-        self.set_filesystem_current(self.current_navigation_path.clone());
+        self.set_filesystem_current(entry.path.clone());
         let _ = self.request_load_path(entry.path);
     }
 }
@@ -655,18 +654,13 @@ fn ellipsize_middle(text: &str, max_chars: usize) -> String {
     format!("{prefix}...{suffix}")
 }
 
-fn format_system_time(value: SystemTime) -> String {
-    let Ok(duration) = value.duration_since(UNIX_EPOCH) else {
-        return "-".to_string();
-    };
-    let total_secs = duration.as_secs() as i64;
-    let days = total_secs.div_euclid(86_400);
-    let secs_of_day = total_secs.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = secs_of_day / 3_600;
-    let minute = (secs_of_day % 3_600) / 60;
-    let second = secs_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02} UTC")
+fn format_system_time(value: SystemTime, locale: &str) -> String {
+    let local: DateTime<Local> = value.into();
+    if locale.starts_with("ja") {
+        local.format("%Y/%m/%d %H:%M").to_string()
+    } else {
+        local.format("%Y-%m-%d %H:%M").to_string()
+    }
 }
 
 fn format_human_size(value: u64) -> String {
@@ -695,18 +689,4 @@ fn format_grouped_u64(value: u64) -> String {
         out.push(ch);
     }
     out.chars().rev().collect()
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let z = days + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let year = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = mp + if mp < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    (year, month, day)
 }

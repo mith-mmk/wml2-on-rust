@@ -8,6 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub(super) fn default_provider() -> PluginProviderConfig {
     PluginProviderConfig {
         enable: false,
+        priority: 280,
         search_path: Vec::new(),
         modules: Vec::new(),
     }

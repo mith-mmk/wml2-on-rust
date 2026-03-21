@@ -445,6 +445,7 @@ mod tests {
         let config = PluginConfig {
             ffmpeg: PluginProviderConfig {
                 enable: true,
+                priority: 100,
                 search_path: vec![repo_root().join("test").join("plugins").join("ffmpeg")],
                 modules: Vec::new(),
             },

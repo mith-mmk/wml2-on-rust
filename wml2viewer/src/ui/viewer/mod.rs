@@ -76,11 +76,13 @@ pub(crate) struct ViewerApp {
     pub(crate) worker_rx: Receiver<RenderResult>,
     pub(crate) next_request_id: u64,
     pub(crate) active_request: Option<ActiveRenderRequest>,
+    pub(crate) pending_navigation_path: Option<PathBuf>,
     pub(crate) fs_tx: Sender<FilesystemCommand>,
     pub(crate) fs_rx: Receiver<FilesystemResult>,
     pub(crate) next_fs_request_id: u64,
     pub(crate) active_fs_request_id: Option<u64>,
     pub(crate) queued_navigation: Option<FilesystemCommand>,
+    pub(crate) deferred_filesystem_init_path: Option<PathBuf>,
     pub(crate) filer_tx: Sender<FilerCommand>,
     pub(crate) filer_rx: Receiver<FilerResult>,
     pub(crate) next_filer_request_id: u64,
@@ -307,11 +309,13 @@ impl ViewerApp {
             worker_rx,
             next_request_id: 0,
             active_request: None,
+            pending_navigation_path: None,
             fs_tx,
             fs_rx,
             next_fs_request_id: 0,
             active_fs_request_id: None,
             queued_navigation: None,
+            deferred_filesystem_init_path: None,
             filer_tx,
             filer_rx,
             next_filer_request_id: 0,
@@ -376,12 +380,17 @@ impl ViewerApp {
         this.ffmpeg_search_paths_input = join_search_paths(&this.plugins.ffmpeg.search_path);
         this.apply_window_theme(&cc.egui_ctx);
 
-        let _ = this.init_filesystem(navigation_path);
-        if let Some(dir) = this.current_directory() {
-            this.request_filer_directory(dir, Some(this.current_navigation_path.clone()));
-        }
         if let Some(path) = startup_load_path {
+            this.deferred_filesystem_init_path = Some(navigation_path.clone());
             let _ = this.request_load_path(path);
+        } else if !show_filer_on_start {
+            this.deferred_filesystem_init_path = Some(navigation_path.clone());
+            let _ = this.request_load_path(navigation_path.clone());
+        } else {
+            let _ = this.init_filesystem(navigation_path);
+            if let Some(dir) = this.current_directory() {
+                this.request_filer_directory(dir, Some(this.current_navigation_path.clone()));
+            }
         }
         this
     }
@@ -960,11 +969,10 @@ impl ViewerApp {
         let request_id = self.alloc_request_id();
         self.companion_active_request = Some(ActiveRenderRequest::Load(request_id));
         self.companion_navigation_path = Some(path.clone());
-        let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path);
         self.companion_tx
             .send(RenderCommand::LoadPath {
                 request_id,
-                path: load_path,
+                path,
                 zoom: self.zoom,
                 method: self.render_options.zoom_method,
             })
@@ -1035,7 +1043,6 @@ impl ViewerApp {
             return Ok(());
         }
         if let Some(target) = self.manga_navigation_target(true) {
-            self.current_navigation_path = target.clone();
             self.request_load_path(target)?;
             self.last_navigation_at = Some(Instant::now());
             return Ok(());
@@ -1053,7 +1060,6 @@ impl ViewerApp {
             return Ok(());
         }
         if let Some(target) = self.manga_navigation_target(false) {
-            self.current_navigation_path = target.clone();
             self.request_load_path(target)?;
             self.last_navigation_at = Some(Instant::now());
             return Ok(());
@@ -1091,23 +1097,31 @@ impl ViewerApp {
     }
 
     pub(crate) fn request_load_path(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
-        let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path.clone());
-        let branch_changed = navigation_branch_path(&self.current_path)
-            != navigation_branch_path(&path);
+        self.request_load_target(path.clone(), path)
+    }
+
+    pub(crate) fn request_load_target(
+        &mut self,
+        navigation_path: PathBuf,
+        load_request_path: PathBuf,
+    ) -> Result<(), Box<dyn Error>> {
+        let branch_changed =
+            navigation_branch_path(&self.current_navigation_path) != navigation_branch_path(&navigation_path);
         if branch_changed {
             self.clear_manga_companion();
         }
-        if self.try_take_preloaded(&path, &load_path) {
+        if self.try_take_preloaded(&navigation_path) {
             return Ok(());
         }
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
+        self.pending_navigation_path = Some(navigation_path.clone());
         self.pending_fit_recalc = !matches!(self.render_options.zoom_option, ZoomOption::None);
-        self.overlay.loading_message = Some(format!("Loading {}", load_path.display()));
+        self.overlay.loading_message = Some(format!("Loading {}", navigation_path.display()));
         self.worker_tx
             .send(RenderCommand::LoadPath {
                 request_id,
-                path: load_path,
+                path: load_request_path,
                 zoom: self.zoom,
                 method: self.render_options.zoom_method,
             })
@@ -1221,10 +1235,14 @@ impl ViewerApp {
         source: LoadedImage,
         rendered: LoadedImage,
     ) {
+        let previous_navigation_path = self.current_navigation_path.clone();
+        if let Some(pending_navigation_path) = self.pending_navigation_path.take() {
+            self.current_navigation_path = pending_navigation_path;
+        }
         if let Some(path) = path {
             let request_id = self.alloc_fs_request_id();
-            let folder_changed =
-                navigation_branch_path(&self.current_path) != navigation_branch_path(&path);
+            let folder_changed = navigation_branch_path(&previous_navigation_path)
+                != navigation_branch_path(&self.current_navigation_path);
             self.current_path = path.clone();
             self.save_dialog.file_name = default_save_file_name(&path);
             if folder_changed {
@@ -1251,6 +1269,11 @@ impl ViewerApp {
             self.overlay.loading_message = None;
         }
         self.active_request = None;
+        if !self.navigator_ready && self.active_fs_request_id.is_none() {
+            if let Some(path) = self.deferred_filesystem_init_path.take() {
+                let _ = self.init_filesystem(path);
+            }
+        }
         self.schedule_preload();
         if self.pending_resize_after_load {
             self.pending_resize_after_load = false;
@@ -1281,25 +1304,23 @@ impl ViewerApp {
         {
             return;
         }
-        let load_path = crate::filesystem::resolve_start_path(&path).unwrap_or(path.clone());
         let request_id = self.alloc_preload_request_id();
         self.active_preload_request_id = Some(request_id);
-        self.pending_preload_navigation_path = Some(path);
+        self.pending_preload_navigation_path = Some(path.clone());
         let _ = self.preload_tx.send(RenderCommand::LoadPath {
             request_id,
-            path: load_path,
+            path,
             zoom: self.zoom,
             method: self.render_options.zoom_method,
         });
     }
 
-    fn try_take_preloaded(&mut self, path: &std::path::Path, load_path: &std::path::Path) -> bool {
+    fn try_take_preloaded(&mut self, path: &std::path::Path) -> bool {
         let matches_navigation = self
             .preloaded_navigation_path
             .as_ref()
             .map(|cached| cached == path)
             .unwrap_or(false);
-        let _ = load_path;
         if !matches_navigation {
             return false;
         }
@@ -1310,6 +1331,7 @@ impl ViewerApp {
         self.preloaded_navigation_path = None;
         self.pending_preload_navigation_path = None;
         if let (Some(source), Some(rendered)) = (source, rendered) {
+            self.pending_navigation_path = Some(path.to_path_buf());
             self.overlay.loading_message = None;
             self.apply_loaded_result(load_path, source, rendered);
             return true;
@@ -1396,6 +1418,7 @@ impl ViewerApp {
                 }
                 Ok(RenderResult::Failed {
                     request_id,
+                    path,
                     message,
                 }) => {
                     let Some(active_request) = self.active_request else {
@@ -1410,9 +1433,20 @@ impl ViewerApp {
                     }
                     let failed_during_load =
                         matches!(active_request, ActiveRenderRequest::Load(_));
-                    self.overlay.alert_message = Some(message);
+                    self.pending_navigation_path = None;
+                    let label = path
+                        .as_ref()
+                        .and_then(|path| path.file_name())
+                        .and_then(|name| name.to_str())
+                        .unwrap_or("image");
+                    self.save_dialog.message = Some(format!("Load failed: {label}: {message}"));
                     self.overlay.loading_message = None;
                     self.active_request = None;
+                    if !self.navigator_ready && self.active_fs_request_id.is_none() {
+                        if let Some(path) = self.deferred_filesystem_init_path.take() {
+                            let _ = self.init_filesystem(path);
+                        }
+                    }
                     if failed_during_load {
                         let _ = self.next_image();
                     }
@@ -1561,17 +1595,20 @@ impl ViewerApp {
                     if self.active_fs_request_id == Some(request_id) {
                         self.navigator_ready = true;
                         self.active_fs_request_id = None;
-                        if let Some(navigation_path) = navigation_path {
-                            self.current_navigation_path = navigation_path;
-                        }
-                        if let Some(load_path) = load_path {
-                            self.empty_mode = false;
-                            let _ = self.request_load_path(load_path);
-                        } else {
-                            self.empty_mode = true;
-                            self.show_filer = true;
-                            self.overlay.loading_message =
-                                Some("No displayable file found".to_string());
+                        match (navigation_path, load_path) {
+                            (Some(navigation_path), Some(load_path)) => {
+                                self.empty_mode = false;
+                                let _ = self.request_load_target(navigation_path, load_path);
+                            }
+                            (Some(navigation_path), None) => {
+                                self.current_navigation_path = navigation_path;
+                            }
+                            _ => {
+                                self.empty_mode = true;
+                                self.show_filer = true;
+                                self.overlay.loading_message =
+                                    Some("No displayable file found".to_string());
+                            }
                         }
                         if self.active_request.is_none() && !self.empty_mode {
                             self.overlay.loading_message = None;
@@ -1585,9 +1622,8 @@ impl ViewerApp {
                     load_path,
                 }) => {
                     if self.active_fs_request_id == Some(request_id) {
-                        self.current_navigation_path = navigation_path;
                         self.empty_mode = false;
-                        let _ = self.request_load_path(load_path);
+                        let _ = self.request_load_target(navigation_path, load_path);
                         self.active_fs_request_id = None;
                     }
                 }
@@ -1744,10 +1780,10 @@ impl eframe::App for ViewerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.sync_window_state(ctx);
         self.update_window_title(ctx);
-        self.poll_filesystem();
         self.poll_worker();
         self.poll_companion_worker();
         self.poll_preload_worker();
+        self.poll_filesystem();
         self.poll_filer_worker();
         self.poll_thumbnail_worker();
         self.poll_save_result();

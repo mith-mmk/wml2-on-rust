@@ -12,6 +12,7 @@ use std::sync::{Mutex, OnceLock};
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PluginConfig {
+    pub internal_priority: i32,
     pub susie64: PluginProviderConfig,
     pub system: PluginProviderConfig,
     pub ffmpeg: PluginProviderConfig,
@@ -20,6 +21,7 @@ pub struct PluginConfig {
 impl Default for PluginConfig {
     fn default() -> Self {
         Self {
+            internal_priority: 300,
             susie64: susie64::default_provider(),
             system: system::default_provider(),
             ffmpeg: ffmpeg::default_provider(),
@@ -27,12 +29,24 @@ impl Default for PluginConfig {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PluginProviderConfig {
     pub enable: bool,
+    pub priority: i32,
     pub search_path: Vec<PathBuf>,
     pub modules: Vec<PluginModuleConfig>,
+}
+
+impl Default for PluginProviderConfig {
+    fn default() -> Self {
+        Self {
+            enable: false,
+            priority: 100,
+            search_path: Vec::new(),
+            modules: Vec::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -75,6 +89,7 @@ struct DecodeCandidate {
     provider: ProviderKind,
     module: Option<PluginModuleConfig>,
     score: i32,
+    provider_priority: i32,
 }
 
 #[derive(Clone)]
@@ -217,7 +232,8 @@ fn decode_candidates(config: &PluginConfig, input: &DecodeInput) -> Vec<DecodeCa
     let mut candidates = vec![DecodeCandidate {
         provider: ProviderKind::Internal,
         module: None,
-        score: 300,
+        score: config.internal_priority,
+        provider_priority: config.internal_priority,
     }];
 
     collect_provider_candidates(
@@ -246,6 +262,7 @@ fn decode_candidates(config: &PluginConfig, input: &DecodeInput) -> Vec<DecodeCa
         right
             .score
             .cmp(&left.score)
+            .then_with(|| right.provider_priority.cmp(&left.provider_priority))
             .then_with(|| provider_rank(right.provider).cmp(&provider_rank(left.provider)))
     });
     candidates
@@ -267,7 +284,8 @@ fn collect_provider_candidates(
         candidates.push(DecodeCandidate {
             provider,
             module: None,
-            score: 100,
+            score: config.priority,
+            provider_priority: config.priority,
         });
         return;
     }
@@ -276,7 +294,8 @@ fn collect_provider_candidates(
         if module_supports_input(provider_name, &module, input) {
             candidates.push(DecodeCandidate {
                 provider,
-                score: module_priority(provider_name, &module),
+                score: module_priority(provider_name, &module, config.priority),
+                provider_priority: config.priority,
                 module: Some(module),
             });
         }
@@ -357,7 +376,11 @@ fn module_patterns(provider_name: &str, module: &PluginModuleConfig) -> Vec<Stri
         .collect()
 }
 
-fn module_priority(provider_name: &str, module: &PluginModuleConfig) -> i32 {
+fn module_priority(
+    provider_name: &str,
+    module: &PluginModuleConfig,
+    fallback_priority: i32,
+) -> i32 {
     let mut priorities = module
         .ext
         .iter()
@@ -367,12 +390,12 @@ fn module_priority(provider_name: &str, module: &PluginModuleConfig) -> i32 {
         .map(|capability| priority_value(&capability.priority))
         .collect::<Vec<_>>();
     if priorities.is_empty() {
-        priorities.push(default_priority(provider_name));
+        priorities.push(fallback_priority.max(default_priority(provider_name)));
     }
     *priorities
         .iter()
         .max()
-        .unwrap_or(&default_priority(provider_name))
+        .unwrap_or(&fallback_priority)
 }
 
 fn default_priority(provider_name: &str) -> i32 {
@@ -610,6 +633,7 @@ mod tests {
     fn discovers_ffmpeg_modules_from_test_plugins() {
         let config = PluginProviderConfig {
             enable: true,
+            priority: 100,
             search_path: vec![plugin_path("ffmpeg")],
             modules: Vec::new(),
         };
@@ -630,6 +654,7 @@ mod tests {
         let config = PluginConfig {
             ffmpeg: PluginProviderConfig {
                 enable: true,
+                priority: 100,
                 search_path: vec![plugin_path("ffmpeg")],
                 modules: Vec::new(),
             },
@@ -655,6 +680,7 @@ mod tests {
         let config = PluginConfig {
             susie64: PluginProviderConfig {
                 enable: true,
+                priority: 100,
                 search_path: vec![plugin_path("susie64")],
                 modules: Vec::new(),
             },

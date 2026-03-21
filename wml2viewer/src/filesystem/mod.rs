@@ -1327,8 +1327,10 @@ mod tests {
     #[test]
     fn plugin_enabled_extensions_are_visible_to_filer() {
         set_runtime_plugin_config(PluginConfig {
+            internal_priority: 300,
             ffmpeg: PluginProviderConfig {
                 enable: true,
+                priority: 100,
                 search_path: Vec::new(),
                 modules: vec![PluginModuleConfig {
                     enable: true,

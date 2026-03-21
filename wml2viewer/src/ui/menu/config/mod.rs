@@ -197,8 +197,25 @@ impl ViewerApp {
     ) {
         let draft = &mut draft_state.config;
         ui.group(|ui| {
+            ui.horizontal(|ui| {
+                ui.label("internal priority");
+                ui.add(
+                    egui::DragValue::new(&mut draft.plugins.internal_priority)
+                        .range(-1000..=1000)
+                        .speed(10.0),
+                );
+            });
+            ui.separator();
             ui.heading("susie64");
             ui.checkbox(&mut draft.plugins.susie64.enable, self.text(UiTextKey::Enable));
+            ui.horizontal(|ui| {
+                ui.label("priority");
+                ui.add(
+                    egui::DragValue::new(&mut draft.plugins.susie64.priority)
+                        .range(-1000..=1000)
+                        .speed(10.0),
+                );
+            });
             ui.label(self.text(UiTextKey::SearchPath));
             if ui
                 .text_edit_singleline(&mut draft_state.susie64_search_paths_input)
@@ -227,6 +244,14 @@ impl ViewerApp {
             ui.separator();
             ui.heading("system");
             ui.checkbox(&mut draft.plugins.system.enable, self.text(UiTextKey::Enable));
+            ui.horizontal(|ui| {
+                ui.label("priority");
+                ui.add(
+                    egui::DragValue::new(&mut draft.plugins.system.priority)
+                        .range(-1000..=1000)
+                        .speed(10.0),
+                );
+            });
             ui.label(self.text(UiTextKey::SearchPathOsApi));
             ui.label(format!(
                 "{}: {}",
@@ -237,6 +262,14 @@ impl ViewerApp {
             ui.separator();
             ui.heading("ffmpeg");
             ui.checkbox(&mut draft.plugins.ffmpeg.enable, self.text(UiTextKey::Enable));
+            ui.horizontal(|ui| {
+                ui.label("priority");
+                ui.add(
+                    egui::DragValue::new(&mut draft.plugins.ffmpeg.priority)
+                        .range(-1000..=1000)
+                        .speed(10.0),
+                );
+            });
             ui.label(self.text(UiTextKey::SearchPath));
             if ui
                 .text_edit_singleline(&mut draft_state.ffmpeg_search_paths_input)
@@ -576,6 +609,9 @@ impl ViewerApp {
         previous: AppConfig,
         initial_live_plugins: crate::dependent::plugins::PluginConfig,
     ) {
+        if self.window_options.ui_theme != previous.window.ui_theme {
+            self.apply_window_theme(ctx);
+        }
         if self.window_options.fullscreen != previous.window.fullscreen {
             ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(
                 self.window_options.fullscreen,
@@ -594,6 +630,29 @@ impl ViewerApp {
         }
         if self.options.grayscale != previous.viewer.grayscale {
             self.upload_current_frame();
+        }
+        if self.resources.locale != previous.resources.locale
+            || self.resources.font_size != previous.resources.font_size
+            || self.resources.font_paths != previous.resources.font_paths
+        {
+            let applied = apply_resources(ctx, &self.resources);
+            self.applied_locale = applied.locale;
+            self.loaded_font_names = applied.loaded_fonts;
+        }
+        if self.runtime.workaround.archive.zip.threshold_mb
+            != previous.runtime.workaround.archive.zip.threshold_mb
+            || self.runtime.workaround.archive.zip.local_cache
+                != previous.runtime.workaround.archive.zip.local_cache
+        {
+            set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
+        }
+        if self.runtime.workaround.thumbnail.suppress_large_files
+            != previous.runtime.workaround.thumbnail.suppress_large_files
+        {
+            set_thumbnail_workaround(self.runtime.workaround.thumbnail.clone());
+        }
+        if self.plugins != previous.plugins {
+            set_runtime_plugin_config(self.plugins.clone());
         }
         if self.plugins != initial_live_plugins {
             self.show_restart_prompt = true;
@@ -622,13 +681,7 @@ impl ViewerApp {
         self.ffmpeg_search_paths_input = join_search_paths(&self.plugins.ffmpeg.search_path);
         self.resource_locale_input = self.resources.locale.clone().unwrap_or_default();
         self.resource_font_paths_input = join_search_paths(&self.resources.font_paths);
-        self.apply_window_theme(ctx);
-        let applied = apply_resources(ctx, &self.resources);
-        set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
-        set_thumbnail_workaround(self.runtime.workaround.thumbnail.clone());
-        set_runtime_plugin_config(self.plugins.clone());
-        self.applied_locale = applied.locale;
-        self.loaded_font_names = applied.loaded_fonts;
+        let _ = ctx;
         self.pending_fit_recalc = true;
     }
 

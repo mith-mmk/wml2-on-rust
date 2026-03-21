@@ -1,4 +1,4 @@
-use crate::drawers::image::load_canvas_from_file;
+use crate::drawers::image::{load_canvas_from_bytes_with_hint, load_canvas_from_file};
 use crate::filesystem::{
     is_browser_container, list_browser_entries, load_virtual_image_bytes, resolve_start_path,
 };
@@ -79,7 +79,9 @@ pub fn benchmark_archive_read(path: &Path, iterations: usize) -> Result<BenchRes
     for _ in 0..iterations {
         let load_path = resolve_start_path(first_entry)
             .ok_or_else(|| "failed to resolve start path".to_string())?;
-        if load_virtual_image_bytes(first_entry).is_none() && !load_path.exists() {
+        if let Some(bytes) = load_virtual_image_bytes(first_entry) {
+            let _ = bytes.len();
+        } else if !load_path.exists() {
             return Err("failed to read archive entry".to_string());
         }
     }
@@ -142,16 +144,23 @@ pub fn benchmark_archive_detailed(
     let started_read = Instant::now();
     let load_path = resolve_start_path(first_entry)
         .ok_or_else(|| "failed to resolve first archive entry".to_string())?;
-    if load_virtual_image_bytes(first_entry).is_none() && !load_path.exists() {
+    if let Some(bytes) = load_virtual_image_bytes(first_entry) {
+        let _ = bytes.len();
+    } else if !load_path.exists() {
         return Err("failed to read first archive entry".to_string());
     }
     let archive_read = started_read.elapsed();
 
     let started_decode = Instant::now();
     for entry in &browser_entries {
-        let load_path =
-            resolve_start_path(entry).ok_or_else(|| "failed to resolve archive entry".to_string())?;
-        load_canvas_from_file(&load_path).map_err(|err| err.to_string())?;
+        let Some(load_path) = resolve_start_path(entry) else {
+            continue;
+        };
+        if let Some(bytes) = load_virtual_image_bytes(entry) {
+            let _ = load_canvas_from_bytes_with_hint(&bytes, Some(&load_path));
+        } else {
+            let _ = load_canvas_from_file(&load_path);
+        }
     }
     let decode_total = started_decode.elapsed();
     let total = started_total.elapsed();

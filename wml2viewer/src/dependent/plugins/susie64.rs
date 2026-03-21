@@ -18,6 +18,7 @@ pub(super) fn default_provider() -> PluginProviderConfig {
 
     PluginProviderConfig {
         enable: false,
+        priority: 100,
         search_path,
         modules: Vec::new(),
     }

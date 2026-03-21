@@ -2,7 +2,7 @@ use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::image::{
     LoadedImage, load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
 };
-use crate::filesystem::load_virtual_image_bytes;
+use crate::filesystem::{load_virtual_image_bytes, resolve_start_path};
 use std::error::Error;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
@@ -32,6 +32,7 @@ pub(crate) enum RenderResult {
     },
     Failed {
         request_id: u64,
+        path: Option<PathBuf>,
         message: String,
     },
 }
@@ -59,14 +60,15 @@ pub(crate) fn spawn_render_worker(
                     method,
                 } => {
                     let result = catch_unwind(AssertUnwindSafe(|| {
-                        (|| -> Result<(LoadedImage, LoadedImage), Box<dyn Error>> {
-                            let source = if let Some(bytes) = load_virtual_image_bytes(&path) {
-                                load_canvas_from_bytes_with_hint(&bytes, Some(&path))?
+                        (|| -> Result<(LoadedImage, LoadedImage, PathBuf), Box<dyn Error>> {
+                            let load_path = resolve_start_path(&path).unwrap_or(path.clone());
+                            let source = if let Some(bytes) = load_virtual_image_bytes(&load_path) {
+                                load_canvas_from_bytes_with_hint(&bytes, Some(&load_path))?
                             } else {
-                                load_canvas_from_file(&path)?
+                                load_canvas_from_file(&load_path)?
                             };
                             let rendered = resize_loaded_image(&source, zoom, method)?;
-                            Ok((source, rendered))
+                            Ok((source, rendered, load_path))
                         })()
                     }))
                     .unwrap_or_else(|_| {
@@ -76,11 +78,11 @@ pub(crate) fn spawn_render_worker(
                     });
 
                     match result {
-                        Ok((source, rendered)) => {
+                        Ok((source, rendered, load_path)) => {
                             current_source = source.clone();
                             let _ = result_tx.send(RenderResult::Loaded {
                                 request_id,
-                                path: Some(path),
+                                path: Some(load_path),
                                 source,
                                 rendered,
                             });
@@ -88,6 +90,7 @@ pub(crate) fn spawn_render_worker(
                         Err(err) => {
                             let _ = result_tx.send(RenderResult::Failed {
                                 request_id,
+                                path: Some(path),
                                 message: err.to_string(),
                             });
                         }
@@ -116,6 +119,7 @@ pub(crate) fn spawn_render_worker(
                     Err(err) => {
                         let _ = result_tx.send(RenderResult::Failed {
                             request_id,
+                            path: None,
                             message: err.to_string(),
                         });
                     }

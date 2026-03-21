@@ -4,6 +4,7 @@ use crate::filesystem::{
 use crate::options::NavigationSortOption;
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerMetadata, FilerSortField, NameSortMode};
 use std::fs;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -47,7 +48,11 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
 
     thread::spawn(move || {
         while let Ok(command) = command_rx.recv() {
-            match command {
+            let mut latest = command;
+            while let Ok(next) = command_rx.try_recv() {
+                latest = next;
+            }
+            match latest {
                 FilerCommand::OpenDirectory {
                     request_id,
                     dir,
@@ -60,93 +65,98 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                     extension_filter,
                     name_sort_mode,
                 } => {
-                    let entries = if dir.is_dir() {
-                        let _ = result_tx.send(FilerResult::Reset {
-                            request_id,
-                            directory: dir.clone(),
-                            selected: selected.clone(),
-                        });
-                        let mut collected = Vec::new();
-                        let Ok(read_dir) = fs::read_dir(&dir) else {
-                            continue;
-                        };
-                        for entry in read_dir.filter_map(Result::ok) {
-                            let path = entry.path();
-                            if !is_browser_entry(&path) {
-                                continue;
-                            }
-                            let preview_entry = build_preview_entry(path.clone());
-                            if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
-                                continue;
-                            }
-                            collected.push(path);
-                        }
-                        let mut preview = collected
-                            .iter()
-                            .cloned()
-                            .map(build_preview_entry)
-                            .collect::<Vec<_>>();
-                        sort_entries(
-                            &mut preview,
-                            sort_field,
-                            ascending,
-                            separate_dirs,
-                            name_sort_mode,
-                        );
-                        for chunk in preview.chunks(128) {
-                            let _ = result_tx.send(FilerResult::Append {
+                    let result = catch_unwind(AssertUnwindSafe(|| {
+                        if dir.is_dir() {
+                            let _ = result_tx.send(FilerResult::Reset {
                                 request_id,
-                                entries: chunk.to_vec(),
+                                directory: dir.clone(),
+                                selected: selected.clone(),
                             });
-                        }
-                        let mut entries = collected.into_iter().map(build_filer_entry).collect::<Vec<_>>();
-                        sort_entries(
-                            &mut entries,
-                            sort_field,
-                            ascending,
-                            separate_dirs,
-                            name_sort_mode,
-                        );
-                        entries
-                    } else {
-                        let mut collected = Vec::new();
-                        for path in list_browser_entries(&dir, sort) {
-                            let preview_entry = build_preview_entry(path.clone());
-                            if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
-                                continue;
+                            let mut collected = Vec::new();
+                            let Ok(read_dir) = fs::read_dir(&dir) else {
+                                return Vec::new();
+                            };
+                            for entry in read_dir.filter_map(Result::ok) {
+                                let path = entry.path();
+                                if !is_browser_entry(&path) {
+                                    continue;
+                                }
+                                let preview_entry = build_preview_entry(path.clone());
+                                if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
+                                    continue;
+                                }
+                                collected.push(path);
                             }
-                            collected.push(path);
+                            let mut preview = collected
+                                .iter()
+                                .cloned()
+                                .map(build_preview_entry)
+                                .collect::<Vec<_>>();
+                            sort_entries(
+                                &mut preview,
+                                sort_field,
+                                ascending,
+                                separate_dirs,
+                                name_sort_mode,
+                            );
+                            for chunk in preview.chunks(128) {
+                                let _ = result_tx.send(FilerResult::Append {
+                                    request_id,
+                                    entries: chunk.to_vec(),
+                                });
+                            }
+                            let mut entries =
+                                collected.into_iter().map(build_filer_entry).collect::<Vec<_>>();
+                            sort_entries(
+                                &mut entries,
+                                sort_field,
+                                ascending,
+                                separate_dirs,
+                                name_sort_mode,
+                            );
+                            entries
+                        } else {
+                            let mut collected = Vec::new();
+                            for path in list_browser_entries(&dir, sort) {
+                                let preview_entry = build_preview_entry(path.clone());
+                                if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
+                                    continue;
+                                }
+                                collected.push(path);
+                            }
+                            let mut preview = collected
+                                .iter()
+                                .cloned()
+                                .map(build_preview_entry)
+                                .collect::<Vec<_>>();
+                            sort_entries(
+                                &mut preview,
+                                sort_field,
+                                ascending,
+                                separate_dirs,
+                                name_sort_mode,
+                            );
+                            for chunk in preview.chunks(128) {
+                                let _ = result_tx.send(FilerResult::Append {
+                                    request_id,
+                                    entries: chunk.to_vec(),
+                                });
+                            }
+                            let mut entries =
+                                collected.into_iter().map(build_filer_entry).collect::<Vec<_>>();
+                            sort_entries(
+                                &mut entries,
+                                sort_field,
+                                ascending,
+                                separate_dirs,
+                                name_sort_mode,
+                            );
+                            entries
                         }
-                        let mut preview = collected
-                            .iter()
-                            .cloned()
-                            .map(build_preview_entry)
-                            .collect::<Vec<_>>();
-                        sort_entries(
-                            &mut preview,
-                            sort_field,
-                            ascending,
-                            separate_dirs,
-                            name_sort_mode,
-                        );
-                        for chunk in preview.chunks(128) {
-                            let _ = result_tx.send(FilerResult::Append {
-                                request_id,
-                                entries: chunk.to_vec(),
-                            });
-                        }
-                        let mut entries = collected
-                            .into_iter()
-                            .map(build_filer_entry)
-                            .collect::<Vec<_>>();
-                        sort_entries(
-                            &mut entries,
-                            sort_field,
-                            ascending,
-                            separate_dirs,
-                            name_sort_mode,
-                        );
-                        entries
+                    }));
+                    let entries = match result {
+                        Ok(entries) => entries,
+                        Err(_) => Vec::new(),
                     };
                     let _ = result_tx.send(FilerResult::Snapshot {
                         request_id,
@@ -232,10 +242,15 @@ fn sort_entries(
             return right.is_container.cmp(&left.is_container);
         }
 
-        let order = match sort_field {
+        let primary = match sort_field {
             FilerSortField::Name => compare_name(&left.label, &right.label, name_sort_mode),
             FilerSortField::Modified => left.metadata.modified.cmp(&right.metadata.modified),
             FilerSortField::Size => left.metadata.size.cmp(&right.metadata.size),
+        };
+        let order = if primary == std::cmp::Ordering::Equal {
+            compare_name(&left.label, &right.label, name_sort_mode)
+        } else {
+            primary
         };
 
         if ascending { order } else { order.reverse() }
@@ -297,5 +312,34 @@ mod tests {
 
         assert!(entries[0].is_container);
         assert!(!entries[1].is_container);
+    }
+
+    #[test]
+    fn descending_sort_reverses_container_names() {
+        let mut entries = vec![
+            FilerEntry {
+                path: PathBuf::from("a"),
+                label: "a".to_string(),
+                is_container: true,
+                metadata: FilerMetadata::default(),
+            },
+            FilerEntry {
+                path: PathBuf::from("b"),
+                label: "b".to_string(),
+                is_container: true,
+                metadata: FilerMetadata::default(),
+            },
+        ];
+
+        sort_entries(
+            &mut entries,
+            FilerSortField::Name,
+            false,
+            true,
+            NameSortMode::Os,
+        );
+
+        assert_eq!(entries[0].label, "b");
+        assert_eq!(entries[1].label, "a");
     }
 }

@@ -99,6 +99,9 @@ pub fn benchmark_archive_detailed(
     if !is_browser_container(path) {
         return Err("archive benchmark expects a container path".to_string());
     }
+    if path.extension().and_then(|ext| ext.to_str()) != Some("zip") {
+        return Err("archive benchmark currently supports zip archives only".to_string());
+    }
 
     let workaround = match method {
         ArchiveBenchmarkMethod::Default => ZipWorkaroundOptions {

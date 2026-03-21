@@ -6,6 +6,7 @@ use crate::filesystem::{load_virtual_image_bytes, virtual_image_size};
 use crate::options::ThumbnailWorkaroundOptions;
 use crate::ui::render::canvas_to_color_image;
 use eframe::egui::ColorImage;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Mutex, OnceLock};
@@ -25,6 +26,11 @@ pub(crate) enum ThumbnailResult {
         path: PathBuf,
         image: ColorImage,
     },
+    Failed {
+        _request_id: u64,
+        path: PathBuf,
+        _message: String,
+    },
 }
 
 pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<ThumbnailResult>) {
@@ -39,32 +45,49 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                     path,
                     max_side,
                 } => {
-                    if should_skip_thumbnail(&path) {
-                        continue;
-                    }
-                    let loaded = if let Some(bytes) = load_virtual_image_bytes(&path) {
-                        load_canvas_from_bytes_with_hint(&bytes, Some(&path))
-                    } else {
-                        load_canvas_from_file(&path)
-                    };
-                    let Ok(image) = loaded else {
-                        continue;
-                    };
+                    let result = catch_unwind(AssertUnwindSafe(|| {
+                        if should_skip_thumbnail(&path) {
+                            return Err("thumbnail suppressed".to_string());
+                        }
+                        let loaded = if let Some(bytes) = load_virtual_image_bytes(&path) {
+                            load_canvas_from_bytes_with_hint(&bytes, Some(&path))
+                        } else {
+                            load_canvas_from_file(&path)
+                        }
+                        .map_err(|err| err.to_string())?;
 
-                    let scale = (max_side as f32
-                        / image.canvas.width().max(image.canvas.height()) as f32)
-                        .clamp(0.05, 1.0);
-                    let Ok(resized) =
-                        resize_loaded_image(&image, scale, InterpolationAlgorithm::Bilinear)
-                    else {
-                        continue;
-                    };
-                    let color_image = canvas_to_color_image(&resized.canvas);
-                    let _ = result_tx.send(ThumbnailResult::Ready {
-                        _request_id: request_id,
-                        path,
-                        image: color_image,
-                    });
+                        let scale = (max_side as f32
+                            / loaded.canvas.width().max(loaded.canvas.height()) as f32)
+                            .clamp(0.05, 1.0);
+                        let resized =
+                            resize_loaded_image(&loaded, scale, InterpolationAlgorithm::Bilinear)
+                                .map_err(|err| err.to_string())?;
+                        Ok::<_, String>(canvas_to_color_image(&resized.canvas))
+                    }));
+
+                    match result {
+                        Ok(Ok(image)) => {
+                            let _ = result_tx.send(ThumbnailResult::Ready {
+                                _request_id: request_id,
+                                path,
+                                image,
+                            });
+                        }
+                        Ok(Err(message)) => {
+                            let _ = result_tx.send(ThumbnailResult::Failed {
+                                _request_id: request_id,
+                                path,
+                                _message: message,
+                            });
+                        }
+                        Err(_) => {
+                            let _ = result_tx.send(ThumbnailResult::Failed {
+                                _request_id: request_id,
+                                path,
+                                _message: "thumbnail worker panicked".to_string(),
+                            });
+                        }
+                    }
                 }
             }
         }

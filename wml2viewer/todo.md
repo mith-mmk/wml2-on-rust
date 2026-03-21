@@ -394,22 +394,22 @@
 - [-] 役割の再整理
 
 ## 次に着手
-中断せずに最後までやりきる
-- [ ] issue: cargo run --example bench_archive が以下のエラーで終了する問題
+previewクォリティからbeta版に出来るまで頑張ろう
+- [x] issue: cargo run --example bench_archive が以下のエラーで終了する問題
   ```
     thread 'main' (66796) panicked at wml2viewer\examples\bench_archive.rs:18:60:
     archive benchmark failed: "failed to load archive metadata"
     note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
   ```
-- [ ] issue: 設定が即時適用されてしまう問題([モジュールを読み込む] [拡張子を登録] [システム登録を削除]以外の設定は[適用]が押されるまで遅延させてください その関係で[元に戻す]が効いていません)
-- [ ] issue: マンガモード:次のフォルダの画像を表示してしまう問題
-- [ ] issue: ファイラーがハングアップすることがある問題
-- [ ] issue: サムネイルが表示されない事がある問題
-- [ ] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
-- [ ] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
+- [x] issue: 設定が即時適用されてしまう問題([モジュールを読み込む] [拡張子を登録] [システム登録を削除]以外の設定は[適用]が押されるまで遅延させてください その関係で[元に戻す]が効いていません)
+- [x] issue: マンガモード:次のフォルダの画像を表示してしまう問題
+- [*] issue: ファイラーがハングアップすることがある問題
+- [x] issue: サムネイルが表示されない事がある問題
+- [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
+- [x] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
 - [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
 - [x] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
-- [ ] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
+- [x] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
 - [+] issue: viewer 画像が切り替わらないことがある
     - [ ] 初期指定時
     - [x] issue: scanning folderが出ている時？

@@ -7,14 +7,17 @@
 - UI を先に起動して初回画像 decode をバックグラウンドで行う非同期起動
 - Viewer / filer / subfiler の分離レイアウトと下部 status overlay
 - システム連携をまとめた `システム` タブ付きの設定ダイアログ
+- 設定変更は `適用` を押すまで反映しない staged 方式
 - 横に十分広い時だけ有効になるマンガ見開きモード
 - 一覧 / サムネイル / 詳細を切り替えられるファイラーと drive/root 切り替え
 - 設定からファイラーの左右ペイン位置を切り替え可能
 - ZIP / WML(ファイルリスト) の仮想ブラウズ
 - 保存形式を選べる保存ダイアログ
 - ロケール連動の UI リソースとフォントフォールバック。設定から locale を変更可能
+- `自動` ボタンでシステムロケールを staged 値へ入れられます
 - `internal / system / ffmpeg / susie64` の優先順位で動く plugin decode 土台
 - ZIP 指定時もウィンドウを先に開いてから中身を解決する非同期起動
+- render / filer / thumbnail worker が切断時に自動で再生成されます
 
 ## 起動
 
@@ -72,12 +75,14 @@ search_path = ["c:/susie64/plugins/"]
 
 - 大きい ZIP やネットワーク上の ZIP では low-I/O ワークアラウンドが有効になります。
 - 大きい BMP / アーカイブのサムネイルは設定から抑制できます。
+- サムネイル生成失敗時は pending を解放して再試行できるようにしています。
 - Windows では `設定 -> システム` から拡張子関連付けを操作できます。
 - `ffmpeg` は現状 `ffmpeg.exe` を起動して decode します。
 - `susie64` は Windows 専用で、今は image plugin decode まで入っています。
 - `system` は Windows では WIC decode まで入りました。macOS system codec は今後の拡張対象です。
 - provider を有効化すると、`avif` や `jp2` などの拡張子も filer / viewer の対象に入ります。
 - plugin 設定変更時は再起動推奨ポップアップを出します。
+- マンガモードの見開き相手は現在のフォルダ / 仮想アーカイブ枝の中だけに制限しています。
 - Windows のフォント探索順は `%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts` → `%WINDIR%\\Fonts` です。
 - ロケール既定の system font を先頭に使い、`resources.font_paths` で追加フォントを前置できます。
 
@@ -90,3 +95,5 @@ cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\som
 cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip online_cache
 cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip temp_copy
 ```
+
+`bench_archive` は非対応入力でも panic せず、通常のエラーメッセージを出して終了します。

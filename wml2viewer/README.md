@@ -7,14 +7,17 @@ Minimal native image viewer built with `egui` and `wml2`.
 - Async startup: the UI opens first and the initial image is decoded in the background
 - Viewer / filer / subfiler layout with bottom status overlay and separate dialogs
 - Config dialog now keeps system integration actions in a dedicated `System` tab
+- Config changes are staged and applied only when `Apply` is pressed
 - Manga spread mode for portrait pages when the viewport is wide enough
 - Filer with list / thumbnail / detail views and drive/root switching
 - Filer side can be switched left/right from Settings
 - ZIP and WML(listed files) virtual browsing
 - Save dialog with output format selection
 - Locale-aware UI resources and font fallback, with locale editable from Settings
+- Locale `Auto` fills the staged value from the current system locale without applying immediately
 - Plugin decode pipeline with priority resolution across `internal`, `system`, `ffmpeg`, and `susie64`
 - ZIP startup now keeps the UI responsive by resolving archive contents after the window opens
+- Render / filer / thumbnail workers automatically respawn if a worker thread disconnects
 
 ## Run
 
@@ -66,12 +69,14 @@ search_path = ["../test/plugins/susie64"]
 
 - Very large or network ZIP files use a low-I/O workaround.
 - Large BMP/archive thumbnails can be suppressed from Settings.
+- Thumbnail failures are cleared from the pending queue so the filer can retry.
 - On Windows, file association registration is available from `Settings -> System`.
 - `ffmpeg` decode currently shells out to `ffmpeg.exe`.
 - `susie64` decode is Windows-only and currently targets image plugins.
 - `system` decode now uses Windows WIC on Windows. macOS system codec runtime is still follow-up work.
 - Filer and viewer also expose plugin-enabled extensions such as `avif` and `jp2` when the provider is enabled.
 - Plugin setting changes show a restart recommendation popup.
+- Manga companion pages stay inside the current folder or virtual archive branch.
 - Windows font lookup now follows `%LOCALAPPDATA%\Microsoft\Windows\Fonts` then `%WINDIR%\Fonts`.
 - Locale default system fonts stay first, and `resources.font_paths` lets you prepend custom fonts.
 
@@ -84,3 +89,5 @@ cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\som
 cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip online_cache
 cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip temp_copy
 ```
+
+`bench_archive` prints a normal error and returns a failure exit code instead of panicking when the input is unsupported.

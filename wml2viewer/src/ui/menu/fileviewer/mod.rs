@@ -36,7 +36,11 @@ impl ViewerApp {
                     self.show_left_menu = false;
                 }
                 if ui.button(self.text(UiTextKey::ToggleSettings)).clicked() {
-                    self.show_settings = !self.show_settings;
+                    if self.show_settings {
+                        self.close_settings_dialog();
+                    } else {
+                        self.open_settings_dialog();
+                    }
                     self.show_left_menu = false;
                 }
                 if ui.button(self.text(UiTextKey::ToggleFiler)).clicked() {

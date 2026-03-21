@@ -88,7 +88,11 @@ impl ViewerApp {
                     self.pending_fit_recalc = true;
                 }
                 ViewerAction::ToggleSettings => {
-                    self.show_settings = !self.show_settings;
+                    if self.show_settings {
+                        self.close_settings_dialog();
+                    } else {
+                        self.open_settings_dialog();
+                    }
                 }
                 ViewerAction::ToggleFiler => {
                     self.show_filer = !self.show_filer;

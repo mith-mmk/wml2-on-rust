@@ -35,6 +35,7 @@ use std::time::{Duration, Instant};
 pub mod options;
 mod state;
 use options::ZoomOption;
+pub(crate) use state::SettingsDraftState;
 use state::{SaveDialogState, ViewerOverlayState};
 
 const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(180);
@@ -92,6 +93,7 @@ pub(crate) struct ViewerApp {
     pub(crate) overlay: ViewerOverlayState,
     pub(crate) last_navigation_at: Option<Instant>,
     pub(crate) show_settings: bool,
+    pub(crate) settings_draft: Option<SettingsDraftState>,
     pub(crate) show_restart_prompt: bool,
     pub(crate) settings_tab: SettingsTab,
     pub(crate) max_texture_side: usize,
@@ -216,6 +218,20 @@ pub(crate) fn parse_search_paths(input: &str) -> Vec<PathBuf> {
         .collect()
 }
 
+fn locale_input_from_config(config: &AppConfig) -> String {
+    config.resources.locale.clone().unwrap_or_default()
+}
+
+pub(crate) fn build_settings_draft(config: &AppConfig) -> SettingsDraftState {
+    SettingsDraftState {
+        config: config.clone(),
+        resource_locale_input: locale_input_from_config(config),
+        resource_font_paths_input: join_search_paths(&config.resources.font_paths),
+        susie64_search_paths_input: join_search_paths(&config.plugins.susie64.search_path),
+        ffmpeg_search_paths_input: join_search_paths(&config.plugins.ffmpeg.search_path),
+    }
+}
+
 impl ViewerApp {
     pub(crate) fn new(
         cc: &eframe::CreationContext<'_>,
@@ -308,6 +324,7 @@ impl ViewerApp {
             overlay: ViewerOverlayState::default(),
             last_navigation_at: None,
             show_settings: false,
+            settings_draft: None,
             show_restart_prompt: false,
             settings_tab: SettingsTab::Viewer,
             max_texture_side: cc.egui_ctx.input(|i| i.max_texture_side),
@@ -507,6 +524,31 @@ impl ViewerApp {
         let _ = std::process::Command::new("open").arg(&path).spawn();
         #[cfg(target_os = "linux")]
         let _ = std::process::Command::new("xdg-open").arg(&path).spawn();
+    }
+
+    pub(crate) fn open_settings_dialog(&mut self) {
+        if self.settings_draft.is_none() {
+            self.settings_draft = Some(build_settings_draft(&self.current_config()));
+        }
+        self.show_settings = true;
+    }
+
+    pub(crate) fn close_settings_dialog(&mut self) {
+        self.show_settings = false;
+        self.settings_draft = None;
+    }
+
+    pub(crate) fn reset_settings_draft_to_live(&mut self) {
+        self.settings_draft = Some(build_settings_draft(&self.current_config()));
+    }
+
+    pub(crate) fn apply_settings_draft(&mut self, ctx: &egui::Context) {
+        let Some(draft) = self.settings_draft.clone() else {
+            return;
+        };
+        self.restore_config(draft.config, ctx);
+        self.persist_config_async();
+        self.settings_draft = Some(build_settings_draft(&self.current_config()));
     }
 
     pub(crate) fn set_zoom(&mut self, zoom: f32) -> Result<(), Box<dyn Error>> {
@@ -887,8 +929,10 @@ impl ViewerApp {
         if !self.options.manga_mode || self.empty_mode || !self.is_current_portrait_page() {
             return None;
         }
-
-        adjacent_entry(&self.current_navigation_path, self.navigation_sort, 1)
+        let companion = adjacent_entry(&self.current_navigation_path, self.navigation_sort, 1)?;
+        let current_branch = navigation_branch_path(&self.current_navigation_path);
+        let companion_branch = navigation_branch_path(&companion);
+        (current_branch == companion_branch).then_some(companion)
     }
 
     fn clear_manga_companion(&mut self) {
@@ -1273,6 +1317,62 @@ impl ViewerApp {
         false
     }
 
+    fn respawn_render_worker(&mut self) {
+        let (worker_tx, worker_rx) = spawn_render_worker(self.source.clone());
+        self.worker_tx = worker_tx;
+        self.worker_rx = worker_rx;
+        self.active_request = None;
+    }
+
+    fn respawn_companion_worker(&mut self) {
+        let seed = self
+            .companion_source
+            .clone()
+            .unwrap_or_else(|| self.source.clone());
+        let (tx, rx) = spawn_render_worker(seed);
+        self.companion_tx = tx;
+        self.companion_rx = rx;
+        self.companion_active_request = None;
+    }
+
+    fn respawn_preload_worker(&mut self) {
+        let (tx, rx) = spawn_render_worker(self.source.clone());
+        self.preload_tx = tx;
+        self.preload_rx = rx;
+        self.invalidate_preload();
+    }
+
+    fn respawn_filesystem_worker(&mut self) {
+        let (tx, rx) = spawn_filesystem_worker(self.navigation_sort);
+        self.fs_tx = tx;
+        self.fs_rx = rx;
+        self.navigator_ready = false;
+        self.active_fs_request_id = None;
+        let _ = self.init_filesystem(self.current_navigation_path.clone());
+    }
+
+    fn respawn_filer_worker(&mut self) {
+        let (tx, rx) = spawn_filer_worker();
+        self.filer_tx = tx;
+        self.filer_rx = rx;
+        self.filer.pending_request_id = None;
+        if let Some(dir) = self
+            .filer
+            .directory
+            .clone()
+            .or_else(|| self.current_directory())
+        {
+            self.request_filer_directory(dir, self.filer.selected.clone());
+        }
+    }
+
+    fn respawn_thumbnail_worker(&mut self) {
+        let (tx, rx) = spawn_thumbnail_worker();
+        self.thumbnail_tx = tx;
+        self.thumbnail_rx = rx;
+        self.thumbnail_pending.clear();
+    }
+
     fn poll_worker(&mut self) {
         loop {
             match self.worker_rx.try_recv() {
@@ -1321,7 +1421,10 @@ impl ViewerApp {
                 Err(TryRecvError::Disconnected) => {
                     self.overlay.alert_message = Some("render worker disconnected".to_string());
                     self.overlay.loading_message = None;
-                    self.active_request = None;
+                    self.respawn_render_worker();
+                    if !self.empty_mode {
+                        let _ = self.request_load_path(self.current_navigation_path.clone());
+                    }
                     break;
                 }
             }
@@ -1358,7 +1461,7 @@ impl ViewerApp {
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    self.invalidate_preload();
+                    self.respawn_preload_worker();
                     break;
                 }
             }
@@ -1437,7 +1540,10 @@ impl ViewerApp {
                     self.companion_source = None;
                     self.companion_rendered = None;
                     self.companion_texture = None;
-                    self.companion_active_request = None;
+                    self.respawn_companion_worker();
+                    if let Some(path) = self.desired_manga_companion_path() {
+                        let _ = self.request_companion_load(path);
+                    }
                     break;
                 }
             }
@@ -1497,7 +1603,7 @@ impl ViewerApp {
                 Err(TryRecvError::Disconnected) => {
                     self.overlay.loading_message =
                         Some("filesystem worker disconnected".to_string());
-                    self.active_fs_request_id = None;
+                    self.respawn_filesystem_worker();
                     break;
                 }
             }
@@ -1549,7 +1655,7 @@ impl ViewerApp {
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    self.filer.pending_request_id = None;
+                    self.respawn_filer_worker();
                     break;
                 }
             }
@@ -1572,9 +1678,16 @@ impl ViewerApp {
                     );
                     self.thumbnail_cache.insert(path, texture);
                 }
+                Ok(ThumbnailResult::Failed {
+                    _request_id: _,
+                    path,
+                    ..
+                }) => {
+                    self.thumbnail_pending.remove(&path);
+                }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    self.thumbnail_pending.clear();
+                    self.respawn_thumbnail_worker();
                     break;
                 }
             }

@@ -1,9 +1,8 @@
-use crate::configs::config::load_app_config;
 use crate::configs::resourses::{FontSizePreset, apply_resources};
 use crate::dependent::plugins::{discover_plugin_modules, set_runtime_plugin_config};
 use crate::dependent::{
     clean_system_integration, default_download_dir, pick_save_directory,
-    register_system_file_associations,
+    register_system_file_associations, system_locale,
 };
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::filesystem::set_archive_zip_workaround;
@@ -12,7 +11,10 @@ use crate::ui::i18n::UiTextKey;
 use crate::ui::menu::fileviewer::thumbnail::set_thumbnail_workaround;
 use crate::ui::render::interpolation_label;
 use crate::ui::viewer::options::{BackgroundStyle, MangaSeparatorStyle, WindowUiTheme, ZoomOption};
-use crate::ui::viewer::{SettingsTab, ViewerApp, join_search_paths, parse_search_paths};
+use crate::ui::viewer::{
+    SettingsDraftState, SettingsTab, ViewerApp, build_settings_draft, join_search_paths,
+    parse_search_paths,
+};
 use eframe::egui;
 
 impl ViewerApp {
@@ -21,775 +23,584 @@ impl ViewerApp {
             return;
         }
 
+        if self.settings_draft.is_none() {
+            self.reset_settings_draft_to_live();
+        }
+        let Some(mut draft_state) = self.settings_draft.take() else {
+            return;
+        };
+
+        let initial_live_plugins = self.plugins.clone();
         let mut open = self.show_settings;
-        let mut reload_requested = false;
-        let mut rerender_requested = false;
-        let mut zoom_option_changed = false;
-        let mut config_changed = false;
-        let initial_plugins = self.plugins.clone();
-        let mut close_requested = false;
         let mut apply_requested = false;
-        let mut undo_requested = false;
-        let mut reset_requested = false;
-        let mut viewer_changed = false;
-        let mut render_changed = false;
-        let mut window_changed = false;
-        let mut resources_changed = false;
-        let mut navigation_changed = false;
-        let mut storage_changed = false;
-        let mut runtime_changed = false;
-        let settings_text = self.text(UiTextKey::Settings);
-        let viewer_text = self.text(UiTextKey::Viewer);
-        let plugins_text = self.text(UiTextKey::Plugins);
-        let resources_text = self.text(UiTextKey::Resources);
-        let render_text = self.text(UiTextKey::Render);
-        let window_text = self.text(UiTextKey::Window);
-        let navigation_text = self.text(UiTextKey::Navigation);
-        let system_tab_text = self.text(UiTextKey::System);
-        let animation_text = self.text(UiTextKey::Animation);
-        let grayscale_text = self.text(UiTextKey::Grayscale);
-        let manga_mode_text = self.text(UiTextKey::MangaMode);
-        let manga_rtl_text = self.text(UiTextKey::MangaRightToLeft);
-        let background_text = self.text(UiTextKey::Background);
-        let locale_text = self.text(UiTextKey::Locale);
-        let fonts_text = self.text(UiTextKey::Fonts);
-        let font_size_text = self.text(UiTextKey::FontSize);
-        let auto_text = self.text(UiTextKey::Auto);
-        let theme_text = self.text(UiTextKey::Theme);
-        let system_text = self.text(UiTextKey::System);
-        let light_text = self.text(UiTextKey::Light);
-        let dark_text = self.text(UiTextKey::Dark);
-        let left_text = self.text(UiTextKey::Left);
-        let right_text = self.text(UiTextKey::Right);
-        let pane_side_text = self.text(UiTextKey::PaneSide);
-        let program_name_text = self.text(UiTextKey::ProgramName);
-        let version_text = self.text(UiTextKey::Version);
-        let author_text = self.text(UiTextKey::Author);
-        let copyright_text = self.text(UiTextKey::Copyright);
-        let zoom_mode_text = self.text(UiTextKey::ZoomMode);
-        let resize_text = self.text(UiTextKey::Resize);
-        let fullscreen_text = self.text(UiTextKey::Fullscreen);
-        let remember_size_text = self.text(UiTextKey::RememberSize);
-        let remember_position_text = self.text(UiTextKey::RememberPosition);
-        let register_system_text = self.text(UiTextKey::RegisterSystem);
-        let clean_system_text = self.text(UiTextKey::CleanSystem);
-        let window_relative_text = self.text(UiTextKey::WindowSizeRelative);
-        let window_exact_text = self.text(UiTextKey::WindowSizeExact);
-        let use_exact_size_text = self.text(UiTextKey::UseExactSize);
-        let use_relative_size_text = self.text(UiTextKey::UseRelativeSize);
-        let end_of_folder_text = self.text(UiTextKey::EndOfFolder);
-        let reload_current_text = self.text(UiTextKey::ReloadCurrent);
-        let close_text = self.text(UiTextKey::Close);
-        let help_text = self.text(UiTextKey::Help);
-        let black_text = self.text(UiTextKey::Black);
-        let gray_text = self.text(UiTextKey::Gray);
-        let tile_text = self.text(UiTextKey::Tile);
-        let separator_text = self.text(UiTextKey::Separator);
-        let separator_style_text = self.text(UiTextKey::SeparatorStyle);
-        let separator_color_text = self.text(UiTextKey::SeparatorColor);
-        let separator_pixels_text = self.text(UiTextKey::SeparatorPixels);
-        let none_text = self.text(UiTextKey::None);
-        let solid_text = self.text(UiTextKey::Solid);
-        let shadow_text = self.text(UiTextKey::Shadow);
-        let remember_save_path_text = self.text(UiTextKey::RememberSavePath);
-        let apply_text = self.text(UiTextKey::Apply);
-        let undo_text = self.text(UiTextKey::Undo);
-        let reset_text = self.text(UiTextKey::Reset);
-        let enable_text = self.text(UiTextKey::Enable);
-        let search_path_text = self.text(UiTextKey::SearchPath);
-        let browse_text = self.text(UiTextKey::Browse);
-        let load_modules_text = self.text(UiTextKey::LoadModules);
-        let modules_text = self.text(UiTextKey::Modules);
-        let search_path_os_api_text = self.text(UiTextKey::SearchPathOsApi);
-        let registered_file_associations_text = self.text(UiTextKey::RegisteredFileAssociations);
-        let failed_file_associations_text = self.text(UiTextKey::FailedFileAssociations);
-        let cleaned_system_integration_text = self.text(UiTextKey::CleanedSystemIntegration);
-        let workaround_text = self.text(UiTextKey::Workaround);
-        let archive_text = self.text(UiTextKey::Archive);
-        let threshold_mb_text = self.text(UiTextKey::ThresholdMb);
-        let local_cache_text = self.text(UiTextKey::LocalCache);
-        let thumbnail_suppression_text = self.text(UiTextKey::ThumbnailSuppression);
-        let fit_width_text = self.text(UiTextKey::FitWidth);
-        let fit_height_text = self.text(UiTextKey::FitHeight);
-        let fit_screen_text = self.text(UiTextKey::FitScreen);
-        let fit_screen_include_smaller_text = self.text(UiTextKey::FitScreenIncludeSmaller);
-        let fit_screen_only_smaller_text = self.text(UiTextKey::FitScreenOnlySmaller);
-        let nearest_text = self.text(UiTextKey::Nearest);
-        let bilinear_text = self.text(UiTextKey::Bilinear);
-        let bicubic_text = self.text(UiTextKey::Bicubic);
-        let lanczos3_text = self.text(UiTextKey::Lanczos3);
-        let stop_text = self.text(UiTextKey::Stop);
-        let loop_text = self.text(UiTextKey::Loop);
-        let next_text = self.text(UiTextKey::Next);
-        let recursive_text = self.text(UiTextKey::Recursive);
-        egui::Window::new(settings_text)
+        let mut reload_requested = false;
+        let mut close_requested = false;
+
+        egui::Window::new(self.text(UiTextKey::Settings))
             .open(&mut open)
             .resizable(true)
             .show(ctx, |ui| {
-                ui.horizontal_wrapped(|ui| {
-                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Viewer, viewer_text);
-                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Render, render_text);
-                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Window, window_text);
-                    ui.selectable_value(
-                        &mut self.settings_tab,
-                        SettingsTab::Navigation,
-                        navigation_text,
-                    );
-                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Plugins, plugins_text);
-                    ui.selectable_value(
-                        &mut self.settings_tab,
-                        SettingsTab::Resources,
-                        resources_text,
-                    );
-                    ui.selectable_value(&mut self.settings_tab, SettingsTab::System, system_tab_text);
-                });
+                self.settings_tab_strip(ui);
                 ui.separator();
 
-                if self.settings_tab == SettingsTab::Viewer {
-                    let section_changed_before = config_changed;
-                    ui.group(|ui| {
-                        config_changed |= ui
-                            .checkbox(&mut self.options.animation, animation_text)
-                            .changed();
-                        config_changed |= ui
-                            .checkbox(&mut self.options.grayscale, grayscale_text)
-                            .changed();
-                        config_changed |= ui
-                            .checkbox(&mut self.options.manga_mode, manga_mode_text)
-                            .changed();
-                        config_changed |= ui
-                            .checkbox(&mut self.options.manga_right_to_left, manga_rtl_text)
-                            .changed();
-                        ui.separator();
-                        ui.label(separator_text);
-                        ui.horizontal(|ui| {
-                            ui.label(separator_style_text);
-                            egui::ComboBox::from_id_salt("manga_separator_style")
-                                .selected_text(match self.options.manga_separator.style {
-                                    MangaSeparatorStyle::None => none_text,
-                                    MangaSeparatorStyle::Solid => solid_text,
-                                    MangaSeparatorStyle::Shadow => shadow_text,
-                                })
-                                .show_ui(ui, |ui| {
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.options.manga_separator.style,
-                                            MangaSeparatorStyle::None,
-                                            none_text,
-                                        )
-                                        .changed();
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.options.manga_separator.style,
-                                            MangaSeparatorStyle::Solid,
-                                            solid_text,
-                                        )
-                                        .changed();
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.options.manga_separator.style,
-                                            MangaSeparatorStyle::Shadow,
-                                            shadow_text,
-                                        )
-                                        .changed();
-                                });
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label(separator_pixels_text);
-                            config_changed |= ui
-                                .add(
-                                    egui::DragValue::new(&mut self.options.manga_separator.pixels)
-                                        .range(0.0..=64.0)
-                                        .speed(0.25),
-                                )
-                                .changed();
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label(separator_color_text);
-                            config_changed |= ui
-                                .color_edit_button_srgba_unmultiplied(
-                                    &mut self.options.manga_separator.color,
-                                )
-                                .changed();
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.label(background_text);
-                            if ui.button(black_text).clicked() {
-                                self.options.background = BackgroundStyle::Solid([0, 0, 0, 255]);
-                                config_changed = true;
-                            }
-                            if ui.button(gray_text).clicked() {
-                                self.options.background = BackgroundStyle::Solid([48, 48, 48, 255]);
-                                config_changed = true;
-                            }
-                            if ui.button(tile_text).clicked() {
-                                self.options.background = BackgroundStyle::Tile {
-                                    color1: [32, 32, 32, 255],
-                                    color2: [80, 80, 80, 255],
-                                    size: 16,
-                                };
-                                config_changed = true;
-                            }
-                        });
-                    });
-                    viewer_changed |= config_changed != section_changed_before;
-                }
-
-                if self.settings_tab == SettingsTab::Plugins {
-                    ui.group(|ui| {
-                        ui.heading("susie64");
-                        config_changed |= ui
-                            .checkbox(&mut self.plugins.susie64.enable, enable_text)
-                            .changed();
-                        ui.label(search_path_text);
-                        if ui
-                            .text_edit_singleline(&mut self.susie64_search_paths_input)
-                            .changed()
-                        {
-                            self.plugins.susie64.search_path =
-                                parse_search_paths(&self.susie64_search_paths_input);
-                            config_changed = true;
-                        }
-                        if ui.button(browse_text).clicked() {
-                            if let Some(path) = pick_save_directory() {
-                                self.plugins.susie64.search_path = vec![path];
-                                self.susie64_search_paths_input =
-                                    join_search_paths(&self.plugins.susie64.search_path);
-                                config_changed = true;
-                            }
-                        }
-                        if ui.button(load_modules_text).clicked() {
-                            self.plugins.susie64.modules =
-                                discover_plugin_modules("susie64", &self.plugins.susie64);
-                            config_changed = true;
-                        }
-                        ui.label(format!(
-                            "{}: {}",
-                            modules_text,
-                            self.plugins.susie64.modules.len()
-                        ));
-                        ui.separator();
-                        ui.heading("system");
-                        config_changed |= ui
-                            .checkbox(&mut self.plugins.system.enable, enable_text)
-                            .changed();
-                        ui.label(search_path_os_api_text);
-                        ui.label(format!(
-                            "{}: {}",
-                            modules_text,
-                            self.plugins.system.modules.len()
-                        ));
-                        ui.separator();
-                        ui.heading("ffmpeg");
-                        config_changed |= ui
-                            .checkbox(&mut self.plugins.ffmpeg.enable, enable_text)
-                            .changed();
-                        ui.label(search_path_text);
-                        if ui
-                            .text_edit_singleline(&mut self.ffmpeg_search_paths_input)
-                            .changed()
-                        {
-                            self.plugins.ffmpeg.search_path =
-                                parse_search_paths(&self.ffmpeg_search_paths_input);
-                            config_changed = true;
-                        }
-                        if ui.button(browse_text).clicked() {
-                            if let Some(path) = pick_save_directory() {
-                                self.plugins.ffmpeg.search_path = vec![path];
-                                self.ffmpeg_search_paths_input =
-                                    join_search_paths(&self.plugins.ffmpeg.search_path);
-                                config_changed = true;
-                            }
-                        }
-                        if ui.button(load_modules_text).clicked() {
-                            self.plugins.ffmpeg.modules =
-                                discover_plugin_modules("ffmpeg", &self.plugins.ffmpeg);
-                            config_changed = true;
-                        }
-                        ui.label(format!(
-                            "{}: {}",
-                            modules_text,
-                            self.plugins.ffmpeg.modules.len()
-                        ));
-                    });
-                }
-
-                if self.settings_tab == SettingsTab::Resources {
-                    let section_changed_before = config_changed;
-                    ui.group(|ui| {
-                        ui.label(format!("{}: {}", locale_text, self.applied_locale));
-                        ui.horizontal(|ui| {
-                            ui.label(locale_text);
-                            if ui
-                                .text_edit_singleline(&mut self.resource_locale_input)
-                                .changed()
-                            {
-                                let trimmed = self.resource_locale_input.trim();
-                                self.resources.locale =
-                                    if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("system")
-                                    {
-                                        None
-                                    } else {
-                                        Some(trimmed.to_string())
-                                    };
-                                config_changed = true;
-                            }
-                            ui.label(auto_text);
-                        });
-                        if !self.loaded_font_names.is_empty() {
-                            ui.label(format!(
-                                "{}: {}",
-                                fonts_text,
-                                self.loaded_font_names.join(", ")
-                            ));
-                        }
-                        ui.horizontal(|ui| {
-                            ui.label(font_size_text);
-                            egui::ComboBox::from_id_salt("font_size")
-                                .selected_text(font_size_label(self.resources.font_size))
-                                .show_ui(ui, |ui| {
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.resources.font_size,
-                                            FontSizePreset::Auto,
-                                            auto_text,
-                                        )
-                                        .changed();
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.resources.font_size,
-                                            FontSizePreset::S,
-                                            "S",
-                                        )
-                                        .changed();
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.resources.font_size,
-                                            FontSizePreset::M,
-                                            "M",
-                                        )
-                                        .changed();
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.resources.font_size,
-                                            FontSizePreset::L,
-                                            "L",
-                                        )
-                                        .changed();
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.resources.font_size,
-                                            FontSizePreset::LL,
-                                            "LL",
-                                        )
-                                        .changed();
-                                });
-                        });
-                        ui.label(search_path_text);
-                        if ui
-                            .text_edit_singleline(&mut self.resource_font_paths_input)
-                            .changed()
-                        {
-                            self.resources.font_paths =
-                                parse_search_paths(&self.resource_font_paths_input);
-                            config_changed = true;
-                        }
-                        ui.separator();
-                        ui.label(workaround_text);
-                        ui.horizontal(|ui| {
-                            ui.label(format!("{archive_text} ZIP"));
-                            ui.label(threshold_mb_text);
-                            config_changed |= ui
-                                .add(
-                                    egui::DragValue::new(
-                                        &mut self.runtime.workaround.archive.zip.threshold_mb,
-                                    )
-                                    .range(16..=16_384)
-                                    .speed(8.0),
-                                )
-                                .changed();
-                            ui.checkbox(
-                                &mut self.runtime.workaround.archive.zip.local_cache,
-                                local_cache_text,
-                            );
-                        });
-                        config_changed |= ui
-                            .checkbox(
-                                &mut self.runtime.workaround.thumbnail.suppress_large_files,
-                                thumbnail_suppression_text,
-                            )
-                            .changed();
-                    });
-                    resources_changed |= config_changed != section_changed_before;
-                    runtime_changed |= config_changed != section_changed_before;
-                }
-
-                if self.settings_tab == SettingsTab::Render {
-                    let section_changed_before = config_changed;
-                    ui.group(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.label(zoom_mode_text);
-                            let before = self.render_options.zoom_option.clone();
-                            egui::ComboBox::from_id_salt("zoom_option")
-                                .selected_text(zoom_option_label(
-                                    &self.applied_locale,
-                                    &self.render_options.zoom_option,
-                                ))
-                                .show_ui(ui, |ui| {
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_option,
-                                        ZoomOption::None,
-                                        none_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_option,
-                                        ZoomOption::FitWidth,
-                                        fit_width_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_option,
-                                        ZoomOption::FitHeight,
-                                        fit_height_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_option,
-                                        ZoomOption::FitScreen,
-                                        fit_screen_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_option,
-                                        ZoomOption::FitScreenIncludeSmaller,
-                                        fit_screen_include_smaller_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_option,
-                                        ZoomOption::FitScreenOnlySmaller,
-                                        fit_screen_only_smaller_text,
-                                    );
-                                });
-                            if self.render_options.zoom_option != before {
-                                zoom_option_changed = true;
-                                config_changed = true;
-                            }
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.label(resize_text);
-                            let before = self.render_options.zoom_method;
-                            egui::ComboBox::from_id_salt("zoom_method")
-                                .selected_text(interpolation_label(self.render_options.zoom_method))
-                                .show_ui(ui, |ui| {
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_method,
-                                        InterpolationAlgorithm::NearestNeighber,
-                                        nearest_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_method,
-                                        InterpolationAlgorithm::Bilinear,
-                                        bilinear_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_method,
-                                        InterpolationAlgorithm::BicubicAlpha(None),
-                                        bicubic_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.render_options.zoom_method,
-                                        InterpolationAlgorithm::Lanzcos3,
-                                        lanczos3_text,
-                                    );
-                                });
-                            if self.render_options.zoom_method != before {
-                                rerender_requested = true;
-                                config_changed = true;
-                            }
-                        });
-                    });
-                    render_changed |= config_changed != section_changed_before;
-                }
-
-                if self.settings_tab == SettingsTab::Window {
-                    let section_changed_before = config_changed;
-                    ui.group(|ui| {
-                        if ui
-                            .checkbox(&mut self.window_options.fullscreen, fullscreen_text)
-                            .changed()
-                        {
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(
-                                self.window_options.fullscreen,
-                            ));
-                            config_changed = true;
-                        }
-                        config_changed |= ui
-                            .checkbox(&mut self.window_options.remember_size, remember_size_text)
-                            .changed();
-                        config_changed |= ui
-                            .checkbox(
-                                &mut self.window_options.remember_position,
-                                remember_position_text,
-                            )
-                            .changed();
-                        ui.horizontal(|ui| {
-                            ui.label(theme_text);
-                            egui::ComboBox::from_id_salt("window_theme")
-                                .selected_text(match self.window_options.ui_theme {
-                                    WindowUiTheme::System => system_text,
-                                    WindowUiTheme::Light => light_text,
-                                    WindowUiTheme::Dark => dark_text,
-                                })
-                                .show_ui(ui, |ui| {
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.window_options.ui_theme,
-                                            WindowUiTheme::System,
-                                            system_text,
-                                        )
-                                        .changed();
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.window_options.ui_theme,
-                                            WindowUiTheme::Light,
-                                            light_text,
-                                        )
-                                        .changed();
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.window_options.ui_theme,
-                                            WindowUiTheme::Dark,
-                                            dark_text,
-                                        )
-                                        .changed();
-                                });
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label(pane_side_text);
-                            egui::ComboBox::from_id_salt("pane_side")
-                                .selected_text(match self.window_options.pane_side {
-                                    PaneSide::Left => left_text,
-                                    PaneSide::Right => right_text,
-                                })
-                                .show_ui(ui, |ui| {
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.window_options.pane_side,
-                                            PaneSide::Left,
-                                            left_text,
-                                        )
-                                        .changed();
-                                    config_changed |= ui
-                                        .selectable_value(
-                                            &mut self.window_options.pane_side,
-                                            PaneSide::Right,
-                                            right_text,
-                                        )
-                                        .changed();
-                                });
-                        });
-                        match &mut self.window_options.size {
-                            crate::ui::viewer::options::WindowSize::Relative(ratio) => {
-                                ui.label(window_relative_text);
-                                config_changed |= ui
-                                    .add(egui::Slider::new(ratio, 0.2..=1.0).text("ratio"))
-                                    .changed();
-                                if ui.button(use_exact_size_text).clicked() {
-                                    self.window_options.size =
-                                        crate::ui::viewer::options::WindowSize::Exact {
-                                            width: self.last_viewport_size.x.max(320.0),
-                                            height: self.last_viewport_size.y.max(240.0),
-                                        };
-                                    config_changed = true;
-                                }
-                            }
-                            crate::ui::viewer::options::WindowSize::Exact { width, height } => {
-                                ui.label(window_exact_text);
-                                config_changed |= ui
-                                    .add(egui::DragValue::new(width).speed(1.0).prefix("W "))
-                                    .changed();
-                                config_changed |= ui
-                                    .add(egui::DragValue::new(height).speed(1.0).prefix("H "))
-                                    .changed();
-                                if ui.button(use_relative_size_text).clicked() {
-                                    self.window_options.size =
-                                        crate::ui::viewer::options::WindowSize::Relative(0.8);
-                                    config_changed = true;
-                                }
-                            }
-                        }
-                    });
-                    window_changed |= config_changed != section_changed_before;
-                }
-
-                if self.settings_tab == SettingsTab::Navigation {
-                    let mut navigation_section_changed = false;
-                    let mut storage_section_changed = false;
-                    ui.group(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.label(end_of_folder_text);
-                            let before = self.end_of_folder;
-                            egui::ComboBox::from_id_salt("end_of_folder")
-                                .selected_text(end_of_folder_label(
-                                    &self.applied_locale,
-                                    self.end_of_folder,
-                                ))
-                                .show_ui(ui, |ui| {
-                                    ui.selectable_value(
-                                        &mut self.end_of_folder,
-                                        EndOfFolderOption::Stop,
-                                        stop_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.end_of_folder,
-                                        EndOfFolderOption::Loop,
-                                        loop_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.end_of_folder,
-                                        EndOfFolderOption::Next,
-                                        next_text,
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.end_of_folder,
-                                        EndOfFolderOption::Recursive,
-                                        recursive_text,
-                                    );
-                                });
-                            if self.end_of_folder != before {
-                                navigation_section_changed = true;
-                                config_changed = true;
-                            }
-                        });
-                        let remember_changed = ui
-                            .checkbox(&mut self.storage.path_record, remember_save_path_text)
-                            .changed();
-                        if remember_changed {
-                            if self.storage.path_record && self.storage.path.is_none() {
-                                self.storage.path = self
-                                    .save_dialog
-                                    .output_dir
-                                    .clone()
-                                    .or_else(default_download_dir)
-                                    .or_else(|| self.current_path.parent().map(|path| path.to_path_buf()));
-                            }
-                            storage_section_changed = true;
-                            config_changed = true;
-                        }
-                    });
-                    navigation_changed |= navigation_section_changed;
-                    storage_changed |= storage_section_changed;
-                }
-
-                if self.settings_tab == SettingsTab::System {
-                    ui.group(|ui| {
-                        ui.label(format!("{}: {}", program_name_text, crate::get_prograname()));
-                        ui.label(format!("{}: {}", version_text, crate::get_version()));
-                        ui.label(format!("{}: {}", author_text, crate::get_auther()));
-                        ui.label(format!("{}: {}", copyright_text, crate::get_copyright()));
-                        ui.separator();
-                        ui.horizontal_wrapped(|ui| {
-                            if ui.button(register_system_text).clicked() {
-                                match std::env::current_exe()
-                                    .ok()
-                                    .and_then(|exe| register_system_file_associations(&exe).ok())
-                                {
-                                    Some(()) => {
-                                        self.overlay.alert_message =
-                                            Some(registered_file_associations_text.to_string());
-                                    }
-                                    None => {
-                                        self.overlay.alert_message =
-                                            Some(failed_file_associations_text.to_string());
-                                    }
-                                }
-                            }
-                            if ui.button(clean_system_text).clicked() {
-                                match clean_system_integration() {
-                                    Ok(()) => {
-                                        self.overlay.alert_message =
-                                            Some(cleaned_system_integration_text.to_string());
-                                    }
-                                    Err(err) => {
-                                        self.overlay.alert_message = Some(err.to_string());
-                                    }
-                                }
-                            }
-                        });
-                    });
+                match self.settings_tab {
+                    SettingsTab::Viewer => self.settings_viewer_tab(ui, &mut draft_state),
+                    SettingsTab::Plugins => self.settings_plugins_tab(ui, &mut draft_state),
+                    SettingsTab::Resources => self.settings_resources_tab(ui, &mut draft_state),
+                    SettingsTab::Render => self.settings_render_tab(ui, &mut draft_state),
+                    SettingsTab::Window => self.settings_window_tab(ui, &mut draft_state),
+                    SettingsTab::Navigation => self.settings_navigation_tab(ui, &mut draft_state),
+                    SettingsTab::System => self.settings_system_tab(ui),
                 }
 
                 ui.separator();
                 ui.horizontal(|ui| {
-                    if ui.button(apply_text).clicked() {
+                    if ui.button(self.text(UiTextKey::Apply)).clicked() {
                         apply_requested = true;
                     }
-                    if ui.button(undo_text).clicked() {
-                        undo_requested = true;
+                    if ui.button(self.text(UiTextKey::Undo)).clicked() {
+                        draft_state = build_settings_draft(&self.current_config());
                     }
-                    if ui.button(reset_text).clicked() {
-                        reset_requested = true;
+                    if ui.button(self.text(UiTextKey::Reset)).clicked() {
+                        draft_state = build_settings_draft(&AppConfig::default());
                     }
-                    if ui.button(reload_current_text).clicked() {
+                    if ui.button(self.text(UiTextKey::ReloadCurrent)).clicked() {
                         reload_requested = true;
                     }
-                    if ui.button(help_text).clicked() {
+                    if ui.button(self.text(UiTextKey::Help)).clicked() {
                         self.open_help();
                     }
-                    if ui.button(close_text).clicked() {
+                    if ui.button(self.text(UiTextKey::Close)).clicked() {
                         close_requested = true;
                     }
                 });
             });
+
         if close_requested {
             open = false;
-        }
-        self.show_settings = open;
-        if reset_requested {
-            self.restore_config(AppConfig::default(), ctx);
-        }
-        if undo_requested {
-            let config = load_app_config(self.config_path.as_deref()).unwrap_or_default();
-            self.restore_config(config, ctx);
-        }
-        if zoom_option_changed {
-            self.pending_fit_recalc = true;
-        }
-        if rerender_requested {
-            let _ = self.request_resize_current();
         }
         if reload_requested {
             let _ = self.reload_current();
         }
-        let plugin_changed = self.plugins != initial_plugins;
-        if config_changed || apply_requested {
-            if window_changed || apply_requested {
-                self.apply_window_theme(ctx);
-            }
-            if resources_changed || apply_requested {
-                let applied = apply_resources(ctx, &self.resources);
-                self.applied_locale = applied.locale;
-                self.loaded_font_names = applied.loaded_fonts;
-            }
-            if runtime_changed || apply_requested {
-                set_archive_zip_workaround(self.runtime.workaround.archive.zip.clone());
-                set_thumbnail_workaround(self.runtime.workaround.thumbnail.clone());
-            }
-            if plugin_changed || apply_requested {
-                set_runtime_plugin_config(self.plugins.clone());
-            }
-            if navigation_changed {
-                self.refresh_current_filer_directory();
-            }
-            if config_changed || apply_requested {
-                self.persist_config_async();
-            }
-            if plugin_changed {
-                self.show_restart_prompt = true;
-            }
+        if apply_requested {
+            self.settings_draft = Some(draft_state.clone());
+            let previous = self.current_config();
+            self.apply_settings_draft(ctx);
+            self.finish_settings_apply(ctx, previous, initial_live_plugins);
+        } else if open {
+            self.settings_draft = Some(draft_state);
+        }
+
+        if !open {
+            self.close_settings_dialog();
+        } else {
+            self.show_settings = true;
         }
     }
 
-    fn restore_config(&mut self, config: AppConfig, ctx: &egui::Context) {
+    fn settings_tab_strip(&mut self, ui: &mut egui::Ui) {
+        let viewer_text = self.text(UiTextKey::Viewer);
+        let render_text = self.text(UiTextKey::Render);
+        let window_text = self.text(UiTextKey::Window);
+        let navigation_text = self.text(UiTextKey::Navigation);
+        let plugins_text = self.text(UiTextKey::Plugins);
+        let resources_text = self.text(UiTextKey::Resources);
+        let system_text = self.text(UiTextKey::System);
+        ui.horizontal_wrapped(|ui| {
+            ui.selectable_value(&mut self.settings_tab, SettingsTab::Viewer, viewer_text);
+            ui.selectable_value(&mut self.settings_tab, SettingsTab::Render, render_text);
+            ui.selectable_value(&mut self.settings_tab, SettingsTab::Window, window_text);
+            ui.selectable_value(&mut self.settings_tab, SettingsTab::Navigation, navigation_text);
+            ui.selectable_value(&mut self.settings_tab, SettingsTab::Plugins, plugins_text);
+            ui.selectable_value(&mut self.settings_tab, SettingsTab::Resources, resources_text);
+            ui.selectable_value(&mut self.settings_tab, SettingsTab::System, system_text);
+        });
+    }
+
+    fn settings_viewer_tab(
+        &mut self,
+        ui: &mut egui::Ui,
+        draft_state: &mut SettingsDraftState,
+    ) {
+        let draft = &mut draft_state.config;
+        ui.group(|ui| {
+            ui.checkbox(&mut draft.viewer.animation, self.text(UiTextKey::Animation));
+            ui.checkbox(&mut draft.viewer.grayscale, self.text(UiTextKey::Grayscale));
+            ui.checkbox(&mut draft.viewer.manga_mode, self.text(UiTextKey::MangaMode));
+            ui.checkbox(
+                &mut draft.viewer.manga_right_to_left,
+                self.text(UiTextKey::MangaRightToLeft),
+            );
+            ui.separator();
+            ui.label(self.text(UiTextKey::Separator));
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::SeparatorStyle));
+                egui::ComboBox::from_id_salt("manga_separator_style")
+                    .selected_text(match draft.viewer.manga_separator.style {
+                        MangaSeparatorStyle::None => self.text(UiTextKey::None),
+                        MangaSeparatorStyle::Solid => self.text(UiTextKey::Solid),
+                        MangaSeparatorStyle::Shadow => self.text(UiTextKey::Shadow),
+                    })
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut draft.viewer.manga_separator.style,
+                            MangaSeparatorStyle::None,
+                            self.text(UiTextKey::None),
+                        );
+                        ui.selectable_value(
+                            &mut draft.viewer.manga_separator.style,
+                            MangaSeparatorStyle::Solid,
+                            self.text(UiTextKey::Solid),
+                        );
+                        ui.selectable_value(
+                            &mut draft.viewer.manga_separator.style,
+                            MangaSeparatorStyle::Shadow,
+                            self.text(UiTextKey::Shadow),
+                        );
+                    });
+            });
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::SeparatorPixels));
+                ui.add(
+                    egui::DragValue::new(&mut draft.viewer.manga_separator.pixels)
+                        .range(0.0..=64.0)
+                        .speed(0.25),
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::SeparatorColor));
+                ui.color_edit_button_srgba_unmultiplied(&mut draft.viewer.manga_separator.color);
+            });
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::Background));
+                if ui.button(self.text(UiTextKey::Black)).clicked() {
+                    draft.viewer.background = BackgroundStyle::Solid([0, 0, 0, 255]);
+                }
+                if ui.button(self.text(UiTextKey::Gray)).clicked() {
+                    draft.viewer.background = BackgroundStyle::Solid([48, 48, 48, 255]);
+                }
+                if ui.button(self.text(UiTextKey::Tile)).clicked() {
+                    draft.viewer.background = BackgroundStyle::Tile {
+                        color1: [32, 32, 32, 255],
+                        color2: [80, 80, 80, 255],
+                        size: 16,
+                    };
+                }
+            });
+        });
+    }
+
+    fn settings_plugins_tab(
+        &mut self,
+        ui: &mut egui::Ui,
+        draft_state: &mut SettingsDraftState,
+    ) {
+        let draft = &mut draft_state.config;
+        ui.group(|ui| {
+            ui.heading("susie64");
+            ui.checkbox(&mut draft.plugins.susie64.enable, self.text(UiTextKey::Enable));
+            ui.label(self.text(UiTextKey::SearchPath));
+            if ui
+                .text_edit_singleline(&mut draft_state.susie64_search_paths_input)
+                .changed()
+            {
+                draft.plugins.susie64.search_path =
+                    parse_search_paths(&draft_state.susie64_search_paths_input);
+            }
+            if ui.button(self.text(UiTextKey::Browse)).clicked() {
+                if let Some(path) = pick_save_directory() {
+                    draft.plugins.susie64.search_path = vec![path];
+                    draft_state.susie64_search_paths_input =
+                        join_search_paths(&draft.plugins.susie64.search_path);
+                }
+            }
+            if ui.button(self.text(UiTextKey::LoadModules)).clicked() {
+                draft.plugins.susie64.modules =
+                    discover_plugin_modules("susie64", &draft.plugins.susie64);
+            }
+            ui.label(format!(
+                "{}: {}",
+                self.text(UiTextKey::Modules),
+                draft.plugins.susie64.modules.len()
+            ));
+
+            ui.separator();
+            ui.heading("system");
+            ui.checkbox(&mut draft.plugins.system.enable, self.text(UiTextKey::Enable));
+            ui.label(self.text(UiTextKey::SearchPathOsApi));
+            ui.label(format!(
+                "{}: {}",
+                self.text(UiTextKey::Modules),
+                draft.plugins.system.modules.len()
+            ));
+
+            ui.separator();
+            ui.heading("ffmpeg");
+            ui.checkbox(&mut draft.plugins.ffmpeg.enable, self.text(UiTextKey::Enable));
+            ui.label(self.text(UiTextKey::SearchPath));
+            if ui
+                .text_edit_singleline(&mut draft_state.ffmpeg_search_paths_input)
+                .changed()
+            {
+                draft.plugins.ffmpeg.search_path =
+                    parse_search_paths(&draft_state.ffmpeg_search_paths_input);
+            }
+            if ui.button(self.text(UiTextKey::Browse)).clicked() {
+                if let Some(path) = pick_save_directory() {
+                    draft.plugins.ffmpeg.search_path = vec![path];
+                    draft_state.ffmpeg_search_paths_input =
+                        join_search_paths(&draft.plugins.ffmpeg.search_path);
+                }
+            }
+            if ui.button(self.text(UiTextKey::LoadModules)).clicked() {
+                draft.plugins.ffmpeg.modules =
+                    discover_plugin_modules("ffmpeg", &draft.plugins.ffmpeg);
+            }
+            ui.label(format!(
+                "{}: {}",
+                self.text(UiTextKey::Modules),
+                draft.plugins.ffmpeg.modules.len()
+            ));
+        });
+    }
+
+    fn settings_resources_tab(
+        &mut self,
+        ui: &mut egui::Ui,
+        draft_state: &mut SettingsDraftState,
+    ) {
+        let draft = &mut draft_state.config;
+        ui.group(|ui| {
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::Locale));
+                ui.text_edit_singleline(&mut draft_state.resource_locale_input);
+                if ui.button(self.text(UiTextKey::Auto)).clicked() {
+                    draft_state.resource_locale_input = system_locale().unwrap_or_default();
+                }
+            });
+            let trimmed = draft_state.resource_locale_input.trim();
+            draft.resources.locale = if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            };
+
+            if !self.loaded_font_names.is_empty() {
+                ui.label(format!(
+                    "{}: {}",
+                    self.text(UiTextKey::Fonts),
+                    self.loaded_font_names.join(", ")
+                ));
+            }
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::FontSize));
+                egui::ComboBox::from_id_salt("font_size")
+                    .selected_text(font_size_label(draft.resources.font_size))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut draft.resources.font_size,
+                            FontSizePreset::Auto,
+                            self.text(UiTextKey::Auto),
+                        );
+                        ui.selectable_value(&mut draft.resources.font_size, FontSizePreset::S, "S");
+                        ui.selectable_value(&mut draft.resources.font_size, FontSizePreset::M, "M");
+                        ui.selectable_value(&mut draft.resources.font_size, FontSizePreset::L, "L");
+                        ui.selectable_value(&mut draft.resources.font_size, FontSizePreset::LL, "LL");
+                    });
+            });
+            ui.label(self.text(UiTextKey::SearchPath));
+            if ui
+                .text_edit_singleline(&mut draft_state.resource_font_paths_input)
+                .changed()
+            {
+                draft.resources.font_paths =
+                    parse_search_paths(&draft_state.resource_font_paths_input);
+            }
+            ui.separator();
+            ui.label(self.text(UiTextKey::Workaround));
+            ui.horizontal(|ui| {
+                ui.label(format!("{} ZIP", self.text(UiTextKey::Archive)));
+                ui.label(self.text(UiTextKey::ThresholdMb));
+                ui.add(
+                    egui::DragValue::new(&mut draft.runtime.workaround.archive.zip.threshold_mb)
+                        .range(16..=16_384)
+                        .speed(8.0),
+                );
+                ui.checkbox(
+                    &mut draft.runtime.workaround.archive.zip.local_cache,
+                    self.text(UiTextKey::LocalCache),
+                );
+            });
+            ui.checkbox(
+                &mut draft.runtime.workaround.thumbnail.suppress_large_files,
+                self.text(UiTextKey::ThumbnailSuppression),
+            );
+        });
+    }
+
+    fn settings_render_tab(
+        &mut self,
+        ui: &mut egui::Ui,
+        draft_state: &mut SettingsDraftState,
+    ) {
+        let draft = &mut draft_state.config;
+        ui.group(|ui| {
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::ZoomMode));
+                egui::ComboBox::from_id_salt("zoom_option")
+                    .selected_text(zoom_option_label(&self.applied_locale, &draft.render.zoom_option))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut draft.render.zoom_option, ZoomOption::None, self.text(UiTextKey::None));
+                        ui.selectable_value(&mut draft.render.zoom_option, ZoomOption::FitWidth, self.text(UiTextKey::FitWidth));
+                        ui.selectable_value(&mut draft.render.zoom_option, ZoomOption::FitHeight, self.text(UiTextKey::FitHeight));
+                        ui.selectable_value(&mut draft.render.zoom_option, ZoomOption::FitScreen, self.text(UiTextKey::FitScreen));
+                        ui.selectable_value(
+                            &mut draft.render.zoom_option,
+                            ZoomOption::FitScreenIncludeSmaller,
+                            self.text(UiTextKey::FitScreenIncludeSmaller),
+                        );
+                        ui.selectable_value(
+                            &mut draft.render.zoom_option,
+                            ZoomOption::FitScreenOnlySmaller,
+                            self.text(UiTextKey::FitScreenOnlySmaller),
+                        );
+                    });
+            });
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::Resize));
+                egui::ComboBox::from_id_salt("zoom_method")
+                    .selected_text(interpolation_label(draft.render.zoom_method))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut draft.render.zoom_method,
+                            InterpolationAlgorithm::NearestNeighber,
+                            self.text(UiTextKey::Nearest),
+                        );
+                        ui.selectable_value(
+                            &mut draft.render.zoom_method,
+                            InterpolationAlgorithm::Bilinear,
+                            self.text(UiTextKey::Bilinear),
+                        );
+                        ui.selectable_value(
+                            &mut draft.render.zoom_method,
+                            InterpolationAlgorithm::BicubicAlpha(None),
+                            self.text(UiTextKey::Bicubic),
+                        );
+                        ui.selectable_value(
+                            &mut draft.render.zoom_method,
+                            InterpolationAlgorithm::Lanzcos3,
+                            self.text(UiTextKey::Lanczos3),
+                        );
+                    });
+            });
+        });
+    }
+
+    fn settings_window_tab(
+        &mut self,
+        ui: &mut egui::Ui,
+        draft_state: &mut SettingsDraftState,
+    ) {
+        let draft = &mut draft_state.config;
+        ui.group(|ui| {
+            ui.checkbox(&mut draft.window.fullscreen, self.text(UiTextKey::Fullscreen));
+            ui.checkbox(&mut draft.window.remember_size, self.text(UiTextKey::RememberSize));
+            ui.checkbox(
+                &mut draft.window.remember_position,
+                self.text(UiTextKey::RememberPosition),
+            );
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::Theme));
+                egui::ComboBox::from_id_salt("window_theme")
+                    .selected_text(match draft.window.ui_theme {
+                        WindowUiTheme::System => self.text(UiTextKey::System),
+                        WindowUiTheme::Light => self.text(UiTextKey::Light),
+                        WindowUiTheme::Dark => self.text(UiTextKey::Dark),
+                    })
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut draft.window.ui_theme,
+                            WindowUiTheme::System,
+                            self.text(UiTextKey::System),
+                        );
+                        ui.selectable_value(
+                            &mut draft.window.ui_theme,
+                            WindowUiTheme::Light,
+                            self.text(UiTextKey::Light),
+                        );
+                        ui.selectable_value(
+                            &mut draft.window.ui_theme,
+                            WindowUiTheme::Dark,
+                            self.text(UiTextKey::Dark),
+                        );
+                    });
+            });
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::PaneSide));
+                egui::ComboBox::from_id_salt("pane_side")
+                    .selected_text(match draft.window.pane_side {
+                        PaneSide::Left => self.text(UiTextKey::Left),
+                        PaneSide::Right => self.text(UiTextKey::Right),
+                    })
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut draft.window.pane_side,
+                            PaneSide::Left,
+                            self.text(UiTextKey::Left),
+                        );
+                        ui.selectable_value(
+                            &mut draft.window.pane_side,
+                            PaneSide::Right,
+                            self.text(UiTextKey::Right),
+                        );
+                    });
+            });
+            match &mut draft.window.size {
+                crate::ui::viewer::options::WindowSize::Relative(ratio) => {
+                    ui.label(self.text(UiTextKey::WindowSizeRelative));
+                    ui.add(egui::Slider::new(ratio, 0.2..=1.0).text("ratio"));
+                    if ui.button(self.text(UiTextKey::UseExactSize)).clicked() {
+                        draft.window.size = crate::ui::viewer::options::WindowSize::Exact {
+                            width: self.last_viewport_size.x.max(320.0),
+                            height: self.last_viewport_size.y.max(240.0),
+                        };
+                    }
+                }
+                crate::ui::viewer::options::WindowSize::Exact { width, height } => {
+                    ui.label(self.text(UiTextKey::WindowSizeExact));
+                    ui.add(egui::DragValue::new(width).speed(1.0).prefix("W "));
+                    ui.add(egui::DragValue::new(height).speed(1.0).prefix("H "));
+                    if ui.button(self.text(UiTextKey::UseRelativeSize)).clicked() {
+                        draft.window.size = crate::ui::viewer::options::WindowSize::Relative(0.8);
+                    }
+                }
+            }
+        });
+    }
+
+    fn settings_navigation_tab(
+        &mut self,
+        ui: &mut egui::Ui,
+        draft_state: &mut SettingsDraftState,
+    ) {
+        let draft = &mut draft_state.config;
+        ui.group(|ui| {
+            ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::EndOfFolder));
+                egui::ComboBox::from_id_salt("end_of_folder")
+                    .selected_text(end_of_folder_label(
+                        &self.applied_locale,
+                        draft.navigation.end_of_folder,
+                    ))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut draft.navigation.end_of_folder,
+                            EndOfFolderOption::Stop,
+                            self.text(UiTextKey::Stop),
+                        );
+                        ui.selectable_value(
+                            &mut draft.navigation.end_of_folder,
+                            EndOfFolderOption::Loop,
+                            self.text(UiTextKey::Loop),
+                        );
+                        ui.selectable_value(
+                            &mut draft.navigation.end_of_folder,
+                            EndOfFolderOption::Next,
+                            self.text(UiTextKey::Next),
+                        );
+                        ui.selectable_value(
+                            &mut draft.navigation.end_of_folder,
+                            EndOfFolderOption::Recursive,
+                            self.text(UiTextKey::Recursive),
+                        );
+                    });
+            });
+            let remember_changed = ui
+                .checkbox(
+                    &mut draft.storage.path_record,
+                    self.text(UiTextKey::RememberSavePath),
+                )
+                .changed();
+            if remember_changed && draft.storage.path_record && draft.storage.path.is_none() {
+                draft.storage.path = self
+                    .save_dialog
+                    .output_dir
+                    .clone()
+                    .or_else(default_download_dir)
+                    .or_else(|| self.current_path.parent().map(|path| path.to_path_buf()));
+            }
+        });
+    }
+
+    fn settings_system_tab(&mut self, ui: &mut egui::Ui) {
+        ui.group(|ui| {
+            ui.label(format!("{}: {}", self.text(UiTextKey::ProgramName), crate::get_prograname()));
+            ui.label(format!("{}: {}", self.text(UiTextKey::Version), crate::get_version()));
+            ui.label(format!("{}: {}", self.text(UiTextKey::Author), crate::get_auther()));
+            ui.label(format!("{}: {}", self.text(UiTextKey::Copyright), crate::get_copyright()));
+            ui.separator();
+            ui.horizontal_wrapped(|ui| {
+                if ui.button(self.text(UiTextKey::RegisterSystem)).clicked() {
+                    match std::env::current_exe()
+                        .ok()
+                        .and_then(|exe| register_system_file_associations(&exe).ok())
+                    {
+                        Some(()) => {
+                            self.overlay.alert_message =
+                                Some(self.text(UiTextKey::RegisteredFileAssociations).to_string());
+                        }
+                        None => {
+                            self.overlay.alert_message =
+                                Some(self.text(UiTextKey::FailedFileAssociations).to_string());
+                        }
+                    }
+                }
+                if ui.button(self.text(UiTextKey::CleanSystem)).clicked() {
+                    match clean_system_integration() {
+                        Ok(()) => {
+                            self.overlay.alert_message =
+                                Some(self.text(UiTextKey::CleanedSystemIntegration).to_string());
+                        }
+                        Err(err) => {
+                            self.overlay.alert_message = Some(err.to_string());
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    fn finish_settings_apply(
+        &mut self,
+        ctx: &egui::Context,
+        previous: AppConfig,
+        initial_live_plugins: crate::dependent::plugins::PluginConfig,
+    ) {
+        if self.window_options.fullscreen != previous.window.fullscreen {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(
+                self.window_options.fullscreen,
+            ));
+        }
+        if self.window_options.pane_side != previous.window.pane_side
+            || self.end_of_folder != previous.navigation.end_of_folder
+        {
+            self.refresh_current_filer_directory();
+        }
+        if self.render_options.zoom_option != previous.render.zoom_option {
+            self.pending_fit_recalc = true;
+        }
+        if self.render_options.zoom_method != previous.render.zoom_method {
+            let _ = self.request_resize_current();
+        }
+        if self.options.grayscale != previous.viewer.grayscale {
+            self.upload_current_frame();
+        }
+        if self.plugins != initial_live_plugins {
+            self.show_restart_prompt = true;
+        }
+    }
+
+    pub(crate) fn restore_config(&mut self, config: AppConfig, ctx: &egui::Context) {
         self.options = config.viewer;
         self.window_options = config.window;
         self.render_options = config.render;

@@ -1,4 +1,5 @@
 use crate::drawers::image::SaveFormat;
+use crate::options::AppConfig;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
 
@@ -30,4 +31,13 @@ impl Default for SaveDialogState {
             result_rx: None,
         }
     }
+}
+
+#[derive(Clone)]
+pub(crate) struct SettingsDraftState {
+    pub(crate) config: AppConfig,
+    pub(crate) resource_locale_input: String,
+    pub(crate) resource_font_paths_input: String,
+    pub(crate) susie64_search_paths_input: String,
+    pub(crate) ffmpeg_search_paths_input: String,
 }

@@ -197,6 +197,14 @@ fn default_save_file_name(path: &std::path::Path) -> String {
         .to_string()
 }
 
+fn blank_loaded_image() -> LoadedImage {
+    LoadedImage {
+        canvas: Canvas::new(1, 1),
+        animation: Vec::new(),
+        loop_count: None,
+    }
+}
+
 fn ellipsize_end(text: &str, max_chars: usize) -> String {
     let chars: Vec<char> = text.chars().collect();
     if chars.len() <= max_chars {
@@ -732,6 +740,18 @@ impl ViewerApp {
         }
     }
 
+    fn clear_current_image_display(&mut self) {
+        let blank = blank_loaded_image();
+        self.source = blank.clone();
+        self.rendered = blank;
+        self.current_frame = 0;
+        self.completed_loops = 0;
+        self.last_frame_at = Instant::now();
+        self.texture_display_scale = 1.0;
+        self.current_texture = self.default_texture.clone();
+        self.current_texture_is_default = true;
+    }
+
     fn update_window_title(&self, ctx: &egui::Context) {
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
             "wml2viewer - {}",
@@ -1066,7 +1086,11 @@ impl ViewerApp {
     }
 
     fn desired_manga_companion_path(&self) -> Option<PathBuf> {
-        if !self.options.manga_mode || self.empty_mode || !self.is_current_portrait_page() {
+        if !self.options.manga_mode
+            || self.empty_mode
+            || !self.navigator_ready
+            || !self.is_current_portrait_page()
+        {
             return None;
         }
         let companion = adjacent_entry(&self.current_navigation_path, self.navigation_sort, 1)?;
@@ -1150,7 +1174,7 @@ impl ViewerApp {
     }
 
     fn manga_navigation_target(&self, forward: bool) -> Option<PathBuf> {
-        if !self.manga_spread_active() {
+        if !self.navigator_ready || !self.manga_spread_active() {
             return None;
         }
 
@@ -1238,23 +1262,31 @@ impl ViewerApp {
     ) -> Result<(), Box<dyn Error>> {
         let branch_changed =
             navigation_branch_path(&self.current_navigation_path) != navigation_branch_path(&navigation_path);
+        let switching_image = self.current_navigation_path != navigation_path;
         if branch_changed {
             self.clear_manga_companion();
         }
+        self.invalidate_preload();
         if self.try_take_preloaded(&navigation_path) {
             return Ok(());
         }
+        if switching_image {
+            self.zoom_factor = 1.0;
+            self.zoom = 1.0;
+        }
         self.show_loading_texture(branch_changed);
+        self.clear_current_image_display();
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.pending_navigation_path = Some(navigation_path.clone());
         self.pending_fit_recalc = !matches!(self.render_options.zoom_option, ZoomOption::None);
         self.overlay.loading_message = Some(format!("Loading {}", navigation_path.display()));
+        let load_zoom = if switching_image { 1.0 } else { self.zoom };
         self.worker_tx
             .send(RenderCommand::LoadPath {
                 request_id,
                 path: load_request_path,
-                zoom: self.zoom,
+                zoom: load_zoom,
                 method: self.render_options.zoom_method,
             })
             .map_err(worker_send_error)?;
@@ -1407,6 +1439,7 @@ impl ViewerApp {
                 pending_navigation_path
             };
         }
+        let loaded_path = path.clone();
         if let Some(path) = path {
             let request_id = self.alloc_fs_request_id();
             let folder_changed = navigation_branch_path(&previous_navigation_path)
@@ -1443,9 +1476,10 @@ impl ViewerApp {
         }
         self.active_request = None;
         if !self.navigator_ready && self.active_fs_request_id.is_none() {
-            if let Some(path) = self.deferred_filesystem_init_path.take() {
+            if self.deferred_filesystem_init_path.take().is_some() {
                 self.startup_phase = StartupPhase::Synchronizing;
-                let _ = self.init_filesystem(path);
+                let sync_path = loaded_path.unwrap_or_else(|| self.current_navigation_path.clone());
+                let _ = self.init_filesystem(sync_path);
             }
         }
         self.schedule_preload();
@@ -1462,6 +1496,9 @@ impl ViewerApp {
 
     fn schedule_preload(&mut self) {
         if self.empty_mode || self.active_request.is_some() {
+            return;
+        }
+        if !self.navigator_ready {
             return;
         }
         if archive_prefers_low_io(&self.current_navigation_path) {
@@ -1546,7 +1583,7 @@ impl ViewerApp {
         self.invalidate_preload();
     }
 
-    fn respawn_filesystem_worker(&mut self) {
+    pub(crate) fn respawn_filesystem_worker(&mut self) {
         let (tx, rx) = spawn_filesystem_worker(self.navigation_sort);
         self.fs_tx = Some(tx);
         self.fs_rx = Some(rx);
@@ -1622,13 +1659,15 @@ impl ViewerApp {
                         .and_then(|name| name.to_str())
                         .unwrap_or("image");
                     self.save_dialog.message = Some(format!("Load failed: {label}: {message}"));
+                    self.clear_current_image_display();
                     self.show_loading_texture(true);
                     self.overlay.loading_message = None;
                     self.active_request = None;
                     if !self.navigator_ready && self.active_fs_request_id.is_none() {
-                        if let Some(path) = self.deferred_filesystem_init_path.take() {
+                        if self.deferred_filesystem_init_path.take().is_some() {
                             self.startup_phase = StartupPhase::Synchronizing;
-                            let _ = self.init_filesystem(path);
+                            let sync_path = self.current_navigation_path.clone();
+                            let _ = self.init_filesystem(sync_path);
                         }
                     }
                     if failed_during_load {

@@ -109,16 +109,16 @@ impl ViewerApp {
     }
 
     pub(crate) fn handle_pointer_input(&mut self, response: &egui::Response) {
-        if self.show_settings || self.save_dialog.open || self.overlay.alert_message.is_some() {
+        if self.save_dialog.open || self.overlay.alert_message.is_some() {
             return;
         }
 
-        if response.double_clicked() {
+        if response.double_clicked_by(egui::PointerButton::Secondary) {
             let _ = self.toggle_fit_zoom_mode();
             return;
         }
 
-        if response.secondary_clicked() {
+        if response.middle_clicked() {
             self.left_menu_pos = response
                 .interact_pointer_pos()
                 .unwrap_or_else(|| response.rect.left_top());
@@ -126,13 +126,17 @@ impl ViewerApp {
             return;
         }
 
-        if response.clicked() {
-            if self.show_filer {
-                self.show_filer = false;
-                self.pending_fit_recalc = true;
-                return;
-            }
+        if response.secondary_clicked() {
             let _ = self.next_image();
+            return;
+        }
+
+        if self.show_settings {
+            return;
+        }
+
+        if response.clicked() {
+            self.open_settings_dialog();
         }
     }
 }

@@ -7,7 +7,7 @@
 - [-] 設計保留
 - [ ] 未実装
 
-最終整理日: 2026-03-22
+最終整理日: 2026-03-23
 
 ## src/main.rs / src/app.rs
 - [x] `wml2viewer <file>` 起動
@@ -20,6 +20,8 @@
 - [x] アプリアイコン設定
 - [x] `resources/help.html` 出力の土台
 - [+] app 起動時の初回 decode worker 化
+- [+] startup を single-viewer -> sync -> multi-viewer で進める土台
+- [+] 最初の画像を優先し、filesystem 初期化は表示後に同期
 - [x] `--clean system`
 - [-] 二重起動の制限は一旦取り下げ
 - [*] フルスクリーン復帰時の安定性確認
@@ -195,8 +197,10 @@
 - [x] settings 表示中は viewer 入力を止める
 - [x] text input 中は viewer shortcut を止める
 - [x] `P` で settings を閉じる
-- [x] 左クリックで次画像
-- [x] 右クリックでメニュー
+- [+] 左クリックで settings 表示
+- [+] 右クリックで次画像
+- [+] 右ダブルクリックで fit toggle
+- [+] 中クリックでメニュー
 - [x] `F1` help
 - [ ] タッチ UI
 
@@ -206,7 +210,7 @@
 ## src/ui/menu/config/mod.rs
 - [x] 設定画面の土台
 - [x] viewer / render / window / navigation / plugins / resources タブ
-- [x] 閉じるボタン
+- [x] `Apply` / `Cancel` で閉じる
 - [x] staged apply
 - [x] manga separator 設定
 - [x] window theme 設定
@@ -222,6 +226,7 @@
 - [x] 設定画面の主要文言リソース化
 - [+] workaround.archive.zip 設定 UI
 - [+] thumbnail 抑制オプション
+- [+] navigation.sort 変更時の filesystem/filer 再同期
 - [ ] キーバインド編集 UI
 
 ## src/ui/menu/fileviewer/functions.rs
@@ -351,9 +356,13 @@
 - [x] filer 表示時の manga レイアウトは実機で継続確認
 - [+] app 起動時の初回 decode 完全 worker 化
 - [+] startup path 解決の render worker 側移動
+- [+] startup 後の filesystem 同期を実画像 path 優先へ変更
 - [+] preload queue
 - [+] message UI 整理
 - [+] pending navigation 導入による event ordering 改善
+- [+] 読み込み開始時の placeholder texture クリア
+- [+] 画像切替時の zoom factor リセット
+- [+] manga companion は navigator ready 後にのみ同期
 
 ## src/drawers/affine.rs
 - [x] resize / interpolation 実装
@@ -464,8 +473,8 @@ betaまで後一歩
         - 基本的な順序 
             - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
             - user setting fontは、font-familyでまとめて指定出来る様にする sansserif, serif, monospaceをデフォルトで用意
-- [ ] todo.mdの更新
-- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- [x] todo.mdの更新
+- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## 優先度低
 - [-] MacはIntel MACの環境しかないので遅延 
@@ -478,7 +487,7 @@ betaまで後一歩
 ## レビュアーissue（整理版）
 
 ### src/ui/viewer/mod.rs
-- [ ] 画像ロードに失敗したとき、前の画像がそのまま残り続ける
+- [+] 画像ロードに失敗したとき、loading texture へ戻す
 - [ ] 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
 - [ ] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
@@ -525,6 +534,7 @@ betaまで後一歩
 - [x] issue: 設定: 分かりにくいので[保存先を記憶] → [画像保存先を記憶]に変更
 - [x] issue: 設定: タブ[システム]を最後追加し[拡張子を登録]と[システム登録を削除]をウィンドウから移動
 - [+] issue: 設定：ナビゲーション→[保存先を記憶]を押すと固まりやすい
+- [x] issue: [適用] [キャンセル] が押されたとき設定を閉じる
 
 ### src/dependent/plugins/*
 - [*] issue: system プラグイン実行時　強制終了時 COM Surrogateが残ることがある(再現条件を確認中)

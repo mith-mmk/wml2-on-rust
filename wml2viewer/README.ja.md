@@ -8,6 +8,7 @@
 - Viewer / filer / subfiler の分離レイアウトと下部 status overlay
 - システム連携をまとめた `システム` タブ付きの設定ダイアログ
 - 設定変更は `適用` を押すまで反映しない staged 方式
+- `適用` / `キャンセル` のどちらでも設定ダイアログを閉じます
 - plugin 設定で `internal / system / ffmpeg / susie64` の優先度を編集可能
 - 横に十分広い時だけ有効になるマンガ見開きモード
 - 一覧 / サムネイル / 詳細を切り替えられるファイラーと drive/root 切り替え
@@ -19,9 +20,11 @@
 - `internal / system / ffmpeg / susie64` の優先順位で動く plugin decode 土台
 - ZIP 指定時もウィンドウを先に開いてから中身を解決する非同期起動
 - 起動時は filer/filesystem の同期より先に最初の viewer 画像表示を優先します
+- startup 後の filesystem 同期は、最初に解決できた実画像 path を優先して行います
 - ZIP metadata 読み込みは必要に応じて plain `BufReader<File>` にフォールバックします
 - 読み込み中の遷移先を pending で保持し、フォルダ/アーカイブ跨ぎの古い表示を減らしています
 - 画像ロード失敗時は前の画像を残さず loading texture に戻します
+- ポインタ既定動作は、左クリックで設定、右クリックで次、右ダブルクリックで fit 切り替え、中クリックでメニューです
 - render / filer / thumbnail worker が切断時に自動で再生成されます
 - アプリ終了時は render worker に明示的に shutdown を送ります
 

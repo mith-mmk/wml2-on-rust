@@ -34,7 +34,7 @@ impl ViewerApp {
         let mut open = self.show_settings;
         let mut apply_requested = false;
         let mut reload_requested = false;
-        let mut close_requested = false;
+        let mut cancel_requested = false;
 
         egui::Window::new(self.text(UiTextKey::Settings))
             .open(&mut open)
@@ -58,6 +58,9 @@ impl ViewerApp {
                     if ui.button(self.text(UiTextKey::Apply)).clicked() {
                         apply_requested = true;
                     }
+                    if ui.button(self.text(UiTextKey::Cancel)).clicked() {
+                        cancel_requested = true;
+                    }
                     if ui.button(self.text(UiTextKey::Undo)).clicked() {
                         draft_state = build_settings_draft(&self.current_config());
                     }
@@ -70,13 +73,10 @@ impl ViewerApp {
                     if ui.button(self.text(UiTextKey::Help)).clicked() {
                         self.open_help();
                     }
-                    if ui.button(self.text(UiTextKey::Close)).clicked() {
-                        close_requested = true;
-                    }
                 });
             });
 
-        if close_requested {
+        if cancel_requested {
             open = false;
         }
         if reload_requested {
@@ -87,6 +87,7 @@ impl ViewerApp {
             let previous = self.current_config();
             self.apply_settings_draft(ctx);
             self.finish_settings_apply(ctx, previous, initial_live_plugins);
+            open = false;
         } else if open {
             self.settings_draft = Some(draft_state);
         }
@@ -617,9 +618,11 @@ impl ViewerApp {
                 self.window_options.fullscreen,
             ));
         }
-        if self.window_options.pane_side != previous.window.pane_side
-            || self.end_of_folder != previous.navigation.end_of_folder
-        {
+        if self.window_options.pane_side != previous.window.pane_side {
+            self.refresh_current_filer_directory();
+        }
+        if self.navigation_sort != previous.navigation.sort {
+            self.respawn_filesystem_worker();
             self.refresh_current_filer_directory();
         }
         if self.render_options.zoom_option != previous.render.zoom_option {

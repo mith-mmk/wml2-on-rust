@@ -8,6 +8,7 @@ Minimal native image viewer built with `egui` and `wml2`.
 - Viewer / filer / subfiler layout with bottom status overlay and separate dialogs
 - Config dialog now keeps system integration actions in a dedicated `System` tab
 - Config changes are staged and applied only when `Apply` is pressed
+- `Apply` and `Cancel` both close the Settings dialog
 - Plugin settings expose priority for `internal`, `system`, `ffmpeg`, and `susie64`
 - Manga spread mode for portrait pages when the viewport is wide enough
 - Filer with list / thumbnail / detail views and drive/root switching
@@ -19,9 +20,11 @@ Minimal native image viewer built with `egui` and `wml2`.
 - Plugin decode pipeline with priority resolution across `internal`, `system`, `ffmpeg`, and `susie64`
 - ZIP startup now keeps the UI responsive by resolving archive contents after the window opens
 - Startup now prioritizes the first viewer image before filer/filesystem worker synchronization
+- Startup filesystem sync now follows the first resolved image path, reducing folder/ZIP startup stalls
 - ZIP metadata loading now falls back to plain `BufReader<File>` if the cached reader path fails
 - Navigation requests now keep a pending target, reducing stale-image state during folder/archive transitions
 - Failed image loads now fall back to the loading texture instead of leaving the previous image onscreen
+- Pointer defaults: left click opens Settings, right click advances, right double click toggles fit mode, middle click opens the menu
 - Render / filer / thumbnail workers automatically respawn if a worker thread disconnects
 - Render workers now receive an explicit shutdown command on app exit
 

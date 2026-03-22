@@ -525,7 +525,7 @@ betaまで後一歩
 - [*] issue: ファイラーがハングアップすることがある問題
 - [x] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
 - [+] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
-- [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
+- [*] フォーマットをLocaleを併せる crate icu を利用 日本語しか効いていない
 
 ### src/ui/menu/config/mod.rs
 - [+] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
@@ -582,8 +582,14 @@ betaまで後一歩
 - [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## beta前の構造整理
+P0 = 至急
+P1 = 優先度高い
+P2 = 優先度やや高い
+P3 = 優先度中
+P4 = 優先度やや低い
+P5 = 優先度低い
 
-### startup sequence
+### startup sequence(P1)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
 - [*] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
 - [*] viewerワーカーの起動を再優先して `current_texture` のみ作る
@@ -598,68 +604,58 @@ betaまで後一歩
 - [*] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
 - [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
 - [*] フォルダをまたぐ時は texture を一度破棄して再生成する
-- [ ] 縮小アルゴリズムに pixel mixing が使えるか検討する
-- [x] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
-    - [ ] [幅に合わせる]で効かない
-    - [ ] ページを変えた時にzoom変更をリセット
-- [x] fit の後に zoom の計算を入れる
+- [ ] P1 縮小・拡大に高速(GPU)/精密(CPU)を追加 設定にも適用（デフォルトは精密）
+  - [ ] 高速はeguiまかせ、精密は`drawers/affilne.rs`を利用
+  - [ ] 高速のアルゴリズムは、Nearest/Linearのみ、精密は、Nearest/Linear/Qubic/Lancos3 (縮小はPixelMixing)
+
 
 ## input/key events/mouse events
-- [ ] マウス:デフォルト挙動との干渉チェック(Scroll系と干渉？)
+- [ ] P0 input系のイベントディスパッチを整理 マウスイベントが効かない原因を追及
+- [ ] P1 issue:マウス:デフォルト挙動との干渉チェック 追加されたマウスイベントが効かない
 - [*] マウス:ダブルクリックが効かない ScreenFit <--> None のトグルにする
-- [ ] マウス:クリックが効かない 次の画面を表示にする
-- [ ] マウス:左クリックが効かない 設定を表示する
-- [ ] マウス：ローラーはスクロール　デフォルトの挙動
+- [*] マウス:クリックが効かない 次の画面を表示にする
+- [*] マウス:左クリックが効かない 設定を表示する
+- [x] マウス：ローラーはスクロール　デフォルトの挙動
 
 ### zip
-- [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
-- [*] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度16MBに設定(IOがネックになっているためSSD最適化した方が速い)
+- [ ] P2 zip: 時間のかかるzip展開時にviewer側が固まる問題
 
 ### filer
-- [ ] OSソート順 Unicode Collation Algorithmを利用
-- [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
-- [ ] issue:Linuxのファイラーで数字が化ける
+- [ ] P2 OSソート順 Unicode Collation Algorithmを利用
+- [ ] P3 まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
 
 ### font
-- [ ] issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
-- [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
-- [ ] user setting font -> system locale font -> cjk font -> emoji -> Last Resort の順で fallback させる
+- [ ] P1 issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
+- [ ] P3 issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
+- [ ] P3 user setting font -> system locale font -> cjk font -> emoji -> Last Resort の順で fallback させる
+- [ ] コードのフルレビュー
+
+### example
+- [ ] P3 bench_archive 1.6GBだと固まる問題
+
+## 機能追加
+
+### INPUT
+- [ ] P4 タッチパネル(android対応用)
+
+### FileSystem
+- [ ] P4 LHAサポート
+
+
 
 ## 修正確認中issue
+### system
+- [ ] コードの整理 モジュール境界をハッキリさせる
+  - [ ]未実装 action の no-op 整理
+- [ ] [重要度低] Arm MACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
+- [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
+    - [x] archive_benchmarkの実装を以下のファンクションでとってください
+
+### ui
 - [ ] UIアイコンの洗練
 - [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
 - [x] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
-- [*] zip 内ファイルソートの実機確認
-- [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
 - [+] ファイラー/サブファイラー/viewer のファイル表示順の実機確認(確認中)
-- [*] ファイラー: OS name collation の最終調整(確認中)
-- [ ] コードの整理 モジュール境界をハッキリさせる
-  - [ ]未実装 action の no-op 整理
-- [ ] コードのフルレビュー
-- [+] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
-- [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
-- プラグイン: 実装続き
-  - [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
-  - [x] susie64プラグイン(動作:x avif o jp2 x heic)
-  - [x] Windows Codecプラグイン(動作: o avif x jp2 o heic)
-  - [x] 設定を変えた時、再起動を促すポップアップを出す 
-  - [ ] [重要度低] Arm MACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
-  - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
-- [+] issue: ファイラーのサイズ表示を読みやすくする
-    - 000,000 方式
-    - 1024byte 未満は B
-    - 1024byteから100,000KB は KB
-    - 100MB ～ 100,000MB は MB
-    - 100GB ～ は GB
-- [x] issue: makiが表示出来ないバグ
-- [+] issue: デコーダがErrorを起こしたときにpanic!を起こし次の画像が表示できなくなるバグ
-    - [+] 壊れたbmp対策:decoderに緩和策を適用
-- [x] issue: 設定: 分かりにくいので[保存先を記憶] → [画像保存先を記憶]に変更
-- [x] 名前でソートのicon(sort.svg)を差し替えました
-- [x] 設定: タブ[システム]を最後追加し[拡張子を登録]と[システム登録を削除]をウィンドウから移動
-- [x] 設定: タブ[システム]: 
-    - [x] get_prograname() ,get_version(), get_copyright(), get_auther() 取得したプログラム名、(C) 作者名 バージョン表記
-    - [x] [拡張子を登録]と[システム登録を削除]
 - [ ] UIの責任範囲と描画領域をハッキリさせる ダイアログは別Windowで処理出来るならば別Windowで処理する
     - [ ] Viewer: ベース 
         - [x] マンガモード: ベースを画像表示部分を二分割する
@@ -671,34 +667,73 @@ betaまで後一歩
       - [x] ファイラー,設定: 左ペインと右ペインを切り替えられる様にする
     - [x] 設定: ダイアログ。設定が閉じられるまでViewerは固定される
     - [+] アラート: ダイアログ。アラートに紐付いたUIは閉じるまで固定される
-- [+] issue: 設定：ナビゲーション→[保存先を記憶]を押すと固まりやすい
-- [x] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない（次のフォルダの初めからリスタート）
+
+#### filer
+- [*] zip 内ファイルソートの実機確認
+- [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
+- [*] ファイラー: OS name collation の最終調整(確認中)
+- [+] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
+- [+] issue: ファイラーがハングアップすることがある問題
+    - [+] デフォルトではalertを抑制してください またalertにはファイル名を付けてください
+- [+] issue: ファイラーのサイズ表示を読みやすくする
+    - 000,000 方式
+    - 1024byte 未満は B
+    - 1024byteから100,000KB は KB
+    - 100MB ～ 100,000MB は MB
+    - 100GB ～ は GB
+
+### FileSystem
+- [+] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度16MBに設定(IOがネックになっているためSSD最適化した方が速い)
+
+
+### plugin
+- [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
+- [x] susie64プラグイン(動作:x avif o jp2 x heic)
+- [x] Windows Codecプラグイン(動作: o avif x jp2 o heic)
+- [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
+
+### renderer
+- [x] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
+    - [x] issue: [幅に合わせる]で効かない
+    - [x] issue: ページを変えた時にzoom変更をリセット
+- [x] fit の後に zoom の計算を入れる
+- [x] issue:マンガモード:フォルダが切り替わったとき前の画像がクリアされない（次のフォルダの初めからリスタート）
 - [x] issue:マンガモード：画面がちらつく問題
-- [x] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ
 - [+] issue: viewer 画像が切り替わらないことがある
-    - [ ] 初期指定時
+    - [+] 初期指定時
     - [x] issue: scanning folderが出ている時？
-    - [ ] reading folderが出ているとき
+    - [+] reading folderが出ているとき
     - [x] issue: フォルダが切り替わったとき
     - [x] issue: マンガモード：半分しか書き換わらない時がある
-- [x] issue: 設定が即時適用されてしまう問題([モジュールを読み込む] [拡張子を登録] [システム登録を削除]以外の設定は[適用]が押されるまで遅延させてください その関係で[元に戻す]が効いていません)
 - [x] issue: マンガモード:次のフォルダの画像を表示してしまう問題
-- [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
-- [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
-    - [x] archive_benchmarkの実装を以下のファンクションでとってください
-- [x] plugin, 設定: プラグインと内製の優先順位の設定 
     - [+] issue: マンガモード:次のフォルダの最初に前フォルダの画像を表示してしまう問題 [home]を押すと正しい表示になる
-    - [+] issue: ファイラーがハングアップすることがある問題
-        - [ ] デフォルトではalertを抑制してください またalertにはファイル名を付けてください
     - [x] issue: サムネイルが表示されない事がある問題
     - [x] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
     - [+] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
-      - [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
+      - [*] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
     - [*] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
       - issue: 数字のフォルダだけ前に来て、それ以外のフォルダが後に来たりと挙動がおかしい
     - [+] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
     - [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
       - [*] zipではUI先行起動まで対応(ファイラーに引きずられて遅くなる模様)
-- setting
-- [x] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
+
+### setting
+- [x] 設定を変えた時、再起動を促すポップアップを出す 
+  - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
+- [x] issue: makiが表示出来ないバグ
+- [+] issue: デコーダがErrorを起こしたときにpanic!を起こし次の画像が表示できなくなるバグ
+    - [+] 壊れたbmp対策:decoderに緩和策を適用
+- [x] issue: 設定: 分かりにくいので[保存先を記憶] → [画像保存先を記憶]に変更
+- [x] 名前でソートのicon(sort.svg)を差し替えました
+- [x] 設定: タブ[システム]を最後追加し[拡張子を登録]と[システム登録を削除]をウィンドウから移動
+- [x] 設定: タブ[システム]: 
+    - [x] get_prograname() ,get_version(), get_copyright(), get_auther() 取得したプログラム名、(C) 作者名 バージョン表記
+    - [x] [拡張子を登録]と[システム登録を削除]
+- [+] issue: 設定：ナビゲーション→[保存先を記憶]を押すと固まりやすい
+- [x] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ
+- [x] issue: 設定が即時適用されてしまう問題([モジュールを読み込む] [拡張子を登録] [システム登録を削除]以外の設定は[適用]が押されるまで遅延させてください その関係で[元に戻す]が効いていません)
 - [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
+- [x] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
+
+### i18n
+- [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)

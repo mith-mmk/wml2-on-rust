@@ -7,7 +7,7 @@
 - [-] 設計保留
 - [ ] 未実装
 
-最終整理日: 2026-03-21
+最終整理日: 2026-03-22
 
 ## src/main.rs / src/app.rs
 - [x] `wml2viewer <file>` 起動
@@ -95,7 +95,7 @@
 
 ## src/dependent/linux/mod.rs
 - [x] locale 環境変数取得
-- [x] Linux font fallback 候補
+- [*] Linux font fallback 候補（数字が出ない）
 - [+] `available_roots` 実装
 - [*] build
 - [ ] フォルダ選択ダイアログ
@@ -402,43 +402,200 @@
 - [-] 役割の再整理
 
 ## 次に着手
-previewクォリティからbeta版に出来るまで頑張ろう
-- [ ] issue: system プラグイン実行時　強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
+一気にやりきろう
+
+- [ ] issue: systemプラグイン有効時　Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
+- [ ] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
+    - ファイラーの機能を強化するほど起動が遅くなるため、単体ビューアーとマルチプルビューアーを分離
+    - 1. viewerワーカーの起動を再優先(`current_texture`のみ作成)
+    - 2. 最初の画像をロード(単体ビューアーモード)
+    - 3. 各ワーカーの生成
+    - 4. 最初の画像の表示
+    - 5. 各ワーカーの同期(マルチプル・ビューアーモードに切り替え)                    
 - zip系
-    - [*] issue: bench_archive: 1.6Gはベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
+    - [*] issue: bench_archive: 1.6Gベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
     - [*] issue: zipの展開が遅くなっている
     - [*] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
     - [+] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
     - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
     - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
     - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
-    - [ ] benchの結果からネットワークファイルのzipのtmp_copyのdefaultを20MBぐらいに設定(IOPSがネックになっているようなので、帯域が細い場合は結果が変わりそう)
+    - [ ] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度0MBに設定(IOがネックになっているためSSD最適化した方が速い)
 - [*] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください
 - 起動
     - [*] issue: 起動時にzipが指定されると長時間待たされる
     - [*] issue: フォルダに引きずられて、最初の画像の表示が遅くなる 画像の表示を再優先にしてください
 - viewer
     - [ ] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける[残すのと消すのと仕様として正しいかUIとして適切なものをtodoに反映]
+    - [ ] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
+        - [ ] マンガモードで最初に全体表示されるケース
+        - [ ] 幅に合わせるでも起きる
+        - [ ] zoom: +/- で以前の画像が表示される(ここがissueの起点？)
+        - [ ] 参照する `texture` をトレースして修正してください 基本的な`texture`キャッシュ法
+            - [ ] default_texture (ローディングに利用 起動時に作成。固定)
+            - [ ] prev_texture (前の画像)
+            - [ ] current_texture (現在の画像)
+            - [ ] next_texture (次の画像)
+            - [ ] マンガモードは各textureが1か2(画像サイズで動的の変化)になる
+            - [ ] フォルダをまたぐ時は`texture`は一度破棄して再生成
+        - [ ] 縮小アルゴリズムにpixel mixingが使えるか検討(拡大アルゴリズムを縮小に転用した場合、モノクロ圧縮のモアレが酷いため) 
+    - [ ] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
+        - fitの後にzoomの計算を入れてください
+    - [ ] ダブルクリックが効かない
+        - ScreenFite <--> Noneのトグルにしてください
 - filer
-    - [ ] OSソート順 windowsの場合、平仮名と片仮名が同順に並びます
+    - [ ] OSソート順 Unicode Collation Algorithmを利用
     - [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
     - [+] ファイラーの並び順をzipをファイルとしてソートする場合とフォルダとしてソートする場合を設定で切り替え
+    - [ ] issue:Linuxのファイラーで数字が化ける
 - font
+    - [ ] issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
     - [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
         - 基本的な順序 
             - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
             - user setting fontは、font-familyでまとめて指定出来る様にする sansserif, serif, monospaceをデフォルトで用意
-- [x] todo.mdの更新
-- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- [ ] todo.mdの更新
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## 優先度低
 - [-] MacはIntel MACの環境しかないので遅延 
-- [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK
+- [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK 起動もOK バグ有り
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
 - [ ] リソースenで日本語が表示出来ない問題
+- [ ] listed fileでhttpが表示出来ない問題
 
-## レビュアーissue
+## レビュアーissue（整理版）
+
+### src/ui/viewer/mod.rs
+- [ ] 画像ロードに失敗したとき、前の画像がそのまま残り続ける
+- [ ] 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
+- [ ] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
+- [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
+- [ ] UIの責任範囲と描画領域をハッキリさせる ダイアログは別Windowで処理出来るならば別Windowで処理する
+- [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
+- [x] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない（次のフォルダの初めからリスタート）
+- [x] issue:マンガモード：画面がちらつく問題
+- [x] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ
+- [+] issue: viewer 画像が切り替わらないことがある
+- [x] issue: 設定が即時適用されてしまう問題
+- [x] issue: マンガモード:次のフォルダの画像を表示してしまう問題
+- [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
+- [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
+
+### src/ui/menu/fileviewer/mod.rs
+- [ ] UIアイコンの洗練
+- [*] zip 内ファイルソートの実機確認
+- [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
+- [+] ファイラー/サブファイラー/viewer のファイル表示順の実機確認(確認中)
+- [*] ファイラー: OS name collation の最終調整(確認中)
+- [ ] ファイラーのサイズ表示を読みやすくする
+- [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
+- [ ] issue:Linuxのファイラーで数字が化ける
+- [x] issue: サムネイルが表示されない事がある問題
+- [+] issue: ファイラーのサイズ表示を読みやすくする
+
+### src/ui/menu/fileviewer/worker.rs
+- [ ] コードの整理 モジュール境界をハッキリさせる
+- [ ] 未実装 action の no-op 整理
+- [ ] コードのフルレビュー
+- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
+- [*] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
+- [*] issue: 数字のフォルダだけ前に来て、それ以外のフォルダが前に来たりと挙動がおかしい
+- [+] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
+- [*] issue: ファイラーがハングアップすることがある問題
+- [x] 上記、decoderのthreadがpanic!で落ちたときか？ watchdogが必要
+- [+] issue: ファイラーの時刻表示をシステムに併せる。 UTCを使わない
+- [ ] フォーマットをLocaleを併せる crate icu を利用 日本語なら YYYY/MM/DD HH:MM
+
+### src/ui/menu/config/mod.rs
+- [+] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
+- [x] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
+- [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
+- [x] issue: 設定: 分かりにくいので[保存先を記憶] → [画像保存先を記憶]に変更
+- [x] issue: 設定: タブ[システム]を最後追加し[拡張子を登録]と[システム登録を削除]をウィンドウから移動
+- [+] issue: 設定：ナビゲーション→[保存先を記憶]を押すと固まりやすい
+
+### src/dependent/plugins/*
+- [ ] issue: system プラグイン実行時　強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
+- [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
+- [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
+- [x] susie64プラグイン(動作:x avif o jp2 x heic)
+- [x] Windows Codecプラグイン(動作: o avif x jp2 o heic)
+- [x] 設定を変えた時、再起動を促すポップアップを出す
+- [ ] [重要度低] Arm MACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic)
+
+### src/configs/resourses/*
+- [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
+- [x] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
+- [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
+- [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
+- [ ] ubuntuで数字が出ない
+- [ ] リソースenで日本語が表示出来ない問題
+
+### src/dependent/linux/mod.rs
+- [*] Linux font fallback 候補（数字が出ない）
+- [ ] issue:Linuxのファイラーで数字が化ける
+- [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK 起動もOK バグ有り
+
+### src/dependent/windows/mod.rs
+- [x] issue: makiが表示出来ないバグ
+
+### src/filesystem/zip_file.rs
+- [*] zip 内ファイルソートの実機確認
+- [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
+- [*] zipの展開が遅くなっている
+- [*] zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
+- [+] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
+- [*] issue: 起動時にzipが指定されると長時間待たされる
+- [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
+- [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
+- [ ] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度0MBに設定(IOがネックになっているためSSD最適化した方が速い)
+- [*] issue: bench_archive: 1.6Gはベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
+
+### 全体 / アーキテクチャ
+- [*] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください
+- [x] plugin, 設定: プラグインと内製の優先順位の設定
+- [x] todo.mdの更新
+- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
+
+## beta前の構造整理
+
+### startup sequence
+- [ ] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
+- [ ] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
+- [ ] viewerワーカーの起動を再優先して `current_texture` のみ作る
+- [ ] 最初の画像をロードして単体ビューアーモードで表示する
+- [ ] 各ワーカーを生成してから最初の画像を表示する
+- [ ] 各ワーカーを同期してマルチプル・ビューアーモードに切り替える
+
+### viewer texture / zoom
+- [ ] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
+- [ ] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
+- [ ] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
+- [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
+- [ ] フォルダをまたぐ時は texture を一度破棄して再生成する
+- [ ] 縮小アルゴリズムに pixel mixing が使えるか検討する
+- [ ] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
+- [ ] fit の後に zoom の計算を入れる
+- [ ] ダブルクリックが効かない
+- [ ] ScreenFit <--> None のトグルにする
+
+### zip
+- [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
+- [ ] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度0MBに設定(IOがネックになっているためSSD最適化した方が速い)
+
+### filer
+- [ ] OSソート順 Unicode Collation Algorithmを利用
+- [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
+- [ ] issue:Linuxのファイラーで数字が化ける
+
+### font
+- [ ] issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
+- [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
+- [ ] user setting font -> system locale font -> cjk font -> emoji -> Last Resort の順で fallback させる
+
+## 修正確認中issue
 - [ ] UIアイコンの洗練
 - [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
 - [x] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
@@ -513,5 +670,5 @@ previewクォリティからbeta版に出来るまで頑張ろう
     - [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
       - [*] zipではUI先行起動まで対応(ファイラーに引きずられて遅くなる模様)
 - setting
-    - [x] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
-    - [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
+- [x] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
+- [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)

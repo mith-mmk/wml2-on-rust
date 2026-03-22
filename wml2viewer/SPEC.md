@@ -1,21 +1,115 @@
+# wml2viewer SPEC
+
 優先順位
-1. キー操作の機能を最優先　[x]
-2. viewerとrender(background, zoom)　[x]
-3. ファイル探索機能、リステッドファイル　[x]
-4. 非同期実装　[ ]
-5. 画像表示とディレクトリ操作は分離する　[x]
+1. キー操作の機能を最優先 [x]
+2. viewerとrender(background, zoom) [x]
+3. ファイル探索機能、リステッドファイル [x]
+4. 非同期実装 [ ]
+5. 画像表示とディレクトリ操作は分離する [x]
 6. 画像先読みデコードを実装にする
-7. マンガモード（サムネイルをみてページ移動する機能）　[x]
-8. 設定画面　[x]
+7. マンガモード（サムネイルをみてページ移動する機能） [x]
+8. 設定画面 [x]
 9. 設定に付随する機能
 10. リソース
-11. ファイラー　[x]
+11. ファイラー [x]
 12. ネットワーク機能
 13. OS依存機能
---- preview releseライン
 14. プラグイン
 15. キー操作の変更
-16. コマンド（file nameとかfile copyとか）, external commandとか
+16. コマンド（file name / file copy / external command）
+
+## 現行 config 構成
+
+`config.toml` は `src/configs/config.rs` の `ConfigFile` と `src/options.rs` / `src/ui/viewer/options.rs` の `AppConfig` に対応しています。
+
+- `viewer`
+  - `animation`
+  - `grayscale`
+  - `manga_mode`
+  - `manga_right_to_left`
+  - `manga_separator.style` = `none` / `solid` / `shadow`
+  - `manga_separator.color`
+  - `manga_separator.pixels`
+  - `background` = `solid` / `tile`
+  - `fade` は `ViewerOptions` にはあるが、現行の永続化対象ではない
+
+- `window`
+  - `fullscreen`
+  - `size` = `relative` / `exact`
+  - `start_position` = `center` / `exact`
+  - `remember_size`
+  - `remember_position`
+  - `ui_theme` = `system` / `light` / `dark`
+  - `pane_side` = `left` / `right`
+
+- `render`
+  - `zoom_option` = `none` / `fit_width` / `fit_height` / `fit_screen` / `fit_screen_include_smaller` / `fit_screen_only_smaller`
+  - `zoom_method` = `nearest` / `bilinear` / `bicubic` / `lanczos3`
+
+- `resources`
+  - `locale`
+  - `font_size` = `auto` / `s` / `m` / `l` / `ll`
+  - `font_paths`
+
+- `navigation`
+  - `end_of_folder` = `stop` / `next` / `loop` / `recursive`
+  - `sort` = `os_name` / `name` / `date` / `size`
+
+- `storage`
+  - `path_record`
+  - `path`
+
+- `filesystem`
+  - 現行では `thumbnail.suppress_large_files` のみを持つ
+  - 旧仕様にあった `protocol` や `zip_encoding` は config ではなく実装側の役割に寄っている
+
+- `runtime`
+  - `current_file`
+  - `workaround.archive.zip.threshold_mb`
+  - `workaround.archive.zip.local_cache`
+
+- `plugins`
+  - `internal_priority`
+  - `susie64`
+  - `system`
+  - `ffmpeg`
+
+- `input`
+  - `key_mapping`
+  - 既定値は `src/options.rs` の `default_key_mapping()`
+
+## 実装メモ
+
+- `runtime.current_file` は終了時のスナップショットとして保存され、起動時の初期 path に使われます。
+- `filesystem.thumbnail.suppress_large_files` はフィル更新時の負荷を抑えるための実装寄り設定です。
+- `viewer.fade` は現状 UI / 永続化にまだ出していないため、仕様上は「runtime-only の予備」として扱います。
+- `window.size` と `window.start_position` は TOML 上では tagged enum です。
+- `ConfigFile` の読み書きは `serde` / `toml` で行います。
+
+## 代表的な動作
+
+- Viewer
+  - 単一画像、zip、`.wml` を画像一覧として扱う
+  - manga mode で 2 枚表示に対応する
+  - preload / companion / overlay を worker 分離する
+
+- FileSystem
+  - 画像一覧の決定と `Next` / `Prev` / `First` / `Last` を担当する
+  - `STOP` / `NEXT` / `LOOP` / `RECURSIVE` を持つ
+  - virtual child path と container path を区別する
+
+- Filer
+  - directory scan を worker 化する
+  - sort / filter / extension filter / thumbnail を持つ
+
+## 旧SPECからの整理点
+
+- `filesystem.protocol` ベースの構造は廃止し、実装側の worker / plugin / container 解決に寄せた
+- `loader` / `mouse_setting` / `touch_setting` は現行 config にはない
+- `zoomMethpod` などの旧表記は `render.zoom_method` に統一した
+- `FileSystem` は「画像ローダと別プロセスの state」というより、viewer から呼ばれる worker として整理した
+
+# 旧SPEC(設計書)
 
 ```jsonc
 {

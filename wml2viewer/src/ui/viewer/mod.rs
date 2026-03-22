@@ -5,7 +5,7 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
     FilesystemCommand, FilesystemResult, adjacent_entry, archive_prefers_low_io,
-    navigation_branch_path,
+    is_browser_container, navigation_branch_path,
     set_archive_zip_workaround, spawn_filesystem_worker,
 };
 use crate::options::{
@@ -31,6 +31,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 pub mod options;
 mod state;
@@ -45,10 +46,14 @@ pub(crate) struct ViewerApp {
     pub(crate) current_path: PathBuf,
     pub(crate) source: LoadedImage,
     pub(crate) rendered: LoadedImage,
-    pub(crate) texture: TextureHandle,
+    pub(crate) default_texture: TextureHandle,
+    pub(crate) prev_texture: Option<TextureHandle>,
+    pub(crate) current_texture: TextureHandle,
+    pub(crate) next_texture: Option<TextureHandle>,
     pub(crate) egui_ctx: egui::Context,
 
     pub(crate) zoom: f32,
+    pub(crate) zoom_factor: f32,
 
     pub(crate) current_frame: usize,
     pub(crate) last_frame_at: Instant,
@@ -57,6 +62,7 @@ pub(crate) struct ViewerApp {
     pub(crate) fit_zoom: f32,
     pub(crate) last_viewport_size: egui::Vec2,
     pub(crate) frame_counter: usize,
+    pub(crate) startup_phase: StartupPhase,
 
     pub(crate) render_options: RenderOptions,
     pub(crate) options: ViewerOptions,
@@ -74,20 +80,21 @@ pub(crate) struct ViewerApp {
     pub(crate) navigation_sort: NavigationSortOption,
     pub(crate) worker_tx: Sender<RenderCommand>,
     pub(crate) worker_rx: Receiver<RenderResult>,
+    pub(crate) worker_join: Option<JoinHandle<()>>,
     pub(crate) next_request_id: u64,
     pub(crate) active_request: Option<ActiveRenderRequest>,
     pub(crate) pending_navigation_path: Option<PathBuf>,
-    pub(crate) fs_tx: Sender<FilesystemCommand>,
-    pub(crate) fs_rx: Receiver<FilesystemResult>,
+    pub(crate) fs_tx: Option<Sender<FilesystemCommand>>,
+    pub(crate) fs_rx: Option<Receiver<FilesystemResult>>,
     pub(crate) next_fs_request_id: u64,
     pub(crate) active_fs_request_id: Option<u64>,
     pub(crate) queued_navigation: Option<FilesystemCommand>,
     pub(crate) deferred_filesystem_init_path: Option<PathBuf>,
-    pub(crate) filer_tx: Sender<FilerCommand>,
-    pub(crate) filer_rx: Receiver<FilerResult>,
+    pub(crate) filer_tx: Option<Sender<FilerCommand>>,
+    pub(crate) filer_rx: Option<Receiver<FilerResult>>,
     pub(crate) next_filer_request_id: u64,
-    pub(crate) thumbnail_tx: Sender<ThumbnailCommand>,
-    pub(crate) thumbnail_rx: Receiver<ThumbnailResult>,
+    pub(crate) thumbnail_tx: Option<Sender<ThumbnailCommand>>,
+    pub(crate) thumbnail_rx: Option<Receiver<ThumbnailResult>>,
     pub(crate) next_thumbnail_request_id: u64,
     pub(crate) thumbnail_pending: HashSet<PathBuf>,
     pub(crate) thumbnail_cache: HashMap<PathBuf, TextureHandle>,
@@ -100,6 +107,8 @@ pub(crate) struct ViewerApp {
     pub(crate) settings_tab: SettingsTab,
     pub(crate) max_texture_side: usize,
     pub(crate) texture_display_scale: f32,
+    pub(crate) next_texture_display_scale: f32,
+    pub(crate) current_texture_is_default: bool,
     pub(crate) pending_resize_after_load: bool,
     pub(crate) pending_fit_recalc: bool,
     pub(crate) config_path: Option<PathBuf>,
@@ -116,6 +125,7 @@ pub(crate) struct ViewerApp {
     pub(crate) empty_mode: bool,
     pub(crate) companion_tx: Sender<RenderCommand>,
     pub(crate) companion_rx: Receiver<RenderResult>,
+    pub(crate) companion_join: Option<JoinHandle<()>>,
     pub(crate) companion_active_request: Option<ActiveRenderRequest>,
     pub(crate) companion_navigation_path: Option<PathBuf>,
     pub(crate) companion_source: Option<LoadedImage>,
@@ -124,6 +134,7 @@ pub(crate) struct ViewerApp {
     pub(crate) companion_texture_display_scale: f32,
     pub(crate) preload_tx: Sender<RenderCommand>,
     pub(crate) preload_rx: Receiver<RenderResult>,
+    pub(crate) preload_join: Option<JoinHandle<()>>,
     pub(crate) next_preload_request_id: u64,
     pub(crate) active_preload_request_id: Option<u64>,
     pub(crate) pending_preload_navigation_path: Option<PathBuf>,
@@ -142,6 +153,13 @@ pub(crate) enum SettingsTab {
     Window,
     Navigation,
     System,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum StartupPhase {
+    SingleViewer,
+    Synchronizing,
+    MultiViewer,
 }
 
 fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOption) -> f32 {
@@ -224,13 +242,6 @@ fn locale_input_from_config(config: &AppConfig) -> String {
     config.resources.locale.clone().unwrap_or_default()
 }
 
-fn startup_requires_navigator(path: &Path) -> bool {
-    path.extension()
-        .and_then(|ext| ext.to_str())
-        .map(|ext| ext.eq_ignore_ascii_case("zip") || ext.eq_ignore_ascii_case("wml"))
-        .unwrap_or(false)
-}
-
 pub(crate) fn build_settings_draft(config: &AppConfig) -> SettingsDraftState {
     SettingsDraftState {
         config: config.clone(),
@@ -256,13 +267,14 @@ impl ViewerApp {
         let color_image = canvas_to_color_image(rendered.frame_canvas(0));
 
         let zoom = 1.0;
+        let zoom_factor = 1.0;
         let texture_name = path
             .file_name()
             .and_then(|name| name.to_str())
-            .unwrap_or("image")
+            .unwrap_or("default")
             .to_owned();
 
-        let texture = cc
+        let default_texture = cc
             .egui_ctx
             .load_texture(texture_name, color_image, TextureOptions::LINEAR);
         let AppliedResources {
@@ -271,24 +283,31 @@ impl ViewerApp {
         } = apply_resources(&cc.egui_ctx, &config.resources);
         set_archive_zip_workaround(config.runtime.workaround.archive.zip.clone());
         set_thumbnail_workaround(config.runtime.workaround.thumbnail.clone());
-        let (worker_tx, worker_rx) = spawn_render_worker(source.clone());
-        let (companion_tx, companion_rx) = spawn_render_worker(source.clone());
-        let (preload_tx, preload_rx) = spawn_render_worker(source.clone());
-        let (fs_tx, fs_rx) = spawn_filesystem_worker(config.navigation.sort);
-        let (filer_tx, filer_rx) = spawn_filer_worker();
-        let (thumbnail_tx, thumbnail_rx) = spawn_thumbnail_worker();
+        let (worker_tx, worker_rx, worker_join) = spawn_render_worker(source.clone());
+        let (companion_tx, companion_rx, companion_join) = spawn_render_worker(source.clone());
+        let (preload_tx, preload_rx, preload_join) = spawn_render_worker(source.clone());
         let resource_locale_input = config.resources.locale.clone().unwrap_or_default();
         let resource_font_paths_input = join_search_paths(&config.resources.font_paths);
+        let defer_navigation_workers = !show_filer_on_start;
+        let startup_phase = if defer_navigation_workers {
+            StartupPhase::SingleViewer
+        } else {
+            StartupPhase::MultiViewer
+        };
 
         let mut this = Self {
             current_navigation_path: navigation_path.clone(),
             current_path: path.clone(),
             source,
             rendered,
-            texture,
+            default_texture: default_texture.clone(),
+            prev_texture: None,
+            current_texture: default_texture.clone(),
+            next_texture: None,
             egui_ctx: cc.egui_ctx.clone(),
 
             zoom,
+            zoom_factor,
 
             current_frame: 0,
             last_frame_at: Instant::now(),
@@ -297,6 +316,7 @@ impl ViewerApp {
             fit_zoom: 1.0,
             last_viewport_size: egui::Vec2::ZERO,
             frame_counter: 0,
+            startup_phase,
 
             render_options: config.render,
             options: config.viewer,
@@ -314,20 +334,21 @@ impl ViewerApp {
             navigation_sort: config.navigation.sort,
             worker_tx,
             worker_rx,
+            worker_join: Some(worker_join),
             next_request_id: 0,
             active_request: None,
             pending_navigation_path: None,
-            fs_tx,
-            fs_rx,
+            fs_tx: None,
+            fs_rx: None,
             next_fs_request_id: 0,
             active_fs_request_id: None,
             queued_navigation: None,
             deferred_filesystem_init_path: None,
-            filer_tx,
-            filer_rx,
+            filer_tx: None,
+            filer_rx: None,
             next_filer_request_id: 0,
-            thumbnail_tx,
-            thumbnail_rx,
+            thumbnail_tx: None,
+            thumbnail_rx: None,
             next_thumbnail_request_id: 0,
             thumbnail_pending: HashSet::new(),
             thumbnail_cache: HashMap::new(),
@@ -340,6 +361,8 @@ impl ViewerApp {
             settings_tab: SettingsTab::Viewer,
             max_texture_side: cc.egui_ctx.input(|i| i.max_texture_side),
             texture_display_scale: 1.0,
+            next_texture_display_scale: 1.0,
+            current_texture_is_default: true,
             pending_resize_after_load: false,
             pending_fit_recalc: false,
             config_path,
@@ -359,6 +382,7 @@ impl ViewerApp {
             empty_mode: show_filer_on_start,
             companion_tx,
             companion_rx,
+            companion_join: Some(companion_join),
             companion_active_request: None,
             companion_navigation_path: None,
             companion_source: None,
@@ -367,6 +391,7 @@ impl ViewerApp {
             companion_texture_display_scale: 1.0,
             preload_tx,
             preload_rx,
+            preload_join: Some(preload_join),
             next_preload_request_id: 0,
             active_preload_request_id: None,
             pending_preload_navigation_path: None,
@@ -387,11 +412,11 @@ impl ViewerApp {
         this.ffmpeg_search_paths_input = join_search_paths(&this.plugins.ffmpeg.search_path);
         this.apply_window_theme(&cc.egui_ctx);
 
+        if !defer_navigation_workers {
+            this.spawn_navigation_workers();
+        }
+
         if let Some(path) = startup_load_path {
-            if startup_requires_navigator(&path) {
-                let _ = this.init_filesystem(navigation_path);
-                return this;
-            }
             this.deferred_filesystem_init_path = Some(navigation_path.clone());
             let _ = this.request_load_path(path);
         } else if !show_filer_on_start {
@@ -571,8 +596,22 @@ impl ViewerApp {
         self.settings_draft = Some(build_settings_draft(&self.current_config()));
     }
 
-    pub(crate) fn set_zoom(&mut self, zoom: f32) -> Result<(), Box<dyn Error>> {
-        let zoom = zoom.clamp(0.1, 16.0);
+    fn effective_zoom(&self) -> f32 {
+        let base = if matches!(self.render_options.zoom_option, ZoomOption::None) {
+            1.0
+        } else {
+            self.fit_zoom.max(0.1)
+        };
+        let factor = self.zoom_factor.clamp(0.1, 16.0);
+        if matches!(self.render_options.zoom_option, ZoomOption::None) {
+            factor
+        } else {
+            (base * factor).clamp(0.1, 16.0)
+        }
+    }
+
+    fn sync_zoom(&mut self) -> Result<(), Box<dyn Error>> {
+        let zoom = self.effective_zoom();
         if (zoom - self.zoom).abs() < f32::EPSILON {
             return Ok(());
         }
@@ -582,6 +621,17 @@ impl ViewerApp {
         Ok(())
     }
 
+    pub(crate) fn set_zoom(&mut self, zoom: f32) -> Result<(), Box<dyn Error>> {
+        let zoom = zoom.clamp(0.1, 16.0);
+        if matches!(self.render_options.zoom_option, ZoomOption::None) {
+            self.zoom_factor = zoom;
+        } else {
+            let base = self.fit_zoom.max(0.1);
+            self.zoom_factor = (zoom / base).clamp(0.1, 16.0);
+        }
+        self.sync_zoom()
+    }
+
     pub(crate) fn toggle_zoom(&mut self) -> Result<(), Box<dyn Error>> {
         let target_zoom = if (self.zoom - 1.0).abs() < 0.01 {
             self.fit_zoom
@@ -589,6 +639,19 @@ impl ViewerApp {
             1.0
         };
         self.set_zoom(target_zoom)
+    }
+
+    pub(crate) fn toggle_fit_zoom_mode(&mut self) -> Result<(), Box<dyn Error>> {
+        if matches!(self.render_options.zoom_option, ZoomOption::None) {
+            self.render_options.zoom_option = ZoomOption::FitScreen;
+            self.zoom_factor = 1.0;
+            self.pending_fit_recalc = true;
+            Ok(())
+        } else {
+            self.render_options.zoom_option = ZoomOption::None;
+            self.zoom_factor = 1.0;
+            self.sync_zoom()
+        }
     }
 
     fn animation_enabled(&self) -> bool {
@@ -603,19 +666,70 @@ impl ViewerApp {
         }
     }
 
-    pub(crate) fn upload_current_frame(&mut self) {
-        let (image, display_scale) = {
-            let canvas = self.current_canvas();
-            let (canvas, display_scale) = downscale_for_texture_limit(
-                canvas,
-                self.max_texture_side,
-                self.render_options.zoom_method,
-            );
-            (self.color_image_from_canvas(&canvas), display_scale)
-        };
+    fn texture_name_for_path(&self, path: Option<&Path>) -> String {
+        path.and_then(|value| value.file_name())
+            .and_then(|name| name.to_str())
+            .unwrap_or("image")
+            .to_owned()
+    }
 
+    fn build_texture_from_canvas(
+        &self,
+        texture_name: &str,
+        canvas: &Canvas,
+    ) -> (TextureHandle, f32) {
+        let (canvas, display_scale) = downscale_for_texture_limit(
+            canvas,
+            self.max_texture_side,
+            self.render_options.zoom_method,
+        );
+        let image = self.color_image_from_canvas(&canvas);
+        let texture = self
+            .egui_ctx
+            .load_texture(texture_name.to_owned(), image, TextureOptions::LINEAR);
+        (texture, display_scale)
+    }
+
+    fn show_loading_texture(&mut self, reset_branch_cache: bool) {
+        if !self.current_texture_is_default {
+            self.prev_texture = Some(self.current_texture.clone());
+        }
+        if reset_branch_cache {
+            self.prev_texture = None;
+            self.next_texture = None;
+            self.next_texture_display_scale = 1.0;
+        }
+        self.current_texture = self.default_texture.clone();
+        self.current_texture_is_default = true;
+        self.texture_display_scale = 1.0;
+    }
+
+    fn shutdown_render_worker(
+        tx: &Sender<RenderCommand>,
+        join: &mut Option<JoinHandle<()>>,
+    ) {
+        let _ = tx.send(RenderCommand::Shutdown);
+        if let Some(handle) = join.take() {
+            let _ = handle.join();
+        }
+    }
+
+    pub(crate) fn upload_current_frame(&mut self) {
+        let texture_name = self.texture_name_for_path(Some(&self.current_path));
+        let (canvas, display_scale) = {
+            let canvas = self.current_canvas();
+            downscale_for_texture_limit(canvas, self.max_texture_side, self.render_options.zoom_method)
+        };
+        let image = self.color_image_from_canvas(&canvas);
         self.texture_display_scale = display_scale;
-        self.texture.set(image, TextureOptions::LINEAR);
+        if self.current_texture_is_default {
+            self.current_texture =
+                self.egui_ctx
+                    .load_texture(texture_name, image, TextureOptions::LINEAR);
+            self.current_texture_is_default = false;
+        } else {
+            self.current_texture.set(image, TextureOptions::LINEAR);
+        }
     }
 
     fn update_window_title(&self, ctx: &egui::Context) {
@@ -684,9 +798,13 @@ impl ViewerApp {
     }
 
     pub(crate) fn request_filer_directory(&mut self, dir: PathBuf, selected: Option<PathBuf>) {
+        self.spawn_navigation_workers();
+        let Some(filer_tx) = self.filer_tx.clone() else {
+            return;
+        };
         let request_id = self.alloc_filer_request_id();
         self.filer.pending_request_id = Some(request_id);
-        let _ = self.filer_tx.send(FilerCommand::OpenDirectory {
+        let _ = filer_tx.send(FilerCommand::OpenDirectory {
             request_id,
             dir,
             sort: self.navigation_sort,
@@ -713,10 +831,11 @@ impl ViewerApp {
     }
 
     pub(crate) fn set_filesystem_current(&mut self, path: PathBuf) {
+        self.spawn_navigation_workers();
         let request_id = self.alloc_fs_request_id();
-        let _ = self
-            .fs_tx
-            .send(FilesystemCommand::SetCurrent { request_id, path });
+        if let Some(fs_tx) = &self.fs_tx {
+            let _ = fs_tx.send(FilesystemCommand::SetCurrent { request_id, path });
+        }
     }
 
     pub(crate) fn save_current_as(&mut self, format: SaveFormat) {
@@ -1125,6 +1244,7 @@ impl ViewerApp {
         if self.try_take_preloaded(&navigation_path) {
             return Ok(());
         }
+        self.show_loading_texture(branch_changed);
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.pending_navigation_path = Some(navigation_path.clone());
@@ -1199,19 +1319,44 @@ impl ViewerApp {
         self.preloaded_load_path = None;
         self.preloaded_source = None;
         self.preloaded_rendered = None;
+        self.next_texture = None;
+        self.next_texture_display_scale = 1.0;
+    }
+
+    fn spawn_navigation_workers(&mut self) {
+        if self.fs_tx.is_none() || self.fs_rx.is_none() {
+            let (tx, rx) = spawn_filesystem_worker(self.navigation_sort);
+            self.fs_tx = Some(tx);
+            self.fs_rx = Some(rx);
+        }
+        if self.filer_tx.is_none() || self.filer_rx.is_none() {
+            let (tx, rx) = spawn_filer_worker();
+            self.filer_tx = Some(tx);
+            self.filer_rx = Some(rx);
+        }
+        if self.thumbnail_tx.is_none() || self.thumbnail_rx.is_none() {
+            let (tx, rx) = spawn_thumbnail_worker();
+            self.thumbnail_tx = Some(tx);
+            self.thumbnail_rx = Some(rx);
+        }
     }
 
     fn init_filesystem(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
+        self.spawn_navigation_workers();
+        let Some(fs_tx) = self.fs_tx.clone() else {
+            return Ok(());
+        };
         let request_id = self.alloc_fs_request_id();
         self.active_fs_request_id = Some(request_id);
         self.overlay.loading_message = Some(format!("Scanning {}", path.display()));
-        self.fs_tx
+        fs_tx
             .send(FilesystemCommand::Init { request_id, path })
             .map_err(filesystem_send_error)?;
         Ok(())
     }
 
     fn request_navigation(&mut self, mut command: FilesystemCommand) -> Result<(), Box<dyn Error>> {
+        self.spawn_navigation_workers();
         if !self.navigator_ready {
             self.queued_navigation = Some(command);
             return Ok(());
@@ -1220,6 +1365,10 @@ impl ViewerApp {
             self.queued_navigation = Some(command);
             return Ok(());
         }
+        let Some(fs_tx) = self.fs_tx.clone() else {
+            self.queued_navigation = Some(command);
+            return Ok(());
+        };
         let request_id = self.alloc_fs_request_id();
         self.active_fs_request_id = Some(request_id);
         command = match command {
@@ -1237,7 +1386,7 @@ impl ViewerApp {
             FilesystemCommand::Last { .. } => FilesystemCommand::Last { request_id },
         };
         self.overlay.loading_message = Some("Scanning folder...".to_string());
-        self.fs_tx.send(command).map_err(filesystem_send_error)?;
+        fs_tx.send(command).map_err(filesystem_send_error)?;
         Ok(())
     }
 
@@ -1249,7 +1398,14 @@ impl ViewerApp {
     ) {
         let previous_navigation_path = self.current_navigation_path.clone();
         if let Some(pending_navigation_path) = self.pending_navigation_path.take() {
-            self.current_navigation_path = pending_navigation_path;
+            self.current_navigation_path = if path
+                .as_ref()
+                .is_some_and(|_| is_browser_container(&pending_navigation_path))
+            {
+                path.clone().unwrap_or(pending_navigation_path)
+            } else {
+                pending_navigation_path
+            };
         }
         if let Some(path) = path {
             let request_id = self.alloc_fs_request_id();
@@ -1259,11 +1415,16 @@ impl ViewerApp {
             self.save_dialog.file_name = default_save_file_name(&path);
             if folder_changed {
                 self.clear_manga_companion();
+                self.prev_texture = None;
+                self.next_texture = None;
+                self.next_texture_display_scale = 1.0;
             }
-            let _ = self.fs_tx.send(FilesystemCommand::SetCurrent {
-                request_id,
-                path: self.current_navigation_path.clone(),
-            });
+            if let Some(fs_tx) = &self.fs_tx {
+                let _ = fs_tx.send(FilesystemCommand::SetCurrent {
+                    request_id,
+                    path: self.current_navigation_path.clone(),
+                });
+            }
             if let Some(dir) = self.current_directory() {
                 self.request_filer_directory(dir, Some(self.current_navigation_path.clone()));
             }
@@ -1283,6 +1444,7 @@ impl ViewerApp {
         self.active_request = None;
         if !self.navigator_ready && self.active_fs_request_id.is_none() {
             if let Some(path) = self.deferred_filesystem_init_path.take() {
+                self.startup_phase = StartupPhase::Synchronizing;
                 let _ = self.init_filesystem(path);
             }
         }
@@ -1343,6 +1505,11 @@ impl ViewerApp {
         self.preloaded_navigation_path = None;
         self.pending_preload_navigation_path = None;
         if let (Some(source), Some(rendered)) = (source, rendered) {
+            if let Some(texture) = self.next_texture.take() {
+                self.current_texture = texture;
+                self.current_texture_is_default = false;
+                self.texture_display_scale = self.next_texture_display_scale;
+            }
             self.pending_navigation_path = Some(path.to_path_buf());
             self.overlay.loading_message = None;
             self.apply_loaded_result(load_path, source, rendered);
@@ -1352,9 +1519,10 @@ impl ViewerApp {
     }
 
     fn respawn_render_worker(&mut self) {
-        let (worker_tx, worker_rx) = spawn_render_worker(self.source.clone());
+        let (worker_tx, worker_rx, worker_join) = spawn_render_worker(self.source.clone());
         self.worker_tx = worker_tx;
         self.worker_rx = worker_rx;
+        self.worker_join = Some(worker_join);
         self.active_request = None;
     }
 
@@ -1363,23 +1531,25 @@ impl ViewerApp {
             .companion_source
             .clone()
             .unwrap_or_else(|| self.source.clone());
-        let (tx, rx) = spawn_render_worker(seed);
+        let (tx, rx, join) = spawn_render_worker(seed);
         self.companion_tx = tx;
         self.companion_rx = rx;
+        self.companion_join = Some(join);
         self.companion_active_request = None;
     }
 
     fn respawn_preload_worker(&mut self) {
-        let (tx, rx) = spawn_render_worker(self.source.clone());
+        let (tx, rx, join) = spawn_render_worker(self.source.clone());
         self.preload_tx = tx;
         self.preload_rx = rx;
+        self.preload_join = Some(join);
         self.invalidate_preload();
     }
 
     fn respawn_filesystem_worker(&mut self) {
         let (tx, rx) = spawn_filesystem_worker(self.navigation_sort);
-        self.fs_tx = tx;
-        self.fs_rx = rx;
+        self.fs_tx = Some(tx);
+        self.fs_rx = Some(rx);
         self.navigator_ready = false;
         self.active_fs_request_id = None;
         let _ = self.init_filesystem(self.current_navigation_path.clone());
@@ -1387,8 +1557,8 @@ impl ViewerApp {
 
     fn respawn_filer_worker(&mut self) {
         let (tx, rx) = spawn_filer_worker();
-        self.filer_tx = tx;
-        self.filer_rx = rx;
+        self.filer_tx = Some(tx);
+        self.filer_rx = Some(rx);
         self.filer.pending_request_id = None;
         if let Some(dir) = self
             .filer
@@ -1402,8 +1572,8 @@ impl ViewerApp {
 
     fn respawn_thumbnail_worker(&mut self) {
         let (tx, rx) = spawn_thumbnail_worker();
-        self.thumbnail_tx = tx;
-        self.thumbnail_rx = rx;
+        self.thumbnail_tx = Some(tx);
+        self.thumbnail_rx = Some(rx);
         self.thumbnail_pending.clear();
     }
 
@@ -1452,10 +1622,12 @@ impl ViewerApp {
                         .and_then(|name| name.to_str())
                         .unwrap_or("image");
                     self.save_dialog.message = Some(format!("Load failed: {label}: {message}"));
+                    self.show_loading_texture(true);
                     self.overlay.loading_message = None;
                     self.active_request = None;
                     if !self.navigator_ready && self.active_fs_request_id.is_none() {
                         if let Some(path) = self.deferred_filesystem_init_path.take() {
+                            self.startup_phase = StartupPhase::Synchronizing;
                             let _ = self.init_filesystem(path);
                         }
                     }
@@ -1492,6 +1664,11 @@ impl ViewerApp {
                     self.active_preload_request_id = None;
                     self.preloaded_navigation_path = self.pending_preload_navigation_path.take();
                     self.preloaded_load_path = path;
+                    let texture_name = self.texture_name_for_path(self.preloaded_load_path.as_deref());
+                    let (texture, display_scale) =
+                        self.build_texture_from_canvas(&texture_name, rendered.frame_canvas(0));
+                    self.next_texture = Some(texture);
+                    self.next_texture_display_scale = display_scale;
                     self.preloaded_source = Some(source);
                     self.preloaded_rendered = Some(rendered);
                 }
@@ -1503,6 +1680,8 @@ impl ViewerApp {
                         self.preloaded_load_path = None;
                         self.preloaded_source = None;
                         self.preloaded_rendered = None;
+                        self.next_texture = None;
+                        self.next_texture_display_scale = 1.0;
                     }
                 }
                 Err(TryRecvError::Empty) => break,
@@ -1598,7 +1777,11 @@ impl ViewerApp {
 
     fn poll_filesystem(&mut self) {
         loop {
-            match self.fs_rx.try_recv() {
+            let result = match self.fs_rx.as_ref() {
+                Some(rx) => rx.try_recv(),
+                None => return,
+            };
+            match result {
                 Ok(FilesystemResult::NavigatorReady {
                     request_id,
                     navigation_path,
@@ -1607,10 +1790,15 @@ impl ViewerApp {
                     if self.active_fs_request_id == Some(request_id) {
                         self.navigator_ready = true;
                         self.active_fs_request_id = None;
+                        self.startup_phase = StartupPhase::MultiViewer;
                         match (navigation_path, load_path) {
                             (Some(navigation_path), Some(load_path)) => {
                                 self.empty_mode = false;
-                                let _ = self.request_load_target(navigation_path, load_path);
+                                if self.current_navigation_path != navigation_path
+                                    || self.current_path != load_path
+                                {
+                                    let _ = self.request_load_target(navigation_path, load_path);
+                                }
                             }
                             (Some(navigation_path), None) => {
                                 self.current_navigation_path = navigation_path;
@@ -1635,12 +1823,18 @@ impl ViewerApp {
                 }) => {
                     if self.active_fs_request_id == Some(request_id) {
                         self.empty_mode = false;
-                        let _ = self.request_load_target(navigation_path, load_path);
+                        self.startup_phase = StartupPhase::MultiViewer;
+                        if self.current_navigation_path != navigation_path
+                            || self.current_path != load_path
+                        {
+                            let _ = self.request_load_target(navigation_path, load_path);
+                        }
                         self.active_fs_request_id = None;
                     }
                 }
                 Ok(FilesystemResult::NoPath { request_id }) => {
                     if self.active_fs_request_id == Some(request_id) {
+                        self.startup_phase = StartupPhase::MultiViewer;
                         self.overlay.loading_message =
                             Some("No displayable file found".to_string());
                         self.show_filer = true;
@@ -1665,7 +1859,11 @@ impl ViewerApp {
 
     fn poll_filer_worker(&mut self) {
         loop {
-            match self.filer_rx.try_recv() {
+            let result = match self.filer_rx.as_ref() {
+                Some(rx) => rx.try_recv(),
+                None => return,
+            };
+            match result {
                 Ok(FilerResult::Reset {
                     request_id,
                     directory,
@@ -1712,7 +1910,11 @@ impl ViewerApp {
 
     fn poll_thumbnail_worker(&mut self) {
         loop {
-            match self.thumbnail_rx.try_recv() {
+            let result = match self.thumbnail_rx.as_ref() {
+                Some(rx) => rx.try_recv(),
+                None => return,
+            };
+            match result {
                 Ok(ThumbnailResult::Ready {
                     _request_id: _,
                     path,
@@ -1743,13 +1945,17 @@ impl ViewerApp {
     }
 
     pub(crate) fn ensure_thumbnail(&mut self, path: &std::path::Path, max_side: u32) {
+        self.spawn_navigation_workers();
+        let Some(thumbnail_tx) = self.thumbnail_tx.clone() else {
+            return;
+        };
         if self.thumbnail_cache.contains_key(path) || self.thumbnail_pending.contains(path) {
             return;
         }
         let request_id = self.alloc_thumbnail_request_id();
         let path = path.to_path_buf();
         self.thumbnail_pending.insert(path.clone());
-        let _ = self.thumbnail_tx.send(ThumbnailCommand::Generate {
+        let _ = thumbnail_tx.send(ThumbnailCommand::Generate {
             request_id,
             path,
             max_side,
@@ -1846,7 +2052,7 @@ impl eframe::App for ViewerApp {
                     &self.render_options.zoom_option,
                 );
                 self.fit_zoom = new_zoom.clamp(0.1, 16.0);
-                let _ = self.set_zoom(new_zoom);
+                let _ = self.sync_zoom();
             }
 
             let draw_size = vec2(
@@ -1903,13 +2109,13 @@ impl eframe::App for ViewerApp {
                                         draw_size.y.max(companion_draw_size.y),
                                     );
                                     ui.add(
-                                        egui::Image::from_texture(&self.texture)
+                                        egui::Image::from_texture(&self.current_texture)
                                             .fit_to_exact_size(draw_size),
                                     );
                                     Some(first)
                                 } else {
                                     let first = ui.add(
-                                        egui::Image::from_texture(&self.texture)
+                                        egui::Image::from_texture(&self.current_texture)
                                             .fit_to_exact_size(draw_size),
                                     );
                                     self.paint_manga_separator(
@@ -1925,7 +2131,7 @@ impl eframe::App for ViewerApp {
                             } else {
                                 Some(
                                     ui.add(
-                                        egui::Image::from_texture(&self.texture)
+                                        egui::Image::from_texture(&self.current_texture)
                                             .fit_to_exact_size(draw_size),
                                     ),
                                 )
@@ -1933,7 +2139,7 @@ impl eframe::App for ViewerApp {
                         } else {
                             Some(
                                 ui.add(
-                                    egui::Image::from_texture(&self.texture)
+                                    egui::Image::from_texture(&self.current_texture)
                                         .fit_to_exact_size(draw_size),
                                 ),
                             )
@@ -1957,6 +2163,9 @@ impl eframe::App for ViewerApp {
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        Self::shutdown_render_worker(&self.worker_tx, &mut self.worker_join);
+        Self::shutdown_render_worker(&self.companion_tx, &mut self.companion_join);
+        Self::shutdown_render_worker(&self.preload_tx, &mut self.preload_join);
         let _ = save_app_config(
             &self.current_config(),
             Some(&self.current_path),

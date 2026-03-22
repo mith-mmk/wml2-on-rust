@@ -177,7 +177,7 @@ pub struct ZipWorkaroundOptions {
 impl Default for ZipWorkaroundOptions {
     fn default() -> Self {
         Self {
-            threshold_mb: 256,
+            threshold_mb: 16,
             local_cache: true,
         }
     }

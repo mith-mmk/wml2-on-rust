@@ -18,9 +18,12 @@
 - `自動` ボタンでシステムロケールを staged 値へ入れられます
 - `internal / system / ffmpeg / susie64` の優先順位で動く plugin decode 土台
 - ZIP 指定時もウィンドウを先に開いてから中身を解決する非同期起動
+- 起動時は filer/filesystem の同期より先に最初の viewer 画像表示を優先します
 - ZIP metadata 読み込みは必要に応じて plain `BufReader<File>` にフォールバックします
 - 読み込み中の遷移先を pending で保持し、フォルダ/アーカイブ跨ぎの古い表示を減らしています
+- 画像ロード失敗時は前の画像を残さず loading texture に戻します
 - render / filer / thumbnail worker が切断時に自動で再生成されます
+- アプリ終了時は render worker に明示的に shutdown を送ります
 
 ## 起動
 
@@ -46,7 +49,7 @@ cargo run --manifest-path wml2viewer/Cargo.toml -- <path>
 ```toml
 [runtime.workaround.archive.zip]
 threshold_mb = 256
-local_cache = true
+local_cache = false
 
 [filesystem.thumbnail]
 suppress_large_files = true
@@ -77,6 +80,7 @@ search_path = ["c:/susie64/plugins/"]
 ## メモ
 
 - 大きい ZIP やネットワーク上の ZIP では low-I/O ワークアラウンドが有効になります。
+- ZIP の一時ローカルキャッシュは既定で無効にし、ネットワーク/SSD 環境で起動を引きずりにくくしています。
 - 大きい BMP / アーカイブのサムネイルは設定から抑制できます。
 - サムネイル生成失敗時は pending を解放して再試行できるようにしています。
 - ファイラーの更新日時は UTC ではなくローカル時刻で表示します。

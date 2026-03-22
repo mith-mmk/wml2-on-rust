@@ -114,7 +114,7 @@ impl ViewerApp {
         }
 
         if response.double_clicked() {
-            let _ = self.toggle_zoom();
+            let _ = self.toggle_fit_zoom_mode();
             return;
         }
 

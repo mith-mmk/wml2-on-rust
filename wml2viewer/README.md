@@ -18,9 +18,12 @@ Minimal native image viewer built with `egui` and `wml2`.
 - Locale `Auto` fills the staged value from the current system locale without applying immediately
 - Plugin decode pipeline with priority resolution across `internal`, `system`, `ffmpeg`, and `susie64`
 - ZIP startup now keeps the UI responsive by resolving archive contents after the window opens
+- Startup now prioritizes the first viewer image before filer/filesystem worker synchronization
 - ZIP metadata loading now falls back to plain `BufReader<File>` if the cached reader path fails
 - Navigation requests now keep a pending target, reducing stale-image state during folder/archive transitions
+- Failed image loads now fall back to the loading texture instead of leaving the previous image onscreen
 - Render / filer / thumbnail workers automatically respawn if a worker thread disconnects
+- Render workers now receive an explicit shutdown command on app exit
 
 ## Run
 
@@ -47,7 +50,7 @@ Relevant runtime workaround example:
 ```toml
 [runtime.workaround.archive.zip]
 threshold_mb = 256
-local_cache = true
+local_cache = false
 
 [filesystem.thumbnail]
 suppress_large_files = true
@@ -71,6 +74,7 @@ search_path = ["../test/plugins/susie64"]
 ## Notes
 
 - Very large or network ZIP files use a low-I/O workaround.
+- Local ZIP temp cache is now disabled by default to avoid slowing network/archive startup on SSD-heavy setups.
 - Large BMP/archive thumbnails can be suppressed from Settings.
 - Thumbnail failures are cleared from the pending queue so the filer can retry.
 - Filer timestamps now use local system time instead of UTC.

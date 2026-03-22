@@ -402,7 +402,7 @@
 - [-] 役割の再整理
 
 ## 次に着手
-一気にやりきろう
+betaまで後一歩
 
 - [ ] issue: systemプラグイン有効時　Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
 - [ ] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
@@ -517,7 +517,8 @@
 - [+] issue: 設定：ナビゲーション→[保存先を記憶]を押すと固まりやすい
 
 ### src/dependent/plugins/*
-- [ ] issue: system プラグイン実行時　強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
+- [*] issue: system プラグイン実行時　強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
+- viewer 終了時に render worker へ明示 shutdown / join を追加
 - [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
 - [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
 - [x] susie64プラグイン(動作:x avif o jp2 x heic)
@@ -550,7 +551,8 @@
 - [*] issue: 起動時にzipが指定されると長時間待たされる
 - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
 - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
-- [ ] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度0MBに設定(IOがネックになっているためSSD最適化した方が速い)
+- [+] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度16MBに設定(IOがネックになっているためSSD最適化した方が速い)
+- 現実装が bool のため、まず default を `local_cache = false` に変更
 - [*] issue: bench_archive: 1.6Gはベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
 
 ### 全体 / アーキテクチャ
@@ -562,28 +564,36 @@
 ## beta前の構造整理
 
 ### startup sequence
-- [ ] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
-- [ ] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
-- [ ] viewerワーカーの起動を再優先して `current_texture` のみ作る
-- [ ] 最初の画像をロードして単体ビューアーモードで表示する
+- [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
+- [*] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
+- [*] viewerワーカーの起動を再優先して `current_texture` のみ作る
+- [*] 最初の画像をロードして単体ビューアーモードで表示する
 - [ ] 各ワーカーを生成してから最初の画像を表示する
-- [ ] 各ワーカーを同期してマルチプル・ビューアーモードに切り替える
+- [*] 各ワーカーを同期してマルチプル・ビューアーモードに切り替える
 
 ### viewer texture / zoom
-- [ ] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
-- [ ] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
-- [ ] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
+- [*] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
+- [*] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
+    - [ ] issue: 最初画像のtextureが再利用されつづける問題 
+- [*] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
 - [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
-- [ ] フォルダをまたぐ時は texture を一度破棄して再生成する
+- [*] フォルダをまたぐ時は texture を一度破棄して再生成する
 - [ ] 縮小アルゴリズムに pixel mixing が使えるか検討する
-- [ ] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
-- [ ] fit の後に zoom の計算を入れる
-- [ ] ダブルクリックが効かない
-- [ ] ScreenFit <--> None のトグルにする
+- [x] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
+    - [ ] [幅に合わせる]で効かない
+    - [ ] ページを変えた時にzoom変更をリセット
+- [x] fit の後に zoom の計算を入れる
+
+## input/key events/mouse events
+- [ ] マウス:デフォルト挙動との干渉チェック(Scroll系と干渉？)
+- [*] マウス:ダブルクリックが効かない ScreenFit <--> None のトグルにする
+- [ ] マウス:クリックが効かない 次の画面を表示にする
+- [ ] マウス:左クリックが効かない 設定を表示する
+- [ ] マウス：ローラーはスクロール　デフォルトの挙動
 
 ### zip
 - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
-- [ ] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度0MBに設定(IOがネックになっているためSSD最適化した方が速い)
+- [*] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度16MBに設定(IOがネックになっているためSSD最適化した方が速い)
 
 ### filer
 - [ ] OSソート順 Unicode Collation Algorithmを利用

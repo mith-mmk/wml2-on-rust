@@ -7,7 +7,7 @@ use std::error::Error;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::thread;
+use std::thread::{self, JoinHandle};
 
 pub(crate) enum RenderCommand {
     LoadPath {
@@ -21,6 +21,7 @@ pub(crate) enum RenderCommand {
         zoom: f32,
         method: InterpolationAlgorithm,
     },
+    Shutdown,
 }
 
 pub(crate) enum RenderResult {
@@ -45,11 +46,11 @@ pub(crate) enum ActiveRenderRequest {
 
 pub(crate) fn spawn_render_worker(
     initial_source: LoadedImage,
-) -> (Sender<RenderCommand>, Receiver<RenderResult>) {
+) -> (Sender<RenderCommand>, Receiver<RenderResult>, JoinHandle<()>) {
     let (command_tx, command_rx) = mpsc::channel::<RenderCommand>();
     let (result_tx, result_rx) = mpsc::channel::<RenderResult>();
 
-    thread::spawn(move || {
+    let join = thread::spawn(move || {
         let mut current_source = initial_source;
         while let Ok(command) = command_rx.recv() {
             match command {
@@ -124,11 +125,12 @@ pub(crate) fn spawn_render_worker(
                         });
                     }
                 },
+                RenderCommand::Shutdown => break,
             }
         }
     });
 
-    (command_tx, result_rx)
+    (command_tx, result_rx, join)
 }
 
 pub(crate) fn worker_send_error(err: mpsc::SendError<RenderCommand>) -> Box<dyn Error> {

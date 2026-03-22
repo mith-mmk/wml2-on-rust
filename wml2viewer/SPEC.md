@@ -67,6 +67,7 @@
   - `current_file`
   - `workaround.archive.zip.threshold_mb`
   - `workaround.archive.zip.local_cache`
+  - `workaround.archive.zip.local_cache` の既定値は現行実装では `false`
 
 - `plugins`
   - `internal_priority`
@@ -81,6 +82,7 @@
 ## 実装メモ
 
 - `runtime.current_file` は終了時のスナップショットとして保存され、起動時の初期 path に使われます。
+- startup は first image 表示を優先し、filesystem/filer worker の同期は後続 phase へ遅延できる構造に寄せています。
 - `filesystem.thumbnail.suppress_large_files` はフィル更新時の負荷を抑えるための実装寄り設定です。
 - `viewer.fade` は現状 UI / 永続化にまだ出していないため、仕様上は「runtime-only の予備」として扱います。
 - `window.size` と `window.start_position` は TOML 上では tagged enum です。

@@ -362,7 +362,7 @@ impl Default for ZipWorkaroundConfigFile {
     fn default() -> Self {
         Self {
             threshold_mb: 256,
-            local_cache: true,
+            local_cache: false,
         }
     }
 }

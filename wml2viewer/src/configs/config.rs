@@ -185,7 +185,7 @@ struct RenderConfigFile {
 impl Default for RenderConfigFile {
     fn default() -> Self {
         Self {
-            scale_mode: RenderScaleModeConfigFile::PreciseCpu,
+            scale_mode: RenderScaleModeConfigFile::FastGpu,
             zoom_option: ZoomOptionConfigFile::FitScreen,
             zoom_method: ZoomMethodConfigFile::Bilinear,
         }

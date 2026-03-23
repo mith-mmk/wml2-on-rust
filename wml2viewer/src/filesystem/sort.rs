@@ -59,6 +59,56 @@ pub(crate) fn compare_natural_str(left: &str, right: &str, case_sensitive: bool)
     left_chars.len().cmp(&right_chars.len())
 }
 
+pub(crate) fn compare_os_str(left: &str, right: &str) -> Ordering {
+    #[cfg(target_os = "windows")]
+    {
+        return compare_windows_shell_str(left, right);
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        compare_natural_str(&normalize_for_os_sort(left), &normalize_for_os_sort(right), true)
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn compare_windows_shell_str(left: &str, right: &str) -> Ordering {
+    use std::os::windows::ffi::OsStrExt;
+
+    #[link(name = "Shlwapi")]
+    unsafe extern "system" {
+        fn StrCmpLogicalW(left: *const u16, right: *const u16) -> i32;
+    }
+
+    let left_wide = std::ffi::OsStr::new(left)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect::<Vec<_>>();
+    let right_wide = std::ffi::OsStr::new(right)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect::<Vec<_>>();
+    let result = unsafe { StrCmpLogicalW(left_wide.as_ptr(), right_wide.as_ptr()) };
+    result.cmp(&0)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn normalize_for_os_sort(input: &str) -> String {
+    input.chars().flat_map(normalize_sort_char).collect()
+}
+
+#[cfg(not(target_os = "windows"))]
+fn normalize_sort_char(ch: char) -> Vec<char> {
+    let folded = match ch {
+        '\u{30A1}'..='\u{30F6}' => char::from_u32(ch as u32 - 0x60).unwrap_or(ch),
+        '\u{FF10}'..='\u{FF19}' => char::from_u32('0' as u32 + (ch as u32 - 0xFF10)).unwrap_or(ch),
+        '\u{FF21}'..='\u{FF3A}' => char::from_u32('a' as u32 + (ch as u32 - 0xFF21)).unwrap_or(ch),
+        '\u{FF41}'..='\u{FF5A}' => char::from_u32('a' as u32 + (ch as u32 - 0xFF41)).unwrap_or(ch),
+        _ => ch,
+    };
+    folded.to_lowercase().collect()
+}
+
 fn trim_leading_zeros(chars: &[char]) -> &[char] {
     let trimmed = chars
         .iter()
@@ -85,5 +135,10 @@ mod tests {
             compare_natural_str("テスト(5).jpg", "テスト(43).jpg", false),
             Ordering::Less
         );
+    }
+
+    #[test]
+    fn os_sort_treats_hiragana_and_katakana_similarly() {
+        assert_eq!(compare_os_str("あ1", "ア2"), Ordering::Less);
     }
 }

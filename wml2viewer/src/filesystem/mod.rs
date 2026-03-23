@@ -12,7 +12,7 @@ use std::time::SystemTime;
 use crate::dependent::plugins::path_supported_by_plugins;
 use crate::options::{EndOfFolderOption, NavigationSortOption};
 use listed_file::load_listed_file_entries;
-pub(crate) use sort::compare_natural_str;
+pub(crate) use sort::{compare_natural_str, compare_os_str};
 pub(crate) use zip_file::{load_zip_entries_unsorted, sort_zip_entries};
 use zip_file::{
     load_zip_entries, load_zip_entry_bytes, set_zip_workaround_options, zip_entry_record,
@@ -1012,7 +1012,7 @@ fn sort_paths(paths: &mut [PathBuf], sort: NavigationSortOption) {
     match sort {
         NavigationSortOption::OsName => {
             paths.sort_by(|left, right| {
-                compare_natural_str(&os_name_sort_key(left), &os_name_sort_key(right), false)
+                compare_os_str(&os_name_sort_key(left), &os_name_sort_key(right))
             });
         }
         NavigationSortOption::Name => {

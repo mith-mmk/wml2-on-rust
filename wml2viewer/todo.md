@@ -479,6 +479,7 @@ betaまで後一歩
 ## 優先度低
 - [-] MacはIntel MACの環境しかないので遅延 
 - [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK 起動もOK バグ有り
+- [x] Ubuntu OK
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
 - [ ] リソースenで日本語が表示出来ない問題
@@ -558,6 +559,7 @@ betaまで後一歩
 - [+] Linux font fallback 候補（数字が出ない）
 - [x] issue:Linuxのファイラーで数字が化ける
 - [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK 起動もOK
+- [x] Ubuntu OK
 
 ### src/dependent/windows/mod.rs
 - [x] issue: makiが表示出来ないバグ
@@ -605,23 +607,16 @@ P5 = 優先度低い
 - [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
 - [*] フォルダをまたぐ時は texture を一度破棄して再生成する
 
-### renderer(P1)
-- [ ] 精密モードが予想以上に重い(変換プロセスが何度も走っていないかチェック　-> アルゴリズムチェック)　このモードが有効になるサイズは6000px越えが多い
-- [ ] [精密]が予想以上に重いので[高速]をデフォルトに変更
-
-## input/key events/mouse events(P1)
-- [ ] issue: マウスイベントが画像内部でしか効かない(backgroundで効かない) VieweAppのイベント定義域にbackgroundが入って居ない
-- [ ] issue: 左クリックは左ダブルクリックでないときにのみ発火(eguiに機能がないみたいなので時間で管理 default 500ms)
-- [ ] (P3) イベントと入力バインドの分離。 Key Remapping UIの準備
+### renderer(P3)
+- [*] 精密モードが予想以上に重い(変換プロセスが何度も走っていないかチェック　-> アルゴリズムチェック)　[精密]モードが効くサイズは6000px越えが多いのでより遅い
 
 ### zip(P3)
 - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
 
 ### filer(P1)
-- [ ] OSソート順 Unicode Collation Algorithmを利用
-- [ ] ja以外の時間ロケールが手抜き(ソース確認)
-- [ ] P3 まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
-
+- [*] OSソート順 Unicode Collation Algorithmを利用
+- [x] ja以外の時間ロケールが適用されていない
+- [ ] (P3) まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
 
 ### Others
 - [ ] コードのフルレビュー
@@ -630,14 +625,27 @@ P5 = 優先度低い
 - [ ] bench_archive 1.6GBだと固まる問題
 
 ## 機能追加
+## input/key events/mouse events(P1)
+- [ ] (P3) イベントと入力バインドの分離。 Key Remapping UIの準備
 
 ### INPUT
 - [ ] P4 タッチパネル(android対応用)
 
 ### FileSystem
+- [ ] Windows Userフォルダをエクスプローラっぽい表示に擬態するモード
+    - User home
+      - Desktop (CSIDL_MYDOCUMENTS)
+      - Documents (CSIDL_MYDOCUMENTS)
+      - Music (CSIDL_MYMUSIC)
+      - Pictures (CSIDL_MYPICTURES)
+      - Video (CSIDL_MYVIDEO)
+      - Downloads
+      - Favariies (CSIDL_FAVORITES)
 - [ ] P4 LHAサポート
 
-
+## 最終確認
+- [x] todo.mdの更新
+- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## 修正確認中issue
 ### system
@@ -688,7 +696,8 @@ P5 = 優先度低い
 - [+] マウス:左クリック 次の画面を表示にする
 - [x] マウス：ローラーはスクロール　デフォルトの挙動
 - [x] マウス:右クリック 設定を表示する → 現在[簡易メニュー]が表示されて閉じられないので[設定]にしてください
-
+- [x] issue: マウスイベントが画像内部でしか効かない(backgroundで効かない) VieweAppのイベント定義域にbackgroundが入って居ない？
+- [x] issue: 左クリックは左ダブルクリックでないときにのみ発火(eguiに機能がないみたいなので時間で管理 default 500ms)
 
 ### plugin
 - [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
@@ -720,6 +729,8 @@ P5 = 優先度低い
     - [+] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
     - [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
       - [*] zipではUI先行起動まで対応(ファイラーに引きずられて遅くなる模様)
+- [x] [精密]が予想以上に重いので[高速]をデフォルトに変更
+
 #### viewer texture / zoom
 - [*] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
 - [*] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること

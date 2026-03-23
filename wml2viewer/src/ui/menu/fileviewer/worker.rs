@@ -1,5 +1,6 @@
 use crate::filesystem::{
-    compare_natural_str, is_browser_container, is_browser_entry, list_browser_entries,
+    compare_natural_str, compare_os_str, is_browser_container, is_browser_entry,
+    list_browser_entries,
 };
 use crate::options::NavigationSortOption;
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerMetadata, FilerSortField, NameSortMode};
@@ -303,7 +304,7 @@ fn sort_entries(
 
 fn compare_name(left: &str, right: &str, mode: NameSortMode) -> std::cmp::Ordering {
     match mode {
-        NameSortMode::Os => compare_natural_str(left, right, false),
+        NameSortMode::Os => compare_os_str(left, right),
         NameSortMode::CaseSensitive => compare_natural_str(left, right, true),
         NameSortMode::CaseInsensitive => compare_natural_str(left, right, false),
     }

@@ -41,6 +41,7 @@ pub(crate) use state::SettingsDraftState;
 use state::{SaveDialogState, ViewerOverlayState};
 
 const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(180);
+const POINTER_SINGLE_CLICK_DELAY: Duration = Duration::from_millis(500);
 
 pub(crate) struct ViewerApp {
     pub(crate) current_navigation_path: PathBuf,
@@ -111,6 +112,7 @@ pub(crate) struct ViewerApp {
     pub(crate) next_texture_display_scale: f32,
     pub(crate) current_texture_is_default: bool,
     pub(crate) pending_resize_after_load: bool,
+    pub(crate) pending_resize_after_render: bool,
     pub(crate) pending_fit_recalc: bool,
     pub(crate) config_path: Option<PathBuf>,
     pub(crate) show_left_menu: bool,
@@ -123,6 +125,7 @@ pub(crate) struct ViewerApp {
     pub(crate) system_search_paths_input: String,
     pub(crate) ffmpeg_search_paths_input: String,
     pub(crate) startup_window_sync_frames: usize,
+    pub(crate) deferred_filesystem_sync_frame: Option<usize>,
     pub(crate) empty_mode: bool,
     pub(crate) companion_tx: Sender<RenderCommand>,
     pub(crate) companion_rx: Receiver<RenderResult>,
@@ -143,6 +146,7 @@ pub(crate) struct ViewerApp {
     pub(crate) preloaded_load_path: Option<PathBuf>,
     pub(crate) preloaded_source: Option<LoadedImage>,
     pub(crate) preloaded_rendered: Option<LoadedImage>,
+    pub(crate) pending_primary_click_deadline: Option<Instant>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -395,6 +399,7 @@ impl ViewerApp {
             next_texture_display_scale: 1.0,
             current_texture_is_default: true,
             pending_resize_after_load: false,
+            pending_resize_after_render: false,
             pending_fit_recalc: false,
             config_path,
             show_left_menu: false,
@@ -410,6 +415,7 @@ impl ViewerApp {
             system_search_paths_input: String::new(),
             ffmpeg_search_paths_input: String::new(),
             startup_window_sync_frames: 0,
+            deferred_filesystem_sync_frame: None,
             empty_mode: show_filer_on_start,
             companion_tx,
             companion_rx,
@@ -430,6 +436,7 @@ impl ViewerApp {
             preloaded_load_path: None,
             preloaded_source: None,
             preloaded_rendered: None,
+            pending_primary_click_deadline: None,
         };
 
         this.save_dialog.output_dir = this
@@ -637,6 +644,45 @@ impl ViewerApp {
             )
         {
             self.render_options.zoom_method = crate::drawers::affine::InterpolationAlgorithm::Bilinear;
+        }
+    }
+
+    pub(crate) fn schedule_single_click_navigation(&mut self) {
+        self.pending_primary_click_deadline = Some(Instant::now() + POINTER_SINGLE_CLICK_DELAY);
+    }
+
+    pub(crate) fn cancel_pending_single_click_navigation(&mut self) {
+        self.pending_primary_click_deadline = None;
+    }
+
+    fn poll_pending_pointer_actions(&mut self) {
+        let Some(deadline) = self.pending_primary_click_deadline else {
+            return;
+        };
+        if Instant::now() < deadline || self.pointer_input_blocked() {
+            return;
+        }
+        self.pending_primary_click_deadline = None;
+        let _ = self.next_image();
+    }
+
+    fn defer_initial_filesystem_sync(&mut self) {
+        if self.deferred_filesystem_init_path.is_some() {
+            self.startup_phase = StartupPhase::Synchronizing;
+            self.deferred_filesystem_sync_frame = Some(self.frame_counter + 2);
+        }
+    }
+
+    fn poll_deferred_filesystem_sync(&mut self) {
+        let Some(target_frame) = self.deferred_filesystem_sync_frame else {
+            return;
+        };
+        if self.frame_counter < target_frame || self.active_fs_request_id.is_some() {
+            return;
+        }
+        self.deferred_filesystem_sync_frame = None;
+        if let Some(sync_path) = self.deferred_filesystem_init_path.take() {
+            let _ = self.init_filesystem(sync_path);
         }
     }
 
@@ -1263,6 +1309,7 @@ impl ViewerApp {
     }
 
     pub(crate) fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
+        self.cancel_pending_single_click_navigation();
         if !self.can_trigger_navigation() {
             return Ok(());
         }
@@ -1280,6 +1327,7 @@ impl ViewerApp {
     }
 
     pub(crate) fn prev_image(&mut self) -> Result<(), Box<dyn Error>> {
+        self.cancel_pending_single_click_navigation();
         if !self.can_trigger_navigation() {
             return Ok(());
         }
@@ -1297,6 +1345,7 @@ impl ViewerApp {
     }
 
     pub(crate) fn first_image(&mut self) -> Result<(), Box<dyn Error>> {
+        self.cancel_pending_single_click_navigation();
         if !self.can_trigger_navigation() {
             return Ok(());
         }
@@ -1306,6 +1355,7 @@ impl ViewerApp {
     }
 
     pub(crate) fn last_image(&mut self) -> Result<(), Box<dyn Error>> {
+        self.cancel_pending_single_click_navigation();
         if !self.can_trigger_navigation() {
             return Ok(());
         }
@@ -1366,6 +1416,24 @@ impl ViewerApp {
     pub(crate) fn request_resize_current(&mut self) -> Result<(), Box<dyn Error>> {
         if matches!(self.active_request, Some(ActiveRenderRequest::Load(_))) {
             self.pending_resize_after_load = true;
+            return Ok(());
+        }
+        if matches!(self.active_request, Some(ActiveRenderRequest::Resize(_))) {
+            self.pending_resize_after_render = true;
+            return Ok(());
+        }
+        if matches!(self.render_options.scale_mode, RenderScaleMode::FastGpu) {
+            self.rendered = self.source.clone();
+            self.current_frame = self
+                .current_frame
+                .min(self.rendered.frame_count().saturating_sub(1));
+            self.upload_current_frame();
+            self.overlay.loading_message = None;
+            if self.companion_source.is_some() && self.companion_rendered.is_none() {
+                if let Some(path) = self.companion_navigation_path.clone() {
+                    let _ = self.request_companion_load(path);
+                }
+            }
             return Ok(());
         }
         self.invalidate_preload();
@@ -1446,6 +1514,7 @@ impl ViewerApp {
 
     fn init_filesystem(&mut self, path: PathBuf) -> Result<(), Box<dyn Error>> {
         self.spawn_navigation_workers();
+        self.deferred_filesystem_sync_frame = None;
         let Some(fs_tx) = self.fs_tx.clone() else {
             return Ok(());
         };
@@ -1547,15 +1616,18 @@ impl ViewerApp {
         }
         self.active_request = None;
         if !self.navigator_ready && self.active_fs_request_id.is_none() {
-            if self.deferred_filesystem_init_path.take().is_some() {
-                self.startup_phase = StartupPhase::Synchronizing;
-                let sync_path = loaded_path.unwrap_or_else(|| self.current_navigation_path.clone());
-                let _ = self.init_filesystem(sync_path);
+            if self.deferred_filesystem_init_path.is_some() {
+                self.deferred_filesystem_init_path =
+                    Some(loaded_path.unwrap_or_else(|| self.current_navigation_path.clone()));
+                self.defer_initial_filesystem_sync();
             }
         }
         self.schedule_preload();
         if self.pending_resize_after_load {
             self.pending_resize_after_load = false;
+            let _ = self.request_resize_current();
+        } else if self.pending_resize_after_render {
+            self.pending_resize_after_render = false;
             let _ = self.request_resize_current();
         }
     }
@@ -1736,10 +1808,10 @@ impl ViewerApp {
                     self.overlay.loading_message = None;
                     self.active_request = None;
                     if !self.navigator_ready && self.active_fs_request_id.is_none() {
-                        if self.deferred_filesystem_init_path.take().is_some() {
-                            self.startup_phase = StartupPhase::Synchronizing;
-                            let sync_path = self.current_navigation_path.clone();
-                            let _ = self.init_filesystem(sync_path);
+                        if self.deferred_filesystem_init_path.is_some() {
+                            self.deferred_filesystem_init_path =
+                                Some(self.current_navigation_path.clone());
+                            self.defer_initial_filesystem_sync();
                         }
                     }
                     if failed_during_load {
@@ -2124,6 +2196,7 @@ impl eframe::App for ViewerApp {
         self.poll_save_result();
         self.sync_manga_companion(ctx);
         self.handle_keyboard(ctx);
+        self.poll_pending_pointer_actions();
         self.settings_ui(ctx);
         self.restart_prompt_ui(ctx);
         self.alert_dialog_ui(ctx);
@@ -2135,21 +2208,23 @@ impl eframe::App for ViewerApp {
 
         let zoom_delta = ctx.input(|i| i.zoom_delta());
 
+        if let Some(deadline) = self.pending_primary_click_deadline {
+            let wait = deadline.saturating_duration_since(Instant::now());
+            ctx.request_repaint_after(wait.min(POINTER_SINGLE_CLICK_DELAY));
+        }
+
         if zoom_delta != 1.0 && !self.show_settings {
             let _ = self.set_zoom(self.zoom * zoom_delta);
         }
 
         self.frame_counter += 1;
+        self.poll_deferred_filesystem_sync();
         self.update_animation(ctx);
 
         let panel = egui::CentralPanel::default().frame(egui::Frame::NONE);
         panel.show(ctx, |ui| {
             self.paint_background(ui, ui.max_rect());
-            let display_response = ui.interact(
-                ui.max_rect(),
-                ui.id().with("viewer_display_area"),
-                egui::Sense::click(),
-            );
+            let display_rect = ui.max_rect();
             if self.active_request.is_some() || self.active_fs_request_id.is_some() {
                 ctx.request_repaint_after(Duration::from_millis(16));
             }
@@ -2272,6 +2347,11 @@ impl eframe::App for ViewerApp {
                             )
                         }
                     });
+                    let display_response = ui.interact(
+                        display_rect,
+                        ui.id().with("viewer_display_area"),
+                        egui::Sense::click(),
+                    );
                     if let Some(response) = inner.inner {
                         if !self.handle_pointer_input(&response)
                             && self.response_has_pointer_intent(&display_response)

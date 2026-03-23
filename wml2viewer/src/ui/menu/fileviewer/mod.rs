@@ -3,7 +3,7 @@ pub(crate) mod state;
 pub(crate) mod thumbnail;
 pub(crate) mod worker;
 
-use crate::dependent::download_http_url;
+use crate::dependent::{download_http_url, normalize_locale_tag};
 use crate::drawers::image::SaveFormat;
 use crate::ui::i18n::UiTextKey;
 use crate::ui::menu::fileviewer::icons::{SvgIcon, paint_svg_icon};
@@ -669,10 +669,41 @@ fn ellipsize_middle(text: &str, max_chars: usize) -> String {
 
 fn format_system_time(value: SystemTime, locale: &str) -> String {
     let local: DateTime<Local> = value.into();
-    if locale.starts_with("ja") {
-        local.format("%Y/%m/%d %H:%M").to_string()
-    } else {
-        local.format("%Y-%m-%d %H:%M").to_string()
+    local.format(locale_datetime_pattern(locale)).to_string()
+}
+
+fn locale_datetime_pattern(locale: &str) -> &'static str {
+    let normalized = normalize_locale_tag(Some(locale));
+    match normalized.as_str() {
+        "ja" | "ja_JP" => "%Y/%m/%d %H:%M",
+        "zh" | "zh_CN" | "zh_TW" | "ko" | "ko_KR" => "%Y/%m/%d %H:%M",
+        "en_US" => "%m/%d/%Y %I:%M %p",
+        "en_GB" | "en_AU" => "%d/%m/%Y %H:%M",
+        "de" | "de_DE" | "ru" | "ru_RU" => "%d.%m.%Y %H:%M",
+        "fr" | "fr_FR" | "it" | "it_IT" | "es" | "es_ES" | "pt" | "pt_BR" => {
+            "%d/%m/%Y %H:%M"
+        }
+        _ if normalized.starts_with("en_") => "%m/%d/%Y %I:%M %p",
+        _ if normalized.starts_with("ja")
+            || normalized.starts_with("zh")
+            || normalized.starts_with("ko") =>
+        {
+            "%Y/%m/%d %H:%M"
+        }
+        _ if normalized.starts_with("de")
+            || normalized.starts_with("ru")
+            || normalized.starts_with("tr") =>
+        {
+            "%d.%m.%Y %H:%M"
+        }
+        _ if normalized.starts_with("fr")
+            || normalized.starts_with("it")
+            || normalized.starts_with("es")
+            || normalized.starts_with("pt") =>
+        {
+            "%d/%m/%Y %H:%M"
+        }
+        _ => "%Y-%m-%d %H:%M",
     }
 }
 
@@ -702,4 +733,17 @@ fn format_grouped_u64(value: u64) -> String {
         out.push(ch);
     }
     out.chars().rev().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::locale_datetime_pattern;
+
+    #[test]
+    fn locale_datetime_pattern_supports_multiple_locales() {
+        assert_eq!(locale_datetime_pattern("ja_JP"), "%Y/%m/%d %H:%M");
+        assert_eq!(locale_datetime_pattern("en_US"), "%m/%d/%Y %I:%M %p");
+        assert_eq!(locale_datetime_pattern("de_DE"), "%d.%m.%Y %H:%M");
+        assert_eq!(locale_datetime_pattern("fr_FR"), "%d/%m/%Y %H:%M");
+    }
 }

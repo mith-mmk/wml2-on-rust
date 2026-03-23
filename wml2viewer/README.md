@@ -24,7 +24,7 @@ Minimal native image viewer built with `egui` and `wml2`.
 - ZIP metadata loading now falls back to plain `BufReader<File>` if the cached reader path fails
 - Navigation requests now keep a pending target, reducing stale-image state during folder/archive transitions
 - Failed image loads now fall back to the loading texture instead of leaving the previous image onscreen
-- Pointer defaults: left click opens Settings, right click advances, right double click toggles fit mode, middle click opens the menu
+- Pointer defaults: left click advances after a short double-click wait, right click opens Settings, left double click toggles fit mode
 - Render / filer / thumbnail workers automatically respawn if a worker thread disconnects
 - Render workers now receive an explicit shutdown command on app exit
 
@@ -80,7 +80,8 @@ search_path = ["../test/plugins/susie64"]
 - Local ZIP temp cache is now disabled by default to avoid slowing network/archive startup on SSD-heavy setups.
 - Large BMP/archive thumbnails can be suppressed from Settings.
 - Thumbnail failures are cleared from the pending queue so the filer can retry.
-- Filer timestamps now use local system time instead of UTC.
+- Filer timestamps now use local system time instead of UTC, with locale-specific formatting.
+- Filer `OS` name sort now uses Windows shell ordering on Windows and locale-aware normalized natural sort on other platforms.
 - Filer can switch whether ZIP is grouped with folders or files in separated sort mode.
 - On Windows, file association registration is available from `Settings -> System`.
 - `ffmpeg` decode currently shells out to `ffmpeg.exe`.

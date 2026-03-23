@@ -8,7 +8,7 @@ use std::time::Instant;
 
 enum PointerIntent {
     ToggleFit,
-    NextImage,
+    NextImageAfterDelay,
     ToggleSettings,
 }
 
@@ -116,6 +116,7 @@ impl ViewerApp {
 
     pub(crate) fn handle_pointer_input(&mut self, response: &egui::Response) -> bool {
         if self.pointer_input_blocked() {
+            self.cancel_pending_single_click_navigation();
             return false;
         }
 
@@ -127,7 +128,7 @@ impl ViewerApp {
         false
     }
 
-    fn pointer_input_blocked(&self) -> bool {
+    pub(crate) fn pointer_input_blocked(&self) -> bool {
         self.save_dialog.open || self.overlay.alert_message.is_some()
     }
 
@@ -145,7 +146,7 @@ impl ViewerApp {
         }
 
         if response.clicked_by(egui::PointerButton::Primary) {
-            return Some(PointerIntent::NextImage);
+            return Some(PointerIntent::NextImageAfterDelay);
         }
 
         None
@@ -158,12 +159,14 @@ impl ViewerApp {
     ) {
         match intent {
             PointerIntent::ToggleFit => {
+                self.cancel_pending_single_click_navigation();
                 let _ = self.toggle_fit_zoom_mode();
             }
-            PointerIntent::NextImage => {
-                let _ = self.next_image();
+            PointerIntent::NextImageAfterDelay => {
+                self.schedule_single_click_navigation();
             }
             PointerIntent::ToggleSettings => {
+                self.cancel_pending_single_click_navigation();
                 if self.show_settings {
                     self.close_settings_dialog();
                 } else {

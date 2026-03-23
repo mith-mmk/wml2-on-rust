@@ -74,7 +74,7 @@ pub struct RenderOptions {
 impl Default for RenderOptions {
     fn default() -> Self {
         Self {
-            scale_mode: RenderScaleMode::PreciseCpu,
+            scale_mode: RenderScaleMode::FastGpu,
             zoom_option: ZoomOption::FitScreen,
             zoom_method: InterpolationAlgorithm::Bilinear,
         }

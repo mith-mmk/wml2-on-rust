@@ -589,22 +589,22 @@ P3 = 優先度中
 P4 = 優先度やや低い
 P5 = 優先度低い
 
-### startup sequence(P3)
+### startup sequence(P1)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
 - [*] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
-- [ ] 起動中`texture`の追加
 - [*] viewerワーカーの起動を再優先して `current_texture` のみ作る
 - [*] 最初の画像をロードして単体ビューアーモードで表示する
 - [ ] 各ワーカーを生成してから最初の画像を表示する
 - [*] 各ワーカーを同期してマルチプル・ビューアーモードに切り替える
 
-### viewer texture / zoom(P3)
+### viewer texture / zoom
 - [*] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
 - [*] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
-    - [ ] issue: 最初画像のtextureが再利用されつづける問題 
+    - [ ] issue: 最初画像のtextureが再利用されつづける問題
 - [*] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
 - [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
 - [*] フォルダをまたぐ時は texture を一度破棄して再生成する
+
 ### renderer(P1)
 - [ ] 縮小・拡大に高速(GPU)/精密(CPU)を追加 設定にも適用（デフォルトは精密）
   - [ ] 高速はeguiまかせ、精密は`drawers/affilne.rs`を利用

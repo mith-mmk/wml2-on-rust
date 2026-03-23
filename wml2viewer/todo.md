@@ -589,47 +589,48 @@ P3 = 優先度中
 P4 = 優先度やや低い
 P5 = 優先度低い
 
-### startup sequence(P1)
+### startup sequence(P3)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
 - [*] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
+- [ ] 起動中`texture`の追加
 - [*] viewerワーカーの起動を再優先して `current_texture` のみ作る
 - [*] 最初の画像をロードして単体ビューアーモードで表示する
 - [ ] 各ワーカーを生成してから最初の画像を表示する
 - [*] 各ワーカーを同期してマルチプル・ビューアーモードに切り替える
 
-### viewer texture / zoom
+### viewer texture / zoom(P3)
 - [*] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
 - [*] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
     - [ ] issue: 最初画像のtextureが再利用されつづける問題 
 - [*] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
 - [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
 - [*] フォルダをまたぐ時は texture を一度破棄して再生成する
-- [ ] P1 縮小・拡大に高速(GPU)/精密(CPU)を追加 設定にも適用（デフォルトは精密）
+### renderer(P1)
+- [ ] 縮小・拡大に高速(GPU)/精密(CPU)を追加 設定にも適用（デフォルトは精密）
   - [ ] 高速はeguiまかせ、精密は`drawers/affilne.rs`を利用
   - [ ] 高速のアルゴリズムは、Nearest/Linearのみ、精密は、Nearest/Linear/Qubic/Lancos3 (縮小はPixelMixing)
 
-## input/key events/mouse events
-- [ ] P1 issue:マウスイベントが画像内部でしか効かない("画像表示領域"(黒い部分も含む) 全体で効かない)
-- [*] マウス:ダブルクリックが効かない ScreenFit <--> None のトグルにする
-- [+] マウス:左クリック 次の画面を表示にする
-- [*] マウス:右クリック 設定を表示する → 現在[簡易メニューが表示されて閉じない]ので[設定]にしてください
-- [x] マウス：ローラーはスクロール　デフォルトの挙動
+## input/key events/mouse events(P1)
+- [ ] issue:マウスイベントが画像内部でしか効かない("画像表示領域"(黒い部分も含む) 全体で効かない)
+- [*] マウス:右クリック 設定を表示する → 現在[簡易メニュー]が表示されて閉じられないので[設定]にしてください
 
-### zip
-- [ ] P2 zip: 時間のかかるzip展開時にviewer側が固まる問題
+### zip(P3)
+- [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
 
-### filer
+### filer(P2)
 - [ ] P2 OSソート順 Unicode Collation Algorithmを利用
 - [ ] P3 まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
 
-### font
+### font(P1)
 - [ ] P1 issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
 - [ ] P3 issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
 - [ ] P3 user setting font -> system locale font -> cjk font -> emoji -> Last Resort の順で fallback させる
+
+### Others
 - [ ] コードのフルレビュー
 
-### example
-- [ ] P3 bench_archive 1.6GBだと固まる問題
+### example(P3)
+- [ ] bench_archive 1.6GBだと固まる問題
 
 ## 機能追加
 
@@ -686,6 +687,9 @@ P5 = 優先度低い
 ### Input
 - [x] P0 input系のイベントディスパッチを整理 マウスイベントが効かない原因を追及
 - [x] P1 issue:マウス:デフォルト挙動との干渉チェック 追加されたマウスイベントが効かない
+- [*] マウス:ダブルクリックが効かない ScreenFit <--> None のトグルにする
+- [+] マウス:左クリック 次の画面を表示にする
+- [x] マウス：ローラーはスクロール　デフォルトの挙動
 
 
 ### plugin
@@ -718,6 +722,13 @@ P5 = 優先度低い
     - [+] issue: フォルダの分離モードでフォルダの降順が入れ替わらない
     - [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
       - [*] zipではUI先行起動まで対応(ファイラーに引きずられて遅くなる模様)
+#### viewer texture / zoom
+- [*] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
+- [*] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
+    - [ ] issue: 最初画像のtextureが再利用されつづける問題 
+- [*] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
+- [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
+- [*] フォルダをまたぐ時は texture を一度破棄して再生成する
 
 ### setting
 - [x] 設定を変えた時、再起動を促すポップアップを出す 

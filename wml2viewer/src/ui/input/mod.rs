@@ -6,6 +6,13 @@ use crate::ui::viewer::ViewerApp;
 use eframe::egui;
 use std::time::Instant;
 
+enum PointerIntent {
+    ToggleFit,
+    OpenMenu,
+    NextImage,
+    ToggleSettings,
+}
+
 impl ViewerApp {
     pub(crate) fn handle_keyboard(&mut self, ctx: &egui::Context) {
         if ctx.input(|i| i.modifiers.ctrl && i.key_pressed(egui::Key::S)) {
@@ -109,34 +116,68 @@ impl ViewerApp {
     }
 
     pub(crate) fn handle_pointer_input(&mut self, response: &egui::Response) {
-        if self.save_dialog.open || self.overlay.alert_message.is_some() {
+        if self.pointer_input_blocked() {
             return;
         }
 
-        if response.double_clicked_by(egui::PointerButton::Secondary) {
-            let _ = self.toggle_fit_zoom_mode();
-            return;
+        if let Some(intent) = self.pointer_intent_from_response(response) {
+            self.perform_pointer_intent(response, intent);
         }
+    }
 
-        if response.middle_clicked() {
-            self.left_menu_pos = response
-                .interact_pointer_pos()
-                .unwrap_or_else(|| response.rect.left_top());
-            self.show_left_menu = true;
-            return;
-        }
+    fn pointer_input_blocked(&self) -> bool {
+        self.save_dialog.open || self.overlay.alert_message.is_some()
+    }
 
-        if response.secondary_clicked() {
-            let _ = self.next_image();
-            return;
-        }
 
-        if self.show_settings {
-            return;
-        }
+fn pointer_intent_from_response(&self, response: &egui::Response) -> Option<PointerIntent> {
+    if response.double_clicked_by(egui::PointerButton::Secondary) {
+        return Some(PointerIntent::ToggleFit);
+    }
 
-        if response.clicked() {
-            self.open_settings_dialog();
+    // no impl
+    /*
+    if response.middle_clicked() {
+        return Some(PointerIntent::NextImage);
+    }
+    */
+
+    if response.secondary_clicked() {
+        return Some(PointerIntent::ToggleSettings);
+    }
+
+    if response.clicked() {
+        return Some(PointerIntent::NextImage);
+    }
+
+    None
+}
+
+    fn perform_pointer_intent(
+        &mut self,
+        response: &egui::Response,
+        intent: PointerIntent,
+    ) {
+        match intent {
+            PointerIntent::ToggleFit => {
+                let _ = self.toggle_fit_zoom_mode();
+            }
+            PointerIntent::OpenMenu => {
+                self.left_menu_pos = response
+                    .interact_pointer_pos()
+                    .unwrap_or_else(|| response.rect.left_top());
+                self.show_left_menu = true;
+            }
+            PointerIntent::NextImage => {
+                let _ = self.next_image();
+            }
+            PointerIntent::ToggleSettings => {
+                if self.show_settings {
+                    self.close_settings_dialog();
+                } else {
+                    self.open_settings_dialog();
+                }
+            }
         }
     }
 }

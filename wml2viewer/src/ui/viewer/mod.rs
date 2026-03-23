@@ -698,6 +698,15 @@ impl ViewerApp {
         (texture, display_scale)
     }
 
+    fn rebuild_current_texture(&mut self) {
+        let texture_name = self.texture_name_for_path(Some(&self.current_path));
+        let (texture, display_scale) =
+            self.build_texture_from_canvas(&texture_name, self.current_canvas());
+        self.current_texture = texture;
+        self.texture_display_scale = display_scale;
+        self.current_texture_is_default = false;
+    }
+
     fn show_loading_texture(&mut self, reset_branch_cache: bool) {
         if !self.current_texture_is_default {
             self.prev_texture = Some(self.current_texture.clone());
@@ -726,7 +735,11 @@ impl ViewerApp {
         let texture_name = self.texture_name_for_path(Some(&self.current_path));
         let (canvas, display_scale) = {
             let canvas = self.current_canvas();
-            downscale_for_texture_limit(canvas, self.max_texture_side, self.render_options.zoom_method)
+            downscale_for_texture_limit(
+                canvas,
+                self.max_texture_side,
+                self.render_options.zoom_method,
+            )
         };
         let image = self.color_image_from_canvas(&canvas);
         self.texture_display_scale = display_scale;
@@ -1470,7 +1483,7 @@ impl ViewerApp {
             .min(self.rendered.frame_count().saturating_sub(1));
         self.completed_loops = 0;
         self.last_frame_at = Instant::now();
-        self.upload_current_frame();
+        self.rebuild_current_texture();
         if self.active_fs_request_id.is_none() {
             self.overlay.loading_message = None;
         }
@@ -1767,9 +1780,14 @@ impl ViewerApp {
                         self.render_options.zoom_method,
                     );
                     let image = self.color_image_from_canvas(&canvas);
-                    let texture = if let Some(texture) = &mut self.companion_texture {
-                        texture.set(image, TextureOptions::LINEAR);
-                        texture.clone()
+                    let texture = if path.is_none() {
+                        if let Some(texture) = &mut self.companion_texture {
+                            texture.set(image, TextureOptions::LINEAR);
+                            texture.clone()
+                        } else {
+                            self.egui_ctx
+                                .load_texture("manga_companion", image, TextureOptions::LINEAR)
+                        }
                     } else {
                         self.egui_ctx
                             .load_texture("manga_companion", image, TextureOptions::LINEAR)
@@ -2095,8 +2113,8 @@ impl eframe::App for ViewerApp {
             }
 
             let draw_size = vec2(
-                self.current_canvas().width() as f32 * self.texture_display_scale,
-                self.current_canvas().height() as f32 * self.texture_display_scale,
+                self.current_canvas().width() as f32,
+                self.current_canvas().height() as f32,
             );
             egui::ScrollArea::both()
                 .auto_shrink([false, false])
@@ -2109,10 +2127,8 @@ impl eframe::App for ViewerApp {
 
                     let companion_draw_size = companion.map(|(companion_rendered, _)| {
                         vec2(
-                            companion_rendered.canvas.width() as f32
-                                * self.companion_texture_display_scale,
-                            companion_rendered.canvas.height() as f32
-                                * self.companion_texture_display_scale,
+                            companion_rendered.canvas.width() as f32,
+                            companion_rendered.canvas.height() as f32,
                         )
                     });
                     let total_draw_size = if spread_active {
@@ -2141,7 +2157,8 @@ impl eframe::App for ViewerApp {
                                 if draw_companion_first {
                                     let first = ui.add(
                                         egui::Image::from_texture(companion_texture)
-                                            .fit_to_exact_size(companion_draw_size),
+                                            .fit_to_exact_size(companion_draw_size)
+                                            .sense(egui::Sense::click()),
                                     );
                                     self.paint_manga_separator(
                                         ui,
@@ -2149,13 +2166,15 @@ impl eframe::App for ViewerApp {
                                     );
                                     ui.add(
                                         egui::Image::from_texture(&self.current_texture)
-                                            .fit_to_exact_size(draw_size),
+                                            .fit_to_exact_size(draw_size)
+                                            .sense(egui::Sense::click()),
                                     );
                                     Some(first)
                                 } else {
                                     let first = ui.add(
                                         egui::Image::from_texture(&self.current_texture)
-                                            .fit_to_exact_size(draw_size),
+                                            .fit_to_exact_size(draw_size)
+                                            .sense(egui::Sense::click()),
                                     );
                                     self.paint_manga_separator(
                                         ui,
@@ -2163,7 +2182,8 @@ impl eframe::App for ViewerApp {
                                     );
                                     ui.add(
                                         egui::Image::from_texture(companion_texture)
-                                            .fit_to_exact_size(companion_draw_size),
+                                            .fit_to_exact_size(companion_draw_size)
+                                            .sense(egui::Sense::click()),
                                     );
                                     Some(first)
                                 }
@@ -2171,7 +2191,8 @@ impl eframe::App for ViewerApp {
                                 Some(
                                     ui.add(
                                         egui::Image::from_texture(&self.current_texture)
-                                            .fit_to_exact_size(draw_size),
+                                            .fit_to_exact_size(draw_size)
+                                            .sense(egui::Sense::click()),
                                     ),
                                 )
                             }
@@ -2179,7 +2200,8 @@ impl eframe::App for ViewerApp {
                             Some(
                                 ui.add(
                                     egui::Image::from_texture(&self.current_texture)
-                                        .fit_to_exact_size(draw_size),
+                                        .fit_to_exact_size(draw_size)
+                                        .sense(egui::Sense::click()),
                                 ),
                             )
                         }

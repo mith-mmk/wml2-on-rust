@@ -59,9 +59,8 @@
 //! }
 //! ```
 
-use std::fmt::Error;
 
-use crate::{png::header::IMAGE_DATA, util::ImageFormat};
+use crate::util::ImageFormat;
 
 // 0.0.19 new!
 /// get_version get WML2 crate version
@@ -69,6 +68,8 @@ pub fn get_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
+// 0.0.19 new!
+/// get_decoder_extentions get extentions of WML2's decoders
 pub fn get_decoder_extentions() -> Vec<String> {
     vec![
         "bmp".to_string(),
@@ -91,7 +92,8 @@ pub fn get_decoder_extentions() -> Vec<String> {
     ]
 }
 
-
+// 0.0.19 new!
+/// get_can_decode get WML2 crate decoder header check
 pub fn get_can_decode(buffer: &[u8]) ->Result<bool, Box<dyn std::error::Error>> {
     let result = crate::util::format_check(buffer);
     match result {
@@ -100,6 +102,9 @@ pub fn get_can_decode(buffer: &[u8]) ->Result<bool, Box<dyn std::error::Error>> 
         _ => Ok(true)
     } 
 }
+
+// 0.0.19 new!
+/// get_encode_extentions get extentions of WML2's encoders
 pub fn get_encode_extentions() -> Vec<String> {
     vec![
         "bmp".to_string(),

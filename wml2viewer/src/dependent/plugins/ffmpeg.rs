@@ -7,6 +7,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 pub(super) fn default_provider() -> PluginProviderConfig {
     PluginProviderConfig {
         enable: false,
@@ -28,7 +34,8 @@ pub(super) fn decode_from_file(
 ) -> Option<LoadedImage> {
     let executable = find_ffmpeg_executable(config, module)?;
     let output = temp_file_path("ffmpeg-output", "bmp")?;
-    let status = Command::new(executable)
+    let mut command = Command::new(executable);
+    command
         .arg("-v")
         .arg("error")
         .arg("-y")
@@ -36,9 +43,10 @@ pub(super) fn decode_from_file(
         .arg(path)
         .arg("-frames:v")
         .arg("1")
-        .arg(&output)
-        .status()
-        .ok()?;
+        .arg(&output);
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+    let status = command.status().ok()?;
     if !status.success() {
         let _ = std::fs::remove_file(&output);
         return None;

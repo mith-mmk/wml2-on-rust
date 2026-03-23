@@ -1,10 +1,21 @@
 use crate::dependent::normalize_locale_tag;
 use std::path::PathBuf;
 use std::process::Command;
+use std::os::windows::process::CommandExt;
+use std::thread;
 use winreg::RegKey;
 use winreg::enums::{HKEY_CURRENT_USER, KEY_READ, KEY_WRITE};
+use windows::Win32::System::Com::{
+    CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE,
+    CoCreateInstance, CoInitializeEx, CoTaskMemFree, CoUninitialize,
+};
+use windows::Win32::UI::Shell::{
+    FOS_FORCEFILESYSTEM, FOS_PATHMUSTEXIST, FOS_PICKFOLDERS, FileOpenDialog, IFileOpenDialog,
+    SIGDN_FILESYSPATH,
+};
 
 const LOCALE_NAME_MAX_LENGTH: i32 = 85;
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 #[link(name = "Kernel32")]
 unsafe extern "system" {
@@ -177,25 +188,40 @@ pub fn clean_file_associations() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub fn pick_directory_dialog() -> Option<PathBuf> {
-    let script = concat!(
-        "Add-Type -AssemblyName System.Windows.Forms; ",
-        "$dialog = New-Object System.Windows.Forms.FolderBrowserDialog; ",
-        "$dialog.ShowNewFolderButton = $true; ",
-        "if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { ",
-        "  [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; ",
-        "  Write-Output $dialog.SelectedPath",
-        " }"
-    );
-    let output = Command::new("powershell")
-        .args(["-NoProfile", "-STA", "-Command", script])
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
+    thread::spawn(native_pick_directory_dialog)
+        .join()
+        .ok()
+        .flatten()
+}
+
+fn native_pick_directory_dialog() -> Option<PathBuf> {
+    unsafe {
+        let init_result =
+            CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+        let needs_uninit = init_result.is_ok();
+
+        let result = (|| {
+            let dialog: IFileOpenDialog =
+                CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER).ok()?;
+            let options = dialog.GetOptions().ok()?;
+            dialog
+                .SetOptions(options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST)
+                .ok()?;
+            dialog.Show(None).ok()?;
+
+            let item = dialog.GetResult().ok()?;
+            let display_name = item.GetDisplayName(SIGDN_FILESYSPATH).ok()?;
+            let path = display_name.to_string().ok().map(PathBuf::from);
+            CoTaskMemFree(Some(display_name.0 as _));
+            path
+        })();
+
+        if needs_uninit {
+            CoUninitialize();
+        }
+
+        result
     }
-    let path = String::from_utf8(output.stdout).ok()?;
-    let path = path.trim();
-    (!path.is_empty()).then(|| PathBuf::from(path))
 }
 
 #[allow(dead_code)]
@@ -213,10 +239,11 @@ pub fn download_url_to_temp(url: &str) -> Option<PathBuf> {
         temp_path.display().to_string().replace('\'', "''"),
         temp_path.display().to_string().replace('\'', "''")
     );
-    let output = Command::new("powershell")
-        .args(["-NoProfile", "-Command", &script])
-        .output()
-        .ok()?;
+    let mut command = Command::new("powershell");
+    command
+        .args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", &script])
+        .creation_flags(CREATE_NO_WINDOW);
+    let output = command.output().ok()?;
     if !output.status.success() {
         return None;
     }

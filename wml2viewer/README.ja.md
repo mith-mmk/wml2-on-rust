@@ -1,4 +1,4 @@
-# wml2viewer 0.0.11 preview
+# wml2viewer 0.0.12 preview
 
 `egui` と `wml2` を使った軽量ネイティブ画像ビューアです。
 
@@ -102,6 +102,13 @@ search_path = ["c:/susie64/plugins/"]
 - `ZipCacheReader` は大きめの chunk と tail prefetch を使うようにしています。
 - Windows のフォント探索順は `%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts` → `%WINDIR%\\Fonts` です。
 - ロケール既定の system font を先頭に使い、`resources.font_paths` で追加フォントを前置できます。
+
+## 0.0.12 の既知の残件
+
+- 時間のかかる ZIP 展開中は、まだ viewer の応答が鈍くなることがあります。
+- `bench_archive` は `1.6GB` 級の大きな archive でまだ詰めが必要です。
+- Windows では、プラグイン用フォルダ設定や system plugin の一部経路でコマンドライン表示や `COM Surrogate` 残留が再現する可能性があります。
+- `LHA` 対応とキーバインド UI は `0.0.13` へスライドしました。
 
 ## ベンチマーク
 

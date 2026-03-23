@@ -1,4 +1,4 @@
-# wml2viewer preview
+# wml2viewer 0.0.12 preview
 
 Minimal native image viewer built with `egui` and `wml2`.
 
@@ -96,6 +96,13 @@ search_path = ["../test/plugins/susie64"]
 - `ZipCacheReader` now uses larger chunks plus tail prefetch to reduce startup I/O on large archives.
 - Windows font lookup now follows `%LOCALAPPDATA%\Microsoft\Windows\Fonts` then `%WINDIR%\Fonts`.
 - Locale default system fonts stay first, and `resources.font_paths` lets you prepend custom fonts.
+
+## Known Remaining Issues For 0.0.12
+
+- Long ZIP extraction can still stall viewer responsiveness.
+- `bench_archive` still needs work for very large archives such as `1.6GB`.
+- On Windows, some plugin-folder/system-plugin flows may still surface command-line windows or leave `COM Surrogate` behind on forced exit.
+- `LHA` support and keybinding UI are deferred to `0.0.13`.
 
 ## Benchmarks
 

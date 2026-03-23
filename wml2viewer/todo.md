@@ -34,7 +34,7 @@
 - [x] `Shift+V` subfiler toggle
 - [x] `Ctrl+S` 保存ダイアログ起動
 - [x] `F1` help 起動
-- [ ] キーリマップ UI
+- [-] キーリマップ UI は 0.0.13 へ移動
 
 ## src/configs/config.rs
 - [x] config load/save
@@ -227,7 +227,7 @@
 - [+] workaround.archive.zip 設定 UI
 - [+] thumbnail 抑制オプション
 - [+] navigation.sort 変更時の filesystem/filer 再同期
-- [ ] キーバインド編集 UI
+- [-] キーバインド編集 UI は 0.0.13 へ移動
 
 ## src/ui/menu/fileviewer/functions.rs
 - [ ] Copy
@@ -583,13 +583,14 @@ betaまで後一歩
 - [x] todo.mdの更新
 - [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
-## beta前の構造整理
+## 0.0.12 残り
 P0 = 至急
 P1 = 優先度高い
 P2 = 優先度やや高い
 P3 = 優先度中
 P4 = 優先度やや低い
 P5 = 優先度低い
+
 
 ### startup sequence(P1)
 - [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
@@ -603,14 +604,15 @@ P5 = 優先度低い
 ### renderer(P3)
 - [*] 精密モードが予想以上に重い(変換プロセスが何度も走っていないかチェック　-> アルゴリズムチェック)　[精密]モードが効くサイズは6000px越えが多いのでより遅い
 
-### zip(P3)
-- [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
+### viewer
+- [ ] `waiting`時の画像がただ点なのでマシなのに差し替える `now loading` など
+- [ ] 精密モードで表示時、一瞬フラッシュする（リサイズする前の画像が先に書き込まれている）
+
+### zip(P1)
+- [+] zip: 時間のかかるzip展開時にviewer側が固まる問題 configのリセットで改善
 
 ### filer(P4)
 - [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
-
-### plugin(P1)
-- [ ] ISSUE:プラグイン用フォルダ設定時、コマンドラインが表示される
 
 ### Others
 - [ ] コードのフルレビュー
@@ -641,7 +643,7 @@ P5 = 優先度低い
       - Video (CSIDL_MYVIDEO)
       - Downloads
       - Favariies (CSIDL_FAVORITES)
-- [ ]  LHAサポート
+- [ ] LHAサポート
 
 ### Setting
 - [ ] 表示名と配置の見直し(作業中)
@@ -685,7 +687,6 @@ P5 = 優先度低い
 #### filer
 - [*] zip 内ファイルソートの実機確認
 - [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
-- [*] ファイラー: OS name collation の最終調整(確認中)
 - [+] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
 - [+] issue: ファイラーがハングアップすることがある問題
     - [+] デフォルトではalertを抑制してください またalertにはファイル名を付けてください
@@ -707,8 +708,8 @@ P5 = 優先度低い
 ### Input
 - [x] P0 input系のイベントディスパッチを整理 マウスイベントが効かない原因を追及
 - [x] P1 issue:マウス:デフォルト挙動との干渉チェック 追加されたマウスイベントが効かない
-- [*] マウス:ダブルクリックが効かない ScreenFit <--> None のトグルにする
-- [+] マウス:左クリック 次の画面を表示にする
+- [x] マウス:ダブルクリックが効かない ScreenFit <--> None のトグルにする
+- [x] マウス:左クリック 次の画面を表示にする
 - [x] マウス：ローラーはスクロール　デフォルトの挙動
 - [x] マウス:右クリック 設定を表示する → 現在[簡易メニュー]が表示されて閉じられないので[設定]にしてください
 - [x] issue: マウスイベントが画像内部でしか効かない(backgroundで効かない) VieweAppのイベント定義域にbackgroundが入って居ない？
@@ -718,8 +719,11 @@ P5 = 優先度低い
 - [x] ffmpegプラグイン(動作:windows o avif o jp2 x heic)
 - [x] susie64プラグイン(動作:x avif o jp2 x heic)
 - [x] Windows Codecプラグイン(動作: o avif x jp2 o heic)
-- [+] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
-
+- [x] `src/dependent/plugins/*` に実ランタイムを足して internal(内蔵Codec) /system(OS Codec, Windows/MAC) / ffmpeg / susie64(windows only) の優先順位解決を実装する
+- [x] ISSUE:プラグイン用フォルダ設定時、コマンドラインが表示される
+- [x] ISSUE:プラグイン実行時、コマンドラインが表示される
+- [+] ISSUE:ゴーストプロセスとしてCOM Surrogateが残るバグ(継続観察)
+- 
 ### renderer
 - [x] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
     - [x] issue: [幅に合わせる]で効かない

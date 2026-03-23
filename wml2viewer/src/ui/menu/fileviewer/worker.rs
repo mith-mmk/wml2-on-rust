@@ -68,112 +68,34 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
                     extension_filter,
                     name_sort_mode,
                 } => {
-                    let result = catch_unwind(AssertUnwindSafe(|| {
-                        if dir.is_dir() {
-                            let _ = result_tx.send(FilerResult::Reset {
+                    let result_tx = result_tx.clone();
+                    thread::spawn(move || {
+                        let result = catch_unwind(AssertUnwindSafe(|| {
+                            scan_directory_request(
+                                &result_tx,
                                 request_id,
-                                directory: dir.clone(),
-                                selected: selected.clone(),
-                            });
-                            let mut collected = Vec::new();
-                            let Ok(read_dir) = fs::read_dir(&dir) else {
-                                return Vec::new();
-                            };
-                            for entry in read_dir.filter_map(Result::ok) {
-                                let path = entry.path();
-                                if !is_browser_entry(&path) {
-                                    continue;
-                                }
-                                let preview_entry =
-                                    build_preview_entry(path.clone(), archive_as_container_in_sort);
-                                if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
-                                    continue;
-                                }
-                                collected.push(path);
-                            }
-                            let mut preview = collected
-                                .iter()
-                                .cloned()
-                                .map(|path| build_preview_entry(path, archive_as_container_in_sort))
-                                .collect::<Vec<_>>();
-                            sort_entries(
-                                &mut preview,
+                                dir.clone(),
+                                sort,
+                                selected.clone(),
                                 sort_field,
                                 ascending,
                                 separate_dirs,
+                                archive_as_container_in_sort,
+                                filter_text,
+                                extension_filter,
                                 name_sort_mode,
-                            );
-                            for chunk in preview.chunks(128) {
-                                let _ = result_tx.send(FilerResult::Append {
-                                    request_id,
-                                    entries: chunk.to_vec(),
-                                });
-                            }
-                            let mut entries =
-                                collected
-                                    .into_iter()
-                                    .map(|path| build_filer_entry(path, archive_as_container_in_sort))
-                                    .collect::<Vec<_>>();
-                            sort_entries(
-                                &mut entries,
-                                sort_field,
-                                ascending,
-                                separate_dirs,
-                                name_sort_mode,
-                            );
-                            entries
-                        } else {
-                            let mut collected = Vec::new();
-                            for path in list_browser_entries(&dir, sort) {
-                                let preview_entry =
-                                    build_preview_entry(path.clone(), archive_as_container_in_sort);
-                                if !matches_filters(&preview_entry, &filter_text, &extension_filter) {
-                                    continue;
-                                }
-                                collected.push(path);
-                            }
-                            let mut preview = collected
-                                .iter()
-                                .cloned()
-                                .map(|path| build_preview_entry(path, archive_as_container_in_sort))
-                                .collect::<Vec<_>>();
-                            sort_entries(
-                                &mut preview,
-                                sort_field,
-                                ascending,
-                                separate_dirs,
-                                name_sort_mode,
-                            );
-                            for chunk in preview.chunks(128) {
-                                let _ = result_tx.send(FilerResult::Append {
-                                    request_id,
-                                    entries: chunk.to_vec(),
-                                });
-                            }
-                            let mut entries =
-                                collected
-                                    .into_iter()
-                                    .map(|path| build_filer_entry(path, archive_as_container_in_sort))
-                                    .collect::<Vec<_>>();
-                            sort_entries(
-                                &mut entries,
-                                sort_field,
-                                ascending,
-                                separate_dirs,
-                                name_sort_mode,
-                            );
-                            entries
-                        }
-                    }));
-                    let entries = match result {
-                        Ok(entries) => entries,
-                        Err(_) => Vec::new(),
-                    };
-                    let _ = result_tx.send(FilerResult::Snapshot {
-                        request_id,
-                        directory: dir,
-                        entries,
-                        selected,
+                            )
+                        }));
+                        let entries = match result {
+                            Ok(entries) => entries,
+                            Err(_) => Vec::new(),
+                        };
+                        let _ = result_tx.send(FilerResult::Snapshot {
+                            request_id,
+                            directory: dir,
+                            entries,
+                            selected,
+                        });
                     });
                 }
             }
@@ -181,6 +103,118 @@ pub(crate) fn spawn_filer_worker() -> (Sender<FilerCommand>, Receiver<FilerResul
     });
 
     (command_tx, result_rx)
+}
+
+fn scan_directory_request(
+    result_tx: &Sender<FilerResult>,
+    request_id: u64,
+    dir: PathBuf,
+    sort: NavigationSortOption,
+    selected: Option<PathBuf>,
+    sort_field: FilerSortField,
+    ascending: bool,
+    separate_dirs: bool,
+    archive_as_container_in_sort: bool,
+    filter_text: String,
+    extension_filter: String,
+    name_sort_mode: NameSortMode,
+) -> Vec<FilerEntry> {
+    let _ = result_tx.send(FilerResult::Reset {
+        request_id,
+        directory: dir.clone(),
+        selected: selected.clone(),
+    });
+
+    let collected = if dir.is_dir() {
+        collect_directory_entries(
+            &dir,
+            archive_as_container_in_sort,
+            &filter_text,
+            &extension_filter,
+        )
+    } else {
+        collect_browser_entries(
+            &dir,
+            sort,
+            archive_as_container_in_sort,
+            &filter_text,
+            &extension_filter,
+        )
+    };
+
+    let mut preview = collected
+        .iter()
+        .cloned()
+        .map(|path| build_preview_entry(path, archive_as_container_in_sort))
+        .collect::<Vec<_>>();
+    sort_entries(
+        &mut preview,
+        sort_field,
+        ascending,
+        separate_dirs,
+        name_sort_mode,
+    );
+    for chunk in preview.chunks(128) {
+        let _ = result_tx.send(FilerResult::Append {
+            request_id,
+            entries: chunk.to_vec(),
+        });
+    }
+
+    let mut entries = collected
+        .into_iter()
+        .map(|path| build_filer_entry(path, archive_as_container_in_sort))
+        .collect::<Vec<_>>();
+    sort_entries(
+        &mut entries,
+        sort_field,
+        ascending,
+        separate_dirs,
+        name_sort_mode,
+    );
+    entries
+}
+
+fn collect_directory_entries(
+    dir: &std::path::Path,
+    archive_as_container_in_sort: bool,
+    filter_text: &str,
+    extension_filter: &str,
+) -> Vec<PathBuf> {
+    let mut collected = Vec::new();
+    let Ok(read_dir) = fs::read_dir(dir) else {
+        return collected;
+    };
+    for entry in read_dir.filter_map(Result::ok) {
+        let path = entry.path();
+        if !is_browser_entry(&path) {
+            continue;
+        }
+        let preview_entry = build_preview_entry(path.clone(), archive_as_container_in_sort);
+        if !matches_filters(&preview_entry, filter_text, extension_filter) {
+            continue;
+        }
+        collected.push(path);
+    }
+    collected
+}
+
+fn collect_browser_entries(
+    dir: &std::path::Path,
+    sort: NavigationSortOption,
+    archive_as_container_in_sort: bool,
+    filter_text: &str,
+    extension_filter: &str,
+) -> Vec<PathBuf> {
+    let mut collected = Vec::new();
+    for path in list_browser_entries(dir, sort) {
+        let preview_entry = build_preview_entry(path.clone(), archive_as_container_in_sort);
+        if !matches_filters(&preview_entry, filter_text, extension_filter) {
+            continue;
+        }
+        collected.push(path);
+    }
+    collected
 }
 
 fn build_filer_entry(path: PathBuf, archive_as_container_in_sort: bool) -> FilerEntry {

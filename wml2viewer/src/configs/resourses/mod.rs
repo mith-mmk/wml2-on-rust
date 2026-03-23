@@ -1,8 +1,8 @@
 mod text;
 
 use crate::dependent::{
-    emoji_font_candidates, locale_font_candidates, normalize_locale_tag, resource_locale_fallbacks,
-    system_locale,
+    emoji_font_candidates, last_resort_font_candidates, locale_font_candidates,
+    normalize_locale_tag, resource_locale_fallbacks, system_locale,
 };
 use eframe::egui::{self, FontFamily, FontId, TextStyle};
 use std::collections::BTreeMap;
@@ -53,18 +53,11 @@ pub fn apply_resources(ctx: &egui::Context, options: &ResourceOptions) -> Applie
 
     for (name, data) in load_font_data(candidate_font_paths(&locale, &options.font_paths)) {
         fonts.font_data.insert(name.clone(), data.into());
-        fonts
-            .families
-            .entry(FontFamily::Proportional)
-            .or_default()
-            .insert(0, name.clone());
-        fonts
-            .families
-            .entry(FontFamily::Monospace)
-            .or_default()
-            .insert(0, name.clone());
         loaded_fonts.push(name);
     }
+
+    prepend_font_family(&mut fonts, FontFamily::Proportional, &loaded_fonts);
+    prepend_font_family(&mut fonts, FontFamily::Monospace, &loaded_fonts);
 
     ctx.set_fonts(fonts);
     apply_text_styles(ctx, options.font_size);
@@ -73,6 +66,25 @@ pub fn apply_resources(ctx: &egui::Context, options: &ResourceOptions) -> Applie
         locale,
         loaded_fonts,
     }
+}
+
+fn prepend_font_family(
+    fonts: &mut egui::FontDefinitions,
+    family: FontFamily,
+    loaded_fonts: &[String],
+) {
+    if loaded_fonts.is_empty() {
+        return;
+    }
+
+    let existing = fonts.families.entry(family).or_default();
+    let mut merged = loaded_fonts.to_vec();
+    for name in existing.iter() {
+        if !merged.iter().any(|loaded| loaded == name) {
+            merged.push(name.clone());
+        }
+    }
+    *existing = merged;
 }
 
 pub fn normalized_locale(locale: Option<&str>) -> String {
@@ -113,7 +125,13 @@ fn candidate_font_paths(locale: &str, configured_paths: &[PathBuf]) -> Vec<PathB
     for candidate in resource_locale_fallbacks(locale) {
         paths.extend(locale_font_candidates(&candidate));
     }
+    for candidate in ["ja", "zh", "ko"] {
+        if !locale.starts_with(candidate) {
+            paths.extend(locale_font_candidates(candidate));
+        }
+    }
     paths.extend(emoji_font_candidates());
+    paths.extend(last_resort_font_candidates());
     paths
 }
 

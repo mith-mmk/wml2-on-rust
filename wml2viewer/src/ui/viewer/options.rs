@@ -66,6 +66,7 @@ pub enum BackgroundStyle {
 
 #[derive(Clone)]
 pub struct RenderOptions {
+    pub scale_mode: RenderScaleMode,
     pub zoom_option: ZoomOption,
     pub zoom_method: InterpolationAlgorithm,
 }
@@ -73,10 +74,17 @@ pub struct RenderOptions {
 impl Default for RenderOptions {
     fn default() -> Self {
         Self {
+            scale_mode: RenderScaleMode::PreciseCpu,
             zoom_option: ZoomOption::FitScreen,
             zoom_method: InterpolationAlgorithm::Bilinear,
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RenderScaleMode {
+    FastGpu,
+    PreciseCpu,
 }
 
 #[derive(Clone)]

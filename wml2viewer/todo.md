@@ -468,8 +468,8 @@ betaまで後一歩
 - setting
     - [ ] [適用] [キャンセル]が押されたときに設定を閉じる。変わりに[閉じる]ボタンを削除
 - font
-    - [ ] issue: ubuntuで数字が出ない（他のアプリでも見かけた既知の現象なので原因を調査してfix, cmapが取れてない？）
-    - [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
+    - [*] issue: ubuntuで数字が出ない（他のアプリでも見かけた既知の現象なので原因を調査してfix, cmapが取れてない？）
+    - [x] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
         - 基本的な順序 
             - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
             - user setting fontは、font-familyでまとめて指定出来る様にする sansserif, serif, monospaceをデフォルトで用意
@@ -550,8 +550,8 @@ betaまで後一歩
 - [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
 - [x] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
 - [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
-- [ ] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
-- [ ] ubuntuで数字が出ない
+- [x] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
+- [*] ubuntuで数字が出ない
 - [ ] リソースenで日本語が表示出来ない問題
 
 ### src/dependent/linux/mod.rs
@@ -606,13 +606,13 @@ P5 = 優先度低い
 - [*] フォルダをまたぐ時は texture を一度破棄して再生成する
 
 ### renderer(P1)
-- [ ] 縮小・拡大に高速(GPU)/精密(CPU)を追加 設定にも適用（デフォルトは精密）
-  - [ ] 高速はeguiまかせ、精密は`drawers/affilne.rs`を利用
-  - [ ] 高速のアルゴリズムは、Nearest/Linearのみ、精密は、Nearest/Linear/Qubic/Lancos3 (縮小はPixelMixing)
+- [x] 縮小・拡大に高速(GPU)/精密(CPU)を追加 設定にも適用（デフォルトは精密）
+  - [x] 高速はeguiまかせ、精密は`drawers/affilne.rs`を利用
+  - [x] 高速のアルゴリズムは、Nearest/Linearのみ、精密は、Nearest/Linear/Qubic/Lancos3 (縮小はPixelMixing)
 
 ## input/key events/mouse events(P1)
-- [ ] issue:マウスイベントが画像内部でしか効かない("画像表示領域"(黒い部分も含む) 全体で効かない)
-- [*] マウス:右クリック 設定を表示する → 現在[簡易メニュー]が表示されて閉じられないので[設定]にしてください
+- [x] issue:マウスイベントが画像内部でしか効かない("画像表示領域"(黒い部分も含む) 全体で効かない)
+- [x] マウス:右クリック 設定を表示する → 現在[簡易メニュー]が表示されて閉じられないので[設定]にしてください
 
 ### zip(P3)
 - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
@@ -622,9 +622,9 @@ P5 = 優先度低い
 - [ ] P3 まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
 
 ### font(P1)
-- [ ] P1 issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
-- [ ] P3 issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
-- [ ] P3 user setting font -> system locale font -> cjk font -> emoji -> Last Resort の順で fallback させる
+- [*] P1 issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
+- [x] P3 issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
+- [x] P3 user setting font -> system locale font -> cjk font -> emoji -> Last Resort の順で fallback させる
 
 ### Others
 - [ ] コードのフルレビュー

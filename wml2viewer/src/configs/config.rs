@@ -10,8 +10,8 @@ use crate::dependent::plugins::PluginConfig;
 use crate::drawers::affine::InterpolationAlgorithm;
 use crate::options::{
     AppConfig, EndOfFolderOption, FontSizePreset, MangaSeparatorOptions, MangaSeparatorStyle,
-    NavigationSortOption, PaneSide, ResourceOptions, RuntimeOptions, StorageOptions,
-    WindowUiTheme,
+    NavigationSortOption, PaneSide, RenderScaleMode, ResourceOptions, RuntimeOptions,
+    StorageOptions, WindowUiTheme,
 };
 use crate::ui::viewer::options::{
     BackgroundStyle, RenderOptions, ViewerOptions, WindowOptions, WindowSize, WindowStartPosition,
@@ -177,6 +177,7 @@ impl Default for WindowStartPositionConfigFile {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 struct RenderConfigFile {
+    scale_mode: RenderScaleModeConfigFile,
     zoom_option: ZoomOptionConfigFile,
     zoom_method: ZoomMethodConfigFile,
 }
@@ -184,10 +185,18 @@ struct RenderConfigFile {
 impl Default for RenderConfigFile {
     fn default() -> Self {
         Self {
+            scale_mode: RenderScaleModeConfigFile::PreciseCpu,
             zoom_option: ZoomOptionConfigFile::FitScreen,
             zoom_method: ZoomMethodConfigFile::Bilinear,
         }
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum RenderScaleModeConfigFile {
+    FastGpu,
+    PreciseCpu,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -710,6 +719,7 @@ impl From<WindowUiTheme> for WindowUiThemeConfigFile {
 impl From<RenderConfigFile> for RenderOptions {
     fn from(value: RenderConfigFile) -> Self {
         Self {
+            scale_mode: value.scale_mode.into(),
             zoom_option: value.zoom_option.into(),
             zoom_method: value.zoom_method.into(),
         }
@@ -719,6 +729,7 @@ impl From<RenderConfigFile> for RenderOptions {
 impl From<RenderOptions> for RenderConfigFile {
     fn from(value: RenderOptions) -> Self {
         Self {
+            scale_mode: value.scale_mode.into(),
             zoom_option: value.zoom_option.into(),
             zoom_method: value.zoom_method.into(),
         }
@@ -873,6 +884,24 @@ impl From<InterpolationAlgorithm> for ZoomMethodConfigFile {
                 Self::Bicubic
             }
             InterpolationAlgorithm::Lanzcos3 | InterpolationAlgorithm::Lanzcos(_) => Self::Lanczos3,
+        }
+    }
+}
+
+impl From<RenderScaleModeConfigFile> for RenderScaleMode {
+    fn from(value: RenderScaleModeConfigFile) -> Self {
+        match value {
+            RenderScaleModeConfigFile::FastGpu => RenderScaleMode::FastGpu,
+            RenderScaleModeConfigFile::PreciseCpu => RenderScaleMode::PreciseCpu,
+        }
+    }
+}
+
+impl From<RenderScaleMode> for RenderScaleModeConfigFile {
+    fn from(value: RenderScaleMode) -> Self {
+        match value {
+            RenderScaleMode::FastGpu => Self::FastGpu,
+            RenderScaleMode::PreciseCpu => Self::PreciseCpu,
         }
     }
 }

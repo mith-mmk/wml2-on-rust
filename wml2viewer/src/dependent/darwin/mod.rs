@@ -32,17 +32,21 @@ pub fn locale_font_candidates(locale: &str) -> Vec<PathBuf> {
             PathBuf::from("/Library/Fonts/NotoSansCJK-Regular.ttc"),
         ]);
     }
-    fonts.extend([
-        PathBuf::from("/System/Library/Fonts/SFNS.ttf"),
-        PathBuf::from("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
-        PathBuf::from("/System/Library/Fonts/Supplemental/Arial.ttf"),
-        PathBuf::from("/System/Library/Fonts/Supplemental/Apple Symbols.ttf"),
-    ]);
     fonts
 }
 
 pub fn emoji_font_candidates() -> Vec<PathBuf> {
     vec![PathBuf::from("/System/Library/Fonts/Apple Color Emoji.ttc")]
+}
+
+pub fn last_resort_font_candidates() -> Vec<PathBuf> {
+    vec![
+        PathBuf::from("/System/Library/Fonts/SFNS.ttf"),
+        PathBuf::from("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
+        PathBuf::from("/System/Library/Fonts/Supplemental/Arial.ttf"),
+        PathBuf::from("/System/Library/Fonts/Supplemental/Apple Symbols.ttf"),
+        PathBuf::from("/System/Library/Fonts/Supplemental/Menlo.ttc"),
+    ]
 }
 
 pub fn pick_directory_dialog() -> Option<PathBuf> {

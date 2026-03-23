@@ -8,7 +8,6 @@ use std::time::Instant;
 
 enum PointerIntent {
     ToggleFit,
-    OpenMenu,
     NextImage,
     ToggleSettings,
 }
@@ -115,58 +114,51 @@ impl ViewerApp {
         }
     }
 
-    pub(crate) fn handle_pointer_input(&mut self, response: &egui::Response) {
+    pub(crate) fn handle_pointer_input(&mut self, response: &egui::Response) -> bool {
         if self.pointer_input_blocked() {
-            return;
+            return false;
         }
 
         if let Some(intent) = self.pointer_intent_from_response(response) {
             self.perform_pointer_intent(response, intent);
+            return true;
         }
+
+        false
     }
 
     fn pointer_input_blocked(&self) -> bool {
         self.save_dialog.open || self.overlay.alert_message.is_some()
     }
 
-
-fn pointer_intent_from_response(&self, response: &egui::Response) -> Option<PointerIntent> {
-    if response.double_clicked_by(egui::PointerButton::Secondary) {
-        return Some(PointerIntent::ToggleFit);
+    pub(crate) fn response_has_pointer_intent(&self, response: &egui::Response) -> bool {
+        self.pointer_intent_from_response(response).is_some()
     }
 
-    // no impl
-    /*
-    if response.middle_clicked() {
-        return Some(PointerIntent::NextImage);
-    }
-    */
+    fn pointer_intent_from_response(&self, response: &egui::Response) -> Option<PointerIntent> {
+        if response.double_clicked_by(egui::PointerButton::Secondary) {
+            return Some(PointerIntent::ToggleFit);
+        }
 
-    if response.secondary_clicked() {
-        return Some(PointerIntent::ToggleSettings);
-    }
+        if response.secondary_clicked() {
+            return Some(PointerIntent::ToggleSettings);
+        }
 
-    if response.clicked() {
-        return Some(PointerIntent::NextImage);
-    }
+        if response.clicked_by(egui::PointerButton::Primary) {
+            return Some(PointerIntent::NextImage);
+        }
 
-    None
-}
+        None
+    }
 
     fn perform_pointer_intent(
         &mut self,
-        response: &egui::Response,
+        _response: &egui::Response,
         intent: PointerIntent,
     ) {
         match intent {
             PointerIntent::ToggleFit => {
                 let _ = self.toggle_fit_zoom_mode();
-            }
-            PointerIntent::OpenMenu => {
-                self.left_menu_pos = response
-                    .interact_pointer_pos()
-                    .unwrap_or_else(|| response.rect.left_top());
-                self.show_left_menu = true;
             }
             PointerIntent::NextImage => {
                 let _ = self.next_image();

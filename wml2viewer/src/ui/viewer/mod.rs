@@ -23,7 +23,8 @@ use crate::ui::render::{
     downscale_for_texture_limit, spawn_render_worker, worker_send_error,
 };
 use crate::ui::viewer::options::{
-    RenderOptions, ViewerOptions, WindowOptions, WindowStartPosition, WindowUiTheme,
+    RenderOptions, RenderScaleMode, ViewerOptions, WindowOptions, WindowStartPosition,
+    WindowUiTheme,
 };
 use eframe::egui::{self, Pos2, TextureHandle, TextureOptions, vec2};
 use std::collections::HashMap;
@@ -183,6 +184,26 @@ fn calc_fit_zoom(ctx_size: egui::Vec2, image_size: egui::Vec2, option: &ZoomOpti
     }
 }
 
+fn texture_options_for_scale_mode(
+    scale_mode: RenderScaleMode,
+    method: crate::drawers::affine::InterpolationAlgorithm,
+) -> TextureOptions {
+    match scale_mode {
+        RenderScaleMode::FastGpu => match method {
+            crate::drawers::affine::InterpolationAlgorithm::NearestNeighber => {
+                TextureOptions::NEAREST
+            }
+            _ => TextureOptions::LINEAR,
+        },
+        RenderScaleMode::PreciseCpu => match method {
+            crate::drawers::affine::InterpolationAlgorithm::NearestNeighber => {
+                TextureOptions::NEAREST
+            }
+            _ => TextureOptions::LINEAR,
+        },
+    }
+}
+
 fn viewport_size_changed(current: egui::Vec2, previous: egui::Vec2) -> bool {
     if previous == egui::Vec2::ZERO {
         return true;
@@ -282,9 +303,11 @@ impl ViewerApp {
             .unwrap_or("default")
             .to_owned();
 
-        let default_texture = cc
-            .egui_ctx
-            .load_texture(texture_name, color_image, TextureOptions::LINEAR);
+        let default_texture = cc.egui_ctx.load_texture(
+            texture_name,
+            color_image,
+            texture_options_for_scale_mode(config.render.scale_mode, config.render.zoom_method),
+        );
         let AppliedResources {
             locale,
             loaded_fonts,
@@ -419,6 +442,7 @@ impl ViewerApp {
         this.system_search_paths_input = join_search_paths(&this.plugins.system.search_path);
         this.ffmpeg_search_paths_input = join_search_paths(&this.plugins.ffmpeg.search_path);
         this.apply_window_theme(&cc.egui_ctx);
+        this.normalize_render_options();
 
         if !defer_navigation_workers {
             this.spawn_navigation_workers();
@@ -604,6 +628,36 @@ impl ViewerApp {
         self.settings_draft = Some(build_settings_draft(&self.current_config()));
     }
 
+    pub(crate) fn normalize_render_options(&mut self) {
+        if matches!(self.render_options.scale_mode, RenderScaleMode::FastGpu)
+            && !matches!(
+                self.render_options.zoom_method,
+                crate::drawers::affine::InterpolationAlgorithm::NearestNeighber
+                    | crate::drawers::affine::InterpolationAlgorithm::Bilinear
+            )
+        {
+            self.render_options.zoom_method = crate::drawers::affine::InterpolationAlgorithm::Bilinear;
+        }
+    }
+
+    fn texture_options(&self) -> TextureOptions {
+        texture_options_for_scale_mode(self.render_options.scale_mode, self.render_options.zoom_method)
+    }
+
+    fn current_draw_scale(&self) -> f32 {
+        match self.render_options.scale_mode {
+            RenderScaleMode::FastGpu => self.zoom.max(0.1),
+            RenderScaleMode::PreciseCpu => 1.0,
+        }
+    }
+
+    fn companion_draw_scale(&self) -> f32 {
+        match self.render_options.scale_mode {
+            RenderScaleMode::FastGpu => self.zoom.max(0.1),
+            RenderScaleMode::PreciseCpu => 1.0,
+        }
+    }
+
     fn effective_zoom(&self) -> f32 {
         let base = if matches!(self.render_options.zoom_option, ZoomOption::None) {
             1.0
@@ -694,7 +748,7 @@ impl ViewerApp {
         let image = self.color_image_from_canvas(&canvas);
         let texture = self
             .egui_ctx
-            .load_texture(texture_name.to_owned(), image, TextureOptions::LINEAR);
+            .load_texture(texture_name.to_owned(), image, self.texture_options());
         (texture, display_scale)
     }
 
@@ -746,10 +800,10 @@ impl ViewerApp {
         if self.current_texture_is_default {
             self.current_texture =
                 self.egui_ctx
-                    .load_texture(texture_name, image, TextureOptions::LINEAR);
+                    .load_texture(texture_name, image, self.texture_options());
             self.current_texture_is_default = false;
         } else {
-            self.current_texture.set(image, TextureOptions::LINEAR);
+            self.current_texture.set(image, self.texture_options());
         }
     }
 
@@ -1143,6 +1197,7 @@ impl ViewerApp {
                 path,
                 zoom: self.zoom,
                 method: self.render_options.zoom_method,
+                scale_mode: self.render_options.scale_mode,
             })
             .map_err(worker_send_error)?;
         Ok(())
@@ -1159,6 +1214,7 @@ impl ViewerApp {
                 request_id,
                 zoom: self.zoom,
                 method: self.render_options.zoom_method,
+                scale_mode: self.render_options.scale_mode,
             })
             .map_err(worker_send_error)?;
         Ok(())
@@ -1301,6 +1357,7 @@ impl ViewerApp {
                 path: load_request_path,
                 zoom: load_zoom,
                 method: self.render_options.zoom_method,
+                scale_mode: self.render_options.scale_mode,
             })
             .map_err(worker_send_error)?;
         Ok(())
@@ -1320,6 +1377,7 @@ impl ViewerApp {
                 request_id,
                 zoom: self.zoom,
                 method: self.render_options.zoom_method,
+                scale_mode: self.render_options.scale_mode,
             })
             .map_err(worker_send_error)?;
         if let Some(path) = self.companion_navigation_path.clone() {
@@ -1536,6 +1594,7 @@ impl ViewerApp {
             path,
             zoom: self.zoom,
             method: self.render_options.zoom_method,
+            scale_mode: self.render_options.scale_mode,
         });
     }
 
@@ -1780,17 +1839,18 @@ impl ViewerApp {
                         self.render_options.zoom_method,
                     );
                     let image = self.color_image_from_canvas(&canvas);
+                    let texture_options = self.texture_options();
                     let texture = if path.is_none() {
                         if let Some(texture) = &mut self.companion_texture {
-                            texture.set(image, TextureOptions::LINEAR);
+                            texture.set(image, texture_options);
                             texture.clone()
                         } else {
                             self.egui_ctx
-                                .load_texture("manga_companion", image, TextureOptions::LINEAR)
+                                .load_texture("manga_companion", image, texture_options)
                         }
                     } else {
                         self.egui_ctx
-                            .load_texture("manga_companion", image, TextureOptions::LINEAR)
+                            .load_texture("manga_companion", image, texture_options)
                     };
                     self.companion_texture = Some(texture);
                     self.companion_source = Some(source);
@@ -2085,6 +2145,11 @@ impl eframe::App for ViewerApp {
         let panel = egui::CentralPanel::default().frame(egui::Frame::NONE);
         panel.show(ctx, |ui| {
             self.paint_background(ui, ui.max_rect());
+            let display_response = ui.interact(
+                ui.max_rect(),
+                ui.id().with("viewer_display_area"),
+                egui::Sense::click(),
+            );
             if self.active_request.is_some() || self.active_fs_request_id.is_some() {
                 ctx.request_repaint_after(Duration::from_millis(16));
             }
@@ -2113,8 +2178,8 @@ impl eframe::App for ViewerApp {
             }
 
             let draw_size = vec2(
-                self.current_canvas().width() as f32,
-                self.current_canvas().height() as f32,
+                self.current_canvas().width() as f32 * self.current_draw_scale(),
+                self.current_canvas().height() as f32 * self.current_draw_scale(),
             );
             egui::ScrollArea::both()
                 .auto_shrink([false, false])
@@ -2127,8 +2192,9 @@ impl eframe::App for ViewerApp {
 
                     let companion_draw_size = companion.map(|(companion_rendered, _)| {
                         vec2(
-                            companion_rendered.canvas.width() as f32,
-                            companion_rendered.canvas.height() as f32,
+                            companion_rendered.canvas.width() as f32 * self.companion_draw_scale(),
+                            companion_rendered.canvas.height() as f32
+                                * self.companion_draw_scale(),
                         )
                     });
                     let total_draw_size = if spread_active {
@@ -2207,7 +2273,13 @@ impl eframe::App for ViewerApp {
                         }
                     });
                     if let Some(response) = inner.inner {
-                        self.handle_pointer_input(&response);
+                        if !self.handle_pointer_input(&response)
+                            && self.response_has_pointer_intent(&display_response)
+                        {
+                            let _ = self.handle_pointer_input(&display_response);
+                        }
+                    } else if self.response_has_pointer_intent(&display_response) {
+                        let _ = self.handle_pointer_input(&display_response);
                     }
 
                     if self.empty_mode {

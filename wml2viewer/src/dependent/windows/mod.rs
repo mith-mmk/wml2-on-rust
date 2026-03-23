@@ -49,12 +49,21 @@ pub fn locale_font_candidates(locale: &str) -> Vec<PathBuf> {
     } else if locale.starts_with("ko") {
         names.extend(["malgun.ttf", "NotoSansCJK-Regular.ttc"]);
     }
-    names.extend(["segoeui.ttf", "seguisym.ttf", "arialuni.ttf", "arial.ttf"]);
     resolve_font_candidates(&names)
 }
 
 pub fn emoji_font_candidates() -> Vec<PathBuf> {
     resolve_font_candidates(&["seguiemj.ttf", "seguisym.ttf"])
+}
+
+pub fn last_resort_font_candidates() -> Vec<PathBuf> {
+    resolve_font_candidates(&[
+        "segoeui.ttf",
+        "seguisym.ttf",
+        "arialuni.ttf",
+        "arial.ttf",
+        "consola.ttf",
+    ])
 }
 
 fn resolve_font_candidates(file_names: &[&str]) -> Vec<PathBuf> {

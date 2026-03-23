@@ -22,12 +22,12 @@ pub fn locale_font_candidates(locale: &str) -> Vec<PathBuf> {
             PathBuf::from("/usr/share/fonts/opentype/noto/NotoSansTC-Regular.otf"),
             PathBuf::from("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
         ]);
+    } else if locale.starts_with("ko") {
+        fonts.extend([
+            PathBuf::from("/usr/share/fonts/opentype/noto/NotoSansKR-Regular.otf"),
+            PathBuf::from("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+        ]);
     }
-    fonts.extend([
-        PathBuf::from("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf"),
-        PathBuf::from("/usr/share/fonts/opentype/noto/NotoSans-Regular.ttf"),
-        PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
-    ]);
     fonts
 }
 
@@ -35,6 +35,18 @@ pub fn emoji_font_candidates() -> Vec<PathBuf> {
     vec![
         PathBuf::from("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf"),
         PathBuf::from("/usr/share/fonts/noto/NotoColorEmoji.ttf"),
+    ]
+}
+
+pub fn last_resort_font_candidates() -> Vec<PathBuf> {
+    vec![
+        PathBuf::from("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf"),
+        PathBuf::from("/usr/share/fonts/opentype/noto/NotoSans-Regular.ttf"),
+        PathBuf::from("/usr/share/fonts/truetype/noto/NotoSansMono-Regular.ttf"),
+        PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+        PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"),
+        PathBuf::from("/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf"),
+        PathBuf::from("/usr/share/fonts/truetype/liberation2/LiberationMono-Regular.ttf"),
     ]
 }
 

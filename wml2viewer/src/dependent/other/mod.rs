@@ -25,6 +25,10 @@ pub fn emoji_font_candidates() -> Vec<PathBuf> {
     Vec::new()
 }
 
+pub fn last_resort_font_candidates() -> Vec<PathBuf> {
+    Vec::new()
+}
+
 pub fn pick_directory_dialog() -> Option<PathBuf> {
     None
 }

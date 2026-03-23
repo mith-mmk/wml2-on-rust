@@ -3,6 +3,7 @@ use crate::drawers::image::{
     LoadedImage, load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
 };
 use crate::filesystem::{load_virtual_image_bytes, resolve_start_path};
+use crate::ui::viewer::options::RenderScaleMode;
 use std::error::Error;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
@@ -15,11 +16,13 @@ pub(crate) enum RenderCommand {
         path: PathBuf,
         zoom: f32,
         method: InterpolationAlgorithm,
+        scale_mode: RenderScaleMode,
     },
     ResizeCurrent {
         request_id: u64,
         zoom: f32,
         method: InterpolationAlgorithm,
+        scale_mode: RenderScaleMode,
     },
     Shutdown,
 }
@@ -59,6 +62,7 @@ pub(crate) fn spawn_render_worker(
                     path,
                     zoom,
                     method,
+                    scale_mode,
                 } => {
                     let result = catch_unwind(AssertUnwindSafe(|| {
                         (|| -> Result<(LoadedImage, LoadedImage, PathBuf), Box<dyn Error>> {
@@ -68,7 +72,12 @@ pub(crate) fn spawn_render_worker(
                             } else {
                                 load_canvas_from_file(&load_path)?
                             };
-                            let rendered = resize_loaded_image(&source, zoom, method)?;
+                            let rendered = match scale_mode {
+                                RenderScaleMode::FastGpu => source.clone(),
+                                RenderScaleMode::PreciseCpu => {
+                                    resize_loaded_image(&source, zoom, method)?
+                                }
+                            };
                             Ok((source, rendered, load_path))
                         })()
                     }))
@@ -101,8 +110,14 @@ pub(crate) fn spawn_render_worker(
                     request_id,
                     zoom,
                     method,
+                    scale_mode,
                 } => match catch_unwind(AssertUnwindSafe(|| {
-                    resize_loaded_image(&current_source, zoom, method)
+                    match scale_mode {
+                        RenderScaleMode::FastGpu => Ok(current_source.clone()),
+                        RenderScaleMode::PreciseCpu => {
+                            resize_loaded_image(&current_source, zoom, method)
+                        }
+                    }
                 }))
                 .unwrap_or_else(|_| {
                     Err(Box::new(std::io::Error::other(

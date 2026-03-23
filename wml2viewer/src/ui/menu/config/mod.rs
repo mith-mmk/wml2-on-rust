@@ -10,7 +10,9 @@ use crate::options::{AppConfig, EndOfFolderOption, NavigationOptions, PaneSide};
 use crate::ui::i18n::UiTextKey;
 use crate::ui::menu::fileviewer::thumbnail::set_thumbnail_workaround;
 use crate::ui::render::interpolation_label;
-use crate::ui::viewer::options::{BackgroundStyle, MangaSeparatorStyle, WindowUiTheme, ZoomOption};
+use crate::ui::viewer::options::{
+    BackgroundStyle, MangaSeparatorStyle, RenderScaleMode, WindowUiTheme, ZoomOption,
+};
 use crate::ui::viewer::{
     SettingsDraftState, SettingsTab, ViewerApp, build_settings_draft, join_search_paths,
     parse_search_paths,
@@ -378,6 +380,7 @@ impl ViewerApp {
         draft_state: &mut SettingsDraftState,
     ) {
         let draft = &mut draft_state.config;
+        normalize_draft_render_options(&mut draft.render);
         ui.group(|ui| {
             ui.horizontal(|ui| {
                 ui.label(self.text(UiTextKey::ZoomMode));
@@ -401,6 +404,31 @@ impl ViewerApp {
                     });
             });
             ui.horizontal(|ui| {
+                ui.label(self.text(UiTextKey::ScaleMode));
+                egui::ComboBox::from_id_salt("scale_mode")
+                    .selected_text(match draft.render.scale_mode {
+                        RenderScaleMode::FastGpu => self.text(UiTextKey::FastGpu),
+                        RenderScaleMode::PreciseCpu => self.text(UiTextKey::PreciseCpu),
+                    })
+                    .show_ui(ui, |ui| {
+                        if ui
+                            .selectable_value(
+                                &mut draft.render.scale_mode,
+                                RenderScaleMode::FastGpu,
+                                self.text(UiTextKey::FastGpu),
+                            )
+                            .changed()
+                        {
+                            normalize_draft_render_options(&mut draft.render);
+                        }
+                        ui.selectable_value(
+                            &mut draft.render.scale_mode,
+                            RenderScaleMode::PreciseCpu,
+                            self.text(UiTextKey::PreciseCpu),
+                        );
+                    });
+            });
+            ui.horizontal(|ui| {
                 ui.label(self.text(UiTextKey::Resize));
                 egui::ComboBox::from_id_salt("zoom_method")
                     .selected_text(interpolation_label(draft.render.zoom_method))
@@ -415,16 +443,18 @@ impl ViewerApp {
                             InterpolationAlgorithm::Bilinear,
                             self.text(UiTextKey::Bilinear),
                         );
-                        ui.selectable_value(
-                            &mut draft.render.zoom_method,
-                            InterpolationAlgorithm::BicubicAlpha(None),
-                            self.text(UiTextKey::Bicubic),
-                        );
-                        ui.selectable_value(
-                            &mut draft.render.zoom_method,
-                            InterpolationAlgorithm::Lanzcos3,
-                            self.text(UiTextKey::Lanczos3),
-                        );
+                        if matches!(draft.render.scale_mode, RenderScaleMode::PreciseCpu) {
+                            ui.selectable_value(
+                                &mut draft.render.zoom_method,
+                                InterpolationAlgorithm::BicubicAlpha(None),
+                                self.text(UiTextKey::Bicubic),
+                            );
+                            ui.selectable_value(
+                                &mut draft.render.zoom_method,
+                                InterpolationAlgorithm::Lanzcos3,
+                                self.text(UiTextKey::Lanczos3),
+                            );
+                        }
                     });
             });
         });
@@ -628,7 +658,9 @@ impl ViewerApp {
         if self.render_options.zoom_option != previous.render.zoom_option {
             self.pending_fit_recalc = true;
         }
-        if self.render_options.zoom_method != previous.render.zoom_method {
+        if self.render_options.scale_mode != previous.render.scale_mode
+            || self.render_options.zoom_method != previous.render.zoom_method
+        {
             let _ = self.request_resize_current();
         }
         if self.options.grayscale != previous.viewer.grayscale {
@@ -673,6 +705,7 @@ impl ViewerApp {
         self.keymap = config.input.merged_with_defaults();
         self.end_of_folder = config.navigation.end_of_folder;
         self.navigation_sort = config.navigation.sort;
+        self.normalize_render_options();
         self.save_dialog.output_dir = self
             .storage
             .path
@@ -760,5 +793,16 @@ fn font_size_label(option: FontSizePreset) -> &'static str {
         FontSizePreset::M => "M",
         FontSizePreset::L => "L",
         FontSizePreset::LL => "LL",
+    }
+}
+
+fn normalize_draft_render_options(render: &mut crate::ui::viewer::options::RenderOptions) {
+    if matches!(render.scale_mode, RenderScaleMode::FastGpu)
+        && !matches!(
+            render.zoom_method,
+            InterpolationAlgorithm::NearestNeighber | InterpolationAlgorithm::Bilinear
+        )
+    {
+        render.zoom_method = InterpolationAlgorithm::Bilinear;
     }
 }

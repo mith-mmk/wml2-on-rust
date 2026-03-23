@@ -592,6 +592,7 @@ P4 = 優先度やや低い
 P5 = 優先度低い
 
 ### startup sequence(P1)
+- [ ] issue: Explorer統合時 Command Lineが表示される問題(println!が悪い？ shell統合時はstdioをcmdに出さない)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
 - [*] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
 - [*] viewerワーカーの起動を再優先して `current_texture` のみ作る
@@ -614,8 +615,7 @@ P5 = 優先度低い
 - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
 
 ### filer(P1)
-- [*] OSソート順 Unicode Collation Algorithmを利用
-- [x] ja以外の時間ロケールが適用されていない
+- [ ] 名前でソートのチェックボックス名を修正　[OS準拠] [Aa区別] [Aa無視]　(ただし互換ではない)
 - [ ] (P3) まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
 
 ### Others
@@ -643,9 +643,12 @@ P5 = 優先度低い
       - Favariies (CSIDL_FAVORITES)
 - [ ] P4 LHAサポート
 
+### Setting
+- [ ] 表示名と配置の見直し(作業中)
+
 ## 最終確認
-- [x] todo.mdの更新
-- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- [ ] todo.mdの更新
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## 修正確認中issue
 ### system
@@ -685,6 +688,8 @@ P5 = 優先度低い
     - 1024byteから100,000KB は KB
     - 100MB ～ 100,000MB は MB
     - 100GB ～ は GB
+- [x] OSソート順 Unicode Collation Algorithmを利用
+- [x] ja以外の時間ロケールが適用されていない
 
 ### FileSystem
 - [+] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度16MBに設定(IOがネックになっているためSSD最適化した方が速い)

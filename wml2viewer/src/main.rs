@@ -1,3 +1,5 @@
+#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
+
 use std::env;
 use std::error::Error;
 use std::ffi::OsString;
@@ -7,13 +9,6 @@ use std::process::ExitCode;
 use wml2viewer::{app, dependent};
 
 fn main() -> ExitCode {
-    println!(
-        "{} version {} Copyright {} {}",
-        wml2viewer::get_prograname(),
-        wml2viewer::get_version(),
-        wml2viewer::get_copyright(),
-        wml2viewer::get_auther()
-    );
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {

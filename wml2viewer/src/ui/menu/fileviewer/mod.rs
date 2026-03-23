@@ -105,6 +105,7 @@ impl ViewerApp {
                 let detail_text = self.text(UiTextKey::Detail);
                 let sort_text = self.text(UiTextKey::Sort);
                 let name_text = self.text(UiTextKey::Name);
+                let name_sort_order_text = self.text(UiTextKey::NameSortOrder);
                 let date_text = self.text(UiTextKey::Date);
                 let size_text = self.text(UiTextKey::Size);
                 let asc_text = self.text(UiTextKey::Asc);
@@ -241,44 +242,37 @@ impl ViewerApp {
                         self.filer.separate_dirs = !self.filer.separate_dirs;
                         refresh_requested = true;
                     }
-                    if simple_toolbar_button(
-                        ui,
-                        if self.filer.archive_as_container_in_sort {
-                            "Zip=Folder"
-                        } else {
-                            "Zip=File"
-                        },
-                        self.filer.archive_as_container_in_sort,
-                    ) {
-                        self.filer.archive_as_container_in_sort =
-                            !self.filer.archive_as_container_in_sort;
-                        refresh_requested = true;
-                    }
-                    ui.label(name_text);
-                    if simple_toolbar_button(
-                        ui,
-                        os_text,
-                        self.filer.name_sort_mode == NameSortMode::Os,
-                    ) {
-                        self.filer.name_sort_mode = NameSortMode::Os;
-                        refresh_requested = true;
-                    }
-                    if simple_toolbar_button(
-                        ui,
-                        case_text,
-                        self.filer.name_sort_mode == NameSortMode::CaseSensitive,
-                    ) {
-                        self.filer.name_sort_mode = NameSortMode::CaseSensitive;
-                        refresh_requested = true;
-                    }
-                    if simple_toolbar_button(
-                        ui,
-                        no_case_text,
-                        self.filer.name_sort_mode == NameSortMode::CaseInsensitive,
-                    ) {
-                        self.filer.name_sort_mode = NameSortMode::CaseInsensitive;
-                        refresh_requested = true;
-                    }
+                    ui.label(name_sort_order_text);
+                    let selected_name_sort_text = match self.filer.name_sort_mode {
+                        NameSortMode::Os => os_text,
+                        NameSortMode::CaseSensitive => case_text,
+                        NameSortMode::CaseInsensitive => no_case_text,
+                    };
+                    egui::ComboBox::from_id_salt("filer_name_sort_mode")
+                        .selected_text(selected_name_sort_text)
+                        .show_ui(ui, |ui| {
+                            refresh_requested |= ui
+                                .selectable_value(
+                                    &mut self.filer.name_sort_mode,
+                                    NameSortMode::Os,
+                                    os_text,
+                                )
+                                .changed();
+                            refresh_requested |= ui
+                                .selectable_value(
+                                    &mut self.filer.name_sort_mode,
+                                    NameSortMode::CaseSensitive,
+                                    case_text,
+                                )
+                                .changed();
+                            refresh_requested |= ui
+                                .selectable_value(
+                                    &mut self.filer.name_sort_mode,
+                                    NameSortMode::CaseInsensitive,
+                                    no_case_text,
+                                )
+                                .changed();
+                        });
                 });
                 ui.horizontal(|ui| {
                     let _ =

@@ -592,7 +592,7 @@ P4 = 優先度やや低い
 P5 = 優先度低い
 
 ### startup sequence(P1)
-- [ ] issue: Explorer統合時 Command Lineが表示される問題(println!が悪い？ shell統合時はstdioをcmdに出さない)
+- [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
 - [*] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
 - [*] viewerワーカーの起動を再優先して `current_texture` のみ作る
@@ -600,23 +600,17 @@ P5 = 優先度低い
 - [ ] 各ワーカーを生成してから最初の画像を表示する
 - [*] 各ワーカーを同期してマルチプル・ビューアーモードに切り替える
 
-### viewer texture / zoom
-- [*] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
-- [*] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
-    - [ ] issue: 最初画像のtextureが再利用されつづける問題
-- [*] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
-- [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
-- [*] フォルダをまたぐ時は texture を一度破棄して再生成する
-
 ### renderer(P3)
 - [*] 精密モードが予想以上に重い(変換プロセスが何度も走っていないかチェック　-> アルゴリズムチェック)　[精密]モードが効くサイズは6000px越えが多いのでより遅い
 
 ### zip(P3)
 - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
 
-### filer(P1)
-- [ ] 名前でソートのチェックボックス名を修正　[OS準拠] [Aa区別] [Aa無視]　(ただし互換ではない)
-- [ ] (P3) まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
+### filer(P4)
+- [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
+
+### plugin(P1)
+- [ ] ISSUE:プラグイン用フォルダ設定時、コマンドラインが表示される
 
 ### Others
 - [ ] コードのフルレビュー
@@ -624,8 +618,14 @@ P5 = 優先度低い
 ### example(P3)
 - [ ] bench_archive 1.6GBだと固まる問題
 
-## 機能追加
-## input/key events/mouse events(P1)
+## 機能追加(0.0.13)予定
+
+### UI
+- アイコンの見直し
+- リソース名の見直し
+- Configの見直し
+
+### input/key events/mouse events(P1)
 - [ ] (P3) イベントと入力バインドの分離。 Key Remapping UIの準備
 
 ### INPUT
@@ -641,7 +641,7 @@ P5 = 優先度低い
       - Video (CSIDL_MYVIDEO)
       - Downloads
       - Favariies (CSIDL_FAVORITES)
-- [ ] P4 LHAサポート
+- [ ]  LHAサポート
 
 ### Setting
 - [ ] 表示名と配置の見直し(作業中)
@@ -660,7 +660,7 @@ P5 = 優先度低い
 
 ### ui
 - [ ] UIアイコンの洗練
-- [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)にしてください。それを上書きする形にしてください。
+- [x] issue: WindowsとMacOSのfontの最優先はそのロケールのシステムフォント(default)。それを上書きする形にしてください。
 - [x] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
 - [+] ファイラー/サブファイラー/viewer のファイル表示順の実機確認(確認中)
 - [ ] UIの責任範囲と描画領域をハッキリさせる ダイアログは別Windowで処理出来るならば別Windowで処理する
@@ -674,6 +674,13 @@ P5 = 優先度低い
       - [x] ファイラー,設定: 左ペインと右ペインを切り替えられる様にする
     - [x] 設定: ダイアログ。設定が閉じられるまでViewerは固定される
     - [+] アラート: ダイアログ。アラートに紐付いたUIは閉じるまで固定される
+### viewer texture / zoom
+- [+] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
+- [+] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
+    - [+] issue: 最初画像のtextureが再利用されつづける問題
+- [+] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
+- [+] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
+- [+] フォルダをまたぐ時は texture を一度破棄して再生成する
 
 #### filer
 - [*] zip 内ファイルソートの実機確認
@@ -690,6 +697,9 @@ P5 = 優先度低い
     - 100GB ～ は GB
 - [x] OSソート順 Unicode Collation Algorithmを利用
 - [x] ja以外の時間ロケールが適用されていない
+- [x] [分離] を[フォルダ分離表示]に
+- [x] [ZIP=FIle]をデフォルト表示にして、切り替えは[ファイラー]から隠す(機能は後から使う)
+- [x] [名前]を[名前のソート順]に修正し、ドロップボックスに変更 
 
 ### FileSystem
 - [+] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度16MBに設定(IOがネックになっているためSSD最適化した方が速い)
@@ -739,16 +749,17 @@ P5 = 優先度低い
 #### viewer texture / zoom
 - [*] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける
 - [*] issue: 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
-    - [ ] issue: 最初画像のtextureが再利用されつづける問題 
+    - [+] issue: 最初画像のtextureが再利用されつづける問題 
 - [*] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
-- [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
+- [+] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
 - [*] フォルダをまたぐ時は texture を一度破棄して再生成する
 
-### font(P1)
-- [*] P1 issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
+
+
+### font
+- [x] P1 issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
 - [x] P3 issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
 - [x] P3 user setting font -> system locale font -> cjk font -> emoji -> Last Resort の順で fallback させる
-
 
 ### setting
 - [x] 設定を変えた時、再起動を促すポップアップを出す 

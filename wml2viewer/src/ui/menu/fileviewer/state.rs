@@ -72,7 +72,7 @@ impl Default for FilerState {
             sort_field: FilerSortField::Name,
             ascending: true,
             separate_dirs: true,
-            archive_as_container_in_sort: true,
+            archive_as_container_in_sort: false,
             filter_text: String::new(),
             extension_filter: String::new(),
             name_sort_mode: NameSortMode::Os,

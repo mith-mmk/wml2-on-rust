@@ -12,6 +12,7 @@ Minimal native image viewer built with `egui` and `wml2`.
 - Plugin settings expose priority for `internal`, `system`, `ffmpeg`, and `susie64`
 - Manga spread mode for portrait pages when the viewport is wide enough
 - Filer with list / thumbnail / detail views and drive/root switching
+- Filer name sorting now uses a dropdown, and ZIP is treated like a file by default in separated sort mode
 - Filer side can be switched left/right from Settings
 - ZIP and WML(listed files) virtual browsing
 - Save dialog with output format selection
@@ -21,6 +22,7 @@ Minimal native image viewer built with `egui` and `wml2`.
 - ZIP startup now keeps the UI responsive by resolving archive contents after the window opens
 - Startup now prioritizes the first viewer image before filer/filesystem worker synchronization
 - Startup filesystem sync now follows the first resolved image path, reducing folder/ZIP startup stalls
+- Windows release builds use the GUI subsystem so Explorer launch does not open a console window
 - ZIP metadata loading now falls back to plain `BufReader<File>` if the cached reader path fails
 - Navigation requests now keep a pending target, reducing stale-image state during folder/archive transitions
 - Failed image loads now fall back to the loading texture instead of leaving the previous image onscreen
@@ -82,7 +84,7 @@ search_path = ["../test/plugins/susie64"]
 - Thumbnail failures are cleared from the pending queue so the filer can retry.
 - Filer timestamps now use local system time instead of UTC, with locale-specific formatting.
 - Filer `OS` name sort now uses Windows shell ordering on Windows and locale-aware normalized natural sort on other platforms.
-- Filer can switch whether ZIP is grouped with folders or files in separated sort mode.
+- ZIP is treated as a file by default in separated sort mode; the hidden toggle is kept internally for later use.
 - On Windows, file association registration is available from `Settings -> System`.
 - `ffmpeg` decode currently shells out to `ffmpeg.exe`.
 - `susie64` decode is Windows-only and currently targets image plugins.

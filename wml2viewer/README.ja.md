@@ -12,6 +12,7 @@
 - plugin 設定で `internal / system / ffmpeg / susie64` の優先度を編集可能
 - 横に十分広い時だけ有効になるマンガ見開きモード
 - 一覧 / サムネイル / 詳細を切り替えられるファイラーと drive/root 切り替え
+- ファイラーの名前ソート順はドロップダウンで切り替え、分離ソート時の ZIP は既定でファイル扱い
 - 設定からファイラーの左右ペイン位置を切り替え可能
 - ZIP / WML(ファイルリスト) の仮想ブラウズ
 - 保存形式を選べる保存ダイアログ
@@ -21,6 +22,7 @@
 - ZIP 指定時もウィンドウを先に開いてから中身を解決する非同期起動
 - 起動時は filer/filesystem の同期より先に最初の viewer 画像表示を優先します
 - startup 後の filesystem 同期は、最初に解決できた実画像 path を優先して行います
+- Windows の release build は GUI subsystem を使い、Explorer から起動してもコンソールを開きません
 - ZIP metadata 読み込みは必要に応じて plain `BufReader<File>` にフォールバックします
 - 読み込み中の遷移先を pending で保持し、フォルダ/アーカイブ跨ぎの古い表示を減らしています
 - 画像ロード失敗時は前の画像を残さず loading texture に戻します
@@ -88,7 +90,7 @@ search_path = ["c:/susie64/plugins/"]
 - サムネイル生成失敗時は pending を解放して再試行できるようにしています。
 - ファイラーの更新日時は UTC ではなくローカル時刻で表示し、ロケールごとの書式を使います。
 - ファイラーの `OS` 名前ソートは、Windows では shell の並び順、それ以外ではロケールを考慮した正規化自然順を使います。
-- ファイラーの分離ソートで ZIP を folder 扱い / file 扱いに切り替えられます。
+- ファイラーの分離ソートでは ZIP を既定で file 扱いにし、切り替え UI は一旦隠しています。
 - Windows では `設定 -> システム` から拡張子関連付けを操作できます。
 - `ffmpeg` は現状 `ffmpeg.exe` を起動して decode します。
 - `susie64` は Windows 専用で、今は image plugin decode まで入っています。

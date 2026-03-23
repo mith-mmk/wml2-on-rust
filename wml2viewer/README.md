@@ -99,9 +99,11 @@ search_path = ["../test/plugins/susie64"]
 
 ## Known Remaining Issues For 0.0.12
 
-- Long ZIP extraction can still stall viewer responsiveness.
+- The waiting placeholder is still too minimal and should be replaced with a clearer `now loading` style screen.
+- Precise CPU rendering can briefly flash the pre-resize image before the final resized image arrives.
+- Long ZIP extraction no longer hard-freezes as often, but still needs more validation. Current reports say resetting config improves it.
 - `bench_archive` still needs work for very large archives such as `1.6GB`.
-- On Windows, some plugin-folder/system-plugin flows may still surface command-line windows or leave `COM Surrogate` behind on forced exit.
+- On Windows, `COM Surrogate` can still remain after forced exit with the system plugin enabled.
 - `LHA` support and keybinding UI are deferred to `0.0.13`.
 
 ## Benchmarks

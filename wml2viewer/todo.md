@@ -551,13 +551,13 @@ betaまで後一歩
 - [x] issue: Windowsのfontの検索は、%LOCALAPPDATA%\Microsoft\Windows\Fonts → %WINDIR%\Fontsの順です。現在ハードコーディングされています
 - [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
 - [x] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
-- [*] ubuntuで数字が出ない
-- [ ] リソースenで日本語が表示出来ない問題
+- [x] ubuntuで数字が出ない
+- [x] リソースenで日本語が表示出来ない問題
 
 ### src/dependent/linux/mod.rs
-- [*] Linux font fallback 候補（数字が出ない）
-- [ ] issue:Linuxのファイラーで数字が化ける
-- [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK 起動もOK バグ有り
+- [+] Linux font fallback 候補（数字が出ない）
+- [x] issue:Linuxのファイラーで数字が化ける
+- [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK 起動もOK
 
 ### src/dependent/windows/mod.rs
 - [x] issue: makiが表示出来ないバグ
@@ -606,25 +606,22 @@ P5 = 優先度低い
 - [*] フォルダをまたぐ時は texture を一度破棄して再生成する
 
 ### renderer(P1)
-- [x] 縮小・拡大に高速(GPU)/精密(CPU)を追加 設定にも適用（デフォルトは精密）
-  - [x] 高速はeguiまかせ、精密は`drawers/affilne.rs`を利用
-  - [x] 高速のアルゴリズムは、Nearest/Linearのみ、精密は、Nearest/Linear/Qubic/Lancos3 (縮小はPixelMixing)
+- [ ] 精密モードが予想以上に重い(変換プロセスが何度も走っていないかチェック　-> アルゴリズムチェック)　このモードが有効になるサイズは6000px越えが多い
+- [ ] [精密]が予想以上に重いので[高速]をデフォルトに変更
 
 ## input/key events/mouse events(P1)
-- [x] issue:マウスイベントが画像内部でしか効かない("画像表示領域"(黒い部分も含む) 全体で効かない)
-- [x] マウス:右クリック 設定を表示する → 現在[簡易メニュー]が表示されて閉じられないので[設定]にしてください
+- [ ] issue: マウスイベントが画像内部でしか効かない(backgroundで効かない) VieweAppのイベント定義域にbackgroundが入って居ない
+- [ ] issue: 左クリックは左ダブルクリックでないときにのみ発火(eguiに機能がないみたいなので時間で管理 default 500ms)
+- [ ] (P3) イベントと入力バインドの分離。 Key Remapping UIの準備
 
 ### zip(P3)
 - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
 
-### filer(P2)
-- [ ] P2 OSソート順 Unicode Collation Algorithmを利用
+### filer(P1)
+- [ ] OSソート順 Unicode Collation Algorithmを利用
+- [ ] ja以外の時間ロケールが手抜き(ソース確認)
 - [ ] P3 まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
 
-### font(P1)
-- [*] P1 issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
-- [x] P3 issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
-- [x] P3 user setting font -> system locale font -> cjk font -> emoji -> Last Resort の順で fallback させる
 
 ### Others
 - [ ] コードのフルレビュー
@@ -646,7 +643,7 @@ P5 = 優先度低い
 ### system
 - [ ] コードの整理 モジュール境界をハッキリさせる
   - [ ]未実装 action の no-op 整理
-- [ ] [重要度低] Arm MACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
+- [ ] P4 Arm MACのテスト環境が無い MacOS Codecプラグイン(動作: o avif x jp2 o heic) 
 - [x] issue: 最初にファイルがないフォルダを指定した時にフォルダを切り替えてもナビゲーションが反応しない
     - [x] archive_benchmarkの実装を以下のファンクションでとってください
 
@@ -690,6 +687,7 @@ P5 = 優先度低い
 - [*] マウス:ダブルクリックが効かない ScreenFit <--> None のトグルにする
 - [+] マウス:左クリック 次の画面を表示にする
 - [x] マウス：ローラーはスクロール　デフォルトの挙動
+- [x] マウス:右クリック 設定を表示する → 現在[簡易メニュー]が表示されて閉じられないので[設定]にしてください
 
 
 ### plugin
@@ -730,6 +728,12 @@ P5 = 優先度低い
 - [ ] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
 - [*] フォルダをまたぐ時は texture を一度破棄して再生成する
 
+### font(P1)
+- [*] P1 issue: ubuntuで数字が出ない（既知の現象なので原因を調査してfix）
+- [x] P3 issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
+- [x] P3 user setting font -> system locale font -> cjk font -> emoji -> Last Resort の順で fallback させる
+
+
 ### setting
 - [x] 設定を変えた時、再起動を促すポップアップを出す 
   - jpeg2000/avif/heicは ./samplesにサンプルあり susie64はjpeg2000だけ、ffmpegは両方可能のはず
@@ -747,6 +751,9 @@ P5 = 優先度低い
 - [x] issue: 設定が即時適用されてしまう問題([モジュールを読み込む] [拡張子を登録] [システム登録を削除]以外の設定は[適用]が押されるまで遅延させてください その関係で[元に戻す]が効いていません)
 - [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
 - [x] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
+- [x] 縮小・拡大に高速(GPU)/精密(CPU)を追加 設定にも適用（デフォルトは精密）
+  - [x] 高速はeguiまかせ、精密は`drawers/affilne.rs`を利用
+  - [x] 高速のアルゴリズムは、Nearest/Linearのみ、精密は、Nearest/Linear/Qubic/Lancos3 (縮小はPixelMixing)
 
 ### i18n
 - [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)

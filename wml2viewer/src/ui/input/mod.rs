@@ -136,7 +136,7 @@ impl ViewerApp {
     }
 
     fn pointer_intent_from_response(&self, response: &egui::Response) -> Option<PointerIntent> {
-        if response.double_clicked_by(egui::PointerButton::Secondary) {
+        if response.double_clicked_by(egui::PointerButton::Primary) {
             return Some(PointerIntent::ToggleFit);
         }
 

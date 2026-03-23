@@ -230,6 +230,13 @@ fn blank_loaded_image() -> LoadedImage {
     }
 }
 
+fn loading_card_message(message: Option<&str>) -> String {
+    match message {
+        Some(message) if !message.trim().is_empty() => format!("Now Loading...\n{}", message),
+        _ => "Now Loading...".to_string(),
+    }
+}
+
 fn ellipsize_end(text: &str, max_chars: usize) -> String {
     let chars: Vec<char> = text.chars().collect();
     if chars.len() <= max_chars {
@@ -865,6 +872,56 @@ impl ViewerApp {
         self.current_texture_is_default = true;
     }
 
+    fn current_viewport_size(&self) -> egui::Vec2 {
+        if self.last_viewport_size != egui::Vec2::ZERO {
+            self.last_viewport_size
+        } else {
+            self.egui_ctx.content_rect().size()
+        }
+    }
+
+    fn maybe_defer_precise_display(
+        &mut self,
+        source_size: egui::Vec2,
+        loaded_path: Option<&Path>,
+    ) -> bool {
+        if loaded_path.is_none() {
+            return false;
+        }
+        if !matches!(self.render_options.scale_mode, RenderScaleMode::PreciseCpu) {
+            return false;
+        }
+        if matches!(self.render_options.zoom_option, ZoomOption::None) {
+            return false;
+        }
+
+        let viewport = self.current_viewport_size();
+        if viewport == egui::Vec2::ZERO {
+            return false;
+        }
+
+        let target_fit = calc_fit_zoom(
+            viewport,
+            source_size,
+            &self.render_options.zoom_option,
+        )
+        .clamp(0.1, 16.0);
+        let target_zoom = (target_fit * self.zoom_factor.clamp(0.1, 16.0)).clamp(0.1, 16.0);
+
+        if (target_zoom - 1.0).abs() < 0.01 {
+            self.fit_zoom = target_fit;
+            self.zoom = target_zoom;
+            self.pending_fit_recalc = false;
+            return false;
+        }
+
+        self.fit_zoom = target_fit;
+        self.zoom = target_zoom;
+        self.pending_fit_recalc = false;
+        self.overlay.loading_message = Some(format!("Rendering {:.0}%", target_zoom * 100.0));
+        true
+    }
+
     fn update_window_title(&self, ctx: &egui::Context) {
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
             "wml2viewer - {}",
@@ -1168,6 +1225,39 @@ impl ViewerApp {
                     ui.set_width(ui.available_width());
                     ui.label(egui::RichText::new(text).small());
                 });
+            });
+    }
+
+    fn loading_card_ui(&self, ctx: &egui::Context) {
+        if !self.current_texture_is_default {
+            return;
+        }
+        if self.empty_mode {
+            return;
+        }
+        if self.active_request.is_none() && self.active_fs_request_id.is_none() {
+            return;
+        }
+
+        egui::Area::new("viewer_waiting_card".into())
+            .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+            .interactable(false)
+            .show(ctx, |ui| {
+                egui::Frame::window(ui.style())
+                    .corner_radius(12.0)
+                    .show(ui, |ui| {
+                        ui.set_min_width(220.0);
+                        ui.vertical_centered(|ui| {
+                            ui.add(egui::Spinner::new().size(22.0));
+                            ui.add_space(8.0);
+                            ui.label(
+                                egui::RichText::new(loading_card_message(
+                                    self.overlay.loading_message.as_deref(),
+                                ))
+                                .strong(),
+                            );
+                        });
+                    });
             });
     }
 
@@ -1610,11 +1700,20 @@ impl ViewerApp {
             .min(self.rendered.frame_count().saturating_sub(1));
         self.completed_loops = 0;
         self.last_frame_at = Instant::now();
-        self.rebuild_current_texture();
-        if self.active_fs_request_id.is_none() {
-            self.overlay.loading_message = None;
-        }
         self.active_request = None;
+
+        let source_size = vec2(self.source.canvas.width() as f32, self.source.canvas.height() as f32);
+        let defer_precise_display =
+            self.maybe_defer_precise_display(source_size, loaded_path.as_deref());
+        if defer_precise_display {
+            let _ = self.request_resize_current();
+        } else {
+            self.rebuild_current_texture();
+            if self.active_fs_request_id.is_none() {
+                self.overlay.loading_message = None;
+            }
+        }
+
         if !self.navigator_ready && self.active_fs_request_id.is_none() {
             if self.deferred_filesystem_init_path.is_some() {
                 self.deferred_filesystem_init_path =
@@ -2373,6 +2472,7 @@ impl eframe::App for ViewerApp {
                 });
         });
         self.loading_overlay_ui(ctx);
+        self.loading_card_ui(ctx);
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {

@@ -59,11 +59,61 @@
 //! }
 //! ```
 
+use std::fmt::Error;
+
+use crate::{png::header::IMAGE_DATA, util::ImageFormat};
+
 // 0.0.19 new!
 /// get_version get WML2 crate version
 pub fn get_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
+
+pub fn get_decoder_extentions() -> Vec<String> {
+    vec![
+        "bmp".to_string(),
+        "gif".to_string(),
+        "jpg".to_string(),
+        "jpe".to_string(),
+        "jpeg".to_string(),
+        "png".to_string(),
+        "tif".to_string(),
+        "tiff".to_string(),
+        "webp".to_string(),
+#[cfg(not(feature = "noretoro"))]
+        "mag".to_string(),
+#[cfg(not(feature = "noretoro"))]
+        "mki".to_string(),
+#[cfg(not(feature = "noretoro"))]
+        "pi".to_string(),
+#[cfg(not(feature = "noretoro"))]
+        "pic".to_string(),
+    ]
+}
+
+
+pub fn get_can_decode(buffer: &[u8]) ->Result<bool, Box<dyn std::error::Error>> {
+    let result = crate::util::format_check(buffer);
+    match result {
+        ImageFormat::Unknown => Ok(false),
+        ImageFormat::RiffFormat(_) => Ok(false),
+        _ => Ok(true)
+    } 
+}
+pub fn get_encode_extentions() -> Vec<String> {
+    vec![
+        "bmp".to_string(),
+        "gif".to_string(),
+        "jpg".to_string(),
+        "jpe".to_string(),
+        "jpeg".to_string(),
+        "png".to_string(),
+        "tif".to_string(),
+        "tiff".to_string(),
+        "webp".to_string(),
+    ]
+}
+
 
 //pub(crate) mod io; // move bin_rs crate
 pub mod bmp;

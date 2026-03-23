@@ -7,8 +7,108 @@
 - [-] 設計保留
 - [ ] 未実装
 
+P0 = 至急
+P1 = 優先度高い
+P2 = 優先度やや高い
+P3 = 優先度中
+P4 = 優先度やや低い
+P5 = 優先度低い
+
 最終整理日: 2026-03-23
 
+# 0.0.12 最中チェック
+- [ ] Readme
+- [ ] helpの最中チェック
+- [ ] Ubuntuの動作チェック
+- [ ] Windowsの動作チェック
+- [ ] 境界条件の動作チェック
+
+# 0.0.13 以降
+## issues
+### startup sequence
+- [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
+- [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
+- [*] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
+- [*] viewerワーカーの起動を再優先して `current_texture` のみ作る
+- [*] 最初の画像をロードして単体ビューアーモードで表示する
+- [ ] 各ワーカーを生成してから最初の画像を表示する
+- [*] 各ワーカーを同期してマルチプル・ビューアーモードに切り替える
+### code
+- [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
+- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
+
+### Filesystems
+- zip系
+    - [*] issue: bench_archive: 1.6Gベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
+    - [*] issue: zipの展開が遅くなっている
+    - [*] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
+    - [+] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
+    - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
+    - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
+    - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
+    - [ ] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度0MBに設定(IOがネックになっているためSSD最適化した方が速い)
+    - [ ] listed file(.wml)でhttpが表示出来ない問題
+
+### syetem
+- [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK 起動もOK
+- [-] MacはIntel MACの環境しかないので遅延 
+
+- [ ] todo.mdの更新
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+### renderer
+- [*] 精密モードが予想以上に重い(変換プロセスが何度も走っていないかチェック　-> アルゴリズムチェック)　[精密]モードが効くサイズは6000px越えが多いのでより遅い
+
+### zip(P1)
+- [+] zip: 時間のかかるzip展開時にviewer側が固まる問題 configのリセットで改善
+
+### filer(P4)
+- [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
+
+### Others
+- [ ] コードのフルレビュー
+
+### example(P3)
+- [ ] bench_archive 1.6GBだと固まる問題
+
+
+## 機能追加(0.0.13+)予定
+### UI
+- アイコンの見直し
+- リソース名の見直し
+- Configの見直し
+
+### input/key events/mouse events(P1)
+- [ ] (P3) イベントと入力バインドの分離。 Key Remapping UIの準備
+
+### INPUT
+- [ ] P4 タッチパネル(android対応用)
+
+### FileSystem
+- [ ] Windows Userフォルダをエクスプローラっぽい表示に擬態するモード
+    - User home
+      - Desktop (CSIDL_MYDOCUMENTS)
+      - Documents (CSIDL_MYDOCUMENTS)
+      - Music (CSIDL_MYMUSIC)
+      - Pictures (CSIDL_MYPICTURES)
+      - Video (CSIDL_MYVIDEO)
+      - Downloads
+      - Favariies (CSIDL_FAVORITES)
+- [ ] LHAサポート
+
+### Setting
+- [ ] 表示名と配置の見直し(作業中)
+
+## 最終確認
+- [ ] todo.mdの更新
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+
+
+## WML本体
+- [ ] ico対応
+- [ ] pic2対応
+
+
+# モジュールベースの整理
 ## src/main.rs / src/app.rs
 - [x] `wml2viewer <file>` 起動
 - [x] `wml2viewer <directory>` 起動
@@ -297,8 +397,6 @@
 - [+] 長いファイル名の中間省略（末尾 7 文字優先）
 - [*] filer 表示時のさらなる高速化
 
-
-
 ## src/ui/render/layout.rs
 - [x] 背景描画
 - [x] 中央寄せ offset 計算
@@ -410,90 +508,13 @@
 ## src/graphics/mod.rs
 - [-] 役割の再整理
 
-## 次に着手
-betaまで後一歩
-
-- [ ] issue: systemプラグイン有効時　Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
-- [ ] command
-- [ ] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
-    - ファイラーの機能を強化するほど起動が遅くなるため、単体ビューアーとマルチプルビューアーを分離
-    - 1. viewerワーカーの起動を再優先(`current_texture`のみ作成)
-    - 2. 最初の画像をロード(単体ビューアーモード)
-    - 3. 各ワーカーの生成
-    - 4. 最初の画像の表示
-    - 5. 各ワーカーの同期(マルチプル・ビューアーモードに切り替え)                    
-- zip系
-    - [*] issue: bench_archive: 1.6Gベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
-    - [*] issue: zipの展開が遅くなっている
-    - [*] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
-    - [+] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
-    - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
-    - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
-    - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
-    - [ ] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度0MBに設定(IOがネックになっているためSSD最適化した方が速い)
-- [*] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください
-- 起動
-    - [*] issue: 起動時にzipが指定されると長時間待たされる
-    - [*] issue: フォルダに引きずられて、最初の画像の表示が遅くなる 画像の表示を再優先にしてください
-- viewer
-    - [ ] issue: 画像ロードに失敗したとき、前の画像がそのまま残り続ける[残すのと消すのと仕様として正しいかUIとして適切なものをtodoに反映]
-    - [ ] issue: 前の画像(ほぼ起動時)がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
-        - [ ] マンガモードで最初に全体表示されるケース
-        - [ ] 幅に合わせるでも起きる
-        - [ ] zoom: +/- で以前の画像が表示される(ここがissueの起点？)
-        - [ ] 参照する `texture` をトレースして修正してください `texture`キャッシュの持ち方に問題ありそう
-            - [ ] texture分類を保守しやすい様に再設計(例)
-            - default_texture (起動時に作成。固定, waitingなど)
-            - prev_texture (前の画像)
-            - current_texture (現在の画像)
-            - next_texture (次の画像)
-            - [ ] マンガモードは各textureが1か2(画像サイズで動的の変化)になる
-            - [ ] フォルダをまたぐ時は`texture`を一度破棄して再生成
-        - [ ] 縮小アルゴリズムにpixel mixingが使えるか検討(拡大アルゴリズムを縮小に転用した場合、モノクロ圧縮のモアレが酷いため) 
-    - [+] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
-        - fitの後にzoomの計算を入れてください
-        - [ ] zoomは画像が切り替わったときリセットしてください
-
-- input
-    - [ ] マウスイベントの衝突がある模様。UIデフォルトのスクロール以外が反応しない
-    - 検出するイベント：デフォルト動作
-        - [ ] 右クリック： 次の画面
-        - [ ] 左クリック： 設定のオン/オフ
-        - [ ] 右ダブルクリック： 画像表示のScreenFite <--> Noneのトグル
-- filer
-    - [ ] OSソート順 Unicode Collation Algorithmを利用
-    - [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
-    - [+] ファイラーの並び順をzipをファイルとしてソートする場合とフォルダとしてソートする場合を設定で切り替え
-    - [ ] issue:Linuxのファイラーで数字が化ける
-- setting
-    - [ ] [適用] [キャンセル]が押されたときに設定を閉じる。変わりに[閉じる]ボタンを削除
-- font
-    - [*] issue: ubuntuで数字が出ない（他のアプリでも見かけた既知の現象なので原因を調査してfix, cmapが取れてない？）
-    - [x] issue: fontフォールバック表示システム（enロケールで他国語が出ない問題を回避）
-        - 基本的な順序 
-            - user setting font -> system locale font -> cjk font -> emoji -> Last Resort
-            - user setting fontは、font-familyでまとめて指定出来る様にする sansserif, serif, monospaceをデフォルトで用意
-- [x] todo.mdの更新
-- [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
-
-## 優先度低
-- [-] MacはIntel MACの環境しかないので遅延 
-- [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK 起動もOK バグ有り
-- [x] Ubuntu OK
-- [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
-- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
-- [ ] リソースenで日本語が表示出来ない問題
-- [ ] listed fileでhttpが表示出来ない問題
 
 ## レビュアーissue（整理版）
-
 ### src/ui/viewer/mod.rs
 - [+] 画像ロードに失敗したとき、loading texture へ戻す
-- [ ] 前の画像がそのまま残り続ける 各状態の`egui::Image::from_textur`をトレースすること
-- [ ] +/-が zoom[なし]以外で効かない fit計算とzoom計算が干渉している
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
 - [ ] UIの責任範囲と描画領域をハッキリさせる ダイアログは別Windowで処理出来るならば別Windowで処理する
-- [*] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
+- [+] 大きなファイルを指定した場合、起動時に時間がかかるので、UIを先に起動して、画像展開中を表示
 - [x] issue: マンガモード:フォルダが切り替わったとき前の画像がクリアされない（次のフォルダの初めからリスタート）
 - [x] issue:マンガモード：画面がちらつく問題
 - [x] issue: [`home`][`end`]を押したときzip(仮想フォルダ)の最初と最後ではなく、フォルダの最後のzipに飛ぶ
@@ -583,74 +604,7 @@ betaまで後一歩
 - [x] todo.mdの更新
 - [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
-## 0.0.12 残り
-P0 = 至急
-P1 = 優先度高い
-P2 = 優先度やや高い
-P3 = 優先度中
-P4 = 優先度やや低い
-P5 = 優先度低い
 
-
-### startup sequence(P1)
-- [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
-- [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
-- [*] startup sequenceの見直し(完全な実装はbeta以降だが、初めからステートマシンの組み替えができるように考慮すること)
-- [*] viewerワーカーの起動を再優先して `current_texture` のみ作る
-- [*] 最初の画像をロードして単体ビューアーモードで表示する
-- [ ] 各ワーカーを生成してから最初の画像を表示する
-- [*] 各ワーカーを同期してマルチプル・ビューアーモードに切り替える
-
-### renderer(P3)
-- [*] 精密モードが予想以上に重い(変換プロセスが何度も走っていないかチェック　-> アルゴリズムチェック)　[精密]モードが効くサイズは6000px越えが多いのでより遅い
-
-### viewer
-- [ ] `waiting`時の画像がただ点なのでマシなのに差し替える `now loading` など
-- [ ] 精密モードで表示時、一瞬フラッシュする（リサイズする前の画像が先に書き込まれている）
-
-### zip(P1)
-- [+] zip: 時間のかかるzip展開時にviewer側が固まる問題 configのリセットで改善
-
-### filer(P4)
-- [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
-
-### Others
-- [ ] コードのフルレビュー
-
-### example(P3)
-- [ ] bench_archive 1.6GBだと固まる問題
-
-## 機能追加(0.0.13)予定
-
-### UI
-- アイコンの見直し
-- リソース名の見直し
-- Configの見直し
-
-### input/key events/mouse events(P1)
-- [ ] (P3) イベントと入力バインドの分離。 Key Remapping UIの準備
-
-### INPUT
-- [ ] P4 タッチパネル(android対応用)
-
-### FileSystem
-- [ ] Windows Userフォルダをエクスプローラっぽい表示に擬態するモード
-    - User home
-      - Desktop (CSIDL_MYDOCUMENTS)
-      - Documents (CSIDL_MYDOCUMENTS)
-      - Music (CSIDL_MYMUSIC)
-      - Pictures (CSIDL_MYPICTURES)
-      - Video (CSIDL_MYVIDEO)
-      - Downloads
-      - Favariies (CSIDL_FAVORITES)
-- [ ] LHAサポート
-
-### Setting
-- [ ] 表示名と配置の見直し(作業中)
-
-## 最終確認
-- [ ] todo.mdの更新
-- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 ## 修正確認中issue
 ### system
@@ -757,7 +711,8 @@ P5 = 優先度低い
 - [*] 参照する `texture` をトレースして `default_texture` / `prev_texture` / `current_texture` / `next_texture` に分ける
 - [+] マンガモードでは各 texture が 1 枚か 2 枚かを画像サイズで動的に切り替える
 - [*] フォルダをまたぐ時は texture を一度破棄して再生成する
-
+- [x] `waiting`時の画像がただ点なのでマシなのに差し替える `now loading` など
+- [x] 精密モードで表示時、一瞬フラッシュする（リサイズする前の画像が先に書き込まれている）
 
 
 ### font
@@ -788,3 +743,7 @@ P5 = 優先度低い
 
 ### i18n
 - [+] issue: fontとlocaleは設定で変更できるようにしてください(defaultはsystem)
+
+### OS Depended
+- [x] Ubuntu OK
+- [x] リソースenで日本語が表示出来ない問題

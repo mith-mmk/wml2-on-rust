@@ -68,7 +68,7 @@ font_paths = ["C:/Windows/Fonts/NotoSansJP-Regular.otf"]
 
 - susie64はpluginを探して導入してください(Windowsのみ)
 - OS SystemはOSがサポートしているフォーマットをそのまま利用します(WindowsとMac OSのみ)
-- ffmpegはexeの入っているフォルダを指定してください
+- ffmpegは実行ファイルの存在するフォルダを指定してください
 
  設定例:
 
@@ -111,6 +111,7 @@ search_path = ["c:/susie64/plugins/"]
 - `bench_archive` は `1.6GB` 級の大きな archive でまだ詰めが必要です。
 - Windows では、system plugin 有効時の強制終了で `COM Surrogate` が残るケースがまだあります。
 - `LHA` 対応とキーバインド UI は `0.0.13` へスライドしました。
+- 拡張子のチェックの問題(`WML0.0.19`にフォールバック)
 
 ## ベンチマーク
 

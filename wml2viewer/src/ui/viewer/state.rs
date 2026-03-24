@@ -2,11 +2,36 @@ use crate::drawers::image::SaveFormat;
 use crate::options::AppConfig;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
+use std::time::Instant;
 
-#[derive(Default)]
 pub(crate) struct ViewerOverlayState {
     pub(crate) loading_message: Option<String>,
     pub(crate) alert_message: Option<String>,
+    pub(crate) loading_started_at: Option<Instant>,
+}
+
+impl Default for ViewerOverlayState {
+    fn default() -> Self {
+        Self {
+            loading_message: None,
+            alert_message: None,
+            loading_started_at: None,
+        }
+    }
+}
+
+impl ViewerOverlayState {
+    pub(crate) fn set_loading_message(&mut self, message: impl Into<String>) {
+        if self.loading_message.is_none() {
+            self.loading_started_at = Some(Instant::now());
+        }
+        self.loading_message = Some(message.into());
+    }
+
+    pub(crate) fn clear_loading_message(&mut self) {
+        self.loading_message = None;
+        self.loading_started_at = None;
+    }
 }
 
 pub(crate) struct SaveDialogState {

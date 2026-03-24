@@ -42,6 +42,7 @@ use state::{SaveDialogState, ViewerOverlayState};
 
 const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(180);
 const POINTER_SINGLE_CLICK_DELAY: Duration = Duration::from_millis(500);
+const WAITING_CARD_DELAY: Duration = Duration::from_millis(180);
 
 pub(crate) struct ViewerApp {
     pub(crate) current_navigation_path: PathBuf,
@@ -918,7 +919,8 @@ impl ViewerApp {
         self.fit_zoom = target_fit;
         self.zoom = target_zoom;
         self.pending_fit_recalc = false;
-        self.overlay.loading_message = Some(format!("Rendering {:.0}%", target_zoom * 100.0));
+        self.overlay
+            .set_loading_message(format!("Rendering {:.0}%", target_zoom * 100.0));
         true
     }
 
@@ -1265,6 +1267,14 @@ impl ViewerApp {
         if self.active_request.is_none() && self.active_fs_request_id.is_none() {
             return;
         }
+        let Some(loading_started_at) = self.overlay.loading_started_at else {
+            return;
+        };
+        let elapsed = loading_started_at.elapsed();
+        if elapsed < WAITING_CARD_DELAY {
+            ctx.request_repaint_after(WAITING_CARD_DELAY - elapsed);
+            return;
+        }
 
         egui::Area::new("viewer_waiting_card".into())
             .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
@@ -1516,7 +1526,8 @@ impl ViewerApp {
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.pending_navigation_path = Some(navigation_path.clone());
         self.pending_fit_recalc = !matches!(self.render_options.zoom_option, ZoomOption::None);
-        self.overlay.loading_message = Some(format!("Loading {}", navigation_path.display()));
+        self.overlay
+            .set_loading_message(format!("Loading {}", navigation_path.display()));
         let load_zoom = if switching_image { 1.0 } else { self.zoom };
         self.worker_tx
             .send(RenderCommand::LoadPath {
@@ -1545,7 +1556,7 @@ impl ViewerApp {
                 .current_frame
                 .min(self.rendered.frame_count().saturating_sub(1));
             self.upload_current_frame();
-            self.overlay.loading_message = None;
+            self.overlay.clear_loading_message();
             if self.companion_source.is_some() && self.companion_rendered.is_none() {
                 if let Some(path) = self.companion_navigation_path.clone() {
                     let _ = self.request_companion_load(path);
@@ -1556,7 +1567,8 @@ impl ViewerApp {
         self.invalidate_preload();
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Resize(request_id));
-        self.overlay.loading_message = Some(format!("Rendering {:.0}%", self.zoom * 100.0));
+        self.overlay
+            .set_loading_message(format!("Rendering {:.0}%", self.zoom * 100.0));
         self.worker_tx
             .send(RenderCommand::ResizeCurrent {
                 request_id,
@@ -1637,7 +1649,8 @@ impl ViewerApp {
         };
         let request_id = self.alloc_fs_request_id();
         self.active_fs_request_id = Some(request_id);
-        self.overlay.loading_message = Some(format!("Scanning {}", path.display()));
+        self.overlay
+            .set_loading_message(format!("Scanning {}", path.display()));
         fs_tx
             .send(FilesystemCommand::Init { request_id, path })
             .map_err(filesystem_send_error)?;
@@ -1674,7 +1687,7 @@ impl ViewerApp {
             FilesystemCommand::First { .. } => FilesystemCommand::First { request_id },
             FilesystemCommand::Last { .. } => FilesystemCommand::Last { request_id },
         };
-        self.overlay.loading_message = Some("Scanning folder...".to_string());
+        self.overlay.set_loading_message("Scanning folder...");
         fs_tx.send(command).map_err(filesystem_send_error)?;
         Ok(())
     }
@@ -1735,7 +1748,7 @@ impl ViewerApp {
         } else {
             self.rebuild_current_texture();
             if self.active_fs_request_id.is_none() {
-                self.overlay.loading_message = None;
+                self.overlay.clear_loading_message();
             }
         }
 
@@ -1816,7 +1829,7 @@ impl ViewerApp {
                 self.texture_display_scale = self.next_texture_display_scale;
             }
             self.pending_navigation_path = Some(path.to_path_buf());
-            self.overlay.loading_message = None;
+            self.overlay.clear_loading_message();
             self.apply_loaded_result(load_path, source, rendered);
             return true;
         }
@@ -1929,7 +1942,7 @@ impl ViewerApp {
                     self.save_dialog.message = Some(format!("Load failed: {label}: {message}"));
                     self.clear_current_image_display();
                     self.show_loading_texture(true);
-                    self.overlay.loading_message = None;
+                    self.overlay.clear_loading_message();
                     self.active_request = None;
                     if !self.navigator_ready && self.active_fs_request_id.is_none() {
                         if self.deferred_filesystem_init_path.is_some() {
@@ -1945,7 +1958,7 @@ impl ViewerApp {
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
                     self.overlay.alert_message = Some("render worker disconnected".to_string());
-                    self.overlay.loading_message = None;
+                    self.overlay.clear_loading_message();
                     self.respawn_render_worker();
                     if !self.empty_mode {
                         let _ = self.request_load_path(self.current_navigation_path.clone());
@@ -2119,12 +2132,12 @@ impl ViewerApp {
                             _ => {
                                 self.empty_mode = true;
                                 self.show_filer = true;
-                                self.overlay.loading_message =
-                                    Some("No displayable file found".to_string());
+                                self.overlay
+                                    .set_loading_message("No displayable file found");
                             }
                         }
                         if self.active_request.is_none() && !self.empty_mode {
-                            self.overlay.loading_message = None;
+                            self.overlay.clear_loading_message();
                         }
                     }
                 }
@@ -2148,16 +2161,16 @@ impl ViewerApp {
                 Ok(FilesystemResult::NoPath { request_id }) => {
                     if self.active_fs_request_id == Some(request_id) {
                         self.startup_phase = StartupPhase::MultiViewer;
-                        self.overlay.loading_message =
-                            Some("No displayable file found".to_string());
+                        self.overlay
+                            .set_loading_message("No displayable file found");
                         self.show_filer = true;
                         self.active_fs_request_id = None;
                     }
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    self.overlay.loading_message =
-                        Some("filesystem worker disconnected".to_string());
+                    self.overlay
+                        .set_loading_message("filesystem worker disconnected");
                     self.respawn_filesystem_worker();
                     break;
                 }

@@ -1,6 +1,5 @@
 use crate::filesystem::{
-    compare_natural_str, compare_os_str, is_browser_container, is_browser_entry,
-    list_browser_entries,
+    browser_entry_path_from_dir_entry, compare_natural_str, compare_os_str, is_browser_container,
 };
 use crate::options::NavigationSortOption;
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerMetadata, FilerSortField, NameSortMode};
@@ -109,7 +108,7 @@ fn scan_directory_request(
     result_tx: &Sender<FilerResult>,
     request_id: u64,
     dir: PathBuf,
-    sort: NavigationSortOption,
+    _sort: NavigationSortOption,
     selected: Option<PathBuf>,
     sort_field: FilerSortField,
     ascending: bool,
@@ -125,41 +124,14 @@ fn scan_directory_request(
         selected: selected.clone(),
     });
 
-    let collected = if dir.is_dir() {
-        collect_directory_entries(
-            &dir,
-            archive_as_container_in_sort,
-            &filter_text,
-            &extension_filter,
-        )
-    } else {
-        collect_browser_entries(
-            &dir,
-            sort,
-            archive_as_container_in_sort,
-            &filter_text,
-            &extension_filter,
-        )
-    };
-
-    let mut preview = collected
-        .iter()
-        .cloned()
-        .map(|path| build_preview_entry(path, archive_as_container_in_sort))
-        .collect::<Vec<_>>();
-    sort_entries(
-        &mut preview,
-        sort_field,
-        ascending,
-        separate_dirs,
-        name_sort_mode,
+    let collected = collect_browser_entries(
+        result_tx,
+        request_id,
+        &dir,
+        archive_as_container_in_sort,
+        &filter_text,
+        &extension_filter,
     );
-    for chunk in preview.chunks(128) {
-        let _ = result_tx.send(FilerResult::Append {
-            request_id,
-            entries: chunk.to_vec(),
-        });
-    }
 
     let mut entries = collected
         .into_iter()
@@ -175,7 +147,9 @@ fn scan_directory_request(
     entries
 }
 
-fn collect_directory_entries(
+fn collect_browser_entries(
+    result_tx: &Sender<FilerResult>,
+    request_id: u64,
     dir: &std::path::Path,
     archive_as_container_in_sort: bool,
     filter_text: &str,
@@ -185,34 +159,30 @@ fn collect_directory_entries(
     let Ok(read_dir) = fs::read_dir(dir) else {
         return collected;
     };
-    for entry in read_dir.filter_map(Result::ok) {
-        let path = entry.path();
-        if !is_browser_entry(&path) {
-            continue;
-        }
-        let preview_entry = build_preview_entry(path.clone(), archive_as_container_in_sort);
-        if !matches_filters(&preview_entry, filter_text, extension_filter) {
-            continue;
-        }
-        collected.push(path);
-    }
-    collected
-}
 
-fn collect_browser_entries(
-    dir: &std::path::Path,
-    sort: NavigationSortOption,
-    archive_as_container_in_sort: bool,
-    filter_text: &str,
-    extension_filter: &str,
-) -> Vec<PathBuf> {
-    let mut collected = Vec::new();
-    for path in list_browser_entries(dir, sort) {
+    let mut preview_chunk = Vec::new();
+    for entry in read_dir.filter_map(Result::ok) {
+        let Some(path) = browser_entry_path_from_dir_entry(&entry) else {
+            continue;
+        };
         let preview_entry = build_preview_entry(path.clone(), archive_as_container_in_sort);
         if !matches_filters(&preview_entry, filter_text, extension_filter) {
             continue;
         }
         collected.push(path);
+        preview_chunk.push(preview_entry);
+        if preview_chunk.len() >= 64 {
+            let _ = result_tx.send(FilerResult::Append {
+                request_id,
+                entries: std::mem::take(&mut preview_chunk),
+            });
+        }
+    }
+    if !preview_chunk.is_empty() {
+        let _ = result_tx.send(FilerResult::Append {
+            request_id,
+            entries: preview_chunk,
+        });
     }
     collected
 }

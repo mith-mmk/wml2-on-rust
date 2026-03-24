@@ -27,6 +27,26 @@ pub(super) fn default_provider() -> PluginProviderConfig {
     }
 }
 
+/* // unix
+pub(super) fn default_provider() -> PluginProviderConfig {
+    PluginProviderConfig {
+        enable: false,
+        priority: 100,
+        search_path: vec![
+            PathBuf::from("./plugins/ffmpeg"),
+            PathBuf::from("../plugins/ffmpeg"),
+            PathBuf::from("./"),
+            PathBuf::from("~/.wml2/plugins"),
+            PathBuf::from("/usr/local/bin"),
+            PathBuf::from("/usr/bin"),
+        ],
+        modules: Vec::new(),
+    }
+}
+
+
+*/
+
 pub(super) fn decode_from_file(
     path: &Path,
     config: &PluginProviderConfig,

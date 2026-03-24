@@ -4,6 +4,7 @@ mod zip_file;
 
 use std::collections::HashMap;
 use std::fs;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -20,7 +21,7 @@ use zip_file::{
 };
 
 const SUPPORTED_EXTENSIONS: &[&str] = &[
-    "webp", "jpg", "jpeg", "bmp", "gif", "png", "tif", "tiff", "mag", "mki", "pi", "pic",
+    "webp","jpe", "jpg", "jpeg", "bmp", "gif", "png", "tif", "tiff", "mag", "mki", "pi", "pic",
 ];
 const LISTED_FILE_EXTENSION: &str = "wml";
 const LISTED_VIRTUAL_MARKER: &str = "__wmlv__";
@@ -392,12 +393,14 @@ pub fn list_browser_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathB
     let mut dirs = Vec::new();
     let mut files = Vec::new();
     for entry in read_dir.filter_map(Result::ok) {
-        let path = entry.path();
-        if path.is_dir() {
+        let Some(path) = browser_entry_path_from_dir_entry(&entry) else {
+            continue;
+        };
+        if dir_entry_is_browser_file(&entry, &path) {
+            files.push(path.clone());
+        }
+        if dir_entry_is_browser_container(&entry, &path) {
             dirs.push(path);
-        } else if is_supported_image(&path) || is_listed_file_path(&path) || is_zip_file_path(&path)
-        {
-            files.push(path);
         }
     }
 
@@ -406,10 +409,6 @@ pub fn list_browser_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathB
     entries.extend(dirs);
     entries.extend(files);
     entries
-}
-
-pub(crate) fn is_browser_entry(path: &Path) -> bool {
-    path.is_dir() || is_supported_image(path) || is_listed_file_path(path) || is_zip_file_path(path)
 }
 
 pub fn is_browser_container(path: &Path) -> bool {
@@ -790,19 +789,13 @@ fn scan_real_directory_listing(dir: &Path, sort: NavigationSortOption) -> Direct
     let mut raw_dirs = Vec::new();
 
     for entry in entries.filter_map(Result::ok) {
-        let path = entry.path();
-        if is_supported_image(&path) || is_listed_file_path(&path) || is_zip_file_path(&path) {
-            raw_files.push(path.clone());
-            if is_listed_file_path(&path) || is_zip_file_path(&path) {
-                raw_dirs.push(path);
-            }
-            continue;
-        }
-
-        let Ok(file_type) = entry.file_type() else {
+        let Some(path) = browser_entry_path_from_dir_entry(&entry) else {
             continue;
         };
-        if file_type.is_dir() {
+        if dir_entry_is_browser_file(&entry, &path) {
+            raw_files.push(path.clone());
+        }
+        if dir_entry_is_browser_container(&entry, &path) {
             raw_dirs.push(path);
         }
     }
@@ -827,6 +820,35 @@ fn scan_real_directory_listing(dir: &Path, sort: NavigationSortOption) -> Direct
         files,
         dirs: raw_dirs,
     }
+}
+
+pub(crate) fn browser_entry_path_from_dir_entry(entry: &fs::DirEntry) -> Option<PathBuf> {
+    let file_name = entry.file_name();
+    let path = entry.path();
+    if is_supported_image_name(&file_name)
+        || is_listed_file_name(&file_name)
+        || is_zip_file_name(&file_name)
+    {
+        return Some(path);
+    }
+
+    dir_entry_is_directory(entry).then_some(path)
+}
+
+fn dir_entry_is_directory(entry: &fs::DirEntry) -> bool {
+    entry.file_type()
+        .map(|file_type| file_type.is_dir())
+        .or_else(|_| entry.metadata().map(|metadata| metadata.is_dir()))
+        .unwrap_or(false)
+}
+
+fn dir_entry_is_browser_file(entry: &fs::DirEntry, path: &Path) -> bool {
+    let file_name = entry.file_name();
+    is_supported_image_name(&file_name) || is_listed_file_path(path) || is_zip_file_path(path)
+}
+
+fn dir_entry_is_browser_container(entry: &fs::DirEntry, path: &Path) -> bool {
+    is_listed_file_path(path) || is_zip_file_path(path) || dir_entry_is_directory(entry)
 }
 
 fn build_listed_virtual_children(listed_file: &Path) -> Vec<PathBuf> {
@@ -948,27 +970,42 @@ fn is_virtual_zip_child(path: &Path) -> bool {
 }
 
 fn is_supported_image(path: &Path) -> bool {
-    path.extension()
+    is_supported_image_name(path.file_name().unwrap_or_else(|| path.as_os_str()))
+        || path_supported_by_plugins(path)
+}
+
+fn is_supported_image_name(name: &OsStr) -> bool {
+    Path::new(name)
+        .extension()
         .and_then(|ext| ext.to_str())
         .map(|ext| {
             let ext = ext.to_ascii_lowercase();
             SUPPORTED_EXTENSIONS
                 .iter()
                 .any(|supported| *supported == ext)
-                || path_supported_by_plugins(path)
         })
         .unwrap_or(false)
 }
 
 fn is_listed_file_path(path: &Path) -> bool {
-    path.extension()
+    is_listed_file_name(path.file_name().unwrap_or_else(|| path.as_os_str()))
+}
+
+fn is_listed_file_name(name: &OsStr) -> bool {
+    Path::new(name)
+        .extension()
         .and_then(|ext| ext.to_str())
         .map(|ext| ext.eq_ignore_ascii_case(LISTED_FILE_EXTENSION))
         .unwrap_or(false)
 }
 
 fn is_zip_file_path(path: &Path) -> bool {
-    path.extension()
+    is_zip_file_name(path.file_name().unwrap_or_else(|| path.as_os_str()))
+}
+
+fn is_zip_file_name(name: &OsStr) -> bool {
+    Path::new(name)
+        .extension()
         .and_then(|ext| ext.to_str())
         .map(|ext| ext.eq_ignore_ascii_case(ZIP_FILE_EXTENSION))
         .unwrap_or(false)
@@ -1360,5 +1397,24 @@ mod tests {
         });
 
         assert!(is_supported_image(Path::new("sample.avif")));
+    }
+
+    #[test]
+    fn browser_listing_includes_webp_files() {
+        let dir = make_temp_dir();
+        let webp = dir.join("network_like.webp");
+        let png = dir.join("other.png");
+        let txt = dir.join("note.txt");
+
+        fs::write(&webp, []).unwrap();
+        fs::write(&png, []).unwrap();
+        fs::write(&txt, []).unwrap();
+
+        let entries = list_browser_entries(&dir, NavigationSortOption::OsName);
+        assert!(entries.contains(&webp));
+        assert!(entries.contains(&png));
+        assert!(!entries.contains(&txt));
+
+        let _ = fs::remove_dir_all(dir);
     }
 }

@@ -16,15 +16,18 @@ P5 = 優先度低い
 
 最終整理日: 2026-03-23
 
-# 0.0.12 最中チェック
+# 0.0.12 チェック中
+- [*] P1 issue: ネットワーク共有上のファイルが多すぎるとファイラーに表示されない問題（viewerは表示可能、filer/subfiler は同一フォルダ再走査抑制で改善。実機再確認）
 - [ ] Readme
-- [ ] helpの最中チェック
+- [ ] helpのチェック
 - [ ] Ubuntuの動作チェック
 - [ ] Windowsの動作チェック
 - [ ] 境界条件の動作チェック
 
 # 0.0.13 以降
 ## issues
+
+- [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
 ### startup sequence
 - [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)

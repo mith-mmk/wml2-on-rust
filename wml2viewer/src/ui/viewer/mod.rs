@@ -1009,6 +1009,33 @@ impl ViewerApp {
         });
     }
 
+    fn sync_filer_directory_with_current_path(&mut self) {
+        let Some(dir) = self.current_directory() else {
+            return;
+        };
+        let selected = Some(self.current_navigation_path.clone());
+        if self.filer.directory.as_ref() == Some(&dir) {
+            self.filer.selected = selected.clone();
+            if self.filer.entries.is_empty() && self.filer.pending_request_id.is_none() {
+                self.request_filer_directory(dir, selected);
+            }
+        } else {
+            self.request_filer_directory(dir, selected);
+        }
+    }
+
+    fn selected_path_for_filer_directory(
+        &self,
+        directory: &std::path::Path,
+        fallback: Option<PathBuf>,
+    ) -> Option<PathBuf> {
+        if self.current_directory().as_deref() == Some(directory) {
+            Some(self.current_navigation_path.clone())
+        } else {
+            fallback
+        }
+    }
+
     pub(crate) fn refresh_current_filer_directory(&mut self) {
         if let Some(dir) = self
             .filer
@@ -1688,9 +1715,7 @@ impl ViewerApp {
                     path: self.current_navigation_path.clone(),
                 });
             }
-            if let Some(dir) = self.current_directory() {
-                self.request_filer_directory(dir, Some(self.current_navigation_path.clone()));
-            }
+            self.sync_filer_directory_with_current_path();
         }
         self.source = source;
         self.rendered = rendered;
@@ -2162,7 +2187,10 @@ impl ViewerApp {
                     }
                     self.filer.directory = Some(directory);
                     self.filer.entries.clear();
-                    self.filer.selected = selected;
+                    self.filer.selected = self.selected_path_for_filer_directory(
+                        self.filer.directory.as_deref().unwrap(),
+                        selected,
+                    );
                 }
                 Ok(FilerResult::Append {
                     request_id,
@@ -2185,7 +2213,10 @@ impl ViewerApp {
                     self.filer.pending_request_id = None;
                     self.filer.directory = Some(directory);
                     self.filer.entries = entries;
-                    self.filer.selected = selected;
+                    self.filer.selected = self.selected_path_for_filer_directory(
+                        self.filer.directory.as_deref().unwrap(),
+                        selected,
+                    );
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {

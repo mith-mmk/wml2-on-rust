@@ -1520,8 +1520,12 @@ impl ViewerApp {
             self.zoom_factor = 1.0;
             self.zoom = 1.0;
         }
-        self.show_loading_texture(branch_changed);
-        self.clear_current_image_display();
+        if branch_changed {
+            self.show_loading_texture(true); // フォルダ変わった時だけリセット
+            self.clear_current_image_display();
+        } 
+//        self.show_loading_texture(branch_changed);
+//        self.clear_current_image_display();
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.pending_navigation_path = Some(navigation_path.clone());

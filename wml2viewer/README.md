@@ -1,12 +1,14 @@
 # wml2viewer 0.0.12 preview
 
-A lightweight native image viewer built with egui and wml2.
+A lightweight native image viewer built with `egui` and `wml2`.
 
-This is a major update of WML21 (essentially a completely new implementation)
-Currently tested on Windows 11 (64-bit) and Ubuntu 24.04
+- This is a major update of WML21 (essentially a completely new implementation)
+- Currently tested on Windows 11 (64-bit) and Ubuntu 24.04
+- This is a preview version, and specifications may change at a later date.
 
 ## Main Features
 - Native support for jpeg/webp/bmp/tiff/png/gif/mag/maki/pi/pic
+- Native support for Animation GIF/PNG/Webp 
 - Direct browsing of zip files
 - Plugin support: susie64 plugin(windows) / OS decoders(windows) / ffmpeg
 - Browsing via listed files (.wml)

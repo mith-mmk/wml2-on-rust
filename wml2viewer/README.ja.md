@@ -1,14 +1,17 @@
-# wml2viewer 0.0.12 preview
+# wml2viewer 0.0.12 preview2
 
-`egui` と `wml2` を使った軽量ネイティブ画像ビューアです。
+- `egui` と `wml2` を使った軽量ネイティブ画像ビューアです。
 
 - WML21のメジャーアップデートになります（完全に別物）
-- 現在、Windows 11(64bit) と Ubuntu 24.04で動作確認してます
+- 現在、Windows 11(64bit) と Ubuntu 24.04(64bit)で動作確認してます
+- プレビュー版なので仕様は今後変わります
 
 ## 主な機能
-- jpeg/webp/bmp/tiff/png/gif/mag/maki/pi/picのネイティブ対応
-- zipファイルの直接ブラウジング
-- プラグイン機能 susie64 plugin(Windows)/os デコーダ(Windows)/ffmpeg (all)に対応
+- JPEG/Webp/BMP/Tiff/PNG/GIF/mag/maki/pi/picのネイティブ対応
+- アニメーションGIF/PNG/webpのネイティブ対応
+- マルチプラットフォーム対応
+- zipファイルの直接閲覧
+- プラグイン機能 susie64 plugin(Windows)/os デコーダ(Windows)/ffmpegに対応
 - リステッドファイル(.wml)によるブラウジング
 - マンガモード
 - 英語/日本語両対応(要フォント)
@@ -16,6 +19,7 @@
 - OS連携機能(Windows)
 
 ## 起動
+- 適当な実行用フォルダに投げ込んでから実行してください
 
 ```powershell
 wml2viewer

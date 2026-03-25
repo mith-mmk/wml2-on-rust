@@ -2,54 +2,43 @@
 
 `egui` と `wml2` を使った軽量ネイティブ画像ビューアです。
 
-## 主な機能
+- WML21のメジャーアップデートになります（完全に別物）
+- 現在、Windows 11(64bit) と Ubuntu 24.04で動作確認してます
 
-- UI を先に起動して初回画像 decode をバックグラウンドで行う非同期起動
-- Viewer / filer / subfiler の分離レイアウトと下部 status overlay
-- システム連携をまとめた `システム` タブ付きの設定ダイアログ
-- 設定変更は `適用` を押すまで反映しない staged 方式
-- `適用` / `キャンセル` のどちらでも設定ダイアログを閉じます
-- plugin 設定で `internal / system / ffmpeg / susie64` の優先度を編集可能
-- 横に十分広い時だけ有効になるマンガ見開きモード
-- 一覧 / サムネイル / 詳細を切り替えられるファイラーと drive/root 切り替え
-- ファイラーの名前ソート順はドロップダウンで切り替え、分離ソート時の ZIP は既定でファイル扱い
-- 設定からファイラーの左右ペイン位置を切り替え可能
-- ZIP / WML(ファイルリスト) の仮想ブラウズ
-- 保存形式を選べる保存ダイアログ
-- ロケール連動の UI リソースとフォントフォールバック。設定から locale を変更可能
-- `自動` ボタンでシステムロケールを staged 値へ入れられます
-- `internal / system / ffmpeg / susie64` の優先順位で動く plugin decode 土台
-- ZIP 指定時もウィンドウを先に開いてから中身を解決する非同期起動
-- 起動時は filer/filesystem の同期より先に最初の viewer 画像表示を優先します
-- startup 後の filesystem 同期は、最初に解決できた実画像 path を優先して行います
-- Windows の release build は GUI subsystem を使い、Explorer から起動してもコンソールを開きません
-- ZIP metadata 読み込みは必要に応じて plain `BufReader<File>` にフォールバックします
-- 読み込み中の遷移先を pending で保持し、フォルダ/アーカイブ跨ぎの古い表示を減らしています
-- 画像ロード失敗時は前の画像を残さず loading texture に戻します
-- ポインタ既定動作は、左クリックで少し待って次へ、右クリックで設定、左ダブルクリックで fit 切り替えです
-- render / filer / thumbnail worker が切断時に自動で再生成されます
-- アプリ終了時は render worker に明示的に shutdown を送ります
+## 主な機能
+- jpeg/webp/bmp/tiff/png/gif/mag/maki/pi/picのネイティブ対応
+- zipファイルの直接ブラウジング
+- プラグイン機能 susie64 plugin(Windows)/os デコーダ(Windows)/ffmpeg (all)に対応
+- リステッドファイル(.wml)によるブラウジング
+- マンガモード
+- 英語/日本語両対応(要フォント)
+- マルチワーカーによる快適な画像ブラウジング
+- OS連携機能(Windows)
 
 ## 起動
 
 ```powershell
-cargo run --manifest-path wml2viewer/Cargo.toml -- <path>
+wml2viewer
 ```
 
 ## コマンドライン
-- `wml2viewer` デフォルトのファイルを見ます
-- `wml2viewer [path]` 画像を指定して起動します
-- `wml2viewer --config <path> [path]` 設定ファイルを指定します
-- `wml2viewer --clean system`　設定を消します
+- `wml2viewer` 通常起動
+- `wml2viewer [path]` 画像を指定して起動
+- `wml2viewer --config <path> [path]` 設定ファイルを指定して起動
+- `wml2viewer --clean system`　設定を削除
 
 ## ヘルプ
 - https://mith-mmk.github.io/wml2/help.html
 
 ## 設定
 
-設定は OS ごとの設定ディレクトリに保存されます。
+設定は、[適用]ボタンを押すまで適用されません。また、OSごとの設定ディレクトリに保存されます。
 
-大容量 / ネットワーク ZIP 向けワークアラウンド例:
+- Windows: %USERAPP%\mith-mmk\wml2\config\config.toml
+- Linux: ~/.wml2/config/config.toml
+
+
+### 大容量 / ネットワーク ZIP 向けワークアラウンド例:
 
 ```toml
 [runtime.workaround.archive.zip]
@@ -63,64 +52,15 @@ suppress_large_files = true
 font_paths = ["C:/Windows/Fonts/NotoSansJP-Regular.otf"]
 ```
 
-### plugin
- Pluginを使う事で利用可能な画像形式を増やすことが可能です。基本ffmpegとSystemを有効にして置けば良いでしょう。
-
-- susie64はpluginを探して導入してください(Windowsのみ)
-- OS SystemはOSがサポートしているフォーマットをそのまま利用します(WindowsとMac OSのみ)
-- ffmpegは実行ファイルの存在するフォルダを指定してください
-
- 設定例:
-
-```toml
-[plugins.ffmpeg]
-enable = true
-search_path = ["c:/bin/ffmpeg"]
-
-[plugins.susie64]
-enable = true
-search_path = ["c:/susie64/plugins/"]
-```
-
 ## メモ
-
 - 大きい ZIP やネットワーク上の ZIP では low-I/O ワークアラウンドが有効になります。
-- ZIP の一時ローカルキャッシュは既定で無効にし、ネットワーク/SSD 環境で起動を引きずりにくくしています。
-- 大きい BMP / アーカイブのサムネイルは設定から抑制できます。
-- サムネイル生成失敗時は pending を解放して再試行できるようにしています。
-- ファイラーの更新日時は UTC ではなくローカル時刻で表示し、ロケールごとの書式を使います。
-- ファイラーの `OS` 名前ソートは、Windows では shell の並び順、それ以外ではロケールを考慮した正規化自然順を使います。
-- ファイラーの分離ソートでは ZIP を既定で file 扱いにし、切り替え UI は一旦隠しています。
-- Windows では `設定 -> システム` から拡張子関連付けを操作できます。
-- `ffmpeg` は現状 `ffmpeg.exe` を起動して decode します。
-- `susie64` は Windows 専用で、今は image plugin decode まで入っています。
-- `system` は Windows では WIC decode まで入りました。macOS system codec は今後の拡張対象です。
-- provider を有効化すると、`avif` や `jp2` などの拡張子も filer / viewer の対象に入ります。
-- plugin 設定変更時は再起動推奨ポップアップを出します。
-- マンガモードの見開き相手は現在のフォルダ / 仮想アーカイブ枝の中だけに制限しています。
-- `bench_archive` は decode 失敗エントリが混ざっても metadata/read の計測を続けます。
-- `ZipCacheReader` は大きめの chunk と tail prefetch を使うようにしています。
-- Windows のフォント探索順は `%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts` → `%WINDIR%\\Fonts` です。
-- ロケール既定の system font を先頭に使い、`resources.font_paths` で追加フォントを前置できます。
+- Windows では `設定 -> システム` から拡張子の関連付けを操作できます。
+- `ffmpeg` は現状 `ffmpeg.exe` を起動してデコード。
+- `susie64` は Windows 専用で、image pluginのみでサポート。
+- `system` は Windows では WIC decode までサポート。macOS system codec は今後の拡張対象です。
+- plugin を有効化すると、`avif` や `jp2` などの拡張子も filer / viewer の対象になります。
 
-## 0.0.12 の既知の残件
-
-- `waiting` 表示がまだ簡素すぎるので、`now loading` のような分かりやすい表示に差し替える余地があります。
-- 精密モードでは、リサイズ前の画像が一瞬先に出てフラッシュすることがあります。
-- 時間のかかる ZIP 展開は以前より改善していますが、まだ追加確認が必要です。現状報告では config をリセットすると改善するケースがあります。
-- `bench_archive` は `1.6GB` 級の大きな archive でまだ詰めが必要です。
-- Windows では、system plugin 有効時の強制終了で `COM Surrogate` が残るケースがまだあります。
+## 0.0.12 の既知のIssue
+- 時間のかかる ZIP展開の問題
+- より洗練されたUIとアイコン
 - `LHA` 対応とキーバインド UI は `0.0.13` へスライドしました。
-- 拡張子のチェックの問題(`WML0.0.19`にフォールバック)
-
-## ベンチマーク
-
-```powershell
-cargo run --manifest-path wml2viewer/Cargo.toml --example bench_decode -- .\samples\WML2Viewer.avif 5
-cargo run --manifest-path wml2viewer/Cargo.toml --example bench_browser -- .\samples 3
-cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip default
-cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip online_cache
-cargo run --manifest-path wml2viewer/Cargo.toml --example bench_archive -- .\some.zip temp_copy
-```
-
-`bench_archive` は非対応入力でも panic せず、通常のエラーメッセージを出して終了します。

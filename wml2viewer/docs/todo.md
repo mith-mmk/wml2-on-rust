@@ -19,17 +19,21 @@ P5 = 優先度低い
 # 0.0.12 チェック中
 - [x] P1 issue: ネットワーク共有上のファイルが多すぎるとファイラーに表示されない問題（viewerは表示可能、filer/subfiler は同一フォルダ再走査抑制で改善。実機再確認）
 - [x] now loading表示までの遅延 180ms
-  - [ ] 遅延が小さい場合は、書き換えまで前の画像を残す
-- [ ] Readme
-- [ ] helpのチェック
+  - [x] 遅延が小さい場合は、書き換えまで前の画像を残す
+- [+] Windowsの動作チェック
 - [ ] Ubuntuの動作チェック
-- [ ] Windowsの動作チェック
 - [ ] 境界条件の動作チェック
+## ドキュメント
+- [ ] helpのチェック
+- [ ] todo.mdの更新
+- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
 # 0.0.13 以降
 ## issues
 
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
+   - [ ] Filerのファイルリストがアップデートしたとき viewerに反映されない問題(データの同期) 
+    - [ ] 油断していると画像の最初に飛ばされる
 ### startup sequence
 - [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
@@ -60,6 +64,7 @@ P5 = 優先度低い
 
 - [ ] todo.mdの更新
 - [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+
 ### renderer
 - [*] 精密モードが予想以上に重い(変換プロセスが何度も走っていないかチェック　-> アルゴリズムチェック)　[精密]モードが効くサイズは6000px越えが多いのでより遅い
 
@@ -78,17 +83,18 @@ P5 = 優先度低い
 
 ## 機能追加(0.0.13+)予定
 ### UI
-- アイコンの見直し
-- リソース名の見直し
-- Configの見直し
+- [ ] アイコンの見直し
+- [ ] メニューの名称の見直し
 
 ### input/key events/mouse events(P1)
-- [ ] (P3) イベントと入力バインドの分離。 Key Remapping UIの準備
+- [ ] イベントと入力バインドの分離。 Key Remapping UIの準備
+- [ ] スクロールを移動に割り当てられる様にする
 
 ### INPUT
 - [ ] P4 タッチパネル(android対応用)
 
 ### FileSystem
+- [ ] LHAサポート
 - [ ] Windows Userフォルダをエクスプローラっぽい表示に擬態するモード
     - User home
       - Desktop (CSIDL_MYDOCUMENTS)
@@ -98,7 +104,6 @@ P5 = 優先度低い
       - Video (CSIDL_MYVIDEO)
       - Downloads
       - Favariies (CSIDL_FAVORITES)
-- [ ] LHAサポート
 
 ### Setting
 - [ ] 表示名と配置の見直し(作業中)
@@ -107,11 +112,11 @@ P5 = 優先度低い
 - [ ] todo.mdの更新
 - [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
-
 ## WML本体
 - [ ] ico対応
 - [ ] pic2対応
-
+- [ ] 破損チェックの厳格化
+- [ ] 連携API群
 
 # モジュールベースの整理
 ## src/main.rs / src/app.rs

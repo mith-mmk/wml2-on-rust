@@ -2040,9 +2040,9 @@ dependencies = [
 
 [[package]]
 name = "miniz_oxide"
-version = "0.5.1"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2b29bd4bc3f33391105ebee3589c19197c4271e3e5a9ec9bfe8127eeff8f082"
+checksum = "b8a240ddb74feaf34a79a7add65a741f3167852fba007066dcac1ca548d89c08"
 dependencies = [
  "adler",
 ]
@@ -4895,7 +4895,7 @@ name = "wml2"
 version = "0.0.19-alpah1"
 dependencies = [
  "bin-rs 0.0.10",
- "miniz_oxide 0.5.1",
+ "miniz_oxide 0.7.4",
 ]
 
 [[package]]

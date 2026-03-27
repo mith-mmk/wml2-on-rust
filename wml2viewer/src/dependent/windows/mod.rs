@@ -109,7 +109,7 @@ const PROG_ID: &str = "wml2viewer.image";
 const APPLICATION_KEY: &str = r"Applications\wml2viewer.exe";
 const ASSOCIATED_EXTENSIONS: &[&str] = &[
     ".webp", ".jpg", ".jpeg", ".bmp", ".gif", ".png", ".tif", ".tiff", ".mag", ".mki", ".pi",
-    ".pic", ".zip", ".wml",
+    ".pic", ".zip", ".wmltxt",
 ];
 
 pub fn available_roots() -> Vec<PathBuf> {

@@ -1,5 +1,6 @@
 use crate::filesystem::{
     browser_entry_path_from_dir_entry, compare_natural_str, compare_os_str, is_browser_container,
+    list_browser_entries,
 };
 use crate::options::NavigationSortOption;
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerMetadata, FilerSortField, NameSortMode};
@@ -108,7 +109,7 @@ fn scan_directory_request(
     result_tx: &Sender<FilerResult>,
     request_id: u64,
     dir: PathBuf,
-    _sort: NavigationSortOption,
+    sort: NavigationSortOption,
     selected: Option<PathBuf>,
     sort_field: FilerSortField,
     ascending: bool,
@@ -128,6 +129,7 @@ fn scan_directory_request(
         result_tx,
         request_id,
         &dir,
+        sort,
         archive_as_container_in_sort,
         &filter_text,
         &extension_filter,
@@ -151,10 +153,37 @@ fn collect_browser_entries(
     result_tx: &Sender<FilerResult>,
     request_id: u64,
     dir: &std::path::Path,
+    sort: NavigationSortOption,
     archive_as_container_in_sort: bool,
     filter_text: &str,
     extension_filter: &str,
 ) -> Vec<PathBuf> {
+    if !dir.is_dir() {
+        let mut collected = Vec::new();
+        let mut preview_chunk = Vec::new();
+        for path in list_browser_entries(dir, sort) {
+            let preview_entry = build_preview_entry(path.clone(), archive_as_container_in_sort);
+            if !matches_filters(&preview_entry, filter_text, extension_filter) {
+                continue;
+            }
+            collected.push(path);
+            preview_chunk.push(preview_entry);
+            if preview_chunk.len() >= 64 {
+                let _ = result_tx.send(FilerResult::Append {
+                    request_id,
+                    entries: std::mem::take(&mut preview_chunk),
+                });
+            }
+        }
+        if !preview_chunk.is_empty() {
+            let _ = result_tx.send(FilerResult::Append {
+                request_id,
+                entries: preview_chunk,
+            });
+        }
+        return collected;
+    }
+
     let mut collected = Vec::new();
     let Ok(read_dir) = fs::read_dir(dir) else {
         return collected;
@@ -235,7 +264,7 @@ fn sort_group_is_container(path: &std::path::Path, archive_as_container_in_sort:
     }
     path.extension()
         .and_then(|ext| ext.to_str())
-        .map(|ext| ext.eq_ignore_ascii_case("wml"))
+        .map(|ext| ext.eq_ignore_ascii_case("wmltxt"))
         .unwrap_or(false)
 }
 

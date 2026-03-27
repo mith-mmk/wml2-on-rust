@@ -11,7 +11,7 @@ A lightweight native image viewer built with `egui` and `wml2`.
 - Native support for Animation GIF/PNG/Webp 
 - Direct browsing of zip files
 - Plugin support: susie64 plugin(windows) / OS decoders(windows) / ffmpeg
-- Browsing via listed files (.wml)
+- Browsing via listed files (.wmltxt)
 - Manga mode
 - English/Japanese support (font required)
 - Smooth image browsing with multi-worker architecture

@@ -23,7 +23,7 @@ use zip_file::{
 const SUPPORTED_EXTENSIONS: &[&str] = &[
     "webp","jpe", "jpg", "jpeg", "bmp", "gif", "png", "tif", "tiff", "mag", "mki", "pi", "pic",
 ];
-const LISTED_FILE_EXTENSION: &str = "wml";
+const LISTED_FILE_EXTENSION: &str = "wmltxt";
 const LISTED_VIRTUAL_MARKER: &str = "__wmlv__";
 const ZIP_FILE_EXTENSION: &str = "zip";
 const ZIP_VIRTUAL_MARKER: &str = "__zipv__";
@@ -1134,7 +1134,7 @@ mod tests {
     fn listed_file_is_expanded_as_virtual_children() {
         let dir = make_temp_dir();
         let before = dir.join("before.webp");
-        let listed = dir.join("listedfile.wml");
+        let listed = dir.join("listedfile.wmltxt");
         let after = dir.join("after.gif");
         let listed_1 = dir.join("test_f16.png");
         let listed_2 = dir.join("test.png");
@@ -1171,7 +1171,7 @@ mod tests {
     fn listed_file_returns_to_directory_on_next_and_prev() {
         let dir = make_temp_dir();
         let before = dir.join("00000-1796047615-Maid_san.jpg.webp");
-        let listed = dir.join("listedfile.wml");
+        let listed = dir.join("listedfile.wmltxt");
         let after = dir.join("sample_animation.webp.gif");
         let listed_1 = dir.join("test_f16.png");
         let listed_2 = dir.join("test.png");
@@ -1242,7 +1242,7 @@ mod tests {
     fn listed_file_prev_exits_to_previous_entry_even_if_first_item_matches_outer_file() {
         let dir = make_temp_dir();
         let before = dir.join("00000-1796047615-Maid_san.jpg.webp");
-        let listed = dir.join("listedfile.wml");
+        let listed = dir.join("listedfile.wmltxt");
         let after = dir.join("sample_animation.webp.gif");
         let listed_2 = dir.join("test.png");
         let listed_3 = dir.join("test_f16.png");

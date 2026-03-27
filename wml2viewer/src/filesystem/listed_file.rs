@@ -15,7 +15,7 @@ pub(crate) fn load_listed_file_entries(path: &Path) -> Option<Vec<PathBuf>> {
 fn is_listed_file_path(path: &Path) -> bool {
     path.extension()
         .and_then(|ext| ext.to_str())
-        .map(|ext| ext.eq_ignore_ascii_case("wml"))
+        .map(|ext| ext.eq_ignore_ascii_case("wmltxt"))
         .unwrap_or(false)
 }
 
@@ -85,7 +85,7 @@ mod tests {
         let dir = make_temp_dir();
         let list_dir = dir.join("lists");
         fs::create_dir_all(&list_dir).unwrap();
-        let path = list_dir.join("sample.wml");
+        let path = list_dir.join("sample.wmltxt");
         fs::write(
             &path,
             "#!WMLViewer2 ListedFile 1.0\n../images/a.png\nsub/b.jpg\n@ PATH=ignored\n",

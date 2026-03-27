@@ -56,7 +56,7 @@ P5 = 優先度低い
     - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
     - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
     - [ ] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度0MBに設定(IOがネックになっているためSSD最適化した方が速い)
-    - [ ] listed file(.wml)でhttpが表示出来ない問題
+    - [ ] listed file(.wmltxt)でhttpが表示出来ない問題
 
 ### syetem
 - [+] LinuxはWSLでbuild。実行はVMで行う 現在buildは OK 起動もOK
@@ -73,7 +73,7 @@ P5 = 優先度低い
 
 ### filer(P4)
 - [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中
-
+- [ ] 拡張子wmlをwmltxtに変更
 ### Others
 - [ ] コードのフルレビュー
 
@@ -613,6 +613,7 @@ P5 = 優先度低い
 - [x] plugin, 設定: プラグインと内製の優先順位の設定
 - [x] todo.mdの更新
 - [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- [ ] 拡張子wmlはwmltxtに変更しました
 
 
 

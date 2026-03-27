@@ -91,7 +91,7 @@
 ## 代表的な動作
 
 - Viewer
-  - 単一画像、zip、`.wml` を画像一覧として扱う
+  - 単一画像、zip、`.wml.txt` を画像一覧として扱う
   - manga mode で 2 枚表示に対応する
   - preload / companion / overlay を worker 分離する
 

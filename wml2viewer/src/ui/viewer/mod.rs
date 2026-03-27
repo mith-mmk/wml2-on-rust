@@ -5,7 +5,7 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
     FilesystemCommand, FilesystemResult, adjacent_entry, archive_prefers_low_io,
-    is_browser_container, navigation_branch_path,
+    is_browser_container, navigation_branch_path, resolve_navigation_entry_path,
     set_archive_zip_workaround, spawn_filesystem_worker,
 };
 use crate::options::{
@@ -1015,6 +1015,12 @@ impl ViewerApp {
         let Some(dir) = self.current_directory() else {
             return;
         };
+        if let Some(rebased) = resolve_navigation_entry_path(&self.current_navigation_path) {
+            if rebased != self.current_navigation_path {
+                self.current_navigation_path = rebased.clone();
+                self.set_filesystem_current(rebased);
+            }
+        }
         let selected = Some(self.current_navigation_path.clone());
         if self.filer.directory.as_ref() == Some(&dir) {
             self.filer.selected = selected.clone();
@@ -1032,7 +1038,8 @@ impl ViewerApp {
         fallback: Option<PathBuf>,
     ) -> Option<PathBuf> {
         if self.current_directory().as_deref() == Some(directory) {
-            Some(self.current_navigation_path.clone())
+            resolve_navigation_entry_path(&self.current_navigation_path)
+                .or_else(|| Some(self.current_navigation_path.clone()))
         } else {
             fallback
         }
@@ -1708,7 +1715,9 @@ impl ViewerApp {
                 .as_ref()
                 .is_some_and(|_| is_browser_container(&pending_navigation_path))
             {
-                path.clone().unwrap_or(pending_navigation_path)
+                resolve_navigation_entry_path(&pending_navigation_path)
+                    .or_else(|| path.clone())
+                    .unwrap_or(pending_navigation_path)
             } else {
                 pending_navigation_path
             };

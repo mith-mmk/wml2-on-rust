@@ -3,8 +3,10 @@ mod sort;
 mod zip_file;
 
 use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
 use std::fs;
 use std::ffi::OsStr;
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -141,7 +143,18 @@ impl FileNavigator {
         self.current = 0;
     }
 
+    fn normalize_current_path(&mut self, cache: &mut FilesystemCache) {
+        if let Some(navigation_path) = resolve_navigation_path(&self.current_path, cache) {
+            if navigation_path != self.current_path {
+                self.current_path = navigation_path;
+                self.files = None;
+                self.current = 0;
+            }
+        }
+    }
+
     fn ensure_files<'a>(&'a mut self, cache: &mut FilesystemCache) -> &'a [PathBuf] {
+        self.normalize_current_path(cache);
         if self.files.is_none() {
             let files = flat_container_entries(&self.current_path, cache)
                 .unwrap_or_else(|| vec![self.current_path.clone()]);
@@ -444,6 +457,11 @@ pub fn adjacent_entry(path: &Path, sort: NavigationSortOption, step: isize) -> O
     result
 }
 
+pub fn resolve_navigation_entry_path(path: &Path) -> Option<PathBuf> {
+    let mut cache = FilesystemCache::default();
+    resolve_navigation_path(path, &mut cache)
+}
+
 pub fn spawn_filesystem_worker(
     sort: NavigationSortOption,
 ) -> (Sender<FilesystemCommand>, Receiver<FilesystemResult>) {
@@ -580,7 +598,8 @@ fn resolve_navigation_path(path: &Path, cache: &mut FilesystemCache) -> Option<P
     }
 
     if is_virtual_listed_child(path) {
-        return resolve_start_path(path).map(|_| path.to_path_buf());
+        return rebase_virtual_listed_child_path(path, cache)
+            .or_else(|| resolve_start_path(path).map(|_| path.to_path_buf()));
     }
 
     if is_listed_file_path(path) || is_zip_file_path(path) || path.is_dir() {
@@ -590,6 +609,31 @@ fn resolve_navigation_path(path: &Path, cache: &mut FilesystemCache) -> Option<P
     }
 
     resolve_start_path(path).map(|_| path.to_path_buf())
+}
+
+fn rebase_virtual_listed_child_path(
+    path: &Path,
+    cache: &mut FilesystemCache,
+) -> Option<PathBuf> {
+    let listed_root = listed_virtual_root(path)?;
+    let expected_identity = listed_virtual_identity_from_virtual_path(path);
+    cache
+        .supported_entries(&listed_root)
+        .into_iter()
+        .find(|entry| {
+            listed_virtual_identity_from_virtual_path(entry)
+                .zip(expected_identity)
+                .map(|(left, right)| left == right)
+                .unwrap_or(false)
+        })
+        .or_else(|| {
+            let expected_name = listed_virtual_name_from_virtual_path(path)?;
+            cache.supported_entries(&listed_root).into_iter().find(|entry| {
+                listed_virtual_name_from_virtual_path(entry)
+                    .map(|name| name.eq_ignore_ascii_case(&expected_name))
+                    .unwrap_or(false)
+            })
+        })
 }
 
 fn flat_container_entries(path: &Path, cache: &mut FilesystemCache) -> Option<Vec<PathBuf>> {
@@ -719,6 +763,14 @@ fn last_path_in_subtree(cache: &mut FilesystemCache, dir: &Path) -> Option<PathB
 
 impl FilesystemCache {
     fn listing(&mut self, dir: &Path) -> &DirectoryListing {
+        if is_listed_file_path(dir) {
+            let listing = scan_directory_listing(dir, self.sort);
+            self.listings_by_dir.insert(dir.to_path_buf(), listing);
+            return self
+                .listings_by_dir
+                .get(dir)
+                .expect("listed file listing inserted");
+        }
         let sort = self.sort;
         self.listings_by_dir
             .entry(dir.to_path_buf())
@@ -879,8 +931,36 @@ fn listed_virtual_child_path(listed_file: &Path, index: usize, entry_path: &Path
         .file_name()
         .and_then(|name| name.to_str())
         .unwrap_or("entry");
-    path.push(format!("{index:08}__{name}"));
+    let identity = listed_virtual_identity(entry_path);
+    path.push(format!("{index:08}__{identity:016x}__{name}"));
     path
+}
+
+fn listed_virtual_identity(entry_path: &Path) -> u64 {
+    let target = resolve_start_path(entry_path).unwrap_or_else(|| entry_path.to_path_buf());
+    let mut hasher = DefaultHasher::new();
+    target.to_string_lossy().to_lowercase().hash(&mut hasher);
+    hasher.finish()
+}
+
+fn listed_virtual_identity_from_virtual_path(path: &Path) -> Option<u64> {
+    let file_name = path.file_name()?.to_string_lossy();
+    let mut parts = file_name.splitn(3, "__");
+    let _index = parts.next()?;
+    let second = parts.next()?;
+    if second.len() == 16 && second.chars().all(|ch| ch.is_ascii_hexdigit()) {
+        return u64::from_str_radix(second, 16).ok();
+    }
+    None
+}
+
+fn listed_virtual_name_from_virtual_path(path: &Path) -> Option<String> {
+    let file_name = path.file_name()?.to_string_lossy();
+    let mut parts = file_name.splitn(3, "__");
+    let _index = parts.next()?;
+    let second = parts.next()?;
+    let third = parts.next();
+    Some(third.unwrap_or(second).to_string())
 }
 
 fn zip_virtual_child_path(zip_file: &Path, index: usize, entry_name: &str) -> PathBuf {
@@ -1363,6 +1443,134 @@ mod tests {
         assert_eq!(zip_virtual_root(&last), Some(archive.clone()));
         assert_eq!(resolve_virtual_zip_child(&first), Some((archive.clone(), 0)));
         assert_eq!(resolve_virtual_zip_child(&last), Some((archive.clone(), 2)));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn home_and_end_stay_inside_current_listed_virtual_folder() {
+        let root = make_temp_dir();
+        let listed = root.join("pages.wmltxt");
+        let page1 = root.join("001.png");
+        let page2 = root.join("002.png");
+        let page3 = root.join("003.png");
+
+        fs::write(&page1, []).unwrap();
+        fs::write(&page2, []).unwrap();
+        fs::write(&page3, []).unwrap();
+        fs::write(
+            &listed,
+            format!(
+                "#!WMLViewer2 ListedFile 1.0\n{}\n{}\n{}\n",
+                page1.display(),
+                page2.display(),
+                page3.display()
+            ),
+        )
+        .unwrap();
+
+        let mut cache = FilesystemCache::default();
+        let listed_children = build_listed_virtual_children(&listed);
+        assert_eq!(listed_children.len(), 3);
+
+        let mut nav = FileNavigator::from_current_path(listed_children[1].clone(), &mut cache);
+        let first = nav.first(&mut cache).expect("first listed entry");
+        let last = nav.last(&mut cache).expect("last listed entry");
+
+        assert_eq!(listed_virtual_root(&first), Some(listed.clone()));
+        assert_eq!(listed_virtual_root(&last), Some(listed.clone()));
+        assert_eq!(resolve_start_path(&first), Some(page1));
+        assert_eq!(resolve_start_path(&last), Some(page3));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn listed_file_cache_is_refreshed_after_file_update() {
+        let root = make_temp_dir();
+        let listed = root.join("pages.wmltxt");
+        let page1 = root.join("001.png");
+        let page2 = root.join("002.png");
+        let page3 = root.join("003.png");
+
+        fs::write(&page1, []).unwrap();
+        fs::write(&page2, []).unwrap();
+        fs::write(&page3, []).unwrap();
+        fs::write(
+            &listed,
+            format!(
+                "#!WMLViewer2 ListedFile 1.0\n{}\n{}\n",
+                page1.display(),
+                page2.display()
+            ),
+        )
+        .unwrap();
+
+        let mut cache = FilesystemCache::default();
+        let first = cache.supported_entries(&listed);
+        assert_eq!(first.len(), 2);
+
+        fs::write(
+            &listed,
+            format!(
+                "#!WMLViewer2 ListedFile 1.0\n{}\n{}\n{}\n",
+                page1.display(),
+                page2.display(),
+                page3.display()
+            ),
+        )
+        .unwrap();
+
+        let second = cache.supported_entries(&listed);
+        assert_eq!(second.len(), 3);
+        assert!(second.iter().any(|entry| resolve_start_path(entry) == Some(page3.clone())));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn listed_virtual_child_rebases_to_same_actual_file_after_update() {
+        let root = make_temp_dir();
+        let listed = root.join("pages.wmltxt");
+        let page1 = root.join("001.png");
+        let page2 = root.join("002.png");
+        let page3 = root.join("003.png");
+
+        fs::write(&page1, []).unwrap();
+        fs::write(&page2, []).unwrap();
+        fs::write(&page3, []).unwrap();
+        fs::write(
+            &listed,
+            format!(
+                "#!WMLViewer2 ListedFile 1.0\n{}\n{}\n",
+                page1.display(),
+                page2.display()
+            ),
+        )
+        .unwrap();
+
+        let mut cache = FilesystemCache::default();
+        let before = cache.supported_entries(&listed);
+        let old_page2 = before
+            .into_iter()
+            .find(|entry| resolve_start_path(entry) == Some(page2.clone()))
+            .expect("old page2 entry");
+
+        fs::write(
+            &listed,
+            format!(
+                "#!WMLViewer2 ListedFile 1.0\n{}\n{}\n{}\n",
+                page1.display(),
+                page3.display(),
+                page2.display()
+            ),
+        )
+        .unwrap();
+
+        let rebased =
+            resolve_navigation_entry_path(&old_page2).expect("rebased entry should exist");
+        assert_eq!(resolve_start_path(&rebased), Some(page2));
+        assert_ne!(rebased, old_page2);
 
         let _ = fs::remove_dir_all(root);
     }

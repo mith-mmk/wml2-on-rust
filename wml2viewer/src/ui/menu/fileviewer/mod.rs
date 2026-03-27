@@ -5,6 +5,7 @@ pub(crate) mod worker;
 
 use crate::dependent::{download_http_url, normalize_locale_tag};
 use crate::drawers::image::SaveFormat;
+use crate::filesystem::resolve_start_path;
 use crate::ui::i18n::UiTextKey;
 use crate::ui::menu::fileviewer::icons::{SvgIcon, paint_svg_icon};
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerSortField, FilerViewMode, NameSortMode};
@@ -587,12 +588,15 @@ impl ViewerApp {
             self.request_filer_directory(entry.path, None);
             return;
         }
-        self.filer.selected = Some(entry.path.clone());
+        let navigation_path = entry.path.clone();
+        let load_path = resolve_start_path(&navigation_path)
+            .unwrap_or_else(|| navigation_path.clone());
+        self.filer.selected = Some(navigation_path.clone());
         self.empty_mode = false;
         self.show_filer = false;
         self.pending_fit_recalc = true;
-        self.set_filesystem_current(entry.path.clone());
-        let _ = self.request_load_path(entry.path);
+        self.set_filesystem_current(navigation_path.clone());
+        let _ = self.request_load_target(navigation_path, load_path);
     }
 }
 

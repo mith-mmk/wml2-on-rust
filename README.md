@@ -236,7 +236,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.16`: pure Rust WebP decoder and APNG encoder
 - `0.0.17`: pure Rust WebP encoder and animated WebP encode
 - `0.0.18`: GIF encoder, TIFF encoder, EXIF writer
-- `0.0.19`: some bug fix
+
 
 ## License
 

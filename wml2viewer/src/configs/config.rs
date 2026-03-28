@@ -231,7 +231,7 @@ impl Default for ResourceConfigFile {
     fn default() -> Self {
         Self {
             locale: None,
-            font_size: FontSizeConfigFile::S,
+            font_size: FontSizeConfigFile::Auto,
             font_paths: Vec::new(),
         }
     }

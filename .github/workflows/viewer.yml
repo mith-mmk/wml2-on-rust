@@ -41,11 +41,11 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           mkdir dist
-          cp target/release/wml2viewer dist/
+          cp target/release/wml2viewer .
           cp wml2viewer/README.* dist/
           cp LICENSE dist/
           cp wml2viewer/resources/help.html dist/
-          zip dist/wml2viewer-${{ matrix.os }}.zip dist/wml2viewer
+          zip dist/wml2viewer-${{ matrix.os }}.zip dist/*
 
       - name: create release
         uses: softprops/action-gh-release@v2

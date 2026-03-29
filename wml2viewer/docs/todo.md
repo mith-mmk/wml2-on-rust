@@ -14,23 +14,48 @@ P3 = 優先度中
 P4 = 優先度やや低い
 P5 = 優先度低い
 
-最終整理日: 2026-03-23
+最終整理日: 2026-03-29
 
-# 0.0.12 チェック中
-- [x] P1 issue: ネットワーク共有上のファイルが多すぎるとファイラーに表示されない問題（viewerは表示可能、filer/subfiler は同一フォルダ再走査抑制で改善。実機再確認）
-- [x] now loading表示までの遅延 180ms
-  - [x] 遅延が小さい場合は、書き換えまで前の画像を残す
-- [+] Windowsの動作チェック
-- [ ] Ubuntuの動作チェック
-- [ ] 境界条件の動作チェック
-## ドキュメント
-- [ ] helpのチェック
+# 0.0.13
+## 機能追加
+### UI
+- [ ] アイコンの見直し
+- [ ] メニューの名称の見直し
+- [ ] 画像切り替時のエフェクト スライド(右左、左右、上下、下上、渦巻き消去／表示、フェイドイン／アウト)
+
+### input/key events/mouse events(P1)
+- [ ] イベントと入力バインドの分離。 Key Remapping UIの準備
+- [ ] スクロールを移動に割り当てられる様にする
+
+### INPUT
+- [ ] P4 タッチパネル(android対応用)
+
+### FileSystem
+- [ ] LHAサポート
+- [ ] Windows Userフォルダをエクスプローラっぽい表示に擬態するモード
+    - User home
+      - Desktop (CSIDL_MYDOCUMENTS)
+      - Documents (CSIDL_MYDOCUMENTS)
+      - Music (CSIDL_MYMUSIC)
+      - Pictures (CSIDL_MYPICTURES)
+      - Video (CSIDL_MYVIDEO)
+      - Downloads
+      - Favariies (CSIDL_FAVORITES)
+
+### Setting
+- [ ] 表示名と配置の見直し(作業中)
+
+## 最終確認
 - [ ] todo.mdの更新
 - [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
-# 0.0.13 以降
-## issues
+## WML本体
+- [ ] ico対応
+- [ ] pic2対応
+- [ ] 破損チェックの厳格化
+- [ ] 連携API群
 
+## issues
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
    - [ ] Filerのファイルリストがアップデートしたとき viewerに反映されない問題(データの同期) 
     - [ ] 油断していると画像の最初に飛ばされる
@@ -80,43 +105,14 @@ P5 = 優先度低い
 ### example(P3)
 - [ ] bench_archive 1.6GBだと固まる問題
 
+## 繰り返し
+- [x] Windowsの動作チェック
+- [+] Ubuntuの動作チェック
+- [ ] 境界条件の動作チェック
+- [+] helpのチェック
+- [ ] wml2viewer/README.ja.md README.md の更新
+- [ ] wml2viewer/docs/todo.mdのチェック
 
-## 機能追加(0.0.13+)予定
-### UI
-- [ ] アイコンの見直し
-- [ ] メニューの名称の見直し
-
-### input/key events/mouse events(P1)
-- [ ] イベントと入力バインドの分離。 Key Remapping UIの準備
-- [ ] スクロールを移動に割り当てられる様にする
-
-### INPUT
-- [ ] P4 タッチパネル(android対応用)
-
-### FileSystem
-- [ ] LHAサポート
-- [ ] Windows Userフォルダをエクスプローラっぽい表示に擬態するモード
-    - User home
-      - Desktop (CSIDL_MYDOCUMENTS)
-      - Documents (CSIDL_MYDOCUMENTS)
-      - Music (CSIDL_MYMUSIC)
-      - Pictures (CSIDL_MYPICTURES)
-      - Video (CSIDL_MYVIDEO)
-      - Downloads
-      - Favariies (CSIDL_FAVORITES)
-
-### Setting
-- [ ] 表示名と配置の見直し(作業中)
-
-## 最終確認
-- [ ] todo.mdの更新
-- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
-
-## WML本体
-- [ ] ico対応
-- [ ] pic2対応
-- [ ] 破損チェックの厳格化
-- [ ] 連携API群
 
 # モジュールベースの整理
 ## src/main.rs / src/app.rs

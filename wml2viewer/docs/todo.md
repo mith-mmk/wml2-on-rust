@@ -49,12 +49,6 @@ P5 = 優先度低い
 - [ ] todo.mdの更新
 - [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
 
-## WML本体
-- [ ] ico対応
-- [ ] pic2対応
-- [ ] 破損チェックの厳格化
-- [ ] 連携API群
-
 ## issues
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
    - [ ] Filerのファイルリストがアップデートしたとき viewerに反映されない問題(データの同期) 
@@ -132,6 +126,7 @@ P5 = 優先度低い
 - [-] 二重起動の制限は一旦取り下げ
 - [*] フルスクリーン復帰時の安定性確認
 - [+] example / benchmark 用の lib 化
+- [ ] 拡張子をwml2本体から取得
 
 ## src/options.rs
 - [x] ViewerAction / KeyBinding の整理
@@ -140,7 +135,7 @@ P5 = 優先度低い
 - [x] `Shift+V` subfiler toggle
 - [x] `Ctrl+S` 保存ダイアログ起動
 - [x] `F1` help 起動
-- [-] キーリマップ UI は 0.0.13 へ移動
+- [ ] キーリマップ UI
 
 ## src/configs/config.rs
 - [x] config load/save
@@ -333,7 +328,7 @@ P5 = 優先度低い
 - [+] workaround.archive.zip 設定 UI
 - [+] thumbnail 抑制オプション
 - [+] navigation.sort 変更時の filesystem/filer 再同期
-- [-] キーバインド編集 UI は 0.0.13 へ移動
+- [ ] キーバインド編集 UI
 
 ## src/ui/menu/fileviewer/functions.rs
 - [ ] Copy
@@ -610,7 +605,6 @@ P5 = 優先度低い
 - [x] todo.mdの更新
 - [x] wml2viewerのREADME.ja.mdとREADME.mdの更新
 - [ ] 拡張子wmlはwmltxtに変更しました
-
 
 
 ## 修正確認中issue

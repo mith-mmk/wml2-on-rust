@@ -106,13 +106,13 @@ pub fn get_decoder_extentions() -> Vec<String> {
 
 // 0.0.19 new!
 /// get_can_decode get WML2 crate decoder header check
-pub fn get_can_decode(buffer: &[u8]) ->Result<bool, Box<dyn std::error::Error>> {
+pub fn get_can_decode(buffer: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {
     let result = crate::util::format_check(buffer);
     match result {
         ImageFormat::Unknown => Ok(false),
         ImageFormat::RiffFormat(_) => Ok(false),
-        _ => Ok(decoder_supports_format(&result))
-    } 
+        _ => Ok(decoder_supports_format(&result)),
+    }
 }
 
 // 0.0.19 new!
@@ -140,7 +140,6 @@ pub fn get_encode_extentions() -> Vec<String> {
     exts.push("webp".to_string());
     exts
 }
-
 
 //pub(crate) mod io; // move bin_rs crate
 #[cfg(feature = "bmp")]

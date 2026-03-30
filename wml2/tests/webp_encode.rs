@@ -393,3 +393,32 @@ fn convert_gif_file_to_webp_preserves_animation_when_first_delay_is_zero() {
 
     let _ = fs::remove_file(output_path);
 }
+
+#[test]
+fn convert_animated_webp_file_to_webp_preserves_animation() {
+    let Some(input_path) = sample_path("sample_animation.webp") else {
+        eprintln!(
+            "skipping missing sample: sample_animation.webp (configure {})",
+            sample_config_hint().display()
+        );
+        return;
+    };
+    let output_path = temp_path("convert-webp-animation-output", "webp");
+
+    convert(
+        input_path.to_string_lossy().into_owned(),
+        output_path.to_string_lossy().into_owned(),
+        None,
+    )
+    .unwrap();
+
+    let webp = fs::read(&output_path).unwrap();
+    let features = get_features(&webp).unwrap();
+    assert!(features.has_animation);
+
+    let decoded = image_load(&webp).unwrap();
+    assert!(decoded.animation.as_ref().map(|frames| frames.len()).unwrap_or(0) > 1);
+    assert!(decoded.first_wait_time.is_some());
+
+    let _ = fs::remove_file(output_path);
+}

@@ -24,6 +24,14 @@ pub fn tracked_sample_path(name: &str) -> PathBuf {
     repo_root().join("test").join("samples").join(name)
 }
 
+fn tracked_sample_paths(name: &str) -> [PathBuf; 3] {
+    [
+        tracked_sample_path(name),
+        repo_root().join("_test").join(name),
+        repo_root().join("_test").join("animation_webp").join(name),
+    ]
+}
+
 fn resolve_config_path(config_dir: &Path, value: &str) -> PathBuf {
     let path = PathBuf::from(value);
     if path.is_absolute() {
@@ -72,9 +80,10 @@ fn sample_config() -> &'static HashMap<String, PathBuf> {
 }
 
 pub fn sample_path(name: &str) -> Option<PathBuf> {
-    let tracked = tracked_sample_path(name);
-    if tracked.is_file() {
-        return Some(tracked);
+    for tracked in tracked_sample_paths(name) {
+        if tracked.is_file() {
+            return Some(tracked);
+        }
     }
 
     let configured = sample_config().get(name)?.clone();

@@ -589,8 +589,8 @@ impl ViewerApp {
             return;
         }
         let navigation_path = entry.path.clone();
-        let load_path = resolve_start_path(&navigation_path)
-            .unwrap_or_else(|| navigation_path.clone());
+        let load_path =
+            resolve_start_path(&navigation_path).unwrap_or_else(|| navigation_path.clone());
         self.filer.selected = Some(navigation_path.clone());
         self.empty_mode = false;
         self.show_filer = false;
@@ -678,9 +678,7 @@ fn locale_datetime_pattern(locale: &str) -> &'static str {
         "en_US" => "%m/%d/%Y %I:%M %p",
         "en_GB" | "en_AU" => "%d/%m/%Y %H:%M",
         "de" | "de_DE" | "ru" | "ru_RU" => "%d.%m.%Y %H:%M",
-        "fr" | "fr_FR" | "it" | "it_IT" | "es" | "es_ES" | "pt" | "pt_BR" => {
-            "%d/%m/%Y %H:%M"
-        }
+        "fr" | "fr_FR" | "it" | "it_IT" | "es" | "es_ES" | "pt" | "pt_BR" => "%d/%m/%Y %H:%M",
         _ if normalized.starts_with("en_") => "%m/%d/%Y %I:%M %p",
         _ if normalized.starts_with("ja")
             || normalized.starts_with("zh")

@@ -243,7 +243,10 @@ fn ellipsize_end(text: &str, max_chars: usize) -> String {
     if chars.len() <= max_chars {
         return text.to_string();
     }
-    let head = chars.iter().take(max_chars.saturating_sub(3)).collect::<String>();
+    let head = chars
+        .iter()
+        .take(max_chars.saturating_sub(3))
+        .collect::<String>();
     format!("{head}...")
 }
 
@@ -651,7 +654,8 @@ impl ViewerApp {
                     | crate::drawers::affine::InterpolationAlgorithm::Bilinear
             )
         {
-            self.render_options.zoom_method = crate::drawers::affine::InterpolationAlgorithm::Bilinear;
+            self.render_options.zoom_method =
+                crate::drawers::affine::InterpolationAlgorithm::Bilinear;
         }
     }
 
@@ -695,7 +699,10 @@ impl ViewerApp {
     }
 
     fn texture_options(&self) -> TextureOptions {
-        texture_options_for_scale_mode(self.render_options.scale_mode, self.render_options.zoom_method)
+        texture_options_for_scale_mode(
+            self.render_options.scale_mode,
+            self.render_options.zoom_method,
+        )
     }
 
     fn current_draw_scale(&self) -> f32 {
@@ -800,9 +807,9 @@ impl ViewerApp {
             self.render_options.zoom_method,
         );
         let image = self.color_image_from_canvas(&canvas);
-        let texture = self
-            .egui_ctx
-            .load_texture(texture_name.to_owned(), image, self.texture_options());
+        let texture =
+            self.egui_ctx
+                .load_texture(texture_name.to_owned(), image, self.texture_options());
         (texture, display_scale)
     }
 
@@ -829,10 +836,7 @@ impl ViewerApp {
         self.texture_display_scale = 1.0;
     }
 
-    fn shutdown_render_worker(
-        tx: &Sender<RenderCommand>,
-        join: &mut Option<JoinHandle<()>>,
-    ) {
+    fn shutdown_render_worker(tx: &Sender<RenderCommand>, join: &mut Option<JoinHandle<()>>) {
         let _ = tx.send(RenderCommand::Shutdown);
         if let Some(handle) = join.take() {
             let _ = handle.join();
@@ -901,12 +905,8 @@ impl ViewerApp {
             return false;
         }
 
-        let target_fit = calc_fit_zoom(
-            viewport,
-            source_size,
-            &self.render_options.zoom_option,
-        )
-        .clamp(0.1, 16.0);
+        let target_fit =
+            calc_fit_zoom(viewport, source_size, &self.render_options.zoom_option).clamp(0.1, 16.0);
         let target_zoom = (target_fit * self.zoom_factor.clamp(0.1, 16.0)).clamp(0.1, 16.0);
 
         if (target_zoom - 1.0).abs() < 0.01 {
@@ -1513,8 +1513,8 @@ impl ViewerApp {
         navigation_path: PathBuf,
         load_request_path: PathBuf,
     ) -> Result<(), Box<dyn Error>> {
-        let branch_changed =
-            navigation_branch_path(&self.current_navigation_path) != navigation_branch_path(&navigation_path);
+        let branch_changed = navigation_branch_path(&self.current_navigation_path)
+            != navigation_branch_path(&navigation_path);
         let switching_image = self.current_navigation_path != navigation_path;
         if branch_changed {
             self.clear_manga_companion();
@@ -1530,9 +1530,9 @@ impl ViewerApp {
         if branch_changed {
             self.show_loading_texture(true); // フォルダ変わった時だけリセット
             self.clear_current_image_display();
-        } 
-//        self.show_loading_texture(branch_changed);
-//        self.clear_current_image_display();
+        }
+        //        self.show_loading_texture(branch_changed);
+        //        self.clear_current_image_display();
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.pending_navigation_path = Some(navigation_path.clone());
@@ -1753,7 +1753,10 @@ impl ViewerApp {
         self.last_frame_at = Instant::now();
         self.active_request = None;
 
-        let source_size = vec2(self.source.canvas.width() as f32, self.source.canvas.height() as f32);
+        let source_size = vec2(
+            self.source.canvas.width() as f32,
+            self.source.canvas.height() as f32,
+        );
         let defer_precise_display =
             self.maybe_defer_precise_display(source_size, loaded_path.as_deref());
         if defer_precise_display {
@@ -1944,8 +1947,7 @@ impl ViewerApp {
                     if !request_matches {
                         continue;
                     }
-                    let failed_during_load =
-                        matches!(active_request, ActiveRenderRequest::Load(_));
+                    let failed_during_load = matches!(active_request, ActiveRenderRequest::Load(_));
                     self.pending_navigation_path = None;
                     let label = path
                         .as_ref()
@@ -1997,7 +1999,8 @@ impl ViewerApp {
                     self.active_preload_request_id = None;
                     self.preloaded_navigation_path = self.pending_preload_navigation_path.take();
                     self.preloaded_load_path = path;
-                    let texture_name = self.texture_name_for_path(self.preloaded_load_path.as_deref());
+                    let texture_name =
+                        self.texture_name_for_path(self.preloaded_load_path.as_deref());
                     let (texture, display_scale) =
                         self.build_texture_from_canvas(&texture_name, rendered.frame_canvas(0));
                     self.next_texture = Some(texture);
@@ -2424,8 +2427,7 @@ impl eframe::App for ViewerApp {
                     let companion_draw_size = companion.map(|(companion_rendered, _)| {
                         vec2(
                             companion_rendered.canvas.width() as f32 * self.companion_draw_scale(),
-                            companion_rendered.canvas.height() as f32
-                                * self.companion_draw_scale(),
+                            companion_rendered.canvas.height() as f32 * self.companion_draw_scale(),
                         )
                     });
                     let total_draw_size = if spread_active {

@@ -53,9 +53,7 @@ fn read_i32_le(buffer: &[u8], offset: usize) -> Result<i32, Error> {
     let bytes = buffer
         .get(offset..offset + 4)
         .ok_or_else(|| invalid_data("ICO DIB header is truncated"))?;
-    Ok(i32::from_le_bytes([
-        bytes[0], bytes[1], bytes[2], bytes[3],
-    ]))
+    Ok(i32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
 }
 
 fn read_u16_le(buffer: &[u8], offset: usize) -> Result<u16, Error> {
@@ -69,9 +67,7 @@ fn read_u32_le(buffer: &[u8], offset: usize) -> Result<u32, Error> {
     let bytes = buffer
         .get(offset..offset + 4)
         .ok_or_else(|| invalid_data("ICO DIB header is truncated"))?;
-    Ok(u32::from_le_bytes([
-        bytes[0], bytes[1], bytes[2], bytes[3],
-    ]))
+    Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
 }
 
 fn parse_dib_layout(data: &[u8], entry: &IcoEntry) -> Result<DibLayout, Error> {
@@ -175,8 +171,10 @@ fn make_fake_bmp(data: &[u8], layout: &DibLayout) -> Result<Vec<u8>, Error> {
     let off_bits = (14usize)
         .checked_add(layout.bitmap_offset)
         .ok_or_else(|| decode_error("ICO bitmap offset overflow"))?;
-    let file_size = u32::try_from(file_size).map_err(|_| decode_error("ICO bitmap is too large"))?;
-    let off_bits = u32::try_from(off_bits).map_err(|_| decode_error("ICO bitmap offset is too large"))?;
+    let file_size =
+        u32::try_from(file_size).map_err(|_| decode_error("ICO bitmap is too large"))?;
+    let off_bits =
+        u32::try_from(off_bits).map_err(|_| decode_error("ICO bitmap offset is too large"))?;
 
     let mut bmp = Vec::with_capacity(14 + dib.len());
     bmp.extend_from_slice(b"BM");
@@ -269,14 +267,12 @@ fn emit_image(
         "ICO resource type",
         DataMap::UInt(header.resource_type as u64),
     )?;
-    option.drawer.set_metadata(
-        "ICO image count",
-        DataMap::UInt(header.image_count as u64),
-    )?;
-    option.drawer.set_metadata(
-        "ICO selected index",
-        DataMap::UInt(selected_index as u64),
-    )?;
+    option
+        .drawer
+        .set_metadata("ICO image count", DataMap::UInt(header.image_count as u64))?;
+    option
+        .drawer
+        .set_metadata("ICO selected index", DataMap::UInt(selected_index as u64))?;
     option.drawer.set_metadata(
         "ICO directory width",
         DataMap::UInt(entry.actual_width() as u64),
@@ -289,10 +285,9 @@ fn emit_image(
         "ICO directory bit count",
         DataMap::UInt(entry.bit_count as u64),
     )?;
-    option.drawer.set_metadata(
-        "ICO color count",
-        DataMap::UInt(entry.color_count as u64),
-    )?;
+    option
+        .drawer
+        .set_metadata("ICO color count", DataMap::UInt(entry.color_count as u64))?;
     option.drawer.terminate(None)?;
     Ok(())
 }
@@ -306,15 +301,15 @@ fn decode_png_payload(
 ) -> Result<Option<ImgWarnings>, Error> {
     #[cfg(feature = "ico-png")]
     {
-    let mut image = ImageBuffer::new();
-    let mut part_option = DecodeOptions {
-        debug_flag: option.debug_flag,
-        drawer: &mut image,
-    };
-    let mut reader = BytesReader::from(data);
-    let warnings = crate::png::decoder::decode(&mut reader, &mut part_option)?;
-    emit_image(&image, option, header, entry, selected_index, "PNG")?;
-    Ok(warnings)
+        let mut image = ImageBuffer::new();
+        let mut part_option = DecodeOptions {
+            debug_flag: option.debug_flag,
+            drawer: &mut image,
+        };
+        let mut reader = BytesReader::from(data);
+        let warnings = crate::png::decoder::decode(&mut reader, &mut part_option)?;
+        emit_image(&image, option, header, entry, selected_index, "PNG")?;
+        Ok(warnings)
     }
     #[cfg(not(feature = "ico-png"))]
     {
@@ -335,23 +330,23 @@ fn decode_dib_payload(
 ) -> Result<Option<ImgWarnings>, Error> {
     #[cfg(feature = "ico-bmp")]
     {
-    let layout = parse_dib_layout(&data, entry)?;
-    let bmp = make_fake_bmp(&data, &layout)?;
+        let layout = parse_dib_layout(&data, entry)?;
+        let bmp = make_fake_bmp(&data, &layout)?;
 
-    let mut image = ImageBuffer::new();
-    let mut part_option = DecodeOptions {
-        debug_flag: option.debug_flag,
-        drawer: &mut image,
-    };
-    let mut reader = BytesReader::from(bmp);
-    let warnings = crate::bmp::decoder::decode(&mut reader, &mut part_option)?;
+        let mut image = ImageBuffer::new();
+        let mut part_option = DecodeOptions {
+            debug_flag: option.debug_flag,
+            drawer: &mut image,
+        };
+        let mut reader = BytesReader::from(bmp);
+        let warnings = crate::bmp::decoder::decode(&mut reader, &mut part_option)?;
 
-    if let Some(buffer) = image.buffer.as_mut() {
-        apply_and_mask(buffer, &data, &layout);
-    }
+        if let Some(buffer) = image.buffer.as_mut() {
+            apply_and_mask(buffer, &data, &layout);
+        }
 
-    emit_image(&image, option, header, entry, selected_index, "BMP")?;
-    Ok(warnings)
+        emit_image(&image, option, header, entry, selected_index, "BMP")?;
+        Ok(warnings)
     }
     #[cfg(not(feature = "ico-bmp"))]
     {
@@ -385,7 +380,9 @@ pub fn decode<B: BinaryReader>(
         .checked_add(entry.bytes_in_res as u64)
         .ok_or_else(|| decode_error("ICO image size overflow"))?;
     if image_end > end {
-        return Err(invalid_data("ICO payload points outside of the input buffer"));
+        return Err(invalid_data(
+            "ICO payload points outside of the input buffer",
+        ));
     }
 
     reader.seek(SeekFrom::Start(image_start))?;
@@ -403,9 +400,9 @@ pub fn decode<B: BinaryReader>(
 #[cfg(all(test, feature = "ico-bmp", feature = "ico-png"))]
 mod tests {
     use super::PNG_SIGNATURE;
-    use crate::draw::{image_load, image_to, ImageBuffer};
+    use crate::draw::{ImageBuffer, image_load, image_to};
     use crate::metadata::DataMap;
-    use crate::util::{format_check, ImageFormat};
+    use crate::util::{ImageFormat, format_check};
 
     fn wrap_ico(payload: &[u8], width: u8, height: u8, bit_count: u16) -> Vec<u8> {
         let mut ico = Vec::with_capacity(22 + payload.len());

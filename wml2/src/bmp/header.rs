@@ -105,7 +105,7 @@ pub enum BitmapInfo {
     Os2(BitmapCore),
 }
 
-#[derive(Debug,Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct ColorTable {
     pub blue: u8,
     pub green: u8,
@@ -158,7 +158,7 @@ impl BitmapHeader {
             12 | 40 | 108 | 124 => {}
             _ => {
                 return Err(Box::new(ImgError::new_const(
-                ImgErrorKind::DecodeError,
+                    ImgErrorKind::DecodeError,
                     "Broken Header Bitmap".to_string(),
                 )));
             }
@@ -211,7 +211,6 @@ impl BitmapHeader {
             height = info_header.bi_height as i32;
 
             let b_v4_header = if header_size > 40 {
-                
                 // V4
                 let b_v4_red_mask = reader.read_u32_le()?;
                 let b_v4_green_mask = reader.read_u32_le()?;
@@ -316,10 +315,10 @@ impl BitmapHeader {
         }
 
         if clut_size > 65536 {
-                return Err(Box::new(ImgError::new_const(
-                    ImgErrorKind::UnsupportedFeature,
-                    "Clut Size too large".to_string(),
-                )));            
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::UnsupportedFeature,
+                "Clut Size too large".to_string(),
+            )));
         }
 
         let mut color_table: Vec<ColorTable> = Vec::with_capacity(clut_size);

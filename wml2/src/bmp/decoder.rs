@@ -15,8 +15,8 @@ use crate::error::{ImgError, ImgErrorKind};
 use crate::warning::ImgWarnings;
 use bin_rs::io::*;
 
-use crate::bmp::header::{BitmapHeader, ColorTable};
 use crate::bmp::header::Compressions;
+use crate::bmp::header::{BitmapHeader, ColorTable};
 
 fn get_color(c: &Option<&Vec<ColorTable>>, idx: usize) -> ColorTable {
     if let Some(c) = c {
@@ -24,13 +24,22 @@ fn get_color(c: &Option<&Vec<ColorTable>>, idx: usize) -> ColorTable {
             c[idx]
         } else {
             // todo get default color table
-            ColorTable { blue: idx as u8, green: idx as u8, red: idx as u8, reserved: 0 }
+            ColorTable {
+                blue: idx as u8,
+                green: idx as u8,
+                red: idx as u8,
+                reserved: 0,
+            }
         }
     } else {
         // todo get default color table
-        ColorTable { blue: idx as u8, green: idx as u8, red: idx as u8, reserved: 0 }
+        ColorTable {
+            blue: idx as u8,
+            green: idx as u8,
+            red: idx as u8,
+            reserved: 0,
+        }
     }
-
 }
 
 fn convert_rgba32(
@@ -87,7 +96,7 @@ fn convert_rgba32(
                 }
                 let color = read_byte(buffer, offset) as usize;
                 let color_tables = &header.color_table.as_ref();
-                let c= get_color(color_tables, color);
+                let c = get_color(color_tables, color);
                 let r = c.red;
                 let g = c.green;
                 let b = c.blue;
@@ -509,8 +518,8 @@ pub fn decode<'decode, B: BinaryReader>(
     let header = BitmapHeader::new(reader, option.debug_flag)?;
 
     // workaround
-    if header.width > 32767 || header.height > 32767 {               
-            return Err(Box::new(ImgError::new_const(
+    if header.width > 32767 || header.height > 32767 {
+        return Err(Box::new(ImgError::new_const(
             ImgErrorKind::CannotDecode,
             "Too Large Bitmap".to_string(),
         )));

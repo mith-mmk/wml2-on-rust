@@ -1,11 +1,11 @@
 //! Metadata value types shared by image decoders and encoders.
 
 use crate::error::{ImgError, ImgErrorKind};
-use std::collections::HashMap;
 #[cfg(feature = "exif")]
 use crate::tiff::header::TiffHeaders;
 #[cfg(feature = "exif")]
 use crate::tiff::header::exif_to_bytes;
+use std::collections::HashMap;
 
 /// A map of metadata keys to typed values.
 pub type Metadata = HashMap<String, DataMap>;

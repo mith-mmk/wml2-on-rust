@@ -152,11 +152,7 @@ impl ViewerApp {
         None
     }
 
-    fn perform_pointer_intent(
-        &mut self,
-        _response: &egui::Response,
-        intent: PointerIntent,
-    ) {
+    fn perform_pointer_intent(&mut self, _response: &egui::Response, intent: PointerIntent) {
         match intent {
             PointerIntent::ToggleFit => {
                 self.cancel_pending_single_click_navigation();

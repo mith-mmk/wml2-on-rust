@@ -4070,6 +4070,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "webp-rust"
+version = "0.2.0"
+dependencies = [
+ "bin-rs 0.0.10",
+]
+
+[[package]]
 name = "webpki-roots"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4896,6 +4903,7 @@ version = "0.0.19-alpha2"
 dependencies = [
  "bin-rs 0.0.10",
  "miniz_oxide 0.7.4",
+ "webp-rust",
 ]
 
 [[package]]

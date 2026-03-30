@@ -24,22 +24,14 @@ use std::f32::consts::PI;
 ))]
 compile_error!("Choose only one JPEG IDCT feature: idct_llm, idct_aan, or idct_slower");
 
-#[cfg(not(any(
-    feature = "idct_llm",
-    feature = "idct_aan",
-    feature = "idct_slower"
-)))]
+#[cfg(not(any(feature = "idct_llm", feature = "idct_aan", feature = "idct_slower")))]
 compile_error!("Enable one JPEG IDCT feature: idct_llm, idct_aan, or idct_slower");
 
 #[cfg(any(
     all(feature = "idct_llm", feature = "idct_aan"),
     all(feature = "idct_llm", feature = "idct_slower"),
     all(feature = "idct_aan", feature = "idct_slower"),
-    not(any(
-        feature = "idct_llm",
-        feature = "idct_aan",
-        feature = "idct_slower"
-    ))
+    not(any(feature = "idct_llm", feature = "idct_aan", feature = "idct_slower"))
 ))]
 pub(crate) fn idct(_: &[i32]) -> Vec<u8> {
     unreachable!("JPEG IDCT feature selection is invalid")

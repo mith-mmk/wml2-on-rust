@@ -6,6 +6,7 @@ Cargo.lock
 /wml2/tests/test_samples.txt
 /target
 .codex-temp
+/.cargo/
 
 # Keep the nested webp-rust repository managed independently from this repo.
 /webp/

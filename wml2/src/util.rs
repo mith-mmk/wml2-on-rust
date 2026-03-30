@@ -7,6 +7,7 @@ pub enum ImageFormat {
     Gif,  // GIF87a , GIF89a
     Jpeg, // 0xfffe
     Bmp,  // BM
+    Ico,  // 00 00 01 00
     Tiff, // II/MM
     Png,  // [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]
     Webp, // RIFF . . . . WEBP
@@ -34,6 +35,11 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         return ImageFormat::Unknown;
     }
     match buffer[0] {
+        0x00 => {
+            if buffer[1] == 0x00 && buffer[2] == 0x01 && buffer[3] == 0x00 {
+                return ImageFormat::Ico;
+            }
+        }
         b'G' => {
             if buffer[1] == b'I'
                 && buffer[2] == b'F'

@@ -1063,6 +1063,9 @@ pub fn image_decoder<B: BinaryReader>(
         Bmp => {
             return crate::bmp::decoder::decode(reader, option);
         }
+        Ico => {
+            return crate::ico::decoder::decode(reader, option);
+        }
         Gif => {
             return crate::gif::decoder::decode(reader, option);
         }

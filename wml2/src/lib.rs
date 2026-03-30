@@ -74,6 +74,7 @@ pub fn get_decoder_extentions() -> Vec<String> {
     vec![
         "bmp".to_string(),
         "gif".to_string(),
+        "ico".to_string(),
         "jpg".to_string(),
         "jpe".to_string(),
         "jpeg".to_string(),
@@ -126,6 +127,7 @@ pub mod draw;
 pub mod encoder;
 pub mod error;
 pub mod gif;
+pub mod ico;
 pub mod jpeg;
 pub mod mag;
 #[cfg(not(feature = "noretoro"))]

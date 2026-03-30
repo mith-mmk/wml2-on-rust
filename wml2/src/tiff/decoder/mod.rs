@@ -1,6 +1,7 @@
 //! TIFF decoder implementation.
 
 type Error = Box<dyn std::error::Error>;
+#[cfg(feature = "tiff-jpeg")]
 use self::jpeg::decode_jpeg_compresson;
 use crate::color::RGBA;
 use crate::decoder::lzw::Lzwdecode;
@@ -15,6 +16,7 @@ use bin_rs::io::read_u16;
 use bin_rs::io::read_u32;
 use bin_rs::reader::BinaryReader;
 mod ccitt;
+#[cfg(feature = "tiff-jpeg")]
 mod jpeg;
 mod packbits;
 
@@ -794,7 +796,16 @@ fn compression_decode<'decode, B: BinaryReader>(
             return decode_lzw_compresson(reader, option, header, initialize, animation);
         }
         Compression::Jpeg => {
+            #[cfg(feature = "tiff-jpeg")]
             return decode_jpeg_compresson(reader, option, header, initialize, animation);
+            #[cfg(not(feature = "tiff-jpeg"))]
+            {
+                let _ = (reader, option, header, initialize, animation);
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::NoSupportFormat,
+                    "TIFF JPEG compression support is disabled by feature flags".to_string(),
+                )));
+            }
         }
         Compression::Packbits => {
             return decode_packbits_compresson(reader, option, header, initialize, animation);

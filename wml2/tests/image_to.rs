@@ -56,6 +56,20 @@ fn image_to_encodes_png_from_imagebuffer() {
 }
 
 #[test]
+fn image_to_encodes_bmp_from_imagebuffer() {
+    let rgba = solid_rgba(3, 2, [12, 34, 56, 255]);
+    let mut image = ImageBuffer::from_buffer(3, 2, rgba.clone());
+
+    let bmp = image_to(&mut image, ImageFormat::Bmp, None).unwrap();
+
+    assert!(bmp.starts_with(b"BM"));
+    let decoded = image_load(&bmp).unwrap();
+    assert_eq!(decoded.width, 3);
+    assert_eq!(decoded.height, 2);
+    assert_eq!(decoded.buffer.unwrap(), rgba);
+}
+
+#[test]
 fn image_to_encodes_animated_webp_from_imagebuffer() {
     let first = solid_rgba(2, 2, [255, 0, 0, 255]);
     let second = solid_rgba(2, 2, [0, 255, 0, 255]);

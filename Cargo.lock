@@ -4892,7 +4892,7 @@ dependencies = [
 
 [[package]]
 name = "wml2"
-version = "0.0.19-alpah1"
+version = "0.0.19-alpha2"
 dependencies = [
  "bin-rs 0.0.10",
  "miniz_oxide 0.7.4",
@@ -4910,7 +4910,7 @@ dependencies = [
 
 [[package]]
 name = "wml2viewer"
-version = "0.0.13-beta"
+version = "0.0.13-beta2"
 dependencies = [
  "chrono",
  "directories",

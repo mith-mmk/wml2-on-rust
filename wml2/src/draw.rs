@@ -1057,50 +1057,58 @@ pub fn image_decoder<B: BinaryReader>(
 
     use crate::util::ImageFormat::*;
     match format {
+        #[cfg(feature = "jpeg")]
         Jpeg => {
             return crate::jpeg::decoder::decode(reader, option);
         }
+        #[cfg(feature = "bmp")]
         Bmp => {
             return crate::bmp::decoder::decode(reader, option);
         }
+        #[cfg(feature = "ico")]
         Ico => {
             return crate::ico::decoder::decode(reader, option);
         }
+        #[cfg(feature = "gif")]
         Gif => {
             return crate::gif::decoder::decode(reader, option);
         }
+        #[cfg(feature = "png")]
         Png => {
             return crate::png::decoder::decode(reader, option);
         }
+        #[cfg(feature = "webp")]
         Webp => {
             return crate::webp::decoder::decode(reader, option);
         }
+        #[cfg(feature = "tiff")]
         Tiff => {
             return crate::tiff::decoder::decode(reader, option);
         }
+        #[cfg(all(feature = "mag", not(feature = "noretoro")))]
         Mag => {
             return crate::mag::decoder::decode(reader, option);
         }
-        #[cfg(not(feature = "noretoro"))]
+        #[cfg(all(feature = "maki", not(feature = "noretoro")))]
         Maki => {
             return crate::maki::decoder::decode(reader, option);
         }
-        #[cfg(not(feature = "noretoro"))]
+        #[cfg(all(feature = "pi", not(feature = "noretoro")))]
         Pi => {
             return crate::pi::decoder::decode(reader, option);
         }
-        #[cfg(not(feature = "noretoro"))]
+        #[cfg(all(feature = "pic", not(feature = "noretoro")))]
         Pic => {
             return crate::pic::decoder::decode(reader, option);
         }
-        #[cfg(not(feature = "noretoro"))]
+        #[cfg(all(feature = "vsp", not(feature = "noretoro")))]
         Vsp => {
             return crate::vsp::decoder::decode(reader, option);
         }
         _ => {}
     }
 
-    #[cfg(not(feature = "noretoro"))]
+    #[cfg(all(feature = "pcd", not(feature = "noretoro")))]
     {
         let current = reader.seek(std::io::SeekFrom::Current(0))?;
         let pcd = (|| -> Result<bool, Error> {
@@ -1141,21 +1149,27 @@ pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<
     use crate::util::ImageFormat::*;
 
     match format {
+        #[cfg(feature = "gif")]
         Gif => {
             return crate::gif::encoder::encode(option);
         }
+        #[cfg(feature = "bmp")]
         Bmp => {
             return crate::bmp::encoder::encode(option);
         }
+        #[cfg(feature = "jpeg")]
         Jpeg => {
             return crate::jpeg::encoder::encode(option);
         }
+        #[cfg(feature = "png")]
         Png => {
             return crate::png::encoder::encode(option);
         }
+        #[cfg(feature = "tiff")]
         Tiff => {
             return crate::tiff::encoder::encode(option);
         }
+        #[cfg(feature = "webp")]
         Webp => {
             return crate::webp::encoder::encode(option);
         }

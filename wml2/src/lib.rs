@@ -59,8 +59,8 @@
 //! }
 //! ```
 
-
 use crate::util::ImageFormat;
+use crate::util::decoder_supports_format;
 
 // 0.0.19 new!
 /// get_version get WML2 crate version
@@ -71,26 +71,37 @@ pub fn get_version() -> String {
 // 0.0.19 new!
 /// get_decoder_extentions get extentions of WML2's decoders
 pub fn get_decoder_extentions() -> Vec<String> {
-    vec![
-        "bmp".to_string(),
-        "gif".to_string(),
-        "ico".to_string(),
-        "jpg".to_string(),
-        "jpe".to_string(),
-        "jpeg".to_string(),
-        "png".to_string(),
-        "tif".to_string(),
-        "tiff".to_string(),
-        "webp".to_string(),
-#[cfg(not(feature = "noretoro"))]
-        "mag".to_string(),
-#[cfg(not(feature = "noretoro"))]
-        "mki".to_string(),
-#[cfg(not(feature = "noretoro"))]
-        "pi".to_string(),
-#[cfg(not(feature = "noretoro"))]
-        "pic".to_string(),
-    ]
+    let mut exts = Vec::new();
+    #[cfg(feature = "bmp")]
+    exts.push("bmp".to_string());
+    #[cfg(feature = "gif")]
+    exts.push("gif".to_string());
+    #[cfg(feature = "ico")]
+    exts.push("ico".to_string());
+    #[cfg(feature = "jpeg")]
+    {
+        exts.push("jpg".to_string());
+        exts.push("jpe".to_string());
+        exts.push("jpeg".to_string());
+    }
+    #[cfg(feature = "png")]
+    exts.push("png".to_string());
+    #[cfg(feature = "tiff")]
+    {
+        exts.push("tif".to_string());
+        exts.push("tiff".to_string());
+    }
+    #[cfg(feature = "webp")]
+    exts.push("webp".to_string());
+    #[cfg(all(feature = "mag", not(feature = "noretoro")))]
+    exts.push("mag".to_string());
+    #[cfg(all(feature = "maki", not(feature = "noretoro")))]
+    exts.push("mki".to_string());
+    #[cfg(all(feature = "pi", not(feature = "noretoro")))]
+    exts.push("pi".to_string());
+    #[cfg(all(feature = "pic", not(feature = "noretoro")))]
+    exts.push("pic".to_string());
+    exts
 }
 
 // 0.0.19 new!
@@ -100,54 +111,78 @@ pub fn get_can_decode(buffer: &[u8]) ->Result<bool, Box<dyn std::error::Error>> 
     match result {
         ImageFormat::Unknown => Ok(false),
         ImageFormat::RiffFormat(_) => Ok(false),
-        _ => Ok(true)
+        _ => Ok(decoder_supports_format(&result))
     } 
 }
 
 // 0.0.19 new!
 /// get_encode_extentions get extentions of WML2's encoders
 pub fn get_encode_extentions() -> Vec<String> {
-    vec![
-        "bmp".to_string(),
-        "gif".to_string(),
-        "jpg".to_string(),
-        "jpe".to_string(),
-        "jpeg".to_string(),
-        "png".to_string(),
-        "tif".to_string(),
-        "tiff".to_string(),
-        "webp".to_string(),
-    ]
+    let mut exts = Vec::new();
+    #[cfg(feature = "bmp")]
+    exts.push("bmp".to_string());
+    #[cfg(feature = "gif")]
+    exts.push("gif".to_string());
+    #[cfg(feature = "jpeg")]
+    {
+        exts.push("jpg".to_string());
+        exts.push("jpe".to_string());
+        exts.push("jpeg".to_string());
+    }
+    #[cfg(feature = "png")]
+    exts.push("png".to_string());
+    #[cfg(feature = "tiff")]
+    {
+        exts.push("tif".to_string());
+        exts.push("tiff".to_string());
+    }
+    #[cfg(feature = "webp")]
+    exts.push("webp".to_string());
+    exts
 }
 
 
 //pub(crate) mod io; // move bin_rs crate
+#[cfg(feature = "bmp")]
 pub mod bmp;
 pub mod draw;
 pub mod encoder;
 pub mod error;
+#[cfg(feature = "gif")]
 pub mod gif;
+#[cfg(feature = "ico")]
 pub mod ico;
+#[cfg(feature = "jpeg")]
 pub mod jpeg;
+#[cfg(all(feature = "mag", not(feature = "noretoro")))]
 pub mod mag;
-#[cfg(not(feature = "noretoro"))]
+#[cfg(all(feature = "maki", not(feature = "noretoro")))]
 pub mod maki;
-#[cfg(not(feature = "noretoro"))]
+#[cfg(all(feature = "pcd", not(feature = "noretoro")))]
 pub mod pcd;
-#[cfg(not(feature = "noretoro"))]
+#[cfg(all(feature = "pi", not(feature = "noretoro")))]
 pub mod pi;
-#[cfg(not(feature = "noretoro"))]
+#[cfg(all(feature = "pic", not(feature = "noretoro")))]
 pub mod pic;
+#[cfg(feature = "png")]
 pub mod png;
-#[cfg(not(feature = "noretoro"))]
+#[cfg(any(
+    all(feature = "maki", not(feature = "noretoro")),
+    all(feature = "pcd", not(feature = "noretoro")),
+    all(feature = "pi", not(feature = "noretoro")),
+    all(feature = "pic", not(feature = "noretoro")),
+    all(feature = "vsp", not(feature = "noretoro"))
+))]
 mod retro;
+#[cfg(any(feature = "tiff", feature = "exif"))]
 pub mod tiff;
 pub mod util;
-#[cfg(not(feature = "noretoro"))]
+#[cfg(all(feature = "vsp", not(feature = "noretoro")))]
 pub mod vsp;
 pub mod warning;
 //pub mod iccprofile;
 pub mod color;
 pub mod decoder;
 pub mod metadata;
+#[cfg(feature = "webp")]
 pub mod webp;

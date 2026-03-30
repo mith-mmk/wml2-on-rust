@@ -1,9 +1,11 @@
 //! Metadata value types shared by image decoders and encoders.
 
 use crate::error::{ImgError, ImgErrorKind};
-use crate::tiff::header::TiffHeaders;
-use crate::tiff::header::exif_to_bytes;
 use std::collections::HashMap;
+#[cfg(feature = "exif")]
+use crate::tiff::header::TiffHeaders;
+#[cfg(feature = "exif")]
+use crate::tiff::header::exif_to_bytes;
 
 /// A map of metadata keys to typed values.
 pub type Metadata = HashMap<String, DataMap>;
@@ -21,6 +23,7 @@ pub enum DataMap {
     Ascii(String),
     I18NString(String),
     SJISString(Vec<u8>),
+    #[cfg(feature = "exif")]
     Exif(TiffHeaders),
     ICCProfile(Vec<u8>),
     None,
@@ -50,6 +53,7 @@ impl DataMap {
             DataMap::SJISString(d) => {
                 format!("{:?}", d)
             }
+            #[cfg(feature = "exif")]
             DataMap::Exif(header) => header.to_string(),
             DataMap::ICCProfile(iccprofile) => {
                 format!("{:?}", iccprofile)
@@ -70,6 +74,7 @@ pub fn get_exif(
         return Ok(None);
     };
 
+    #[cfg(feature = "exif")]
     match metadata.get("EXIF") {
         Some(DataMap::Exif(headers)) => return exif_to_bytes(headers).map(Some),
         Some(DataMap::Raw(bytes)) => return Ok(Some(bytes.clone())),
@@ -82,6 +87,7 @@ pub fn get_exif(
         None => {}
     }
 
+    #[cfg(feature = "exif")]
     match metadata.get("Tiff headers") {
         Some(DataMap::Exif(headers)) => return exif_to_bytes(headers).map(Some),
         Some(_) => {
@@ -132,6 +138,7 @@ pub fn get_exif_option(
 
     match value {
         DataMap::Raw(bytes) => Ok(Some(bytes.clone())),
+        #[cfg(feature = "exif")]
         DataMap::Exif(headers) => exif_to_bytes(headers).map(Some),
         DataMap::Ascii(value) if value.trim().eq_ignore_ascii_case("copy") => get_exif(metadata),
         DataMap::Ascii(_) => Err(Box::new(ImgError::new_const(

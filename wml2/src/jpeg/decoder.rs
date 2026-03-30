@@ -17,6 +17,34 @@ use bin_rs::reader::BinaryReader;
 #[cfg(feature = "idct_slower")]
 use std::f32::consts::PI;
 
+#[cfg(any(
+    all(feature = "idct_llm", feature = "idct_aan"),
+    all(feature = "idct_llm", feature = "idct_slower"),
+    all(feature = "idct_aan", feature = "idct_slower"),
+))]
+compile_error!("Choose only one JPEG IDCT feature: idct_llm, idct_aan, or idct_slower");
+
+#[cfg(not(any(
+    feature = "idct_llm",
+    feature = "idct_aan",
+    feature = "idct_slower"
+)))]
+compile_error!("Enable one JPEG IDCT feature: idct_llm, idct_aan, or idct_slower");
+
+#[cfg(any(
+    all(feature = "idct_llm", feature = "idct_aan"),
+    all(feature = "idct_llm", feature = "idct_slower"),
+    all(feature = "idct_aan", feature = "idct_slower"),
+    not(any(
+        feature = "idct_llm",
+        feature = "idct_aan",
+        feature = "idct_slower"
+    ))
+))]
+pub(crate) fn idct(_: &[i32]) -> Vec<u8> {
+    unreachable!("JPEG IDCT feature selection is invalid")
+}
+
 pub(crate) struct BitReader<'decode, B> {
     pub reader: &'decode mut B,
     pub(crate) bptr: usize,
@@ -279,7 +307,10 @@ pub(crate) fn extend(v: i32, t: usize) -> i32 {
     v
 }
 
-#[cfg(feature = "idct_slower")]
+#[cfg(all(
+    feature = "idct_slower",
+    not(any(feature = "idct_llm", feature = "idct_aan"))
+))]
 pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
     let vals: Vec<u8> = (0..64)
         .map(|i| {
@@ -311,7 +342,10 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
     vals
 }
 
-#[cfg(feature = "idct_llm")]
+#[cfg(all(
+    feature = "idct_llm",
+    not(any(feature = "idct_aan", feature = "idct_slower"))
+))]
 pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
     let m1 = 0.5411961; // α ∁Ecos(3π/8)
     let m2 = 1.306_563; // β ∁Ecos(3π/8)
@@ -447,7 +481,10 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
 
 #[inline]
 // AAN algorythm
-#[cfg(not(any(feature = "idct_llm", feature = "idct_slower")))]
+#[cfg(all(
+    feature = "idct_aan",
+    not(any(feature = "idct_llm", feature = "idct_slower"))
+))]
 pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
     let mut _f = [0_f32; 64];
     let mut vals = [0_u8; 64];

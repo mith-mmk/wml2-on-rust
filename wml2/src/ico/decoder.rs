@@ -304,6 +304,8 @@ fn decode_png_payload(
     entry: &IcoEntry,
     selected_index: usize,
 ) -> Result<Option<ImgWarnings>, Error> {
+    #[cfg(feature = "ico-png")]
+    {
     let mut image = ImageBuffer::new();
     let mut part_option = DecodeOptions {
         debug_flag: option.debug_flag,
@@ -313,6 +315,15 @@ fn decode_png_payload(
     let warnings = crate::png::decoder::decode(&mut reader, &mut part_option)?;
     emit_image(&image, option, header, entry, selected_index, "PNG")?;
     Ok(warnings)
+    }
+    #[cfg(not(feature = "ico-png"))]
+    {
+        let _ = (data, option, header, entry, selected_index);
+        Err(Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            "ICO PNG payload support is disabled by feature flags".to_string(),
+        )))
+    }
 }
 
 fn decode_dib_payload(
@@ -322,6 +333,8 @@ fn decode_dib_payload(
     entry: &IcoEntry,
     selected_index: usize,
 ) -> Result<Option<ImgWarnings>, Error> {
+    #[cfg(feature = "ico-bmp")]
+    {
     let layout = parse_dib_layout(&data, entry)?;
     let bmp = make_fake_bmp(&data, &layout)?;
 
@@ -339,6 +352,15 @@ fn decode_dib_payload(
 
     emit_image(&image, option, header, entry, selected_index, "BMP")?;
     Ok(warnings)
+    }
+    #[cfg(not(feature = "ico-bmp"))]
+    {
+        let _ = (data, option, header, entry, selected_index);
+        Err(Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            "ICO BMP payload support is disabled by feature flags".to_string(),
+        )))
+    }
 }
 
 pub fn decode<B: BinaryReader>(
@@ -378,7 +400,7 @@ pub fn decode<B: BinaryReader>(
     Ok(result)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ico-bmp", feature = "ico-png"))]
 mod tests {
     use super::PNG_SIGNATURE;
     use crate::draw::{image_load, image_to, ImageBuffer};

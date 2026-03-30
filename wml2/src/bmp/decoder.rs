@@ -473,7 +473,16 @@ fn decode_jpeg<B: BinaryReader>(
     _: &BitmapHeader,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
+    #[cfg(feature = "bmp-jpeg")]
     return crate::jpeg::decoder::decode(reader, option);
+    #[cfg(not(feature = "bmp-jpeg"))]
+    {
+        let _ = (reader, option);
+        Err(Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            "BMP JPEG payload support is disabled by feature flags".to_string(),
+        )))
+    }
 }
 
 fn decode_png<B: BinaryReader>(
@@ -481,7 +490,16 @@ fn decode_png<B: BinaryReader>(
     _header: &BitmapHeader,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
+    #[cfg(feature = "bmp-png")]
     return crate::png::decoder::decode(reader, option);
+    #[cfg(not(feature = "bmp-png"))]
+    {
+        let _ = (reader, option);
+        Err(Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            "BMP PNG payload support is disabled by feature flags".to_string(),
+        )))
+    }
 }
 
 pub fn decode<'decode, B: BinaryReader>(

@@ -1,6 +1,6 @@
 [package]
 name = "wml2"
-version = "0.0.19-alpah1"
+version = "0.0.19-alpha2"
 repository = "https://github.com/mith-mmk/wml2-on-rust"
 homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
@@ -15,20 +15,64 @@ categories = ["multimedia::images","encoding"]
 crate-type = ["rlib"] 
 
 [features]
-#bmp = []
-#gif = []
-#jpeg = []
-#use LL&M for IDCT
-idct_llm = []   
-#use Slower for IDCT
-idct_slower = [] 
-#use slower reference FDCT
+# Recommended build: all standard formats, EXIF support, embedded-format bridges,
+# and the LL&M JPEG IDCT implementation.
+default = [
+    "bmp",
+    "gif",
+    "ico",
+    "jpeg",
+    "png",
+    "tiff",
+    "webp",
+    "mag",
+    "maki",
+    "pcd",
+    "pi",
+    "pic",
+    "vsp",
+    "exif",
+    "bmp-jpeg",
+    "bmp-png",
+    "tiff-jpeg",
+    "ico-bmp",
+    "ico-png",
+    "idct_llm",
+]
+
+exif = []
+bmp = []
+gif = []
+ico = []
+jpeg = ["exif"]
+png = ["exif"]
+tiff = ["exif"]
+webp = ["exif"]
+mag = []
+maki = []
+pcd = []
+pi = []
+pic = []
+vsp = []
+
+# Embedded/bridged codec support for container formats that reuse other decoders.
+bmp-jpeg = ["bmp", "jpeg"]
+bmp-png = ["bmp", "png"]
+tiff-jpeg = ["tiff", "jpeg"]
+ico-bmp = ["ico", "bmp"]
+ico-png = ["ico", "png"]
+
+# JPEG IDCT implementation.
+# The recommended/default choice is `idct_llm`.
+# Pick exactly one of `idct_llm`, `idct_aan`, or `idct_slower`.
+idct_llm = []
+idct_aan = []
+idct_slower = []
+
+# Use the slower reference FDCT in the JPEG encoder.
 fdct_slower = []
-#default use AAN for IDCT
-#png = []
-#tiff = []
-#all = []
-# use multithread
+
+# Miscellaneous build toggles.
 multithread = []
 SJIS = []
 noretoro = []

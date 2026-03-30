@@ -7,6 +7,7 @@ use crate::draw::{
 };
 use crate::encoder::lzw::encode_tiff;
 use crate::error::{ImgError, ImgErrorKind};
+#[cfg(feature = "tiff-jpeg")]
 use crate::jpeg::encoder::{encode_rgba as encode_jpeg_rgba, quality_from_draw_options};
 use crate::metadata::{DataMap, get_exif_option};
 use crate::tiff::header::{
@@ -135,9 +136,15 @@ fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMod
             "none" | "uncompressed" => Ok(TiffCompressionMode::None),
             "lzw" | "lzw_msb" => Ok(TiffCompressionMode::Lzw { is_lsb: false }),
             "lzw_lsb" => Ok(TiffCompressionMode::Lzw { is_lsb: true }),
+            #[cfg(feature = "tiff-jpeg")]
             "jpeg" | "jpg" => Ok(TiffCompressionMode::Jpeg {
                 quality: quality_from_draw_options(option),
             }),
+            #[cfg(not(feature = "tiff-jpeg"))]
+            "jpeg" | "jpg" => Err(Box::new(ImgError::new_const(
+                ImgErrorKind::NoSupportFormat,
+                "TIFF JPEG compression support is disabled by feature flags".to_string(),
+            ))),
             _ => Err(Box::new(ImgError::new_const(
                 ImgErrorKind::InvalidParameter,
                 format!("unsupported TIFF compression: {value}"),
@@ -145,9 +152,15 @@ fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMod
         },
         DataMap::UInt(1) | DataMap::SInt(1) => Ok(TiffCompressionMode::None),
         DataMap::UInt(5) | DataMap::SInt(5) => Ok(TiffCompressionMode::Lzw { is_lsb: false }),
+        #[cfg(feature = "tiff-jpeg")]
         DataMap::UInt(7) | DataMap::SInt(7) => Ok(TiffCompressionMode::Jpeg {
             quality: quality_from_draw_options(option),
         }),
+        #[cfg(not(feature = "tiff-jpeg"))]
+        DataMap::UInt(7) | DataMap::SInt(7) => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            "TIFF JPEG compression support is disabled by feature flags".to_string(),
+        ))),
         _ => Err(Box::new(ImgError::new_const(
             ImgErrorKind::InvalidParameter,
             "TIFF compression must be `none`, `lzw`, `lzw_msb`, `lzw_lsb`, `jpeg`, 1, 5, or 7"
@@ -705,7 +718,15 @@ fn build_page_plan(
     let pixel_data = match compression {
         TiffCompressionMode::None => raw_pixel_data,
         TiffCompressionMode::Lzw { is_lsb } => encode_tiff(&raw_pixel_data, is_lsb)?,
+        #[cfg(feature = "tiff-jpeg")]
         TiffCompressionMode::Jpeg { quality } => encode_jpeg_rgba(width, height, rgba, quality)?,
+        #[cfg(not(feature = "tiff-jpeg"))]
+        TiffCompressionMode::Jpeg { .. } => {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::NoSupportFormat,
+                "TIFF JPEG compression support is disabled by feature flags".to_string(),
+            )));
+        }
     };
     let headers = build_page_headers(
         width,

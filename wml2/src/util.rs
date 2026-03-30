@@ -152,3 +152,55 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
     }
     ImageFormat::Unknown
 }
+
+/// Returns whether a decoder for `format` is enabled in the current build.
+pub fn decoder_supports_format(format: &ImageFormat) -> bool {
+    match format {
+        #[cfg(feature = "gif")]
+        ImageFormat::Gif => true,
+        #[cfg(feature = "jpeg")]
+        ImageFormat::Jpeg => true,
+        #[cfg(feature = "bmp")]
+        ImageFormat::Bmp => true,
+        #[cfg(feature = "ico")]
+        ImageFormat::Ico => true,
+        #[cfg(feature = "tiff")]
+        ImageFormat::Tiff => true,
+        #[cfg(feature = "png")]
+        ImageFormat::Png => true,
+        #[cfg(feature = "webp")]
+        ImageFormat::Webp => true,
+        #[cfg(all(feature = "mag", not(feature = "noretoro")))]
+        ImageFormat::Mag => true,
+        #[cfg(all(feature = "maki", not(feature = "noretoro")))]
+        ImageFormat::Maki => true,
+        #[cfg(all(feature = "pi", not(feature = "noretoro")))]
+        ImageFormat::Pi => true,
+        #[cfg(all(feature = "pic", not(feature = "noretoro")))]
+        ImageFormat::Pic => true,
+        #[cfg(all(feature = "vsp", not(feature = "noretoro")))]
+        ImageFormat::Vsp => true,
+        #[cfg(all(feature = "pcd", not(feature = "noretoro")))]
+        ImageFormat::Pcd => true,
+        _ => false,
+    }
+}
+
+/// Returns whether an encoder for `format` is enabled in the current build.
+pub fn encoder_supports_format(format: &ImageFormat) -> bool {
+    match format {
+        #[cfg(feature = "gif")]
+        ImageFormat::Gif => true,
+        #[cfg(feature = "jpeg")]
+        ImageFormat::Jpeg => true,
+        #[cfg(feature = "bmp")]
+        ImageFormat::Bmp => true,
+        #[cfg(feature = "png")]
+        ImageFormat::Png => true,
+        #[cfg(feature = "tiff")]
+        ImageFormat::Tiff => true,
+        #[cfg(feature = "webp")]
+        ImageFormat::Webp => true,
+        _ => false,
+    }
+}

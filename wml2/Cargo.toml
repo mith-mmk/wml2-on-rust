@@ -8,7 +8,7 @@ description = "Pure Rust multi-format image decoding and encoding library suppor
 edition = "2024"
 rust-version = "1.91"
 license = "MIT"
-keywords = ["image","codec","jpeg","codec","png"]
+keywords = ["image","codec","jpeg","webp","png"]
 categories = ["multimedia::images","encoding"]
 
 [lib]
@@ -80,6 +80,6 @@ noretoro = []
 [dependencies]
 bin-rs = {version = "0.0.10",features = ["util"]}
 #bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
-webp_codec = { package = "webp-rust", git = "https://github.com/mith-mmk/webp-rust", rev = "9b0b978cfeb83b12d31010d6881cadacb92fd90e", optional = true }
+webp_codec = { package = "webp-rust", version = "0.2.0", optional = true }
 
 miniz_oxide = {version = "0.7.1"}

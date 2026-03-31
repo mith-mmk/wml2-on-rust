@@ -17,7 +17,7 @@ encoding_rs = "0.8"
 
 [dependencies.wml2]
 path = "../wml2"
-features = ["multithread","idct_llm"]
+features = ["multithread"]
 
 [dependencies.icc-profile]
 git = "https://github.com/mith-mmk/icc_profile"

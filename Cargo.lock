@@ -4072,6 +4072,8 @@ dependencies = [
 [[package]]
 name = "webp-rust"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f87425d75917f546e4899b3df08ae7afc3eeb0958d83ee90db657fc370bd6aa"
 dependencies = [
  "bin-rs 0.0.10",
 ]
@@ -5294,3 +5296,7 @@ dependencies = [
  "syn",
  "winnow",
 ]
+
+[[patch.unused]]
+name = "webp-rust"
+version = "0.2.0"

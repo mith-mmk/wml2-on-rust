@@ -45,7 +45,7 @@ P5 = 優先度低い
       - Video (CSIDL_MYVIDEO)
       - Downloads
       - Favariies (CSIDL_FAVORITES)
-- [ ] フォルダの内容更新(自動更新 or [F5]の手動更新)
+- [ ] フォルダの内容更新のタイミング([F5]の手動更新 / フォルダ移動時に更新 / 自動更新)
 
 
 ### Setting

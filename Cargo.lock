@@ -4901,7 +4901,7 @@ dependencies = [
 
 [[package]]
 name = "wml2"
-version = "0.0.19-alpha2"
+version = "0.0.19"
 dependencies = [
  "bin-rs 0.0.10",
  "miniz_oxide 0.7.4",
@@ -5296,7 +5296,3 @@ dependencies = [
  "syn",
  "winnow",
 ]
-
-[[patch.unused]]
-name = "webp-rust"
-version = "0.2.0"

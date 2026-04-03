@@ -32,17 +32,18 @@ $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]
 ```
 
-## Supported formats (`0.0.18`)
+## Supported formats (`0.0.19`)
 
 | format | enc | dec | notes |
 | --- | --- | --- | --- |
 | BMP | O | O | encoder writes uncompressed BMP |
 | JPEG | O | O | baseline encoder; baseline and Huffman progressive decoder |
 | GIF | O | O | palette/LZW encoder, animation supported |
+| ICO | x | O | decoder for BMP/PNG embedded icon images |
 | PNG | O | O | PNG/APNG; encoder writes RGBA truecolor |
 | TIFF | O | O | encode: none/LZW/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP | O | O | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output |
-| MAG | x | O | Japanese legacy image format |
+| MAG | x | O | Japanese legacy image format, disabled by `noretoro` |
 | MAKI | x | O | Japanese legacy image format, disabled by `noretoro` |
 | PI | x | O | Japanese legacy image format, disabled by `noretoro` |
 | PIC | x | O | Japanese legacy image format, disabled by `noretoro` |
@@ -51,17 +52,28 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ## Features
 
-- default: legacy decoders are enabled
-- `noretoro`: disables `MAKI`, `PI`, `PIC`, `VSP/DAT`, and `PCD`
+- `default`: enables the standard decoders/encoders, EXIF support, embedded-format bridges, and `idct_llm`
+- format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- metadata feature: `exif`
+- embedded-format bridge features: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
+- JPEG IDCT features: choose exactly one of `idct_llm` (default), `idct_aan`, or `idct_slower`
+- JPEG encoder toggle: `fdct_slower`
+- miscellaneous toggles: `multithread`, `SJIS`, `noretoro`
+- `noretoro`: disables all retro format decoders gated by it: `MAG`, `MAKI`, `PCD`, `PI`, `PIC`, and `VSP/DAT`
 
 ```toml
 [dependencies]
-wml2 = "0.0.18"
+wml2 = "0.0.19"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.18", features = ["noretoro"] }
+wml2 = { version = "0.0.19", features = ["noretoro"] }
+```
+
+```toml
+[dependencies]
+wml2 = { version = "0.0.19", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options
@@ -236,7 +248,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.16`: pure Rust WebP decoder and APNG encoder
 - `0.0.17`: pure Rust WebP encoder and animated WebP encode
 - `0.0.18`: GIF encoder, TIFF encoder, EXIF writer
-- `0.0.18`: add ICO decoder, restructuring features, The default IDCT algorithm for JPEG decoder has been changed to LL&M.
+- `0.0.19`: ICO decoder, feature restructuring, and LL&M as the default JPEG decoder IDCT
 
 
 ## License

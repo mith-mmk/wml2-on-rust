@@ -32,17 +32,18 @@ $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]
 ```
 
-## サポートフォーマット (`0.0.18`)
+## サポートフォーマット (`0.0.19`)
 
 | フォーマット | enc | dec | 備考 |
 | --- | --- | --- | --- |
 | BMP | O | O | encoder は無圧縮 BMP を出力 |
 | JPEG | O | O | encoder は baseline のみ、decoder は baseline と Huffman progressive に対応 |
 | GIF | O | O | パレット/LZW encoder、animation 対応 |
+| ICO | x | O | BMP/PNG 内包の icon image を decode |
 | PNG | O | O | PNG/APNG 対応、encoder は RGBA truecolor を出力 |
 | TIFF | O | O | encode: none/LZW/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP | O | O | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応 |
-| MAG | x | O | 日本の旧画像形式 |
+| MAG | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
 | MAKI | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
 | PI | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
 | PIC | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
@@ -51,17 +52,28 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ## Feature
 
-- デフォルトでは旧フォーマット decoder は有効
-- `noretoro`: `MAKI`, `PI`, `PIC`, `VSP/DAT`, `PCD` を無効化
+- `default`: 標準の decoder/encoder、EXIF 対応、埋め込みフォーマット bridge、`idct_llm` を有効化
+- フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- metadata feature: `exif`
+- 埋め込みフォーマット bridge feature: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
+- JPEG IDCT feature: `idct_llm` (default), `idct_aan`, `idct_slower` のいずれか 1 つを選択
+- JPEG encoder 用 toggle: `fdct_slower`
+- その他の toggle: `multithread`, `SJIS`, `noretoro`
+- `noretoro`: これで gate されている旧フォーマット decoder、`MAG`, `MAKI`, `PCD`, `PI`, `PIC`, `VSP/DAT` を無効化
 
 ```toml
 [dependencies]
-wml2 = "0.0.18"
+wml2 = "0.0.19"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.18", features = ["noretoro"] }
+wml2 = { version = "0.0.19", features = ["noretoro"] }
+```
+
+```toml
+[dependencies]
+wml2 = { version = "0.0.19", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -237,7 +249,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.16`: Pure Rust WebP decoder と APNG encoder
 - `0.0.17`: Pure Rust WebP encoder と animated WebP encode
 - `0.0.18`: GIF encoder、TIFF encoder、EXIF writer
-- `0.0.19`: ICO encoder、featuresの整理、JPEG decoderのIDCTのアルゴリズムはLL&Mがデフォルトに変更になりました
+- `0.0.19`: ICO decoder、features の整理、JPEG decoder の IDCT アルゴリズムは LL&M が default に変更
 
 ## License
 

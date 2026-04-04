@@ -16,20 +16,50 @@ fn package_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-fn sample_config_path() -> PathBuf {
+fn sample_override_config_path() -> PathBuf {
     package_root().join("tests").join("test_samples.txt")
 }
 
-pub fn tracked_sample_path(name: &str) -> PathBuf {
+pub fn test_image_root() -> PathBuf {
+    repo_root().join("test").join("images")
+}
+
+pub fn bundled_test_image_path(name: &str) -> PathBuf {
+    test_image_root().join("bundled").join(name)
+}
+
+fn legacy_sample_path(name: &str) -> PathBuf {
     repo_root().join("test").join("samples").join(name)
 }
 
-fn tracked_sample_paths(name: &str) -> [PathBuf; 3] {
+fn tracked_sample_paths(name: &str) -> [PathBuf; 4] {
     [
-        tracked_sample_path(name),
+        bundled_test_image_path(name),
+        legacy_sample_path(name),
         repo_root().join("_test").join(name),
         repo_root().join("_test").join("animation_webp").join(name),
     ]
+}
+
+fn search_dir_recursive(root: &Path, name: &str) -> Option<PathBuf> {
+    let entries = fs::read_dir(root).ok()?;
+    for entry in entries.filter_map(Result::ok) {
+        let path = entry.path();
+        if path.is_file() {
+            let matches = path
+                .file_name()
+                .and_then(|file_name| file_name.to_str())
+                .is_some_and(|file_name| file_name.eq_ignore_ascii_case(name));
+            if matches {
+                return Some(path);
+            }
+        } else if path.is_dir() {
+            if let Some(found) = search_dir_recursive(&path, name) {
+                return Some(found);
+            }
+        }
+    }
+    None
 }
 
 fn resolve_config_path(config_dir: &Path, value: &str) -> PathBuf {
@@ -42,7 +72,7 @@ fn resolve_config_path(config_dir: &Path, value: &str) -> PathBuf {
 }
 
 fn parse_sample_config() -> HashMap<String, PathBuf> {
-    let path = sample_config_path();
+    let path = sample_override_config_path();
     let Ok(text) = fs::read_to_string(&path) else {
         return HashMap::new();
     };
@@ -86,8 +116,13 @@ pub fn sample_path(name: &str) -> Option<PathBuf> {
         }
     }
 
-    let configured = sample_config().get(name)?.clone();
-    configured.is_file().then_some(configured)
+    if let Some(configured) = sample_config().get(name).cloned() {
+        if configured.is_file() {
+            return Some(configured);
+        }
+    }
+
+    search_dir_recursive(&test_image_root().join("external"), name)
 }
 
 pub fn sample_bytes(name: &str) -> Option<Vec<u8>> {
@@ -96,5 +131,5 @@ pub fn sample_bytes(name: &str) -> Option<Vec<u8>> {
 }
 
 pub fn sample_config_hint() -> PathBuf {
-    sample_config_path()
+    test_image_root().join("README.md")
 }

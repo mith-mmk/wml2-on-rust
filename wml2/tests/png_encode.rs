@@ -112,6 +112,14 @@ fn repo_root() -> PathBuf {
         .to_path_buf()
 }
 
+fn bundled_test_image_path(name: &str) -> PathBuf {
+    repo_root()
+        .join("test")
+        .join("images")
+        .join("bundled")
+        .join(name)
+}
+
 #[test]
 fn encode_png_via_public_api() {
     let rgba = gradient_rgba(32, 32);
@@ -316,10 +324,7 @@ fn encode_apng_normalizes_offset_first_frame_to_full_canvas() {
 
 #[test]
 fn encode_viewer_error_sample_to_png_uses_full_canvas_first_frame() {
-    let path = repo_root()
-        .join("_test")
-        .join("errors")
-        .join("WML2Viewer_error.webp");
+    let path = bundled_test_image_path("WML2Viewer_error.webp");
     let mut image = image_from_file(path.to_string_lossy().into_owned()).unwrap();
 
     let mut encode = EncodeOptions {

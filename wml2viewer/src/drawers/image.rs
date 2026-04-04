@@ -443,6 +443,14 @@ mod tests {
             .to_path_buf()
     }
 
+    fn bundled_test_image_path(name: &str) -> PathBuf {
+        repo_root()
+            .join("test")
+            .join("images")
+            .join("bundled")
+            .join(name)
+    }
+
     #[cfg(target_os = "windows")]
     #[test]
     fn plugin_decode_is_visible_from_viewer_load_path() {
@@ -483,10 +491,7 @@ mod tests {
 
     #[test]
     fn bundled_error_webp_sample_matches_raw_decoder_canvas() {
-        let path = repo_root()
-            .join("_test")
-            .join("errors")
-            .join("WML2Viewer_error.webp");
+        let path = bundled_test_image_path("WML2Viewer_error.webp");
         let raw = image_from_file(path.to_string_lossy().into_owned()).unwrap();
         let loaded = load_canvas_from_file_internal(&path).unwrap();
 

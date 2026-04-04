@@ -28,6 +28,139 @@ struct ApngInfo {
     frames: Vec<ApngFrame>,
 }
 
+fn source_over(dst: &mut [u8], src: &[u8]) {
+    let src_alpha = src[3] as u32;
+    if src_alpha == 0 {
+        return;
+    }
+    if src_alpha == 255 {
+        dst.copy_from_slice(src);
+        return;
+    }
+
+    let dst_alpha = dst[3] as u32;
+    let out_alpha = src_alpha + ((dst_alpha * (255 - src_alpha) + 127) / 255);
+    if out_alpha == 0 {
+        dst.copy_from_slice(&[0, 0, 0, 0]);
+        return;
+    }
+
+    for channel in 0..3 {
+        let src_premul = src[channel] as u32 * src_alpha;
+        let dst_premul = dst[channel] as u32 * dst_alpha;
+        let out_premul = src_premul + ((dst_premul * (255 - src_alpha) + 127) / 255);
+        dst[channel] = ((out_premul * 255 + (out_alpha / 2)) / out_alpha) as u8;
+    }
+    dst[3] = out_alpha as u8;
+}
+
+fn fill_canvas(width: u32, height: u32, background: Option<crate::color::RGBA>) -> Vec<u8> {
+    let background = background.unwrap_or(crate::color::RGBA {
+        red: 0,
+        green: 0,
+        blue: 0,
+        alpha: 0,
+    });
+    let mut canvas = vec![0u8; width as usize * height as usize * 4];
+    for pixel in canvas.chunks_exact_mut(4) {
+        pixel[0] = background.red;
+        pixel[1] = background.green;
+        pixel[2] = background.blue;
+        pixel[3] = background.alpha;
+    }
+    canvas
+}
+
+fn apply_frame(canvas: &mut [u8], canvas_width: u32, frame: &ApngFrame) {
+    let canvas_width = canvas_width as usize;
+    for y in 0..frame.height as usize {
+        let src_row = y * frame.width as usize * 4;
+        let dst_row = (frame.y_offset as usize + y) * canvas_width * 4;
+        for x in 0..frame.width as usize {
+            let src_offset = src_row + x * 4;
+            let dst_offset = dst_row + (frame.x_offset as usize + x) * 4;
+            if frame.blend_op == 1 {
+                source_over(
+                    &mut canvas[dst_offset..dst_offset + 4],
+                    &frame.buffer[src_offset..src_offset + 4],
+                );
+            } else {
+                canvas[dst_offset..dst_offset + 4]
+                    .copy_from_slice(&frame.buffer[src_offset..src_offset + 4]);
+            }
+        }
+    }
+}
+
+fn clear_frame(
+    canvas: &mut [u8],
+    canvas_width: u32,
+    frame: &ApngFrame,
+    background: Option<crate::color::RGBA>,
+) {
+    let background = background.unwrap_or(crate::color::RGBA {
+        red: 0,
+        green: 0,
+        blue: 0,
+        alpha: 0,
+    });
+    let canvas_width = canvas_width as usize;
+    for y in 0..frame.height as usize {
+        let dst_row = (frame.y_offset as usize + y) * canvas_width * 4;
+        for x in 0..frame.width as usize {
+            let dst_offset = dst_row + (frame.x_offset as usize + x) * 4;
+            canvas[dst_offset] = background.red;
+            canvas[dst_offset + 1] = background.green;
+            canvas[dst_offset + 2] = background.blue;
+            canvas[dst_offset + 3] = background.alpha;
+        }
+    }
+}
+
+fn normalize_apng_frames(
+    width: u32,
+    height: u32,
+    background: Option<crate::color::RGBA>,
+    apng: ApngInfo,
+) -> Result<ApngInfo, Error> {
+    let mut canvas = fill_canvas(width, height, background.clone());
+    let mut normalized = Vec::with_capacity(apng.frames.len());
+
+    for frame in apng.frames {
+        let previous = (frame.dispose_op == 2).then(|| canvas.clone());
+        apply_frame(&mut canvas, width, &frame);
+        normalized.push(ApngFrame {
+            width,
+            height,
+            x_offset: 0,
+            y_offset: 0,
+            delay_num: frame.delay_num,
+            delay_den: frame.delay_den,
+            dispose_op: 0,
+            blend_op: 0,
+            buffer: canvas.clone(),
+        });
+
+        match frame.dispose_op {
+            1 => clear_frame(&mut canvas, width, &frame, background.clone()),
+            2 => {
+                canvas = previous.ok_or_else(|| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::EncodeError,
+                        "missing previous canvas for dispose=previous".to_string(),
+                    )) as Error
+                })?;
+            }
+            _ => {}
+        }
+    }
+
+    Ok(ApngInfo {
+        loop_count: apng.loop_count,
+        frames: normalized,
+    })
+}
+
 fn write_chunk(write_buffer: &mut Vec<u8>, crc32: &CRC32, chunk_type: &[u8; 4], data: &[u8]) {
     write_u32_be(data.len() as u32, write_buffer);
     let mut temp_buffer = Vec::with_capacity(4 + data.len());
@@ -165,7 +298,24 @@ fn parse_apng_info(profile: &ImageProfiles) -> Result<Option<ApngInfo>, Error> {
         });
     }
 
-    Ok(Some(ApngInfo { loop_count, frames }))
+    let apng = ApngInfo { loop_count, frames };
+    let needs_normalization = apng.frames.first().is_some_and(|frame| {
+        frame.x_offset != 0
+            || frame.y_offset != 0
+            || frame.width != profile.width as u32
+            || frame.height != profile.height as u32
+    });
+
+    if needs_normalization {
+        Ok(Some(normalize_apng_frames(
+            profile.width as u32,
+            profile.height as u32,
+            profile.background.clone(),
+            apng,
+        )?))
+    } else {
+        Ok(Some(apng))
+    }
 }
 
 fn filtered_scanlines<F>(width: u32, height: u32, mut row: F) -> Result<Vec<u8>, Error>

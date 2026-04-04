@@ -1,9 +1,10 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use bin_rs::Endian;
 use wml2::draw::{
     AnimationLayer, EncodeOptions, ImageBuffer, ImageRect, NextBlend, NextDispose, NextOption,
-    NextOptions, image_encoder, image_load,
+    NextOptions, image_encoder, image_from_file, image_load,
 };
 use wml2::metadata::DataMap;
 use wml2::tiff::header::{DataPack, TiffHeader, TiffHeaders, exif_to_bytes};
@@ -66,6 +67,34 @@ fn apng_blend_ops(data: &[u8]) -> Vec<u8> {
     blend_ops
 }
 
+fn first_fctl_rect(data: &[u8]) -> Option<(u32, u32, u32, u32)> {
+    let mut cursor = 8;
+
+    while cursor + 12 <= data.len() {
+        let length = u32::from_be_bytes(data[cursor..cursor + 4].try_into().unwrap()) as usize;
+        let chunk_type = &data[cursor + 4..cursor + 8];
+        let data_start = cursor + 8;
+        let data_end = data_start + length;
+        if data_end + 4 > data.len() {
+            break;
+        }
+        if chunk_type == b"fcTL" && length == 26 {
+            let width =
+                u32::from_be_bytes(data[data_start + 4..data_start + 8].try_into().unwrap());
+            let height =
+                u32::from_be_bytes(data[data_start + 8..data_start + 12].try_into().unwrap());
+            let x_offset =
+                u32::from_be_bytes(data[data_start + 12..data_start + 16].try_into().unwrap());
+            let y_offset =
+                u32::from_be_bytes(data[data_start + 16..data_start + 20].try_into().unwrap());
+            return Some((width, height, x_offset, y_offset));
+        }
+        cursor = data_end + 4;
+    }
+
+    None
+}
+
 fn exif_bytes() -> Vec<u8> {
     let mut headers = TiffHeaders::empty(Endian::LittleEndian);
     headers.headers.push(TiffHeader {
@@ -74,6 +103,13 @@ fn exif_bytes() -> Vec<u8> {
         length: 4,
     });
     exif_to_bytes(&headers).unwrap()
+}
+
+fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .to_path_buf()
 }
 
 #[test]
@@ -230,5 +266,78 @@ fn encode_apng_preserves_over_blend_for_transparent_frames() {
     assert_eq!(
         decoded.animation.as_ref().map(|frames| frames.len()),
         Some(3)
+    );
+}
+
+#[test]
+fn encode_apng_normalizes_offset_first_frame_to_full_canvas() {
+    let mut expected = solid_rgba(4, 4, [0, 0, 0, 0]);
+    for y in 0..2 {
+        for x in 0..2 {
+            let offset = ((y + 1) * 4 + (x + 1)) * 4;
+            expected[offset..offset + 4].copy_from_slice(&[255, 0, 0, 255]);
+        }
+    }
+
+    let mut image = ImageBuffer::from_buffer(4, 4, expected.clone());
+    image.loop_count = Some(1);
+    image.animation = Some(vec![AnimationLayer {
+        width: 2,
+        height: 2,
+        start_x: 1,
+        start_y: 1,
+        buffer: solid_rgba(2, 2, [255, 0, 0, 255]),
+        control: NextOptions {
+            image_rect: Some(ImageRect {
+                start_x: 1,
+                start_y: 1,
+                width: 2,
+                height: 2,
+            }),
+            ..frame_control(2, 2, 90)
+        },
+    }]);
+
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: None,
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Png).unwrap();
+
+    assert!(data.windows(4).any(|window| window == b"acTL"));
+    assert_eq!(first_fctl_rect(&data), Some((4, 4, 0, 0)));
+
+    let decoded = image_load(&data).unwrap();
+    assert_eq!(decoded.width, 4);
+    assert_eq!(decoded.height, 4);
+    assert_eq!(decoded.buffer.as_ref(), Some(&expected));
+}
+
+#[test]
+fn encode_viewer_error_sample_to_png_uses_full_canvas_first_frame() {
+    let path = repo_root()
+        .join("_test")
+        .join("errors")
+        .join("WML2Viewer_error.webp");
+    let mut image = image_from_file(path.to_string_lossy().into_owned()).unwrap();
+
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: None,
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Png).unwrap();
+
+    assert_eq!(first_fctl_rect(&data), Some((900, 900, 0, 0)));
+
+    let decoded = image_load(&data).unwrap();
+    assert_eq!(decoded.width, 900);
+    assert_eq!(decoded.height, 900);
+    assert!(
+        decoded
+            .buffer
+            .as_ref()
+            .is_some_and(|buffer| !buffer.is_empty())
     );
 }

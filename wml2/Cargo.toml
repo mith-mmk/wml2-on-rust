@@ -80,6 +80,6 @@ noretoro = []
 [dependencies]
 bin-rs = {version = "0.0.10",features = ["util"]}
 #bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
-webp_codec = { package = "webp-rust", version = "0.2.0", optional = true }
+webp_codec = { package = "webp-rust", version = "0.2.1", path = "../webp", optional = true }
 
 miniz_oxide = {version = "0.7.1"}

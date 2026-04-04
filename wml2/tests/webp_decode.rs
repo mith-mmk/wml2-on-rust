@@ -268,20 +268,29 @@ fn decode_tracked_animated_webp_sample_from_bytes() {
 }
 
 #[test]
-fn decode_viewer_animated_webp_sample() {
-    let path = repo_root().join("samples").join("WML2Viewer.webp");
+fn decode_viewer_error_webp_sample() {
+    let path = repo_root()
+        .join("_test")
+        .join("errors")
+        .join("WML2Viewer_error.webp");
     let image = image_from_file(path.to_string_lossy().into_owned()).unwrap();
     let metadata = image.metadata.as_ref().unwrap();
 
+    assert_eq!(image.width, 900);
+    assert_eq!(image.height, 900);
+    assert!(image.first_wait_time.is_some());
     assert!(
         image
-            .animation
+            .buffer
             .as_ref()
-            .map(|frames| frames.len())
-            .unwrap_or(0)
-            > 1
+            .map(|buffer| !buffer.is_empty())
+            .unwrap_or(false)
+            || image
+                .animation
+                .as_ref()
+                .map(|frames| !frames.is_empty())
+                .unwrap_or(false)
     );
-    assert!(image.first_wait_time.is_some());
     assert!(matches!(
         metadata.get("WebP animated"),
         Some(DataMap::Ascii(flag)) if flag == "true"

@@ -2,6 +2,7 @@ mod common;
 
 use bin_rs::reader::BytesReader;
 use common::{sample_bytes, sample_config_hint, sample_path};
+use std::path::PathBuf;
 use wml2::draw::{
     CallbackResponse, DecodeOptions, DrawCallback, DrawOptions, ImageBuffer, NextOptions,
     TerminateOptions, VerboseOptions, image_decoder, image_from_file, image_load, image_to,
@@ -88,6 +89,13 @@ fn animated_sample_bytes() -> Vec<u8> {
         116, 186, 0, 3, 152, 0, 254, 249, 147, 111, 255, 144, 31, 255, 144, 31, 255, 144, 31, 255,
         32, 63, 226, 23, 123, 32, 48, 0,
     ]
+}
+
+fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .to_path_buf()
 }
 
 fn assert_webp_metadata(image: &wml2::draw::ImageBuffer, width: usize, height: usize, codec: &str) {
@@ -256,6 +264,27 @@ fn decode_tracked_animated_webp_sample_from_bytes() {
     assert!(matches!(
         metadata.get("Animation frames"),
         Some(DataMap::UInt(count)) if *count > 1
+    ));
+}
+
+#[test]
+fn decode_viewer_animated_webp_sample() {
+    let path = repo_root().join("samples").join("WML2Viewer.webp");
+    let image = image_from_file(path.to_string_lossy().into_owned()).unwrap();
+    let metadata = image.metadata.as_ref().unwrap();
+
+    assert!(
+        image
+            .animation
+            .as_ref()
+            .map(|frames| frames.len())
+            .unwrap_or(0)
+            > 1
+    );
+    assert!(image.first_wait_time.is_some());
+    assert!(matches!(
+        metadata.get("WebP animated"),
+        Some(DataMap::Ascii(flag)) if flag == "true"
     ));
 }
 

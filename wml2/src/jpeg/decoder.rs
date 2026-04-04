@@ -1005,6 +1005,144 @@ pub(crate) fn huffman_extend(
     (dc_decode, ac_decode)
 }
 
+fn jpeg_illegal_data(message: impl Into<String>) -> Error {
+    Box::new(ImgError::new_const(
+        ImgErrorKind::IllegalData,
+        message.into(),
+    ))
+}
+
+pub(crate) fn require_scan_header<'a>(
+    header: &'a JpegHaeder,
+) -> Result<&'a HuffmanScanHeader, Error> {
+    header
+        .huffman_scan_header
+        .as_ref()
+        .ok_or_else(|| jpeg_illegal_data("Not undefined Huffman Scan Header"))
+}
+
+pub(crate) fn require_frame_header<'a>(header: &'a JpegHaeder) -> Result<&'a FrameHeader, Error> {
+    header
+        .frame_header
+        .as_ref()
+        .ok_or_else(|| jpeg_illegal_data("Not undefined Frame Header"))
+}
+
+pub(crate) fn require_components<'a>(
+    frame_header: &'a FrameHeader,
+) -> Result<&'a Vec<Component>, Error> {
+    frame_header
+        .component
+        .as_ref()
+        .ok_or_else(|| jpeg_illegal_data("Not undefined Frame Header Component"))
+}
+
+pub(crate) fn require_quantization_tables<'a>(
+    header: &'a JpegHaeder,
+) -> Result<&'a Vec<QuantizationTable>, Error> {
+    header
+        .quantization_tables
+        .as_ref()
+        .ok_or_else(|| jpeg_illegal_data("Not undefined Quantization Tables"))
+}
+
+pub(crate) struct BaselineScanSlot<'a> {
+    pub(crate) dc: &'a HuffmanDecodeTable,
+    pub(crate) ac: &'a HuffmanDecodeTable,
+    pub(crate) component_index: usize,
+    pub(crate) quant_index: usize,
+}
+
+pub(crate) struct ProgressiveScanSlot<'a> {
+    pub(crate) dc: Option<&'a HuffmanDecodeTable>,
+    pub(crate) ac: Option<&'a HuffmanDecodeTable>,
+    pub(crate) component_index: usize,
+    pub(crate) quant_index: usize,
+    pub(crate) in_scan: bool,
+    pub(crate) is_first: bool,
+}
+
+fn require_huffman_decode_table<'a>(
+    tables: &'a [Option<HuffmanDecodeTable>],
+    index: usize,
+    kind: &str,
+) -> Result<&'a HuffmanDecodeTable, Error> {
+    tables
+        .get(index)
+        .and_then(Option::as_ref)
+        .ok_or_else(|| jpeg_illegal_data(format!("missing {kind} Huffman table {}", index)))
+}
+
+fn validate_quantization_table(
+    quantization_tables: &[QuantizationTable],
+    index: usize,
+) -> Result<(), Error> {
+    if quantization_tables.get(index).is_none() {
+        return Err(jpeg_illegal_data(format!(
+            "missing quantization table {}",
+            index
+        )));
+    }
+    Ok(())
+}
+
+pub(crate) fn build_baseline_scan_slots<'a>(
+    scan: &[(usize, usize, usize, usize, bool, bool)],
+    quantization_tables: &[QuantizationTable],
+    dc_decode: &'a [Option<HuffmanDecodeTable>],
+    ac_decode: &'a [Option<HuffmanDecodeTable>],
+) -> Result<Vec<BaselineScanSlot<'a>>, Error> {
+    let mut slots = Vec::with_capacity(scan.len());
+    for (dc_current, ac_current, component_index, tq, in_scan, _) in scan {
+        if !in_scan {
+            return Err(jpeg_illegal_data(
+                "baseline scan is missing one or more frame components",
+            ));
+        }
+        validate_quantization_table(quantization_tables, *tq)?;
+        slots.push(BaselineScanSlot {
+            dc: require_huffman_decode_table(dc_decode, *dc_current, "DC")?,
+            ac: require_huffman_decode_table(ac_decode, *ac_current, "AC")?,
+            component_index: *component_index,
+            quant_index: *tq,
+        });
+    }
+    Ok(slots)
+}
+
+pub(crate) fn build_progressive_scan_slots<'a>(
+    scan: &[(usize, usize, usize, usize, bool, bool)],
+    quantization_tables: &[QuantizationTable],
+    dc_decode: &'a [Option<HuffmanDecodeTable>],
+    ac_decode: &'a [Option<HuffmanDecodeTable>],
+    ss: usize,
+    se: usize,
+) -> Result<Vec<ProgressiveScanSlot<'a>>, Error> {
+    let mut slots = Vec::with_capacity(scan.len());
+    for (dc_current, ac_current, component_index, tq, in_scan, is_first) in scan {
+        validate_quantization_table(quantization_tables, *tq)?;
+        let dc = if *in_scan && ss == 0 {
+            Some(require_huffman_decode_table(dc_decode, *dc_current, "DC")?)
+        } else {
+            None
+        };
+        let ac = if *in_scan && se > 0 {
+            Some(require_huffman_decode_table(ac_decode, *ac_current, "AC")?)
+        } else {
+            None
+        };
+        slots.push(ProgressiveScanSlot {
+            dc,
+            ac,
+            component_index: *component_index,
+            quant_index: *tq,
+            in_scan: *in_scan,
+            is_first: *is_first,
+        });
+    }
+    Ok(slots)
+}
+
 #[cfg(feature = "multithread")]
 #[derive(std::cmp::PartialEq)]
 enum ThreadCommand {
@@ -1077,20 +1215,22 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let width = header.width;
     let height = header.height;
-    let huffman_scan_header = header.huffman_scan_header.as_ref().unwrap();
-    let fh = header.frame_header.clone().unwrap();
+    let huffman_scan_header = require_scan_header(header)?;
+    let fh = require_frame_header(header)?.clone();
     let color_space = fh.color_space.to_string();
-    let component = fh.component.clone().unwrap();
+    let component = require_components(&fh)?.clone();
     let plane = fh.plane;
     // decode
     option.drawer.init(width, height, InitOptions::new())?;
 
-    let quantization_tables = header.quantization_tables.clone().unwrap();
+    let quantization_tables = require_quantization_tables(header)?.clone();
     let (dc_decode, ac_decode) = huffman_extend(&header.huffman_tables);
 
     let mut bitread = BitReader::new(reader);
     let (mcu_size, h_max, v_max, dx, dy) = calc_mcu(&component);
     let scan = calc_scan(&component, huffman_scan_header);
+    let scan_slots =
+        build_baseline_scan_slots(&scan, &quantization_tables, &dc_decode, &ac_decode)?;
 
     let mut preds: Vec<i32> = (0..component.len()).map(|_| 0).collect();
 
@@ -1169,13 +1309,9 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
     for mcu_y in 0..mcu_y_max {
         for mcu_x in 0..mcu_x_max {
             for scannumber in 0..mcu_size {
-                let (dc_current, ac_current, i, tq, _, _) = scan[scannumber];
-                let ret = baseline_read(
-                    &mut bitread,
-                    dc_decode[dc_current].as_ref().unwrap(),
-                    ac_decode[ac_current].as_ref().unwrap(),
-                    preds[i],
-                );
+                let slot = &scan_slots[scannumber];
+                let ret =
+                    baseline_read(&mut bitread, slot.dc, slot.ac, preds[slot.component_index]);
                 let (zz, pred);
                 match ret {
                     Ok((_zz, _pred)) => {
@@ -1193,8 +1329,8 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                         return Ok(warnings);
                     }
                 }
-                preds[i] = pred;
-                let _ = tx1.send((ThreadCommand::Run, zz, mcu_x, mcu_y, tq));
+                preds[slot.component_index] = pred;
+                let _ = tx1.send((ThreadCommand::Run, zz, mcu_x, mcu_y, slot.quant_index));
             }
             if header.interval > 0 {
                 mcu_interval -= 1;
@@ -1318,20 +1454,21 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let width = header.width;
     let height = header.height;
-    let huffman_scan_header = header.huffman_scan_header.as_ref().unwrap();
-    let fh = header.frame_header.as_ref().unwrap();
+    let huffman_scan_header = require_scan_header(header)?;
+    let fh = require_frame_header(header)?;
     let color_space = fh.color_space.to_string();
-    let component = fh.component.as_ref().unwrap();
+    let component = require_components(fh)?;
     let plane = fh.plane;
     // decode
     option.drawer.init(width, height, InitOptions::new())?;
 
-    let quantization_tables = header.quantization_tables.as_ref().unwrap();
+    let quantization_tables = require_quantization_tables(header)?;
     let (dc_decode, ac_decode) = huffman_extend(&header.huffman_tables);
 
     let mut bitread = BitReader::new(reader);
     let (mcu_size, h_max, v_max, dx, dy) = calc_mcu(&component);
     let scan = calc_scan(&component, &huffman_scan_header);
+    let scan_slots = build_baseline_scan_slots(&scan, quantization_tables, &dc_decode, &ac_decode)?;
 
     let mut preds: Vec<i32> = (0..component.len()).map(|_| 0).collect();
 
@@ -1349,13 +1486,9 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
             let mut mcu_units: Vec<Vec<u8>> = Vec::new();
 
             for scannumber in 0..mcu_size {
-                let (dc_current, ac_current, i, tq, _, _) = scan[scannumber];
-                let ret = baseline_read(
-                    &mut bitread,
-                    &dc_decode[dc_current].as_ref().unwrap(),
-                    &ac_decode[ac_current].as_ref().unwrap(),
-                    preds[i],
-                );
+                let slot = &scan_slots[scannumber];
+                let ret =
+                    baseline_read(&mut bitread, slot.dc, slot.ac, preds[slot.component_index]);
                 let (zz, pred);
                 match ret {
                     Ok((_zz, _pred)) => {
@@ -1373,10 +1506,10 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                         return Ok(warnings);
                     }
                 }
-                preds[i] = pred;
+                preds[slot.component_index] = pred;
 
                 let sq = &super::util::ZIG_ZAG_SEQUENCE;
-                let q = quantization_tables[tq].q.clone();
+                let q = quantization_tables[slot.quant_index].q.clone();
                 let zz: Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
                 let ff = idct(&zz);
                 mcu_units.push(ff);
@@ -1524,7 +1657,7 @@ pub fn decode<'decode, B: BinaryReader>(
         )));
     }
 
-    let fh = header.frame_header.as_ref().unwrap();
+    let fh = require_frame_header(&header)?;
     let plane = fh.plane;
     if plane == 0 || plane > 4 {
         return Err(Box::new(ImgError::new_const(

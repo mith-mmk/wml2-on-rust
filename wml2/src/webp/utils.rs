@@ -36,7 +36,8 @@ fn scan_chunks<'a>(data: &'a [u8]) -> Result<Vec<([u8; 4], &'a [u8])>, DecoderEr
             return Err(DecoderError::NotEnoughData("chunk payload"));
         }
 
-        let fourcc: [u8; 4] = data[offset..offset + 4].try_into().unwrap();
+        let mut fourcc = [0_u8; 4];
+        fourcc.copy_from_slice(&data[offset..offset + 4]);
         let payload = &data[offset + 8..offset + 8 + size];
         chunks.push((fourcc, payload));
         offset = chunk_end;

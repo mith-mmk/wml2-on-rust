@@ -115,7 +115,7 @@ pub(crate) fn wrap_still_webp(
         return extend_riff(body);
     }
 
-    let exif = exif.unwrap();
+    let exif = exif.ok_or(EncoderError::InvalidParam("missing EXIF payload"))?;
     let vp8x_payload_size = 10usize;
     let padded_exif_size = padded_len(exif.len())?;
     let body_size = 4usize

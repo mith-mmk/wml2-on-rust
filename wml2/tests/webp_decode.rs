@@ -208,7 +208,14 @@ fn decode_tracked_animated_webp_sample_from_file() {
     let image = image_from_file(path.to_string_lossy().into_owned()).unwrap();
     let metadata = image.metadata.as_ref().unwrap();
 
-    assert!(image.animation.as_ref().map(|frames| frames.len()).unwrap_or(0) > 1);
+    assert!(
+        image
+            .animation
+            .as_ref()
+            .map(|frames| frames.len())
+            .unwrap_or(0)
+            > 1
+    );
     assert!(image.first_wait_time.is_some());
     assert!(matches!(
         metadata.get("WebP animated"),
@@ -233,7 +240,14 @@ fn decode_tracked_animated_webp_sample_from_bytes() {
     let image = image_load(&bytes).unwrap();
     let metadata = image.metadata.as_ref().unwrap();
 
-    assert!(image.animation.as_ref().map(|frames| frames.len()).unwrap_or(0) > 1);
+    assert!(
+        image
+            .animation
+            .as_ref()
+            .map(|frames| frames.len())
+            .unwrap_or(0)
+            > 1
+    );
     assert!(image.first_wait_time.is_some());
     assert!(matches!(
         metadata.get("WebP animated"),

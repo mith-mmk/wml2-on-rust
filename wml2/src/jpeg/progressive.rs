@@ -18,9 +18,9 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let width = header.width;
     let height = header.height;
-    let mut huffman_scan_header = header.huffman_scan_header.as_ref().unwrap();
-    let fh = header.frame_header.clone().unwrap();
-    let component = fh.component.clone().unwrap();
+    let mut huffman_scan_header = require_scan_header(header)?.clone();
+    let fh = require_frame_header(header)?.clone();
+    let component = require_components(&fh)?.clone();
     let plane = fh.plane;
     let mut _huffman_scan_header;
 
@@ -42,7 +42,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
         mcu_blocks.push(mcu_block);
     }
 
-    let quantization_tables = header.quantization_tables.clone().unwrap();
+    let quantization_tables = require_quantization_tables(header)?.clone();
     let huffman_tables = &mut header.huffman_tables;
     let mut loop_count = 1;
     let mut eobrun: usize = 0;
@@ -70,7 +70,15 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
             option.drawer.verbose(&boxstr, None)?;
             loop_count += 1;
         }
-        let scan = calc_scan(&component, huffman_scan_header);
+        let scan = calc_scan(&component, &huffman_scan_header);
+        let scan_slots = build_progressive_scan_slots(
+            &scan,
+            &quantization_tables,
+            &dc_decode,
+            &ac_decode,
+            ss,
+            se,
+        )?;
         let mut preds: Vec<i32> = (0..component.len()).map(|_| 0).collect();
 
         let mut mcu_interval = if header.interval > 0 {
@@ -84,8 +92,8 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                 for mcu_x in 0..mcu_x_max {
                     let mcu_block = &mut mcu_blocks[mcu_y * mcu_x_max + mcu_x];
                     for scannumber in 0..mcu_size {
-                        let (dc_current, ac_current, i, _, cs, _) = scan[scannumber];
-                        if !cs {
+                        let slot = &scan_slots[scannumber];
+                        if !slot.in_scan {
                             continue;
                         }
 
@@ -93,24 +101,32 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
 
                         if ss == 0 {
                             if ah == 0 {
-                                let pred = preds[i];
-                                let val = dc_read(
-                                    &mut bitread,
-                                    dc_decode[dc_current].as_ref().unwrap(),
-                                    pred,
-                                )?;
+                                let pred = preds[slot.component_index];
+                                let dc = slot.dc.ok_or_else(|| {
+                                    Box::new(ImgError::new_const(
+                                        ImgErrorKind::IllegalData,
+                                        "missing progressive DC Huffman table".to_string(),
+                                    )) as Error
+                                })?;
+                                let val = dc_read(&mut bitread, dc, pred)?;
                                 zz[0] = val << al;
-                                preds[i] = val;
+                                preds[slot.component_index] = val;
                             } else if bitread.get_bit()? == 1 {
                                 zz[0] |= 1 << al;
                             }
                         }
                         if se > 0 {
                             let start = if ss == 0 { 1 } else { ss };
+                            let ac = slot.ac.ok_or_else(|| {
+                                Box::new(ImgError::new_const(
+                                    ImgErrorKind::IllegalData,
+                                    "missing progressive AC Huffman table".to_string(),
+                                )) as Error
+                            })?;
                             if ah == 0 {
                                 eobrun = progressive_ac_read(
                                     &mut bitread,
-                                    ac_decode[ac_current].as_ref().unwrap(),
+                                    ac,
                                     zz,
                                     start,
                                     se,
@@ -120,7 +136,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                             } else {
                                 eobrun = successive_approximation_read(
                                     &mut bitread,
-                                    ac_decode[ac_current].as_ref().unwrap(),
+                                    ac,
                                     zz,
                                     start,
                                     se,
@@ -187,13 +203,19 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                 }
             }
         } else {
+            let first_component = *huffman_scan_header.csn.first().ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::IllegalData,
+                    "scan header has no components".to_string(),
+                )) as Error
+            })?;
             let mut scanfirst = 0;
             let mut i = 0;
             for scannumber in 0..scan.len() {
-                let (_, _, _i, _, _, is_first) = scan[scannumber];
-                if _i + 1 == huffman_scan_header.csn[0] && is_first {
+                let slot = &scan_slots[scannumber];
+                if slot.component_index + 1 == first_component && slot.is_first {
                     scanfirst = scannumber;
-                    i = _i;
+                    i = slot.component_index;
                     break;
                 }
             }
@@ -210,8 +232,8 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                 break;
                             }
                             let scannumber = scanfirst + mcu_y_fix * component[i].h + mcu_x_fix;
-                            let (dc_current, ac_current, i, _, cs, _) = scan[scannumber];
-                            if !cs {
+                            let slot = &scan_slots[scannumber];
+                            if !slot.in_scan {
                                 continue;
                             }
 
@@ -219,24 +241,32 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
 
                             if ss == 0 {
                                 if ah == 0 {
-                                    let pred = preds[i];
-                                    let val = dc_read(
-                                        &mut bitread,
-                                        dc_decode[dc_current].as_ref().unwrap(),
-                                        pred,
-                                    )?;
+                                    let pred = preds[slot.component_index];
+                                    let dc = slot.dc.ok_or_else(|| {
+                                        Box::new(ImgError::new_const(
+                                            ImgErrorKind::IllegalData,
+                                            "missing progressive DC Huffman table".to_string(),
+                                        )) as Error
+                                    })?;
+                                    let val = dc_read(&mut bitread, dc, pred)?;
                                     zz[0] = val << al;
-                                    preds[i] = val;
+                                    preds[slot.component_index] = val;
                                 } else if bitread.get_bit()? == 1 {
                                     zz[0] |= 1 << al;
                                 }
                             }
                             if se > 0 {
                                 let start = if ss == 0 { 1 } else { ss };
+                                let ac = slot.ac.ok_or_else(|| {
+                                    Box::new(ImgError::new_const(
+                                        ImgErrorKind::IllegalData,
+                                        "missing progressive AC Huffman table".to_string(),
+                                    )) as Error
+                                })?;
                                 if ah == 0 {
                                     eobrun = progressive_ac_read(
                                         &mut bitread,
-                                        ac_decode[ac_current].as_ref().unwrap(),
+                                        ac,
                                         zz,
                                         start,
                                         se,
@@ -246,7 +276,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                 } else {
                                     eobrun = successive_approximation_read(
                                         &mut bitread,
-                                        ac_decode[ac_current].as_ref().unwrap(),
+                                        ac,
                                         zz,
                                         start,
                                         se,
@@ -293,9 +323,9 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                     let mcu_block = &mut mcu_blocks[mcu_y * mcu_x_max + mcu_x];
                                     let mut mcu_units: Vec<Vec<u8>> = Vec::new();
                                     for scannumber in 0..mcu_size {
-                                        let (_, _, _, tq, _, _) = scan[scannumber];
+                                        let slot = &scan_slots[scannumber];
                                         let zz = &mut mcu_block[scannumber];
-                                        let q = quantization_tables[tq].q.clone();
+                                        let q = quantization_tables[slot.quant_index].q.clone();
                                         let sq = &super::util::ZIG_ZAG_SEQUENCE;
                                         let zz: Vec<i32> =
                                             (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
@@ -334,7 +364,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                         0xda => {
                             // SOS
                             _huffman_scan_header = JpegHaeder::sos_reader(bitread.reader)?;
-                            huffman_scan_header = &_huffman_scan_header;
+                            huffman_scan_header = _huffman_scan_header.clone();
                             bitread.reset();
                             break;
                         }

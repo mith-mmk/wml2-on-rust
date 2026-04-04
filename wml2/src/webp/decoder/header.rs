@@ -139,6 +139,12 @@ fn padded_payload_size(size: usize) -> usize {
     size + (size & 1)
 }
 
+fn read_fourcc(data: &[u8], offset: usize) -> [u8; 4] {
+    let mut fourcc = [0_u8; 4];
+    fourcc.copy_from_slice(&data[offset..offset + TAG_SIZE]);
+    fourcc
+}
+
 fn parse_chunk(
     data: &[u8],
     offset: usize,
@@ -165,7 +171,7 @@ fn parse_chunk(
     }
 
     Ok(ChunkHeader {
-        fourcc: data[offset..offset + TAG_SIZE].try_into().unwrap(),
+        fourcc: read_fourcc(data, offset),
         offset,
         size,
         padded_size,
@@ -462,11 +468,12 @@ pub fn parse_animation_webp(data: &[u8]) -> Result<ParsedAnimationWebp<'_>, Deco
         return Err(DecoderError::Bitstream("wrong ANIM chunk size"));
     }
     let animation = AnimationHeader {
-        background_color: u32::from_le_bytes(
-            data[anim_chunk.data_offset..anim_chunk.data_offset + 4]
-                .try_into()
-                .unwrap(),
-        ),
+        background_color: u32::from_le_bytes([
+            data[anim_chunk.data_offset],
+            data[anim_chunk.data_offset + 1],
+            data[anim_chunk.data_offset + 2],
+            data[anim_chunk.data_offset + 3],
+        ]),
         loop_count: read_le16(&data[anim_chunk.data_offset + 4..anim_chunk.data_offset + 6]),
     };
     offset += CHUNK_HEADER_SIZE + anim_chunk.padded_size;

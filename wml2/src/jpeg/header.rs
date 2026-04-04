@@ -13,6 +13,7 @@ use bin_rs::reader::BinaryReader;
 use bin_rs::reader::BytesReader; // for exif
 
 /* from SOS */
+#[derive(Clone)]
 pub struct HuffmanScanHeader {
     pub ns: usize,
     pub csn: Vec<usize>,

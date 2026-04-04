@@ -4,6 +4,7 @@ type Error = Box<dyn std::error::Error>;
 use crate::draw::DecodeOptions;
 use crate::draw::ImageBuffer;
 use crate::draw::InitOptions;
+use crate::error::{ImgError, ImgErrorKind};
 use crate::tiff::header::*;
 use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
@@ -24,10 +25,8 @@ fn draw_jpeg(
     let width = image.width;
     let height = image.height;
 
-    if image.buffer.is_some() {
-        option
-            .drawer
-            .draw(x, y, width, height, &image.buffer.unwrap(), None)?;
+    if let Some(buffer) = image.buffer.as_ref() {
+        option.drawer.draw(x, y, width, height, buffer, None)?;
     }
 
     Ok(ws)
@@ -45,6 +44,11 @@ pub fn decode_jpeg_compresson<'decode, B: BinaryReader>(
     let metadata;
     if jpeg_tables.is_empty() {
         metadata = vec![0xff, 0xd8]; // SOI
+    } else if jpeg_tables.len() < 2 {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::DecodeError,
+            "JPEG tables are truncated".to_string(),
+        )));
     } else {
         let len = jpeg_tables.len() - 2;
         metadata = jpeg_tables[..len].to_vec(); // remove EOI
@@ -77,6 +81,12 @@ pub fn decode_jpeg_compresson<'decode, B: BinaryReader>(
             let mut data = vec![];
             data.append(&mut metadata.to_vec());
             let buf = reader.read_bytes_as_vec(header.tile_byte_counts[i] as usize)?;
+            if buf.len() < 2 {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    "JPEG tile payload is truncated".to_string(),
+                )));
+            }
             data.append(&mut buf[2..].to_vec()); // remove SOI
 
             let ws = draw_jpeg(data, x, y, option)?;
@@ -96,6 +106,12 @@ pub fn decode_jpeg_compresson<'decode, B: BinaryReader>(
             let mut data = vec![];
             data.append(&mut metadata.to_vec());
             let buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
+            if buf.len() < 2 {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    "JPEG strip payload is truncated".to_string(),
+                )));
+            }
             data.append(&mut buf[2..].to_vec()); // remove SOI
 
             let ws = draw_jpeg(data, 0, y, option)?;

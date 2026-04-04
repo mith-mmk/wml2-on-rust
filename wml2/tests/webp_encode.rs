@@ -417,7 +417,14 @@ fn convert_animated_webp_file_to_webp_preserves_animation() {
     assert!(features.has_animation);
 
     let decoded = image_load(&webp).unwrap();
-    assert!(decoded.animation.as_ref().map(|frames| frames.len()).unwrap_or(0) > 1);
+    assert!(
+        decoded
+            .animation
+            .as_ref()
+            .map(|frames| frames.len())
+            .unwrap_or(0)
+            > 1
+    );
     assert!(decoded.first_wait_time.is_some());
 
     let _ = fs::remove_file(output_path);

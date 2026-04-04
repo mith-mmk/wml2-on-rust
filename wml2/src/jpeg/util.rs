@@ -99,11 +99,8 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
         _ => {}
     }
 
-    if header.icc_profile.is_some() {
-        println!(
-            "ICC Profile {}",
-            &header.icc_profile.as_ref().unwrap().len()
-        );
+    if let Some(icc_profile) = &header.icc_profile {
+        println!("ICC Profile {}", icc_profile.len());
     }
 
     match &header.jpeg_app_headers {
@@ -371,10 +368,10 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String, DataMap> {
         map.insert("comment".to_string(), DataMap::Ascii(comment.to_string()));
     }
 
-    if header.icc_profile.is_some() {
+    if let Some(icc_profile) = &header.icc_profile {
         map.insert(
             "ICC Profile".to_string(),
-            DataMap::ICCProfile(header.icc_profile.as_ref().unwrap().to_vec()),
+            DataMap::ICCProfile(icc_profile.to_vec()),
         );
     }
 

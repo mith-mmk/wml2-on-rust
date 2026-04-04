@@ -513,9 +513,19 @@ impl DrawCallback for ImageBuffer {
                 height
             };
             raws = self.width;
-            buffer = self.buffer.as_deref_mut().unwrap();
+            buffer = self.buffer.as_deref_mut().ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::NotInitializedImageBuffer,
+                    "buffer is not initialized".to_string(),
+                )) as Error
+            })?;
         } else if let Some(animation) = &mut self.animation {
-            let current = self.current.unwrap();
+            let current = self.current.ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::IllegalData,
+                    "animation frame is not selected".to_string(),
+                )) as Error
+            })?;
             if start_x >= animation[current].width || start_y >= animation[current].height {
                 return Ok(None);
             }
@@ -575,7 +585,14 @@ impl DrawCallback for ImageBuffer {
                     self.current = Some(0);
                     self.first_wait_time = Some(opt.await_time);
                 } else {
-                    self.current = Some(self.current.unwrap() + 1);
+                    self.current = Some(
+                        self.current.ok_or_else(|| {
+                            Box::new(ImgError::new_const(
+                                ImgErrorKind::IllegalData,
+                                "animation frame is not selected".to_string(),
+                            )) as Error
+                        })? + 1,
+                    );
                 }
                 let (width, height, start_x, start_y);
                 if let Some(ref rect) = opt.image_rect {
@@ -600,7 +617,14 @@ impl DrawCallback for ImageBuffer {
                     control: opt,
                 };
 
-                self.animation.as_mut().unwrap().push(layer);
+                if let Some(animation) = self.animation.as_mut() {
+                    animation.push(layer);
+                } else {
+                    return Err(Box::new(ImgError::new_const(
+                        ImgErrorKind::NotInitializedImageBuffer,
+                        "animation buffer is not initialized".to_string(),
+                    )));
+                }
 
                 return Ok(Some(CallbackResponse::cont()));
             }
@@ -627,7 +651,12 @@ impl DrawCallback for ImageBuffer {
             hashmap
         } else {
             self.metadata = Some(HashMap::new());
-            self.metadata.as_mut().unwrap()
+            self.metadata.as_mut().ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::IllegalData,
+                    "metadata store is not initialized".to_string(),
+                )) as Error
+            })?
         };
         hashmap.insert(key.to_string(), value);
 
@@ -645,7 +674,12 @@ impl PickCallback for ImageBuffer {
                     metadata
                 } else {
                     metadata = Some(HashMap::new());
-                    metadata.as_mut().unwrap()
+                    metadata.as_mut().ok_or_else(|| {
+                        Box::new(ImgError::new_const(
+                            ImgErrorKind::IllegalData,
+                            "metadata store is not initialized".to_string(),
+                        )) as Error
+                    })?
                 };
                 append_animation_metadata(hashmap, animation, self.loop_count.unwrap_or(0));
             }
@@ -676,7 +710,12 @@ impl PickCallback for ImageBuffer {
         }
         let buffersize = width * height * 4;
         let mut data = Vec::with_capacity(buffersize);
-        let buffer = self.buffer.as_ref().unwrap();
+        let buffer = self.buffer.as_ref().ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::NotInitializedImageBuffer,
+                "in pick".to_string(),
+            )) as Error
+        })?;
 
         if start_x >= self.width || start_y >= self.height {
             return Ok(None);

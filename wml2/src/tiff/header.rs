@@ -446,7 +446,12 @@ impl Tiff {
                     current.bitspersamples.push(current.bitspersample);
                 }
                 append.push(Self::empty());
-                current = append.last_mut().unwrap();
+                current = append.last_mut().ok_or_else(|| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::UnknownError,
+                        "failed to append TIFF page".to_string(),
+                    )) as Error
+                })?;
                 current.tiff_headers.endian = tiff_headers.endian;
             }
             match header.tagid {
@@ -966,7 +971,12 @@ fn serialize_ifd(
                 exif,
                 None,
                 None,
-                exif_offset.unwrap(),
+                exif_offset.ok_or_else(|| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::InvalidParameter,
+                        "TIFF EXIF offset is missing".to_string(),
+                    )) as Error
+                })?,
                 0,
                 endian,
             )?)
@@ -987,7 +997,12 @@ fn serialize_ifd(
                 gps,
                 None,
                 None,
-                gps_offset.unwrap(),
+                gps_offset.ok_or_else(|| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::InvalidParameter,
+                        "TIFF GPS offset is missing".to_string(),
+                    )) as Error
+                })?,
                 0,
                 endian,
             )?)
@@ -1037,9 +1052,19 @@ fn serialize_ifd(
             write_u16(4, &mut buf, endian);
             write_u32(1, &mut buf, endian);
             let offset = if tag.tagid == 0x8769 {
-                exif_offset.unwrap()
+                exif_offset.ok_or_else(|| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::InvalidParameter,
+                        "TIFF EXIF offset is missing".to_string(),
+                    )) as Error
+                })?
             } else {
-                gps_offset.unwrap()
+                gps_offset.ok_or_else(|| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::InvalidParameter,
+                        "TIFF GPS offset is missing".to_string(),
+                    )) as Error
+                })?
             };
             write_u32(offset as u32, &mut buf, endian);
             continue;

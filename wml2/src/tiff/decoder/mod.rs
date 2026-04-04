@@ -179,6 +179,29 @@ pub fn draw_tile(
             "This is an index color image,but A color table is empty.".to_string(),
         )));
     }
+    let palette = match header.photometric_interpretation {
+        0 | 1 | 3 => {
+            let palette = color_table.as_deref().ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    "This is an index color image,but A color table is empty.".to_string(),
+                )) as Error
+            })?;
+            let required_len = 1usize << header.bitspersample as usize;
+            if palette.len() < required_len {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    format!(
+                        "Color table is too short. expected at least {} entries, got {}",
+                        required_len,
+                        palette.len()
+                    ),
+                )));
+            }
+            palette
+        }
+        _ => &[],
+    };
 
     let mut row_len = ((header.width as usize * header.bitspersample as usize) + 7) / 8;
     if header.bitspersample == 4 {
@@ -247,7 +270,7 @@ pub fn draw_tile(
                                 prevs[0] = color;
                             }
 
-                            let rgba = &color_table.as_ref().unwrap()[color as usize];
+                            let rgba = &palette[color as usize];
 
                             buf.push(rgba.red);
                             buf.push(rgba.green);
@@ -273,7 +296,7 @@ pub fn draw_tile(
                                 c = (color.reverse_bits() >> 4) as usize;
                             }
 
-                            let rgba = &color_table.as_ref().unwrap()[c];
+                            let rgba = &palette[c];
 
                             buf.push(rgba.red);
                             buf.push(rgba.green);
@@ -295,7 +318,7 @@ pub fn draw_tile(
                                 c = ((color.reverse_bits() >> (6 - shift)) & 0x3) as usize;
                             }
 
-                            let rgba = &color_table.as_ref().unwrap()[c];
+                            let rgba = &palette[c];
 
                             buf.push(rgba.red);
                             buf.push(rgba.green);
@@ -316,7 +339,7 @@ pub fn draw_tile(
                                 c = ((color.reverse_bits() >> (7 - shift)) & 0x1) as usize;
                             }
 
-                            let rgba = &color_table.as_ref().unwrap()[c];
+                            let rgba = &palette[c];
 
                             buf.push(rgba.red);
                             buf.push(rgba.green);

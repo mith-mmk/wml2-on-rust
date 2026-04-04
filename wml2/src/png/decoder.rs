@@ -16,6 +16,31 @@ const START_Y: [usize; 7] = [0, 4, 0, 2, 0, 1, 0];
 const STEP_Y: [usize; 7] = [8, 8, 8, 4, 4, 2, 2];
 const STEP_X: [usize; 7] = [8, 8, 4, 4, 2, 2, 1];
 
+fn png_error(kind: ImgErrorKind, message: impl Into<String>) -> Error {
+    Box::new(ImgError::new_const(kind, message.into()))
+}
+
+fn palette_entries<'a>(header: &'a PngHeader) -> Result<&'a [RGBA], Error> {
+    let palette = header
+        .pallete
+        .as_deref()
+        .ok_or_else(|| png_error(ImgErrorKind::IllegalData, "Pallte data is nothing."))?;
+    let required = 1usize
+        .checked_shl(header.bitpersample as u32)
+        .ok_or_else(|| png_error(ImgErrorKind::IllegalData, "invalid palette bit depth"))?;
+    if palette.len() < required {
+        return Err(png_error(
+            ImgErrorKind::IllegalData,
+            format!(
+                "palette is too short: expected at least {} entries, got {}",
+                required,
+                palette.len()
+            ),
+        ));
+    }
+    Ok(palette)
+}
+
 fn draw_rect(header: &PngHeader) -> (u32, u32) {
     if header.frame_controls.is_empty() {
         (header.width, header.height)
@@ -626,15 +651,8 @@ fn load_index_color(
     buffer: &[u8],
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    if header.pallete.is_none() {
-        let string = "Pallte data is nothing.";
-        return Err(Box::new(ImgError::new_const(
-            ImgErrorKind::IllegalData,
-            string.to_string(),
-        )));
-    }
     let (width, height) = draw_rect(header);
-    let pallet = header.pallete.as_ref().unwrap();
+    let pallet = palette_entries(header)?;
     let raw_length = ((width * header.bitpersample as u32 + 7) / 8 + 1) as usize;
 
     let mut outbuf: Vec<u8> = (0..width * 4).map(|_| 0).collect();
@@ -692,14 +710,7 @@ fn load_index_color_progressive(
     buffer: &[u8],
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    if header.pallete.is_none() {
-        let string = "Pallte data is nothing.";
-        return Err(Box::new(ImgError::new_const(
-            ImgErrorKind::IllegalData,
-            string.to_string(),
-        )));
-    }
-    let pallet = header.pallete.as_ref().unwrap();
+    let pallet = palette_entries(header)?;
     let (width, height) = draw_rect(header);
 
     let mut outbuf: Vec<u8> = (0..width * 4).map(|_| 0).collect();
@@ -876,7 +887,18 @@ pub fn decode<'decode, B: BinaryReader>(
             },
             BacgroundColor::Index(index) => {
                 let index = *index as usize;
-                let pallete = &header.pallete.as_ref().unwrap();
+                let pallete = header.pallete.as_deref().ok_or_else(|| {
+                    png_error(
+                        ImgErrorKind::IllegalData,
+                        "background color references missing palette",
+                    )
+                })?;
+                if index >= pallete.len() {
+                    return Err(png_error(
+                        ImgErrorKind::OutboundIndex,
+                        format!("background palette index {} is out of range", index),
+                    ));
+                }
                 let r = pallete[index].red;
                 let g = pallete[index].green;
                 let b = pallete[index].blue;

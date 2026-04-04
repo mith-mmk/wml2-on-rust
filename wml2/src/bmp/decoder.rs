@@ -401,7 +401,12 @@ fn decode_bit_fileds<B: BinaryReader>(
             "Illigal bit field / no V4 Header".to_string(),
         )));
     }
-    let v4 = info.b_v4_header.as_ref().unwrap();
+    let v4 = info.b_v4_header.as_ref().ok_or_else(|| {
+        Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            "Illigal bit field / no V4 Header".to_string(),
+        )) as Box<dyn std::error::Error>
+    })?;
 
     let red_mask = v4.b_v4_red_mask;
     let (red_shift, red_bits) = get_shift(red_mask);

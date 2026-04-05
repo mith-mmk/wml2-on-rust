@@ -1,5 +1,7 @@
 # wml2viewer TODO
 
+- project wml2viewerに関するもののみ
+
 ステータス
 - [x] 確認済み / 安定実装
 - [+] 実装済み / 今後の拡張余地あり
@@ -25,6 +27,7 @@ P5 = 優先度低い
 ### UI
 - [ ] アイコンの見直し
 - [ ] メニューの名称の見直し
+- [ ] UIの各種不具合の修正（大半がネットワーク共有フォルダに関するもの）
 - [ ] 画像切り替時のエフェクト スライド(右左、左右、上下、下上、渦巻き消去／表示、フェイドイン／アウト)
 
 ### input/key events/mouse events(P1)
@@ -52,8 +55,8 @@ P5 = 優先度低い
 - [ ] 表示名と配置の見直し(作業中)
 
 ## 最終確認
-- [ ] todo.mdの更新
-- [ ] wml2viewerのREADME.ja.mdとREADME.mdの更新
+- [ ] wml2viewer/docs/todo.mdの更新
+- [ ] wml2viewer/README.ja.mdとwml2viewer/README.mdの更新
 
 ## issues
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
@@ -109,7 +112,7 @@ P5 = 優先度低い
 - [x] Windowsの動作チェック
 - [+] Ubuntuの動作チェック
 - [ ] 境界条件の動作チェック
-- [+] helpのチェック
+- [ ] wml2viewer/resources/help.htmlのチェック
 - [ ] wml2viewer/README.ja.md README.md の更新
 - [ ] wml2viewer/docs/todo.mdのチェック
 

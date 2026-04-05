@@ -34,6 +34,7 @@ pub enum ViewerAction {
     ZoomToggle,
     ToggleFullscreen,
     Reload,
+    RefreshFilerDirectory,
     NextImage,
     PrevImage,
     FirstImage,
@@ -96,6 +97,7 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
     );
     map.insert(KeyBinding::new("Enter"), ViewerAction::ToggleFullscreen);
     map.insert(KeyBinding::new("R").with_shift(), ViewerAction::Reload);
+    map.insert(KeyBinding::new("F5"), ViewerAction::RefreshFilerDirectory);
     map.insert(KeyBinding::new("Space"), ViewerAction::NextImage);
     map.insert(KeyBinding::new("ArrowRight"), ViewerAction::NextImage);
     map.insert(
@@ -120,6 +122,20 @@ fn default_key_mapping() -> HashMap<KeyBinding, ViewerAction> {
     map.insert(KeyBinding::new("F"), ViewerAction::ToggleFiler);
     map.insert(KeyBinding::new("P"), ViewerAction::ToggleSettings);
     map
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{InputOptions, KeyBinding, ViewerAction};
+
+    #[test]
+    fn default_keymap_includes_f5_filer_refresh() {
+        let keymap = InputOptions::default().merged_with_defaults();
+        assert_eq!(
+            keymap.get(&KeyBinding::new("F5")),
+            Some(&ViewerAction::RefreshFilerDirectory)
+        );
+    }
 }
 
 #[derive(Clone, Default)]

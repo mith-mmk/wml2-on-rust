@@ -64,6 +64,9 @@ impl ViewerApp {
                 ViewerAction::Reload => {
                     let _ = self.reload_current();
                 }
+                ViewerAction::RefreshFilerDirectory => {
+                    self.refresh_current_filer_directory();
+                }
                 ViewerAction::NextImage => {
                     let _ = self.next_image();
                 }

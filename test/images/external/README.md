@@ -7,3 +7,8 @@
 必要に応じて、sample repository をこの配下に clone してください。
 ファイル名だけで解決できない場合は、`wml2/tests/test_samples.example.txt` を
 `wml2/tests/test_samples.txt` にコピーしてパスを明示します。
+
+# テスト用データ
+- bmp https://github.com/jdelauney/BMP-ImageTestSuite
+- tiff https://github.com/tlnagy/exampletiffs
+- tiff/png https://people.math.sc.edu/Burkardt/data/tif/tif.html

@@ -5,12 +5,12 @@ use std::path::{Path, PathBuf};
 use crate::options::NavigationSortOption;
 
 use super::listed_file::load_listed_file_entries;
-use super::zip_file::load_zip_entries;
-use super::{
+use super::path::{
     is_listed_file_name, is_listed_file_path, is_supported_image_name, is_zip_file_name,
-    is_zip_file_path, listed_virtual_child_path, resolve_start_path, sort_paths,
-    zip_virtual_child_path,
+    is_zip_file_path, listed_virtual_child_path, resolve_start_path, zip_virtual_child_path,
 };
+use super::sort_paths;
+use super::zip_file::load_zip_entries;
 
 pub(crate) struct FilesystemCache {
     listings_by_dir: HashMap<PathBuf, DirectoryListing>,

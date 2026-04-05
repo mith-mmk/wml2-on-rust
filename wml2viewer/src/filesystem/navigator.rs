@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use crate::options::{EndOfFolderOption, NavigationSortOption};
 
 use super::cache::FilesystemCache;
-use super::{
+use super::path::{
     is_listed_file_path, is_virtual_listed_child, is_virtual_zip_child, is_zip_file_path,
     listed_virtual_identity_from_virtual_path, listed_virtual_name_from_virtual_path,
     listed_virtual_root, resolve_start_path, zip_virtual_root,

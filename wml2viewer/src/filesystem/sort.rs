@@ -1,4 +1,12 @@
 use std::cmp::Ordering;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::SystemTime;
+
+use crate::options::NavigationSortOption;
+
+use super::path::{resolve_virtual_listed_child, resolve_virtual_zip_child};
+use super::zip_file::load_zip_entries;
 
 pub(crate) fn compare_natural_str(left: &str, right: &str, case_sensitive: bool) -> Ordering {
     let left = if case_sensitive {
@@ -75,6 +83,27 @@ pub(crate) fn compare_os_str(left: &str, right: &str) -> Ordering {
     }
 }
 
+pub(crate) fn sort_paths(paths: &mut [PathBuf], sort: NavigationSortOption) {
+    match sort {
+        NavigationSortOption::OsName => {
+            paths.sort_by(|left, right| {
+                compare_os_str(&os_name_sort_key(left), &os_name_sort_key(right))
+            });
+        }
+        NavigationSortOption::Name => {
+            paths.sort_by(|left, right| {
+                compare_natural_str(&file_name_sort_key(left), &file_name_sort_key(right), true)
+            });
+        }
+        NavigationSortOption::Date => {
+            paths.sort_by_cached_key(|path| (metadata_modified_key(path), file_name_sort_key(path)));
+        }
+        NavigationSortOption::Size => {
+            paths.sort_by_cached_key(|path| (metadata_size_key(path), file_name_sort_key(path)));
+        }
+    }
+}
+
 #[cfg(target_os = "windows")]
 fn compare_windows_shell_str(left: &str, right: &str) -> Ordering {
     use std::os::windows::ffi::OsStrExt;
@@ -119,6 +148,66 @@ fn trim_leading_zeros(chars: &[char]) -> &[char] {
         .position(|ch| *ch != '0')
         .unwrap_or(chars.len().saturating_sub(1));
     &chars[trimmed..]
+}
+
+fn file_name_sort_key(path: &Path) -> String {
+    if let Some((archive, index)) = resolve_virtual_zip_child(path) {
+        return load_zip_entries(&archive)
+            .and_then(|entries| entries.into_iter().find(|entry| entry.index == index))
+            .map(|entry| entry.name.to_lowercase())
+            .unwrap_or_default();
+    }
+
+    if let Some(target) = resolve_virtual_listed_child(path) {
+        return file_name_sort_key(&target);
+    }
+
+    path.file_name()
+        .map(|name| name.to_string_lossy().to_lowercase())
+        .unwrap_or_default()
+}
+
+fn os_name_sort_key(path: &Path) -> String {
+    if let Some((archive, index)) = resolve_virtual_zip_child(path) {
+        return load_zip_entries(&archive)
+            .and_then(|entries| entries.into_iter().find(|entry| entry.index == index))
+            .map(|entry| entry.name)
+            .unwrap_or_default();
+    }
+
+    if let Some(target) = resolve_virtual_listed_child(path) {
+        return os_name_sort_key(&target);
+    }
+
+    path.file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default()
+}
+
+fn metadata_modified_key(path: &Path) -> SystemTime {
+    if let Some((archive, _)) = resolve_virtual_zip_child(path) {
+        return fs::metadata(archive)
+            .and_then(|metadata| metadata.modified())
+            .unwrap_or(SystemTime::UNIX_EPOCH);
+    }
+
+    let metadata_path = resolve_virtual_listed_child(path).unwrap_or_else(|| path.to_path_buf());
+    fs::metadata(metadata_path)
+        .and_then(|metadata| metadata.modified())
+        .unwrap_or(SystemTime::UNIX_EPOCH)
+}
+
+fn metadata_size_key(path: &Path) -> u64 {
+    if let Some((archive, _)) = resolve_virtual_zip_child(path) {
+        return fs::metadata(archive)
+            .map(|metadata| metadata.len())
+            .unwrap_or(0);
+    }
+
+    let metadata_path = resolve_virtual_listed_child(path).unwrap_or_else(|| path.to_path_buf());
+    fs::metadata(metadata_path)
+        .map(|metadata| metadata.len())
+        .unwrap_or(0)
 }
 
 #[cfg(test)]

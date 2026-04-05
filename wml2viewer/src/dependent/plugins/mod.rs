@@ -595,7 +595,12 @@ mod tests {
     }
 
     fn plugin_path(provider: &str) -> PathBuf {
-        repo_root().join("test").join("plugins").join(provider)
+        repo_root()
+            .join("test")
+            .join("images")
+            .join("external")
+            .join("plugins")
+            .join(provider)
     }
 
     #[test]

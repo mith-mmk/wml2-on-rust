@@ -1,7 +1,7 @@
 use crate::dependent::ui_available_roots;
 pub(crate) use crate::filesystem::{
-    BrowserEntry as FilerEntry, BrowserMetadata as FilerMetadata,
-    BrowserNameSortMode as NameSortMode, BrowserSortField as FilerSortField,
+    BrowserEntry as FilerEntry, BrowserNameSortMode as NameSortMode,
+    BrowserSortField as FilerSortField,
 };
 use std::path::PathBuf;
 

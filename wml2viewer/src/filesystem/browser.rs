@@ -1,6 +1,9 @@
 use crate::options::NavigationSortOption;
 use std::fs;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::thread;
 use std::time::SystemTime;
 
 use super::{
@@ -51,6 +54,81 @@ pub struct BrowserScanOptions {
     pub name_sort_mode: BrowserNameSortMode,
 }
 
+#[derive(Clone)]
+pub enum BrowserQuery {
+    OpenDirectory {
+        request_id: u64,
+        dir: PathBuf,
+        selected: Option<PathBuf>,
+        options: BrowserScanOptions,
+    },
+}
+
+pub enum BrowserQueryResult {
+    Reset {
+        request_id: u64,
+        directory: PathBuf,
+        selected: Option<PathBuf>,
+    },
+    Append {
+        request_id: u64,
+        entries: Vec<BrowserEntry>,
+    },
+    Snapshot {
+        request_id: u64,
+        directory: PathBuf,
+        entries: Vec<BrowserEntry>,
+        selected: Option<PathBuf>,
+    },
+}
+
+pub fn spawn_browser_query_worker() -> (Sender<BrowserQuery>, Receiver<BrowserQueryResult>) {
+    let (command_tx, command_rx) = mpsc::channel::<BrowserQuery>();
+    let (result_tx, result_rx) = mpsc::channel::<BrowserQueryResult>();
+
+    thread::spawn(move || {
+        while let Ok(command) = command_rx.recv() {
+            let mut latest = command;
+            while let Ok(next) = command_rx.try_recv() {
+                latest = next;
+            }
+            match latest {
+                BrowserQuery::OpenDirectory {
+                    request_id,
+                    dir,
+                    selected,
+                    options,
+                } => {
+                    let result_tx = result_tx.clone();
+                    thread::spawn(move || {
+                        let result = catch_unwind(AssertUnwindSafe(|| {
+                            scan_query_request(
+                                &result_tx,
+                                request_id,
+                                dir.clone(),
+                                selected.clone(),
+                                options,
+                            )
+                        }));
+                        let entries = match result {
+                            Ok(entries) => entries,
+                            Err(_) => Vec::new(),
+                        };
+                        let _ = result_tx.send(BrowserQueryResult::Snapshot {
+                            request_id,
+                            directory: dir,
+                            entries,
+                            selected,
+                        });
+                    });
+                }
+            }
+        }
+    });
+
+    (command_tx, result_rx)
+}
+
 pub fn scan_browser_directory_with_preview(
     dir: &Path,
     options: &BrowserScanOptions,
@@ -69,6 +147,27 @@ pub fn scan_browser_directory_with_preview(
         options.name_sort_mode,
     );
     entries
+}
+
+fn scan_query_request(
+    result_tx: &Sender<BrowserQueryResult>,
+    request_id: u64,
+    dir: PathBuf,
+    selected: Option<PathBuf>,
+    options: BrowserScanOptions,
+) -> Vec<BrowserEntry> {
+    let _ = result_tx.send(BrowserQueryResult::Reset {
+        request_id,
+        directory: dir.clone(),
+        selected: selected.clone(),
+    });
+
+    scan_browser_directory_with_preview(&dir, &options, |entries| {
+        let _ = result_tx.send(BrowserQueryResult::Append {
+            request_id,
+            entries,
+        });
+    })
 }
 
 pub fn sort_browser_entries(

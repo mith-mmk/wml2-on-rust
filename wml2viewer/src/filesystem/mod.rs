@@ -9,8 +9,9 @@ mod zip_file;
 
 use crate::options::NavigationSortOption;
 pub use browser::{
-    BrowserEntry, BrowserMetadata, BrowserNameSortMode, BrowserScanOptions, BrowserSortField,
-    compare_browser_name, scan_browser_directory_with_preview, sort_browser_entries,
+    BrowserEntry, BrowserMetadata, BrowserNameSortMode, BrowserQuery, BrowserQueryResult,
+    BrowserScanOptions, BrowserSortField, compare_browser_name,
+    scan_browser_directory_with_preview, sort_browser_entries, spawn_browser_query_worker,
 };
 pub(crate) use cache::{
     FilesystemCache, browser_entry_path_from_dir_entry, build_listed_virtual_children,

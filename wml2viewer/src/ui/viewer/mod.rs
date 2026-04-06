@@ -4,9 +4,9 @@ use crate::dependent::{default_download_dir, pick_save_directory};
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
-    FilesystemCommand, FilesystemResult, adjacent_entry, archive_prefers_low_io,
-    is_browser_container, navigation_branch_path, resolve_navigation_entry_path,
-    set_archive_zip_workaround, spawn_filesystem_worker,
+    BrowserScanOptions, FilesystemCommand, FilesystemResult, adjacent_entry,
+    archive_prefers_low_io, is_browser_container, navigation_branch_path,
+    resolve_navigation_entry_path, set_archive_zip_workaround, spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, PluginConfig, ResourceOptions,
@@ -999,15 +999,17 @@ impl ViewerApp {
         let _ = filer_tx.send(FilerCommand::OpenDirectory {
             request_id,
             dir,
-            sort: self.navigation_sort,
             selected,
-            sort_field: self.filer.sort_field,
-            ascending: self.filer.ascending,
-            separate_dirs: self.filer.separate_dirs,
-            archive_as_container_in_sort: self.filer.archive_as_container_in_sort,
-            filter_text: self.filer.filter_text.clone(),
-            extension_filter: self.filer.extension_filter.clone(),
-            name_sort_mode: self.filer.name_sort_mode,
+            options: BrowserScanOptions {
+                navigation_sort: self.navigation_sort,
+                sort_field: self.filer.sort_field,
+                ascending: self.filer.ascending,
+                separate_dirs: self.filer.separate_dirs,
+                archive_as_container_in_sort: self.filer.archive_as_container_in_sort,
+                filter_text: self.filer.filter_text.clone(),
+                extension_filter: self.filer.extension_filter.clone(),
+                name_sort_mode: self.filer.name_sort_mode,
+            },
         });
     }
 

@@ -1,21 +1,9 @@
 use crate::dependent::ui_available_roots;
+pub(crate) use crate::filesystem::{
+    BrowserEntry as FilerEntry, BrowserMetadata as FilerMetadata,
+    BrowserNameSortMode as NameSortMode, BrowserSortField as FilerSortField,
+};
 use std::path::PathBuf;
-use std::time::SystemTime;
-
-#[derive(Clone, Debug, Default)]
-pub(crate) struct FilerMetadata {
-    pub(crate) size: Option<u64>,
-    pub(crate) modified: Option<SystemTime>,
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct FilerEntry {
-    pub(crate) path: PathBuf,
-    pub(crate) label: String,
-    pub(crate) is_container: bool,
-    pub(crate) sort_as_container: bool,
-    pub(crate) metadata: FilerMetadata,
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub(crate) enum FilerViewMode {
@@ -25,20 +13,6 @@ pub(crate) enum FilerViewMode {
     ThumbnailMedium,
     ThumbnailLarge,
     Detail,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum FilerSortField {
-    Name,
-    Modified,
-    Size,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum NameSortMode {
-    Os,
-    CaseSensitive,
-    CaseInsensitive,
 }
 
 #[derive(Debug)]

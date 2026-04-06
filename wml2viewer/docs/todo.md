@@ -1,6 +1,8 @@
 # wml2viewer TODO
 
 - project wml2viewerに関するもののみ
+- `SPEC.md`と`state.md`も参照
+
 
 ステータス
 - [x] 確認済み / 安定実装
@@ -19,7 +21,10 @@ P5 = 優先度低い
 最終整理日: 2026-03-29
 
 # 0.0.13
-## P1
+## 優先度1
+- [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
+
+## 優先度2
 - [ ] LHAサポート(zipと同じレイヤーに置く)
 - [ ] フォルダの内容更新
     - [x] [F5]の手動更新(default)
@@ -77,8 +82,14 @@ P5 = 優先度低い
 
 ## issues
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
+   - [+] directory scan / preview chunk / filter / metadata / sort を `filesystem.browser` へ寄せた
+   - [ ] `FilerCommand / FilerResult` 自体を filesystem 側の query/result モデルへ統合
+   - [ ] viewer の navigation cache と filer の browser scan cache を共有化
+   - [ ] filer のファイルリスト更新を viewer の current/pending navigation と同期
    - [ ] Filerのファイルリストがアップデートしたとき viewerに反映されない問題(データの同期) 
     - [ ] 油断していると画像の最初に飛ばされる
+   - [ ] 大規模フォルダ向け lazy load / incremental snapshot を filesystem 側の共通実装へ寄せる
+   - [ ] metadata/thumbnail の共通キャッシュ層を追加
 ### startup sequence
 - [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
@@ -281,10 +292,22 @@ P5 = 優先度低い
 - [x] fileviewer から zip の中身を辿れる
 - [x] sort order `os_name` / `name` / `date` / `size`
 - [+] plugin 有効拡張子を filer / viewer に反映
+- [+] browser query を `filesystem.browser` へ分離
+- [+] virtual path / worker / navigator / cache / sort をモジュール分割
 - [*] `RECURSIVE` の探索コスト最適化
 - [ ] filter 条件の filesystem 側統合
 - [ ] archive option (`FOLDER` / `SKIP` / `ARCHIVER`)
 - [ ] キャッシュのシリアライズ
+- [ ] browser query と navigation cache の共有化
+- [ ] metadata cache の共有化
+- [ ] filesystem 側での query/result protocol の一本化
+
+## src/filesystem/browser.rs
+- [+] filer の scan / preview / filter / sort / metadata 収集を集約
+- [ ] virtual directory と real directory の incremental snapshot を同じ経路へ統合
+- [ ] 大規模フォルダ向け lazy load を filesystem worker と共有
+- [ ] filter 条件を filesystem worker 側の永続 state として扱えるように整理
+- [ ] thumbnail worker と連動する query hint の追加
 
 ## src/filesystem/listed_file.rs
 - [x] `.wml` 判定
@@ -378,12 +401,14 @@ P5 = 優先度低い
 ## src/ui/menu/fileviewer/worker.rs
 - [x] `FilerCommand / FilerResult`
 - [x] directory scan の worker 分離
-- [x] metadata 収集
-- [x] sort / filter / ext filter / dir separate
+- [+] metadata 収集を `filesystem.browser` へ移動
+- [+] sort / filter / ext filter / dir separate を `filesystem.browser` へ移動
 - [x] 数値を含む自然順ソート
 - [+] incremental snapshot preview
 - [+] lazy load の段階化
 - [ ] OS 準拠 name collation の強化
+- [ ] worker を filesystem query の薄い adapter にさらに整理
+- [ ] `FilerCommand / FilerResult` を browser query/result へ置き換え
 
 ## src/ui/menu/fileviewer/thumbnail.rs
 - [x] サムネイル worker

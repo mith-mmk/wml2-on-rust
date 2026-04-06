@@ -27,6 +27,7 @@ impl Default for FilesystemCache {
 pub(crate) struct DirectoryListing {
     files: Vec<PathBuf>,
     dirs: Vec<PathBuf>,
+    browser_entries: Vec<PathBuf>,
     first_file: Option<PathBuf>,
     last_file: Option<PathBuf>,
 }
@@ -54,12 +55,23 @@ impl FilesystemCache {
             .or_insert_with(|| scan_directory_listing(dir, sort))
     }
 
+    pub(crate) fn ensure_sort(&mut self, sort: NavigationSortOption) {
+        if self.sort != sort {
+            self.sort = sort;
+            self.listings_by_dir.clear();
+        }
+    }
+
     pub(crate) fn supported_entries(&mut self, dir: &Path) -> Vec<PathBuf> {
         self.listing(dir).files.clone()
     }
 
     pub(crate) fn child_directories(&mut self, dir: &Path) -> Vec<PathBuf> {
         self.listing(dir).dirs.clone()
+    }
+
+    pub(crate) fn browser_entries(&mut self, dir: &Path) -> Vec<PathBuf> {
+        self.listing(dir).browser_entries.clone()
     }
 
     pub(crate) fn first_supported_file(&mut self, dir: &Path) -> Option<PathBuf> {
@@ -78,38 +90,8 @@ pub fn list_openable_entries(dir: &Path, sort: NavigationSortOption) -> Vec<Path
 }
 
 pub fn list_browser_entries(dir: &Path, sort: NavigationSortOption) -> Vec<PathBuf> {
-    if is_zip_file_path(dir) {
-        return build_zip_virtual_children(dir);
-    }
-
-    if is_listed_file_path(dir) {
-        return build_listed_virtual_children(dir);
-    }
-
-    let mut entries = Vec::new();
-    let Ok(read_dir) = fs::read_dir(dir) else {
-        return entries;
-    };
-
-    let mut dirs = Vec::new();
-    let mut files = Vec::new();
-    for entry in read_dir.filter_map(Result::ok) {
-        let Some(path) = browser_entry_path_from_dir_entry(&entry) else {
-            continue;
-        };
-        if dir_entry_is_browser_file(&entry, &path) {
-            files.push(path.clone());
-        }
-        if dir_entry_is_browser_container(&entry, &path) {
-            dirs.push(path);
-        }
-    }
-
-    sort_paths(&mut dirs, sort);
-    sort_paths(&mut files, sort);
-    entries.extend(dirs);
-    entries.extend(files);
-    entries
+    let mut cache = FilesystemCache::new(sort);
+    cache.browser_entries(dir)
 }
 
 pub fn is_browser_container(path: &Path) -> bool {
@@ -163,10 +145,12 @@ pub(crate) fn build_zip_virtual_children(zip_file: &Path) -> Vec<PathBuf> {
 
 fn scan_listed_virtual_directory(listed_file: &Path) -> DirectoryListing {
     let files = build_listed_virtual_children(listed_file);
+    let browser_entries = files.clone();
 
     DirectoryListing {
         first_file: files.first().cloned(),
         last_file: files.last().cloned(),
+        browser_entries,
         files,
         dirs: Vec::new(),
     }
@@ -178,10 +162,12 @@ fn scan_zip_virtual_directory(zip_file: &Path) -> DirectoryListing {
         .iter()
         .map(|entry| zip_virtual_child_path(zip_file, entry.index, &entry.name))
         .collect::<Vec<_>>();
+    let browser_entries = files.clone();
 
     DirectoryListing {
         first_file: files.first().cloned(),
         last_file: files.last().cloned(),
+        browser_entries,
         files,
         dirs: Vec::new(),
     }
@@ -209,6 +195,8 @@ fn scan_real_directory_listing(dir: &Path, sort: NavigationSortOption) -> Direct
 
     sort_paths(&mut raw_files, sort);
     sort_paths(&mut raw_dirs, sort);
+    let mut browser_entries = raw_dirs.clone();
+    browser_entries.extend(raw_files.clone());
 
     let mut files = Vec::new();
     for path in raw_files {
@@ -224,6 +212,7 @@ fn scan_real_directory_listing(dir: &Path, sort: NavigationSortOption) -> Direct
     DirectoryListing {
         first_file: files.first().cloned(),
         last_file: files.last().cloned(),
+        browser_entries,
         files,
         dirs: raw_dirs,
     }

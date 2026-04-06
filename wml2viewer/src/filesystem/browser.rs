@@ -7,7 +7,7 @@ use std::thread;
 use std::time::SystemTime;
 
 use super::{
-    browser_entry_path_from_dir_entry, compare_natural_str, compare_os_str, is_browser_container,
+    FilesystemCache, compare_natural_str, compare_os_str, is_browser_container,
     list_browser_entries,
 };
 
@@ -87,6 +87,7 @@ pub fn spawn_browser_query_worker() -> (Sender<BrowserQuery>, Receiver<BrowserQu
     let (result_tx, result_rx) = mpsc::channel::<BrowserQueryResult>();
 
     thread::spawn(move || {
+        let mut cache = FilesystemCache::default();
         while let Ok(command) = command_rx.recv() {
             let mut latest = command;
             while let Ok(next) = command_rx.try_recv() {
@@ -99,27 +100,25 @@ pub fn spawn_browser_query_worker() -> (Sender<BrowserQuery>, Receiver<BrowserQu
                     selected,
                     options,
                 } => {
-                    let result_tx = result_tx.clone();
-                    thread::spawn(move || {
-                        let result = catch_unwind(AssertUnwindSafe(|| {
-                            scan_query_request(
-                                &result_tx,
-                                request_id,
-                                dir.clone(),
-                                selected.clone(),
-                                options,
-                            )
-                        }));
-                        let entries = match result {
-                            Ok(entries) => entries,
-                            Err(_) => Vec::new(),
-                        };
-                        let _ = result_tx.send(BrowserQueryResult::Snapshot {
+                    let result = catch_unwind(AssertUnwindSafe(|| {
+                        scan_query_request(
+                            &result_tx,
                             request_id,
-                            directory: dir,
-                            entries,
-                            selected,
-                        });
+                            dir.clone(),
+                            selected.clone(),
+                            options,
+                            &mut cache,
+                        )
+                    }));
+                    let entries = match result {
+                        Ok(entries) => entries,
+                        Err(_) => Vec::new(),
+                    };
+                    let _ = result_tx.send(BrowserQueryResult::Snapshot {
+                        request_id,
+                        directory: dir,
+                        entries,
+                        selected,
                     });
                 }
             }
@@ -134,7 +133,18 @@ pub fn scan_browser_directory_with_preview(
     options: &BrowserScanOptions,
     mut on_preview_chunk: impl FnMut(Vec<BrowserEntry>),
 ) -> Vec<BrowserEntry> {
-    let collected = collect_browser_entry_paths(dir, options, &mut on_preview_chunk);
+    let mut cache = FilesystemCache::new(options.navigation_sort);
+    scan_browser_directory_with_preview_cached(dir, options, &mut cache, &mut on_preview_chunk)
+}
+
+pub fn scan_browser_directory_with_preview_cached(
+    dir: &Path,
+    options: &BrowserScanOptions,
+    cache: &mut FilesystemCache,
+    mut on_preview_chunk: impl FnMut(Vec<BrowserEntry>),
+) -> Vec<BrowserEntry> {
+    cache.ensure_sort(options.navigation_sort);
+    let collected = collect_browser_entry_paths(dir, options, cache, &mut on_preview_chunk);
     let mut entries = collected
         .into_iter()
         .map(|path| build_browser_entry(path, options.archive_as_container_in_sort))
@@ -155,6 +165,7 @@ fn scan_query_request(
     dir: PathBuf,
     selected: Option<PathBuf>,
     options: BrowserScanOptions,
+    cache: &mut FilesystemCache,
 ) -> Vec<BrowserEntry> {
     let _ = result_tx.send(BrowserQueryResult::Reset {
         request_id,
@@ -162,7 +173,7 @@ fn scan_query_request(
         selected: selected.clone(),
     });
 
-    scan_browser_directory_with_preview(&dir, &options, |entries| {
+    scan_browser_directory_with_preview_cached(&dir, &options, cache, |entries| {
         let _ = result_tx.send(BrowserQueryResult::Append {
             request_id,
             entries,
@@ -231,6 +242,7 @@ pub fn compare_browser_name(
 fn collect_browser_entry_paths(
     dir: &Path,
     options: &BrowserScanOptions,
+    cache: &mut FilesystemCache,
     on_preview_chunk: &mut impl FnMut(Vec<BrowserEntry>),
 ) -> Vec<PathBuf> {
     if !dir.is_dir() {
@@ -257,15 +269,8 @@ fn collect_browser_entry_paths(
     }
 
     let mut collected = Vec::new();
-    let Ok(read_dir) = fs::read_dir(dir) else {
-        return collected;
-    };
-
     let mut preview_chunk = Vec::new();
-    for entry in read_dir.filter_map(Result::ok) {
-        let Some(path) = browser_entry_path_from_dir_entry(&entry) else {
-            continue;
-        };
+    for path in cache.browser_entries(dir) {
         let preview_entry = build_preview_entry(path.clone(), options.archive_as_container_in_sort);
         if !matches_filters(
             &preview_entry,

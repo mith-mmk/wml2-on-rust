@@ -14,8 +14,7 @@ pub use browser::{
     scan_browser_directory_with_preview, sort_browser_entries, spawn_browser_query_worker,
 };
 pub(crate) use cache::{
-    FilesystemCache, browser_entry_path_from_dir_entry, build_listed_virtual_children,
-    build_zip_virtual_children,
+    FilesystemCache, build_listed_virtual_children, build_zip_virtual_children,
 };
 pub use cache::{is_browser_container, list_browser_entries, list_openable_entries};
 pub(crate) use navigator::{FileNavigator, NavigationOutcome};

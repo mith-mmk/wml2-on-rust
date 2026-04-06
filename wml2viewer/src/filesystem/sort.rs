@@ -96,7 +96,8 @@ pub(crate) fn sort_paths(paths: &mut [PathBuf], sort: NavigationSortOption) {
             });
         }
         NavigationSortOption::Date => {
-            paths.sort_by_cached_key(|path| (metadata_modified_key(path), file_name_sort_key(path)));
+            paths
+                .sort_by_cached_key(|path| (metadata_modified_key(path), file_name_sort_key(path)));
         }
         NavigationSortOption::Size => {
             paths.sort_by_cached_key(|path| (metadata_size_key(path), file_name_sort_key(path)));

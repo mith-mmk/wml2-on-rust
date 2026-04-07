@@ -20,6 +20,24 @@ pub(crate) struct ZipEntryRecord {
     pub size: u64,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ArchiveSignature {
+    len: u64,
+    modified_nanos: Option<u128>,
+}
+
+#[derive(Clone)]
+struct ZipIndexCacheEntry {
+    signature: ArchiveSignature,
+    entries: Vec<ZipEntryRecord>,
+}
+
+#[derive(Clone)]
+struct LocalArchiveCacheEntry {
+    signature: ArchiveSignature,
+    cached_path: PathBuf,
+}
+
 #[derive(Clone)]
 enum ZipArchiveAccess {
     Direct(PathBuf),
@@ -27,15 +45,24 @@ enum ZipArchiveAccess {
 }
 
 pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
+    let signature = archive_signature(path)?;
     let cache = zip_index_cache();
-    if let Some(entries) = cache.lock().ok()?.get(path).cloned() {
-        return Some(entries);
+    if let Some(entry) = cache.lock().ok()?.get(path).cloned() {
+        if entry.signature == signature {
+            return Some(entry.entries);
+        }
     }
 
     let mut entries = load_zip_entries_unsorted(path)?;
     sort_zip_entries(&mut entries);
     if let Ok(mut cache) = cache.lock() {
-        cache.insert(path.to_path_buf(), entries.clone());
+        cache.insert(
+            path.to_path_buf(),
+            ZipIndexCacheEntry {
+                signature,
+                entries: entries.clone(),
+            },
+        );
     }
     Some(entries)
 }
@@ -203,15 +230,16 @@ fn resolve_zip_archive_access(path: &Path) -> Option<ZipArchiveAccess> {
 }
 
 fn ensure_local_archive_cache(path: &Path, metadata: &std::fs::Metadata) -> Option<PathBuf> {
+    let signature = archive_signature_from_metadata(metadata);
     let cache = local_archive_cache();
     if let Some(cached) = cache
         .lock()
         .ok()?
         .get(path)
         .cloned()
-        .filter(|cached| cached.exists())
+        .filter(|entry| entry.signature == signature && entry.cached_path.exists())
     {
-        return Some(cached);
+        return Some(cached.cached_path);
     }
 
     let temp_root = default_temp_dir()?.join("archive-cache");
@@ -236,7 +264,13 @@ fn ensure_local_archive_cache(path: &Path, metadata: &std::fs::Metadata) -> Opti
         std::fs::copy(path, &destination).ok()?;
     }
     if let Ok(mut cache) = cache.lock() {
-        cache.insert(path.to_path_buf(), destination.clone());
+        cache.insert(
+            path.to_path_buf(),
+            LocalArchiveCacheEntry {
+                signature,
+                cached_path: destination.clone(),
+            },
+        );
     }
     Some(destination)
 }
@@ -250,14 +284,30 @@ fn clear_zip_caches() {
     }
 }
 
-fn zip_index_cache() -> &'static Mutex<HashMap<PathBuf, Vec<ZipEntryRecord>>> {
-    static ZIP_INDEX_CACHE: OnceLock<Mutex<HashMap<PathBuf, Vec<ZipEntryRecord>>>> =
-        OnceLock::new();
+fn archive_signature(path: &Path) -> Option<ArchiveSignature> {
+    let metadata = std::fs::metadata(path).ok()?;
+    Some(archive_signature_from_metadata(&metadata))
+}
+
+fn archive_signature_from_metadata(metadata: &std::fs::Metadata) -> ArchiveSignature {
+    ArchiveSignature {
+        len: metadata.len(),
+        modified_nanos: metadata
+            .modified()
+            .ok()
+            .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+            .map(|duration| duration.as_nanos()),
+    }
+}
+
+fn zip_index_cache() -> &'static Mutex<HashMap<PathBuf, ZipIndexCacheEntry>> {
+    static ZIP_INDEX_CACHE: OnceLock<Mutex<HashMap<PathBuf, ZipIndexCacheEntry>>> = OnceLock::new();
     ZIP_INDEX_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn local_archive_cache() -> &'static Mutex<HashMap<PathBuf, PathBuf>> {
-    static LOCAL_ARCHIVE_CACHE: OnceLock<Mutex<HashMap<PathBuf, PathBuf>>> = OnceLock::new();
+fn local_archive_cache() -> &'static Mutex<HashMap<PathBuf, LocalArchiveCacheEntry>> {
+    static LOCAL_ARCHIVE_CACHE: OnceLock<Mutex<HashMap<PathBuf, LocalArchiveCacheEntry>>> =
+        OnceLock::new();
     LOCAL_ARCHIVE_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
@@ -394,10 +444,12 @@ fn decode_zip_name(file: &zip::read::ZipFile<'_>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::ZipCacheReader;
+    use super::{ZipCacheReader, load_zip_entries, set_zip_workaround_options};
+    use crate::options::ZipWorkaroundOptions;
     use std::fs::File;
     use std::io::{Read, Seek, SeekFrom, Write};
     use std::time::{SystemTime, UNIX_EPOCH};
+    use zip::write::SimpleFileOptions;
 
     fn temp_path(name: &str) -> std::path::PathBuf {
         let unique = SystemTime::now()
@@ -429,6 +481,36 @@ mod tests {
         reader.seek(SeekFrom::Start(32)).unwrap();
         reader.read_exact(&mut buf[..8]).unwrap();
         assert_eq!(&buf[..8], &[32, 33, 34, 35, 36, 37, 38, 39]);
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    fn write_zip(path: &std::path::Path, names: &[&str]) {
+        let file = File::create(path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        for name in names {
+            zip.start_file(name, SimpleFileOptions::default()).unwrap();
+            zip.write_all(b"data").unwrap();
+        }
+        zip.finish().unwrap();
+    }
+
+    #[test]
+    fn zip_caches_are_invalidated_when_archive_changes() {
+        let path = temp_path("zip-signature");
+        write_zip(&path, &["001.png"]);
+        set_zip_workaround_options(ZipWorkaroundOptions {
+            threshold_mb: 0,
+            local_cache: true,
+        });
+
+        let first = load_zip_entries(&path).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        write_zip(&path, &["001.png", "002.png"]);
+        let second = load_zip_entries(&path).unwrap();
+
+        assert_eq!(first.len(), 1);
+        assert_eq!(second.len(), 2);
 
         let _ = std::fs::remove_file(path);
     }

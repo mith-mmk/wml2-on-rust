@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::time::UNIX_EPOCH;
 
 use crate::dependent::default_temp_dir;
 use crate::options::{ArchiveBrowseOption, NavigationSortOption};
@@ -11,14 +12,15 @@ use super::browser::BrowserMetadata;
 use super::listed_file::load_listed_file_entries;
 use super::path::{
     is_listed_file_name, is_listed_file_path, is_supported_image_name, is_zip_file_name,
-    is_zip_file_path, listed_virtual_child_path, resolve_start_path, zip_virtual_child_path,
+    is_zip_file_path, listed_virtual_child_path, listed_virtual_root, resolve_start_path,
+    zip_virtual_child_path, zip_virtual_root,
 };
 use super::sort_paths;
 use super::zip_file::load_zip_entries;
 
 pub(crate) struct FilesystemCache {
-    listings_by_dir: HashMap<PathBuf, DirectoryListing>,
-    metadata_by_path: HashMap<PathBuf, BrowserMetadata>,
+    listings_by_dir: HashMap<PathBuf, CachedDirectoryListing>,
+    metadata_by_path: HashMap<PathBuf, CachedBrowserMetadata>,
     sort: NavigationSortOption,
     archive_mode: ArchiveBrowseOption,
 }
@@ -40,6 +42,26 @@ pub(crate) struct DirectoryListing {
     last_file: Option<PathBuf>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct PathSignature {
+    exists: bool,
+    is_dir: bool,
+    len: Option<u64>,
+    modified_nanos: Option<u128>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct CachedDirectoryListing {
+    signature: Option<PathSignature>,
+    listing: DirectoryListing,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct CachedBrowserMetadata {
+    signature: Option<PathSignature>,
+    metadata: BrowserMetadata,
+}
+
 impl FilesystemCache {
     pub(crate) fn new(sort: NavigationSortOption, archive_mode: ArchiveBrowseOption) -> Self {
         let mut cache = load_persistent_cache().unwrap_or(Self {
@@ -53,24 +75,26 @@ impl FilesystemCache {
     }
 
     pub(crate) fn listing(&mut self, dir: &Path) -> &DirectoryListing {
-        if is_listed_file_path(dir) {
+        let current_signature = listing_signature(dir);
+        let should_refresh = self
+            .listings_by_dir
+            .get(dir)
+            .map(|cached| cached.signature != current_signature)
+            .unwrap_or(true);
+        if should_refresh {
             let listing = scan_directory_listing(dir, self.sort, self.archive_mode);
-            self.listings_by_dir.insert(dir.to_path_buf(), listing);
-            persist_cache(self);
-            return self
-                .listings_by_dir
-                .get(dir)
-                .expect("listed file listing inserted");
-        }
-        let sort = self.sort;
-        let archive_mode = self.archive_mode;
-        if !self.listings_by_dir.contains_key(dir) {
-            let listing = scan_directory_listing(dir, sort, archive_mode);
-            self.listings_by_dir.insert(dir.to_path_buf(), listing);
+            self.listings_by_dir.insert(
+                dir.to_path_buf(),
+                CachedDirectoryListing {
+                    signature: current_signature,
+                    listing,
+                },
+            );
             persist_cache(self);
         }
         self.listings_by_dir
             .get(dir)
+            .map(|cached| &cached.listing)
             .expect("directory listing inserted")
     }
 
@@ -93,11 +117,30 @@ impl FilesystemCache {
         let mut changed = false;
         let mut result = HashMap::with_capacity(paths.len());
         for path in paths {
+            let signature = metadata_signature(path);
             let metadata = match self.metadata_by_path.get(path) {
-                Some(metadata) => metadata.clone(),
+                Some(cached) if cached.signature == signature => cached.metadata.clone(),
                 None => {
                     let metadata = load_browser_metadata(path);
-                    self.metadata_by_path.insert(path.clone(), metadata.clone());
+                    self.metadata_by_path.insert(
+                        path.clone(),
+                        CachedBrowserMetadata {
+                            signature,
+                            metadata: metadata.clone(),
+                        },
+                    );
+                    changed = true;
+                    metadata
+                }
+                Some(_) => {
+                    let metadata = load_browser_metadata(path);
+                    self.metadata_by_path.insert(
+                        path.clone(),
+                        CachedBrowserMetadata {
+                            signature,
+                            metadata: metadata.clone(),
+                        },
+                    );
                     changed = true;
                     metadata
                 }
@@ -339,12 +382,41 @@ fn load_browser_metadata(path: &Path) -> BrowserMetadata {
         .unwrap_or_default()
 }
 
+fn listing_signature(path: &Path) -> Option<PathSignature> {
+    signature_for_cache_path(path)
+}
+
+fn metadata_signature(path: &Path) -> Option<PathSignature> {
+    signature_for_cache_path(path)
+}
+
+fn signature_for_cache_path(path: &Path) -> Option<PathSignature> {
+    let target = zip_virtual_root(path)
+        .or_else(|| listed_virtual_root(path))
+        .unwrap_or_else(|| path.to_path_buf());
+    path_signature(&target)
+}
+
+fn path_signature(path: &Path) -> Option<PathSignature> {
+    let metadata = fs::metadata(path).ok()?;
+    Some(PathSignature {
+        exists: true,
+        is_dir: metadata.is_dir(),
+        len: metadata.is_file().then_some(metadata.len()),
+        modified_nanos: metadata
+            .modified()
+            .ok()
+            .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+            .map(|duration| duration.as_nanos()),
+    })
+}
+
 #[derive(Serialize, Deserialize)]
 struct PersistentFilesystemCache {
     sort: NavigationSortOption,
     archive_mode: ArchiveBrowseOption,
-    listings_by_dir: HashMap<PathBuf, DirectoryListing>,
-    metadata_by_path: HashMap<PathBuf, BrowserMetadata>,
+    listings_by_dir: HashMap<PathBuf, CachedDirectoryListing>,
+    metadata_by_path: HashMap<PathBuf, CachedBrowserMetadata>,
 }
 
 fn persistent_cache_path() -> Option<PathBuf> {
@@ -400,18 +472,19 @@ mod tests {
     }
 
     #[test]
-    fn browser_metadata_batch_reuses_cached_values() {
+    fn browser_metadata_batch_is_invalidated_when_file_changes() {
         let dir = make_temp_dir();
         let file = dir.join("page.png");
         fs::write(&file, [1u8]).unwrap();
 
         let mut cache = FilesystemCache::default();
         let first = cache.browser_metadata_batch(std::slice::from_ref(&file));
+        std::thread::sleep(std::time::Duration::from_millis(20));
         fs::write(&file, [1u8, 2, 3, 4]).unwrap();
         let second = cache.browser_metadata_batch(std::slice::from_ref(&file));
 
         assert_eq!(first.get(&file).and_then(|meta| meta.size), Some(1));
-        assert_eq!(second.get(&file).and_then(|meta| meta.size), Some(1));
+        assert_eq!(second.get(&file).and_then(|meta| meta.size), Some(4));
 
         let _ = fs::remove_dir_all(dir);
     }
@@ -444,6 +517,26 @@ mod tests {
         assert!(!skip_listing.browser_entries.contains(&archive));
         assert!(archiver_listing.browser_entries.contains(&archive));
         assert!(archiver_listing.files.contains(&archive));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn directory_listing_is_invalidated_when_directory_changes() {
+        let dir = make_temp_dir();
+        let first = dir.join("001.png");
+        let second = dir.join("002.png");
+        fs::write(&first, []).unwrap();
+
+        let mut cache = FilesystemCache::default();
+        let before = cache.browser_entries(&dir);
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        fs::write(&second, []).unwrap();
+        let after = cache.browser_entries(&dir);
+
+        assert_eq!(before, vec![first.clone()]);
+        assert!(after.contains(&first));
+        assert!(after.contains(&second));
 
         let _ = fs::remove_dir_all(dir);
     }

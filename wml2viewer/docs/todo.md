@@ -65,9 +65,10 @@ P5 = 優先度低い
       - source 単位の共通 cache budget / eviction は未統合
     - [ ] kvsベース
       - remote body / archive local copy / thumbnail / metadata snapshot を同じ永続 cache backend で扱う
-    - [ ] 更新されていないかだけチェック
+    - [*] 更新されていないかだけチェック
+      - filesystem persistent cache / zip index cache / local archive cache は path + size + mtime 相当で再検証する
       - path + size + mtime + provider-specific version(etag等) の signature ベースへ寄せる
-      - 現在は zip local cache のみ size/mtime 相当を利用、filesystem persistent cache は検証なしで再利用
+      - provider-specific version(etag等) や http/cloud 側の検証は未実装
     - [*] 速度が見込める場合はキャッシュしない
       - 現在は zip workaround の閾値 / network path 判定 / low-I/O archive の preload 抑制のみ
       - provider 共通の no-cache policy は未実装
@@ -360,7 +361,9 @@ P5 = 優先度低い
 - [+] tail prefetch
 - [+] benchmark で計測できる形に整理
 - [ ] source provider protocol への統合
-- [ ] local archive cache の signature 検証と eviction policy
+- [*] local archive cache の signature 検証と eviction policy
+  - signature 検証までは実装済み
+  - eviction policy / size budget は未実装
 - [ ] zip encoding option
 - [ ] `7z` / `rar` / `lzh` / `gzip`
 

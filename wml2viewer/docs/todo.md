@@ -305,7 +305,8 @@ P5 = 優先度低い
 
 ## src/filesystem/browser.rs
 - [+] filer の scan / preview / filter / sort / metadata 収集を集約
-- [ ] virtual directory と real directory の incremental snapshot を同じ経路へ統合
+- [+] virtual directory と real directory の incremental snapshot を同じ経路へ統合
+- [+] incremental snapshot の完了通知を full snapshot 再送なしで扱う
 - [ ] 大規模フォルダ向け lazy load を filesystem worker と共有
 - [ ] filter 条件を filesystem worker 側の永続 state として扱えるように整理
 - [ ] thumbnail worker と連動する query hint の追加
@@ -588,11 +589,11 @@ P5 = 優先度低い
 - [x] issue: サムネイルが表示されない事がある問題
 - [+] issue: ファイラーのサイズ表示を読みやすくする
 
-### src/ui/menu/fileviewer/worker.rs
+### src/ui/menu/fileviewer
 - [ ] コードの整理 モジュール境界をハッキリさせる
 - [ ] 未実装 action の no-op 整理
 - [ ] コードのフルレビュー
-- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
+- [ ] `filesystem.browser` の lazy load / incremental snapshot をさらに進めて大規模フォル
 - [*] issue: フォルダの分離モードが機能していない(フォルダが先、ファイルが後に来る挙動です)
 - [*] issue: 数字のフォルダだけ前に来て、それ以外のフォルダが前に来たりと挙動がおかしい
 - [+] issue: フォルダの分離モードでフォルダの降順が入れ替わらない

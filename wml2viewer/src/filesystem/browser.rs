@@ -75,11 +75,13 @@ pub enum BrowserQueryResult {
         request_id: u64,
         entries: Vec<BrowserEntry>,
     },
-    Snapshot {
+    Finish {
         request_id: u64,
         directory: PathBuf,
-        entries: Vec<BrowserEntry>,
         selected: Option<PathBuf>,
+    },
+    Failed {
+        request_id: u64,
     },
 }
 
@@ -165,10 +167,9 @@ impl BrowserSnapshotState {
                 self.entries.extend(entries);
                 true
             }
-            BrowserQueryResult::Snapshot {
+            BrowserQueryResult::Finish {
                 request_id,
                 directory,
-                entries,
                 selected,
             } => {
                 if self.pending_request_id != Some(request_id) {
@@ -176,7 +177,6 @@ impl BrowserSnapshotState {
                 }
                 self.pending_request_id = None;
                 self.directory = Some(directory);
-                self.entries = entries;
                 self.selected = browser_selected_path_for_directory(
                     self.directory.as_deref().unwrap(),
                     current_navigation_path,
@@ -184,6 +184,13 @@ impl BrowserSnapshotState {
                     current_load_path,
                     selected,
                 );
+                true
+            }
+            BrowserQueryResult::Failed { request_id } => {
+                if self.pending_request_id != Some(request_id) {
+                    return false;
+                }
+                self.pending_request_id = None;
                 true
             }
         }
@@ -265,15 +272,13 @@ pub(crate) fn spawn_browser_query_worker(
                             &mut cache,
                         )
                     }));
-                    let entries = match result {
-                        Ok(entries) => entries,
-                        Err(_) => Vec::new(),
-                    };
-                    let _ = result_tx.send(BrowserQueryResult::Snapshot {
-                        request_id,
-                        directory: dir,
-                        entries,
-                        selected,
+                    let _ = result_tx.send(match result {
+                        Ok(()) => BrowserQueryResult::Finish {
+                            request_id,
+                            directory: dir,
+                            selected,
+                        },
+                        Err(_) => BrowserQueryResult::Failed { request_id },
                     });
                 }
             }
@@ -321,19 +326,19 @@ fn scan_query_request(
     selected: Option<PathBuf>,
     options: BrowserScanOptions,
     cache: &mut FilesystemCache,
-) -> Vec<BrowserEntry> {
+) {
     let _ = result_tx.send(BrowserQueryResult::Reset {
         request_id,
         directory: dir.clone(),
         selected: selected.clone(),
     });
 
-    scan_browser_directory_with_preview_cached(&dir, &options, cache, |entries| {
+    let _ = scan_browser_directory_with_preview_cached(&dir, &options, cache, |entries| {
         let _ = result_tx.send(BrowserQueryResult::Append {
             request_id,
             entries,
         });
-    })
+    });
 }
 
 pub fn sort_browser_entries(
@@ -671,5 +676,66 @@ mod tests {
         assert!(applied);
         assert_eq!(snapshot.directory, Some(dir));
         assert_eq!(snapshot.selected, Some(pending));
+    }
+
+    #[test]
+    fn finish_keeps_incremental_entries_and_clears_pending() {
+        let dir = std::env::temp_dir().join("wml2viewer_browser_finish");
+        let entry = BrowserEntry {
+            path: dir.join("001.png"),
+            label: "001.png".to_string(),
+            is_container: false,
+            sort_as_container: false,
+            metadata: BrowserMetadata::default(),
+        };
+        let mut snapshot = BrowserSnapshotState {
+            entries: vec![entry.clone()],
+            pending_request_id: Some(9),
+            ..Default::default()
+        };
+
+        let applied = snapshot.apply_query_result(
+            BrowserQueryResult::Finish {
+                request_id: 9,
+                directory: dir.clone(),
+                selected: Some(entry.path.clone()),
+            },
+            &entry.path,
+            None,
+            None,
+        );
+
+        assert!(applied);
+        assert_eq!(snapshot.entries.len(), 1);
+        assert_eq!(snapshot.directory, Some(dir));
+        assert_eq!(snapshot.selected, Some(entry.path));
+        assert_eq!(snapshot.pending_request_id, None);
+    }
+
+    #[test]
+    fn failed_clears_pending_without_discarding_incremental_entries() {
+        let dir = std::env::temp_dir().join("wml2viewer_browser_failed");
+        let mut snapshot = BrowserSnapshotState {
+            entries: vec![BrowserEntry {
+                path: dir.join("001.png"),
+                label: "001.png".to_string(),
+                is_container: false,
+                sort_as_container: false,
+                metadata: BrowserMetadata::default(),
+            }],
+            pending_request_id: Some(10),
+            ..Default::default()
+        };
+
+        let applied = snapshot.apply_query_result(
+            BrowserQueryResult::Failed { request_id: 10 },
+            dir.as_path(),
+            None,
+            None,
+        );
+
+        assert!(applied);
+        assert_eq!(snapshot.entries.len(), 1);
+        assert_eq!(snapshot.pending_request_id, None);
     }
 }

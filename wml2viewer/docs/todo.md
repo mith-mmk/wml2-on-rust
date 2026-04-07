@@ -49,16 +49,35 @@ P5 = 優先度低い
 ### FileSystem
 
 #### 仮想ファイル
-- [ ] キャッシングアルゴリズムの見直し/実装
-    - [ ] プロトコル統合(zipファイルもsmbもhttpもcloud driveもすべて管理する)
-    - [ ] 先読み（漫画モード加味すると最大2枚）
-    - [ ] インメモリキャッシュ
+- [*] キャッシングアルゴリズムの見直し/実装
+    - [+] 既存の個別キャッシュ
+      - zip index cache / ZipCacheReader chunk cache / local archive cache
+      - browser/navigation shared listing cache / metadata cache / persistent snapshot
+      - viewer preload / thumbnail in-memory cache
+    - [ ] provider protocol を統合する
+      - zip / listed / local fs / smb / http / cloud drive を同じ source key / metadata / open API で扱う
+      - 現在は zip/listed/local fs 中心。http は temp file 化の暫定対応、smb は OS path 任せ、cloud drive は未対応
+    - [*] 先読み（漫画モード加味すると最大2枚）
+      - next preload と manga companion load はある
+      - filesystem cache policy と統合された source-level prefetch queue にはなっていない
+    - [*] インメモリキャッシュ
+      - listing / metadata / zip chunk / preload / thumbnail は個別実装あり
+      - source 単位の共通 cache budget / eviction は未統合
     - [ ] kvsベース
+      - remote body / archive local copy / thumbnail / metadata snapshot を同じ永続 cache backend で扱う
     - [ ] 更新されていないかだけチェック
-    - [ ] 速度が見込める場合はキャッシュしない
-    - [ ] 古いファイルはちゃんと消す(LRUアルゴリズム)
+      - path + size + mtime + provider-specific version(etag等) の signature ベースへ寄せる
+      - 現在は zip local cache のみ size/mtime 相当を利用、filesystem persistent cache は検証なしで再利用
+    - [*] 速度が見込める場合はキャッシュしない
+      - 現在は zip workaround の閾値 / network path 判定 / low-I/O archive の preload 抑制のみ
+      - provider 共通の no-cache policy は未実装
+    - [*] 古いファイルはちゃんと消す(LRUアルゴリズム)
+      - 現在は ZipCacheReader chunk cache のみ限定的 LRU
+      - archive-cache / filesystem-cache / thumbnail-cache の容量上限と世代管理は未実装
 - [ ] LHAサポート
-- [ ] httpの再実装 reqwestベースでフェッチ→ロード(非同期)
+- [*] httpの暫定実装
+    - [+] reqwest blocking download -> temp file 化で表示
+    - [ ] filesystem provider として非同期 fetch / cache / cancel を統合
 
 #### UX
 - [ ] Windows Userフォルダをエクスプローラっぽい表示に擬態するモード

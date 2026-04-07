@@ -103,6 +103,8 @@ P5 = 優先度低い
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
    - [+] directory scan / preview chunk / filter / metadata / sort を `filesystem.browser` へ寄せた
    - [+] `FilerCommand / FilerResult` 自体を filesystem 側の query/result モデルへ統合
+   - [ ] source provider protocol の統合
+    - zip / listed / local fs / smb / http / cloud drive を同じ key / metadata / open API へ寄せる
    - [+] viewer の navigation cache と filer の browser scan cache を共有化
    - [+] filer のファイルリスト更新を viewer の current/pending navigation と同期
    - [+] filer の snapshot state (`directory / entries / selected / pending_request_id`) を `filesystem.browser` へ寄せた
@@ -113,6 +115,7 @@ P5 = 優先度低い
     - [ ] 油断していると画像の最初に飛ばされる
    - [+] 大規模フォルダ向け lazy load / incremental snapshot を filesystem 側の共通実装へ寄せる
    - [ ] thumbnail の共通永続キャッシュ層を追加
+    - filesystem の共通 KVS / signature / eviction policy に乗せる
 ### startup sequence
 - [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
@@ -134,7 +137,9 @@ P5 = 優先度低い
     - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
     - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
     - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
-    - [ ] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度0MBに設定(IOがネックになっているためSSD最適化した方が速い)
+    - [*] zipのローカルキャッシュ方針を見直す
+      - 現在は bool (`local_cache`) で on/off のみ
+      - provider 共通 cache policy 導入後に size budget / no-cache 条件へ置き換える
     - [ ] listed file(.wmltxt)でhttpが表示出来ない問題
 
 ### syetem
@@ -208,7 +213,7 @@ P5 = 優先度低い
 - [x] manga separator / UI theme の永続化
 - [x] plugin config の永続化土台
 - [x] workaround.archive.zip の永続化
-- [+] filesystem.thumbnail の永続化
+- [+] filesystem.thumbnail 設定値の永続化
 - [ ] config schema のバージョニング
 
 ## src/configs/resourses/mod.rs
@@ -234,7 +239,9 @@ P5 = 優先度低い
 - [x] OS 依存 API の窓口整理
 - [x] root drive 一覧取得の UI 用ラッパ
 - [x] 保存先フォルダ選択ダイアログの窓口
-- [x] http/https 共通ダウンロード窓口（reqwest）
+- [*] http/https 共通ダウンロード窓口（reqwest）
+  - blocking download -> temp file 化の暫定対応
+  - provider protocol へは未統合
 
 ## src/dependent/thirdparty/locale_config.rs
 - [x] locale 正規化ヘルパ
@@ -352,6 +359,8 @@ P5 = 優先度低い
 - [+] metadata 読み取り時の plain file fallback
 - [+] tail prefetch
 - [+] benchmark で計測できる形に整理
+- [ ] source provider protocol への統合
+- [ ] local archive cache の signature 検証と eviction policy
 - [ ] zip encoding option
 - [ ] `7z` / `rar` / `lzh` / `gzip`
 
@@ -438,8 +447,8 @@ P5 = 優先度低い
 - [x] virtual zip/listed file のサムネイル生成
 - [+] 巨大 zip bmp thumbnail の抑制
 - [+] thumbnail抑制オプション
-- [ ] 永続キャッシュ
-- [ ] 失敗キャッシュ
+- [ ] 共通 KVS ベースの永続キャッシュ
+- [ ] signature 付き失敗キャッシュ
 
 ## src/ui/menu/fileviewer/mod.rs
 - [x] 一覧表示
@@ -485,7 +494,7 @@ P5 = 優先度低い
 ## src/ui/render/worker.rs
 - [x] render worker
 - [x] load / resize request 分離
-- [+] preload queue 連携
+- [+] 単発 preload queue 連携
 
 ## src/ui/render/mod.rs
 - [x] viewer から render 責務を切り出し
@@ -500,7 +509,7 @@ P5 = 優先度低い
 
 ## src/ui/viewer/animation.rs
 - [x] アニメーション表示の基礎
-- [ ] preload との統合
+- [ ] source-level prefetch queue との統合
 
 ## src/ui/viewer/mod.rs
 - [x] ViewerApp が composition root として worker を束ねる
@@ -530,7 +539,7 @@ P5 = 優先度低い
 - [+] app 起動時の初回 decode 完全 worker 化
 - [+] startup path 解決の render worker 側移動
 - [+] startup 後の filesystem 同期を実画像 path 優先へ変更
-- [+] preload queue
+- [+] 単発 preload queue
 - [+] message UI 整理
 - [+] pending navigation 導入による event ordering 改善
 - [+] 読み込み開始時の placeholder texture クリア
@@ -625,7 +634,7 @@ P5 = 優先度低い
 - [*] フォーマットをLocaleを併せる crate icu を利用 日本語しか効いていない
 
 ### src/ui/menu/config/mod.rs
-- [+] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
+- [+] 設定で、thumbnail抑制オプションを保存できるようにする filesystem.thumbnail
 - [x] issue: 設定 適用ボタンを押してから反映に時間がかかる問題
 - [x] issue: 設定のLocaleの表示が2つある。[自動]はボタンにしてシステムロケールを設定してください(そのさい、反映させないでください)
 - [x] issue: 設定: 分かりにくいので[保存先を記憶] → [画像保存先を記憶]に変更
@@ -669,8 +678,8 @@ P5 = 優先度低い
 - [*] issue: 起動時にzipが指定されると長時間待たされる
 - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
 - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
-- [+] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度16MBに設定(IOがネックになっているためSSD最適化した方が速い)
-- 現実装が bool のため、まず default を `local_cache = false` に変更
+- [*] local archive cache の方針見直し
+  - 詳細は `FileSystem > 仮想ファイル > キャッシングアルゴリズムの見直し/実装` を参照
 - [*] issue: bench_archive: 1.6Gはベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
 
 ### 全体 / アーキテクチャ
@@ -716,7 +725,7 @@ P5 = 優先度低い
 #### filer
 - [*] zip 内ファイルソートの実機確認
 - [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
-- [+] 設定で、thumbnailを抑制出来るようにする filesystem.thumbnail
+- [+] 設定で、thumbnail抑制オプションを保存できるようにする filesystem.thumbnail
 - [+] issue: ファイラーがハングアップすることがある問題
     - [+] デフォルトではalertを抑制してください またalertにはファイル名を付けてください
 - [+] issue: ファイラーのサイズ表示を読みやすくする
@@ -732,7 +741,7 @@ P5 = 優先度低い
 - [x] [名前]を[名前のソート順]に修正し、ドロップボックスに変更 
 
 ### FileSystem
-- [+] benchの結果からネットワークファイルのzipの[ローカルキャッシュ]のdefaultを一度16MBに設定(IOがネックになっているためSSD最適化した方が速い)
+- [*] zip / archive cache policy を provider 共通方針へ寄せる
 - [ ] listed fileが表示されない問題
 
 ### Input

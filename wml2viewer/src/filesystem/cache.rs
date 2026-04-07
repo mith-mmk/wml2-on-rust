@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::UNIX_EPOCH;
 
 use crate::dependent::default_temp_dir;
 use crate::options::{ArchiveBrowseOption, NavigationSortOption};
@@ -12,10 +11,10 @@ use super::browser::BrowserMetadata;
 use super::listed_file::load_listed_file_entries;
 use super::path::{
     is_listed_file_name, is_listed_file_path, is_supported_image_name, is_zip_file_name,
-    is_zip_file_path, listed_virtual_child_path, listed_virtual_root, resolve_start_path,
-    zip_virtual_child_path, zip_virtual_root,
+    is_zip_file_path, listed_virtual_child_path, resolve_start_path, zip_virtual_child_path,
 };
 use super::sort_paths;
+use super::source_signature_for_path;
 use super::zip_file::load_zip_entries;
 
 pub(crate) struct FilesystemCache {
@@ -42,23 +41,15 @@ pub(crate) struct DirectoryListing {
     last_file: Option<PathBuf>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct PathSignature {
-    exists: bool,
-    is_dir: bool,
-    len: Option<u64>,
-    modified_nanos: Option<u128>,
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 struct CachedDirectoryListing {
-    signature: Option<PathSignature>,
+    signature: Option<super::SourceSignature>,
     listing: DirectoryListing,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 struct CachedBrowserMetadata {
-    signature: Option<PathSignature>,
+    signature: Option<super::SourceSignature>,
     metadata: BrowserMetadata,
 }
 
@@ -382,33 +373,12 @@ fn load_browser_metadata(path: &Path) -> BrowserMetadata {
         .unwrap_or_default()
 }
 
-fn listing_signature(path: &Path) -> Option<PathSignature> {
-    signature_for_cache_path(path)
+fn listing_signature(path: &Path) -> Option<super::SourceSignature> {
+    source_signature_for_path(path)
 }
 
-fn metadata_signature(path: &Path) -> Option<PathSignature> {
-    signature_for_cache_path(path)
-}
-
-fn signature_for_cache_path(path: &Path) -> Option<PathSignature> {
-    let target = zip_virtual_root(path)
-        .or_else(|| listed_virtual_root(path))
-        .unwrap_or_else(|| path.to_path_buf());
-    path_signature(&target)
-}
-
-fn path_signature(path: &Path) -> Option<PathSignature> {
-    let metadata = fs::metadata(path).ok()?;
-    Some(PathSignature {
-        exists: true,
-        is_dir: metadata.is_dir(),
-        len: metadata.is_file().then_some(metadata.len()),
-        modified_nanos: metadata
-            .modified()
-            .ok()
-            .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
-            .map(|duration| duration.as_nanos()),
-    })
+fn metadata_signature(path: &Path) -> Option<super::SourceSignature> {
+    source_signature_for_path(path)
 }
 
 #[derive(Serialize, Deserialize)]

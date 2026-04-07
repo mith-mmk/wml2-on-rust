@@ -1,7 +1,8 @@
 use crate::drawers::image::{load_canvas_from_bytes_with_hint, load_canvas_from_file};
 use crate::filesystem;
 use crate::filesystem::{
-    is_browser_container, list_browser_entries, load_virtual_image_bytes, resolve_start_path,
+    OpenedImageSource, is_browser_container, list_browser_entries, open_image_source,
+    resolve_start_path,
 };
 use crate::options::{NavigationSortOption, ZipWorkaroundOptions};
 use std::path::Path;
@@ -77,12 +78,22 @@ pub fn benchmark_archive_read(path: &Path, iterations: usize) -> Result<BenchRes
 
     let started = Instant::now();
     for _ in 0..iterations {
-        let load_path = resolve_start_path(first_entry)
-            .ok_or_else(|| "failed to resolve start path".to_string())?;
-        if let Some(bytes) = load_virtual_image_bytes(first_entry) {
-            let _ = bytes.len();
-        } else if !load_path.exists() {
-            return Err("failed to read archive entry".to_string());
+        match open_image_source(first_entry) {
+            Some(OpenedImageSource::Bytes { bytes, .. }) => {
+                let _ = bytes.len();
+            }
+            Some(OpenedImageSource::File { path, .. }) => {
+                if !path.exists() {
+                    return Err("failed to read archive entry".to_string());
+                }
+            }
+            None => {
+                let load_path = resolve_start_path(first_entry)
+                    .ok_or_else(|| "failed to resolve start path".to_string())?;
+                if !load_path.exists() {
+                    return Err("failed to read archive entry".to_string());
+                }
+            }
         }
     }
     let total = started.elapsed();
@@ -142,24 +153,42 @@ pub fn benchmark_archive_detailed(
         .ok_or_else(|| "failed to list archive entries".to_string())?;
 
     let started_read = Instant::now();
-    let load_path = resolve_start_path(first_entry)
-        .ok_or_else(|| "failed to resolve first archive entry".to_string())?;
-    if let Some(bytes) = load_virtual_image_bytes(first_entry) {
-        let _ = bytes.len();
-    } else if !load_path.exists() {
-        return Err("failed to read first archive entry".to_string());
+    match open_image_source(first_entry) {
+        Some(OpenedImageSource::Bytes { bytes, .. }) => {
+            let _ = bytes.len();
+        }
+        Some(OpenedImageSource::File { path, .. }) => {
+            if !path.exists() {
+                return Err("failed to read first archive entry".to_string());
+            }
+        }
+        None => {
+            let load_path = resolve_start_path(first_entry)
+                .ok_or_else(|| "failed to resolve first archive entry".to_string())?;
+            if !load_path.exists() {
+                return Err("failed to read first archive entry".to_string());
+            }
+        }
     }
     let archive_read = started_read.elapsed();
 
     let started_decode = Instant::now();
     for entry in &browser_entries {
-        let Some(load_path) = resolve_start_path(entry) else {
-            continue;
-        };
-        if let Some(bytes) = load_virtual_image_bytes(entry) {
-            let _ = load_canvas_from_bytes_with_hint(&bytes, Some(&load_path));
-        } else {
-            let _ = load_canvas_from_file(&load_path);
+        match open_image_source(entry) {
+            Some(OpenedImageSource::Bytes {
+                bytes, hint_path, ..
+            }) => {
+                let _ = load_canvas_from_bytes_with_hint(&bytes, Some(&hint_path));
+            }
+            Some(OpenedImageSource::File { path, .. }) => {
+                let _ = load_canvas_from_file(&path);
+            }
+            None => {
+                let Some(load_path) = resolve_start_path(entry) else {
+                    continue;
+                };
+                let _ = load_canvas_from_file(&load_path);
+            }
         }
     }
     let decode_total = started_decode.elapsed();

@@ -5,6 +5,7 @@ mod navigator;
 mod path;
 mod protocol;
 mod sort;
+mod source;
 mod worker;
 mod zip_file;
 
@@ -41,6 +42,10 @@ pub(crate) use path::{
 pub(crate) use path::{is_supported_image, listed_virtual_root, zip_virtual_root};
 pub use protocol::{BrowserQuery, BrowserQueryResult, FilesystemCommand, FilesystemResult};
 pub(crate) use sort::{compare_natural_str, compare_os_str, sort_paths};
+pub(crate) use source::{
+    OpenedImageSource, SourceSignature, open_image_source, source_id_for_path,
+    source_signature_for_path,
+};
 pub(crate) use worker::spawn_filesystem_worker;
 pub(crate) use zip_file::{load_zip_entries_unsorted, sort_zip_entries};
 

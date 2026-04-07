@@ -3,7 +3,7 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{
     LoadedImage, load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
 };
-use crate::filesystem::{load_virtual_image_bytes, resolve_start_path};
+use crate::filesystem::{OpenedImageSource, open_image_source, resolve_start_path};
 use crate::ui::viewer::options::RenderScaleMode;
 use std::error::Error;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -96,10 +96,16 @@ pub(crate) fn spawn_render_worker(
                                     return Ok(None);
                                 }
 
-                                let source = if let Some(bytes) = load_virtual_image_bytes(&load_path) {
-                                    load_canvas_from_bytes_with_hint(&bytes, Some(&load_path))?
-                                } else {
-                                    load_canvas_from_file(&load_path)?
+                                let source = match open_image_source(&load_path) {
+                                    Some(OpenedImageSource::Bytes {
+                                        bytes,
+                                        hint_path,
+                                        ..
+                                    }) => load_canvas_from_bytes_with_hint(&bytes, Some(&hint_path))?,
+                                    Some(OpenedImageSource::File { path, .. }) => {
+                                        load_canvas_from_file(&path)?
+                                    }
+                                    None => load_canvas_from_file(&load_path)?,
                                 };
                                 if latest_load_request_id.load(Ordering::Acquire) != request_id {
                                     return Ok(None);

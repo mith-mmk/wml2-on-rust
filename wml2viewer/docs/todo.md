@@ -54,7 +54,9 @@ P5 = 優先度低い
       - zip index cache / ZipCacheReader chunk cache / local archive cache
       - browser/navigation shared listing cache / metadata cache / persistent snapshot
       - viewer preload / thumbnail in-memory cache
-    - [ ] provider protocol を統合する
+    - [*] provider protocol を統合する
+      - local fs / listed / zip / temp-http を同じ source id / signature / open API で扱う基盤は追加済み
+      - render worker / thumbnail worker は filesystem source open API を経由する
       - zip / listed / local fs / smb / http / cloud drive を同じ source key / metadata / open API で扱う
       - 現在は zip/listed/local fs 中心。http は temp file 化の暫定対応、smb は OS path 任せ、cloud drive は未対応
     - [*] 先読み（漫画モード加味すると最大2枚）
@@ -105,6 +107,7 @@ P5 = 優先度低い
    - [+] directory scan / preview chunk / filter / metadata / sort を `filesystem.browser` へ寄せた
    - [+] `FilerCommand / FilerResult` 自体を filesystem 側の query/result モデルへ統合
    - [ ] source provider protocol の統合
+    - local fs / listed / zip / temp-http の source key / signature / open API は導入済み
     - zip / listed / local fs / smb / http / cloud drive を同じ key / metadata / open API へ寄せる
    - [+] viewer の navigation cache と filer の browser scan cache を共有化
    - [+] filer のファイルリスト更新を viewer の current/pending navigation と同期
@@ -360,7 +363,9 @@ P5 = 優先度低い
 - [+] metadata 読み取り時の plain file fallback
 - [+] tail prefetch
 - [+] benchmark で計測できる形に整理
-- [ ] source provider protocol への統合
+- [*] source provider protocol への統合
+  - source id / signature ベースの判定へ移行開始
+  - open/fetch API の共通化は未実装
 - [*] local archive cache の signature 検証と eviction policy
   - signature 検証までは実装済み
   - eviction policy / size budget は未実装

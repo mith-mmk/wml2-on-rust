@@ -2,7 +2,7 @@ use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::image::{
     load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
 };
-use crate::filesystem::{load_virtual_image_bytes, virtual_image_size};
+use crate::filesystem::{OpenedImageSource, open_image_source, virtual_image_size};
 use crate::options::ThumbnailWorkaroundOptions;
 use crate::ui::render::canvas_to_color_image;
 use eframe::egui::ColorImage;
@@ -49,10 +49,14 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                         if should_skip_thumbnail(&path) {
                             return Err("thumbnail suppressed".to_string());
                         }
-                        let loaded = if let Some(bytes) = load_virtual_image_bytes(&path) {
-                            load_canvas_from_bytes_with_hint(&bytes, Some(&path))
-                        } else {
-                            load_canvas_from_file(&path)
+                        let loaded = match open_image_source(&path) {
+                            Some(OpenedImageSource::Bytes {
+                                bytes, hint_path, ..
+                            }) => load_canvas_from_bytes_with_hint(&bytes, Some(&hint_path)),
+                            Some(OpenedImageSource::File { path, .. }) => {
+                                load_canvas_from_file(&path)
+                            }
+                            None => load_canvas_from_file(&path),
                         }
                         .map_err(|err| err.to_string())?;
 

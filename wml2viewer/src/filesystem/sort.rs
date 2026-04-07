@@ -5,8 +5,7 @@ use std::time::SystemTime;
 
 use crate::options::NavigationSortOption;
 
-use super::path::{resolve_virtual_listed_child, resolve_virtual_zip_child};
-use super::zip_file::load_zip_entries;
+use super::source::{source_entry_name, source_metadata_path};
 
 pub(crate) fn compare_natural_str(left: &str, right: &str, case_sensitive: bool) -> Ordering {
     let left = if case_sensitive {
@@ -152,60 +151,24 @@ fn trim_leading_zeros(chars: &[char]) -> &[char] {
 }
 
 fn file_name_sort_key(path: &Path) -> String {
-    if let Some((archive, index)) = resolve_virtual_zip_child(path) {
-        return load_zip_entries(&archive)
-            .and_then(|entries| entries.into_iter().find(|entry| entry.index == index))
-            .map(|entry| entry.name.to_lowercase())
-            .unwrap_or_default();
-    }
-
-    if let Some(target) = resolve_virtual_listed_child(path) {
-        return file_name_sort_key(&target);
-    }
-
-    path.file_name()
-        .map(|name| name.to_string_lossy().to_lowercase())
+    source_entry_name(path)
+        .map(|name| name.to_lowercase())
         .unwrap_or_default()
 }
 
 fn os_name_sort_key(path: &Path) -> String {
-    if let Some((archive, index)) = resolve_virtual_zip_child(path) {
-        return load_zip_entries(&archive)
-            .and_then(|entries| entries.into_iter().find(|entry| entry.index == index))
-            .map(|entry| entry.name)
-            .unwrap_or_default();
-    }
-
-    if let Some(target) = resolve_virtual_listed_child(path) {
-        return os_name_sort_key(&target);
-    }
-
-    path.file_name()
-        .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_default()
+    source_entry_name(path).unwrap_or_default()
 }
 
 fn metadata_modified_key(path: &Path) -> SystemTime {
-    if let Some((archive, _)) = resolve_virtual_zip_child(path) {
-        return fs::metadata(archive)
-            .and_then(|metadata| metadata.modified())
-            .unwrap_or(SystemTime::UNIX_EPOCH);
-    }
-
-    let metadata_path = resolve_virtual_listed_child(path).unwrap_or_else(|| path.to_path_buf());
+    let metadata_path = source_metadata_path(path).unwrap_or_else(|| path.to_path_buf());
     fs::metadata(metadata_path)
         .and_then(|metadata| metadata.modified())
         .unwrap_or(SystemTime::UNIX_EPOCH)
 }
 
 fn metadata_size_key(path: &Path) -> u64 {
-    if let Some((archive, _)) = resolve_virtual_zip_child(path) {
-        return fs::metadata(archive)
-            .map(|metadata| metadata.len())
-            .unwrap_or(0);
-    }
-
-    let metadata_path = resolve_virtual_listed_child(path).unwrap_or_else(|| path.to_path_buf());
+    let metadata_path = source_metadata_path(path).unwrap_or_else(|| path.to_path_buf());
     fs::metadata(metadata_path)
         .map(|metadata| metadata.len())
         .unwrap_or(0)

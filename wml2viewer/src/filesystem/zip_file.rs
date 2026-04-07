@@ -11,7 +11,10 @@ use crate::options::ZipWorkaroundOptions;
 use encoding_rs::SHIFT_JIS;
 use zip::ZipArchive;
 
-use super::{compare_natural_str, is_supported_image};
+use super::{
+    SourceSignature, compare_natural_str, is_supported_image, source_id_for_path,
+    source_signature_for_path,
+};
 
 #[derive(Clone, Debug)]
 pub(crate) struct ZipEntryRecord {
@@ -20,21 +23,15 @@ pub(crate) struct ZipEntryRecord {
     pub size: u64,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct ArchiveSignature {
-    len: u64,
-    modified_nanos: Option<u128>,
-}
-
 #[derive(Clone)]
 struct ZipIndexCacheEntry {
-    signature: ArchiveSignature,
+    signature: SourceSignature,
     entries: Vec<ZipEntryRecord>,
 }
 
 #[derive(Clone)]
 struct LocalArchiveCacheEntry {
-    signature: ArchiveSignature,
+    signature: SourceSignature,
     cached_path: PathBuf,
 }
 
@@ -230,7 +227,7 @@ fn resolve_zip_archive_access(path: &Path) -> Option<ZipArchiveAccess> {
 }
 
 fn ensure_local_archive_cache(path: &Path, metadata: &std::fs::Metadata) -> Option<PathBuf> {
-    let signature = archive_signature_from_metadata(metadata);
+    let signature = archive_signature_from_metadata(path, metadata);
     let cache = local_archive_cache();
     if let Some(cached) = cache
         .lock()
@@ -284,20 +281,22 @@ fn clear_zip_caches() {
     }
 }
 
-fn archive_signature(path: &Path) -> Option<ArchiveSignature> {
-    let metadata = std::fs::metadata(path).ok()?;
-    Some(archive_signature_from_metadata(&metadata))
+fn archive_signature(path: &Path) -> Option<SourceSignature> {
+    source_signature_for_path(path)
 }
 
-fn archive_signature_from_metadata(metadata: &std::fs::Metadata) -> ArchiveSignature {
-    ArchiveSignature {
-        len: metadata.len(),
+fn archive_signature_from_metadata(path: &Path, metadata: &std::fs::Metadata) -> SourceSignature {
+    source_signature_for_path(path).unwrap_or_else(|| SourceSignature {
+        source: source_id_for_path(path),
+        exists: true,
+        is_dir: metadata.is_dir(),
+        len: metadata.is_file().then_some(metadata.len()),
         modified_nanos: metadata
             .modified()
             .ok()
             .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
             .map(|duration| duration.as_nanos()),
-    }
+    })
 }
 
 fn zip_index_cache() -> &'static Mutex<HashMap<PathBuf, ZipIndexCacheEntry>> {

@@ -7,9 +7,10 @@ use crate::dependent::plugins::path_supported_by_plugins;
 
 use super::cache::{FilesystemCache, build_listed_virtual_children};
 use super::listed_file::load_listed_file_entries;
-use super::zip_file::{
-    load_zip_entry_bytes, set_zip_workaround_options, zip_entry_record, zip_prefers_low_io,
+use super::source::{
+    OpenedImageSource, open_image_source, source_image_size, source_prefers_low_io,
 };
+use super::zip_file::set_zip_workaround_options;
 
 const SUPPORTED_EXTENSIONS: &[&str] = &[
     "webp", "jpe", "jpg", "jpeg", "bmp", "gif", "png", "tif", "tiff", "mag", "mki", "pi", "pic",
@@ -50,8 +51,10 @@ pub fn resolve_start_path(path: &Path) -> Option<PathBuf> {
 }
 
 pub fn load_virtual_image_bytes(path: &Path) -> Option<Vec<u8>> {
-    resolve_virtual_zip_child(path)
-        .and_then(|(archive, index)| load_zip_entry_bytes(&archive, index))
+    match open_image_source(path)? {
+        OpenedImageSource::Bytes { bytes, .. } => Some(bytes),
+        OpenedImageSource::File { .. } => None,
+    }
 }
 
 pub fn set_archive_zip_workaround(options: crate::options::ZipWorkaroundOptions) {
@@ -59,19 +62,11 @@ pub fn set_archive_zip_workaround(options: crate::options::ZipWorkaroundOptions)
 }
 
 pub fn archive_prefers_low_io(path: &Path) -> bool {
-    if let Some((archive, _)) = resolve_virtual_zip_child(path) {
-        return zip_prefers_low_io(&archive);
-    }
-    if is_zip_file_path(path) {
-        return zip_prefers_low_io(path);
-    }
-    false
+    source_prefers_low_io(path)
 }
 
 pub fn virtual_image_size(path: &Path) -> Option<u64> {
-    resolve_virtual_zip_child(path)
-        .and_then(|(archive, index)| zip_entry_record(&archive, index))
-        .map(|entry| entry.size)
+    source_image_size(path)
 }
 
 pub(crate) fn listed_virtual_child_path(
@@ -137,6 +132,7 @@ pub(crate) fn resolve_virtual_listed_child(path: &Path) -> Option<PathBuf> {
     resolve_navigation_leaf(entry)
 }
 
+#[cfg(test)]
 pub(crate) fn resolve_virtual_zip_child(path: &Path) -> Option<(PathBuf, usize)> {
     zip_virtual_child_info(path)
 }

@@ -1,7 +1,6 @@
 mod icons;
 pub(crate) mod state;
 pub(crate) mod thumbnail;
-pub(crate) mod worker;
 
 use crate::dependent::{download_http_url, normalize_locale_tag};
 use crate::drawers::image::SaveFormat;

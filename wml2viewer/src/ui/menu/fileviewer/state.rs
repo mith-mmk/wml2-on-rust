@@ -1,8 +1,9 @@
 use crate::dependent::ui_available_roots;
 pub(crate) use crate::filesystem::{
-    BrowserEntry as FilerEntry, BrowserNameSortMode as NameSortMode,
+    BrowserEntry as FilerEntry, BrowserNameSortMode as NameSortMode, BrowserScanOptions,
     BrowserSnapshotState as FilerSnapshotState, BrowserSortField as FilerSortField,
 };
+use crate::options::NavigationSortOption;
 use std::path::PathBuf;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -47,5 +48,53 @@ impl Default for FilerState {
             url_input: String::new(),
             thumbnail_scale: 1.0,
         }
+    }
+}
+
+impl FilerState {
+    pub(crate) fn browser_scan_options(
+        &self,
+        navigation_sort: NavigationSortOption,
+    ) -> BrowserScanOptions {
+        BrowserScanOptions {
+            navigation_sort,
+            sort_field: self.sort_field,
+            ascending: self.ascending,
+            separate_dirs: self.separate_dirs,
+            archive_as_container_in_sort: self.archive_as_container_in_sort,
+            filter_text: self.filter_text.clone(),
+            extension_filter: self.extension_filter.clone(),
+            name_sort_mode: self.name_sort_mode,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn browser_scan_options_follow_filer_state() {
+        let state = FilerState {
+            sort_field: FilerSortField::Modified,
+            ascending: false,
+            separate_dirs: false,
+            archive_as_container_in_sort: true,
+            filter_text: "cover".to_string(),
+            extension_filter: "png".to_string(),
+            name_sort_mode: NameSortMode::CaseInsensitive,
+            ..Default::default()
+        };
+
+        let options = state.browser_scan_options(NavigationSortOption::Date);
+
+        assert_eq!(options.navigation_sort, NavigationSortOption::Date);
+        assert_eq!(options.sort_field, FilerSortField::Modified);
+        assert!(!options.ascending);
+        assert!(!options.separate_dirs);
+        assert!(options.archive_as_container_in_sort);
+        assert_eq!(options.filter_text, "cover");
+        assert_eq!(options.extension_filter, "png");
+        assert_eq!(options.name_sort_mode, NameSortMode::CaseInsensitive);
     }
 }

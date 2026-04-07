@@ -4,10 +4,10 @@ use crate::dependent::{default_download_dir, pick_save_directory};
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
-    BrowserScanOptions, FilesystemCommand, FilesystemResult, SharedFilesystemCache, adjacent_entry,
-    archive_prefers_low_io, browser_directory_for_path, is_browser_container,
+    BrowserQuery, BrowserQueryResult, FilesystemCommand, FilesystemResult, SharedFilesystemCache,
+    adjacent_entry, archive_prefers_low_io, browser_directory_for_path, is_browser_container,
     navigation_branch_path, new_shared_filesystem_cache, resolve_navigation_entry_path,
-    set_archive_zip_workaround, spawn_filesystem_worker,
+    set_archive_zip_workaround, spawn_browser_query_worker, spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, PluginConfig, ResourceOptions,
@@ -18,7 +18,6 @@ use crate::ui::menu::fileviewer::state::FilerState;
 use crate::ui::menu::fileviewer::thumbnail::{
     ThumbnailCommand, ThumbnailResult, set_thumbnail_workaround, spawn_thumbnail_worker,
 };
-use crate::ui::menu::fileviewer::worker::{FilerCommand, FilerResult, spawn_filer_worker};
 use crate::ui::render::{
     ActiveRenderRequest, RenderCommand, RenderResult, aligned_offset, canvas_to_color_image,
     downscale_for_texture_limit, spawn_render_worker, worker_send_error,
@@ -95,8 +94,8 @@ pub(crate) struct ViewerApp {
     pub(crate) active_fs_request_id: Option<u64>,
     pub(crate) queued_navigation: Option<FilesystemCommand>,
     pub(crate) deferred_filesystem_init_path: Option<PathBuf>,
-    pub(crate) filer_tx: Option<Sender<FilerCommand>>,
-    pub(crate) filer_rx: Option<Receiver<FilerResult>>,
+    pub(crate) filer_tx: Option<Sender<BrowserQuery>>,
+    pub(crate) filer_rx: Option<Receiver<BrowserQueryResult>>,
     pub(crate) next_filer_request_id: u64,
     pub(crate) thumbnail_tx: Option<Sender<ThumbnailCommand>>,
     pub(crate) thumbnail_rx: Option<Receiver<ThumbnailResult>>,
@@ -989,20 +988,11 @@ impl ViewerApp {
         };
         let request_id = self.alloc_filer_request_id();
         self.filer.snapshot.begin_request(request_id);
-        let _ = filer_tx.send(FilerCommand::OpenDirectory {
+        let _ = filer_tx.send(BrowserQuery::OpenDirectory {
             request_id,
             dir,
             selected,
-            options: BrowserScanOptions {
-                navigation_sort: self.navigation_sort,
-                sort_field: self.filer.sort_field,
-                ascending: self.filer.ascending,
-                separate_dirs: self.filer.separate_dirs,
-                archive_as_container_in_sort: self.filer.archive_as_container_in_sort,
-                filter_text: self.filer.filter_text.clone(),
-                extension_filter: self.filer.extension_filter.clone(),
-                name_sort_mode: self.filer.name_sort_mode,
-            },
+            options: self.filer.browser_scan_options(self.navigation_sort),
         });
     }
 
@@ -1624,7 +1614,7 @@ impl ViewerApp {
             self.fs_rx = Some(rx);
         }
         if self.filer_tx.is_none() || self.filer_rx.is_none() {
-            let (tx, rx) = spawn_filer_worker(shared_cache);
+            let (tx, rx) = spawn_browser_query_worker(shared_cache);
             self.filer_tx = Some(tx);
             self.filer_rx = Some(rx);
         }
@@ -1881,7 +1871,7 @@ impl ViewerApp {
             .shared_filesystem_cache
             .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
             .clone();
-        let (tx, rx) = spawn_filer_worker(shared_cache);
+        let (tx, rx) = spawn_browser_query_worker(shared_cache);
         self.filer_tx = Some(tx);
         self.filer_rx = Some(rx);
         self.filer.snapshot.clear_pending_request();

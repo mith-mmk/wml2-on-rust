@@ -83,7 +83,7 @@ P5 = 優先度低い
 ## issues
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
    - [+] directory scan / preview chunk / filter / metadata / sort を `filesystem.browser` へ寄せた
-   - [ ] `FilerCommand / FilerResult` 自体を filesystem 側の query/result モデルへ統合
+   - [+] `FilerCommand / FilerResult` 自体を filesystem 側の query/result モデルへ統合
    - [+] viewer の navigation cache と filer の browser scan cache を共有化
    - [+] filer のファイルリスト更新を viewer の current/pending navigation と同期
    - [+] filer の snapshot state (`directory / entries / selected / pending_request_id`) を `filesystem.browser` へ寄せた
@@ -399,8 +399,8 @@ P5 = 優先度低い
 - [x] background 反転色での icon 描画
 - [ ] SVG icon の共通化と他 menu への展開
 
-## src/ui/menu/fileviewer/worker.rs
-- [x] `FilerCommand / FilerResult`
+## src/filesystem/browser.rs / src/ui/menu/fileviewer/state.rs
+- [x] browser query/result を viewer から直接利用
 - [x] directory scan の worker 分離
 - [+] metadata 収集を `filesystem.browser` へ移動
 - [+] sort / filter / ext filter / dir separate を `filesystem.browser` へ移動
@@ -408,8 +408,7 @@ P5 = 優先度低い
 - [+] incremental snapshot preview
 - [+] lazy load の段階化
 - [ ] OS 準拠 name collation の強化
-- [ ] worker を filesystem query の薄い adapter にさらに整理
-- [ ] `FilerCommand / FilerResult` を browser query/result へ置き換え
+- [x] worker の thin adapter を削除して filesystem query へ直接接続
 
 ## src/ui/menu/fileviewer/thumbnail.rs
 - [x] サムネイル worker

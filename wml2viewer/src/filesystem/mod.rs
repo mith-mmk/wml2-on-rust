@@ -11,8 +11,9 @@ use crate::options::NavigationSortOption;
 pub(crate) use browser::spawn_browser_query_worker;
 pub use browser::{
     BrowserEntry, BrowserMetadata, BrowserNameSortMode, BrowserQuery, BrowserQueryResult,
-    BrowserScanOptions, BrowserSortField, compare_browser_name,
-    scan_browser_directory_with_preview, sort_browser_entries,
+    BrowserScanOptions, BrowserSnapshotState, BrowserSortField, browser_directory_for_path,
+    browser_selected_path_for_directory, compare_browser_name, scan_browser_directory_with_preview,
+    sort_browser_entries,
 };
 pub(crate) use cache::{
     FilesystemCache, SharedFilesystemCache, build_listed_virtual_children,

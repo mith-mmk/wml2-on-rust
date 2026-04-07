@@ -8,7 +8,8 @@ use std::time::SystemTime;
 
 use super::{
     FilesystemCache, SharedFilesystemCache, compare_natural_str, compare_os_str,
-    is_browser_container, list_browser_entries,
+    is_browser_container, list_browser_entries, listed_virtual_root, resolve_navigation_entry_path,
+    zip_virtual_root,
 };
 
 const PREVIEW_CHUNK_SIZE: usize = 64;
@@ -80,6 +81,156 @@ pub enum BrowserQueryResult {
         entries: Vec<BrowserEntry>,
         selected: Option<PathBuf>,
     },
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct BrowserSnapshotState {
+    pub entries: Vec<BrowserEntry>,
+    pub directory: Option<PathBuf>,
+    pub selected: Option<PathBuf>,
+    pub pending_request_id: Option<u64>,
+}
+
+impl BrowserSnapshotState {
+    pub fn begin_request(&mut self, request_id: u64) {
+        self.pending_request_id = Some(request_id);
+    }
+
+    pub fn clear_pending_request(&mut self) {
+        self.pending_request_id = None;
+    }
+
+    pub fn sync_with_navigation(
+        &mut self,
+        current_navigation_path: &Path,
+        pending_navigation_path: Option<&Path>,
+        current_load_path: Option<&Path>,
+    ) -> Option<(PathBuf, Option<PathBuf>)> {
+        let directory = pending_navigation_path
+            .and_then(|path| browser_directory_for_path(path, current_load_path))
+            .or_else(|| browser_directory_for_path(current_navigation_path, current_load_path))?;
+        let selected = browser_selected_path_for_directory(
+            &directory,
+            current_navigation_path,
+            pending_navigation_path,
+            current_load_path,
+            self.selected.clone(),
+        );
+
+        if self.directory.as_ref() == Some(&directory) {
+            self.selected = selected.clone();
+            if self.entries.is_empty() && self.pending_request_id.is_none() {
+                return Some((directory, selected));
+            }
+            return None;
+        }
+
+        Some((directory, selected))
+    }
+
+    pub fn apply_query_result(
+        &mut self,
+        result: BrowserQueryResult,
+        current_navigation_path: &Path,
+        pending_navigation_path: Option<&Path>,
+        current_load_path: Option<&Path>,
+    ) -> bool {
+        match result {
+            BrowserQueryResult::Reset {
+                request_id,
+                directory,
+                selected,
+            } => {
+                if self.pending_request_id != Some(request_id) {
+                    return false;
+                }
+                self.directory = Some(directory);
+                self.entries.clear();
+                self.selected = browser_selected_path_for_directory(
+                    self.directory.as_deref().unwrap(),
+                    current_navigation_path,
+                    pending_navigation_path,
+                    current_load_path,
+                    selected,
+                );
+                true
+            }
+            BrowserQueryResult::Append {
+                request_id,
+                entries,
+            } => {
+                if self.pending_request_id != Some(request_id) {
+                    return false;
+                }
+                self.entries.extend(entries);
+                true
+            }
+            BrowserQueryResult::Snapshot {
+                request_id,
+                directory,
+                entries,
+                selected,
+            } => {
+                if self.pending_request_id != Some(request_id) {
+                    return false;
+                }
+                self.pending_request_id = None;
+                self.directory = Some(directory);
+                self.entries = entries;
+                self.selected = browser_selected_path_for_directory(
+                    self.directory.as_deref().unwrap(),
+                    current_navigation_path,
+                    pending_navigation_path,
+                    current_load_path,
+                    selected,
+                );
+                true
+            }
+        }
+    }
+}
+
+pub fn browser_directory_for_path(
+    path: &Path,
+    current_load_path: Option<&Path>,
+) -> Option<PathBuf> {
+    if path.is_dir() {
+        return Some(path.to_path_buf());
+    }
+
+    if let Some(root) = listed_virtual_root(path) {
+        return Some(root);
+    }
+
+    if let Some(root) = zip_virtual_root(path) {
+        return Some(root);
+    }
+
+    path.parent()
+        .map(Path::to_path_buf)
+        .or_else(|| current_load_path.and_then(|current| current.parent().map(Path::to_path_buf)))
+}
+
+pub fn browser_selected_path_for_directory(
+    directory: &Path,
+    current_navigation_path: &Path,
+    pending_navigation_path: Option<&Path>,
+    current_load_path: Option<&Path>,
+    fallback: Option<PathBuf>,
+) -> Option<PathBuf> {
+    for candidate in [pending_navigation_path, Some(current_navigation_path)] {
+        let Some(candidate) = candidate else {
+            continue;
+        };
+        if browser_directory_for_path(candidate, current_load_path).as_deref() == Some(directory) {
+            if listed_virtual_root(candidate).is_some() || zip_virtual_root(candidate).is_some() {
+                return resolve_navigation_entry_path(candidate)
+                    .or_else(|| Some(candidate.to_path_buf()));
+            }
+            return Some(candidate.to_path_buf());
+        }
+    }
+    fallback
 }
 
 pub(crate) fn spawn_browser_query_worker(
@@ -457,5 +608,68 @@ mod tests {
 
         assert_eq!(entries[0].label, "b");
         assert_eq!(entries[1].label, "a");
+    }
+
+    #[test]
+    fn selected_path_prefers_pending_navigation_in_same_directory() {
+        let dir = std::env::temp_dir().join("wml2viewer_browser_selection");
+        let current = dir.join("001.png");
+        let pending = dir.join("002.png");
+
+        let selected =
+            browser_selected_path_for_directory(&dir, &current, Some(&pending), None, None);
+
+        assert_eq!(selected, Some(pending));
+    }
+
+    #[test]
+    fn selected_path_keeps_archive_entry_in_parent_directory() {
+        let dir = std::env::temp_dir().join("wml2viewer_browser_archive_parent");
+        let archive = dir.join("sample.zip");
+
+        let selected = browser_selected_path_for_directory(&dir, &archive, None, None, None);
+
+        assert_eq!(selected, Some(archive));
+    }
+
+    #[test]
+    fn snapshot_sync_requests_pending_directory_change() {
+        let dir1 = std::env::temp_dir().join("wml2viewer_browser_sync_1");
+        let dir2 = std::env::temp_dir().join("wml2viewer_browser_sync_2");
+        let current = dir1.join("001.png");
+        let pending = dir2.join("002.png");
+        let mut snapshot = BrowserSnapshotState {
+            directory: Some(dir1.clone()),
+            selected: Some(current.clone()),
+            ..Default::default()
+        };
+
+        let sync = snapshot.sync_with_navigation(&current, Some(&pending), None);
+
+        assert_eq!(sync, Some((dir2, Some(pending))));
+    }
+
+    #[test]
+    fn snapshot_reset_uses_pending_selection_when_request_matches() {
+        let dir = std::env::temp_dir().join("wml2viewer_browser_reset");
+        let current = dir.join("001.png");
+        let pending = dir.join("002.png");
+        let mut snapshot = BrowserSnapshotState::default();
+        snapshot.begin_request(7);
+
+        let applied = snapshot.apply_query_result(
+            BrowserQueryResult::Reset {
+                request_id: 7,
+                directory: dir.clone(),
+                selected: Some(current),
+            },
+            Path::new("ignored"),
+            Some(&pending),
+            None,
+        );
+
+        assert!(applied);
+        assert_eq!(snapshot.directory, Some(dir));
+        assert_eq!(snapshot.selected, Some(pending));
     }
 }

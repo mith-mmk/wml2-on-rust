@@ -1,7 +1,7 @@
 use crate::dependent::ui_available_roots;
 pub(crate) use crate::filesystem::{
     BrowserEntry as FilerEntry, BrowserNameSortMode as NameSortMode,
-    BrowserSortField as FilerSortField,
+    BrowserSnapshotState as FilerSnapshotState, BrowserSortField as FilerSortField,
 };
 use std::path::PathBuf;
 
@@ -17,11 +17,8 @@ pub(crate) enum FilerViewMode {
 
 #[derive(Debug)]
 pub(crate) struct FilerState {
-    pub(crate) entries: Vec<FilerEntry>,
-    pub(crate) directory: Option<PathBuf>,
-    pub(crate) selected: Option<PathBuf>,
+    pub(crate) snapshot: FilerSnapshotState,
     pub(crate) roots: Vec<PathBuf>,
-    pub(crate) pending_request_id: Option<u64>,
     pub(crate) view_mode: FilerViewMode,
     pub(crate) sort_field: FilerSortField,
     pub(crate) ascending: bool,
@@ -37,11 +34,8 @@ pub(crate) struct FilerState {
 impl Default for FilerState {
     fn default() -> Self {
         Self {
-            entries: Vec::new(),
-            directory: None,
-            selected: None,
+            snapshot: FilerSnapshotState::default(),
             roots: ui_available_roots(),
-            pending_request_id: None,
             view_mode: FilerViewMode::List,
             sort_field: FilerSortField::Name,
             ascending: true,

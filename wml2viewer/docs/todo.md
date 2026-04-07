@@ -84,8 +84,9 @@ P5 = 優先度低い
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
    - [+] directory scan / preview chunk / filter / metadata / sort を `filesystem.browser` へ寄せた
    - [ ] `FilerCommand / FilerResult` 自体を filesystem 側の query/result モデルへ統合
-   - [ ] viewer の navigation cache と filer の browser scan cache を共有化
-   - [ ] filer のファイルリスト更新を viewer の current/pending navigation と同期
+   - [+] viewer の navigation cache と filer の browser scan cache を共有化
+   - [+] filer のファイルリスト更新を viewer の current/pending navigation と同期
+   - [+] filer の snapshot state (`directory / entries / selected / pending_request_id`) を `filesystem.browser` へ寄せた
    - [ ] Filerのファイルリストがアップデートしたとき viewerに反映されない問題(データの同期) 
     - [ ] 油断していると画像の最初に飛ばされる
    - [ ] 大規模フォルダ向け lazy load / incremental snapshot を filesystem 側の共通実装へ寄せる

@@ -5,9 +5,9 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
     BrowserScanOptions, FilesystemCommand, FilesystemResult, SharedFilesystemCache, adjacent_entry,
-    archive_prefers_low_io, is_browser_container, navigation_branch_path,
-    new_shared_filesystem_cache, resolve_navigation_entry_path, set_archive_zip_workaround,
-    spawn_filesystem_worker,
+    archive_prefers_low_io, browser_directory_for_path, is_browser_container,
+    navigation_branch_path, new_shared_filesystem_cache, resolve_navigation_entry_path,
+    set_archive_zip_workaround, spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, PluginConfig, ResourceOptions,
@@ -979,17 +979,7 @@ impl ViewerApp {
     }
 
     pub(crate) fn current_directory(&self) -> Option<PathBuf> {
-        if self.current_navigation_path.is_dir() {
-            return Some(self.current_navigation_path.clone());
-        }
-        if let Some(parent) = self.current_navigation_path.parent() {
-            let marker = parent.file_name().and_then(|name| name.to_str());
-            if matches!(marker, Some("__wmlv__" | "__zipv__")) {
-                return parent.parent().map(|path| path.to_path_buf());
-            }
-            return Some(parent.to_path_buf());
-        }
-        self.current_path.parent().map(|path| path.to_path_buf())
+        browser_directory_for_path(&self.current_navigation_path, Some(&self.current_path))
     }
 
     pub(crate) fn request_filer_directory(&mut self, dir: PathBuf, selected: Option<PathBuf>) {
@@ -998,7 +988,7 @@ impl ViewerApp {
             return;
         };
         let request_id = self.alloc_filer_request_id();
-        self.filer.pending_request_id = Some(request_id);
+        self.filer.snapshot.begin_request(request_id);
         let _ = filer_tx.send(FilerCommand::OpenDirectory {
             request_id,
             dir,
@@ -1017,47 +1007,30 @@ impl ViewerApp {
     }
 
     fn sync_filer_directory_with_current_path(&mut self) {
-        let Some(dir) = self.current_directory() else {
-            return;
-        };
         if let Some(rebased) = resolve_navigation_entry_path(&self.current_navigation_path) {
             if rebased != self.current_navigation_path {
                 self.current_navigation_path = rebased.clone();
                 self.set_filesystem_current(rebased);
             }
         }
-        let selected = Some(self.current_navigation_path.clone());
-        if self.filer.directory.as_ref() == Some(&dir) {
-            self.filer.selected = selected.clone();
-            if self.filer.entries.is_empty() && self.filer.pending_request_id.is_none() {
-                self.request_filer_directory(dir, selected);
-            }
-        } else {
+        if let Some((dir, selected)) = self.filer.snapshot.sync_with_navigation(
+            &self.current_navigation_path,
+            self.pending_navigation_path.as_deref(),
+            Some(&self.current_path),
+        ) {
             self.request_filer_directory(dir, selected);
-        }
-    }
-
-    fn selected_path_for_filer_directory(
-        &self,
-        directory: &std::path::Path,
-        fallback: Option<PathBuf>,
-    ) -> Option<PathBuf> {
-        if self.current_directory().as_deref() == Some(directory) {
-            resolve_navigation_entry_path(&self.current_navigation_path)
-                .or_else(|| Some(self.current_navigation_path.clone()))
-        } else {
-            fallback
         }
     }
 
     pub(crate) fn refresh_current_filer_directory(&mut self) {
         if let Some(dir) = self
             .filer
+            .snapshot
             .directory
             .clone()
             .or_else(|| self.current_directory())
         {
-            self.request_filer_directory(dir, self.filer.selected.clone());
+            self.request_filer_directory(dir, self.filer.snapshot.selected.clone());
         }
     }
 
@@ -1541,6 +1514,7 @@ impl ViewerApp {
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.pending_navigation_path = Some(navigation_path.clone());
+        self.sync_filer_directory_with_current_path();
         self.pending_fit_recalc = !matches!(self.render_options.zoom_option, ZoomOption::None);
         self.overlay
             .set_loading_message(format!("Loading {}", navigation_path.display()));
@@ -1910,14 +1884,15 @@ impl ViewerApp {
         let (tx, rx) = spawn_filer_worker(shared_cache);
         self.filer_tx = Some(tx);
         self.filer_rx = Some(rx);
-        self.filer.pending_request_id = None;
+        self.filer.snapshot.clear_pending_request();
         if let Some(dir) = self
             .filer
+            .snapshot
             .directory
             .clone()
             .or_else(|| self.current_directory())
         {
-            self.request_filer_directory(dir, self.filer.selected.clone());
+            self.request_filer_directory(dir, self.filer.snapshot.selected.clone());
         }
     }
 
@@ -2223,45 +2198,12 @@ impl ViewerApp {
                 None => return,
             };
             match result {
-                Ok(FilerResult::Reset {
-                    request_id,
-                    directory,
-                    selected,
-                }) => {
-                    if self.filer.pending_request_id != Some(request_id) {
-                        continue;
-                    }
-                    self.filer.directory = Some(directory);
-                    self.filer.entries.clear();
-                    self.filer.selected = self.selected_path_for_filer_directory(
-                        self.filer.directory.as_deref().unwrap(),
-                        selected,
-                    );
-                }
-                Ok(FilerResult::Append {
-                    request_id,
-                    entries,
-                }) => {
-                    if self.filer.pending_request_id != Some(request_id) {
-                        continue;
-                    }
-                    self.filer.entries.extend(entries);
-                }
-                Ok(FilerResult::Snapshot {
-                    request_id,
-                    directory,
-                    entries,
-                    selected,
-                }) => {
-                    if self.filer.pending_request_id != Some(request_id) {
-                        continue;
-                    }
-                    self.filer.pending_request_id = None;
-                    self.filer.directory = Some(directory);
-                    self.filer.entries = entries;
-                    self.filer.selected = self.selected_path_for_filer_directory(
-                        self.filer.directory.as_deref().unwrap(),
-                        selected,
+                Ok(result) => {
+                    let _ = self.filer.snapshot.apply_query_result(
+                        result,
+                        &self.current_navigation_path,
+                        self.pending_navigation_path.as_deref(),
+                        Some(&self.current_path),
                     );
                 }
                 Err(TryRecvError::Empty) => break,

@@ -301,6 +301,7 @@ impl ViewerApp {
                 });
                 let current_root = self
                     .filer
+                    .snapshot
                     .directory
                     .as_ref()
                     .and_then(|dir| self.filer.roots.iter().find(|root| dir.starts_with(root)))
@@ -326,7 +327,7 @@ impl ViewerApp {
                             }
                         }
                     });
-                if let Some(dir) = &self.filer.directory {
+                if let Some(dir) = &self.filer.snapshot.directory {
                     ui.label(dir.display().to_string());
                     if let Some(parent) = dir.parent() {
                         if icon_toolbar_button(ui, SvgIcon::Up, false, up_text, icon_color) {
@@ -343,7 +344,7 @@ impl ViewerApp {
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
                         ui.set_min_width(panel_width.max(160.0));
-                        let entries = self.filer.entries.clone();
+                        let entries = self.filer.snapshot.entries.clone();
                         match self.filer.view_mode {
                             FilerViewMode::List | FilerViewMode::Detail => {
                                 for entry in entries {
@@ -365,7 +366,7 @@ impl ViewerApp {
     }
 
     fn filer_entry_row(&mut self, ui: &mut egui::Ui, entry: FilerEntry) {
-        let selected = self.filer.selected.as_ref() == Some(&entry.path)
+        let selected = self.filer.snapshot.selected.as_ref() == Some(&entry.path)
             || self.current_navigation_path == entry.path;
         let text = if self.filer.view_mode == FilerViewMode::Detail {
             let modified = entry
@@ -430,7 +431,7 @@ impl ViewerApp {
 
     fn filer_thumbnail_tile(&mut self, ui: &mut egui::Ui, entry: FilerEntry, item_width: f32) {
         let entry_label = entry.label.clone();
-        let selected = self.filer.selected.as_ref() == Some(&entry.path)
+        let selected = self.filer.snapshot.selected.as_ref() == Some(&entry.path)
             || self.current_navigation_path == entry.path;
         ui.allocate_ui_with_layout(
             egui::vec2(item_width, item_width + 56.0),
@@ -522,7 +523,7 @@ impl ViewerApp {
         let Some(current_dir) = self.current_directory() else {
             return;
         };
-        if self.filer.directory.as_ref() != Some(&current_dir) {
+        if self.filer.snapshot.directory.as_ref() != Some(&current_dir) {
             return;
         }
 
@@ -544,7 +545,7 @@ impl ViewerApp {
                 });
                 egui::ScrollArea::horizontal().show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        let mut entries = self.filer.entries.clone();
+                        let mut entries = self.filer.snapshot.entries.clone();
                         if self.options.manga_right_to_left {
                             entries.reverse();
                         }
@@ -591,7 +592,7 @@ impl ViewerApp {
         let navigation_path = entry.path.clone();
         let load_path =
             resolve_start_path(&navigation_path).unwrap_or_else(|| navigation_path.clone());
-        self.filer.selected = Some(navigation_path.clone());
+        self.filer.snapshot.selected = Some(navigation_path.clone());
         self.empty_mode = false;
         self.show_filer = false;
         self.pending_fit_recalc = true;

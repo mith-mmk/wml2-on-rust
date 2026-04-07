@@ -306,13 +306,13 @@ P5 = 優先度低い
 ## src/filesystem/browser.rs
 - [+] filer の scan / preview / filter / sort / metadata 収集を集約
 - [+] virtual directory と real directory の incremental snapshot を同じ経路へ統合
-- [+] incremental snapshot の完了通知を full snapshot 再送なしで扱う
+- [+] incremental snapshot 中の cache lock を listing snapshot 取得までに短縮
 - [ ] 大規模フォルダ向け lazy load を filesystem worker と共有
 - [ ] filter 条件を filesystem worker 側の永続 state として扱えるように整理
 - [ ] thumbnail worker と連動する query hint の追加
 
 ## src/filesystem/listed_file.rs
-- [x] `.wml` 判定
+- [+] `.wmltxt` 判定
 - [x] 相対 path 基準を ListedFile 親ディレクトリにする
 - [x] コメント行 `#` を無視
 - [-] `@command` / `@(...)` の本実装

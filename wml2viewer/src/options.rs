@@ -2,6 +2,7 @@
 ! prelude options
 */
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -217,6 +218,7 @@ impl Default for ThumbnailWorkaroundOptions {
 pub struct NavigationOptions {
     pub end_of_folder: EndOfFolderOption,
     pub sort: NavigationSortOption,
+    pub archive: ArchiveBrowseOption,
 }
 
 impl Default for NavigationOptions {
@@ -224,11 +226,12 @@ impl Default for NavigationOptions {
         Self {
             end_of_folder: EndOfFolderOption::Recursive,
             sort: NavigationSortOption::OsName,
+            archive: ArchiveBrowseOption::Folder,
         }
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EndOfFolderOption {
     Stop,
     Next,
@@ -236,10 +239,17 @@ pub enum EndOfFolderOption {
     Recursive,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NavigationSortOption {
     OsName,
     Name,
     Date,
     Size,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ArchiveBrowseOption {
+    Folder,
+    Skip,
+    Archiver,
 }

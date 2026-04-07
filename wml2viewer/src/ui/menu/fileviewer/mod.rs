@@ -5,6 +5,7 @@ pub(crate) mod thumbnail;
 use crate::dependent::{download_http_url, normalize_locale_tag};
 use crate::drawers::image::SaveFormat;
 use crate::filesystem::resolve_start_path;
+use crate::options::ArchiveBrowseOption;
 use crate::ui::i18n::UiTextKey;
 use crate::ui::menu::fileviewer::icons::{SvgIcon, paint_svg_icon};
 use crate::ui::menu::fileviewer::state::{FilerEntry, FilerSortField, FilerViewMode, NameSortMode};
@@ -244,6 +245,37 @@ impl ViewerApp {
                         self.filer.separate_dirs = !self.filer.separate_dirs;
                         refresh_requested = true;
                     }
+                    ui.label(self.text(UiTextKey::Archive));
+                    let archive_text = match self.filer.archive_mode {
+                        ArchiveBrowseOption::Folder => "Folder",
+                        ArchiveBrowseOption::Skip => "Skip",
+                        ArchiveBrowseOption::Archiver => "Archiver",
+                    };
+                    egui::ComboBox::from_id_salt("filer_archive_mode")
+                        .selected_text(archive_text)
+                        .show_ui(ui, |ui| {
+                            refresh_requested |= ui
+                                .selectable_value(
+                                    &mut self.filer.archive_mode,
+                                    ArchiveBrowseOption::Folder,
+                                    "Folder",
+                                )
+                                .changed();
+                            refresh_requested |= ui
+                                .selectable_value(
+                                    &mut self.filer.archive_mode,
+                                    ArchiveBrowseOption::Skip,
+                                    "Skip",
+                                )
+                                .changed();
+                            refresh_requested |= ui
+                                .selectable_value(
+                                    &mut self.filer.archive_mode,
+                                    ArchiveBrowseOption::Archiver,
+                                    "Archiver",
+                                )
+                                .changed();
+                        });
                     ui.label(name_sort_order_text);
                     let selected_name_sort_text = match self.filer.name_sort_mode {
                         NameSortMode::Os => os_text,

@@ -798,6 +798,7 @@ impl ViewerApp {
             navigation: NavigationOptions {
                 end_of_folder: self.end_of_folder,
                 sort: self.navigation_sort,
+                archive: self.filer.archive_mode,
             },
         }
     }

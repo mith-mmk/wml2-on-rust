@@ -1,5 +1,5 @@
-use crate::options::NavigationSortOption;
-use std::fs;
+use crate::options::{ArchiveBrowseOption, NavigationSortOption};
+use serde::{Deserialize, Serialize};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::SystemTime;
 
+use super::protocol::{FilesystemCommand, FilesystemResult};
 use super::{
     FilesystemCache, SharedFilesystemCache, compare_natural_str, compare_os_str,
     is_browser_container, listed_virtual_root, resolve_navigation_entry_path, zip_virtual_root,
@@ -14,7 +15,7 @@ use super::{
 
 const PREVIEW_CHUNK_SIZE: usize = 64;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct BrowserMetadata {
     pub size: Option<u64>,
     pub modified: Option<SystemTime>,
@@ -46,6 +47,7 @@ pub enum BrowserNameSortMode {
 #[derive(Clone, Debug)]
 pub struct BrowserScanOptions {
     pub navigation_sort: NavigationSortOption,
+    pub archive_mode: ArchiveBrowseOption,
     pub sort_field: BrowserSortField,
     pub ascending: bool,
     pub separate_dirs: bool,
@@ -61,6 +63,7 @@ impl Default for BrowserScanOptions {
     fn default() -> Self {
         Self {
             navigation_sort: NavigationSortOption::OsName,
+            archive_mode: ArchiveBrowseOption::Folder,
             sort_field: BrowserSortField::Name,
             ascending: true,
             separate_dirs: true,
@@ -74,40 +77,10 @@ impl Default for BrowserScanOptions {
     }
 }
 
-#[derive(Clone)]
-pub enum BrowserQuery {
-    OpenDirectory {
-        request_id: u64,
-        dir: PathBuf,
-        selected: Option<PathBuf>,
-        options: Option<BrowserScanOptions>,
-    },
-}
-
-pub enum BrowserQueryResult {
-    Reset {
-        request_id: u64,
-        directory: PathBuf,
-        selected: Option<PathBuf>,
-    },
-    Append {
-        request_id: u64,
-        entries: Vec<BrowserEntry>,
-    },
-    ThumbnailHint {
-        request_id: u64,
-        paths: Vec<PathBuf>,
-        max_side: u32,
-    },
-    Finish {
-        request_id: u64,
-        directory: PathBuf,
-        entries: Vec<BrowserEntry>,
-        selected: Option<PathBuf>,
-    },
-    Failed {
-        request_id: u64,
-    },
+#[derive(Clone, Debug)]
+struct CachedBrowserEntry {
+    path: PathBuf,
+    metadata: BrowserMetadata,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -123,7 +96,8 @@ pub(crate) struct BrowserWorkerState {
     options: BrowserScanOptions,
     cached_directory: Option<PathBuf>,
     cached_navigation_sort: Option<NavigationSortOption>,
-    cached_entry_paths: Vec<PathBuf>,
+    cached_archive_mode: Option<ArchiveBrowseOption>,
+    cached_entries: Vec<CachedBrowserEntry>,
 }
 
 pub(crate) type SharedBrowserWorkerState = Arc<Mutex<BrowserWorkerState>>;
@@ -167,13 +141,13 @@ impl BrowserSnapshotState {
 
     pub fn apply_query_result(
         &mut self,
-        result: BrowserQueryResult,
+        result: FilesystemResult,
         current_navigation_path: &Path,
         pending_navigation_path: Option<&Path>,
         current_load_path: Option<&Path>,
     ) -> bool {
         match result {
-            BrowserQueryResult::Reset {
+            FilesystemResult::BrowserReset {
                 request_id,
                 directory,
                 selected,
@@ -192,7 +166,7 @@ impl BrowserSnapshotState {
                 );
                 true
             }
-            BrowserQueryResult::Append {
+            FilesystemResult::BrowserAppend {
                 request_id,
                 entries,
             } => {
@@ -202,8 +176,8 @@ impl BrowserSnapshotState {
                 self.entries.extend(entries);
                 true
             }
-            BrowserQueryResult::ThumbnailHint { .. } => false,
-            BrowserQueryResult::Finish {
+            FilesystemResult::ThumbnailHint { .. } => false,
+            FilesystemResult::BrowserFinish {
                 request_id,
                 directory,
                 entries,
@@ -224,13 +198,14 @@ impl BrowserSnapshotState {
                 );
                 true
             }
-            BrowserQueryResult::Failed { request_id } => {
+            FilesystemResult::BrowserFailed { request_id } => {
                 if self.pending_request_id != Some(request_id) {
                     return false;
                 }
                 self.pending_request_id = None;
                 true
             }
+            _ => false,
         }
     }
 }
@@ -286,15 +261,17 @@ pub(crate) fn preload_browser_directory_for_path(
     state: &SharedBrowserWorkerState,
     path: &Path,
     navigation_sort: NavigationSortOption,
+    archive_mode: ArchiveBrowseOption,
     cache: &mut FilesystemCache,
 ) {
     let Some(directory) = browser_directory_for_path(path, None) else {
         return;
     };
-    let entry_paths = load_browser_entry_paths(
+    let entry_paths = load_browser_entries(
         &directory,
         &BrowserScanOptions {
             navigation_sort,
+            archive_mode,
             ..BrowserScanOptions::default()
         },
         cache,
@@ -302,16 +279,18 @@ pub(crate) fn preload_browser_directory_for_path(
     if let Ok(mut state) = state.lock() {
         state.cached_directory = Some(directory);
         state.cached_navigation_sort = Some(navigation_sort);
-        state.cached_entry_paths = entry_paths;
+        state.cached_archive_mode = Some(archive_mode);
+        state.options.archive_mode = archive_mode;
+        state.cached_entries = entry_paths;
     }
 }
 
 pub(crate) fn spawn_browser_query_worker(
     shared_cache: SharedFilesystemCache,
     shared_state: SharedBrowserWorkerState,
-) -> (Sender<BrowserQuery>, Receiver<BrowserQueryResult>) {
-    let (command_tx, command_rx) = mpsc::channel::<BrowserQuery>();
-    let (result_tx, result_rx) = mpsc::channel::<BrowserQueryResult>();
+) -> (Sender<FilesystemCommand>, Receiver<FilesystemResult>) {
+    let (command_tx, command_rx) = mpsc::channel::<FilesystemCommand>();
+    let (result_tx, result_rx) = mpsc::channel::<FilesystemResult>();
 
     thread::spawn(move || {
         while let Ok(command) = command_rx.recv() {
@@ -320,7 +299,7 @@ pub(crate) fn spawn_browser_query_worker(
                 latest = next;
             }
             match latest {
-                BrowserQuery::OpenDirectory {
+                FilesystemCommand::OpenBrowserDirectory {
                     request_id,
                     dir,
                     selected,
@@ -329,14 +308,15 @@ pub(crate) fn spawn_browser_query_worker(
                     let options = match resolve_scan_options(&shared_state, options) {
                         Some(options) => options,
                         None => {
-                            let _ = result_tx.send(BrowserQueryResult::Failed { request_id });
+                            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
                             continue;
                         }
                     };
-                    if let Some(entry_paths) = load_cached_browser_entry_paths(
+                    if let Some(entries) = load_cached_browser_entries(
                         &shared_state,
                         &dir,
                         options.navigation_sort,
+                        options.archive_mode,
                     ) {
                         let result = catch_unwind(AssertUnwindSafe(|| {
                             scan_query_request(
@@ -345,43 +325,45 @@ pub(crate) fn spawn_browser_query_worker(
                                 dir.clone(),
                                 selected.clone(),
                                 options.clone(),
-                                entry_paths,
+                                entries,
                             )
                         }));
                         let _ = result_tx.send(match result {
                             Ok(entries) => {
                                 send_thumbnail_hint(&result_tx, request_id, &entries, &options);
-                                BrowserQueryResult::Finish {
+                                FilesystemResult::BrowserFinish {
                                     request_id,
                                     directory: dir,
                                     entries,
                                     selected,
                                 }
                             }
-                            Err(_) => BrowserQueryResult::Failed { request_id },
+                            Err(_) => FilesystemResult::BrowserFailed { request_id },
                         });
                         continue;
                     }
-                    let entry_paths = {
+                    let cached_entries = {
                         let Ok(mut cache) = shared_cache.lock() else {
                             break;
                         };
                         let result = catch_unwind(AssertUnwindSafe(|| {
-                            load_browser_entry_paths(&dir, &options, &mut cache)
+                            load_browser_entries(&dir, &options, &mut cache)
                         }));
                         match result {
-                            Ok(entry_paths) => entry_paths,
+                            Ok(entries) => entries,
                             Err(_) => {
-                                let _ = result_tx.send(BrowserQueryResult::Failed { request_id });
+                                let _ =
+                                    result_tx.send(FilesystemResult::BrowserFailed { request_id });
                                 continue;
                             }
                         }
                     };
-                    store_cached_browser_entry_paths(
+                    store_cached_browser_entries(
                         &shared_state,
                         &dir,
                         options.navigation_sort,
-                        entry_paths.clone(),
+                        options.archive_mode,
+                        cached_entries.clone(),
                     );
                     let options_for_scan = options.clone();
                     let result = catch_unwind(AssertUnwindSafe(|| {
@@ -391,13 +373,13 @@ pub(crate) fn spawn_browser_query_worker(
                             dir.clone(),
                             selected.clone(),
                             options_for_scan,
-                            entry_paths,
+                            cached_entries,
                         )
                     }));
                     match result {
                         Ok(entries) => {
                             send_thumbnail_hint(&result_tx, request_id, &entries, &options);
-                            let _ = result_tx.send(BrowserQueryResult::Finish {
+                            let _ = result_tx.send(FilesystemResult::BrowserFinish {
                                 request_id,
                                 directory: dir,
                                 entries,
@@ -405,10 +387,11 @@ pub(crate) fn spawn_browser_query_worker(
                             });
                         }
                         Err(_) => {
-                            let _ = result_tx.send(BrowserQueryResult::Failed { request_id });
+                            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
                         }
                     }
                 }
+                _ => {}
             }
         }
     });
@@ -421,7 +404,7 @@ pub fn scan_browser_directory_with_preview(
     options: &BrowserScanOptions,
     mut on_preview_chunk: impl FnMut(Vec<BrowserEntry>),
 ) -> Vec<BrowserEntry> {
-    let mut cache = FilesystemCache::new(options.navigation_sort);
+    let mut cache = FilesystemCache::new(options.navigation_sort, options.archive_mode);
     scan_browser_directory_with_preview_cached(dir, options, &mut cache, &mut on_preview_chunk)
 }
 
@@ -431,26 +414,26 @@ pub fn scan_browser_directory_with_preview_cached(
     cache: &mut FilesystemCache,
     mut on_preview_chunk: impl FnMut(Vec<BrowserEntry>),
 ) -> Vec<BrowserEntry> {
-    let entry_paths = load_browser_entry_paths(dir, options, cache);
-    finalize_browser_entries(entry_paths, options, &mut on_preview_chunk)
+    let entries = load_browser_entries(dir, options, cache);
+    finalize_browser_entries(entries, options, &mut on_preview_chunk)
 }
 
 fn scan_query_request(
-    result_tx: &Sender<BrowserQueryResult>,
+    result_tx: &Sender<FilesystemResult>,
     request_id: u64,
     dir: PathBuf,
     selected: Option<PathBuf>,
     options: BrowserScanOptions,
-    entry_paths: Vec<PathBuf>,
+    cached_entries: Vec<CachedBrowserEntry>,
 ) -> Vec<BrowserEntry> {
-    let _ = result_tx.send(BrowserQueryResult::Reset {
+    let _ = result_tx.send(FilesystemResult::BrowserReset {
         request_id,
         directory: dir.clone(),
         selected: selected.clone(),
     });
 
-    finalize_browser_entries(entry_paths, &options, &mut |entries| {
-        let _ = result_tx.send(BrowserQueryResult::Append {
+    finalize_browser_entries(cached_entries, &options, &mut |entries| {
+        let _ = result_tx.send(FilesystemResult::BrowserAppend {
             request_id,
             entries,
         });
@@ -458,14 +441,21 @@ fn scan_query_request(
 }
 
 fn finalize_browser_entries(
-    entry_paths: Vec<PathBuf>,
+    cached_entries: Vec<CachedBrowserEntry>,
     options: &BrowserScanOptions,
     on_preview_chunk: &mut impl FnMut(Vec<BrowserEntry>),
 ) -> Vec<BrowserEntry> {
-    let collected = collect_browser_entry_paths(entry_paths, options, on_preview_chunk);
+    let collected = collect_browser_entries(cached_entries, options, on_preview_chunk);
     let mut entries = collected
         .into_iter()
-        .map(|path| build_browser_entry(path, options.archive_as_container_in_sort))
+        .map(|entry| {
+            build_browser_entry(
+                entry.path,
+                entry.metadata,
+                options.archive_mode,
+                options.archive_as_container_in_sort,
+            )
+        })
         .collect::<Vec<_>>();
     sort_browser_entries(
         &mut entries,
@@ -477,13 +467,21 @@ fn finalize_browser_entries(
     entries
 }
 
-fn load_browser_entry_paths(
+fn load_browser_entries(
     dir: &Path,
     options: &BrowserScanOptions,
     cache: &mut FilesystemCache,
-) -> Vec<PathBuf> {
-    cache.ensure_sort(options.navigation_sort);
-    cache.browser_entries(dir)
+) -> Vec<CachedBrowserEntry> {
+    cache.ensure_settings(options.navigation_sort, options.archive_mode);
+    let entry_paths = cache.browser_entries(dir);
+    let metadata_by_path = cache.browser_metadata_batch(&entry_paths);
+    entry_paths
+        .into_iter()
+        .map(|path| CachedBrowserEntry {
+            metadata: metadata_by_path.get(&path).cloned().unwrap_or_default(),
+            path,
+        })
+        .collect()
 }
 
 fn resolve_scan_options(
@@ -500,38 +498,43 @@ fn resolve_scan_options(
     Some(state.options.clone())
 }
 
-fn load_cached_browser_entry_paths(
+fn load_cached_browser_entries(
     shared_state: &SharedBrowserWorkerState,
     dir: &Path,
     navigation_sort: NavigationSortOption,
-) -> Option<Vec<PathBuf>> {
+    archive_mode: ArchiveBrowseOption,
+) -> Option<Vec<CachedBrowserEntry>> {
     let Ok(state) = shared_state.lock() else {
         return None;
     };
     if state.cached_directory.as_deref() != Some(dir)
         || state.cached_navigation_sort != Some(navigation_sort)
+        || state.cached_archive_mode != Some(archive_mode)
     {
         return None;
     }
-    Some(state.cached_entry_paths.clone())
+    Some(state.cached_entries.clone())
 }
 
-fn store_cached_browser_entry_paths(
+fn store_cached_browser_entries(
     shared_state: &SharedBrowserWorkerState,
     dir: &Path,
     navigation_sort: NavigationSortOption,
-    entry_paths: Vec<PathBuf>,
+    archive_mode: ArchiveBrowseOption,
+    entries: Vec<CachedBrowserEntry>,
 ) {
     let Ok(mut state) = shared_state.lock() else {
         return;
     };
     state.cached_directory = Some(dir.to_path_buf());
     state.cached_navigation_sort = Some(navigation_sort);
-    state.cached_entry_paths = entry_paths;
+    state.cached_archive_mode = Some(archive_mode);
+    state.options.archive_mode = archive_mode;
+    state.cached_entries = entries;
 }
 
 fn send_thumbnail_hint(
-    result_tx: &Sender<BrowserQueryResult>,
+    result_tx: &Sender<FilesystemResult>,
     request_id: u64,
     entries: &[BrowserEntry],
     options: &BrowserScanOptions,
@@ -548,7 +551,7 @@ fn send_thumbnail_hint(
     if paths.is_empty() {
         return;
     }
-    let _ = result_tx.send(BrowserQueryResult::ThumbnailHint {
+    let _ = result_tx.send(FilesystemResult::ThumbnailHint {
         request_id,
         paths,
         max_side: options.thumbnail_hint_max_side,
@@ -613,15 +616,19 @@ pub fn compare_browser_name(
     }
 }
 
-fn collect_browser_entry_paths(
-    entry_paths: Vec<PathBuf>,
+fn collect_browser_entries(
+    cached_entries: Vec<CachedBrowserEntry>,
     options: &BrowserScanOptions,
     on_preview_chunk: &mut impl FnMut(Vec<BrowserEntry>),
-) -> Vec<PathBuf> {
+) -> Vec<CachedBrowserEntry> {
     let mut collected = Vec::new();
     let mut preview_chunk = Vec::new();
-    for path in entry_paths {
-        let preview_entry = build_preview_entry(path.clone(), options.archive_as_container_in_sort);
+    for entry in cached_entries {
+        let preview_entry = build_preview_entry(
+            entry.path.clone(),
+            options.archive_mode,
+            options.archive_as_container_in_sort,
+        );
         if !matches_filters(
             &preview_entry,
             &options.filter_text,
@@ -629,7 +636,7 @@ fn collect_browser_entry_paths(
         ) {
             continue;
         }
-        collected.push(path);
+        collected.push(entry);
         preview_chunk.push(preview_entry);
         flush_preview_chunk(on_preview_chunk, &mut preview_chunk);
     }
@@ -648,15 +655,13 @@ fn flush_preview_chunk(
     }
 }
 
-fn build_browser_entry(path: PathBuf, archive_as_container_in_sort: bool) -> BrowserEntry {
-    let metadata = fs::metadata(&path)
-        .ok()
-        .map(|metadata| BrowserMetadata {
-            size: metadata.is_file().then_some(metadata.len()),
-            modified: metadata.modified().ok(),
-        })
-        .unwrap_or_default();
-    let is_container = is_browser_container(&path);
+fn build_browser_entry(
+    path: PathBuf,
+    metadata: BrowserMetadata,
+    archive_mode: ArchiveBrowseOption,
+    archive_as_container_in_sort: bool,
+) -> BrowserEntry {
+    let is_container = browser_entry_is_container(&path, archive_mode);
     let sort_as_container = sort_group_is_container(&path, archive_as_container_in_sort);
     let label = path
         .file_name()
@@ -671,8 +676,12 @@ fn build_browser_entry(path: PathBuf, archive_as_container_in_sort: bool) -> Bro
     }
 }
 
-fn build_preview_entry(path: PathBuf, archive_as_container_in_sort: bool) -> BrowserEntry {
-    let is_container = is_browser_container(&path);
+fn build_preview_entry(
+    path: PathBuf,
+    archive_mode: ArchiveBrowseOption,
+    archive_as_container_in_sort: bool,
+) -> BrowserEntry {
+    let is_container = browser_entry_is_container(&path, archive_mode);
     let sort_as_container = sort_group_is_container(&path, archive_as_container_in_sort);
     let label = path
         .file_name()
@@ -685,6 +694,17 @@ fn build_preview_entry(path: PathBuf, archive_as_container_in_sort: bool) -> Bro
         sort_as_container,
         metadata: BrowserMetadata::default(),
     }
+}
+
+fn browser_entry_is_container(path: &Path, archive_mode: ArchiveBrowseOption) -> bool {
+    if matches!(archive_mode, ArchiveBrowseOption::Archiver)
+        && (listed_virtual_root(path).is_none() && zip_virtual_root(path).is_none())
+        && !path.is_dir()
+        && is_browser_container(path)
+    {
+        return false;
+    }
+    is_browser_container(path)
 }
 
 fn sort_group_is_container(path: &Path, archive_as_container_in_sort: bool) -> bool {
@@ -853,7 +873,7 @@ mod tests {
         snapshot.begin_request(7);
 
         let applied = snapshot.apply_query_result(
-            BrowserQueryResult::Reset {
+            FilesystemResult::BrowserReset {
                 request_id: 7,
                 directory: dir.clone(),
                 selected: Some(current),
@@ -885,7 +905,7 @@ mod tests {
         };
 
         let applied = snapshot.apply_query_result(
-            BrowserQueryResult::Finish {
+            FilesystemResult::BrowserFinish {
                 request_id: 9,
                 directory: dir.clone(),
                 entries: vec![entry.clone()],
@@ -919,7 +939,7 @@ mod tests {
         };
 
         let applied = snapshot.apply_query_result(
-            BrowserQueryResult::Failed { request_id: 10 },
+            FilesystemResult::BrowserFailed { request_id: 10 },
             dir.as_path(),
             None,
             None,
@@ -989,14 +1009,17 @@ mod tests {
         send_thumbnail_hint(&tx, 3, &entries, &options);
 
         match rx.try_recv().unwrap() {
-            BrowserQueryResult::ThumbnailHint {
+            FilesystemResult::ThumbnailHint {
                 request_id,
                 paths,
                 max_side,
             } => {
                 assert_eq!(request_id, 3);
                 assert_eq!(max_side, 96);
-                assert_eq!(paths, vec![PathBuf::from("001.png"), PathBuf::from("002.png")]);
+                assert_eq!(
+                    paths,
+                    vec![PathBuf::from("001.png"), PathBuf::from("002.png")]
+                );
             }
             other => panic!("unexpected result: {:?}", std::mem::discriminant(&other)),
         }

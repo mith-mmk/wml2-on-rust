@@ -89,10 +89,11 @@ P5 = 優先度低い
    - [+] filer の snapshot state (`directory / entries / selected / pending_request_id`) を `filesystem.browser` へ寄せた
    - [+] filer options を worker 永続 state として扱い、directory sync では差分更新だけ送る
    - [+] thumbnail worker 向け query hint を browser result から返す
+   - [+] metadata cache を browser/navigation 共有 cache に統合し、永続化した
    - [ ] Filerのファイルリストがアップデートしたとき viewerに反映されない問題(データの同期) 
     - [ ] 油断していると画像の最初に飛ばされる
    - [+] 大規模フォルダ向け lazy load / incremental snapshot を filesystem 側の共通実装へ寄せる
-   - [ ] metadata/thumbnail の共通キャッシュ層を追加
+   - [ ] thumbnail の共通永続キャッシュ層を追加
 ### startup sequence
 - [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
 - [*] issue: systemプラグイン有効時 Viewerの強制終了時 COM Surrogateが残ることがある(再現条件を確認中)
@@ -298,12 +299,12 @@ P5 = 優先度低い
 - [+] browser query を `filesystem.browser` へ分離
 - [+] virtual path / worker / navigator / cache / sort をモジュール分割
 - [*] `RECURSIVE` の探索コスト最適化
-- [ ] filter 条件の filesystem 側統合
-- [ ] archive option (`FOLDER` / `SKIP` / `ARCHIVER`)
-- [ ] キャッシュのシリアライズ
-- [ ] browser query と navigation cache の共有化
-- [ ] metadata cache の共有化
-- [ ] filesystem 側での query/result protocol の一本化
+- [x] filter 条件の filesystem 側統合
+- [x] archive option (`FOLDER` / `SKIP` / `ARCHIVER`)
+- [x] キャッシュのシリアライズ
+- [x] browser query と navigation cache の共有化
+- [x] metadata cache の共有化
+- [x] filesystem 側での query/result protocol の一本化
 
 ## src/filesystem/browser.rs
 - [+] filer の scan / preview / filter / sort / metadata 収集を集約

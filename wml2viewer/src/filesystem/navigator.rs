@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::options::{EndOfFolderOption, NavigationSortOption};
+use crate::options::{ArchiveBrowseOption, EndOfFolderOption, NavigationSortOption};
 
 use super::cache::FilesystemCache;
 use super::path::{
@@ -240,8 +240,13 @@ impl FileNavigator {
     }
 }
 
-pub fn adjacent_entry(path: &Path, sort: NavigationSortOption, step: isize) -> Option<PathBuf> {
-    let mut cache = FilesystemCache::new(sort);
+pub fn adjacent_entry(
+    path: &Path,
+    sort: NavigationSortOption,
+    archive_mode: ArchiveBrowseOption,
+    step: isize,
+) -> Option<PathBuf> {
+    let mut cache = FilesystemCache::new(sort, archive_mode);
     let start_path = resolve_navigation_path(path, &mut cache)?;
     let mut navigator = FileNavigator::from_current_path(start_path, &mut cache);
 

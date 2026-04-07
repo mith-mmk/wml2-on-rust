@@ -3,7 +3,7 @@ pub(crate) use crate::filesystem::{
     BrowserEntry as FilerEntry, BrowserNameSortMode as NameSortMode, BrowserScanOptions,
     BrowserSnapshotState as FilerSnapshotState, BrowserSortField as FilerSortField,
 };
-use crate::options::NavigationSortOption;
+use crate::options::{ArchiveBrowseOption, NavigationSortOption};
 use std::path::PathBuf;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -25,6 +25,7 @@ pub(crate) struct FilerState {
     pub(crate) sort_field: FilerSortField,
     pub(crate) ascending: bool,
     pub(crate) separate_dirs: bool,
+    pub(crate) archive_mode: ArchiveBrowseOption,
     pub(crate) archive_as_container_in_sort: bool,
     pub(crate) filter_text: String,
     pub(crate) extension_filter: String,
@@ -43,6 +44,7 @@ impl Default for FilerState {
             sort_field: FilerSortField::Name,
             ascending: true,
             separate_dirs: true,
+            archive_mode: ArchiveBrowseOption::Folder,
             archive_as_container_in_sort: false,
             filter_text: String::new(),
             extension_filter: String::new(),
@@ -75,6 +77,7 @@ impl FilerState {
     ) -> BrowserScanOptions {
         BrowserScanOptions {
             navigation_sort,
+            archive_mode: self.archive_mode,
             sort_field: self.sort_field,
             ascending: self.ascending,
             separate_dirs: self.separate_dirs,
@@ -117,6 +120,7 @@ mod tests {
             sort_field: FilerSortField::Modified,
             ascending: false,
             separate_dirs: false,
+            archive_mode: ArchiveBrowseOption::Archiver,
             archive_as_container_in_sort: true,
             filter_text: "cover".to_string(),
             extension_filter: "png".to_string(),
@@ -127,6 +131,7 @@ mod tests {
         let options = state.browser_scan_options(NavigationSortOption::Date);
 
         assert_eq!(options.navigation_sort, NavigationSortOption::Date);
+        assert_eq!(options.archive_mode, ArchiveBrowseOption::Archiver);
         assert_eq!(options.sort_field, FilerSortField::Modified);
         assert!(!options.ascending);
         assert!(!options.separate_dirs);

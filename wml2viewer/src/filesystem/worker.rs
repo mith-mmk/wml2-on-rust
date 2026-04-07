@@ -1,60 +1,18 @@
-use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 
-use crate::options::{EndOfFolderOption, NavigationSortOption};
+use crate::options::{ArchiveBrowseOption, EndOfFolderOption, NavigationSortOption};
 
 use super::browser::{SharedBrowserWorkerState, preload_browser_directory_for_path};
 use super::cache::{FilesystemCache, SharedFilesystemCache};
 use super::navigator::{
     FileNavigator, NavigationOutcome, NavigationTarget, PendingDirection, resolve_navigation_path,
 };
-
-#[derive(Clone)]
-pub enum FilesystemCommand {
-    Init {
-        request_id: u64,
-        path: PathBuf,
-    },
-    SetCurrent {
-        request_id: u64,
-        path: PathBuf,
-    },
-    Next {
-        request_id: u64,
-        policy: EndOfFolderOption,
-    },
-    Prev {
-        request_id: u64,
-        policy: EndOfFolderOption,
-    },
-    First {
-        request_id: u64,
-    },
-    Last {
-        request_id: u64,
-    },
-}
-
-pub enum FilesystemResult {
-    NavigatorReady {
-        request_id: u64,
-        navigation_path: Option<PathBuf>,
-        load_path: Option<PathBuf>,
-    },
-    CurrentSet,
-    PathResolved {
-        request_id: u64,
-        navigation_path: PathBuf,
-        load_path: PathBuf,
-    },
-    NoPath {
-        request_id: u64,
-    },
-}
+use super::protocol::{FilesystemCommand, FilesystemResult};
 
 pub(crate) fn spawn_filesystem_worker(
     sort: NavigationSortOption,
+    archive_mode: ArchiveBrowseOption,
     shared_cache: SharedFilesystemCache,
     shared_browser_state: SharedBrowserWorkerState,
 ) -> (Sender<FilesystemCommand>, Receiver<FilesystemResult>) {
@@ -68,7 +26,7 @@ pub(crate) fn spawn_filesystem_worker(
             let Ok(mut cache) = shared_cache.lock() else {
                 break;
             };
-            cache.ensure_sort(sort);
+            cache.ensure_settings(sort, archive_mode);
             match command {
                 FilesystemCommand::Init { request_id, path } => {
                     let Some(start_path) = resolve_navigation_path(&path, &mut cache) else {
@@ -82,6 +40,7 @@ pub(crate) fn spawn_filesystem_worker(
                             &shared_browser_state,
                             nav.current(),
                             sort,
+                            archive_mode,
                             &mut cache,
                         );
                     }
@@ -103,6 +62,7 @@ pub(crate) fn spawn_filesystem_worker(
                             &shared_browser_state,
                             nav.current(),
                             sort,
+                            archive_mode,
                             &mut cache,
                         );
                     } else if let Some(start_path) = resolve_navigation_path(&path, &mut cache) {
@@ -112,6 +72,7 @@ pub(crate) fn spawn_filesystem_worker(
                                 &shared_browser_state,
                                 nav.current(),
                                 sort,
+                                archive_mode,
                                 &mut cache,
                             );
                         }
@@ -161,6 +122,7 @@ pub(crate) fn spawn_filesystem_worker(
                         navigation_outcome_to_target(outcome),
                     );
                 }
+                FilesystemCommand::OpenBrowserDirectory { .. } => {}
             }
         }
     });

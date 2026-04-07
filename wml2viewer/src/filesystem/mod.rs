@@ -3,6 +3,7 @@ mod cache;
 mod listed_file;
 mod navigator;
 mod path;
+mod protocol;
 mod sort;
 mod worker;
 mod zip_file;
@@ -11,10 +12,9 @@ mod zip_file;
 use crate::options::NavigationSortOption;
 pub(crate) use browser::spawn_browser_query_worker;
 pub use browser::{
-    BrowserEntry, BrowserMetadata, BrowserNameSortMode, BrowserQuery, BrowserQueryResult,
-    BrowserScanOptions, BrowserSnapshotState, BrowserSortField, browser_directory_for_path,
-    browser_selected_path_for_directory, compare_browser_name, scan_browser_directory_with_preview,
-    sort_browser_entries,
+    BrowserEntry, BrowserMetadata, BrowserNameSortMode, BrowserScanOptions, BrowserSnapshotState,
+    BrowserSortField, browser_directory_for_path, browser_selected_path_for_directory,
+    compare_browser_name, scan_browser_directory_with_preview, sort_browser_entries,
 };
 pub(crate) use browser::{SharedBrowserWorkerState, new_shared_browser_worker_state};
 #[cfg(test)]
@@ -39,9 +39,9 @@ pub(crate) use path::{
 };
 #[cfg(not(test))]
 pub(crate) use path::{is_supported_image, listed_virtual_root, zip_virtual_root};
+pub use protocol::{BrowserQuery, BrowserQueryResult, FilesystemCommand, FilesystemResult};
 pub(crate) use sort::{compare_natural_str, compare_os_str, sort_paths};
 pub(crate) use worker::spawn_filesystem_worker;
-pub use worker::{FilesystemCommand, FilesystemResult};
 pub(crate) use zip_file::{load_zip_entries_unsorted, sort_zip_entries};
 
 #[cfg(test)]

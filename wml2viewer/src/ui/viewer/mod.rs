@@ -4,11 +4,11 @@ use crate::dependent::{default_download_dir, pick_save_directory};
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
-    BrowserQuery, BrowserQueryResult, FilesystemCommand, FilesystemResult,
-    SharedBrowserWorkerState, SharedFilesystemCache, adjacent_entry, archive_prefers_low_io,
-    browser_directory_for_path, is_browser_container, navigation_branch_path,
-    new_shared_browser_worker_state, new_shared_filesystem_cache, resolve_navigation_entry_path,
-    set_archive_zip_workaround, spawn_browser_query_worker, spawn_filesystem_worker,
+    FilesystemCommand, FilesystemResult, SharedBrowserWorkerState, SharedFilesystemCache,
+    adjacent_entry, archive_prefers_low_io, browser_directory_for_path, is_browser_container,
+    navigation_branch_path, new_shared_browser_worker_state, new_shared_filesystem_cache,
+    resolve_navigation_entry_path, set_archive_zip_workaround, spawn_browser_query_worker,
+    spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, PluginConfig, ResourceOptions,
@@ -96,8 +96,8 @@ pub(crate) struct ViewerApp {
     pub(crate) active_fs_request_id: Option<u64>,
     pub(crate) queued_navigation: Option<FilesystemCommand>,
     pub(crate) deferred_filesystem_init_path: Option<PathBuf>,
-    pub(crate) filer_tx: Option<Sender<BrowserQuery>>,
-    pub(crate) filer_rx: Option<Receiver<BrowserQueryResult>>,
+    pub(crate) filer_tx: Option<Sender<FilesystemCommand>>,
+    pub(crate) filer_rx: Option<Receiver<FilesystemResult>>,
     pub(crate) next_filer_request_id: u64,
     pub(crate) thumbnail_tx: Option<Sender<ThumbnailCommand>>,
     pub(crate) thumbnail_rx: Option<Receiver<ThumbnailResult>>,
@@ -426,7 +426,10 @@ impl ViewerApp {
             },
             show_filer: show_filer_on_start,
             show_subfiler: false,
-            filer: FilerState::default(),
+            filer: FilerState {
+                archive_mode: config.navigation.archive,
+                ..FilerState::default()
+            },
             susie64_search_paths_input: String::new(),
             system_search_paths_input: String::new(),
             ffmpeg_search_paths_input: String::new(),
@@ -991,7 +994,7 @@ impl ViewerApp {
         };
         let request_id = self.alloc_filer_request_id();
         self.filer.snapshot.begin_request(request_id);
-        let _ = filer_tx.send(BrowserQuery::OpenDirectory {
+        let _ = filer_tx.send(FilesystemCommand::OpenBrowserDirectory {
             request_id,
             dir,
             selected,
@@ -1311,7 +1314,12 @@ impl ViewerApp {
         {
             return None;
         }
-        let companion = adjacent_entry(&self.current_navigation_path, self.navigation_sort, 1)?;
+        let companion = adjacent_entry(
+            &self.current_navigation_path,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            1,
+        )?;
         let current_branch = navigation_branch_path(&self.current_navigation_path);
         let companion_branch = navigation_branch_path(&companion);
         (current_branch == companion_branch).then_some(companion)
@@ -1401,6 +1409,7 @@ impl ViewerApp {
         let boundary_target = adjacent_entry(
             &self.current_navigation_path,
             self.navigation_sort,
+            self.filer.archive_mode,
             if forward { 1 } else { -1 },
         )?;
         let current_branch = navigation_branch_path(&self.current_navigation_path);
@@ -1410,7 +1419,12 @@ impl ViewerApp {
         }
 
         let step = if forward { 2 } else { -2 };
-        adjacent_entry(&self.current_navigation_path, self.navigation_sort, step)
+        adjacent_entry(
+            &self.current_navigation_path,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            step,
+        )
     }
 
     pub(crate) fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
@@ -1609,7 +1623,9 @@ impl ViewerApp {
     fn spawn_navigation_workers(&mut self) {
         let shared_cache = self
             .shared_filesystem_cache
-            .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
+            .get_or_insert_with(|| {
+                new_shared_filesystem_cache(self.navigation_sort, self.filer.archive_mode)
+            })
             .clone();
         let shared_browser_state = self
             .shared_browser_worker_state
@@ -1618,6 +1634,7 @@ impl ViewerApp {
         if self.fs_tx.is_none() || self.fs_rx.is_none() {
             let (tx, rx) = spawn_filesystem_worker(
                 self.navigation_sort,
+                self.filer.archive_mode,
                 shared_cache.clone(),
                 shared_browser_state.clone(),
             );
@@ -1681,6 +1698,17 @@ impl ViewerApp {
             }
             FilesystemCommand::First { .. } => FilesystemCommand::First { request_id },
             FilesystemCommand::Last { .. } => FilesystemCommand::Last { request_id },
+            FilesystemCommand::OpenBrowserDirectory {
+                dir,
+                selected,
+                options,
+                ..
+            } => FilesystemCommand::OpenBrowserDirectory {
+                request_id,
+                dir,
+                selected,
+                options,
+            },
         };
         self.overlay.set_loading_message("Scanning folder...");
         fs_tx.send(command).map_err(filesystem_send_error)?;
@@ -1771,7 +1799,12 @@ impl ViewerApp {
 
     fn next_preload_candidate(&self) -> Option<PathBuf> {
         let step = if self.manga_spread_active() { 2 } else { 1 };
-        adjacent_entry(&self.current_navigation_path, self.navigation_sort, step)
+        adjacent_entry(
+            &self.current_navigation_path,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            step,
+        )
     }
 
     fn schedule_preload(&mut self) {
@@ -1867,14 +1900,20 @@ impl ViewerApp {
     pub(crate) fn respawn_filesystem_worker(&mut self) {
         let shared_cache = self
             .shared_filesystem_cache
-            .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
+            .get_or_insert_with(|| {
+                new_shared_filesystem_cache(self.navigation_sort, self.filer.archive_mode)
+            })
             .clone();
         let shared_browser_state = self
             .shared_browser_worker_state
             .get_or_insert_with(new_shared_browser_worker_state)
             .clone();
-        let (tx, rx) =
-            spawn_filesystem_worker(self.navigation_sort, shared_cache, shared_browser_state);
+        let (tx, rx) = spawn_filesystem_worker(
+            self.navigation_sort,
+            self.filer.archive_mode,
+            shared_cache,
+            shared_browser_state,
+        );
         self.fs_tx = Some(tx);
         self.fs_rx = Some(rx);
         self.navigator_ready = false;
@@ -1885,7 +1924,9 @@ impl ViewerApp {
     fn respawn_filer_worker(&mut self) {
         let shared_cache = self
             .shared_filesystem_cache
-            .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
+            .get_or_insert_with(|| {
+                new_shared_filesystem_cache(self.navigation_sort, self.filer.archive_mode)
+            })
             .clone();
         let shared_browser_state = self
             .shared_browser_worker_state
@@ -2186,6 +2227,11 @@ impl ViewerApp {
                         self.active_fs_request_id = None;
                     }
                 }
+                Ok(FilesystemResult::BrowserReset { .. })
+                | Ok(FilesystemResult::BrowserAppend { .. })
+                | Ok(FilesystemResult::ThumbnailHint { .. })
+                | Ok(FilesystemResult::BrowserFinish { .. })
+                | Ok(FilesystemResult::BrowserFailed { .. }) => {}
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
                     self.overlay
@@ -2210,7 +2256,7 @@ impl ViewerApp {
             };
             match result {
                 Ok(result) => {
-                    if let BrowserQueryResult::ThumbnailHint {
+                    if let FilesystemResult::ThumbnailHint {
                         request_id: _,
                         paths,
                         max_side,

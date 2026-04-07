@@ -252,6 +252,7 @@ enum FontSizeConfigFile {
 struct NavigationConfigFile {
     end_of_folder: EndOfFolderConfigFile,
     sort: NavigationSortConfigFile,
+    archive: ArchiveBrowseConfigFile,
 }
 
 impl Default for NavigationConfigFile {
@@ -259,6 +260,7 @@ impl Default for NavigationConfigFile {
         Self {
             end_of_folder: EndOfFolderConfigFile::Recursive,
             sort: NavigationSortConfigFile::OsName,
+            archive: ArchiveBrowseConfigFile::Folder,
         }
     }
 }
@@ -295,6 +297,14 @@ enum NavigationSortConfigFile {
     Name,
     Date,
     Size,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+enum ArchiveBrowseConfigFile {
+    Folder,
+    Skip,
+    Archiver,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -455,6 +465,7 @@ impl From<ConfigFile> for AppConfig {
         config.storage = value.storage.into();
         config.navigation.end_of_folder = value.navigation.end_of_folder.into();
         config.navigation.sort = value.navigation.sort.into();
+        config.navigation.archive = value.navigation.archive.into();
         config.runtime = value.runtime.into();
         config.runtime.workaround.thumbnail = value.filesystem.thumbnail.into();
         config
@@ -490,6 +501,7 @@ impl ConfigFile {
             navigation: NavigationConfigFile {
                 end_of_folder: value.navigation.end_of_folder.into(),
                 sort: value.navigation.sort.into(),
+                archive: value.navigation.archive.into(),
             },
             runtime: RuntimeConfigFile {
                 current_file: current_path.map(|path| path.to_path_buf()),
@@ -946,6 +958,26 @@ impl From<NavigationSortOption> for NavigationSortConfigFile {
             NavigationSortOption::Name => Self::Name,
             NavigationSortOption::Date => Self::Date,
             NavigationSortOption::Size => Self::Size,
+        }
+    }
+}
+
+impl From<ArchiveBrowseConfigFile> for crate::options::ArchiveBrowseOption {
+    fn from(value: ArchiveBrowseConfigFile) -> Self {
+        match value {
+            ArchiveBrowseConfigFile::Folder => Self::Folder,
+            ArchiveBrowseConfigFile::Skip => Self::Skip,
+            ArchiveBrowseConfigFile::Archiver => Self::Archiver,
+        }
+    }
+}
+
+impl From<crate::options::ArchiveBrowseOption> for ArchiveBrowseConfigFile {
+    fn from(value: crate::options::ArchiveBrowseOption) -> Self {
+        match value {
+            crate::options::ArchiveBrowseOption::Folder => Self::Folder,
+            crate::options::ArchiveBrowseOption::Skip => Self::Skip,
+            crate::options::ArchiveBrowseOption::Archiver => Self::Archiver,
         }
     }
 }

@@ -57,6 +57,8 @@ P5 = 優先度低い
     - [*] provider protocol を統合する
       - local fs / listed / zip / temp-http を同じ source id / signature / open API で扱う基盤は追加済み
       - render worker / thumbnail worker は filesystem source open API を経由する
+      - URL入力と app 起動入力は filesystem source input resolver を経由して temp-http へ落とせる
+      - URL入力は FilesystemCommand / FilesystemResult 経由で worker thread から解決する
       - zip / listed / local fs / smb / http / cloud drive を同じ source key / metadata / open API で扱う
       - 現在は zip/listed/local fs 中心。http は temp file 化の暫定対応、smb は OS path 任せ、cloud drive は未対応
     - [*] 先読み（漫画モード加味すると最大2枚）
@@ -80,6 +82,8 @@ P5 = 優先度低い
 - [ ] LHAサポート
 - [*] httpの暫定実装
     - [+] reqwest blocking download -> temp file 化で表示
+    - [+] UI の URL open と app 起動入力は filesystem source resolver 経由に移行
+    - [*] UI の URL open は filesystem protocol を経由して worker thread で解決
     - [ ] filesystem provider として非同期 fetch / cache / cancel を統合
 
 #### UX
@@ -108,6 +112,8 @@ P5 = 優先度低い
    - [+] `FilerCommand / FilerResult` 自体を filesystem 側の query/result モデルへ統合
    - [ ] source provider protocol の統合
     - local fs / listed / zip / temp-http の source key / signature / open API は導入済み
+    - URL open / app startup input も filesystem 側の source resolver を通る
+    - URL open request は filesystem worker protocol に乗っている
     - zip / listed / local fs / smb / http / cloud drive を同じ key / metadata / open API へ寄せる
    - [+] viewer の navigation cache と filer の browser scan cache を共有化
    - [+] filer のファイルリスト更新を viewer の current/pending navigation と同期

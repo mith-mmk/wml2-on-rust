@@ -205,6 +205,8 @@ impl BrowserSnapshotState {
                 self.pending_request_id = None;
                 true
             }
+            FilesystemResult::InputPathResolved { .. }
+            | FilesystemResult::InputPathFailed { .. } => false,
             _ => false,
         }
     }
@@ -391,6 +393,7 @@ pub(crate) fn spawn_browser_query_worker(
                         }
                     }
                 }
+                FilesystemCommand::ResolveSourceInput { .. } => {}
                 _ => {}
             }
         }

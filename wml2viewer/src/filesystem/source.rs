@@ -4,6 +4,8 @@ use std::time::UNIX_EPOCH;
 
 use serde::{Deserialize, Serialize};
 
+use crate::dependent::download_http_url;
+
 use super::path::{
     is_listed_file_path, is_zip_file_path, listed_virtual_identity_from_virtual_path,
     listed_virtual_root, resolve_start_path, resolve_virtual_listed_child, zip_virtual_root,
@@ -114,6 +116,19 @@ pub(crate) fn source_signature_for_path(path: &Path) -> Option<SourceSignature> 
             .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
             .map(|duration| duration.as_nanos()),
     })
+}
+
+pub fn resolve_source_input_path(path: &Path) -> Option<PathBuf> {
+    let url = source_url_from_input(path)?;
+    if url.starts_with("http://") || url.starts_with("https://") {
+        return download_http_url(&url);
+    }
+    Some(PathBuf::from(url))
+}
+
+fn source_url_from_input(path: &Path) -> Option<String> {
+    let text = path.to_string_lossy().trim().to_string();
+    (!text.is_empty()).then_some(text)
 }
 
 pub(crate) fn open_image_source(path: &Path) -> Option<OpenedImageSource> {
@@ -246,6 +261,23 @@ mod tests {
         let source = source_id_for_path(&path);
 
         assert_eq!(source.kind, SourceKind::HttpTempFile);
+    }
+
+    #[test]
+    fn resolve_source_input_path_keeps_local_paths() {
+        let path = PathBuf::from("C:/images/sample.png");
+
+        assert_eq!(resolve_source_input_path(&path), Some(path));
+    }
+
+    #[test]
+    fn source_url_from_input_detects_http_urls() {
+        let path = PathBuf::from("https://example.com/image.webp");
+
+        assert_eq!(
+            source_url_from_input(&path),
+            Some("https://example.com/image.webp".to_string())
+        );
     }
 
     fn make_temp_dir() -> PathBuf {

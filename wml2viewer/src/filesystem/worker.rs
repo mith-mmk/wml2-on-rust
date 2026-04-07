@@ -9,6 +9,7 @@ use super::navigator::{
     FileNavigator, NavigationOutcome, NavigationTarget, PendingDirection, resolve_navigation_path,
 };
 use super::protocol::{FilesystemCommand, FilesystemResult};
+use super::resolve_source_input_path;
 
 pub(crate) fn spawn_filesystem_worker(
     sort: NavigationSortOption,
@@ -122,6 +123,13 @@ pub(crate) fn spawn_filesystem_worker(
                         navigation_outcome_to_target(outcome),
                     );
                 }
+                FilesystemCommand::ResolveSourceInput { request_id, input } => {
+                    let result = match resolve_source_input_path(&input) {
+                        Some(path) => FilesystemResult::InputPathResolved { request_id, path },
+                        None => FilesystemResult::InputPathFailed { request_id, input },
+                    };
+                    let _ = result_tx.send(result);
+                }
                 FilesystemCommand::OpenBrowserDirectory { .. } => {}
             }
         }
@@ -168,5 +176,56 @@ fn navigation_outcome_to_target(outcome: NavigationOutcome) -> Option<Navigation
     match outcome {
         NavigationOutcome::Resolved(target) => Some(target),
         NavigationOutcome::NoPath => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::options::{ArchiveBrowseOption, NavigationSortOption};
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_path(name: &str) -> std::path::PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!("wml2viewer-worker-{name}-{unique}.png"))
+    }
+
+    #[test]
+    fn resolve_source_input_returns_local_path() {
+        let path = temp_path("resolve");
+        fs::write(&path, b"png").unwrap();
+
+        let (tx, rx) = spawn_filesystem_worker(
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+            super::super::new_shared_filesystem_cache(
+                NavigationSortOption::OsName,
+                ArchiveBrowseOption::Folder,
+            ),
+            super::super::new_shared_browser_worker_state(),
+        );
+
+        tx.send(FilesystemCommand::ResolveSourceInput {
+            request_id: 7,
+            input: path.clone(),
+        })
+        .unwrap();
+
+        match rx.recv().unwrap() {
+            FilesystemResult::InputPathResolved {
+                request_id,
+                path: resolved,
+            } => {
+                assert_eq!(request_id, 7);
+                assert_eq!(resolved, path);
+            }
+            other => panic!("unexpected result: {other:?}"),
+        }
+
+        let _ = fs::remove_file(path);
     }
 }

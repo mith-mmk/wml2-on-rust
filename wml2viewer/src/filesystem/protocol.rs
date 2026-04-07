@@ -34,6 +34,10 @@ pub enum FilesystemCommand {
         selected: Option<PathBuf>,
         options: Option<BrowserScanOptions>,
     },
+    ResolveSourceInput {
+        request_id: u64,
+        input: PathBuf,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -74,6 +78,14 @@ pub enum FilesystemResult {
     },
     BrowserFailed {
         request_id: u64,
+    },
+    InputPathResolved {
+        request_id: u64,
+        path: PathBuf,
+    },
+    InputPathFailed {
+        request_id: u64,
+        input: PathBuf,
     },
 }
 

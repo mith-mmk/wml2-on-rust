@@ -2,7 +2,7 @@ mod icons;
 pub(crate) mod state;
 pub(crate) mod thumbnail;
 
-use crate::dependent::{download_http_url, normalize_locale_tag};
+use crate::dependent::normalize_locale_tag;
 use crate::drawers::image::SaveFormat;
 use crate::filesystem::resolve_start_path;
 use crate::options::ArchiveBrowseOption;
@@ -325,10 +325,9 @@ impl ViewerApp {
                     ui.label(url_text);
                     ui.text_edit_singleline(&mut self.filer.url_input);
                     if ui.button(open_url_text).clicked() {
-                        if let Some(path) = download_http_url(&self.filer.url_input) {
-                            self.empty_mode = false;
-                            self.pending_fit_recalc = true;
-                            let _ = self.request_load_path(path);
+                        let input = std::path::PathBuf::from(self.filer.url_input.trim());
+                        if !input.as_os_str().is_empty() {
+                            let _ = self.request_source_input(input);
                         }
                     }
                 });

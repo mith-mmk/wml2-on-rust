@@ -94,6 +94,7 @@ pub(crate) struct ViewerApp {
     pub(crate) fs_rx: Option<Receiver<FilesystemResult>>,
     pub(crate) next_fs_request_id: u64,
     pub(crate) active_fs_request_id: Option<u64>,
+    pub(crate) active_fs_input_request_id: Option<u64>,
     pub(crate) queued_navigation: Option<FilesystemCommand>,
     pub(crate) deferred_filesystem_init_path: Option<PathBuf>,
     pub(crate) filer_tx: Option<Sender<FilesystemCommand>>,
@@ -393,6 +394,7 @@ impl ViewerApp {
             fs_rx: None,
             next_fs_request_id: 0,
             active_fs_request_id: None,
+            active_fs_input_request_id: None,
             queued_navigation: None,
             deferred_filesystem_init_path: None,
             filer_tx: None,
@@ -1669,6 +1671,21 @@ impl ViewerApp {
         Ok(())
     }
 
+    pub(crate) fn request_source_input(&mut self, input: PathBuf) -> Result<(), Box<dyn Error>> {
+        self.spawn_navigation_workers();
+        let Some(fs_tx) = self.fs_tx.clone() else {
+            return Ok(());
+        };
+        let request_id = self.alloc_fs_request_id();
+        self.active_fs_input_request_id = Some(request_id);
+        self.overlay
+            .set_loading_message(format!("Opening {}", input.display()));
+        fs_tx
+            .send(FilesystemCommand::ResolveSourceInput { request_id, input })
+            .map_err(filesystem_send_error)?;
+        Ok(())
+    }
+
     fn request_navigation(&mut self, mut command: FilesystemCommand) -> Result<(), Box<dyn Error>> {
         self.spawn_navigation_workers();
         if !self.navigator_ready {
@@ -1709,6 +1726,9 @@ impl ViewerApp {
                 selected,
                 options,
             },
+            FilesystemCommand::ResolveSourceInput { input, .. } => {
+                FilesystemCommand::ResolveSourceInput { request_id, input }
+            }
         };
         self.overlay.set_loading_message("Scanning folder...");
         fs_tx.send(command).map_err(filesystem_send_error)?;
@@ -1918,6 +1938,7 @@ impl ViewerApp {
         self.fs_rx = Some(rx);
         self.navigator_ready = false;
         self.active_fs_request_id = None;
+        self.active_fs_input_request_id = None;
         let _ = self.init_filesystem(self.current_navigation_path.clone());
     }
 
@@ -2225,6 +2246,21 @@ impl ViewerApp {
                             .set_loading_message("No displayable file found");
                         self.show_filer = true;
                         self.active_fs_request_id = None;
+                    }
+                }
+                Ok(FilesystemResult::InputPathResolved { request_id, path }) => {
+                    if self.active_fs_input_request_id == Some(request_id) {
+                        self.active_fs_input_request_id = None;
+                        self.empty_mode = false;
+                        self.pending_fit_recalc = true;
+                        let _ = self.request_load_path(path);
+                    }
+                }
+                Ok(FilesystemResult::InputPathFailed { request_id, input }) => {
+                    if self.active_fs_input_request_id == Some(request_id) {
+                        self.active_fs_input_request_id = None;
+                        self.overlay
+                            .set_loading_message(format!("Failed to open {}", input.display()));
                     }
                 }
                 Ok(FilesystemResult::BrowserReset { .. })

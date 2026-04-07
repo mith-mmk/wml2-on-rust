@@ -4,9 +4,10 @@ use crate::dependent::{default_download_dir, pick_save_directory};
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
-    BrowserScanOptions, FilesystemCommand, FilesystemResult, adjacent_entry,
+    BrowserScanOptions, FilesystemCommand, FilesystemResult, SharedFilesystemCache, adjacent_entry,
     archive_prefers_low_io, is_browser_container, navigation_branch_path,
-    resolve_navigation_entry_path, set_archive_zip_workaround, spawn_filesystem_worker,
+    new_shared_filesystem_cache, resolve_navigation_entry_path, set_archive_zip_workaround,
+    spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, PluginConfig, ResourceOptions,
@@ -87,6 +88,7 @@ pub(crate) struct ViewerApp {
     pub(crate) next_request_id: u64,
     pub(crate) active_request: Option<ActiveRenderRequest>,
     pub(crate) pending_navigation_path: Option<PathBuf>,
+    pub(crate) shared_filesystem_cache: Option<SharedFilesystemCache>,
     pub(crate) fs_tx: Option<Sender<FilesystemCommand>>,
     pub(crate) fs_rx: Option<Receiver<FilesystemResult>>,
     pub(crate) next_fs_request_id: u64,
@@ -384,6 +386,7 @@ impl ViewerApp {
             next_request_id: 0,
             active_request: None,
             pending_navigation_path: None,
+            shared_filesystem_cache: None,
             fs_tx: None,
             fs_rx: None,
             next_fs_request_id: 0,
@@ -1637,13 +1640,17 @@ impl ViewerApp {
     }
 
     fn spawn_navigation_workers(&mut self) {
+        let shared_cache = self
+            .shared_filesystem_cache
+            .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
+            .clone();
         if self.fs_tx.is_none() || self.fs_rx.is_none() {
-            let (tx, rx) = spawn_filesystem_worker(self.navigation_sort);
+            let (tx, rx) = spawn_filesystem_worker(self.navigation_sort, shared_cache.clone());
             self.fs_tx = Some(tx);
             self.fs_rx = Some(rx);
         }
         if self.filer_tx.is_none() || self.filer_rx.is_none() {
-            let (tx, rx) = spawn_filer_worker();
+            let (tx, rx) = spawn_filer_worker(shared_cache);
             self.filer_tx = Some(tx);
             self.filer_rx = Some(rx);
         }
@@ -1883,7 +1890,11 @@ impl ViewerApp {
     }
 
     pub(crate) fn respawn_filesystem_worker(&mut self) {
-        let (tx, rx) = spawn_filesystem_worker(self.navigation_sort);
+        let shared_cache = self
+            .shared_filesystem_cache
+            .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
+            .clone();
+        let (tx, rx) = spawn_filesystem_worker(self.navigation_sort, shared_cache);
         self.fs_tx = Some(tx);
         self.fs_rx = Some(rx);
         self.navigator_ready = false;
@@ -1892,7 +1903,11 @@ impl ViewerApp {
     }
 
     fn respawn_filer_worker(&mut self) {
-        let (tx, rx) = spawn_filer_worker();
+        let shared_cache = self
+            .shared_filesystem_cache
+            .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
+            .clone();
+        let (tx, rx) = spawn_filer_worker(shared_cache);
         self.filer_tx = Some(tx);
         self.filer_rx = Some(rx);
         self.filer.pending_request_id = None;

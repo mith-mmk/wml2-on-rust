@@ -7,8 +7,8 @@ use std::thread;
 use std::time::SystemTime;
 
 use super::{
-    FilesystemCache, compare_natural_str, compare_os_str, is_browser_container,
-    list_browser_entries,
+    FilesystemCache, SharedFilesystemCache, compare_natural_str, compare_os_str,
+    is_browser_container, list_browser_entries,
 };
 
 const PREVIEW_CHUNK_SIZE: usize = 64;
@@ -82,12 +82,13 @@ pub enum BrowserQueryResult {
     },
 }
 
-pub fn spawn_browser_query_worker() -> (Sender<BrowserQuery>, Receiver<BrowserQueryResult>) {
+pub(crate) fn spawn_browser_query_worker(
+    shared_cache: SharedFilesystemCache,
+) -> (Sender<BrowserQuery>, Receiver<BrowserQueryResult>) {
     let (command_tx, command_rx) = mpsc::channel::<BrowserQuery>();
     let (result_tx, result_rx) = mpsc::channel::<BrowserQueryResult>();
 
     thread::spawn(move || {
-        let mut cache = FilesystemCache::default();
         while let Ok(command) = command_rx.recv() {
             let mut latest = command;
             while let Ok(next) = command_rx.try_recv() {
@@ -100,6 +101,9 @@ pub fn spawn_browser_query_worker() -> (Sender<BrowserQuery>, Receiver<BrowserQu
                     selected,
                     options,
                 } => {
+                    let Ok(mut cache) = shared_cache.lock() else {
+                        break;
+                    };
                     let result = catch_unwind(AssertUnwindSafe(|| {
                         scan_query_request(
                             &result_tx,

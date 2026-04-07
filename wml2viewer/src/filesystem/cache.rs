@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use crate::options::NavigationSortOption;
 
@@ -16,6 +17,8 @@ pub(crate) struct FilesystemCache {
     listings_by_dir: HashMap<PathBuf, DirectoryListing>,
     sort: NavigationSortOption,
 }
+
+pub(crate) type SharedFilesystemCache = Arc<Mutex<FilesystemCache>>;
 
 impl Default for FilesystemCache {
     fn default() -> Self {
@@ -81,6 +84,10 @@ impl FilesystemCache {
     pub(crate) fn last_supported_file(&mut self, dir: &Path) -> Option<PathBuf> {
         self.listing(dir).last_file.clone()
     }
+}
+
+pub(crate) fn new_shared_filesystem_cache(sort: NavigationSortOption) -> SharedFilesystemCache {
+    Arc::new(Mutex::new(FilesystemCache::new(sort)))
 }
 
 #[allow(dead_code)]

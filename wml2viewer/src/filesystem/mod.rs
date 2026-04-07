@@ -8,13 +8,15 @@ mod worker;
 mod zip_file;
 
 use crate::options::NavigationSortOption;
+pub(crate) use browser::spawn_browser_query_worker;
 pub use browser::{
     BrowserEntry, BrowserMetadata, BrowserNameSortMode, BrowserQuery, BrowserQueryResult,
     BrowserScanOptions, BrowserSortField, compare_browser_name,
-    scan_browser_directory_with_preview, sort_browser_entries, spawn_browser_query_worker,
+    scan_browser_directory_with_preview, sort_browser_entries,
 };
 pub(crate) use cache::{
-    FilesystemCache, build_listed_virtual_children, build_zip_virtual_children,
+    FilesystemCache, SharedFilesystemCache, build_listed_virtual_children,
+    build_zip_virtual_children, new_shared_filesystem_cache,
 };
 pub use cache::{is_browser_container, list_browser_entries, list_openable_entries};
 pub(crate) use navigator::{FileNavigator, NavigationOutcome};
@@ -28,7 +30,8 @@ pub(crate) use path::{
     resolve_virtual_zip_child, zip_virtual_root,
 };
 pub(crate) use sort::{compare_natural_str, compare_os_str, sort_paths};
-pub use worker::{FilesystemCommand, FilesystemResult, spawn_filesystem_worker};
+pub(crate) use worker::spawn_filesystem_worker;
+pub use worker::{FilesystemCommand, FilesystemResult};
 pub(crate) use zip_file::{load_zip_entries_unsorted, sort_zip_entries};
 
 #[cfg(test)]

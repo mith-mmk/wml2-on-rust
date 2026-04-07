@@ -4,7 +4,7 @@ use std::thread;
 
 use crate::options::{EndOfFolderOption, NavigationSortOption};
 
-use super::cache::FilesystemCache;
+use super::cache::{FilesystemCache, SharedFilesystemCache};
 use super::navigator::{
     FileNavigator, NavigationOutcome, NavigationTarget, PendingDirection, resolve_navigation_path,
 };
@@ -52,17 +52,21 @@ pub enum FilesystemResult {
     },
 }
 
-pub fn spawn_filesystem_worker(
+pub(crate) fn spawn_filesystem_worker(
     sort: NavigationSortOption,
+    shared_cache: SharedFilesystemCache,
 ) -> (Sender<FilesystemCommand>, Receiver<FilesystemResult>) {
     let (command_tx, command_rx) = mpsc::channel::<FilesystemCommand>();
     let (result_tx, result_rx) = mpsc::channel::<FilesystemResult>();
 
     thread::spawn(move || {
         let mut navigator: Option<FileNavigator> = None;
-        let mut cache = FilesystemCache::new(sort);
 
         while let Ok(command) = command_rx.recv() {
+            let Ok(mut cache) = shared_cache.lock() else {
+                break;
+            };
+            cache.ensure_sort(sort);
             match command {
                 FilesystemCommand::Init { request_id, path } => {
                     let Some(start_path) = resolve_navigation_path(&path, &mut cache) else {

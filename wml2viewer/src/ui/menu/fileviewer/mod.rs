@@ -178,11 +178,13 @@ impl ViewerApp {
                             | FilerViewMode::ThumbnailMedium
                             | FilerViewMode::ThumbnailLarge
                     ) {
-                        ui.add(
-                            egui::Slider::new(&mut self.filer.thumbnail_scale, 0.75..=2.5)
-                                .show_value(false)
-                                .text("thumb"),
-                        );
+                        refresh_requested |= ui
+                            .add(
+                                egui::Slider::new(&mut self.filer.thumbnail_scale, 0.75..=2.5)
+                                    .show_value(false)
+                                    .text("thumb"),
+                            )
+                            .changed();
                     }
                 });
                 ui.horizontal_wrapped(|ui| {
@@ -336,6 +338,7 @@ impl ViewerApp {
                 }
                 ui.separator();
                 if refresh_requested {
+                    self.filer.mark_query_options_dirty();
                     self.refresh_current_filer_directory();
                 }
                 let panel_width = ui.available_width();

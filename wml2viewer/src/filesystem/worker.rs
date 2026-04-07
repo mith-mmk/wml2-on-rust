@@ -4,6 +4,7 @@ use std::thread;
 
 use crate::options::{EndOfFolderOption, NavigationSortOption};
 
+use super::browser::{SharedBrowserWorkerState, preload_browser_directory_for_path};
 use super::cache::{FilesystemCache, SharedFilesystemCache};
 use super::navigator::{
     FileNavigator, NavigationOutcome, NavigationTarget, PendingDirection, resolve_navigation_path,
@@ -55,6 +56,7 @@ pub enum FilesystemResult {
 pub(crate) fn spawn_filesystem_worker(
     sort: NavigationSortOption,
     shared_cache: SharedFilesystemCache,
+    shared_browser_state: SharedBrowserWorkerState,
 ) -> (Sender<FilesystemCommand>, Receiver<FilesystemResult>) {
     let (command_tx, command_rx) = mpsc::channel::<FilesystemCommand>();
     let (result_tx, result_rx) = mpsc::channel::<FilesystemResult>();
@@ -75,6 +77,14 @@ pub(crate) fn spawn_filesystem_worker(
                     };
 
                     navigator = Some(FileNavigator::from_current_path(start_path, &mut cache));
+                    if let Some(nav) = navigator.as_ref() {
+                        preload_browser_directory_for_path(
+                            &shared_browser_state,
+                            nav.current(),
+                            sort,
+                            &mut cache,
+                        );
+                    }
                     let initial_target = navigator
                         .as_ref()
                         .and_then(|nav| navigation_outcome_to_target(nav.current_target()));
@@ -89,8 +99,22 @@ pub(crate) fn spawn_filesystem_worker(
                 FilesystemCommand::SetCurrent { request_id, path } => {
                     if let Some(nav) = navigator.as_mut() {
                         nav.set_current_input(path, &mut cache);
+                        preload_browser_directory_for_path(
+                            &shared_browser_state,
+                            nav.current(),
+                            sort,
+                            &mut cache,
+                        );
                     } else if let Some(start_path) = resolve_navigation_path(&path, &mut cache) {
                         navigator = Some(FileNavigator::from_current_path(start_path, &mut cache));
+                        if let Some(nav) = navigator.as_ref() {
+                            preload_browser_directory_for_path(
+                                &shared_browser_state,
+                                nav.current(),
+                                sort,
+                                &mut cache,
+                            );
+                        }
                     }
                     let _ = request_id;
                     let _ = result_tx.send(FilesystemResult::CurrentSet);

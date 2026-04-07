@@ -87,9 +87,11 @@ P5 = 優先度低い
    - [+] viewer の navigation cache と filer の browser scan cache を共有化
    - [+] filer のファイルリスト更新を viewer の current/pending navigation と同期
    - [+] filer の snapshot state (`directory / entries / selected / pending_request_id`) を `filesystem.browser` へ寄せた
+   - [+] filer options を worker 永続 state として扱い、directory sync では差分更新だけ送る
+   - [+] thumbnail worker 向け query hint を browser result から返す
    - [ ] Filerのファイルリストがアップデートしたとき viewerに反映されない問題(データの同期) 
     - [ ] 油断していると画像の最初に飛ばされる
-   - [ ] 大規模フォルダ向け lazy load / incremental snapshot を filesystem 側の共通実装へ寄せる
+   - [+] 大規模フォルダ向け lazy load / incremental snapshot を filesystem 側の共通実装へ寄せる
    - [ ] metadata/thumbnail の共通キャッシュ層を追加
 ### startup sequence
 - [*] issue: Explorer統合時 Command Lineが表示される問題(println!, eprintln!が悪い？ shell統合時はstdioをcmdに出さない改善)
@@ -101,7 +103,7 @@ P5 = 優先度低い
 - [*] 各ワーカーを同期してマルチプル・ビューアーモードに切り替える
 ### code
 - [ ] `src/ui/viewer/mod.rs` の state 分離を進めて `ViewerApp` をさらに薄くする
-- [ ] `src/ui/menu/fileviewer/worker.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
+- [ ] `src/filesystem/browser.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
 
 ### Filesystems
 - zip系
@@ -307,9 +309,9 @@ P5 = 優先度低い
 - [+] filer の scan / preview / filter / sort / metadata 収集を集約
 - [+] virtual directory と real directory の incremental snapshot を同じ経路へ統合
 - [+] incremental snapshot 中の cache lock を listing snapshot 取得までに短縮
-- [ ] 大規模フォルダ向け lazy load を filesystem worker と共有
-- [ ] filter 条件を filesystem worker 側の永続 state として扱えるように整理
-- [ ] thumbnail worker と連動する query hint の追加
+- [+] 大規模フォルダ向け lazy load を filesystem worker と共有
+- [+] filter 条件を filesystem worker 側の永続 state として扱えるように整理
+- [+] thumbnail worker と連動する query hint の追加
 
 ## src/filesystem/listed_file.rs
 - [+] `.wmltxt` 判定

@@ -3,6 +3,7 @@ use std::fs;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::SystemTime;
 
@@ -52,6 +53,25 @@ pub struct BrowserScanOptions {
     pub filter_text: String,
     pub extension_filter: String,
     pub name_sort_mode: BrowserNameSortMode,
+    pub thumbnail_hint_count: usize,
+    pub thumbnail_hint_max_side: u32,
+}
+
+impl Default for BrowserScanOptions {
+    fn default() -> Self {
+        Self {
+            navigation_sort: NavigationSortOption::OsName,
+            sort_field: BrowserSortField::Name,
+            ascending: true,
+            separate_dirs: true,
+            archive_as_container_in_sort: false,
+            filter_text: String::new(),
+            extension_filter: String::new(),
+            name_sort_mode: BrowserNameSortMode::Os,
+            thumbnail_hint_count: 0,
+            thumbnail_hint_max_side: 0,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -60,7 +80,7 @@ pub enum BrowserQuery {
         request_id: u64,
         dir: PathBuf,
         selected: Option<PathBuf>,
-        options: BrowserScanOptions,
+        options: Option<BrowserScanOptions>,
     },
 }
 
@@ -73,6 +93,11 @@ pub enum BrowserQueryResult {
     Append {
         request_id: u64,
         entries: Vec<BrowserEntry>,
+    },
+    ThumbnailHint {
+        request_id: u64,
+        paths: Vec<PathBuf>,
+        max_side: u32,
     },
     Finish {
         request_id: u64,
@@ -92,6 +117,16 @@ pub struct BrowserSnapshotState {
     pub selected: Option<PathBuf>,
     pub pending_request_id: Option<u64>,
 }
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct BrowserWorkerState {
+    options: BrowserScanOptions,
+    cached_directory: Option<PathBuf>,
+    cached_navigation_sort: Option<NavigationSortOption>,
+    cached_entry_paths: Vec<PathBuf>,
+}
+
+pub(crate) type SharedBrowserWorkerState = Arc<Mutex<BrowserWorkerState>>;
 
 impl BrowserSnapshotState {
     pub fn begin_request(&mut self, request_id: u64) {
@@ -167,6 +202,7 @@ impl BrowserSnapshotState {
                 self.entries.extend(entries);
                 true
             }
+            BrowserQueryResult::ThumbnailHint { .. } => false,
             BrowserQueryResult::Finish {
                 request_id,
                 directory,
@@ -242,8 +278,37 @@ pub fn browser_selected_path_for_directory(
     fallback
 }
 
+pub(crate) fn new_shared_browser_worker_state() -> SharedBrowserWorkerState {
+    Arc::new(Mutex::new(BrowserWorkerState::default()))
+}
+
+pub(crate) fn preload_browser_directory_for_path(
+    state: &SharedBrowserWorkerState,
+    path: &Path,
+    navigation_sort: NavigationSortOption,
+    cache: &mut FilesystemCache,
+) {
+    let Some(directory) = browser_directory_for_path(path, None) else {
+        return;
+    };
+    let entry_paths = load_browser_entry_paths(
+        &directory,
+        &BrowserScanOptions {
+            navigation_sort,
+            ..BrowserScanOptions::default()
+        },
+        cache,
+    );
+    if let Ok(mut state) = state.lock() {
+        state.cached_directory = Some(directory);
+        state.cached_navigation_sort = Some(navigation_sort);
+        state.cached_entry_paths = entry_paths;
+    }
+}
+
 pub(crate) fn spawn_browser_query_worker(
     shared_cache: SharedFilesystemCache,
+    shared_state: SharedBrowserWorkerState,
 ) -> (Sender<BrowserQuery>, Receiver<BrowserQueryResult>) {
     let (command_tx, command_rx) = mpsc::channel::<BrowserQuery>();
     let (result_tx, result_rx) = mpsc::channel::<BrowserQueryResult>();
@@ -261,6 +326,42 @@ pub(crate) fn spawn_browser_query_worker(
                     selected,
                     options,
                 } => {
+                    let options = match resolve_scan_options(&shared_state, options) {
+                        Some(options) => options,
+                        None => {
+                            let _ = result_tx.send(BrowserQueryResult::Failed { request_id });
+                            continue;
+                        }
+                    };
+                    if let Some(entry_paths) = load_cached_browser_entry_paths(
+                        &shared_state,
+                        &dir,
+                        options.navigation_sort,
+                    ) {
+                        let result = catch_unwind(AssertUnwindSafe(|| {
+                            scan_query_request(
+                                &result_tx,
+                                request_id,
+                                dir.clone(),
+                                selected.clone(),
+                                options.clone(),
+                                entry_paths,
+                            )
+                        }));
+                        let _ = result_tx.send(match result {
+                            Ok(entries) => {
+                                send_thumbnail_hint(&result_tx, request_id, &entries, &options);
+                                BrowserQueryResult::Finish {
+                                    request_id,
+                                    directory: dir,
+                                    entries,
+                                    selected,
+                                }
+                            }
+                            Err(_) => BrowserQueryResult::Failed { request_id },
+                        });
+                        continue;
+                    }
                     let entry_paths = {
                         let Ok(mut cache) = shared_cache.lock() else {
                             break;
@@ -276,25 +377,37 @@ pub(crate) fn spawn_browser_query_worker(
                             }
                         }
                     };
+                    store_cached_browser_entry_paths(
+                        &shared_state,
+                        &dir,
+                        options.navigation_sort,
+                        entry_paths.clone(),
+                    );
+                    let options_for_scan = options.clone();
                     let result = catch_unwind(AssertUnwindSafe(|| {
                         scan_query_request(
                             &result_tx,
                             request_id,
                             dir.clone(),
                             selected.clone(),
-                            options,
+                            options_for_scan,
                             entry_paths,
                         )
                     }));
-                    let _ = result_tx.send(match result {
-                        Ok(entries) => BrowserQueryResult::Finish {
-                            request_id,
-                            directory: dir,
-                            entries,
-                            selected,
-                        },
-                        Err(_) => BrowserQueryResult::Failed { request_id },
-                    });
+                    match result {
+                        Ok(entries) => {
+                            send_thumbnail_hint(&result_tx, request_id, &entries, &options);
+                            let _ = result_tx.send(BrowserQueryResult::Finish {
+                                request_id,
+                                directory: dir,
+                                entries,
+                                selected,
+                            });
+                        }
+                        Err(_) => {
+                            let _ = result_tx.send(BrowserQueryResult::Failed { request_id });
+                        }
+                    }
                 }
             }
         }
@@ -371,6 +484,75 @@ fn load_browser_entry_paths(
 ) -> Vec<PathBuf> {
     cache.ensure_sort(options.navigation_sort);
     cache.browser_entries(dir)
+}
+
+fn resolve_scan_options(
+    shared_state: &SharedBrowserWorkerState,
+    options: Option<BrowserScanOptions>,
+) -> Option<BrowserScanOptions> {
+    let Ok(mut state) = shared_state.lock() else {
+        return options;
+    };
+    if let Some(options) = options {
+        state.options = options.clone();
+        return Some(options);
+    }
+    Some(state.options.clone())
+}
+
+fn load_cached_browser_entry_paths(
+    shared_state: &SharedBrowserWorkerState,
+    dir: &Path,
+    navigation_sort: NavigationSortOption,
+) -> Option<Vec<PathBuf>> {
+    let Ok(state) = shared_state.lock() else {
+        return None;
+    };
+    if state.cached_directory.as_deref() != Some(dir)
+        || state.cached_navigation_sort != Some(navigation_sort)
+    {
+        return None;
+    }
+    Some(state.cached_entry_paths.clone())
+}
+
+fn store_cached_browser_entry_paths(
+    shared_state: &SharedBrowserWorkerState,
+    dir: &Path,
+    navigation_sort: NavigationSortOption,
+    entry_paths: Vec<PathBuf>,
+) {
+    let Ok(mut state) = shared_state.lock() else {
+        return;
+    };
+    state.cached_directory = Some(dir.to_path_buf());
+    state.cached_navigation_sort = Some(navigation_sort);
+    state.cached_entry_paths = entry_paths;
+}
+
+fn send_thumbnail_hint(
+    result_tx: &Sender<BrowserQueryResult>,
+    request_id: u64,
+    entries: &[BrowserEntry],
+    options: &BrowserScanOptions,
+) {
+    if options.thumbnail_hint_count == 0 || options.thumbnail_hint_max_side == 0 {
+        return;
+    }
+    let paths = entries
+        .iter()
+        .filter(|entry| !entry.is_container)
+        .take(options.thumbnail_hint_count)
+        .map(|entry| entry.path.clone())
+        .collect::<Vec<_>>();
+    if paths.is_empty() {
+        return;
+    }
+    let _ = result_tx.send(BrowserQueryResult::ThumbnailHint {
+        request_id,
+        paths,
+        max_side: options.thumbnail_hint_max_side,
+    });
 }
 
 pub fn sort_browser_entries(
@@ -746,5 +928,77 @@ mod tests {
         assert!(applied);
         assert_eq!(snapshot.entries.len(), 1);
         assert_eq!(snapshot.pending_request_id, None);
+    }
+
+    #[test]
+    fn scan_options_are_persisted_in_shared_worker_state() {
+        let shared = new_shared_browser_worker_state();
+        let options = BrowserScanOptions {
+            filter_text: "cover".to_string(),
+            thumbnail_hint_count: 8,
+            ..BrowserScanOptions::default()
+        };
+
+        let first = resolve_scan_options(&shared, Some(options.clone())).unwrap();
+        let second = resolve_scan_options(&shared, None).unwrap();
+
+        assert_eq!(first.filter_text, "cover");
+        assert_eq!(second.filter_text, "cover");
+        assert_eq!(second.thumbnail_hint_count, 8);
+    }
+
+    #[test]
+    fn thumbnail_hint_targets_first_non_container_entries() {
+        let (tx, rx) = mpsc::channel();
+        let options = BrowserScanOptions {
+            thumbnail_hint_count: 2,
+            thumbnail_hint_max_side: 96,
+            ..BrowserScanOptions::default()
+        };
+        let entries = vec![
+            BrowserEntry {
+                path: PathBuf::from("folder"),
+                label: "folder".to_string(),
+                is_container: true,
+                sort_as_container: true,
+                metadata: BrowserMetadata::default(),
+            },
+            BrowserEntry {
+                path: PathBuf::from("001.png"),
+                label: "001.png".to_string(),
+                is_container: false,
+                sort_as_container: false,
+                metadata: BrowserMetadata::default(),
+            },
+            BrowserEntry {
+                path: PathBuf::from("002.png"),
+                label: "002.png".to_string(),
+                is_container: false,
+                sort_as_container: false,
+                metadata: BrowserMetadata::default(),
+            },
+            BrowserEntry {
+                path: PathBuf::from("003.png"),
+                label: "003.png".to_string(),
+                is_container: false,
+                sort_as_container: false,
+                metadata: BrowserMetadata::default(),
+            },
+        ];
+
+        send_thumbnail_hint(&tx, 3, &entries, &options);
+
+        match rx.try_recv().unwrap() {
+            BrowserQueryResult::ThumbnailHint {
+                request_id,
+                paths,
+                max_side,
+            } => {
+                assert_eq!(request_id, 3);
+                assert_eq!(max_side, 96);
+                assert_eq!(paths, vec![PathBuf::from("001.png"), PathBuf::from("002.png")]);
+            }
+            other => panic!("unexpected result: {:?}", std::mem::discriminant(&other)),
+        }
     }
 }

@@ -4,9 +4,10 @@ use crate::dependent::{default_download_dir, pick_save_directory};
 use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
-    BrowserQuery, BrowserQueryResult, FilesystemCommand, FilesystemResult, SharedFilesystemCache,
-    adjacent_entry, archive_prefers_low_io, browser_directory_for_path, is_browser_container,
-    navigation_branch_path, new_shared_filesystem_cache, resolve_navigation_entry_path,
+    BrowserQuery, BrowserQueryResult, FilesystemCommand, FilesystemResult,
+    SharedBrowserWorkerState, SharedFilesystemCache, adjacent_entry, archive_prefers_low_io,
+    browser_directory_for_path, is_browser_container, navigation_branch_path,
+    new_shared_browser_worker_state, new_shared_filesystem_cache, resolve_navigation_entry_path,
     set_archive_zip_workaround, spawn_browser_query_worker, spawn_filesystem_worker,
 };
 use crate::options::{
@@ -88,6 +89,7 @@ pub(crate) struct ViewerApp {
     pub(crate) active_request: Option<ActiveRenderRequest>,
     pub(crate) pending_navigation_path: Option<PathBuf>,
     pub(crate) shared_filesystem_cache: Option<SharedFilesystemCache>,
+    pub(crate) shared_browser_worker_state: Option<SharedBrowserWorkerState>,
     pub(crate) fs_tx: Option<Sender<FilesystemCommand>>,
     pub(crate) fs_rx: Option<Receiver<FilesystemResult>>,
     pub(crate) next_fs_request_id: u64,
@@ -386,6 +388,7 @@ impl ViewerApp {
             active_request: None,
             pending_navigation_path: None,
             shared_filesystem_cache: None,
+            shared_browser_worker_state: None,
             fs_tx: None,
             fs_rx: None,
             next_fs_request_id: 0,
@@ -992,7 +995,7 @@ impl ViewerApp {
             request_id,
             dir,
             selected,
-            options: self.filer.browser_scan_options(self.navigation_sort),
+            options: self.filer.take_browser_scan_options(self.navigation_sort),
         });
     }
 
@@ -1608,13 +1611,21 @@ impl ViewerApp {
             .shared_filesystem_cache
             .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
             .clone();
+        let shared_browser_state = self
+            .shared_browser_worker_state
+            .get_or_insert_with(new_shared_browser_worker_state)
+            .clone();
         if self.fs_tx.is_none() || self.fs_rx.is_none() {
-            let (tx, rx) = spawn_filesystem_worker(self.navigation_sort, shared_cache.clone());
+            let (tx, rx) = spawn_filesystem_worker(
+                self.navigation_sort,
+                shared_cache.clone(),
+                shared_browser_state.clone(),
+            );
             self.fs_tx = Some(tx);
             self.fs_rx = Some(rx);
         }
         if self.filer_tx.is_none() || self.filer_rx.is_none() {
-            let (tx, rx) = spawn_browser_query_worker(shared_cache);
+            let (tx, rx) = spawn_browser_query_worker(shared_cache, shared_browser_state);
             self.filer_tx = Some(tx);
             self.filer_rx = Some(rx);
         }
@@ -1858,7 +1869,12 @@ impl ViewerApp {
             .shared_filesystem_cache
             .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
             .clone();
-        let (tx, rx) = spawn_filesystem_worker(self.navigation_sort, shared_cache);
+        let shared_browser_state = self
+            .shared_browser_worker_state
+            .get_or_insert_with(new_shared_browser_worker_state)
+            .clone();
+        let (tx, rx) =
+            spawn_filesystem_worker(self.navigation_sort, shared_cache, shared_browser_state);
         self.fs_tx = Some(tx);
         self.fs_rx = Some(rx);
         self.navigator_ready = false;
@@ -1871,10 +1887,15 @@ impl ViewerApp {
             .shared_filesystem_cache
             .get_or_insert_with(|| new_shared_filesystem_cache(self.navigation_sort))
             .clone();
-        let (tx, rx) = spawn_browser_query_worker(shared_cache);
+        let shared_browser_state = self
+            .shared_browser_worker_state
+            .get_or_insert_with(new_shared_browser_worker_state)
+            .clone();
+        let (tx, rx) = spawn_browser_query_worker(shared_cache, shared_browser_state);
         self.filer_tx = Some(tx);
         self.filer_rx = Some(rx);
         self.filer.snapshot.clear_pending_request();
+        self.filer.mark_query_options_dirty();
         if let Some(dir) = self
             .filer
             .snapshot
@@ -2189,6 +2210,15 @@ impl ViewerApp {
             };
             match result {
                 Ok(result) => {
+                    if let BrowserQueryResult::ThumbnailHint {
+                        request_id: _,
+                        paths,
+                        max_side,
+                    } = &result
+                    {
+                        self.queue_thumbnail_hints(paths, *max_side);
+                        continue;
+                    }
                     let _ = self.filer.snapshot.apply_query_result(
                         result,
                         &self.current_navigation_path,
@@ -2257,6 +2287,12 @@ impl ViewerApp {
             path,
             max_side,
         });
+    }
+
+    fn queue_thumbnail_hints(&mut self, paths: &[PathBuf], max_side: u32) {
+        for path in paths {
+            self.ensure_thumbnail(path, max_side);
+        }
     }
 
     fn sync_window_state(&mut self, ctx: &egui::Context) {

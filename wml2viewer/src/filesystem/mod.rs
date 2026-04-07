@@ -7,6 +7,7 @@ mod sort;
 mod worker;
 mod zip_file;
 
+#[cfg(test)]
 use crate::options::NavigationSortOption;
 pub(crate) use browser::spawn_browser_query_worker;
 pub use browser::{
@@ -15,21 +16,29 @@ pub use browser::{
     browser_selected_path_for_directory, compare_browser_name, scan_browser_directory_with_preview,
     sort_browser_entries,
 };
+pub(crate) use browser::{SharedBrowserWorkerState, new_shared_browser_worker_state};
+#[cfg(test)]
 pub(crate) use cache::{
     FilesystemCache, SharedFilesystemCache, build_listed_virtual_children,
     build_zip_virtual_children, new_shared_filesystem_cache,
 };
+#[cfg(not(test))]
+pub(crate) use cache::{FilesystemCache, SharedFilesystemCache, new_shared_filesystem_cache};
 pub use cache::{is_browser_container, list_browser_entries, list_openable_entries};
+#[cfg(test)]
 pub(crate) use navigator::{FileNavigator, NavigationOutcome};
 pub use navigator::{adjacent_entry, navigation_branch_path, resolve_navigation_entry_path};
 pub use path::{
     archive_prefers_low_io, load_virtual_image_bytes, resolve_start_path,
     set_archive_zip_workaround, virtual_image_size,
 };
+#[cfg(test)]
 pub(crate) use path::{
     is_supported_image, is_virtual_listed_child, is_virtual_zip_child, listed_virtual_root,
     resolve_virtual_zip_child, zip_virtual_root,
 };
+#[cfg(not(test))]
+pub(crate) use path::{is_supported_image, listed_virtual_root, zip_virtual_root};
 pub(crate) use sort::{compare_natural_str, compare_os_str, sort_paths};
 pub(crate) use worker::spawn_filesystem_worker;
 pub use worker::{FilesystemCommand, FilesystemResult};

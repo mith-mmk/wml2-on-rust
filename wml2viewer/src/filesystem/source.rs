@@ -17,7 +17,7 @@ use super::path::{
     listed_virtual_root, resolve_start_path, resolve_virtual_listed_child, zip_virtual_root,
 };
 use super::zip_file::{
-    load_zip_entries, load_zip_entry_bytes, zip_entry_record, zip_prefers_low_io,
+    load_zip_entries, load_zip_entry_bytes_with_size, zip_entry_size, zip_prefers_low_io,
 };
 
 pub(crate) const HTTP_TEMP_PREFIX: &str = "wml2viewer_url_";
@@ -465,8 +465,7 @@ impl HttpSourceCacheMetadata {
 pub(crate) fn open_image_source(path: &Path) -> Option<OpenedImageSource> {
     let resolved = normalize_open_path(path)?;
     if let Some((archive, index)) = zip_virtual_child_source(&resolved) {
-        let size_hint = zip_entry_record(&archive, index).map(|entry| entry.size);
-        let bytes = load_zip_entry_bytes(&archive, index)?;
+        let (bytes, size_hint) = load_zip_entry_bytes_with_size(&archive, index)?;
         return Some(OpenedImageSource::Bytes {
             hint_path: resolved,
             bytes,
@@ -485,7 +484,7 @@ pub(crate) fn open_image_source(path: &Path) -> Option<OpenedImageSource> {
 pub(crate) fn source_image_size(path: &Path) -> Option<u64> {
     let resolved = normalize_open_path(path)?;
     if let Some((archive, index)) = zip_virtual_child_source(&resolved) {
-        return zip_entry_record(&archive, index).map(|entry| entry.size);
+        return zip_entry_size(&archive, index);
     }
     let metadata = fs::metadata(&resolved).ok()?;
     metadata.is_file().then_some(metadata.len())

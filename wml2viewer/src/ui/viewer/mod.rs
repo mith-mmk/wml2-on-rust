@@ -274,6 +274,13 @@ fn format_key_binding(binding: &KeyBinding) -> String {
     parts.join("+")
 }
 
+fn preloaded_navigation_matches(
+    preloaded_navigation_path: Option<&std::path::Path>,
+    requested_navigation_path: &std::path::Path,
+) -> bool {
+    preloaded_navigation_path == Some(requested_navigation_path)
+}
+
 pub(crate) fn join_search_paths(paths: &[PathBuf]) -> String {
     paths
         .iter()
@@ -1517,10 +1524,10 @@ impl ViewerApp {
         if branch_changed {
             self.clear_manga_companion();
         }
-        self.invalidate_preload();
         if self.try_take_preloaded(&navigation_path) {
             return Ok(());
         }
+        self.invalidate_preload();
         if switching_image {
             self.zoom_factor = 1.0;
             self.zoom = 1.0;
@@ -1880,11 +1887,8 @@ impl ViewerApp {
     }
 
     fn try_take_preloaded(&mut self, path: &std::path::Path) -> bool {
-        let matches_navigation = self
-            .preloaded_navigation_path
-            .as_ref()
-            .map(|cached| cached == path)
-            .unwrap_or(false);
+        let matches_navigation =
+            preloaded_navigation_matches(self.preloaded_navigation_path.as_deref(), path);
         if !matches_navigation {
             return false;
         }
@@ -2659,4 +2663,22 @@ impl eframe::App for ViewerApp {
 
 fn filesystem_send_error(err: mpsc::SendError<FilesystemCommand>) -> Box<dyn Error> {
     Box::new(std::io::Error::other(err.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::preloaded_navigation_matches;
+    use std::path::Path;
+
+    #[test]
+    fn preloaded_navigation_match_requires_same_path() {
+        assert!(preloaded_navigation_matches(
+            Some(Path::new(r"F:\archive.zip#001.bmp")),
+            Path::new(r"F:\archive.zip#001.bmp")
+        ));
+        assert!(!preloaded_navigation_matches(
+            Some(Path::new(r"F:\archive.zip#002.bmp")),
+            Path::new(r"F:\archive.zip#001.bmp")
+        ));
+    }
 }

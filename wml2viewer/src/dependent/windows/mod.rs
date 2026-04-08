@@ -1,8 +1,10 @@
 use crate::dependent::normalize_locale_tag;
+use std::os::windows::ffi::OsStrExt;
 use std::os::windows::process::CommandExt;
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::thread;
+use windows::Win32::Storage::FileSystem::GetDriveTypeW;
 use windows::Win32::System::Com::{
     CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE, CoCreateInstance,
     CoInitializeEx, CoTaskMemFree, CoUninitialize,
@@ -11,6 +13,7 @@ use windows::Win32::UI::Shell::{
     FOS_FORCEFILESYSTEM, FOS_PATHMUSTEXIST, FOS_PICKFOLDERS, FileOpenDialog, IFileOpenDialog,
     SIGDN_FILESYSPATH,
 };
+use windows::core::PCWSTR;
 use winreg::RegKey;
 use winreg::enums::{HKEY_CURRENT_USER, KEY_READ, KEY_WRITE};
 
@@ -132,6 +135,10 @@ pub fn available_roots() -> Vec<PathBuf> {
     roots
 }
 
+pub fn path_is_probably_network(path: &Path) -> bool {
+    looks_like_unc_path(path) || drive_root_is_remote(path)
+}
+
 pub fn register_file_associations(
     exe_path: &std::path::Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -194,6 +201,39 @@ pub fn pick_directory_dialog() -> Option<PathBuf> {
         .flatten()
 }
 
+fn looks_like_unc_path(path: &Path) -> bool {
+    let text = path.to_string_lossy();
+    text.starts_with(r"\\") || text.starts_with(r"//")
+}
+
+fn drive_root_is_remote(path: &Path) -> bool {
+    let Some(root) = drive_root(path) else {
+        return false;
+    };
+    let wide: Vec<u16> = root
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    unsafe { GetDriveTypeW(PCWSTR(wide.as_ptr())) == 4 }
+}
+
+fn drive_root(path: &Path) -> Option<PathBuf> {
+    let mut components = path.components();
+    match (components.next(), components.next()) {
+        (Some(Component::Prefix(prefix)), Some(Component::RootDir)) => {
+            let disk = match prefix.kind() {
+                std::path::Prefix::Disk(letter) | std::path::Prefix::VerbatimDisk(letter) => {
+                    letter as char
+                }
+                _ => return None,
+            };
+            Some(PathBuf::from(format!("{disk}:\\")))
+        }
+        _ => None,
+    }
+}
+
 fn native_pick_directory_dialog() -> Option<PathBuf> {
     unsafe {
         let init_result = CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -247,4 +287,25 @@ pub fn download_url_to_temp(url: &str) -> Option<PathBuf> {
         return None;
     }
     Some(temp_path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{drive_root, looks_like_unc_path};
+    use std::path::{Path, PathBuf};
+
+    #[test]
+    fn drive_root_extracts_disk_prefix() {
+        assert_eq!(
+            drive_root(Path::new(r"F:\benchmark\sample_60M.zip")),
+            Some(PathBuf::from(r"F:\"))
+        );
+    }
+
+    #[test]
+    fn unc_paths_are_treated_as_network() {
+        assert!(looks_like_unc_path(Path::new(
+            r"\\server\share\sample_60M.zip"
+        )));
+    }
 }

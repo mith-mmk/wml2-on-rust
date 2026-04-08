@@ -2,8 +2,8 @@ use crate::drawers::image::{load_canvas_from_bytes_with_hint, load_canvas_from_f
 use crate::filesystem;
 use crate::filesystem::{
     BrowserNameSortMode, BrowserScanOptions, BrowserSortField, FilesystemCache, OpenedImageSource,
-    benchmark_browser_scan_cached, is_browser_container, list_browser_entries, open_image_source,
-    resolve_start_path,
+    benchmark_browser_scan_cached, ensure_local_archive_cache, is_browser_container,
+    list_browser_entries, open_image_source, resolve_start_path, zip_archive_policy_debug,
 };
 use crate::options::{ArchiveBrowseOption, NavigationSortOption, ZipWorkaroundOptions};
 use std::path::Path;
@@ -20,6 +20,7 @@ pub struct BenchResult {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ArchiveBenchmarkMethod {
     Default,
+    Direct,
     OnlineCache,
     TempCopy,
 }
@@ -28,6 +29,14 @@ pub enum ArchiveBenchmarkMethod {
 pub struct ArchiveBenchmarkResult {
     pub method: ArchiveBenchmarkMethod,
     pub images: usize,
+    pub access_kind: Option<&'static str>,
+    pub is_network_path: bool,
+    pub exceeds_size_threshold: bool,
+    pub sampled_supported_entries: usize,
+    pub stored_entries: usize,
+    pub compressed_bytes: u64,
+    pub uncompressed_bytes: u64,
+    pub prefers_direct: bool,
     pub metadata_scan: Duration,
     pub metadata_sort: Duration,
     pub archive_read: Duration,
@@ -187,8 +196,15 @@ pub fn benchmark_archive_detailed(
         return Err("archive benchmark currently supports zip archives only".to_string());
     }
 
+    let benchmark_path = match method {
+        ArchiveBenchmarkMethod::TempCopy => ensure_local_archive_cache(path)
+            .ok_or_else(|| "failed to prepare local archive cache".to_string())?,
+        _ => path.to_path_buf(),
+    };
+
     let workaround = match method {
-        ArchiveBenchmarkMethod::Default => ZipWorkaroundOptions {
+        ArchiveBenchmarkMethod::Default => ZipWorkaroundOptions::default(),
+        ArchiveBenchmarkMethod::Direct => ZipWorkaroundOptions {
             threshold_mb: u64::MAX / (1024 * 1024),
             local_cache: false,
         },
@@ -197,15 +213,16 @@ pub fn benchmark_archive_detailed(
             local_cache: false,
         },
         ArchiveBenchmarkMethod::TempCopy => ZipWorkaroundOptions {
-            threshold_mb: 1,
-            local_cache: true,
+            threshold_mb: u64::MAX / (1024 * 1024),
+            local_cache: false,
         },
     };
     filesystem::set_archive_zip_workaround(workaround);
+    let policy = zip_archive_policy_debug(&benchmark_path);
 
     let started_total = Instant::now();
     let started_scan = Instant::now();
-    let mut entries = filesystem::load_zip_entries_unsorted(path)
+    let mut entries = filesystem::load_zip_entries_unsorted(&benchmark_path)
         .ok_or_else(|| "failed to load archive metadata".to_string())?;
     let metadata_scan = started_scan.elapsed();
 
@@ -218,7 +235,7 @@ pub fn benchmark_archive_detailed(
         return Err("no readable archive entries".to_string());
     }
 
-    let browser_entries = list_browser_entries(path, NavigationSortOption::OsName);
+    let browser_entries = list_browser_entries(&benchmark_path, NavigationSortOption::OsName);
     let first_entry = browser_entries
         .first()
         .ok_or_else(|| "failed to list archive entries".to_string())?;
@@ -268,6 +285,39 @@ pub fn benchmark_archive_detailed(
     Ok(ArchiveBenchmarkResult {
         method,
         images,
+        access_kind: policy.as_ref().map(|policy| match policy.access_kind {
+            crate::filesystem::ZipArchiveAccessKind::DirectOriginal => "direct-original",
+            crate::filesystem::ZipArchiveAccessKind::DirectCached => "direct-cached",
+            crate::filesystem::ZipArchiveAccessKind::Sequential => "sequential",
+        }),
+        is_network_path: policy
+            .as_ref()
+            .map(|policy| policy.is_network_path)
+            .unwrap_or(false),
+        exceeds_size_threshold: policy
+            .as_ref()
+            .map(|policy| policy.exceeds_size_threshold)
+            .unwrap_or(false),
+        sampled_supported_entries: policy
+            .as_ref()
+            .map(|policy| policy.sampled_supported_entries)
+            .unwrap_or(0),
+        stored_entries: policy
+            .as_ref()
+            .map(|policy| policy.stored_entries)
+            .unwrap_or(0),
+        compressed_bytes: policy
+            .as_ref()
+            .map(|policy| policy.compressed_bytes)
+            .unwrap_or(0),
+        uncompressed_bytes: policy
+            .as_ref()
+            .map(|policy| policy.uncompressed_bytes)
+            .unwrap_or(0),
+        prefers_direct: policy
+            .as_ref()
+            .map(|policy| policy.prefers_direct)
+            .unwrap_or(false),
         metadata_scan,
         metadata_sort,
         archive_read,

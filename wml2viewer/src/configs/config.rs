@@ -377,11 +377,14 @@ struct ZipWorkaroundConfigFile {
     local_cache: bool,
 }
 
+const LEGACY_ZIP_WORKAROUND_THRESHOLD_MB: u64 = 256;
+const LEGACY_ZIP_WORKAROUND_LOCAL_CACHE: bool = false;
+
 impl Default for ZipWorkaroundConfigFile {
     fn default() -> Self {
         Self {
-            threshold_mb: 256,
-            local_cache: false,
+            threshold_mb: 16,
+            local_cache: true,
         }
     }
 }
@@ -560,6 +563,11 @@ impl From<crate::options::ArchiveWorkaroundOptions> for ArchiveWorkaroundConfigF
 
 impl From<ZipWorkaroundConfigFile> for crate::options::ZipWorkaroundOptions {
     fn from(value: ZipWorkaroundConfigFile) -> Self {
+        if value.threshold_mb == LEGACY_ZIP_WORKAROUND_THRESHOLD_MB
+            && value.local_cache == LEGACY_ZIP_WORKAROUND_LOCAL_CACHE
+        {
+            return Self::default();
+        }
         Self {
             threshold_mb: value.threshold_mb,
             local_cache: value.local_cache,
@@ -979,5 +987,38 @@ impl From<crate::options::ArchiveBrowseOption> for ArchiveBrowseConfigFile {
             crate::options::ArchiveBrowseOption::Skip => Self::Skip,
             crate::options::ArchiveBrowseOption::Archiver => Self::Archiver,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        LEGACY_ZIP_WORKAROUND_LOCAL_CACHE, LEGACY_ZIP_WORKAROUND_THRESHOLD_MB,
+        ZipWorkaroundConfigFile,
+    };
+    use crate::options::ZipWorkaroundOptions;
+
+    #[test]
+    fn zip_workaround_config_defaults_match_runtime_defaults() {
+        let config = ZipWorkaroundConfigFile::default();
+        let runtime = ZipWorkaroundOptions::default();
+        assert_eq!(config.threshold_mb, runtime.threshold_mb);
+        assert_eq!(config.local_cache, runtime.local_cache);
+    }
+
+    #[test]
+    fn legacy_zip_workaround_defaults_are_migrated_on_load() {
+        let runtime = ZipWorkaroundOptions::from(ZipWorkaroundConfigFile {
+            threshold_mb: LEGACY_ZIP_WORKAROUND_THRESHOLD_MB,
+            local_cache: LEGACY_ZIP_WORKAROUND_LOCAL_CACHE,
+        });
+        assert_eq!(
+            runtime.threshold_mb,
+            ZipWorkaroundOptions::default().threshold_mb
+        );
+        assert_eq!(
+            runtime.local_cache,
+            ZipWorkaroundOptions::default().local_cache
+        );
     }
 }

@@ -55,7 +55,10 @@ pub(crate) use source::{
     source_signature_for_path,
 };
 pub(crate) use worker::spawn_filesystem_worker;
-pub(crate) use zip_file::{load_zip_entries_unsorted, sort_zip_entries};
+pub(crate) use zip_file::{
+    ZipArchiveAccessKind, ensure_local_archive_cache, load_zip_entries_unsorted, sort_zip_entries,
+    zip_archive_policy_debug,
+};
 
 pub fn clean_cache_files() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(path) = cache::persistent_cache_path() {

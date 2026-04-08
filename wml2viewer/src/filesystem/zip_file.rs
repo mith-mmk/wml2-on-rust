@@ -6,10 +6,10 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::UNIX_EPOCH;
 
-use crate::dependent::default_temp_dir;
+use crate::dependent::{default_temp_dir, path_is_probably_network};
 use crate::options::ZipWorkaroundOptions;
 use encoding_rs::SHIFT_JIS;
-use zip::ZipArchive;
+use zip::{CompressionMethod, ZipArchive};
 
 use super::{
     SourceSignature, compare_natural_str, is_supported_image, source_id_for_path,
@@ -27,6 +27,39 @@ pub(crate) struct ZipEntryRecord {
 struct ZipIndexCacheEntry {
     signature: SourceSignature,
     entries: Vec<ZipEntryRecord>,
+}
+
+#[derive(Clone, Debug, Default)]
+struct ZipArchiveProfile {
+    sampled_supported_entries: usize,
+    stored_entries: usize,
+    compressed_bytes: u64,
+    uncompressed_bytes: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ZipArchiveAccessKind {
+    DirectOriginal,
+    DirectCached,
+    Sequential,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct ZipArchivePolicyDebug {
+    pub access_kind: ZipArchiveAccessKind,
+    pub is_network_path: bool,
+    pub exceeds_size_threshold: bool,
+    pub sampled_supported_entries: usize,
+    pub stored_entries: usize,
+    pub compressed_bytes: u64,
+    pub uncompressed_bytes: u64,
+    pub prefers_direct: bool,
+}
+
+#[derive(Clone)]
+struct ZipProfileCacheEntry {
+    signature: SourceSignature,
+    profile: ZipArchiveProfile,
 }
 
 #[derive(Clone)]
@@ -80,16 +113,25 @@ pub(crate) fn sort_zip_entries(entries: &mut [ZipEntryRecord]) {
 }
 
 pub(crate) fn load_zip_entry_bytes(path: &Path, entry_index: usize) -> Option<Vec<u8>> {
+    load_zip_entry_bytes_with_size(path, entry_index).map(|(bytes, _)| bytes)
+}
+
+pub(crate) fn load_zip_entry_bytes_with_size(
+    path: &Path,
+    entry_index: usize,
+) -> Option<(Vec<u8>, Option<u64>)> {
     let access = resolve_zip_archive_access(path)?;
     let archive_path = access.path();
+    if let Some((bytes, size_hint)) =
+        read_zip_entry_bytes_from_path(archive_path, entry_index, None)
+    {
+        return Some((bytes, size_hint));
+    }
 
-    let fallback_name = load_zip_entries(path)?
-        .into_iter()
-        .find(|entry| entry.index == entry_index)
-        .map(|entry| entry.name)?;
-    read_zip_entry_bytes_from_path(archive_path, entry_index, &fallback_name).or_else(|| {
+    let fallback_name = zip_entry_record(path, entry_index).map(|entry| entry.name)?;
+    read_zip_entry_bytes_from_path(archive_path, entry_index, Some(&fallback_name)).or_else(|| {
         if archive_path != path {
-            read_zip_entry_bytes_from_path(path, entry_index, &fallback_name)
+            read_zip_entry_bytes_from_path(path, entry_index, Some(&fallback_name))
         } else {
             None
         }
@@ -100,6 +142,38 @@ pub(crate) fn zip_entry_record(path: &Path, entry_index: usize) -> Option<ZipEnt
     load_zip_entries(path)?
         .into_iter()
         .find(|entry| entry.index == entry_index)
+}
+
+pub(crate) fn zip_entry_size(path: &Path, entry_index: usize) -> Option<u64> {
+    zip_entry_record(path, entry_index).map(|entry| entry.size)
+}
+
+fn read_zip_entry_bytes_from_path(
+    archive_path: &Path,
+    entry_index: usize,
+    fallback_name: Option<&str>,
+) -> Option<(Vec<u8>, Option<u64>)> {
+    if let Ok(mut archive) = open_zip_archive(archive_path) {
+        if let Some(bytes) = read_entry_bytes(&mut archive, entry_index, fallback_name) {
+            return Some(bytes);
+        }
+    }
+    let mut archive = open_plain_zip_archive(archive_path).ok()?;
+    read_entry_bytes(&mut archive, entry_index, fallback_name)
+}
+
+fn read_entry_bytes<R: Read + Seek>(
+    archive: &mut ZipArchive<R>,
+    entry_index: usize,
+    fallback_name: Option<&str>,
+) -> Option<(Vec<u8>, Option<u64>)> {
+    if let Ok(mut entry) = archive.by_index(entry_index) {
+        let size_hint = Some(entry.size());
+        return read_zip_entry_to_end(&mut entry).map(|bytes| (bytes, size_hint));
+    }
+    let mut entry = archive.by_name(fallback_name?).ok()?;
+    let size_hint = Some(entry.size());
+    read_zip_entry_to_end(&mut entry).map(|bytes| (bytes, size_hint))
 }
 
 pub(crate) fn set_zip_workaround_options(options: ZipWorkaroundOptions) {
@@ -114,6 +188,37 @@ pub(crate) fn zip_prefers_low_io(path: &Path) -> bool {
         resolve_zip_archive_access(path),
         Some(ZipArchiveAccess::Sequential(_))
     )
+}
+
+pub(crate) fn zip_archive_policy_debug(path: &Path) -> Option<ZipArchivePolicyDebug> {
+    let metadata = std::fs::metadata(path).ok()?;
+    let options = current_zip_workaround_options();
+    let threshold_bytes = options.threshold_mb.saturating_mul(1024 * 1024);
+    let is_network_path = path_is_probably_network(path);
+    let exceeds_size_threshold = metadata.len() >= threshold_bytes;
+    let needs_workaround = is_network_path || exceeds_size_threshold;
+    let profile = if needs_workaround {
+        probe_zip_archive_profile(path).unwrap_or_default()
+    } else {
+        ZipArchiveProfile::default()
+    };
+    let prefers_direct = !needs_workaround || zip_profile_is_direct_friendly(&profile);
+    let access_kind = if !needs_workaround || prefers_direct {
+        ZipArchiveAccessKind::DirectOriginal
+    } else {
+        ZipArchiveAccessKind::Sequential
+    };
+
+    Some(ZipArchivePolicyDebug {
+        access_kind,
+        is_network_path,
+        exceeds_size_threshold,
+        sampled_supported_entries: profile.sampled_supported_entries,
+        stored_entries: profile.stored_entries,
+        compressed_bytes: profile.compressed_bytes,
+        uncompressed_bytes: profile.uncompressed_bytes,
+        prefers_direct,
+    })
 }
 
 fn open_zip_archive(path: &Path) -> std::io::Result<ZipArchive<ZipCacheReader>> {
@@ -169,32 +274,6 @@ fn collect_zip_entries<R: Read + Seek>(archive: &mut ZipArchive<R>) -> Vec<ZipEn
     entries
 }
 
-fn read_zip_entry_bytes_from_path(
-    archive_path: &Path,
-    entry_index: usize,
-    fallback_name: &str,
-) -> Option<Vec<u8>> {
-    if let Ok(mut archive) = open_zip_archive(archive_path) {
-        if let Some(bytes) = read_entry_bytes(&mut archive, entry_index, fallback_name) {
-            return Some(bytes);
-        }
-    }
-    let mut archive = open_plain_zip_archive(archive_path).ok()?;
-    read_entry_bytes(&mut archive, entry_index, fallback_name)
-}
-
-fn read_entry_bytes<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    entry_index: usize,
-    fallback_name: &str,
-) -> Option<Vec<u8>> {
-    if let Ok(mut entry) = archive.by_index(entry_index) {
-        return read_zip_entry_to_end(&mut entry);
-    }
-    let mut entry = archive.by_name(fallback_name).ok()?;
-    read_zip_entry_to_end(&mut entry)
-}
-
 fn read_zip_entry_to_end<R: Read>(entry: &mut R) -> Option<Vec<u8>> {
     let mut buf = Vec::new();
     entry.read_to_end(&mut buf).ok()?;
@@ -212,36 +291,56 @@ fn resolve_zip_archive_access(path: &Path) -> Option<ZipArchiveAccess> {
     let metadata = std::fs::metadata(path).ok()?;
     let options = current_zip_workaround_options();
     let threshold_bytes = options.threshold_mb.saturating_mul(1024 * 1024);
-    let needs_workaround = is_probably_network_path(path) || metadata.len() >= threshold_bytes;
+    let needs_workaround = path_is_probably_network(path) || metadata.len() >= threshold_bytes;
     if !needs_workaround {
         return Some(ZipArchiveAccess::Direct(path.to_path_buf()));
     }
-
-    if options.local_cache {
-        if let Some(cached) = ensure_local_archive_cache(path, &metadata) {
-            return Some(ZipArchiveAccess::Direct(cached));
-        }
+    if zip_profile_prefers_direct(path, &metadata) {
+        return Some(ZipArchiveAccess::Direct(path.to_path_buf()));
     }
 
     Some(ZipArchiveAccess::Sequential(path.to_path_buf()))
 }
 
-fn ensure_local_archive_cache(path: &Path, metadata: &std::fs::Metadata) -> Option<PathBuf> {
+pub(crate) fn ensure_local_archive_cache(path: &Path) -> Option<PathBuf> {
+    let metadata = std::fs::metadata(path).ok()?;
+    if let Some(cached) = cached_local_archive_path(path, &metadata) {
+        return Some(cached);
+    }
+
+    let destination = archive_cache_destination(path, &metadata)?;
+    let temp_root = archive_cache_root()?;
+    std::fs::create_dir_all(&temp_root).ok()?;
+    if !destination.exists() {
+        std::fs::copy(path, &destination).ok()?;
+    }
+    let signature = archive_signature_from_metadata(path, &metadata);
+    if let Ok(mut cache) = local_archive_cache().lock() {
+        cache.insert(
+            path.to_path_buf(),
+            LocalArchiveCacheEntry {
+                signature,
+                cached_path: destination.clone(),
+            },
+        );
+    }
+    Some(destination)
+}
+
+fn cached_local_archive_path(path: &Path, metadata: &std::fs::Metadata) -> Option<PathBuf> {
     let signature = archive_signature_from_metadata(path, metadata);
     let cache = local_archive_cache();
-    if let Some(cached) = cache
+    cache
         .lock()
         .ok()?
         .get(path)
         .cloned()
         .filter(|entry| entry.signature == signature && entry.cached_path.exists())
-    {
-        return Some(cached.cached_path);
-    }
+        .map(|entry| entry.cached_path)
+}
 
+fn archive_cache_destination(path: &Path, metadata: &std::fs::Metadata) -> Option<PathBuf> {
     let temp_root = archive_cache_root()?;
-    std::fs::create_dir_all(&temp_root).ok()?;
-
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     path.to_string_lossy().hash(&mut hasher);
     metadata.len().hash(&mut hasher);
@@ -256,20 +355,7 @@ fn ensure_local_archive_cache(path: &Path, metadata: &std::fs::Metadata) -> Opti
         .extension()
         .and_then(|ext| ext.to_str())
         .unwrap_or("zip");
-    let destination = temp_root.join(format!("{:016x}.{ext}", hasher.finish()));
-    if !destination.exists() {
-        std::fs::copy(path, &destination).ok()?;
-    }
-    if let Ok(mut cache) = cache.lock() {
-        cache.insert(
-            path.to_path_buf(),
-            LocalArchiveCacheEntry {
-                signature,
-                cached_path: destination.clone(),
-            },
-        );
-    }
-    Some(destination)
+    Some(temp_root.join(format!("{:016x}.{ext}", hasher.finish())))
 }
 
 pub(crate) fn archive_cache_root() -> Option<PathBuf> {
@@ -278,6 +364,9 @@ pub(crate) fn archive_cache_root() -> Option<PathBuf> {
 
 fn clear_zip_caches() {
     if let Ok(mut cache) = zip_index_cache().lock() {
+        cache.clear();
+    }
+    if let Ok(mut cache) = zip_profile_cache().lock() {
         cache.clear();
     }
     if let Ok(mut cache) = local_archive_cache().lock() {
@@ -308,6 +397,12 @@ fn zip_index_cache() -> &'static Mutex<HashMap<PathBuf, ZipIndexCacheEntry>> {
     ZIP_INDEX_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+fn zip_profile_cache() -> &'static Mutex<HashMap<PathBuf, ZipProfileCacheEntry>> {
+    static ZIP_PROFILE_CACHE: OnceLock<Mutex<HashMap<PathBuf, ZipProfileCacheEntry>>> =
+        OnceLock::new();
+    ZIP_PROFILE_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
 fn local_archive_cache() -> &'static Mutex<HashMap<PathBuf, LocalArchiveCacheEntry>> {
     static LOCAL_ARCHIVE_CACHE: OnceLock<Mutex<HashMap<PathBuf, LocalArchiveCacheEntry>>> =
         OnceLock::new();
@@ -319,9 +414,76 @@ fn zip_workaround_config() -> &'static Mutex<ZipWorkaroundOptions> {
     CONFIG.get_or_init(|| Mutex::new(ZipWorkaroundOptions::default()))
 }
 
-fn is_probably_network_path(path: &Path) -> bool {
-    let text = path.to_string_lossy();
-    text.starts_with(r"\\") || text.starts_with(r"//")
+fn zip_profile_prefers_direct(path: &Path, metadata: &std::fs::Metadata) -> bool {
+    let signature = archive_signature_from_metadata(path, metadata);
+    let cache = zip_profile_cache();
+    if let Some(entry) = cache.lock().ok().and_then(|cache| cache.get(path).cloned()) {
+        if entry.signature == signature {
+            return zip_profile_is_direct_friendly(&entry.profile);
+        }
+    }
+
+    let profile = probe_zip_archive_profile(path).unwrap_or_default();
+    if let Ok(mut cache) = cache.lock() {
+        cache.insert(
+            path.to_path_buf(),
+            ZipProfileCacheEntry {
+                signature,
+                profile: profile.clone(),
+            },
+        );
+    }
+    zip_profile_is_direct_friendly(&profile)
+}
+
+fn probe_zip_archive_profile(path: &Path) -> Option<ZipArchiveProfile> {
+    let mut archive = open_plain_zip_archive(path).ok()?;
+    Some(sample_zip_archive_profile(&mut archive, 8))
+}
+
+fn sample_zip_archive_profile<R: Read + Seek>(
+    archive: &mut ZipArchive<R>,
+    sample_limit: usize,
+) -> ZipArchiveProfile {
+    let mut profile = ZipArchiveProfile::default();
+    for index in 0..archive.len() {
+        if profile.sampled_supported_entries >= sample_limit {
+            break;
+        }
+        let Ok(file) = archive.by_index(index) else {
+            continue;
+        };
+        if file.is_dir() {
+            continue;
+        }
+        let entry_path = PathBuf::from(decode_zip_name(&file).replace('\\', "/"));
+        if !is_supported_image(&entry_path) {
+            continue;
+        }
+        profile.sampled_supported_entries += 1;
+        if file.compression() == CompressionMethod::Stored {
+            profile.stored_entries += 1;
+        }
+        profile.compressed_bytes = profile
+            .compressed_bytes
+            .saturating_add(file.compressed_size());
+        profile.uncompressed_bytes = profile.uncompressed_bytes.saturating_add(file.size());
+    }
+    profile
+}
+
+fn zip_profile_is_direct_friendly(profile: &ZipArchiveProfile) -> bool {
+    if profile.sampled_supported_entries == 0 {
+        return false;
+    }
+    if profile.stored_entries != profile.sampled_supported_entries {
+        return false;
+    }
+    if profile.uncompressed_bytes == 0 {
+        return true;
+    }
+    let ratio = profile.compressed_bytes as f64 / profile.uncompressed_bytes as f64;
+    ratio >= 0.98
 }
 
 struct ZipCacheReader {
@@ -337,7 +499,7 @@ struct ZipCacheReader {
 impl ZipCacheReader {
     fn new(inner: File) -> std::io::Result<Self> {
         let len = inner.metadata()?.len();
-        let mut this = Self {
+        Ok(Self {
             inner,
             pos: 0,
             len,
@@ -345,22 +507,7 @@ impl ZipCacheReader {
             max_chunks: 32,
             cache: HashMap::new(),
             order: VecDeque::new(),
-        };
-        let _ = this.prefetch_tail(4 * 1024 * 1024);
-        Ok(this)
-    }
-
-    fn prefetch_tail(&mut self, bytes: u64) -> std::io::Result<()> {
-        if self.len == 0 {
-            return Ok(());
-        }
-        let start = self.len.saturating_sub(bytes.min(self.len));
-        let first_chunk = start / self.chunk_size;
-        let last_chunk = (self.len.saturating_sub(1)) / self.chunk_size;
-        for chunk_index in first_chunk..=last_chunk {
-            let _ = self.read_chunk(chunk_index)?;
-        }
-        Ok(())
+        })
     }
 
     fn read_chunk(&mut self, chunk_index: u64) -> std::io::Result<&[u8]> {
@@ -447,11 +594,16 @@ fn decode_zip_name(file: &zip::read::ZipFile<'_>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{ZipCacheReader, load_zip_entries, set_zip_workaround_options};
+    use super::{
+        ZipArchiveAccess, ZipArchiveProfile, ZipCacheReader, ensure_local_archive_cache,
+        load_zip_entries, resolve_zip_archive_access, set_zip_workaround_options,
+        zip_profile_is_direct_friendly,
+    };
     use crate::options::ZipWorkaroundOptions;
     use std::fs::File;
     use std::io::{Read, Seek, SeekFrom, Write};
     use std::time::{SystemTime, UNIX_EPOCH};
+    use zip::CompressionMethod;
     use zip::write::SimpleFileOptions;
 
     fn temp_path(name: &str) -> std::path::PathBuf {
@@ -498,6 +650,20 @@ mod tests {
         zip.finish().unwrap();
     }
 
+    fn write_zip_with_method(path: &std::path::Path, entries: &[(&str, CompressionMethod, &[u8])]) {
+        let file = File::create(path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        for (name, method, bytes) in entries {
+            zip.start_file(
+                name,
+                SimpleFileOptions::default().compression_method(*method),
+            )
+            .unwrap();
+            zip.write_all(bytes).unwrap();
+        }
+        zip.finish().unwrap();
+    }
+
     #[test]
     fn zip_caches_are_invalidated_when_archive_changes() {
         let path = temp_path("zip-signature");
@@ -514,6 +680,86 @@ mod tests {
 
         assert_eq!(first.len(), 1);
         assert_eq!(second.len(), 2);
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn direct_friendly_profile_prefers_uncompressed_entries() {
+        assert!(zip_profile_is_direct_friendly(&ZipArchiveProfile {
+            sampled_supported_entries: 4,
+            stored_entries: 4,
+            compressed_bytes: 9_900,
+            uncompressed_bytes: 10_000,
+        }));
+        assert!(!zip_profile_is_direct_friendly(&ZipArchiveProfile {
+            sampled_supported_entries: 4,
+            stored_entries: 3,
+            compressed_bytes: 9_900,
+            uncompressed_bytes: 10_000,
+        }));
+        assert!(!zip_profile_is_direct_friendly(&ZipArchiveProfile {
+            sampled_supported_entries: 4,
+            stored_entries: 4,
+            compressed_bytes: 5_000,
+            uncompressed_bytes: 10_000,
+        }));
+    }
+
+    #[test]
+    fn load_zip_entries_reads_stored_and_deflated_archives() {
+        let path = temp_path("zip-method");
+        write_zip_with_method(
+            &path,
+            &[
+                ("001.bmp", CompressionMethod::Stored, &[1u8; 1024]),
+                ("002.bmp", CompressionMethod::Deflated, &[2u8; 1024]),
+            ],
+        );
+
+        let entries = load_zip_entries(&path).unwrap();
+        assert_eq!(entries.len(), 2);
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn large_stored_zip_prefers_original_path_over_temp_copy() {
+        let path = temp_path("zip-stored-direct");
+        write_zip_with_method(
+            &path,
+            &[("001.bmp", CompressionMethod::Stored, &[1u8; 4096])],
+        );
+        set_zip_workaround_options(ZipWorkaroundOptions {
+            threshold_mb: 0,
+            local_cache: true,
+        });
+
+        let access = resolve_zip_archive_access(&path).unwrap();
+        assert!(matches!(access, ZipArchiveAccess::Direct(ref direct) if direct == &path));
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn compressed_zip_with_local_cache_stays_sequential_by_default() {
+        let path = temp_path("zip-compressed-sequential");
+        write_zip_with_method(
+            &path,
+            &[(
+                "001.bmp",
+                CompressionMethod::Deflated,
+                &vec![7u8; 32 * 1024],
+            )],
+        );
+        let _ = ensure_local_archive_cache(&path);
+        set_zip_workaround_options(ZipWorkaroundOptions {
+            threshold_mb: 0,
+            local_cache: true,
+        });
+
+        let access = resolve_zip_archive_access(&path).unwrap();
+        assert!(matches!(access, ZipArchiveAccess::Sequential(ref original) if original == &path));
 
         let _ = std::fs::remove_file(path);
     }

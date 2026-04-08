@@ -185,6 +185,12 @@ pub fn clean_system_integration() -> Result<(), Box<dyn std::error::Error>> {
     clean_file_associations()
 }
 
+#[cfg(not(target_os = "windows"))]
+pub fn path_is_probably_network(path: &std::path::Path) -> bool {
+    let text = path.to_string_lossy();
+    text.starts_with(r"\\") || text.starts_with(r"//")
+}
+
 fn infer_http_extension<'a>(url: &'a str, content_type: Option<&str>) -> Option<&'a str> {
     let from_url = url
         .rsplit_once('.')

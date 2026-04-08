@@ -33,8 +33,11 @@ impl Default for FilesystemCache {
 }
 
 #[derive(Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub(crate) struct DirectoryListing {
+    raw_files: Vec<PathBuf>,
     files: Vec<PathBuf>,
+    files_ready: bool,
     dirs: Vec<PathBuf>,
     browser_entries: Vec<PathBuf>,
     first_file: Option<PathBuf>,
@@ -87,6 +90,32 @@ impl FilesystemCache {
             .get(dir)
             .map(|cached| &cached.listing)
             .expect("directory listing inserted")
+    }
+
+    fn ensure_flat_files_ready(&mut self, dir: &Path) {
+        let _ = self.listing(dir);
+        let needs_flatten = self
+            .listings_by_dir
+            .get(dir)
+            .map(|cached| !cached.listing.files_ready)
+            .unwrap_or(false);
+        if !needs_flatten {
+            return;
+        }
+        let files = self
+            .listings_by_dir
+            .get(dir)
+            .map(|cached| {
+                expand_supported_files_from_raw(&cached.listing.raw_files, self.archive_mode)
+            })
+            .unwrap_or_default();
+        if let Some(cached) = self.listings_by_dir.get_mut(dir) {
+            cached.listing.first_file = files.first().cloned();
+            cached.listing.last_file = files.last().cloned();
+            cached.listing.files = files;
+            cached.listing.files_ready = true;
+        }
+        persist_cache(self);
     }
 
     pub(crate) fn ensure_settings(
@@ -145,6 +174,7 @@ impl FilesystemCache {
     }
 
     pub(crate) fn supported_entries(&mut self, dir: &Path) -> Vec<PathBuf> {
+        self.ensure_flat_files_ready(dir);
         self.listing(dir).files.clone()
     }
 
@@ -157,6 +187,7 @@ impl FilesystemCache {
     }
 
     pub(crate) fn first_supported_file(&mut self, dir: &Path) -> Option<PathBuf> {
+        self.ensure_flat_files_ready(dir);
         self.listing(dir).first_file.clone()
     }
 
@@ -165,6 +196,7 @@ impl FilesystemCache {
     }
 
     pub(crate) fn last_supported_file(&mut self, dir: &Path) -> Option<PathBuf> {
+        self.ensure_flat_files_ready(dir);
         self.listing(dir).last_file.clone()
     }
 }
@@ -311,6 +343,8 @@ fn scan_listed_virtual_directory(listed_file: &Path) -> DirectoryListing {
     let browser_entries = files.clone();
 
     DirectoryListing {
+        raw_files: files.clone(),
+        files_ready: true,
         first_file: files.first().cloned(),
         last_file: files.last().cloned(),
         browser_entries,
@@ -328,6 +362,8 @@ fn scan_zip_virtual_directory(zip_file: &Path) -> DirectoryListing {
     let browser_entries = files.clone();
 
     DirectoryListing {
+        raw_files: files.clone(),
+        files_ready: true,
         first_file: files.first().cloned(),
         last_file: files.last().cloned(),
         browser_entries,
@@ -365,30 +401,17 @@ fn scan_real_directory_listing(
     let mut browser_entries = raw_dirs.clone();
     browser_entries.extend(raw_files.clone());
 
-    let mut files = Vec::new();
-    for path in raw_files {
-        match archive_mode {
-            ArchiveBrowseOption::Folder => {
-                if is_listed_file_path(&path) {
-                    files.extend(build_listed_virtual_children(&path));
-                } else if is_zip_file_path(&path) {
-                    files.extend(build_zip_virtual_children(&path));
-                } else {
-                    files.push(path);
-                }
-            }
-            ArchiveBrowseOption::Skip => {
-                if !is_listed_file_path(&path) && !is_zip_file_path(&path) {
-                    files.push(path);
-                }
-            }
-            ArchiveBrowseOption::Archiver => {
-                files.push(path);
-            }
-        }
-    }
+    let (files, files_ready) = match archive_mode {
+        ArchiveBrowseOption::Folder => (Vec::new(), false),
+        _ => (
+            expand_supported_files_from_raw(&raw_files, archive_mode),
+            true,
+        ),
+    };
 
     DirectoryListing {
+        raw_files,
+        files_ready,
         first_file: files.first().cloned(),
         last_file: files.last().cloned(),
         browser_entries,
@@ -441,6 +464,35 @@ fn load_browser_metadata(path: &Path) -> BrowserMetadata {
             modified: metadata.modified().ok(),
         })
         .unwrap_or_default()
+}
+
+fn expand_supported_files_from_raw(
+    raw_files: &[PathBuf],
+    archive_mode: ArchiveBrowseOption,
+) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    for path in raw_files {
+        match archive_mode {
+            ArchiveBrowseOption::Folder => {
+                if is_listed_file_path(path) {
+                    files.extend(build_listed_virtual_children(path));
+                } else if is_zip_file_path(path) {
+                    files.extend(build_zip_virtual_children(path));
+                } else {
+                    files.push(path.clone());
+                }
+            }
+            ArchiveBrowseOption::Skip => {
+                if !is_listed_file_path(path) && !is_zip_file_path(path) {
+                    files.push(path.clone());
+                }
+            }
+            ArchiveBrowseOption::Archiver => {
+                files.push(path.clone());
+            }
+        }
+    }
+    files
 }
 
 fn listing_signature(path: &Path) -> Option<super::SourceSignature> {

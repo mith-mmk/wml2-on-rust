@@ -623,7 +623,9 @@ impl ViewerApp {
                                         && self.pending_filer_scroll_to.as_ref()
                                             == Some(&entry.path)
                                     {
-                                        response.scroll_to_me(Some(egui::Align::Center));
+                                        response.scroll_to_me(Some(subfiler_scroll_align(
+                                            self.options.manga_right_to_left,
+                                        )));
                                         self.pending_filer_scroll_to = None;
                                     }
                                     if response.clicked() {
@@ -635,7 +637,9 @@ impl ViewerApp {
                                         && self.pending_filer_scroll_to.as_ref()
                                             == Some(&entry.path)
                                     {
-                                        response.scroll_to_me(Some(egui::Align::Center));
+                                        response.scroll_to_me(Some(subfiler_scroll_align(
+                                            self.options.manga_right_to_left,
+                                        )));
                                         self.pending_filer_scroll_to = None;
                                     }
                                     if response.clicked() {
@@ -843,9 +847,18 @@ fn format_grouped_u64(value: u64) -> String {
     out.chars().rev().collect()
 }
 
+fn subfiler_scroll_align(right_to_left: bool) -> egui::Align {
+    if right_to_left {
+        egui::Align::Max
+    } else {
+        egui::Align::Center
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::locale_datetime_pattern;
+    use super::{locale_datetime_pattern, subfiler_scroll_align};
+    use eframe::egui;
 
     #[test]
     fn locale_datetime_pattern_supports_multiple_locales() {
@@ -853,5 +866,11 @@ mod tests {
         assert_eq!(locale_datetime_pattern("en_US"), "%m/%d/%Y %I:%M %p");
         assert_eq!(locale_datetime_pattern("de_DE"), "%d.%m.%Y %H:%M");
         assert_eq!(locale_datetime_pattern("fr_FR"), "%d/%m/%Y %H:%M");
+    }
+
+    #[test]
+    fn subfiler_uses_right_edge_only_for_right_to_left_mode() {
+        assert_eq!(subfiler_scroll_align(true), egui::Align::Max);
+        assert_eq!(subfiler_scroll_align(false), egui::Align::Center);
     }
 }

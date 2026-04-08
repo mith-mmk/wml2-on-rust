@@ -4,8 +4,9 @@ use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 
 use crate::dependent::plugins::path_supported_by_plugins;
+use crate::options::{ArchiveBrowseOption, NavigationSortOption};
 
-use super::cache::{FilesystemCache, build_listed_virtual_children};
+use super::cache::{FilesystemCache, build_listed_virtual_children, probe_first_supported_path};
 use super::listed_file::load_listed_file_entries;
 use super::source::{
     OpenedImageSource, open_image_source, source_image_size, source_prefers_low_io,
@@ -30,20 +31,29 @@ pub fn resolve_start_path(path: &Path) -> Option<PathBuf> {
     }
 
     if is_zip_file_path(path) {
-        let mut cache = FilesystemCache::default();
-        let navigation_path = cache.first_supported_file(path)?;
+        let navigation_path = probe_first_supported_path(
+            path,
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+        )?;
         return resolve_start_path(&navigation_path);
     }
 
     if is_listed_file_path(path) {
-        let mut cache = FilesystemCache::default();
-        let navigation_path = cache.first_supported_file(path)?;
+        let navigation_path = probe_first_supported_path(
+            path,
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+        )?;
         return resolve_start_path(&navigation_path);
     }
 
     if path.is_dir() {
-        let mut cache = FilesystemCache::default();
-        let navigation_path = cache.first_supported_file(path)?;
+        let navigation_path = probe_first_supported_path(
+            path,
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+        )?;
         return resolve_start_path(&navigation_path);
     }
 
@@ -202,7 +212,9 @@ fn resolve_navigation_leaf(path: PathBuf) -> Option<PathBuf> {
 
     if path.is_dir() {
         let mut cache = FilesystemCache::default();
-        return cache.first_supported_file(&path);
+        return cache
+            .probe_first_supported_file(&path)
+            .or_else(|| cache.first_supported_file(&path));
     }
 
     resolve_start_path(&path).map(|_| path)

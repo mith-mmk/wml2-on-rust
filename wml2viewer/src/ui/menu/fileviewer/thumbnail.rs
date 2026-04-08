@@ -24,11 +24,13 @@ pub(crate) enum ThumbnailResult {
     Ready {
         _request_id: u64,
         path: PathBuf,
+        max_side: u32,
         image: ColorImage,
     },
     Failed {
         _request_id: u64,
         path: PathBuf,
+        _max_side: u32,
         _message: String,
     },
 }
@@ -74,6 +76,7 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                             let _ = result_tx.send(ThumbnailResult::Ready {
                                 _request_id: request_id,
                                 path,
+                                max_side,
                                 image,
                             });
                         }
@@ -81,6 +84,7 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                             let _ = result_tx.send(ThumbnailResult::Failed {
                                 _request_id: request_id,
                                 path,
+                                _max_side: max_side,
                                 _message: message,
                             });
                         }
@@ -88,6 +92,7 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                             let _ = result_tx.send(ThumbnailResult::Failed {
                                 _request_id: request_id,
                                 path,
+                                _max_side: max_side,
                                 _message: "thumbnail worker panicked".to_string(),
                             });
                         }

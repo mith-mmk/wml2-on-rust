@@ -79,6 +79,8 @@ impl FilerState {
             navigation_sort,
             archive_mode: self.archive_mode,
             sort_field: self.sort_field,
+            include_metadata: self.view_mode == FilerViewMode::Detail
+                || self.sort_field != FilerSortField::Name,
             ascending: self.ascending,
             separate_dirs: self.separate_dirs,
             archive_as_container_in_sort: self.archive_as_container_in_sort,
@@ -133,6 +135,7 @@ mod tests {
         assert_eq!(options.navigation_sort, NavigationSortOption::Date);
         assert_eq!(options.archive_mode, ArchiveBrowseOption::Archiver);
         assert_eq!(options.sort_field, FilerSortField::Modified);
+        assert!(options.include_metadata);
         assert!(!options.ascending);
         assert!(!options.separate_dirs);
         assert!(options.archive_as_container_in_sort);
@@ -155,5 +158,6 @@ mod tests {
 
         assert_eq!(options.thumbnail_hint_count, 18);
         assert_eq!(options.thumbnail_hint_max_side, 168);
+        assert!(!options.include_metadata);
     }
 }

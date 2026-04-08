@@ -423,6 +423,10 @@ impl ViewerApp {
             entry.label.clone()
         };
         let response = ui.selectable_label(selected, text);
+        if selected && self.pending_filer_scroll_to.as_ref() == Some(&entry.path) {
+            response.scroll_to_me(Some(egui::Align::Center));
+            self.pending_filer_scroll_to = None;
+        }
         if let Some(size) = entry.metadata.size {
             let modified = entry
                 .metadata
@@ -499,9 +503,9 @@ impl ViewerApp {
                     response.on_hover_text(self.text(UiTextKey::FolderArchive))
                 } else {
                     self.ensure_thumbnail(&entry.path, thumb_size.x.max(32.0) as u32);
-                    if let Some(texture) = self.thumbnail_cache.get(&entry.path) {
+                    if let Some(cached) = self.thumbnail_cache.get(&entry.path) {
                         let response = ui.add(
-                            egui::Image::from_texture(texture)
+                            egui::Image::from_texture(&cached.texture)
                                 .fit_to_exact_size(thumb_size)
                                 .sense(egui::Sense::click()),
                         );
@@ -512,6 +516,10 @@ impl ViewerApp {
                                 egui::Stroke::new(2.0, ui.visuals().selection.stroke.color),
                                 egui::StrokeKind::Outside,
                             );
+                        }
+                        if selected && self.pending_filer_scroll_to.as_ref() == Some(&entry.path) {
+                            response.scroll_to_me(Some(egui::Align::Center));
+                            self.pending_filer_scroll_to = None;
                         }
                         response
                     } else {
@@ -527,6 +535,10 @@ impl ViewerApp {
                                 egui::Stroke::new(2.0, ui.visuals().selection.stroke.color),
                                 egui::StrokeKind::Outside,
                             );
+                        }
+                        if selected && self.pending_filer_scroll_to.as_ref() == Some(&entry.path) {
+                            response.scroll_to_me(Some(egui::Align::Center));
+                            self.pending_filer_scroll_to = None;
                         }
                         response
                     }
@@ -577,6 +589,9 @@ impl ViewerApp {
                     }
                 });
                 egui::ScrollArea::horizontal().show(ui, |ui| {
+                    for path in self.subfiler_thumbnail_request_paths() {
+                        self.ensure_thumbnail(&path, 72);
+                    }
                     ui.horizontal(|ui| {
                         let mut entries = self.filer.snapshot.entries.clone();
                         if self.options.manga_right_to_left {
@@ -586,7 +601,6 @@ impl ViewerApp {
                             if entry.is_container {
                                 continue;
                             }
-                            self.ensure_thumbnail(&entry.path, 72);
                             let selected = self.current_navigation_path == entry.path;
                             let mut frame = egui::Frame::group(ui.style());
                             if selected {
@@ -595,17 +609,32 @@ impl ViewerApp {
                             }
                             frame.show(ui, |ui| {
                                 if let Some(texture) = self.thumbnail_cache.get(&entry.path) {
-                                    if ui
-                                        .add(egui::Button::image(
-                                            egui::Image::from_texture(texture)
-                                                .fit_to_exact_size(egui::vec2(72.0, 72.0)),
-                                        ))
-                                        .clicked()
+                                    let response = ui.add(egui::Button::image(
+                                        egui::Image::from_texture(&texture.texture)
+                                            .fit_to_exact_size(egui::vec2(72.0, 72.0)),
+                                    ));
+                                    if selected
+                                        && self.pending_filer_scroll_to.as_ref()
+                                            == Some(&entry.path)
                                     {
+                                        response.scroll_to_me(Some(egui::Align::Center));
+                                        self.pending_filer_scroll_to = None;
+                                    }
+                                    if response.clicked() {
                                         self.activate_filer_entry(entry.clone());
                                     }
-                                } else if ui.button("...").clicked() {
-                                    self.activate_filer_entry(entry.clone());
+                                } else {
+                                    let response = ui.button("...");
+                                    if selected
+                                        && self.pending_filer_scroll_to.as_ref()
+                                            == Some(&entry.path)
+                                    {
+                                        response.scroll_to_me(Some(egui::Align::Center));
+                                        self.pending_filer_scroll_to = None;
+                                    }
+                                    if response.clicked() {
+                                        self.activate_filer_entry(entry.clone());
+                                    }
                                 }
                             });
                         }
@@ -626,11 +655,54 @@ impl ViewerApp {
         let load_path =
             resolve_start_path(&navigation_path).unwrap_or_else(|| navigation_path.clone());
         self.filer.snapshot.selected = Some(navigation_path.clone());
+        self.pending_filer_scroll_to = Some(navigation_path.clone());
         self.empty_mode = false;
         self.show_filer = false;
         self.pending_fit_recalc = true;
         self.set_filesystem_current(navigation_path.clone());
         let _ = self.request_load_target(navigation_path, load_path);
+    }
+
+    fn subfiler_thumbnail_request_paths(&self) -> Vec<std::path::PathBuf> {
+        let entries = self
+            .filer
+            .snapshot
+            .entries
+            .iter()
+            .filter(|entry| !entry.is_container)
+            .map(|entry| entry.path.clone())
+            .collect::<Vec<_>>();
+        if entries.is_empty() {
+            return entries;
+        }
+        let selected_index = entries
+            .iter()
+            .position(|path| path == &self.current_navigation_path)
+            .or_else(|| {
+                self.filer
+                    .snapshot
+                    .selected
+                    .as_ref()
+                    .and_then(|selected| entries.iter().position(|path| path == selected))
+            });
+        let Some(selected_index) = selected_index else {
+            return entries;
+        };
+
+        let mut ordered = Vec::with_capacity(entries.len());
+        ordered.push(entries[selected_index].clone());
+        for offset in 1..entries.len() {
+            if let Some(next) = entries.get(selected_index + offset) {
+                ordered.push(next.clone());
+            }
+            if let Some(prev_index) = selected_index.checked_sub(offset) {
+                ordered.push(entries[prev_index].clone());
+            }
+            if ordered.len() >= entries.len() {
+                break;
+            }
+        }
+        ordered
     }
 }
 

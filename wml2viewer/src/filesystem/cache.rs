@@ -160,9 +160,79 @@ impl FilesystemCache {
         self.listing(dir).first_file.clone()
     }
 
+    pub(crate) fn probe_first_supported_file(&self, path: &Path) -> Option<PathBuf> {
+        probe_first_supported_path(path, self.sort, self.archive_mode)
+    }
+
     pub(crate) fn last_supported_file(&mut self, dir: &Path) -> Option<PathBuf> {
         self.listing(dir).last_file.clone()
     }
+}
+
+pub(crate) fn probe_first_supported_path(
+    path: &Path,
+    sort: NavigationSortOption,
+    archive_mode: ArchiveBrowseOption,
+) -> Option<PathBuf> {
+    if archive_mode == ArchiveBrowseOption::Folder && is_zip_file_path(path) {
+        return load_zip_entries(path)
+            .unwrap_or_default()
+            .into_iter()
+            .next()
+            .map(|entry| zip_virtual_child_path(path, entry.index, &entry.name));
+    }
+
+    if archive_mode == ArchiveBrowseOption::Folder && is_listed_file_path(path) {
+        return load_listed_file_entries(path)
+            .unwrap_or_default()
+            .into_iter()
+            .enumerate()
+            .find_map(|(index, entry_path)| {
+                resolve_start_path(&entry_path)
+                    .map(|_| listed_virtual_child_path(path, index, &entry_path))
+            });
+    }
+
+    if !path.is_dir() {
+        return None;
+    }
+
+    let Some(entries) = fs::read_dir(path).ok() else {
+        return None;
+    };
+
+    let mut raw_files = Vec::new();
+    for entry in entries.filter_map(Result::ok) {
+        let Some(candidate) = browser_entry_path_from_dir_entry(&entry) else {
+            continue;
+        };
+        if dir_entry_is_browser_file(&entry, &candidate, archive_mode) {
+            raw_files.push(candidate);
+        }
+    }
+    sort_paths(&mut raw_files, sort);
+
+    for candidate in raw_files {
+        match archive_mode {
+            ArchiveBrowseOption::Folder => {
+                if is_listed_file_path(&candidate) || is_zip_file_path(&candidate) {
+                    if let Some(path) = probe_first_supported_path(&candidate, sort, archive_mode) {
+                        return Some(path);
+                    }
+                } else {
+                    return Some(candidate);
+                }
+            }
+            ArchiveBrowseOption::Skip => {
+                if !is_listed_file_path(&candidate) && !is_zip_file_path(&candidate) {
+                    return Some(candidate);
+                }
+            }
+            ArchiveBrowseOption::Archiver => return Some(candidate),
+        }
+    }
+
+    None
 }
 
 pub(crate) fn new_shared_filesystem_cache(
@@ -430,6 +500,7 @@ fn persist_cache(cache: &FilesystemCache) {
 mod tests {
     use super::*;
     use std::time::{SystemTime, UNIX_EPOCH};
+    use zip::write::SimpleFileOptions;
 
     fn make_temp_dir() -> PathBuf {
         let unique = SystemTime::now()
@@ -439,6 +510,17 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("wml2viewer_cache_{unique}"));
         fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    fn make_zip_with_entries(path: &Path, names: &[&str]) {
+        let file = fs::File::create(path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        for name in names {
+            zip.start_file(name, SimpleFileOptions::default()).unwrap();
+            use std::io::Write;
+            zip.write_all(b"data").unwrap();
+        }
+        zip.finish().unwrap();
     }
 
     #[test]
@@ -507,6 +589,23 @@ mod tests {
         assert_eq!(before, vec![first.clone()]);
         assert!(after.contains(&first));
         assert!(after.contains(&second));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn probe_first_supported_path_returns_first_zip_child() {
+        let dir = make_temp_dir();
+        let zip_path = dir.join("001.zip");
+        make_zip_with_entries(&zip_path, &["002.png", "010.png"]);
+
+        let first = probe_first_supported_path(
+            &dir,
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+        );
+
+        assert_eq!(first, Some(zip_virtual_child_path(&zip_path, 0, "002.png")));
 
         let _ = fs::remove_dir_all(dir);
     }

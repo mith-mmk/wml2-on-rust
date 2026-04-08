@@ -35,17 +35,11 @@ pub(crate) enum PendingDirection {
 }
 
 impl FileNavigator {
-    pub(crate) fn from_current_path(path: PathBuf, cache: &mut FilesystemCache) -> Self {
-        let files = flat_container_entries(&path, cache).unwrap_or_else(|| vec![path.clone()]);
-        let current = files
-            .iter()
-            .position(|candidate| candidate == &path)
-            .unwrap_or(0);
-
+    pub(crate) fn from_current_path(path: PathBuf, _cache: &mut FilesystemCache) -> Self {
         Self {
             current_path: path,
-            files: Some(files),
-            current,
+            files: None,
+            current: 0,
         }
     }
 
@@ -288,7 +282,8 @@ pub(crate) fn resolve_navigation_path(path: &Path, cache: &mut FilesystemCache) 
 
     if is_listed_file_path(path) || is_zip_file_path(path) || path.is_dir() {
         return cache
-            .first_supported_file(path)
+            .probe_first_supported_file(path)
+            .or_else(|| cache.first_supported_file(path))
             .or_else(|| Some(path.to_path_buf()));
     }
 
@@ -443,4 +438,23 @@ fn last_path_in_subtree(cache: &mut FilesystemCache, dir: &Path) -> Option<PathB
     }
 
     cache.last_supported_file(dir)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::options::{ArchiveBrowseOption, NavigationSortOption};
+
+    #[test]
+    fn navigator_from_current_path_does_not_eagerly_expand_file_list() {
+        let mut cache =
+            FilesystemCache::new(NavigationSortOption::OsName, ArchiveBrowseOption::Folder);
+        let path = PathBuf::from("sample.png");
+
+        let navigator = FileNavigator::from_current_path(path.clone(), &mut cache);
+
+        assert_eq!(navigator.current_path, path);
+        assert!(navigator.files.is_none());
+        assert_eq!(navigator.current, 0);
+    }
 }

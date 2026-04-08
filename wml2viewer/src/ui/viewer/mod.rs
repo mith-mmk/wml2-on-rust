@@ -29,7 +29,6 @@ use crate::ui::viewer::options::{
 };
 use eframe::egui::{self, Pos2, TextureHandle, TextureOptions, vec2};
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
@@ -103,8 +102,9 @@ pub(crate) struct ViewerApp {
     pub(crate) thumbnail_tx: Option<Sender<ThumbnailCommand>>,
     pub(crate) thumbnail_rx: Option<Receiver<ThumbnailResult>>,
     pub(crate) next_thumbnail_request_id: u64,
-    pub(crate) thumbnail_pending: HashSet<PathBuf>,
-    pub(crate) thumbnail_cache: HashMap<PathBuf, TextureHandle>,
+    pub(crate) thumbnail_pending: HashMap<PathBuf, u32>,
+    pub(crate) thumbnail_cache: HashMap<PathBuf, CachedThumbnail>,
+    pub(crate) pending_filer_scroll_to: Option<PathBuf>,
     pub(crate) navigator_ready: bool,
     pub(crate) overlay: ViewerOverlayState,
     pub(crate) last_navigation_at: Option<Instant>,
@@ -152,6 +152,11 @@ pub(crate) struct ViewerApp {
     pub(crate) preloaded_source: Option<LoadedImage>,
     pub(crate) preloaded_rendered: Option<LoadedImage>,
     pub(crate) pending_primary_click_deadline: Option<Instant>,
+}
+
+pub(crate) struct CachedThumbnail {
+    pub(crate) texture: TextureHandle,
+    pub(crate) max_side: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -403,8 +408,9 @@ impl ViewerApp {
             thumbnail_tx: None,
             thumbnail_rx: None,
             next_thumbnail_request_id: 0,
-            thumbnail_pending: HashSet::new(),
+            thumbnail_pending: HashMap::new(),
             thumbnail_cache: HashMap::new(),
+            pending_filer_scroll_to: None,
             navigator_ready: false,
             overlay: ViewerOverlayState::default(),
             last_navigation_at: None,
@@ -997,6 +1003,7 @@ impl ViewerApp {
         };
         let request_id = self.alloc_filer_request_id();
         self.filer.snapshot.begin_request(request_id);
+        self.pending_filer_scroll_to = selected.clone();
         let _ = filer_tx.send(FilesystemCommand::OpenBrowserDirectory {
             request_id,
             dir,
@@ -1012,12 +1019,15 @@ impl ViewerApp {
                 self.set_filesystem_current(rebased);
             }
         }
+        let previous_selected = self.filer.snapshot.selected.clone();
         if let Some((dir, selected)) = self.filer.snapshot.sync_with_navigation(
             &self.current_navigation_path,
             self.pending_navigation_path.as_deref(),
             Some(&self.current_path),
         ) {
             self.request_filer_directory(dir, selected);
+        } else if self.filer.snapshot.selected != previous_selected {
+            self.pending_filer_scroll_to = self.filer.snapshot.selected.clone();
         }
     }
 
@@ -2317,12 +2327,16 @@ impl ViewerApp {
                         self.queue_thumbnail_hints(paths, *max_side);
                         continue;
                     }
-                    let _ = self.filer.snapshot.apply_query_result(
+                    let previous_selected = self.filer.snapshot.selected.clone();
+                    let applied = self.filer.snapshot.apply_query_result(
                         result,
                         &self.current_navigation_path,
                         self.pending_navigation_path.as_deref(),
                         Some(&self.current_path),
                     );
+                    if applied && self.filer.snapshot.selected != previous_selected {
+                        self.pending_filer_scroll_to = self.filer.snapshot.selected.clone();
+                    }
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
@@ -2343,6 +2357,7 @@ impl ViewerApp {
                 Ok(ThumbnailResult::Ready {
                     _request_id: _,
                     path,
+                    max_side,
                     image,
                 }) => {
                     self.thumbnail_pending.remove(&path);
@@ -2351,11 +2366,13 @@ impl ViewerApp {
                         image,
                         TextureOptions::LINEAR,
                     );
-                    self.thumbnail_cache.insert(path, texture);
+                    self.thumbnail_cache
+                        .insert(path, CachedThumbnail { texture, max_side });
                 }
                 Ok(ThumbnailResult::Failed {
                     _request_id: _,
                     path,
+                    _max_side: _,
                     ..
                 }) => {
                     self.thumbnail_pending.remove(&path);
@@ -2374,12 +2391,23 @@ impl ViewerApp {
         let Some(thumbnail_tx) = self.thumbnail_tx.clone() else {
             return;
         };
-        if self.thumbnail_cache.contains_key(path) || self.thumbnail_pending.contains(path) {
+        if self
+            .thumbnail_cache
+            .get(path)
+            .is_some_and(|cached| cached.max_side >= max_side)
+        {
+            return;
+        }
+        if self
+            .thumbnail_pending
+            .get(path)
+            .is_some_and(|pending| *pending >= max_side)
+        {
             return;
         }
         let request_id = self.alloc_thumbnail_request_id();
         let path = path.to_path_buf();
-        self.thumbnail_pending.insert(path.clone());
+        self.thumbnail_pending.insert(path.clone(), max_side);
         let _ = thumbnail_tx.send(ThumbnailCommand::Generate {
             request_id,
             path,

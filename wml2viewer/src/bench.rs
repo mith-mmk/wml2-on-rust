@@ -1,10 +1,11 @@
 use crate::drawers::image::{load_canvas_from_bytes_with_hint, load_canvas_from_file};
 use crate::filesystem;
 use crate::filesystem::{
-    OpenedImageSource, is_browser_container, list_browser_entries, open_image_source,
+    BrowserNameSortMode, BrowserScanOptions, BrowserSortField, FilesystemCache, OpenedImageSource,
+    benchmark_browser_scan_cached, is_browser_container, list_browser_entries, open_image_source,
     resolve_start_path,
 };
-use crate::options::{NavigationSortOption, ZipWorkaroundOptions};
+use crate::options::{ArchiveBrowseOption, NavigationSortOption, ZipWorkaroundOptions};
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -33,6 +34,18 @@ pub struct ArchiveBenchmarkResult {
     pub decode_total: Duration,
     pub total: Duration,
     pub average_decode: Duration,
+}
+
+#[derive(Clone, Debug)]
+pub struct FilerBenchmarkResult {
+    pub iterations: usize,
+    pub entry_count: usize,
+    pub filtered_count: usize,
+    pub listing: Duration,
+    pub preview_filter: Duration,
+    pub metadata: Duration,
+    pub finalize: Duration,
+    pub total: Duration,
 }
 
 pub fn benchmark_decode(path: &Path, iterations: usize) -> Result<BenchResult, String> {
@@ -66,6 +79,64 @@ pub fn benchmark_browser_scan(
         iterations,
         average: total / iterations as u32,
         total,
+    })
+}
+
+pub fn benchmark_filer_scan(
+    path: &Path,
+    iterations: usize,
+    sort: NavigationSortOption,
+    archive_mode: ArchiveBrowseOption,
+    sort_field: BrowserSortField,
+    include_metadata: bool,
+) -> Result<FilerBenchmarkResult, String> {
+    let iterations = iterations.max(1);
+    let mut total_listing = Duration::ZERO;
+    let mut total_preview_filter = Duration::ZERO;
+    let mut total_metadata = Duration::ZERO;
+    let mut total_finalize = Duration::ZERO;
+    let mut total_total = Duration::ZERO;
+    let mut entry_count = 0usize;
+    let mut filtered_count = 0usize;
+
+    for _ in 0..iterations {
+        let mut cache = FilesystemCache::new(sort, archive_mode);
+        let result = benchmark_browser_scan_cached(
+            path,
+            &BrowserScanOptions {
+                navigation_sort: sort,
+                archive_mode,
+                sort_field,
+                include_metadata,
+                ascending: true,
+                separate_dirs: true,
+                archive_as_container_in_sort: false,
+                filter_text: String::new(),
+                extension_filter: String::new(),
+                name_sort_mode: BrowserNameSortMode::Os,
+                thumbnail_hint_count: 0,
+                thumbnail_hint_max_side: 0,
+            },
+            &mut cache,
+        );
+        total_listing += result.listing;
+        total_preview_filter += result.preview_filter;
+        total_metadata += result.metadata;
+        total_finalize += result.finalize;
+        total_total += result.total;
+        entry_count = result.entry_count;
+        filtered_count = result.filtered_count;
+    }
+
+    Ok(FilerBenchmarkResult {
+        iterations,
+        entry_count,
+        filtered_count,
+        listing: total_listing / iterations as u32,
+        preview_filter: total_preview_filter / iterations as u32,
+        metadata: total_metadata / iterations as u32,
+        finalize: total_finalize / iterations as u32,
+        total: total_total / iterations as u32,
     })
 }
 

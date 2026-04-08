@@ -17,6 +17,7 @@ use crate::dependent::default_temp_dir;
 
 #[cfg(test)]
 use crate::options::NavigationSortOption;
+pub(crate) use browser::benchmark_browser_scan_cached;
 pub(crate) use browser::spawn_browser_query_worker;
 pub use browser::{
     BrowserEntry, BrowserMetadata, BrowserNameSortMode, BrowserScanOptions, BrowserSnapshotState,

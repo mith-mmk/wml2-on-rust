@@ -6,8 +6,10 @@ use super::cache::FilesystemCache;
 use super::path::{
     is_listed_file_path, is_virtual_listed_child, is_virtual_zip_child, is_zip_file_path,
     listed_virtual_identity_from_virtual_path, listed_virtual_name_from_virtual_path,
-    listed_virtual_root, resolve_start_path, zip_virtual_root,
+    listed_virtual_root, resolve_start_path, resolve_virtual_zip_child, zip_virtual_child_path,
+    zip_virtual_root,
 };
+use super::{probe_adjacent_supported_zip_entry, zip_index_is_available};
 
 #[derive(Clone, Debug)]
 pub(crate) struct FileNavigator {
@@ -303,6 +305,12 @@ pub fn adjacent_entry_in_current_branch(
 
     let mut cache = FilesystemCache::new(sort, archive_mode);
     let current_path = resolve_navigation_path(path, &mut cache)?;
+    if let Some((zip_root, entry_index)) = resolve_virtual_zip_child(&current_path)
+        && !zip_index_is_available(&zip_root)
+    {
+        return probe_adjacent_supported_zip_entry(&zip_root, entry_index, step)
+            .map(|entry| zip_virtual_child_path(&zip_root, entry.index, &entry.name));
+    }
     let branch_root =
         zip_virtual_root(&current_path).or_else(|| listed_virtual_root(&current_path))?;
     let entries = cache.supported_entries(&branch_root);

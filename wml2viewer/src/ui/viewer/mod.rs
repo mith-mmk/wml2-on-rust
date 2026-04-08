@@ -2749,7 +2749,7 @@ mod tests {
         adjacent_same_branch_navigation_target, preloaded_navigation_matches,
         same_navigation_branch, should_defer_filer_sync_for_navigation,
     };
-    use crate::filesystem::build_zip_virtual_children;
+    use crate::filesystem::{build_zip_virtual_children, zip_index_is_available};
     use crate::options::{ArchiveBrowseOption, NavigationSortOption};
     use std::fs;
     use std::path::Path;
@@ -2819,6 +2819,7 @@ mod tests {
         let archive = dir.join("pages.zip");
         make_zip_with_entries(&archive, &["001.png", "002.png"]);
         let children = build_zip_virtual_children(&archive);
+        assert!(!zip_index_is_available(&archive));
 
         let next = adjacent_same_branch_navigation_target(
             &children[0],

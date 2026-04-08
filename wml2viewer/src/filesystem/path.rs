@@ -142,7 +142,6 @@ pub(crate) fn resolve_virtual_listed_child(path: &Path) -> Option<PathBuf> {
     resolve_navigation_leaf(entry)
 }
 
-#[cfg(test)]
 pub(crate) fn resolve_virtual_zip_child(path: &Path) -> Option<(PathBuf, usize)> {
     zip_virtual_child_info(path)
 }

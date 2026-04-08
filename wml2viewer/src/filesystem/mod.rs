@@ -59,8 +59,9 @@ pub(crate) use source::{
 };
 pub(crate) use worker::spawn_filesystem_worker;
 pub(crate) use zip_file::{
-    ZipArchiveAccessKind, ensure_local_archive_cache, load_zip_entries_unsorted, sort_zip_entries,
-    zip_archive_policy_debug,
+    ZipArchiveAccessKind, ensure_local_archive_cache, load_zip_entries_unsorted,
+    probe_adjacent_supported_zip_entry, sort_zip_entries, zip_archive_policy_debug,
+    zip_index_is_available,
 };
 
 pub fn clean_cache_files() -> Result<(), Box<dyn std::error::Error>> {

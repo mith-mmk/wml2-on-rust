@@ -287,7 +287,6 @@ pub fn benchmark_archive_detailed(
         images,
         access_kind: policy.as_ref().map(|policy| match policy.access_kind {
             crate::filesystem::ZipArchiveAccessKind::DirectOriginal => "direct-original",
-            crate::filesystem::ZipArchiveAccessKind::DirectCached => "direct-cached",
             crate::filesystem::ZipArchiveAccessKind::Sequential => "sequential",
         }),
         is_network_path: policy

@@ -15,7 +15,7 @@ use super::path::{
 };
 use super::sort_paths;
 use super::source_signature_for_path;
-use super::zip_file::load_zip_entries;
+use super::zip_file::{load_zip_entries, probe_first_supported_zip_entry};
 
 pub(crate) struct FilesystemCache {
     listings_by_dir: HashMap<PathBuf, CachedDirectoryListing>,
@@ -216,10 +216,7 @@ pub(crate) fn probe_first_supported_path(
     archive_mode: ArchiveBrowseOption,
 ) -> Option<PathBuf> {
     if archive_mode == ArchiveBrowseOption::Folder && is_zip_file_path(path) {
-        return load_zip_entries(path)
-            .unwrap_or_default()
-            .into_iter()
-            .next()
+        return probe_first_supported_zip_entry(path)
             .map(|entry| zip_virtual_child_path(path, entry.index, &entry.name));
     }
 

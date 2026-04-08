@@ -49,7 +49,6 @@ struct ZipArchiveProfile {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ZipArchiveAccessKind {
     DirectOriginal,
-    DirectCached,
     Sequential,
 }
 
@@ -110,6 +109,37 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
     Some(entries)
 }
 
+pub(crate) fn probe_first_supported_zip_entry(path: &Path) -> Option<ZipEntryRecord> {
+    let access = resolve_zip_archive_access(path)?;
+    try_probe_first_supported_zip_entry_from_path(access.path()).or_else(|| {
+        if access.path() != path {
+            try_probe_first_supported_zip_entry_from_path(path)
+        } else {
+            None
+        }
+    })
+}
+
+pub(crate) fn probe_adjacent_supported_zip_entry(
+    path: &Path,
+    entry_index: usize,
+    step: isize,
+) -> Option<ZipEntryRecord> {
+    if step == 0 {
+        return None;
+    }
+    let access = resolve_zip_archive_access(path)?;
+    try_probe_adjacent_supported_zip_entry_from_path(access.path(), entry_index, step).or_else(
+        || {
+            if access.path() != path {
+                try_probe_adjacent_supported_zip_entry_from_path(path, entry_index, step)
+            } else {
+                None
+            }
+        },
+    )
+}
+
 pub(crate) fn load_zip_entries_unsorted(path: &Path) -> Option<Vec<ZipEntryRecord>> {
     load_zip_entries_unsorted_with_profile(path).map(|(entries, _)| entries)
 }
@@ -142,10 +172,6 @@ fn load_zip_entries_unsorted_with_profile(
 
 pub(crate) fn sort_zip_entries(entries: &mut [ZipEntryRecord]) {
     entries.sort_by(|left, right| compare_natural_str(&left.name, &right.name, false));
-}
-
-pub(crate) fn load_zip_entry_bytes(path: &Path, entry_index: usize) -> Option<Vec<u8>> {
-    load_zip_entry_bytes_with_size(path, entry_index).map(|(bytes, _)| bytes)
 }
 
 pub(crate) fn load_zip_entry_bytes_with_size(
@@ -280,6 +306,86 @@ fn try_load_zip_entries_from_path(
     }
     let mut archive = open_plain_zip_archive(path).ok()?;
     Some(collect_zip_entries_and_profile(&mut archive))
+}
+
+fn try_probe_first_supported_zip_entry_from_path(path: &Path) -> Option<ZipEntryRecord> {
+    if let Ok(mut archive) = open_zip_archive(path) {
+        return probe_first_supported_zip_entry_from_archive(&mut archive);
+    }
+    let mut archive = open_plain_zip_archive(path).ok()?;
+    probe_first_supported_zip_entry_from_archive(&mut archive)
+}
+
+fn try_probe_adjacent_supported_zip_entry_from_path(
+    path: &Path,
+    entry_index: usize,
+    step: isize,
+) -> Option<ZipEntryRecord> {
+    if let Ok(mut archive) = open_zip_archive(path) {
+        return probe_adjacent_supported_zip_entry_from_archive(&mut archive, entry_index, step);
+    }
+    let mut archive = open_plain_zip_archive(path).ok()?;
+    probe_adjacent_supported_zip_entry_from_archive(&mut archive, entry_index, step)
+}
+
+fn probe_first_supported_zip_entry_from_archive<R: Read + Seek>(
+    archive: &mut ZipArchive<R>,
+) -> Option<ZipEntryRecord> {
+    for index in 0..archive.len() {
+        let Ok(file) = archive.by_index(index) else {
+            continue;
+        };
+        if file.is_dir() {
+            continue;
+        }
+
+        let name = decode_zip_name(&file);
+        let normalized = name.replace('\\', "/");
+        let entry_path = PathBuf::from(&normalized);
+        if !is_supported_image(&entry_path) {
+            continue;
+        }
+
+        return Some(ZipEntryRecord {
+            index,
+            name: normalized,
+            size: file.size(),
+        });
+    }
+    None
+}
+
+fn probe_adjacent_supported_zip_entry_from_archive<R: Read + Seek>(
+    archive: &mut ZipArchive<R>,
+    entry_index: usize,
+    step: isize,
+) -> Option<ZipEntryRecord> {
+    let mut index = entry_index.checked_add_signed(step)?;
+    while index < archive.len() {
+        let Ok(file) = archive.by_index(index) else {
+            index = index.checked_add_signed(step)?;
+            continue;
+        };
+        if file.is_dir() {
+            index = index.checked_add_signed(step)?;
+            continue;
+        }
+
+        let name = decode_zip_name(&file);
+        let normalized = name.replace('\\', "/");
+        let entry_path = PathBuf::from(&normalized);
+        if !is_supported_image(&entry_path) {
+            index = index.checked_add_signed(step)?;
+            continue;
+        }
+
+        return Some(ZipEntryRecord {
+            index,
+            name: normalized,
+            size: file.size(),
+        });
+    }
+    None
 }
 
 fn collect_zip_entries_and_profile<R: Read + Seek>(
@@ -477,6 +583,20 @@ fn cache_zip_profile(path: &Path, signature: SourceSignature, profile: ZipArchiv
             ZipProfileCacheEntry { signature, profile },
         );
     }
+}
+
+pub(crate) fn zip_index_is_available(path: &Path) -> bool {
+    let Some(signature) = archive_signature(path) else {
+        return false;
+    };
+    if let Ok(cache) = zip_index_cache().lock()
+        && cache
+            .get(path)
+            .is_some_and(|entry| entry.signature == signature)
+    {
+        return true;
+    }
+    load_persistent_zip_index(path, &signature).is_some()
 }
 
 fn archive_signature(path: &Path) -> Option<SourceSignature> {
@@ -701,8 +821,8 @@ mod tests {
     use super::{
         PersistentZipIndexSnapshot, ZipArchiveAccess, ZipArchiveProfile, ZipCacheReader,
         ensure_local_archive_cache, load_zip_entries, load_zip_entries_unsorted,
-        resolve_zip_archive_access, set_zip_workaround_options, zip_index_cache_path,
-        zip_profile_is_direct_friendly,
+        probe_first_supported_zip_entry, resolve_zip_archive_access, set_zip_workaround_options,
+        zip_index_cache_path, zip_index_is_available, zip_profile_is_direct_friendly,
     };
     use crate::options::ZipWorkaroundOptions;
     use std::fs::File;
@@ -805,6 +925,19 @@ mod tests {
 
         let _ = std::fs::remove_file(path);
         let _ = std::fs::remove_file(snapshot_path);
+    }
+
+    #[test]
+    fn probe_first_supported_zip_entry_does_not_require_full_index() {
+        let path = temp_path("zip-probe-first");
+        write_zip(&path, &["001.png", "002.png"]);
+
+        let first = probe_first_supported_zip_entry(&path).unwrap();
+        assert_eq!(first.index, 0);
+        assert_eq!(first.name, "001.png");
+        assert!(!zip_index_is_available(&path));
+
+        let _ = std::fs::remove_file(path);
     }
 
     #[test]

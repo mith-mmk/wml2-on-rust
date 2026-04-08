@@ -9,6 +9,7 @@ use std::time::UNIX_EPOCH;
 use crate::dependent::{default_temp_dir, path_is_probably_network};
 use crate::options::ZipWorkaroundOptions;
 use encoding_rs::SHIFT_JIS;
+use serde::{Deserialize, Serialize};
 use zip::{CompressionMethod, ZipArchive};
 
 use super::{
@@ -16,7 +17,7 @@ use super::{
     source_signature_for_path,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct ZipEntryRecord {
     pub index: usize,
     pub name: String,
@@ -25,6 +26,12 @@ pub(crate) struct ZipEntryRecord {
 
 #[derive(Clone)]
 struct ZipIndexCacheEntry {
+    signature: SourceSignature,
+    entries: Vec<ZipEntryRecord>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct PersistentZipIndexSnapshot {
     signature: SourceSignature,
     entries: Vec<ZipEntryRecord>,
 }
@@ -98,14 +105,21 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
 }
 
 pub(crate) fn load_zip_entries_unsorted(path: &Path) -> Option<Vec<ZipEntryRecord>> {
+    let signature = archive_signature(path)?;
+    if let Some(entries) = load_persistent_zip_index(path, &signature) {
+        return Some(entries);
+    }
+
     let access = resolve_zip_archive_access(path)?;
-    try_load_zip_entries_from_path(access.path()).or_else(|| {
+    let entries = try_load_zip_entries_from_path(access.path()).or_else(|| {
         if access.path() != path {
             try_load_zip_entries_from_path(path)
         } else {
             None
         }
-    })
+    })?;
+    persist_zip_index(path, &signature, &entries);
+    Some(entries)
 }
 
 pub(crate) fn sort_zip_entries(entries: &mut [ZipEntryRecord]) {
@@ -362,6 +376,46 @@ pub(crate) fn archive_cache_root() -> Option<PathBuf> {
     Some(default_temp_dir()?.join("archive-cache"))
 }
 
+fn zip_index_cache_path(path: &Path) -> Option<PathBuf> {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    path.to_string_lossy().hash(&mut hasher);
+    Some(
+        archive_cache_root()?
+            .join("zip-index")
+            .join(format!("{:016x}.json", hasher.finish())),
+    )
+}
+
+fn load_persistent_zip_index(
+    path: &Path,
+    signature: &SourceSignature,
+) -> Option<Vec<ZipEntryRecord>> {
+    let snapshot_path = zip_index_cache_path(path)?;
+    let text = std::fs::read_to_string(snapshot_path).ok()?;
+    let snapshot = serde_json::from_str::<PersistentZipIndexSnapshot>(&text).ok()?;
+    (snapshot.signature == *signature).then_some(snapshot.entries)
+}
+
+fn persist_zip_index(path: &Path, signature: &SourceSignature, entries: &[ZipEntryRecord]) {
+    let Some(snapshot_path) = zip_index_cache_path(path) else {
+        return;
+    };
+    let Some(parent) = snapshot_path.parent() else {
+        return;
+    };
+    if std::fs::create_dir_all(parent).is_err() {
+        return;
+    }
+    let snapshot = PersistentZipIndexSnapshot {
+        signature: signature.clone(),
+        entries: entries.to_vec(),
+    };
+    let Ok(text) = serde_json::to_string(&snapshot) else {
+        return;
+    };
+    let _ = std::fs::write(snapshot_path, text);
+}
+
 fn clear_zip_caches() {
     if let Ok(mut cache) = zip_index_cache().lock() {
         cache.clear();
@@ -596,8 +650,8 @@ fn decode_zip_name(file: &zip::read::ZipFile<'_>) -> String {
 mod tests {
     use super::{
         ZipArchiveAccess, ZipArchiveProfile, ZipCacheReader, ensure_local_archive_cache,
-        load_zip_entries, resolve_zip_archive_access, set_zip_workaround_options,
-        zip_profile_is_direct_friendly,
+        load_zip_entries, load_zip_entries_unsorted, resolve_zip_archive_access,
+        set_zip_workaround_options, zip_index_cache_path, zip_profile_is_direct_friendly,
     };
     use crate::options::ZipWorkaroundOptions;
     use std::fs::File;
@@ -682,6 +736,21 @@ mod tests {
         assert_eq!(second.len(), 2);
 
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn zip_index_is_persisted_on_disk() {
+        let path = temp_path("zip-persistent-index");
+        write_zip(&path, &["001.png", "002.png"]);
+
+        let entries = load_zip_entries_unsorted(&path).unwrap();
+        assert_eq!(entries.len(), 2);
+
+        let snapshot_path = zip_index_cache_path(&path).unwrap();
+        assert!(snapshot_path.exists());
+
+        let _ = std::fs::remove_file(path);
+        let _ = std::fs::remove_file(snapshot_path);
     }
 
     #[test]

@@ -35,7 +35,10 @@ pub(crate) use cache::{FilesystemCache, SharedFilesystemCache, new_shared_filesy
 pub use cache::{is_browser_container, list_browser_entries, list_openable_entries};
 #[cfg(test)]
 pub(crate) use navigator::{FileNavigator, NavigationOutcome};
-pub use navigator::{adjacent_entry, navigation_branch_path, resolve_navigation_entry_path};
+pub use navigator::{
+    adjacent_entry, adjacent_non_container_entry, navigation_branch_path,
+    resolve_navigation_entry_path,
+};
 pub use path::{
     archive_prefers_low_io, load_virtual_image_bytes, resolve_start_path,
     set_archive_zip_workaround, virtual_image_size,

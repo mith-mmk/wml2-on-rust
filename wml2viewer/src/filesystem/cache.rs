@@ -76,7 +76,8 @@ impl FilesystemCache {
             .map(|cached| cached.signature != current_signature)
             .unwrap_or(true);
         if should_refresh {
-            let listing = scan_directory_listing(dir, self.sort, self.archive_mode);
+            let mut listing = scan_directory_listing(dir, self.sort, self.archive_mode);
+            normalize_directory_listing(&mut listing);
             self.listings_by_dir.insert(
                 dir.to_path_buf(),
                 CachedDirectoryListing {
@@ -85,6 +86,10 @@ impl FilesystemCache {
                 },
             );
             persist_cache(self);
+        } else if let Some(cached) = self.listings_by_dir.get_mut(dir) {
+            if normalize_directory_listing(&mut cached.listing) {
+                persist_cache(self);
+            }
         }
         self.listings_by_dir
             .get(dir)
@@ -186,6 +191,10 @@ impl FilesystemCache {
         self.listing(dir).browser_entries.clone()
     }
 
+    pub(crate) fn raw_files(&mut self, dir: &Path) -> Vec<PathBuf> {
+        self.listing(dir).raw_files.clone()
+    }
+
     pub(crate) fn first_supported_file(&mut self, dir: &Path) -> Option<PathBuf> {
         self.ensure_flat_files_ready(dir);
         self.listing(dir).first_file.clone()
@@ -244,23 +253,29 @@ pub(crate) fn probe_first_supported_path(
     }
     sort_paths(&mut raw_files, sort);
 
-    for candidate in raw_files {
+    for candidate in &raw_files {
         match archive_mode {
             ArchiveBrowseOption::Folder => {
-                if is_listed_file_path(&candidate) || is_zip_file_path(&candidate) {
-                    if let Some(path) = probe_first_supported_path(&candidate, sort, archive_mode) {
-                        return Some(path);
-                    }
-                } else {
-                    return Some(candidate);
+                if !is_listed_file_path(candidate) && !is_zip_file_path(candidate) {
+                    return Some(candidate.clone());
                 }
             }
             ArchiveBrowseOption::Skip => {
-                if !is_listed_file_path(&candidate) && !is_zip_file_path(&candidate) {
-                    return Some(candidate);
+                if !is_listed_file_path(candidate) && !is_zip_file_path(candidate) {
+                    return Some(candidate.clone());
                 }
             }
-            ArchiveBrowseOption::Archiver => return Some(candidate),
+            ArchiveBrowseOption::Archiver => return Some(candidate.clone()),
+        }
+    }
+
+    if archive_mode == ArchiveBrowseOption::Folder {
+        for candidate in &raw_files {
+            if (is_listed_file_path(candidate) || is_zip_file_path(candidate))
+                && let Some(path) = probe_first_supported_path(candidate, sort, archive_mode)
+            {
+                return Some(path);
+            }
         }
     }
 
@@ -399,7 +414,12 @@ fn scan_real_directory_listing(
     sort_paths(&mut raw_files, sort);
     sort_paths(&mut raw_dirs, sort);
     let mut browser_entries = raw_dirs.clone();
-    browser_entries.extend(raw_files.clone());
+    browser_entries.extend(
+        raw_files
+            .iter()
+            .filter(|path| !raw_dirs.contains(path))
+            .cloned(),
+    );
 
     let (files, files_ready) = match archive_mode {
         ArchiveBrowseOption::Folder => (Vec::new(), false),
@@ -503,6 +523,21 @@ fn metadata_signature(path: &Path) -> Option<super::SourceSignature> {
     source_signature_for_path(path)
 }
 
+fn normalize_directory_listing(listing: &mut DirectoryListing) -> bool {
+    let original_len = listing.browser_entries.len();
+    let mut deduped = Vec::with_capacity(original_len);
+    for path in &listing.browser_entries {
+        if !deduped.contains(path) {
+            deduped.push(path.clone());
+        }
+    }
+    if deduped.len() == original_len {
+        return false;
+    }
+    listing.browser_entries = deduped;
+    true
+}
+
 #[derive(Serialize, Deserialize)]
 struct PersistentFilesystemCache {
     sort: NavigationSortOption,
@@ -517,7 +552,10 @@ pub(crate) fn persistent_cache_path() -> Option<PathBuf> {
 
 fn load_persistent_cache() -> Option<FilesystemCache> {
     let text = fs::read_to_string(persistent_cache_path()?).ok()?;
-    let snapshot = serde_json::from_str::<PersistentFilesystemCache>(&text).ok()?;
+    let mut snapshot = serde_json::from_str::<PersistentFilesystemCache>(&text).ok()?;
+    for cached in snapshot.listings_by_dir.values_mut() {
+        normalize_directory_listing(&mut cached.listing);
+    }
     Some(FilesystemCache {
         listings_by_dir: snapshot.listings_by_dir,
         metadata_by_path: snapshot.metadata_by_path,
@@ -660,5 +698,70 @@ mod tests {
         assert_eq!(first, Some(zip_virtual_child_path(&zip_path, 0, "002.png")));
 
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn folder_browser_listing_does_not_duplicate_archives() {
+        let dir = make_temp_dir();
+        let archive = dir.join("pages.zip");
+        let image = dir.join("cover.png");
+
+        make_zip_with_entries(&archive, &["001.png"]);
+        fs::write(&image, []).unwrap();
+
+        let listing = scan_real_directory_listing(
+            &dir,
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+        );
+
+        assert_eq!(
+            listing
+                .browser_entries
+                .iter()
+                .filter(|path| *path == &archive)
+                .count(),
+            1
+        );
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn probe_first_supported_path_prefers_direct_images_before_archives() {
+        let dir = make_temp_dir();
+        let archive = dir.join("000_pages.zip");
+        let image = dir.join("zzz_cover.png");
+
+        fs::write(&archive, b"not-a-real-zip").unwrap();
+        fs::write(&image, []).unwrap();
+
+        let first = probe_first_supported_path(
+            &dir,
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+        );
+
+        assert_eq!(first, Some(image));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn normalize_directory_listing_deduplicates_browser_entries() {
+        let archive = PathBuf::from("pages.zip");
+        let image = PathBuf::from("cover.png");
+        let mut listing = DirectoryListing {
+            raw_files: vec![archive.clone(), image],
+            files: Vec::new(),
+            files_ready: false,
+            dirs: vec![archive.clone()],
+            browser_entries: vec![archive.clone(), archive, PathBuf::from("cover.png")],
+            first_file: None,
+            last_file: None,
+        };
+
+        assert!(normalize_directory_listing(&mut listing));
+        assert_eq!(listing.browser_entries.len(), 2);
     }
 }

@@ -261,6 +261,36 @@ pub fn adjacent_entry(
     result
 }
 
+pub fn adjacent_non_container_entry(
+    path: &Path,
+    sort: NavigationSortOption,
+    archive_mode: ArchiveBrowseOption,
+    step: isize,
+) -> Option<PathBuf> {
+    if archive_mode != ArchiveBrowseOption::Folder || step == 0 {
+        return None;
+    }
+    if path.is_dir()
+        || is_zip_file_path(path)
+        || is_listed_file_path(path)
+        || is_virtual_zip_child(path)
+        || is_virtual_listed_child(path)
+    {
+        return None;
+    }
+
+    let parent = path.parent()?;
+    let mut cache = FilesystemCache::new(sort, archive_mode);
+    let raw_files = cache.raw_files(parent);
+    let current_index = raw_files.iter().position(|candidate| candidate == path)?;
+    let target_index = current_index.checked_add_signed(step)?;
+    let candidate = raw_files.get(target_index)?;
+    if is_zip_file_path(candidate) || is_listed_file_path(candidate) {
+        return None;
+    }
+    Some(candidate.clone())
+}
+
 pub fn navigation_branch_path(path: &Path) -> Option<PathBuf> {
     recursive_branch_dir(path)
 }
@@ -444,6 +474,30 @@ fn last_path_in_subtree(cache: &mut FilesystemCache, dir: &Path) -> Option<PathB
 mod tests {
     use super::*;
     use crate::options::{ArchiveBrowseOption, NavigationSortOption};
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+    use zip::write::SimpleFileOptions;
+
+    fn make_temp_dir() -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("wml2viewer_navigator_{unique}"));
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn make_zip_with_entries(path: &Path, names: &[&str]) {
+        let file = fs::File::create(path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        for name in names {
+            zip.start_file(name, SimpleFileOptions::default()).unwrap();
+            use std::io::Write;
+            zip.write_all(b"not-a-real-image").unwrap();
+        }
+        zip.finish().unwrap();
+    }
 
     #[test]
     fn navigator_from_current_path_does_not_eagerly_expand_file_list() {
@@ -456,5 +510,69 @@ mod tests {
         assert_eq!(navigator.current_path, path);
         assert!(navigator.files.is_none());
         assert_eq!(navigator.current, 0);
+    }
+
+    #[test]
+    fn adjacent_non_container_entry_skips_archive_expansion() {
+        let dir = make_temp_dir();
+        let first = dir.join("001.png");
+        let archive = dir.join("002.zip");
+        let last = dir.join("003.png");
+
+        fs::write(&first, []).unwrap();
+        make_zip_with_entries(&archive, &["001.png"]);
+        fs::write(&last, []).unwrap();
+
+        assert_eq!(
+            adjacent_non_container_entry(
+                &first,
+                NavigationSortOption::OsName,
+                ArchiveBrowseOption::Folder,
+                1,
+            ),
+            None
+        );
+        assert_eq!(
+            adjacent_non_container_entry(
+                &last,
+                NavigationSortOption::OsName,
+                ArchiveBrowseOption::Folder,
+                -1,
+            ),
+            None
+        );
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn adjacent_non_container_entry_returns_regular_neighbor() {
+        let dir = make_temp_dir();
+        let first = dir.join("001.png");
+        let second = dir.join("002.png");
+
+        fs::write(&first, []).unwrap();
+        fs::write(&second, []).unwrap();
+
+        assert_eq!(
+            adjacent_non_container_entry(
+                &first,
+                NavigationSortOption::OsName,
+                ArchiveBrowseOption::Folder,
+                1,
+            ),
+            Some(second.clone())
+        );
+        assert_eq!(
+            adjacent_non_container_entry(
+                &second,
+                NavigationSortOption::OsName,
+                ArchiveBrowseOption::Folder,
+                -1,
+            ),
+            Some(first.clone())
+        );
+
+        let _ = fs::remove_dir_all(dir);
     }
 }

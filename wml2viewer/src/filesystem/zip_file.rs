@@ -28,15 +28,17 @@ pub(crate) struct ZipEntryRecord {
 struct ZipIndexCacheEntry {
     signature: SourceSignature,
     entries: Vec<ZipEntryRecord>,
+    profile: Option<ZipArchiveProfile>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 struct PersistentZipIndexSnapshot {
     signature: SourceSignature,
     entries: Vec<ZipEntryRecord>,
+    profile: Option<ZipArchiveProfile>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 struct ZipArchiveProfile {
     sampled_supported_entries: usize,
     stored_entries: usize,
@@ -86,11 +88,14 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
     let cache = zip_index_cache();
     if let Some(entry) = cache.lock().ok()?.get(path).cloned() {
         if entry.signature == signature {
+            if let Some(profile) = entry.profile {
+                cache_zip_profile(path, signature.clone(), profile);
+            }
             return Some(entry.entries);
         }
     }
 
-    let mut entries = load_zip_entries_unsorted(path)?;
+    let (mut entries, profile) = load_zip_entries_unsorted_with_profile(path)?;
     sort_zip_entries(&mut entries);
     if let Ok(mut cache) = cache.lock() {
         cache.insert(
@@ -98,6 +103,7 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
             ZipIndexCacheEntry {
                 signature,
                 entries: entries.clone(),
+                profile,
             },
         );
     }
@@ -105,21 +111,33 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
 }
 
 pub(crate) fn load_zip_entries_unsorted(path: &Path) -> Option<Vec<ZipEntryRecord>> {
+    load_zip_entries_unsorted_with_profile(path).map(|(entries, _)| entries)
+}
+
+fn load_zip_entries_unsorted_with_profile(
+    path: &Path,
+) -> Option<(Vec<ZipEntryRecord>, Option<ZipArchiveProfile>)> {
     let signature = archive_signature(path)?;
-    if let Some(entries) = load_persistent_zip_index(path, &signature) {
-        return Some(entries);
+    if let Some(snapshot) = load_persistent_zip_index(path, &signature) {
+        if let Some(profile) = snapshot.profile.clone() {
+            cache_zip_profile(path, signature, profile);
+        }
+        return Some((snapshot.entries, snapshot.profile));
     }
 
     let access = resolve_zip_archive_access(path)?;
-    let entries = try_load_zip_entries_from_path(access.path()).or_else(|| {
+    let (entries, profile) = try_load_zip_entries_from_path(access.path()).or_else(|| {
         if access.path() != path {
             try_load_zip_entries_from_path(path)
         } else {
             None
         }
     })?;
-    persist_zip_index(path, &signature, &entries);
-    Some(entries)
+    if let Some(profile) = profile.clone() {
+        cache_zip_profile(path, signature.clone(), profile);
+    }
+    persist_zip_index(path, &signature, &entries, profile.clone());
+    Some((entries, profile))
 }
 
 pub(crate) fn sort_zip_entries(entries: &mut [ZipEntryRecord]) {
@@ -254,16 +272,22 @@ impl ZipArchiveAccess {
     }
 }
 
-fn try_load_zip_entries_from_path(path: &Path) -> Option<Vec<ZipEntryRecord>> {
+fn try_load_zip_entries_from_path(
+    path: &Path,
+) -> Option<(Vec<ZipEntryRecord>, Option<ZipArchiveProfile>)> {
     if let Ok(mut archive) = open_zip_archive(path) {
-        return Some(collect_zip_entries(&mut archive));
+        return Some(collect_zip_entries_and_profile(&mut archive));
     }
     let mut archive = open_plain_zip_archive(path).ok()?;
-    Some(collect_zip_entries(&mut archive))
+    Some(collect_zip_entries_and_profile(&mut archive))
 }
 
-fn collect_zip_entries<R: Read + Seek>(archive: &mut ZipArchive<R>) -> Vec<ZipEntryRecord> {
+fn collect_zip_entries_and_profile<R: Read + Seek>(
+    archive: &mut ZipArchive<R>,
+) -> (Vec<ZipEntryRecord>, Option<ZipArchiveProfile>) {
     let mut entries = Vec::new();
+    let mut profile = ZipArchiveProfile::default();
+    const SAMPLE_LIMIT: usize = 8;
     for index in 0..archive.len() {
         let Ok(file) = archive.by_index(index) else {
             continue;
@@ -279,13 +303,25 @@ fn collect_zip_entries<R: Read + Seek>(archive: &mut ZipArchive<R>) -> Vec<ZipEn
             continue;
         }
 
+        if profile.sampled_supported_entries < SAMPLE_LIMIT {
+            profile.sampled_supported_entries += 1;
+            if file.compression() == CompressionMethod::Stored {
+                profile.stored_entries += 1;
+            }
+            profile.compressed_bytes = profile
+                .compressed_bytes
+                .saturating_add(file.compressed_size());
+            profile.uncompressed_bytes = profile.uncompressed_bytes.saturating_add(file.size());
+        }
+
         entries.push(ZipEntryRecord {
             index,
             name: normalized,
             size: file.size(),
         });
     }
-    entries
+    let profile = (profile.sampled_supported_entries > 0).then_some(profile);
+    (entries, profile)
 }
 
 fn read_zip_entry_to_end<R: Read>(entry: &mut R) -> Option<Vec<u8>> {
@@ -389,14 +425,19 @@ fn zip_index_cache_path(path: &Path) -> Option<PathBuf> {
 fn load_persistent_zip_index(
     path: &Path,
     signature: &SourceSignature,
-) -> Option<Vec<ZipEntryRecord>> {
+) -> Option<PersistentZipIndexSnapshot> {
     let snapshot_path = zip_index_cache_path(path)?;
     let text = std::fs::read_to_string(snapshot_path).ok()?;
     let snapshot = serde_json::from_str::<PersistentZipIndexSnapshot>(&text).ok()?;
-    (snapshot.signature == *signature).then_some(snapshot.entries)
+    (snapshot.signature == *signature).then_some(snapshot)
 }
 
-fn persist_zip_index(path: &Path, signature: &SourceSignature, entries: &[ZipEntryRecord]) {
+fn persist_zip_index(
+    path: &Path,
+    signature: &SourceSignature,
+    entries: &[ZipEntryRecord],
+    profile: Option<ZipArchiveProfile>,
+) {
     let Some(snapshot_path) = zip_index_cache_path(path) else {
         return;
     };
@@ -409,6 +450,7 @@ fn persist_zip_index(path: &Path, signature: &SourceSignature, entries: &[ZipEnt
     let snapshot = PersistentZipIndexSnapshot {
         signature: signature.clone(),
         entries: entries.to_vec(),
+        profile,
     };
     let Ok(text) = serde_json::to_string(&snapshot) else {
         return;
@@ -425,6 +467,15 @@ fn clear_zip_caches() {
     }
     if let Ok(mut cache) = local_archive_cache().lock() {
         cache.clear();
+    }
+}
+
+fn cache_zip_profile(path: &Path, signature: SourceSignature, profile: ZipArchiveProfile) {
+    if let Ok(mut cache) = zip_profile_cache().lock() {
+        cache.insert(
+            path.to_path_buf(),
+            ZipProfileCacheEntry { signature, profile },
+        );
     }
 }
 
@@ -477,16 +528,15 @@ fn zip_profile_prefers_direct(path: &Path, metadata: &std::fs::Metadata) -> bool
         }
     }
 
-    let profile = probe_zip_archive_profile(path).unwrap_or_default();
-    if let Ok(mut cache) = cache.lock() {
-        cache.insert(
-            path.to_path_buf(),
-            ZipProfileCacheEntry {
-                signature,
-                profile: profile.clone(),
-            },
-        );
+    if let Some(snapshot) = load_persistent_zip_index(path, &signature)
+        && let Some(profile) = snapshot.profile
+    {
+        cache_zip_profile(path, signature, profile.clone());
+        return zip_profile_is_direct_friendly(&profile);
     }
+
+    let profile = probe_zip_archive_profile(path).unwrap_or_default();
+    cache_zip_profile(path, signature, profile.clone());
     zip_profile_is_direct_friendly(&profile)
 }
 
@@ -649,8 +699,9 @@ fn decode_zip_name(file: &zip::read::ZipFile<'_>) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        ZipArchiveAccess, ZipArchiveProfile, ZipCacheReader, ensure_local_archive_cache,
-        load_zip_entries, load_zip_entries_unsorted, resolve_zip_archive_access,
+        PersistentZipIndexSnapshot, ZipArchiveAccess, ZipArchiveProfile, ZipCacheReader,
+        ensure_local_archive_cache, load_zip_entries, load_zip_entries_unsorted,
+        resolve_zip_archive_access,
         set_zip_workaround_options, zip_index_cache_path, zip_profile_is_direct_friendly,
     };
     use crate::options::ZipWorkaroundOptions;
@@ -748,6 +799,9 @@ mod tests {
 
         let snapshot_path = zip_index_cache_path(&path).unwrap();
         assert!(snapshot_path.exists());
+        let snapshot = std::fs::read_to_string(&snapshot_path).unwrap();
+        let snapshot = serde_json::from_str::<PersistentZipIndexSnapshot>(&snapshot).unwrap();
+        assert!(snapshot.profile.is_some());
 
         let _ = std::fs::remove_file(path);
         let _ = std::fs::remove_file(snapshot_path);

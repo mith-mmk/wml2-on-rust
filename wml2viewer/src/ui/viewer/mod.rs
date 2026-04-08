@@ -5,10 +5,10 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
     FilesystemCommand, FilesystemResult, SharedBrowserWorkerState, SharedFilesystemCache,
-    adjacent_entry, archive_prefers_low_io, browser_directory_for_path, is_browser_container,
-    navigation_branch_path, new_shared_browser_worker_state, new_shared_filesystem_cache,
-    resolve_navigation_entry_path, set_archive_zip_workaround, spawn_browser_query_worker,
-    spawn_filesystem_worker,
+    adjacent_entry, adjacent_non_container_entry, archive_prefers_low_io,
+    browser_directory_for_path, is_browser_container, navigation_branch_path,
+    new_shared_browser_worker_state, new_shared_filesystem_cache, resolve_navigation_entry_path,
+    set_archive_zip_workaround, spawn_browser_query_worker, spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, PluginConfig, ResourceOptions,
@@ -281,11 +281,27 @@ fn preloaded_navigation_matches(
     preloaded_navigation_path == Some(requested_navigation_path)
 }
 
+#[cfg(test)]
 fn same_navigation_branch(
     current_path: &std::path::Path,
     candidate_path: &std::path::Path,
 ) -> bool {
     navigation_branch_path(current_path) == navigation_branch_path(candidate_path)
+}
+
+fn adjacent_regular_navigation_target(
+    current_path: &std::path::Path,
+    navigation_sort: NavigationSortOption,
+    archive_mode: crate::options::ArchiveBrowseOption,
+    manga_spread_active: bool,
+    forward: bool,
+) -> Option<PathBuf> {
+    let step = if forward { 1 } else { -1 };
+    let boundary = adjacent_non_container_entry(current_path, navigation_sort, archive_mode, step)?;
+    if !manga_spread_active {
+        return Some(boundary);
+    }
+    adjacent_non_container_entry(&boundary, navigation_sort, archive_mode, step).or(Some(boundary))
 }
 
 pub(crate) fn join_search_paths(paths: &[PathBuf]) -> String {
@@ -1341,7 +1357,7 @@ impl ViewerApp {
         {
             return None;
         }
-        let companion = adjacent_entry(
+        let companion = adjacent_non_container_entry(
             &self.current_navigation_path,
             self.navigation_sort,
             self.filer.archive_mode,
@@ -1459,19 +1475,18 @@ impl ViewerApp {
         if !self.can_trigger_navigation() {
             return Ok(());
         }
-        if let Some(target) = self.manga_navigation_target(true) {
+        if let Some(target) = adjacent_regular_navigation_target(
+            &self.current_navigation_path,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            self.manga_spread_active(),
+            true,
+        ) {
             self.request_load_path(target)?;
             self.last_navigation_at = Some(Instant::now());
             return Ok(());
         }
-        if let Some(target) = adjacent_entry(
-            &self.current_navigation_path,
-            self.navigation_sort,
-            self.filer.archive_mode,
-            1,
-        )
-        .filter(|target| same_navigation_branch(&self.current_navigation_path, target))
-        {
+        if let Some(target) = self.manga_navigation_target(true) {
             self.request_load_path(target)?;
             self.last_navigation_at = Some(Instant::now());
             return Ok(());
@@ -1489,19 +1504,18 @@ impl ViewerApp {
         if !self.can_trigger_navigation() {
             return Ok(());
         }
-        if let Some(target) = self.manga_navigation_target(false) {
+        if let Some(target) = adjacent_regular_navigation_target(
+            &self.current_navigation_path,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            self.manga_spread_active(),
+            false,
+        ) {
             self.request_load_path(target)?;
             self.last_navigation_at = Some(Instant::now());
             return Ok(());
         }
-        if let Some(target) = adjacent_entry(
-            &self.current_navigation_path,
-            self.navigation_sort,
-            self.filer.archive_mode,
-            -1,
-        )
-        .filter(|target| same_navigation_branch(&self.current_navigation_path, target))
-        {
+        if let Some(target) = self.manga_navigation_target(false) {
             self.request_load_path(target)?;
             self.last_navigation_at = Some(Instant::now());
             return Ok(());
@@ -1875,12 +1889,12 @@ impl ViewerApp {
     }
 
     fn next_preload_candidate(&self) -> Option<PathBuf> {
-        let step = if self.manga_spread_active() { 2 } else { 1 };
-        adjacent_entry(
+        adjacent_regular_navigation_target(
             &self.current_navigation_path,
             self.navigation_sort,
             self.filer.archive_mode,
-            step,
+            self.manga_spread_active(),
+            true,
         )
     }
 

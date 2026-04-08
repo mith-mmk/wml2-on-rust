@@ -291,6 +291,28 @@ pub fn adjacent_non_container_entry(
     Some(candidate.clone())
 }
 
+pub fn adjacent_entry_in_current_branch(
+    path: &Path,
+    sort: NavigationSortOption,
+    archive_mode: ArchiveBrowseOption,
+    step: isize,
+) -> Option<PathBuf> {
+    if step == 0 {
+        return Some(path.to_path_buf());
+    }
+
+    let mut cache = FilesystemCache::new(sort, archive_mode);
+    let current_path = resolve_navigation_path(path, &mut cache)?;
+    let branch_root =
+        zip_virtual_root(&current_path).or_else(|| listed_virtual_root(&current_path))?;
+    let entries = cache.supported_entries(&branch_root);
+    let current_index = entries
+        .iter()
+        .position(|candidate| candidate == &current_path)?;
+    let target_index = current_index.checked_add_signed(step)?;
+    entries.get(target_index).cloned()
+}
+
 pub fn navigation_branch_path(path: &Path) -> Option<PathBuf> {
     recursive_branch_dir(path)
 }
@@ -473,6 +495,7 @@ fn last_path_in_subtree(cache: &mut FilesystemCache, dir: &Path) -> Option<PathB
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::filesystem::build_zip_virtual_children;
     use crate::options::{ArchiveBrowseOption, NavigationSortOption};
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -571,6 +594,35 @@ mod tests {
                 -1,
             ),
             Some(first.clone())
+        );
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn adjacent_entry_in_current_branch_stays_inside_zip() {
+        let dir = make_temp_dir();
+        let archive = dir.join("pages.zip");
+        make_zip_with_entries(&archive, &["001.png", "002.png"]);
+        let children = build_zip_virtual_children(&archive);
+
+        assert_eq!(
+            adjacent_entry_in_current_branch(
+                &children[0],
+                NavigationSortOption::OsName,
+                ArchiveBrowseOption::Folder,
+                1,
+            ),
+            Some(children[1].clone())
+        );
+        assert_eq!(
+            adjacent_entry_in_current_branch(
+                &children[1],
+                NavigationSortOption::OsName,
+                ArchiveBrowseOption::Folder,
+                -1,
+            ),
+            Some(children[0].clone())
         );
 
         let _ = fs::remove_dir_all(dir);

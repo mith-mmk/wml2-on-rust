@@ -701,8 +701,8 @@ mod tests {
     use super::{
         PersistentZipIndexSnapshot, ZipArchiveAccess, ZipArchiveProfile, ZipCacheReader,
         ensure_local_archive_cache, load_zip_entries, load_zip_entries_unsorted,
-        resolve_zip_archive_access,
-        set_zip_workaround_options, zip_index_cache_path, zip_profile_is_direct_friendly,
+        resolve_zip_archive_access, set_zip_workaround_options, zip_index_cache_path,
+        zip_profile_is_direct_friendly,
     };
     use crate::options::ZipWorkaroundOptions;
     use std::fs::File;

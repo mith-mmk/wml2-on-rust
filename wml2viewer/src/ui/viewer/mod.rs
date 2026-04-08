@@ -5,7 +5,7 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
     FilesystemCommand, FilesystemResult, SharedBrowserWorkerState, SharedFilesystemCache,
-    adjacent_entry, adjacent_non_container_entry, archive_prefers_low_io,
+    adjacent_entry_in_current_branch, adjacent_non_container_entry, archive_prefers_low_io,
     browser_directory_for_path, is_browser_container, navigation_branch_path,
     new_shared_browser_worker_state, new_shared_filesystem_cache, resolve_navigation_entry_path,
     set_archive_zip_workaround, spawn_browser_query_worker, spawn_filesystem_worker,
@@ -105,6 +105,7 @@ pub(crate) struct ViewerApp {
     pub(crate) thumbnail_pending: HashMap<PathBuf, u32>,
     pub(crate) thumbnail_cache: HashMap<PathBuf, CachedThumbnail>,
     pub(crate) pending_filer_scroll_to: Option<PathBuf>,
+    pub(crate) filer_needs_sync: bool,
     pub(crate) navigator_ready: bool,
     pub(crate) overlay: ViewerOverlayState,
     pub(crate) last_navigation_at: Option<Instant>,
@@ -297,11 +298,36 @@ fn adjacent_regular_navigation_target(
     forward: bool,
 ) -> Option<PathBuf> {
     let step = if forward { 1 } else { -1 };
-    let boundary = adjacent_non_container_entry(current_path, navigation_sort, archive_mode, step)?;
+    let boundary =
+        adjacent_same_branch_navigation_target(current_path, navigation_sort, archive_mode, step)?;
     if !manga_spread_active {
         return Some(boundary);
     }
-    adjacent_non_container_entry(&boundary, navigation_sort, archive_mode, step).or(Some(boundary))
+    adjacent_same_branch_navigation_target(&boundary, navigation_sort, archive_mode, step)
+        .or(Some(boundary))
+}
+
+fn adjacent_same_branch_navigation_target(
+    current_path: &std::path::Path,
+    navigation_sort: NavigationSortOption,
+    archive_mode: crate::options::ArchiveBrowseOption,
+    step: isize,
+) -> Option<PathBuf> {
+    let branch = navigation_branch_path(current_path)?;
+    if !branch.is_dir() && is_browser_container(&branch) {
+        return adjacent_entry_in_current_branch(current_path, navigation_sort, archive_mode, step)
+            .filter(|candidate| navigation_branch_path(candidate) == Some(branch.clone()));
+    }
+    adjacent_non_container_entry(current_path, navigation_sort, archive_mode, step)
+}
+
+fn should_defer_filer_sync_for_navigation(
+    navigation_path: &std::path::Path,
+    current_load_path: Option<&std::path::Path>,
+) -> bool {
+    browser_directory_for_path(navigation_path, current_load_path)
+        .filter(|dir| !dir.is_dir() && is_browser_container(dir))
+        .is_some()
 }
 
 pub(crate) fn join_search_paths(paths: &[PathBuf]) -> String {
@@ -441,6 +467,7 @@ impl ViewerApp {
             thumbnail_pending: HashMap::new(),
             thumbnail_cache: HashMap::new(),
             pending_filer_scroll_to: None,
+            filer_needs_sync: true,
             navigator_ready: false,
             overlay: ViewerOverlayState::default(),
             last_navigation_at: None,
@@ -1032,6 +1059,7 @@ impl ViewerApp {
             return;
         };
         let request_id = self.alloc_filer_request_id();
+        self.filer_needs_sync = false;
         self.filer.snapshot.begin_request(request_id);
         self.pending_filer_scroll_to = selected.clone();
         let _ = filer_tx.send(FilesystemCommand::OpenBrowserDirectory {
@@ -1058,6 +1086,14 @@ impl ViewerApp {
             self.request_filer_directory(dir, selected);
         } else if self.filer.snapshot.selected != previous_selected {
             self.pending_filer_scroll_to = self.filer.snapshot.selected.clone();
+        }
+    }
+
+    pub(crate) fn maybe_sync_visible_filer_with_current_path(&mut self) {
+        if self.show_filer || self.show_subfiler {
+            self.sync_filer_directory_with_current_path();
+        } else {
+            self.filer_needs_sync = true;
         }
     }
 
@@ -1357,15 +1393,13 @@ impl ViewerApp {
         {
             return None;
         }
-        let companion = adjacent_non_container_entry(
+        let companion = adjacent_same_branch_navigation_target(
             &self.current_navigation_path,
             self.navigation_sort,
             self.filer.archive_mode,
             1,
         )?;
-        let current_branch = navigation_branch_path(&self.current_navigation_path);
-        let companion_branch = navigation_branch_path(&companion);
-        (current_branch == companion_branch).then_some(companion)
+        Some(companion)
     }
 
     fn clear_manga_companion(&mut self) {
@@ -1449,25 +1483,20 @@ impl ViewerApp {
             return None;
         }
 
-        let boundary_target = adjacent_entry(
-            &self.current_navigation_path,
-            self.navigation_sort,
-            self.filer.archive_mode,
-            if forward { 1 } else { -1 },
-        )?;
-        let current_branch = navigation_branch_path(&self.current_navigation_path);
-        let boundary_branch = navigation_branch_path(&boundary_target);
-        if current_branch != boundary_branch {
-            return Some(boundary_target);
-        }
-
-        let step = if forward { 2 } else { -2 };
-        adjacent_entry(
+        let step = if forward { 1 } else { -1 };
+        let boundary_target = adjacent_same_branch_navigation_target(
             &self.current_navigation_path,
             self.navigation_sort,
             self.filer.archive_mode,
             step,
+        )?;
+        adjacent_same_branch_navigation_target(
+            &boundary_target,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            step,
         )
+        .or(Some(boundary_target))
     }
 
     pub(crate) fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
@@ -1586,7 +1615,11 @@ impl ViewerApp {
         let request_id = self.alloc_request_id();
         self.active_request = Some(ActiveRenderRequest::Load(request_id));
         self.pending_navigation_path = Some(navigation_path.clone());
-        self.sync_filer_directory_with_current_path();
+        if !should_defer_filer_sync_for_navigation(&navigation_path, Some(&load_request_path)) {
+            self.maybe_sync_visible_filer_with_current_path();
+        } else {
+            self.filer_needs_sync = true;
+        }
         self.pending_fit_recalc = !matches!(self.render_options.zoom_option, ZoomOption::None);
         self.overlay
             .set_loading_message(format!("Loading {}", navigation_path.display()));
@@ -1844,7 +1877,7 @@ impl ViewerApp {
                     path: self.current_navigation_path.clone(),
                 });
             }
-            self.sync_filer_directory_with_current_path();
+            self.maybe_sync_visible_filer_with_current_path();
         }
         self.source = source;
         self.rendered = rendered;
@@ -2712,8 +2745,37 @@ fn filesystem_send_error(err: mpsc::SendError<FilesystemCommand>) -> Box<dyn Err
 
 #[cfg(test)]
 mod tests {
-    use super::{preloaded_navigation_matches, same_navigation_branch};
+    use super::{
+        adjacent_same_branch_navigation_target, preloaded_navigation_matches,
+        same_navigation_branch, should_defer_filer_sync_for_navigation,
+    };
+    use crate::filesystem::build_zip_virtual_children;
+    use crate::options::{ArchiveBrowseOption, NavigationSortOption};
+    use std::fs;
     use std::path::Path;
+    use std::time::{SystemTime, UNIX_EPOCH};
+    use zip::write::SimpleFileOptions;
+
+    fn make_temp_dir() -> std::path::PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("wml2viewer_viewer_{unique}"));
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn make_zip_with_entries(path: &Path, names: &[&str]) {
+        let file = fs::File::create(path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        for name in names {
+            zip.start_file(name, SimpleFileOptions::default()).unwrap();
+            use std::io::Write;
+            zip.write_all(b"data").unwrap();
+        }
+        zip.finish().unwrap();
+    }
 
     #[test]
     fn preloaded_navigation_match_requires_same_path() {
@@ -2737,5 +2799,36 @@ mod tests {
             Path::new(r"F:\dir\001.png"),
             Path::new(r"F:\other\002.png")
         ));
+    }
+
+    #[test]
+    fn filer_sync_is_deferred_for_archive_virtual_navigation() {
+        assert!(should_defer_filer_sync_for_navigation(
+            Path::new(r"F:\archive.zip\__zipv__\00000000__001.png"),
+            Some(Path::new(r"F:\archive.zip"))
+        ));
+        assert!(!should_defer_filer_sync_for_navigation(
+            Path::new(r"F:\dir\001.png"),
+            Some(Path::new(r"F:\dir\001.png"))
+        ));
+    }
+
+    #[test]
+    fn adjacent_same_branch_navigation_target_works_inside_zip() {
+        let dir = make_temp_dir();
+        let archive = dir.join("pages.zip");
+        make_zip_with_entries(&archive, &["001.png", "002.png"]);
+        let children = build_zip_virtual_children(&archive);
+
+        let next = adjacent_same_branch_navigation_target(
+            &children[0],
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+            1,
+        );
+
+        assert_eq!(next, Some(children[1].clone()));
+
+        let _ = fs::remove_dir_all(dir);
     }
 }

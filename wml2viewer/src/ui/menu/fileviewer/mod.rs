@@ -75,6 +75,9 @@ impl ViewerApp {
         if !self.show_filer {
             return;
         }
+        if self.filer_needs_sync || self.filer.snapshot.directory.is_none() {
+            self.maybe_sync_visible_filer_with_current_path();
+        }
 
         let content = ctx.content_rect();
         let max_width = if content.width() >= content.height() * 1.5 {
@@ -564,6 +567,9 @@ impl ViewerApp {
     pub(crate) fn subfiler_ui(&mut self, ctx: &egui::Context) {
         if !self.show_subfiler {
             return;
+        }
+        if self.filer_needs_sync || self.filer.snapshot.directory.is_none() {
+            self.maybe_sync_visible_filer_with_current_path();
         }
         let Some(current_dir) = self.current_directory() else {
             return;

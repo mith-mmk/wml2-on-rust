@@ -614,7 +614,8 @@ impl ViewerApp {
     <li><code>wml2viewer [path]</code></li>
     <li><code>wml2viewer --config &lt;path&gt; [path]</code></li>
     <li><code>wml2viewer --config=&lt;path&gt; [path]</code></li>
-    <li><code>wml2viewer --clean system</code> (planned)</li>
+    <li><code>wml2viewer --clean system</code></li>
+    <li><code>wml2viewer --clean cache</code></li>
   </ul>
 </body>
 </html>"#
@@ -1676,6 +1677,11 @@ impl ViewerApp {
         let Some(fs_tx) = self.fs_tx.clone() else {
             return Ok(());
         };
+        if let Some(active_request_id) = self.active_fs_input_request_id.take() {
+            let _ = fs_tx.send(FilesystemCommand::CancelSourceInput {
+                request_id: active_request_id,
+            });
+        }
         let request_id = self.alloc_fs_request_id();
         self.active_fs_input_request_id = Some(request_id);
         self.overlay
@@ -1728,6 +1734,9 @@ impl ViewerApp {
             },
             FilesystemCommand::ResolveSourceInput { input, .. } => {
                 FilesystemCommand::ResolveSourceInput { request_id, input }
+            }
+            FilesystemCommand::CancelSourceInput { .. } => {
+                FilesystemCommand::CancelSourceInput { request_id }
             }
         };
         self.overlay.set_loading_message("Scanning folder...");
@@ -2261,6 +2270,13 @@ impl ViewerApp {
                         self.active_fs_input_request_id = None;
                         self.overlay
                             .set_loading_message(format!("Failed to open {}", input.display()));
+                    }
+                }
+                Ok(FilesystemResult::InputPathCancelled { request_id, input }) => {
+                    if self.active_fs_input_request_id == Some(request_id) {
+                        self.active_fs_input_request_id = None;
+                        self.overlay
+                            .set_loading_message(format!("Cancelled opening {}", input.display()));
                     }
                 }
                 Ok(FilesystemResult::BrowserReset { .. })

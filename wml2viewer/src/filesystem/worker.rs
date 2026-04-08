@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 
@@ -9,7 +11,7 @@ use super::navigator::{
     FileNavigator, NavigationOutcome, NavigationTarget, PendingDirection, resolve_navigation_path,
 };
 use super::protocol::{FilesystemCommand, FilesystemResult};
-use super::resolve_source_input_path;
+use super::source::{SourceInputResolution, resolve_source_input_path_with_cancel};
 
 pub(crate) fn spawn_filesystem_worker(
     sort: NavigationSortOption,
@@ -19,11 +21,43 @@ pub(crate) fn spawn_filesystem_worker(
 ) -> (Sender<FilesystemCommand>, Receiver<FilesystemResult>) {
     let (command_tx, command_rx) = mpsc::channel::<FilesystemCommand>();
     let (result_tx, result_rx) = mpsc::channel::<FilesystemResult>();
+    let latest_source_input_request_id = Arc::new(AtomicU64::new(0));
 
     thread::spawn(move || {
         let mut navigator: Option<FileNavigator> = None;
+        let mut active_source_input: Option<(u64, std::path::PathBuf, Arc<AtomicBool>)> = None;
 
         while let Ok(command) = command_rx.recv() {
+            if let FilesystemCommand::ResolveSourceInput { request_id, input } = command {
+                latest_source_input_request_id.store(request_id, Ordering::Release);
+                if let Some((_, _, cancel)) = active_source_input.take() {
+                    cancel.store(true, Ordering::Release);
+                }
+                let cancel = Arc::new(AtomicBool::new(false));
+                active_source_input = Some((request_id, input.clone(), Arc::clone(&cancel)));
+                spawn_source_input_resolver(
+                    result_tx.clone(),
+                    Arc::clone(&latest_source_input_request_id),
+                    request_id,
+                    input,
+                    cancel,
+                );
+                continue;
+            }
+            if let FilesystemCommand::CancelSourceInput { request_id } = command {
+                if let Some((active_request_id, input, cancel)) = active_source_input.as_ref() {
+                    if *active_request_id == request_id {
+                        latest_source_input_request_id.store(0, Ordering::Release);
+                        cancel.store(true, Ordering::Release);
+                        let _ = result_tx.send(FilesystemResult::InputPathCancelled {
+                            request_id,
+                            input: input.clone(),
+                        });
+                    }
+                }
+                continue;
+            }
+
             let Ok(mut cache) = shared_cache.lock() else {
                 break;
             };
@@ -123,14 +157,9 @@ pub(crate) fn spawn_filesystem_worker(
                         navigation_outcome_to_target(outcome),
                     );
                 }
-                FilesystemCommand::ResolveSourceInput { request_id, input } => {
-                    let result = match resolve_source_input_path(&input) {
-                        Some(path) => FilesystemResult::InputPathResolved { request_id, path },
-                        None => FilesystemResult::InputPathFailed { request_id, input },
-                    };
-                    let _ = result_tx.send(result);
-                }
                 FilesystemCommand::OpenBrowserDirectory { .. } => {}
+                FilesystemCommand::ResolveSourceInput { .. }
+                | FilesystemCommand::CancelSourceInput { .. } => {}
             }
         }
     });
@@ -179,11 +208,40 @@ fn navigation_outcome_to_target(outcome: NavigationOutcome) -> Option<Navigation
     }
 }
 
+fn spawn_source_input_resolver(
+    result_tx: Sender<FilesystemResult>,
+    latest_request_id: Arc<AtomicU64>,
+    request_id: u64,
+    input: std::path::PathBuf,
+    cancel: Arc<AtomicBool>,
+) {
+    thread::spawn(move || {
+        let result = match resolve_source_input_path_with_cancel(&input, Some(&cancel)) {
+            SourceInputResolution::Resolved(path) => {
+                FilesystemResult::InputPathResolved { request_id, path }
+            }
+            SourceInputResolution::Cancelled => {
+                FilesystemResult::InputPathCancelled { request_id, input }
+            }
+            SourceInputResolution::Failed => {
+                FilesystemResult::InputPathFailed { request_id, input }
+            }
+        };
+        if latest_request_id.load(Ordering::Acquire) != request_id || cancel.load(Ordering::Acquire)
+        {
+            return;
+        }
+        let _ = result_tx.send(result);
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::options::{ArchiveBrowseOption, NavigationSortOption};
     use std::fs;
+    use std::sync::Arc;
+    use std::sync::atomic::AtomicU64;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn temp_path(name: &str) -> std::path::PathBuf {
@@ -225,6 +283,29 @@ mod tests {
             }
             other => panic!("unexpected result: {other:?}"),
         }
+
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn stale_source_input_result_is_not_sent() {
+        let path = temp_path("stale");
+        fs::write(&path, b"png").unwrap();
+        let (tx, rx) = mpsc::channel();
+        let latest = Arc::new(AtomicU64::new(9));
+
+        spawn_source_input_resolver(
+            tx,
+            latest,
+            8,
+            path.clone(),
+            Arc::new(AtomicBool::new(false)),
+        );
+
+        assert!(
+            rx.recv_timeout(std::time::Duration::from_millis(100))
+                .is_err()
+        );
 
         let _ = fs::remove_file(path);
     }

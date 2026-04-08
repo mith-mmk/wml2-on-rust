@@ -206,7 +206,8 @@ impl BrowserSnapshotState {
                 true
             }
             FilesystemResult::InputPathResolved { .. }
-            | FilesystemResult::InputPathFailed { .. } => false,
+            | FilesystemResult::InputPathFailed { .. }
+            | FilesystemResult::InputPathCancelled { .. } => false,
             _ => false,
         }
     }
@@ -393,7 +394,8 @@ pub(crate) fn spawn_browser_query_worker(
                         }
                     }
                 }
-                FilesystemCommand::ResolveSourceInput { .. } => {}
+                FilesystemCommand::ResolveSourceInput { .. }
+                | FilesystemCommand::CancelSourceInput { .. } => {}
                 _ => {}
             }
         }

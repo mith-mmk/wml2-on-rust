@@ -389,7 +389,7 @@ struct PersistentFilesystemCache {
     metadata_by_path: HashMap<PathBuf, CachedBrowserMetadata>,
 }
 
-fn persistent_cache_path() -> Option<PathBuf> {
+pub(crate) fn persistent_cache_path() -> Option<PathBuf> {
     Some(default_temp_dir()?.join("filesystem-cache.json"))
 }
 

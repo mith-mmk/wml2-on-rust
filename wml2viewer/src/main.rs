@@ -9,7 +9,7 @@ use std::ffi::OsString;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use wml2viewer::{app, dependent};
+use wml2viewer::{app, dependent, filesystem};
 
 fn main() -> ExitCode {
     match run() {
@@ -25,6 +25,10 @@ fn run() -> Result<(), Box<dyn Error>> {
     let args = parse_args()?;
     if args.clean_target.as_deref() == Some("system") {
         dependent::clean_system_integration()?;
+        return Ok(());
+    }
+    if args.clean_target.as_deref() == Some("cache") {
+        filesystem::clean_cache_files()?;
         return Ok(());
     }
     app::run(args.image_path, args.config_path)
@@ -119,6 +123,6 @@ fn usage_error(program: &OsString) -> Box<dyn Error> {
         .to_string_lossy();
     Box::new(io::Error::new(
         io::ErrorKind::InvalidInput,
-        format!("Usage: {program} [--config <path>] [--clean system] [path]"),
+        format!("Usage: {program} [--config <path>] [--clean system|cache] [path]"),
     ))
 }

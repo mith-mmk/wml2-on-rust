@@ -59,8 +59,14 @@ P5 = 優先度低い
       - render worker / thumbnail worker は filesystem source open API を経由する
       - URL入力と app 起動入力は filesystem source input resolver を経由して temp-http へ落とせる
       - URL入力は FilesystemCommand / FilesystemResult 経由で worker thread から解決する
+      - ResolveSourceInput は main filesystem worker を止めずに別スレッドで解決する
+      - 新しい URL resolve request が来たら古い結果は捨てる
+      - URL resolve request は CancelSourceInput で明示 cancel できる
+      - temp-http は URL -> temp file の session cache を持つ
+      - temp-http は URL hash ベースの persistent cache file と sidecar metadata(etag/last-modified) を持つ
+      - stale な temp-http cache は conditional request で再検証し、304 なら再利用する
       - zip / listed / local fs / smb / http / cloud drive を同じ source key / metadata / open API で扱う
-      - 現在は zip/listed/local fs 中心。http は temp file 化の暫定対応、smb は OS path 任せ、cloud drive は未対応
+      - 現在は zip/listed/local fs/http まで統合が進行。smb は OS path 任せ、cloud drive は未対応
     - [*] 先読み（漫画モード加味すると最大2枚）
       - next preload と manga companion load はある
       - filesystem cache policy と統合された source-level prefetch queue にはなっていない
@@ -72,7 +78,8 @@ P5 = 優先度低い
     - [*] 更新されていないかだけチェック
       - filesystem persistent cache / zip index cache / local archive cache は path + size + mtime 相当で再検証する
       - path + size + mtime + provider-specific version(etag等) の signature ベースへ寄せる
-      - provider-specific version(etag等) や http/cloud 側の検証は未実装
+      - http は etag/last-modified の再検証まで対応済み
+      - cloud 側の provider-specific version 検証は未実装
     - [*] 速度が見込める場合はキャッシュしない
       - 現在は zip workaround の閾値 / network path 判定 / low-I/O archive の preload 抑制のみ
       - provider 共通の no-cache policy は未実装
@@ -83,8 +90,15 @@ P5 = 優先度低い
 - [*] httpの暫定実装
     - [+] reqwest blocking download -> temp file 化で表示
     - [+] UI の URL open と app 起動入力は filesystem source resolver 経由に移行
-    - [*] UI の URL open は filesystem protocol を経由して worker thread で解決
-    - [ ] filesystem provider として非同期 fetch / cache / cancel を統合
+    - [+] UI の URL open は filesystem protocol を経由して worker thread で解決
+    - [+] URL resolve は main filesystem worker loop と分離
+    - [+] 新しい URL request が来た場合は stale result を返さない
+    - [+] 新しい URL request が来た場合は古い request を cancel する
+    - [+] 同一 URL は session 中 temp file を再利用する
+    - [+] URL hash ベースの persistent cache file を使い、一定時間は再取得しない
+    - [+] stale cache は etag / last-modified で再検証する
+    - [+] URL 解決中は shared filesystem cache lock を握らない
+    - [+] filesystem provider として worker protocol / persistent cache / revalidate / cancel を統合
 
 #### UX
 - [ ] Windows Userフォルダをエクスプローラっぽい表示に擬態するモード
@@ -114,6 +128,7 @@ P5 = 優先度低い
     - local fs / listed / zip / temp-http の source key / signature / open API は導入済み
     - URL open / app startup input も filesystem 側の source resolver を通る
     - URL open request は filesystem worker protocol に乗っている
+    - temp-http は session cache / persistent cache / etag revalidate / cancel まで導入済み
     - zip / listed / local fs / smb / http / cloud drive を同じ key / metadata / open API へ寄せる
    - [+] viewer の navigation cache と filer の browser scan cache を共有化
    - [+] filer のファイルリスト更新を viewer の current/pending navigation と同期
@@ -198,6 +213,7 @@ P5 = 優先度低い
 - [+] startup を single-viewer -> sync -> multi-viewer で進める土台
 - [+] 最初の画像を優先し、filesystem 初期化は表示後に同期
 - [x] `--clean system`
+- [x] `--clean cache`
 - [-] 二重起動の制限は一旦取り下げ
 - [*] フルスクリーン復帰時の安定性確認
 - [+] example / benchmark 用の lib 化

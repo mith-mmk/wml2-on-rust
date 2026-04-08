@@ -239,7 +239,7 @@ fn ensure_local_archive_cache(path: &Path, metadata: &std::fs::Metadata) -> Opti
         return Some(cached.cached_path);
     }
 
-    let temp_root = default_temp_dir()?.join("archive-cache");
+    let temp_root = archive_cache_root()?;
     std::fs::create_dir_all(&temp_root).ok()?;
 
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
@@ -270,6 +270,10 @@ fn ensure_local_archive_cache(path: &Path, metadata: &std::fs::Metadata) -> Opti
         );
     }
     Some(destination)
+}
+
+pub(crate) fn archive_cache_root() -> Option<PathBuf> {
+    Some(default_temp_dir()?.join("archive-cache"))
 }
 
 fn clear_zip_caches() {

@@ -30,3 +30,6 @@ winres = "0.1"
 
 [build-dependencies]
 winres = "0.1"
+
+[dev-dependencies]
+filetime = "0.2"

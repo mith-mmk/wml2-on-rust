@@ -38,6 +38,9 @@ pub enum FilesystemCommand {
         request_id: u64,
         input: PathBuf,
     },
+    CancelSourceInput {
+        request_id: u64,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -84,6 +87,10 @@ pub enum FilesystemResult {
         path: PathBuf,
     },
     InputPathFailed {
+        request_id: u64,
+        input: PathBuf,
+    },
+    InputPathCancelled {
         request_id: u64,
         input: PathBuf,
     },

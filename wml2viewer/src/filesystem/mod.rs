@@ -9,6 +9,12 @@ mod source;
 mod worker;
 mod zip_file;
 
+use std::fs;
+use std::io;
+use std::path::Path;
+
+use crate::dependent::default_temp_dir;
+
 #[cfg(test)]
 use crate::options::NavigationSortOption;
 pub(crate) use browser::spawn_browser_query_worker;
@@ -50,6 +56,47 @@ pub(crate) use source::{
 pub(crate) use worker::spawn_filesystem_worker;
 pub(crate) use zip_file::{load_zip_entries_unsorted, sort_zip_entries};
 
+pub fn clean_cache_files() -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(path) = cache::persistent_cache_path() {
+        remove_cache_path(&path)?;
+    }
+    if let Some(path) = zip_file::archive_cache_root() {
+        remove_cache_path(&path)?;
+    }
+    remove_cache_path(&source::http_source_cache_root())?;
+    if let Some(temp_root) = default_temp_dir() {
+        remove_matching_temp_files(&temp_root, source::HTTP_TEMP_PREFIX)?;
+    }
+    Ok(())
+}
+
+fn remove_cache_path(path: &Path) -> io::Result<()> {
+    if !path.exists() {
+        return Ok(());
+    }
+    if path.is_dir() {
+        fs::remove_dir_all(path)
+    } else {
+        fs::remove_file(path)
+    }
+}
+
+fn remove_matching_temp_files(root: &Path, prefix: &str) -> io::Result<()> {
+    let Ok(entries) = fs::read_dir(root) else {
+        return Ok(());
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
+            continue;
+        };
+        if path.is_file() && name.starts_with(prefix) {
+            fs::remove_file(path)?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -73,6 +120,22 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("wml2viewer_nav_{unique}"));
         fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    #[test]
+    fn remove_matching_temp_files_removes_prefixed_files_only() {
+        let dir = make_temp_dir();
+        let target = dir.join(format!("{}123.png", source::HTTP_TEMP_PREFIX));
+        let keep = dir.join("keep.txt");
+        fs::write(&target, []).unwrap();
+        fs::write(&keep, []).unwrap();
+
+        remove_matching_temp_files(&dir, source::HTTP_TEMP_PREFIX).unwrap();
+
+        assert!(!target.exists());
+        assert!(keep.exists());
+
+        let _ = fs::remove_dir_all(dir);
     }
 
     fn plugin_runtime_lock() -> &'static Mutex<()> {

@@ -158,6 +158,16 @@ P5 = 優先度低い
     - [*] issue: bench_archive: 1.6Gベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
     - [*] issue: zipの展開が遅くなっている
     - [*] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
+    - [ ] issue: viewer で巨大 zip の最初の1枚表示に極端に時間がかかる
+      - 1.6GB zip で初回表示が 40 秒級になるケースあり
+      - first page fast path / central directory open / 初回 index 構築のどこが支配的か再計測する
+      - filer / thumbnail / companion / preload の副作用を切り分けた上で、viewer 単体で最初の1枚を優先する
+    - [ ] issue: viewer で zip の2枚目以降が回収前よりもっさりしている
+      - full index warmup や branch navigation の回帰が混ざりやすい
+      - zip 内 next/prev, preload, manga companion を同じ軽量経路に揃えて再設計する
+    - [ ] issue: zip 内ナビゲーションと漫画モードが速度改善のたびに壊れやすい
+      - zip virtual child の next/prev と manga companion を viewer 側の場当たり分岐で持たない
+      - navigation policy を filesystem 側へ寄せ、zip/listed/dir で共通に扱えるようにする
     - [+] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
     - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
     - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
@@ -179,6 +189,9 @@ P5 = 優先度低い
 
 ### zip(P1)
 - [+] zip: 時間のかかるzip展開時にviewer側が固まる問題 configのリセットで改善
+- [ ] issue: viewer の zip 初回表示と 2 枚目以降の体感速度を再チューニング
+  - 巨大 zip では first page fast path、通常サイズでは 2 枚目以降の応答性を優先して評価する
+  - `bench_archive` だけでなく viewer 実機操作で比較する
 
 ### filer(P4)
 - [ ] まれに固まる事がある フォルダに問題があるのかfilerに原因があるのか調査中

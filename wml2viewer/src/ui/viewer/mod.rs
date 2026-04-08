@@ -330,6 +330,16 @@ fn should_defer_filer_sync_for_navigation(
         .is_some()
 }
 
+fn should_allow_preload_for_path(
+    current_navigation_path: &std::path::Path,
+    candidate_path: &std::path::Path,
+) -> bool {
+    if !archive_prefers_low_io(candidate_path) {
+        return true;
+    }
+    navigation_branch_path(current_navigation_path) == navigation_branch_path(candidate_path)
+}
+
 pub(crate) fn join_search_paths(paths: &[PathBuf]) -> String {
     paths
         .iter()
@@ -1938,13 +1948,10 @@ impl ViewerApp {
         if !self.navigator_ready {
             return;
         }
-        if archive_prefers_low_io(&self.current_navigation_path) {
-            return;
-        }
         let Some(path) = self.next_preload_candidate() else {
             return;
         };
-        if archive_prefers_low_io(&path) {
+        if !should_allow_preload_for_path(&self.current_navigation_path, &path) {
             return;
         }
         if self.preloaded_navigation_path.as_ref() == Some(&path)
@@ -2747,7 +2754,8 @@ fn filesystem_send_error(err: mpsc::SendError<FilesystemCommand>) -> Box<dyn Err
 mod tests {
     use super::{
         adjacent_same_branch_navigation_target, preloaded_navigation_matches,
-        same_navigation_branch, should_defer_filer_sync_for_navigation,
+        same_navigation_branch, should_allow_preload_for_path,
+        should_defer_filer_sync_for_navigation,
     };
     use crate::filesystem::{build_zip_virtual_children, zip_index_is_available};
     use crate::options::{ArchiveBrowseOption, NavigationSortOption};
@@ -2831,5 +2839,12 @@ mod tests {
         assert_eq!(next, Some(children[1].clone()));
 
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn should_allow_preload_for_same_zip_branch_even_when_low_io() {
+        let current = Path::new(r"F:\archive.zip\__zipv__\00000000__001.png");
+        let next = Path::new(r"F:\archive.zip\__zipv__\00000001__002.png");
+        assert!(should_allow_preload_for_path(current, next));
     }
 }

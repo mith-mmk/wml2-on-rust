@@ -281,6 +281,13 @@ fn preloaded_navigation_matches(
     preloaded_navigation_path == Some(requested_navigation_path)
 }
 
+fn same_navigation_branch(
+    current_path: &std::path::Path,
+    candidate_path: &std::path::Path,
+) -> bool {
+    navigation_branch_path(current_path) == navigation_branch_path(candidate_path)
+}
+
 pub(crate) fn join_search_paths(paths: &[PathBuf]) -> String {
     paths
         .iter()
@@ -1457,6 +1464,18 @@ impl ViewerApp {
             self.last_navigation_at = Some(Instant::now());
             return Ok(());
         }
+        if let Some(target) = adjacent_entry(
+            &self.current_navigation_path,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            1,
+        )
+        .filter(|target| same_navigation_branch(&self.current_navigation_path, target))
+        {
+            self.request_load_path(target)?;
+            self.last_navigation_at = Some(Instant::now());
+            return Ok(());
+        }
         self.request_navigation(FilesystemCommand::Next {
             request_id: 0,
             policy: self.end_of_folder,
@@ -1471,6 +1490,18 @@ impl ViewerApp {
             return Ok(());
         }
         if let Some(target) = self.manga_navigation_target(false) {
+            self.request_load_path(target)?;
+            self.last_navigation_at = Some(Instant::now());
+            return Ok(());
+        }
+        if let Some(target) = adjacent_entry(
+            &self.current_navigation_path,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            -1,
+        )
+        .filter(|target| same_navigation_branch(&self.current_navigation_path, target))
+        {
             self.request_load_path(target)?;
             self.last_navigation_at = Some(Instant::now());
             return Ok(());
@@ -2667,7 +2698,7 @@ fn filesystem_send_error(err: mpsc::SendError<FilesystemCommand>) -> Box<dyn Err
 
 #[cfg(test)]
 mod tests {
-    use super::preloaded_navigation_matches;
+    use super::{preloaded_navigation_matches, same_navigation_branch};
     use std::path::Path;
 
     #[test]
@@ -2679,6 +2710,18 @@ mod tests {
         assert!(!preloaded_navigation_matches(
             Some(Path::new(r"F:\archive.zip#002.bmp")),
             Path::new(r"F:\archive.zip#001.bmp")
+        ));
+    }
+
+    #[test]
+    fn same_navigation_branch_requires_same_container_or_directory() {
+        assert!(same_navigation_branch(
+            Path::new(r"F:\dir\001.png"),
+            Path::new(r"F:\dir\002.png")
+        ));
+        assert!(!same_navigation_branch(
+            Path::new(r"F:\dir\001.png"),
+            Path::new(r"F:\other\002.png")
         ));
     }
 }

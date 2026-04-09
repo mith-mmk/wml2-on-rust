@@ -1,4 +1,5 @@
 use crate::options::{ArchiveBrowseOption, NavigationSortOption};
+use crate::ui::render::{should_cancel_low_priority_io, snapshot_primary_io_epoch};
 use serde::{Deserialize, Serialize};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
@@ -322,6 +323,12 @@ pub(crate) fn spawn_browser_query_worker(
                             continue;
                         }
                     };
+                    let primary_epoch_snapshot = snapshot_primary_io_epoch();
+                    let should_cancel = || should_cancel_low_priority_io(primary_epoch_snapshot);
+                    if should_cancel() {
+                        let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
+                        continue;
+                    }
                     if let Some(entries) = load_cached_browser_entries(
                         &shared_state,
                         &dir,
@@ -337,10 +344,11 @@ pub(crate) fn spawn_browser_query_worker(
                                 selected.clone(),
                                 options.clone(),
                                 entries,
+                                &should_cancel,
                             )
                         }));
                         let _ = result_tx.send(match result {
-                            Ok(entries) => {
+                            Ok(Some(entries)) => {
                                 send_thumbnail_hint(
                                     &result_tx,
                                     request_id,
@@ -355,6 +363,7 @@ pub(crate) fn spawn_browser_query_worker(
                                     selected,
                                 }
                             }
+                            Ok(None) => FilesystemResult::BrowserFailed { request_id },
                             Err(_) => FilesystemResult::BrowserFailed { request_id },
                         });
                         continue;
@@ -392,10 +401,11 @@ pub(crate) fn spawn_browser_query_worker(
                             selected.clone(),
                             options_for_scan,
                             cached_entries,
+                            &should_cancel,
                         )
                     }));
                     match result {
-                        Ok(entries) => {
+                        Ok(Some(entries)) => {
                             send_thumbnail_hint(
                                 &result_tx,
                                 request_id,
@@ -409,6 +419,9 @@ pub(crate) fn spawn_browser_query_worker(
                                 entries,
                                 selected,
                             });
+                        }
+                        Ok(None) => {
+                            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
                         }
                         Err(_) => {
                             let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
@@ -441,7 +454,9 @@ pub fn scan_browser_directory_with_preview_cached(
     mut on_preview_chunk: impl FnMut(Vec<BrowserEntry>),
 ) -> Vec<BrowserEntry> {
     let entry_paths = load_browser_entry_paths(dir, options, cache);
-    let filtered = collect_browser_entry_paths(entry_paths, options, &mut on_preview_chunk);
+    let filtered =
+        collect_browser_entry_paths(entry_paths, options, &|| false, &mut on_preview_chunk)
+            .unwrap_or_default();
     finalize_browser_entries(filtered, options, cache)
 }
 
@@ -458,7 +473,8 @@ pub(crate) fn benchmark_browser_scan_cached(
     let entry_count = entry_paths.len();
 
     let started_preview = Instant::now();
-    let filtered = collect_browser_entry_paths(entry_paths, options, &mut |_| {});
+    let filtered = collect_browser_entry_paths(entry_paths, options, &|| false, &mut |_| {})
+        .unwrap_or_default();
     let preview_filter = started_preview.elapsed();
     let filtered_count = filtered.len();
 
@@ -489,20 +505,25 @@ fn scan_query_request(
     selected: Option<PathBuf>,
     options: BrowserScanOptions,
     cached_entries: Vec<PathBuf>,
-) -> Vec<BrowserEntry> {
+    should_cancel: &impl Fn() -> bool,
+) -> Option<Vec<BrowserEntry>> {
+    if should_cancel() {
+        return None;
+    }
     let _ = result_tx.send(FilesystemResult::BrowserReset {
         request_id,
         directory: dir.clone(),
         selected: selected.clone(),
     });
 
-    let filtered = collect_browser_entry_paths(cached_entries, &options, &mut |entries| {
-        let _ = result_tx.send(FilesystemResult::BrowserAppend {
-            request_id,
-            entries,
-        });
-    });
-    finalize_browser_entries_shared(filtered, &options, shared_cache)
+    let filtered =
+        collect_browser_entry_paths(cached_entries, &options, should_cancel, &mut |entries| {
+            let _ = result_tx.send(FilesystemResult::BrowserAppend {
+                request_id,
+                entries,
+            });
+        })?;
+    finalize_browser_entries_shared(filtered, &options, shared_cache, should_cancel)
 }
 
 fn finalize_browser_entries(
@@ -518,21 +539,34 @@ fn finalize_browser_entries_shared(
     filtered_paths: Vec<PathBuf>,
     options: &BrowserScanOptions,
     shared_cache: &SharedFilesystemCache,
-) -> Vec<BrowserEntry> {
+    should_cancel: &impl Fn() -> bool,
+) -> Option<Vec<BrowserEntry>> {
+    if should_cancel() {
+        return None;
+    }
     let Ok(mut cache) = shared_cache.lock() else {
-        return filtered_paths
-            .into_iter()
-            .map(|path| {
-                build_browser_entry(
-                    path,
-                    BrowserMetadata::default(),
-                    options.archive_mode,
-                    options.archive_as_container_in_sort,
-                )
-            })
-            .collect();
+        return Some(
+            filtered_paths
+                .into_iter()
+                .map(|path| {
+                    build_browser_entry(
+                        path,
+                        BrowserMetadata::default(),
+                        options.archive_mode,
+                        options.archive_as_container_in_sort,
+                    )
+                })
+                .collect(),
+        );
     };
-    finalize_browser_entries(filtered_paths, options, &mut cache)
+    if should_cancel() {
+        return None;
+    }
+    Some(finalize_browser_entries(
+        filtered_paths,
+        options,
+        &mut cache,
+    ))
 }
 
 fn load_browser_entry_paths(
@@ -704,11 +738,15 @@ pub fn compare_browser_name(
 fn collect_browser_entries(
     cached_entries: Vec<PathBuf>,
     options: &BrowserScanOptions,
+    should_cancel: &impl Fn() -> bool,
     on_preview_chunk: &mut impl FnMut(Vec<BrowserEntry>),
-) -> Vec<PathBuf> {
+) -> Option<Vec<PathBuf>> {
     let mut collected = Vec::new();
     let mut preview_chunk = Vec::new();
     for entry in cached_entries {
+        if should_cancel() {
+            return None;
+        }
         let preview_entry = build_preview_entry(
             entry.clone(),
             options.archive_mode,
@@ -728,15 +766,16 @@ fn collect_browser_entries(
     if !preview_chunk.is_empty() {
         on_preview_chunk(preview_chunk);
     }
-    collected
+    Some(collected)
 }
 
 fn collect_browser_entry_paths(
     cached_entries: Vec<PathBuf>,
     options: &BrowserScanOptions,
+    should_cancel: &impl Fn() -> bool,
     on_preview_chunk: &mut impl FnMut(Vec<BrowserEntry>),
-) -> Vec<PathBuf> {
-    collect_browser_entries(cached_entries, options, on_preview_chunk)
+) -> Option<Vec<PathBuf>> {
+    collect_browser_entries(cached_entries, options, should_cancel, on_preview_chunk)
 }
 
 fn build_final_browser_entries(

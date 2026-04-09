@@ -174,22 +174,37 @@ pub(crate) fn sort_zip_entries(entries: &mut [ZipEntryRecord]) {
     entries.sort_by(|left, right| compare_natural_str(&left.name, &right.name, false));
 }
 
+#[allow(dead_code)]
 pub(crate) fn load_zip_entry_bytes_with_size(
     path: &Path,
     entry_index: usize,
 ) -> Option<(Vec<u8>, Option<u64>)> {
+    load_zip_entry_bytes_with_size_with_cancel(path, entry_index, &|| false)
+}
+
+pub(crate) fn load_zip_entry_bytes_with_size_with_cancel<F: Fn() -> bool>(
+    path: &Path,
+    entry_index: usize,
+    should_cancel: &F,
+) -> Option<(Vec<u8>, Option<u64>)> {
     let access = resolve_zip_archive_access(path)?;
     let archive_path = access.path();
     if let Some((bytes, size_hint)) =
-        read_zip_entry_bytes_from_path(archive_path, entry_index, None)
+        read_zip_entry_bytes_from_path(archive_path, entry_index, None, should_cancel)
     {
         return Some((bytes, size_hint));
     }
 
     let fallback_name = zip_entry_record(path, entry_index).map(|entry| entry.name)?;
-    read_zip_entry_bytes_from_path(archive_path, entry_index, Some(&fallback_name)).or_else(|| {
+    read_zip_entry_bytes_from_path(
+        archive_path,
+        entry_index,
+        Some(&fallback_name),
+        should_cancel,
+    )
+    .or_else(|| {
         if archive_path != path {
-            read_zip_entry_bytes_from_path(path, entry_index, Some(&fallback_name))
+            read_zip_entry_bytes_from_path(path, entry_index, Some(&fallback_name), should_cancel)
         } else {
             None
         }
@@ -206,32 +221,39 @@ pub(crate) fn zip_entry_size(path: &Path, entry_index: usize) -> Option<u64> {
     zip_entry_record(path, entry_index).map(|entry| entry.size)
 }
 
-fn read_zip_entry_bytes_from_path(
+fn read_zip_entry_bytes_from_path<F: Fn() -> bool>(
     archive_path: &Path,
     entry_index: usize,
     fallback_name: Option<&str>,
+    should_cancel: &F,
 ) -> Option<(Vec<u8>, Option<u64>)> {
     if let Ok(mut archive) = open_zip_archive(archive_path) {
-        if let Some(bytes) = read_entry_bytes(&mut archive, entry_index, fallback_name) {
+        if let Some(bytes) =
+            read_entry_bytes(&mut archive, entry_index, fallback_name, should_cancel)
+        {
             return Some(bytes);
         }
     }
     let mut archive = open_plain_zip_archive(archive_path).ok()?;
-    read_entry_bytes(&mut archive, entry_index, fallback_name)
+    read_entry_bytes(&mut archive, entry_index, fallback_name, should_cancel)
 }
 
-fn read_entry_bytes<R: Read + Seek>(
+fn read_entry_bytes<R: Read + Seek, F: Fn() -> bool>(
     archive: &mut ZipArchive<R>,
     entry_index: usize,
     fallback_name: Option<&str>,
+    should_cancel: &F,
 ) -> Option<(Vec<u8>, Option<u64>)> {
+    if should_cancel() {
+        return None;
+    }
     if let Ok(mut entry) = archive.by_index(entry_index) {
         let size_hint = Some(entry.size());
-        return read_zip_entry_to_end(&mut entry).map(|bytes| (bytes, size_hint));
+        return read_zip_entry_to_end(&mut entry, should_cancel).map(|bytes| (bytes, size_hint));
     }
     let mut entry = archive.by_name(fallback_name?).ok()?;
     let size_hint = Some(entry.size());
-    read_zip_entry_to_end(&mut entry).map(|bytes| (bytes, size_hint))
+    read_zip_entry_to_end(&mut entry, should_cancel).map(|bytes| (bytes, size_hint))
 }
 
 pub(crate) fn set_zip_workaround_options(options: ZipWorkaroundOptions) {
@@ -430,9 +452,22 @@ fn collect_zip_entries_and_profile<R: Read + Seek>(
     (entries, profile)
 }
 
-fn read_zip_entry_to_end<R: Read>(entry: &mut R) -> Option<Vec<u8>> {
+fn read_zip_entry_to_end<R: Read, F: Fn() -> bool>(
+    entry: &mut R,
+    should_cancel: &F,
+) -> Option<Vec<u8>> {
     let mut buf = Vec::new();
-    entry.read_to_end(&mut buf).ok()?;
+    let mut chunk = [0u8; 256 * 1024];
+    loop {
+        if should_cancel() {
+            return None;
+        }
+        let read = entry.read(&mut chunk).ok()?;
+        if read == 0 {
+            break;
+        }
+        buf.extend_from_slice(&chunk[..read]);
+    }
     Some(buf)
 }
 

@@ -20,8 +20,8 @@ use crate::ui::menu::fileviewer::thumbnail::{
     ThumbnailCommand, ThumbnailResult, set_thumbnail_workaround, spawn_thumbnail_worker,
 };
 use crate::ui::render::{
-    ActiveRenderRequest, RenderCommand, RenderResult, aligned_offset, canvas_to_color_image,
-    downscale_for_texture_limit, spawn_render_worker, worker_send_error,
+    ActiveRenderRequest, RenderCommand, RenderResult, RenderWorkerPriority, aligned_offset,
+    canvas_to_color_image, downscale_for_texture_limit, spawn_render_worker, worker_send_error,
 };
 use crate::ui::viewer::options::{
     RenderOptions, RenderScaleMode, ViewerOptions, WindowOptions, WindowStartPosition,
@@ -404,9 +404,12 @@ impl ViewerApp {
         } = apply_resources(&cc.egui_ctx, &config.resources);
         set_archive_zip_workaround(config.runtime.workaround.archive.zip.clone());
         set_thumbnail_workaround(config.runtime.workaround.thumbnail.clone());
-        let (worker_tx, worker_rx, worker_join) = spawn_render_worker(source.clone());
-        let (companion_tx, companion_rx, companion_join) = spawn_render_worker(source.clone());
-        let (preload_tx, preload_rx, preload_join) = spawn_render_worker(source.clone());
+        let (worker_tx, worker_rx, worker_join) =
+            spawn_render_worker(source.clone(), RenderWorkerPriority::Primary);
+        let (companion_tx, companion_rx, companion_join) =
+            spawn_render_worker(source.clone(), RenderWorkerPriority::Companion);
+        let (preload_tx, preload_rx, preload_join) =
+            spawn_render_worker(source.clone(), RenderWorkerPriority::Preload);
         let resource_locale_input = config.resources.locale.clone().unwrap_or_default();
         let resource_font_paths_input = join_search_paths(&config.resources.font_paths);
         let defer_navigation_workers = !show_filer_on_start;
@@ -1998,7 +2001,8 @@ impl ViewerApp {
     }
 
     fn respawn_render_worker(&mut self) {
-        let (worker_tx, worker_rx, worker_join) = spawn_render_worker(self.source.clone());
+        let (worker_tx, worker_rx, worker_join) =
+            spawn_render_worker(self.source.clone(), RenderWorkerPriority::Primary);
         self.worker_tx = worker_tx;
         self.worker_rx = worker_rx;
         self.worker_join = Some(worker_join);
@@ -2010,7 +2014,7 @@ impl ViewerApp {
             .companion_source
             .clone()
             .unwrap_or_else(|| self.source.clone());
-        let (tx, rx, join) = spawn_render_worker(seed);
+        let (tx, rx, join) = spawn_render_worker(seed, RenderWorkerPriority::Companion);
         self.companion_tx = tx;
         self.companion_rx = rx;
         self.companion_join = Some(join);
@@ -2018,7 +2022,8 @@ impl ViewerApp {
     }
 
     fn respawn_preload_worker(&mut self) {
-        let (tx, rx, join) = spawn_render_worker(self.source.clone());
+        let (tx, rx, join) =
+            spawn_render_worker(self.source.clone(), RenderWorkerPriority::Preload);
         self.preload_tx = tx;
         self.preload_rx = rx;
         self.preload_join = Some(join);

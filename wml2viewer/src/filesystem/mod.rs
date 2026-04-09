@@ -54,8 +54,8 @@ pub use protocol::{BrowserQuery, BrowserQueryResult, FilesystemCommand, Filesyst
 pub(crate) use sort::{compare_natural_str, compare_os_str, sort_paths};
 pub use source::resolve_source_input_path;
 pub(crate) use source::{
-    OpenedImageSource, SourceSignature, open_image_source, source_id_for_path,
-    source_signature_for_path,
+    OpenedImageSource, SourceSignature, open_image_source, open_image_source_with_cancel,
+    source_id_for_path, source_signature_for_path,
 };
 pub(crate) use worker::spawn_filesystem_worker;
 pub(crate) use zip_file::{

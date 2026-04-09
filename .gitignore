@@ -1,12 +1,11 @@
-.test
+.test*
 .env
+.compare
 /wml2-win
 Cargo.lock
 .vscode
 /wml2/tests/test_samples.txt
 /target
-.codex-temp
-/.cargo/
 /test/images/external/*
 !/test/images/external/README.md
 .tmp*

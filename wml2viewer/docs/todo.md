@@ -26,6 +26,7 @@ P5 = 優先度低い
     - [*] 優先度によるI/O調停
       - viewer / companion / preload が同時に archive を触る burst を抑える
       - まずは render worker 側で `primary > companion > preload` の優先度を持たせる
+      - thumbnail worker も primary load 中は低優先度として扱い、重い archive 読み出しを中断できるようにする
     - [*] ロードキャンセル/SKIPの実装(重いzip対策)
       - まずは zip 読み出し中に古い companion / preload を早めに打ち切れるようにする
     - [ ] ワークアラウンドの削除

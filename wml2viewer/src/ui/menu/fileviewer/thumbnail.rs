@@ -2,9 +2,11 @@ use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::image::{
     load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
 };
-use crate::filesystem::{OpenedImageSource, open_image_source, virtual_image_size};
+use crate::filesystem::{OpenedImageSource, open_image_source_with_cancel, virtual_image_size};
 use crate::options::ThumbnailWorkaroundOptions;
-use crate::ui::render::canvas_to_color_image;
+use crate::ui::render::{
+    canvas_to_color_image, should_cancel_low_priority_io, snapshot_primary_io_epoch,
+};
 use eframe::egui::ColorImage;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
@@ -51,7 +53,13 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                         if should_skip_thumbnail(&path) {
                             return Err("thumbnail suppressed".to_string());
                         }
-                        let loaded = match open_image_source(&path) {
+                        let primary_epoch_snapshot = snapshot_primary_io_epoch();
+                        let should_cancel =
+                            || should_cancel_low_priority_io(primary_epoch_snapshot);
+                        if should_cancel() {
+                            return Err("thumbnail cancelled".to_string());
+                        }
+                        let loaded = match open_image_source_with_cancel(&path, &should_cancel) {
                             Some(OpenedImageSource::Bytes {
                                 bytes, hint_path, ..
                             }) => load_canvas_from_bytes_with_hint(&bytes, Some(&hint_path)),
@@ -61,6 +69,9 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                             None => load_canvas_from_file(&path),
                         }
                         .map_err(|err| err.to_string())?;
+                        if should_cancel() {
+                            return Err("thumbnail cancelled".to_string());
+                        }
 
                         let scale = (max_side as f32
                             / loaded.canvas.width().max(loaded.canvas.height()) as f32)

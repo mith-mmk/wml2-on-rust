@@ -70,6 +70,18 @@ fn render_io_coordinator() -> &'static RenderIoCoordinator {
     })
 }
 
+pub(crate) fn snapshot_primary_io_epoch() -> u64 {
+    render_io_coordinator()
+        .primary_epoch
+        .load(Ordering::Acquire)
+}
+
+pub(crate) fn should_cancel_low_priority_io(primary_epoch_snapshot: u64) -> bool {
+    let coordinator = render_io_coordinator();
+    coordinator.primary_active.load(Ordering::Acquire) > 0
+        || coordinator.primary_epoch.load(Ordering::Acquire) != primary_epoch_snapshot
+}
+
 fn should_abort_background_load(
     priority: RenderWorkerPriority,
     request_id: u64,

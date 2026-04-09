@@ -157,6 +157,12 @@ P5 = 優先度低い
 - [ ] wml2viewer/README.ja.mdとwml2viewer/README.mdの更新
 
 ## issues
+- [ ] P0 issue: 漫画モードの体感速度と挙動が現行で明確に劣化している
+   - 単ページ表示より見開き表示の方が遅い状態を解消する
+   - `companion` / `preload` / `next-prev` / `filesystem navigation` の責務を分離して切り分ける
+   - `viewer` の通常モードを壊さないことを優先し、漫画モードだけを独立して再設計する
+   - まずは `companion` 表示の成立条件と load path を固定し、その後で `next/prev`、最後に `preload` を戻す
+   - 実機で `通常モード`, `漫画モード`, `zip`, `展開画像` を比較して回帰確認する
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
    - [+] directory scan / preview chunk / filter / metadata / sort を `filesystem.browser` へ寄せた
    - [+] `FilerCommand / FilerResult` 自体を filesystem 側の query/result モデルへ統合
@@ -197,6 +203,10 @@ P5 = 優先度低い
       - 2枚目以降でも burst read / decode を起こさない
       - filer / thumbnail / preload / manga companion の副作用を切り分ける
       - network path では「表示優先」で段階的に後続処理を走らせる
+    - [ ] P0 issue: viewer の漫画モードを通常表示と切り離して再設計する
+      - `current` と `companion` の表示成立を先に固定し、`preload` は後段に回す
+      - 漫画モード専用の同期探索と状態キャッシュを通常モードへ漏らさない
+      - regressions を `next/prev`, `companion`, `preload` に分けて個別に確認する
     - [ ] zip: 巨大 archive の最初の1枚表示に極端に時間がかかる
       - 1.6GB zip で初回表示が 40 秒級になるケースあり
       - first page fast path / central directory open / 初回 index 構築のどこが支配的か再計測する

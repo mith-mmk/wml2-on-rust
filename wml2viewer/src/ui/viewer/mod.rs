@@ -340,6 +340,14 @@ fn should_allow_preload_for_path(
     navigation_branch_path(current_navigation_path) == navigation_branch_path(candidate_path)
 }
 
+fn should_defer_filer_request_while_loading(
+    active_request: bool,
+    active_fs_request: bool,
+    active_fs_input_request: bool,
+) -> bool {
+    active_request || active_fs_request || active_fs_input_request
+}
+
 pub(crate) fn join_search_paths(paths: &[PathBuf]) -> String {
     paths
         .iter()
@@ -1067,6 +1075,17 @@ impl ViewerApp {
     }
 
     pub(crate) fn request_filer_directory(&mut self, dir: PathBuf, selected: Option<PathBuf>) {
+        if should_defer_filer_request_while_loading(
+            self.active_request.is_some(),
+            self.active_fs_request_id.is_some(),
+            self.active_fs_input_request_id.is_some(),
+        ) {
+            self.filer_needs_sync = true;
+            self.pending_filer_scroll_to = selected.clone();
+            self.filer.snapshot.directory = Some(dir);
+            self.filer.snapshot.selected = selected;
+            return;
+        }
         self.spawn_navigation_workers();
         let Some(filer_tx) = self.filer_tx.clone() else {
             return;
@@ -1108,6 +1127,20 @@ impl ViewerApp {
         } else {
             self.filer_needs_sync = true;
         }
+    }
+
+    fn poll_deferred_filer_sync(&mut self) {
+        if !self.filer_needs_sync || !(self.show_filer || self.show_subfiler) {
+            return;
+        }
+        if should_defer_filer_request_while_loading(
+            self.active_request.is_some(),
+            self.active_fs_request_id.is_some(),
+            self.active_fs_input_request_id.is_some(),
+        ) {
+            return;
+        }
+        self.sync_filer_directory_with_current_path();
     }
 
     pub(crate) fn refresh_current_filer_directory(&mut self) {
@@ -2558,6 +2591,7 @@ impl eframe::App for ViewerApp {
         self.poll_filer_worker();
         self.poll_thumbnail_worker();
         self.poll_save_result();
+        self.poll_deferred_filer_sync();
         self.sync_manga_companion(ctx);
         self.handle_keyboard(ctx);
         self.poll_pending_pointer_actions();
@@ -2760,7 +2794,7 @@ mod tests {
     use super::{
         adjacent_same_branch_navigation_target, preloaded_navigation_matches,
         same_navigation_branch, should_allow_preload_for_path,
-        should_defer_filer_sync_for_navigation,
+        should_defer_filer_request_while_loading, should_defer_filer_sync_for_navigation,
     };
     use crate::filesystem::{build_zip_virtual_children, zip_index_is_available};
     use crate::options::{ArchiveBrowseOption, NavigationSortOption};
@@ -2851,5 +2885,15 @@ mod tests {
         let current = Path::new(r"F:\archive.zip\__zipv__\00000000__001.png");
         let next = Path::new(r"F:\archive.zip\__zipv__\00000001__002.png");
         assert!(should_allow_preload_for_path(current, next));
+    }
+
+    #[test]
+    fn filer_request_is_deferred_while_loading_or_navigation_is_active() {
+        assert!(should_defer_filer_request_while_loading(true, false, false));
+        assert!(should_defer_filer_request_while_loading(false, true, false));
+        assert!(should_defer_filer_request_while_loading(false, false, true));
+        assert!(!should_defer_filer_request_while_loading(
+            false, false, false
+        ));
     }
 }

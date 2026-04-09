@@ -71,6 +71,12 @@ struct ZipProfileCacheEntry {
 }
 
 #[derive(Clone)]
+struct ZipFirstEntryCacheEntry {
+    signature: SourceSignature,
+    entry: Option<ZipEntryRecord>,
+}
+
+#[derive(Clone)]
 struct LocalArchiveCacheEntry {
     signature: SourceSignature,
     cached_path: PathBuf,
@@ -110,14 +116,32 @@ pub(crate) fn load_zip_entries(path: &Path) -> Option<Vec<ZipEntryRecord>> {
 }
 
 pub(crate) fn probe_first_supported_zip_entry(path: &Path) -> Option<ZipEntryRecord> {
+    let signature = archive_signature(path)?;
+    if let Ok(cache) = zip_first_entry_cache().lock()
+        && let Some(entry) = cache.get(path)
+        && entry.signature == signature
+    {
+        return entry.entry.clone();
+    }
+
     let access = resolve_zip_archive_access(path)?;
-    try_probe_first_supported_zip_entry_from_path(access.path()).or_else(|| {
+    let entry = try_probe_first_supported_zip_entry_from_path(access.path()).or_else(|| {
         if access.path() != path {
             try_probe_first_supported_zip_entry_from_path(path)
         } else {
             None
         }
-    })
+    });
+    if let Ok(mut cache) = zip_first_entry_cache().lock() {
+        cache.insert(
+            path.to_path_buf(),
+            ZipFirstEntryCacheEntry {
+                signature,
+                entry: entry.clone(),
+            },
+        );
+    }
+    entry
 }
 
 pub(crate) fn probe_adjacent_supported_zip_entry(
@@ -603,6 +627,9 @@ fn clear_zip_caches() {
     if let Ok(mut cache) = zip_index_cache().lock() {
         cache.clear();
     }
+    if let Ok(mut cache) = zip_first_entry_cache().lock() {
+        cache.clear();
+    }
     if let Ok(mut cache) = zip_profile_cache().lock() {
         cache.clear();
     }
@@ -655,6 +682,12 @@ fn archive_signature_from_metadata(path: &Path, metadata: &std::fs::Metadata) ->
 fn zip_index_cache() -> &'static Mutex<HashMap<PathBuf, ZipIndexCacheEntry>> {
     static ZIP_INDEX_CACHE: OnceLock<Mutex<HashMap<PathBuf, ZipIndexCacheEntry>>> = OnceLock::new();
     ZIP_INDEX_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn zip_first_entry_cache() -> &'static Mutex<HashMap<PathBuf, ZipFirstEntryCacheEntry>> {
+    static ZIP_FIRST_ENTRY_CACHE: OnceLock<Mutex<HashMap<PathBuf, ZipFirstEntryCacheEntry>>> =
+        OnceLock::new();
+    ZIP_FIRST_ENTRY_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
 fn zip_profile_cache() -> &'static Mutex<HashMap<PathBuf, ZipProfileCacheEntry>> {
@@ -971,6 +1004,23 @@ mod tests {
         assert_eq!(first.index, 0);
         assert_eq!(first.name, "001.png");
         assert!(!zip_index_is_available(&path));
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn probe_first_supported_zip_entry_cache_is_invalidated_when_archive_changes() {
+        let path = temp_path("zip-probe-first-invalidate");
+        write_zip(&path, &["001.png", "002.png"]);
+
+        let first = probe_first_supported_zip_entry(&path).unwrap();
+        assert_eq!(first.name, "001.png");
+
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        write_zip(&path, &["000.png", "002.png"]);
+
+        let first = probe_first_supported_zip_entry(&path).unwrap();
+        assert_eq!(first.name, "000.png");
 
         let _ = std::fs::remove_file(path);
     }

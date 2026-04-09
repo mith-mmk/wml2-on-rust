@@ -3,6 +3,7 @@ use crate::ui::render::{should_cancel_low_priority_io, snapshot_primary_io_epoch
 use serde::{Deserialize, Serialize};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -278,6 +279,9 @@ pub(crate) fn preload_browser_directory_for_path(
     let Some(directory) = browser_directory_for_path(path, None) else {
         return;
     };
+    if !directory.is_dir() {
+        return;
+    }
     let entry_paths = load_browser_entry_paths(
         &directory,
         &BrowserScanOptions {
@@ -302,6 +306,7 @@ pub(crate) fn spawn_browser_query_worker(
 ) -> (Sender<FilesystemCommand>, Receiver<FilesystemResult>) {
     let (command_tx, command_rx) = mpsc::channel::<FilesystemCommand>();
     let (result_tx, result_rx) = mpsc::channel::<FilesystemResult>();
+    let latest_request_id = Arc::new(AtomicU64::new(0));
 
     thread::spawn(move || {
         while let Ok(command) = command_rx.recv() {
@@ -316,117 +321,23 @@ pub(crate) fn spawn_browser_query_worker(
                     selected,
                     options,
                 } => {
-                    let options = match resolve_scan_options(&shared_state, options) {
-                        Some(options) => options,
-                        None => {
-                            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
-                            continue;
-                        }
-                    };
-                    let primary_epoch_snapshot = snapshot_primary_io_epoch();
-                    let should_cancel = || should_cancel_low_priority_io(primary_epoch_snapshot);
-                    if should_cancel() {
-                        let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
-                        continue;
-                    }
-                    if let Some(entries) = load_cached_browser_entries(
-                        &shared_state,
-                        &dir,
-                        options.navigation_sort,
-                        options.archive_mode,
-                    ) {
-                        let result = catch_unwind(AssertUnwindSafe(|| {
-                            scan_query_request(
-                                &result_tx,
-                                &shared_cache,
-                                request_id,
-                                dir.clone(),
-                                selected.clone(),
-                                options.clone(),
-                                entries,
-                                &should_cancel,
-                            )
-                        }));
-                        let _ = result_tx.send(match result {
-                            Ok(Some(entries)) => {
-                                send_thumbnail_hint(
-                                    &result_tx,
-                                    request_id,
-                                    &entries,
-                                    &options,
-                                    selected.as_deref(),
-                                );
-                                FilesystemResult::BrowserFinish {
-                                    request_id,
-                                    directory: dir,
-                                    entries,
-                                    selected,
-                                }
-                            }
-                            Ok(None) => FilesystemResult::BrowserFailed { request_id },
-                            Err(_) => FilesystemResult::BrowserFailed { request_id },
-                        });
-                        continue;
-                    }
-                    let cached_entries = {
-                        let Ok(mut cache) = shared_cache.lock() else {
-                            break;
-                        };
-                        let result = catch_unwind(AssertUnwindSafe(|| {
-                            load_browser_entry_paths(&dir, &options, &mut cache)
-                        }));
-                        match result {
-                            Ok(entries) => entries,
-                            Err(_) => {
-                                let _ =
-                                    result_tx.send(FilesystemResult::BrowserFailed { request_id });
-                                continue;
-                            }
-                        }
-                    };
-                    store_cached_browser_entries(
-                        &shared_state,
-                        &dir,
-                        options.navigation_sort,
-                        options.archive_mode,
-                        cached_entries.clone(),
-                    );
-                    let options_for_scan = options.clone();
-                    let result = catch_unwind(AssertUnwindSafe(|| {
-                        scan_query_request(
+                    latest_request_id.store(request_id, Ordering::SeqCst);
+                    let result_tx = result_tx.clone();
+                    let shared_cache = shared_cache.clone();
+                    let shared_state = shared_state.clone();
+                    let latest_request_id = latest_request_id.clone();
+                    thread::spawn(move || {
+                        process_open_browser_directory(
                             &result_tx,
                             &shared_cache,
+                            &shared_state,
+                            &latest_request_id,
                             request_id,
-                            dir.clone(),
-                            selected.clone(),
-                            options_for_scan,
-                            cached_entries,
-                            &should_cancel,
-                        )
-                    }));
-                    match result {
-                        Ok(Some(entries)) => {
-                            send_thumbnail_hint(
-                                &result_tx,
-                                request_id,
-                                &entries,
-                                &options,
-                                selected.as_deref(),
-                            );
-                            let _ = result_tx.send(FilesystemResult::BrowserFinish {
-                                request_id,
-                                directory: dir,
-                                entries,
-                                selected,
-                            });
-                        }
-                        Ok(None) => {
-                            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
-                        }
-                        Err(_) => {
-                            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
-                        }
-                    }
+                            dir,
+                            selected,
+                            options,
+                        );
+                    });
                 }
                 FilesystemCommand::ResolveSourceInput { .. }
                 | FilesystemCommand::CancelSourceInput { .. } => {}
@@ -436,6 +347,137 @@ pub(crate) fn spawn_browser_query_worker(
     });
 
     (command_tx, result_rx)
+}
+
+fn process_open_browser_directory(
+    result_tx: &Sender<FilesystemResult>,
+    shared_cache: &SharedFilesystemCache,
+    shared_state: &SharedBrowserWorkerState,
+    latest_request_id: &AtomicU64,
+    request_id: u64,
+    dir: PathBuf,
+    selected: Option<PathBuf>,
+    options: Option<BrowserScanOptions>,
+) {
+    let options = match resolve_scan_options(shared_state, options) {
+        Some(options) => options,
+        None => {
+            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
+            return;
+        }
+    };
+    let primary_epoch_snapshot = snapshot_primary_io_epoch();
+    let should_cancel = || {
+        latest_request_id.load(Ordering::SeqCst) != request_id
+            || should_cancel_low_priority_io(primary_epoch_snapshot)
+    };
+    if should_cancel() {
+        let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
+        return;
+    }
+    if let Some(entries) = load_cached_browser_entries(
+        shared_state,
+        &dir,
+        options.navigation_sort,
+        options.archive_mode,
+    ) {
+        send_browser_scan_result(
+            result_tx,
+            shared_cache,
+            request_id,
+            dir,
+            selected,
+            options,
+            entries,
+            &should_cancel,
+        );
+        return;
+    }
+    let cached_entries = {
+        let Ok(mut cache) = shared_cache.lock() else {
+            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
+            return;
+        };
+        if should_cancel() {
+            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
+            return;
+        }
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            load_browser_entry_paths(&dir, &options, &mut cache)
+        }));
+        match result {
+            Ok(entries) => entries,
+            Err(_) => {
+                let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
+                return;
+            }
+        }
+    };
+    store_cached_browser_entries(
+        shared_state,
+        &dir,
+        options.navigation_sort,
+        options.archive_mode,
+        cached_entries.clone(),
+    );
+    send_browser_scan_result(
+        result_tx,
+        shared_cache,
+        request_id,
+        dir,
+        selected,
+        options,
+        cached_entries,
+        &should_cancel,
+    );
+}
+
+fn send_browser_scan_result(
+    result_tx: &Sender<FilesystemResult>,
+    shared_cache: &SharedFilesystemCache,
+    request_id: u64,
+    dir: PathBuf,
+    selected: Option<PathBuf>,
+    options: BrowserScanOptions,
+    cached_entries: Vec<PathBuf>,
+    should_cancel: &impl Fn() -> bool,
+) {
+    let options_for_scan = options.clone();
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        scan_query_request(
+            result_tx,
+            shared_cache,
+            request_id,
+            dir.clone(),
+            selected.clone(),
+            options_for_scan,
+            cached_entries,
+            should_cancel,
+        )
+    }));
+    match result {
+        Ok(Some(entries)) => {
+            send_thumbnail_hint(
+                result_tx,
+                request_id,
+                &entries,
+                &options,
+                selected.as_deref(),
+            );
+            let _ = result_tx.send(FilesystemResult::BrowserFinish {
+                request_id,
+                directory: dir,
+                entries,
+                selected,
+            });
+        }
+        Ok(None) => {
+            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
+        }
+        Err(_) => {
+            let _ = result_tx.send(FilesystemResult::BrowserFailed { request_id });
+        }
+    }
 }
 
 pub fn scan_browser_directory_with_preview(
@@ -919,6 +961,7 @@ fn matches_filters(entry: &BrowserEntry, filter_text: &str, extension_filter: &s
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::filesystem::path::zip_virtual_child_path;
 
     #[test]
     fn natural_sort_orders_numeric_suffixes() {
@@ -1220,5 +1263,66 @@ mod tests {
             }
             other => panic!("unexpected result: {:?}", std::mem::discriminant(&other)),
         }
+    }
+
+    #[test]
+    fn stale_browser_request_fails_before_scanning() {
+        let shared_cache = Arc::new(Mutex::new(FilesystemCache::new(
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+        )));
+        let shared_state = new_shared_browser_worker_state();
+        let latest_request_id = AtomicU64::new(2);
+        let (tx, rx) = mpsc::channel();
+
+        process_open_browser_directory(
+            &tx,
+            &shared_cache,
+            &shared_state,
+            &latest_request_id,
+            1,
+            std::env::temp_dir(),
+            None,
+            Some(BrowserScanOptions::default()),
+        );
+
+        match rx.try_recv().unwrap() {
+            FilesystemResult::BrowserFailed { request_id } => assert_eq!(request_id, 1),
+            other => panic!("unexpected result: {:?}", std::mem::discriminant(&other)),
+        }
+    }
+
+    #[test]
+    fn archive_virtual_child_does_not_preload_browser_directory() {
+        let dir = std::env::temp_dir().join("wml2viewer_browser_archive_preload");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let archive = dir.join("pages.zip");
+        let file = std::fs::File::create(&archive).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        zip.start_file("001.png", zip::write::SimpleFileOptions::default())
+            .unwrap();
+        use std::io::Write;
+        zip.write_all(b"png").unwrap();
+        zip.finish().unwrap();
+
+        let shared = new_shared_browser_worker_state();
+        let mut cache =
+            FilesystemCache::new(NavigationSortOption::OsName, ArchiveBrowseOption::Folder);
+        let child = zip_virtual_child_path(&archive, 0, "001.png");
+
+        preload_browser_directory_for_path(
+            &shared,
+            &child,
+            NavigationSortOption::OsName,
+            ArchiveBrowseOption::Folder,
+            &mut cache,
+        );
+
+        let state = shared.lock().unwrap();
+        assert!(state.cached_directory.is_none());
+        assert!(state.cached_entries.is_empty());
+
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

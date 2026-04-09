@@ -162,27 +162,32 @@ P5 = 優先度低い
 - [ ] `src/filesystem/browser.rs` の lazy load / incremental snapshot をさらに進めて大規模フォル
 
 ### Filesystems
-- zip系
-    - [*] issue: bench_archive: 1.6Gベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
-    - [*] issue: zipの展開が遅くなっている
-    - [*] issue: zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
-    - [ ] issue: viewer で巨大 zip の最初の1枚表示に極端に時間がかかる
+- 非 network-aware format の I/O バースト対策
+    - [ ] P0 issue: viewer の表示優先制御を再設計する
+      - 対象は当面 `zip` と `tiff`
+      - 初回表示で I/O を集中させない
+      - 2枚目以降でも burst read / decode を起こさない
+      - filer / thumbnail / preload / manga companion の副作用を切り分ける
+      - network path では「表示優先」で段階的に後続処理を走らせる
+    - [ ] zip: 巨大 archive の最初の1枚表示に極端に時間がかかる
       - 1.6GB zip で初回表示が 40 秒級になるケースあり
       - first page fast path / central directory open / 初回 index 構築のどこが支配的か再計測する
-      - filer / thumbnail / companion / preload の副作用を切り分けた上で、viewer 単体で最初の1枚を優先する
-    - [ ] issue: viewer で zip の2枚目以降が回収前よりもっさりしている
-      - full index warmup や branch navigation の回帰が混ざりやすい
+      - viewer 単体で最初の1枚を優先し、filer / thumbnail / companion / preload の副作用を抑える
+    - [ ] zip: 2枚目以降が回収前よりもっさりしている
+      - preload / branch navigation / companion / texture reuse の回帰が混ざりやすい
       - zip 内 next/prev, preload, manga companion を同じ軽量経路に揃えて再設計する
-    - [ ] issue: zip 内ナビゲーションと漫画モードが速度改善のたびに壊れやすい
+    - [ ] zip: ナビゲーションと漫画モードが速度改善のたびに壊れやすい
       - zip virtual child の next/prev と manga companion を viewer 側の場当たり分岐で持たない
       - navigation policy を filesystem 側へ寄せ、zip/listed/dir で共通に扱えるようにする
-    - [+] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
-    - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
-    - [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
-    - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
-    - [*] zipのローカルキャッシュ方針を見直す
+    - [ ] zip/tiff: 時間のかかる展開時に viewer 側が固まる問題
+    - [*] zip: `bench_archive` 1.6G ベンチが安定して終わらない。bench の結果は `test\benchmarklog.txt` `.\test\bench.bat` で実行可能
+    - [+] zip: zip crate は `BufRead` で 8KB のキャッシュしか効かないので、`ZipCacheReader` をラップして改善できるかチェック　`zipreader.md` 参照
+    - [*] zip: 起動時の引数に zip を選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
+    - [*] zip: ローカルキャッシュ方針を見直す
       - 現在は bool (`local_cache`) で on/off のみ
       - provider 共通 cache policy 導入後に size budget / no-cache 条件へ置き換える
+    - [ ] tiff: network 上での burst read / decode 対策
+    - [ ] crate oxiarc-lzhufで、lzhアーカイブ対応 feature LHA で実装
     - [ ] listed file(.wmltxt)でhttpが表示出来ない問題
 
 ### syetem
@@ -198,10 +203,10 @@ P5 = 優先度低い
   - 表示順や通常スクロールは壊さず、初期表示時だけ右端寄せする
   - `stick_to_right()` のような継続追従は再描画を増やすので使わない
 
-### zip(P1)
-- [+] zip: 時間のかかるzip展開時にviewer側が固まる問題 configのリセットで改善
-- [ ] issue: viewer の zip 初回表示と 2 枚目以降の体感速度を再チューニング
-  - 巨大 zip では first page fast path、通常サイズでは 2 枚目以降の応答性を優先して評価する
+### 非 network-aware format(P1)
+- [+] zip: 時間のかかる zip 展開時に viewer 側が固まる問題 config のリセットで改善
+- [ ] issue: viewer の zip / tiff の体感速度を再チューニング
+  - 巨大 archive では first page fast path、通常サイズでは 2 枚目以降の応答性を優先して評価する
   - `bench_archive` だけでなく viewer 実機操作で比較する
 
 ### filer(P4)
@@ -726,15 +731,15 @@ P5 = 優先度低い
 ### src/filesystem/zip_file.rs
 - [*] zip 内ファイルソートの実機確認
 - [+] 数字入りファイルのソート順の Explorer 差分調整(確認中)
-- [*] zipの展開が遅くなっている
-- [*] zip 起動時がもたつく問題を修正, cache,  ダミースクリーン+ Waiting画面など
+- [*] 非 network-aware format の I/O バースト対策の一環として zip 展開の速度確認
+- [*] zip 起動時がもたつく問題を修正, cache, ダミースクリーン+ Waiting画面など
 - [+] issue: zip crateはBufferReadで8KBのキャッシュしか効いていないので、ZipCacheReaderをラップして改善できるかチェック　`zipreader.md` 参照
 - [*] issue: 起動時にzipが指定されると長時間待たされる
 - [*] issue: 起動時の引数にzipを選ぶとナビゲーションできなくなるバグ(Filerで選択できる)
-- [ ] zip: 時間のかかるzip展開時にviewer側が固まる問題
+- [ ] zip/tiff: 時間のかかる展開時にviewer側が固まる問題
 - [*] local archive cache の方針見直し
   - 詳細は `FileSystem > 仮想ファイル > キャッシングアルゴリズムの見直し/実装` を参照
-- [*] issue: bench_archive: 1.6Gはベンチが終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
+- [*] issue: `bench_archive` 1.6G は安定して終わらない。benchの結果は `test\benchmarklog.txt` `.\test\bench.bat`で実行可能
 
 ### 全体 / アーキテクチャ
 - [*] 全体的にイベントの処理順番に引きずられているissueが多いので処理順を見直してください

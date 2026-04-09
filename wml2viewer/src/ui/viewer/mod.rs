@@ -5,10 +5,11 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{LoadedImage, SaveFormat, save_loaded_image};
 use crate::filesystem::{
     FilesystemCommand, FilesystemResult, SharedBrowserWorkerState, SharedFilesystemCache,
-    adjacent_entry_in_current_branch, adjacent_non_container_entry, archive_prefers_low_io,
-    browser_directory_for_path, is_browser_container, navigation_branch_path,
-    new_shared_browser_worker_state, new_shared_filesystem_cache, resolve_navigation_entry_path,
-    set_archive_zip_workaround, spawn_browser_query_worker, spawn_filesystem_worker,
+    adjacent_entry, adjacent_entry_in_current_branch, adjacent_non_container_entry,
+    archive_prefers_low_io, browser_directory_for_path, is_browser_container,
+    navigation_branch_path, new_shared_browser_worker_state, new_shared_filesystem_cache,
+    resolve_navigation_entry_path, set_archive_zip_workaround, spawn_browser_query_worker,
+    spawn_filesystem_worker,
 };
 use crate::options::{
     AppConfig, EndOfFolderOption, KeyBinding, NavigationSortOption, PluginConfig, ResourceOptions,
@@ -40,7 +41,7 @@ use options::ZoomOption;
 pub(crate) use state::SettingsDraftState;
 use state::{SaveDialogState, ViewerOverlayState};
 
-const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(60);
+const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(90);
 const POINTER_SINGLE_CLICK_DELAY: Duration = Duration::from_millis(500);
 const WAITING_CARD_DELAY: Duration = Duration::from_millis(180);
 
@@ -290,23 +291,6 @@ fn same_navigation_branch(
     navigation_branch_path(current_path) == navigation_branch_path(candidate_path)
 }
 
-fn adjacent_regular_navigation_target(
-    current_path: &std::path::Path,
-    navigation_sort: NavigationSortOption,
-    archive_mode: crate::options::ArchiveBrowseOption,
-    manga_spread_active: bool,
-    forward: bool,
-) -> Option<PathBuf> {
-    let step = if forward { 1 } else { -1 };
-    let boundary =
-        adjacent_same_branch_navigation_target(current_path, navigation_sort, archive_mode, step)?;
-    if !manga_spread_active {
-        return Some(boundary);
-    }
-    adjacent_same_branch_navigation_target(&boundary, navigation_sort, archive_mode, step)
-        .or(Some(boundary))
-}
-
 fn adjacent_same_branch_navigation_target(
     current_path: &std::path::Path,
     navigation_sort: NavigationSortOption,
@@ -389,16 +373,6 @@ fn should_defer_thumbnail_io(
 ) -> bool {
     archive_prefers_low_io(current_navigation_path)
         && (active_request || companion_active_request || preload_active_request)
-}
-
-fn companion_load_scale_mode(
-    companion_path: &std::path::Path,
-    configured: RenderScaleMode,
-) -> RenderScaleMode {
-    if matches!(configured, RenderScaleMode::PreciseCpu) && archive_prefers_low_io(companion_path) {
-        return RenderScaleMode::FastGpu;
-    }
-    configured
 }
 
 pub(crate) fn join_search_paths(paths: &[PathBuf]) -> String {
@@ -1530,14 +1504,13 @@ impl ViewerApp {
         let request_id = self.alloc_request_id();
         self.companion_active_request = Some(ActiveRenderRequest::Load(request_id));
         self.companion_navigation_path = Some(path.clone());
-        let scale_mode = companion_load_scale_mode(&path, self.render_options.scale_mode);
         self.companion_tx
             .send(RenderCommand::LoadPath {
                 request_id,
                 path,
                 zoom: self.zoom,
                 method: self.render_options.zoom_method,
-                scale_mode,
+                scale_mode: self.render_options.scale_mode,
             })
             .map_err(worker_send_error)?;
         Ok(())
@@ -1634,17 +1607,6 @@ impl ViewerApp {
         if !self.can_trigger_navigation() {
             return Ok(());
         }
-        if let Some(target) = adjacent_regular_navigation_target(
-            &self.current_navigation_path,
-            self.navigation_sort,
-            self.filer.archive_mode,
-            self.manga_spread_active(),
-            true,
-        ) {
-            self.request_load_path(target)?;
-            self.last_navigation_at = Some(Instant::now());
-            return Ok(());
-        }
         if let Some(target) = self.manga_navigation_target(true) {
             self.request_load_path(target)?;
             self.last_navigation_at = Some(Instant::now());
@@ -1661,17 +1623,6 @@ impl ViewerApp {
     pub(crate) fn prev_image(&mut self) -> Result<(), Box<dyn Error>> {
         self.cancel_pending_single_click_navigation();
         if !self.can_trigger_navigation() {
-            return Ok(());
-        }
-        if let Some(target) = adjacent_regular_navigation_target(
-            &self.current_navigation_path,
-            self.navigation_sort,
-            self.filer.archive_mode,
-            self.manga_spread_active(),
-            false,
-        ) {
-            self.request_load_path(target)?;
-            self.last_navigation_at = Some(Instant::now());
             return Ok(());
         }
         if let Some(target) = self.manga_navigation_target(false) {
@@ -2052,12 +2003,12 @@ impl ViewerApp {
     }
 
     fn next_preload_candidate(&self) -> Option<PathBuf> {
-        adjacent_regular_navigation_target(
+        let step = if self.manga_spread_active() { 2 } else { 1 };
+        adjacent_entry(
             &self.current_navigation_path,
             self.navigation_sort,
             self.filer.archive_mode,
-            self.manga_spread_active(),
-            true,
+            step,
         )
     }
 
@@ -2916,15 +2867,14 @@ fn filesystem_send_error(err: mpsc::SendError<FilesystemCommand>) -> Box<dyn Err
 #[cfg(test)]
 mod tests {
     use super::{
-        adjacent_same_branch_navigation_target, companion_load_scale_mode,
-        manga_companion_matches_preloaded, preloaded_navigation_matches, same_navigation_branch,
-        should_allow_preload_for_path, should_defer_filer_request_while_loading,
-        should_defer_filer_sync_for_navigation, should_defer_preload_for_manga_low_io,
-        should_defer_thumbnail_io, should_disable_preload_for_manga_low_io,
+        adjacent_same_branch_navigation_target, manga_companion_matches_preloaded,
+        preloaded_navigation_matches, same_navigation_branch, should_allow_preload_for_path,
+        should_defer_filer_request_while_loading, should_defer_filer_sync_for_navigation,
+        should_defer_preload_for_manga_low_io, should_defer_thumbnail_io,
+        should_disable_preload_for_manga_low_io,
     };
     use crate::filesystem::{build_zip_virtual_children, zip_index_is_available};
     use crate::options::{ArchiveBrowseOption, NavigationSortOption};
-    use crate::ui::viewer::options::RenderScaleMode;
     use std::fs;
     use std::path::Path;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -3087,18 +3037,5 @@ mod tests {
             false,
             false
         ));
-    }
-
-    #[test]
-    fn low_io_companion_uses_fast_gpu_first() {
-        let companion = Path::new(r"F:\archive.zip\__zipv__\00000001__002.png");
-        assert_eq!(
-            companion_load_scale_mode(companion, RenderScaleMode::PreciseCpu),
-            RenderScaleMode::FastGpu
-        );
-        assert_eq!(
-            companion_load_scale_mode(Path::new(r"F:\dir\002.png"), RenderScaleMode::PreciseCpu),
-            RenderScaleMode::PreciseCpu
-        );
     }
 }

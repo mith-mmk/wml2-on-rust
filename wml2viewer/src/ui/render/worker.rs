@@ -3,16 +3,14 @@ use crate::drawers::canvas::Canvas;
 use crate::drawers::image::{
     LoadedImage, load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
 };
-use crate::filesystem::{
-    OpenedImageSource, archive_prefers_low_io, open_image_source_with_cancel, resolve_start_path,
-};
+use crate::filesystem::{OpenedImageSource, open_image_source_with_cancel, resolve_start_path};
 use crate::ui::viewer::options::RenderScaleMode;
 use std::error::Error;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::{Arc, Condvar, Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::thread::{self, JoinHandle};
 
 pub(crate) enum RenderCommand {
@@ -66,19 +64,6 @@ struct RenderIoCoordinator {
     companion_active: AtomicU64,
 }
 
-#[derive(Default)]
-struct LowIoQueueState {
-    active: bool,
-    queued_primary: usize,
-    queued_companion: usize,
-    queued_preload: usize,
-}
-
-struct LowIoQueue {
-    state: Mutex<LowIoQueueState>,
-    wake: Condvar,
-}
-
 fn render_io_coordinator() -> &'static RenderIoCoordinator {
     static COORDINATOR: OnceLock<RenderIoCoordinator> = OnceLock::new();
     COORDINATOR.get_or_init(|| RenderIoCoordinator {
@@ -86,14 +71,6 @@ fn render_io_coordinator() -> &'static RenderIoCoordinator {
         primary_active: AtomicU64::new(0),
         high_priority_epoch: AtomicU64::new(0),
         companion_active: AtomicU64::new(0),
-    })
-}
-
-fn low_io_queue() -> &'static LowIoQueue {
-    static QUEUE: OnceLock<LowIoQueue> = OnceLock::new();
-    QUEUE.get_or_init(|| LowIoQueue {
-        state: Mutex::new(LowIoQueueState::default()),
-        wake: Condvar::new(),
     })
 }
 
@@ -134,64 +111,13 @@ fn should_abort_background_load(
     }
 }
 
-pub(crate) struct LowIoPermit<'a> {
-    queue: &'a LowIoQueue,
-}
-
-impl Drop for LowIoPermit<'_> {
-    fn drop(&mut self) {
-        if let Ok(mut state) = self.queue.state.lock() {
-            state.active = false;
-            self.queue.wake.notify_all();
-        }
-    }
-}
-
-fn low_io_higher_priority_waiting(state: &LowIoQueueState, priority: RenderWorkerPriority) -> bool {
-    match priority {
-        RenderWorkerPriority::Primary => false,
-        RenderWorkerPriority::Companion => state.queued_primary > 0,
-        RenderWorkerPriority::Preload => state.queued_primary > 0 || state.queued_companion > 0,
-    }
-}
+pub(crate) struct LowIoPermit;
 
 pub(crate) fn acquire_low_io_permit<F: Fn() -> bool>(
-    priority: RenderWorkerPriority,
+    _priority: RenderWorkerPriority,
     should_cancel: &F,
-) -> Option<LowIoPermit<'static>> {
-    let queue = low_io_queue();
-    let mut state = queue.state.lock().ok()?;
-    match priority {
-        RenderWorkerPriority::Primary => state.queued_primary += 1,
-        RenderWorkerPriority::Companion => state.queued_companion += 1,
-        RenderWorkerPriority::Preload => state.queued_preload += 1,
-    }
-
-    loop {
-        if should_cancel() {
-            match priority {
-                RenderWorkerPriority::Primary => state.queued_primary -= 1,
-                RenderWorkerPriority::Companion => state.queued_companion -= 1,
-                RenderWorkerPriority::Preload => state.queued_preload -= 1,
-            }
-            queue.wake.notify_all();
-            return None;
-        }
-
-        let higher_waiting = low_io_higher_priority_waiting(&state, priority);
-
-        if !state.active && !higher_waiting {
-            state.active = true;
-            match priority {
-                RenderWorkerPriority::Primary => state.queued_primary -= 1,
-                RenderWorkerPriority::Companion => state.queued_companion -= 1,
-                RenderWorkerPriority::Preload => state.queued_preload -= 1,
-            }
-            return Some(LowIoPermit { queue });
-        }
-
-        state = queue.wake.wait(state).ok()?;
-    }
+) -> Option<LowIoPermit> {
+    (!should_cancel()).then_some(LowIoPermit)
 }
 
 fn blank_loaded_image() -> LoadedImage {
@@ -294,13 +220,6 @@ pub(crate) fn spawn_render_worker(
                                     return Ok(None);
                                 }
 
-                                let low_io_archive = archive_prefers_low_io(&load_path);
-                                let low_io_permit = low_io_archive
-                                    .then(|| acquire_low_io_permit(priority, &should_cancel))
-                                    .flatten();
-                                if low_io_archive && low_io_permit.is_none() {
-                                    return Ok(None);
-                                }
                                 let source = match open_image_source_with_cancel(&load_path, &should_cancel) {
                                     Some(OpenedImageSource::Bytes {
                                         bytes,
@@ -312,7 +231,6 @@ pub(crate) fn spawn_render_worker(
                                     }
                                     None => load_canvas_from_file(&load_path)?,
                                 };
-                                drop(low_io_permit);
                                 if should_cancel() {
                                     return Ok(None);
                                 }
@@ -416,10 +334,7 @@ pub(crate) fn worker_send_error(err: mpsc::SendError<RenderCommand>) -> Box<dyn 
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        RenderIoCoordinator, RenderWorkerPriority, low_io_higher_priority_waiting,
-        should_abort_background_load,
-    };
+    use super::{RenderIoCoordinator, RenderWorkerPriority, should_abort_background_load};
     use std::sync::atomic::{AtomicU64, Ordering};
 
     #[test]
@@ -515,44 +430,6 @@ mod tests {
             &latest,
             8,
             &coordinator,
-        ));
-    }
-
-    #[test]
-    fn low_io_priority_waiting_prefers_primary_then_companion() {
-        let state = super::LowIoQueueState {
-            active: false,
-            queued_primary: 1,
-            queued_companion: 1,
-            queued_preload: 1,
-        };
-
-        assert!(!low_io_higher_priority_waiting(
-            &state,
-            RenderWorkerPriority::Primary,
-        ));
-        assert!(low_io_higher_priority_waiting(
-            &state,
-            RenderWorkerPriority::Companion,
-        ));
-        assert!(low_io_higher_priority_waiting(
-            &state,
-            RenderWorkerPriority::Preload,
-        ));
-
-        let state = super::LowIoQueueState {
-            active: false,
-            queued_primary: 0,
-            queued_companion: 1,
-            queued_preload: 1,
-        };
-        assert!(!low_io_higher_priority_waiting(
-            &state,
-            RenderWorkerPriority::Companion,
-        ));
-        assert!(low_io_higher_priority_waiting(
-            &state,
-            RenderWorkerPriority::Preload,
         ));
     }
 }

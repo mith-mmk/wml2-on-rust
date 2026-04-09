@@ -33,7 +33,14 @@
   - `background` = `solid` / `tile`
   - `fade` は `ViewerOptions` にはあるが、現行の永続化対象ではない
 
-  - 漫画モードの設計：2枚読んでレンダーに投げて終わり viewer2回たたくだけ（見開きにならないときは次の画像キャッシュに入れて終わり。この場合前後2枚ずつカレント2枚の最低6枚だけキャッシュすればよいはず。通常の場合は次3,1,2の配分）
+  - 漫画モードの設計：
+    - 通常モードの別実装ではなく、通常モードに対する条件分岐として扱う
+    - `current spread = current + companion(隣の1枚)` を 1 単位として render worker に渡す
+    - `preload spread = 次の見開き2枚` も 1 単位として preload worker に渡す
+    - portrait かつ viewport が見開き条件を満たす時だけ 2 枚表示する
+    - landscape / 相方なし の場合は単ページ表示へフォールバックする
+    - `companion` は UI 側の独立状態機械として増やさず、見開き単位 load の副産物として扱う
+    - 先読みは「次の見開き1組」までに制限し、通常モードより積極的に増やさない
 
 - `window`
   - `fullscreen`
@@ -89,6 +96,37 @@
 - `viewer.fade` は現状 UI / 永続化にまだ出していないため、仕様上は「runtime-only の予備」として扱います。
 - `window.size` と `window.start_position` は TOML 上では tagged enum です。
 - `ConfigFile` の読み書きは `serde` / `toml` で行います。
+
+## I/O と優先度
+
+- viewer 本線を最優先とし、優先順位は `current > manga spread current > preload > filer > thumbnail` を基本とする
+- hidden な filer / subfiler / thumbnail は viewer 本線を妨げないことを優先し、表示中でない限り積極的に work を走らせない
+- thumbnail は補助機能であり、viewer のページ送りや見開き表示より優先してはならない
+- preload は「現在の遷移を速くするための最小限」に留め、background I/O の肥大化を避ける
+
+## 非 network-aware format の方針
+
+- 対象は当面 `zip` と `tiff`
+- 問題設定は「decoder の速度」ではなく「network path 上での I/O バースト抑制」とする
+- `zip` は以下の段階的方針を取る
+  - 初回1枚目は `probe_first_supported_zip_entry()` を使い、full index なしで最速表示を優先する
+  - zip index は persistent cache を使い、2回目以降の metadata scan を抑える
+  - access policy は `DirectOriginal` / `Sequential` を持ち、network path と size threshold と sampled profile から決める
+  - 大きい network zip では「初回表示」と「連続閲覧」を同じ戦略で最適化しない
+  - staged policy を前提にし、必要なら表示後に local cache warmup を行い、連続閲覧だけ cached archive へ切り替える
+- `stored` / 実質無圧縮 zip は temp copy を強制しない
+
+## Manga Mode 実装原則
+
+- 漫画モードは通常モードの上に載る薄い分岐でなければならない
+- 漫画モード専用の複雑な state machine を増やさない
+- 変えるのは以下に限定する
+  - 表示枚数
+  - `next/prev` の進み方
+  - preload の単位
+- per-frame で branch 探索や companion 再同期を行わない
+- 見開き target の計算は `current path / viewport / sort / archive mode` 変更時にだけ更新する
+- render worker は `LoadPath` と `LoadSpread` を持ち、漫画モード時の current / preload は可能な限り `LoadSpread` を使う
 
 ## 代表的な動作
 

@@ -157,7 +157,7 @@ P5 = 優先度低い
 - [ ] wml2viewer/README.ja.mdとwml2viewer/README.mdの更新
 
 ## issues
-- [ ] P0 issue: 漫画モードの体感速度と挙動が現行で明確に劣化している
+- [x] P0 issue: 漫画モードの体感速度と挙動が現行で明確に劣化している
    - 単ページ表示より見開き表示の方が遅い状態を解消する
    - `companion` / `preload` / `next-prev` / `filesystem navigation` の責務を分離して切り分ける
    - `viewer` の通常モードを壊さないことを優先し、漫画モードだけを独立して再設計する

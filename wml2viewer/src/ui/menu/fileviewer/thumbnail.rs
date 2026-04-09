@@ -2,10 +2,13 @@ use crate::drawers::affine::InterpolationAlgorithm;
 use crate::drawers::image::{
     load_canvas_from_bytes_with_hint, load_canvas_from_file, resize_loaded_image,
 };
-use crate::filesystem::{OpenedImageSource, open_image_source_with_cancel, virtual_image_size};
+use crate::filesystem::{
+    OpenedImageSource, open_image_source_with_cancel, source_prefers_low_io, virtual_image_size,
+};
 use crate::options::ThumbnailWorkaroundOptions;
 use crate::ui::render::{
-    canvas_to_color_image, should_cancel_low_priority_io, snapshot_primary_io_epoch,
+    RenderWorkerPriority, acquire_low_io_permit, canvas_to_color_image,
+    should_cancel_low_priority_io, snapshot_primary_io_epoch,
 };
 use eframe::egui::ColorImage;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -59,6 +62,14 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                         if should_cancel() {
                             return Err("thumbnail cancelled".to_string());
                         }
+                        let low_io_permit = source_prefers_low_io(&path)
+                            .then(|| {
+                                acquire_low_io_permit(RenderWorkerPriority::Preload, &should_cancel)
+                            })
+                            .flatten();
+                        if source_prefers_low_io(&path) && low_io_permit.is_none() {
+                            return Err("thumbnail cancelled".to_string());
+                        }
                         let loaded = match open_image_source_with_cancel(&path, &should_cancel) {
                             Some(OpenedImageSource::Bytes {
                                 bytes, hint_path, ..
@@ -69,6 +80,7 @@ pub(crate) fn spawn_thumbnail_worker() -> (Sender<ThumbnailCommand>, Receiver<Th
                             None => load_canvas_from_file(&path),
                         }
                         .map_err(|err| err.to_string())?;
+                        drop(low_io_permit);
                         if should_cancel() {
                             return Err("thumbnail cancelled".to_string());
                         }

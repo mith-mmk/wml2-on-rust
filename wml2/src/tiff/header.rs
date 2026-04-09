@@ -1491,17 +1491,10 @@ fn read_tag(
         let buf = reader.read_bytes_no_move(tag * 12 + 4)?;
         let next_ifd = bin_rs::io::read_u32(&buf, tag * 12, reader.endian());
 
-        if cfg!(debug_assertions) {
-            println!("Tiff ifd {} {} {}", tag, offset_ifd, next_ifd);
-        }
-
         for _i in 0..tag {
             let tagid = reader.read_u16()?;
             let datatype = reader.read_u16()? as usize;
             let datalen = reader.read_u32()? as usize;
-            if cfg!(debug_assertions) {
-                println!("tag {:04x} {} {}", tagid, datatype, datalen);
-            }
 
             let data: DataPack = get_data(reader, datatype, datalen)?;
             if mode == IfdMode::BaseTiff {

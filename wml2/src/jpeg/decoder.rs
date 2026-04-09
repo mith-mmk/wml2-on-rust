@@ -101,10 +101,6 @@ impl<'decode, B: BinaryReader> BitReader<'decode, B> {
                 }
                 0xd0..=0xd7 => {
                     // RST
-                    if cfg!(debug_assertions) {
-                        println!("RST {:02x}{:02x}", b, marker);
-                    }
-
                     let rst_no = (b & 0x7) as usize;
                     if rst_no != (self.prev_rst + 1) % 8 {
                         return Err(Box::new(ImgError::new_const(
@@ -1336,12 +1332,6 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                 mcu_interval -= 1;
                 if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
                     if bitread.rst()? {
-                        if cfg!(debug_assertions) {
-                            println!(
-                                "strange reset interval {},{} {} {}",
-                                mcu_x, mcu_y, mcu_x_max, mcu_y_max
-                            );
-                        }
                         mcu_interval = header.interval as isize;
                         for i in 0..preds.len() {
                             preds[i] = 0;
@@ -1532,12 +1522,6 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                 mcu_interval = mcu_interval - 1;
                 if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
                     if bitread.rst()? == true {
-                        if cfg!(debug_assertions) {
-                            println!(
-                                "strange reset interval {},{} {} {}",
-                                mcu_x, mcu_y, mcu_x_max, mcu_y_max
-                            );
-                        }
                         mcu_interval = header.interval as isize;
                         for i in 0..preds.len() {
                             preds[i] = 0;

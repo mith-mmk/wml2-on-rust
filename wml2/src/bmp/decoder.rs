@@ -191,9 +191,6 @@ fn decode_rgb<B: BinaryReader>(
 
     let line_size = ((width * header.bit_count + 31) / 32) * 4;
     for y_ in 0..height {
-        if cfg!(debug_assertions) {
-            println!("{}", y_);
-        }
         let buffer = reader.read_bytes_as_vec(line_size)?;
         let y = height - 1 - y_;
         //        let offset = y_ * line_size;
@@ -419,26 +416,6 @@ fn decode_bit_fileds<B: BinaryReader>(
 
     let alpha_mask = v4.b_v4_alpha_mask;
     let (alpha_shift, alpha_bits) = get_shift(alpha_mask);
-
-    if cfg!(debug_assertions) {
-        println!(
-            "{:>04x} {:>032b} >>{} {}",
-            red_mask, red_mask, red_shift, red_bits
-        );
-        println!(
-            "{:>04x} {:>032b} >>{} {}",
-            green_mask, green_mask, green_shift, green_bits
-        );
-        println!(
-            "{:>04x} {:>032b} >>{} {}",
-            blue_mask, blue_mask, blue_shift, blue_bits
-        );
-        println!(
-            "{:>04x} {:>032b} >>{} {}",
-            alpha_mask, alpha_mask, alpha_shift, alpha_bits
-        );
-        println!("{} {}", width, height);
-    }
 
     option.drawer.init(width, height, InitOptions::new())?;
     let mut line: Vec<u8> = (0..width * 4)

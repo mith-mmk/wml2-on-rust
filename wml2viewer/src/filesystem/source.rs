@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::dependent::{
     HttpFetchMetadata, HttpFetchRequest, HttpFetchResult, default_temp_dir, fetch_http_url,
+    path_is_probably_network,
 };
 
 use super::path::{
@@ -529,7 +530,10 @@ pub(crate) fn source_prefers_low_io(path: &Path) -> bool {
     if let Some((archive, _)) = zip_virtual_child_source(&resolved) {
         return zip_prefers_low_io(&archive);
     }
-    is_zip_file_path(&resolved) && zip_prefers_low_io(&resolved)
+    if is_zip_file_path(&resolved) {
+        return zip_prefers_low_io(&resolved);
+    }
+    path_is_probably_network(&resolved)
 }
 
 fn normalize_open_path(path: &Path) -> Option<PathBuf> {
@@ -618,6 +622,12 @@ mod tests {
             source_url_from_input(&path),
             Some("https://example.com/image.webp".to_string())
         );
+    }
+
+    #[test]
+    fn source_prefers_low_io_for_unc_regular_files() {
+        let path = PathBuf::from(r"\\server\share\images\sample.bmp");
+        assert!(source_prefers_low_io(&path));
     }
 
     #[test]

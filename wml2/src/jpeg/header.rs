@@ -678,11 +678,7 @@ impl JpegHaeder {
                         let text = reader.read_ascii_string(length - 2);
                         match text {
                             Ok(text) => comment = Some(text),
-                            Err(err) => {
-                                if cfg!(debug_assertions) {
-                                    println!("Unreadable string{:?}", err);
-                                }
-                            }
+                            Err(_err) => {}
                         }
                         // offset = offset + length; // skip
                     }
@@ -692,11 +688,6 @@ impl JpegHaeder {
                         let length = reader.read_u16_be()? as usize;
                         let buffer = reader.read_bytes_as_vec(length - 2)?;
                         let tag = read_string(&buffer, 0, length - 2);
-                        let len = buffer.len() - tag.len() - 1;
-                        let ptr = tag.len();
-                        if cfg!(debug_assertions) {
-                            println!("App {} {} {} {} {}", num, length, tag, len, ptr);
-                        }
                         let result = read_app(num, &tag, &buffer)?;
                         match &result {
                             JpegAppHeaders::Adobe(app) => {

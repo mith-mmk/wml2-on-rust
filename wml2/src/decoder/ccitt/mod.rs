@@ -421,25 +421,15 @@ pub fn decoder(
         codes.push(0);
         let mut codes_ptr = 1;
 
-        if cfg!(debug_assertions) {
-            print!("\ny {} {} ", y, is2d);
-        }
-
         while a0 < width && !eol {
             let mode = if is2d { reader.mode()? } else { Mode::Horiz };
             match mode {
                 Mode::Horiz => {
                     let (mut len1, mut len2);
                     if codes.len() & 0x1 == 0 {
-                        if cfg!(debug_assertions) {
-                            print!("Hw ");
-                        }
                         len1 = reader.run_len(&white)?;
                         len2 = reader.run_len(&black)?;
                     } else {
-                        if cfg!(debug_assertions) {
-                            print!("Hb ");
-                        }
                         len1 = reader.run_len(&black)?;
                         len2 = reader.run_len(&white)?;
                     }
@@ -458,15 +448,8 @@ pub fn decoder(
                     codes.push(a0);
                     a0 += len2 as usize;
                     codes.push(a0);
-
-                    if cfg!(debug_assertions) {
-                        print!("{} {} {} ", len1, len2, a0);
-                    }
                 }
                 Mode::Pass => {
-                    if cfg!(debug_assertions) {
-                        print!("Ps ");
-                    }
                     codes_ptr += 1;
                     while codes_ptr < pre_codes.len() && a0 >= pre_codes[codes_ptr] {
                         codes_ptr += 2;
@@ -477,14 +460,8 @@ pub fn decoder(
                         width
                     });
                     a0 = b2;
-                    if cfg!(debug_assertions) {
-                        print!("{} ", a0);
-                    }
                 }
                 Mode::V => {
-                    if cfg!(debug_assertions) {
-                        print!("V ");
-                    }
                     codes_ptr += 1;
 
                     while codes_ptr < pre_codes.len() && a0 >= pre_codes[codes_ptr] {
@@ -498,15 +475,8 @@ pub fn decoder(
                     a0 = a1;
 
                     codes.push(a0);
-
-                    if cfg!(debug_assertions) {
-                        print!("{} ", a0);
-                    }
                 }
                 Mode::Vr(n) => {
-                    if cfg!(debug_assertions) {
-                        print!("Vr({}) ", n);
-                    }
                     codes_ptr += 1;
 
                     while codes_ptr < pre_codes.len() && a0 >= pre_codes[codes_ptr] {
@@ -521,15 +491,8 @@ pub fn decoder(
                     let a1 = (b1 + n).min(width);
                     a0 = a1;
                     codes.push(a0);
-
-                    if cfg!(debug_assertions) {
-                        print!("{} ", a0);
-                    }
                 }
                 Mode::Vl(n) => {
-                    if cfg!(debug_assertions) {
-                        print!("Vl({}) ", n);
-                    }
                     codes_ptr += 1;
 
                     while codes_ptr < pre_codes.len() && a0 >= pre_codes[codes_ptr] {
@@ -544,22 +507,8 @@ pub fn decoder(
                     codes.push(a0);
 
                     codes_ptr = codes_ptr.saturating_sub(2);
-
-                    if cfg!(debug_assertions) {
-                        print!("{} ", a0);
-                    }
                 }
                 Mode::Ext2D(n) => {
-                    if cfg!(debug_assertions) {
-                        let ptr = reader.ptr.saturating_sub(32);
-                        println!();
-                        for i in 0..64 {
-                            print!("{:08b} ", reader.buffer[ptr + i].reverse_bits());
-                            if i % 8 == 7 {
-                                println!();
-                            }
-                        }
-                    }
                     let message = format!("not support 2D Ext({}) for CCITT decoder", n);
                     return Err(Box::new(ImgError::new_const(
                         ImgErrorKind::DecodeError,
@@ -568,14 +517,10 @@ pub fn decoder(
                 }
                 Mode::None => {
                     // fill?
-                    print!("None ");
                     reader.get_bits(1)?;
                     // error
                 }
                 Mode::EOL => {
-                    if cfg!(debug_assertions) {
-                        print!("EOL ");
-                    }
                     eol = true;
                     break;
                 }

@@ -55,7 +55,7 @@ pub(crate) use sort::{compare_natural_str, compare_os_str, sort_paths};
 pub use source::resolve_source_input_path;
 pub(crate) use source::{
     OpenedImageSource, SourceSignature, open_image_source, open_image_source_with_cancel,
-    source_id_for_path, source_signature_for_path,
+    source_id_for_path, source_prefers_low_io, source_signature_for_path,
 };
 pub(crate) use worker::spawn_filesystem_worker;
 pub(crate) use zip_file::{
@@ -201,12 +201,14 @@ mod tests {
     #[test]
     fn listed_file_returns_to_directory_on_next_and_prev() {
         let dir = make_temp_dir();
+        let listed_dir = dir.join("listed");
         let before = dir.join("00000-1796047615-Maid_san.jpg.webp");
         let listed = dir.join("listedfile.wmltxt");
         let after = dir.join("sample_animation.webp.gif");
-        let listed_1 = dir.join("test_f16.png");
-        let listed_2 = dir.join("test.png");
+        let listed_1 = listed_dir.join("test_f16.png");
+        let listed_2 = listed_dir.join("test.png");
 
+        fs::create_dir_all(&listed_dir).unwrap();
         fs::write(&before, []).unwrap();
         fs::write(&after, []).unwrap();
         fs::write(&listed_1, []).unwrap();
@@ -272,12 +274,14 @@ mod tests {
     #[test]
     fn listed_file_prev_exits_to_previous_entry_even_if_first_item_matches_outer_file() {
         let dir = make_temp_dir();
+        let listed_dir = dir.join("listed");
         let before = dir.join("00000-1796047615-Maid_san.jpg.webp");
         let listed = dir.join("listedfile.wmltxt");
         let after = dir.join("sample_animation.webp.gif");
-        let listed_2 = dir.join("test.png");
-        let listed_3 = dir.join("test_f16.png");
+        let listed_2 = listed_dir.join("test.png");
+        let listed_3 = listed_dir.join("test_f16.png");
 
+        fs::create_dir_all(&listed_dir).unwrap();
         fs::write(&before, []).unwrap();
         fs::write(&after, []).unwrap();
         fs::write(&listed_2, []).unwrap();

@@ -99,10 +99,6 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
         _ => {}
     }
 
-    if let Some(icc_profile) = &header.icc_profile {
-        println!("ICC Profile {}", icc_profile.len());
-    }
-
     match &header.jpeg_app_headers {
         Some(app_headers) => {
             for app in app_headers.iter() {

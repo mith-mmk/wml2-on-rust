@@ -20,16 +20,26 @@ P5 = 優先度低い
 
 最終整理日: 2026-03-29
 
-# 0.0.13
+# 0.0.20
 ## 優先度1
 - [ ] I/Oストリームの改善(zipのパフォーマンスの改善。FileSystemが面倒をみる。)
     - [*] 優先度によるI/O調停
       - viewer / companion / preload が同時に archive を触る burst を抑える
       - まずは render worker 側で `primary > companion > preload` の優先度を持たせる
-      - thumbnail worker も primary load 中は低優先度として扱い、重い archive 読み出しを中断できるようにする
+      - thumbnail worker も render worker と同じ low-I/O gate に乗せ、primary / companion 中は `Preload` 相当の低優先度として扱う
       - browser / filer scan も primary load 中は低優先度として扱い、古い request は worker 側で途中キャンセルできるようにする
+      - 現状の問題点:
+        - render(primary/companion/preload) が別 worker のままで、archive read queue が一本化されていない
+        - manga mode は `current + companion + preload` が絡み、通常表示より I/O burst しやすい
+        - filer / thumbnail は低優先度化したが、visible 時の direct request は still UI 側から個別に発火する
+      - 次にやること:
+        - zip/tiff だけでも `current > companion > preload > filer > thumbnail` の単一 queue に寄せる
+        - companion と preload の read path を統合し、同じ page の二重 open をなくす
+        - thumbnail hint は worker 側で drop できるようにし、viewer 側の後段判定に頼らない
     - [*] ロードキャンセル/SKIPの実装(重いzip対策)
       - まずは zip 読み出し中に古い companion / preload を早めに打ち切れるようにする
+      - ただし cancel は「別 worker が既に read 開始済み」の分までは止めきれていない
+      - queue 一本化前提で cancel / skip を整理し直す
     - [ ] ワークアラウンドの削除
 - [ ] キーバインドのカスタマイズ 
   - [ ] デフォルト・キーバインドの変更
@@ -47,6 +57,7 @@ P5 = 優先度低い
 - [ ] ファイラーメニュー move, copy ,delete(trash), rename
 - [ ] ファイラー／サブファイラー／サムネイルの表示 なるべく固定位置に
 - [ ] ファイルが最後につくと自動でファイラーが開くのをデフォルトでオフに変更
+- [ ] issue: zipファイルの途中で終わるとそのファイルではなくファイラーが開く問題
 
 ## 優先度2
 - [+] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善

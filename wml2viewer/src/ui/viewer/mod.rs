@@ -40,7 +40,7 @@ use options::ZoomOption;
 pub(crate) use state::SettingsDraftState;
 use state::{SaveDialogState, ViewerOverlayState};
 
-const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(180);
+const NAVIGATION_REPEAT_INTERVAL: Duration = Duration::from_millis(60);
 const POINTER_SINGLE_CLICK_DELAY: Duration = Duration::from_millis(500);
 const WAITING_CARD_DELAY: Duration = Duration::from_millis(180);
 
@@ -344,8 +344,61 @@ fn should_defer_filer_request_while_loading(
     active_request: bool,
     active_fs_request: bool,
     active_fs_input_request: bool,
+    companion_active_request: bool,
+    preload_active_request: bool,
 ) -> bool {
-    active_request || active_fs_request || active_fs_input_request
+    active_request
+        || active_fs_request
+        || active_fs_input_request
+        || companion_active_request
+        || preload_active_request
+}
+
+fn manga_companion_matches_preloaded(
+    companion_path: &std::path::Path,
+    preloaded_navigation_path: Option<&std::path::Path>,
+) -> bool {
+    preloaded_navigation_matches(preloaded_navigation_path, companion_path)
+}
+
+fn should_defer_preload_for_manga_low_io(
+    manga_mode: bool,
+    current_navigation_path: &std::path::Path,
+    desired_companion: Option<&std::path::Path>,
+    companion_ready: bool,
+) -> bool {
+    manga_mode
+        && desired_companion.is_some()
+        && archive_prefers_low_io(current_navigation_path)
+        && !companion_ready
+}
+
+fn should_disable_preload_for_manga_low_io(
+    manga_mode: bool,
+    current_navigation_path: &std::path::Path,
+    desired_companion: Option<&std::path::Path>,
+) -> bool {
+    manga_mode && desired_companion.is_some() && archive_prefers_low_io(current_navigation_path)
+}
+
+fn should_defer_thumbnail_io(
+    current_navigation_path: &std::path::Path,
+    active_request: bool,
+    companion_active_request: bool,
+    preload_active_request: bool,
+) -> bool {
+    archive_prefers_low_io(current_navigation_path)
+        && (active_request || companion_active_request || preload_active_request)
+}
+
+fn companion_load_scale_mode(
+    companion_path: &std::path::Path,
+    configured: RenderScaleMode,
+) -> RenderScaleMode {
+    if matches!(configured, RenderScaleMode::PreciseCpu) && archive_prefers_low_io(companion_path) {
+        return RenderScaleMode::FastGpu;
+    }
+    configured
 }
 
 pub(crate) fn join_search_paths(paths: &[PathBuf]) -> String {
@@ -1079,6 +1132,8 @@ impl ViewerApp {
             self.active_request.is_some(),
             self.active_fs_request_id.is_some(),
             self.active_fs_input_request_id.is_some(),
+            self.companion_active_request.is_some(),
+            self.active_preload_request_id.is_some(),
         ) {
             self.filer_needs_sync = true;
             self.pending_filer_scroll_to = selected.clone();
@@ -1137,6 +1192,8 @@ impl ViewerApp {
             self.active_request.is_some(),
             self.active_fs_request_id.is_some(),
             self.active_fs_input_request_id.is_some(),
+            self.companion_active_request.is_some(),
+            self.active_preload_request_id.is_some(),
         ) {
             return;
         }
@@ -1473,13 +1530,14 @@ impl ViewerApp {
         let request_id = self.alloc_request_id();
         self.companion_active_request = Some(ActiveRenderRequest::Load(request_id));
         self.companion_navigation_path = Some(path.clone());
+        let scale_mode = companion_load_scale_mode(&path, self.render_options.scale_mode);
         self.companion_tx
             .send(RenderCommand::LoadPath {
                 request_id,
                 path,
                 zoom: self.zoom,
                 method: self.render_options.zoom_method,
-                scale_mode: self.render_options.scale_mode,
+                scale_mode,
             })
             .map_err(worker_send_error)?;
         Ok(())
@@ -1502,6 +1560,27 @@ impl ViewerApp {
         Ok(())
     }
 
+    fn try_apply_preloaded_to_companion(&mut self, path: &std::path::Path) -> bool {
+        if !manga_companion_matches_preloaded(path, self.preloaded_navigation_path.as_deref()) {
+            return false;
+        }
+        let (Some(source), Some(rendered), Some(texture)) = (
+            self.preloaded_source.clone(),
+            self.preloaded_rendered.clone(),
+            self.next_texture.clone(),
+        ) else {
+            return false;
+        };
+        self.companion_navigation_path = Some(path.to_path_buf());
+        self.companion_source = Some(source);
+        self.companion_rendered = Some(rendered);
+        self.companion_texture = Some(texture);
+        self.companion_texture_display_scale = self.next_texture_display_scale;
+        self.companion_active_request = None;
+        self.pending_fit_recalc |= !matches!(self.render_options.zoom_option, ZoomOption::None);
+        true
+    }
+
     fn sync_manga_companion(&mut self, ctx: &egui::Context) {
         let desired = self.desired_manga_companion_path();
         if desired == self.companion_navigation_path && self.companion_rendered.is_some() {
@@ -1515,6 +1594,11 @@ impl ViewerApp {
             self.companion_texture = None;
             self.companion_active_request = None;
             self.pending_fit_recalc |= !matches!(self.render_options.zoom_option, ZoomOption::None);
+            return;
+        }
+
+        if self.try_apply_preloaded_to_companion(desired.as_deref().unwrap()) {
+            ctx.request_repaint();
             return;
         }
 
@@ -1984,10 +2068,33 @@ impl ViewerApp {
         if !self.navigator_ready {
             return;
         }
+        let desired_companion = self.desired_manga_companion_path();
+        if should_disable_preload_for_manga_low_io(
+            self.options.manga_mode,
+            &self.current_navigation_path,
+            desired_companion.as_deref(),
+        ) {
+            return;
+        }
+        if should_defer_preload_for_manga_low_io(
+            self.options.manga_mode,
+            &self.current_navigation_path,
+            desired_companion.as_deref(),
+            self.companion_rendered.is_some(),
+        ) {
+            return;
+        }
         let Some(path) = self.next_preload_candidate() else {
             return;
         };
         if !should_allow_preload_for_path(&self.current_navigation_path, &path) {
+            return;
+        }
+        if desired_companion
+            .as_ref()
+            .is_some_and(|companion| companion == &path)
+            && (self.companion_active_request.is_some() || self.companion_rendered.is_none())
+        {
             return;
         }
         if self.preloaded_navigation_path.as_ref() == Some(&path)
@@ -2297,6 +2404,7 @@ impl ViewerApp {
                             !matches!(self.render_options.zoom_option, ZoomOption::None);
                     }
                     self.companion_active_request = None;
+                    self.schedule_preload();
                 }
                 Ok(RenderResult::Failed { request_id, .. }) => {
                     let Some(active_request) = self.companion_active_request else {
@@ -2451,6 +2559,14 @@ impl ViewerApp {
                         max_side,
                     } = &result
                     {
+                        if should_defer_thumbnail_io(
+                            &self.current_navigation_path,
+                            self.active_request.is_some(),
+                            self.companion_active_request.is_some(),
+                            self.active_preload_request_id.is_some(),
+                        ) {
+                            continue;
+                        }
                         self.queue_thumbnail_hints(paths, *max_side);
                         continue;
                     }
@@ -2514,6 +2630,14 @@ impl ViewerApp {
     }
 
     pub(crate) fn ensure_thumbnail(&mut self, path: &std::path::Path, max_side: u32) {
+        if should_defer_thumbnail_io(
+            &self.current_navigation_path,
+            self.active_request.is_some(),
+            self.companion_active_request.is_some(),
+            self.active_preload_request_id.is_some(),
+        ) {
+            return;
+        }
         self.spawn_navigation_workers();
         let Some(thumbnail_tx) = self.thumbnail_tx.clone() else {
             return;
@@ -2792,12 +2916,15 @@ fn filesystem_send_error(err: mpsc::SendError<FilesystemCommand>) -> Box<dyn Err
 #[cfg(test)]
 mod tests {
     use super::{
-        adjacent_same_branch_navigation_target, preloaded_navigation_matches,
-        same_navigation_branch, should_allow_preload_for_path,
-        should_defer_filer_request_while_loading, should_defer_filer_sync_for_navigation,
+        adjacent_same_branch_navigation_target, companion_load_scale_mode,
+        manga_companion_matches_preloaded, preloaded_navigation_matches, same_navigation_branch,
+        should_allow_preload_for_path, should_defer_filer_request_while_loading,
+        should_defer_filer_sync_for_navigation, should_defer_preload_for_manga_low_io,
+        should_defer_thumbnail_io, should_disable_preload_for_manga_low_io,
     };
     use crate::filesystem::{build_zip_virtual_children, zip_index_is_available};
     use crate::options::{ArchiveBrowseOption, NavigationSortOption};
+    use crate::ui::viewer::options::RenderScaleMode;
     use std::fs;
     use std::path::Path;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -2889,11 +3016,89 @@ mod tests {
 
     #[test]
     fn filer_request_is_deferred_while_loading_or_navigation_is_active() {
-        assert!(should_defer_filer_request_while_loading(true, false, false));
-        assert!(should_defer_filer_request_while_loading(false, true, false));
-        assert!(should_defer_filer_request_while_loading(false, false, true));
-        assert!(!should_defer_filer_request_while_loading(
-            false, false, false
+        assert!(should_defer_filer_request_while_loading(
+            true, false, false, false, false
         ));
+        assert!(should_defer_filer_request_while_loading(
+            false, true, false, false, false
+        ));
+        assert!(should_defer_filer_request_while_loading(
+            false, false, true, false, false
+        ));
+        assert!(should_defer_filer_request_while_loading(
+            false, false, false, true, false
+        ));
+        assert!(should_defer_filer_request_while_loading(
+            false, false, false, false, true
+        ));
+        assert!(!should_defer_filer_request_while_loading(
+            false, false, false, false, false
+        ));
+    }
+
+    #[test]
+    fn manga_companion_can_reuse_matching_preload() {
+        let companion = Path::new(r"F:\archive.zip\__zipv__\00000001__002.png");
+        let preloaded = Some(Path::new(r"F:\archive.zip\__zipv__\00000001__002.png"));
+        assert!(manga_companion_matches_preloaded(companion, preloaded));
+        assert!(!manga_companion_matches_preloaded(
+            companion,
+            Some(Path::new(r"F:\archive.zip\__zipv__\00000002__003.png"))
+        ));
+    }
+
+    #[test]
+    fn low_io_manga_defers_preload_until_companion_is_ready() {
+        let current = Path::new(r"F:\archive.zip\__zipv__\00000000__001.png");
+        let companion = Some(Path::new(r"F:\archive.zip\__zipv__\00000001__002.png"));
+        assert!(should_defer_preload_for_manga_low_io(
+            true, current, companion, false
+        ));
+        assert!(!should_defer_preload_for_manga_low_io(
+            true, current, companion, true
+        ));
+        assert!(!should_defer_preload_for_manga_low_io(
+            false, current, companion, false
+        ));
+    }
+
+    #[test]
+    fn low_io_manga_disables_preload_when_companion_exists() {
+        let current = Path::new(r"F:\archive.zip\__zipv__\00000000__001.png");
+        let companion = Some(Path::new(r"F:\archive.zip\__zipv__\00000001__002.png"));
+        assert!(should_disable_preload_for_manga_low_io(
+            true, current, companion
+        ));
+        assert!(!should_disable_preload_for_manga_low_io(
+            false, current, companion
+        ));
+    }
+
+    #[test]
+    fn low_io_archive_defers_thumbnail_work_while_rendering() {
+        let current = Path::new(r"F:\archive.zip\__zipv__\00000000__001.png");
+        assert!(should_defer_thumbnail_io(current, true, false, false));
+        assert!(should_defer_thumbnail_io(current, false, true, false));
+        assert!(should_defer_thumbnail_io(current, false, false, true));
+        assert!(!should_defer_thumbnail_io(current, false, false, false));
+        assert!(!should_defer_thumbnail_io(
+            Path::new(r"F:\dir\001.png"),
+            true,
+            false,
+            false
+        ));
+    }
+
+    #[test]
+    fn low_io_companion_uses_fast_gpu_first() {
+        let companion = Path::new(r"F:\archive.zip\__zipv__\00000001__002.png");
+        assert_eq!(
+            companion_load_scale_mode(companion, RenderScaleMode::PreciseCpu),
+            RenderScaleMode::FastGpu
+        );
+        assert_eq!(
+            companion_load_scale_mode(Path::new(r"F:\dir\002.png"), RenderScaleMode::PreciseCpu),
+            RenderScaleMode::PreciseCpu
+        );
     }
 }

@@ -150,12 +150,6 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                         mcu_interval -= 1;
                         if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
                             if bitread.rst()? {
-                                if cfg!(debug_assertions) {
-                                    println!(
-                                        "strange reset interval {},{} {} {}",
-                                        mcu_x, mcu_y, mcu_x_max, mcu_y_max
-                                    );
-                                }
                                 mcu_interval = header.interval as isize;
                                 for i in 0..preds.len() {
                                     preds[i] = 0;

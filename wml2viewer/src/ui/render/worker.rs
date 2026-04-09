@@ -21,6 +21,14 @@ pub(crate) enum RenderCommand {
         method: InterpolationAlgorithm,
         scale_mode: RenderScaleMode,
     },
+    LoadSpread {
+        request_id: u64,
+        path: PathBuf,
+        companion_path: PathBuf,
+        zoom: f32,
+        method: InterpolationAlgorithm,
+        scale_mode: RenderScaleMode,
+    },
     ResizeCurrent {
         request_id: u64,
         zoom: f32,
@@ -36,6 +44,13 @@ pub(crate) enum RenderResult {
         path: Option<PathBuf>,
         source: LoadedImage,
         rendered: LoadedImage,
+    },
+    LoadedSpread {
+        request_id: u64,
+        path: PathBuf,
+        source: LoadedImage,
+        rendered: LoadedImage,
+        companion: Option<(PathBuf, LoadedImage, LoadedImage)>,
     },
     Failed {
         request_id: u64,
@@ -128,6 +143,44 @@ fn blank_loaded_image() -> LoadedImage {
     }
 }
 
+fn should_load_spread_companion(source: &LoadedImage, companion_path: Option<&PathBuf>) -> bool {
+    companion_path.is_some() && source.canvas.height() >= source.canvas.width()
+}
+
+fn load_rendered_image<F: Fn() -> bool>(
+    path: &PathBuf,
+    zoom: f32,
+    method: InterpolationAlgorithm,
+    scale_mode: RenderScaleMode,
+    should_cancel: &F,
+) -> Result<Option<(LoadedImage, LoadedImage, PathBuf)>, Box<dyn Error>> {
+    if should_cancel() {
+        return Ok(None);
+    }
+
+    let load_path = resolve_start_path(path).unwrap_or(path.clone());
+    if should_cancel() {
+        return Ok(None);
+    }
+
+    let source = match open_image_source_with_cancel(&load_path, should_cancel) {
+        Some(OpenedImageSource::Bytes {
+            bytes, hint_path, ..
+        }) => load_canvas_from_bytes_with_hint(&bytes, Some(&hint_path))?,
+        Some(OpenedImageSource::File { path, .. }) => load_canvas_from_file(&path)?,
+        None => load_canvas_from_file(&load_path)?,
+    };
+    if should_cancel() {
+        return Ok(None);
+    }
+
+    let rendered = match scale_mode {
+        RenderScaleMode::FastGpu => source.clone(),
+        RenderScaleMode::PreciseCpu => resize_loaded_image(&source, zoom, method)?,
+    };
+    Ok(Some((source, rendered, load_path)))
+}
+
 pub(crate) fn spawn_render_worker(
     initial_source: LoadedImage,
     priority: RenderWorkerPriority,
@@ -143,10 +196,23 @@ pub(crate) fn spawn_render_worker(
 
     let join = thread::spawn(move || {
         while let Ok(command) = command_rx.recv() {
+            let spread_companion_path = match &command {
+                RenderCommand::LoadSpread { companion_path, .. } => Some(companion_path.clone()),
+                _ => None,
+            };
+            let is_spread = spread_companion_path.is_some();
             match command {
                 RenderCommand::LoadPath {
                     request_id,
                     path,
+                    zoom,
+                    method,
+                    scale_mode,
+                }
+                | RenderCommand::LoadSpread {
+                    request_id,
+                    path,
+                    companion_path: _,
                     zoom,
                     method,
                     scale_mode,
@@ -210,38 +276,45 @@ pub(crate) fn spawn_render_worker(
                             )
                         };
                         let result = catch_unwind(AssertUnwindSafe(|| {
-                            (|| -> Result<Option<(LoadedImage, LoadedImage, PathBuf)>, Box<dyn Error>> {
-                                if should_cancel() {
+                            (|| -> Result<
+                                Option<(
+                                    LoadedImage,
+                                    LoadedImage,
+                                    PathBuf,
+                                    Option<(PathBuf, LoadedImage, LoadedImage)>,
+                                )>,
+                                Box<dyn Error>,
+                            > {
+                                let Some((source, rendered, load_path)) = load_rendered_image(
+                                    &path,
+                                    zoom,
+                                    method,
+                                    scale_mode,
+                                    &should_cancel,
+                                )? else {
                                     return Ok(None);
-                                }
-
-                                let load_path = resolve_start_path(&path).unwrap_or(path.clone());
-                                if should_cancel() {
-                                    return Ok(None);
-                                }
-
-                                let source = match open_image_source_with_cancel(&load_path, &should_cancel) {
-                                    Some(OpenedImageSource::Bytes {
-                                        bytes,
-                                        hint_path,
-                                        ..
-                                    }) => load_canvas_from_bytes_with_hint(&bytes, Some(&hint_path))?,
-                                    Some(OpenedImageSource::File { path, .. }) => {
-                                        load_canvas_from_file(&path)?
-                                    }
-                                    None => load_canvas_from_file(&load_path)?,
                                 };
-                                if should_cancel() {
-                                    return Ok(None);
-                                }
 
-                                let rendered = match scale_mode {
-                                    RenderScaleMode::FastGpu => source.clone(),
-                                    RenderScaleMode::PreciseCpu => {
-                                        resize_loaded_image(&source, zoom, method)?
+                                let companion = match &spread_companion_path {
+                                    Some(companion_path)
+                                        if should_load_spread_companion(
+                                            &source,
+                                            Some(companion_path),
+                                        ) =>
+                                    {
+                                        load_rendered_image(
+                                            companion_path,
+                                            zoom,
+                                            method,
+                                            scale_mode,
+                                            &should_cancel,
+                                        )?
+                                        .map(|(source, rendered, path)| (path, source, rendered))
                                     }
+                                    _ => None,
                                 };
-                                Ok(Some((source, rendered, load_path)))
+
+                                Ok(Some((source, rendered, load_path, companion)))
                             })()
                         }))
                         .unwrap_or_else(|_| {
@@ -251,19 +324,29 @@ pub(crate) fn spawn_render_worker(
                         });
 
                         match result {
-                            Ok(Some((source, rendered, load_path))) => {
+                            Ok(Some((source, rendered, load_path, companion))) => {
                                 if should_cancel() {
                                     return;
                                 }
                                 if let Ok(mut current) = current_source.lock() {
                                     *current = source.clone();
                                 }
-                                let _ = result_tx.send(RenderResult::Loaded {
-                                    request_id,
-                                    path: Some(load_path),
-                                    source,
-                                    rendered,
-                                });
+                                if is_spread {
+                                    let _ = result_tx.send(RenderResult::LoadedSpread {
+                                        request_id,
+                                        path: load_path,
+                                        source,
+                                        rendered,
+                                        companion,
+                                    });
+                                } else {
+                                    let _ = result_tx.send(RenderResult::Loaded {
+                                        request_id,
+                                        path: Some(load_path),
+                                        source,
+                                        rendered,
+                                    });
+                                }
                             }
                             Ok(None) => {}
                             Err(err) => {
@@ -334,7 +417,12 @@ pub(crate) fn worker_send_error(err: mpsc::SendError<RenderCommand>) -> Box<dyn 
 
 #[cfg(test)]
 mod tests {
-    use super::{RenderIoCoordinator, RenderWorkerPriority, should_abort_background_load};
+    use super::{
+        RenderIoCoordinator, RenderWorkerPriority, blank_loaded_image,
+        should_abort_background_load, should_load_spread_companion,
+    };
+    use crate::drawers::canvas::Canvas;
+    use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
 
     #[test]
@@ -430,6 +518,26 @@ mod tests {
             &latest,
             8,
             &coordinator,
+        ));
+    }
+
+    #[test]
+    fn spread_companion_requires_portrait_primary() {
+        let mut source = blank_loaded_image();
+        source.canvas = Canvas::new(800, 1200);
+        assert!(should_load_spread_companion(
+            &source,
+            Some(&PathBuf::from("next.png"))
+        ));
+    }
+
+    #[test]
+    fn spread_companion_is_skipped_for_landscape_primary() {
+        let mut source = blank_loaded_image();
+        source.canvas = Canvas::new(1200, 800);
+        assert!(!should_load_spread_companion(
+            &source,
+            Some(&PathBuf::from("next.png"))
         ));
     }
 }

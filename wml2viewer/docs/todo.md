@@ -163,6 +163,9 @@ P5 = 優先度低い
    - `viewer` の通常モードを壊さないことを優先し、漫画モードだけを独立して再設計する
    - まずは `companion` 表示の成立条件と load path を固定し、その後で `next/prev`、最後に `preload` を戻す
    - 実機で `通常モード`, `漫画モード`, `zip`, `展開画像` を比較して回帰確認する
+
+  - [ ] コメント：漫画モードって2枚先読みするだけでしょ。後はレンダーの仕事、単純化して実装できないの？
+
 - [ ] Viewer/Filerがバラバラで持っているファイルスキャンの統合 I/Oストリームの改善
    - [+] directory scan / preview chunk / filter / metadata / sort を `filesystem.browser` へ寄せた
    - [+] `FilerCommand / FilerResult` 自体を filesystem 側の query/result モデルへ統合

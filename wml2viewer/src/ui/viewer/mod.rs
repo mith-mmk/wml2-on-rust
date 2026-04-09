@@ -138,6 +138,14 @@ pub(crate) struct ViewerApp {
     pub(crate) companion_rx: Receiver<RenderResult>,
     pub(crate) companion_join: Option<JoinHandle<()>>,
     pub(crate) companion_active_request: Option<ActiveRenderRequest>,
+    pub(crate) manga_cached_navigation_path: Option<PathBuf>,
+    pub(crate) manga_cached_spread_requested: bool,
+    pub(crate) manga_cached_navigator_ready: bool,
+    pub(crate) manga_cached_sort: NavigationSortOption,
+    pub(crate) manga_cached_archive_mode: crate::options::ArchiveBrowseOption,
+    pub(crate) desired_companion_navigation_path: Option<PathBuf>,
+    pub(crate) next_manga_navigation_path: Option<PathBuf>,
+    pub(crate) prev_manga_navigation_path: Option<PathBuf>,
     pub(crate) companion_navigation_path: Option<PathBuf>,
     pub(crate) companion_source: Option<LoadedImage>,
     pub(crate) companion_rendered: Option<LoadedImage>,
@@ -153,6 +161,11 @@ pub(crate) struct ViewerApp {
     pub(crate) preloaded_load_path: Option<PathBuf>,
     pub(crate) preloaded_source: Option<LoadedImage>,
     pub(crate) preloaded_rendered: Option<LoadedImage>,
+    pub(crate) preloaded_companion_navigation_path: Option<PathBuf>,
+    pub(crate) preloaded_companion_source: Option<LoadedImage>,
+    pub(crate) preloaded_companion_rendered: Option<LoadedImage>,
+    pub(crate) preloaded_companion_texture: Option<TextureHandle>,
+    pub(crate) preloaded_companion_texture_display_scale: f32,
     pub(crate) pending_primary_click_deadline: Option<Instant>,
 }
 
@@ -357,14 +370,6 @@ fn should_defer_preload_for_manga_low_io(
         && !companion_ready
 }
 
-fn should_disable_preload_for_manga_low_io(
-    manga_mode: bool,
-    current_navigation_path: &std::path::Path,
-    desired_companion: Option<&std::path::Path>,
-) -> bool {
-    manga_mode && desired_companion.is_some() && archive_prefers_low_io(current_navigation_path)
-}
-
 fn should_defer_thumbnail_io(
     current_navigation_path: &std::path::Path,
     active_request: bool,
@@ -553,6 +558,14 @@ impl ViewerApp {
             companion_rx,
             companion_join: Some(companion_join),
             companion_active_request: None,
+            manga_cached_navigation_path: None,
+            manga_cached_spread_requested: false,
+            manga_cached_navigator_ready: false,
+            manga_cached_sort: config.navigation.sort,
+            manga_cached_archive_mode: config.navigation.archive,
+            desired_companion_navigation_path: None,
+            next_manga_navigation_path: None,
+            prev_manga_navigation_path: None,
             companion_navigation_path: None,
             companion_source: None,
             companion_rendered: None,
@@ -568,6 +581,11 @@ impl ViewerApp {
             preloaded_load_path: None,
             preloaded_source: None,
             preloaded_rendered: None,
+            preloaded_companion_navigation_path: None,
+            preloaded_companion_source: None,
+            preloaded_companion_rendered: None,
+            preloaded_companion_texture: None,
+            preloaded_companion_texture_display_scale: 1.0,
             pending_primary_click_deadline: None,
         };
 
@@ -1463,20 +1481,94 @@ impl ViewerApp {
     }
 
     fn desired_manga_companion_path(&self) -> Option<PathBuf> {
+        self.desired_companion_navigation_path.clone()
+    }
+
+    fn manga_companion_candidate_for_path(
+        &self,
+        navigation_path: &std::path::Path,
+    ) -> Option<PathBuf> {
         if !self.options.manga_mode
-            || self.empty_mode
             || !self.navigator_ready
-            || !self.is_current_portrait_page()
+            || self.empty_mode
+            || self.last_viewport_size.x < self.last_viewport_size.y * 1.4
         {
             return None;
         }
-        let companion = adjacent_same_branch_navigation_target(
+        adjacent_same_branch_navigation_target(
+            navigation_path,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            1,
+        )
+    }
+
+    fn manga_spread_requested(&self) -> bool {
+        self.options.manga_mode
+            && !self.empty_mode
+            && self.navigator_ready
+            && self.last_viewport_size.x >= self.last_viewport_size.y * 1.4
+            && self.is_current_portrait_page()
+    }
+
+    fn refresh_manga_targets(&mut self) -> bool {
+        let spread_requested = self.manga_spread_requested();
+        let unchanged = self.manga_cached_navigation_path.as_deref()
+            == Some(self.current_navigation_path.as_path())
+            && self.manga_cached_spread_requested == spread_requested
+            && self.manga_cached_navigator_ready == self.navigator_ready
+            && self.manga_cached_sort == self.navigation_sort
+            && self.manga_cached_archive_mode == self.filer.archive_mode;
+        if unchanged {
+            return false;
+        }
+
+        self.manga_cached_navigation_path = Some(self.current_navigation_path.clone());
+        self.manga_cached_spread_requested = spread_requested;
+        self.manga_cached_navigator_ready = self.navigator_ready;
+        self.manga_cached_sort = self.navigation_sort;
+        self.manga_cached_archive_mode = self.filer.archive_mode;
+        self.desired_companion_navigation_path = None;
+        self.next_manga_navigation_path = None;
+        self.prev_manga_navigation_path = None;
+
+        if !spread_requested {
+            return true;
+        }
+
+        let next_boundary = adjacent_same_branch_navigation_target(
             &self.current_navigation_path,
             self.navigation_sort,
             self.filer.archive_mode,
             1,
-        )?;
-        Some(companion)
+        );
+        self.desired_companion_navigation_path = next_boundary.clone();
+        self.next_manga_navigation_path = next_boundary.as_ref().and_then(|boundary| {
+            adjacent_same_branch_navigation_target(
+                boundary,
+                self.navigation_sort,
+                self.filer.archive_mode,
+                1,
+            )
+            .or_else(|| Some(boundary.clone()))
+        });
+
+        self.prev_manga_navigation_path = adjacent_same_branch_navigation_target(
+            &self.current_navigation_path,
+            self.navigation_sort,
+            self.filer.archive_mode,
+            -1,
+        )
+        .and_then(|boundary| {
+            adjacent_same_branch_navigation_target(
+                &boundary,
+                self.navigation_sort,
+                self.filer.archive_mode,
+                -1,
+            )
+            .or(Some(boundary))
+        });
+        true
     }
 
     fn clear_manga_companion(&mut self) {
@@ -1486,6 +1578,30 @@ impl ViewerApp {
         self.companion_texture = None;
         self.companion_active_request = None;
         self.companion_texture_display_scale = 1.0;
+    }
+
+    fn apply_loaded_companion(
+        &mut self,
+        navigation_path: PathBuf,
+        source: LoadedImage,
+        rendered: LoadedImage,
+    ) {
+        let (canvas, display_scale) = downscale_for_texture_limit(
+            rendered.frame_canvas(0),
+            self.max_texture_side,
+            self.render_options.zoom_method,
+        );
+        let image = self.color_image_from_canvas(&canvas);
+        let texture = self
+            .egui_ctx
+            .load_texture("manga_companion", image, self.texture_options());
+        self.companion_navigation_path = Some(navigation_path);
+        self.companion_source = Some(source);
+        self.companion_rendered = Some(rendered);
+        self.companion_texture = Some(texture);
+        self.companion_texture_display_scale = display_scale;
+        self.companion_active_request = None;
+        self.pending_fit_recalc |= !matches!(self.render_options.zoom_option, ZoomOption::None);
     }
 
     fn manga_spread_active(&self) -> bool {
@@ -1534,13 +1650,16 @@ impl ViewerApp {
     }
 
     fn try_apply_preloaded_to_companion(&mut self, path: &std::path::Path) -> bool {
-        if !manga_companion_matches_preloaded(path, self.preloaded_navigation_path.as_deref()) {
+        if !manga_companion_matches_preloaded(
+            path,
+            self.preloaded_companion_navigation_path.as_deref(),
+        ) {
             return false;
         }
         let (Some(source), Some(rendered), Some(texture)) = (
-            self.preloaded_source.clone(),
-            self.preloaded_rendered.clone(),
-            self.next_texture.clone(),
+            self.preloaded_companion_source.take(),
+            self.preloaded_companion_rendered.take(),
+            self.preloaded_companion_texture.take(),
         ) else {
             return false;
         };
@@ -1548,13 +1667,18 @@ impl ViewerApp {
         self.companion_source = Some(source);
         self.companion_rendered = Some(rendered);
         self.companion_texture = Some(texture);
-        self.companion_texture_display_scale = self.next_texture_display_scale;
+        self.companion_texture_display_scale = self.preloaded_companion_texture_display_scale;
+        self.preloaded_companion_navigation_path = None;
+        self.preloaded_companion_texture_display_scale = 1.0;
         self.companion_active_request = None;
         self.pending_fit_recalc |= !matches!(self.render_options.zoom_option, ZoomOption::None);
         true
     }
 
     fn sync_manga_companion(&mut self, ctx: &egui::Context) {
+        if self.active_request.is_some() {
+            return;
+        }
         let desired = self.desired_manga_companion_path();
         if desired == self.companion_navigation_path && self.companion_rendered.is_some() {
             return;
@@ -1581,25 +1705,22 @@ impl ViewerApp {
         }
     }
 
-    fn manga_navigation_target(&self, forward: bool) -> Option<PathBuf> {
+    fn sync_manga_companion_if_targets_changed(&mut self, ctx: &egui::Context) {
+        if self.refresh_manga_targets() {
+            self.sync_manga_companion(ctx);
+        }
+    }
+
+    fn manga_navigation_target(&mut self, forward: bool) -> Option<PathBuf> {
+        self.refresh_manga_targets();
         if !self.navigator_ready || !self.manga_spread_active() {
             return None;
         }
-
-        let step = if forward { 1 } else { -1 };
-        let boundary_target = adjacent_same_branch_navigation_target(
-            &self.current_navigation_path,
-            self.navigation_sort,
-            self.filer.archive_mode,
-            step,
-        )?;
-        adjacent_same_branch_navigation_target(
-            &boundary_target,
-            self.navigation_sort,
-            self.filer.archive_mode,
-            step,
-        )
-        .or(Some(boundary_target))
+        if forward {
+            self.next_manga_navigation_path.clone()
+        } else {
+            self.prev_manga_navigation_path.clone()
+        }
     }
 
     pub(crate) fn next_image(&mut self) -> Result<(), Box<dyn Error>> {
@@ -1705,15 +1826,28 @@ impl ViewerApp {
         self.overlay
             .set_loading_message(format!("Loading {}", navigation_path.display()));
         let load_zoom = if switching_image { 1.0 } else { self.zoom };
-        self.worker_tx
-            .send(RenderCommand::LoadPath {
-                request_id,
-                path: load_request_path,
-                zoom: load_zoom,
-                method: self.render_options.zoom_method,
-                scale_mode: self.render_options.scale_mode,
-            })
-            .map_err(worker_send_error)?;
+        if let Some(companion_path) = self.manga_companion_candidate_for_path(&navigation_path) {
+            self.worker_tx
+                .send(RenderCommand::LoadSpread {
+                    request_id,
+                    path: load_request_path,
+                    companion_path,
+                    zoom: load_zoom,
+                    method: self.render_options.zoom_method,
+                    scale_mode: self.render_options.scale_mode,
+                })
+                .map_err(worker_send_error)?;
+        } else {
+            self.worker_tx
+                .send(RenderCommand::LoadPath {
+                    request_id,
+                    path: load_request_path,
+                    zoom: load_zoom,
+                    method: self.render_options.zoom_method,
+                    scale_mode: self.render_options.scale_mode,
+                })
+                .map_err(worker_send_error)?;
+        }
         Ok(())
     }
 
@@ -1795,6 +1929,11 @@ impl ViewerApp {
         self.preloaded_load_path = None;
         self.preloaded_source = None;
         self.preloaded_rendered = None;
+        self.preloaded_companion_navigation_path = None;
+        self.preloaded_companion_source = None;
+        self.preloaded_companion_rendered = None;
+        self.preloaded_companion_texture = None;
+        self.preloaded_companion_texture_display_scale = 1.0;
         self.next_texture = None;
         self.next_texture_display_scale = 1.0;
     }
@@ -1925,6 +2064,7 @@ impl ViewerApp {
         path: Option<PathBuf>,
         source: LoadedImage,
         rendered: LoadedImage,
+        companion: Option<(PathBuf, LoadedImage, LoadedImage)>,
     ) {
         let previous_navigation_path = self.current_navigation_path.clone();
         if let Some(pending_navigation_path) = self.pending_navigation_path.take() {
@@ -1992,6 +2132,13 @@ impl ViewerApp {
                 self.defer_initial_filesystem_sync();
             }
         }
+        self.refresh_manga_targets();
+        if let Some((navigation_path, source, rendered)) = companion {
+            self.apply_loaded_companion(navigation_path, source, rendered);
+        } else {
+            let egui_ctx = self.egui_ctx.clone();
+            self.sync_manga_companion(&egui_ctx);
+        }
         self.schedule_preload();
         if self.pending_resize_after_load {
             self.pending_resize_after_load = false;
@@ -2019,14 +2166,8 @@ impl ViewerApp {
         if !self.navigator_ready {
             return;
         }
+        self.refresh_manga_targets();
         let desired_companion = self.desired_manga_companion_path();
-        if should_disable_preload_for_manga_low_io(
-            self.options.manga_mode,
-            &self.current_navigation_path,
-            desired_companion.as_deref(),
-        ) {
-            return;
-        }
         if should_defer_preload_for_manga_low_io(
             self.options.manga_mode,
             &self.current_navigation_path,
@@ -2056,13 +2197,24 @@ impl ViewerApp {
         let request_id = self.alloc_preload_request_id();
         self.active_preload_request_id = Some(request_id);
         self.pending_preload_navigation_path = Some(path.clone());
-        let _ = self.preload_tx.send(RenderCommand::LoadPath {
-            request_id,
-            path,
-            zoom: self.zoom,
-            method: self.render_options.zoom_method,
-            scale_mode: self.render_options.scale_mode,
-        });
+        if let Some(companion_path) = self.manga_companion_candidate_for_path(&path) {
+            let _ = self.preload_tx.send(RenderCommand::LoadSpread {
+                request_id,
+                path,
+                companion_path,
+                zoom: self.zoom,
+                method: self.render_options.zoom_method,
+                scale_mode: self.render_options.scale_mode,
+            });
+        } else {
+            let _ = self.preload_tx.send(RenderCommand::LoadPath {
+                request_id,
+                path,
+                zoom: self.zoom,
+                method: self.render_options.zoom_method,
+                scale_mode: self.render_options.scale_mode,
+            });
+        }
     }
 
     fn try_take_preloaded(&mut self, path: &std::path::Path) -> bool {
@@ -2085,7 +2237,7 @@ impl ViewerApp {
             }
             self.pending_navigation_path = Some(path.to_path_buf());
             self.overlay.clear_loading_message();
-            self.apply_loaded_result(load_path, source, rendered);
+            self.apply_loaded_result(load_path, source, rendered, None);
             return true;
         }
         false
@@ -2199,7 +2351,37 @@ impl ViewerApp {
                     if !request_matches {
                         continue;
                     }
-                    self.apply_loaded_result(path, source, rendered);
+                    self.apply_loaded_result(path, source, rendered, None);
+                }
+                Ok(RenderResult::LoadedSpread {
+                    request_id,
+                    path,
+                    source,
+                    rendered,
+                    companion,
+                }) => {
+                    let Some(active_request) = self.active_request else {
+                        continue;
+                    };
+                    let request_matches = match active_request {
+                        ActiveRenderRequest::Load(active_id)
+                        | ActiveRenderRequest::Resize(active_id) => active_id == request_id,
+                    };
+                    if !request_matches {
+                        continue;
+                    }
+                    let companion = companion.map(|(_, source, rendered)| {
+                        let navigation_base = self
+                            .pending_navigation_path
+                            .as_deref()
+                            .unwrap_or(self.current_navigation_path.as_path());
+                        let navigation_path = self
+                            .manga_companion_candidate_for_path(navigation_base)
+                            .or_else(|| self.desired_manga_companion_path())
+                            .unwrap_or_else(|| path.clone());
+                        (navigation_path, source, rendered)
+                    });
+                    self.apply_loaded_result(Some(path), source, rendered, companion);
                 }
                 Ok(RenderResult::Failed {
                     request_id,
@@ -2277,6 +2459,47 @@ impl ViewerApp {
                     self.preloaded_source = Some(source);
                     self.preloaded_rendered = Some(rendered);
                 }
+                Ok(RenderResult::LoadedSpread {
+                    request_id,
+                    path,
+                    source,
+                    rendered,
+                    companion,
+                }) => {
+                    if self.active_preload_request_id != Some(request_id) {
+                        continue;
+                    }
+                    self.active_preload_request_id = None;
+                    self.preloaded_navigation_path = self.pending_preload_navigation_path.take();
+                    self.preloaded_load_path = Some(path);
+                    let texture_name =
+                        self.texture_name_for_path(self.preloaded_load_path.as_deref());
+                    let (texture, display_scale) =
+                        self.build_texture_from_canvas(&texture_name, rendered.frame_canvas(0));
+                    self.next_texture = Some(texture);
+                    self.next_texture_display_scale = display_scale;
+                    self.preloaded_source = Some(source);
+                    self.preloaded_rendered = Some(rendered);
+                    if let Some((companion_path, companion_source, companion_rendered)) = companion
+                    {
+                        let texture_name = self.texture_name_for_path(Some(&companion_path));
+                        let (texture, display_scale) = self.build_texture_from_canvas(
+                            &texture_name,
+                            companion_rendered.frame_canvas(0),
+                        );
+                        self.preloaded_companion_navigation_path = Some(companion_path);
+                        self.preloaded_companion_source = Some(companion_source);
+                        self.preloaded_companion_rendered = Some(companion_rendered);
+                        self.preloaded_companion_texture = Some(texture);
+                        self.preloaded_companion_texture_display_scale = display_scale;
+                    } else {
+                        self.preloaded_companion_navigation_path = None;
+                        self.preloaded_companion_source = None;
+                        self.preloaded_companion_rendered = None;
+                        self.preloaded_companion_texture = None;
+                        self.preloaded_companion_texture_display_scale = 1.0;
+                    }
+                }
                 Ok(RenderResult::Failed { request_id, .. }) => {
                     if self.active_preload_request_id == Some(request_id) {
                         self.active_preload_request_id = None;
@@ -2285,6 +2508,11 @@ impl ViewerApp {
                         self.preloaded_load_path = None;
                         self.preloaded_source = None;
                         self.preloaded_rendered = None;
+                        self.preloaded_companion_navigation_path = None;
+                        self.preloaded_companion_source = None;
+                        self.preloaded_companion_rendered = None;
+                        self.preloaded_companion_texture = None;
+                        self.preloaded_companion_texture_display_scale = 1.0;
                         self.next_texture = None;
                         self.next_texture_display_scale = 1.0;
                     }
@@ -2372,6 +2600,7 @@ impl ViewerApp {
                         self.companion_active_request = None;
                     }
                 }
+                Ok(RenderResult::LoadedSpread { .. }) => continue,
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
                     self.companion_source = None;
@@ -2667,7 +2896,7 @@ impl eframe::App for ViewerApp {
         self.poll_thumbnail_worker();
         self.poll_save_result();
         self.poll_deferred_filer_sync();
-        self.sync_manga_companion(ctx);
+        self.sync_manga_companion_if_targets_changed(ctx);
         self.handle_keyboard(ctx);
         self.poll_pending_pointer_actions();
         self.settings_ui(ctx);
@@ -2708,6 +2937,7 @@ impl eframe::App for ViewerApp {
 
             if startup_viewport_settling {
                 self.last_viewport_size = viewport;
+                self.sync_manga_companion_if_targets_changed(ctx);
             } else if !self.empty_mode
                 && (viewport_size_changed(viewport, self.last_viewport_size)
                     || self.pending_fit_recalc)
@@ -2715,6 +2945,7 @@ impl eframe::App for ViewerApp {
             {
                 self.last_viewport_size = viewport;
                 self.pending_fit_recalc = false;
+                self.sync_manga_companion_if_targets_changed(ctx);
 
                 let new_zoom = calc_fit_zoom(
                     viewport,
@@ -2871,7 +3102,6 @@ mod tests {
         preloaded_navigation_matches, same_navigation_branch, should_allow_preload_for_path,
         should_defer_filer_request_while_loading, should_defer_filer_sync_for_navigation,
         should_defer_preload_for_manga_low_io, should_defer_thumbnail_io,
-        should_disable_preload_for_manga_low_io,
     };
     use crate::filesystem::{build_zip_virtual_children, zip_index_is_available};
     use crate::options::{ArchiveBrowseOption, NavigationSortOption};
@@ -3009,18 +3239,6 @@ mod tests {
         ));
         assert!(!should_defer_preload_for_manga_low_io(
             false, current, companion, false
-        ));
-    }
-
-    #[test]
-    fn low_io_manga_disables_preload_when_companion_exists() {
-        let current = Path::new(r"F:\archive.zip\__zipv__\00000000__001.png");
-        let companion = Some(Path::new(r"F:\archive.zip\__zipv__\00000001__002.png"));
-        assert!(should_disable_preload_for_manga_low_io(
-            true, current, companion
-        ));
-        assert!(!should_disable_preload_for_manga_low_io(
-            false, current, companion
         ));
     }
 

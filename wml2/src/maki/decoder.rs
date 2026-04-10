@@ -72,6 +72,12 @@ pub fn decode<B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let data = read_all(reader)?;
     let header = parse_header(&data)?;
+    if header.width == 0 || header.height == 0 {
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "MAKI dimensions must be non-zero",
+        ));
+    }
     let mut cursor = ByteCursor::new(&data, header.data_offset);
     let ll = if (header.exp_flag & 0x01) != 0 {
         header.height.min(200)
@@ -84,7 +90,10 @@ pub fn decode<B: BinaryReader>(
     let flag_b = cursor.read_bytes(header.flag_b_size)?.to_vec();
 
     let matrix_stride = header.width >> 4;
-    let mut matrix = vec![0u8; matrix_stride * ll];
+    let matrix_len = matrix_stride.checked_mul(ll).ok_or_else(|| {
+        err(ImgErrorKind::IllegalData, "MAKI matrix size overflow")
+    })?;
+    let mut matrix = vec![0u8; matrix_len];
     let mut w = 0usize;
     let mut s = 0usize;
     let mut p = 0usize;
@@ -126,7 +135,10 @@ pub fn decode<B: BinaryReader>(
     }
 
     let mut lines = vec![vec![0u8; header.width]; 5];
-    let mut pixels = vec![0u8; header.width * header.height];
+    let pixel_count = header.width.checked_mul(header.height).ok_or_else(|| {
+        err(ImgErrorKind::IllegalData, "MAKI pixel buffer size overflow")
+    })?;
+    let mut pixels = vec![0u8; pixel_count];
     let mut matrix_index = 0usize;
 
     for y in 0..ll {
@@ -158,6 +170,12 @@ pub fn decode<B: BinaryReader>(
         }
 
         let row = y * header.width;
+        if row + header.width > pixels.len() {
+            return Err(err(
+                ImgErrorKind::IllegalData,
+                "MAKI row output is out of range",
+            ));
+        }
         pixels[row..row + header.width].copy_from_slice(&lines[0]);
         lines.rotate_right(1);
     }

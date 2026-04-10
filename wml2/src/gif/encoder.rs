@@ -193,13 +193,34 @@ fn parse_animation_info(profile: &ImageProfiles) -> Result<Option<AnimationInfo>
         }
         let x_offset = x_offset as usize;
         let y_offset = y_offset as usize;
-        if x_offset + width > profile.width || y_offset + height > profile.height {
+        let end_x = x_offset.checked_add(width).ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                format!("animation frame {index} x range overflows"),
+            )) as Error
+        })?;
+        let end_y = y_offset.checked_add(height).ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                format!("animation frame {index} y range overflows"),
+            )) as Error
+        })?;
+        if end_x > profile.width || end_y > profile.height {
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::InvalidParameter,
                 format!("animation frame {index} exceeds the canvas"),
             )));
         }
-        if buffer.len() != width * height * 4 {
+        let expected_len = width
+            .checked_mul(height)
+            .and_then(|pixels| pixels.checked_mul(4))
+            .ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::InvalidParameter,
+                    format!("animation frame {index} buffer size overflows"),
+                )) as Error
+            })?;
+        if buffer.len() != expected_len {
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::InvalidParameter,
                 format!("animation frame {index} buffer size mismatch"),

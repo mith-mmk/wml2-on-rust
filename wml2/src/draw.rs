@@ -396,6 +396,18 @@ fn default_verbose(_: &str) -> Result<Option<CallbackResponse>, Error> {
     Ok(None)
 }
 
+fn checked_rgba_len(width: usize, height: usize, context: &str) -> Result<usize, Error> {
+    width
+        .checked_mul(height)
+        .and_then(|pixels| pixels.checked_mul(4))
+        .ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                format!("{context} buffer size overflow"),
+            )) as Error
+        })
+}
+
 impl ImageBuffer {
     /// Creates an empty image buffer.
     pub fn new() -> Self {
@@ -452,7 +464,7 @@ impl DrawCallback for ImageBuffer {
         height: usize,
         option: Option<InitOptions>,
     ) -> Result<Option<CallbackResponse>, Error> {
-        let buffersize = width * height * 4;
+        let buffersize = checked_rgba_len(width, height, "image")?;
         self.width = width;
         self.height = height;
         if let Some(option) = option {
@@ -502,16 +514,20 @@ impl DrawCallback for ImageBuffer {
             if start_x >= self.width || start_y >= self.height {
                 return Ok(None);
             }
-            w = if self.width < width + start_x {
-                self.width - start_x
-            } else {
-                width
-            };
-            h = if self.height < height + start_y {
-                self.height - start_y
-            } else {
-                height
-            };
+            let requested_end_x = start_x.checked_add(width).ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::OutboundIndex,
+                    "draw rectangle x overflow".to_string(),
+                )) as Error
+            })?;
+            let requested_end_y = start_y.checked_add(height).ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::OutboundIndex,
+                    "draw rectangle y overflow".to_string(),
+                )) as Error
+            })?;
+            w = self.width.min(requested_end_x) - start_x;
+            h = self.height.min(requested_end_y) - start_y;
             raws = self.width;
             buffer = self.buffer.as_deref_mut().ok_or_else(|| {
                 Box::new(ImgError::new_const(
@@ -529,16 +545,20 @@ impl DrawCallback for ImageBuffer {
             if start_x >= animation[current].width || start_y >= animation[current].height {
                 return Ok(None);
             }
-            w = if animation[current].width < width + start_x {
-                animation[current].width - start_x
-            } else {
-                width
-            };
-            h = if animation[current].height < height + start_y {
-                animation[current].height - start_y
-            } else {
-                height
-            };
+            let requested_end_x = start_x.checked_add(width).ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::OutboundIndex,
+                    "draw rectangle x overflow".to_string(),
+                )) as Error
+            })?;
+            let requested_end_y = start_y.checked_add(height).ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::OutboundIndex,
+                    "draw rectangle y overflow".to_string(),
+                )) as Error
+            })?;
+            w = animation[current].width.min(requested_end_x) - start_x;
+            h = animation[current].height.min(requested_end_y) - start_y;
             raws = animation[current].width;
             buffer = &mut animation[current].buffer;
         } else {
@@ -558,6 +578,12 @@ impl DrawCallback for ImageBuffer {
                     return Err(Box::new(ImgError::new_const(
                         ImgErrorKind::OutboundIndex,
                         "decoder buffer in draw".to_string(),
+                    )));
+                }
+                if offset_dest + 3 >= buffer.len() {
+                    return Err(Box::new(ImgError::new_const(
+                        ImgErrorKind::OutboundIndex,
+                        "image buffer in draw".to_string(),
                     )));
                 }
                 buffer[offset_dest] = data[offset_src];
@@ -606,7 +632,7 @@ impl DrawCallback for ImageBuffer {
                     start_x = 0;
                     start_y = 0;
                 }
-                let buffersize = width * height * 4;
+                let buffersize = checked_rgba_len(width, height, "animation frame")?;
                 let buffer: Vec<u8> = (0..buffersize).map(|_| 0).collect();
                 let layer = AnimationLayer {
                     width,
@@ -708,7 +734,7 @@ impl PickCallback for ImageBuffer {
                 "in pick".to_string(),
             )));
         }
-        let buffersize = width * height * 4;
+        let buffersize = checked_rgba_len(width, height, "pick")?;
         let mut data = Vec::with_capacity(buffersize);
         let buffer = self.buffer.as_ref().ok_or_else(|| {
             Box::new(ImgError::new_const(
@@ -720,19 +746,23 @@ impl PickCallback for ImageBuffer {
         if start_x >= self.width || start_y >= self.height {
             return Ok(None);
         }
-        let w = if self.width < width + start_x {
-            self.width - start_x
-        } else {
-            width
-        };
-        let h = if self.height < height + start_y {
-            self.height - start_y
-        } else {
-            height
-        };
+        let requested_end_x = start_x.checked_add(width).ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::OutboundIndex,
+                "pick rectangle x overflow".to_string(),
+            )) as Error
+        })?;
+        let requested_end_y = start_y.checked_add(height).ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::OutboundIndex,
+                "pick rectangle y overflow".to_string(),
+            )) as Error
+        })?;
+        let w = self.width.min(requested_end_x) - start_x;
+        let h = self.height.min(requested_end_y) - start_y;
 
         for y in 0..h {
-            let scanline_src = (start_y + y) * width * 4;
+            let scanline_src = (start_y + y) * self.width * 4;
             for x in 0..w {
                 let offset_src = scanline_src + (start_x + x) * 4;
                 if offset_src + 3 >= buffer.len() {

@@ -173,7 +173,12 @@ fn write_chunk(write_buffer: &mut Vec<u8>, crc32: &CRC32, chunk_type: &[u8; 4], 
 
 fn to_u32(value: Option<&DataMap>, key: &str) -> Result<u32, Error> {
     match value {
-        Some(DataMap::UInt(value)) => Ok(*value as u32),
+        Some(DataMap::UInt(value)) => u32::try_from(*value).map_err(|_| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::EncodeError,
+                format!("{key} exceeds u32"),
+            )) as Error
+        }),
         Some(_) => Err(Box::new(ImgError::new_const(
             ImgErrorKind::EncodeError,
             format!("{key} is not UInt metadata"),
@@ -187,8 +192,18 @@ fn to_u32(value: Option<&DataMap>, key: &str) -> Result<u32, Error> {
 
 fn to_i32(value: Option<&DataMap>, key: &str) -> Result<i32, Error> {
     match value {
-        Some(DataMap::SInt(value)) => Ok(*value as i32),
-        Some(DataMap::UInt(value)) => Ok(*value as i32),
+        Some(DataMap::SInt(value)) => i32::try_from(*value).map_err(|_| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::EncodeError,
+                format!("{key} exceeds i32"),
+            )) as Error
+        }),
+        Some(DataMap::UInt(value)) => i32::try_from(*value).map_err(|_| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::EncodeError,
+                format!("{key} exceeds i32"),
+            )) as Error
+        }),
         Some(_) => Err(Box::new(ImgError::new_const(
             ImgErrorKind::EncodeError,
             format!("{key} is not integer metadata"),
@@ -277,7 +292,17 @@ fn parse_apng_info(profile: &ImageProfiles) -> Result<Option<ApngInfo>, Error> {
                 format!("animation frame {index} has negative offset"),
             )));
         }
-        if buffer.len() != width as usize * height as usize * 4 {
+        let expected_len = usize::try_from(width)
+            .ok()
+            .and_then(|w| usize::try_from(height).ok().and_then(|h| w.checked_mul(h)))
+            .and_then(|pixels| pixels.checked_mul(4))
+            .ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::EncodeError,
+                    format!("animation frame {index} buffer size overflows"),
+                )) as Error
+            })?;
+        if buffer.len() != expected_len {
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::EncodeError,
                 format!("animation frame {index} buffer size mismatch"),

@@ -55,6 +55,12 @@ fn convert_rgba32(
         32 => {
             // bgra
             for x in 0..width {
+                if offset + 3 >= buffer_size {
+                    return Err(Box::new(ImgError::new_const(
+                        ImgErrorKind::DecodeError,
+                        "BMP scanline is truncated".to_string(),
+                    )));
+                }
                 let b = buffer[offset];
                 let g = buffer[offset + 1];
                 let r = buffer[offset + 2];
@@ -67,6 +73,12 @@ fn convert_rgba32(
         24 => {
             // bgra
             for x in 0..width {
+                if offset + 2 >= buffer_size {
+                    return Err(Box::new(ImgError::new_const(
+                        ImgErrorKind::DecodeError,
+                        "BMP scanline is truncated".to_string(),
+                    )));
+                }
                 let b = buffer[offset];
                 let g = buffer[offset + 1];
                 let r = buffer[offset + 2];
@@ -79,6 +91,12 @@ fn convert_rgba32(
         16 => {
             // rgb555
             for x in 0..width {
+                if offset + 1 >= buffer_size {
+                    return Err(Box::new(ImgError::new_const(
+                        ImgErrorKind::DecodeError,
+                        "BMP scanline is truncated".to_string(),
+                    )));
+                }
                 let color = read_u16_le(buffer, offset);
                 let r = ((color & 0x7c00) >> 10) as u8;
                 let g = ((color & 0x03e0) >> 5) as u8;
@@ -212,8 +230,14 @@ fn decode_rle<B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let width = header.width.unsigned_abs() as usize;
     let height = header.height.unsigned_abs() as usize;
+    if height == 0 {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::SizeZero,
+            "BMP height is zero".to_string(),
+        )));
+    }
     option.drawer.init(width, height, InitOptions::new())?;
-    let mut line: Vec<u8> = (0..header.width * 4)
+    let mut line: Vec<u8> = (0..width * 4)
         .map(|i| if i % 4 == 3 { 0xff } else { 0 })
         .collect();
     let mut y: usize = height - 1;
@@ -315,6 +339,9 @@ fn decode_rle<B: BinaryReader>(
                     x += 1;
                 }
                 if data0 % 2 == 1 {
+                    if x >= buf.len() {
+                        break 'x;
+                    }
                     buf[x] = data1 >> 4;
                     x += 1;
                 }
@@ -374,6 +401,12 @@ fn decode_bit_fileds<B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let width = header.width.unsigned_abs() as usize;
     let height = header.height.unsigned_abs() as usize;
+    if width == 0 || height == 0 {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::SizeZero,
+            "BMP dimensions must be non-zero".to_string(),
+        )));
+    }
 
     let info;
 
@@ -430,10 +463,18 @@ fn decode_bit_fileds<B: BinaryReader>(
         //        let offset = y_ * line_size;
 
         for x in 0..width {
+            let color_offset = if header.bit_count == 32 { x * 4 } else { x * 2 };
+            let needed = if header.bit_count == 32 { 4 } else { 2 };
+            if color_offset + needed > buffer.len() {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    "BMP bitfield scanline is truncated".to_string(),
+                )));
+            }
             let color = if header.bit_count == 32 {
-                read_u32_le(&buffer, x * 4)
+                read_u32_le(&buffer, color_offset)
             } else {
-                read_u16_le(&buffer, x * 2) as u32
+                read_u16_le(&buffer, color_offset) as u32
             };
             let red = (color & red_mask) >> red_shift;
             let green = (color & green_mask) >> green_shift;

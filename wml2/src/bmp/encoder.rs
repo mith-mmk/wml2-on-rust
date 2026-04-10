@@ -21,14 +21,52 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
             "Image profiles nothing".to_string(),
         )));
     }
-    let bit_count = 24;
-    let raw_samples = (width * bit_count + 31) / 32 * 4;
-    let gap = raw_samples - (width * (bit_count / 8));
-    let buffersize = raw_samples * height;
+    if width == 0 || height == 0 {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "BMP dimensions must be non-zero".to_string(),
+        )));
+    }
+    let bit_count = 24u32;
+    let raw_samples = width
+        .checked_mul(bit_count)
+        .and_then(|bits| bits.checked_add(31))
+        .map(|bits| (bits / 32) * 4)
+        .ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "BMP row size overflow".to_string(),
+            )) as Error
+        })?;
+    let gap = raw_samples
+        .checked_sub(width.checked_mul(bit_count / 8).ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "BMP row size overflow".to_string(),
+            )) as Error
+        })?)
+        .ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "BMP row gap overflow".to_string(),
+            )) as Error
+        })?;
+    let buffersize = raw_samples.checked_mul(height).ok_or_else(|| {
+        Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "BMP image size overflow".to_string(),
+        )) as Error
+    })?;
+    let file_size = buffersize.checked_add(54).ok_or_else(|| {
+        Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "BMP file size overflow".to_string(),
+        )) as Error
+    })?;
 
     let bitmap_file_header = BitmapFileHeader {
         bf_type: 0x4d42,
-        bf_size: buffersize + 54,
+        bf_size: file_size,
         bf_reserved1: 0,
         bf_reserved2: 0,
         bf_offbits: 54,
@@ -75,7 +113,27 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
         let buf = image
             .drawer
             .encode_pick(0, bmp_y as usize, width as usize, 1, None)?
-            .unwrap_or(vec![0]);
+            .ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::EncodeError,
+                    "BMP source row is missing".to_string(),
+                )) as Error
+            })?;
+        let expected_row_len = usize::try_from(width)
+            .ok()
+            .and_then(|w| w.checked_mul(4))
+            .ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::InvalidParameter,
+                    "BMP source row size overflow".to_string(),
+                )) as Error
+            })?;
+        if buf.len() < expected_row_len {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::EncodeError,
+                "BMP source row is truncated".to_string(),
+            )));
+        }
         let mut ptr = 0;
         for _ in 0..width {
             let blue = buf[ptr];

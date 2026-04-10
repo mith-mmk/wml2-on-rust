@@ -24,7 +24,8 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: build wml2viewer
-        run: cargo build --release -p wml2viewer
+        run: cargo build --release
+        working-directory: wml2viewer
 
       - name: zip (windows)
         if: matrix.os == 'windows-latest'
@@ -33,7 +34,7 @@ jobs:
           copy wml2viewer/README.* dist/
           copy LICENSE dist/
           copy wml2viewer/resources/help.html dist/
-          copy target/release/wml2viewer.exe dist/
+          copy wml2viewer/target/release/wml2viewer.exe dist/
           Compress-Archive -Path dist/*  -DestinationPath dist/wml2viewer-windows.zip        
         shell: pwsh
 
@@ -41,7 +42,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           mkdir dist
-          cp target/release/wml2viewer .
+          cp wml2viewer/target/release/wml2viewer dist/
           cp wml2viewer/README.* dist/
           cp LICENSE dist/
           cp wml2viewer/resources/help.html dist/

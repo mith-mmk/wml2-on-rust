@@ -61,6 +61,8 @@ dependencies = [
 [[package]]
 name = "webp-rust"
 version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d5967f27dbd1796f7ca3f9f555500ed7ae4aef4c153bf1f8e9e8a72751ed1b4"
 dependencies = [
  "bin-rs 0.0.10",
 ]

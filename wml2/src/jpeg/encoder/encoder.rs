@@ -200,7 +200,16 @@ pub fn encode(image: &EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
         )));
     }
 
-    let expected_len = image.width * image.height * 4;
+    let expected_len = image
+        .width
+        .checked_mul(image.height)
+        .and_then(|pixels| pixels.checked_mul(4))
+        .ok_or_else(|| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "image dimensions overflow",
+            )) as Error
+        })?;
     if image.rgba.len() != expected_len {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,

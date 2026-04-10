@@ -130,6 +130,12 @@ pub fn decode<B: BinaryReader>(
 
     let width = header.end_x as usize - header.start_x as usize + 1;
     let height = header.end_y as usize - header.start_y as usize + 1;
+    if width == 0 || height == 0 {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "MAG dimensions must be non-zero",
+        )));
+    }
 
     option.drawer.init(width, height, InitOptions::new())?;
 
@@ -264,6 +270,12 @@ pub fn decode<B: BinaryReader>(
 
         if ncolors == 256 {
             let src_off = ftmp as usize + (header.start_x as usize - aligned_start_x);
+            if src_off + width > line_buf.len() || row_out + width > pixels.len() {
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "MAG scanline is out of range",
+                )));
+            }
             let src = &line_buf[src_off..src_off + width];
             pixels[row_out..row_out + width].copy_from_slice(src);
         } else {
@@ -274,6 +286,12 @@ pub fn decode<B: BinaryReader>(
                 expanded[m * 2 + 1] = c & 0x0F;
             }
             let pix_off = header.start_x as usize - aligned_start_x;
+            if pix_off + width > expanded.len() || row_out + width > pixels.len() {
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "MAG expanded scanline is out of range",
+                )));
+            }
             pixels[row_out..row_out + width].copy_from_slice(&expanded[pix_off..pix_off + width]);
         }
     }
@@ -281,7 +299,12 @@ pub fn decode<B: BinaryReader>(
     let mut rgba_pixels = vec![0u8; width * height * 4];
     for i in 0..(width * height) {
         let c = pixels[i] as usize;
-        let (r, g, b) = header.palette[c];
+        let Some(&(r, g, b)) = header.palette.get(c) else {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "MAG palette index out of range",
+            )));
+        };
         rgba_pixels[i * 4] = r;
         rgba_pixels[i * 4 + 1] = g;
         rgba_pixels[i * 4 + 2] = b;

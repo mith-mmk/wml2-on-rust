@@ -120,6 +120,12 @@ fn decode_vsp16(
     let width_cells = header.end_x.saturating_sub(header.start_x);
     let height = header.end_y.saturating_sub(header.start_y);
     let width = width_cells * 8;
+    if width == 0 || height == 0 {
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "VSP dimensions must be non-zero",
+        ));
+    }
     let mut pixels = vec![0u8; width * height];
     let mut reader = ByteCursor::new(data, offset + 0x3a);
     let mut planes = vec![vec![vec![0u8; height + 1]; 2]; 4];
@@ -136,6 +142,9 @@ fn decode_vsp16(
                     0x00 => {
                         let count = reader.read_u8()? as usize;
                         for _ in 0..=count {
+                            if y >= height {
+                                break;
+                            }
                             planes[pal][xw][y] = planes[pal][xb][y];
                             y += 1;
                         }
@@ -144,6 +153,9 @@ fn decode_vsp16(
                         let count = reader.read_u8()? as usize;
                         let value = reader.read_u8()?;
                         for _ in 0..=count {
+                            if y >= height {
+                                break;
+                            }
                             planes[pal][xw][y] = value;
                             y += 1;
                         }
@@ -167,6 +179,9 @@ fn decode_vsp16(
                         let count = reader.read_u8()? as usize;
                         let src_plane = (flag - 3) as usize;
                         for _ in 0..=count {
+                            if y >= height {
+                                break;
+                            }
                             let value = planes[src_plane][xw][y];
                             planes[pal][xw][y] = if s == 0 { value } else { !value };
                             y += 1;
@@ -175,10 +190,16 @@ fn decode_vsp16(
                     }
                     0x06 => s = 1,
                     0x07 => {
+                        if y >= height {
+                            break;
+                        }
                         planes[pal][xw][y] = reader.read_u8()?;
                         y += 1;
                     }
                     _ => {
+                        if y >= height {
+                            break;
+                        }
                         planes[pal][xw][y] = flag;
                         y += 1;
                     }

@@ -155,7 +155,7 @@ impl BitmapHeader {
         let mut clut_size;
         let clut_offset;
         match bi_size {
-            12 | 40 | 108 | 124 => {}
+            12 | 40 | 52 | 56 | 108 | 124 => {}
             _ => {
                 return Err(Box::new(ImgError::new_const(
                     ImgErrorKind::DecodeError,
@@ -228,7 +228,7 @@ impl BitmapHeader {
             width = info_header.bi_width as i32;
             height = info_header.bi_height as i32;
 
-            let b_v4_header = if header_size > 40 {
+            let b_v4_header = if header_size >= 52 {
                 // V4
                 let b_v4_red_mask = reader.read_u32_le()?;
                 let b_v4_green_mask = reader.read_u32_le()?;
@@ -241,15 +241,15 @@ impl BitmapHeader {
                 let mut b_v4_gamma_blue = 0;
                 read_size += 12;
 
-                if header_size > 56 {
+                if header_size >= 56 {
                     b_v4_alpha_mask = reader.read_u32_le()?;
                     read_size += 4;
                 }
-                if header_size > 60 {
+                if header_size >= 60 {
                     b_v4_cstype = reader.read_u32_le()?;
                     read_size += 4;
                 }
-                if header_size > 96 {
+                if header_size >= 96 {
                     b_v4_endpoints = Some(CieXYZTriple {
                         ciexyz_red: CieXYZ {
                             ciexyz_x: reader.read_u32_le()?,
@@ -269,7 +269,7 @@ impl BitmapHeader {
                     });
                     read_size += 36;
                 }
-                if header_size > 108 {
+                if header_size >= 108 {
                     b_v4_gamma_red = reader.read_u32_le()?;
                     b_v4_gamma_green = reader.read_u32_le()?;
                     b_v4_gamma_blue = reader.read_u32_le()?; //108
@@ -291,14 +291,14 @@ impl BitmapHeader {
                 None
             };
 
-            let b_v5_header = if header_size > 112 {
+            let b_v5_header = if header_size >= 112 {
                 let b_v5_intent = reader.read_u32_le()?; // 112
-                let (b_v5_profile_data, b_v5_profile_size) = if header_size > 120 {
+                let (b_v5_profile_data, b_v5_profile_size) = if header_size >= 120 {
                     (reader.read_u32_le()?, reader.read_u32_le()?)
                 } else {
                     (0, 0)
                 }; //120
-                let b_v5_reserved = if header_size > 124 {
+                let b_v5_reserved = if header_size >= 124 {
                     reader.read_u32_le()?
                 } else {
                     0

@@ -1172,7 +1172,7 @@ pub(crate) fn calc_scan(
     let mut j = 0;
     for i in 0..component.len() {
         let tq = component[i].tq;
-        if j < huffman_scan_header.ns && huffman_scan_header.csn[j] == i + 1 {
+        if j < huffman_scan_header.ns && huffman_scan_header.csn[j] == component[i].c {
             scan.push((
                 huffman_scan_header.tdcn[j],
                 huffman_scan_header.tacn[j],

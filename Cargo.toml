@@ -3,11 +3,11 @@ resolver = "2"
 members = [
     "wml2",
     "wml2-test",
-    "wml2viewer",
 ]
 
 exclude = [
     "webp",
+    "wml2viewer",
 ]
 
 [profile.release]

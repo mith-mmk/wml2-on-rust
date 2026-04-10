@@ -114,6 +114,9 @@
   - access policy は `DirectOriginal` / `Sequential` を持ち、network path と size threshold と sampled profile から決める
   - 大きい network zip では「初回表示」と「連続閲覧」を同じ戦略で最適化しない
   - staged policy を前提にし、必要なら表示後に local cache warmup を行い、連続閲覧だけ cached archive へ切り替える
+  - 状態遷移的にはファーストロード→メタデータスキャン→ネクストロードになるが、I/Oを減らすため、メタデータのキャッシュ戦略が重要
+  - 現状、メタデータスキャンがO(n^2)的な動きをしているためO(n)を目指す
+  - viewerの割り込みを優先し、メタデータのスキャンをとめてpreloadできるようにする
 - `stored` / 実質無圧縮 zip は temp copy を強制しない
 
 ## Manga Mode 実装原則

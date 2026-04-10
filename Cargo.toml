@@ -7,7 +7,6 @@ members = [
 
 exclude = [
     "webp",
-    "wml2viewer",
 ]
 
 [profile.release]

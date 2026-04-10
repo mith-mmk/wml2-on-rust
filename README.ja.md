@@ -1,6 +1,10 @@
 [![crates.io](https://img.shields.io/crates/v/wml2)](https://crates.io/crates/wml2) ![license](https://img.shields.io/crates/l/wml2)
 [英語](./README.md)
 
+> [!NOTE]
+> WML2Viewerはリポジトリごと移転しました [WML2Viwer](https://github.com/mith-mmk/wml2viewer)
+
+
 # WML2 - Web graphic Multi format Library To Rust
 
 `wml2` は callback ベースの画像 I/O ライブラリです。

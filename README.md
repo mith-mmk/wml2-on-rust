@@ -1,6 +1,9 @@
 [![crates.io](https://img.shields.io/crates/v/wml2)](https://crates.io/crates/wml2) ![license](https://img.shields.io/crates/l/wml2)
 [Japanese](./README.ja.md)
 
+> [!NOTE]
+> WML2Viewer is moved new repository [WML2Viwer](https://github.com/mith-mmk/wml2viewer)
+
 # WML2 - Web graphic Multi format Library To Rust
 
 `wml2` is a callback-based image I/O library for Rust.

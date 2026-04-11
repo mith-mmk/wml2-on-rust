@@ -90,9 +90,9 @@ pub fn decode<B: BinaryReader>(
     let flag_b = cursor.read_bytes(header.flag_b_size)?.to_vec();
 
     let matrix_stride = header.width >> 4;
-    let matrix_len = matrix_stride.checked_mul(ll).ok_or_else(|| {
-        err(ImgErrorKind::IllegalData, "MAKI matrix size overflow")
-    })?;
+    let matrix_len = matrix_stride
+        .checked_mul(ll)
+        .ok_or_else(|| err(ImgErrorKind::IllegalData, "MAKI matrix size overflow"))?;
     let mut matrix = vec![0u8; matrix_len];
     let mut w = 0usize;
     let mut s = 0usize;
@@ -135,9 +135,10 @@ pub fn decode<B: BinaryReader>(
     }
 
     let mut lines = vec![vec![0u8; header.width]; 5];
-    let pixel_count = header.width.checked_mul(header.height).ok_or_else(|| {
-        err(ImgErrorKind::IllegalData, "MAKI pixel buffer size overflow")
-    })?;
+    let pixel_count = header
+        .width
+        .checked_mul(header.height)
+        .ok_or_else(|| err(ImgErrorKind::IllegalData, "MAKI pixel buffer size overflow"))?;
     let mut pixels = vec![0u8; pixel_count];
     let mut matrix_index = 0usize;
 

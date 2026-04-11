@@ -102,11 +102,19 @@ pub fn decode<B: BinaryReader>(
     let rgb_len = width
         .checked_mul(height)
         .and_then(|pixels| pixels.checked_mul(3))
-        .ok_or_else(|| err(crate::error::ImgErrorKind::IllegalData, "PCD RGB buffer size overflow"))?;
+        .ok_or_else(|| {
+            err(
+                crate::error::ImgErrorKind::IllegalData,
+                "PCD RGB buffer size overflow",
+            )
+        })?;
     let mut rgb = vec![0u8; rgb_len];
     cursor.seek(size.seek)?;
     let y_len = width.checked_mul(2).ok_or_else(|| {
-        err(crate::error::ImgErrorKind::IllegalData, "PCD Y plane size overflow")
+        err(
+            crate::error::ImgErrorKind::IllegalData,
+            "PCD Y plane size overflow",
+        )
     })?;
     let mut y_data = vec![0u8; y_len];
     let mut c1_data = vec![0u8; width / 2];

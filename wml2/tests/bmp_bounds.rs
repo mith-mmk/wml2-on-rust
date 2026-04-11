@@ -50,7 +50,10 @@ fn broken_bmp_header_does_not_panic() {
     let bytes = bmp_with_invalid_offbits();
     let result = panic::catch_unwind(|| image_load(&bytes));
     assert!(result.is_ok(), "broken BMP header caused a panic");
-    assert!(result.unwrap().is_err(), "broken BMP header unexpectedly decoded");
+    assert!(
+        result.unwrap().is_err(),
+        "broken BMP header unexpectedly decoded"
+    );
 }
 
 #[test]

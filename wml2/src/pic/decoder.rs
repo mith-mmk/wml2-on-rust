@@ -353,11 +353,17 @@ fn unpack_chain_value(row: &[u8], x: usize) -> u8 {
     if (x & 1) == 0 { byte >> 4 } else { byte & 0x0f }
 }
 
-fn decode_indexed(bits: &mut BitReaderWordMsb<'_>, parsed: &PicParsed) -> Result<PicDecoded, Error> {
+fn decode_indexed(
+    bits: &mut BitReaderWordMsb<'_>,
+    parsed: &PicParsed,
+) -> Result<PicDecoded, Error> {
     let width = parsed.width;
     let height = parsed.height;
     if width == 0 || height == 0 {
-        return Err(err(ImgErrorKind::IllegalData, "PIC dimensions must be non-zero"));
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "PIC dimensions must be non-zero",
+        ));
     }
     let mut chain = vec![vec![0u8; (width + 1) >> 1]; height];
     let mut current = vec![0u8; width];
@@ -437,7 +443,10 @@ fn decode_direct(bits: &mut BitReaderWordMsb<'_>, parsed: &PicParsed) -> Result<
     let width = parsed.width;
     let height = parsed.height;
     if width == 0 || height == 0 {
-        return Err(err(ImgErrorKind::IllegalData, "PIC dimensions must be non-zero"));
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "PIC dimensions must be non-zero",
+        ));
     }
     let mut chain = vec![vec![0u8; (width + 1) >> 1]; height];
     let mut current = vec![0u32; width];
@@ -507,12 +516,14 @@ fn decode_direct(bits: &mut BitReaderWordMsb<'_>, parsed: &PicParsed) -> Result<
         }
     }
 
-    let mut pixels = vec![
-        0u8;
-        width.checked_mul(height)
-            .and_then(|px| px.checked_mul(3))
-            .ok_or_else(|| err(ImgErrorKind::IllegalData, "PIC RGB output size overflow"))?
-    ];
+    let mut pixels =
+        vec![
+            0u8;
+            width
+                .checked_mul(height)
+                .and_then(|px| px.checked_mul(3))
+                .ok_or_else(|| err(ImgErrorKind::IllegalData, "PIC RGB output size overflow"))?
+        ];
     let mut c = 0u32;
     let mut x = usize::MAX;
     let mut y = 0usize;
@@ -569,7 +580,10 @@ fn scale_indexed_nearest(
     target_height: usize,
 ) -> Result<PicDecoded, Error> {
     if target_width == 0 || target_height == 0 {
-        return Err(err(ImgErrorKind::IllegalData, "PIC target dimensions must be non-zero"));
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "PIC target dimensions must be non-zero",
+        ));
     }
     let mut pixels = vec![
         0u8;
@@ -600,13 +614,20 @@ fn scale_rgb_nearest(
     target_height: usize,
 ) -> Result<PicDecoded, Error> {
     if target_width == 0 || target_height == 0 {
-        return Err(err(ImgErrorKind::IllegalData, "PIC target dimensions must be non-zero"));
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "PIC target dimensions must be non-zero",
+        ));
     }
     let mut pixels = vec![
         0u8;
-        target_width.checked_mul(target_height)
+        target_width
+            .checked_mul(target_height)
             .and_then(|px| px.checked_mul(3))
-            .ok_or_else(|| err(ImgErrorKind::IllegalData, "PIC scaled RGB output size overflow"))?
+            .ok_or_else(|| err(
+                ImgErrorKind::IllegalData,
+                "PIC scaled RGB output size overflow"
+            ))?
     ];
     for y in 0..target_height {
         let src_y = (y * image.height / target_height).min(image.height.saturating_sub(1));
@@ -617,7 +638,10 @@ fn scale_rgb_nearest(
             let src_end = src + 3;
             let dst_end = dst + 3;
             if src_end > image.pixels.len() || dst_end > pixels.len() {
-                return Err(err(ImgErrorKind::IllegalData, "PIC scale copy is out of range"));
+                return Err(err(
+                    ImgErrorKind::IllegalData,
+                    "PIC scale copy is out of range",
+                ));
             }
             pixels[dst..dst_end].copy_from_slice(&image.pixels[src..src_end]);
         }

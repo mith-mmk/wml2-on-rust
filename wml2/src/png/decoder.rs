@@ -1,5 +1,6 @@
 //! PNG and APNG decoder implementation.
 
+// use crate::color;
 use crate::color::RGBA;
 use crate::draw::*;
 use crate::error::*;
@@ -20,25 +21,11 @@ fn png_error(kind: ImgErrorKind, message: impl Into<String>) -> Error {
     Box::new(ImgError::new_const(kind, message.into()))
 }
 
-fn palette_entries<'a>(header: &'a PngHeader) -> Result<&'a [RGBA], Error> {
-    let palette = header
+fn palette_entries(header: &PngHeader) -> Result<&[RGBA], Error> {
+    header
         .pallete
         .as_deref()
-        .ok_or_else(|| png_error(ImgErrorKind::IllegalData, "Pallte data is nothing."))?;
-    let required = 1usize
-        .checked_shl(header.bitpersample as u32)
-        .ok_or_else(|| png_error(ImgErrorKind::IllegalData, "invalid palette bit depth"))?;
-    if palette.len() < required {
-        return Err(png_error(
-            ImgErrorKind::IllegalData,
-            format!(
-                "palette is too short: expected at least {} entries, got {}",
-                required,
-                palette.len()
-            ),
-        ));
-    }
-    Ok(palette)
+        .ok_or_else(|| png_error(ImgErrorKind::IllegalData, "Palette data is missing."))
 }
 
 fn draw_rect(header: &PngHeader) -> (u32, u32) {
@@ -646,6 +633,17 @@ fn load_truecolor_progressive(
     Ok(None)
 }
 
+fn check_color(pallet: &[RGBA], color: usize) -> Result<(), Error> {
+    let color = color as usize;
+    if color >= pallet.len() {
+        return Err(png_error(
+            ImgErrorKind::IllegalData,
+            format!("palette index {} is out of range {}", color, pallet.len()),
+        ));
+    }
+    Ok(())
+}
+
 fn load_index_color(
     header: &PngHeader,
     buffer: &[u8],
@@ -653,6 +651,7 @@ fn load_index_color(
 ) -> Result<Option<ImgWarnings>, Error> {
     let (width, height) = draw_rect(header);
     let pallet = palette_entries(header)?;
+
     let raw_length = ((width * header.bitpersample as u32 + 7) / 8 + 1) as usize;
 
     let mut outbuf: Vec<u8> = (0..width * 4).map(|_| 0).collect();
@@ -694,10 +693,11 @@ fn load_index_color(
             }
             // index color also no use filter
             let color = color as usize;
+            check_color(pallet, color)?;
             outbuf[outptr] = pallet[color].red;
             outbuf[outptr + 1] = pallet[color].green;
             outbuf[outptr + 2] = pallet[color].blue;
-            outbuf[outptr + 3] = 0xff;
+            outbuf[outptr + 3] = pallet[color].alpha;
             outptr += 4;
         }
         option.drawer.draw(0, y, width as usize, 1, &outbuf, None)?;
@@ -758,12 +758,14 @@ fn load_index_color_progressive(
                     }
                     _ => {}
                 }
+
                 // index color also no use filter
                 let color = color as usize;
+                check_color(pallet, color)?;
                 outbuf[outptr] = pallet[color].red;
                 outbuf[outptr + 1] = pallet[color].green;
                 outbuf[outptr + 2] = pallet[color].blue;
-                outbuf[outptr + 3] = 0xff;
+                outbuf[outptr + 3] = pallet[color].alpha;
                 outptr += 4;
                 option.drawer.draw(x, y, 1, 1, &outbuf, None)?;
                 x_ += 1;

@@ -25,16 +25,28 @@ jobs:
       - name: build examples
         run: cargo build --release --examples
 
+      # Windows: *.exe のみ
+      - name: archive (windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd target/release/examples
+          powershell Compress-Archive -Path *.exe -DestinationPath ../examples-${{ matrix.os }}.zip
+
+      # Unix系: 拡張子なしのみ
+      - name: archive (linux/mac)
+        if: runner.os != 'Windows'
+        run: |
+          cd target/release/examples
+          files=$(find . -type f ! -name "*.*")
+          zip -r ../examples-${{ matrix.os }}.zip $files
+
       - name: upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: examples-${{ matrix.os }}
-          path: |
-            target/release/examples/*
-            target/release/examples/*.exe
+          path: target/release/examples-${{ matrix.os }}.zip
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            target/release/examples/*
+          files: target/release/examples-${{ matrix.os }}.zip

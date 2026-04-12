@@ -162,7 +162,6 @@ impl PngHeader {
             let buf = reader.read_bytes_no_move(8)?;
             let length = read_u32_be(&buf, 0);
             let chunck = &buf[4..];
-
             if chunck == IMAGE_DATA {
                 header.image_lenghth = length;
                 break;
@@ -261,7 +260,7 @@ impl PngHeader {
                 header.compression = reader.read_byte()?;
                 header.filter_method = reader.read_byte()?;
                 header.interace_method = reader.read_byte()?;
-                let _crc = reader.read_u32_be();
+                let _crc = reader.read_u32_be()?;
             } else if chunck == PALLET {
                 reader.skip_ptr(8)?;
                 if length % 3 != 0 {
@@ -282,6 +281,7 @@ impl PngHeader {
                     pallet.push(color);
                 }
                 header.pallete = Some(pallet);
+                let _crc = reader.read_u32_be()?;
             } else if chunck == TRANNCEPEARENCY {
                 reader.skip_ptr(8)?;
                 if header.pallete.is_none() {
@@ -300,6 +300,7 @@ impl PngHeader {
                         pallete[i].alpha = reader.read_byte()?;
                     }
                 }
+                let _crc = reader.read_u32_be()?;
             } else if chunck == GAMMA {
                 reader.skip_ptr(8)?;
                 let gamma = reader.read_u32_be()?;

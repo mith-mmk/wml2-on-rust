@@ -251,7 +251,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.16`: pure Rust WebP decoder and APNG encoder
 - `0.0.17`: pure Rust WebP encoder and animated WebP encode
 - `0.0.18`: GIF encoder, TIFF encoder, EXIF writer
-- `0.0.20`: ICO decoder, feature restructuring, and LL&M as the default JPEG decoder IDCT
+- `0.0.19`: ICO decoder, feature restructuring, and LL&M as the default JPEG decoder IDCT
+- `0.0.20`: Enhancement of boundary check, Decoding bug in PNG with palette
 
 
 ## License

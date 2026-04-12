@@ -253,7 +253,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.16`: Pure Rust WebP decoder と APNG encoder
 - `0.0.17`: Pure Rust WebP encoder と animated WebP encode
 - `0.0.18`: GIF encoder、TIFF encoder、EXIF writer
-- `0.0.20`: ICO decoder、features の整理、JPEG decoder の IDCT アルゴリズムは LL&M が default に変更
+- `0.0.19`: ICO decoder、features の整理、JPEG decoder の IDCT アルゴリズムは LL&M が default に変更
+- `0.0.20`: boudary checkの強化、パレット付きpngのデコードバグfix
 
 ## License
 

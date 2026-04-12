@@ -16,37 +16,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
 
-      - name: cache cargo
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
 
-      - name: build examples
-        run: cargo build --release --examples
+      - run: cargo build --release --examples
 
-      # Windows: *.exe のみ
       - name: archive (windows)
         if: runner.os == 'Windows'
         run: |
           cd target/release/examples
           powershell Compress-Archive -Path *.exe -DestinationPath ../examples-${{ matrix.os }}.zip
 
-      # Unix系: 拡張子なしのみ
-      - name: archive (linux/mac)
+      - name: archive (unix)
         if: runner.os != 'Windows'
         run: |
           cd target/release/examples
           files=$(find . -type f ! -name "*.*")
           zip -r ../examples-${{ matrix.os }}.zip $files
 
-      - name: upload artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: examples-${{ matrix.os }}
           path: target/release/examples-${{ matrix.os }}.zip
 
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/release/examples-${{ matrix.os }}.zip
+          files: dist/**/*.zip
+          overwrite_files: true

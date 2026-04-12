@@ -32,7 +32,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd target/release/examples
-          files=$(find . -type f ! -name "*.*")
+          files=$(find . -type f ! -name "*.*" ! -regex '.*-[0-9a-f]\{16\}$')
           zip -r ../examples-${{ matrix.os }}.zip $files
 
       - uses: actions/upload-artifact@v4

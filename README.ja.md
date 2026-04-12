@@ -36,7 +36,7 @@ $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]
 ```
 
-## サポートフォーマット (`0.0.19`)
+## サポートフォーマット (`0.0.20`)
 
 | フォーマット | enc | dec | 備考 |
 | --- | --- | --- | --- |
@@ -67,17 +67,17 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ```toml
 [dependencies]
-wml2 = "0.0.19"
+wml2 = "0.0.20"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.19", features = ["noretoro"] }
+wml2 = { version = "0.0.20", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.19", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.20", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -253,7 +253,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.16`: Pure Rust WebP decoder と APNG encoder
 - `0.0.17`: Pure Rust WebP encoder と animated WebP encode
 - `0.0.18`: GIF encoder、TIFF encoder、EXIF writer
-- `0.0.19`: ICO decoder、features の整理、JPEG decoder の IDCT アルゴリズムは LL&M が default に変更
+- `0.0.20`: ICO decoder、features の整理、JPEG decoder の IDCT アルゴリズムは LL&M が default に変更
 
 ## License
 

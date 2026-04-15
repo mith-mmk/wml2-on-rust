@@ -253,6 +253,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.18`: GIF encoder, TIFF encoder, EXIF writer
 - `0.0.19`: ICO decoder, feature restructuring, and LL&M as the default JPEG decoder IDCT
 - `0.0.20`: Enhancement of boundary check, Decoding bug in PNG with palette
+- `0.0.21`: fix gif decode bug
 
 
 ## License

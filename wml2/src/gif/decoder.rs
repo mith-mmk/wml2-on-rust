@@ -167,8 +167,6 @@ pub fn decode<'decode, B: BinaryReader>(
                             if len == 0 {
                                 break;
                             }
-                            let id = reader.read_byte()?;
-
                             if s == "NETSCAPE2.0" {
                                 option.drawer.set_metadata(
                                     "Animation GIF",
@@ -179,10 +177,14 @@ pub fn decode<'decode, B: BinaryReader>(
                                         .drawer
                                         .verbose(&("Animation tag: ".to_owned() + &s), None)?;
                                 }
-                                if id == 0x01 {
+                                let id = reader.read_byte()?;
+                                if id == 0x01 && len >= 3 {
                                     loop_count = reader.read_u16_le()? as u32;
+                                    if len > 3 {
+                                        reader.skip_ptr(len - 3)?;
+                                    }
                                 } else {
-                                    reader.skip_ptr(len)?;
+                                    reader.skip_ptr(len.saturating_sub(1))?;
                                 }
                             } else {
                                 reader.skip_ptr(len)?;
@@ -194,6 +196,7 @@ pub fn decode<'decode, B: BinaryReader>(
                         if len == 0 {
                             break;
                         }
+                        reader.skip_ptr(len)?;
                     },
                 }
             }

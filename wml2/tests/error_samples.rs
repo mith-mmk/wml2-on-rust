@@ -41,3 +41,8 @@ fn decode_56_byte_bmp_header_samples() {
 fn decode_cmyk_jpeg_error_sample() {
     decode_error_sample_if_available("cmyk.jpg");
 }
+
+#[test]
+fn decode_innai_gif_error_sample() {
+    decode_error_sample_if_available("innai3_gif01.gif");
+}

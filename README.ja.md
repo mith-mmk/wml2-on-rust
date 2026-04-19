@@ -256,6 +256,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.19`: ICO decoder、features の整理、JPEG decoder の IDCT アルゴリズムは LL&M が default に変更
 - `0.0.20`: boudary checkの強化、パレット付きpngのデコードバグfix
 - `0.0.21`: gif decoderのバグフィックス
+- `0.0.22`: png decoderのエンバグフィックス
 
 ## License
 MIT License (C) 2022-2026

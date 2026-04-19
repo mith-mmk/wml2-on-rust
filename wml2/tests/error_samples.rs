@@ -46,3 +46,8 @@ fn decode_cmyk_jpeg_error_sample() {
 fn decode_innai_gif_error_sample() {
     decode_error_sample_if_available("innai3_gif01.gif");
 }
+
+#[test]
+fn decode_korean_peninsula_png_error_sample() {
+    decode_error_sample_if_available("Korean_Peninsula_topographic_map.png");
+}

@@ -85,15 +85,15 @@ fn load_grayscale(
                 1 => {
                     // Sub
                     if outptr > 0 {
-                        gray += outbuf[outptr - 4];
-                        alpha += outbuf[outptr - 1];
+                        gray = gray.wrapping_add(outbuf[outptr - 4]);
+                        alpha = alpha.wrapping_add(outbuf[outptr - 1]);
                     }
                 }
                 2 => {
                     // Up
                     if !prev_buf.is_empty() {
-                        gray += prev_buf[outptr];
-                        alpha += prev_buf[outptr + 3];
+                        gray = gray.wrapping_add(prev_buf[outptr]);
+                        alpha = alpha.wrapping_add(prev_buf[outptr + 3]);
                     }
                 }
                 3 => {
@@ -116,8 +116,8 @@ fn load_grayscale(
                     gray_ /= 2;
                     alpha_ /= 2;
 
-                    gray += gray_ as u8;
-                    alpha += alpha_ as u8;
+                    gray = gray.wrapping_add(gray_ as u8);
+                    alpha = alpha.wrapping_add(alpha_ as u8);
                 }
                 4 => {
                     // Pease
@@ -218,15 +218,15 @@ fn load_grayscale_progressive(
                     1 => {
                         // Sub
                         if outptr > 0 {
-                            gray += outbuf[outptr - 4];
-                            alpha += outbuf[outptr - 1];
+                            gray = gray.wrapping_add(outbuf[outptr - 4]);
+                            alpha = alpha.wrapping_add(outbuf[outptr - 1]);
                         }
                     }
                     2 => {
                         // Up
                         if !prev_buf.is_empty() {
-                            gray += prev_buf[outptr];
-                            alpha += prev_buf[outptr + 3];
+                            gray = gray.wrapping_add(prev_buf[outptr]);
+                            alpha = alpha.wrapping_add(prev_buf[outptr + 3]);
                         }
                     }
                     3 => {
@@ -249,8 +249,8 @@ fn load_grayscale_progressive(
                         gray_ /= 2;
                         alpha_ /= 2;
 
-                        gray += gray_ as u8;
-                        alpha += alpha_ as u8;
+                        gray = gray.wrapping_add(gray_ as u8);
+                        alpha = alpha.wrapping_add(alpha_ as u8);
                     }
                     4 => {
                         // Pease
@@ -353,19 +353,19 @@ fn load_truecolor(
                 1 => {
                     // Sub
                     if outptr > 0 {
-                        red += outbuf[outptr - 4];
-                        green += outbuf[outptr - 3];
-                        blue += outbuf[outptr - 2];
-                        alpha += outbuf[outptr - 1];
+                        red = red.wrapping_add(outbuf[outptr - 4]);
+                        green = green.wrapping_add(outbuf[outptr - 3]);
+                        blue = blue.wrapping_add(outbuf[outptr - 2]);
+                        alpha = alpha.wrapping_add(outbuf[outptr - 1]);
                     }
                 }
                 2 => {
                     // Up
                     if !prev_buf.is_empty() {
-                        red += prev_buf[outptr];
-                        green += prev_buf[outptr + 1];
-                        blue += prev_buf[outptr + 2];
-                        alpha += prev_buf[outptr + 3];
+                        red = red.wrapping_add(prev_buf[outptr]);
+                        green = green.wrapping_add(prev_buf[outptr + 1]);
+                        blue = blue.wrapping_add(prev_buf[outptr + 2]);
+                        alpha = alpha.wrapping_add(prev_buf[outptr + 3]);
                     }
                 }
                 3 => {
@@ -398,10 +398,10 @@ fn load_truecolor(
                     blue_ /= 2;
                     alpha_ /= 2;
 
-                    red += red_ as u8;
-                    green += green_ as u8;
-                    blue += blue_ as u8;
-                    alpha += alpha_ as u8;
+                    red = red.wrapping_add(red_ as u8);
+                    green = green.wrapping_add(green_ as u8);
+                    blue = blue.wrapping_add(blue_ as u8);
+                    alpha = alpha.wrapping_add(alpha_ as u8);
                 }
                 4 => {
                     // Pease
@@ -519,19 +519,19 @@ fn load_truecolor_progressive(
                     1 => {
                         // Sub
                         if outptr > 0 {
-                            red += outbuf[outptr - 4];
-                            green += outbuf[outptr - 3];
-                            blue += outbuf[outptr - 2];
-                            alpha += outbuf[outptr - 1];
+                            red = red.wrapping_add(outbuf[outptr - 4]);
+                            green = green.wrapping_add(outbuf[outptr - 3]);
+                            blue = blue.wrapping_add(outbuf[outptr - 2]);
+                            alpha = alpha.wrapping_add(outbuf[outptr - 1]);
                         }
                     }
                     2 => {
                         // Up
                         if !prev_buf.is_empty() {
-                            red += prev_buf[outptr];
-                            green += prev_buf[outptr + 1];
-                            blue += prev_buf[outptr + 2];
-                            alpha += prev_buf[outptr + 3];
+                            red = red.wrapping_add(prev_buf[outptr]);
+                            green = green.wrapping_add(prev_buf[outptr + 1]);
+                            blue = blue.wrapping_add(prev_buf[outptr + 2]);
+                            alpha = alpha.wrapping_add(prev_buf[outptr + 3]);
                         }
                     }
                     3 => {
@@ -564,10 +564,10 @@ fn load_truecolor_progressive(
                         blue_ /= 2;
                         alpha_ /= 2;
 
-                        red += red_ as u8;
-                        green += green_ as u8;
-                        blue += blue_ as u8;
-                        alpha += alpha_ as u8;
+                        red = red.wrapping_add(red_ as u8);
+                        green = green.wrapping_add(green_ as u8);
+                        blue = blue.wrapping_add(blue_ as u8);
+                        alpha = alpha.wrapping_add(alpha_ as u8);
                     }
                     4 => {
                         // Pease

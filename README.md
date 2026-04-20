@@ -212,11 +212,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 ```
 
 ## Test samples
-
+- The test data is not included in the repository due to rights issues. Please provide appropriate samples.
 - integration tests use generic names such as `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat`
 - original sample filenames are intentionally not referenced in public test code
 - optional external sample paths can be configured in `wml2/tests/test_samples.txt`
 - `wml2/tests/test_samples.txt` is ignored by git; use `wml2/tests/test_samples.example.txt` as a template
+- `wm2/tests/error_samples.rs` looks for environ variable `WML2_ERROR_SAMPLES_DIR` pointing to a directory of intentionally malformed files for testing error handling
 
 ## Debug flags
 

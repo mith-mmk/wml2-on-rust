@@ -215,10 +215,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 ## テストサンプル
 
+- テストデータは権利上の問題が生じるため、リポジトリには含まれていません。適切なサンプルを用意してください
 - 統合テストでは `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat` などの汎用名を使います
 - 元の sample 名は公開テストコードでは直接参照しません
 - 外部 sample のパスは `wml2/tests/test_samples.txt` に設定できます
 - `wml2/tests/test_samples.txt` は `.gitignore` 対象で、雛形は `wml2/tests/test_samples.example.txt` です
+- `wm2/tests/error_samples.rs` はエラー処理テスト用のファイルを置いたフォルダを指定した環境変数 `WML2_ERROR_SAMPLES_DIR` を指定していることを前提としています .env ファイルなどで設定してください
 
 ## debug flag
 

@@ -1,8 +1,12 @@
 mod common;
 
-use std::path::PathBuf;
+use std::env;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use wml2::draw::image_from_file;
+
+const ERROR_SAMPLES_DIR_ENV: &str = "WML2_ERROR_SAMPLES_DIR";
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -11,43 +15,91 @@ fn repo_root() -> PathBuf {
         .to_path_buf()
 }
 
-fn error_sample_path(name: &str) -> PathBuf {
-    repo_root().join(".test").join("errors").join(name)
+fn parse_dotenv_var(path: &Path, key: &str) -> Option<String> {
+    let text = fs::read_to_string(path).ok()?;
+    for raw_line in text.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let (left, right) = line.split_once('=')?;
+        if left.trim() != key {
+            continue;
+        }
+        return Some(right.trim().trim_matches('"').trim_matches('\'').to_string());
+    }
+    None
 }
 
-fn decode_error_sample_if_available(name: &str) {
-    let path = error_sample_path(name);
-    if !path.is_file() {
-        eprintln!(
-            "skipping missing error sample: {name} (configure {})",
-            common::sample_config_hint().display()
-        );
-        return;
-    }
+fn resolve_error_samples_root() -> PathBuf {
+    let repo = repo_root();
+    let configured = env::var(ERROR_SAMPLES_DIR_ENV)
+        .ok()
+        .or_else(|| parse_dotenv_var(&repo.join(".env"), ERROR_SAMPLES_DIR_ENV));
 
-    let image = image_from_file(path.to_string_lossy().into_owned()).unwrap();
+    match configured {
+        Some(path) => {
+            let path = PathBuf::from(path);
+            if path.is_absolute() {
+                path
+            } else {
+                repo.join(path)
+            }
+        }
+        None => repo.join(".test").join("errors"),
+    }
+}
+
+fn collect_files_recursive(root: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let Ok(entries) = fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.is_file() {
+                files.push(path);
+            }
+        }
+    }
+    files.sort();
+    files
+}
+
+fn decode_error_sample(path: &Path) {
+    let image = image_from_file(path.to_string_lossy().into_owned()).unwrap_or_else(|err| {
+        panic!("failed to decode {}: {}", path.display(), err);
+    });
     assert!(image.width > 0);
     assert!(image.height > 0);
 }
 
 #[test]
-fn decode_56_byte_bmp_header_samples() {
-    decode_error_sample_if_available("lena-01.bmp");
-    decode_error_sample_if_available("lena-02.bmp");
-    decode_error_sample_if_available("lena-03.bmp");
-}
+fn decode_error_samples_from_configured_directory() {
+    let root = resolve_error_samples_root();
+    if !root.is_dir() {
+        eprintln!(
+            "skipping error samples: directory does not exist: {} (set {} in env or .env)",
+            root.display(),
+            ERROR_SAMPLES_DIR_ENV
+        );
+        eprintln!("hint: {}", common::sample_config_hint().display());
+        return;
+    }
 
-#[test]
-fn decode_cmyk_jpeg_error_sample() {
-    decode_error_sample_if_available("cmyk.jpg");
-}
+    let files = collect_files_recursive(&root);
+    assert!(
+        !files.is_empty(),
+        "error sample directory is empty: {} (set {} in env or .env)",
+        root.display(),
+        ERROR_SAMPLES_DIR_ENV
+    );
 
-#[test]
-fn decode_innai_gif_error_sample() {
-    decode_error_sample_if_available("innai3_gif01.gif");
-}
-
-#[test]
-fn decode_korean_peninsula_png_error_sample() {
-    decode_error_sample_if_available("Korean_Peninsula_topographic_map.png");
+    for path in files {
+        decode_error_sample(&path);
+    }
 }

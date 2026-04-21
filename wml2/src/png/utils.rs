@@ -2,8 +2,6 @@
 
 use crate::metadata::DataMap;
 use crate::tiff::header::read_tags;
-use bin_rs::io::read_ascii_string;
-use bin_rs::io::read_byte;
 use bin_rs::reader::BytesReader;
 use std::collections::HashMap;
 
@@ -103,16 +101,8 @@ pub(crate) fn make_metadata(header: &super::header::PngHeader) -> HashMap<String
         map.insert(key.to_string(), DataMap::Ascii(val.to_string()));
     }
     if let Some(profile) = &header.iccprofile {
-        let profile_name = read_ascii_string(profile, 0, 79);
-        let mut ptr = profile_name.len() + 1;
-        let _ = read_byte(profile, ptr); // alway 0
-        ptr += 1;
-        let decompressed = miniz_oxide::inflate::decompress_to_vec_zlib(&profile[ptr..]);
-        if let Ok(icc_profile) = decompressed {
-            map.insert(
-                "ICC Profile name".to_string(),
-                DataMap::Ascii(profile_name.to_string()),
-            );
+        if let Some((profile_name, icc_profile)) = decode_icc_profile(profile) {
+            map.insert("ICC Profile name".to_string(), DataMap::Ascii(profile_name));
             map.insert("ICC Profile".to_string(), DataMap::ICCProfile(icc_profile));
         }
     }
@@ -130,4 +120,39 @@ pub(crate) fn make_metadata(header: &super::header::PngHeader) -> HashMap<String
     */
 
     map
+}
+
+fn decode_icc_profile(profile: &[u8]) -> Option<(String, Vec<u8>)> {
+    // iCCP payload layout: profile_name\0 compression_method compressed_profile
+    let name_end = profile.iter().position(|b| *b == 0)?;
+    let method_pos = name_end + 1;
+    let data_pos = name_end + 2;
+    if data_pos > profile.len() || method_pos >= profile.len() {
+        return None;
+    }
+    if profile[method_pos] != 0 {
+        return None;
+    }
+
+    let profile_name = String::from_utf8_lossy(&profile[..name_end]).to_string();
+    let icc_profile = miniz_oxide::inflate::decompress_to_vec_zlib(&profile[data_pos..]).ok()?;
+    Some((profile_name, icc_profile))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::decode_icc_profile;
+
+    #[test]
+    fn decode_icc_profile_rejects_truncated_payloads() {
+        assert!(decode_icc_profile(b"iccname").is_none());
+        assert!(decode_icc_profile(b"iccname\0").is_none());
+        assert!(decode_icc_profile(b"iccname\0\0").is_none());
+    }
+
+    #[test]
+    fn decode_icc_profile_rejects_nonzero_compression_method() {
+        let payload = b"iccname\0\x01dummy";
+        assert!(decode_icc_profile(payload).is_none());
+    }
 }

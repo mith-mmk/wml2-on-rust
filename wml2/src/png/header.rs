@@ -50,6 +50,13 @@ pub(crate) const ANIMATION_CONTROLE: [u8; 4] = [b'a', b'c', b'T', b'L'];
 pub(crate) const FRAME_CONTROLE: [u8; 4] = [b'f', b'c', b'T', b'L'];
 pub(crate) const FRAME_DATA: [u8; 4] = [b'f', b'd', b'A', b'T'];
 
+fn chunk_size_error(name: &str, length: u32, expected: &str) -> Error {
+    Box::new(ImgError::new_const(
+        ImgErrorKind::IllegalData,
+        format!("Illegal size {}: {} (expected {})", name, length, expected),
+    ))
+}
+
 pub(crate) fn to_string<'a>(text: &[u8], compressed: bool) -> (String, String) {
     let mut split = 0;
     let keyword = read_ascii_string(text, 0, text.len());
@@ -284,25 +291,50 @@ impl PngHeader {
                 let _crc = reader.read_u32_be()?;
             } else if chunck == TRANNCEPEARENCY {
                 reader.skip_ptr(8)?;
-                if header.pallete.is_none() {
-                    return Err(Box::new(ImgError::new_const(
-                        ImgErrorKind::IllegalData,
-                        "Illegal format tRNS before PLTE".to_string(),
-                    )));
-                } else if length as usize > pallete_size {
-                    return Err(Box::new(ImgError::new_const(
-                        ImgErrorKind::IllegalData,
-                        "Illegal format tRNS too big,PLTE size".to_string(),
-                    )));
-                }
-                if let Some(pallete) = &mut header.pallete {
-                    for i in 0..length as usize {
-                        pallete[i].alpha = reader.read_byte()?;
+                let transparency = reader.read_bytes_as_vec(length as usize)?;
+                match header.color_type {
+                    3 => {
+                        if header.pallete.is_none() {
+                            return Err(Box::new(ImgError::new_const(
+                                ImgErrorKind::IllegalData,
+                                "Illegal format tRNS before PLTE".to_string(),
+                            )));
+                        } else if length as usize > pallete_size {
+                            return Err(Box::new(ImgError::new_const(
+                                ImgErrorKind::IllegalData,
+                                "Illegal format tRNS too big,PLTE size".to_string(),
+                            )));
+                        }
+                        if let Some(pallete) = &mut header.pallete {
+                            for i in 0..transparency.len() {
+                                pallete[i].alpha = transparency[i];
+                            }
+                        }
+                    }
+                    0 => {
+                        if length != 2 {
+                            return Err(chunk_size_error("tRNS", length, "2"));
+                        }
+                    }
+                    2 => {
+                        if length != 6 {
+                            return Err(chunk_size_error("tRNS", length, "6"));
+                        }
+                    }
+                    _ => {
+                        return Err(Box::new(ImgError::new_const(
+                            ImgErrorKind::IllegalData,
+                            "Illegal format tRNS for this color type".to_string(),
+                        )));
                     }
                 }
+                header.transparency = Some(transparency);
                 let _crc = reader.read_u32_be()?;
             } else if chunck == GAMMA {
                 reader.skip_ptr(8)?;
+                if length != 4 {
+                    return Err(chunk_size_error("gAMA", length, "4"));
+                }
                 let gamma = reader.read_u32_be()?;
                 header.gamma = Some(gamma);
                 let _crc = reader.read_u32_be()?;
@@ -321,13 +353,22 @@ impl PngHeader {
                 let buffer = reader.read_bytes_as_vec(length as usize)?;
                 match header.color_type {
                     3 => {
+                        if length != 1 {
+                            return Err(chunk_size_error("bKGD", length, "1"));
+                        }
                         header.background_color = Some(BacgroundColor::Index(buffer[0]));
                     }
                     0 | 4 => {
+                        if length != 2 {
+                            return Err(chunk_size_error("bKGD", length, "2"));
+                        }
                         let color = read_u16_be(&buffer, 0);
                         header.background_color = Some(BacgroundColor::Grayscale(color));
                     }
                     2 | 6 => {
+                        if length != 6 {
+                            return Err(chunk_size_error("bKGD", length, "6"));
+                        }
                         let red = read_u16_be(&buffer, 0);
                         let green = read_u16_be(&buffer, 2);
                         let blue = read_u16_be(&buffer, 4);
@@ -340,6 +381,9 @@ impl PngHeader {
             } else if chunck == MODIFIED_TIME {
                 // no impl...
                 reader.skip_ptr(8)?;
+                if length != 7 {
+                    return Err(chunk_size_error("tIME", length, "7"));
+                }
                 let year = reader.read_u16_be()?;
                 let month = reader.read_byte()?;
                 let day = reader.read_byte()?;
@@ -351,6 +395,9 @@ impl PngHeader {
                 let _crc = reader.read_u32_be()?;
             } else if chunck == ANIMATION_CONTROLE {
                 reader.skip_ptr(8)?;
+                if length != 8 {
+                    return Err(chunk_size_error("acTL", length, "8"));
+                }
                 header.is_apng = true;
                 header.num_frames = reader.read_u32_be()?;
                 header.num_plays = reader.read_u32_be()?;
@@ -358,6 +405,9 @@ impl PngHeader {
             } else if chunck == FRAME_CONTROLE {
                 // noimpl
                 reader.skip_ptr(8)?;
+                if length != 26 {
+                    return Err(chunk_size_error("fcTL", length, "26"));
+                }
                 let frame_control = FrameControl {
                     sequence_number: reader.read_u32_be()?,
                     width: reader.read_u32_be()?,
@@ -374,6 +424,9 @@ impl PngHeader {
             } else if chunck == SRGB {
                 // noimpl
                 reader.skip_ptr(8)?;
+                if length != 1 {
+                    return Err(chunk_size_error("sRGB", length, "1"));
+                }
                 let srgb = reader.read_byte()?;
                 header.srgb = Some(srgb);
                 let _crc = reader.read_u32_be()?;

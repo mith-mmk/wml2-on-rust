@@ -194,6 +194,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 Metadata is stored as `HashMap<String, DataMap>`.
 
+- `metadata::exif` provides helpers to parse, serialize, and edit TIFF-style EXIF/GPS tags.
+- PNG `caBX` and JPEG APP11 C2PA manifest stores are exposed as `"C2PA"` `DataMap::JSON` and `"C2PA Raw"` bytes. Signature and certificate validation is intentionally left to a higher-level C2PA validator.
+
 ```rust
 use std::error::Error;
 use wml2::draw::{PickCallback, image_from_file};
@@ -218,6 +221,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - optional external sample paths can be configured in `wml2/tests/test_samples.txt`
 - `wml2/tests/test_samples.txt` is ignored by git; use `wml2/tests/test_samples.example.txt` as a template
 - `wm2/tests/error_samples.rs` looks for environ variable `WML2_ERROR_SAMPLES_DIR` pointing to a directory of intentionally malformed files for testing error handling
+- C2PA/EXIF local samples are read from `WML2_C2PA_EXIF_SAMPLES_DIR` or `.test/c2pa+exif` when present; the test skips when the directory is missing
 
 ## Debug flags
 
@@ -256,7 +260,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.20`: Enhancement of boundary check, Decoding bug in PNG with palette
 - `0.0.21`: fix gif decode bug
 - `0.0.22`: fix png decode enbug
-
+- `0.0.23`: add decode for c2pa manifest store
 
 ## License
 

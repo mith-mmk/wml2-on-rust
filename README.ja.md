@@ -196,6 +196,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 metadata は `HashMap<String, DataMap>` で表現されます。
 
+- `metadata::exif` で TIFF 形式の EXIF/GPS タグを parse / serialize / edit できます。
+- PNG `caBX` と JPEG APP11 の C2PA manifest store は `"C2PA"` の `DataMap::JSON` と `"C2PA Raw"` の生バイト列として出力します。署名・証明書検証は上位の C2PA validator に任せます。
+
 ```rust
 use std::error::Error;
 use wml2::draw::{PickCallback, image_from_file};
@@ -221,6 +224,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - 外部 sample のパスは `wml2/tests/test_samples.txt` に設定できます
 - `wml2/tests/test_samples.txt` は `.gitignore` 対象で、雛形は `wml2/tests/test_samples.example.txt` です
 - `wm2/tests/error_samples.rs` はエラー処理テスト用のファイルを置いたフォルダを指定した環境変数 `WML2_ERROR_SAMPLES_DIR` を指定していることを前提としています .env ファイルなどで設定してください
+- C2PA/EXIF のローカル sample は `WML2_C2PA_EXIF_SAMPLES_DIR` または `.test/c2pa+exif` が存在する場合に読みます。ディレクトリが無い場合、該当テストは skip します
 
 ## debug flag
 
@@ -259,6 +263,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.20`: boudary checkの強化、パレット付きpngのデコードバグfix
 - `0.0.21`: gif decoderのバグフィックス
 - `0.0.22`: png decoderのエンバグフィックス
+- `0.0.23`: c2pa manifest store の decode を追加
 
 ## License
 MIT License (C) 2022-2026

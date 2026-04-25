@@ -7,6 +7,10 @@ use crate::tiff::header::TiffHeaders;
 use crate::tiff::header::exif_to_bytes;
 use std::collections::HashMap;
 
+pub mod c2pa;
+#[cfg(feature = "exif")]
+pub mod exif;
+
 /// A map of metadata keys to typed values.
 pub type Metadata = HashMap<String, DataMap>;
 
@@ -21,6 +25,7 @@ pub enum DataMap {
     FloatAllay(Vec<f64>),
     Raw(Vec<u8>),
     Ascii(String),
+    JSON(String),
     I18NString(String),
     SJISString(Vec<u8>),
     #[cfg(feature = "exif")]
@@ -49,6 +54,7 @@ impl DataMap {
                 format!("{:?}", d)
             }
             DataMap::Ascii(d) => d.to_string(),
+            DataMap::JSON(d) => json_pretty(d),
             DataMap::I18NString(d) => d.to_string(),
             DataMap::SJISString(d) => {
                 format!("{:?}", d)
@@ -60,6 +66,119 @@ impl DataMap {
             }
             DataMap::None => "none".to_owned(),
         }
+    }
+}
+
+/// Formats a JSON string using two-space indentation.
+///
+/// The formatter is intentionally small and only changes whitespace outside
+/// string literals. It is suitable for metadata display paths where the source
+/// JSON is already produced by the decoder.
+pub fn json_pretty(value: &str) -> String {
+    let chars: Vec<char> = value.chars().collect();
+    let mut out = String::with_capacity(value.len() + value.len() / 4);
+    let mut indent = 0usize;
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut index = 0usize;
+
+    while index < chars.len() {
+        let ch = chars[index];
+        if in_string {
+            out.push(ch);
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            index += 1;
+            continue;
+        }
+
+        match ch {
+            '"' => {
+                in_string = true;
+                out.push(ch);
+            }
+            '{' | '[' => {
+                out.push(ch);
+                let close = if ch == '{' { '}' } else { ']' };
+                if next_non_ws(&chars, index + 1) != Some(close) {
+                    indent += 1;
+                    push_json_newline(&mut out, indent);
+                }
+            }
+            '}' | ']' => {
+                let open = if ch == '}' { '{' } else { '[' };
+                if previous_non_ws(&chars, index) != Some(open) {
+                    indent = indent.saturating_sub(1);
+                    push_json_newline(&mut out, indent);
+                }
+                out.push(ch);
+            }
+            ',' => {
+                out.push(',');
+                push_json_newline(&mut out, indent);
+            }
+            ':' => {
+                out.push_str(": ");
+            }
+            ch if ch.is_whitespace() => {}
+            _ => out.push(ch),
+        }
+        index += 1;
+    }
+
+    out
+}
+
+fn push_json_newline(out: &mut String, indent: usize) {
+    out.push('\n');
+    for _ in 0..indent {
+        out.push_str("  ");
+    }
+}
+
+fn next_non_ws(chars: &[char], mut index: usize) -> Option<char> {
+    while index < chars.len() {
+        let ch = chars[index];
+        if !ch.is_whitespace() {
+            return Some(ch);
+        }
+        index += 1;
+    }
+    None
+}
+
+fn previous_non_ws(chars: &[char], index: usize) -> Option<char> {
+    let mut index = index.checked_sub(1)?;
+    loop {
+        let ch = chars[index];
+        if !ch.is_whitespace() {
+            return Some(ch);
+        }
+        if index == 0 {
+            break;
+        }
+        index -= 1;
+    }
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn json_pretty_formats_like_json_stringify_indent_two() {
+        let json = r#"{"a":1,"b":[true,{"c":"d,e"}],"empty":[]}"#;
+
+        assert_eq!(
+            json_pretty(json),
+            "{\n  \"a\": 1,\n  \"b\": [\n    true,\n    {\n      \"c\": \"d,e\"\n    }\n  ],\n  \"empty\": []\n}"
+        );
     }
 }
 

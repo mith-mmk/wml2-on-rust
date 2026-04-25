@@ -370,9 +370,28 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String, DataMap> {
             DataMap::ICCProfile(icc_profile.to_vec()),
         );
     }
-
     match &header.jpeg_app_headers {
         Some(app_headers) => {
+            let mut c2pa_manifest_store = Vec::new();
+            for app in app_headers.iter() {
+                if let Unknown(app) = app {
+                    if app.number == 11 {
+                        if let Some(mut fragment) =
+                            crate::metadata::c2pa::jpeg_app11_payload_to_manifest_store(&app.raw)
+                        {
+                            c2pa_manifest_store.append(&mut fragment);
+                        }
+                    }
+                }
+            }
+            if !c2pa_manifest_store.is_empty() {
+                crate::metadata::c2pa::insert_metadata(
+                    &mut map,
+                    "jpeg-app11",
+                    &c2pa_manifest_store,
+                );
+            }
+
             for app in app_headers.iter() {
                 match app {
                     Jfif(jfif) => {

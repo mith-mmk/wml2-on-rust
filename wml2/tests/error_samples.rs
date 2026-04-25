@@ -100,6 +100,7 @@ fn decode_error_samples_from_configured_directory() {
     );
 
     for path in files {
+        print!("Testing error sample: {} ...\n", path.display());
         decode_error_sample(&path);
     }
 }

@@ -6,8 +6,8 @@ use std::io::Write;
 use std::time::Instant;
 use wml2::draw::CallbackResponse;
 use wml2::draw::*;
-use wml2::metadata::DataMap;
 use wml2::metadata::Metadata;
+use wml2::metadata::{DataMap, json_pretty};
 
 fn write_log(str: &str) -> Result<Option<CallbackResponse>, Box<dyn Error>> {
     println!("{}", str);
@@ -30,6 +30,11 @@ fn print_metadata(metadata: &Metadata) {
             }
             DataMap::Ascii(string) => {
                 println!("{}: {}", key, string);
+            }
+            DataMap::JSON(string) => {
+                println!("=============== {} JSON START ==============", key);
+                println!("{}", json_pretty(string));
+                println!("================ {} JSON END ===============", key);
             }
             DataMap::Exif(value) => {
                 println!("=============== EXIF START ==============");

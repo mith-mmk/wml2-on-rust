@@ -4,7 +4,8 @@ use encoding_rs::SHIFT_JIS;
 use std::env;
 use std::error::Error;
 use wml2::draw::*;
-use wml2::metadata::DataMap;
+use wml2::metadata::exif::gps_coordinate;
+use wml2::metadata::{DataMap, json_pretty};
 
 pub fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
@@ -43,6 +44,11 @@ pub fn main() -> Result<(), Box<dyn Error>> {
             DataMap::Raw(value) => {
                 println!("{}: {}bytes", key, value.len());
             }
+            DataMap::JSON(string) => {
+                println!("=============== {} JSON START ==============", key);
+                println!("{}", json_pretty(string));
+                println!("================ {} JSON END ===============", key);
+            }
             DataMap::Ascii(string) => {
                 println!("{}: {}", key, string);
             }
@@ -50,6 +56,16 @@ pub fn main() -> Result<(), Box<dyn Error>> {
                 println!("=============== EXIF START ==============");
                 let string = value.to_string();
                 println!("{}", string);
+                if let Some(gps) = gps_coordinate(value) {
+                    println!(
+                        "GPS decimal: latitude={} longitude={} altitude={}",
+                        gps.latitude,
+                        gps.longitude,
+                        gps.altitude
+                            .map(|value| value.to_string())
+                            .unwrap_or_else(|| "none".to_string())
+                    );
+                }
                 println!("================ EXIF END ===============");
             }
             DataMap::ICCProfile(data) => {

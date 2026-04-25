@@ -113,6 +113,9 @@ pub(crate) fn make_metadata(header: &super::header::PngHeader) -> HashMap<String
         }
         map.insert("EXIF Raw".to_string(), DataMap::Raw(exif.clone()));
     }
+    if let Some(c2pa) = &header.c2pa {
+        crate::metadata::c2pa::insert_metadata(&mut map, "png-caBX", c2pa);
+    }
     /*
         pub transparency: Option<Vec<u8>>,
         pub background_color: Option<BacgroundColor>,

@@ -32,8 +32,19 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd target/release/examples
-          files=$(find . -type f ! -name "*.*" ! -regex '.*-[0-9a-f]\{16\}$')
-          zip -r ../examples-${{ matrix.os }}.zip $files
+          files=()
+          for f in ./*; do
+            [[ -f "$f" ]] || continue
+            name="${f#./}"
+            [[ "$name" == *.* ]] && continue
+            [[ "$name" =~ -[0-9a-f]{16}$ ]] && continue
+            files+=("$f")
+          done
+          if (( ${#files[@]} == 0 )); then
+            echo "No example binaries to zip"
+            exit 0
+          fi
+          zip ../examples-${{ matrix.os }}.zip "${files[@]}"
 
       - uses: actions/upload-artifact@v4
         with:

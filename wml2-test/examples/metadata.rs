@@ -4,17 +4,23 @@ use encoding_rs::SHIFT_JIS;
 use std::env;
 use std::error::Error;
 use wml2::draw::*;
+use wml2::metadata::c2pa::{C2PA_JSON_KEY, C2PA_RAW_KEY, c2pa_to_text};
 use wml2::metadata::exif::gps_coordinate;
 use wml2::metadata::{DataMap, json_pretty};
 
 pub fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!("usage: metadata <inputfilename>");
+    let verbose_c2pa = args.iter().any(|arg| arg == "--verbose-c2pa");
+    let filename = args
+        .iter()
+        .skip(1)
+        .find(|arg| !arg.starts_with("--"))
+        .cloned();
+    let Some(filename) = filename else {
+        println!("usage: metadata [--verbose-c2pa] <inputfilename>");
         return Ok(());
-    }
+    };
 
-    let filename = &args[1];
     let mut image = image_from_file(filename.to_string())?;
     let metadata = image.metadata()?;
     if metadata.is_none() {
@@ -41,8 +47,20 @@ pub fn main() -> Result<(), Box<dyn Error>> {
                 println!("{}: {}", key, value);
             }
 
+            DataMap::Raw(_) if key == C2PA_RAW_KEY && !verbose_c2pa => {}
             DataMap::Raw(value) => {
                 println!("{}: {}bytes", key, value.len());
+            }
+            DataMap::JSON(string) if key == C2PA_JSON_KEY => {
+                if verbose_c2pa {
+                    println!("=============== {} JSON START ==============", key);
+                    println!("{}", json_pretty(string));
+                    println!("================ {} JSON END ===============", key);
+                } else {
+                    println!("=============== {} START ==============", key);
+                    println!("{}", c2pa_to_text(string));
+                    println!("================ {} END ===============", key);
+                }
             }
             DataMap::JSON(string) => {
                 println!("=============== {} JSON START ==============", key);

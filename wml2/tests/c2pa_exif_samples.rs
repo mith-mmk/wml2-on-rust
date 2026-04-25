@@ -1,3 +1,5 @@
+#![cfg(feature = "c2pa")]
+
 use std::fs;
 use std::path::{Path, PathBuf};
 

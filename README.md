@@ -195,7 +195,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 Metadata is stored as `HashMap<String, DataMap>`.
 
 - `metadata::exif` provides helpers to parse, serialize, and edit TIFF-style EXIF/GPS tags.
-- PNG `caBX` and JPEG APP11 C2PA manifest stores are exposed as `"C2PA"` `DataMap::JSON` and `"C2PA Raw"` bytes. Signature and certificate validation is intentionally left to a higher-level C2PA validator.
+- With the `c2pa` feature enabled, PNG `caBX` and JPEG APP11 C2PA manifest stores are exposed as `"C2PA"` `DataMap::JSON` and `"C2PA Raw"` bytes. Signature and certificate validation is intentionally left to a higher-level C2PA validator. `metadata::c2pa::c2pa_to_text()` returns a compact display summary with claim generator names and actions while omitting byte payloads, hashes, and signatures.
 
 ```rust
 use std::error::Error;

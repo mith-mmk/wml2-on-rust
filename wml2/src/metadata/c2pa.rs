@@ -88,6 +88,66 @@ pub fn manifest_store_json(source: &str, payload: &[u8]) -> String {
     C2paManifestStore::new(source, payload).to_json()
 }
 
+/// Builds a compact human-readable C2PA summary from [`C2paManifestStore::to_json`].
+///
+/// This intentionally ignores byte payloads, base64 data, hashes, signatures,
+/// and validation material. It keeps the fields that are useful for quick
+/// inspection in metadata dumps.
+pub fn c2pa_to_text(json: &str) -> String {
+    let mut claim_names = Vec::new();
+    let mut search_from = 0usize;
+    while let Some(key_pos) = find_json_key(json, "claim_generator_info", search_from) {
+        search_from = key_pos + 1;
+        let Some(object_start) = json[key_pos..].find('{').map(|pos| key_pos + pos) else {
+            continue;
+        };
+        let Some(object_end) = find_matching_json(json, object_start, '{', '}') else {
+            continue;
+        };
+        if let Some(name) = read_string_key(&json[object_start..=object_end], "name", 0) {
+            push_unique(&mut claim_names, name);
+        }
+    }
+
+    let mut actions = Vec::new();
+    search_from = 0;
+    while let Some(key_pos) = find_json_key(json, "actions", search_from) {
+        search_from = key_pos + 1;
+        let Some(array_start) = json[key_pos..].find('[').map(|pos| key_pos + pos) else {
+            continue;
+        };
+        let Some(array_end) = find_matching_json(json, array_start, '[', ']') else {
+            continue;
+        };
+        collect_action_summaries(&json[array_start + 1..array_end], &mut actions);
+    }
+
+    let mut out = String::new();
+    if !claim_names.is_empty() {
+        out.push_str("claim_generator_info.name:\n");
+        for name in claim_names {
+            out.push_str("- ");
+            out.push_str(&name);
+            out.push('\n');
+        }
+    }
+    if !actions.is_empty() {
+        if !out.is_empty() {
+            out.push('\n');
+        }
+        out.push_str("actions:\n");
+        for action in actions {
+            out.push_str(&action);
+        }
+    }
+
+    if out.is_empty() {
+        "C2PA: no displayable claim/action metadata".to_string()
+    } else {
+        out.trim_end().to_string()
+    }
+}
+
 /// Extracts the C2PA JUMBF bytes from one JPEG APP11 payload when recognizable.
 pub fn jpeg_app11_payload_to_manifest_store(payload: &[u8]) -> Option<Vec<u8>> {
     if let Some(start) = find_jumbf_start(payload) {
@@ -245,6 +305,164 @@ fn contains_c2pa_uuid(data: &[u8]) -> bool {
 
 fn starts_with_c2pa_identifier(data: &[u8]) -> bool {
     data.starts_with(b"C2PA")
+}
+
+fn collect_action_summaries(json: &str, actions: &mut Vec<String>) {
+    let mut offset = 0usize;
+    while let Some(relative_start) = json[offset..].find('{') {
+        let object_start = offset + relative_start;
+        let Some(object_end) = find_matching_json(json, object_start, '{', '}') else {
+            break;
+        };
+        let object = &json[object_start..=object_end];
+        if let Some(action) = read_string_key(object, "action", 0) {
+            let mut summary = String::new();
+            summary.push_str("- ");
+            summary.push_str(&action);
+            summary.push('\n');
+            if let Some(when) = read_object_key(object, "when", 0) {
+                if let Some(value) = read_string_key(when, "value", 0) {
+                    push_summary_field(&mut summary, "when", &value);
+                }
+            }
+            if let Some(software_agent) = read_object_key(object, "softwareAgent", 0) {
+                if let Some(name) = read_string_key(software_agent, "name", 0) {
+                    push_summary_field(&mut summary, "softwareAgent.name", &name);
+                }
+                if let Some(version) = read_string_key(software_agent, "version", 0) {
+                    push_summary_field(&mut summary, "softwareAgent.version", &version);
+                }
+            }
+            for key in ["description", "digitalSourceType"] {
+                if let Some(value) = read_string_key(object, key, 0) {
+                    push_summary_field(&mut summary, key, &value);
+                }
+            }
+            push_unique(actions, summary);
+        }
+        offset = object_end + 1;
+    }
+}
+
+fn push_summary_field(summary: &mut String, key: &str, value: &str) {
+    summary.push_str("  ");
+    summary.push_str(key);
+    summary.push_str(": ");
+    summary.push_str(value);
+    summary.push('\n');
+}
+
+fn push_unique(values: &mut Vec<String>, value: String) {
+    if !values.iter().any(|existing| existing == &value) {
+        values.push(value);
+    }
+}
+
+fn find_json_key(json: &str, key: &str, from: usize) -> Option<usize> {
+    let needle = format!("\"{}\"", key);
+    json.get(from..)?.find(&needle).map(|pos| from + pos)
+}
+
+fn read_string_key(json: &str, key: &str, from: usize) -> Option<String> {
+    let key_pos = find_json_key(json, key, from)?;
+    let colon = json.get(key_pos..)?.find(':').map(|pos| key_pos + pos)?;
+    let mut value_start = colon + 1;
+    while let Some(ch) = json.get(value_start..)?.chars().next() {
+        if !ch.is_whitespace() {
+            break;
+        }
+        value_start += ch.len_utf8();
+    }
+    read_json_string_at(json, value_start).map(|(value, _)| value)
+}
+
+fn read_object_key<'a>(json: &'a str, key: &str, from: usize) -> Option<&'a str> {
+    let key_pos = find_json_key(json, key, from)?;
+    let colon = json.get(key_pos..)?.find(':').map(|pos| key_pos + pos)?;
+    let mut value_start = colon + 1;
+    while let Some(ch) = json.get(value_start..)?.chars().next() {
+        if !ch.is_whitespace() {
+            break;
+        }
+        value_start += ch.len_utf8();
+    }
+    if json.get(value_start..)?.chars().next()? != '{' {
+        return None;
+    }
+    let value_end = find_matching_json(json, value_start, '{', '}')?;
+    json.get(value_start..=value_end)
+}
+
+fn read_json_string_at(json: &str, start: usize) -> Option<(String, usize)> {
+    if json.as_bytes().get(start).copied()? != b'"' {
+        return None;
+    }
+    let mut value = String::new();
+    let mut index = start + 1;
+    while index < json.len() {
+        let ch = json.get(index..)?.chars().next()?;
+        index += ch.len_utf8();
+        match ch {
+            '"' => return Some((value, index)),
+            '\\' => {
+                let escaped = json.get(index..)?.chars().next()?;
+                index += escaped.len_utf8();
+                match escaped {
+                    '"' => value.push('"'),
+                    '\\' => value.push('\\'),
+                    '/' => value.push('/'),
+                    'b' => value.push('\u{08}'),
+                    'f' => value.push('\u{0c}'),
+                    'n' => value.push('\n'),
+                    'r' => value.push('\r'),
+                    't' => value.push('\t'),
+                    'u' => {
+                        let hex = json.get(index..index + 4)?;
+                        let code = u16::from_str_radix(hex, 16).ok()?;
+                        value.push(char::from_u32(u32::from(code))?);
+                        index += 4;
+                    }
+                    _ => return None,
+                }
+            }
+            _ => value.push(ch),
+        }
+    }
+    None
+}
+
+fn find_matching_json(json: &str, start: usize, open: char, close: char) -> Option<usize> {
+    let mut depth = 0usize;
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut index = start;
+    while index < json.len() {
+        let ch = json.get(index..)?.chars().next()?;
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            index += ch.len_utf8();
+            continue;
+        }
+
+        if ch == '"' {
+            in_string = true;
+        } else if ch == open {
+            depth += 1;
+        } else if ch == close {
+            depth = depth.checked_sub(1)?;
+            if depth == 0 {
+                return Some(index);
+            }
+        }
+        index += ch.len_utf8();
+    }
+    None
 }
 
 fn cbor_to_json(data: &[u8]) -> Option<String> {
@@ -679,6 +897,24 @@ mod tests {
         assert!(json.contains("\"actions\""));
         assert!(json.contains("\"c2pa.created\""));
         assert!(json.contains("\"hash\":{\"type\":\"bytes\",\"length\":32"));
+    }
+
+    #[test]
+    fn c2pa_to_text_keeps_claim_name_and_actions_only() {
+        let json = r#"{"manifest_store_base64":"AAAA","jumbf_boxes":[{"cbor":{"claim_generator_info":{"name":"OpenAI Media Service API","icon":{"hash":{"type":"bytes","base64":"AAAA"}}},"actions":[{"action":"c2pa.created","when":{"tag":0,"value":"2026-04-25T00:00:00Z"},"softwareAgent":{"name":"gpt-image","version":"2.0"},"digitalSourceType":"http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia","hash":{"type":"bytes","base64":"BBBB"}},{"action":"c2pa.converted"}]}},{"cbor":{"tag":18,"value":[{}]}}]}"#;
+
+        let text = c2pa_to_text(json);
+
+        assert!(text.contains("claim_generator_info.name:"));
+        assert!(text.contains("OpenAI Media Service API"));
+        assert!(text.contains("- c2pa.created"));
+        assert!(text.contains("when: 2026-04-25T00:00:00Z"));
+        assert!(text.contains("softwareAgent.name: gpt-image"));
+        assert!(text.contains("softwareAgent.version: 2.0"));
+        assert!(text.contains("digitalSourceType: http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia"));
+        assert!(text.contains("- c2pa.converted"));
+        assert!(!text.contains("base64"));
+        assert!(!text.contains("signature"));
     }
 
     #[test]

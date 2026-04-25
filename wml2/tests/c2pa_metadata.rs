@@ -1,3 +1,5 @@
+#![cfg(feature = "c2pa")]
+
 use std::collections::HashMap;
 
 use wml2::draw::{EncodeOptions, ImageBuffer, image_encoder, image_load};

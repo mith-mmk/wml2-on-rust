@@ -7,6 +7,7 @@ use crate::tiff::header::TiffHeaders;
 use crate::tiff::header::exif_to_bytes;
 use std::collections::HashMap;
 
+#[cfg(feature = "c2pa")]
 pub mod c2pa;
 #[cfg(feature = "exif")]
 pub mod exif;

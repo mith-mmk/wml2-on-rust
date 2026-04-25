@@ -38,8 +38,10 @@ default = [
     "ico-bmp",
     "ico-png",
     "idct_llm",
+    "c2pa",
 ]
 
+c2pa = []
 exif = []
 bmp = []
 gif = []

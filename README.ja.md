@@ -197,7 +197,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 metadata は `HashMap<String, DataMap>` で表現されます。
 
 - `metadata::exif` で TIFF 形式の EXIF/GPS タグを parse / serialize / edit できます。
-- PNG `caBX` と JPEG APP11 の C2PA manifest store は `"C2PA"` の `DataMap::JSON` と `"C2PA Raw"` の生バイト列として出力します。署名・証明書検証は上位の C2PA validator に任せます。
+- `c2pa` feature が有効な場合、PNG `caBX` と JPEG APP11 の C2PA manifest store は `"C2PA"` の `DataMap::JSON` と `"C2PA Raw"` の生バイト列として出力します。署名・証明書検証は上位の C2PA validator に任せます。`metadata::c2pa::c2pa_to_text()` は claim generator 名と actions だけを残し、bytes/base64/hash/signature を省いた簡易表示を返します。
 
 ```rust
 use std::error::Error;

@@ -26,7 +26,13 @@ fn parse_dotenv_var(path: &Path, key: &str) -> Option<String> {
         if left.trim() != key {
             continue;
         }
-        return Some(right.trim().trim_matches('"').trim_matches('\'').to_string());
+        return Some(
+            right
+                .trim()
+                .trim_matches('"')
+                .trim_matches('\'')
+                .to_string(),
+        );
     }
     None
 }

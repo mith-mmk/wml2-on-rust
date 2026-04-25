@@ -1046,8 +1046,15 @@ pub fn decode<'decode, B: BinaryReader>(
                         header.text.push((keyword, string));
                         let _crc = reader.read_u32_be()?;
                     } else if chunck == C2PA_CHUNK {
-                        let mut c2pa = reader.read_bytes_as_vec(length as usize)?;
-                        header.c2pa.get_or_insert_with(Vec::new).append(&mut c2pa);
+                        #[cfg(feature = "c2pa")]
+                        {
+                            let mut c2pa = reader.read_bytes_as_vec(length as usize)?;
+                            header.c2pa.get_or_insert_with(Vec::new).append(&mut c2pa);
+                        }
+                        #[cfg(not(feature = "c2pa"))]
+                        {
+                            reader.skip_ptr(length as usize)?;
+                        }
                         let _crc = reader.read_u32_be()?;
                     } else if chunck == ANIMATION_CONTROLE {
                         // noimpl error!

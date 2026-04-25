@@ -64,20 +64,21 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 - JPEG encoder 用 toggle: `fdct_slower`
 - その他の toggle: `multithread`, `SJIS`, `noretoro`
 - `noretoro`: これで gate されている旧フォーマット decoder、`MAG`, `MAKI`, `PCD`, `PI`, `PIC`, `VSP/DAT` を無効化
-
+- `C2PA`: PNG と JPEG のメタデータ内の C2PA manifest store の解析を有効化
+  
 ```toml
 [dependencies]
-wml2 = "0.0.20"
+wml2 = "0.0.23"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.20", features = ["noretoro"] }
+wml2 = { version = "0.0.23", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.20", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.23", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション

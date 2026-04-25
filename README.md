@@ -63,20 +63,21 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 - JPEG encoder toggle: `fdct_slower`
 - miscellaneous toggles: `multithread`, `SJIS`, `noretoro`
 - `noretoro`: disables all retro format decoders gated by it: `MAG`, `MAKI`, `PCD`, `PI`, `PIC`, and `VSP/DAT`
+- `C2PA`: enables parsing of C2PA manifest stores in PNG and JPEG metadata
 
 ```toml
 [dependencies]
-wml2 = "0.0.20"
+wml2 = "0.0.23"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.20", features = ["noretoro"] }
+wml2 = { version = "0.0.23", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.20", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.23", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options

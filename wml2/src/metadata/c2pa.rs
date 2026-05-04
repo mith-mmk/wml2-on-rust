@@ -320,10 +320,11 @@ fn collect_action_summaries(json: &str, actions: &mut Vec<String>) {
             summary.push_str("- ");
             summary.push_str(&action);
             summary.push('\n');
-            if let Some(when) = read_object_key(object, "when", 0) {
-                if let Some(value) = read_string_key(when, "value", 0) {
-                    push_summary_field(&mut summary, "when", &value);
-                }
+            if let Some(when) = read_string_key(object, "when", 0).or_else(|| {
+                read_object_key(object, "when", 0)
+                    .and_then(|when| read_string_key(when, "value", 0))
+            }) {
+                push_summary_field(&mut summary, "when", &when);
             }
             if let Some(software_agent) = read_object_key(object, "softwareAgent", 0) {
                 if let Some(name) = read_string_key(software_agent, "name", 0) {
@@ -901,7 +902,7 @@ mod tests {
 
     #[test]
     fn c2pa_to_text_keeps_claim_name_and_actions_only() {
-        let json = r#"{"manifest_store_base64":"AAAA","jumbf_boxes":[{"cbor":{"claim_generator_info":{"name":"OpenAI Media Service API","icon":{"hash":{"type":"bytes","base64":"AAAA"}}},"actions":[{"action":"c2pa.created","when":{"tag":0,"value":"2026-04-25T00:00:00Z"},"softwareAgent":{"name":"gpt-image","version":"2.0"},"digitalSourceType":"http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia","hash":{"type":"bytes","base64":"BBBB"}},{"action":"c2pa.converted"}]}},{"cbor":{"tag":18,"value":[{}]}}]}"#;
+        let json = r#"{"manifest_store_base64":"AAAA","jumbf_boxes":[{"cbor":{"claim_generator_info":{"name":"OpenAI Media Service API","icon":{"hash":{"type":"bytes","base64":"AAAA"}}},"actions":[{"action":"c2pa.created","when":{"tag":0,"value":"2026-04-25T00:00:00Z"},"softwareAgent":{"name":"gpt-image","version":"2.0"},"digitalSourceType":"http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia","hash":{"type":"bytes","base64":"BBBB"}},{"action":"c2pa.watermarked","when":"2026-04-26T02:27:51.062181+00:00","softwareAgent":{"name":"Microsoft Responsible AI Provenance","version":"1.0"},"description":"Content watermarked by Microsoft Responsible AI"},{"action":"c2pa.converted"}]}},{"cbor":{"tag":18,"value":[{}]}}]}"#;
 
         let text = c2pa_to_text(json);
 
@@ -912,6 +913,11 @@ mod tests {
         assert!(text.contains("softwareAgent.name: gpt-image"));
         assert!(text.contains("softwareAgent.version: 2.0"));
         assert!(text.contains("digitalSourceType: http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia"));
+        assert!(text.contains("- c2pa.watermarked"));
+        assert!(text.contains("when: 2026-04-26T02:27:51.062181+00:00"));
+        assert!(text.contains("softwareAgent.name: Microsoft Responsible AI Provenance"));
+        assert!(text.contains("softwareAgent.version: 1.0"));
+        assert!(text.contains("description: Content watermarked by Microsoft Responsible AI"));
         assert!(text.contains("- c2pa.converted"));
         assert!(!text.contains("base64"));
         assert!(!text.contains("signature"));

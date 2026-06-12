@@ -11,6 +11,7 @@ pub enum ImageFormat {
     Tiff, // II/MM
     Png,  // [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]
     Webp, // RIFF . . . . WEBP
+    Avif, // ISO BMFF ftyp avif/avis
     //
     // Japanse old format
     Mag,
@@ -82,6 +83,20 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         let s = read_string(buffer, 8, 4);
         return ImageFormat::RiffFormat(s);
     }
+    if buffer.len() >= 16 && &buffer[4..8] == b"ftyp" {
+        let major_brand = &buffer[8..12];
+        if major_brand == b"avif" || major_brand == b"avis" {
+            return ImageFormat::Avif;
+        }
+        let mut offset = 16;
+        while offset + 4 <= buffer.len() {
+            let brand = &buffer[offset..offset + 4];
+            if brand == b"avif" || brand == b"avis" {
+                return ImageFormat::Avif;
+            }
+            offset += 4;
+        }
+    }
     if buffer.len() >= 8
         && buffer[0] == 0x89
         && buffer[1] == 0x50
@@ -151,6 +166,8 @@ pub fn decoder_supports_format(format: &ImageFormat) -> bool {
         ImageFormat::Png => true,
         #[cfg(feature = "webp")]
         ImageFormat::Webp => true,
+        #[cfg(feature = "avif")]
+        ImageFormat::Avif => true,
         #[cfg(all(feature = "mag", not(feature = "noretoro")))]
         ImageFormat::Mag => true,
         #[cfg(all(feature = "maki", not(feature = "noretoro")))]

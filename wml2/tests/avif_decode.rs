@@ -96,7 +96,7 @@ fn format_check_recognizes_avif_sample() {
 }
 
 #[test]
-fn avif_decoder_parses_container_before_unsupported_av1_decode() {
+fn avif_decoder_emits_image_callbacks() {
     let data = sample_avif();
     let mut reader = BytesReader::new(&data);
     let mut drawer = RecordingDrawer::default();
@@ -105,14 +105,15 @@ fn avif_decoder_parses_container_before_unsupported_av1_decode() {
         drawer: &mut drawer,
     };
 
-    let err = image_decoder(&mut reader, &mut options).unwrap_err();
-    let err = err.to_string();
+    image_decoder(&mut reader, &mut options).unwrap();
 
-    assert!(
-        err.contains("AV1 image bitstream decoding is not implemented yet"),
-        "{err}"
-    );
     assert!(drawer.events.iter().any(|event| event == "init:900x900"));
+    assert!(
+        drawer
+            .events
+            .iter()
+            .any(|event| event == "draw:0,0:900x900")
+    );
     assert!(
         drawer
             .events
@@ -322,7 +323,7 @@ fn avif_decoder_parses_container_before_unsupported_av1_decode() {
             _ => None,
         })
         .expect("first transform all-zero metadata should be emitted");
-    if first_transform_all_zero {
+    if !first_transform_all_zero {
         assert!(drawer.events.iter().any(|event| {
             event.starts_with("metadata:AV1 first non-zero transform index=UInt(")
         }));
@@ -564,5 +565,5 @@ fn avif_decoder_parses_container_before_unsupported_av1_decode() {
             .iter()
             .any(|event| event.starts_with("metadata:AV1 first tile pixel height=UInt(900)"))
     );
-    assert!(!drawer.events.iter().any(|event| event == "terminate"));
+    assert!(drawer.events.iter().any(|event| event == "terminate"));
 }

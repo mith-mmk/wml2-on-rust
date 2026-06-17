@@ -82,6 +82,7 @@ fn sample_avif() -> Vec<u8> {
     .expect("sample AVIF should exist")
 }
 
+#[cfg(feature = "avif")]
 #[test]
 fn format_check_recognizes_avif_sample() {
     let data = sample_avif();

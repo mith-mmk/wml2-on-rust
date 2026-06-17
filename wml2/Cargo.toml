@@ -25,7 +25,6 @@ default = [
     "png",
     "tiff",
     "webp",
-    "avif",
     "mag",
     "maki",
     "pcd",
@@ -58,6 +57,7 @@ pcd = []
 pi = []
 pic = []
 vsp = []
+
 
 # Embedded/bridged codec support for container formats that reuse other decoders.
 bmp-jpeg = ["bmp", "jpeg"]

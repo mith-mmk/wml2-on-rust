@@ -11,9 +11,11 @@ pub enum ImageFormat {
     Tiff, // II/MM
     Png,  // [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]
     Webp, // RIFF . . . . WEBP
+    #[cfg(feature = "avif")]
     Avif, // ISO BMFF ftyp avif/avis
     //
     // Japanse old format
+    #[cfg(not(feature = "noretoro"))]
     Mag,
     #[cfg(not(feature = "noretoro"))]
     Maki,
@@ -83,6 +85,7 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         let s = read_string(buffer, 8, 4);
         return ImageFormat::RiffFormat(s);
     }
+    #[cfg(feature = "avif")]
     if buffer.len() >= 16 && &buffer[4..8] == b"ftyp" {
         let major_brand = &buffer[8..12];
         if major_brand == b"avif" || major_brand == b"avis" {

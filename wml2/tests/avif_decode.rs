@@ -6,7 +6,6 @@ use wml2::draw::{
     TerminateOptions, VerboseOptions, image_decoder,
 };
 use wml2::metadata::DataMap;
-use wml2::util::{ImageFormat, format_check};
 
 type Error = Box<dyn std::error::Error>;
 
@@ -87,7 +86,10 @@ fn sample_avif() -> Vec<u8> {
 fn format_check_recognizes_avif_sample() {
     let data = sample_avif();
 
-    assert!(matches!(format_check(&data), ImageFormat::Avif));
+    assert!(matches!(
+        wml2::util::format_check(&data),
+        wml2::util::ImageFormat::Avif
+    ));
     assert!(wml2::get_can_decode(&data).unwrap());
     assert!(
         wml2::get_decoder_extentions()
@@ -96,8 +98,9 @@ fn format_check_recognizes_avif_sample() {
     );
 }
 
+#[cfg(feature = "avif")]
 #[test]
-fn avif_decoder_parses_container_before_unsupported_av1_decode() {
+fn avif_decoder_emits_image_callbacks() {
     let data = sample_avif();
     let mut reader = BytesReader::new(&data);
     let mut drawer = RecordingDrawer::default();
@@ -106,14 +109,15 @@ fn avif_decoder_parses_container_before_unsupported_av1_decode() {
         drawer: &mut drawer,
     };
 
-    let err = image_decoder(&mut reader, &mut options).unwrap_err();
-    let err = err.to_string();
+    image_decoder(&mut reader, &mut options).unwrap();
 
-    assert!(
-        err.contains("AV1 image bitstream decoding is not implemented yet"),
-        "{err}"
-    );
     assert!(drawer.events.iter().any(|event| event == "init:900x900"));
+    assert!(
+        drawer
+            .events
+            .iter()
+            .any(|event| event == "draw:0,0:900x900")
+    );
     assert!(
         drawer
             .events
@@ -126,5 +130,22 @@ fn avif_decoder_parses_container_before_unsupported_av1_decode() {
             .iter()
             .any(|event| event.starts_with("metadata:AVIF bits per channel="))
     );
-    assert!(!drawer.events.iter().any(|event| event == "terminate"));
+    assert!(drawer.events.iter().any(|event| event == "terminate"));
+}
+
+#[cfg(not(feature = "avif"))]
+#[test]
+fn avif_decoder_is_feature_gated() {
+    let data = sample_avif();
+    let mut reader = BytesReader::new(&data);
+    let mut drawer = RecordingDrawer::default();
+    let mut options = DecodeOptions {
+        debug_flag: 0,
+        drawer: &mut drawer,
+    };
+
+    let err = image_decoder(&mut reader, &mut options).unwrap_err();
+
+    assert!(err.to_string().contains("No Support format"));
+    assert!(drawer.events.is_empty());
 }

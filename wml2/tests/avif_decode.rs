@@ -13,6 +13,7 @@ type Error = Box<dyn std::error::Error>;
 #[derive(Default)]
 struct RecordingDrawer {
     events: Vec<String>,
+    draw_buffers: Vec<Vec<u8>>,
 }
 
 impl DrawCallback for RecordingDrawer {
@@ -32,9 +33,10 @@ impl DrawCallback for RecordingDrawer {
         start_y: usize,
         width: usize,
         height: usize,
-        _data: &[u8],
+        data: &[u8],
         _option: Option<DrawOptions>,
     ) -> Result<Option<CallbackResponse>, Error> {
+        self.draw_buffers.push(data.to_vec());
         self.events
             .push(format!("draw:{start_x},{start_y}:{width}x{height}"));
         Ok(Some(CallbackResponse::cont()))
@@ -114,6 +116,9 @@ fn avif_decoder_emits_image_callbacks() {
             .iter()
             .any(|event| event == "draw:0,0:900x900")
     );
+    assert_eq!(drawer.draw_buffers.len(), 1);
+    let expected = avif_codec::image_from_bytes(&data).unwrap();
+    assert_eq!(drawer.draw_buffers[0], expected.rgba);
     assert!(
         drawer
             .events

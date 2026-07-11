@@ -14,6 +14,15 @@ categories = ["multimedia::images","encoding"]
 [lib]
 crate-type = ["rlib"] 
 
+[[test]]
+name = "avif_decode"
+path = "tests/avif_decode.rs"
+required-features = ["avif"]
+
+[[test]]
+name = "avif_feature_off"
+path = "tests/avif_feature_off.rs"
+
 [features]
 # Recommended build: all standard formats, EXIF support, embedded-format bridges,
 # and the LL&M JPEG IDCT implementation.

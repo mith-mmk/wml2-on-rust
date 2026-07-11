@@ -84,6 +84,19 @@ fn sample_avif() -> Vec<u8> {
     .expect("sample AVIF should exist")
 }
 
+fn filter_disabled_fixture() -> Vec<u8> {
+    std::fs::read(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("avif")
+            .join("test_data")
+            .join("images")
+            .join("filter-disabled-gbr.avif"),
+    )
+    .expect("filter-disabled AVIF fixture should exist; run avif/scripts/bootstrap_oracles.ps1")
+}
+
 #[test]
 fn format_check_recognizes_avif_sample() {
     let data = sample_avif();
@@ -98,7 +111,7 @@ fn format_check_recognizes_avif_sample() {
 }
 
 #[test]
-fn avif_decoder_emits_image_callbacks() {
+fn avif_decoder_rejects_active_unimplemented_filters_before_callbacks() {
     let data = sample_avif();
     let mut reader = BytesReader::new(&data);
     let mut drawer = RecordingDrawer::default();
@@ -107,18 +120,11 @@ fn avif_decoder_emits_image_callbacks() {
         drawer: &mut drawer,
     };
 
-    image_decoder(&mut reader, &mut options).unwrap();
-
-    assert!(drawer.events.iter().any(|event| event == "init:900x900"));
-    assert!(
-        drawer
-            .events
-            .iter()
-            .any(|event| event == "draw:0,0:900x900")
-    );
-    assert_eq!(drawer.draw_buffers.len(), 1);
-    let expected = avif_codec::image_from_bytes(&data).unwrap();
-    assert_eq!(drawer.draw_buffers[0], expected.rgba);
+    let error = image_decoder(&mut reader, &mut options).unwrap_err();
+    assert!(error.to_string().contains("CDEF"));
+    assert!(drawer.events.iter().all(|event| !event.starts_with("init:")
+        && !event.starts_with("draw:")
+        && event != "terminate"));
     assert!(
         drawer
             .events
@@ -570,5 +576,57 @@ fn avif_decoder_emits_image_callbacks() {
             .iter()
             .any(|event| event.starts_with("metadata:AV1 first tile pixel height=UInt(900)"))
     );
-    assert!(drawer.events.iter().any(|event| event == "terminate"));
+}
+
+#[test]
+fn avif_decoder_keeps_callback_order_for_filter_disabled_fixture() {
+    let data = filter_disabled_fixture();
+    let mut reader = BytesReader::new(&data);
+    let mut drawer = RecordingDrawer::default();
+    let mut options = DecodeOptions {
+        debug_flag: 0,
+        drawer: &mut drawer,
+    };
+
+    image_decoder(&mut reader, &mut options).expect("filter-disabled AVIF should decode");
+
+    let callback_events = drawer
+        .events
+        .iter()
+        .filter(|event| {
+            event.starts_with("init:")
+                || event.starts_with("draw:")
+                || event.as_str() == "terminate"
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    assert_eq!(
+        callback_events.first().map(String::as_str),
+        Some("init:16x16")
+    );
+    assert!(
+        callback_events
+            .iter()
+            .any(|event| event.starts_with("draw:0,0:16x16"))
+    );
+    assert_eq!(
+        callback_events.last().map(String::as_str),
+        Some("terminate")
+    );
+    assert_eq!(
+        callback_events
+            .iter()
+            .filter(|event| event.starts_with("init:"))
+            .count(),
+        1
+    );
+    assert_eq!(
+        callback_events
+            .iter()
+            .filter(|event| event.as_str() == "terminate")
+            .count(),
+        1
+    );
+    assert_eq!(drawer.draw_buffers.len(), 1);
+    assert_eq!(drawer.draw_buffers[0].len(), 16 * 16 * 4);
 }

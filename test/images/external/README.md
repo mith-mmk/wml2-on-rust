@@ -53,6 +53,15 @@ commit `c666a368b73006246694919b5dbcc078317af6cc` を使用して、
 
 親 workspace root から実行します。
 
+14件のhash、AVIFヘッダー、converterの期待エラー、部分PNGなしを一括確認するスクリプトは
+`test/avif_external_compat.ps1` です。入力が不足している環境では
+`-DownloadMissing` を付けると、上記固定commitから不足分だけ取得します。
+
+```powershell
+pwsh -File test/avif_external_compat.ps1
+pwsh -File test/avif_external_compat.ps1 -DownloadMissing
+```
+
 ```powershell
 git ls-remote https://github.com/link-u/avif-sample-images.git refs/heads/master
 

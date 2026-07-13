@@ -111,7 +111,7 @@ fn format_check_recognizes_avif_sample() {
 }
 
 #[test]
-fn avif_decoder_rejects_active_unimplemented_filters_before_callbacks() {
+fn avif_decoder_decodes_sample_with_active_filters() {
     let data = sample_avif();
     let mut reader = BytesReader::new(&data);
     let mut drawer = RecordingDrawer::default();
@@ -120,11 +120,7 @@ fn avif_decoder_rejects_active_unimplemented_filters_before_callbacks() {
         drawer: &mut drawer,
     };
 
-    let error = image_decoder(&mut reader, &mut options).unwrap_err();
-    assert!(error.to_string().contains("CDEF"));
-    assert!(drawer.events.iter().all(|event| !event.starts_with("init:")
-        && !event.starts_with("draw:")
-        && event != "terminate"));
+    image_decoder(&mut reader, &mut options).expect("supported filtered AVIF should decode");
     assert!(
         drawer
             .events
@@ -576,6 +572,31 @@ fn avif_decoder_rejects_active_unimplemented_filters_before_callbacks() {
             .iter()
             .any(|event| event.starts_with("metadata:AV1 first tile pixel height=UInt(900)"))
     );
+    let callback_events = drawer
+        .events
+        .iter()
+        .filter(|event| {
+            event.starts_with("init:")
+                || event.starts_with("draw:")
+                || event.as_str() == "terminate"
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    assert_eq!(
+        callback_events.first().map(String::as_str),
+        Some("init:900x900")
+    );
+    assert!(
+        callback_events
+            .iter()
+            .any(|event| event.starts_with("draw:0,0:900x900"))
+    );
+    assert_eq!(
+        callback_events.last().map(String::as_str),
+        Some("terminate")
+    );
+    assert_eq!(drawer.draw_buffers.len(), 1);
+    assert_eq!(drawer.draw_buffers[0].len(), 900 * 900 * 4);
 }
 
 #[test]

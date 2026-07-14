@@ -53,6 +53,12 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | VSP/DAT | x | O | Japanese legacy image format/container, disabled by `noretoro` |
 | PCD | x | O | Photo CD base4 decode, disabled by `noretoro` |
 
+AVIF decoding is enabled with the `avif` feature. The current public
+compatibility gate covers 8-bit YUV444 still images; unsupported bit depths,
+subsampling, alpha, composition properties, ICC profiles and sequences fail
+closed with `Unsupported`. Run the external regression gate from the workspace
+root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
+
 ## Features
 
 - `default`: enables the standard decoders/encoders, EXIF support, embedded-format bridges, and `idct_llm`

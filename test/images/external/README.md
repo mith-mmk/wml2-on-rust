@@ -23,10 +23,9 @@ commit `c666a368b73006246694919b5dbcc078317af6cc` を使用して、
 - 入力: `test/images/external/avif/`
 - 変換成功時の出力: `test/images/external/converted/avif/`
 - 外部 sample と変換結果は `.gitignore` 対象です。この README だけを Git 管理します。
-- 8-bit YUV444 の対応候補 4 件を含め、今回取得した 14 件はすべて変換に失敗しました。
-  対応候補は `avif/unsupported/unexpected/` へ移動しています。
-- PNG は 1 件も生成されなかったため、外部 sample の目視表示確認は実施できませんでした。
-  失敗時に部分的な PNG が残らないことは確認済みです。
+- 8-bit YUV444 の4件は `avif/supported/` に移動し、converterで指定寸法のPNGへ変換できました。
+- 残る10件は未対応機能の期待エラーで失敗し、部分PNGは生成されません。
+- 4枚の変換結果は `converted/avif/` に保持し、PNG signature/IHDR寸法を検証済みです。
 
 ### 取得ファイルと実測結果
 
@@ -34,10 +33,10 @@ commit `c666a368b73006246694919b5dbcc078317af6cc` を使用して、
 
 | 分類 | sample | bytes | SHA-256 | ライセンス / 作者 | 期待した確認 | converter の実結果 |
 |---|---|---:|---|---|---|---|
-| unexpected | [fox.profile1.8bpc.yuv444.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile1.8bpc.yuv444.avif) | 95375 | `a0cdc981a6b056c8af2d177a1438c332d630040dacbfd1c89bb5e3e381ba5822` | CC-BY-SA 4.0 / Kaede Fujisaki | 8-bit YUV444、1204x800 | 失敗: `AV1 entropy trailing zero bit is not zero` |
-| unexpected | [fox.profile1.8bpc.yuv444.odd-height.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile1.8bpc.yuv444.odd-height.avif) | 91421 | `77e0510def73213c00ebcf051cf45fa63cf27d7c69340cc145ab6d44ec77bb07` | CC-BY-SA 4.0 / Kaede Fujisaki | 8-bit YUV444、1204x799 | 失敗: `AV1 entropy trailing zero bit is not zero` |
-| unexpected | [fox.profile1.8bpc.yuv444.odd-width.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile1.8bpc.yuv444.odd-width.avif) | 91492 | `12787042364bd13be01830f988cb714220bde340a3329baa808df27a269b83f8` | CC-BY-SA 4.0 / Kaede Fujisaki | 8-bit YUV444、1203x800 | 失敗: `Horizontal4` の `Block16x4` child partition は未対応 |
-| unexpected | [fox.profile1.8bpc.yuv444.odd-width.odd-height.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile1.8bpc.yuv444.odd-width.odd-height.avif) | 89658 | `fad3b6dd9cb99e6925858f69aafae3f68c861845f2c3d4a6d1c51c6161490134` | CC-BY-SA 4.0 / Kaede Fujisaki | 8-bit YUV444、1203x799 | 失敗: `AV1 entropy trailing one bit is missing` |
+| supported | [fox.profile1.8bpc.yuv444.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile1.8bpc.yuv444.avif) | 95375 | `a0cdc981a6b056c8af2d177a1438c332d630040dacbfd1c89bb5e3e381ba5822` | CC-BY-SA 4.0 / Kaede Fujisaki | 8-bit YUV444、1204x800 | 成功: PNG IHDR `1204x800` |
+| supported | [fox.profile1.8bpc.yuv444.odd-height.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile1.8bpc.yuv444.odd-height.avif) | 91421 | `77e0510def73213c00ebcf051cf45fa63cf27d7c69340cc145ab6d44ec77bb07` | CC-BY-SA 4.0 / Kaede Fujisaki | 8-bit YUV444、1204x799 | 成功: PNG IHDR `1204x799` |
+| supported | [fox.profile1.8bpc.yuv444.odd-width.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile1.8bpc.yuv444.odd-width.avif) | 91492 | `12787042364bd13be01830f988cb714220bde340a3329baa808df27a269b83f8` | CC-BY-SA 4.0 / Kaede Fujisaki | 8-bit YUV444、1203x800 | 成功: PNG IHDR `1203x800` |
+| supported | [fox.profile1.8bpc.yuv444.odd-width.odd-height.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile1.8bpc.yuv444.odd-width.odd-height.avif) | 89658 | `fad3b6dd9cb99e6925858f69aafae3f68c861845f2c3d4a6d1c51c6161490134` | CC-BY-SA 4.0 / Kaede Fujisaki | 8-bit YUV444、1203x799 | 成功: PNG IHDR `1203x799` |
 | unsupported | [fox.profile0.8bpc.yuv420.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile0.8bpc.yuv420.avif) | 80743 | `cb884c82ac7b6d4fa03b1f687e9e20abc346107095473e9c1d422aaf0de14eaf` | CC-BY-SA 4.0 / Kaede Fujisaki | YUV420 の fail-closed | 失敗: public decode は 4:4:4 color のみ対応 |
 | unsupported | [fox.profile0.8bpc.yuv420.monochrome.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile0.8bpc.yuv420.monochrome.avif) | 69856 | `15d84077066c47fdbe2a7b8ed583a17017d09a033144ac1b31486d6c8f6f5c82` | CC-BY-SA 4.0 / Kaede Fujisaki | monochrome の fail-closed | 失敗: public decode は 4:4:4 color のみ対応 |
 | unsupported | [fox.profile1.10bpc.yuv444.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile1.10bpc.yuv444.avif) | 97436 | `a10de8204aee73ba1786daca6390546bd7aa6b069aaa644012219a1c11246a43` | CC-BY-SA 4.0 / Kaede Fujisaki | 10-bit の fail-closed | 失敗: 10-bit quantization は未対応 |
@@ -53,7 +52,7 @@ commit `c666a368b73006246694919b5dbcc078317af6cc` を使用して、
 
 親 workspace root から実行します。
 
-14件のhash、AVIFヘッダー、converterの期待エラー、部分PNGなしを一括確認するスクリプトは
+14件のhash、AVIFヘッダー、成功PNGのsignature/IHDR、converterの期待エラー、部分PNGなしを一括確認するスクリプトは
 `test/avif_external_compat.ps1` です。入力が不足している環境では
 `-DownloadMissing` を付けると、上記固定commitから不足分だけ取得します。
 
@@ -78,5 +77,5 @@ Get-ChildItem -File test/images/external/avif/unsupported | ForEach-Object {
 }
 ```
 
-`supported/` は現在空です。`unsupported/unexpected/` の 4 件を再確認するときは、
-同じ converter コマンドへ各ファイルを明示して実行します。
+成功4件は `supported/` と `converted/avif/` にあります。未対応10件を含む全件を再確認するときは、
+上記スクリプトを実行します。

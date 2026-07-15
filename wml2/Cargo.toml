@@ -1,6 +1,6 @@
 [package]
 name = "wml2"
-version = "0.0.23"
+version = "0.0.24"
 repository = "https://github.com/mith-mmk/wml2-on-rust"
 homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
@@ -13,6 +13,15 @@ categories = ["multimedia::images","encoding"]
 
 [lib]
 crate-type = ["rlib"] 
+
+[[test]]
+name = "avif_decode"
+path = "tests/avif_decode.rs"
+required-features = ["avif"]
+
+[[test]]
+name = "avif_feature_off"
+path = "tests/avif_feature_off.rs"
 
 [features]
 # Recommended build: all standard formats, EXIF support, embedded-format bridges,

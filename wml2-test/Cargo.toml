@@ -10,6 +10,7 @@ readme = "README.md"
 
 [features]
 default = []
+avif = ["wml2/avif"]
 
 [dependencies]
 dotenv = "0.15"

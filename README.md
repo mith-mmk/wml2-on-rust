@@ -37,21 +37,28 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ## Supported formats (`0.0.20`)
 
-| format | enc | dec | notes |
-| --- | --- | --- | --- |
-| BMP | O | O | encoder writes uncompressed BMP |
-| JPEG | O | O | baseline encoder; baseline and Huffman progressive decoder |
-| GIF | O | O | palette/LZW encoder, animation supported |
-| ICO | x | O | decoder for BMP/PNG embedded icon images |
-| PNG | O | O | PNG/APNG; encoder writes RGBA truecolor |
-| TIFF | O | O | encode: none/LZW/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
-| WEBP | O | O | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output |
-| MAG | x | O | Japanese legacy image format, disabled by `noretoro` |
-| MAKI | x | O | Japanese legacy image format, disabled by `noretoro` |
-| PI | x | O | Japanese legacy image format, disabled by `noretoro` |
-| PIC | x | O | Japanese legacy image format, disabled by `noretoro` |
-| VSP/DAT | x | O | Japanese legacy image format/container, disabled by `noretoro` |
-| PCD | x | O | Photo CD base4 decode, disabled by `noretoro` |
+| format  | enc | dec | notes                                                                                                               |
+| ------- | --- | --- | ------------------------------------------------------------------------------------------------------------------- |
+| BMP     | O   | O   | encoder writes uncompressed BMP                                                                                     |
+| JPEG    | O   | O   | baseline encoder; baseline and Huffman progressive decoder                                                          |
+| GIF     | O   | O   | palette/LZW encoder, animation supported                                                                            |
+| ICO     | x   | O   | decoder for BMP/PNG embedded icon images                                                                            |
+| PNG     | O   | O   | PNG/APNG; encoder writes RGBA truecolor                                                                             |
+| TIFF    | O   | O   | encode: none/LZW/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
+| WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
+| AVIF    | x   | O   | see avif-rust                                                                                                       |
+| MAG     | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
+| MAKI    | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
+| PI      | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
+| PIC     | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
+| VSP/DAT | x   | O   | Japanese legacy image format/container, disabled by `noretoro`                                                      |
+| PCD     | x   | O   | Photo CD base4 decode, disabled by `noretoro`                                                                       |
+
+AVIF decoding is enabled with the `avif` feature. The current public
+compatibility gate covers 8-bit YUV444 still images; unsupported bit depths,
+subsampling, alpha, composition properties, ICC profiles and sequences fail
+closed with `Unsupported`. Run the external regression gate from the workspace
+root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 
 ## Features
 
@@ -216,6 +223,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 ```
 
 ## Test samples
+
 - The test data is not included in the repository due to rights issues. Please provide appropriate samples.
 - integration tests use generic names such as `sample.mki`, `sample.pi`, `sample.pic`, `sample.dat`
 - original sample filenames are intentionally not referenced in public test code
@@ -262,6 +270,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.21`: fix gif decode bug
 - `0.0.22`: fix png decode enbug
 - `0.0.23`: add decode for c2pa manifest store
+- `0.0.24`: avif decoder
 
 ## License
 

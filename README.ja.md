@@ -4,7 +4,6 @@
 > [!NOTE]
 > WML2Viewerはリポジトリごと移転しました [WML2Viwer](https://github.com/mith-mmk/wml2viewer)
 
-
 # WML2 - Web graphic Multi format Library To Rust
 
 `wml2` は callback ベースの画像 I/O ライブラリです。
@@ -38,21 +37,21 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ## サポートフォーマット (`0.0.20`)
 
-| フォーマット | enc | dec | 備考 |
-| --- | --- | --- | --- |
-| BMP | O | O | encoder は無圧縮 BMP を出力 |
-| JPEG | O | O | encoder は baseline のみ、decoder は baseline と Huffman progressive に対応 |
-| GIF | O | O | パレット/LZW encoder、animation 対応 |
-| ICO | x | O | BMP/PNG 内包の icon image を decode |
-| PNG | O | O | PNG/APNG 対応、encoder は RGBA truecolor を出力 |
-| TIFF | O | O | encode: none/LZW/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
-| WEBP | O | O | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応 |
-| MAG | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
-| MAKI | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
-| PI | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
-| PIC | x | O | 日本の旧画像形式。`noretoro` 指定時は無効 |
-| VSP/DAT | x | O | 日本の旧画像形式/コンテナ。`noretoro` 指定時は無効 |
-| PCD | x | O | Photo CD base4 decode。`noretoro` 指定時は無効 |
+| フォーマット | enc | dec | 備考                                                                                                                |
+| ------------ | --- | --- | ------------------------------------------------------------------------------------------------------------------- |
+| BMP          | O   | O   | encoder は無圧縮 BMP を出力                                                                                         |
+| JPEG         | O   | O   | encoder は baseline のみ、decoder は baseline と Huffman progressive に対応                                         |
+| GIF          | O   | O   | パレット/LZW encoder、animation 対応                                                                                |
+| ICO          | x   | O   | BMP/PNG 内包の icon image を decode                                                                                 |
+| PNG          | O   | O   | PNG/APNG 対応、encoder は RGBA truecolor を出力                                                                     |
+| TIFF         | O   | O   | encode: none/LZW/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
+| WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
+| MAG          | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
+| MAKI         | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
+| PI           | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
+| PIC          | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
+| VSP/DAT      | x   | O   | 日本の旧画像形式/コンテナ。`noretoro` 指定時は無効                                                                  |
+| PCD          | x   | O   | Photo CD base4 decode。`noretoro` 指定時は無効                                                                      |
 
 ## Feature
 
@@ -65,7 +64,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 - その他の toggle: `multithread`, `SJIS`, `noretoro`
 - `noretoro`: これで gate されている旧フォーマット decoder、`MAG`, `MAKI`, `PCD`, `PI`, `PIC`, `VSP/DAT` を無効化
 - `C2PA`: PNG と JPEG のメタデータ内の C2PA manifest store の解析を有効化
-  
+
 ```toml
 [dependencies]
 wml2 = "0.0.23"
@@ -265,8 +264,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.21`: gif decoderのバグフィックス
 - `0.0.22`: png decoderのエンバグフィックス
 - `0.0.23`: c2pa manifest store の decode を追加
+- `0.0.24`: avif decoder
 
 ## License
+
 MIT License (C) 2022-2026
 
 ## Author

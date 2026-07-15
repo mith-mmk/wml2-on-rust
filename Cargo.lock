@@ -76,7 +76,7 @@ dependencies = [
 
 [[package]]
 name = "wml2"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "avif-rust",
  "bin-rs 0.0.10",

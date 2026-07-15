@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $externalRoot = Join-Path $repoRoot 'test/images/external'
-$workRoot = Join-Path $repoRoot '.test-avif-script'
+$workRoot = Join-Path ([IO.Path]::GetTempPath()) '.test-avif-script'
 $downloadRoot = Join-Path $workRoot 'download'
 $outputRoot = Join-Path $workRoot 'outputs'
 $sourceCommit = 'c666a368b73006246694919b5dbcc078317af6cc'
@@ -112,7 +112,16 @@ try {
                 } else {
                     $finalOutput = Join-Path $externalRoot "converted/avif/$($entry.Name).png"
                     New-Item -ItemType Directory -Force -Path (Split-Path $finalOutput) | Out-Null
-                    Copy-Item -LiteralPath $pngOutputs[0].FullName -Destination $finalOutput -Force
+                    $generatedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $pngOutputs[0].FullName).Hash
+                    if (Test-Path -LiteralPath $finalOutput) {
+                        $finalHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $finalOutput).Hash
+                        if ($finalHash -ne $generatedHash) {
+                            Remove-Item -LiteralPath $finalOutput -Force
+                            Copy-Item -LiteralPath $pngOutputs[0].FullName -Destination $finalOutput -Force
+                        }
+                    } else {
+                        Copy-Item -LiteralPath $pngOutputs[0].FullName -Destination $finalOutput -Force
+                    }
                     $successCount++
                     Write-Host "[PASS] $($entry.Name) converted $($entry.Width)x$($entry.Height)"
                 }

@@ -60,6 +60,8 @@ commit `c666a368b73006246694919b5dbcc078317af6cc` を使用して、
 | supported | [abc_color_irot_alpha_irot.avif](https://raw.githubusercontent.com/AOMediaCodec/libavif/main/tests/data/abc_color_irot_alpha_irot.avif) | 取得時固定 | `b371cc88244a873131e4d10ff9363d71ce4f41cf333bd4a491b38d970d9abd3b` | BSD-2-Clause / AOMediaCodec | `irot` + alpha、出力256x512 | 成功: PNG IHDR `256x512`、RGBA oracle通過 |
 | supported* | [fox.profile2.12bpc.yuv444.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile2.12bpc.yuv444.avif) | 取得時固定 | `ed96eca6ed79863eaf91e4d666e4e220b5fa4e5a6cb1696477ba901ac12f5dde` | CC-BY-SA 4.0 / Kaede Fujisaki | profile-2 12-bit YUV444、1204x800 | 成功: PNG IHDR `1204x800`、RGB平均差41.77 |
 
+`supported*` は decode／PNG出力を確認済みですが、strict pixel oracleの閾値未達を示します。
+
 ### 再実行
 
 親 workspace root から実行します。

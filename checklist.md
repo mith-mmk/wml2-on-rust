@@ -31,6 +31,10 @@ git -c safe.directory=C:/Users/misir/OneDrive/source/wmprojects/wml2/avif -C avi
 - [x] Missing above/left references are completed from the available side where required.
 - [x] Directional reference arrays collect additional top-right and bottom-left frame samples.
 - [x] Type-0 directional edge upsampling uses the AOM four-tap interpolation and signed edge indices.
+- [x] Coefficient decode reuses tile-local scratch storage and caches transform scan tables;
+      benchmark variance remains tracked separately from correctness gates.
+- [x] Common DC intra prediction uses a direct edge-sum path to avoid allocating
+      temporary edge vectors for every transform block.
 
 Current FFmpeg oracle metric for `WML2Viewer.avif`:
 
@@ -87,14 +91,30 @@ Likely high-impact file: `avif/src/av1/transform.rs`.
 
 ### 5. Expand supported AVIF/AV1 formats
 
-- [ ] YUV-to-RGBA conversion for non-identity matrix coefficients.
+- [x] YUV-to-RGBA conversion for the supported non-identity matrix coefficients,
+      including YCgCo (matrix coefficient 8).
 - [ ] 4:2:0 and 4:2:2 chroma subsampling with correct chroma sample positions.
 - [ ] Monochrome images.
-- [ ] 10-bit and 12-bit decode/output conversion.
-- [ ] Alpha auxiliary items and AVIF item-property associations.
+- [x] 10-bit and profile-2 12-bit YUV444 decode/output conversion; the external
+      fox sample now decodes through the public API.
+- [x] Generated and external 12-bit YUV444 samples decode without entropy or CDEF
+      overflow. The external fox sample still has a diagnostic post-filter RGB gap
+      (average error approximately 41.77) and is not a strict pixel oracle.
+- [x] Generated 12-bit YUV444 samples using 128x128 superblocks and extended
+      rectangular/uneven partitions are covered by the FFmpeg conformance test.
+- [x] AVIF item-property associations, still-image grid composition, and alpha
+      auxiliary grid composition; direct alpha auxiliary items remain supported
+      for non-grid still images.
+- [x] `irot` rotation composition, including official rotated alpha and legacy
+      `kimono.rotate90` samples.
+- [x] ICC matrix-shaper conversion for RGB/XYZ profiles with `curv` tone
+      curves; lookup-table and other ICC profile classes remain fail-closed.
+- [x] Generated lossless AVIF fixture is compared against FFmpeg when libaom is
+      available.
 - [ ] Multiple tiles and tile groups.
 - [ ] Additional still-frame header tools currently returning `Unsupported`.
-- [ ] AVIF sequences/animation only after still-image conformance is stable.
+- [x] `avis` primary items with one frame decode as a still image; multi-frame
+      animation iteration remains out of scope and fail-closed.
 
 ### 6. Conformance corpus and fuzzing
 

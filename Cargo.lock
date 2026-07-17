@@ -10,7 +10,7 @@ checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 
 [[package]]
 name = "avif-rust"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "bin-rs 0.0.10",
 ]
@@ -76,7 +76,7 @@ dependencies = [
 
 [[package]]
 name = "wml2"
-version = "0.0.24"
+version = "0.0.25"
 dependencies = [
  "avif-rust",
  "bin-rs 0.0.10",

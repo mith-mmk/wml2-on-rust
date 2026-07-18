@@ -104,7 +104,9 @@ Likely high-impact file: `avif/src/av1/transform.rs`.
       rectangular/uneven partitions are covered by the FFmpeg conformance test.
 - [x] AVIF item-property associations, still-image grid composition, and alpha
       auxiliary grid composition; direct alpha auxiliary items remain supported
-      for non-grid still images.
+      for non-grid still images. Native-plane grid output applies aligned
+      `clap`/`imir`/`irot` geometry for 4:4:4 and 4:2:0; alpha grids and
+      axis-swapping 4:2:2 quarter-turns remain explicit unsupported cases.
 - [x] `irot` rotation composition, including official rotated alpha and legacy
       `kimono.rotate90` samples.
 - [x] ICC matrix-shaper conversion for RGB/XYZ profiles with `curv` tone

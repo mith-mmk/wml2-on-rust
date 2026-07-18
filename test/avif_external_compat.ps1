@@ -112,7 +112,11 @@ try {
             $converterOutput = @(& cargo run -q -p wml2-test --example converter --features avif -- $target -o $probeRoot -f png 2>&1)
             $converterExit = $LASTEXITCODE
             $converterText = $converterOutput -join "`n"
-            $partialOutputs = @(Get-ChildItem -File -Recurse $probeRoot)
+            $partialOutputs = if (Test-Path -LiteralPath $probeRoot -PathType Container) {
+                @(Get-ChildItem -File -Recurse $probeRoot)
+            } else {
+                @()
+            }
 
             if ($entry.Kind -eq 'supported') {
                 $pngOutputs = @($partialOutputs | Where-Object { $_.Extension -ieq '.png' })

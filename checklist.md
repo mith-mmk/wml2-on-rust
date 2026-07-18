@@ -98,8 +98,8 @@ Likely high-impact file: `avif/src/av1/transform.rs`.
 - [x] 10-bit and profile-2 12-bit YUV444 decode/output conversion; the external
       fox sample now decodes through the public API.
 - [x] Generated and external 12-bit YUV444 samples decode without entropy or CDEF
-      overflow. The external fox sample still has a diagnostic post-filter RGB gap
-      (average error approximately 41.77) and is not a strict pixel oracle.
+      overflow; the external fox sample passes the strict FFmpeg RGB oracle
+      (average error approximately 0.075, maximum 6).
 - [x] Generated 12-bit YUV444 samples using 128x128 superblocks and extended
       rectangular/uneven partitions are covered by the FFmpeg conformance test.
 - [x] AVIF item-property associations, still-image grid composition, and alpha
@@ -144,7 +144,8 @@ To print the current strict FFmpeg comparison result:
 cargo test -p avif-rust --test ffmpeg_conformance pure_rust_decode_matches_ffmpeg_oracle_and_original_png -- --ignored --nocapture
 ```
 
-The strict test is expected to fail until pixel conformance is reached. Record the numeric error before and after each reconstruction change.
+The external 12-bit fox strict test now passes; record the numeric error before and after
+each reconstruction change while closing the remaining conformance gaps.
 
 ## Completion criteria for the initial decoder
 

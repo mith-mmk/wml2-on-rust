@@ -25,7 +25,8 @@ commit `c666a368b73006246694919b5dbcc078317af6cc` を使用して、
 - 外部 sample と変換結果は `.gitignore` 対象です。この README だけを Git 管理します。
 - 8-bit YUV444 の4件、YUV420・monochrome・YUV422の3件、奇数寸法6件、alpha auxiliaryの1件、clap/imir の2件、irot+alphaの1件、grid compositionの1件、irotを含む回転・反転の2件、ICC matrix-shaperの1件はconverterで指定寸法のPNGへ変換できます。
 - さらにYUV420/YUV422の奇数幅・奇数高サンプルを6件追加し、端部のplane切り詰めを検証します。
-- 全25件がconverterでPNG化できます。12-bit sampleもFFmpegのRGB oracleを通過し、最終RGB差分は平均約0.075、最大6です。`avis` の primary item は先頭フレームを静止画として変換できます。
+- 現在の互換性ゲートは34件をPNG化できます。12-bit sampleもFFmpegのRGB oracleを通過し、最終RGB差分は平均約0.075、最大6です。`avis` の primary item は先頭フレームを静止画として変換できます。
+- `alpha_noispe.avif` は CDEF/SGRPROJ の entropy restoration parity が未実装のため、`trailing zero bit` を返し、部分PNGを生成しない期待失敗として固定しています。
 - 変換結果は `converted/avif/` に保持し、PNG signature/IHDR寸法を検証します。
 
 ### 取得ファイルと実測結果
@@ -59,6 +60,7 @@ commit `c666a368b73006246694919b5dbcc078317af6cc` を使用して、
 | supported | [sofa_grid1x5_420.avif](https://raw.githubusercontent.com/AOMediaCodec/libavif/main/tests/data/sofa_grid1x5_420.avif) | 取得時固定 | `c9e04ff9d90d7093454750fa33b7543ee5479e0cfb151e2c3d2ce6a16c1651c1` | BSD-2-Clause / AOMediaCodec | grid 1x5、1024x770 | 成功: PNG IHDR `1024x770`、FFmpeg平均誤差0.75 |
 | supported | [abc_color_irot_alpha_irot.avif](https://raw.githubusercontent.com/AOMediaCodec/libavif/main/tests/data/abc_color_irot_alpha_irot.avif) | 取得時固定 | `b371cc88244a873131e4d10ff9363d71ce4f41cf333bd4a491b38d970d9abd3b` | BSD-2-Clause / AOMediaCodec | `irot` + alpha、出力256x512 | 成功: PNG IHDR `256x512`、RGBA oracle通過 |
 | supported | [fox.profile2.12bpc.yuv444.avif](https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile2.12bpc.yuv444.avif) | 取得時固定 | `ed96eca6ed79863eaf91e4d666e4e220b5fa4e5a6cb1696477ba901ac12f5dde` | CC-BY-SA 4.0 / Kaede Fujisaki | profile-2 12-bit YUV444、1204x800 | 成功: PNG IHDR `1204x800`、RGB平均差0.075、最大6 |
+| unsupported | [alpha_noispe.avif](https://raw.githubusercontent.com/AOMediaCodec/libavif/main/tests/data/alpha_noispe.avif) | 取得時固定 | `8deb96e78c3e5d608a157b2de4c98eb1a30e0c85736b4230758400509c88d47e` | BSD-2-Clause / AOMediaCodec | reduced still、CDEF/SGRPROJ restoration | 期待失敗: `trailing zero bit`、部分PNGなし |
 
 `supported` は decode／PNG出力と strict pixel oracle を確認済みです。
 

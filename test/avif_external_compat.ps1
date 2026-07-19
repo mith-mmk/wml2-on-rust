@@ -48,6 +48,7 @@ $manifest = @(
     [pscustomobject]@{ Name = 'clap_irot_imir_non_essential.avif'; Kind = 'supported'; RelativePath = 'avif/unsupported/clap_irot_imir_non_essential.avif'; DownloadUrl = 'https://raw.githubusercontent.com/AOMediaCodec/libavif/main/tests/data/clap_irot_imir_non_essential.avif'; Sha256 = '33f869fcf2a879913eb394982b8fc03e9a60c25831aa37622ddefa656fd39fc1'; Width = 10; Height = 8 }
     [pscustomobject]@{ Name = 'clop_irot_imor.avif'; Kind = 'supported'; RelativePath = 'avif/unsupported/clop_irot_imor.avif'; DownloadUrl = 'https://raw.githubusercontent.com/AOMediaCodec/libavif/main/tests/data/clop_irot_imor.avif'; Sha256 = '28e96ad4c913d75a32d66bce116f2963e29d93c01952698c7b33dd893f8bd541'; Width = 34; Height = 12 }
     [pscustomobject]@{ Name = 'fox.profile2.12bpc.yuv444.avif'; Kind = 'supported'; RelativePath = 'avif/unsupported/fox.profile2.12bpc.yuv444.avif'; DownloadUrl = 'https://raw.githubusercontent.com/link-u/avif-sample-images/c666a368b73006246694919b5dbcc078317af6cc/fox.profile2.12bpc.yuv444.avif'; Sha256 = 'ed96eca6ed79863eaf91e4d666e4e220b5fa4e5a6cb1696477ba901ac12f5dde'; Width = 1204; Height = 800 }
+    [pscustomobject]@{ Name = 'alpha_noispe.avif'; Kind = 'unsupported'; RelativePath = 'avif/unsupported/alpha_noispe.avif'; DownloadUrl = 'https://raw.githubusercontent.com/AOMediaCodec/libavif/main/tests/data/alpha_noispe.avif'; Sha256 = '8deb96e78c3e5d608a157b2de4c98eb1a30e0c85736b4230758400509c88d47e'; ErrorPattern = 'trailing zero bit' }
 )
 
 function Read-BigEndianUInt32([byte[]]$bytes, [int]$offset) {

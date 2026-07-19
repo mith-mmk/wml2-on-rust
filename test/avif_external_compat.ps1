@@ -1,13 +1,21 @@
 [CmdletBinding()]
 param(
     [switch]$DownloadMissing,
-    [switch]$KeepWork
+    [switch]$KeepWork,
+    [string]$WorkRoot
 )
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $externalRoot = Join-Path $repoRoot 'test/images/external'
-$workRoot = Join-Path $repoRoot '.test-avif-script'
+$workRoot = if ($WorkRoot) {
+    [IO.Path]::GetFullPath($WorkRoot)
+} else {
+    Join-Path $repoRoot '.test-avif-script'
+}
+if ([IO.Path]::GetFileName($workRoot) -notlike '.test*') {
+    throw "WorkRoot must be a .test* directory: $workRoot"
+}
 $downloadRoot = Join-Path $workRoot 'download'
 $outputRoot = Join-Path $workRoot 'outputs'
 $sourceCommit = 'c666a368b73006246694919b5dbcc078317af6cc'

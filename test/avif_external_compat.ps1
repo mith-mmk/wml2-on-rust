@@ -117,10 +117,20 @@ try {
             $converterOutput = @(& cargo run -q -p wml2-test --example converter --features avif -- $target -o $probeRoot -f png 2>&1)
             $converterExit = $LASTEXITCODE
             $converterText = $converterOutput -join "`n"
-            $partialOutputs = if (Test-Path -LiteralPath $probeRoot -PathType Container) {
-                @(Get-ChildItem -File -Recurse $probeRoot)
-            } else {
-                @()
+            $partialOutputs = @()
+            for ($attempt = 0; $attempt -lt 10; $attempt++) {
+                $partialOutputs = if (Test-Path -LiteralPath $probeRoot -PathType Container) {
+                    @(Get-ChildItem -File -Recurse $probeRoot)
+                } else {
+                    @()
+                }
+                if ($partialOutputs.Count -gt 0 -or $converterExit -ne 0) {
+                    break
+                }
+                # OneDrive can publish a newly written PNG slightly after the
+                # converter process exits; give the filesystem a short window
+                # before classifying a successful conversion as partial.
+                Start-Sleep -Milliseconds 200
             }
 
             if ($entry.Kind -eq 'supported') {

@@ -23,6 +23,59 @@ required-features = ["avif"]
 name = "avif_feature_off"
 path = "tests/avif_feature_off.rs"
 
+# These integration tests exercise optional codec modules directly. Keep them
+# out of feature-off builds so the feature matrix can still compile and run
+# the core/AVIF regression targets without pulling every codec in.
+[[test]]
+name = "convert"
+path = "tests/convert.rs"
+required-features = ["jpeg", "png", "tiff"]
+
+[[test]]
+name = "image_to"
+path = "tests/image_to.rs"
+required-features = ["bmp", "png", "webp"]
+
+[[test]]
+name = "jpeg_encode"
+path = "tests/jpeg_encode.rs"
+required-features = ["jpeg"]
+
+[[test]]
+name = "png_encode"
+path = "tests/png_encode.rs"
+required-features = ["png"]
+
+[[test]]
+name = "tiff_encode"
+path = "tests/tiff_encode.rs"
+required-features = ["tiff"]
+
+[[test]]
+name = "webp_encode"
+path = "tests/webp_encode.rs"
+required-features = ["webp"]
+
+[[test]]
+name = "error_recovery"
+path = "tests/error_recovery.rs"
+required-features = ["webp", "tiff"]
+
+[[test]]
+name = "gif_encode"
+path = "tests/gif_encode.rs"
+required-features = ["gif"]
+
+[[test]]
+name = "retro_formats"
+path = "tests/retro_formats.rs"
+required-features = ["maki", "pi", "pic", "vsp"]
+
+[[test]]
+name = "webp_decode"
+path = "tests/webp_decode.rs"
+required-features = ["webp"]
+
 [features]
 # Recommended build: all standard formats, EXIF support, embedded-format bridges,
 # and the LL&M JPEG IDCT implementation.

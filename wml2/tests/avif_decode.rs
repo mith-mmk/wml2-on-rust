@@ -122,7 +122,9 @@ fn avif_decoder_decodes_sample_with_active_filters() {
     let mut reader = BytesReader::new(&data);
     let mut drawer = RecordingDrawer::default();
     let mut options = DecodeOptions {
-        debug_flag: 0,
+        // The assertions below cover AV1 diagnostic probes, which are
+        // intentionally collected only when debug mode is requested.
+        debug_flag: 1,
         drawer: &mut drawer,
     };
 

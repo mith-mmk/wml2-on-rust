@@ -195,7 +195,11 @@ try {
                     $failures.Add("$($entry.Name): expected success, exit=$converterExit, pngs=$($pngOutputs.Count), output=$converterText")
                     Write-Host "[FAIL] $($entry.Name) expected success"
                 } else {
-                    $finalOutput = Join-Path $externalRoot "converted/avif/$($entry.Name).png"
+                    # Keep generated PNGs inside the caller-selected .test*
+                    # work root. Persisting them under OneDrive's shared
+                    # external directory can turn a successful conversion
+                    # into an access-denied result when an old PNG is locked.
+                    $finalOutput = Join-Path $outputRoot "converted/avif/$($entry.Name).png"
                     New-Item -ItemType Directory -Force -Path (Split-Path $finalOutput) | Out-Null
                     $generatedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $pngOutputs[0].FullName).Hash
                     if (Test-Path -LiteralPath $finalOutput) {

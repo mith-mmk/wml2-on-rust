@@ -2,7 +2,10 @@
 
 type Error = Box<dyn std::error::Error>;
 
-use crate::draw::{DecodeOptions, DrawOptions, InitOptions, TerminateOptions, VerboseOptions};
+use crate::draw::{
+    DecodeOptions, DrawOptions, ImageRect, InitOptions, NextBlend, NextDispose, NextOption,
+    NextOptions, TerminateOptions, VerboseOptions,
+};
 use crate::error::{ImgError, ImgErrorKind};
 use crate::metadata::DataMap;
 use crate::warning::ImgWarnings;
@@ -88,6 +91,40 @@ impl avif_codec::DrawCallback for DrawerAdapter<'_> {
                     }
                 })
             })
+    }
+
+    fn next(
+        &mut self,
+        option: Option<avif_codec::NextOptions>,
+    ) -> Result<Option<avif_codec::CallbackResponse>, Error> {
+        let option = option.map(|option| NextOptions {
+            flag: NextOption::Continue,
+            await_time: option.await_time,
+            image_rect: option.image_rect.map(|rect| ImageRect {
+                start_x: rect.start_x,
+                start_y: rect.start_y,
+                width: rect.width,
+                height: rect.height,
+            }),
+            dispose_option: Some(match option.dispose {
+                avif_codec::NextDispose::None => NextDispose::None,
+                avif_codec::NextDispose::Background => NextDispose::Background,
+                avif_codec::NextDispose::Previous => NextDispose::Previous,
+            }),
+            blend: Some(match option.blend {
+                avif_codec::NextBlend::Source => NextBlend::Source,
+                avif_codec::NextBlend::Override => NextBlend::Override,
+            }),
+        });
+        self.drawer.next(option).map(|response| {
+            response.map(|response| {
+                if response.response == crate::draw::ResponseCommand::Abort {
+                    avif_codec::CallbackResponse::abort()
+                } else {
+                    avif_codec::CallbackResponse::cont()
+                }
+            })
+        })
     }
 
     fn terminate(

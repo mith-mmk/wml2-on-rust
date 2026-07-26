@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use bin_rs::reader::BytesReader;
 use wml2::draw::{
-    CallbackResponse, DecodeOptions, DrawCallback, DrawOptions, InitOptions, NextOptions,
-    TerminateOptions, VerboseOptions, image_decoder,
+    CallbackResponse, DecodeOptions, DrawCallback, DrawOptions, ImageBuffer, InitOptions,
+    NextOptions, TerminateOptions, VerboseOptions, image_decoder,
 };
 use wml2::metadata::DataMap;
 
@@ -13,6 +13,7 @@ type Error = Box<dyn std::error::Error>;
 struct RecordingDrawer {
     events: Vec<String>,
     draw_buffers: Vec<Vec<u8>>,
+    next_durations: Vec<u64>,
 }
 
 impl DrawCallback for RecordingDrawer {
@@ -49,7 +50,10 @@ impl DrawCallback for RecordingDrawer {
         Ok(Some(CallbackResponse::cont()))
     }
 
-    fn next(&mut self, _next: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error> {
+    fn next(&mut self, next: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error> {
+        if let Some(next) = next {
+            self.next_durations.push(next.await_time);
+        }
         self.events.push("next".to_string());
         Ok(Some(CallbackResponse::cont()))
     }
@@ -96,6 +100,17 @@ fn filter_disabled_fixture() -> Vec<u8> {
             .join("filter-disabled-gbr.avif"),
     )
     .expect("filter-disabled AVIF fixture should exist; run avif/scripts/bootstrap_oracles.ps1")
+}
+
+#[cfg(feature = "avif")]
+fn external_animated_avif(name: &str) -> Option<Vec<u8>> {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("test/images/external/avif/unsupported")
+        .join(name);
+    path.exists()
+        .then(|| std::fs::read(path).expect("external AVIS sample should be readable"))
 }
 
 #[cfg(feature = "avif")]
@@ -658,4 +673,90 @@ fn avif_decoder_keeps_callback_order_for_filter_disabled_fixture() {
     );
     assert_eq!(drawer.draw_buffers.len(), 1);
     assert_eq!(drawer.draw_buffers[0].len(), 16 * 16 * 4);
+}
+
+#[cfg(feature = "avif")]
+#[test]
+fn avif_animation_notifies_next_before_each_full_canvas_frame() {
+    let Some(data) = external_animated_avif("star-8bpc.avif") else {
+        return;
+    };
+    let mut reader = BytesReader::new(&data);
+    let mut drawer = RecordingDrawer::default();
+    let mut options = DecodeOptions {
+        debug_flag: 0,
+        drawer: &mut drawer,
+    };
+
+    image_decoder(&mut reader, &mut options).expect("star AVIS should decode");
+
+    let init = drawer
+        .events
+        .iter()
+        .position(|event| event.starts_with("init:"))
+        .expect("animation should initialize the canvas");
+    let tail = &drawer.events[init..];
+    assert_eq!(drawer.draw_buffers.len(), 5);
+    assert_eq!(drawer.next_durations.len(), 5);
+    assert!(drawer.next_durations.iter().all(|duration| *duration > 0));
+    assert_eq!(&tail[1..3], ["next", "draw:0,0:159x159"]);
+    assert_eq!(&tail[3..5], ["next", "draw:0,0:159x159"]);
+    assert_eq!(&tail[5..7], ["next", "draw:0,0:159x159"]);
+    assert_eq!(&tail[7..9], ["next", "draw:0,0:159x159"]);
+    assert_eq!(tail.last().map(String::as_str), Some("terminate"));
+}
+
+#[cfg(feature = "avif")]
+#[test]
+fn avif_animation_alpha_is_synchronized_per_frame() {
+    let Some(data) = external_animated_avif("colors-animated-8bpc-alpha-exif-xmp.avif") else {
+        return;
+    };
+    let mut reader = BytesReader::new(&data);
+    let mut drawer = RecordingDrawer::default();
+    let mut options = DecodeOptions {
+        debug_flag: 0,
+        drawer: &mut drawer,
+    };
+
+    image_decoder(&mut reader, &mut options).expect("alpha AVIS should decode");
+    assert_eq!(drawer.draw_buffers.len(), 5);
+    assert_eq!(drawer.next_durations.len(), 5);
+    let alpha_planes: Vec<Vec<u8>> = drawer
+        .draw_buffers
+        .iter()
+        .map(|buffer| buffer.iter().skip(3).step_by(4).copied().collect())
+        .collect();
+    assert!(
+        alpha_planes
+            .iter()
+            .all(|plane| plane.iter().any(|alpha| *alpha != 255))
+    );
+}
+
+#[cfg(feature = "avif")]
+#[test]
+fn avif_animation_is_stored_as_five_full_canvas_layers() {
+    let Some(data) = external_animated_avif("colors-animated-8bpc.avif") else {
+        return;
+    };
+    let mut reader = BytesReader::new(&data);
+    let mut image = ImageBuffer::new();
+    let mut options = DecodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+    };
+
+    image_decoder(&mut reader, &mut options).expect("animated AVIS should populate ImageBuffer");
+    let layers = image
+        .animation
+        .as_ref()
+        .expect("animation layers should exist");
+    assert_eq!(layers.len(), 5);
+    assert!(layers.iter().all(|layer| {
+        (layer.width, layer.height) == (150, 150)
+            && layer.start_x == 0
+            && layer.start_y == 0
+            && layer.buffer.len() == 150 * 150 * 4
+    }));
 }

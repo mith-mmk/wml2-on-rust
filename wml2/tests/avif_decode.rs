@@ -2,10 +2,12 @@ use std::path::PathBuf;
 
 use bin_rs::reader::BytesReader;
 use wml2::draw::{
-    CallbackResponse, DecodeOptions, DrawCallback, DrawOptions, ImageBuffer, InitOptions,
-    NextOptions, TerminateOptions, VerboseOptions, image_decoder,
+    CallbackResponse, DecodeOptions, DrawCallback, DrawOptions, EncodeOptions, ImageBuffer,
+    InitOptions, NextOptions, TerminateOptions, VerboseOptions, image_decoder, image_encoder,
+    image_load,
 };
 use wml2::metadata::DataMap;
+use wml2::util::ImageFormat;
 
 type Error = Box<dyn std::error::Error>;
 
@@ -759,4 +761,35 @@ fn avif_animation_is_stored_as_five_full_canvas_layers() {
             && layer.start_y == 0
             && layer.buffer.len() == 150 * 150 * 4
     }));
+}
+
+#[cfg(feature = "avif")]
+#[test]
+fn avif_animation_round_trips_to_five_frame_apng() {
+    let Some(data) = external_animated_avif("colors-animated-8bpc.avif") else {
+        return;
+    };
+    let mut reader = BytesReader::new(&data);
+    let mut image = ImageBuffer::new();
+    let mut decode = DecodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+    };
+    image_decoder(&mut reader, &mut decode).expect("animated AVIS should populate ImageBuffer");
+
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: None,
+    };
+    let apng =
+        image_encoder(&mut encode, ImageFormat::Png).expect("animated AVIS should encode as APNG");
+    assert!(apng.windows(4).any(|window| window == b"acTL"));
+
+    let decoded = image_load(&apng).expect("encoded APNG should decode");
+    assert_eq!(
+        decoded.animation.as_ref().map(Vec::len),
+        Some(5),
+        "APNG should preserve all AVIS frames"
+    );
 }

@@ -18,6 +18,7 @@ fn map_decoder_error(error: &avif_codec::DecoderError) -> ImgErrorKind {
         avif_codec::DecoderError::Bitstream(_) => ImgErrorKind::IllegalData,
         avif_codec::DecoderError::Unsupported(_) => ImgErrorKind::UnsupportedFeature,
         avif_codec::DecoderError::Io(_) => ImgErrorKind::IOError,
+        _ => ImgErrorKind::DecodeError,
     }
 }
 

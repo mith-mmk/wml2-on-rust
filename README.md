@@ -74,17 +74,17 @@ root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 
 ```toml
 [dependencies]
-wml2 = "0.0.23"
+wml2 = "0.0.26"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.23", features = ["noretoro"] }
+wml2 = { version = "0.0.26", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.23", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.26", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options
@@ -101,6 +101,8 @@ Supported option keys in `EncodeOptions::options` / `draw::convert(..., options)
 - TIFF with `compression=jpeg`: `quality`
 - WebP: `optimize` (`0..=9`)
 - WebP lossy: `quality`
+- WebP low-level encoder: `LossyEncodingConfig.method` (`0..=6`) and
+  `LosslessEncodingConfig.z_level` (`0..=9`)
 - PNG/JPEG/TIFF/WebP: `exif`
   - raw EXIF bytes via `DataMap::Raw`
   - TIFF-style EXIF via `DataMap::Exif`
@@ -198,6 +200,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `encode_end`
 - `metadata`
 
+For direct WebP encoder control, use the 0.3.0-style Config API:
+
+```rust
+use wml2::webp::encoder::{
+    LossyEncodingConfig, encode_lossy_image_to_webp_with_config,
+};
+
+let config = LossyEncodingConfig {
+    quality: 75.0,
+    method: 4,
+    ..Default::default()
+};
+let webp = encode_lossy_image_to_webp_with_config(&image, &config)?;
+```
+
+The older `LossyEncodingOptions` / `LosslessEncodingOptions` and
+`*_with_options` functions remain available as compatibility wrappers.
+
 ## Metadata
 
 Metadata is stored as `HashMap<String, DataMap>`.
@@ -271,6 +291,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.22`: fix png decode enbug
 - `0.0.23`: add decode for c2pa manifest store
 - `0.0.24`: avif decoder
+- `0.0.26`: WebP 0.3.0 integration, Config API compatibility, and WebP option metrics
 
 ## License
 

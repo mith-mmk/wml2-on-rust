@@ -1,6 +1,6 @@
 [package]
 name = "wml2"
-version = "0.0.25"
+version = "0.0.26"
 repository = "https://github.com/mith-mmk/wml2-on-rust"
 homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
@@ -146,7 +146,7 @@ noretoro = []
 [dependencies]
 bin-rs = {version = "0.0.10",features = ["util"]}
 #bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
-webp_codec = { package = "webp-rust", version = "0.2.1", optional = true }
-avif_codec = { package = "avif-rust", path = "../avif", optional = true }
+webp_codec = { package = "webp-rust", version = "0.3.0", optional = true }
+avif_codec = { package = "avif-rust", version = "0.0.3", path = "../avif", optional = true }
 
 miniz_oxide = {version = "0.7.1"}

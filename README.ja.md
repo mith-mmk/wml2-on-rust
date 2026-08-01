@@ -67,17 +67,17 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ```toml
 [dependencies]
-wml2 = "0.0.23"
+wml2 = "0.0.26"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.23", features = ["noretoro"] }
+wml2 = { version = "0.0.26", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.23", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.26", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -94,6 +94,8 @@ wml2 = { version = "0.0.23", default-features = false, features = ["jpeg", "png"
 - TIFF で `compression=jpeg`: `quality`
 - WebP: `optimize` (`0..=9`)
 - WebP lossy: `quality`
+- WebP low-level encoder: `LossyEncodingConfig.method` (`0..=6`) と
+  `LosslessEncodingConfig.z_level` (`0..=9`)
 - PNG/JPEG/TIFF/WebP: `exif`
   - `DataMap::Raw` で生 EXIF バイト列
   - `DataMap::Exif` で TIFF 形式の EXIF
@@ -192,6 +194,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `encode_end`
 - `metadata`
 
+WebP encoder を直接制御する場合は、0.3.0 形式の Config API を使います。
+
+```rust
+use wml2::webp::encoder::{
+    LossyEncodingConfig, encode_lossy_image_to_webp_with_config,
+};
+
+let config = LossyEncodingConfig {
+    quality: 75.0,
+    method: 4,
+    ..Default::default()
+};
+let webp = encode_lossy_image_to_webp_with_config(&image, &config)?;
+```
+
+旧 `LossyEncodingOptions` / `LosslessEncodingOptions` と
+`*_with_options` 関数も互換 wrapper として利用できます。
+
 ## Metadata
 
 metadata は `HashMap<String, DataMap>` で表現されます。
@@ -265,6 +285,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.22`: png decoderのエンバグフィックス
 - `0.0.23`: c2pa manifest store の decode を追加
 - `0.0.24`: avif decoder
+- `0.0.26`: WebP 0.3.0対応、Config API互換、WebPオプション計測を追加
 
 ## License
 

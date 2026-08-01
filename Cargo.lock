@@ -67,16 +67,16 @@ dependencies = [
 
 [[package]]
 name = "webp-rust"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d5967f27dbd1796f7ca3f9f555500ed7ae4aef4c153bf1f8e9e8a72751ed1b4"
+checksum = "54d04b4b3799e2925b935f35a6a108a6a7772b2cb5a51f17da2afbc8ed22a50d"
 dependencies = [
  "bin-rs 0.0.10",
 ]
 
 [[package]]
 name = "wml2"
-version = "0.0.25"
+version = "0.0.26"
 dependencies = [
  "avif-rust",
  "bin-rs 0.0.10",

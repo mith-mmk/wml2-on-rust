@@ -62,7 +62,6 @@ enum Token {
     Cache(usize),
     Copy { distance: usize, length: usize },
 }
-
 #[derive(Debug, Clone, Copy)]
 struct PrefixCode {
     symbol: usize,
@@ -165,23 +164,37 @@ struct LosslessSearchProfile {
     early_stop_ratio_percent: usize,
 }
 
-/// Lossless encoder tuning knobs.
+/// Libwebp-style lossless encoder configuration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LosslessEncodingConfig {
+    pub z_level: u8,
+}
+
+impl Default for LosslessEncodingConfig {
+    fn default() -> Self {
+        Self {
+            z_level: DEFAULT_OPTIMIZATION_LEVEL,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LosslessEncodingOptions {
-    /// Compression effort from `0` to `9`.
-    ///
-    /// - `0`: fastest path, raw-only search
-    /// - `1..=3`: fast presets that should still beat PNG on typical images
-    /// - `4..=6`: balanced presets
-    /// - `7..=9`: increasingly heavy search, with `9` enabling the slowest trials
     pub optimization_level: u8,
 }
 
 impl Default for LosslessEncodingOptions {
-    /// Returns the balanced default lossless settings.
     fn default() -> Self {
         Self {
             optimization_level: DEFAULT_OPTIMIZATION_LEVEL,
+        }
+    }
+}
+
+impl LosslessEncodingOptions {
+    pub(crate) fn to_config(self) -> LosslessEncodingConfig {
+        LosslessEncodingConfig {
+            z_level: self.optimization_level,
         }
     }
 }
@@ -244,8 +257,8 @@ fn validate_rgba(width: usize, height: usize, rgba: &[u8]) -> Result<(), Encoder
 }
 
 /// Validates options.
-fn validate_options(options: &LosslessEncodingOptions) -> Result<(), EncoderError> {
-    if options.optimization_level > MAX_OPTIMIZATION_LEVEL {
+fn validate_config(config: &LosslessEncodingConfig) -> Result<(), EncoderError> {
+    if config.z_level > MAX_OPTIMIZATION_LEVEL {
         return Err(EncoderError::InvalidParam(
             "lossless optimization level must be in 0..=9",
         ));
@@ -254,8 +267,8 @@ fn validate_options(options: &LosslessEncodingOptions) -> Result<(), EncoderErro
 }
 
 /// Builds the lossless search profile for a given optimization level.
-fn lossless_search_profile(optimization_level: u8) -> LosslessSearchProfile {
-    match optimization_level {
+fn lossless_search_profile(z_level: u8) -> LosslessSearchProfile {
+    match z_level {
         0 => LosslessSearchProfile {
             transform_search_level: 0,
             match_search_level: 0,
@@ -340,11 +353,11 @@ fn lossless_search_profile(optimization_level: u8) -> LosslessSearchProfile {
 }
 
 /// Expands a lossless optimization level into candidate search profiles.
-fn lossless_candidate_profiles(optimization_level: u8) -> Vec<LosslessSearchProfile> {
-    match optimization_level {
+fn lossless_candidate_profiles(z_level: u8) -> Vec<LosslessSearchProfile> {
+    match z_level {
         8 => vec![lossless_search_profile(7)],
         9 => vec![lossless_search_profile(7)],
-        _ => vec![lossless_search_profile(optimization_level)],
+        _ => vec![lossless_search_profile(z_level)],
     }
 }
 

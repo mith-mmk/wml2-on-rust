@@ -13,6 +13,7 @@
 //! as animated WebP by consuming the reserved animation metadata produced by
 //! [`crate::draw::ImageBuffer`].
 
+mod alpha;
 mod bit_writer;
 mod container;
 mod error;
@@ -33,16 +34,22 @@ use crate::metadata::{DataMap, get_exif_option};
 use self::container::{AnimationFrameChunk, wrap_animated_webp};
 pub use error::EncoderError;
 pub use lossless::{
-    LosslessEncodingOptions, encode_lossless_image_to_webp,
+    LosslessEncodingConfig, LosslessEncodingOptions, encode_lossless_image_to_webp,
+    encode_lossless_image_to_webp_with_config, encode_lossless_image_to_webp_with_config_and_exif,
     encode_lossless_image_to_webp_with_options,
     encode_lossless_image_to_webp_with_options_and_exif, encode_lossless_rgba_to_vp8l,
-    encode_lossless_rgba_to_vp8l_with_options, encode_lossless_rgba_to_webp,
-    encode_lossless_rgba_to_webp_with_options, encode_lossless_rgba_to_webp_with_options_and_exif,
+    encode_lossless_rgba_to_vp8l_with_config, encode_lossless_rgba_to_vp8l_with_options,
+    encode_lossless_rgba_to_webp, encode_lossless_rgba_to_webp_with_config,
+    encode_lossless_rgba_to_webp_with_config_and_exif, encode_lossless_rgba_to_webp_with_options,
+    encode_lossless_rgba_to_webp_with_options_and_exif,
 };
 pub use lossy::{
-    LossyEncodingOptions, encode_lossy_image_to_webp, encode_lossy_image_to_webp_with_options,
-    encode_lossy_image_to_webp_with_options_and_exif, encode_lossy_rgba_to_vp8,
+    AlphaFilter, LossyEncodingConfig, LossyEncodingOptions, WebpPreset, encode_lossy_image_to_webp,
+    encode_lossy_image_to_webp_with_config, encode_lossy_image_to_webp_with_config_and_exif,
+    encode_lossy_image_to_webp_with_options, encode_lossy_image_to_webp_with_options_and_exif,
+    encode_lossy_rgba_to_vp8, encode_lossy_rgba_to_vp8_with_config,
     encode_lossy_rgba_to_vp8_with_options, encode_lossy_rgba_to_webp,
+    encode_lossy_rgba_to_webp_with_config, encode_lossy_rgba_to_webp_with_config_and_exif,
     encode_lossy_rgba_to_webp_with_options, encode_lossy_rgba_to_webp_with_options_and_exif,
 };
 
@@ -425,11 +432,11 @@ fn encode_lossless_frame(
     rgba: &[u8],
     optimize: Option<u8>,
 ) -> Result<Vec<u8>, Error> {
-    let mut options = LosslessEncodingOptions::default();
+    let mut config = LosslessEncodingConfig::default();
     if let Some(optimize) = optimize {
-        options.optimization_level = optimize;
+        config.z_level = optimize;
     }
-    encode_lossless_rgba_to_vp8l_with_options(width, height, rgba, &options).map_err(map_error)
+    encode_lossless_rgba_to_vp8l_with_config(width, height, rgba, &config).map_err(map_error)
 }
 
 fn encode_lossy_frame(
@@ -439,12 +446,15 @@ fn encode_lossy_frame(
     quality: u8,
     optimize: Option<u8>,
 ) -> Result<Vec<u8>, Error> {
-    let mut options = LossyEncodingOptions::default();
-    options.quality = quality;
+    let mut config = LossyEncodingConfig {
+        quality: quality as f32,
+        method: 0,
+        ..LossyEncodingConfig::default()
+    };
     if let Some(optimize) = optimize {
-        options.optimization_level = optimize;
+        config.method = optimize.min(6);
     }
-    encode_lossy_rgba_to_vp8_with_options(width, height, rgba, &options).map_err(map_error)
+    encode_lossy_rgba_to_vp8_with_config(width, height, rgba, &config).map_err(map_error)
 }
 
 fn encode_still(
@@ -456,19 +466,22 @@ fn encode_still(
     exif: Option<&[u8]>,
 ) -> Result<Vec<u8>, Error> {
     if let Some(quality) = quality {
-        let mut options = LossyEncodingOptions::default();
-        options.quality = quality;
+        let mut config = LossyEncodingConfig {
+            quality: quality as f32,
+            method: 0,
+            ..LossyEncodingConfig::default()
+        };
         if let Some(optimize) = optimize {
-            options.optimization_level = optimize;
+            config.method = optimize.min(6);
         }
-        encode_lossy_rgba_to_webp_with_options_and_exif(width, height, rgba, &options, exif)
+        encode_lossy_rgba_to_webp_with_config_and_exif(width, height, rgba, &config, exif)
             .map_err(map_error)
     } else {
-        let mut options = LosslessEncodingOptions::default();
+        let mut config = LosslessEncodingConfig::default();
         if let Some(optimize) = optimize {
-            options.optimization_level = optimize;
+            config.z_level = optimize;
         }
-        encode_lossless_rgba_to_webp_with_options_and_exif(width, height, rgba, &options, exif)
+        encode_lossless_rgba_to_webp_with_config_and_exif(width, height, rgba, &config, exif)
             .map_err(map_error)
     }
 }

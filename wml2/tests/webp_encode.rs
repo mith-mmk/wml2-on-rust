@@ -15,6 +15,10 @@ use wml2::metadata::DataMap;
 use wml2::tiff::header::{DataPack, TiffHeader, TiffHeaders, exif_to_bytes};
 use wml2::util::ImageFormat;
 use wml2::webp::decoder::{WebpFormat, get_features};
+use wml2::webp::encoder::{
+    LosslessEncodingConfig, LossyEncodingConfig, encode_lossless_rgba_to_webp_with_config,
+    encode_lossy_rgba_to_webp_with_config,
+};
 
 fn solid_rgba(width: usize, height: usize, rgba: [u8; 4]) -> Vec<u8> {
     let mut buffer = Vec::with_capacity(width * height * 4);
@@ -428,4 +432,35 @@ fn convert_animated_webp_file_to_webp_preserves_animation() {
     assert!(decoded.first_wait_time.is_some());
 
     let _ = fs::remove_file(output_path);
+}
+
+#[test]
+fn config_api_encodes_lossless_and_lossy_webp() {
+    let rgba = gradient_rgba(12, 10, true);
+
+    let lossless = encode_lossless_rgba_to_webp_with_config(
+        12,
+        10,
+        &rgba,
+        &LosslessEncodingConfig { z_level: 6 },
+    )
+    .unwrap();
+    let lossless_features = get_features(&lossless).unwrap();
+    assert_eq!(lossless_features.format, WebpFormat::Lossless);
+    assert!(lossless_features.has_alpha);
+
+    let lossy = encode_lossy_rgba_to_webp_with_config(
+        12,
+        10,
+        &rgba,
+        &LossyEncodingConfig {
+            quality: 75.0,
+            method: 4,
+            ..LossyEncodingConfig::default()
+        },
+    )
+    .unwrap();
+    let lossy_features = get_features(&lossy).unwrap();
+    assert_eq!(lossy_features.format, WebpFormat::Lossy);
+    assert!(lossy_features.has_alpha);
 }

@@ -1,3 +1,7 @@
 [submodule "avif"]
 	path = avif
 	url = https://github.com/mith-mmk/avif-rust.git
+
+[submodule "avifenc"]
+	path = avifenc
+	url = https://github.com/mith-mmk/avifenc-rust.git

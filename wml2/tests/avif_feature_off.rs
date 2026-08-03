@@ -20,3 +20,18 @@ fn avif_is_not_advertised_or_decodable_without_feature() {
             .any(|extension| extension == "avif")
     );
 }
+
+#[cfg(all(feature = "avif", not(feature = "avifenc")))]
+#[test]
+fn avif_decoder_feature_does_not_enable_encoder() {
+    assert!(
+        wml2::get_decoder_extentions()
+            .iter()
+            .any(|extension| extension == "avif")
+    );
+    assert!(
+        wml2::get_encode_extentions()
+            .iter()
+            .all(|extension| extension != "avif")
+    );
+}

@@ -1,6 +1,6 @@
 [package]
 name = "wml2"
-version = "0.0.26"
+version = "0.0.27"
 repository = "https://github.com/mith-mmk/wml2-on-rust"
 homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]
@@ -22,6 +22,16 @@ required-features = ["avif"]
 [[test]]
 name = "avif_feature_off"
 path = "tests/avif_feature_off.rs"
+
+[[test]]
+name = "avif_encode"
+path = "tests/avif_encode.rs"
+required-features = ["avifenc"]
+
+[[test]]
+name = "avif_encode_sample"
+path = "tests/avif_encode_sample.rs"
+required-features = ["avifenc", "webp"]
 
 # These integration tests exercise optional codec modules directly. Keep them
 # out of feature-off builds so the feature matrix can still compile and run
@@ -113,6 +123,7 @@ png = ["exif"]
 tiff = ["exif"]
 webp = ["exif", "dep:webp_codec"]
 avif = ["dep:avif_codec"]
+avifenc = ["avif", "dep:avifenc_codec"]
 mag = []
 maki = []
 pcd = []
@@ -148,5 +159,6 @@ bin-rs = {version = "0.0.10",features = ["util"]}
 #bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
 webp_codec = { package = "webp-rust", version = "0.3.0", optional = true }
 avif_codec = { package = "avif-rust", version = "0.0.6", path = "../avif", optional = true }
+avifenc_codec = { package = "avifenc-rust", version = "0.1.0", path = "../avifenc", optional = true }
 
 miniz_oxide = {version = "0.7.1"}

@@ -917,6 +917,8 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
         Some("bmp") => Ok(ImageFormat::Bmp),
         Some("tif") | Some("tiff") => Ok(ImageFormat::Tiff),
         Some("webp") => Ok(ImageFormat::Webp),
+        #[cfg(feature = "avifenc")]
+        Some("avif") => Ok(ImageFormat::Avif),
         Some(extension) => Err(Box::new(ImgError::new_const(
             ImgErrorKind::NoSupportFormat,
             format!("unsupported output extension: {extension}"),
@@ -1218,33 +1220,38 @@ pub fn image_decoder<B: BinaryReader>(
 /// let png = image_encoder(&mut options, ImageFormat::Png).unwrap();
 /// assert!(png.starts_with(&[0x89, b'P', b'N', b'G']));
 /// ```
-pub fn image_encoder(option: &mut EncodeOptions, format: ImageFormat) -> Result<Vec<u8>, Error> {
+pub fn image_encoder(_option: &mut EncodeOptions, format: ImageFormat) -> Result<Vec<u8>, Error> {
+    #[allow(unused_imports)]
     use crate::util::ImageFormat::*;
 
     match format {
         #[cfg(feature = "gif")]
         Gif => {
-            return crate::gif::encoder::encode(option);
+            return crate::gif::encoder::encode(_option);
         }
         #[cfg(feature = "bmp")]
         Bmp => {
-            return crate::bmp::encoder::encode(option);
+            return crate::bmp::encoder::encode(_option);
         }
         #[cfg(feature = "jpeg")]
         Jpeg => {
-            return crate::jpeg::encoder::encode(option);
+            return crate::jpeg::encoder::encode(_option);
         }
         #[cfg(feature = "png")]
         Png => {
-            return crate::png::encoder::encode(option);
+            return crate::png::encoder::encode(_option);
         }
         #[cfg(feature = "tiff")]
         Tiff => {
-            return crate::tiff::encoder::encode(option);
+            return crate::tiff::encoder::encode(_option);
         }
         #[cfg(feature = "webp")]
         Webp => {
-            return crate::webp::encoder::encode(option);
+            return crate::webp::encoder::encode(_option);
+        }
+        #[cfg(feature = "avifenc")]
+        Avif => {
+            return crate::avif::encoder::encode(_option);
         }
         _ => Err(Box::new(ImgError::new_const(
             ImgErrorKind::NoSupportFormat,

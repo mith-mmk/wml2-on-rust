@@ -120,6 +120,7 @@ pub fn get_can_decode(buffer: &[u8]) -> Result<bool, Box<dyn std::error::Error>>
 // 0.0.20 new!
 /// get_encode_extentions get extentions of WML2's encoders
 pub fn get_encode_extentions() -> Vec<String> {
+    #[allow(unused_mut)]
     let mut exts = Vec::new();
     #[cfg(feature = "bmp")]
     exts.push("bmp".to_string());
@@ -140,6 +141,8 @@ pub fn get_encode_extentions() -> Vec<String> {
     }
     #[cfg(feature = "webp")]
     exts.push("webp".to_string());
+    #[cfg(feature = "avifenc")]
+    exts.push("avif".to_string());
     exts
 }
 

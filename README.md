@@ -46,7 +46,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | PNG     | O   | O   | PNG/APNG; encoder writes RGBA truecolor                                                                             |
 | TIFF    | O   | O   | encode: none/LZW/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
-| AVIF    | x   | O   | see avif-rust                                                                                                       |
+| AVIF    | x   | O   | decoder: `avif`; encoder: `avifenc` (`avifenc-rust`)                                                               |
 | MAG     | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
 | MAKI    | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
 | PI      | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
@@ -54,7 +54,8 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | VSP/DAT | x   | O   | Japanese legacy image format/container, disabled by `noretoro`                                                      |
 | PCD     | x   | O   | Photo CD base4 decode, disabled by `noretoro`                                                                       |
 
-AVIF decoding is enabled with the `avif` feature. The current public
+AVIF decoding is enabled with the `avif` feature, and AVIF encoding with the
+`avifenc` feature. The current public
 compatibility gate covers 8-bit YUV444 still images; unsupported bit depths,
 subsampling, alpha, composition properties, ICC profiles and sequences fail
 closed with `Unsupported`. Run the external regression gate from the workspace
@@ -63,7 +64,8 @@ root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 ## Features
 
 - `default`: enables the standard decoders/encoders, EXIF support, embedded-format bridges, and `idct_llm`
-- format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the standalone `avifenc-rust` submodule
 - metadata feature: `exif`
 - embedded-format bridge features: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
 - JPEG IDCT features: choose exactly one of `idct_llm` (default), `idct_aan`, or `idct_slower`
@@ -74,17 +76,17 @@ root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 
 ```toml
 [dependencies]
-wml2 = "0.0.26"
+wml2 = "0.0.27"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.26", features = ["noretoro"] }
+wml2 = { version = "0.0.27", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.26", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.27", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options
@@ -292,6 +294,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.23`: add decode for c2pa manifest store
 - `0.0.24`: avif decoder
 - `0.0.26`: WebP 0.3.0 integration, Config API compatibility, and WebP option metrics
+- `0.0.27`: standalone `avifenc-rust` integration through the `avifenc` feature
 
 ## License
 

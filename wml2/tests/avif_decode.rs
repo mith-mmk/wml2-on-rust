@@ -2,11 +2,13 @@ use std::path::PathBuf;
 
 use bin_rs::reader::BytesReader;
 use wml2::draw::{
-    CallbackResponse, DecodeOptions, DrawCallback, DrawOptions, EncodeOptions, ImageBuffer,
-    InitOptions, NextOptions, TerminateOptions, VerboseOptions, image_decoder, image_encoder,
-    image_load,
+    CallbackResponse, DecodeOptions, DrawCallback, DrawOptions, ImageBuffer, InitOptions,
+    NextOptions, TerminateOptions, VerboseOptions, image_decoder,
 };
+#[cfg(feature = "png")]
+use wml2::draw::{EncodeOptions, image_encoder, image_load};
 use wml2::metadata::DataMap;
+#[cfg(feature = "png")]
 use wml2::util::ImageFormat;
 
 type Error = Box<dyn std::error::Error>;
@@ -763,7 +765,7 @@ fn avif_animation_is_stored_as_five_full_canvas_layers() {
     }));
 }
 
-#[cfg(feature = "avif")]
+#[cfg(all(feature = "avif", feature = "png"))]
 #[test]
 fn avif_animation_round_trips_to_five_frame_apng() {
     let Some(data) = external_animated_avif("colors-animated-8bpc.avif") else {

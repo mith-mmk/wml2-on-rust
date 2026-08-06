@@ -150,7 +150,7 @@ idct_slower = []
 fdct_slower = []
 
 # Miscellaneous build toggles.
-multithread = []
+multithread = ["avifenc_codec?/multithread"]
 SJIS = []
 noretoro = []
 

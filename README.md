@@ -71,6 +71,7 @@ root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 - JPEG IDCT features: choose exactly one of `idct_llm` (default), `idct_aan`, or `idct_slower`
 - JPEG encoder toggle: `fdct_slower`
 - miscellaneous toggles: `multithread`, `SJIS`, `noretoro`
+- `multithread`: enables the existing JPEG threading path and, when combined with `avifenc`, opts into `avifenc-rust`'s native parallel keyframe search; it is not enabled by default, which keeps the default/WASM build single-threaded
 - `noretoro`: disables all retro format decoders gated by it: `MAG`, `MAKI`, `PCD`, `PI`, `PIC`, and `VSP/DAT`
 - `C2PA`: enables parsing of C2PA manifest stores in PNG and JPEG metadata
 

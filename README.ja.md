@@ -46,6 +46,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | PNG          | O   | O   | PNG/APNG 対応、encoder は RGBA truecolor を出力                                                                     |
 | TIFF         | O   | O   | encode: none/LZW/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
+| AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                        |
 | MAG          | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
 | MAKI         | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
 | PI           | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
@@ -56,7 +57,8 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 ## Feature
 
 - `default`: 標準の decoder/encoder、EXIF 対応、埋め込みフォーマット bridge、`idct_llm` を有効化
-- フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- `avif`: `avif-rust` による AVIF decoder、`avifenc`: 独立サブモジュール `avifenc-rust` による AVIF encoder
 - metadata feature: `exif`
 - 埋め込みフォーマット bridge feature: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
 - JPEG IDCT feature: `idct_llm` (default), `idct_aan`, `idct_slower` のいずれか 1 つを選択
@@ -67,17 +69,17 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ```toml
 [dependencies]
-wml2 = "0.0.26"
+wml2 = "0.0.27"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.26", features = ["noretoro"] }
+wml2 = { version = "0.0.27", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.26", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.27", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -85,7 +87,7 @@ wml2 = { version = "0.0.26", default-features = false, features = ["jpeg", "png"
 `draw::image_to()` は `ImageBuffer` を直接 `Vec<u8>` に encode します。
 
 `draw::convert()` は出力拡張子から encoder を選択します。
-対応拡張子は `.gif`, `.png`, `.apng`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp` です。
+対応拡張子は `.gif`, `.png`, `.apng`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp`, `.avif` です。
 
 `EncodeOptions::options` / `draw::convert(..., options)` で使える主なキー:
 
@@ -94,6 +96,7 @@ wml2 = { version = "0.0.26", default-features = false, features = ["jpeg", "png"
 - TIFF で `compression=jpeg`: `quality`
 - WebP: `optimize` (`0..=9`)
 - WebP lossy: `quality`
+- AVIF: `avifenc` feature 有効時に `quality` / `qcolor` / `qalpha` / `speed` / `lossless`
 - WebP low-level encoder: `LossyEncodingConfig.method` (`0..=6`) と
   `LosslessEncodingConfig.z_level` (`0..=9`)
 - PNG/JPEG/TIFF/WebP: `exif`
@@ -286,6 +289,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.23`: c2pa manifest store の decode を追加
 - `0.0.24`: avif decoder
 - `0.0.26`: WebP 0.3.0対応、Config API互換、WebPオプション計測を追加
+- `0.0.27`: 独立 `avifenc-rust` を `avifenc` feature で統合
 
 ## License
 

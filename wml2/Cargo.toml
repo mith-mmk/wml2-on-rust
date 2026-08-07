@@ -159,6 +159,6 @@ bin-rs = {version = "0.0.10",features = ["util"]}
 #bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
 webp_codec = { package = "webp-rust", version = "0.3.0", optional = true }
 avif_codec = { package = "avif-rust", version = "0.0.6", path = "../avif", optional = true }
-avifenc_codec = { package = "avifenc-rust", version = "0.1.0", path = "../avifenc", optional = true }
+avifenc_codec = { package = "avifenc-rust", version = "0.0.6", path = "../avifenc", optional = true }
 
 miniz_oxide = {version = "0.7.1"}

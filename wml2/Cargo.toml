@@ -86,6 +86,15 @@ name = "webp_decode"
 path = "tests/webp_decode.rs"
 required-features = ["webp"]
 
+[[test]]
+name = "psd_decode"
+path = "tests/psd_decode.rs"
+required-features = ["psd"]
+
+[[test]]
+name = "psd_feature_off"
+path = "tests/psd_feature_off.rs"
+
 [features]
 # Recommended build: all standard formats, EXIF support, embedded-format bridges,
 # and the LL&M JPEG IDCT implementation.
@@ -122,6 +131,7 @@ jpeg = ["exif"]
 png = ["exif"]
 tiff = ["exif"]
 webp = ["exif", "dep:webp_codec"]
+psd = []
 avif = ["dep:avif_codec"]
 avifenc = ["avif", "dep:avifenc_codec"]
 mag = []

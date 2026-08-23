@@ -47,6 +47,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | TIFF    | O   | O   | encode: none/LZW/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
 | AVIF    | x   | O   | decoder: `avif`; encoder: `avifenc` (`avifenc-rust`)                                                               |
+| PSD     | x   | O   | optional `psd` feature; PSD v1 composite plus basic raster layers through the animation transport                  |
 | MAG     | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
 | MAKI    | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
 | PI      | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
@@ -64,7 +65,8 @@ root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 ## Features
 
 - `default`: enables the standard decoders/encoders, EXIF support, embedded-format bridges, and `idct_llm`
-- format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `psd`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- `psd`: optional PSD v1 decoding for 8/16-bit RGB, grayscale, indexed (8-bit), and CMYK composite images using Raw, RLE, ZIP, or ZIP prediction compression; it is not enabled by default
 - `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the standalone `avifenc-rust` submodule
 - metadata feature: `exif`
 - embedded-format bridge features: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
@@ -74,6 +76,15 @@ root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 - `multithread`: enables the existing JPEG threading path and, when combined with `avifenc`, opts into `avifenc-rust`'s native parallel keyframe search; it is not enabled by default, which keeps the default/WASM build single-threaded
 - `noretoro`: disables all retro format decoders gated by it: `MAG`, `MAKI`, `PCD`, `PI`, `PIC`, and `VSP/DAT`
 - `C2PA`: enables parsing of C2PA manifest stores in PNG and JPEG metadata
+
+PSD decoding stores the merged image in `ImageBuffer::buffer`. Basic raster
+layers are exposed in PSD record order through `ImageBuffer::animation`, with
+zero frame delay and layer attributes under `wml2.psd.layer.*` metadata keys.
+The `wml2.psd.layer_model = "animation"` marker distinguishes these entries
+from real animation frames, so converting a decoded PSD encodes only its merged
+image. PSB, Lab/multichannel data, 1/32-bit channels, masks, effects,
+adjustments, groups, and reconstruction of a missing merged image are not
+supported.
 
 ```toml
 [dependencies]

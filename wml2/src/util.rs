@@ -10,6 +10,8 @@ pub enum ImageFormat {
     Ico,  // 00 00 01 00
     Tiff, // II/MM
     Png,  // [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]
+    #[cfg(feature = "psd")]
+    Psd, // 8BPS, version checked by the decoder
     Webp, // RIFF . . . . WEBP
     #[cfg(feature = "avif")]
     Avif, // ISO BMFF ftyp avif/avis
@@ -34,6 +36,10 @@ pub enum ImageFormat {
 
 /// Detects an image format from the leading bytes of `buffer`.
 pub fn format_check(buffer: &[u8]) -> ImageFormat {
+    #[cfg(feature = "psd")]
+    if buffer.len() >= 4 && buffer.starts_with(b"8BPS") {
+        return ImageFormat::Psd;
+    }
     if buffer.len() >= 4 && buffer.starts_with(&[0x00, 0x00, 0x01, 0x00]) {
         return ImageFormat::Ico;
     }
@@ -167,6 +173,8 @@ pub fn decoder_supports_format(format: &ImageFormat) -> bool {
         ImageFormat::Tiff => true,
         #[cfg(feature = "png")]
         ImageFormat::Png => true,
+        #[cfg(feature = "psd")]
+        ImageFormat::Psd => true,
         #[cfg(feature = "webp")]
         ImageFormat::Webp => true,
         #[cfg(feature = "avif")]

@@ -18,6 +18,7 @@ use std::collections::HashMap;
 use std::io::BufRead;
 #[cfg(not(target_family = "wasm"))]
 use std::io::BufReader;
+#[cfg(not(target_family = "wasm"))]
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
@@ -694,21 +695,28 @@ impl PickCallback for ImageBuffer {
     /// Exposes the image profile to encoders.
     fn encode_start(&mut self, _: Option<EncoderOptions>) -> Result<Option<ImageProfiles>, Error> {
         let mut metadata = self.metadata.clone();
-        if let Some(animation) = &self.animation {
-            if !animation.is_empty() {
-                let hashmap = if let Some(ref mut metadata) = metadata {
-                    metadata
-                } else {
-                    metadata = Some(HashMap::new());
-                    metadata.as_mut().ok_or_else(|| {
-                        Box::new(ImgError::new_const(
-                            ImgErrorKind::IllegalData,
-                            "metadata store is not initialized".to_string(),
-                        )) as Error
-                    })?
-                };
-                append_animation_metadata(hashmap, animation, self.loop_count.unwrap_or(0));
-            }
+        let psd_layer_model = metadata.as_ref().is_some_and(|metadata| {
+            matches!(
+                metadata.get("wml2.psd.layer_model"),
+                Some(DataMap::Ascii(value)) if value == "animation"
+            )
+        });
+        if !psd_layer_model
+            && let Some(animation) = &self.animation
+            && !animation.is_empty()
+        {
+            let hashmap = if let Some(ref mut metadata) = metadata {
+                metadata
+            } else {
+                metadata = Some(HashMap::new());
+                metadata.as_mut().ok_or_else(|| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::IllegalData,
+                        "metadata store is not initialized".to_string(),
+                    )) as Error
+                })?
+            };
+            append_animation_metadata(hashmap, animation, self.loop_count.unwrap_or(0));
         }
         let init = ImageProfiles {
             width: self.width,
@@ -1147,6 +1155,10 @@ pub fn image_decoder<B: BinaryReader>(
         #[cfg(feature = "png")]
         Png => {
             return crate::png::decoder::decode(reader, option);
+        }
+        #[cfg(feature = "psd")]
+        Psd => {
+            return crate::psd::decoder::decode(reader, option);
         }
         #[cfg(feature = "webp")]
         Webp => {

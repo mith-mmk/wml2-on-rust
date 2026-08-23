@@ -47,6 +47,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | TIFF         | O   | O   | encode: none/LZW/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
 | AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                        |
+| PSD          | x   | O   | 任意の `psd` feature。PSD v1 の統合画像と基本ラスターレイヤーを animation transport 経由で取得                         |
 | MAG          | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
 | MAKI         | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
 | PI           | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
@@ -57,7 +58,8 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 ## Feature
 
 - `default`: 標準の decoder/encoder、EXIF 対応、埋め込みフォーマット bridge、`idct_llm` を有効化
-- フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `psd`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- `psd`: 既定では無効。PSD v1 の8/16-bit RGB・グレースケール・CMYK、8-bit Indexed、Raw/RLE/ZIP/ZIP prediction圧縮をdecode
 - `avif`: `avif-rust` による AVIF decoder、`avifenc`: 独立サブモジュール `avifenc-rust` による AVIF encoder
 - metadata feature: `exif`
 - 埋め込みフォーマット bridge feature: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
@@ -66,6 +68,14 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 - その他の toggle: `multithread`, `SJIS`, `noretoro`
 - `noretoro`: これで gate されている旧フォーマット decoder、`MAG`, `MAKI`, `PCD`, `PI`, `PIC`, `VSP/DAT` を無効化
 - `C2PA`: PNG と JPEG のメタデータ内の C2PA manifest store の解析を有効化
+
+PSDの統合画像は`ImageBuffer::buffer`へ格納します。基本ラスターレイヤーは
+PSDの記録順で、delay 0の`ImageBuffer::animation`として公開し、名前・表示状態・
+不透明度・blend keyは`wml2.psd.layer.*`メタデータへ格納します。
+`wml2.psd.layer_model = "animation"` markerにより通常のanimationと区別されるため、
+PSDから別形式へ変換するときは統合画像だけを静止画としてencodeします。
+PSB、Lab/Multichannel、1/32-bit、マスク、効果、調整、グループ、統合画像がない
+PSDのレイヤー合成には対応しません。
 
 ```toml
 [dependencies]

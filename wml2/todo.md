@@ -11,7 +11,7 @@
   
 - codec challenge
 - [ ] AVIF
-- [ ] psd
+- [x] psd (PSD v1 composite + basic raster-layer preview; optional `psd` feature)
 - [ ] pic2
 - [ ] targa
 

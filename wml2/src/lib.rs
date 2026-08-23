@@ -8,8 +8,8 @@
 //!
 //! `wml2` exposes a callback-based decoding API in [`draw`] and built-in
 //! buffer-backed helpers via [`draw::ImageBuffer`]. The crate can decode still
-//! images and animations into RGBA buffers, preserve metadata, and encode BMP,
-//! GIF, JPEG, PNG/APNG, TIFF, and WebP output.
+//! images, PSD composite/layer previews, and animations into RGBA buffers,
+//! preserve metadata, and encode BMP, GIF, JPEG, PNG/APNG, TIFF, and WebP output.
 //!
 //! # Example
 //! ```rust
@@ -71,39 +71,40 @@ pub fn get_version() -> String {
 // 0.0.20 new!
 /// get_decoder_extentions get extentions of WML2's decoders
 pub fn get_decoder_extentions() -> Vec<String> {
-    let mut exts = Vec::new();
-    #[cfg(feature = "bmp")]
-    exts.push("bmp".to_string());
-    #[cfg(feature = "gif")]
-    exts.push("gif".to_string());
-    #[cfg(feature = "ico")]
-    exts.push("ico".to_string());
-    #[cfg(feature = "jpeg")]
-    {
-        exts.push("jpg".to_string());
-        exts.push("jpe".to_string());
-        exts.push("jpeg".to_string());
-    }
-    #[cfg(feature = "png")]
-    exts.push("png".to_string());
-    #[cfg(feature = "tiff")]
-    {
-        exts.push("tif".to_string());
-        exts.push("tiff".to_string());
-    }
-    #[cfg(feature = "webp")]
-    exts.push("webp".to_string());
-    #[cfg(feature = "avif")]
-    exts.push("avif".to_string());
-    #[cfg(all(feature = "mag", not(feature = "noretoro")))]
-    exts.push("mag".to_string());
-    #[cfg(all(feature = "maki", not(feature = "noretoro")))]
-    exts.push("mki".to_string());
-    #[cfg(all(feature = "pi", not(feature = "noretoro")))]
-    exts.push("pi".to_string());
-    #[cfg(all(feature = "pic", not(feature = "noretoro")))]
-    exts.push("pic".to_string());
-    exts
+    vec![
+        #[cfg(feature = "bmp")]
+        "bmp".to_string(),
+        #[cfg(feature = "gif")]
+        "gif".to_string(),
+        #[cfg(feature = "ico")]
+        "ico".to_string(),
+        #[cfg(feature = "jpeg")]
+        "jpg".to_string(),
+        #[cfg(feature = "jpeg")]
+        "jpe".to_string(),
+        #[cfg(feature = "jpeg")]
+        "jpeg".to_string(),
+        #[cfg(feature = "png")]
+        "png".to_string(),
+        #[cfg(feature = "psd")]
+        "psd".to_string(),
+        #[cfg(feature = "tiff")]
+        "tif".to_string(),
+        #[cfg(feature = "tiff")]
+        "tiff".to_string(),
+        #[cfg(feature = "webp")]
+        "webp".to_string(),
+        #[cfg(feature = "avif")]
+        "avif".to_string(),
+        #[cfg(all(feature = "mag", not(feature = "noretoro")))]
+        "mag".to_string(),
+        #[cfg(all(feature = "maki", not(feature = "noretoro")))]
+        "mki".to_string(),
+        #[cfg(all(feature = "pi", not(feature = "noretoro")))]
+        "pi".to_string(),
+        #[cfg(all(feature = "pic", not(feature = "noretoro")))]
+        "pic".to_string(),
+    ]
 }
 
 // 0.0.20 new!
@@ -170,6 +171,8 @@ pub mod pi;
 pub mod pic;
 #[cfg(feature = "png")]
 pub mod png;
+#[cfg(feature = "psd")]
+pub mod psd;
 #[cfg(any(
     all(feature = "maki", not(feature = "noretoro")),
     all(feature = "pcd", not(feature = "noretoro")),

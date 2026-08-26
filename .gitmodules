@@ -4,4 +4,4 @@
 
 [submodule "avifenc"]
 	path = avifenc
-	url = https://github.com/mith-mmk/avifenc-rust.git
+	url = https://github.com/mith-mmk/avifenc.git

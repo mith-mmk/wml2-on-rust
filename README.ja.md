@@ -35,7 +35,7 @@ $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]
 ```
 
-## サポートフォーマット (`0.0.20`)
+## サポートフォーマット
 
 | フォーマット | enc | dec | 備考                                                                                                                |
 | ------------ | --- | --- | ------------------------------------------------------------------------------------------------------------------- |
@@ -46,8 +46,8 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | PNG          | O   | O   | PNG/APNG 対応、encoder は RGBA truecolor を出力                                                                     |
 | TIFF         | O   | O   | encode: none/LZW/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
-| AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                        |
-| PSD          | x   | O   | 任意の `psd` feature。PSD v1 の統合画像と基本ラスターレイヤーを animation transport 経由で取得                         |
+| AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                     |
+| PSD          | x   | O   | 既定で無効の `psd` feature。Pure RustでPSD v1の統合画像と基本ラスターレイヤーをdecode                                |
 | MAG          | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
 | MAKI         | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
 | PI           | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
@@ -57,9 +57,9 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ## Feature
 
-- `default`: 標準の decoder/encoder、EXIF 対応、埋め込みフォーマット bridge、`idct_llm` を有効化
+- `default`: 標準の decoder/encoder、EXIF/C2PA対応、埋め込みフォーマット bridge、`idct_llm` を有効化。`psd`、`avif`、`avifenc` は含まない
 - フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `psd`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
-- `psd`: 既定では無効。PSD v1 の8/16-bit RGB・グレースケール・CMYK、8-bit Indexed、Raw/RLE/ZIP/ZIP prediction圧縮をdecode
+- `psd`: Pure RustのPSD v1 decoder。8/16-bit RGB・Grayscale・CMYKと8-bit Indexedに対応し、統合画像とレイヤーチャンネルのRaw、PackBits RLE、ZIP、ZIP predictionをdecode
 - `avif`: `avif-rust` による AVIF decoder、`avifenc`: 独立サブモジュール `avifenc-rust` による AVIF encoder
 - metadata feature: `exif`
 - 埋め込みフォーマット bridge feature: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
@@ -67,29 +67,63 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 - JPEG encoder 用 toggle: `fdct_slower`
 - その他の toggle: `multithread`, `SJIS`, `noretoro`
 - `noretoro`: これで gate されている旧フォーマット decoder、`MAG`, `MAKI`, `PCD`, `PI`, `PIC`, `VSP/DAT` を無効化
-- `C2PA`: PNG と JPEG のメタデータ内の C2PA manifest store の解析を有効化
+- `c2pa`: PNG と JPEG のメタデータ内の C2PA manifest store の解析を有効化
 
-PSDの統合画像は`ImageBuffer::buffer`へ格納します。基本ラスターレイヤーは
-PSDの記録順で、delay 0の`ImageBuffer::animation`として公開し、名前・表示状態・
-不透明度・blend keyは`wml2.psd.layer.*`メタデータへ格納します。
-`wml2.psd.layer_model = "animation"` markerにより通常のanimationと区別されるため、
-PSDから別形式へ変換するときは統合画像だけを静止画としてencodeします。
-PSB、Lab/Multichannel、1/32-bit、マスク、効果、調整、グループ、統合画像がない
-PSDのレイヤー合成には対応しません。
+## PSD decode
+
+`psd` featureはdefault featureに含まれないため、明示的に有効化します。
 
 ```toml
 [dependencies]
-wml2 = "0.0.27"
+wml2 = { version = "0.0.28", features = ["psd"] }
+```
+
+対応データはRGBA8へ変換します。16-bit値は丸めて8-bitへ縮小します。統合画像では
+基底色チャンネルを超える最初のチャンネルをalphaとして使い、レイヤーではchannel
+ID `-1`をalphaとして使った後、不透明度を乗算します。Indexedは8-bit・256色
+paletteのみ対応します。CMYKはdevice CMYK近似で変換し、埋め込みICC profileは
+変換には適用せずメタデータへ保持します。
+
+統合画像は`ImageBuffer::buffer`へ格納します。必要な色チャンネルを持つ画素付き
+ラスターレイヤーはPSDの記録順で`ImageBuffer::animation`へ格納します。各レイヤーは
+符号付き矩形座標を保持し、delay 0・disposeなしです。非表示レイヤーも画素を保持し、
+RGBAのalphaにはレイヤー不透明度が反映済みです。レイヤー名はPascal名よりUnicode
+`luni`名を優先します。
+
+PSDメタデータには`Format`、`width`、`height`、`channels`、
+`bits per channel`、`color mode`、統合画像の`compression`を格納します。
+Image Resourceから`ICC Profile`、`XMP`（UTF-8でなければ`XMP Raw`）、
+`EXIF Raw`も抽出します。ラスターレイヤーを1件以上格納した場合、擬似レイヤー契約で
+次のキーを使用します。
+
+- `wml2.psd.layer_model = "animation"`
+- `wml2.psd.layer_record_count`: PSD内の全レイヤーレコード数
+- `wml2.psd.layer_count`: `animation`へ実際に格納したラスターレイヤー数
+- `wml2.psd.layer.{i}.source_index|name|visible|opacity|blend_mode`
+
+markerにより通常のanimationと区別するため、PSDを格納した`ImageBuffer`をGIF、
+APNG、WebPなどへencodeするときは擬似レイヤーをanimation transportへ渡さず、
+統合画像だけを書き出します。独自callbackの呼び出し順は
+`set_metadata -> init -> composite draw -> layer next/draw... -> terminate`です。
+`Abort`を返した場合は正常に早期終了し、以降のcallbackと`terminate`を呼びません。
+
+PSB、1/32-bit、Lab、Multichannelは未対応として拒否します。マスク、clipping、
+効果、調整内容、グループは境界を検証して読み飛ばし、描画しません。統合画像が
+欠落または破損している場合はfail closedとし、レイヤーから近似合成しません。
+
+```toml
+[dependencies]
+wml2 = "0.0.28"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.27", features = ["noretoro"] }
+wml2 = { version = "0.0.28", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.27", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.28", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -300,6 +334,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.24`: avif decoder
 - `0.0.26`: WebP 0.3.0対応、Config API互換、WebPオプション計測を追加
 - `0.0.27`: 独立 `avifenc-rust` を `avifenc` feature で統合
+- `0.0.28`: 任意featureのPure Rust PSD v1 decoderを追加（統合画像と基本ラスターレイヤーpreview）
 
 ## License
 

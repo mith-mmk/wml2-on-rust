@@ -35,7 +35,7 @@ $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]
 ```
 
-## Supported formats (`0.0.20`)
+## Supported formats
 
 | format  | enc | dec | notes                                                                                                               |
 | ------- | --- | --- | ------------------------------------------------------------------------------------------------------------------- |
@@ -46,8 +46,8 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | PNG     | O   | O   | PNG/APNG; encoder writes RGBA truecolor                                                                             |
 | TIFF    | O   | O   | encode: none/LZW/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
-| AVIF    | x   | O   | decoder: `avif`; encoder: `avifenc` (`avifenc-rust`)                                                               |
-| PSD     | x   | O   | optional `psd` feature; PSD v1 composite plus basic raster layers through the animation transport                  |
+| AVIF    | O   | O   | decoder: `avif`; encoder: `avifenc` (`avifenc-rust`)                                                               |
+| PSD     | x   | O   | optional, non-default `psd` feature; Pure Rust PSD v1 merged-image and basic raster-layer decoding                 |
 | MAG     | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
 | MAKI    | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
 | PI      | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
@@ -64,9 +64,9 @@ root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 
 ## Features
 
-- `default`: enables the standard decoders/encoders, EXIF support, embedded-format bridges, and `idct_llm`
+- `default`: enables the standard decoders/encoders, EXIF/C2PA support, embedded-format bridges, and `idct_llm`; it does not enable `psd`, `avif`, or `avifenc`
 - format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `psd`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
-- `psd`: optional PSD v1 decoding for 8/16-bit RGB, grayscale, indexed (8-bit), and CMYK composite images using Raw, RLE, ZIP, or ZIP prediction compression; it is not enabled by default
+- `psd`: enables Pure Rust PSD v1 decoding for 8/16-bit RGB, Grayscale, and CMYK plus 8-bit Indexed images; Raw, PackBits RLE, ZIP, and ZIP prediction are supported for both merged-image and layer-channel data
 - `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the standalone `avifenc-rust` submodule
 - metadata feature: `exif`
 - embedded-format bridge features: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
@@ -75,30 +75,67 @@ root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 - miscellaneous toggles: `multithread`, `SJIS`, `noretoro`
 - `multithread`: enables the existing JPEG threading path and, when combined with `avifenc`, opts into `avifenc-rust`'s native parallel keyframe search; it is not enabled by default, which keeps the default/WASM build single-threaded
 - `noretoro`: disables all retro format decoders gated by it: `MAG`, `MAKI`, `PCD`, `PI`, `PIC`, and `VSP/DAT`
-- `C2PA`: enables parsing of C2PA manifest stores in PNG and JPEG metadata
+- `c2pa`: enables parsing of C2PA manifest stores in PNG and JPEG metadata
 
-PSD decoding stores the merged image in `ImageBuffer::buffer`. Basic raster
-layers are exposed in PSD record order through `ImageBuffer::animation`, with
-zero frame delay and layer attributes under `wml2.psd.layer.*` metadata keys.
-The `wml2.psd.layer_model = "animation"` marker distinguishes these entries
-from real animation frames, so converting a decoded PSD encodes only its merged
-image. PSB, Lab/multichannel data, 1/32-bit channels, masks, effects,
-adjustments, groups, and reconstruction of a missing merged image are not
-supported.
+## PSD decoding
+
+The `psd` feature is not included in the default feature set. Enable it
+explicitly:
 
 ```toml
 [dependencies]
-wml2 = "0.0.27"
+wml2 = { version = "0.0.28", features = ["psd"] }
+```
+
+The decoder converts supported input to RGBA8. It rounds 16-bit samples down to
+8-bit, uses the first merged-image channel after the color channels as alpha,
+and uses layer channel ID `-1` as alpha before multiplying it by the layer
+opacity. Indexed color requires an 8-bit, 256-entry palette. CMYK uses a device
+CMYK approximation; an embedded ICC profile is preserved as metadata but is
+not applied during conversion.
+
+The merged image is stored in `ImageBuffer::buffer`. Pixel-bearing raster
+layers with all required color channels are stored in PSD record order in
+`ImageBuffer::animation`. Each layer retains its signed rectangle coordinates,
+has zero delay and no disposal, and keeps its pixels even when marked hidden.
+The Unicode `luni` name is preferred over the Pascal name. Layer opacity is
+already reflected in the stored RGBA alpha.
+
+PSD metadata includes `Format`, `width`, `height`, `channels`,
+`bits per channel`, `color mode`, and merged-image `compression`. Image
+resources are exposed as `ICC Profile`, `XMP` (or `XMP Raw` for invalid UTF-8),
+and `EXIF Raw`. When at least one raster layer is exposed, the pseudo-layer
+contract uses:
+
+- `wml2.psd.layer_model = "animation"`
+- `wml2.psd.layer_record_count`: all layer records in the PSD
+- `wml2.psd.layer_count`: raster layers actually exposed in `animation`
+- `wml2.psd.layer.{i}.source_index|name|visible|opacity|blend_mode`
+
+The marker prevents the pseudo-layers from being transported as GIF, APNG,
+WebP, or another animation when the `ImageBuffer` is encoded; only the merged
+image is written. Custom callbacks receive
+`set_metadata -> init -> composite draw -> layer next/draw... -> terminate`.
+Returning `Abort` stops successfully without later callbacks or `terminate`.
+
+PSB, 1/32-bit channels, Lab, and Multichannel are rejected as unsupported.
+Masks, clipping, effects, adjustment contents, and groups are validated and
+skipped rather than rendered. A missing or corrupt merged image fails closed;
+the decoder does not approximate it by compositing layers.
+
+```toml
+[dependencies]
+wml2 = "0.0.28"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.27", features = ["noretoro"] }
+wml2 = { version = "0.0.28", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.27", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.28", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options
@@ -106,7 +143,8 @@ wml2 = { version = "0.0.27", default-features = false, features = ["jpeg", "png"
 `draw::image_to()` encodes an `ImageBuffer` directly into a `Vec<u8>`.
 
 `draw::convert()` chooses the encoder from the output extension:
-`.gif`, `.png`, `.apng`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp`.
+`.gif`, `.png`, `.apng`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp`,
+and `.avif` when the `avifenc` feature is enabled.
 
 Supported option keys in `EncodeOptions::options` / `draw::convert(..., options)`:
 
@@ -115,6 +153,7 @@ Supported option keys in `EncodeOptions::options` / `draw::convert(..., options)
 - TIFF with `compression=jpeg`: `quality`
 - WebP: `optimize` (`0..=9`)
 - WebP lossy: `quality`
+- AVIF with the `avifenc` feature: `quality`, `qcolor`, `qalpha`, `speed`, and `lossless`
 - WebP low-level encoder: `LossyEncodingConfig.method` (`0..=6`) and
   `LosslessEncodingConfig.z_level` (`0..=9`)
 - PNG/JPEG/TIFF/WebP: `exif`
@@ -307,6 +346,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.24`: avif decoder
 - `0.0.26`: WebP 0.3.0 integration, Config API compatibility, and WebP option metrics
 - `0.0.27`: standalone `avifenc-rust` integration through the `avifenc` feature
+- `0.0.28`: optional Pure Rust PSD v1 decoder for merged images and basic raster-layer previews
 
 ## License
 

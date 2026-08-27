@@ -95,6 +95,16 @@ required-features = ["psd"]
 name = "psd_feature_off"
 path = "tests/psd_feature_off.rs"
 
+[[test]]
+name = "highres_typed"
+path = "tests/highres_typed.rs"
+required-features = ["highres"]
+
+[[test]]
+name = "highres_safety"
+path = "tests/highres_safety.rs"
+required-features = ["highres"]
+
 [features]
 # Recommended build: all standard formats, EXIF support, embedded-format bridges,
 # and the LL&M JPEG IDCT implementation.
@@ -134,6 +144,7 @@ webp = ["exif", "dep:webp_codec"]
 psd = []
 avif = ["dep:avif_codec"]
 avifenc = ["avif", "dep:avifenc_codec"]
+highres = ["dep:icc_profile"]
 mag = []
 maki = []
 pcd = []
@@ -170,5 +181,6 @@ bin-rs = {version = "0.0.10",features = ["util"]}
 webp_codec = { package = "webp-rust", version = "0.3.0", optional = true }
 avif_codec = { package = "avif-rust", version = "0.0.6", path = "../avif", optional = true }
 avifenc_codec = { package = "avifenc-rust", version = "0.0.6", path = "../avifenc", optional = true }
+icc_profile = { package = "icc-profile", version = "0.0.4", git = "https://github.com/mith-mmk/icc-profile.git", rev = "c96f6e3899e884eb874d39357f601074e3888277", optional = true }
 
 miniz_oxide = {version = "0.7.1"}

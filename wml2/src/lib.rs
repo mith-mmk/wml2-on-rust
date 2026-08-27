@@ -192,6 +192,9 @@ pub mod warning;
 pub mod avif;
 pub mod color;
 pub mod decoder;
+/// Checked native/high-precision image representations and explicit color math.
+#[cfg(feature = "highres")]
+pub mod highres;
 pub mod metadata;
 #[cfg(feature = "webp")]
 pub mod webp;

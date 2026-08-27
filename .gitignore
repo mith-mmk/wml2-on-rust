@@ -1,4 +1,6 @@
 .test*
+# Locally generated conformance fixtures and oracle data.
+/test_data/
 .env
 .compare
 /wml2-win

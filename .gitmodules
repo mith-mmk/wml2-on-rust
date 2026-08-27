@@ -5,3 +5,6 @@
 [submodule "avifenc"]
 	path = avifenc
 	url = https://github.com/mith-mmk/avifenc.git
+[submodule "jxl"]
+	path = jxl
+	url = https://github.com/mith-mmk/jxl-rust.git

@@ -87,7 +87,7 @@ pub fn hlg_scene_from_signal(signal: f32) -> Result<f32, HighresError> {
     if signal <= 0.5 {
         Ok((f64::from(signal) * f64::from(signal) / 3.0) as f32)
     } else {
-        Ok((((f64::from(signal) - c) / HLG_A).exp() + HLG_B) as f32 / 12.0)
+        Ok(((((f64::from(signal) - c) / HLG_A).exp() + HLG_B) / 12.0) as f32)
     }
 }
 
@@ -122,6 +122,7 @@ pub struct HlgDisplayConditions {
     black_level_nits: f32,
     system_gamma: f32,
 }
+impl Eq for HlgDisplayConditions {}
 
 impl HlgDisplayConditions {
     pub fn new(

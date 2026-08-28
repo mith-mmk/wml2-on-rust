@@ -105,6 +105,11 @@ name = "highres_safety"
 path = "tests/highres_safety.rs"
 required-features = ["highres"]
 
+[[test]]
+name = "highres_stage_a"
+path = "tests/highres_stage_a.rs"
+required-features = ["highres"]
+
 [features]
 # Recommended build: all standard formats, EXIF support, embedded-format bridges,
 # and the LL&M JPEG IDCT implementation.

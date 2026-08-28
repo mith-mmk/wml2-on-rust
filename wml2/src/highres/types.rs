@@ -1,8 +1,10 @@
 //! Checked typed planes and frame descriptors.
 
-use std::fmt;
+use std::{fmt, mem::size_of};
 
+use super::domain::{RgbPrimaries, SampleDomain};
 use super::metadata::{ColorInformationSet, FrameMetadata};
+use super::{ProcessingError, ResourceLimits};
 
 const MAX_CHANNELS: usize = 4;
 
@@ -187,7 +189,12 @@ impl PlaneLayout {
     pub fn planar(width: u32, height: u32, subsampling: Subsampling) -> Result<Self> {
         let row_stride = usize::try_from(width)
             .map_err(|_| HighresError::InvalidDimensions("width does not fit usize".into()))?;
-        Self::new(width, height, row_stride, 1, vec![0], subsampling)
+        let mut channel_offsets = Vec::new();
+        channel_offsets
+            .try_reserve_exact(1)
+            .map_err(|_| HighresError::InvalidLayout("channel offset allocation failed".into()))?;
+        channel_offsets.push(0);
+        Self::new(width, height, row_stride, 1, channel_offsets, subsampling)
     }
     pub fn interleaved(
         width: u32,
@@ -243,6 +250,13 @@ impl PlaneLayout {
             + self.channel_offsets.iter().copied().max().unwrap()
             + 1
     }
+
+    pub(crate) fn owned_bytes(&self) -> Result<usize> {
+        self.channel_offsets
+            .capacity()
+            .checked_mul(size_of::<usize>())
+            .ok_or_else(|| HighresError::InvalidLayout("layout allocation size overflows".into()))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -282,6 +296,17 @@ impl PlaneDescriptor {
     }
     pub fn planar(layout: PlaneLayout, role: ChannelRole, meaningful_bits: u8) -> Result<Self> {
         Self::new(layout, vec![role], meaningful_bits)
+    }
+    pub(crate) fn owned_bytes(&self) -> Result<usize> {
+        let roles = self
+            .roles
+            .capacity()
+            .checked_mul(size_of::<ChannelRole>())
+            .ok_or_else(|| HighresError::InvalidLayout("role allocation size overflows".into()))?;
+        self.layout
+            .owned_bytes()?
+            .checked_add(roles)
+            .ok_or_else(|| HighresError::InvalidLayout("descriptor size overflows".into()))
     }
     pub fn layout(&self) -> &PlaneLayout {
         &self.layout
@@ -329,6 +354,25 @@ impl<T> Plane<T> {
     pub fn into_samples(self) -> Vec<T> {
         self.samples
     }
+    pub fn sample_len(&self) -> usize {
+        self.samples.len()
+    }
+    pub fn sample_capacity(&self) -> usize {
+        self.samples.capacity()
+    }
+    pub(crate) fn owned_bytes(&self) -> Result<usize> {
+        let samples = self
+            .samples
+            .capacity()
+            .checked_mul(size_of::<T>())
+            .ok_or_else(|| {
+                HighresError::InvalidLayout("sample allocation size overflows".into())
+            })?;
+        self.layout
+            .owned_bytes()?
+            .checked_add(samples)
+            .ok_or_else(|| HighresError::InvalidLayout("plane size overflows".into()))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -353,6 +397,18 @@ impl<T> Planes<T> {
     }
     pub fn into_vec(self) -> Vec<Plane<T>> {
         self.planes
+    }
+    pub(crate) fn owned_bytes(&self) -> Result<usize> {
+        let outer = self
+            .planes
+            .capacity()
+            .checked_mul(size_of::<Plane<T>>())
+            .ok_or_else(|| HighresError::InvalidLayout("plane vector size overflows".into()))?;
+        self.planes.iter().try_fold(outer, |total, plane| {
+            total
+                .checked_add(plane.owned_bytes()?)
+                .ok_or_else(|| HighresError::InvalidLayout("plane size overflows".into()))
+        })
     }
 }
 
@@ -429,6 +485,37 @@ impl PixelBuffer {
             None
         }
     }
+    pub(crate) fn allocated_sample_count(&self) -> Result<usize> {
+        match self {
+            Self::U8(p) => p.as_slice().iter().try_fold(0usize, |total, plane| {
+                total.checked_add(plane.sample_capacity())
+            }),
+            Self::U16(p) => p.as_slice().iter().try_fold(0usize, |total, plane| {
+                total.checked_add(plane.sample_capacity())
+            }),
+            Self::F32(p) => p.as_slice().iter().try_fold(0usize, |total, plane| {
+                total.checked_add(plane.sample_capacity())
+            }),
+        }
+        .ok_or_else(|| HighresError::InvalidLayout("allocated sample count overflows".into()))
+    }
+
+    pub(crate) fn max_allocated_plane_samples(&self) -> Result<usize> {
+        let max = match self {
+            Self::U8(p) => p.as_slice().iter().map(Plane::sample_capacity).max(),
+            Self::U16(p) => p.as_slice().iter().map(Plane::sample_capacity).max(),
+            Self::F32(p) => p.as_slice().iter().map(Plane::sample_capacity).max(),
+        };
+        max.ok_or_else(|| HighresError::InvalidLayout("pixel buffer has no planes".into()))
+    }
+
+    pub(crate) fn owned_bytes(&self) -> Result<usize> {
+        match self {
+            Self::U8(planes) => planes.owned_bytes(),
+            Self::U16(planes) => planes.owned_bytes(),
+            Self::F32(planes) => planes.owned_bytes(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -472,6 +559,8 @@ pub struct ImageDescriptor {
     planes: Vec<PlaneDescriptor>,
     alpha: AlphaAssociation,
     color_information: ColorInformationSet,
+    domain: SampleDomain,
+    primaries: Option<RgbPrimaries>,
 }
 
 impl ImageDescriptor {
@@ -494,7 +583,7 @@ impl ImageDescriptor {
             ChannelModel::RGB => &[ChannelRole::Red, ChannelRole::Green, ChannelRole::Blue],
             ChannelModel::YCbCr => &[ChannelRole::Y, ChannelRole::Cb, ChannelRole::Cr],
         };
-        let mut roles = Vec::new();
+        let mut roles = 0u16;
         for plane in &planes {
             let (expected_width, expected_height) =
                 plane.layout.subsampling.dimensions(width, height)?;
@@ -504,30 +593,31 @@ impl ImageDescriptor {
                 ));
             }
             for role in plane.roles() {
-                if roles.contains(role) {
+                let bit = channel_role_bit(*role);
+                if roles & bit != 0 {
                     return Err(HighresError::InvalidLayout(
                         "duplicate channel role across planes".into(),
                     ));
                 }
-                roles.push(*role);
+                roles |= bit;
             }
         }
         for role in required {
-            if !roles.contains(role) {
+            if roles & channel_role_bit(*role) == 0 {
                 return Err(HighresError::InvalidLayout(format!(
                     "missing required channel role {role:?}"
                 )));
             }
         }
-        if roles
+        let required_mask = required
             .iter()
-            .any(|role| !required.contains(role) && *role != ChannelRole::Alpha)
-        {
+            .fold(0u16, |mask, role| mask | channel_role_bit(*role));
+        if roles & !(required_mask | channel_role_bit(ChannelRole::Alpha)) != 0 {
             return Err(HighresError::Unsupported(
                 "channel role is not supported by this model".into(),
             ));
         }
-        if roles.contains(&ChannelRole::Alpha) {
+        if roles & channel_role_bit(ChannelRole::Alpha) != 0 {
             // Alpha is valid for every model, but it is always full resolution.
             let alpha_plane = planes
                 .iter()
@@ -546,6 +636,8 @@ impl ImageDescriptor {
             planes,
             alpha: AlphaAssociation::None,
             color_information: ColorInformationSet::default(),
+            domain: SampleDomain::Unknown,
+            primaries: None,
         })
     }
     pub fn gray(width: u32, height: u32, meaningful_bits: u8) -> Result<Self> {
@@ -608,6 +700,14 @@ impl ImageDescriptor {
         self.color_information = color;
         self
     }
+    pub fn with_domain(mut self, domain: SampleDomain) -> Self {
+        self.domain = domain;
+        self
+    }
+    pub fn with_primaries(mut self, primaries: RgbPrimaries) -> Self {
+        self.primaries = Some(primaries);
+        self
+    }
     pub const fn width(&self) -> u32 {
         self.width
     }
@@ -626,6 +726,42 @@ impl ImageDescriptor {
     pub fn color_information(&self) -> &ColorInformationSet {
         &self.color_information
     }
+    pub const fn domain(&self) -> SampleDomain {
+        self.domain
+    }
+    pub const fn primaries(&self) -> Option<RgbPrimaries> {
+        self.primaries
+    }
+    pub(crate) fn owned_bytes(&self) -> Result<usize> {
+        let outer = self
+            .planes
+            .capacity()
+            .checked_mul(size_of::<PlaneDescriptor>())
+            .ok_or_else(|| {
+                HighresError::InvalidLayout("descriptor vector size overflows".into())
+            })?;
+        let total = self.planes.iter().try_fold(outer, |total, plane| {
+            total
+                .checked_add(plane.owned_bytes()?)
+                .ok_or_else(|| HighresError::InvalidLayout("descriptor size overflows".into()))
+        })?;
+        total
+            .checked_add(self.color_information.owned_bytes()?)
+            .ok_or_else(|| HighresError::InvalidMetadata("descriptor size overflows".into()))
+    }
+}
+
+const fn channel_role_bit(role: ChannelRole) -> u16 {
+    match role {
+        ChannelRole::Gray => 1 << 0,
+        ChannelRole::Red => 1 << 1,
+        ChannelRole::Green => 1 << 2,
+        ChannelRole::Blue => 1 << 3,
+        ChannelRole::Y => 1 << 4,
+        ChannelRole::Cb => 1 << 5,
+        ChannelRole::Cr => 1 << 6,
+        ChannelRole::Alpha => 1 << 7,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -638,11 +774,28 @@ pub struct ImageFrame {
 
 impl ImageFrame {
     pub fn new(descriptor: ImageDescriptor, pixels: PixelBuffer) -> Result<Self> {
+        let source_color = descriptor.color_information().try_clone_owned()?;
         let frame = Self {
-            metadata: FrameMetadata::new(descriptor.color_information().clone()),
+            metadata: FrameMetadata::new(source_color),
             descriptor,
             pixels,
             timing: None,
+        };
+        frame.validate()?;
+        Ok(frame)
+    }
+    #[cfg(feature = "avif")]
+    pub(crate) fn from_parts(
+        descriptor: ImageDescriptor,
+        pixels: PixelBuffer,
+        metadata: FrameMetadata,
+        timing: Option<FrameTiming>,
+    ) -> Result<Self> {
+        let frame = Self {
+            descriptor,
+            pixels,
+            metadata,
+            timing,
         };
         frame.validate()?;
         Ok(frame)
@@ -712,6 +865,13 @@ impl ImageFrame {
             }
         }
         Ok(())
+    }
+    pub fn validate_with_limits(
+        &self,
+        limits: &ResourceLimits,
+    ) -> std::result::Result<(), ProcessingError> {
+        self.validate().map_err(ProcessingError::from)?;
+        limits.check_frame(self)
     }
 }
 

@@ -2684,3 +2684,685 @@ preserving the channel/PCS and eager-facade checks they represented; three unuse
 private-item warnings remain in this snapshot. S1 remains NO-GO pending this
 finite repair. S2-S4, all intents/domain policy, LCMS accuracy and full H3 remain
 unfinished. Review changed no product code.
+
+## Parent Slice B: candidate transactions verified, AV1 update still open
+
+Independent execution of the frozen B repair passes the existing main harness
+68/68, including all previous 65 assertions and three new tracked cases. The
+original harness source and allocator observer are unchanged. Product mapping
+tests pass 26/26 on Rust 1.91; coordinator Miri evidence covers the same 26.
+
+A separate candidate-observer target passes four of five independent tests:
+
+- Fresh metadata candidates with actual capacity above the request reject under
+  each independently constrained frame/live/metadata limit. The actual allocator
+  request and exact candidate deallocation are observed; all counters stay
+  unchanged and an exact-capacity retry succeeds.
+- Provenance and unknown outer replacements pass the corresponding three-limit
+  table, including the known inline AV1 cost and borrowed live-only seed. Failed
+  actual-capacity reconciliation preserves old pointer/length/capacity, nested
+  payload pointer/content and all counters. Exact replacements move the nested
+  owner, retain the new outer until real drop, and preserve the payload pointer.
+- Predictable inline-budget errors reject before the candidate-maker. Real
+  fresh allocator denial returns Allocation without creating a candidate owner.
+  Additional fresh precheck/empty/overflow assertions are prepared, but their
+  rerun encountered the subsequently resumed AV1-helper work in progress; they
+  need execution against its next frozen snapshot.
+- A preexisting identical AV1 description still succeeds at the complete final
+  metadata budget. This positive test is not a proof of internal ledger equality.
+
+The fresh and replacement helpers leave committed counters untouched until the
+successful commit. Their error path explicitly drops its local candidate; no
+scalar restoration is needed in this version. Real deallocation is observed,
+and source inspection verifies the absence of an early counter mutation. The
+observer never dereferences candidate addresses or reads a mutably borrowed
+ledger. This is not a process-wide no-allocation claim: diagnostic Strings are
+outside the watched data-owner request. The tests use the production candidate
+admission/reconciliation implementation, not a copy of its transaction algorithm.
+
+One fixed-inventory P2 remains in the inline AV1 update. Adding AV1 to metadata
+without it and overwriting the same existing AV1/provenance produce identical
+metadata, descriptors and owned-byte totals, but their final ledger tuples are
+respectively (1183,1183,20) and (1191,1191,28) on this host. The latter charges the
+already present eight-byte inline owner again. The failing test is
+`b_candidate_existing_av1_update_does_not_charge_same_inline_owner_twice`.
+It demonstrates counter inconsistency, not a newly claimed public low-budget
+rejection. The separate exact final-metadata test above succeeds.
+
+Finish only the previously required AV1 update seam: extract a private operation
+over mutable metadata and the same ledger; calculate missing provenance and
+missing AV1 inline ownership separately; pass only the actual inline delta to
+the accepted growth primitive; then set fields within admitted capacity. Updating
+an already present AV1 value must not debit its inline owner again. Test this
+operation directly for zero-delta/repeated updates and for allocation, budget and
+actual-capacity failure, preserving metadata values, outer/nested pointers and
+all counters. The earlier consumed-frame error test cannot observe its former
+metadata owner and does not replace this agreed mutable-owner assertion.
+
+The candidate primitive and provenance/unknown growth repairs receive local
+acceptance; Slice B remains NO-GO for the AV1 update item. Per-ICC actual capacity
+is still Slice C, and unused private helper cleanup remains required separately
+(five warnings in this independent product-test configuration). Full B/D/H6 are
+not accepted. Review changed only ignored tests and this record, not product code.
+
+## ICC S1 follow-up: borrowed materialization accepted, two ledger checks remain
+
+The matrix compiler now consumes lifetime-bearing curve plans and checked matrix
+fields rather than reparsing raw tags. Selected MatrixProfile/CompiledDirection
+headers, Curve outer storage and payload capacities are included once. The new
+matrix parametric path uses borrowed validation without the earlier temporary
+parameter clones; remaining legacy-only copies are not reopened by this slice.
+The header exact/one-under observer now passes, as do all earlier S1, route,
+wrapper-length and selected-white regressions. External public suites total
+31 pass / 3 previously assigned S2-S4 LUT failures. Independent product library
+21, compile-limits 4, LUT 23, structural parse 2 and transform 11 all pass.
+
+Three added private-seam tests isolate the remaining ledger contract. One passes:
+with actual ownership 4, candidate capacity 13 and another pending owner 8, limit
+24 rejects the combined 25 even though the candidate alone fits. Its real
+allocation and deallocation are observed, the prior owner and checkpoint remain
+unchanged, and exact retry plus the remaining owner succeeds. Empty and overflow
+requests also preserve that checkpoint. This extends the tracked three private
+tests; their earlier overcapacity fixture alone exceeded its limit and did not
+prove the other-pending-owner case. Root's reported Miri 3 covers those tracked
+tests, not these new external checks.
+
+Two fixed-contract checks fail:
+
+- P2, admission atomicity: entry-limit, byte-limit, arithmetic-overflow and matrix
+  storage rejection mutate scalar counters. A three-curve MatrixPlan rejected by
+  a two-entry limit leaves entries 3/pending 247 instead of its preceding
+  entries 0/pending 7. No allocation is involved. Make each scalar admission
+  compute/check before commit; make complete plan admission atomic too, using
+  aggregate checked costs or restoring a scalar checkpoint on any error before
+  materialization. Do not clone the live ledger or preserve a rejected partial
+  plan. Keep a retry assertion after the failed admission.
+- P2, known fresh request preflight: `try_new_vec::<u8>(16, planned=8)` under limit
+  8 requests the 16-byte allocation before rejecting it. Compute checked
+  count-times-element-size and validate its equality to this owner's planned
+  contribution, pending allowance and current total before invoking the allocator.
+  Retain actual-capacity reconciliation for genuinely larger returned capacity.
+  Current matrix callsites supply matching values: this is a private-helper
+  contract reproduction, not a demonstrated public-input bypass.
+
+The new private suite is 1 pass / 2 fail. Fix only these admission/fresh-helper
+checks; borrowed-plan consumption, complete selected headers, the new parametric
+path and measured pending-capacity rollback remain locally accepted. S1 stays
+NO-GO until both checks pass. S2-S4, unused-helper cleanup, full intent/domain
+semantics, LittleCMS accuracy and H3 completion remain separate unfinished gates.
+
+## Parent Slice B AV1 update: repeated-value repair accepted, one presence branch open
+
+The extracted mutable AV1 update fixes the previous duplicate inline charge.
+Independent main-harness execution passes 71/71; the separate candidate target
+passes 6/7. Fresh/replacement actual-capacity rejection, pending-inline preflight,
+empty/overflow checks, allocator denial and exact retry all pass. Direct mutable
+AV1 budget and real allocator-failure tests preserve every metadata value,
+provenance/unknown outer pointers, nested payload pointer and ledger counter.
+
+The fixed four-way AV1-value/provenance table leaves one P1 private-boundary case:
+Some AV1 with no AV1 provenance. The helper checks provenance only inside its
+AV1-absent branch, then the setter grows provenance infallibly. With expected
+metadata ownership and limit 44, the test observes one eight-byte allocation,
+actual ownership 51 and success while retained metadata accounting stays 43.
+The private owned-parts constructor represents this state and the helper does
+not validate an invariant excluding it. Normal public setters add provenance,
+so this is not a claim of a demonstrated malformed public-input route.
+
+Compute the two missing-owner decisions independently. Reserve missing
+provenance even when AV1 already exists, passing zero inline delta in that case;
+when only AV1 is missing, debit only its established logical size. Use the same
+size definition in prediction/update/tests instead of another hard-coded eight.
+Keep setters after all fallible checks. The other three combinations and the
+earlier repeated-update/candidate observers remain unchanged. Slice B remains
+NO-GO for this one fixed-item branch; Slice C and unused-helper cleanup remain
+separate, and no product code was edited by review.
+
+## ICC S1 matrix compilation: limited checkpoint accepted
+
+The final two ledger repairs pass independent review. Scalar admission checks
+all next values before mutation; whole MatrixPlan admission restores its scalar
+checkpoint on failure before any materialization. The same budget accepts a
+fitting retry afterward. Fresh Vec allocation checks count-times-element-size
+and equality with the admitted owner contribution before invoking the allocator.
+The known 16-byte request under an eight-byte plan now makes zero requests.
+
+All three private-seam tests pass, including actual ownership plus a larger
+candidate plus a separate pending owner, real candidate destruction, unchanged
+prior owner/checkpoint, exact retry and empty/overflow handling. The earlier
+borrowed-plan materialization, complete selected header/outer/payload inventory
+and new matrix parametric validation remain unchanged and accepted. No additional
+failure remains in this fixed S1 inventory.
+
+Independent external results are 34 pass / 3 known S2-S4 failures across 37
+checks: boundary 7, structural parse 7, public compile 17 pass / 3 fail, and
+private ledger 3 pass. Product all-targets execution passes 164 with one existing
+ignored test. Coordinator Miri 5 covers the tracked private-budget tests, not the
+three external observer tests. These scope differences remain explicit.
+
+S1 receives limited GO for selected matrix planning/materialization and its
+compile ledger. The three LUT shape/ownership/two-direction budget regressions,
+unused private-item cleanup, full intent/domain semantics, LittleCMS accuracy
+and full H3 remain open. Successful integer-wrapper budgeting is also separate.
+This result does not authorize a broad product commit or publication; review
+edited no product source and left version/staging state unchanged.
+
+## Parent Slice B transactional metadata: limited checkpoint accepted
+
+The final AV1 update now decides missing inline value and missing provenance
+independently. All four presence combinations pass, including an existing AV1
+value with no provenance through the private owned-parts seam. Repeated equal or
+different AV1 values do not charge the existing inline owner again. Both missing
+and existing AV1 cases preserve metadata values, outer and nested payload
+pointers, capacities and all ledger counters on a budget error or real allocator
+denial. The setter runs only after successful fallible admission.
+
+Independent results are main harness 72/72, separate candidate observer 7/7 and
+product mapping tests 30/30. The candidate target also checks fresh/replacement
+actual-capacity rejection against each frame/metadata/live bound, the whole
+replacement live peak, pending inline cost, empty/overflow requests, destruction
+of rejected candidates and exact retry. These are real System-backed TLS/RAII
+allocator observations, not only a synthetic failpoint. Original main-harness
+assertions and observer sources are unchanged.
+
+Slice B receives limited GO for this fixed transactional allocation inventory.
+Common AV1 logical-size definitions remain a small DRY cleanup: prediction still
+uses literal eight where the update uses the current eight-byte type size. The
+values currently agree; this is not another demonstrated allocation failure.
+Per-ICC actual-capacity checks and unused private-item cleanup remain Slice C.
+Full B/D, authoritative native metadata/ordered geometry and H6 are not accepted.
+No product source, version or staging state was changed by review.
+
+## Parent Slice C: fixed ICC-copy and cleanup implementation bundle
+
+Keep this slice to the already assigned per-ICC boundary, final metadata
+observers and cleanup. Reuse Slice B's candidate transaction; do not add another
+aggregate allowance, owner registry or second copy implementation.
+
+1. Store the per-owner ICC byte limit in ConstructionLedger. Extend the common
+   fresh-metadata admission core with an owner byte ceiling. Check the requested
+   count-times-element-size against that ceiling and all existing budgets before
+   calling the candidate maker. Check the candidate's actual capacity against
+   the same ceiling and all three ledger budgets before committing any counters.
+   Ordinary metadata callers retain their existing unconstrained per-owner
+   ceiling. Add `try_copy_icc_with(source, make_candidate)` for the same private
+   maker seam, plus `try_copy_icc(source)` using the production maker. Copy only
+   after successful admission. Failure destroys the empty candidate and leaves
+   all counters and existing owners unchanged; do not commit generic metadata
+   first and only then reject its ICC capacity.
+2. Route both the Rich source ICC projection in `color_information_impl` and
+   the active ICC clone in `clone_color_information_with_ledger` through that
+   one helper. Preserve separate checks on existing retained/source capacities.
+   A fresh destination uses requested length, then actual destination capacity;
+   it must not inherit the source's spare capacity. Keep predictable final
+   dimensions, scalar values and provenance before copying, and preserve both
+   mapper entrypoint limit tables and exact/one-under real-copy observers.
+3. Use one established logical AV1 size definition in the owned walk, fresh
+   prediction, additional-byte calculation, projection, update and their tests.
+   Do not conflate AV1 bytes with unrelated nclx or geometry fields. Clean only
+   the identified unused private inventory: ledger `new`/`try_copy`; old
+   NativeMapPlan inspect wrappers; `consume_native_frame_with_metadata`;
+   `metadata_owned_bytes`; `unknown_colr_capacity`/`try_clone_owned_bridge`;
+   and `PlaneDescriptor::try_planar`. Keep genuinely used test seams under the
+   correct test/feature gate, remove obsolete duplication, and retain all
+   required validation and public/legacy entrypoints. Normal library and unit
+   configurations expose different subsets of this same inventory.
+
+Three independent ICC-copy fixtures are prepared against the agreed production
+seam. Requested overflow of the per-owner limit must call neither maker nor
+allocator. Actual overcapacity necessarily allocates a candidate: a fully
+initialized sentinel byte buffer is cleared to length zero, and its bytes are
+observed immediately before real deallocation. Rejection must leave those bytes
+unchanged, destroy the candidate once and preserve source/ledger state. Exact
+retry both succeeds and changes the sentinel as a positive copy control. A real
+allocator-denial case preserves the same state and returns Allocation. No
+uninitialized memory is read, and allocation count is not used as a substitute
+for copy observation. Before implementation these fixtures cannot compile
+because the agreed helper is absent; they are prepared acceptance checks, not
+passing evidence or a new product regression.
+
+Freeze this slice only after those checks plus unchanged B main 72/candidate 7,
+mapping tests, final metadata exact/one-under and both-entrypoint limit observers
+pass. Verify ordinary library and highres-only configurations after cleanup;
+do not mask new warnings as baseline. No wider color conversion, codec or public
+API scope is added by this bundle.
+
+## ICC S2 selected LUT shape: matrix repair accepted, shared shape still open
+
+The full 48-byte selected matrix range is now checked before A/B/M curve
+materialization in both directions. The original allocation observer passes,
+and an added private check observes zero requested allocation bytes for both
+matrix truncation and wrong-direction-before-invalid-channel rejection. Existing
+legal/illegal stage-pair tests remain passing. This closes that original matrix
+regression, not the whole S2 validated-shape contract.
+
+Two minimal checks in the same S2 inventory fail:
+
+- P2, mft plan completeness: mft1 and mft2 tags missing their last table byte
+  are accepted by the new plan in either direction. LutShape::Mft contains no
+  ranges/counts; materialization falls back to the old parser, which finally
+  rejects the truncated table. That old parser still checks the total range
+  before decoding allocations, so this is an incomplete authoritative-plan
+  contract, not a demonstrated public allocation-before-range-check bypass.
+- P1, grid validation phase: with three selected grid dimensions equal to two
+  and the next grid byte equal to one, both mAB/mBA plans succeed. Their existing
+  materializer then rejects after allocating A/B Curve outers and the grid:
+  320 requested bytes, including one 128-byte grid allocation on the tested
+  64-bit target. The original parser already rejects this fixture; the test asks
+  that its validation happen in the plan, not for a new interpretation of unused
+  grid fields. Plan checks only selected dimensions while materialization walks
+  up to sixteen entries, exposing the duplicated shape interpretation.
+
+Complete these together as one S2-only repair:
+
+1. Make mft shape retain checked input/CLUT/output ranges, entry counts, element
+   width, dimensions and fixed matrix values. Validate all existing structural
+   rules before returning it. Materialization must consume those descriptors,
+   not dispatch back through the old raw-header parser.
+2. Make mAB/mBA shape retain bounded stack curve descriptors with checked ranges
+   and kinds, the complete selected matrix and one checked CLUT/grid descriptor.
+   Consume these in every materializer. Move shared structural interpretation
+   into lut_plan/curve_plan responsibilities instead of keeping duplicate
+   encoded_curve_info/curve_size and independent grid scans in lut.rs. Reuse
+   existing curve planning where compatible while preserving LUT entry policy,
+   forward-curve semantics and current direction/stage error precedence.
+3. Keep any compatibility parser as a thin plan-then-materialize entrypoint, or
+   share the same structural primitive; do not create a second validated path.
+   Preserve current legacy acceptance/rejection while making the two grid walks
+   one decision. Leave decoded-owner ledger wiring and two-direction aggregate
+   admission to S3/S4; no new intent/domain or curve-semantic work belongs here.
+
+Independent new private tests are 1 pass / 2 fail. Existing external suites are
+boundary 7, structural parse 7 and S1 private ledger 3 all passing; public compile
+18 pass / 2 known S3/S4 failures. Product library 23, compile-limits 4, shape 2,
+LUT 23 and transform 11 all pass. The official LUT fixture was present, not an
+empty optional skip. Only the new lut_plan module declaration was added to the
+old private S1 harness; all its assertions were preserved. Review changed no
+product code. S1 limited acceptance stands; S2 remains NO-GO for these fixed
+shape gaps, with S3/S4 and the wider H3 gates separately unfinished.
+
+## Parent Slice C review: ICC-copy boundary accepted, one size cleanup remains
+
+The shared metadata fresh-candidate core now checks both requested and actual
+per-owner ICC capacity before committing any counters. Source ICC projection and
+active ICC cloning both use that core through the same ICC-copy helper. The
+independent sentinel fixture passes: requested excess calls no maker; actual
+excess allocates then destroys one candidate without copying source bytes or
+changing source/ledger state. Exact retry succeeds, with changed sentinel bytes
+as its positive copy control. Real allocator denial also preserves state.
+
+Independent runs pass ICC-copy target 36 (three new observer checks plus included
+product tests), unchanged main 74, B candidate 7 and product mapping 32. The main
+suite retains final metadata exact/one-under, both-entrypoint limits-before-copy
+and source spare-capacity/fresh-clone checks. Normal avif+highres library checking
+has no warnings; highres-only typed 9/safety 1/Stage A 6 pass with only the two
+previously recorded draw warnings. Obsolete private helpers were removed and
+remaining test seams gated without widening feature dependencies.
+
+One fixed cleanup item remains before complete Slice C acceptance: the consumer's
+`av1_metadata_delta` prediction still starts with literal `8usize` instead of
+`AV1_COLOR_INFORMATION_BYTES`. All other assigned AV1 byte calculations now use
+the shared definition. Replace this last literal and its stale size wording;
+retain independent type-size test expectations. The current value is equal, so
+this is a DRY/maintenance requirement, not another reproduced runtime-budget
+failure. ICC-copy behavior receives limited acceptance; final Slice C acceptance
+awaits this small cleanup. Full B/D/H6 and public bounded decode/color conversion
+remain outside the accepted slices. No product source was edited by review.
+
+## Parent Slice C final behavior and checkpoint dependency boundary
+
+The last AV1 prediction literal now uses the shared size definition and its
+comment agrees with that contract. Independent final reruns pass main 74,
+candidate 7 and all three ICC-copy observer cases. The earlier complete ICC-copy
+target 36 includes product tests as well as those three independent cases.
+Slice C receives limited GO for the assigned per-ICC requested/actual capacity,
+copy ordering, failure ownership and size/unused-helper cleanup behavior.
+Coordinator verification additionally reports mapping Miri 32, MSRV all-target
+checking and wasm checking passing. Full B/D/H6 and conversion/decode completion
+remain excluded. Three separately found strict-Clippy issues are being repaired;
+ordinary warning-free checking is not a replacement for that gate.
+
+The parent-only product checkpoint has a separate dependency blocker. Its
+recorded AVIF gitlink is still 1203c44, which has no RichAvifInfo. The accepted
+internal ownership adapter imports that type from a55753e. The ignored review
+baseline and current workspace use a55753e, so their successful tests do not
+prove compatibility with a clean checkout of the recorded gitlink. Committing
+the complete parent bridge while excluding the gitlink would break the
+avif+highres build in that checkout. No gitlink change is authorized here.
+
+Therefore do not stage the complete parent foundation bundle yet. Either obtain
+a separately approved dependency-checkpoint synchronization, or prepare and
+validate an explicitly split Stage-A-only snapshot without the bridge module
+and its bridge-only helpers/reexports. The latter is not simply omission of the
+five bridge files: dependent module declarations and feature-specific helper
+warnings need matching partial changes and fresh staged-snapshot tests.
+
+Outside that dependency boundary, read-only inspection found the proposed
+parent changes limited to the Stage A vocabulary, the accepted A/B/C internal
+adapter, their tests and the test-target manifest registration. HLG inverse
+arithmetic keeps the division in f64 until the final cast; the added Eq trait
+is supported by private fields and finite checked construction. Domain defaults
+remain Unknown; explicit interpretation is separate from storage. ResourceLimits
+validation covers already-owned frames and does not bound a preceding decoder.
+The manifest diff changes no dependency, feature default or version. Codec,
+encoder, JXL, gitlinks and version files stay excluded from this review's staging
+authority. No files were staged or committed by review.
+
+The coordinator subsequently approved a separate synchronization of the already
+reviewed AVIF checkpoint. Independent inspection confirms cbdd77a changes only
+the avif gitlink from 1203c44 to exact a55753e; no dirty codec implementation is
+included. The local dependency blocker above is therefore resolved. The clean
+review worktree is exactly a55753e, and the current parent bridge compiles and
+passes its external cases against that baseline. This local checkpoint does
+not establish remote availability or registry-version API compatibility.
+
+After the final strict-Clippy repair, the proposed parent product checkpoint is
+limited to fourteen files: wml2/Cargo.toml; highres hdr, metadata, mod, types,
+domain, limits and processing; highres/avif mod, mapping, metadata, allocation
+and mapping_tests; and tests/highres_stage_a.rs. This checklist may be recorded
+separately. No encoder, JXL, ICC working-tree code, further gitlink, lockfile or
+version change belongs in that parent checkpoint. Its acceptance remains a
+foundation/internal-adapter checkpoint, not completion of the public pipeline.
+
+Final freeze review accepts those fourteen parent files for staging, followed by
+an exact-index check before commit. The former eight-argument internal helper
+is replaced by six arguments plus a three-field scalar state; both test-harness
+calls preserve their prior booleans/live-byte values and every observer/assertion.
+The unused eight-argument test shim is removed, and the two bool assertions are
+equivalent. Independent final main 74, candidate 7 and ICC-copy 3 all pass.
+Installed Clippy 0.1.95 reports zero highres diagnostics; the full command still
+fails on 24 diagnostics outside this scope, so it is not reported as globally
+clean or as an MSRV-Clippy run. Coordinator's final mapping Miri 32 and MSRV
+all-target checks also pass. Slice C and the scoped foundation/internal adapter
+are accepted; public byte decoding, complete Stage B/D and H3-H6 remain unfinished.
+
+Exact-index review then confirms all fourteen staged files match the reviewed
+working-tree contents, have ordinary file modes, and contain no extra path,
+gitlink, dependency/version or environment-specific data change. The staged
+diff passes whitespace checks. That exact parent foundation/internal-adapter
+checkpoint is accepted for commit, with the previously stated scope exclusions.
+
+## ICC S2 follow-up: early rejection repaired, materializer sharing still pending
+
+The three independent S2 checks now pass, as do all three S1 private-ledger
+checks. Truncated mft ranges and the mismatched grid-validation phase are fixed;
+the full matrix and error-precedence checks remain passing. These positive
+results do not complete the remaining implementation contract.
+
+Read-only inspection still finds two authoritative-shape gaps: mft's planned
+materializer checks its descriptor then dispatches to the old raw-header parser;
+mAB/mBA CurveSetShape still holds only offset/count and reconstructs each curve
+through curve_size/parse_curve_forward. Curve planning is not shared with
+curve_plan. Planning/materialization duplication has also grown lut.rs beyond
+1500 lines, with obsolete parsing paths retained under dead-code allowances.
+These are the same already assigned S2 requirements, not new reproduced runtime
+failures or added S3/S4 scope. S2 remains NO-GO until they are implemented.
+
+Finish the fixed bundle directly:
+
+- Decode mft input tables, CLUT and output tables from the planned ranges,
+  widths/counts and matrix; remove the fallback to the old raw-header parser.
+- Store each selected curve's borrowed CurvePlan in a bounded stack array
+  (at most the supported three channels per set), with explicit absent/used
+  counts. Materializers decode its kind/count/checked payload and do not reread
+  curve signatures/count headers or rediscover sizes.
+- Share the decoded curve loop through a fallible allocator callback if needed:
+  the S1 wrapper keeps its existing CompileBudget allocator and semantics; the
+  LUT wrapper can retain its current fallible allocation until S3 wires the
+  ledger. This does not authorize a semantic curve rewrite or claim LUT owner
+  budgets complete. Preserve S1 admission/rollback assertions.
+- Move shape/range/stage interpretation into lut_plan/curve_plan responsibility,
+  and keep compatibility parsing as thin plan-then-materialize wrappers. Delete
+  obsolete raw-parser duplicates rather than suppressing their unused warnings.
+  Keep the repaired three tests, stage-pair/error-precedence coverage, and the
+  existing S3/S4 failures unchanged through this refactor.
+
+## C1 substep 4: fixed counter, stack and sort implementation slices
+
+Substeps 1/2/3 remain accepted in their recorded scope: the original 39 external
+assertions pass unchanged. Substep 4 is not accepted. Eight new private-helper
+checks produce one positive and seven failures; one additional public-entry
+check also fails. These are the previously identified counter/stack/sort scope,
+not a reopening of ownership/drop accounting or AV1/deep-decoder work.
+
+- Public repeated IPMA with two entries for one item and no extra associations
+  succeeds under max_items=1 and copies the selected payload. The exact bound 2
+  and Legacy path both succeed. The scan checks each IPMA entry count separately.
+- Shared structural parsing accepts a second iinf, iloc, IPMA entry, property,
+  or association past its same-kind bound, after allocating that new owner.
+  Property counting must precede nested av1C/colr/string materialization, not
+  just the outer property Vec reserve. Different kinds at their own exact bound
+  pass together; do not sum them into an invented unique-item count.
+- Direct Native method-0 payload copying requests an unaccounted 16-byte
+  recursion-stack Vec despite requiring no recursion. A 1024-alpha unique-ID
+  permutation requests two 32768-byte allocations: charged ID-vector growth
+  plus unaccounted stable-sort scratch. The sort assertion expects the former
+  allocation, not a zero-allocation complete parser.
+
+Implement and freeze in these three small slices:
+
+1. Add fixed scalar ParseCounts to the existing non-Copy ParseContext. Provide
+   checked admission for IinfEntries, IlocEntries and IpmaEntries against
+   max_items, and Properties and Associations against max_properties. Check
+   addition/limit before mutation. Replaced tables count as parsing work, so
+   dropping owners does not release counts. Ownership rollback must not silently
+   erase consumed work. Legacy admission is a no-op.
+   Wire iinf/iloc after validated count headers and before their first reserve;
+   IPMA uses one borrowed count walk to admit entries plus associations before
+   materialization, with atomic multi-counter admission and no loop double count;
+   ipco admits each property before parsing its payload. One context survives
+   repeated meta/iprp calls. The pre-scan may reuse the same checked arithmetic
+   independently, but must not seed totals and then charge the structural walk
+   again. It is not a substitute for shared-parser enforcement. Add exact,
+   one-over, overflow/no-mutation and repeated-meta coverage, preserving all
+   five fixed data-owner allocation observers and the mixed-kind positive.
+2. Extract borrowed direct-item extent planning/copying for Native methods 0/1
+   from the recursive compatibility routine. Reuse checked source ranges and
+   cumulative length before the existing Payload-token reserve. Native method 2
+   remains Unsupported before allocation; Legacy retains its recursive path,
+   cycle detection and error precedence. Remove the Native stack allocation,
+   rather than inventing an uncharged local Vec or enabling new recursion.
+3. Keep Native gathering on the existing unique-selection helper, then use an
+   allocation-free ordering step for those unique numeric IDs. Native-only
+   sort_unstable_by_key is sufficient when uniqueness is established; keep
+   Legacy stable ordering and its first-duplicate choice unchanged. Retain
+   string/payload ownership and release the temporary ID token only after its
+   consuming iterator drops. Preserve sorted output, duplicate/fallback and
+   exact returned-record assertions. Add allocation-failure tests only around
+   fallible owners; do not inject allocator failure into unchecked stable sort.
+
+The fixed external probes are count_stack_boundary's c1_ cases and
+count_public_boundary::c1_public_repeated_ipma_entry_limit_precedes_payload_copy.
+No product edits were made for these observations. Existing C1 tests, Legacy
+compatibility, MSRV and portable tests remain required after each implementation
+slice. AV1 header/tile preallocation, C2 and C3 remain separately open.
+
+The parent foundation checkpoint also has isolated clean-checkout evidence:
+parent 6830906 with reviewed AVIF a55753e and encoder 5b00acd builds without
+dirty dependencies. Root reports lib43, typed9, stageA6 and safety1 on host and
+i686, WASI lib43 execution, plus callback4 and explicit external-Next1 in both
+feature configurations. This is foundation/compatibility evidence, not H4,
+complete decoder bounds, encoder quality or ICC oracle acceptance.
+
+## H5 slice 1: property-index behavior verified; tracked graph assertions pending
+
+The writer now captures each appended property's index and uses those indices
+for both primary and alpha IPMA entries. Independent execution passes lib23 and
+the two tracked container tests. Two additional independent writer tests pass:
+all eight color-presence/alpha combinations have exact IPMA entry counts,
+nonzero in-range indices, required essential flags, distinct primary/alpha av1C
+payloads, existing-item reference endpoints and correct iloc payload ranges;
+the old writer path is byte-identical to clean checkpoint 5b00acd for default,
+nclx, prof and rICC options with/without alpha. This is a container-writer
+comparison with fixed encoded payloads, not an independent AV1 decoding oracle.
+
+No further property-index product defect was found. Before calling the tracked
+slice complete, strengthen container_properties.rs with the exact IPMA count
+and end cursor, iref presence/absence, one auxl record and its endpoint IDs
+matched against iinf/iloc. Find meta by top-level box traversal instead of a
+fixed byte offset. Keep every existing association/essential assertion. The
+existing 1-to-2 auxl direction is characterized as unchanged Legacy output;
+these tests do not establish new HEIF directional conformance. AVIF specifies
+auxiliary relationships through HEIF, separately from property indexing
+([AVIF container hierarchy](https://aomediacodec.github.io/av1-avif/v1.2.0.html#avif-box-structure)).
+
+The metadata helper-only second test is not item-reference coverage. ICC byte
+and type authority, absent-color signaling policy, AV1 header consistency,
+native luma/chroma validation and source-lossless/alpha fidelity remain the
+previously listed later H5 slices. No version, dependency or Legacy API changed
+in this review; temporary tests remain ignored. Full encoder acceptance and
+publication are not granted.
+
+## ICC S2 latest review: descriptor consumption accepted; two fixed repairs remain
+
+Mft materialization now decodes the planned table/CLUT ranges directly instead
+of returning to the old raw parser. mAB/mBA curve sets now contain a bounded
+three-element array of borrowed CurvePlan values consumed by the shared curve
+materializer. The previous three shape/early-rejection tests pass. These parts
+of S2 are closed; S1 acceptance and its independent three ledger tests remain
+unchanged. S2 as a whole remains NO-GO for the following finite repairs.
+
+1. **P1 ParseLimits regression in shared LUT curves.** The selected mAB/mBA
+   curve path creates a local TransformLimits budget but no longer applies the
+   Profile's ParseLimits.max_curve_entries, formerly enforced by
+   parse_curve_forward. A 32-entry curv under a parse bound of 16 now compiles
+   in both directions, allocating its 128-byte table; Transform assembly also
+   succeeds and allocates both tables. The exact parse bound 32 passes. Both a
+   public Profile/Transform probe and a private shared-plan probe reproduce this
+   one cause, with the old curve helper's ResourceLimit result as a control.
+   Restore an allocation-free check over all selected borrowed curve plans
+   before any curve-set outer or payload reserve. Keep per-curve ParseLimits
+   separate from cumulative TransformLimits. Preserve the former curv
+   identity/gamma/table count rule; do not silently impose that count rule on
+   para functions that the old parser handled differently. The check can live
+   at the plan/materialize boundary where both limits are available; reintroducing
+   the raw curve parser is not a fix. Retain exact-positive and allocator-zero
+   rejection assertions for both directions and assembler sides.
+2. **P2 unfinished responsibility split and duplicate parsing.** Shape/range
+   construction and check_encoded_limits still occupy lut.rs, while lut_plan
+   delegates back into it; lut.rs remains over 1300 lines. Move that structural
+   interpretation to lut_plan and reuse its descriptors for encoded-count/cost
+   checks. Keep lut.rs focused on materialization/evaluation. Remove the old
+   unused parse_clut duplicate rather than hiding it with allow(dead_code).
+   Keep compatibility entrypoints only as thin shared-plan wrappers, test-only
+   where appropriate. Preserve direction-before-channel errors, stage pairing,
+   both-direction invalid-range observers and the S1 shared curve semantics.
+
+Independent execution: boundary7, parse7 and S1-private3 pass; compile21 is
+18 pass/3 fail, and S2-shape4 is 3 pass/1 fail. Two failures are the same new
+ParseLimits regression; the other two are unchanged S3 retained outer/grid
+storage and S4 combined-direction budgets. Selected product suites total 65
+passes (lib23, compile4, shape2, LUT23, parse2, transform11), with the official
+LUT fixture confirmed present. Root separately reports all-targets166 pass and
+one ignored. Passing existing suites does not dismiss the independent failures.
+
+The temporary local CompileBudget used by the LUT curve materializer is not
+acceptance of full pending/retained LUT ownership or shared-direction budgets.
+Those remain S3/S4, not additional S2 repair work. The three pre-existing unused
+items, all-intent/domain behavior and LCMS precision gates also remain open.
+
+## C1 substep 4 counter slice: bounds verified; Legacy guard repair pending
+
+Independent execution passes the original 39 tests plus the public repeated-IPMA
+case (40/40), all six fixed counter/mixed-kind cases, and four added checks for
+atomic IPMA retry, arithmetic overflow without mutation, counts surviving
+ownership rollback/separate MetaState instances, and complete Legacy admission
+no-op. The new checks observe the work counters, not only ParseAccounting.
+The five structural admissions precede table reserve and nested property copies;
+the independent pre-scan does not seed and double-charge the context counters.
+The scan's per-box IPMA check is not the authoritative cumulative enforcement.
+
+One small compatibility repair remains before counter-slice GO: the new
+ipma_counts walk is called unconditionally, even for Legacy. Against exact
+checkpoint a55753e, a truncated one-entry IPMA now produces a different
+NotEnoughData diagnostic. Guard the borrowed count walk and admit_ipma together
+with is_native_still, retaining the old Legacy parser path. The additional
+legacy-error assertion fails until that repair. Move the four passing counter
+proofs into tracked tests without weakening the existing allocation observers.
+This is a P2 compatibility/coverage repair, not a counter-budget bypass.
+
+The Native recursion-stack and stable-sort scratch assertions still fail and
+remain the next two substep-4 slices. They are not part of the counter repair.
+Root separately reports lib499/6 ignored, native10/limits5/phase9/rich3 on Rust
+1.88, strict Clippy success, and Miri counter3; these do not replace the pending
+Legacy guard or the stack/sort work.
+
+## H5 property-index slice: limited acceptance after tracked graph coverage
+
+The final test-only addition supplies top-level meta discovery, exact IPMA entry
+count/end cursor, iinf IDs, iref/auxl presence and endpoints, and iloc-to-mdat
+extent checks across all eight combinations. Existing association/essential
+assertions remain intact. Independent final execution is lib23 plus container3
+passes, not 65 separate container tests. The earlier independent writer graph
+and eight-option Legacy byte comparisons remain valid because product source
+did not change during this test-only repair. No before-fix failing execution is
+claimed: that was not run for the initial index implementation.
+
+H5 slice 1 is accepted only for property indices and the characterized container
+references/Legacy writer compatibility. Remaining H5 color authority, signaling,
+native plane validation and lossless quality gates stay open. This does not
+authorize publishing or committing unrelated encoder WIP.
+
+## LCMS oracle preparation: transport only, full-grid comparison pending
+
+Black-box transicc reports calculator 5.1 / LittleCMS 2.19. Eight sentinels for
+sRGB2014-to-itself and v4-Preference-to-sRGB2014 run with -n -c0 -d1 -t1 and
+without BPC, encoded, quantized or bounded-mode flags. RGB transport uses 0..255
+and this pipe output prints four fractional digits. Self-transform examples
+include 127.5 becoming 127.5019 and 1 becoming 0.9961; they are not a precision
+pass or proof of internal arithmetic precision. The mixed-profile relative
+black becomes approximately 29.3/255; do not enable BPC or change profile data
+to erase that observation.
+
+Work paused at transport calibration for the higher-priority frozen review.
+RGB4913 and Gray4096 comparisons, fixed destination-Lab measurement, DeltaE00
+self-check/Sharma validation and all acceptance thresholds remain unexecuted.
+No LittleCMS implementation source was inspected or product dependency added.
+
+## C1 substep 4 counter slice: limited acceptance
+
+The Native-only IPMA count guard preserves the Legacy parser and its existing
+truncation diagnostic. The final tracked overflow proof executes each admission
+separately and checks the complete context plus ownership accounting before and
+after failure; eager evaluation and the ownership-only assertion are removed.
+Independent execution passes the eight tracked counter tests, eleven filtered
+external counter proofs, and forty old/public boundary tests. Included product
+tests are not counted again as independent cases. Root also reports final Miri8
+and strict Clippy success.
+
+The five independent count kinds, atomic IPMA admission, failed-admission retry,
+overflow, Legacy no-op and count-work survival across owner rollback/replacement
+are accepted for this counter slice. Native direct-payload recursion-stack and
+alpha stable-sort scratch owners remain the next two fixed substep-4 slices.
+This does not accept all of C1, AV1 pre-allocation, C2 or C3.
+
+## LCMS first diagnostic pair: validated metric and complete RGB grid
+
+The independent f64 DeltaE00 implementation passes all 34 published
+[Sharma/Wu/Dalal reference pairs](https://hajim.rochester.edu/ece/sites/gsharma/ciede2000/)
+to their four-decimal printed precision (maximum absolute discrepancy
+0.000049498977), plus identity, symmetry and zero-chroma checks. It was derived
+from the paper's equations, not the authors' software or LittleCMS source.
+Reference data and provenance remain in ignored test_data.
+
+One diagnostic pair, official sRGB v4 Preference to sRGB2014 with Relative
+colorimetric intent and BPC off, completes all 4913 RGB grid points (14739 channel
+values), including endpoints, without errors or omitted points. Product F32
+evaluation uses clamp=true. Black-box transicc uses -n -c0 -d1 -t1, RGB transport
+0..255, and no encoded, quantized or bounded-mode flags. Both output sets are
+measured by the same destination-to-Lab transform with physical Lab output;
+this does not treat the built-in Lab profile as a raw tag evaluator.
+
+DeltaE00 median is 0.0017950127, nearest-rank p95 is 0.0063801949 and maximum is
+0.0459857599; maximum normalized channel absolute error is 0.0003992994. These
+meet the existing 0.1/0.25/1.0 thresholds for this one pair without relaxing them.
+The worst DeltaE00 input is (0, 0, 0.125). Pipe output has four fractional digits;
+this result does not establish the oracle's internal arithmetic precision.
+
+Executable and profile SHA256, command options, raw outputs, all point results,
+and metric checks are retained in the ignored harness. The executable was built
+during S2 work: its binary hash is fixed, but no exact pre-build source-hash
+snapshot was captured. Later Cargo metadata is explicitly not evidence of that
+binary's exact source. Repeat this same pair on the final frozen implementation
+with a pre-build source snapshot. Other intents, Gray4096, remaining routes and
+full H3 acceptance stay open; this diagnostic is not an S2/S3/S4 budget approval.

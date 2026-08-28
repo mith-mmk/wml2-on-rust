@@ -3594,3 +3594,492 @@ Keep the repair finite and within S3:
 S3 stays NO-GO for these two fixed points. S4 combined directions, existing
 unused-item cleanup, all-intent/domain behavior and complete CMS oracle gates
 remain separate; no new LUT semantics or format support is requested.
+
+## C1 substep 4 direct-payload slice: limited acceptance after shared range repair
+
+The finite P2 is closed: item_extent_bounds now owns the checked start/end
+calculation; the validation wrapper, Legacy append and both Native read-only
+walks use it. The duplicate Native range helper is removed. Existing error
+precedence, diagnostic text, token lifetime and reserve-before-copy order remain
+unchanged. Independent direct4, original stack1, counter11 and public boundary40
+all pass, as do tracked direct4 and strict all-target Clippy with warnings denied.
+This retains borrowed-idat bytes, late-range/total rejection, real allocation
+failure/retry and finite exact-checkpoint Legacy comparison.
+
+The direct-payload slice is accepted only for Native method-zero/one stackless
+materialization and this shared-range boundary. Stable-sort scratch, broader
+AV1 allocation guards, C2/C3 and general bounded-decoder acceptance remain open.
+
+## H5 slice 3 review: authority checks pass; configuration and borrowed writer remain
+
+The frozen native color plan now rejects missing nclx, partial/invalid ICC
+pairs, conflicting nested color, noncanonical nested nclx, out-of-width CICP
+and the unsupported identity combinations before encoding. Independent negative
+coverage exercises nineteen cases and an exact nested-nclx positive. The prior
+external plane3 and property/Legacy-byte2 tests still pass; only the plane
+fixtures gained the now-required explicit nclx, without weakening assertions.
+Independent product library23, encode28, color3, native5 and container3 pass
+(62 tests), and strict all-target Clippy/diff check pass. Root separately
+confirms Rust1.88 color3/native5/container3/encode28, i686 color3/native5/container3
+and wasm32-unknown-unknown check. The author's full76 includes fourteen existing
+FFmpeg tests; these are not new color-plan oracle cases.
+
+The three new independent color tests give one pass and two failures:
+
+1. **P1 native lossy monochrome av1C disagrees with the payload.** Thirty real
+   encodes cover five selected color/layout tuples, 8/10/12 bits and quality
+   80/100, each with alpha. Exact a55753e parser APIs inspect the resulting
+   Sequence Headers and associated properties, without copying decoder code.
+   Eighteen monochrome items in quality-80 outputs have av1C subsampling 1/0
+   but their Sequence Header infers 1/1; this affects alpha and the Gray primary.
+   Quality-100 controls agree. The native entry currently retains the backend
+   container record without applying its checked native configuration plan.
+   [AV1-ISOBMFF section 2.3.4](https://aomediacodec.github.io/av1-isobmff/v1.3.0.html#av1codecconfigurationbox)
+   requires these fields to match the Sequence Header, including inferred
+   color_config values. Fix the new native record path, preserving the unrelated
+   bits and old entrypoint/backend byte behavior. Do not change native luma
+   layout 0/0 to the AV1 monochrome flags 1/1.
+2. **P2 borrowed ICC does not reach the writer.** A 4093-byte opaque profile
+   triggers five standalone profile-sized allocations: one NativeColorPlan
+   to_owned copy, then profile.clone and color_box's clone during each metadata
+   sizing/final-writing pass. Supplying a matching nested ICC adds a sixth via
+   cloning EncoderOptions before overwriting its color field. Exact output ICC
+   type/bytes and caller options remain intact, but the prescribed borrowed
+   plan/writer seam is not implemented. Pass borrowed checked color through the
+   native writer and use a shared type-plus-borrowed-bytes box helper. Build
+   native backend options without cloning an ICC field that is immediately
+   replaced. Framed output copies are expected; standalone metadata clones are
+   not. Keep the old writer wrapper and its byte-equivalence assertions.
+
+In all thirty outputs, the tested primary CICP/range and exact ICC type/bytes
+match their inputs; alpha is monochrome/full-range at matching depth, uses no
+identity tuple, and has no associated colr. These are header/property checks,
+not a proof of decoded native sample or source-lossless fidelity.
+
+Complete the same finite slice with two supporting changes: document mandatory
+native nclx, paired ICC fields, authority/conflict rules, identity GBR order and
+optional alpha ID 3 in the public API docs; distinguish defined Unspecified
+code 2 rejected by API policy from values that exceed the eight-bit field.
+EncoderOptions retains its legacy default color, so examples supplying a
+different native tuple must explicitly clear that nested field or supply an
+exact match. Strengthen tracked color tests from unrelated byte-window searches
+to exact associated colr and AV1/av1C comparisons, including matching nested
+ICC and both backends. Retain the existing width/reserved-code rejection tests.
+
+H5 slice 3 remains NO-GO for this finite configuration/borrowed-writer/documented
+contract bundle. Legal identity tuples still temporarily rejected, slice-4
+controls/pixi/semantic metadata and full source-lossless fidelity remain open.
+No old API change, encoder publication or broader format work is authorized.
+
+## C1 substep 4 sort slice: limited acceptance
+
+Native alpha IDs are made unique by the existing shared auxl/fallback selector
+before in-place unstable sorting. The public Native path always passes its
+resolved primary ID, so it reaches that unique-selection branch. Legacy retains
+its stable sort and first-duplicate dedup behavior. The temporary ID owner is
+still released only after the consuming iterator drops; moved strings and
+returned payloads remain live and charged.
+
+Independent execution passes the fixed counter11, stack1, sort1 and direct4
+assertions, plus public boundary40. The 1024-item scratch observer sees only the
+expected charged ID-vector growth, no second stable-sort scratch owner, and
+checks the exact ascending IDs and payload/type preservation. The full include-
+based harness passes 170 tests, including product and baseline tests; these are
+not 170 independent review cases. Tracked sort1 and strict all-target Clippy
+also pass. Root separately confirms Rust1.88 and Miri for the tracked sort test.
+
+The fixed C1 parser counter/direct-payload/sort slices are accepted. This does
+not complete AV1-header/tile allocation guards, C2/C3, the full bounded native
+byte API or the wider H6 gates. The earlier parser ownership acceptance remains
+limited to its reviewed allocation classes and supported ordinary-still subset.
+
+## C1 substep 5 preparation: header inspection before decode materialization
+
+This is a design checkpoint, not acceptance of the bounded decoder. Keep the
+reviewed parser slices closed and restrict the next work to ordinary av01 still
+items with their selected alpha. Deep decoded/reference/filter ownership (C2)
+and AVIS state (C3) remain separate.
+
+The current bounded call sequence checks sequence maxima, then collects an OBU
+Vec, calls parse_av1_headers, checks its decode plan and decodes the master.
+That header call already allocates tile-layout vectors, tile descriptors and
+entropy states and copies frame/tile payloads. Alpha validation runs afterward,
+constructs a cloned AvifInfo/payload and parses its headers; alpha decode repeats
+both operations, then clones the decoded alpha plane.
+
+Use these small implementation slices, preserving the old public wrappers:
+
+1. Add a private borrowed ObuIter over the existing read_next_obu primitive.
+   Keep a single syntax implementation and preserve old collection/first-match
+   early-stop behavior. The Native inspection walk must consume the required
+   full item without collecting OBUs and distinguish actual show_frame from an
+   OBU_FRAME/FRAME_HEADER count. Hidden/show-existing, multiple frames and the
+   currently unbudgeted super-resolution route remain explicit Unsupported.
+2. Split the existing frame-header parser at the common pre-tile boundary into
+   scalar prefix and resumable remainder, including reduced-still and ordinary
+   branches. Do not copy the grammar into a second Native parser. A private
+   borrowed ItemHeaderSource supplies payload/config/pixi/color/geometry without
+   synthesizing AvifInfo. A prefix records display state, sequence maxima,
+   coded/upscaled/render dimensions, depth and the parser continuation. Check
+   both master and selected alpha prefixes before tile-layout allocation,
+   entropy work or decoded planes. Validate real dimension pairs, padded plane
+   extents and checked sample-byte arithmetic; do not pair upscaled width with
+   render height. Master/alpha geometry, depth, monochrome/full-range constraints
+   are part of this preflight, not a post-master-decode test.
+3. Resume those checked prefixes into reusable header plans. Tile-range scanning
+   and materialization must share the same checked range primitive; borrowed
+   payload ranges must not become per-tile temporary byte copies before bounds
+   are known. Admit necessary descriptor/encoded-scratch owners before fallible
+   reserve and reconcile capacities before filling, without claiming that this
+   accounts for C2 entropy/reference/filter state. Keep Legacy wrappers and their
+   diagnostic order; any temporarily unsupported Native organization is explicit.
+4. Decode both items from the already validated plans. Borrow alpha payload and
+   move its final samples owner into the master after strict validation; retain
+   alpha ID 3 and hidden-pixel semantics. Remove only the Native repeated
+   alpha-info/header/plane-copy route, preserving the old API behavior.
+
+Fixed acceptance fixtures will observe OBU collection elimination, sequence and
+actual/padded/render bounds before tile copies, hidden/show-existing rejection,
+invalid alpha before master allocation, one alpha header materialization and
+sample-pointer identity on attachment. Use real allocator observations scoped
+to data owners, not a claim that error formatting allocates nothing. Include
+exact/one-under, malformed range and successful still/alpha controls. Two initial
+external observer fixtures currently stop at a missing required ispe property;
+they are unfinished test setup, not reproduced product failures or acceptance.
+
+Root additionally confirms the current parser-only snapshot with WASI execution
+of 21 budget/counter/direct/sort tests and i686 execution of native10, limits5,
+phase9 and rich3. These results do not cover the new header/decode work.
+
+## ICC S3 follow-up: selected ownership fixes verified; finite remainder
+
+The prior selected-header and partial-admission defects are closed in the
+reviewed snapshot. LutPlan admits its complete owner inventory and selected
+LutTransform/CompiledDirection headers atomically. The selected materializer
+receives that ledger, consumes pending costs without readmitting stages and
+commits headers once. mAB matrix storage is inside the header rather than a
+second 48-byte charge. Parameter curves materialize directly into their final
+owners through the common curve-plan helper.
+
+Independent execution passes both existing S3 tests: exact/one-under checks for
+mft1, mft2, mAB and mBA, plus parameter/grid allocation-failure cleanup. A new
+test first admits an actual mAB/mBA plan with all its future owners pending,
+then substitutes a 32-byte candidate for one planned 28-byte parameter owner.
+The candidate fits alone but exceeds the total including another live 8-byte
+owner and pending stages. It is rejected and actually dropped; the old payload
+pointer/content and scalar checkpoint are unchanged, and materializing the
+same admitted plan afterward succeeds. This is additional evidence, not the
+old generic candidate test relabelled as LUT wiring coverage.
+
+Three finite S3 follow-ups remain:
+
+1. **P2 raw encoded length is still charged as compiled storage.** The selected
+   compile path retains `tag.len() > max_compiled_bytes`. A checked mAB or mBA
+   with an 8192-byte zero gap before its offset-addressed stages has encoded
+   length 8676 but the same exact 908-byte owned inventory as the compact tag
+   on the tested host. Planning accepts it; public compile incorrectly rejects
+   it with ResourceLimit. Remove that raw-length/compiled-budget comparison,
+   preserving Profile ParseLimits, structural ranges and all owner admission.
+   The new test requires both directions to accept the same exact owned budget
+   and reject one-under before any materialization.
+2. **P2 tracked ownership regression needs an independent expectation.** The
+   public mft test now binary-searches its own successful budget and tests that
+   discovered boundary. It cannot detect omission of the private headers and
+   is not a replacement for a fixed owner inventory assertion. Keep its public
+   monotonicity coverage if useful; add a separate private tracked test using
+   size_of for every header/outer/payload/grid owner and an admitted-LutPlan
+   excess-capacity/pending-owner test with drop, unchanged state and retry.
+3. **New cleanup item, not baseline:** LutTransform::decoded_bytes is now an
+   unused fourth warning, in addition to the three previously recorded items.
+   Remove the obsolete private float/length-only accounting helper, or retain
+   it only under test cfg if a real test requires it; do not suppress the new
+   warning or reinstate it as authoritative owned-byte accounting.
+
+The original external set passes 45 of 46 tests; its sole failure remains S4
+two-direction cumulative budgeting. The expanded S3 target passes three of
+four tests, with the raw-padding test failing in both directions. Independent
+selected product execution passes lib23, compile4, shape5, LUT23, parse2 and
+transform11. Root separately reports all-targets169 pass/one ignored. S3 stays
+NO-GO for the finite remainder above; S4, all intents/domain/LCMS completion and
+overall H3 acceptance remain separate and incomplete.
+
+## C1 substep 5: established probes and next prefix/resume slice
+
+The initial external fixture setup is repaired: ispe, pixi and av1C are generated
+from the actual synthetic Sequence Header and Frame Header. Every case first
+requires successful Native container parsing. Three fixed probes now reach the
+intended AV1 path:
+
+- 2048 padding OBUs after a valid sequence cause a 98304-byte OBU-vector
+  allocation before rejection of a deliberately missing frame. This failed
+  on the pre-iterator implementation; a later run during the iterator work
+  passes. That in-progress result is not the iterator freeze review.
+- A valid displayed reduced-still header followed by a 4093-byte frame payload
+  is copied once before the correctly reported one-byte plane-limit rejection.
+- A selected alpha has a valid RGB header, which already violates the required
+  alpha monochrome constraint. The deliberately invalid master entropy is
+  nevertheless processed first, after one 4093-byte tile-payload copy, and its
+  trailing-bit error hides the known alpha-header error. The acceptance result
+  is Native alpha Unsupported before either item's tile copy/entropy work.
+  This poison-entropy case is a phase-order test, not a valid image/oracle test.
+
+The original forty external parser assertions are unchanged. The latest three-
+probe run is one pass/two failures while iterator implementation is in progress.
+Error-string allocations are not confused with the observed data owners.
+
+After the iterator-only freeze, implement the following private seam as the
+next small slice; names can follow existing conventions, ownership cannot:
+
+```rust
+fn parse_frame_prefix<'a>(source: &'a [u8], sequence: &SequenceHeader,
+    sequence_metadata: &SequenceHeaderMetadata,
+    references: &[Option<ReferenceFrameState>; 8])
+    -> Result<FramePrefix<'a>, DecoderError>;
+fn finish_frame_header(prefix: FramePrefix<'_>, /* shared checked context */)
+    -> Result<FrameHeader, DecoderError>;
+fn inspect_native_item<'a>(source: ItemHeaderSource<'a>, limits: &NativeDecodeLimits)
+    -> Result<NativeItemPrefix<'a>, DecoderError>;
+fn inspect_native_still<'a>(info: &'a AvifInfo, limits: &NativeDecodeLimits)
+    -> Result<NativeStillPrefixes<'a>, DecoderError>;
+```
+
+FramePrefix owns only scalar/fixed-size state and the borrowed bit-reader
+continuation at the existing pre-tile boundary. It is consumed by the remainder
+instead of reparsing raw bytes. Public frame-header functions compose these two
+steps with Legacy policy, preserving old diagnostics and reference behavior.
+Native checks display state, sequence maxima and all actual dimension/plane
+limits before resuming either prefix. Factor the per-plane geometry arithmetic
+out of build_plane_layouts so the old Vec constructor and Native fixed three-
+slot preflight use one implementation. Check coded (width,height), upscaled
+(upscaled_width,frame_height) and render (render_width,render_height) separately,
+including coded padding and subsampling when counting u16 samples.
+
+ItemHeaderSource borrows payload and available config/pixi/color/geometry; it
+does not clone compatible brands or fabricate an alpha AvifInfo. The Native
+pair holds one master and an optional selected alpha prefix. Validate alpha
+dimensions/depth/monochrome/full-range and supported display behavior against
+the master's header before finishing either item. Do not claim validation of
+alpha metadata that the present public projection does not retain. Multiple
+frames, hidden/show-existing and the current super-resolution route stay
+explicitly unsupported; do not call the Legacy hidden-frame search helper.
+
+Acceptance of this prefix slice requires the plane/alpha probes to become green
+without weakening allocator observations, plus reduced-still and normal-header
+positive controls, checked actual/render/padded bounds and exact old-wrapper
+results. It does not by itself close later tile-descriptor/entropy allocations.
+Those remain the next slice: checked range/count inspection shared with the
+materializer, fallible descriptor reserves, checked actual capacities and a
+single necessary encoded-data owner or borrowed payload. Do not repurpose the
+container metadata budget as an unexplained decoder-wide budget. C2 total
+decoded/reference/filter state and C3 sequence state remain outside this work.
+The last slice reuses the validated alpha header and moves its sample owner,
+with a pointer-identity assertion, instead of reparsing or cloning the plane.
+
+Root separately confirms S3's current compile4/shape5 tests by WASI execution;
+those nine passes are supplementary portability evidence, not S3 acceptance.
+
+## H5 slice 3 repair review: runtime fixes closed; documentation/test remainder
+
+The native monochrome av1C correction now applies only to the new Native
+primary/alpha record path and preserves the other configuration bits. The
+thirty-encode external matrix passes actual AV1 Sequence Header versus av1C,
+associated CICP/range and exact ICC assertions for both selected backends and
+8/10/12-bit inputs. NativeColorPlan remains borrowed through NativeColorSource
+and the shared container append helper. The 4093-byte ICC observer sees no
+standalone profile-sized copies, with or without an exact matching nested ICC;
+caller data and output ICC remain unchanged. The old writer's exact baseline
+byte comparisons also pass; this is not an exhaustive old encoder pixel oracle.
+
+Independent external color3, plane3 and property2 all pass. Selected product
+lib23, encode28, container3, color3, headers1 and validation5 pass, as does strict
+all-target Clippy. Root separately confirms Rust1.88 all77 including fourteen
+executed FFmpeg tests, i68612 and the wasm32-unknown-unknown build for this
+pre-support-fix snapshot.
+
+The runtime defects are closed, but the prescribed slice-3 support contract
+still needs two finite corrections before whole-slice acceptance:
+
+- The public prose incorrectly requires a single nested colr to match both
+  CICP and ICC. State the actual alternatives: absent nested color, exact
+  canonical nclx match, or exact ICC type/bytes match. Explain the legacy
+  EncoderOptions default color and how to clear/override it. Document input
+  alpha plane ID 3 (distinct from container item ID 2), and explicit identity
+  input order 0=G, 1=B, 2=R. Remove the unrelated future item-3 claim.
+- The new tracked header test checks only 8-bit quality-80 Cs444/Cs400 av1C
+  flags and associated properties. It still does not compare an actual AV1
+  Sequence Header, cover both selected backends or supply matching nested ICC.
+  Add those fixed regression assertions; the passing independent thirty-encode
+  matrix must not be reported as tracked coverage already present in the repo.
+
+Thus runtime repair is accepted narrowly; complete H5 slice 3 remains pending
+these support changes. Slice 4 controls/pixi/semantic metadata, temporarily
+rejected legal identity tuples and full source-lossless fidelity remain open.
+
+## C1 substep 5 iterator slice: limited acceptance and separable checkpoint
+
+The private ObuIter uses the unchanged read_next_obu syntax primitive, borrows
+payloads and yields an error once before becoming fused. Old parse/search/count
+wrappers retain their public signatures, collecting result, first-match early
+return and independent-part framing. The bounded still inspection now walks
+this iterator without an OBU collection; it does not yet inspect actual
+show_frame or preflight the master/alpha decode pair.
+
+Four new independent tests pass: successful iteration performs no allocations
+while preserving payload pointers/source bytes; ordinary 128-byte size and
+extension handling are retained; malformed input errors once; and results from
+the old collector, searches, count and zero-target search agree with the exact
+baseline. Parts cannot complete a truncated OBU across a boundary, and a
+completed first-match search still does not parse a malformed suffix. The
+include-based target passes eighteen tests: four independent, nine current and
+five baseline tests, not eighteen independent cases. Product focused11,
+external parser40 and strict all-target Clippy also pass.
+
+The fixed OBU collection observer passes. Plane-limit-before-tile-copy and
+invalid-alpha-before-master-entropy remain the two expected failures of the
+next slice. Root separately confirms the four new tracked iterator tests under
+Miri, nine OBU tests under actual WASI execution and eleven focused tests under
+Rust1.88. Its parent lib62, AVIF decode7 and Stage-A6 regressions also pass.
+
+This iterator-only slice is accepted. The two files `avif/src/obu.rs` and
+`avif/src/obu_iter_tests.rs` are a separable checkpoint candidate against the
+reviewed baseline: no new Native API/type, dependency or version change is
+required. Leave decoder/frame.rs integration and all other uncommitted C1 work
+outside that checkpoint. Additional i686 LEB128 overflow investigation was not
+retried and remains unverified; the primitive was not altered by this refactor.
+Neither this checkpoint nor the parser's earlier acceptance completes bounded
+AV1 decode, C2/C3 or the wider H6 gates.
+
+The iterator checkpoint is now saved as nested AVIF a461af7 and parent gitlink
+sync c0d7ccb. Root verifies an isolated checkout at that object with Rust1.88
+focused OBU11, without the uncommitted Native implementation. Its clean parent
+regressions pass lib62, decode7 and Stage-A6 after the required ignored fixture
+was supplied with its existing matching hash. This does not commit or accept
+the decoder/frame.rs Native integration.
+
+## ICC S4 next slice: shared two-direction admission
+
+Keep Profile::compile's public single-direction API and semantics. Extract a
+small private route-plan module rather than further enlarging compile.rs:
+
+```rust
+enum SelectedStagePlan<'a> { Matrix(MatrixPlan<'a>), Lut(LutPlan<'a>) }
+struct RoutePlan<'a> { /* selected stage, direction, PCS, channels, media white */ }
+fn plan_route(profile: &Profile, direction: TransformDirection,
+    intent: RenderingIntent, limits: TransformLimits) -> Result<RoutePlan<'_>, TransformError>;
+fn admit_pair(input: &RoutePlan<'_>, output: &RoutePlan<'_>, budget: &mut CompileBudget)
+    -> Result<(), TransformError>;
+fn materialize_route(plan: RoutePlan<'_>, budget: &mut CompileBudget)
+    -> Result<CompiledProfile, TransformError>;
+```
+
+The standalone wrapper plans one selected route, creates one budget, admits
+once and calls the shared materializer. Transform::new_with_limits must not
+call that fresh-budget public wrapper twice. Instead: preserve the BPC rejection;
+plan input DeviceToPcs and output PcsToDevice without decoding either; check the
+existing selected-white/bridge conditions; atomically admit both route costs;
+then materialize input and output using the same mutable ledger. No broad tag
+walk, unused matrix fallback, opposite-direction compilation or eager raw-cache
+clone is added. Preserve direction-before-channel diagnostics, forward-only
+curve support, selected inverse/singular rejection and Relative handling of
+unused malformed white/chad. This is not an intent/domain behavior rewrite.
+
+CompileBudget already accumulates bytes and curve entries; add CLUT-entry state
+to its scalar checkpoint and admission checks. Matrix contributes zero CLUT
+entries. LutPlan admits curve entries, CLUT entries and full owned bytes as one
+transaction, and pair admission rolls back all counters if either fails. Counts
+describe the two compiled routes and are not released while materializing them.
+Actual-capacity reconciliation consumes pending bytes, with the complete output
+plan still pending while building input, then the actual input owners remaining
+live while building output. On error, drop partial candidates and the first
+completed stage before restoring the outer checkpoint; retry must be safe.
+
+Reuse S1/S3's exact selected header inventory, including each stage's payload
+header and CompiledDirection header once. Keep both CompiledProfile handles
+alive through pair assembly so that this accounted construction peak matches
+real ownership. Transform can retain its existing Arc fields and worker clone
+behavior; cloning handles must not copy payloads or charge the same owner twice.
+The temporary direction wrappers can drop after assembly. Do not charge raw
+Profile/tag bytes as compiled storage, and do not infer sharing merely because
+both calls reference the same Profile: the current two directions construct
+distinct owners. No new public dependency, option or worker representation is
+needed for this slice.
+
+The existing two_selected_luts_share_one_compiled_budget regression remains
+unchanged. Add a narrow tracked table for matrix/matrix, matrix/LUT, LUT/matrix
+and LUT/LUT: exact/one-under bytes and independent total curve/CLUT-entry limits,
+with known admission failure before the first data-owner allocation. The old
+test's fewer-than-two-CLUT-allocations assertion alone is not enough; the new
+pair-preflight observer requires zero. Include a valid input plus truncated
+selected output, and keep unused malformed routes accepted. A candidate test
+must combine input actual-capacity excess with pending output cost, observe
+drop/checkpoint/source preservation and retry; a destination allocation failure
+must also release the completed input. Retain all S1/S2/S3, route, Absolute,
+wrapper-length and worker-sharing assertions. Freeze/review this finite S4
+slice before any wider H3 acceptance or oracle expansion.
+
+## H5 slice 3 support follow-up: limited acceptance
+
+The two remaining support items are closed. Public NativeColorInformation
+documentation now distinguishes an exact nested nclx match from an exact nested
+ICC type/byte match, explains clearing the legacy nested default, states identity
+input plane order 0=G/1=B/2=R and separates input alpha plane ID 3 from the
+container-owned auxiliary item ID. The obsolete future-item claim is removed.
+
+The strengthened tracked native_headers test passes eight combinations:
+lossless false/true, nested nclx/ICC and Cs444/Cs400, with alpha in each. It reads
+actual sequence OBU payloads, checks primary CICP/range and alpha mono/full-range,
+compares actual sequence monochrome and inferred subsampling with associated
+av1C (including the corrected 0x08 x-subsampling mask), and checks exact associated
+nclx/ICC bytes plus absence of alpha colr. Independent execution of that one
+tracked test and strict all-target Clippy pass. This tracked matrix is 8-bit;
+the previously passing independent thirty-encode 8/10/12-bit matrix remains
+separate evidence, not additional tracked test functions.
+
+Together with the already verified runtime corrections and old writer byte
+comparisons, the fixed H5 slice-3 color authority/header/borrowed-ICC/documented
+contract is accepted. This does not complete slice-4 controls/pixi/semantic
+metadata, support for temporarily rejected legal identity tuples, full native
+source-lossless validation, encoder publication or all of H5. No product files
+were edited by this review.
+
+## ICC S3 final review: selected LUT ownership slice accepted
+
+The three finite follow-ups are closed. Public selected compilation no longer
+compares raw encoded tag length with the compiled-owner budget; Profile
+ParseLimits and checked selected ranges still apply. Both offset-addressed
+mAB/mBA gap fixtures now accept their unchanged exact owned budget and reject
+one-under before materialization. The obsolete decoded_bytes helper is removed.
+
+Three private tracked tests now use portable size_of-based header/outer/payload/
+grid expectations, including fixed public exact/one-under boundaries. The real
+admitted mAB plan test keeps all future owners pending alongside a live 8-byte
+owner, rejects a 32-byte candidate for a planned 28-byte parameter owner, checks
+candidate drop, old pointer/content and checkpoint preservation, then retries
+the same plan successfully. Independent mAB/mBA allocation observations also
+confirm actual deallocation and pending-owner accounting. The older public
+binary-search test remains supplementary monotonicity coverage, not the fixed
+header proof.
+
+Independent S3 four pass; the include-based target reports seven because it
+also runs the three tracked tests. The original external forty-six pass
+forty-five, with only the unchanged S4 two-selected-LUT cumulative-budget
+failure remaining. Included copies of the new tracked tests in other private
+targets are not counted as independent cases. Selected product lib26,
+compile4, shape5, LUT23, parse2 and transform11 all pass (71 total); the optional
+official profile used by the LUT fixture is present. Root separately confirms
+Rust1.91 all-targets172/one ignored and the three new private tests under i686,
+Miri and actual WASI execution.
+
+Focused formatting and diff checks pass after one import-order-only repair.
+Normal compilation is back to the three earlier unused items. Clippy is not
+globally clean: the existing iccprofile comparison error remains, and the
+highres WIP has separately recorded unused/style diagnostics, including the
+LutShape large variant, wrapper divisibility checks and RenderingIntent Default
+implementation. No new diagnostic is attached to this final S3 repair/test
+slice. These WIP diagnostics remain checkpoint-cleanup work, not an unrelated
+published-baseline exemption.
+
+S3's fixed selected-LUT ownership/allocation behavior is accepted. S4 shared
+two-direction bytes/curve/CLUT admission, cleanup, all-intent/domain behavior,
+full oracle coverage and H3/product checkpoint acceptance remain incomplete.
+The S4 design above is unchanged; no product source was edited by the reviewer.

@@ -4577,3 +4577,121 @@ examples with highres both off and on because existing examples assume Exif/PNG;
 the default/highres doctest configuration passes twelve. This pre-existing feature
 assumption remains a full-gate limitation, not a new highres regression. Native
 show-frame/prefix hookup and H4 conversion/resolver work remain separate reviews.
+
+## Native prefix hookup review: two finite repairs remain
+
+The frozen hookup keeps master and selected-alpha FramePrefix values alive until
+finish and borrows auxiliary payloads through ItemHeaderSource/Parts instead of
+constructing cloned AvifInfo values. Actual show_frame is checked. Independent
+existing header-admission3, baseline/current grammar2, tracked public hookup2,
+native-prefix2 and private hookup2 pass. These results do not close the following
+fixed C1 boundaries:
+
+1. **P1 selected-alpha framing is not inspected completely.** A new external
+   regression first decodes a positive master/alpha control and verifies alpha
+   ID3. It then appends a second frame-header OBU to the selected alpha, confirms
+   container parsing retains those exact bytes, and calls the bounded Native API.
+   Decoding incorrectly succeeds; two allocations with the master tile payload's
+   size are observed. The full-item single-frame walk is applied only to master.
+   Reuse one borrowed item-framing validator for both items before either finish
+   or master decoding. Keep Legacy's first-frame behavior unchanged.
+2. **P1 Native alpha still clones its decoded samples.** After strict alpha
+   validation, the common attachment call clones the first PlaneBuffer even on
+   the Native branch. Move that validated owner into the master and prove sample
+   pointer/content identity in a tracked attachment test; preserve alpha ID3 and
+   Legacy behavior. This is the previously approved C1 copy-removal boundary,
+   not an expansion into C2 reference/filter/entropy ownership accounting.
+
+Root separately reports Rust1.88 all-targets698/eight ignored on this pre-repair
+snapshot and byte-identical Legacy callback/Abort snapshots with highres off/on.
+Those existing passes do not detect or override the new Native failures. The
+Native hookup remains unaccepted until these two repairs and their observations
+pass; the previously accepted parser and grammar-only slices remain separate.
+
+The subsequent runtime repair passes the independent multiple-alpha regression
+with zero master-tile-size allocation hits. Both items now use the same borrowed
+framing walk before finish; Native consumes the validated alpha PlaneBuffer while
+Legacy retains its clone path. Header43 and grammar62 reruns pass (included tests
+are not additional independent cases), as do public hookup2/native-prefix2.
+Tracked rejection and actual attachment pointer/content identity proofs remain
+the final support requirement; pixel equality alone cannot detect a reintroduced
+clone.
+
+## H3 D strict-domain review: fixed follow-up boundaries
+
+The old semantic nine and fixed allocation/direction boundaries remain separate
+from the new strict-domain probes. Two new edge tests pass: exact device endpoints
+are accepted but adjacent/subnormal outside values are rejected; decoded sampled
+curve endpoints are accepted but their one-ULP and small outside values are not.
+No quantization epsilon expands the supported input or inverse-image domain.
+
+Two finite follow-ups were independently reproduced:
+
+- CompiledProfile's two LUT branches still used the legacy always-clamped
+  evaluator. A legal mAB/mBA matrix stage producing normalized1.5 silently clipped
+  in both directions despite the directional API's strict contract. Connect both
+  branches to the shared strict evaluator and track both directions, preserving
+  the explicit clamp=true pair path.
+- Parametric function1/2 with threshold2 selects its constant branch throughout
+  device[0,1]. The new domain validator nevertheless checked the unused negative
+  power base and rejected forward compilation. Validate only the intersection
+  of each selected piecewise branch with the supported domain; constant inverse
+  rejection remains unchanged. This preserves the existing forward-only contract.
+
+The synthetic mft2 white correction is justified by ICC.1:2022 Table14's exact
+PCSXYZ codes7B6B/8000/6996, rather than a relaxed oracle tolerance. Table68 defines
+the parametric branch selection. The existing full-grid runner explicitly uses
+clamp=true and is not proof of strict-domain error behavior. D remains pending
+these finite repairs; class/version routing, execution/worker limits and WIP
+Clippy cleanup are the next separate E slices, not additional D acceptance claims.
+
+### Next H3 E slices: bounded implementation order, not acceptance
+
+1. Retain raw version/class in structural Profile metadata and retain requested
+   intent, selected tag/model and fallback in the immutable route description.
+   Validate executable class/model at the common route-plan entry, before stage
+   allocation. For the approved ICC v2/v4 models, Input/Display may use RGB XYZ
+   matrix or Gray XYZ/Lab; Output uses Gray or supported LUTs; ColorSpace uses
+   supported LUTs, not an invented RGB matrix interpretation. Unsupported
+   DeviceLink/Abstract/NamedColor or unknown classes return the existing explicit
+   Unsupported category when compiled. Preserve readable raw metadata and the
+   compatibility constructors' separate eager-validation path. Test selected
+   fallback information, missing/unsupported classes and untouched unused routes.
+2. Audit execution allocations separately from immutable compiled storage.
+   Worker F32 can call the existing slice core without copying the image.
+   U8/U16 conversion can share a fixed pixel/chunk buffer instead of retaining
+   two image-sized Vecs. If dynamic buffers remain, account actual retained
+   capacities and old-plus-whole-replacement peaks before reserve, with atomic
+   failure/retry tests. The allocating F32 wrapper must check pixel/sample/byte
+   multiplication and its output bound before reserve. Add private-field limits
+   and checked builders where needed; do not add fields to the existing public
+   options structs or variants to the exhaustive error enum. Verify cold/warm
+   allocation observations, constant-cost worker creation and preserved lengths.
+3. Finish the current ICC WIP's unused-item and strict Clippy cleanup without
+   suppressing new diagnostics as unrelated baseline. Preserve fixed54 plus the
+   seven product S4 tests, accepted semantic/domain assertions and the frozen
+   declared-pair oracle recipe. E is not CMYK/MPE/BPC/HDR execution, H4 completion
+   or permission to publish/commit the ICC product.
+
+### H3 D final independent decision
+
+D's fixed domain slice is accepted after both repairs. The final external target
+passes35 tests: unchanged22, semantic9 and the four new domain boundaries; these
+are not35 additional tests. The original fixed54 and the seven product S4 tests
+also pass independently. Product LUT36/transform12, six-file focused rustfmt and
+diff checks pass. Tracked tests exercise both public compiled LUT directions and
+forward-only parametric function1/2 with inverse-constant rejection. The unused
+always-clamped LUT wrapper was removed; normal builds retain the two previously
+recorded WIP unused items. This is not a strict Clippy or whole-H3 pass.
+
+The same five declared profile pairs were rebuilt and rerun at this frozen D
+snapshot: four intents,91,724 points, no missing rows or failures, all existing
+DeltaE thresholds met. Per-pair statistics equal the prior A/B/C result. Fresh
+ignored artifacts preserve canonical Cargo metadata, source/build hashes before
+and after (identical), executable/profile/oracle hashes, settings and raw output;
+the prior artifacts remain untouched. The bounded clamp=true oracle comparison
+and strict-domain error probes remain separate evidence.
+
+Root separately confirms the final two tracked repairs on Linux Miri, i686 and
+executed WASI. These supplementary checks do not close E's class/model metadata,
+execution/worker bounds, cleanup, untested route/format coverage or H4.

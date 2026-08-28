@@ -7,6 +7,19 @@ assigned to sol. Review each checkpoint before its separate repository commit.
 No version bump, GitHub push, PR, tag, release or registry publication is
 authorized by this checklist. JXL remains stopped and out of staged changes.
 
+## Latest resume snapshot
+
+- Encoder native/CfL checkpoint 9c93f1c and parent gitlink-only checkpoint
+  a00a12d are saved; independent native lossless checks cover 37 cases/55 streams.
+- C1 parser slices and the prefix grammar seam have limited acceptance. Native
+  show-frame validation and alpha prefix retention/reparse removal remain open.
+- ICC S1-S3 are accepted only within their allocation/selected-route slices.
+  S4 public exact-owner behavior is repaired, but plan-bound owner policy,
+  tracked same-ledger pipeline failure/retry proof and cleanup await final review.
+- Full H3 intent/domain/oracle coverage and H4 explicit frame conversion remain
+  unfinished. Historical evidence below is slice-specific, not a blanket gate.
+  No publishing, version bump or wider checkbox completion is authorized.
+
 ## H0: boundaries and reproducible baseline
 
 - [x] Record the approved `highres` namespace, typed API and compatibility scope.
@@ -4083,3 +4096,353 @@ S3's fixed selected-LUT ownership/allocation behavior is accepted. S4 shared
 two-direction bytes/curve/CLUT admission, cleanup, all-intent/domain behavior,
 full oracle coverage and H3/product checkpoint acceptance remain incomplete.
 The S4 design above is unchanged; no product source was edited by the reviewer.
+
+## ICC S3 frozen-source diagnostic: existing LCMS pair repeated
+
+The existing RGB17-cubed v4-preference to sRGB2014 Relative comparison was
+rebuilt and repeated without changing its oracle or metric. SHA256 manifests
+for the ICC source/build inputs and harness/metric agree before and after the
+build/run (42 files). The preserved run also records Cargo metadata, executable
+and both profile hashes, transicc hash, exact command/settings and full output
+rows in a new ignored artifact directory; the older diagnostic is untouched.
+
+The Sharma metric self-check passes all 34 vectors. All 4913 RGB points complete
+without failure. DeltaE00 median is 0.0017950127, nearest-rank p95 0.0063801949
+and maximum 0.0459857599; maximum normalized channel difference is 0.0003992994.
+These reproduce the previous diagnostic values and satisfy this pair's existing
+thresholds. Input/output transport remains floating 0..255, Relative without
+BPC, with both result sets measured through the same destination-to-physical-Lab
+oracle path. The subject retains its explicit clamp=true setting.
+
+Unlike the earlier run, this result has a verified source snapshot attribution.
+It is still only one pair/intent: S4 cumulative budgeting, other intents, Gray,
+unclamped/domain behavior and overall H3/oracle completion remain open.
+
+## H5 slice 4 review: selected backend controls and pixi boundary accepted
+
+The shared lossless capability check preserves the old control predicate,
+diagnostic and its precedence before legacy pixi/color restrictions. Native
+preflight resolves actual primary and optional alpha routes and validates both
+before entering either backend. Jobs, row/column tiling and advanced controls
+are rejected for selected lossless routes, including explicit lossless=true.
+An absent alpha with quality_alpha=100 does not restrict a lossy primary.
+Extended pixi is explicitly rejected by the Native route; mixed channel depths
+were already rejected by common validation and are not a newly fixed defect.
+
+Three independent tests pass. Sixteen control negatives and four extended-pixi
+cases observe no backend-sized allocator requests, calibrated against successful
+execution of both backends; small preflight/error allocations are not claimed
+to be absent. Mixed-quality output comparisons confirm the primary and alpha
+payloads follow their independently selected qualities. A no-alpha lossy encode
+with jobs=1 succeeds despite quality_alpha=100. Legacy control error text and
+precedence remain exact, including intentionally conflicting later metadata.
+The previous external color3, plane3 and property2 tests remain unchanged and
+pass, including the old writer's baseline byte comparisons.
+
+The strengthened tracked support adds four tests with thread-local, test-only
+entry counters. Negative controls observe zero primary/alpha entries, a positive
+control verifies primary-then-alpha order, the no-alpha control observes only
+primary, and mixed-depth pixi rejects before entry. Counters sit immediately
+before the real selected backend branches and introduce no release-build state.
+Independent final product execution passes all84: lib27, encode28, container3,
+native color3, headers1, validation5, controls3 and fourteen executed FFmpeg
+tests. Strict all-target Clippy, formatting and diff checks pass. Root separately
+confirms Rust1.88 all84, i686 counter4, wasm32-unknown-unknown check and the
+negative backend-entry test under Miri. The author did not run a pre-fix red
+test for this slice; no such failure count is claimed.
+
+The fixed slice-4 controls/extended-pixi boundary is accepted. This is not
+extended-pixi preservation support, geometry/other frame metadata preservation,
+support for temporarily rejected legal identity tuples, full new-native sample
+or source-lossless coverage, animation encoding, publication or all-H5 closure.
+The existing FFmpeg suite covers old entrypoints and does not substitute for
+all those new-native roundtrip gates. Encoder checkpoint scope is the reviewed
+native slices and their tests; type-level plane documentation must agree with
+the explicit GBR/alpha contract before that checkpoint is saved.
+
+The final encoder candidate includes fourteen reviewed files: the four existing
+source integrations, four private helper/test modules, five integration-test
+files and ignore rules. The two existing plane-type doc comments now distinguish
+the legacy YUV interface from new-native GBR and alpha plane 3. Exact staged
+contents match the tested source apart from that documentation-only correction;
+there are no dependency, manifest, version or other-repository changes. The
+candidate is accepted as a standalone implementation checkpoint, not release
+or full H5 completion.
+
+## C1 prefix implementation seam: concrete saved state
+
+The temporary helper returning a fully parsed FrameHeader is not a pre-tile
+prefix: parse_tile_info has already allocated its vectors. Split the existing
+grammar at reduced-still allow_intrabc completion and at normal-frame
+disable_frame_end_update_cdf completion, immediately before each tile-info call.
+
+A move-only FramePrefix carries the existing BitReader borrowing the OBU data,
+a copied SequenceHeader and a borrowed fixed eight-slot reference-state array.
+Native callers use a stable all-None array; do not borrow a helper-local array
+into the returned prefix. SequenceHeaderMetadata is consumed by the existing
+buffer-removal-time read before this boundary and need not survive afterward.
+No seek/reparse, dummy TileInfo or full FrameHeader allocation is needed.
+
+Its fixed parsed fields are frame type/display/showable/error-resilience flags;
+CDF/screen-content/integer-motion flags; size-override, order hint, primary
+reference, refresh flags, frame ID, seven reference indices/order hints and
+short-signaling state; high-precision/filter/motion-mode/reference-MV state;
+coded/upscaled/render dimensions; intrabc and frame-end-CDF flags. Intermediate
+frame_order_hints need not survive after reference_order_hints are resolved.
+Normalize reduced-still fields to the existing literal defaults without reading
+normal-only bits, particularly disable_frame_end_update_cdf.
+
+The consuming finish function uses that same reader for tile info, trailing
+parameters, global motion and film grain, then assembles FrameHeader once.
+Reduced-still trailing/grain parsing keeps its existing all-None references;
+normal parsing keeps the supplied reference state. Existing public wrappers
+compose prefix plus finish, preserving bit order, early show-existing rejection,
+diagnostics and final offsets. Only the Native caller inserts both-item limit/
+alpha validation before either finish. Keep this seam in a small private module
+sharing existing syntax helpers; do not clone the grammar into a Native parser.
+This is design guidance, not acceptance of the in-progress prefix implementation.
+
+The reviewed encoder checkpoint is saved as 1bcf542, with parent gitlink sync
+0995d14. Root's clean temporary checkout confirms Rust1.88 encoder84, parent
+encoder integration8 and callback4 plus the explicitly run external Next case.
+These checkpoint regressions do not establish full new-native lossless fidelity.
+
+## H5 new-native source-lossless pilot: confirmed chroma mismatch
+
+This is a new encode_native_bytes oracle, not the existing fourteen old-entry-
+point FFmpeg tests. The exact clean encoder checkpoint generates native planes
+with explicit depth/layout, lossless=true, independent alpha values 0/1/mid/max,
+distinct hidden colors and exact ICC+nclx. FFprobe checks native pixel format,
+dimensions and full range. FFmpeg maps primary and alpha streams separately,
+disables automatic conversion/scaling and requires the matching native output
+format; no RGB intermediate is used.
+
+The first 4x4 12-bit 4:4:4 primary, whose samples never exceed one, and its
+12-bit alpha are byte-exact. ICC, nclx and caller data are also preserved.
+The 5x3 8-bit 4:2:0 case fails: U[1] changes 138 to 137 and V[3] changes 74 to
+75, while luma and all fifteen alpha samples are exact. Explicit libdav1d and
+libaom decodes of the same encoded file produce identical raw bytes and the
+same two errors, with native yuv420p/gray full-range output.
+
+The fixed variations retain the mismatch at speed 0, 6 and 10 and without
+alpha. An even 6x4 control also fails, with three U samples increased by one.
+Therefore this is not isolated to odd dimensions, alpha attachment or one speed
+preset. It is a P1 source-lossless failure on the selected pure-Rust primary
+route; the internal prediction/transform cause has not yet been diagnosed.
+The all-depth/subsampling matrix is deliberately deferred until this finite
+failure is repaired, not reported as passed.
+
+The ignored harness retains exact input/expected/decoded planes, encoded files,
+commands, both oracle versions and SHA256 manifests for the clean commit source,
+harness, executable, ICC and artifacts. Source hashes were captured after the
+run and tied to the exact clean commit verified before/after, not falsely
+claimed as pre-build hashes. The finite fixture/options are handed to the
+implementation agent for a tracked red/green repair. Preserve the passing dark
+12-bit control and do not replace the repair with geometry-only rejection or
+weaker sample tolerances. No product source was edited by this review.
+
+## ICC S4 independent review: cumulative gate closed, exact ownership not yet closed
+
+The unchanged independent boundary46 now all pass, including the formerly
+failing two-selected-LUT cumulative limit. The four independent S3 owner tests
+also pass. Product all-targets execution independently confirms 176 passed and
+one explicitly ignored supplementary-metric test. Included product tests in
+private harnesses are not counted again as independent cases. Root separately
+confirms the four tracked S4 cases on i686, Miri and executed WASI.
+
+Four new independent S4 cases produce three passes and one failure. Fixed
+matrix/matrix, matrix/LUT, LUT/matrix and LUT/LUT counts reject cumulative
+byte/curve/CLUT one-under budgets before the first allocation. A destination
+12-byte curve allocation failure occurs after the input's eight-byte curve
+was constructed; all completed-input/partial-output owners are actually
+deallocated, and source pointers and contents remain unchanged. A genuinely
+admitted two-LUT plan rejects a 28-byte-planned/32-byte-actual candidate,
+deallocates it and restores its checkpoint; the same plans and same ledger then
+materialize successfully without a fresh Transform or readmission.
+
+P1: exact compiled-owned storage is overcharged in Transform construction.
+RoutePlan unconditionally charges a CompiledDirection heap header, whereas
+Transform keeps that intermediate on the stack and retains only its stage Arc.
+The independent 64-bit fixture's actual owned byte totals are 288, 49720, 49720
+and 99152 for the four pair kinds. Allocation observation confirms those totals
+plus only the documented two Arc control-pair exclusions. All four exact
+budgets incorrectly return ResourceLimit before allocation. Tests derive these
+totals from fixed payload counts and size_of owner types, not by asking the
+ledger to discover its own passing boundary.
+
+Finite repair, superseding the earlier suggestion to retain extra compiled
+handles solely to match their charge:
+
+1. Give the shared route planner an explicit private owner policy for standalone
+   CompiledProfile versus Transform stage storage. Charge the selected stage
+   header once in both; charge CompiledDirection only where its heap owner
+   really exists. Admission and materialization must consume the same policy.
+   Keep the standalone S1/S3 exact-header tests unchanged; do not add needless
+   Arc allocations to justify a charge for non-existent owners.
+2. Strengthen tracked S4 tests with the fixed independent inventory/allocator
+   observations above. The current pair_cost derives its expectation from
+   admission itself, and the current candidate retry creates a new Transform.
+   Use a small shared private pair-materialization seam to expose the admitted
+   checkpoint: on failure, drop partial output and completed input before
+   restoring it, then retry the same admitted plans and ledger. Preserve source
+   pointer/content, output-allocation failure and candidate actual-capacity
+   observations; do not replace them with inspect-only or fresh-budget tests.
+3. Remove the newly unused Curve storage_bytes and LUT curve_entries/clut_entries
+   helpers. The new SelectedStagePlan large-enum Clippy diagnostic also belongs
+   to S4 cleanup. Keep planning allocation-free rather than boxing the large
+   variant; private checked fixed storage is an available alternative.
+
+Focused formatting passes. Ordinary checking reports five warning groups:
+the prior three plus two newly unused-method groups. Clippy is not clean: the
+existing reader comparison error and prior high-resolution WIP diagnostics
+remain distinct from the newly added route enum diagnostic. These are not
+waived by runtime test success. S4 remains NO-GO pending this finite repair;
+full intent/domain/Gray/oracle coverage and the overall ICC checkpoint remain
+separate unfinished gates. No product source was edited by this review.
+
+## H5 source-lossless repair: fixed native oracle accepted
+
+The finite chroma mismatch is repaired by retaining subsampled luma at Q3
+precision before its block average and using the reconstructed coded backing
+extent rather than clipping every read to visible source dimensions. The
+tracked sixteen-value vector is independently calculated from the official
+CfL process; its Q3 block average is 752 and every expected delta agrees.
+The sum scaling and signed final prediction follow
+[AV1 chroma-from-luma decoding](https://aomediacodec.github.io/av1-spec/#predict-chroma-from-luma-process).
+
+The normative MaxLumaW/H variables describe the last reconstructed luma
+transform extent, not an unrestricted whole-frame prediction window. Current
+CfL selection is restricted to one 4x4 chroma footprint and luma is emitted
+before chroma. Subsampled partitions do not use the finer 4:4:4-only partition
+search; the selected 4:2:0 footprint is its complete 8x8 luma leaf. A 4:4:4
+CfL block uses its corresponding 4x4 luma footprint. Interior reads therefore
+do not activate the coded backing-edge clamp. This is a current callsite
+invariant, not a general redefinition of MaxLumaW/H. A final comment-only
+clarification is requested before the two-file repair checkpoint is staged.
+
+Independent new-native oracle execution passes 37 cases: the two original
+pilots, five speed/alpha/even-size variations, twelve combinations of explicit
+8/10/12-bit and 400/420/422/444 at odd dimensions, and eighteen 8-bit tiny/edge
+cases. The latter use 1x1, 1x3, 3x1, 2x2, 7x5 and 9x9 in 420/422/444. The exact
+same encoded files are decoded through explicit libdav1d and libaom routes.
+All 55 primary/alpha streams are byte-identical to each other and to source
+native samples, with automatic conversion/scaling disabled. ICC+nclx, depth,
+range, alpha values and distinct hidden colors are checked without an RGB
+intermediate. This closes the fixed pilot failure; it does not claim arbitrary
+image/content, quality, geometry or all-H5 conformance.
+
+The first review attempt accidentally used the original clean encoder path
+after the implementation agent restored that external manifest. Cargo metadata
+exposed the baseline dependency and the original red result was retained as
+baseline evidence, not mislabeled a repair regression. The successful rerun
+uses a separate ignored manifest with a canonical current-dependency assertion,
+complete encoder source/manifest/lock hashes before and after execution,
+executable/tool/profile hashes, and preserved commands/raw artifacts. Both
+decoder runs confirm unchanged frozen source. Earlier pilot artifacts remain
+untouched.
+
+The final functional snapshot independently passes product all-targets85,
+including fourteen executed existing FFmpeg tests, and the eleven unchanged
+external color/plane/property/control tests. Strict all-target Clippy,
+focused formatting and diff checks pass. Root's supporting host Rust1.88,
+i686 Rust1.91 and Miri results remain separately attributed. The two-file
+runtime repair is accepted. Final exact staged review confirms only the two
+repair files, 52 additions/11 removals and no unstaged change. The final comment
+now distinguishes the reconstructed footprint/backing limit from generic AV1
+MaxLumaW/H; this is the only change after the oracle snapshot. The isolated
+two-file checkpoint candidate is accepted, not publication or all-H5 completion.
+No product source was edited by the reviewer.
+
+## ICC S4 owner-policy repair review: public exact boundary closed
+
+The selected Transform routes now charge only their real stage heap owners;
+standalone CompiledProfile retains its additional direction header. Independent
+allocator-calibrated exact budgets pass for all four matrix/LUT pairings, while
+the unchanged standalone S3 header tests still pass.
+
+One old external cumulative test initially failed because its byte threshold
+still added two standalone direction headers. That amount is above the repaired
+Transform boundary, so successful construction was correct. The reviewer changed
+only the expected inventory to the observed stage-only total and used the same
+Transform policy for admission/materialization in the pending-candidate probe.
+Exact positive controls, typed one-under rejection, zero allocation before
+known rejection, curve/CLUT cumulative limits, real candidate deallocation,
+source preservation and same-ledger retry assertions remain intact. All four
+independent S4 tests, the four independent S3 tests and the original independent
+46 now pass. Included tracked tests are not added to those independent counts.
+
+This closes the public exact-budget P1, not all S4 acceptance. Three finite
+requirements remain:
+
+1. Bind OwnerPolicy immutably when RoutePlan is created. The current separate
+   admit_with_policy/materialize_with_policy arguments and default wrappers
+   can disagree; both phases must consume the same plan-bound owner contract.
+2. Move pair construction into the small shared production seam described
+   above and migrate the real allocator/drop/source/same-admitted-ledger proof
+   into tracked tests. The existing candidate test still retries a fresh
+   Transform, and pair_cost still derives expectations from admission itself.
+   Restore the admitted checkpoint only after partial output and completed
+   input have actually dropped, then exercise retry through that same seam.
+3. The obsolete Curve/LUT count helpers are removed, but a newly unused default
+   admit_pair and SelectedStagePlan's large-enum diagnostic remain. Remove the
+   unnecessary wrapper and use checked fixed plan storage without heap boxing.
+
+Current public callsites consistently select the correct policy; the first
+remaining item is a fixed design/invariant gap, not a claimed new public runtime
+reproduction. Focused Clippy confirms the new route diagnostics separately from
+the previous reader error and other WIP cleanup. S4 remains unaccepted until
+these finite requirements are complete. No product source was edited.
+
+## C1 substep5 prefix grammar seam: limited acceptance
+
+The final prefix/finish extraction is accepted as a grammar seam only. The
+move-only prefix retains the original borrowed BitReader and reference table,
+copies the small SequenceHeader state, and finishes on that same reader after
+the prefix boundary. Sequence metadata is consumed before the boundary; no
+second header parser or reference-vector clone is introduced. The reduced
+branch continues to use the legacy NONE reference table during its trailing
+stages. Static comparison preserves old trace strings, conditions and order.
+
+The deterministic normal fixture now uses disable_cdf_update=false (0x11) and
+monochrome's true/true subsampling flags. Its prefix ends at bit8 and its full
+header at bit21/byte3. The former 0x19 fixture exercised an existing legacy
+unconditional end-CDF-bit read, not normative syntax: when CDF updates are
+disabled, AV1 infers that field instead of reading it. This pre-existing
+grammar issue is recorded separately and was not repaired in this extraction.
+The applicable conditional and monochrome flags are specified in the
+[official AV1 syntax](https://aomediacodec.github.io/av1-spec/#uncompressed-header-syntax).
+The fixture proves the selected header branch, not complete-bitstream or
+entropy conformance.
+
+Independent external tests compare all header fields and exact error variants
+and messages against the committed pre-extraction parser. Normal/reduced byte
+truncations, show-existing rejection, and the real normal WML2Viewer header
+with every header-byte truncation pass two tests; the real fixture is required,
+not silently skipped. A separate production-cfg allocator observer confirms
+zero prefix allocations, unchanged source bytes/pointer, the retained reference
+pointer and sequence snapshot, with a positive tile-allocation control in
+finish. The initial test-cfg observation included four legacy Windows trace
+environment-query allocations; it is not misrepresented as a production data
+owner or removed by weakening the zero-allocation assertion.
+
+The final product snapshot passes the four tracked prefix tests, two native
+prefix tests and twenty-one existing frame tests independently. The three
+existing external OBU/plane/alpha early-admission probes also pass. The corrected
+tracked finish-truncation assertion compares the complete error to the public
+wrapper. Focused formatting and diff checks pass. Root separately confirms
+Rust1.88 prefix4/native-prefix2, Miri prefix4 and actual WASI prefix4 on the final
+fixture snapshot. Included product tests are not added to external counts.
+
+Native hookup remains unfinished: actual show_frame validation and retaining
+the selected alpha prefix through finishing/decoding instead of reparsing are
+still required. Tile/decode ownership and later C2/C3 work are not accepted by
+this grammar-only result. No product source was edited by the reviewer.
+
+## Encoder CfL repair checkpoint recorded
+
+The independently accepted two-file CfL repair is saved in encoder checkpoint
+9c93f1c; parent a00a12d synchronizes only that encoder gitlink. Exact object and
+gitlink review confirmed no unrelated product/version change. Root separately
+reran all 85 encoder tests with Rust1.88 in the clean checkpoint checkout.
+The earlier 37-case/55-stream native source-lossless evidence remains specific
+to the reviewed repair and does not imply full H5 completion or publication.

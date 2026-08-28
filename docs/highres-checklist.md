@@ -4498,3 +4498,82 @@ intent/domain/Gray/oracle coverage, general cleanup, H4 explicit frame color
 conversion and C1 Native show-frame/alpha-prefix hookup remain unfinished.
 No further scope is started at this checkpoint. Product source, versions,
 dependencies and repository commits were not changed by the reviewer.
+
+## Resumed H3 semantics: intent / physical PCS / Gray limited acceptance
+
+The next implementation order is A: designated intent route and same-direction
+fallback; B: one physical-D50-XYZ Absolute bridge; C: distinct Gray XYZ/Lab
+interpretations; D: checked unclamped device/inverse domains. This implements
+the existing H3 design, not a replacement plan. S4's selected ownership and
+cumulative allocation contract remains in force.
+
+[ICC.1:2022, 8.10.2 and Table 25](https://www.color.org/specifications/ICC.1-2022-05.pdf)
+require the selected A/B tag, then same-direction suffix0 when absent. Absolute
+designates suffix1 and is not exempt from this fallback; A2B3/B2A3 are never
+selected. The initial implementation/test assumption forbidding Absolute's
+fallback was rejected and repaired. A malformed selected tag is not hidden by
+fallback, and unused reverse/matrix tags remain unvalidated.
+
+Independent review found two connection errors after Gray Lab was added:
+LUT-to-Gray passed converted Lab coordinates into a helper expecting XYZ;
+RGB-to-Gray Lab rejected chromatic XYZ instead of using its achromatic channel.
+Both have been repaired, with four tracked Gray/PCS regressions. Selected matrix
+destinations now receive physical XYZ; Gray Lab uses L*/100, while Gray XYZ uses
+Y. Absolute applies the source/destination media-white ratio once in XYZ, without
+applying chad again. Non-neutral Lab vectors, both source PCS forms, unequal-white
+four-way matrix/LUT pairings, and Gray forward/reverse analytic values pass.
+
+The final independent semantic set passes seven and retains two expected D-slice
+failures: unclamped negative device input still succeeds, and an unreachable
+inverse sampled-curve value is extrapolated. These are not ignored or accepted.
+The prior 54 allocation/parse boundaries pass after two explicit harness updates:
+the new private MatrixPlan PCS field is set to the former XYZ value; the obsolete
+Gray-Lab-Unsupported expectation becomes physical-XYZ/Lab analytic assertions in
+both structural and eager paths, preserving RGB-matrix-Lab rejection. No budget,
+allocator, source-preservation or failure-atomicity assertion is weakened.
+Product lib33 (including S4's seven tests), LUT30 and transform11 pass independently;
+focused five-file formatting and diff checks pass. Ordinary checking retains
+two WIP unused groups; full strict cleanup is still open.
+
+### Frozen-source LCMS comparisons
+
+The black-box CLI transport was first calibrated with generated, self-described
+Gray XYZ and Gray Lab gamma2 profiles. Gray input is 0..255, not a percentage.
+At input127.5 their physical Lab lightness values are respectively 57.0754 and25;
+black/white produce0/100. Sharma's 34 printed vectors and metric self-checks pass.
+No LCMS implementation source or runtime dependency is used.
+
+On the frozen repaired source, the five pairs below each run all four intents.
+RGB uses17^3 points and Gray4096, endpoints included. Both output sets are measured
+through the same destination-to-physical-Lab Relative path, with full adaptation,
+no BPC and no quantized/bounded flags. Every declared row is present and finite.
+The table gives the largest statistic across the four intents for each pair.
+
+| Pair | Points per intent | Maximum p95 DeltaE00 | Maximum DeltaE00 |
+| --- | ---: | ---: | ---: |
+| v4 preference to sRGB2014 | 4913 | 0.0063801949 | 0.0459857599 |
+| Synthetic Gray XYZ gamma2 to sRGB2014 | 4096 | 0.0062008612 | 0.0322419796 |
+| Synthetic Gray Lab gamma2 to sRGB2014 | 4096 | 0.0094597953 | 0.0633450190 |
+| sRGB2014 to synthetic Gray XYZ gamma2 | 4913 | 0.0012991512 | 0.0034726289 |
+| sRGB2014 to synthetic Gray Lab gamma2 | 4913 | 0.0012979954 | 0.0034726289 |
+
+All20 comparisons, totalling91,724 input points, meet the existing median/p95/max
+thresholds. Fresh ignored artifacts retain complete CSV/CLI output, settings,
+profile and executable hashes, canonical Cargo dependency metadata and identical
+source/build/harness manifests before and after the build/comparison. Earlier
+diagnostic and S3 artifacts are preserved. These five declared pairs do not cover
+all profile classes/models, every LUT format, genuine suffix2 profiles, every
+inverse/domain case or all H3. Official equal-white pairs do not replace the
+separate unequal-white analytic checks.
+
+A/B/C's fixed semantic slice is accepted; D and the remaining H3 gates are not.
+Root separately confirms final all-targets186/one ignored, Gray-focused five tests
+on Linux Miri, i686 and executed WASI, plus four Absolute tests on Linux Miri/i686.
+These are separate supplementary counts, not additions to the independent set.
+
+Root also reports parent default/highres/encoder all-targets and the seven consumer
+configurations passing. Minimal no-default doctests fail the same nine of twelve
+examples with highres both off and on because existing examples assume Exif/PNG;
+the default/highres doctest configuration passes twelve. This pre-existing feature
+assumption remains a full-gate limitation, not a new highres regression. Native
+show-frame/prefix hookup and H4 conversion/resolver work remain separate reviews.

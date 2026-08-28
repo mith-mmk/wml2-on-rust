@@ -13,9 +13,9 @@ authorized by this checklist. JXL remains stopped and out of staged changes.
   a00a12d are saved; independent native lossless checks cover 37 cases/55 streams.
 - C1 parser slices and the prefix grammar seam have limited acceptance. Native
   show-frame validation and alpha prefix retention/reparse removal remain open.
-- ICC S1-S3 are accepted only within their allocation/selected-route slices.
-  S4 public exact-owner behavior is repaired, but plan-bound owner policy,
-  tracked same-ledger pipeline failure/retry proof and cleanup await final review.
+- ICC S1-S4 are accepted only within their selected-route/allocation slices.
+  S4 plan-bound ownership and tracked real-allocation/drop/same-ledger retry are
+  verified. Broader ICC WIP lint cleanup and overall product acceptance remain open.
 - Full H3 intent/domain/oracle coverage and H4 explicit frame conversion remain
   unfinished. Historical evidence below is slice-specific, not a blanket gate.
   No publishing, version bump or wider checkbox completion is authorized.
@@ -4446,3 +4446,55 @@ gitlink review confirmed no unrelated product/version change. Root separately
 reran all 85 encoder tests with Rust1.88 in the clean checkpoint checkout.
 The earlier 37-case/55-stream native source-lossless evidence remains specific
 to the reviewed repair and does not imply full H5 completion or publication.
+
+## ICC S4 final fixed bundle: limited acceptance
+
+The owner policy is now private immutable state of each borrowed RoutePlan;
+admission and materialization cannot select different policies. Standalone
+CompiledProfile still counts its real direction heap header, while Transform
+counts only its actual selected stage owners. Fixed checked matrix/LUT plan
+storage replaces the large enum without introducing a planning allocation.
+Transform uses the common pair-materialization seam; on failure it drops
+partial output and completed input before restoring the admitted checkpoint.
+
+The final tracked proof uses actual allocations, not a manually returned error.
+A Gray two-entry input curve is created before the allocator denies the
+three-entry destination's twelve-byte allocation. Exactly one input payload
+and one allocation denial are observed; completed/partial owners are actually
+deallocated, and both source pointers and complete tag bytes are unchanged.
+A separately admitted real mAB/mBA pair rejects a planned28/actual32 candidate
+with typed ResourceLimit, a real 32-byte peak and zero remaining live bytes.
+Its checkpoint is unchanged, and the same plans and same budget then complete
+through the production pair seam without readmission or a fresh Transform.
+The fixed full-owner size_of formula is checked independently of plan inventory.
+TLS/RAII test instrumentation has one test-only allocator registration and does
+not change the normal-library allocator.
+
+Final independent execution passes the unchanged 54 boundaries: base7, parse7,
+compile22, S1 private3, S2 private7, S3 private4 and S4 private4. Included tracked
+cases are not counted again. The seven tracked S4 tests pass, as do product
+all-targets179 with one ignored supplementary-metric test. A separate doctest
+run passes one and leaves eight documented fragments ignored. Focused formatting
+and diff checks pass. The S4 large-enum and newly unused route/count-helper
+diagnostics are closed. Ordinary checking still reports the prior three WIP
+unused groups; full Clippy is not clean, including earlier compile wrapper
+modulo diagnostics and other reader/WIP findings. This result does not waive
+that cleanup or authorize an ICC product checkpoint.
+
+Windows Miri is not reported as passed. Its System allocator path fails a
+Stacked Borrows header read while the test harness drops its CompletedTest
+channel. An independent dependency-free empty test passes with the default
+allocator, but reproduces the same failure with bare System registration, a
+stateless System wrapper and the actual test Probe. Thus ICC parsing/transform
+code and TLS instrumentation are not needed to reproduce this toolchain path.
+No Miri checking flag was weakened and no test was excluded to hide the failure.
+Root separately reran the final frozen seven S4 tests successfully with Linux
+Miri, Rust1.91 i686 and executed WASI. Final Rust1.91 all-targets also confirms
+179 passes/one ignored test. These are distinct from the unsuccessful Windows
+Miri run.
+
+The fixed S4 selected-route/cumulative-allocation bundle is accepted. Full H3
+intent/domain/Gray/oracle coverage, general cleanup, H4 explicit frame color
+conversion and C1 Native show-frame/alpha-prefix hookup remain unfinished.
+No further scope is started at this checkpoint. Product source, versions,
+dependencies and repository commits were not changed by the reviewer.

@@ -4695,3 +4695,43 @@ and strict-domain error probes remain separate evidence.
 Root separately confirms the final two tracked repairs on Linux Miri, i686 and
 executed WASI. These supplementary checks do not close E's class/model metadata,
 execution/worker bounds, cleanup, untested route/format coverage or H4.
+
+## Native hookup final review and limited checkpoint candidate
+
+The two fixed Native repairs and their support tests are accepted. The public
+extra-alpha-frame regression first requires a successful synthetic alpha control
+and exact selected payload retention. Its separate independent public-API probe
+continues to observe zero master-tile-size allocations on rejection. The tracked
+owner test decodes real master/alpha planes, then calls the same consuming
+attachment helper used by production and checks sample pointer, length, capacity,
+content and attached planeID3. Legacy keeps its previous clone/validation path.
+
+Final independent execution passes external44 (the prior header43 plus the new
+framing probe), grammar62, product library520/six ignored and native boundary11,
+hookup3, limits5, phase9, prefix2, rich3. Included tests are not counted again as
+new independent evidence. Strict Clippy all-targets, rustfmt, rustdoc and diff
+checks pass. Root separately confirms the six focused tracked tests and rustdoc
+on Rust1.88, plus the previously recorded Legacy callback/Abort equivalence.
+
+The exact eight modified plus fifteen new AVIF source/test files form a coherent
+local checkpoint candidate for accepted container budgets, shared prefix grammar
+and Native still/alpha hookup. The additive API and limit rustdocs now explicitly
+say that deep tile/entropy, reference/filter scratch and total-live-allocation
+coverage are unfinished; AVIS/derived inputs remain explicitly unsupported here.
+No Cargo, version, external fixture, encoder, ICC or parent H4 files belong in
+this checkpoint. This decision permits the limited local checkpoint, not
+publication or a claim that all C1/C2/C3 bounded decoding is complete.
+
+Exact staged inspection found eight literal NUL characters in two synthetic ftyp
+byte strings in the phase test. Both were replaced with equivalent Rust escapes,
+preserving the encoded fixture bytes. Final independent staged inspection finds
+zero NUL characters, a normal text diff, the exact approved23 files, no unstaged
+AVIF changes and a clean diff check. Root reran phase9 on Rust1.88 successfully.
+The exact staged local checkpoint is accepted; the unfinished decode scopes above
+remain explicitly outside this decision.
+
+Root saved the reviewed23-file AVIF checkpoint as
+`b5e4de09a8982e9554378670892aa8cb89517aef`; independent object inspection confirms
+the exact file inventory and a clean nested worktree. Synchronizing the parent
+AVIF gitlink to this exact object is ready for a separate exact staged review;
+parent H4 work, ICC work, encoder and versions remain excluded.

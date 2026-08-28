@@ -4735,3 +4735,334 @@ Root saved the reviewed23-file AVIF checkpoint as
 the exact file inventory and a clean nested worktree. Synchronizing the parent
 AVIF gitlink to this exact object is ready for a separate exact staged review;
 parent H4 work, ICC work, encoder and versions remain excluded.
+
+## H3 E1 final class/model and retained-route review
+
+E1 is accepted as a finite functional slice. Raw version/class survive structural
+parsing; the common route planner rejects unsupported major versions and
+class/model combinations before selected curve allocation. Supported v2/v4
+Input/Display matrix and Gray models, monochrome Output models, and ColorSpace
+LUT routes are covered without inventing an Output RGB or ColorSpace matrix
+interpretation. Selected malformed routes and unused-direction behavior retain
+the previously accepted checks.
+
+The immutable compiled stage and Transform retain actual input/output route
+metadata, not only temporary planning fields. Independent tests drop Profiles
+and original clones and verify distinct input/output version, class, requested
+intent, selected tag and model. A new boundary found that missing-tag matrix
+selection incorrectly reported no fallback. The final repair and tracked
+input/output assertions now distinguish a designated tag from same-direction0
+or legal-model fallback; all four intents and both directions pass independently.
+The accessor's public documentation should also state this agreed definition.
+
+Final independent execution passes five new E1 tests (the complete included
+target has40), the fixed54 and product S4 seven. The old external Gray pair
+builder received an explicit supported version header; its allocator observations,
+exact/one-under budgets and all assertions were preserved. The larger retained
+CompiledDirection header is covered by actual size-based accounting; Transform
+still does not charge nonexistent direction heap owners. Restored final product
+all-targets pass197/one ignored, and focused non-recursive rustfmt plus diff checks
+pass. Two known WIP unused items and strict cleanup remain separate E3 work.
+
+An accidental formatter traversal changed unrelated legacy CMS files during
+implementation. Root reports verified backups and an approved exact restoration;
+independent final status confirms those legacy differences are gone, and the
+full product run above is after restoration. This E1 decision permits the next
+execution/worker-bound slice, not all-H3 acceptance, ICC publication or an ICC
+product checkpoint. The earlier frozen diagnostic oracle remains evidence for
+its recorded snapshot, not an unperformed E1 oracle rerun.
+
+Separately, root saved the Native checkpoint documentation and exact AVIF gitlink
+as parent `297e7eaf1a22964f76a3951a98480a7826923448`; parent H4 and ICC work were
+excluded from that checkpoint.
+
+## Next decoder allocation slice: candidate design, not C2 acceptance
+
+The next bounded assignment remains normal `av01` still plus its selected alpha.
+Current Native preflight checks both prefixes, but header completion then creates
+tile descriptors/data/entropy probes and a Vec-based decode plan before the
+existing decode-plan check. `alloc_coded_frame_buffers` clones plane layouts and
+allocates the outer plane Vec and sample Vecs; crop later owns coded and visible
+samples simultaneously. These are concrete connection points, not evidence that
+entropy, filters, references or AVIS have been budgeted.
+
+Use two reviewable steps rather than a decoder-wide rewrite:
+
+1. Introduce a private, non-Clone `DecodeBudget` and move-only allocation tickets,
+   sharing the existing container allocation engine's checked capacity arithmetic,
+   fallible fresh/replacement reservation and scalar checkpoint rules. Keep parser
+   count/work policy separate. Do not copy the container helper into another
+   allocator, create an unbounded pointer registry or use ambient global state.
+   Preserve the existing `NativeDecodeLimits::new` signature and public frame
+   types. An additive checked setter can select the new allocation ceiling;
+   existing constructor behavior remains its documented partial-bound contract.
+   Neither an absent new setting nor this slice implies a total-live guarantee.
+   The internal bounded parse/decode entry must carry one budget forward, retaining
+   actual metadata/payload owners after parser-only owners have really dropped;
+   public parse-only return may end that local accounting. Do not reset each phase
+   to the caller's full ceiling or relabel `max_metadata_bytes` as a decoder cap.
+
+   First wire fixed-slot visible/coded plane geometry through the existing
+   `plane_layout_for_geometry`, shared decode-plan validation, coded allocation
+   and crop. Plan master and selected alpha before their first sample allocation.
+   Charge plan/plane outer storage and each actual sample capacity once, including
+   completed master storage during alpha construction. Crop checks old plus the
+   whole visible candidate before reserve; an already-visible plane keeps pointer
+   identity. Move tickets with moved samples; release only after real drop.
+   Keep Legacy public allocation/decode wrappers and their error ordering intact.
+
+2. Connect tile/header materialization to that same budget, without a second
+   Native grammar. Shared `finish_frame_header`/tile-info parsing needs an internal
+   allocation-context adapter, while its old wrapper preserves Legacy behavior.
+   Extract checked tile-range inspection from `parse_tile_group` and the existing
+   merge path, and have materialization consume those validated ranges. Check all
+   selected master/alpha tile counts, ranges and aggregate copy sizes before the
+   first tile copy or entropy preparation. Budget TilePayload/TileDecodePlan
+   outers, merged data, frame-header tile arrays and retained header owners;
+   eliminate per-tile deep copies when one checked final merge suffices. Use the
+   same planned records in the decoder, not validation followed by a raw reparse.
+
+Each step needs exact/one-under known-owner peaks, odd coded-padding/crop cases,
+master-plus-alpha simultaneous ownership, real reserve denial, injected excess
+capacity, candidate drop before counter restoration, source/ticket invariance and
+retry on the same surviving state. Preserve the accepted Native framing/alpha
+pointer, prefix/wrapper equivalence and Legacy callback regressions. Actual
+entropy/CDF/motion/filter/film-grain/super-resolution owners, shared-reference
+deduplication, bridge peak handoff and transactional AVIS remain later C2/C3 work.
+The private ticket/transaction interface should permit those future owners; this
+assignment neither implements them nor adds managed public frames or fallbacks.
+
+## H3 E2 execution review: runtime observations pass, final proof pending
+
+The frozen follow-up shares checked output-length/byte/addressability arithmetic
+and uses one fixed64-pixel integer loop for validation and publication. Direct
+and worker F32 avoid image-sized copies. The integer validation pass preserves
+the previous whole-output-on-error behavior; this does not add an equivalent
+global atomicity promise to borrowed F32 execution.
+
+Independent execution passes six new public tests plus the included previous40.
+They observe cold/warm heap requests, Gray/RGB channel mappings, U8/U16 rounding,
+length errors, late inverse/LUT failures with unchanged entire integer output,
+requested exact/one-under/empty limits, the agreed64MiB default and real output
+reservation denial followed by successful retry. Three additional private tests
+pass scalar length/byte/isize overflow, error precedence and same-plan retry;
+impossible slice lengths are tested as scalars, not forged references. All
+known-before-allocation failures retain zero allocator requests. The previous
+fixed54 also pass after a module-only external harness migration, with their
+assertions unchanged.
+
+E2 acceptance remains pending the fixed final evidence bundle: inject excess
+capacity through the very same fresh-output core used by the public wrapper,
+observe actual candidate deallocation and rejection before fill, and retain
+tracked scalar/allocator/cold-warm/late-error regressions. The current product's
+three execution tests alone do not prove those properties. Public documentation
+must state the default64MiB output ceiling, its use by the old allocating wrapper,
+the explicit override and zero's empty-output meaning. This is not a request for
+another execution policy or E3 cleanup, and no new runtime failure is claimed
+from the passing cases above. Two existing normal unused warnings and broader
+strict-Clippy cleanup remain separate work.
+
+## H4 first borrowed-plan review: fixed twelve-boundary NO-GO
+
+The first frozen options/resolver snapshot is plan-only: no output conversion or
+CMS compilation is implemented. The parent Cargo change registers its highres
+test only; no new dependency or version is involved. Separate flat modules keep
+responsibilities apart under the reported directory-creation constraint.
+Independent tests use the pinned public ICC dependency, not the local ICC WIP.
+
+The fixed independent set has twelve tests: three pass and nine fail. Passing
+observations cover H.273 codes0..5 and AV1 phase translation, explicitly described
+F32/linear input with no heap work or original-metadata rediscovery, and per-ICC
+requested bounds without copying plus successful retry. The remaining failures
+are grouped into these four existing-contract repairs, not converter expansion:
+
+1. Validate the source/destination domain and policy pair, not only each enum.
+   Undefined SDR-to-nits/HLG and PQ-to-SDR transitions currently succeed. So do
+   different declared whites under RequireSameWhite and nonlinear output from
+   premultiplied linear input under PreserveAssociation. Keep defined positive
+   routes, including homogeneous linear preservation; do not implement new HDR
+   normalization, adaptation math or alpha-association execution in this slice.
+2. Check selected borrowed ICC headers/declared ranges/version/channel space
+   before accepting the plan, under source/destination ICC bounds. Three bytes
+   and a Gray profile assigned to RGB input currently succeed. Selected malformed
+   ICC must not fall back to CICP; tracked preference tests need valid synthetic
+   profiles instead of declaring truncated bytes a successful interpretation.
+3. Resolve native fields independently of colour authority. Known active nclx or
+   AV1 range/matrix must fill missing explicit options, while known conflicting
+   descriptions must be checked. The current resolver instead requires explicit
+   integer options and ignores AV1 range conflicts. Retain resolved facts in the
+   borrowed plan; CICP override must not change storage/range/matrix semantics.
+4. Include retained borrowed option profiles in the live budget without charging
+   the same known owner twice. An8192-byte explicit source/destination profile
+   currently passes a4096-byte total-live ceiling. Existing per-ICC bounds,
+   borrowed-source immutability and zero profile-copy observations must remain.
+
+The authors have received this fixed bundle. Root separately reports old16 plus
+new8 product tests and consumer/dependency isolation checks passing; those do not
+validate the incorrect domain/header success expectations or close these nine
+failures. No H4 execution, full H3 acceptance or product checkpoint follows from
+this first-slice review.
+
+## H3 E2 fresh-output seam follow-up: two fixed candidate failures
+
+The next frozen seam is the production allocating wrapper's actual shared core.
+Independent private tests now pass five of seven cases. The excess-capacity
+candidate allocates16 bytes against an8-byte ceiling, is really deallocated, and
+leaves all four initialized sentinel values unchanged at deallocation: rejection
+precedes fill, live bytes return to zero, peak is16, and retry on the same plan
+succeeds. Requested rejection precedes the maker; empty output at limit zero also
+passes. The original public46 remain passing, with only six being new E2 tests.
+
+Two private failures remain: a capacity-zero candidate for two F32 outputs causes
+an implicit16-byte resize allocation and succeeds despite the8-byte ceiling; a
+nonempty candidate is accepted as a fresh output. Reject both invalid candidate
+states before resize, without another allocation. Complete the already-requested
+tracked cold/warm and late-integer-error observations and the output-limit public
+documentation; do not broaden this repair into another execution policy.
+The fallback accessor documentation is now present. Root's supplemental i686,
+actual WASI and Linux-target Miri passes cover the current three private and
+three integration tests, not these missing boundaries. E2 remains pending this
+finite repair; E3 has not been accepted or implemented by the reviewer.
+
+### E3 bounded cleanup candidate, after E2 acceptance
+
+First remove genuinely unused transform-only state/helpers and resolve local
+derive/style diagnostics; keep unrelated legacy cleanup and recursive formatting
+out of this assignment. Do not suppress the linter to claim success.
+Removing an unused retained matrix field must not remove any existing eager
+constructor's semantic validation; separate that validation from storage. Update
+post-parse owner tests only where their actual structural ownership changes.
+
+For the large LUT shape enum, preserve no-allocation preflight by moving the
+common channel fields and fixed three CurveSetShape slots into an enclosing
+LutShape struct. A smaller layout enum then distinguishes MFT counts/matrix/ranges
+from mAB/mBA direction/matrix-range/CLUT fields. MFT has empty curve slots; private
+constructors preserve the valid-state invariant. The existing nine borrowed
+CurvePlan descriptors remain authoritative for both inventory and materialization.
+No Box/Vec, raw reparse, reduced CLUT grid support or counts-only substitute is
+needed. Verify actual host/i686 structure sizes and avoid enlarging the bounded
+stack footprint. Preserve selected-shape allocation-zero tests, all direction and
+curve semantics, owned-header exact/one-under budgets and S4 actual-owner/drop
+proofs. This is a proposed representation change, not a completed cleanup gate.
+
+## Native C2-1 implementation interface: fixed owner slice, not total-live closure
+
+This refines the approved candidate into six bounded implementation items. The
+only proposed public addition is a checked positive ceiling setter on
+NativeDecodeLimits, provisionally `with_max_live_allocation_bytes(usize)` returning
+Result. Its private optional field is unset by the existing twelve-argument
+constructor, preserving that constructor and its documented partial bounds.
+Document precisely which owners are covered; neither a missing ceiling nor this
+slice establishes a process-wide or complete C2 total-live guarantee.
+
+1. Extract the existing fresh/replacement reserve mechanics from
+   `container_budget.rs` into a small private allocation module. A private ledger
+   adapter supplies checkpoint, requested/actual admission, commit, release and
+   restore; ParseContext keeps its class sublimits and count policy, while a
+   non-Clone DecodeBudget holds the shared aggregate ceiling/live/peak state.
+   Preserve move-only AllocationToken semantics through a common AllocationTicket
+   implementation: exact capacity ownership, explicit adoption, fresh-only
+   tokenless calls, and validation before spare-capacity return. The one engine
+   must handle old-plus-whole-candidate storage with fallible allocation and
+   actual-capacity reconciliation before moving/filling. Candidate failure must
+   explicitly drop allocated storage before restoring scalar state. Legacy uses
+   its existing reserve policy and error ordering, not the Native ceiling.
+
+2. Add an internal parse handoff used by strict Native decode rather than ending
+   accounting through the public `parse_native_info` return. ParseContext may own
+   the DecodeBudget and move it out; this avoids a second lifetime parameter or
+   a shared/global mutable registry. After projection, explicitly drop parser-only
+   MetaState owners, then transfer the surviving rich metadata, ordered-property
+   owners and primary/selected-alpha payload capacities into retained tickets.
+   Reuse the retained metadata walker, with a separate payload total: the existing
+   metadata total intentionally excludes item payload samples. Preserve peak
+   history and subtract only real dropped owners; do not seed a fresh full budget
+   or substitute the earlier parser live total. Public parse-only return ends its
+   local accounting as before. The existing DecodedFrame colour payload clone
+   needs the same small fallible copy adapter when it creates another retained
+   owner; no new colour metadata behavior is introduced.
+
+3. Put fixed geometry in a private NativePlanePlan with up to three visible/coded
+   layouts per item, plus a master/optional-alpha pair. Build it from the accepted
+   prefixes using `plane_layout_for_geometry` and the existing coded alignment
+   arithmetic before the first sample allocation. Both dimensions and each plane
+   byte limit must pass before master allocation. Materialize the plan's layout
+   Vec through the shared engine; do not clone coded layouts or recompute a
+   separate Native geometry algorithm. The public decode-plan builder remains a
+   compatibility wrapper over the same geometry logic. Tile descriptors and
+   entropy materialization remain the next slice, not hidden acceptance here.
+
+4. A private FrameAllocationTickets sidecar holds the layout/plane-outer ticket
+   and fixed sample tickets; public FrameBuffers/DecodedFrame stay unchanged.
+   Pass the sidecar and the same budget through coded allocation, both crop call
+   sites in `decoder.rs`, finishing and selected-alpha attachment. A selected
+   alpha may reserve the master's four-entry plane outer up front, charging its
+   actual capacity once. Keep completed master owners live during alpha decode;
+   move the alpha sample ticket with its Vec and release the alpha outer only
+   after its consuming iterator really drops. No-op crop keeps the sample pointer.
+   For changed crop storage, prepare candidates before publishing replacement;
+   failure drops candidates and preserves the surviving old owners and tickets.
+   Internal transaction scopes must drop failed owned values before rollback;
+   tickets are not an excuse to release storage that remains alive.
+
+5. Root includes the two necessary persistent-plane replacement adapters in this
+   same slice: super-resolution sample replacement and film-grain plane source/
+   output clones. Otherwise the sidecar would describe obsolete capacities at
+   alpha decode or return. Route these allocations through the same old-plus-
+   candidate engine, with source clone and output simultaneously charged where
+   they really coexist. Share the existing math/RNG/kernel bodies and retain the
+   Legacy signatures, output and supported inputs. Do not reject previously
+   supported Native inputs to avoid this wiring. Grain LUT/scaling, other filter
+   scratch, tile/entropy, CDF/motion, references and AVIS remain explicitly outside
+   this slice. End decoder accounting on successful public ownership transfer;
+   no managed public frame or caller-lifetime tracking is added.
+
+6. Keep the initial proof set finite: parser-only-drop/retained payload handoff;
+   fixed plane exact/one-under including outer capacity; odd coded-padding crop
+   with no-op pointer control; master-plus-alpha simultaneous peak and moved
+   pointer; real reserve denial/excess-capacity rejection followed by same-state
+   retry; and persistent super-resolution/grain replacement peak with unchanged
+   math output. Use exact portable capacity/size formulas, not a binary-searched
+   self-derived limit. Test known rejection before allocation, candidate drop
+   before scalar restoration and source/old-owner/ticket invariance. Keep tests
+   separate from product modules and preserve all accepted parser, prefix,
+   Native-alpha and Legacy callback regressions. This design is not a test result.
+
+## H3 E2 final independent decision: limited GO
+
+The final shared output core rejects both short-capacity and nonempty candidates
+before resize; the two reproduced failures are closed. Requested bounds precede
+the candidate maker, actual capacity is checked before fill, and an allocated
+overcapacity candidate is really freed with initialized sentinels untouched.
+Source values/pointers and the checked plan survive failure, and the same plan
+retries successfully. Scalar overflow/addressability and empty/exact/one-under
+cases remain covered without constructing invalid references.
+
+Final independent external execution passes46 public tests (six new E2 plus
+the previous40) and seven new private tests. Tracked execution passes six private
+plus five integration tests after the last test-only strengthening: cold/warm
+calls must succeed with identity output, and the late inverse case first proves
+all4097 valid samples succeed before changing only the last sample. The independent
+public tests additionally exercise all Gray/RGB mappings, U8/U16 rounding,
+allocation-zero cold/warm execution and late inverse/LUT failures without partial
+integer publication. No assertion or existing limit was weakened.
+
+The runtime snapshot's product all-targets pass208/one ignored; final focused
+formatting and diff checks pass. Root additionally reports all six private and
+five integration execution tests passing on i686, actual WASI and Linux-target
+Miri. Those supplemental runs precede the final two test-only non-vacuity edits;
+the final strengthened assertions were independently rerun on the host. The
+previous fixed54 and product S4 seven remain intact. Strict Clippy still fails
+outside the new execution/worker/limit files; this is E3 work, not a whole-crate
+lint pass. Default64MiB, zero/empty behavior, the old allocating wrapper's default
+and explicit override are now documented. The E1 fallback accessor definition
+is also documented.
+
+Root reran the frozen diagnostic recipe on its recorded E2 runtime snapshot:
+five declared pairs, four intents each, total91,724 points and all20 threshold
+checks pass (largest DeltaE00 about0.063345019). Independent artifact inspection
+confirms all20 summaries and matching before/after source records; binary,
+profile, oracle and command provenance are retained with that run. This is the
+explicit clamp=true pair set, separate from strict-domain negative tests, not
+every ICC profile/class or full H3 coverage. E2 permits the bounded E3 cleanup
+assignment only; ICC publication, product checkpoint and full H4 remain unaccepted.

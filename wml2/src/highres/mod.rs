@@ -6,6 +6,7 @@
 
 #[cfg(feature = "avif")]
 mod avif;
+mod convert;
 mod domain;
 mod hdr;
 mod limits;
@@ -13,6 +14,11 @@ mod metadata;
 mod processing;
 mod types;
 
+pub use convert::{
+    AlphaPolicy, ChromaLocation, ChromaPhase, ColorConvertOptions, Destination, MatrixCoefficients,
+    NativeSampleEncoding, RenderingIntent, SampleRange, SourceInterpretation, WhiteAdaptation,
+    ZeroAlphaPolicy,
+};
 pub use domain::{RgbPrimaries, SampleDomain};
 pub use hdr::{HlgDisplayConditions, hlg_oetf, hlg_scene_from_signal, pq_eotf, pq_oetf};
 pub use limits::{ResourceLimits, ResourceLimitsBuilder};

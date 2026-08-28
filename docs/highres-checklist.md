@@ -5066,3 +5066,165 @@ profile, oracle and command provenance are retained with that run. This is the
 explicit clamp=true pair set, separate from strict-domain negative tests, not
 every ICC profile/class or full H3 coverage. E2 permits the bounded E3 cleanup
 assignment only; ICC publication, product checkpoint and full H4 remain unaccepted.
+
+## H4 plan-only follow-up: fixed domain, white and alias table
+
+The initial twelve independent cases now pass. Six additional tests exercise
+the same approved resolver conditions, not conversion math or a new destination
+feature: a ten-source by ten-destination physical-domain table, known CICP/linear
+white agreement in both directions, Gray matrix applicability, explicit filling
+of unknown native matrix information, preserved-profile aliases and overlapping
+borrowed-profile ranges. On the reviewed intermediate repair these are three
+passes and three failures, hence total15/18, not H4 acceptance.
+
+The physical-domain table passes: relative SDR transfer changes are allowed,
+PQ/nits do not become HLG scene values without a policy, ICC is not treated as a
+nit/HLG route, and encoded destinations receive the same domain checks as linear
+ones. Preserved ICC whole/prefix aliases are not charged twice; overlapping
+external profiles charge their byte-range union while disjoint profiles still
+sum. Successful planning has zero observed heap requests. The three remaining
+tests demonstrate known-white mismatches accepted under RequireSameWhite, Gray
+luma rejected solely for nonidentity colour signaling, and explicit native
+interpretation incorrectly conflicting with unspecified matrix code2.
+
+Gray scalar range/transfer processing must be separate from preserved matrix
+signaling. [AV1 sections5.5.2 and6.4.2](https://aomediacodec.github.io/av1-spec/av1-spec.pdf)
+do not require identity color signaling for monochrome: color-description fields
+precede its no-chroma branch. This is the existing model-applicability condition,
+not a request to add chroma conversion or change AVIF decoding. Known conflicting
+descriptions must still fail; an unspecified field is not a known conflict.
+These finite repairs have been returned to the author. ICC semantic compilation
+and any deferred PCS/media-white bridge must remain explicit in planning docs.
+
+Root separately reports the pre-alias-repair highres24 tests, new8 on i686/WASI/
+Linux-target Miri, seven consumer configurations plus five dependency-shape
+checks, and five alpha-AVIS Legacy snapshots byte-identical with highres off/on.
+Those are compatibility/portability evidence, not acceptance of the remaining
+three resolver conditions or actual frame conversion.
+
+## ICC E3 independent structural cleanup review
+
+The new LutShape keeps the same authoritative borrowed curve plans in fixed
+common slots and a smaller layout enum. It introduces no Box/Vec in preflight,
+no count-only replacement and no hidden raw-parser fallback. Matrix storage is
+removed from ProfileInner while eager constructor semantic validation remains.
+The independently rerun old54 boundaries, E2 public46 (old40 plus new6), private7,
+and product all-targets208 with one ignored pass; the product run includes S4's
+seven ownership/rollback tests. Normal all-targets check emits no warnings and
+all changed/new Rust files pass focused nonrecursive formatting and diff checks.
+
+An ignored independent mirror reconstructs the complete pre-E3 representation
+from the recorded original schema, using unchanged component types. E2's frozen
+source manifest confirms route_plan and compile_plan remain byte-identical, so
+the surrounding route representation is not guessed. Same-compiler measurements
+are Shape624->624, LutPlan672->672 and Route936->936 on x64, and348->348,
+372->372 and564->564 on i686. The same probe plans mft1/mft2 in both directions
+and mAB/mBA in their designated directions with zero allocation and unchanged
+source pointer/content. These are
+measured mirror/current sizes, not a claimed old binary build or a lower bound.
+
+Root additionally reports i686 all-targets208/1ignored and warning-denied rustdoc
+success. Its separately recorded E3 LCMS recipe again passes all20 comparisons
+over91,724 points with unchanged before/after source hashes and E2-equivalent
+statistics; the explicit clamp=true pair set remains narrower than full H3.
+
+E3 behavior and stack-size boundaries are closed. Strict whole-crate Clippy is
+still not green: this independent run reports209 diagnostics in untouched legacy
+library modules plus three in the unchanged transform test file. None originates
+in the changed transform production files. Before the cohesive local ICC
+checkpoint, remove the five existing uncommitted LUT lint suppressions with the
+approved tiny private-wrapper/definite-assignment cleanup, preserving all math
+and observers. Do not label these WIP suppressions a published baseline, or
+silence the remaining whole-repository lint gate. No ICC product commit,
+publication, full-H3 or H4 acceptance is claimed by this intermediate review.
+
+### E3 final tiny cleanup and cohesive ICC checkpoint candidate: limited GO
+
+The five LUT suppressions are now removed. Private compatibility entrypoints
+are test-only and have one explicit tracked regression; production read_tables
+needs no suppression. CLUT weights/corners use complete branch tuple assignment
+with unchanged formulas and corner selection. Independent final normal
+all-targets check has zero warnings, unit40 passes, and all27 candidate Rust
+files pass focused formatting/diff checks. Whole-crate strict Clippy still fails
+only in the previously identified untouched modules/test file; it is not waived.
+
+The official-profile test no longer silently succeeds when its file is absent.
+It is explicitly ignored in ordinary runs, requires the environment-supplied
+fixture path, and fails clearly when invoked without it. Independent explicit
+invocation with the official fixture passes one; invocation without the setting
+fails one as expected. Tiny-fix all-targets therefore reports208 passes and two
+ignored, including the new private compatibility test, with the official-profile
+pass counted separately. Old54, E2 public46/private7 and the size/no-allocation
+probe also pass after the substantive tiny cleanup; the final annotation-only
+removal is followed by the clean check/40-unit rerun.
+
+The cohesive27-file candidate comprises the checked facade, structural profile
+parser, direction/route and matrix/LUT plans, shared owner budget, bounded
+execution/worker, test-only allocator and their tracked regressions. No Cargo
+dependency/version, legacy CMS source, AVIF/encoder or parent H4 change is part
+of this ICC candidate. Existing A-D/E1-E2/S1-S4 acceptance and E3's finite cleanup
+support a local unpublished checkpoint; no known P1 remains in that fixed scope.
+Root may stage those27 files for a separate exact-cached review. Full-H3 profile
+coverage, broader fuzz/conformance/release gates and whole-repository strict
+Clippy remain open. A checkpoint is not publication or completion of H4.
+
+### H4 same-table final source-interpretation check
+
+The repaired known-white, Gray nonidentity/unspecified signaling, real AV1
+monochrome unknown-position and explicit unknown-matrix cases bring the existing
+eighteen tests to18/18. Final source inspection identified one additional path
+through the same domain condition: explicit CICP transfer8 on an already-declared
+nit/HLG frame was allowed to relabel it as relative light. The independent
+nineteenth test reproduces acceptance of nit-valued input into encoded sRGB.
+Its fixed controls require identity transfer to preserve each declared domain,
+including same-domain success and the already-permitted HLG scene/display route.
+Return this one path to the author, preserving the shared domain table rather
+than rejecting all HDR identity transfers. The source/destination CICP validation
+helper duplication is included in that same small repair; no new math is added.
+H4 plan-only checkpoint remains pending this final source-route fix.
+
+### ICC checkpoint saved; H4 plan runtime boundaries closed
+
+Root saved the independently reviewed27-file ICC checkpoint as
+`83f857a499983e3d5399b803fc7e5ca13f9cba16`; its worktree is clean. The exact cached
+inventory was8121 insertions/208 deletions, with no Cargo/version or unrelated
+legacy source changes. Version0.0.4 is unchanged; nothing was pushed/published.
+The limited local-checkpoint qualifications above remain in force.
+
+H4's TC8 repair now keeps the descriptor's declared linear domain and uses the
+same shared source/destination domain table. Independent19/19 passes, including
+same-domain identity and HLG scene/display positive controls, along with the
+tracked12 and previous16 product tests. Known whites, ICC header/space bounds,
+borrowed alias accounting, Gray/AV1 no-chroma applicability, active-source
+precedence and source immutability remain covered. The duplicate CICP
+primary/transfer checks are shared. Public validate_for documentation explicitly
+defers selected ICC execution and PCS/media-white/adaptation gates.
+
+This closes the fixed plan-only runtime conditions, not convert_frame,
+quantize_frame, CMS compilation, native reconstruction or output allocation.
+Root independently reports final-runtime Rust1.91 i68628, executed WASI12 and
+Linux-target Miri12 passes. Default+highres warning-denied rustdoc passes;
+no-default+highres still fails on the existing unrelated TiffHeaders link in
+metadata documentation. A final independent strict-Clippy run found four new
+collapsible-if sites in convert_plan (duplicated by lib/test diagnostics).
+These require the approved syntax-only cleanup before the six-file H4
+checkpoint; do not merge them into the old module baseline or suppress them.
+
+### H4 planning slice final checkpoint decision: limited GO
+
+The syntax-only repair closes those four new Clippy findings without changing
+conditions or evaluation order. On the final frozen source, independent19/19
+and tracked12/12 pass again; focused formatting/diff checks pass and strict
+Clippy reports zero diagnostics in the six-file candidate. The whole invocation
+still has unrelated baseline diagnostics, so this is not a whole-repository lint
+pass. Root also reruns final-style i68612 and default+highres warning-free check;
+the preceding WASI/Miri12 results refer to the semantically equivalent pre-style
+snapshot, not an unperformed final-style rerun.
+
+The six files are the test registration, highres module export, options facade,
+borrowed plan, options types and dedicated options tests. Cargo changes only add
+the highres-gated test target; no dependency, version, AVIF/encoder, ICC source or
+legacy callback change is included. These files plus this acceptance record are
+approved for an exact-cached parent checkpoint review. The next private native
+pixel-access design is separate and is not part of this checkpoint. H4 execution,
+CMS wiring, output ownership, quantization and full-H3/C2/C3 completion remain open.

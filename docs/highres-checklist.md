@@ -3366,3 +3366,231 @@ snapshot was captured. Later Cargo metadata is explicitly not evidence of that
 binary's exact source. Repeat this same pair on the final frozen implementation
 with a pre-build source snapshot. Other intents, Gray4096, remaining routes and
 full H3 acceptance stay open; this diagnostic is not an S2/S3/S4 budget approval.
+
+## ICC S2 final shape review: two repairs closed; degenerate mft grid remains
+
+The selected curv ParseLimits regression is closed in both directions and public
+assembly, with exact-32 success and bound-16 rejection before table allocation.
+The private probe was adapted to the new plan_lut ParseLimits argument and
+observes planning plus materialization; none of its rejection or allocation
+assertions was weakened. Additional controls confirm identity at count zero,
+gamma rejection at count zero, and the legacy fixed-parametric-shape exception.
+The PCS-neutral check_encoded_limits wrapper does not bypass the subsequent
+PCS-aware mft plan: Lab nonidentity matrices reject before allocation, while
+valid Lab and XYZ cases retain their existing behavior.
+
+Structural planning now lives in lut_plan and materialization consumes its
+descriptors. The old duplicate parse_clut is removed; the remaining parse/mAB
+wrappers are thin shared-plan adapters. This closes the previous responsibility
+split repair without accepting the temporary per-LUT ledger as S3/S4 complete.
+
+One P1 within the selected-shape inventory prevents final S2 acceptance:
+checked_mft_shape accepts grid counts zero and one. Public mft2 compilation then
+succeeds in both directions, and transform_f32 panics in Clut::eval at grid-1 or
+grid-2. Private mft1/mft2 checks reproduce accepted malformed shapes and owner
+allocations for both directions and both grid counts. These are current-source
+observations, not a claim about when the missing guard was introduced.
+
+The finite repair is to reject grid < 2 with InvalidProfile in the shared mft
+planner before grid-size arithmetic or any materialization. Preserve grid-two
+positive controls and all existing Lab, range, stage-pair and direction-order
+assertions. Add tracked coverage for both formats/directions with public
+compile/evaluation and allocation-free rejection; no LUT budget redesign is
+part of this fix.
+
+Independent external totals are 42 pass / 4 fail: boundary7, parse7 and
+S1-private3 pass; shape7 has six passes plus the degenerate-grid failure;
+compile22 has nineteen passes plus the public grid failure and the two known
+S3/S4 budget failures. Selected product suites pass 66 tests, including the
+present official LUT fixture. Root separately reports all-targets167 pass with
+one ignored. The three older unused items remain separate cleanup. S2 is NO-GO
+only for this new fixed grid-shape repair; S3/S4 and full H3 remain unaccepted.
+
+## H5 slice 2: limited native-plane validation acceptance
+
+The new private native_plan helper checks plane ID, full expected geometry,
+subsampling exponents, checked sample count and per-sample range. The entrypoint
+first admits only explicit 8/10/12 depths, so the helper's range shift cannot
+receive an arbitrary depth. Luma/gray and alpha are full-resolution with 0/0;
+only U/V use the selected ceiling-divided chroma dimensions. All color and alpha
+planes are validated before the first backend encode. Borrowed supplied samples
+are passed directly to native PlaneInput without RGBA conversion or depth
+inference. Existing entrypoints are unchanged by this slice.
+
+Independent external validation passes three tests: 24 combinations of odd
+400/420/422/444 geometry, explicit depth and optional alpha; twenty invalid
+layout mutations; and plane-count, dimension-overflow, invalid-depth and
+per-plane sample-range boundaries. The dark-value-one cases retain explicit
+depth in av1C/pixi, with alpha configuration and source buffers unchanged.
+The av1C observations use the
+[AV1-ISOBMFF configuration syntax](https://aomediacodec.github.io/av1-isobmff/v1.3.0.html#av1codecconfigurationbox-syntax),
+not a copied decoder. These header checks are not decoded native-sample fidelity
+or full color-signaling conformance proofs.
+
+Independent product execution passes lib23, container3, native_validation5 and
+existing encode28, plus the two prior external property/Legacy-byte tests.
+Strict Clippy all-targets with warnings denied and diff check pass. There are
+five native_validation test functions with multiple cases, not fourteen new
+tests. Root separately reports Rust1.88 total73 including fourteen existing
+FFmpeg tests with the executable present, i686 Rust1.91 container3/native5,
+and both wasm target checks. The implementation author reports three initial
+failing cases before the repair; that red-first result was not independently
+re-executed on the earlier snapshot.
+
+H5 slice 2 is accepted only for this native-plane validation and explicit-depth
+boundary. Shared color authority/header planning, lossless controls, semantic
+metadata and source-lossless sample/alpha fidelity remain slices 3/4 and later
+gates. The surrounding uncommitted encoder WIP is not accepted for release or
+an isolated encoder commit.
+
+## ICC S2 selected-shape slice: limited acceptance after grid guard
+
+The shared mft planner now rejects grid counts below two with InvalidProfile
+before count/offset arithmetic or owner allocation. Independent mft1/mft2 and
+both-direction grid-zero/one checks pass, as do grid-two positives and the
+public compile/evaluation panic regression. All seven external shape tests,
+the prior S1-private3, boundary7 and parse7 pass; compile22 is twenty passes and
+only the two unchanged S3/S4 budget failures. Tracked shape4 and LUT23 pass.
+
+S2 is accepted for authoritative selected descriptors, complete selected ranges,
+ParseLimits preservation and the repaired grid/evaluator precondition. No
+additional product change was made by review. Retained LUT outer/grid/header
+accounting, shared two-direction budgets, the older unused items and full H3
+intent/domain/oracle gates remain open.
+
+## C1 substep 4 direct-payload slice: runtime boundary closed, shared-range repair pending
+
+Native methods zero and one now leave the compatibility recursion resolver
+before its stack is allocated. Every extent and cumulative payload length is
+checked before the Payload-token reserve; method two remains Unsupported.
+Independent execution passes the original stack-allocation assertion, eleven
+counter proofs and forty old/public boundaries. The latter includes exact
+4096-byte payload preservation through the public borrowed-idat path.
+
+Four new external tests pass: borrowed idat with a nonzero range/base and
+multiple/empty extents; late-invalid ranges and cumulative-budget rejection
+before the payload owner reserve; real payload allocation failure with unchanged
+context and successful retry; and finite Legacy method-zero/one bytes, errors
+and item-offset cycle diagnostics against exact a55753e. A huge-length Legacy
+case was not made an equality requirement: that old checkpoint itself panics
+in its infallible capacity reserve, a pre-existing hardening difference rather
+than this extraction's regression. Native overflow checks remain asserted.
+The four tracked direct-payload tests and strict all-target Clippy also pass.
+Root reports Rust1.88 lib508/6 ignored plus native10/limits5/phase9/rich3 and
+Miri direct-payload4; included product tests are not counted as independent
+external assertions.
+
+One P2 from the existing shared-range/copy requirement remains. Native's
+direct_extent_bounds calls validate_item_extent and then repeats the same
+checked start/end arithmetic; Legacy append repeats it again. Extract a single
+private item_extent_bounds returning the checked start/end pair from the
+existing validator. Keep validate_item_extent as a thin discard-result wrapper
+where needed, use the returned pair in Legacy append, and call that same helper
+from both read-only Native walks. Delete the redundant Native helper. Preserve
+the current validation/error order, method-two recursion/cycle behavior,
+payload-token lifetime and reserve-before-copy sequence. No extent Vec or
+additional parser is required. Keep all allocator, exact-byte and retry
+assertions, including borrowed-idat coverage.
+
+The direct-payload runtime repair is accepted, but the slice stays NO-GO until
+this finite responsibility-sharing repair is completed. The separately fixed
+Native stable-sort scratch test still fails and belongs to the next slice.
+No new AV1-header, C2/C3 or general bounded-decoder acceptance is implied.
+
+## H5 slice 3: native color authority clarification
+
+This is an implementation-policy clarification, not acceptance of the changing
+encoder. Require explicit native nclx for this API, including ICC-only or absent
+color input; reject missing coded matrix/range before either backend. This is
+an API restriction, not a claim that every ICC-only AVIF is invalid. Preserve
+legacy defaults. Require ICC bytes and an explicit prof/rICC type together,
+preserve both unchanged, and reject partial pairs. Native color is authoritative;
+an explicitly supplied nested color value must match its canonical nclx payload
+or its ICC type and bytes exactly. Do not silently discard conflicts, trailing
+nclx data or noncanonical bits through the permissive legacy getter.
+
+[AV1 sections 5.5.2 and 6.4.2](https://aomediacodec.github.io/av1-spec/av1-spec.pdf)
+define eight-bit CICP fields. Check both field width and supported meaning:
+never truncate or replace unsupported values with Unspecified. Code 2 is a
+defined Unspecified value; rejecting it under the native explicit-color policy
+must not be described as inability to represent it in eight bits. The syntax
+shortcut uses the complete non-monochrome tuple (1,13,0), inferring full range
+and 4:4:4. Other identity tuples need the general syntax branch; temporary
+Unsupported is permitted but leaves their support open. Independently, identity
+requires AV1 subsampling flags 0/0, whereas monochrome infers 1/1, so native
+monochrome with matrix 0 must not be accepted. Do not confuse full-resolution
+native luma layout with those AV1 flags.
+
+Use a separate alpha plan: monochrome, full range, matching master depth,
+without copying the primary identity tuple or ICC into alpha. Alpha colr should
+be omitted under [AVIF 1.2 section 4.1](https://aomediacodec.github.io/av1-avif/v1.2.0.html#auxiliary-image-items-and-sequences).
+Keep one borrowed checked plan through both writers; ownership/copy wiring and
+the finite rejection/metadata-preservation tests are reviewed only after freeze.
+
+## ICC S3 review: outer/grid repair closed; headers and pending admission remain
+
+The frozen S3 change closes the original float-only outer/grid regression.
+Independent execution passes boundary7, parse7, S1-private3 and S2-shape7;
+compile22 passes 21 with only the known S4 two-direction cumulative failure.
+Selected product library23, compile4, shape5, LUT23, parse2 and transform11 all
+pass (68 tests). The implementation author reports all-targets 169 pass / 1
+ignored; root independently confirms Rust 1.91 compile4, shape5 and transform11
+success (20 tests). These are not full H3 proof.
+
+Two new independent S3 tests give one pass and one failure. The passing test
+constructs all A/M/B parametric stages in both directions: nine 28-byte parameter
+owners are allocated exactly once, without a temporary full parameter clone.
+Real allocator denial at the parameter, grid and curve-outer allocations returns
+ResourceLimit, destroys partial owners (live bytes return to zero), and permits
+retry from the unchanged profile. The S1 private candidate test also still
+checks actual capacity against another pending owner, real destruction and
+checkpoint restoration. It proves the shared helper, not LUT pending wiring.
+
+**P1: selected fixed headers are missing.** The new
+`s3_selected_headers_exact_and_one_under_precede_every_allocation` checks mft1,
+mft2 and all-stage parametric mAB/mBA, both directions. Complete logical owned
+sizes on the reviewed host are 6656, 49616 and 908 bytes respectively. Each exact
+positive succeeds, but each one-under also succeeds and allocates the entire
+result. Observed allocator totals add only the documented 32-byte exclusion for
+the two Arc control pairs. The missing logical header contribution is
+`size_of::<LutTransform>() + size_of::<CompiledDirection>()`, 248 bytes here.
+Current `compile.rs` wraps both headers without admitting them; `lut_plan.rs`
+counts nested Vec owners but omits the headers. The tracked mft exact test
+therefore describes an incomplete inventory and must be corrected, not preserved
+as proof that its lower limit is sufficient. Use size_of in tests, not these
+host-specific numbers. Whole LutTransform storage already includes its inline
+matrix/optional stages; do not also add the mAB matrix's 48 bytes separately.
+
+**P2: complete pending admission is not wired to LUT materialization.**
+`validate_shape_limits` compares a planned total, but each materializer creates
+a fresh ledger and admits the next stage only immediately before allocating it.
+Consequently real capacity is checked without all future planned owners pending.
+The helper is transactional; the missing piece is the LUT caller's complete
+admission. This is a source-proven design gap, not a claim that the ordinary
+allocator in the passing tests returned excess Vec capacity.
+
+Keep the repair finite and within S3:
+
+1. Expose one checked owner/entry inventory from the existing borrowed LutPlan.
+   Include Table/Curve outer storage, each table/parameter payload, grid/CLUT,
+   and the selected fixed headers exactly once. Reuse it for validation and
+   admission instead of independently maintained byte formulas.
+2. Add atomic `LutPlan::admit(&mut CompileBudget, owned_headers)` and make the
+   materializer consume that admitted ledger. Standalone compile creates the
+   ledger, admits the complete selected plan before any allocation, and commits
+   its header contribution before returning the owned result. The mft/mAB/mBA
+   helpers must not create or reset another ledger.
+3. Remove incremental re-admission from table/curve/CLUT helpers. Their existing
+   fresh candidates replace their own reserved contribution with actual capacity
+   while other pending owners remain charged. Keep the existing drop-before-
+   rollback and typed failure paths; do not double-charge known planned bytes.
+4. Keep the new exact/one-under and allocator-failure assertions. Add a test
+   using an actually admitted LUT plan and the same candidate seam: candidate
+   capacity alone fits, but capacity plus another pending owner exceeds the
+   limit. Require rejection before payload fill, actual candidate destruction,
+   unchanged checkpoint/previous owner and a successful fitting retry. An
+   isolated fresh-ledger test is not a substitute for this wiring proof.
+
+S3 stays NO-GO for these two fixed points. S4 combined directions, existing
+unused-item cleanup, all-intent/domain behavior and complete CMS oracle gates
+remain separate; no new LUT semantics or format support is requested.

@@ -1,10 +1,26 @@
 //! Metadata retained by the checked high-resolution representation.
 
 use super::HighresError;
-#[cfg(feature = "avif")]
 use super::ProcessingError;
+#[cfg(feature = "avif")]
+use super::allocation::ConstructionLedger;
+use super::domain::{RgbPrimaries, SampleDomain};
+use super::output_plan::{OwnerElement, OwnerKey, OwnerSink};
+#[cfg(feature = "avif")]
+use super::ownership::LedgerOwnerSink;
+use super::ownership::OrdinaryOwnerSink;
 use crate::metadata::Metadata;
 use std::mem::size_of;
+
+fn copy_owner<T: Copy + OwnerElement, S: OwnerSink>(
+    sink: &mut S,
+    key: OwnerKey,
+    source: &[T],
+) -> Result<Vec<T>, ProcessingError> {
+    let mut copy = sink.fresh::<T>(key, source.len())?;
+    copy.extend_from_slice(source);
+    Ok(copy)
+}
 
 /// Origin of one piece of colour signalling.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -19,6 +35,34 @@ pub enum ColorProvenance {
 pub enum IccColorType {
     Prof,
     Ricc,
+}
+
+/// The authority used for one side of an explicit ICC conversion.
+///
+/// The profile bytes themselves remain in the frame's colour information;
+/// this small copyable record makes the conversion history explicit without
+/// duplicating the profile allocation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct IccConversionAuthority {
+    color_type: IccColorType,
+}
+
+impl IccConversionAuthority {
+    pub(crate) const fn from_color_type(color_type: IccColorType) -> Self {
+        Self { color_type }
+    }
+
+    pub const fn color_type(self) -> IccColorType {
+        self.color_type
+    }
+}
+
+/// Authority for the primaries recorded by a conversion route. ICC routes
+/// retain the profile-defined primaries instead of pretending they are sRGB.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConversionPrimaries {
+    Explicit(RgbPrimaries),
+    IccDefined,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -111,6 +155,14 @@ impl PixelInformation {
     }
     pub fn extended_channels(&self) -> Option<&[PixelChannelInformation]> {
         self.extended_channels.as_deref()
+    }
+    #[cfg(test)]
+    pub(crate) fn bits_capacity_for_test(&self) -> usize {
+        self.bits_per_channel.capacity()
+    }
+    #[cfg(test)]
+    pub(crate) fn extended_capacity_for_test(&self) -> Option<usize> {
+        self.extended_channels.as_ref().map(Vec::capacity)
     }
 }
 
@@ -333,6 +385,23 @@ impl ColorInformationSet {
         self.add_provenance(ColorProvenance::EmbeddedIcc);
         Ok(())
     }
+
+    /// Replace the ICC payload when its provenance is supplied by an
+    /// explicit conversion operation.  The ordinary setter intentionally
+    /// records `EmbeddedIcc`; an adapter replacing an input profile must not
+    /// manufacture that provenance (and must preserve the existing entries).
+    pub(crate) fn set_icc_profile_admitted(
+        &mut self,
+        profile: Vec<u8>,
+    ) -> Result<(), ProcessingError> {
+        if profile.is_empty() {
+            return Err(ProcessingError::Invalid(HighresError::InvalidMetadata(
+                "ICC profile is empty".into(),
+            )));
+        }
+        self.icc_profile = Some(profile);
+        Ok(())
+    }
     pub fn with_icc_color_type(mut self, color_type: IccColorType) -> Self {
         self.icc_color_type = Some(color_type);
         self
@@ -374,9 +443,27 @@ impl ColorInformationSet {
     pub fn provenance(&self) -> &[ColorProvenance] {
         &self.provenance
     }
-    #[cfg(feature = "avif")]
-    pub(crate) fn provenance_mut_bridge(&mut self) -> &mut Vec<ColorProvenance> {
-        &mut self.provenance
+    #[cfg(test)]
+    pub(crate) fn provenance_capacity_for_test(&self) -> usize {
+        self.provenance.capacity()
+    }
+    /// Append provenance only when the owner has already admitted capacity.
+    /// Conversion adapters use this feature-independent hook so they cannot
+    /// grow the vector behind the construction ledger.
+    pub(crate) fn push_admitted_provenance(
+        &mut self,
+        value: ColorProvenance,
+    ) -> Result<(), ProcessingError> {
+        if self.provenance.contains(&value) {
+            return Ok(());
+        }
+        if self.provenance.len() == self.provenance.capacity() {
+            return Err(ProcessingError::Allocation(
+                "colour provenance capacity was not admitted".into(),
+            ));
+        }
+        self.provenance.push(value);
+        Ok(())
     }
     #[cfg(feature = "avif")]
     pub(crate) fn provenance_capacity(&self) -> usize {
@@ -390,6 +477,10 @@ impl ColorInformationSet {
     }
     pub fn unknown_colr(&self) -> &[UnknownColorInformation] {
         &self.unknown_colr
+    }
+    #[cfg(test)]
+    pub(crate) fn unknown_colr_capacity_for_test(&self) -> usize {
+        self.unknown_colr.capacity()
     }
     #[cfg(feature = "avif")]
     pub(crate) fn unknown_colr_mut_bridge(&mut self) -> &mut Vec<UnknownColorInformation> {
@@ -422,47 +513,78 @@ impl ColorInformationSet {
     }
 
     pub(crate) fn try_clone_owned(&self) -> Result<Self, HighresError> {
-        let mut clone = Self::new();
-        clone
+        let mut sink = OrdinaryOwnerSink;
+        self.try_clone_owned_with_sink(&mut sink)
+            .map_err(|error| match error {
+                ProcessingError::Allocation(message) => HighresError::InvalidMetadata(message),
+                ProcessingError::Invalid(error) => error,
+                other => HighresError::InvalidMetadata(other.to_string()),
+            })
+    }
+
+    #[cfg(feature = "avif")]
+    pub(crate) fn try_clone_owned_with_ledger(
+        &self,
+        ledger: &mut ConstructionLedger,
+    ) -> Result<Self, ProcessingError> {
+        let mut sink = LedgerOwnerSink { ledger };
+        self.try_clone_owned_with_sink(&mut sink)
+    }
+
+    pub(crate) fn try_clone_owned_with_sink<S: OwnerSink>(
+        &self,
+        sink: &mut S,
+    ) -> Result<Self, ProcessingError> {
+        self.try_clone_owned_with_sink_mode(sink, true)
+    }
+
+    fn try_clone_owned_with_sink_mode<S: OwnerSink>(
+        &self,
+        sink: &mut S,
+        include_icc: bool,
+    ) -> Result<Self, ProcessingError> {
+        self.try_clone_owned_with_sink_mode_extra(sink, include_icc, 0)
+    }
+
+    fn try_clone_owned_with_sink_mode_extra<S: OwnerSink>(
+        &self,
+        sink: &mut S,
+        include_icc: bool,
+        extra_provenance: usize,
+    ) -> Result<Self, ProcessingError> {
+        let provenance_count = self
             .provenance
-            .try_reserve_exact(self.provenance.len())
-            .map_err(|_| {
-                HighresError::InvalidMetadata("colour provenance allocation failed".into())
+            .len()
+            .checked_add(extra_provenance)
+            .ok_or_else(|| {
+                ProcessingError::ResourceLimit("colour provenance count overflows".into())
             })?;
-        clone.provenance.extend_from_slice(&self.provenance);
-        if let Some(profile) = &self.icc_profile {
-            let mut copied = Vec::new();
-            copied.try_reserve_exact(profile.len()).map_err(|_| {
-                HighresError::InvalidMetadata("ICC profile allocation failed".into())
-            })?;
-            copied.extend_from_slice(profile);
-            clone.icc_profile = Some(copied);
-        }
-        clone.nclx = self.nclx;
-        clone.av1 = self.av1;
-        clone
-            .unknown_colr
-            .try_reserve_exact(self.unknown_colr.len())
-            .map_err(|_| {
-                HighresError::InvalidMetadata("unknown colour allocation failed".into())
-            })?;
-        for color in &self.unknown_colr {
-            let mut payload = Vec::new();
-            payload
-                .try_reserve_exact(color.payload.len())
-                .map_err(|_| {
-                    HighresError::InvalidMetadata("unknown colour payload allocation failed".into())
-                })?;
-            payload.extend_from_slice(&color.payload);
-            clone.unknown_colr.push(UnknownColorInformation {
+        let mut provenance =
+            sink.fresh::<ColorProvenance>(OwnerKey::Provenance, provenance_count)?;
+        provenance.extend_from_slice(&self.provenance);
+        let icc_profile = include_icc
+            .then_some(self.icc_profile.as_deref())
+            .flatten()
+            .map(|profile| copy_owner(sink, OwnerKey::IccProfile, profile))
+            .transpose()?;
+        let mut unknown_colr =
+            sink.fresh::<UnknownColorInformation>(OwnerKey::UnknownOuter, self.unknown_colr.len())?;
+        for (index, color) in self.unknown_colr.iter().enumerate() {
+            let payload = copy_owner(sink, OwnerKey::UnknownPayload(index), &color.payload)?;
+            unknown_colr.push(UnknownColorInformation {
                 color_type: color.color_type,
                 payload,
             });
         }
-        clone.icc_color_type = self.icc_color_type;
-        Ok(clone)
+        Ok(Self::from_owned_parts(
+            provenance,
+            icc_profile,
+            self.icc_color_type,
+            self.nclx,
+            self.av1,
+            unknown_colr,
+        ))
     }
-    #[cfg(feature = "avif")]
     pub(crate) fn from_owned_parts(
         provenance: Vec<ColorProvenance>,
         icc_profile: Option<Vec<u8>>,
@@ -484,26 +606,27 @@ impl ColorInformationSet {
     /// Return the bytes requested by a fresh owned clone.  This deliberately
     /// uses lengths rather than the capacities of the borrowed owner; the
     /// bridge allocates each clone with `try_reserve_exact` for its contents.
-    #[cfg(feature = "avif")]
-    pub(crate) fn fresh_owned_bytes(&self) -> Result<usize, HighresError> {
+    pub(crate) fn fresh_clone_owned_bytes(&self) -> Result<usize, HighresError> {
+        self.fresh_clone_owned_bytes_mode(true)
+    }
+
+    pub(crate) fn fresh_clone_owned_bytes_without_icc(&self) -> Result<usize, HighresError> {
+        self.fresh_clone_owned_bytes_mode(false)
+    }
+
+    fn fresh_clone_owned_bytes_mode(&self, include_icc: bool) -> Result<usize, HighresError> {
         let mut total = self.provenance.len();
-        if let Some(profile) = &self.icc_profile {
-            total = total.checked_add(profile.len()).ok_or_else(|| {
-                HighresError::InvalidMetadata("colour metadata size overflows".into())
-            })?;
-        }
-        if self.nclx.is_some() {
-            total = total.checked_add(8).ok_or_else(|| {
-                HighresError::InvalidMetadata("colour metadata size overflows".into())
-            })?;
-        }
-        if self.av1.is_some() {
-            total = total
-                .checked_add(AV1_COLOR_INFORMATION_BYTES)
-                .ok_or_else(|| {
+        if include_icc {
+            if let Some(profile) = &self.icc_profile {
+                total = total.checked_add(profile.len()).ok_or_else(|| {
                     HighresError::InvalidMetadata("colour metadata size overflows".into())
                 })?;
+            }
         }
+        // nclx and the AV1 colour description are copied as inline fields in
+        // the destination metadata.  Only heap-backed owners belong in the
+        // fresh-clone reservation ledger; their logical retained sizes stay
+        // accounted by `owned_bytes`/`metadata_bytes`.
         total = total
             .checked_add(
                 self.unknown_colr
@@ -520,6 +643,31 @@ impl ColorInformationSet {
             total = total.checked_add(color.payload.len()).ok_or_else(|| {
                 HighresError::InvalidMetadata("colour metadata size overflows".into())
             })?;
+        }
+        Ok(total)
+    }
+
+    pub(crate) fn fresh_clone_retained_bytes(&self) -> Result<usize, HighresError> {
+        self.fresh_clone_retained_bytes_mode(true)
+    }
+
+    pub(crate) fn fresh_clone_retained_bytes_without_icc(&self) -> Result<usize, HighresError> {
+        self.fresh_clone_retained_bytes_mode(false)
+    }
+
+    fn fresh_clone_retained_bytes_mode(&self, include_icc: bool) -> Result<usize, HighresError> {
+        let mut total = self.fresh_clone_owned_bytes_mode(include_icc)?;
+        if self.nclx.is_some() {
+            total = total.checked_add(8).ok_or_else(|| {
+                HighresError::InvalidMetadata("colour metadata size overflows".into())
+            })?;
+        }
+        if self.av1.is_some() {
+            total = total
+                .checked_add(AV1_COLOR_INFORMATION_BYTES)
+                .ok_or_else(|| {
+                    HighresError::InvalidMetadata("colour metadata size overflows".into())
+                })?;
         }
         Ok(total)
     }
@@ -574,6 +722,11 @@ impl ColorInformationSet {
             })?;
         }
         Ok(total)
+    }
+
+    #[cfg(feature = "avif")]
+    pub(crate) fn fresh_owned_bytes(&self) -> Result<usize, HighresError> {
+        self.fresh_clone_retained_bytes()
     }
 }
 
@@ -707,6 +860,226 @@ impl Default for PixelAspectRatio {
 
 /// Non-pixel metadata owned by a frame. Source colour is separate from any
 /// active output colour descriptor after an explicit conversion.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LastConversion {
+    source: ConversionSource,
+    source_cicp: Option<NclxColorInformation>,
+    source_icc: Option<IccConversionAuthority>,
+    source_primaries_authority: ConversionPrimaries,
+    source_primaries: RgbPrimaries,
+    source_domain: SampleDomain,
+    destination: ConversionDestination,
+    destination_icc: Option<IccConversionAuthority>,
+    destination_primaries_authority: ConversionPrimaries,
+    destination_domain: SampleDomain,
+    destination_primaries: RgbPrimaries,
+    intent: ConversionIntent,
+    native: Option<NativeInterpretation>,
+    white_adaptation: ConversionWhiteAdaptation,
+    alpha: ConversionAlpha,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConversionSource {
+    ActiveCicp,
+    ExplicitCicp,
+    LinearRelative,
+    Icc,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConversionDestination {
+    LinearRelativeRgb,
+    LinearAbsoluteNitsRgb,
+    HlgSceneLinearRgb,
+    Icc,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConversionIntent {
+    RelativeColorimetric,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NativeInterpretation {
+    full_range: bool,
+    matrix: u16,
+    chroma_location: Option<u8>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConversionWhiteAdaptation {
+    RequireSameWhite,
+    IccD50Pcs,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConversionAlpha {
+    PreserveAssociation,
+}
+
+pub(crate) struct LastConversionParts {
+    pub(crate) source: ConversionSource,
+    pub(crate) source_cicp: Option<NclxColorInformation>,
+    pub(crate) source_icc: Option<IccConversionAuthority>,
+    pub(crate) source_primaries_authority: ConversionPrimaries,
+    pub(crate) source_primaries: RgbPrimaries,
+    pub(crate) source_domain: SampleDomain,
+    pub(crate) destination: ConversionDestination,
+    pub(crate) destination_icc: Option<IccConversionAuthority>,
+    pub(crate) destination_primaries_authority: ConversionPrimaries,
+    pub(crate) destination_domain: SampleDomain,
+    pub(crate) destination_primaries: RgbPrimaries,
+    pub(crate) intent: ConversionIntent,
+    pub(crate) native: Option<NativeInterpretation>,
+    pub(crate) white_adaptation: ConversionWhiteAdaptation,
+    pub(crate) alpha: ConversionAlpha,
+}
+
+impl LastConversion {
+    pub(crate) const fn from_parts(parts: LastConversionParts) -> Self {
+        Self {
+            source: parts.source,
+            source_cicp: parts.source_cicp,
+            source_icc: parts.source_icc,
+            source_primaries_authority: parts.source_primaries_authority,
+            source_primaries: parts.source_primaries,
+            source_domain: parts.source_domain,
+            destination: parts.destination,
+            destination_icc: parts.destination_icc,
+            destination_primaries_authority: parts.destination_primaries_authority,
+            destination_domain: parts.destination_domain,
+            destination_primaries: parts.destination_primaries,
+            intent: parts.intent,
+            native: parts.native,
+            white_adaptation: parts.white_adaptation,
+            alpha: parts.alpha,
+        }
+    }
+
+    pub const fn source(self) -> ConversionSource {
+        self.source
+    }
+
+    pub const fn source_cicp(self) -> Option<NclxColorInformation> {
+        self.source_cicp
+    }
+
+    pub const fn source_icc(self) -> Option<IccConversionAuthority> {
+        self.source_icc
+    }
+
+    pub const fn source_primaries_authority(self) -> ConversionPrimaries {
+        self.source_primaries_authority
+    }
+
+    pub const fn source_primaries(self) -> RgbPrimaries {
+        self.source_primaries
+    }
+
+    /// Return the truthful primaries authority for this route.
+    ///
+    /// In particular, ICC-defined primaries are reported as
+    /// [`ConversionPrimaries::IccDefined`] instead of being represented by
+    /// the CICP-oriented [`RgbPrimaries`] compatibility value returned by
+    /// [`Self::source_primaries`].  Consumers that must not infer colour
+    /// information from a compatibility value should use this accessor (or
+    /// [`Self::source_primaries_if_defined`]).
+    pub const fn source_primaries_info(self) -> ConversionPrimaries {
+        self.source_primaries_authority
+    }
+
+    /// Return concrete source primaries when the route declares them.
+    /// ICC profiles define their own primaries, so no RGB fallback is exposed
+    /// through this accessor for ICC-defined routes.
+    pub const fn source_primaries_if_defined(self) -> Option<RgbPrimaries> {
+        match self.source_primaries_authority {
+            ConversionPrimaries::Explicit(value) => Some(value),
+            ConversionPrimaries::IccDefined => None,
+        }
+    }
+
+    pub const fn source_domain(self) -> SampleDomain {
+        self.source_domain
+    }
+
+    pub const fn destination(self) -> ConversionDestination {
+        self.destination
+    }
+
+    pub const fn destination_icc(self) -> Option<IccConversionAuthority> {
+        self.destination_icc
+    }
+
+    pub const fn destination_primaries_authority(self) -> ConversionPrimaries {
+        self.destination_primaries_authority
+    }
+
+    pub const fn destination_domain(self) -> SampleDomain {
+        self.destination_domain
+    }
+
+    pub const fn destination_primaries(self) -> RgbPrimaries {
+        self.destination_primaries
+    }
+
+    /// Return the truthful destination primaries authority for this route.
+    /// ICC-defined primaries are never exposed as a fabricated RGB value.
+    pub const fn destination_primaries_info(self) -> ConversionPrimaries {
+        self.destination_primaries_authority
+    }
+
+    /// Return concrete destination primaries when the route declares them.
+    pub const fn destination_primaries_if_defined(self) -> Option<RgbPrimaries> {
+        match self.destination_primaries_authority {
+            ConversionPrimaries::Explicit(value) => Some(value),
+            ConversionPrimaries::IccDefined => None,
+        }
+    }
+
+    pub const fn intent(self) -> ConversionIntent {
+        self.intent
+    }
+
+    pub const fn native(self) -> Option<NativeInterpretation> {
+        self.native
+    }
+
+    pub const fn white_adaptation(self) -> ConversionWhiteAdaptation {
+        self.white_adaptation
+    }
+
+    pub const fn alpha(self) -> ConversionAlpha {
+        self.alpha
+    }
+}
+
+impl NativeInterpretation {
+    pub(crate) const fn from_parts(
+        full_range: bool,
+        matrix: u16,
+        chroma_location: Option<u8>,
+    ) -> Self {
+        Self {
+            full_range,
+            matrix,
+            chroma_location,
+        }
+    }
+
+    pub const fn full_range(self) -> bool {
+        self.full_range
+    }
+
+    pub const fn matrix(self) -> u16 {
+        self.matrix
+    }
+
+    pub const fn chroma_location(self) -> Option<u8> {
+        self.chroma_location
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct FrameMetadata {
     source_color: ColorInformationSet,
@@ -724,6 +1097,7 @@ pub struct FrameMetadata {
     coded_dimensions: Option<(u32, u32)>,
     render_dimensions: Option<(u32, u32)>,
     sequence_information: Option<SequenceInformation>,
+    last_conversion: Option<LastConversion>,
 }
 
 impl Default for FrameMetadata {
@@ -744,6 +1118,7 @@ impl Default for FrameMetadata {
             coded_dimensions: None,
             render_dimensions: None,
             sequence_information: None,
+            last_conversion: None,
         }
     }
 }
@@ -791,6 +1166,14 @@ impl FrameMetadata {
     pub fn render_geometry(&self) -> &[GeometryOperation] {
         &self.render_geometry
     }
+    #[cfg(test)]
+    pub(crate) fn coded_geometry_capacity_for_test(&self) -> usize {
+        self.coded_geometry.capacity()
+    }
+    #[cfg(test)]
+    pub(crate) fn render_geometry_capacity_for_test(&self) -> usize {
+        self.render_geometry.capacity()
+    }
     pub fn av1_description(&self) -> Option<Av1Description> {
         self.av1_description
     }
@@ -805,6 +1188,9 @@ impl FrameMetadata {
     }
     pub fn sequence_information(&self) -> Option<SequenceInformation> {
         self.sequence_information
+    }
+    pub fn last_conversion(&self) -> Option<LastConversion> {
+        self.last_conversion
     }
     pub fn set_crop(&mut self, crop: Option<Rect>) {
         self.crop = crop;
@@ -842,6 +1228,134 @@ impl FrameMetadata {
     }
     pub fn set_sequence_information(&mut self, information: Option<SequenceInformation>) {
         self.sequence_information = information;
+    }
+
+    pub(crate) fn set_last_conversion(&mut self, record: LastConversion) {
+        self.last_conversion = Some(record);
+    }
+
+    pub(crate) fn try_clone_for_conversion_with_sink<S: OwnerSink>(
+        &self,
+        sink: &mut S,
+    ) -> Result<Self, ProcessingError> {
+        if self.tags.capacity() != 0 {
+            return Err(ProcessingError::Unsupported(
+                "metadata tags with retained capacity are unsupported by this conversion slice"
+                    .into(),
+            ));
+        }
+        let coded_geometry = copy_owner(sink, OwnerKey::CodedGeometry, &self.coded_geometry)?;
+        let render_geometry = copy_owner(sink, OwnerKey::RenderGeometry, &self.render_geometry)?;
+        let pixel_information = if let Some(information) = &self.pixel_information {
+            let bits_per_channel =
+                copy_owner(sink, OwnerKey::PixiBits, &information.bits_per_channel)?;
+            let extended_channels = information
+                .extended_channels
+                .as_ref()
+                .map(|channels| copy_owner(sink, OwnerKey::PixiExtended, channels))
+                .transpose()?;
+            Some(PixelInformation {
+                bits_per_channel,
+                extended_channels,
+            })
+        } else {
+            None
+        };
+        let source_color = self.source_color.try_clone_owned_with_sink(sink)?;
+        if self.source_color.nclx.is_some() {
+            sink.commit_inline(OwnerKey::SourceNclx, 8)?;
+        }
+        if self.source_color.av1.is_some() {
+            sink.commit_inline(OwnerKey::SourceAv1, AV1_COLOR_INFORMATION_BYTES)?;
+        }
+        if self.coded_dimensions.is_some() {
+            sink.commit_inline(OwnerKey::CodedDimensions, 8)?;
+        }
+        if self.render_dimensions.is_some() {
+            sink.commit_inline(OwnerKey::RenderDimensions, 8)?;
+        }
+        Ok(Self {
+            source_color,
+            tags: Metadata::new(),
+            crop: self.crop,
+            rotation: self.rotation,
+            mirror_horizontal: self.mirror_horizontal,
+            mirror_vertical: self.mirror_vertical,
+            pixel_aspect_ratio: self.pixel_aspect_ratio,
+            clean_aperture: self.clean_aperture,
+            coded_geometry,
+            render_geometry,
+            av1_description: self.av1_description,
+            pixel_information,
+            coded_dimensions: self.coded_dimensions,
+            render_dimensions: self.render_dimensions,
+            sequence_information: self.sequence_information,
+            last_conversion: self.last_conversion,
+        })
+    }
+
+    pub(crate) fn try_clone_for_icc_conversion_with_sink<S: OwnerSink>(
+        &self,
+        sink: &mut S,
+    ) -> Result<Self, ProcessingError> {
+        if self.tags.capacity() != 0 {
+            return Err(ProcessingError::Unsupported(
+                "metadata tags with retained capacity are unsupported by this conversion slice"
+                    .into(),
+            ));
+        }
+        let coded_geometry = copy_owner(sink, OwnerKey::CodedGeometry, &self.coded_geometry)?;
+        let render_geometry = copy_owner(sink, OwnerKey::RenderGeometry, &self.render_geometry)?;
+        let pixel_information = if let Some(information) = &self.pixel_information {
+            let bits_per_channel =
+                copy_owner(sink, OwnerKey::PixiBits, &information.bits_per_channel)?;
+            let extended_channels = information
+                .extended_channels
+                .as_ref()
+                .map(|channels| copy_owner(sink, OwnerKey::PixiExtended, channels))
+                .transpose()?;
+            Some(PixelInformation {
+                bits_per_channel,
+                extended_channels,
+            })
+        } else {
+            None
+        };
+        let source_color = self
+            .source_color
+            .try_clone_owned_with_sink_mode_extra(sink, false, 1)?;
+        if self.source_color.nclx.is_some() {
+            sink.commit_inline(OwnerKey::SourceNclx, 8)?;
+        }
+        if self.source_color.av1.is_some() {
+            sink.commit_inline(OwnerKey::SourceAv1, AV1_COLOR_INFORMATION_BYTES)?;
+        }
+        if self.coded_dimensions.is_some() {
+            sink.commit_inline(OwnerKey::CodedDimensions, 8)?;
+        }
+        if self.render_dimensions.is_some() {
+            sink.commit_inline(OwnerKey::RenderDimensions, 8)?;
+        }
+        Ok(Self {
+            source_color,
+            tags: Metadata::new(),
+            crop: self.crop,
+            rotation: self.rotation,
+            mirror_horizontal: self.mirror_horizontal,
+            mirror_vertical: self.mirror_vertical,
+            pixel_aspect_ratio: self.pixel_aspect_ratio,
+            clean_aperture: self.clean_aperture,
+            coded_geometry,
+            render_geometry,
+            av1_description: self.av1_description,
+            pixel_information,
+            coded_dimensions: self.coded_dimensions,
+            render_dimensions: self.render_dimensions,
+            sequence_information: self.sequence_information,
+            // ICC has a separate typed colour authority and does not reuse a
+            // record produced by the CICP/linear execution path.
+            last_conversion: None,
+        })
     }
 
     pub(crate) fn metadata_bytes(&self) -> Result<usize, HighresError> {
@@ -938,6 +1452,107 @@ impl FrameMetadata {
                 .ok_or_else(|| HighresError::InvalidMetadata("metadata size overflows".into()))?;
         }
         Ok(total)
+    }
+
+    pub(crate) fn fresh_clone_bytes(&self) -> Result<usize, HighresError> {
+        let mut total = self.source_color.fresh_clone_owned_bytes()?;
+        for geometry in [&self.coded_geometry, &self.render_geometry] {
+            total = total
+                .checked_add(
+                    geometry
+                        .len()
+                        .checked_mul(size_of::<GeometryOperation>())
+                        .ok_or_else(|| {
+                            HighresError::InvalidMetadata("metadata size overflows".into())
+                        })?,
+                )
+                .ok_or_else(|| HighresError::InvalidMetadata("metadata size overflows".into()))?;
+        }
+        if let Some(pixel_information) = &self.pixel_information {
+            let extended_bytes =
+                pixel_information
+                    .extended_channels
+                    .as_ref()
+                    .map_or(Ok(0usize), |channels| {
+                        channels
+                            .len()
+                            .checked_mul(size_of::<PixelChannelInformation>())
+                            .ok_or_else(|| {
+                                HighresError::InvalidMetadata("metadata size overflows".into())
+                            })
+                    })?;
+            total = total
+                .checked_add(pixel_information.bits_per_channel.len())
+                .and_then(|value| value.checked_add(extended_bytes))
+                .ok_or_else(|| HighresError::InvalidMetadata("metadata size overflows".into()))?;
+        }
+        Ok(total)
+    }
+
+    pub(crate) fn fresh_clone_owned_bytes_without_icc(&self) -> Result<usize, HighresError> {
+        let with_icc = self.source_color.fresh_clone_owned_bytes()?;
+        let without_icc = self.source_color.fresh_clone_owned_bytes_without_icc()?;
+        let rest = self
+            .fresh_clone_bytes()?
+            .checked_sub(with_icc)
+            .ok_or_else(|| HighresError::InvalidMetadata("metadata size underflows".into()))?;
+        rest.checked_add(without_icc)
+            .ok_or_else(|| HighresError::InvalidMetadata("metadata size overflows".into()))
+    }
+
+    pub(crate) fn fresh_clone_retained_bytes(&self) -> Result<usize, HighresError> {
+        let mut total = self.source_color.fresh_clone_retained_bytes()?;
+        let coded_geometry_bytes = self
+            .coded_geometry
+            .len()
+            .checked_mul(size_of::<GeometryOperation>())
+            .ok_or_else(|| HighresError::InvalidMetadata("metadata size overflows".into()))?;
+        let render_geometry_bytes = self
+            .render_geometry
+            .len()
+            .checked_mul(size_of::<GeometryOperation>())
+            .ok_or_else(|| HighresError::InvalidMetadata("metadata size overflows".into()))?;
+        total = total
+            .checked_add(coded_geometry_bytes)
+            .and_then(|value| value.checked_add(render_geometry_bytes))
+            .ok_or_else(|| HighresError::InvalidMetadata("metadata size overflows".into()))?;
+        for dimensions in [self.coded_dimensions, self.render_dimensions] {
+            if dimensions.is_some() {
+                total = total.checked_add(8).ok_or_else(|| {
+                    HighresError::InvalidMetadata("metadata size overflows".into())
+                })?;
+            }
+        }
+        if let Some(pixel_information) = &self.pixel_information {
+            let extended_bytes =
+                pixel_information
+                    .extended_channels
+                    .as_ref()
+                    .map_or(Ok(0usize), |channels| {
+                        channels
+                            .len()
+                            .checked_mul(size_of::<PixelChannelInformation>())
+                            .ok_or_else(|| {
+                                HighresError::InvalidMetadata("metadata size overflows".into())
+                            })
+                    })?;
+            total = total
+                .checked_add(pixel_information.bits_per_channel.len())
+                .and_then(|value| value.checked_add(extended_bytes))
+                .ok_or_else(|| HighresError::InvalidMetadata("metadata size overflows".into()))?;
+        }
+        Ok(total)
+    }
+
+    pub(crate) fn fresh_clone_retained_bytes_without_icc(&self) -> Result<usize, HighresError> {
+        let with_icc = self.source_color.fresh_clone_retained_bytes()?;
+        let without_icc = self.source_color.fresh_clone_retained_bytes_without_icc()?;
+        let rest = self
+            .fresh_clone_retained_bytes()?
+            .checked_sub(with_icc)
+            .ok_or_else(|| HighresError::InvalidMetadata("metadata size underflows".into()))?;
+        rest.checked_add(without_icc)
+            .ok_or_else(|| HighresError::InvalidMetadata("metadata size overflows".into()))
     }
 
     pub(crate) fn validate_bounds(&self, width: u32, height: u32) -> Result<(), HighresError> {

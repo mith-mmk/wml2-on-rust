@@ -1,8 +1,12 @@
 use avif_codec::RichAvifInfo;
 use std::mem::size_of;
 
-use super::allocation::{ConstructionLedger, try_copy, try_new_metadata_candidate};
+use super::allocation::ConstructionLedger;
 use crate::highres::ProcessingError;
+use crate::highres::ownership::{
+    copy_owner_with_ledger, fresh_owner_with_ledger, reserve_provenance_with_ledger,
+    reserve_unknown_with_ledger,
+};
 use crate::highres::{
     Av1Description, CleanAperture, ColorInformationSet, ColorProvenance, FrameMetadata,
     GeometryOperation, IccColorType, NclxColorInformation, PixelChannelInformation,
@@ -17,15 +21,20 @@ fn add_bytes(total: &mut usize, value: usize) -> Result<(), ProcessingError> {
 }
 
 pub(super) fn metadata_final_owned_bytes(rich: &RichAvifInfo) -> Result<usize, ProcessingError> {
-    if rich.info.rotation.is_some() || rich.info.mirror.is_some() {
-        return Err(ProcessingError::Unsupported(
-            "ordered geometry metadata is unavailable".into(),
-        ));
-    }
     let source = &rich.color_information;
     let mut total = 2usize
         .checked_mul(size_of::<(u32, u32)>())
         .ok_or_else(|| ProcessingError::ResourceLimit("metadata size overflows".into()))?;
+    let geometry_count = usize::from(rich.info.rotation.is_some())
+        .checked_add(usize::from(rich.info.mirror.is_some()))
+        .ok_or_else(|| ProcessingError::ResourceLimit("metadata size overflows".into()))?;
+    add_bytes(
+        &mut total,
+        geometry_count
+            .checked_mul(2)
+            .and_then(|count| count.checked_mul(size_of::<crate::highres::GeometryOperation>()))
+            .ok_or_else(|| ProcessingError::ResourceLimit("metadata size overflows".into()))?,
+    )?;
     let mut color = 0usize;
     if let Some(profile) = &source.icc_profile {
         add_bytes(&mut color, profile.len())?;
@@ -69,11 +78,6 @@ pub(super) fn metadata_final_owned_bytes(rich: &RichAvifInfo) -> Result<usize, P
 }
 
 pub(super) fn metadata_borrowed_bytes(rich: &RichAvifInfo) -> Result<usize, ProcessingError> {
-    if rich.info.rotation.is_some() || rich.info.mirror.is_some() {
-        return Err(ProcessingError::Unsupported(
-            "ordered geometry metadata is unavailable".into(),
-        ));
-    }
     let mut source_total = 0;
     let source = &rich.color_information;
     if let Some(projected) = &rich.info.color_information {
@@ -174,64 +178,6 @@ pub(super) fn color_information(
     color_information_impl(rich, &mut None)
 }
 
-fn copy_with_ledger<T: Copy>(
-    ledger: &mut Option<&mut ConstructionLedger>,
-    source: &[T],
-) -> Result<Vec<T>, ProcessingError> {
-    if let Some(ledger) = ledger.as_mut() {
-        ledger.try_copy_metadata(source)
-    } else {
-        try_copy(source)
-    }
-}
-
-fn copy_icc_with_ledger(
-    ledger: &mut Option<&mut ConstructionLedger>,
-    source: &[u8],
-) -> Result<Vec<u8>, ProcessingError> {
-    if let Some(ledger) = ledger.as_mut() {
-        ledger.try_copy_icc(source)
-    } else {
-        try_copy(source)
-    }
-}
-
-fn reserve_provenance_with_ledger(
-    colors: &mut ColorInformationSet,
-    ledger: &mut Option<&mut ConstructionLedger>,
-) -> Result<(), ProcessingError> {
-    if let Some(ledger) = ledger.as_mut() {
-        return ledger.try_grow_metadata_vec(
-            colors.provenance_mut_bridge(),
-            1,
-            0,
-            try_new_metadata_candidate::<ColorProvenance>,
-        );
-    }
-    colors
-        .try_reserve_provenance(1)
-        .map_err(ProcessingError::from)
-}
-
-fn reserve_unknown_with_ledger(
-    colors: &mut ColorInformationSet,
-    additional: usize,
-    ledger: &mut Option<&mut ConstructionLedger>,
-) -> Result<(), ProcessingError> {
-    if additional == 0 {
-        return Ok(());
-    }
-    if let Some(ledger) = ledger.as_mut() {
-        return ledger.try_grow_metadata_vec(
-            colors.unknown_colr_mut_bridge(),
-            additional,
-            0,
-            try_new_metadata_candidate::<crate::highres::UnknownColorInformation>,
-        );
-    }
-    colors.try_reserve_unknown_colr_bridge(additional)
-}
-
 fn color_information_impl(
     rich: &RichAvifInfo,
     ledger: &mut Option<&mut ConstructionLedger>,
@@ -239,7 +185,11 @@ fn color_information_impl(
     let mut set = ColorInformationSet::new();
     let source = &rich.color_information;
     if let Some(profile) = &source.icc_profile {
-        let copied = copy_icc_with_ledger(ledger, profile)?;
+        let copied = copy_owner_with_ledger(
+            crate::highres::output_plan::OwnerKey::IccProfile,
+            ledger,
+            profile,
+        )?;
         reserve_provenance_with_ledger(&mut set, ledger)?;
         set.set_icc_profile(copied).map_err(ProcessingError::from)?;
         if let Some(kind) = source.icc_color_type {
@@ -271,8 +221,12 @@ fn color_information_impl(
         ));
     }
     reserve_unknown_with_ledger(&mut set, source.unknown_colr.len(), ledger)?;
-    for unknown in &source.unknown_colr {
-        let payload = copy_with_ledger(ledger, &unknown.payload)?;
+    for (index, unknown) in source.unknown_colr.iter().enumerate() {
+        let payload = copy_owner_with_ledger(
+            crate::highres::output_plan::OwnerKey::UnknownPayload(index),
+            ledger,
+            &unknown.payload,
+        )?;
         set.push_unknown_colr(crate::highres::UnknownColorInformation {
             color_type: unknown.color_type,
             payload,
@@ -297,11 +251,6 @@ fn frame_metadata_impl(
     rich: &RichAvifInfo,
     ledger: &mut Option<&mut ConstructionLedger>,
 ) -> Result<FrameMetadata, ProcessingError> {
-    if rich.info.rotation.is_some() || rich.info.mirror.is_some() {
-        return Err(ProcessingError::Unsupported(
-            "ordered geometry metadata is unavailable".into(),
-        ));
-    }
     let colors = color_information_impl(rich, ledger)?;
     let mut metadata = FrameMetadata::new(colors);
     let info = &rich.info;
@@ -311,15 +260,11 @@ fn frame_metadata_impl(
             .as_ref()
             .map(
                 |source| -> Result<Vec<PixelChannelInformation>, ProcessingError> {
-                    let mut channels = if let Some(ledger) = ledger.as_mut() {
-                        ledger.try_new_metadata_vec(source.len())?
-                    } else {
-                        let mut channels = Vec::new();
-                        channels.try_reserve_exact(source.len()).map_err(|_| {
-                            ProcessingError::Allocation("metadata allocation failed".into())
-                        })?;
-                        channels
-                    };
+                    let mut channels = fresh_owner_with_ledger(
+                        crate::highres::output_plan::OwnerKey::PixiExtended,
+                        ledger,
+                        source.len(),
+                    )?;
                     for channel in source {
                         channels.push(PixelChannelInformation::new(
                             channel.channel_idc,
@@ -336,7 +281,11 @@ fn frame_metadata_impl(
                 },
             )
             .transpose()?;
-        let bits = copy_with_ledger(ledger, &pixi.bits_per_channel)?;
+        let bits = copy_owner_with_ledger(
+            crate::highres::output_plan::OwnerKey::PixiBits,
+            ledger,
+            &pixi.bits_per_channel,
+        )?;
         let pixel_information =
             PixelInformation::new(bits, channels).map_err(ProcessingError::from)?;
         metadata.set_pixel_information(Some(pixel_information));
@@ -344,15 +293,10 @@ fn frame_metadata_impl(
     let operation_count = usize::from(info.rotation.is_some())
         .checked_add(usize::from(info.mirror.is_some()))
         .ok_or_else(|| ProcessingError::ResourceLimit("geometry count overflows".into()))?;
-    let mut coded = if let Some(ledger) = ledger.as_mut() {
-        ledger.try_new_metadata_vec(operation_count)?
-    } else {
-        let mut coded = Vec::new();
-        coded
-            .try_reserve_exact(operation_count)
-            .map_err(|_| ProcessingError::Allocation("geometry allocation failed".into()))?;
-        coded
-    };
+    let mut coded = Vec::new();
+    coded
+        .try_reserve_exact(operation_count)
+        .map_err(|_| ProcessingError::Allocation("geometry allocation failed".into()))?;
     if let Some(crop) = info.clean_aperture {
         let aperture = CleanAperture::new(
             RawRational::new(crop.width_n, crop.width_d).map_err(ProcessingError::from)?,
@@ -383,7 +327,11 @@ fn frame_metadata_impl(
             coded.push(GeometryOperation::MirrorVertical);
         }
     }
-    let render = copy_with_ledger(ledger, &coded)?;
+    let render = copy_owner_with_ledger(
+        crate::highres::output_plan::OwnerKey::RenderGeometry,
+        ledger,
+        &coded,
+    )?;
     metadata.set_coded_geometry(coded);
     metadata.set_render_geometry(render);
     Ok(metadata)

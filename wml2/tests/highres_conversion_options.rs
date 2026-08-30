@@ -141,6 +141,33 @@ fn explicit_cicp_override_is_independent_of_active_icc() {
 }
 
 #[test]
+fn convert_frame_rejects_active_icc_but_explicit_cicp_succeeds() {
+    let color = ColorInformationSet::new()
+        .with_icc_profile(valid_rgb_profile())
+        .unwrap()
+        .with_icc_color_type(IccColorType::Prof)
+        .with_nclx(NclxColorInformation::new(1, 13, 0, true));
+    let frame = rgb_frame(color, SampleDomain::Encoded);
+    let destination = Destination::linear_rgb(SampleDomain::LinearRelative, RgbPrimaries::srgb());
+    let active = ColorConvertOptions::new(destination).with_native_sample_encoding(rgb_native());
+    assert!(matches!(
+        convert_frame(&frame, &active, &limits()),
+        Err(ProcessingError::Unsupported(_))
+    ));
+
+    let explicit = ColorConvertOptions::new(destination)
+        .with_source(SourceInterpretation::Cicp(NclxColorInformation::new(
+            1, 13, 0, true,
+        )))
+        .with_native_sample_encoding(rgb_native());
+    let converted = convert_frame(&frame, &explicit, &limits()).unwrap();
+    assert_eq!(
+        converted.descriptor().domain(),
+        SampleDomain::LinearRelative
+    );
+}
+
+#[test]
 fn native_range_and_matrix_are_checked_separately_from_source_route() {
     let color = ColorInformationSet::new().with_nclx(NclxColorInformation::new(1, 13, 1, false));
     let frame = rgb_frame(color, SampleDomain::Encoded);

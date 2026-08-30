@@ -2,18 +2,16 @@ use std::mem::size_of;
 
 use avif_codec::{DecodedFrame, RichAvifInfo};
 
+use crate::highres::ownership::clone_color_information_with_ledger;
 use crate::highres::{
-    AlphaAssociation, ChannelModel, ChannelRole, ColorInformationSet, FrameTiming, HighresError,
-    ImageDescriptor, ImageFrame, PixelBuffer, Plane, PlaneDescriptor, PlaneLayout, ProcessingError,
-    ResourceLimits, Subsampling,
+    AlphaAssociation, ChannelModel, ChannelRole, FrameTiming, HighresError, ImageDescriptor,
+    ImageFrame, PixelBuffer, Plane, PlaneDescriptor, PlaneLayout, ProcessingError, ResourceLimits,
+    Subsampling,
 };
 
 use super::allocation::ConstructionLedger;
 #[cfg(test)]
 pub(super) use super::allocation::construction_failpoint;
-#[cfg(test)]
-#[allow(unused_imports)]
-use super::metadata::frame_metadata;
 use super::metadata::{
     av1_description, frame_metadata_with_ledger, metadata_borrowed_bytes,
     metadata_final_owned_bytes, projected_color_bytes,
@@ -47,6 +45,15 @@ struct NativeMapPlan {
 struct NativeOwnershipPlan {
     pre_release_live_bytes: usize,
     post_release_live_bytes: usize,
+}
+
+#[cfg(test)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct NativeMappingPeak {
+    pub(super) final_frame_bytes: usize,
+    pub(super) pre_release_live_bytes: usize,
+    pub(super) post_release_live_bytes: usize,
+    pub(super) peak_live_bytes: usize,
 }
 
 fn late_dimension_bytes(
@@ -121,6 +128,35 @@ impl NativeOwnershipPlan {
     }
 }
 
+fn full_metadata_preflight(
+    frame: &DecodedFrame,
+    rich: &RichAvifInfo,
+) -> Result<(usize, usize), ProcessingError> {
+    let retained_bytes = metadata_final_owned_bytes(rich)?;
+    let active_color_base_bytes = projected_color_bytes(rich, false)?;
+    let has_new_av1 = frame.color_config.color_description.is_some();
+    let av1_bytes = if has_new_av1 {
+        crate::highres::AV1_COLOR_INFORMATION_BYTES
+            .checked_add(1)
+            .ok_or_else(|| ProcessingError::ResourceLimit("metadata bytes overflow".into()))?
+    } else {
+        0
+    };
+    let active_color_bytes = active_color_base_bytes
+        .checked_add(av1_bytes)
+        .ok_or_else(|| ProcessingError::ResourceLimit("metadata bytes overflow".into()))?;
+    let metadata_budget_bytes = retained_bytes
+        .checked_add(av1_bytes)
+        .and_then(|value| value.checked_add(active_color_bytes))
+        .and_then(|value| {
+            2usize
+                .checked_mul(size_of::<(u32, u32)>())
+                .and_then(|dimensions| value.checked_add(dimensions))
+        })
+        .ok_or_else(|| ProcessingError::ResourceLimit("metadata bytes overflow".into()))?;
+    Ok((metadata_budget_bytes, active_color_bytes))
+}
+
 impl NativeMapPlan {
     /// Validate every bridge-relevant property without allocating a metadata
     /// projection, descriptor, or destination plane.  The fixed-size plan is
@@ -131,11 +167,6 @@ impl NativeMapPlan {
         rich: &RichAvifInfo,
         limits: &ResourceLimits,
     ) -> Result<Self, ProcessingError> {
-        if rich.info.rotation.is_some() || rich.info.mirror.is_some() {
-            return Err(ProcessingError::Unsupported(
-                "ordered geometry metadata is unavailable in this bridge".into(),
-            ));
-        }
         validate_native_configuration(frame)?;
         validate_native_pixel_information(frame, rich)?;
         validate_icc_kinds(rich)?;
@@ -174,6 +205,66 @@ impl NativeMapPlan {
             NativeOwnershipPlan::for_rich(frame, rich, plan)?.check(limits)?;
             Ok(plan)
         })
+    }
+
+    fn inspect_with_external_live(
+        frame: &DecodedFrame,
+        rich: &RichAvifInfo,
+        limits: &ResourceLimits,
+        external_live_bytes: usize,
+    ) -> Result<Self, ProcessingError> {
+        validate_native_configuration(frame)?;
+        validate_native_pixel_information(frame, rich)?;
+        validate_icc_kinds(rich)?;
+        let metadata_bytes = metadata_final_owned_bytes(rich)?;
+        if metadata_bytes > limits.max_metadata_bytes {
+            return Err(ProcessingError::ResourceLimit(
+                "native metadata exceeds resource limits".into(),
+            ));
+        }
+        let source_icc_capacity = rich
+            .color_information
+            .icc_profile
+            .as_ref()
+            .map_or(0, Vec::capacity);
+        let projected_icc_capacity = rich
+            .info
+            .color_information
+            .as_ref()
+            .filter(|color| color.color_type == *b"prof" || color.color_type == *b"rICC")
+            .map_or(0, |color| color.payload.capacity());
+        if source_icc_capacity > limits.max_icc_bytes
+            || projected_icc_capacity > limits.max_icc_bytes
+        {
+            return Err(ProcessingError::ResourceLimit(
+                "native ICC profile exceeds resource limits".into(),
+            ));
+        }
+        let plan = Self::inspect_frame_with_live_extra(
+            frame,
+            metadata_bytes,
+            external_live_bytes,
+            limits,
+            true,
+        )?;
+        let native_outer_bytes = frame
+            .buffers
+            .planes
+            .capacity()
+            .checked_mul(size_of::<avif_codec::av1::PlaneBuffer>())
+            .ok_or_else(|| ProcessingError::ResourceLimit("native outer bytes overflow".into()))?;
+        let active_color_bytes =
+            projected_color_bytes(rich, frame.color_config.color_description.is_some())?;
+        let late_dimensions = late_dimension_bytes(false, false)?;
+        NativeOwnershipPlan::new(
+            plan.final_frame_bytes,
+            active_color_bytes,
+            late_dimensions,
+            external_live_bytes,
+            native_outer_bytes,
+        )?
+        .check(limits)?;
+        Ok(plan)
     }
 
     #[cfg(test)]
@@ -494,30 +585,68 @@ pub(super) fn inspect_native_for_test(
     NativeMapPlan::inspect(frame, rich, limits).map(|_| ())
 }
 
-fn clone_color_information_with_ledger(
-    source: &ColorInformationSet,
-    ledger: &mut ConstructionLedger,
-) -> Result<ColorInformationSet, ProcessingError> {
-    let provenance = ledger.try_copy_metadata(source.provenance())?;
-    let icc_profile = source
-        .icc_profile()
-        .map(|profile| ledger.try_copy_icc(profile))
-        .transpose()?;
-    let mut unknown_colr = ledger.try_new_metadata_vec(source.unknown_colr().len())?;
-    for color in source.unknown_colr() {
-        unknown_colr.push(crate::highres::UnknownColorInformation {
-            color_type: color.color_type,
-            payload: ledger.try_copy_metadata(&color.payload)?,
-        });
+#[cfg(test)]
+pub(super) fn inspect_native_mapping_peak_for_test(
+    frame: &DecodedFrame,
+    rich: &RichAvifInfo,
+    limits: &ResourceLimits,
+    external_live_bytes: usize,
+) -> Result<NativeMappingPeak, ProcessingError> {
+    // Run the same rich-input validation as the production entry first.  The
+    // production mapper then adds AV1 provenance and late dimensions to its
+    // metadata owner before the final plan, so reproduce that second plan
+    // here rather than reporting the smaller parser-only projection.
+    if external_live_bytes == 0 {
+        NativeMapPlan::inspect(frame, rich, limits)?;
+    } else {
+        NativeMapPlan::inspect_with_external_live(frame, rich, limits, external_live_bytes)?;
     }
-    Ok(ColorInformationSet::from_owned_parts(
-        provenance,
-        icc_profile,
-        source.icc_color_type(),
-        source.nclx(),
-        source.av1(),
-        unknown_colr,
-    ))
+    let (metadata_budget_bytes, active_color_bytes) = full_metadata_preflight(frame, rich)?;
+    let plan = NativeMapPlan::inspect_frame_with_live_extra(
+        frame,
+        metadata_budget_bytes,
+        external_live_bytes,
+        limits,
+        true,
+    )?;
+    let native_outer_bytes = frame
+        .buffers
+        .planes
+        .capacity()
+        .checked_mul(size_of::<avif_codec::av1::PlaneBuffer>())
+        .ok_or_else(|| ProcessingError::ResourceLimit("native outer bytes overflow".into()))?;
+    let borrowed_live_bytes = if external_live_bytes == 0 {
+        metadata_borrowed_bytes(rich)?
+    } else {
+        0
+    };
+    let ownership = NativeOwnershipPlan::new(
+        plan.final_frame_bytes,
+        active_color_bytes,
+        // The production ledger performs this check before coded/render
+        // dimensions are attached to the output metadata.
+        late_dimension_bytes(false, false)?,
+        external_live_bytes
+            .checked_add(borrowed_live_bytes)
+            .ok_or_else(|| ProcessingError::ResourceLimit("native live bytes overflow".into()))?,
+        native_outer_bytes,
+    )?;
+    ownership.check(limits)?;
+    let peak_live_bytes = plan
+        .live_peak_bytes
+        .max(ownership.pre_release_live_bytes)
+        .max(ownership.post_release_live_bytes);
+    if peak_live_bytes > limits.max_total_live_decoded_bytes {
+        return Err(ProcessingError::ResourceLimit(
+            "native ownership peak exceeds live limits".into(),
+        ));
+    }
+    Ok(NativeMappingPeak {
+        final_frame_bytes: plan.final_frame_bytes,
+        pre_release_live_bytes: ownership.pre_release_live_bytes,
+        post_release_live_bytes: ownership.post_release_live_bytes,
+        peak_live_bytes,
+    })
 }
 
 pub(super) fn update_av1_metadata_with_ledger(
@@ -559,29 +688,77 @@ pub(super) fn update_av1_metadata_with_ledger(
     Ok(())
 }
 
-// The public bridge is intentionally deferred until the standalone strict
-// decode gates (C1-C3). Keep the ownership adapter compiled and fixture-tested
-// in this checkpoint without exposing an unbounded byte-decoding API.
-#[allow(dead_code)]
+// The public bridge performs one bounded native decode and transfers its
+// checked native ownership into the high-resolution representation.
 pub(crate) fn consume_native_frame(
     frame: DecodedFrame,
     rich: &RichAvifInfo,
     limits: &ResourceLimits,
     timing: Option<FrameTiming>,
 ) -> Result<ImageFrame, ProcessingError> {
-    let plan = NativeMapPlan::inspect(&frame, rich, limits)?;
-    let borrowed_bytes = metadata_borrowed_bytes(rich)?;
+    consume_native_frame_with_external_live(frame, rich, limits, timing, 0)
+}
+
+/// Maps a native frame while an external owner remains live during the map.
+///
+/// The external bytes are included in the same live-limit preflight and ledger
+/// scope as the native parser owner. This is used by the transactional AVIS
+/// bridge; the still-image API passes zero and keeps its legacy accounting.
+pub(crate) fn consume_native_frame_with_external_live(
+    frame: DecodedFrame,
+    rich: &RichAvifInfo,
+    limits: &ResourceLimits,
+    timing: Option<FrameTiming>,
+    external_live_bytes: usize,
+) -> Result<ImageFrame, ProcessingError> {
+    let plan = if external_live_bytes == 0 {
+        NativeMapPlan::inspect(&frame, rich, limits)?
+    } else {
+        NativeMapPlan::inspect_with_external_live(
+            &frame,
+            rich,
+            limits,
+            external_live_bytes,
+        )?
+    };
+    let borrowed_bytes = if external_live_bytes == 0 {
+        metadata_borrowed_bytes(rich)?
+    } else {
+        0
+    };
     let native_outer_bytes = frame
         .buffers
         .planes
         .capacity()
         .checked_mul(size_of::<avif_codec::av1::PlaneBuffer>())
         .ok_or_else(|| ProcessingError::ResourceLimit("native outer bytes overflow".into()))?;
+    // Validate the complete metadata and ownership phases before the first
+    // metadata candidate is requested.  The later ledger path repeats these
+    // checks after materialization, where actual capacities are reconciled;
+    // this stack-only pass closes the live-limit boundary without allowing a
+    // one-byte-under candidate to reach an allocator failpoint.
+    let (metadata_budget_bytes, active_color_bytes) = full_metadata_preflight(&frame, rich)?;
+    let full_plan = NativeMapPlan::inspect_frame_with_live_extra(
+        &frame,
+        metadata_budget_bytes,
+        external_live_bytes,
+        limits,
+        true,
+    )?;
+    NativeOwnershipPlan::new(
+        full_plan.final_frame_bytes,
+        active_color_bytes,
+        late_dimension_bytes(false, false)?,
+        external_live_bytes,
+        native_outer_bytes,
+    )?
+    .check(limits)?;
     let mut ledger = ConstructionLedger::new_with_ownership(
         0,
         0,
         borrowed_bytes
             .checked_add(native_outer_bytes)
+            .and_then(|bytes| bytes.checked_add(external_live_bytes))
             .ok_or_else(|| ProcessingError::ResourceLimit("native live bytes overflow".into()))?,
         limits,
     )?;
@@ -603,7 +780,9 @@ pub(crate) fn consume_native_frame(
         NativeFrameLedgerState {
             samples_precharged: true,
             headers_precharged: true,
-            live_only_bytes: borrowed_bytes,
+            live_only_bytes: borrowed_bytes
+                .checked_add(external_live_bytes)
+                .ok_or_else(|| ProcessingError::ResourceLimit("native live bytes overflow".into()))?,
         },
     )
 }

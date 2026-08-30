@@ -455,13 +455,18 @@ fn rich_pixi_precision_is_checked_before_mapping() {
 }
 
 #[test]
-fn ordered_geometry_is_unsupported_by_native_bridge() {
+fn ordered_geometry_is_retained_by_native_bridge() {
     let mut info = rich_info();
     info.info.rotation = Some(avif_codec::ImageRotation { angle: 1 });
-    assert!(matches!(
-        super::mapping::consume_native_frame(native_rgb_8(), &info, &limits(), None),
-        Err(ProcessingError::Unsupported(_))
-    ));
+    info.info.mirror = Some(avif_codec::ImageMirror { axis: 0 });
+    let frame = super::mapping::consume_native_frame(native_rgb_8(), &info, &limits(), None)
+        .expect("ordered geometry is metadata, not a pixel transform");
+    assert_eq!(
+        frame.metadata().rotation(),
+        crate::highres::Rotation::Degrees90
+    );
+    assert!(frame.metadata().mirror_horizontal());
+    assert_eq!(frame.metadata().coded_geometry().len(), 2);
 }
 
 #[test]
@@ -536,6 +541,142 @@ fn native_map_plan_accepts_exact_peak_and_rejects_one_byte_less() {
     exact.max_frame_bytes = frame_bytes;
     exact.max_total_live_decoded_bytes = live_bytes;
     assert!(super::mapping::inspect_native_frame_for_test(&frame, metadata_bytes, &exact).is_ok());
+}
+
+#[test]
+fn native_mapping_peak_includes_external_and_native_outer_ownership() {
+    let frame = native_rgb_8();
+    let info = rich_info();
+    let external_live_bytes = 17;
+    let baseline = limits();
+    let peak = super::mapping::inspect_native_mapping_peak_for_test(
+        &frame,
+        &info,
+        &baseline,
+        external_live_bytes,
+    )
+    .expect("native ownership peak should be finite");
+    assert!(peak.pre_release_live_bytes >= peak.post_release_live_bytes);
+    assert!(peak.peak_live_bytes >= peak.pre_release_live_bytes);
+    assert!(peak.peak_live_bytes >= peak.post_release_live_bytes);
+
+    let mut exact = baseline;
+    exact.max_frame_bytes = peak.final_frame_bytes;
+    exact.max_total_live_decoded_bytes = peak.peak_live_bytes;
+    super::mapping::consume_native_frame_with_external_live(
+        frame,
+        &info,
+        &exact,
+        None,
+        external_live_bytes,
+    )
+    .expect("exact ownership peak should map");
+
+    let mut below = exact;
+    below.max_total_live_decoded_bytes = peak.peak_live_bytes.saturating_sub(1);
+    let error = super::mapping::consume_native_frame_with_external_live(
+        native_rgb_8(),
+        &info,
+        &below,
+        None,
+        external_live_bytes,
+    )
+    .expect_err("one byte below the ownership peak must fail in preflight");
+    assert!(matches!(error, ProcessingError::ResourceLimit(_)));
+}
+
+#[test]
+fn rich_native_mapping_peak_accounts_all_owned_metadata_and_retries() {
+    let mut info = rich_info();
+    let mut profile = Vec::with_capacity(4096);
+    profile.push(1);
+    info.color_information.icc_profile = Some(profile);
+    info.color_information.icc_color_type = Some(*b"prof");
+    info.color_information.nclx = Some(avif_codec::NclxColorInformation {
+        color_primaries: 1,
+        transfer_characteristics: 13,
+        matrix_coefficients: 1,
+        full_range_flag: true,
+    });
+    let mut unknown_payload = Vec::with_capacity(32);
+    unknown_payload.extend_from_slice(&[0xa5, 0x5a]);
+    info.color_information
+        .unknown_colr
+        .push(avif_codec::ColorInformation {
+            color_type: *b"zzzz",
+            payload: unknown_payload,
+        });
+    info.info.pixel_information = Some(avif_codec::PixelInformation {
+        bits_per_channel: vec![8, 8, 8],
+        extended_channels: None,
+    });
+    info.info.rotation = Some(avif_codec::ImageRotation { angle: 1 });
+    info.info.mirror = Some(avif_codec::ImageMirror { axis: 0 });
+
+    let external_live_bytes = 17;
+    let baseline = limits();
+    let peak = super::mapping::inspect_native_mapping_peak_for_test(
+        &native_rgb_8(),
+        &info,
+        &baseline,
+        external_live_bytes,
+    )
+    .expect("rich native ownership peak should be checked");
+    assert!(peak.pre_release_live_bytes > 0);
+    assert!(peak.post_release_live_bytes > 0);
+    assert!(peak.peak_live_bytes >= peak.pre_release_live_bytes);
+    assert!(peak.peak_live_bytes >= peak.post_release_live_bytes);
+
+    let mut exact = baseline;
+    exact.max_frame_bytes = peak.final_frame_bytes;
+    exact.max_total_live_decoded_bytes = peak.peak_live_bytes;
+    super::mapping::consume_native_frame_with_external_live(
+        native_rgb_8(),
+        &info,
+        &exact,
+        None,
+        external_live_bytes,
+    )
+    .expect("the measured rich ownership peak must be admitted exactly");
+
+    // The preflight rejection proves that the mapping candidate is not entered
+    // one byte below the combined peak.  An exact-budget failpoint is the
+    // positive control that the same path does request a fresh candidate.
+    let mut below = exact;
+    below.max_total_live_decoded_bytes = peak.peak_live_bytes.saturating_sub(1);
+    let failpoint = super::mapping::construction_failpoint(0);
+    let error = super::mapping::consume_native_frame_with_external_live(
+        native_rgb_8(),
+        &info,
+        &below,
+        None,
+        external_live_bytes,
+    )
+    .expect_err("one byte below rich ownership peak must reject before mapping");
+    assert!(
+        matches!(error, ProcessingError::ResourceLimit(_)),
+        "unexpected M-1 error: {error:?}; peak={:?}",
+        peak
+    );
+    let error = super::mapping::consume_native_frame_with_external_live(
+        native_rgb_8(),
+        &info,
+        &exact,
+        None,
+        external_live_bytes,
+    )
+    .expect_err("exact rich mapping should reach the allocation failpoint");
+    assert!(matches!(error, ProcessingError::Allocation(_)));
+    drop(failpoint);
+
+    super::mapping::consume_native_frame_with_external_live(
+        native_rgb_8(),
+        &info,
+        &exact,
+        None,
+        external_live_bytes,
+    )
+    .expect("the exact rich budget must remain retryable after candidate failure");
 }
 
 #[test]

@@ -305,7 +305,7 @@ dependencies = [
 [[package]]
 name = "icc-profile"
 version = "0.0.4"
-source = "git+https://github.com/mith-mmk/icc-profile.git?rev=c96f6e3899e884eb874d39357f601074e3888277#c96f6e3899e884eb874d39357f601074e3888277"
+source = "git+https://github.com/mith-mmk/icc-profile.git?rev=7a752cdb3e0242eecb4a0a86552f7f5b1a0d9a71#7a752cdb3e0242eecb4a0a86552f7f5b1a0d9a71"
 dependencies = [
  "bin-rs 0.0.10",
 ]

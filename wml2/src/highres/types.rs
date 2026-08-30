@@ -241,6 +241,10 @@ impl PlaneLayout {
     pub fn channel_offsets(&self) -> &[usize] {
         &self.channel_offsets
     }
+    #[cfg(test)]
+    pub(crate) fn channel_offsets_capacity_for_test(&self) -> usize {
+        self.channel_offsets.capacity()
+    }
     pub const fn subsampling(&self) -> Subsampling {
         self.subsampling
     }
@@ -313,6 +317,10 @@ impl PlaneDescriptor {
     }
     pub fn roles(&self) -> &[ChannelRole] {
         &self.roles
+    }
+    #[cfg(test)]
+    pub(crate) fn roles_capacity_for_test(&self) -> usize {
+        self.roles.capacity()
     }
     pub const fn meaningful_bits(&self) -> u8 {
         self.meaningful_bits
@@ -398,6 +406,10 @@ impl<T> Planes<T> {
     pub fn into_vec(self) -> Vec<Plane<T>> {
         self.planes
     }
+    #[cfg(test)]
+    pub(crate) fn capacity_for_test(&self) -> usize {
+        self.planes.capacity()
+    }
     pub(crate) fn owned_bytes(&self) -> Result<usize> {
         let outer = self
             .planes
@@ -460,6 +472,14 @@ impl PixelBuffer {
     pub fn f32_planes(&self) -> Option<&[Plane<f32>]> {
         if let Self::F32(p) = self {
             Some(p.as_slice())
+        } else {
+            None
+        }
+    }
+    #[cfg(test)]
+    pub(crate) fn f32_planes_capacity_for_test(&self) -> Option<usize> {
+        if let Self::F32(p) = self {
+            Some(p.capacity_for_test())
         } else {
             None
         }
@@ -720,6 +740,10 @@ impl ImageDescriptor {
     pub fn planes(&self) -> &[PlaneDescriptor] {
         &self.planes
     }
+    #[cfg(test)]
+    pub(crate) fn planes_capacity_for_test(&self) -> usize {
+        self.planes.capacity()
+    }
     pub const fn alpha(&self) -> AlphaAssociation {
         self.alpha
     }
@@ -784,7 +808,6 @@ impl ImageFrame {
         frame.validate()?;
         Ok(frame)
     }
-    #[cfg(feature = "avif")]
     pub(crate) fn from_parts(
         descriptor: ImageDescriptor,
         pixels: PixelBuffer,

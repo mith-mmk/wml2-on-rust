@@ -115,6 +115,36 @@ name = "highres_conversion_options"
 path = "tests/highres_conversion_options.rs"
 required-features = ["highres"]
 
+[[test]]
+name = "highres_avif_public"
+path = "tests/highres_avif_public.rs"
+required-features = ["avif", "highres"]
+
+[[test]]
+name = "highres_avif_native_bridge"
+path = "tests/highres_avif_native_bridge.rs"
+required-features = ["avif", "highres"]
+
+[[test]]
+name = "highres_avif_sequence"
+path = "tests/highres_avif_sequence.rs"
+required-features = ["avif", "highres"]
+
+[[test]]
+name = "highres_icc"
+path = "tests/highres_icc.rs"
+required-features = ["highres"]
+
+[[bin]]
+name = "highres_avif_windows_main"
+path = "tests/bin/highres_avif_windows_main.rs"
+required-features = ["avif", "highres"]
+
+[[test]]
+name = "highres_avif_windows_bridge"
+path = "tests/highres_avif_windows_bridge.rs"
+required-features = ["avif", "highres"]
+
 [features]
 # Recommended build: all standard formats, EXIF support, embedded-format bridges,
 # and the LL&M JPEG IDCT implementation.
@@ -191,6 +221,6 @@ bin-rs = {version = "0.0.10",features = ["util"]}
 webp_codec = { package = "webp-rust", version = "0.3.0", optional = true }
 avif_codec = { package = "avif-rust", version = "0.0.6", path = "../avif", optional = true }
 avifenc_codec = { package = "avifenc-rust", version = "0.0.6", path = "../avifenc", optional = true }
-icc_profile = { package = "icc-profile", version = "0.0.4", git = "https://github.com/mith-mmk/icc-profile.git", rev = "c96f6e3899e884eb874d39357f601074e3888277", optional = true }
+icc_profile = { package = "icc-profile", version = "0.0.4", git = "https://github.com/mith-mmk/icc-profile.git", rev = "7a752cdb3e0242eecb4a0a86552f7f5b1a0d9a71", optional = true }
 
 miniz_oxide = {version = "0.7.1"}

@@ -52,6 +52,22 @@ pub(crate) struct ConversionPlan<'a> {
 }
 
 impl<'a> ConversionPlan<'a> {
+    pub(crate) const fn native_sample_encoding(&self) -> Option<NativeSampleEncoding> {
+        self.native_sample_encoding
+    }
+
+    pub(crate) const fn source_route(&self) -> SourceRoute<'a> {
+        self.source_route
+    }
+
+    pub(crate) const fn destination_route(&self) -> DestinationRoute<'a> {
+        self.destination_route
+    }
+
+    pub(crate) const fn estimated_live_bytes(&self) -> usize {
+        self.estimated_live_bytes
+    }
+
     pub(crate) fn inspect(
         frame: &'a ImageFrame,
         options: &ColorConvertOptions<'a>,

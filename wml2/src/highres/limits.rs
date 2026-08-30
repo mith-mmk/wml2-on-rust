@@ -34,6 +34,7 @@ impl ResourceLimits {
     pub fn builder() -> ResourceLimitsBuilder {
         ResourceLimitsBuilder::default()
     }
+
     pub(crate) fn check_frame(&self, frame: &ImageFrame) -> Result<(), ProcessingError> {
         let descriptor = frame.descriptor();
         let width = descriptor.width();

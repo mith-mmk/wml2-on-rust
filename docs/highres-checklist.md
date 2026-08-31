@@ -3,8 +3,8 @@
 Status: checkpoints 1 through 5 are implemented on the dedicated branch.
 Ordinary and bounded Sample Transform AVIF still bridging are included in
 checkpoint 2; high-precision AVIS remains later independent work. Each
-checkpoint gets its own commit. No release, version bump, registry
-publication, tag, or main integration is part of this work.
+checkpoint gets its own commit. Registry publication, tag, or main integration
+is still outside this work; the release-candidate version bumps are included.
 
 ## Scope
 
@@ -25,7 +25,8 @@ publication, tag, or main integration is part of this work.
 
 - [x] `high-bit-depth`: typed buffers only; no ICC dependency.
 - [x] `color-management`: depends on `high-bit-depth` and `icc-profile`.
-- [x] `avif,high-bit-depth`: native still decode adapter for ordinary stills.
+- [x] `avif,high-bit-depth`: native still decode adapter for ordinary and
+      bounded Sample Transform stills.
 - [x] `avifenc,high-bit-depth`: typed AVIF encode adapter at checkpoint 5
       is reached.
 - [x] Do not retain a combined `highres = ["dep:icc_profile"]` feature.
@@ -100,3 +101,22 @@ publication, tag, or main integration is part of this work.
 Allocation accounting is limited to checked arithmetic and practical safety
 limits. Exact byte-by-byte peak-live-allocation proof is not an acceptance
 condition.
+
+## Publication handoff
+
+The release candidates are intentionally kept on their implementation
+branches until publication is explicitly approved:
+
+| Crate | Candidate | Required order |
+| --- | --- | --- |
+| `icc-profile` | `0.0.5` | 1 |
+| `avif-rust` | `0.0.7` | 2 |
+| `avifenc-rust` | `0.0.7` | 3 |
+| `wml2` | `0.0.29` | 4 |
+
+Before publishing, run the locked package and publish dry-runs for every
+crate. The WML2 manifest currently pins the unreleased ICC commit so the
+integration can be tested before registry publication; after `icc-profile`
+is published, replace that temporary git dependency with the released
+registry dependency in a separate release commit. Do not publish, tag, or
+merge to `main` as part of this implementation work.

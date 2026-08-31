@@ -106,14 +106,14 @@ dependencies = [
 
 [[package]]
 name = "avif-rust"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "bin-rs 0.0.10",
 ]
 
 [[package]]
 name = "avifenc-rust"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "gamut-bitstream",
  "gamut-core 0.1.0",
@@ -304,8 +304,8 @@ dependencies = [
 
 [[package]]
 name = "icc-profile"
-version = "0.0.4"
-source = "git+https://github.com/mith-mmk/icc-profile.git?rev=7a752cdb3e0242eecb4a0a86552f7f5b1a0d9a71#7a752cdb3e0242eecb4a0a86552f7f5b1a0d9a71"
+version = "0.0.5"
+source = "git+https://github.com/mith-mmk/icc-profile.git?rev=34189eebe8722a80ef18e40d62c5245308d53b64#34189eebe8722a80ef18e40d62c5245308d53b64"
 dependencies = [
  "bin-rs 0.0.10",
 ]
@@ -814,12 +814,12 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
 name = "wml2"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "avif-rust",
  "avifenc-rust",
  "bin-rs 0.0.10",
- "icc-profile 0.0.4",
+ "icc-profile 0.0.5",
  "miniz_oxide",
  "webp-rust",
 ]

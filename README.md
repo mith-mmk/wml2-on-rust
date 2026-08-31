@@ -56,11 +56,11 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | PCD     | x   | O   | Photo CD base4 decode, disabled by `noretoro`                                                                       |
 
 AVIF decoding is enabled with the `avif` feature, and AVIF encoding with the
-`avifenc` feature. The current public
-compatibility gate covers 8-bit YUV444 still images; unsupported bit depths,
-subsampling, alpha, composition properties, ICC profiles and sequences fail
-closed with `Unsupported`. Run the external regression gate from the workspace
-root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
+`avifenc` feature. The additive `high-bit-depth` feature exposes typed U8/U16
+planes and native AVIF 8/10/12-bit still decode; `color-management` adds the
+explicit Gray/RGB ICC adapter. Existing RGBA8 decode and callback APIs remain
+unchanged. Run the external regression gate from the workspace root with
+`pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 
 ## Features
 
@@ -68,6 +68,8 @@ root with `pwsh -File test/avif_external_compat.ps1 -DownloadMissing`.
 - format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `psd`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
 - `psd`: enables Pure Rust PSD v1 decoding for 8/16-bit RGB, Grayscale, and CMYK plus 8-bit Indexed images; Raw, PackBits RLE, ZIP, and ZIP prediction are supported for both merged-image and layer-channel data
 - `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the standalone `avifenc-rust` submodule
+- `high-bit-depth`: additive typed U8/U16/F32 buffer and native metadata APIs; it has no ICC dependency
+- `color-management`: depends on `high-bit-depth` and adds explicit Gray/RGB ICC transforms through `icc-profile`
 - metadata feature: `exif`
 - embedded-format bridge features: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
 - JPEG IDCT features: choose exactly one of `idct_llm` (default), `idct_aan`, or `idct_slower`
@@ -84,7 +86,7 @@ explicitly:
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.28", features = ["psd"] }
+wml2 = { version = "0.0.29", features = ["psd"] }
 ```
 
 The decoder converts supported input to RGBA8. It rounds 16-bit samples down to
@@ -125,17 +127,17 @@ the decoder does not approximate it by compositing layers.
 
 ```toml
 [dependencies]
-wml2 = "0.0.28"
+wml2 = "0.0.29"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.28", features = ["noretoro"] }
+wml2 = { version = "0.0.29", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.28", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.29", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options
@@ -347,6 +349,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.26`: WebP 0.3.0 integration, Config API compatibility, and WebP option metrics
 - `0.0.27`: standalone `avifenc-rust` integration through the `avifenc` feature
 - `0.0.28`: optional Pure Rust PSD v1 decoder for merged images and basic raster-layer previews
+- `0.0.29`: additive typed high-bit-depth buffers, explicit Gray/RGB ICC transforms, and native AVIF 8/10/12-bit still integration
 
 ## License
 

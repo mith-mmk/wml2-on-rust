@@ -61,6 +61,8 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 - フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `psd`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
 - `psd`: Pure RustのPSD v1 decoder。8/16-bit RGB・Grayscale・CMYKと8-bit Indexedに対応し、統合画像とレイヤーチャンネルのRaw、PackBits RLE、ZIP、ZIP predictionをdecode
 - `avif`: `avif-rust` による AVIF decoder、`avifenc`: 独立サブモジュール `avifenc-rust` による AVIF encoder
+- `high-bit-depth`: 追加型のU8/U16/F32 bufferとnative metadata API。ICCには依存しない
+- `color-management`: `high-bit-depth`に依存し、`icc-profile`によるGray/RGB明示ICC変換を追加
 - metadata feature: `exif`
 - 埋め込みフォーマット bridge feature: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
 - JPEG IDCT feature: `idct_llm` (default), `idct_aan`, `idct_slower` のいずれか 1 つを選択
@@ -75,7 +77,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.28", features = ["psd"] }
+wml2 = { version = "0.0.29", features = ["psd"] }
 ```
 
 対応データはRGBA8へ変換します。16-bit値は丸めて8-bitへ縮小します。統合画像では
@@ -113,17 +115,17 @@ PSB、1/32-bit、Lab、Multichannelは未対応として拒否します。マス
 
 ```toml
 [dependencies]
-wml2 = "0.0.28"
+wml2 = "0.0.29"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.28", features = ["noretoro"] }
+wml2 = { version = "0.0.29", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.28", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.29", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -335,6 +337,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.26`: WebP 0.3.0対応、Config API互換、WebPオプション計測を追加
 - `0.0.27`: 独立 `avifenc-rust` を `avifenc` feature で統合
 - `0.0.28`: 任意featureのPure Rust PSD v1 decoderを追加（統合画像と基本ラスターレイヤーpreview）
+- `0.0.29`: 追加型の高色深度buffer、明示的Gray/RGB ICC変換、AVIF native 8/10/12-bit静止画integration
 
 ## License
 

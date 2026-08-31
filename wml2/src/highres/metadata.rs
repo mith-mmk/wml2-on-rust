@@ -247,10 +247,7 @@ impl CleanAperture {
         vertical_offset_n: u32,
         vertical_offset_d: u32,
     ) -> Result<Self, HighresError> {
-        if [width_d, height_d, horizontal_offset_d, vertical_offset_d]
-            .iter()
-            .any(|denominator| *denominator == 0)
-        {
+        if [width_d, height_d, horizontal_offset_d, vertical_offset_d].contains(&0) {
             return Err(HighresError::InvalidMetadata(
                 "clean-aperture denominator must be non-zero".into(),
             ));

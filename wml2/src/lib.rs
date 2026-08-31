@@ -192,6 +192,8 @@ pub mod warning;
 pub mod avif;
 pub mod color;
 pub mod decoder;
+#[cfg(feature = "high-bit-depth")]
+pub mod highres;
 pub mod metadata;
 #[cfg(feature = "webp")]
 pub mod webp;

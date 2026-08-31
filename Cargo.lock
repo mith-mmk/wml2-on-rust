@@ -303,6 +303,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "icc-profile"
+version = "0.0.4"
+source = "git+https://github.com/mith-mmk/icc-profile.git?rev=7a752cdb3e0242eecb4a0a86552f7f5b1a0d9a71#7a752cdb3e0242eecb4a0a86552f7f5b1a0d9a71"
+dependencies = [
+ "bin-rs 0.0.10",
+]
+
+[[package]]
 name = "interpolate_name"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -811,6 +819,7 @@ dependencies = [
  "avif-rust",
  "avifenc-rust",
  "bin-rs 0.0.10",
+ "icc-profile 0.0.4",
  "miniz_oxide",
  "webp-rust",
 ]
@@ -821,7 +830,7 @@ version = "0.1.0"
 dependencies = [
  "dotenv",
  "encoding_rs",
- "icc-profile",
+ "icc-profile 0.0.3",
  "wml2",
 ]
 

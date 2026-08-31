@@ -111,6 +111,11 @@ path = "tests/highres_avif_native_bridge.rs"
 required-features = ["avif", "high-bit-depth"]
 
 [[test]]
+name = "highres_avif_encode"
+path = "tests/highres_avif_encode.rs"
+required-features = ["avifenc", "high-bit-depth"]
+
+[[test]]
 name = "highres_icc"
 path = "tests/highres_icc.rs"
 required-features = ["color-management"]

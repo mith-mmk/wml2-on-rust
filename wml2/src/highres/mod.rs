@@ -20,5 +20,8 @@ pub use types::{
 #[cfg(feature = "avif")]
 pub mod avif;
 
+#[cfg(feature = "avifenc")]
+pub mod avif_encode;
+
 #[cfg(feature = "color-management")]
 pub mod icc;

@@ -51,11 +51,12 @@ buffers.
 
 ## AVIF native data
 
-Existing native AVIF plane decode is mapped directly into `ImageFrame`:
+Existing ordinary native AVIF plane decode is mapped directly into `ImageFrame`:
 
 - 8-bit data may use U8 or U16; 10/12-bit data uses U16.
-- Derived-image output at 16 bits or below uses U16 and records its actual
-  `meaningful_bits`.
+- Derived-image output at 16 bits or below remains a follow-up until the
+  bounded AVIF entry point admits derived construction; no unbounded fallback
+  is used by WML2.
 - Integer sample values are copied without requantization.
 - Y, Cb, and Cr planes retain range, matrix, subsampling, and related decode
   signalling as metadata.

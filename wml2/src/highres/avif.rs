@@ -47,10 +47,7 @@ impl From<HighresError> for DecodeError {
 /// it retains its input, dimension, plane, and malformed-container limits.
 /// Derived Sample Transform items remain an explicit unsupported result until
 /// the codec exposes a bounded native derived-image entry point.
-pub fn decode_native(
-    data: &[u8],
-    limits: &NativeDecodeLimits,
-) -> Result<ImageFrame, DecodeError> {
+pub fn decode_native(data: &[u8], limits: &NativeDecodeLimits) -> Result<ImageFrame, DecodeError> {
     let decoded = avif_codec::decode_frame_bytes_strict_with_limits(data, limits)?;
     let pixel_aspect_ratio = decoded.information().pixel_aspect_ratio();
     let (frame, rich) = decoded.into_frame_and_rich();
@@ -110,10 +107,14 @@ fn map_frame(
             Subsampling::new(x_factor, y_factor)?
         };
         let plane_width = u32::try_from(native_plane.layout.width).map_err(|_| {
-            HighresError::InvalidDimensions("native AVIF plane width exceeds WML2 dimensions".into())
+            HighresError::InvalidDimensions(
+                "native AVIF plane width exceeds WML2 dimensions".into(),
+            )
         })?;
         let plane_height = u32::try_from(native_plane.layout.height).map_err(|_| {
-            HighresError::InvalidDimensions("native AVIF plane height exceeds WML2 dimensions".into())
+            HighresError::InvalidDimensions(
+                "native AVIF plane height exceeds WML2 dimensions".into(),
+            )
         })?;
         if native_plane.layout.sample_count != native_plane.samples.len() {
             return Err(HighresError::InvalidLayout(
@@ -177,15 +178,9 @@ fn map_frame(
         metadata.set_mirror(mirror.axis == 0, mirror.axis != 0);
     }
     if let Some((horizontal, vertical)) = pixel_aspect_ratio {
-        metadata.set_pixel_aspect_ratio(Some(super::PixelAspectRatio::new(
-            horizontal, vertical,
-        )?));
+        metadata.set_pixel_aspect_ratio(Some(super::PixelAspectRatio::new(horizontal, vertical)?));
     }
-    Ok(ImageFrame::new(
-        descriptor,
-        PixelBuffer::u16(planes)?,
-    )?
-    .with_metadata(metadata))
+    Ok(ImageFrame::new(descriptor, PixelBuffer::u16(planes)?)?.with_metadata(metadata))
 }
 
 fn native_role(

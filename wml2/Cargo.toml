@@ -105,6 +105,11 @@ name = "highres_safety"
 path = "tests/highres_safety.rs"
 required-features = ["high-bit-depth"]
 
+[[test]]
+name = "highres_avif_native_bridge"
+path = "tests/highres_avif_native_bridge.rs"
+required-features = ["avif", "high-bit-depth"]
+
 [features]
 # Recommended build: all standard formats, EXIF support, embedded-format bridges,
 # and the LL&M JPEG IDCT implementation.

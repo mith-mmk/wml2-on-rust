@@ -222,6 +222,65 @@ impl PixelAspectRatio {
     }
 }
 
+/// `clap` clean-aperture rationals retained without applying them to pixels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CleanAperture {
+    width_n: u32,
+    width_d: u32,
+    height_n: u32,
+    height_d: u32,
+    horizontal_offset_n: u32,
+    horizontal_offset_d: u32,
+    vertical_offset_n: u32,
+    vertical_offset_d: u32,
+}
+
+impl CleanAperture {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        width_n: u32,
+        width_d: u32,
+        height_n: u32,
+        height_d: u32,
+        horizontal_offset_n: u32,
+        horizontal_offset_d: u32,
+        vertical_offset_n: u32,
+        vertical_offset_d: u32,
+    ) -> Result<Self, HighresError> {
+        if [width_d, height_d, horizontal_offset_d, vertical_offset_d]
+            .iter()
+            .any(|denominator| *denominator == 0)
+        {
+            return Err(HighresError::InvalidMetadata(
+                "clean-aperture denominator must be non-zero".into(),
+            ));
+        }
+        Ok(Self {
+            width_n,
+            width_d,
+            height_n,
+            height_d,
+            horizontal_offset_n,
+            horizontal_offset_d,
+            vertical_offset_n,
+            vertical_offset_d,
+        })
+    }
+
+    pub const fn width(self) -> (u32, u32) {
+        (self.width_n, self.width_d)
+    }
+    pub const fn height(self) -> (u32, u32) {
+        (self.height_n, self.height_d)
+    }
+    pub const fn horizontal_offset(self) -> (u32, u32) {
+        (self.horizontal_offset_n, self.horizontal_offset_d)
+    }
+    pub const fn vertical_offset(self) -> (u32, u32) {
+        (self.vertical_offset_n, self.vertical_offset_d)
+    }
+}
+
 impl Default for PixelAspectRatio {
     fn default() -> Self {
         Self::ONE_TO_ONE
@@ -235,10 +294,13 @@ pub struct FrameMetadata {
     source_color: ColorInformationSet,
     tags: Metadata,
     crop: Option<Rect>,
+    clean_aperture: Option<CleanAperture>,
     rotation: Rotation,
     mirror_horizontal: bool,
     mirror_vertical: bool,
     pixel_aspect_ratio: Option<PixelAspectRatio>,
+    coded_dimensions: Option<(u32, u32)>,
+    render_dimensions: Option<(u32, u32)>,
 }
 
 impl Default for FrameMetadata {
@@ -247,10 +309,13 @@ impl Default for FrameMetadata {
             source_color: ColorInformationSet::default(),
             tags: Metadata::new(),
             crop: None,
+            clean_aperture: None,
             rotation: Rotation::None,
             mirror_horizontal: false,
             mirror_vertical: false,
             pixel_aspect_ratio: None,
+            coded_dimensions: None,
+            render_dimensions: None,
         }
     }
 }
@@ -274,6 +339,9 @@ impl FrameMetadata {
     pub fn crop(&self) -> Option<Rect> {
         self.crop
     }
+    pub fn clean_aperture(&self) -> Option<CleanAperture> {
+        self.clean_aperture
+    }
     pub fn rotation(&self) -> Rotation {
         self.rotation
     }
@@ -286,8 +354,17 @@ impl FrameMetadata {
     pub fn pixel_aspect_ratio(&self) -> Option<PixelAspectRatio> {
         self.pixel_aspect_ratio
     }
+    pub fn coded_dimensions(&self) -> Option<(u32, u32)> {
+        self.coded_dimensions
+    }
+    pub fn render_dimensions(&self) -> Option<(u32, u32)> {
+        self.render_dimensions
+    }
     pub fn set_crop(&mut self, crop: Option<Rect>) {
         self.crop = crop;
+    }
+    pub fn set_clean_aperture(&mut self, clean_aperture: Option<CleanAperture>) {
+        self.clean_aperture = clean_aperture;
     }
     pub fn set_rotation(&mut self, rotation: Rotation) {
         self.rotation = rotation;
@@ -298,6 +375,12 @@ impl FrameMetadata {
     }
     pub fn set_pixel_aspect_ratio(&mut self, ratio: Option<PixelAspectRatio>) {
         self.pixel_aspect_ratio = ratio;
+    }
+    pub fn set_coded_dimensions(&mut self, dimensions: Option<(u32, u32)>) {
+        self.coded_dimensions = dimensions;
+    }
+    pub fn set_render_dimensions(&mut self, dimensions: Option<(u32, u32)>) {
+        self.render_dimensions = dimensions;
     }
 
     pub(crate) fn validate_bounds(&self, width: u32, height: u32) -> Result<(), HighresError> {
@@ -319,6 +402,16 @@ impl FrameMetadata {
         if ratio.horizontal == 0 || ratio.vertical == 0 {
             return Err(HighresError::InvalidMetadata(
                 "pixel aspect ratio must be non-zero".into(),
+            ));
+        }
+        if self
+            .coded_dimensions
+            .into_iter()
+            .chain(self.render_dimensions)
+            .any(|(width, height)| width == 0 || height == 0)
+        {
+            return Err(HighresError::InvalidMetadata(
+                "metadata dimensions must be non-zero".into(),
             ));
         }
         Ok(())

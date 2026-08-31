@@ -8,11 +8,14 @@ mod metadata;
 mod types;
 
 pub use metadata::{
-    Av1ColorInformation, ColorInformationSet, ColorProvenance, FrameMetadata, NclxColorInformation,
-    PixelAspectRatio, Rect, Rotation,
+    Av1ColorInformation, CleanAperture, ColorInformationSet, ColorProvenance, FrameMetadata,
+    NclxColorInformation, PixelAspectRatio, Rect, Rotation,
 };
 pub use types::{
     AlphaAssociation, ChannelModel, ChannelRole, FrameTiming, HighresError, ImageDescriptor,
     ImageFrame, PixelBuffer, PixelFormat, Plane, PlaneDescriptor, PlaneLayout, Planes, Result,
     Subsampling,
 };
+
+#[cfg(feature = "avif")]
+pub mod avif;

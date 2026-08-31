@@ -120,3 +120,24 @@ integration can be tested before registry publication; after `icc-profile`
 is published, replace that temporary git dependency with the released
 registry dependency in a separate release commit. Do not publish, tag, or
 merge to `main` as part of this implementation work.
+
+## Release-candidate validation record
+
+On 2026-08-31 the following checks passed on the candidate commits:
+
+- `icc-profile`: 45 library tests, locked package, and publish dry-run.
+- `avif-rust`: locked package and publish dry-run; native boundary tests and
+  the existing decoder regression suite were run.
+- `avifenc-rust`: locked package and publish dry-run.
+- `wml2`: locked no-default, `high-bit-depth`, `color-management`,
+  `avifenc + color-management`, and integration test matrices passed.
+- WML2 and AVIFENC formatting checks passed; Clippy completed successfully
+  with pre-existing warnings in legacy code.
+
+The WML2 package and publish dry-runs are intentionally blocked until the
+three child release candidates exist in their required registry/git order.
+AVIF and ICC repositories retain unrelated pre-existing formatting debt, so
+their full-tree format checks are not release gates for this change.
+
+Miri/fuzz and external fixture-dependent checks remain follow-up validation;
+they are not silently represented as passed here.

@@ -52,11 +52,16 @@ pub fn decode_native(
     limits: &NativeDecodeLimits,
 ) -> Result<ImageFrame, DecodeError> {
     let decoded = avif_codec::decode_frame_bytes_strict_with_limits(data, limits)?;
+    let pixel_aspect_ratio = decoded.information().pixel_aspect_ratio();
     let (frame, rich) = decoded.into_frame_and_rich();
-    map_frame(frame, &rich)
+    map_frame(frame, &rich, pixel_aspect_ratio)
 }
 
-fn map_frame(frame: DecodedFrame, rich: &RichAvifInfo) -> Result<ImageFrame, DecodeError> {
+fn map_frame(
+    frame: DecodedFrame,
+    rich: &RichAvifInfo,
+    pixel_aspect_ratio: Option<(u32, u32)>,
+) -> Result<ImageFrame, DecodeError> {
     let width = u32::try_from(frame.width).map_err(|_| {
         HighresError::InvalidDimensions("native AVIF width exceeds WML2 dimensions".into())
     })?;
@@ -170,6 +175,11 @@ fn map_frame(frame: DecodedFrame, rich: &RichAvifInfo) -> Result<ImageFrame, Dec
     }
     if let Some(mirror) = rich.info.mirror {
         metadata.set_mirror(mirror.axis == 0, mirror.axis != 0);
+    }
+    if let Some((horizontal, vertical)) = pixel_aspect_ratio {
+        metadata.set_pixel_aspect_ratio(Some(super::PixelAspectRatio::new(
+            horizontal, vertical,
+        )?));
     }
     Ok(ImageFrame::new(
         descriptor,

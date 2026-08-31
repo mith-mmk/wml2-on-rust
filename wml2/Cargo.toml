@@ -110,6 +110,11 @@ name = "highres_avif_native_bridge"
 path = "tests/highres_avif_native_bridge.rs"
 required-features = ["avif", "high-bit-depth"]
 
+[[test]]
+name = "highres_icc"
+path = "tests/highres_icc.rs"
+required-features = ["color-management"]
+
 [features]
 # Recommended build: all standard formats, EXIF support, embedded-format bridges,
 # and the LL&M JPEG IDCT implementation.

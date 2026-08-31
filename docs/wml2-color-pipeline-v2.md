@@ -54,9 +54,9 @@ buffers.
 Existing ordinary native AVIF plane decode is mapped directly into `ImageFrame`:
 
 - 8-bit data may use U8 or U16; 10/12-bit data uses U16.
-- Derived-image output at 16 bits or below remains a follow-up until the
-  bounded AVIF entry point admits derived construction; no unbounded fallback
-  is used by WML2.
+- Sample Transform output at 16 bits or below uses the bounded AVIF entry
+  point; direct AV1 inputs stay on the bounded native path and unsupported
+  derived graphs fail explicitly. No unbounded fallback is used by WML2.
 - Integer sample values are copied without requantization.
 - Y, Cb, and Cr planes retain range, matrix, subsampling, and related decode
   signalling as metadata.

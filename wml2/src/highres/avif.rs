@@ -45,8 +45,8 @@ impl From<HighresError> for DecodeError {
 ///
 /// The standalone decoder's strict native entry point is used exactly once;
 /// it retains its input, dimension, plane, and malformed-container limits.
-/// Derived Sample Transform items remain an explicit unsupported result until
-/// the codec exposes a bounded native derived-image entry point.
+/// Ordinary native stills and bounded Sample Transform stills are mapped
+/// without RGB conversion; unsupported derived graphs fail explicitly.
 pub fn decode_native(data: &[u8], limits: &NativeDecodeLimits) -> Result<ImageFrame, DecodeError> {
     let decoded = avif_codec::decode_frame_bytes_strict_with_limits(data, limits)?;
     let pixel_aspect_ratio = decoded.information().pixel_aspect_ratio();

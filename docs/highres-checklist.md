@@ -1,11 +1,10 @@
 # WML2 high-bit-depth and ICC checklist
 
-Status: checkpoints 1, 3, 4, and 5 are implemented on the dedicated branch;
-ordinary native AVIF still bridging is implemented in checkpoint 2. Derived
-Sample Transform input remains an explicit follow-up because the current
-bounded codec entry point rejects it. Each checkpoint gets its own commit. No
-release, version bump, registry publication, tag, or main integration is part
-of this work.
+Status: checkpoints 1 through 5 are implemented on the dedicated branch.
+Ordinary and bounded Sample Transform AVIF still bridging are included in
+checkpoint 2; high-precision AVIS remains later independent work. Each
+checkpoint gets its own commit. No release, version bump, registry
+publication, tag, or main integration is part of this work.
 
 ## Scope
 
@@ -44,8 +43,8 @@ of this work.
 ### 2. AVIF native still decode
 
 - [x] Map existing native AVIF planes directly to `ImageFrame`.
-- [x] Cover ordinary native 8/10/12-bit AV1 samples; derived 16-bit-or-less
-      output remains pending bounded codec support.
+- [x] Cover ordinary native 8/10/12-bit AV1 samples and bounded
+      Sample Transform output up to 16 bits.
 - [x] Preserve integer samples; do not RGB-convert YCbCr.
 - [x] Preserve ICC, nclx/CICP, AV1 colour description, range, matrix,
       subsampling, alpha, and geometry metadata.

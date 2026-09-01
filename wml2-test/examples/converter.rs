@@ -67,6 +67,8 @@ struct Config {
     exif_copy: bool,
     quality: Option<u64>,
     optimize: Option<u64>,
+    #[cfg_attr(not(feature = "avifenc"), allow(dead_code))]
+    speed: Option<u64>,
     split: bool,
 }
 
@@ -105,6 +107,7 @@ impl Config {
         let mut exif_copy = false;
         let mut quality = None;
         let mut optimize = None;
+        let mut speed = None;
         let mut split = false;
 
         let mut index = 1;
@@ -157,6 +160,17 @@ impl Config {
                     }
                     optimize = Some(args[index].parse::<u64>()?);
                 }
+                "--speed" => {
+                    index += 1;
+                    if index >= args.len() {
+                        return Err("missing value for --speed".into());
+                    }
+                    let value = args[index].parse::<u64>()?;
+                    if value > 10 {
+                        return Err("AVIF speed must be in 0..=10".into());
+                    }
+                    speed = Some(value);
+                }
                 "--split" => {
                     split = true;
                 }
@@ -176,6 +190,13 @@ impl Config {
             return Err("--split is currently supported for GIF/PNG/TIFF/WebP output".into());
         }
         Self::validate_compression(&format, compression.as_deref())?;
+        #[cfg(feature = "avifenc")]
+        let speed_supported = matches!(format, OutputFormat::Avif);
+        #[cfg(not(feature = "avifenc"))]
+        let speed_supported = false;
+        if speed.is_some() && !speed_supported {
+            return Err("--speed is only supported for AVIF output".into());
+        }
         if exif_copy && matches!(format, OutputFormat::Gif | OutputFormat::Bmp) {
             return Err("--exif copy is only supported for PNG/JPEG/TIFF/WebP output".into());
         }
@@ -188,6 +209,7 @@ impl Config {
             exif_copy,
             quality,
             optimize,
+            speed,
             split,
         })
     }
@@ -237,6 +259,13 @@ impl Config {
                     }
                 }
             }
+            #[cfg(feature = "avifenc")]
+            OutputFormat::Avif => {
+                options.insert(
+                    "speed".to_string(),
+                    DataMap::UInt(self.speed.unwrap_or(10)),
+                );
+            }
             _ => {}
         }
         (!options.is_empty()).then_some(options)
@@ -263,7 +292,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => {
             eprintln!("{}", error);
             eprintln!(
-                "usage: converter [inputfiles...] -o <outputfolder> [-f {}] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]",
+                "usage: converter [inputfiles...] -o <outputfolder> [-f {}] [-q <quality>] [-z <0-9>] [--speed <0-10>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]",
                 OutputFormat::supported_formats_help()
             );
             return Err(error);
@@ -596,6 +625,7 @@ mod tests {
             exif_copy: false,
             quality: None,
             optimize: None,
+            speed: None,
             split: false,
         };
         assert!(should_split_output(
@@ -625,6 +655,7 @@ mod tests {
             exif_copy: false,
             quality: None,
             optimize: None,
+            speed: None,
             split: false,
         };
         assert!(should_split_output(&config, Path::new("frame.gif"), &image));
@@ -641,6 +672,7 @@ mod tests {
             exif_copy: false,
             quality: None,
             optimize: Some(7),
+            speed: None,
             split: true,
         };
 
@@ -659,6 +691,7 @@ mod tests {
             exif_copy: false,
             quality: None,
             optimize: Some(6),
+            speed: None,
             split: false,
         };
 
@@ -677,6 +710,7 @@ mod tests {
             exif_copy: false,
             quality: Some(92),
             optimize: Some(4),
+            speed: None,
             split: false,
         };
 
@@ -715,6 +749,7 @@ mod tests {
             exif_copy: false,
             quality: Some(87),
             optimize: None,
+            speed: None,
             split: false,
         };
 
@@ -770,6 +805,7 @@ mod tests {
             exif_copy: true,
             quality: None,
             optimize: None,
+            speed: None,
             split: false,
         };
 
@@ -811,6 +847,27 @@ mod tests {
         assert!(matches!(config.format, OutputFormat::Avif));
         assert_eq!(config.format.extension(), "avif");
         assert!(matches!(config.image_format(), ImageFormat::Avif));
+        let options = config.encode_options().unwrap();
+        assert!(matches!(options.get("speed"), Some(DataMap::UInt(10))));
+    }
+
+    #[cfg(feature = "avifenc")]
+    #[test]
+    fn avif_speed_option_is_forwarded() {
+        let args = vec![
+            "converter".to_string(),
+            "input.png".to_string(),
+            "-o".to_string(),
+            "out".to_string(),
+            "-f".to_string(),
+            "avif".to_string(),
+            "--speed".to_string(),
+            "10".to_string(),
+        ];
+
+        let config = Config::parse(&args).unwrap();
+        let options = config.encode_options().unwrap();
+        assert!(matches!(options.get("speed"), Some(DataMap::UInt(10))));
     }
 
     #[test]

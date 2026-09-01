@@ -15,6 +15,8 @@ enum OutputFormat {
     Bmp,
     Tiff,
     Webp,
+    #[cfg(feature = "avifenc")]
+    Avif,
 }
 
 impl OutputFormat {
@@ -26,6 +28,8 @@ impl OutputFormat {
             "bmp" => Ok(Self::Bmp),
             "tif" | "tiff" => Ok(Self::Tiff),
             "webp" => Ok(Self::Webp),
+            #[cfg(feature = "avifenc")]
+            "avif" => Ok(Self::Avif),
             _ => Err(format!("unknown output format: {}", value).into()),
         }
     }
@@ -38,6 +42,19 @@ impl OutputFormat {
             Self::Bmp => "bmp",
             Self::Tiff => "tiff",
             Self::Webp => "webp",
+            #[cfg(feature = "avifenc")]
+            Self::Avif => "avif",
+        }
+    }
+
+    fn supported_formats_help() -> &'static str {
+        #[cfg(feature = "avifenc")]
+        {
+            "gif|png|jpeg|bmp|tiff|webp|avif"
+        }
+        #[cfg(not(feature = "avifenc"))]
+        {
+            "gif|png|jpeg|bmp|tiff|webp"
         }
     }
 }
@@ -233,6 +250,8 @@ impl Config {
             OutputFormat::Bmp => ImageFormat::Bmp,
             OutputFormat::Tiff => ImageFormat::Tiff,
             OutputFormat::Webp => ImageFormat::Webp,
+            #[cfg(feature = "avifenc")]
+            OutputFormat::Avif => ImageFormat::Avif,
         }
     }
 }
@@ -244,7 +263,8 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => {
             eprintln!("{}", error);
             eprintln!(
-                "usage: converter [inputfiles...] -o <outputfolder> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]"
+                "usage: converter [inputfiles...] -o <outputfolder> [-f {}] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]",
+                OutputFormat::supported_formats_help()
             );
             return Err(error);
         }
@@ -773,6 +793,24 @@ mod tests {
 
         let error = Config::parse(&args).err().unwrap().to_string();
         assert_eq!(error, "unsupported value for --exif: keep");
+    }
+
+    #[cfg(feature = "avifenc")]
+    #[test]
+    fn avif_output_is_available_with_avifenc_feature() {
+        let args = vec![
+            "converter".to_string(),
+            "input.png".to_string(),
+            "-o".to_string(),
+            "out".to_string(),
+            "-f".to_string(),
+            "avif".to_string(),
+        ];
+
+        let config = Config::parse(&args).unwrap();
+        assert!(matches!(config.format, OutputFormat::Avif));
+        assert_eq!(config.format.extension(), "avif");
+        assert!(matches!(config.image_format(), ImageFormat::Avif));
     }
 
     #[test]

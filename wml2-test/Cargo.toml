@@ -22,4 +22,4 @@ path = "../wml2"
 features = ["multithread"]
 
 [dependencies.icc-profile]
-git = "https://github.com/mith-mmk/icc_profile"
+version = "0.0.5"

@@ -108,7 +108,7 @@ dependencies = [
 name = "avif-rust"
 version = "0.0.7"
 dependencies = [
- "bin-rs 0.0.10",
+ "bin-rs",
 ]
 
 [[package]]
@@ -120,12 +120,6 @@ dependencies = [
  "gamut-dsp",
  "rav1e",
 ]
-
-[[package]]
-name = "bin-rs"
-version = "0.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e62e12dae19127152eee5b5ff249a86100a01e388abbac4c22e9f97eb33d9c3d"
 
 [[package]]
 name = "bin-rs"
@@ -296,10 +290,11 @@ dependencies = [
 
 [[package]]
 name = "icc-profile"
-version = "0.0.3"
-source = "git+https://github.com/mith-mmk/icc_profile#40ff38dd9d26d00719e1fcdb50fef8163b2352bd"
+version = "0.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81b3b5f2613cdd11cbb0424a7dd1f7fd135e31fb46e9216161b26808ce5c75fc"
 dependencies = [
- "bin-rs 0.0.7",
+ "bin-rs",
 ]
 
 [[package]]
@@ -307,7 +302,7 @@ name = "icc-profile"
 version = "0.0.5"
 source = "git+https://github.com/mith-mmk/icc-profile.git?rev=34189eebe8722a80ef18e40d62c5245308d53b64#34189eebe8722a80ef18e40d62c5245308d53b64"
 dependencies = [
- "bin-rs 0.0.10",
+ "bin-rs",
 ]
 
 [[package]]
@@ -803,7 +798,7 @@ version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c9c8776fe97ff9083d2c7ebb62dd98f643124c2ce94cb50a7bbf1dfea5deb5a0"
 dependencies = [
- "bin-rs 0.0.10",
+ "bin-rs",
 ]
 
 [[package]]
@@ -818,8 +813,8 @@ version = "0.0.29"
 dependencies = [
  "avif-rust",
  "avifenc-rust",
- "bin-rs 0.0.10",
- "icc-profile 0.0.5",
+ "bin-rs",
+ "icc-profile 0.0.5 (git+https://github.com/mith-mmk/icc-profile.git?rev=34189eebe8722a80ef18e40d62c5245308d53b64)",
  "miniz_oxide",
  "webp-rust",
 ]
@@ -830,7 +825,7 @@ version = "0.1.0"
 dependencies = [
  "dotenv",
  "encoding_rs",
- "icc-profile 0.0.3",
+ "icc-profile 0.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "wml2",
 ]
 

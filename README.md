@@ -96,7 +96,7 @@ explicitly:
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.29", features = ["psd"] }
+wml2 = { version = "0.0.30", features = ["psd"] }
 ```
 
 The decoder converts supported input to RGBA8. It rounds 16-bit samples down to
@@ -137,17 +137,17 @@ the decoder does not approximate it by compositing layers.
 
 ```toml
 [dependencies]
-wml2 = "0.0.29"
+wml2 = "0.0.30"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.29", features = ["noretoro"] }
+wml2 = { version = "0.0.30", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.29", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.30", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options
@@ -360,6 +360,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.27`: standalone `avifenc-rust` integration through the `avifenc` feature
 - `0.0.28`: optional Pure Rust PSD v1 decoder for merged images and basic raster-layer previews
 - `0.0.29`: additive typed high-bit-depth buffers, explicit Gray/RGB ICC transforms, and native AVIF 8/10/12-bit still integration
+- `0.0.30`: resource-limit hardening, callback-abort safety, high-resolution ICC/AVIF regressions, and WebP core compatibility cleanup
 
 ## License
 

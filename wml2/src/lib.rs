@@ -197,3 +197,6 @@ pub mod highres;
 pub mod metadata;
 #[cfg(feature = "webp")]
 pub mod webp;
+
+mod decode_guard;
+pub mod limits;

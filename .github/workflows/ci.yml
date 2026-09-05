@@ -1,0 +1,84 @@
+name: checks
+on:
+  pull_request:
+  push:
+    branches: [main, 'codex/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ['1.91.0', stable]
+        features: [default, minimal, high-bit-depth, color-management, 'avif,high-bit-depth', 'avifenc,high-bit-depth', 'avifenc,high-bit-depth,multithread', 'jpeg,idct_llm', 'jpeg,idct_aan', 'jpeg,idct_slower', 'jpeg,idct_llm,multithread', 'png,psd,tiff']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      # The library workspace intentionally does not track Cargo.lock.
+      - run: cargo generate-lockfile
+      - name: Test selected feature set
+        env:
+          FEATURES: ${{ matrix.features }}
+        run: |
+          args=()
+          if [[ "$FEATURES" != default ]]; then args+=(--no-default-features); fi
+          if [[ "$FEATURES" != default && "$FEATURES" != minimal ]]; then args+=(--features "$FEATURES"); fi
+          cargo test -p wml2 --locked --lib --tests "${args[@]}"
+          cargo clippy -p wml2 --locked --lib --tests "${args[@]}" --message-format=json > clippy.json
+          if [[ "$FEATURES" == default ]]; then
+            cargo test -p wml2 --locked --doc
+            cargo check -p wml2 --locked --examples
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diagnostics-${{ matrix.rust }}-${{ strategy.job-index }}
+          path: |
+            clippy.json
+            Cargo.lock
+  platform:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p wml2 --test review_regressions --no-default-features --features png
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [wasm32-unknown-unknown, i686-unknown-linux-gnu]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check -p wml2 --lib --target ${{ matrix.target }} --features high-bit-depth,color-management,avifenc,psd
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt -p wml2 --check

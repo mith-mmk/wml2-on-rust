@@ -730,7 +730,32 @@ pub fn decode_deflate_compresson<'decode, B: BinaryReader>(
         init_canvas(option, header, animation)?;
     }
     let data = read_strips(reader, header)?;
-    let res = miniz_oxide::inflate::decompress_to_vec_zlib(&data);
+    let width = header.width as usize;
+    let height = header.height as usize;
+    let row_bytes = if header.planar_config == 2 {
+        header
+            .bitspersamples
+            .iter()
+            .try_fold(0usize, |total, bits| {
+                width
+                    .checked_mul(*bits as usize)?
+                    .checked_add(7)?
+                    .checked_div(8)?
+                    .checked_add(total)
+            })
+    } else {
+        let bits = header
+            .bitspersamples
+            .iter()
+            .try_fold(0usize, |sum, bits| sum.checked_add(*bits as usize));
+        bits.and_then(|bits| width.checked_mul(bits))
+            .and_then(|v| v.checked_add(7))
+            .map(|v| v / 8)
+    };
+    let expected = row_bytes
+        .and_then(|row| row.checked_mul(height))
+        .ok_or_else(|| std::io::Error::other("TIFF expanded size overflow"))?;
+    let res = crate::limits::inflate_image(&data, expected);
     match res {
         Ok(data) => {
             let warnings = draw(&data, option, header)?;

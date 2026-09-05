@@ -449,6 +449,7 @@ fn encode_lzw_tiff_via_public_api_roundtrips_pixels() {
 }
 
 #[test]
+#[cfg(feature = "tiff-jpeg")]
 fn encode_jpeg_tiff_via_public_api_matches_standalone_jpeg() {
     let mut rgba = Vec::with_capacity(11 * 7 * 4);
     for y in 0..7 {
@@ -511,6 +512,7 @@ fn encode_jpeg_tiff_via_public_api_matches_standalone_jpeg() {
 }
 
 #[test]
+#[cfg(feature = "tiff-jpeg")]
 fn encode_animated_jpeg_tiff_via_public_api_matches_standalone_jpeg_pages() {
     let expected_pages = expected_animation_pages()
         .into_iter()

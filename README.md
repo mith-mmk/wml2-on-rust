@@ -13,6 +13,16 @@
 - supports still images and selected animation / multi-page formats
 - includes native file helpers on non-WASM targets
 
+File conversion now commits output through a sibling temporary file, keeping
+existing output intact on ordinary encoding/write failures. Decode entry
+points apply configurable resource budgets; use `image_from_with_limits` or
+`image_decoder_with_limits` with `DecodeLimits` for large trusted inputs.
+`FrameTransform` reuses compiled ICC conversions while preserving meaningful
+precision, alpha, and timing. Native AVIF encoding requires explicit precision
+reduction. ImageBuffer WebP animation encoding borrows frame pixels.
+See the [implementation and compatibility record](docs/review-plan-progress.md)
+for defaults, API scope, validation, and [measured tradeoffs](docs/review-performance.md).
+
 ## Examples
 
 See `wml2-test/examples`.

@@ -1,0 +1,29 @@
+name: bounded extended checks
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 3 * * 1'
+permissions:
+  contents: read
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test -p wml2 --no-default-features --features png --test review_regressions bounded_png_mutation_corpus -- --ignored
+  miri:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - run: cargo miri setup
+      - run: cargo miri test -p wml2 --no-default-features --test review_regressions

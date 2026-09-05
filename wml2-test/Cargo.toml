@@ -22,4 +22,4 @@ path = "../wml2"
 features = ["multithread"]
 
 [dependencies.icc-profile]
-version = "0.0.5"
+version = "0.0.6"

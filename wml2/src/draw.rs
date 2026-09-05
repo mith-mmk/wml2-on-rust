@@ -307,7 +307,20 @@ fn append_animation_metadata(
     metadata: &mut HashMap<String, DataMap>,
     animation: &[AnimationLayer],
     loop_count: u32,
-) {
+) -> Result<(), Error> {
+    let limits = crate::limits::current();
+    crate::limits::check(animation.len(), limits.frames, "animation frames")?;
+    let mut total = 0usize;
+    for layer in animation {
+        let length = checked_rgba_len(layer.width, layer.height, "animation metadata")?;
+        if length != layer.buffer.len() {
+            return Err(buffer_error("animation buffer length mismatch"));
+        }
+        total = total
+            .checked_add(length)
+            .ok_or_else(|| buffer_error("animation size overflow"))?;
+        crate::limits::check(total, limits.animation_bytes, "animation pixels")?;
+    }
     metadata.insert(
         ENCODE_ANIMATION_FRAMES_KEY.to_string(),
         DataMap::UInt(animation.len() as u64),
@@ -351,6 +364,7 @@ fn append_animation_metadata(
             DataMap::Raw(layer.buffer.clone()),
         );
     }
+    Ok(())
 }
 
 /// One decoded animation frame stored as an RGBA sub-rectangle.
@@ -409,6 +423,43 @@ fn checked_rgba_len(width: usize, height: usize, context: &str) -> Result<usize,
         })
 }
 
+fn buffer_error(message: &str) -> Error {
+    Box::new(ImgError::new_const(
+        ImgErrorKind::OutboundIndex,
+        message.to_string(),
+    ))
+}
+
+fn zeroed_bytes(length: usize) -> Result<Vec<u8>, Error> {
+    let mut bytes = Vec::new();
+    bytes.try_reserve_exact(length)?;
+    bytes.resize(length, 0);
+    Ok(bytes)
+}
+
+fn clipped_rect(
+    x: usize,
+    y: usize,
+    width: usize,
+    height: usize,
+    canvas_width: usize,
+    canvas_height: usize,
+) -> Result<Option<(usize, usize)>, Error> {
+    if x >= canvas_width || y >= canvas_height {
+        return Ok(None);
+    }
+    let end_x = x
+        .checked_add(width)
+        .ok_or_else(|| buffer_error("rectangle x overflow"))?;
+    let end_y = y
+        .checked_add(height)
+        .ok_or_else(|| buffer_error("rectangle y overflow"))?;
+    Ok(Some((
+        canvas_width.min(end_x) - x,
+        canvas_height.min(end_y) - y,
+    )))
+}
+
 impl ImageBuffer {
     /// Creates an empty image buffer.
     pub fn new() -> Self {
@@ -444,6 +495,8 @@ impl ImageBuffer {
 
     /// Enables or disables animation storage.
     pub fn set_animation(&mut self, flag: bool) {
+        self.current = None;
+        self.first_wait_time = None;
         if flag {
             self.animation = Some(Vec::new())
         } else {
@@ -466,29 +519,28 @@ impl DrawCallback for ImageBuffer {
         option: Option<InitOptions>,
     ) -> Result<Option<CallbackResponse>, Error> {
         let buffersize = checked_rgba_len(width, height, "image")?;
+        let option = option.unwrap_or(InitOptions {
+            background: None,
+            animation: false,
+            loop_count: 0,
+        });
+        let mut buffer = zeroed_bytes(buffersize)?;
+        if let Some(background) = &option.background {
+            for pixel in buffer.chunks_exact_mut(4) {
+                pixel.copy_from_slice(&[
+                    background.red,
+                    background.green,
+                    background.blue,
+                    background.alpha,
+                ]);
+            }
+        }
         self.width = width;
         self.height = height;
-        if let Some(option) = option {
-            self.background_color = option.background;
-            if option.animation {
-                self.set_animation(true);
-            }
-            self.loop_count = Some(option.loop_count);
-        }
-        if let Some(background) = &self.background_color {
-            self.buffer = Some(
-                (0..buffersize)
-                    .map(|i| match i % 4 {
-                        0 => background.red,
-                        1 => background.green,
-                        2 => background.blue,
-                        _ => background.alpha,
-                    })
-                    .collect(),
-            );
-        } else {
-            self.buffer = Some((0..buffersize).map(|_| 0).collect());
-        }
+        self.buffer = Some(buffer);
+        self.background_color = option.background;
+        self.set_animation(option.animation);
+        self.loop_count = Some(option.loop_count);
 
         Ok(None)
     }
@@ -509,89 +561,45 @@ impl DrawCallback for ImageBuffer {
                 "in draw".to_string(),
             )));
         }
-        let buffer;
-        let (w, h, raws);
-        if self.current.is_none() {
-            if start_x >= self.width || start_y >= self.height {
-                return Ok(None);
-            }
-            let requested_end_x = start_x.checked_add(width).ok_or_else(|| {
-                Box::new(ImgError::new_const(
-                    ImgErrorKind::OutboundIndex,
-                    "draw rectangle x overflow".to_string(),
-                )) as Error
-            })?;
-            let requested_end_y = start_y.checked_add(height).ok_or_else(|| {
-                Box::new(ImgError::new_const(
-                    ImgErrorKind::OutboundIndex,
-                    "draw rectangle y overflow".to_string(),
-                )) as Error
-            })?;
-            w = self.width.min(requested_end_x) - start_x;
-            h = self.height.min(requested_end_y) - start_y;
-            raws = self.width;
-            buffer = self.buffer.as_deref_mut().ok_or_else(|| {
-                Box::new(ImgError::new_const(
-                    ImgErrorKind::NotInitializedImageBuffer,
-                    "buffer is not initialized".to_string(),
-                )) as Error
-            })?;
-        } else if let Some(animation) = &mut self.animation {
-            let current = self.current.ok_or_else(|| {
-                Box::new(ImgError::new_const(
-                    ImgErrorKind::IllegalData,
-                    "animation frame is not selected".to_string(),
-                )) as Error
-            })?;
-            if start_x >= animation[current].width || start_y >= animation[current].height {
-                return Ok(None);
-            }
-            let requested_end_x = start_x.checked_add(width).ok_or_else(|| {
-                Box::new(ImgError::new_const(
-                    ImgErrorKind::OutboundIndex,
-                    "draw rectangle x overflow".to_string(),
-                )) as Error
-            })?;
-            let requested_end_y = start_y.checked_add(height).ok_or_else(|| {
-                Box::new(ImgError::new_const(
-                    ImgErrorKind::OutboundIndex,
-                    "draw rectangle y overflow".to_string(),
-                )) as Error
-            })?;
-            w = animation[current].width.min(requested_end_x) - start_x;
-            h = animation[current].height.min(requested_end_y) - start_y;
-            raws = animation[current].width;
-            buffer = &mut animation[current].buffer;
+        let (buffer, canvas_width, canvas_height) = if let Some(current) = self.current {
+            let frame = self
+                .animation
+                .as_mut()
+                .and_then(|frames| frames.get_mut(current))
+                .ok_or_else(|| buffer_error("animation frame index is invalid"))?;
+            (&mut frame.buffer, frame.width, frame.height)
         } else {
-            return Err(Box::new(ImgError::new_const(
-                ImgErrorKind::NotInitializedImageBuffer,
-                "in animation".to_string(),
-            )));
+            (
+                self.buffer
+                    .as_mut()
+                    .ok_or_else(|| buffer_error("buffer is not initialized"))?,
+                self.width,
+                self.height,
+            )
+        };
+        let Some((w, h)) =
+            clipped_rect(start_x, start_y, width, height, canvas_width, canvas_height)?
+        else {
+            return Ok(None);
+        };
+        let source_stride = checked_rgba_len(width, 1, "draw stride")?;
+        let destination_stride = checked_rgba_len(canvas_width, 1, "canvas stride")?;
+        let row_bytes = checked_rgba_len(w, 1, "draw row")?;
+        if h == 0 || w == 0 {
+            return Ok(None);
         }
-
+        let source_end = (h - 1)
+            .checked_mul(source_stride)
+            .and_then(|v| v.checked_add(row_bytes))
+            .ok_or_else(|| buffer_error("draw source overflow"))?;
+        let destination_end = checked_rgba_len(canvas_width, canvas_height, "draw canvas")?;
+        if data.len() < source_end || buffer.len() < destination_end {
+            return Err(buffer_error("insufficient draw buffer"));
+        }
         for y in 0..h {
-            let scanline_src = y * width * 4;
-            let scanline_dest = (start_y + y) * raws * 4;
-            for x in 0..w {
-                let offset_src = scanline_src + x * 4;
-                let offset_dest = scanline_dest + (x + start_x) * 4;
-                if offset_src + 3 >= data.len() {
-                    return Err(Box::new(ImgError::new_const(
-                        ImgErrorKind::OutboundIndex,
-                        "decoder buffer in draw".to_string(),
-                    )));
-                }
-                if offset_dest + 3 >= buffer.len() {
-                    return Err(Box::new(ImgError::new_const(
-                        ImgErrorKind::OutboundIndex,
-                        "image buffer in draw".to_string(),
-                    )));
-                }
-                buffer[offset_dest] = data[offset_src];
-                buffer[offset_dest + 1] = data[offset_src + 1];
-                buffer[offset_dest + 2] = data[offset_src + 2];
-                buffer[offset_dest + 3] = data[offset_src + 3];
-            }
+            let src = y * source_stride;
+            let dst = (start_y + y) * destination_stride + start_x * 4;
+            buffer[dst..dst + row_bytes].copy_from_slice(&data[src..src + row_bytes]);
         }
         Ok(None)
     }
@@ -606,20 +614,13 @@ impl DrawCallback for ImageBuffer {
 
     /// Starts a new animation frame in the buffer.
     fn next(&mut self, opt: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error> {
-        if self.animation.is_some() {
+        if let Some(animation) = self.animation.as_ref() {
             if let Some(opt) = opt {
-                if self.current.is_none() {
-                    self.current = Some(0);
-                    self.first_wait_time = Some(opt.await_time);
-                } else {
-                    self.current = Some(
-                        self.current.ok_or_else(|| {
-                            Box::new(ImgError::new_const(
-                                ImgErrorKind::IllegalData,
-                                "animation frame is not selected".to_string(),
-                            )) as Error
-                        })? + 1,
-                    );
+                if self
+                    .current
+                    .is_some_and(|current| current >= animation.len())
+                {
+                    return Err(buffer_error("animation frame index is invalid"));
                 }
                 let (width, height, start_x, start_y);
                 if let Some(ref rect) = opt.image_rect {
@@ -634,7 +635,7 @@ impl DrawCallback for ImageBuffer {
                     start_y = 0;
                 }
                 let buffersize = checked_rgba_len(width, height, "animation frame")?;
-                let buffer: Vec<u8> = (0..buffersize).map(|_| 0).collect();
+                let buffer = zeroed_bytes(buffersize)?;
                 let layer = AnimationLayer {
                     width,
                     height,
@@ -645,7 +646,13 @@ impl DrawCallback for ImageBuffer {
                 };
 
                 if let Some(animation) = self.animation.as_mut() {
+                    animation.try_reserve(1)?;
+                    let current = animation.len();
+                    if current == 0 {
+                        self.first_wait_time = Some(layer.control.await_time);
+                    }
                     animation.push(layer);
+                    self.current = Some(current);
                 } else {
                     return Err(Box::new(ImgError::new_const(
                         ImgErrorKind::NotInitializedImageBuffer,
@@ -694,6 +701,15 @@ impl DrawCallback for ImageBuffer {
 impl PickCallback for ImageBuffer {
     /// Exposes the image profile to encoders.
     fn encode_start(&mut self, _: Option<EncoderOptions>) -> Result<Option<ImageProfiles>, Error> {
+        if self.width == 0
+            || self.height == 0
+            || self.buffer.as_ref().is_none_or(|buffer| {
+                checked_rgba_len(self.width, self.height, "encode")
+                    .map_or(true, |size| buffer.len() < size)
+            })
+        {
+            return Err(buffer_error("invalid image buffer for encoding"));
+        }
         let mut metadata = self.metadata.clone();
         let psd_layer_model = metadata.as_ref().is_some_and(|metadata| {
             matches!(
@@ -716,7 +732,7 @@ impl PickCallback for ImageBuffer {
                     )) as Error
                 })?
             };
-            append_animation_metadata(hashmap, animation, self.loop_count.unwrap_or(0));
+            append_animation_metadata(hashmap, animation, self.loop_count.unwrap_or(0))?;
         }
         let init = ImageProfiles {
             width: self.width,
@@ -743,63 +759,22 @@ impl PickCallback for ImageBuffer {
             )));
         }
         let buffersize = checked_rgba_len(width, height, "pick")?;
-        let mut data = Vec::with_capacity(buffersize);
-        let buffer = self.buffer.as_ref().ok_or_else(|| {
-            Box::new(ImgError::new_const(
-                ImgErrorKind::NotInitializedImageBuffer,
-                "in pick".to_string(),
-            )) as Error
-        })?;
-
-        if start_x >= self.width || start_y >= self.height {
+        let Some((w, h)) = clipped_rect(start_x, start_y, width, height, self.width, self.height)?
+        else {
             return Ok(None);
+        };
+        let buffer = self
+            .buffer
+            .as_ref()
+            .ok_or_else(|| buffer_error("buffer is not initialized"))?;
+        if buffer.len() < checked_rgba_len(self.width, self.height, "pick canvas")? {
+            return Err(buffer_error("insufficient pick buffer"));
         }
-        let requested_end_x = start_x.checked_add(width).ok_or_else(|| {
-            Box::new(ImgError::new_const(
-                ImgErrorKind::OutboundIndex,
-                "pick rectangle x overflow".to_string(),
-            )) as Error
-        })?;
-        let requested_end_y = start_y.checked_add(height).ok_or_else(|| {
-            Box::new(ImgError::new_const(
-                ImgErrorKind::OutboundIndex,
-                "pick rectangle y overflow".to_string(),
-            )) as Error
-        })?;
-        let w = self.width.min(requested_end_x) - start_x;
-        let h = self.height.min(requested_end_y) - start_y;
-
+        let mut data = zeroed_bytes(buffersize)?;
         for y in 0..h {
-            let scanline_src = (start_y + y) * self.width * 4;
-            for x in 0..w {
-                let offset_src = scanline_src + (start_x + x) * 4;
-                if offset_src + 3 >= buffer.len() {
-                    return Err(Box::new(ImgError::new_const(
-                        ImgErrorKind::OutboundIndex,
-                        "Image buffer in pick".to_string(),
-                    )));
-                }
-                data.push(buffer[offset_src]);
-                data.push(buffer[offset_src + 1]);
-                data.push(buffer[offset_src + 2]);
-                data.push(buffer[offset_src + 3]);
-            }
-            for _ in w..width {
-                // 0 fill
-                data.push(0x00);
-                data.push(0x00);
-                data.push(0x00);
-                data.push(0x00);
-            }
-        }
-        for _ in h..height {
-            // 0 fill
-            for _ in 0..width {
-                data.push(0x00);
-                data.push(0x00);
-                data.push(0x00);
-                data.push(0x00);
-            }
+            let src = ((start_y + y) * self.width + start_x) * 4;
+            let dst = y * width * 4;
+            data[dst..dst + w * 4].copy_from_slice(&buffer[src..src + w * 4]);
         }
 
         Ok(Some(data))
@@ -901,14 +876,65 @@ pub fn image_to_file(
     image: &mut dyn PickCallback,
     format: ImageFormat,
 ) -> Result<(), Error> {
-    let f = std::fs::File::create(filename)?;
     let mut option = EncodeOptions {
         debug_flag: 0x00,
         drawer: image,
         options: None,
     };
-    image_writer(f, &mut option, format)?;
+    atomic_image_write(&filename, &mut option, format)?;
     Ok(())
+}
+
+// Commit only a complete encoded file. Rename replaces the destination directory
+// entry, including a symlink, without modifying other hard links to its inode.
+#[cfg(not(target_family = "wasm"))]
+fn atomic_image_write(
+    filename: &str,
+    options: &mut EncodeOptions,
+    format: ImageFormat,
+) -> Result<(), Error> {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static SERIAL: AtomicU64 = AtomicU64::new(0);
+    let encoded = image_encoder(options, format)?;
+    let destination = Path::new(filename);
+    let parent = destination
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    struct Temporary(std::path::PathBuf);
+    impl Drop for Temporary {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+    for _ in 0..128 {
+        let path = parent.join(format!(
+            ".wml2-{}-{}.tmp",
+            std::process::id(),
+            SERIAL.fetch_add(1, Ordering::Relaxed)
+        ));
+        let mut file = match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path)
+        {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(error.into()),
+        };
+        let temporary = Temporary(path);
+        file.write_all(&encoded)?;
+        file.flush()?;
+        file.sync_all()?;
+        drop(file);
+        std::fs::rename(&temporary.0, destination)?;
+        return Ok(());
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::AlreadyExists,
+        "cannot create a unique output temporary file",
+    )
+    .into())
 }
 
 #[cfg(not(target_family = "wasm"))]
@@ -971,7 +997,6 @@ pub fn convert(
     options: Option<HashMap<String, DataMap>>,
 ) -> Result<(), Error> {
     let format = format_from_output_path(&output_file)?;
-    let f = std::fs::File::create(&output_file)?;
     let mut image = image_from_file(input_file)?;
     let mut encode = EncodeOptions {
         debug_flag: 0,
@@ -979,7 +1004,7 @@ pub fn convert(
         options,
     };
 
-    image_writer(f, &mut encode, format)?;
+    atomic_image_write(&output_file, &mut encode, format)?;
     Ok(())
 }
 
@@ -1118,7 +1143,40 @@ pub fn image_writer<W: Write>(
 /// assert_eq!(target.width, 1);
 /// assert_eq!(target.height, 1);
 /// ```
+/// Decode with explicit resource limits without changing `DecodeOptions`.
+pub fn image_decoder_with_limits<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Option<ImgWarnings>, Error> {
+    crate::decode_guard::run(reader, option, limits, image_decoder_inner)
+}
+
+/// Decode an in-memory image with explicit resource limits.
+pub fn image_from_with_limits(
+    buffer: &[u8],
+    limits: crate::limits::DecodeLimits,
+) -> Result<ImageBuffer, Error> {
+    let mut image = ImageBuffer::new();
+    image_decoder_with_limits(
+        &mut BytesReader::new(buffer),
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+        },
+        limits,
+    )?;
+    Ok(image)
+}
+
 pub fn image_decoder<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    image_decoder_with_limits(reader, option, crate::limits::DecodeLimits::default())
+}
+
+fn image_decoder_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
@@ -1138,7 +1196,7 @@ pub fn image_decoder<B: BinaryReader>(
     match format {
         #[cfg(feature = "jpeg")]
         Jpeg => {
-            return crate::jpeg::decoder::decode(reader, option);
+            return crate::jpeg::decoder::decode_inner(reader, option);
         }
         #[cfg(feature = "bmp")]
         Bmp => {
@@ -1154,7 +1212,7 @@ pub fn image_decoder<B: BinaryReader>(
         }
         #[cfg(feature = "png")]
         Png => {
-            return crate::png::decoder::decode(reader, option);
+            return crate::png::decoder::decode_inner(reader, option);
         }
         #[cfg(feature = "psd")]
         Psd => {
@@ -1294,10 +1352,38 @@ pub fn image_to(
     format: ImageFormat,
     options: Option<HashMap<String, DataMap>>,
 ) -> Result<Vec<u8>, Error> {
+    #[cfg(feature = "webp")]
+    if matches!(format, ImageFormat::Webp) {
+        return crate::webp::encoder::encode_buffer(image, options);
+    }
     let mut option = EncodeOptions {
         debug_flag: 0,
         drawer: image,
         options,
     };
     image_encoder(&mut option, format)
+}
+
+/// Encode an ImageBuffer with explicit animation frame/storage limits.
+/// These limits cover the legacy animation metadata transport and WebP's
+/// borrowed animation path (including its canvas expansion); they are not
+/// a general encoder allocation budget. Decode-only limits are unused.
+pub fn image_to_with_limits(
+    image: &mut ImageBuffer,
+    format: ImageFormat,
+    options: Option<HashMap<String, DataMap>>,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Vec<u8>, Error> {
+    crate::limits::scope(limits, || image_to(image, format, options))
+}
+
+/// Encode a custom PickCallback using explicit animation storage limits.
+/// Enforcement depends on the callback's metadata transport and the selected
+/// encoder; arbitrary allocations inside a user callback cannot be bounded.
+pub fn image_encoder_with_limits(
+    options: &mut EncodeOptions,
+    format: ImageFormat,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Vec<u8>, Error> {
+    crate::limits::scope(limits, || image_encoder(options, format))
 }

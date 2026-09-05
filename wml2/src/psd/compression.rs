@@ -37,6 +37,11 @@ fn expected_len(
 }
 
 fn allocated(length: usize) -> Result<Vec<u8>, Error> {
+    crate::limits::check(
+        length,
+        crate::limits::current().expanded_bytes,
+        "PSD pixels",
+    )?;
     let mut output = Vec::new();
     output.try_reserve_exact(length).map_err(|_| {
         err(
@@ -203,13 +208,12 @@ pub(crate) fn decompress_planar(
             Ok(output)
         }
         2 | 3 => {
-            let mut output =
-                miniz_oxide::inflate::decompress_to_vec_zlib(payload).map_err(|_| {
-                    err(
-                        ImgErrorKind::DecodeError,
-                        "PSD ZIP stream could not be decompressed",
-                    )
-                })?;
+            let mut output = crate::limits::inflate_image(payload, expected).map_err(|_| {
+                err(
+                    ImgErrorKind::DecodeError,
+                    "PSD ZIP stream could not be decompressed",
+                )
+            })?;
             if output.len() != expected {
                 return Err(err(
                     ImgErrorKind::IllegalData,

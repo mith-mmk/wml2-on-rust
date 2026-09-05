@@ -94,6 +94,26 @@ fn explicit_8_10_12_bit_outputs_use_the_requested_depth() {
 }
 
 #[test]
+fn implicit_precision_expansion_is_rejected() {
+    for (frame, target) in [
+        (rgb_frame_u8(), 10),
+        (rgb_frame_u8(), 12),
+        (rgb_frame_u16(10), 12),
+    ] {
+        assert!(matches!(
+            encode_native(&frame, &options(target)),
+            Err(EncodeError::Frame(
+                wml2::highres::HighresError::Unsupported(_)
+            ))
+        ));
+        assert!(
+            encode_native_with_quantization(&frame, &options(target), Quantization::RightShift)
+                .is_err()
+        );
+    }
+}
+
+#[test]
 fn sixteen_bit_downshift_requires_explicit_quantization() {
     let frame = rgb_frame_u16(16);
     let native = options(12);
@@ -157,4 +177,37 @@ fn interleaved_straight_alpha_is_encoded_as_an_independent_plane() {
             .iter()
             .any(|plane| plane.roles() == [ChannelRole::Alpha].as_slice())
     );
+}
+
+#[test]
+fn explicit_twelve_to_ten_bit_shift_preserves_exact_native_samples() {
+    let frame = rgb_frame_u16(12);
+    let mut native = options(10);
+    native.encoder.lossless = true;
+    let bytes = encode_native_with_quantization(&frame, &native, Quantization::RightShift).unwrap();
+    let decoded = decode_native(&bytes, &limits()).unwrap();
+    for role in [ChannelRole::Red, ChannelRole::Green, ChannelRole::Blue] {
+        let source_index = frame
+            .descriptor()
+            .planes()
+            .iter()
+            .position(|plane| plane.roles().contains(&role))
+            .unwrap();
+        let output_index = decoded
+            .descriptor()
+            .planes()
+            .iter()
+            .position(|plane| plane.roles().contains(&role))
+            .unwrap();
+        let source = &frame.pixels().u16_planes().unwrap()[source_index];
+        let output = &decoded.pixels().u16_planes().unwrap()[output_index];
+        assert_eq!(
+            output.samples(),
+            source
+                .samples()
+                .iter()
+                .map(|sample| sample >> 2)
+                .collect::<Vec<_>>()
+        );
+    }
 }

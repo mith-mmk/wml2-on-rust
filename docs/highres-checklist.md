@@ -102,10 +102,10 @@ Allocation accounting is limited to checked arithmetic and practical safety
 limits. Exact byte-by-byte peak-live-allocation proof is not an acceptance
 condition.
 
-## Publication handoff
+## Publication handoff (historical, 2026-08-31)
 
-The release candidates are intentionally kept on their implementation
-branches until publication is explicitly approved:
+The original release handoff kept these candidates on implementation
+branches pending publication approval:
 
 | Crate | Candidate | Required order |
 | --- | --- | --- |
@@ -114,12 +114,11 @@ branches until publication is explicitly approved:
 | `avifenc-rust` | `0.0.7` | 3 |
 | `wml2` | `0.0.29` | 4 |
 
-Before publishing, run the locked package and publish dry-runs for every
-crate. The WML2 manifest currently pins the unreleased ICC commit so the
-integration can be tested before registry publication; after `icc-profile`
-is published, replace that temporary git dependency with the released
-registry dependency in a separate release commit. Do not publish, tag, or
-merge to `main` as part of this implementation work.
+That handoff required locked package and publish dry-runs for every crate,
+and replacement of the temporary ICC git dependency with a registry
+dependency. The latter is already reflected in the current manifest; see
+the dated status below. This historical list is not a statement of current
+registry publication or branch status.
 
 ## Release-candidate validation record
 
@@ -134,10 +133,32 @@ On 2026-08-31 the following checks passed on the candidate commits:
 - WML2 and AVIFENC formatting checks passed; Clippy completed successfully
   with pre-existing warnings in legacy code.
 
-The WML2 package and publish dry-runs are intentionally blocked until the
+At that time, WML2 package and publish dry-runs were blocked until the
 three child release candidates exist in their required registry/git order.
 AVIF and ICC repositories retain unrelated pre-existing formatting debt, so
 their full-tree format checks are not release gates for this change.
 
 Miri/fuzz and external fixture-dependent checks remain follow-up validation;
 they are not silently represented as passed here.
+
+## Implementation status verified on 2026-09-05
+
+The manifest uses registry `icc-profile 0.0.6`, registry `webp-rust 0.3.1`,
+and version `0.0.7` path dependencies for the independent AVIF decoder and
+encoder. ICC 0.0.6 was published on 2026-09-05 after main integration and
+locked package/dry-run validation. Its registry download was verified before
+updating both WML2 and wml2-test. See the current release integration record
+in [review-plan-progress.md](review-plan-progress.md). WML2 publication is a
+separate step.
+
+The review implementation adds meaningful-bit ICC normalization, explicit
+premultiplied-alpha rejection, timing preservation, reusable tiled ICC
+transforms, explicit AVIF precision rejection, and preservation of AV1 range
+when its color description is absent. Existing APIs remain available.
+
+See [the implementation and validation record](review-plan-progress.md) for
+completed tests, reproducible commands, CI configuration, and unverified
+platforms. Local Miri boundary tests and a bounded PNG mutation campaign now
+pass; these do not mark the entire historical validation checklist as
+complete. A new LittleCMS 2.16 RGB gamma reference covers 256 colors at
+8/10/12/16-bit precision. Linux/macOS CI execution remains unverified.

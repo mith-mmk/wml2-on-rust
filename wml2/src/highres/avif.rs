@@ -228,6 +228,11 @@ fn color_information(
             u16::from(description.matrix_coefficients),
             matches!(frame.color_config.color_range, ColorRange::Full),
         ));
+    } else {
+        colors.set_av1(Av1ColorInformation::without_description(matches!(
+            frame.color_config.color_range,
+            ColorRange::Full
+        )));
     }
     Ok(colors)
 }

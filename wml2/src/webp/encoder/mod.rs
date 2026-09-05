@@ -13,14 +13,7 @@
 //! as animated WebP by consuming the reserved animation metadata produced by
 //! [`crate::draw::ImageBuffer`].
 
-mod alpha;
-mod bit_writer;
 mod container;
-mod error;
-mod huffman;
-mod lossless;
-mod lossy;
-mod vp8_bool_writer;
 mod writer;
 
 use crate::color::RGBA;
@@ -32,8 +25,17 @@ use crate::error::{ImgError, ImgErrorKind};
 use crate::metadata::{DataMap, get_exif_option};
 
 use self::container::{AnimationFrameChunk, wrap_animated_webp};
-pub use error::EncoderError;
-pub use lossless::{
+pub use webp_codec::encoder::EncoderError;
+pub use webp_codec::encoder::{
+    AlphaFilter, LossyEncodingConfig, LossyEncodingOptions, WebpPreset, encode_lossy_image_to_webp,
+    encode_lossy_image_to_webp_with_config, encode_lossy_image_to_webp_with_config_and_exif,
+    encode_lossy_image_to_webp_with_options, encode_lossy_image_to_webp_with_options_and_exif,
+    encode_lossy_rgba_to_vp8, encode_lossy_rgba_to_vp8_with_config,
+    encode_lossy_rgba_to_vp8_with_options, encode_lossy_rgba_to_webp,
+    encode_lossy_rgba_to_webp_with_config, encode_lossy_rgba_to_webp_with_config_and_exif,
+    encode_lossy_rgba_to_webp_with_options, encode_lossy_rgba_to_webp_with_options_and_exif,
+};
+pub use webp_codec::encoder::{
     LosslessEncodingConfig, LosslessEncodingOptions, encode_lossless_image_to_webp,
     encode_lossless_image_to_webp_with_config, encode_lossless_image_to_webp_with_config_and_exif,
     encode_lossless_image_to_webp_with_options,
@@ -43,20 +45,11 @@ pub use lossless::{
     encode_lossless_rgba_to_webp_with_config_and_exif, encode_lossless_rgba_to_webp_with_options,
     encode_lossless_rgba_to_webp_with_options_and_exif,
 };
-pub use lossy::{
-    AlphaFilter, LossyEncodingConfig, LossyEncodingOptions, WebpPreset, encode_lossy_image_to_webp,
-    encode_lossy_image_to_webp_with_config, encode_lossy_image_to_webp_with_config_and_exif,
-    encode_lossy_image_to_webp_with_options, encode_lossy_image_to_webp_with_options_and_exif,
-    encode_lossy_rgba_to_vp8, encode_lossy_rgba_to_vp8_with_config,
-    encode_lossy_rgba_to_vp8_with_options, encode_lossy_rgba_to_webp,
-    encode_lossy_rgba_to_webp_with_config, encode_lossy_rgba_to_webp_with_config_and_exif,
-    encode_lossy_rgba_to_webp_with_options, encode_lossy_rgba_to_webp_with_options_and_exif,
-};
 
 type Error = Box<dyn std::error::Error>;
 
 #[derive(Debug)]
-struct AnimationFrame {
+struct AnimationFrame<'a> {
     width: usize,
     height: usize,
     x_offset: usize,
@@ -64,15 +57,15 @@ struct AnimationFrame {
     delay_ms: usize,
     blend: bool,
     dispose: u8,
-    buffer: Vec<u8>,
+    buffer: &'a [u8],
 }
 
 #[derive(Debug)]
-struct AnimationInfo {
+struct AnimationInfo<'a> {
     background: RGBA,
     background_color: u32,
     loop_count: u16,
-    frames: Vec<AnimationFrame>,
+    frames: Vec<AnimationFrame<'a>>,
 }
 
 fn map_error(error: EncoderError) -> Error {
@@ -125,9 +118,9 @@ fn as_i64(value: Option<&DataMap>, key: &str) -> Result<i64, Error> {
     }
 }
 
-fn as_raw(value: Option<&DataMap>, key: &str) -> Result<Vec<u8>, Error> {
+fn as_raw<'a>(value: Option<&'a DataMap>, key: &str) -> Result<&'a [u8], Error> {
     match value {
-        Some(DataMap::Raw(value)) => Ok(value.clone()),
+        Some(DataMap::Raw(value)) => Ok(value.as_slice()),
         Some(_) => Err(Box::new(ImgError::new_const(
             ImgErrorKind::InvalidParameter,
             format!("{key} is not raw metadata"),
@@ -186,7 +179,7 @@ fn webp_optimize(option: &DrawEncodeOptions<'_>) -> Result<Option<u8>, Error> {
     Ok(optimize)
 }
 
-fn parse_animation_info(profile: &ImageProfiles) -> Result<Option<AnimationInfo>, Error> {
+fn parse_animation_info(profile: &ImageProfiles) -> Result<Option<AnimationInfo<'_>>, Error> {
     let Some(metadata) = &profile.metadata else {
         return Ok(None);
     };
@@ -228,8 +221,16 @@ fn parse_animation_info(profile: &ImageProfiles) -> Result<Option<AnimationInfo>
         alpha: 0,
     });
 
-    let mut frames = Vec::with_capacity(*frame_count as usize);
-    for index in 0..*frame_count as usize {
+    let frame_count = usize::try_from(*frame_count)?;
+    crate::limits::check(
+        frame_count,
+        crate::limits::current().frames,
+        "animation frame count",
+    )?;
+    let mut frames = Vec::new();
+    frames.try_reserve_exact(frame_count)?;
+    let mut total = 0usize;
+    for index in 0..frame_count {
         let width_key = encode_animation_frame_key(index, "width");
         let height_key = encode_animation_frame_key(index, "height");
         let start_x_key = encode_animation_frame_key(index, "start_x");
@@ -313,6 +314,14 @@ fn parse_animation_info(profile: &ImageProfiles) -> Result<Option<AnimationInfo>
                     format!("animation frame {index} buffer size overflows"),
                 )) as Error
             })?;
+        total = total
+            .checked_add(expected_len)
+            .ok_or_else(|| std::io::Error::other("animation size overflow"))?;
+        crate::limits::check(
+            total,
+            crate::limits::current().animation_bytes,
+            "animation pixels",
+        )?;
         if buffer.len() != expected_len {
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::InvalidParameter,
@@ -493,6 +502,7 @@ fn encode_animation(
     optimize: Option<u8>,
     exif: Option<&[u8]>,
 ) -> Result<Vec<u8>, Error> {
+    validate_frames(profile, &animation.frames)?;
     let mut canvas = fill_canvas(profile.width, profile.height, &animation.background);
     let mut has_alpha = canvas.chunks_exact(4).any(|pixel| pixel[3] != 0xff);
     let mut encoded_frames = Vec::with_capacity(animation.frames.len());
@@ -601,4 +611,124 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
 
     image.drawer.encode_end(None)?;
     Ok(data)
+}
+
+fn validate_frames(profile: &ImageProfiles, frames: &[AnimationFrame<'_>]) -> Result<(), Error> {
+    let limits = crate::limits::current();
+    let canvas = profile
+        .width
+        .checked_mul(profile.height)
+        .and_then(|v| v.checked_mul(4))
+        .ok_or_else(|| std::io::Error::other("canvas size overflow"))?;
+    if profile.width == 0 || profile.height == 0 {
+        return Err(std::io::Error::other("empty animation canvas").into());
+    }
+    crate::limits::check(canvas, limits.expanded_bytes, "animation canvas")?;
+    crate::limits::check(frames.len(), limits.frames, "animation frames")?;
+    let mut total = 0usize;
+    for frame in frames {
+        let bytes = frame
+            .width
+            .checked_mul(frame.height)
+            .and_then(|v| v.checked_mul(4))
+            .ok_or_else(|| std::io::Error::other("frame size overflow"))?;
+        if frame.width == 0
+            || frame.height == 0
+            || bytes != frame.buffer.len()
+            || frame
+                .x_offset
+                .checked_add(frame.width)
+                .is_none_or(|v| v > profile.width)
+            || frame
+                .y_offset
+                .checked_add(frame.height)
+                .is_none_or(|v| v > profile.height)
+        {
+            return Err(std::io::Error::other("invalid animation frame").into());
+        }
+        total = total
+            .checked_add(bytes)
+            .ok_or_else(|| std::io::Error::other("animation size overflow"))?;
+        crate::limits::check(total, limits.animation_bytes, "animation pixels")?;
+    }
+    Ok(())
+}
+
+/// Encode an ImageBuffer using borrowed frame pixels. The legacy PickCallback
+/// route remains available through `encode`, including its reserved keys.
+pub fn encode_buffer(
+    image: &mut crate::draw::ImageBuffer,
+    options: Option<std::collections::HashMap<String, DataMap>>,
+) -> Result<Vec<u8>, Error> {
+    let (quality, optimize) = {
+        let settings = DrawEncodeOptions {
+            debug_flag: 0,
+            drawer: image,
+            options: options.clone(),
+        };
+        (webp_quality(&settings)?, webp_optimize(&settings)?)
+    };
+    let profile = ImageProfiles {
+        width: image.width,
+        height: image.height,
+        background: image.background_color.clone(),
+        metadata: image.metadata.clone(),
+    };
+    let exif = get_exif_option(options.as_ref(), profile.metadata.as_ref())?;
+    let psd = profile.metadata.as_ref().is_some_and(
+        |m| matches!(m.get("wml2.psd.layer_model"),Some(DataMap::Ascii(v)) if v=="animation"),
+    );
+    if !psd && let Some(layers) = image.animation.as_ref().filter(|v| !v.is_empty()) {
+        crate::limits::check(
+            layers.len(),
+            crate::limits::current().frames,
+            "animation frames",
+        )?;
+        let mut frames = Vec::new();
+        frames.try_reserve_exact(layers.len())?;
+        for layer in layers {
+            frames.push(AnimationFrame {
+                width: layer.width,
+                height: layer.height,
+                x_offset: usize::try_from(layer.start_x)?,
+                y_offset: usize::try_from(layer.start_y)?,
+                delay_ms: usize::try_from(layer.control.await_time)?,
+                dispose: match layer.control.dispose_option {
+                    Some(crate::draw::NextDispose::Background) => 1,
+                    Some(crate::draw::NextDispose::Previous) => 2,
+                    _ => 0,
+                },
+                blend: matches!(layer.control.blend, Some(crate::draw::NextBlend::Source)),
+                buffer: &layer.buffer,
+            });
+        }
+        let background = profile.background.clone().unwrap_or(RGBA {
+            red: 0,
+            green: 0,
+            blue: 0,
+            alpha: 0,
+        });
+        let animation = AnimationInfo {
+            background_color: rgba_to_argb(&background),
+            background,
+            loop_count: u16::try_from(image.loop_count.unwrap_or(0))?,
+            frames,
+        };
+        encode_animation(&profile, animation, quality, optimize, exif.as_deref())
+    } else if let Some(animation) = parse_animation_info(&profile)? {
+        encode_animation(&profile, animation, quality, optimize, exif.as_deref())
+    } else {
+        let pixels = image
+            .buffer
+            .as_deref()
+            .ok_or_else(|| std::io::Error::other("image buffer is not initialized"))?;
+        encode_still(
+            image.width,
+            image.height,
+            pixels,
+            quality,
+            optimize,
+            exif.as_deref(),
+        )
+    }
 }

@@ -232,7 +232,7 @@ pub(crate) fn dc_read<B: BinaryReader>(
 pub(crate) fn ac_read<B: BinaryReader>(
     bitread: &mut BitReader<B>,
     ac_decode: &HuffmanDecodeTable,
-) -> Result<Vec<i32>, Error> {
+) -> Result<[i32; 64], Error> {
     let mut zigzag: usize = 1;
     let mut zz = [0_i32; 64];
     loop {
@@ -244,14 +244,14 @@ pub(crate) fn ac_read<B: BinaryReader>(
         if ssss == 0 {
             if ac == 0x00 {
                 //EOB
-                return Ok(zz.to_vec());
+                return Ok(zz);
             }
             if rrrr == 15 {
                 //ZRL
                 zigzag += 16;
                 continue;
             }
-            return Ok(zz.to_vec()); // N/A
+            return Ok(zz); // N/A
         } else {
             zigzag += rrrr as usize;
             let v = bitread.get_bits(ssss as usize)?;
@@ -261,7 +261,7 @@ pub(crate) fn ac_read<B: BinaryReader>(
             }
         }
         if zigzag >= 63 {
-            return Ok(zz.to_vec());
+            return Ok(zz);
         }
         zigzag += 1;
     }
@@ -273,7 +273,7 @@ pub(crate) fn baseline_read<B: BinaryReader>(
     dc_decode: &HuffmanDecodeTable,
     ac_decode: &HuffmanDecodeTable,
     pred: i32,
-) -> Result<(Vec<i32>, i32), Error> {
+) -> Result<([i32; 64], i32), Error> {
     let dc = dc_read(bitread, dc_decode, pred)?;
     let mut zz = ac_read(bitread, ac_decode)?;
     zz[0] = dc;
@@ -337,7 +337,7 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
 pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
     let m1 = 0.5411961; // α ∁Ecos(3π/8)
     let m2 = 1.306_563; // β ∁Ecos(3π/8)
-    let m3 = 1.414_213_5; // γ v2
+    let m3 = std::f32::consts::SQRT_2; // same f32 representation as 1.414_213_5
     let m4 = 0.831_469_6; // η cos(3π/16)
     let m5 = 0.555_570_24; // θ sin(3π/16)
     let m6 = 0.98078528; // δ cos(π/16)
@@ -1139,13 +1139,6 @@ pub(crate) fn build_progressive_scan_slots<'a>(
     Ok(slots)
 }
 
-#[cfg(feature = "multithread")]
-#[derive(std::cmp::PartialEq)]
-enum ThreadCommand {
-    Stop,
-    Run,
-}
-
 pub(crate) fn calc_mcu(component: &Vec<Component>) -> (usize, usize, usize, usize, usize) {
     let mut h_max = 1;
     let mut v_max = 1;
@@ -1202,240 +1195,47 @@ pub(crate) fn calc_scan(
     scan
 }
 
-#[cfg(feature = "multithread")]
-pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
-    reader: &mut B,
-    header: &JpegHaeder,
-    option: &mut DecodeOptions,
-    mut warnings: Option<ImgWarnings>,
-) -> Result<Option<ImgWarnings>, Error> {
-    let width = header.width;
-    let height = header.height;
-    let huffman_scan_header = require_scan_header(header)?;
-    let fh = require_frame_header(header)?.clone();
-    let color_space = fh.color_space.to_string();
-    let component = require_components(&fh)?.clone();
-    let plane = fh.plane;
-    // decode
-    option.drawer.init(width, height, InitOptions::new())?;
-
-    let quantization_tables = require_quantization_tables(header)?.clone();
-    let (dc_decode, ac_decode) = huffman_extend(&header.huffman_tables);
-
-    let mut bitread = BitReader::new(reader);
-    let (mcu_size, h_max, v_max, dx, dy) = calc_mcu(&component);
-    let scan = calc_scan(&component, huffman_scan_header);
-    let scan_slots =
-        build_baseline_scan_slots(&scan, &quantization_tables, &dc_decode, &ac_decode)?;
-
-    let mut preds: Vec<i32> = (0..component.len()).map(|_| 0).collect();
-
-    let mcu_y_max = (height + dy - 1) / dy;
-    let mcu_x_max = (width + dx - 1) / dx;
-
-    let mut mcu_interval = if header.interval > 0 {
-        header.interval as isize
-    } else {
-        -1
-    };
-
-    let (tx1, rx1) = std::sync::mpsc::channel();
-    let (tx2, rx2) = std::sync::mpsc::channel();
-    let (tx3, rx3) = std::sync::mpsc::channel();
-    let (tx4, rx4) = std::sync::mpsc::channel();
-
-    let sq = &super::util::ZIG_ZAG_SEQUENCE;
-
-    std::thread::spawn(move || {
-        loop {
-            let (com, zz, mcu_x, mcu_y, tq) =
-                rx1.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0, 0));
-            if com == ThreadCommand::Stop {
-                let _ = tx2.send((com, zz, mcu_x, mcu_y));
-                break;
-            }
-            let q = quantization_tables[tq].q.clone();
-            let zz: Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
-            let _ = tx2.send((com, zz, mcu_x, mcu_y));
+#[allow(clippy::too_many_arguments)] // validated MCU layout and numerical kernel inputs
+fn baseline_pixels(
+    blocks: &[[i32; 64]],
+    slots: &[BaselineScanSlot<'_>],
+    tables: &[QuantizationTable],
+    units: &mut Vec<Vec<u8>>,
+    plane: usize,
+    components: &Vec<Component>,
+    color_space: &str,
+    sampling: (usize, usize),
+) -> Vec<u8> {
+    units.clear();
+    let order = &super::util::ZIG_ZAG_SEQUENCE;
+    for (block, slot) in blocks.iter().zip(slots) {
+        let table = &tables[slot.quant_index].q;
+        let mut coefficients = [0i32; 64];
+        for i in 0..64 {
+            coefficients[i] = block[order[i]] * table[order[i]] as i32;
         }
-    });
-
-    std::thread::spawn(move || {
-        loop {
-            let (com, zz, mcu_x, mcu_y) = rx2.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0));
-            if com == ThreadCommand::Stop {
-                let _ = tx3.send((com, vec![], mcu_x, mcu_y));
-                break;
-            }
-            let ff = idct(&zz);
-            let _ = tx3.send((com, ff, mcu_x, mcu_y));
-        }
-    });
-
-    std::thread::spawn(move || {
-        loop {
-            let mut mcu_units: Vec<Vec<u8>> = Vec::new();
-            let mut com = ThreadCommand::Run;
-            let mut mcu_x = 0;
-            let mut mcu_y = 0;
-            for _ in 0..mcu_size {
-                let (_com, ff, _mcu_x, _mcu_y) =
-                    rx3.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0));
-                mcu_units.push(ff);
-                com = _com;
-                mcu_x = _mcu_x;
-                mcu_y = _mcu_y
-            }
-            if com == ThreadCommand::Stop {
-                let _ = tx4.send((com, vec![], mcu_x, mcu_y));
-                break;
-            }
-            let data = convert_rgb(
-                plane,
-                &mcu_units,
-                &component,
-                color_space.to_string(),
-                (h_max, v_max),
-            );
-
-            let _ = tx4.send((com, data, mcu_x, mcu_y));
-        }
-    });
-
-    for mcu_y in 0..mcu_y_max {
-        for mcu_x in 0..mcu_x_max {
-            for scannumber in 0..mcu_size {
-                let slot = &scan_slots[scannumber];
-                let ret =
-                    baseline_read(&mut bitread, slot.dc, slot.ac, preds[slot.component_index]);
-                let (zz, pred);
-                match ret {
-                    Ok((_zz, _pred)) => {
-                        zz = _zz;
-                        pred = _pred;
-                    }
-                    Err(..) => {
-                        warnings = ImgWarnings::add(
-                            warnings,
-                            Box::new(JpegWarning::new_const(
-                                JpegWarningKind::DataCorruption,
-                                "baseline".to_string(),
-                            )),
-                        );
-                        return Ok(warnings);
-                    }
-                }
-                preds[slot.component_index] = pred;
-                let _ = tx1.send((ThreadCommand::Run, zz, mcu_x, mcu_y, slot.quant_index));
-            }
-            if header.interval > 0 {
-                mcu_interval -= 1;
-                if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
-                    if bitread.rst()? {
-                        mcu_interval = header.interval as isize;
-                        for i in 0..preds.len() {
-                            preds[i] = 0;
-                        }
-                    } else {
-                        // Reset Interval
-                        let r = bitread.next_marker()?;
-                        if (0xd0..=0xd7).contains(&r) {
-                            mcu_interval = header.interval as isize;
-                            for i in 0..preds.len() {
-                                preds[i] = 0;
-                            }
-                        } else if r == 0xd9 {
-                            // EOI
-                            option.drawer.terminate(None)?;
-                            warnings = ImgWarnings::add(
-                                warnings,
-                                Box::new(JpegWarning::new_const(
-                                    JpegWarningKind::IlligalRSTMaker,
-                                    "Unexcept EOI,Is this image corruption?".to_string(),
-                                )),
-                            );
-                            let _ = tx1.send((ThreadCommand::Stop, vec![], 0, 0, 0));
-                            return Ok(warnings);
-                        }
-                    }
-                } else if bitread.rst()? {
-                    warnings = ImgWarnings::add(
-                        warnings,
-                        Box::new(JpegWarning::new_const(
-                            JpegWarningKind::IlligalRSTMaker,
-                            "Unexcept RST marker location,Is this image corruption?".to_string(),
-                        )),
-                    );
-                    mcu_interval = header.interval as isize;
-                    for i in 0..preds.len() {
-                        preds[i] = 0;
-                    }
-                }
-            }
-        }
+        units.push(idct(&coefficients));
     }
-    let _ = tx1.send((ThreadCommand::Stop, vec![], 0, 0, 0));
-    // Only implement RGB
-
-    loop {
-        let (com, data, mcu_x, mcu_y) = rx4.recv().unwrap_or((ThreadCommand::Stop, vec![], 0, 0));
-        if com == ThreadCommand::Stop {
-            break;
-        }
-        option
-            .drawer
-            .draw(mcu_x * dx, mcu_y * dy, dx, dy, &data, None)?;
-    }
-
-    let b = bitread.next_marker();
-    match b {
-        Ok(marker) => {
-            match marker {
-                0xd9 => {
-                    // EOI
-                    option.drawer.terminate(None)?;
-                    return Ok(warnings);
-                }
-                0xdd => {
-                    option.drawer.terminate(None)?;
-                    warnings = ImgWarnings::add(
-                        warnings,
-                        Box::new(JpegWarning::new_const(
-                            JpegWarningKind::UnexpectMarker,
-                            "DNL,No Support Multi scan/frame".to_string(),
-                        )),
-                    );
-                    return Ok(warnings);
-                }
-                _ => {
-                    option.drawer.terminate(None)?;
-                    warnings = ImgWarnings::add(
-                        warnings,
-                        Box::new(JpegWarning::new_const(
-                            JpegWarningKind::UnexpectMarker,
-                            "No Support Multi scan/frame".to_string(),
-                        )),
-                    );
-                    return Ok(warnings);
-                }
-            }
-        }
-        Err(s) => {
-            let s = format!("found {:?}", s);
-            warnings = ImgWarnings::add(
-                warnings,
-                Box::new(JpegWarning::new_const(
-                    JpegWarningKind::UnexpectMarker,
-                    s.to_string(),
-                )),
-            );
-        }
-    }
-    option.drawer.terminate(None)?;
-    Ok(warnings)
+    convert_rgb(plane, units, components, color_space.to_string(), sampling)
 }
 
-#[cfg(not(feature = "multithread"))]
+#[cfg(feature = "multithread")]
+fn finish_worker(worker: Option<std::thread::ScopedJoinHandle<'_, ()>>) -> Result<(), Error> {
+    if worker.is_some_and(|worker| worker.join().is_err()) {
+        return Err(std::io::Error::other("JPEG worker panicked").into());
+    }
+    Ok(())
+}
+
+#[cfg(all(test, feature = "multithread"))]
+#[test]
+fn worker_panic_is_reported_after_join() {
+    let result = std::thread::scope(|scope| {
+        finish_worker(Some(scope.spawn(|| panic!("synthetic worker failure"))))
+    });
+    assert!(result.is_err());
+}
+
 pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
     reader: &mut B,
     header: &JpegHaeder,
@@ -1456,8 +1256,8 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
     let (dc_decode, ac_decode) = huffman_extend(&header.huffman_tables);
 
     let mut bitread = BitReader::new(reader);
-    let (mcu_size, h_max, v_max, dx, dy) = calc_mcu(&component);
-    let scan = calc_scan(&component, &huffman_scan_header);
+    let (mcu_size, h_max, v_max, dx, dy) = calc_mcu(component);
+    let scan = calc_scan(component, huffman_scan_header);
     let scan_slots = build_baseline_scan_slots(&scan, quantization_tables, &dc_decode, &ac_decode)?;
 
     let mut preds: Vec<i32> = (0..component.len()).map(|_| 0).collect();
@@ -1471,149 +1271,238 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
         -1
     };
 
-    for mcu_y in 0..mcu_y_max {
-        for mcu_x in 0..mcu_x_max {
-            let mut mcu_units: Vec<Vec<u8>> = Vec::new();
-
-            for scannumber in 0..mcu_size {
-                let slot = &scan_slots[scannumber];
-                let ret =
-                    baseline_read(&mut bitread, slot.dc, slot.ac, preds[slot.component_index]);
-                let (zz, pred);
-                match ret {
-                    Ok((_zz, _pred)) => {
-                        zz = _zz;
-                        pred = _pred;
+    // Small images cannot amortize worker startup (see review benchmark report).
+    let parallel = cfg!(feature = "multithread") && mcu_x_max.saturating_mul(mcu_y_max) > 8;
+    #[cfg(feature = "multithread")]
+    let cancelled = std::sync::atomic::AtomicBool::new(false);
+    std::thread::scope(|scope| {
+        #[cfg(not(feature = "multithread"))]
+        let _ = scope;
+        #[cfg(feature = "multithread")]
+        let (sender, jobs) = std::sync::mpsc::sync_channel::<(Vec<[i32; 64]>, usize, usize)>(8);
+        #[cfg(feature = "multithread")]
+        let (results, receiver) = std::sync::mpsc::sync_channel::<(Vec<u8>, usize, usize)>(8);
+        #[cfg(feature = "multithread")]
+        let worker = parallel.then(|| {
+            let scan_slots = &scan_slots;
+            let cancelled = &cancelled;
+            let color_space = &color_space;
+            scope.spawn(move || {
+                let mut units = Vec::with_capacity(mcu_size);
+                while let Ok((blocks, x, y)) = jobs.recv() {
+                    if cancelled.load(std::sync::atomic::Ordering::Relaxed) {
+                        break;
                     }
-                    Err(..) => {
-                        warnings = ImgWarnings::add(
-                            warnings,
-                            Box::new(JpegWarning::new_const(
-                                JpegWarningKind::DataCorruption,
-                                "baseline".to_string(),
-                            )),
-                        );
-                        return Ok(warnings);
+                    let data = baseline_pixels(
+                        &blocks,
+                        scan_slots,
+                        quantization_tables,
+                        &mut units,
+                        plane,
+                        component,
+                        color_space,
+                        (h_max, v_max),
+                    );
+                    if results.send((data, x, y)).is_err() {
+                        break;
                     }
                 }
-                preds[slot.component_index] = pred;
+            })
+        });
+        #[cfg(feature = "multithread")]
+        let mut pending = 0usize;
+        let mut units = Vec::with_capacity(mcu_size);
+        let result = (|| {
+            for mcu_y in 0..mcu_y_max {
+                for mcu_x in 0..mcu_x_max {
+                    let mut blocks = Vec::with_capacity(mcu_size);
 
-                let sq = &super::util::ZIG_ZAG_SEQUENCE;
-                let q = quantization_tables[slot.quant_index].q.clone();
-                let zz: Vec<i32> = (0..64).map(|i| zz[sq[i]] * q[sq[i]] as i32).collect();
-                let ff = idct(&zz);
-                mcu_units.push(ff);
-            }
-
-            // Only implement RGB
-            let data = convert_rgb(
-                plane,
-                &mcu_units,
-                &component,
-                color_space.to_string(),
-                (h_max, v_max),
-            );
-
-            option
-                .drawer
-                .draw(mcu_x * dx, mcu_y * dy, dx, dy, &data, None)?;
-
-            if header.interval > 0 {
-                mcu_interval = mcu_interval - 1;
-                if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
-                    if bitread.rst()? == true {
-                        mcu_interval = header.interval as isize;
-                        for i in 0..preds.len() {
-                            preds[i] = 0;
-                        }
-                    } else {
-                        // Reset Interval
-                        let r = bitread.next_marker()?;
-                        if r >= 0xd0 && r <= 0xd7 {
-                            mcu_interval = header.interval as isize;
-                            for i in 0..preds.len() {
-                                preds[i] = 0;
+                    for scannumber in 0..mcu_size {
+                        let slot = &scan_slots[scannumber];
+                        let ret = baseline_read(
+                            &mut bitread,
+                            slot.dc,
+                            slot.ac,
+                            preds[slot.component_index],
+                        );
+                        let (zz, pred);
+                        match ret {
+                            Ok((_zz, _pred)) => {
+                                zz = _zz;
+                                pred = _pred;
                             }
-                        } else if r == 0xd9 {
-                            // EOI
-                            option.drawer.terminate(None)?;
+                            Err(..) => {
+                                warnings = ImgWarnings::add(
+                                    warnings,
+                                    Box::new(JpegWarning::new_const(
+                                        JpegWarningKind::DataCorruption,
+                                        "baseline".to_string(),
+                                    )),
+                                );
+                                return Ok(warnings);
+                            }
+                        }
+                        preds[slot.component_index] = pred;
+
+                        blocks.push(zz);
+                    }
+                    #[cfg(feature = "multithread")]
+                    if parallel {
+                        sender
+                            .send((std::mem::take(&mut blocks), mcu_x, mcu_y))
+                            .map_err(|_| std::io::Error::other("JPEG worker disconnected"))?;
+                        pending += 1;
+                        if pending == 8 {
+                            let (data, x, y) = receiver
+                                .recv()
+                                .map_err(|_| std::io::Error::other("JPEG worker disconnected"))?;
+                            option.drawer.draw(x * dx, y * dy, dx, dy, &data, None)?;
+                            pending -= 1;
+                        }
+                    }
+                    if !parallel {
+                        let data = baseline_pixels(
+                            &blocks,
+                            &scan_slots,
+                            quantization_tables,
+                            &mut units,
+                            plane,
+                            component,
+                            &color_space,
+                            (h_max, v_max),
+                        );
+                        option
+                            .drawer
+                            .draw(mcu_x * dx, mcu_y * dy, dx, dy, &data, None)?;
+                    }
+
+                    if header.interval > 0 {
+                        mcu_interval -= 1;
+                        if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
+                            if bitread.rst()? {
+                                mcu_interval = header.interval as isize;
+                                for i in 0..preds.len() {
+                                    preds[i] = 0;
+                                }
+                            } else {
+                                // Reset Interval
+                                let r = bitread.next_marker()?;
+                                if (0xd0..=0xd7).contains(&r) {
+                                    mcu_interval = header.interval as isize;
+                                    for i in 0..preds.len() {
+                                        preds[i] = 0;
+                                    }
+                                } else if r == 0xd9 {
+                                    // EOI
+                                    option.drawer.terminate(None)?;
+                                    warnings = ImgWarnings::add(
+                                        warnings,
+                                        Box::new(JpegWarning::new_const(
+                                            JpegWarningKind::IlligalRSTMaker,
+                                            "Unexcept EOI,Is this image corruption?".to_string(),
+                                        )),
+                                    );
+                                    return Ok(warnings);
+                                }
+                            }
+                        } else if bitread.rst()? {
                             warnings = ImgWarnings::add(
                                 warnings,
                                 Box::new(JpegWarning::new_const(
                                     JpegWarningKind::IlligalRSTMaker,
-                                    "Unexcept EOI,Is this image corruption?".to_string(),
+                                    "Unexcept RST marker location,Is this image corruption?"
+                                        .to_string(),
+                                )),
+                            );
+                            mcu_interval = header.interval as isize;
+                            for i in 0..preds.len() {
+                                preds[i] = 0;
+                            }
+                            //                 return Ok(Warning);
+                        }
+                    }
+                }
+            }
+
+            #[cfg(feature = "multithread")]
+            while pending > 0 {
+                let (data, x, y) = receiver
+                    .recv()
+                    .map_err(|_| std::io::Error::other("JPEG worker disconnected"))?;
+                option.drawer.draw(x * dx, y * dy, dx, dy, &data, None)?;
+                pending -= 1;
+            }
+            let b = bitread.next_marker();
+            match b {
+                Ok(marker) => {
+                    match marker {
+                        0xd9 => {
+                            // EOI
+                            option.drawer.terminate(None)?;
+                            return Ok(warnings);
+                        }
+                        0xdd => {
+                            option.drawer.terminate(None)?;
+                            warnings = ImgWarnings::add(
+                                warnings,
+                                Box::new(JpegWarning::new_const(
+                                    JpegWarningKind::UnexpectMarker,
+                                    "DNL,No Support Multi scan/frame".to_string(),
+                                )),
+                            );
+                            return Ok(warnings);
+                        }
+                        _ => {
+                            option.drawer.terminate(None)?;
+                            warnings = ImgWarnings::add(
+                                warnings,
+                                Box::new(JpegWarning::new_const(
+                                    JpegWarningKind::UnexpectMarker,
+                                    "No Support Multi scan/frame".to_string(),
                                 )),
                             );
                             return Ok(warnings);
                         }
                     }
-                } else if bitread.rst()? == true {
-                    warnings = ImgWarnings::add(
-                        warnings,
-                        Box::new(JpegWarning::new_const(
-                            JpegWarningKind::IlligalRSTMaker,
-                            "Unexcept RST marker location,Is this image corruption?".to_string(),
-                        )),
-                    );
-                    mcu_interval = header.interval as isize;
-                    for i in 0..preds.len() {
-                        preds[i] = 0;
-                    }
-                    //                 return Ok(Warning);
                 }
-            }
-        }
-    }
-
-    let b = bitread.next_marker();
-    match b {
-        Ok(marker) => {
-            match marker {
-                0xd9 => {
-                    // EOI
-                    option.drawer.terminate(None)?;
-                    return Ok(warnings);
-                }
-                0xdd => {
-                    option.drawer.terminate(None)?;
+                Err(s) => {
+                    let s = format!("found {:?}", s);
                     warnings = ImgWarnings::add(
                         warnings,
                         Box::new(JpegWarning::new_const(
                             JpegWarningKind::UnexpectMarker,
-                            "DNL,No Support Multi scan/frame".to_string(),
+                            s.to_string(),
                         )),
                     );
-                    return Ok(warnings);
-                }
-                _ => {
-                    option.drawer.terminate(None)?;
-                    warnings = ImgWarnings::add(
-                        warnings,
-                        Box::new(JpegWarning::new_const(
-                            JpegWarningKind::UnexpectMarker,
-                            "No Support Multi scan/frame".to_string(),
-                        )),
-                    );
-                    return Ok(warnings);
                 }
             }
+            option.drawer.terminate(None)?;
+            Ok(warnings)
+        })();
+        #[cfg(feature = "multithread")]
+        {
+            cancelled.store(true, std::sync::atomic::Ordering::Relaxed);
+            drop(sender);
+            drop(receiver);
+            finish_worker(worker)?;
         }
-        Err(s) => {
-            let s = format!("found {:?}", s);
-            warnings = ImgWarnings::add(
-                warnings,
-                Box::new(JpegWarning::new_const(
-                    JpegWarningKind::UnexpectMarker,
-                    s.to_string(),
-                )),
-            );
-        }
-    }
-    option.drawer.terminate(None)?;
-    Ok(warnings)
+        result
+    })
 }
 
-pub fn decode<'decode, B: BinaryReader>(
+pub fn decode<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    crate::decode_guard::run(
+        reader,
+        option,
+        crate::limits::DecodeLimits::default(),
+        decode_inner,
+    )
+}
+
+pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {

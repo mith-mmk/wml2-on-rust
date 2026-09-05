@@ -65,64 +65,158 @@ pub fn transform_frame_with_options(
     destination_icc: &[u8],
     options: TransformOptions,
 ) -> Result<ImageFrame, Error> {
-    frame.validate()?;
-    let channels = match frame.descriptor().model() {
-        ChannelModel::Gray => 1,
-        ChannelModel::RGB => 3,
-        ChannelModel::YCbCr => {
+    FrameTransform::new(source_icc, destination_icc, options)?.transform(frame)
+}
+
+/// Reusable compiled ICC conversion. Scratch storage is bounded to 256 RGB
+/// pixels, independently of image dimensions. Integer samples use their own
+/// plane precision; alpha and padding never enter the CMS.
+pub struct FrameTransform {
+    transform: Transform,
+    destination_icc: Vec<u8>,
+}
+
+impl FrameTransform {
+    pub fn new(
+        source_icc: &[u8],
+        destination_icc: &[u8],
+        options: TransformOptions,
+    ) -> Result<Self, Error> {
+        let source = Profile::from_bytes(source_icc)?;
+        let destination = Profile::from_bytes(destination_icc)?;
+        Ok(Self {
+            transform: Transform::new(&source, &destination, options)?,
+            destination_icc: destination_icc.to_vec(),
+        })
+    }
+
+    pub fn transform(&self, frame: &ImageFrame) -> Result<ImageFrame, Error> {
+        frame.validate()?;
+        if frame.descriptor().alpha() == super::AlphaAssociation::Premultiplied {
             return Err(HighresError::Unsupported(
-                "ICC conversion requires Gray or RGB samples; YCbCr must be explicitly converted first".into(),
+                "ICC requires explicit unpremultiplication of alpha".into(),
             )
             .into());
         }
+        let colors = frame.descriptor().color_information();
+        if colors.nclx().is_some_and(|color| !color.full_range())
+            || colors.av1().is_some_and(|color| !color.full_range())
+        {
+            return Err(HighresError::Unsupported(
+                "ICC requires explicit conversion of limited-range samples".into(),
+            )
+            .into());
+        }
+        let channels = match frame.descriptor().model() {
+            ChannelModel::Gray => 1,
+            ChannelModel::RGB => 3,
+            ChannelModel::YCbCr => {
+                return Err(HighresError::Unsupported(
+                    "ICC requires explicit YCbCr to RGB conversion".into(),
+                )
+                .into());
+            }
+        };
+        let locations = sample_locations(frame, channels)?;
+        if self.transform.input_channels() != channels
+            || self.transform.output_channels() != channels
+        {
+            return Err(TransformError::UnsupportedProfileFeature(
+                "WML2 ICC adapter requires matching Gray/RGB channel counts",
+            )
+            .into());
+        }
+        let mut pixels = frame.pixels().clone();
+        match &mut pixels {
+            PixelBuffer::U8(planes) => self.apply(planes.as_mut_slice(), &locations, frame)?,
+            PixelBuffer::U16(planes) => self.apply(planes.as_mut_slice(), &locations, frame)?,
+            PixelBuffer::F32(planes) => self.apply(planes.as_mut_slice(), &locations, frame)?,
+        }
+        let colors = ColorInformationSet::new().with_icc_profile(self.destination_icc.clone())?;
+        let descriptor = frame.descriptor().clone().with_color_information(colors);
+        let metadata: FrameMetadata = frame.metadata().clone();
+        let mut output = ImageFrame::new(descriptor, pixels)?.with_metadata(metadata);
+        if let Some(timing) = frame.timing() {
+            output = output.with_timing(timing);
+        }
+        Ok(output)
+    }
+
+    fn apply<T: ColorSample>(
+        &self,
+        planes: &mut [Plane<T>],
+        locations: &[SampleLocation],
+        frame: &ImageFrame,
+    ) -> Result<(), Error> {
+        let mut input = [0.0f32; 256 * 3];
+        let mut output = [0.0f32; 256 * 3];
+        let width = frame.descriptor().width() as usize;
+        for y in 0..frame.descriptor().height() as usize {
+            for start in (0..width).step_by(256) {
+                let count = (width - start).min(256);
+                for (x, pixel) in input[..count * locations.len()]
+                    .chunks_exact_mut(locations.len())
+                    .enumerate()
+                {
+                    for (channel, location) in locations.iter().enumerate() {
+                        let plane = &planes[location.plane];
+                        let index = sample_index(plane.layout(), start + x, y, location.offset)?;
+                        pixel[channel] = plane.samples()[index].normalized(location.maximum);
+                    }
+                }
+                self.transform.transform_f32(
+                    &input[..count * locations.len()],
+                    &mut output[..count * locations.len()],
+                )?;
+                for (x, pixel) in output[..count * locations.len()]
+                    .chunks_exact(locations.len())
+                    .enumerate()
+                {
+                    for (channel, location) in locations.iter().enumerate() {
+                        let plane = &mut planes[location.plane];
+                        let index = sample_index(plane.layout(), start + x, y, location.offset)?;
+                        plane.samples_mut()[index] =
+                            T::from_normalized(pixel[channel], location.maximum);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+trait ColorSample: Copy {
+    fn normalized(self, maximum: f32) -> f32;
+    fn from_normalized(value: f32, maximum: f32) -> Self;
+}
+macro_rules! integer_sample {
+    ($ty:ty) => {
+        impl ColorSample for $ty {
+            fn normalized(self, maximum: f32) -> f32 {
+                self as f32 / maximum
+            }
+            fn from_normalized(value: f32, maximum: f32) -> Self {
+                (value.clamp(0.0, 1.0) * maximum).round() as Self
+            }
+        }
     };
-    let locations = sample_locations(frame, channels)?;
-    let source_profile = Profile::from_bytes(source_icc)?;
-    let destination_profile = Profile::from_bytes(destination_icc)?;
-    let transform = Transform::new(&source_profile, &destination_profile, options)?;
-    if transform.input_channels() != channels || transform.output_channels() != channels {
-        return Err(TransformError::UnsupportedProfileFeature(
-            "WML2 ICC adapter requires matching Gray/RGB channel counts",
-        )
-        .into());
+}
+integer_sample!(u8);
+integer_sample!(u16);
+impl ColorSample for f32 {
+    fn normalized(self, _: f32) -> f32 {
+        self
     }
-
-    let mut pixels = frame.pixels().clone();
-    match &mut pixels {
-        PixelBuffer::U8(planes) => {
-            let input = read_color_samples(planes.as_slice(), &locations, frame)?;
-            let mut output = vec![0u8; input.len()];
-            transform.transform_u8(&input, &mut output)?;
-            write_color_samples(planes.as_mut_slice(), &locations, frame, &output)?;
-        }
-        PixelBuffer::U16(planes) => {
-            let input = read_color_samples(planes.as_slice(), &locations, frame)?;
-            let mut output = vec![0u16; input.len()];
-            transform.transform_u16(&input, &mut output)?;
-            write_color_samples(planes.as_mut_slice(), &locations, frame, &output)?;
-        }
-        PixelBuffer::F32(planes) => {
-            let input = read_color_samples(planes.as_slice(), &locations, frame)?;
-            let mut output = vec![0.0f32; input.len()];
-            transform.transform_f32(&input, &mut output)?;
-            write_color_samples(planes.as_mut_slice(), &locations, frame, &output)?;
-        }
+    fn from_normalized(value: f32, _: f32) -> Self {
+        value
     }
-
-    let destination_color =
-        ColorInformationSet::new().with_icc_profile(destination_icc.to_vec())?;
-    let descriptor = frame
-        .descriptor()
-        .clone()
-        .with_color_information(destination_color);
-    let metadata: FrameMetadata = frame.metadata().clone();
-    Ok(ImageFrame::new(descriptor, pixels)?.with_metadata(metadata))
 }
 
 #[derive(Clone, Copy)]
 struct SampleLocation {
     plane: usize,
     offset: usize,
+    maximum: f32,
 }
 
 fn sample_locations(
@@ -155,6 +249,7 @@ fn sample_locations(
                 }
                 found = Some(SampleLocation {
                     plane: plane_index,
+                    maximum: ((1u64 << descriptor.meaningful_bits()) - 1) as f32,
                     offset: descriptor.layout().channel_offsets()[role_index],
                 });
             }
@@ -176,76 +271,4 @@ fn sample_index(
         .and_then(|value| value.checked_add(x.checked_mul(layout.pixel_stride())?))
         .and_then(|value| value.checked_add(offset))
         .ok_or_else(|| HighresError::InvalidLayout("ICC sample index overflows".into()))
-}
-
-fn read_color_samples<T: Copy>(
-    planes: &[Plane<T>],
-    locations: &[SampleLocation],
-    frame: &ImageFrame,
-) -> Result<Vec<T>, HighresError> {
-    let pixels = usize::try_from(frame.descriptor().width())
-        .ok()
-        .and_then(|width| {
-            usize::try_from(frame.descriptor().height())
-                .ok()
-                .and_then(|height| width.checked_mul(height))
-        })
-        .ok_or_else(|| HighresError::InvalidDimensions("ICC pixel count overflows".into()))?;
-    let length = pixels
-        .checked_mul(locations.len())
-        .ok_or_else(|| HighresError::InvalidDimensions("ICC sample count overflows".into()))?;
-    let mut output = Vec::with_capacity(length);
-    for y in 0..frame.descriptor().height() as usize {
-        for x in 0..frame.descriptor().width() as usize {
-            for location in locations {
-                let plane = planes.get(location.plane).ok_or_else(|| {
-                    HighresError::InvalidLayout("ICC plane index is out of range".into())
-                })?;
-                let index = sample_index(plane.layout(), x, y, location.offset)?;
-                output.push(*plane.samples().get(index).ok_or_else(|| {
-                    HighresError::InvalidLayout("ICC sample index is out of range".into())
-                })?);
-            }
-        }
-    }
-    Ok(output)
-}
-
-fn write_color_samples<T: Copy>(
-    planes: &mut [Plane<T>],
-    locations: &[SampleLocation],
-    frame: &ImageFrame,
-    samples: &[T],
-) -> Result<(), HighresError> {
-    let expected = usize::try_from(frame.descriptor().width())
-        .ok()
-        .and_then(|width| {
-            usize::try_from(frame.descriptor().height())
-                .ok()
-                .and_then(|height| width.checked_mul(height))
-        })
-        .and_then(|pixels| pixels.checked_mul(locations.len()))
-        .ok_or_else(|| HighresError::InvalidDimensions("ICC sample count overflows".into()))?;
-    if samples.len() != expected {
-        return Err(HighresError::InvalidLayout(
-            "ICC transform output length does not match the frame".into(),
-        ));
-    }
-    let mut sample_index_in_buffer = 0usize;
-    for y in 0..frame.descriptor().height() as usize {
-        for x in 0..frame.descriptor().width() as usize {
-            for location in locations {
-                let plane = planes.get_mut(location.plane).ok_or_else(|| {
-                    HighresError::InvalidLayout("ICC plane index is out of range".into())
-                })?;
-                let index = sample_index(plane.layout(), x, y, location.offset)?;
-                let destination = plane.samples_mut().get_mut(index).ok_or_else(|| {
-                    HighresError::InvalidLayout("ICC sample index is out of range".into())
-                })?;
-                *destination = samples[sample_index_in_buffer];
-                sample_index_in_buffer += 1;
-            }
-        }
-    }
-    Ok(())
 }

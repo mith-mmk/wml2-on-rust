@@ -6,16 +6,6 @@ use crate::webp::encoder::writer::ByteWriter;
 
 const EXIF_FLAG: u32 = 0x0000_0008;
 
-/// Metadata and payload for a still-image WebP chunk.
-pub(crate) struct StillImageChunk<'a> {
-    pub fourcc: [u8; 4],
-    pub payload: &'a [u8],
-    pub width: usize,
-    pub height: usize,
-    pub has_alpha: bool,
-    pub alpha_payload: Option<&'a [u8]>,
-}
-
 /// Metadata and payload for one animated WebP frame.
 pub(crate) struct AnimationFrameChunk {
     pub fourcc: [u8; 4],
@@ -23,12 +13,6 @@ pub(crate) struct AnimationFrameChunk {
     pub duration_ms: usize,
     pub blend: bool,
     pub dispose_to_background: bool,
-}
-
-/// Internal helper for padded len.
-fn padded_len(size: usize) -> Result<usize, EncoderError> {
-    size.checked_add(size & 1)
-        .ok_or(EncoderError::InvalidParam("encoded output is too large"))
 }
 
 /// Internal helper for append chunk.
@@ -77,69 +61,6 @@ fn encode_le24(value: usize) -> Result<[u8; 3], EncoderError> {
     ])
 }
 
-/// Wraps an encoded still-image payload in a RIFF/WebP container.
-pub(crate) fn wrap_still_webp(
-    image: StillImageChunk<'_>,
-    exif: Option<&[u8]>,
-) -> Result<Vec<u8>, EncoderError> {
-    let padded_image_size = padded_len(image.payload.len())?;
-    if exif.is_none() && image.alpha_payload.is_none() {
-        let body_size = 4usize
-            .checked_add(8)
-            .and_then(|size| size.checked_add(padded_image_size))
-            .ok_or(EncoderError::InvalidParam("encoded output is too large"))?;
-        let mut body = ByteWriter::with_capacity(body_size);
-        body.write_bytes(b"WEBP");
-        append_chunk(&mut body, &image.fourcc, image.payload)?;
-        return extend_riff(body);
-    }
-
-    let vp8x_payload_size = 10usize;
-    let padded_exif_size = match exif {
-        Some(payload) => padded_len(payload.len())?,
-        None => 0,
-    };
-    let padded_alpha_size = match image.alpha_payload {
-        Some(payload) => padded_len(payload.len())?,
-        None => 0,
-    };
-    let body_size = 4usize
-        .checked_add(8 + vp8x_payload_size)
-        .and_then(|size| size.checked_add(8 + padded_image_size))
-        .and_then(|size| {
-            image
-                .alpha_payload
-                .map_or(Some(size), |_| size.checked_add(8 + padded_alpha_size))
-        })
-        .and_then(|size| exif.map_or(Some(size), |_| size.checked_add(8 + padded_exif_size)))
-        .ok_or(EncoderError::InvalidParam("encoded output is too large"))?;
-    let mut body = ByteWriter::with_capacity(body_size);
-    body.write_bytes(b"WEBP");
-
-    let mut flags = 0;
-    if exif.is_some() {
-        flags |= EXIF_FLAG;
-    }
-    if image.has_alpha {
-        flags |= ALPHA_FLAG;
-    }
-    let width = encode_le24(image.width)?;
-    let height = encode_le24(image.height)?;
-    let mut vp8x_payload = ByteWriter::with_capacity(10);
-    vp8x_payload.write_u32_le(flags);
-    vp8x_payload.write_bytes(&width);
-    vp8x_payload.write_bytes(&height);
-
-    append_chunk(&mut body, b"VP8X", &vp8x_payload.into_bytes())?;
-    if let Some(alpha) = image.alpha_payload {
-        append_chunk(&mut body, b"ALPH", alpha)?;
-    }
-    append_chunk(&mut body, &image.fourcc, image.payload)?;
-    if let Some(exif) = exif {
-        append_chunk(&mut body, b"EXIF", exif)?;
-    }
-    extend_riff(body)
-}
 /// Encodes a 24-bit little-endian integer.
 fn encode_u24(value: usize, name: &'static str) -> Result<[u8; 3], EncoderError> {
     if value > 0x00ff_ffff {

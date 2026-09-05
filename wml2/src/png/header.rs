@@ -58,27 +58,49 @@ fn chunk_size_error(name: &str, length: u32, expected: &str) -> Error {
     ))
 }
 
-pub(crate) fn to_string<'a>(text: &[u8], compressed: bool) -> (String, String) {
-    let mut split = 0;
-    let keyword = read_ascii_string(text, 0, text.len());
-    for i in 0..text.len() {
-        if text[i] == 0 {
-            split = i + 1;
-            break;
-        }
+pub(crate) fn validate_chunk_available<B: BinaryReader>(
+    reader: &mut B,
+    length: u32,
+) -> Result<(), Error> {
+    let current = reader.offset()?;
+    let end = reader.seek(std::io::SeekFrom::End(0))?;
+    reader.seek(std::io::SeekFrom::Start(current))?;
+    if end.saturating_sub(current) < u64::from(length) + 4 {
+        return Err(chunk_size_error(
+            "chunk",
+            length,
+            "available input including CRC",
+        ));
     }
-    let string = if compressed {
-        let decoded = miniz_oxide::inflate::decompress_to_vec_zlib(&text[split + 1..]);
-        if let Ok(decode) = decoded {
-            decode
-        } else {
-            b"".to_vec()
+    crate::limits::check(
+        length as usize,
+        crate::limits::current().input_bytes,
+        "PNG chunk",
+    )?;
+    Ok(())
+}
+
+pub(crate) fn to_string(text: &[u8], compressed: bool) -> Result<(String, String), Error> {
+    let split = text
+        .iter()
+        .position(|b| *b == 0)
+        .ok_or_else(|| chunk_size_error("text", text.len() as u32, "NUL-terminated keyword"))?;
+    let keyword = String::from_utf8_lossy(&text[..split]).into_owned();
+    let payload = &text[split + 1..];
+    let bytes = if compressed {
+        if payload.first() != Some(&0) {
+            return Err(chunk_size_error(
+                "zTXt",
+                text.len() as u32,
+                "compression method 0",
+            ));
         }
+        crate::limits::inflate_metadata(&payload[1..])?
     } else {
-        text[split..].to_vec()
+        crate::limits::charge_metadata(payload.len())?;
+        payload.to_vec()
     };
-    let string = read_ascii_string(&string, 0, string.len());
-    (keyword, string)
+    Ok((keyword, read_ascii_string(&bytes, 0, bytes.len())))
 }
 
 #[derive(Debug, Clone)]
@@ -174,6 +196,9 @@ impl PngHeader {
             let buf = reader.read_bytes_no_move(8)?;
             let length = read_u32_be(&buf, 0);
             let chunck = &buf[4..];
+            reader.skip_ptr(8)?;
+            validate_chunk_available(reader, length)?;
+            reader.seek(std::io::SeekFrom::Current(-8))?;
             if chunck == IMAGE_DATA {
                 header.image_lenghth = length;
                 break;
@@ -345,13 +370,23 @@ impl PngHeader {
                 let _crc = reader.read_u32_be()?;
             } else if chunck == TEXTDATA || chunck == I18N_TEXT {
                 reader.skip_ptr(8)?;
+                crate::limits::check(
+                    length as usize,
+                    crate::limits::current().metadata_bytes,
+                    "PNG text",
+                )?;
                 let text = reader.read_bytes_as_vec(length as usize)?;
-                header.text.push(to_string(&text, false));
+                header.text.push(to_string(&text, false)?);
                 let _crc = reader.read_u32_be()?;
             } else if chunck == COMPRESSED_TEXTUAL_DATA {
                 reader.skip_ptr(8)?;
+                crate::limits::check(
+                    length as usize,
+                    crate::limits::current().metadata_bytes,
+                    "compressed PNG text",
+                )?;
                 let text = reader.read_bytes_as_vec(length as usize)?;
-                header.text.push(to_string(&text, true));
+                header.text.push(to_string(&text, true)?);
                 let _crc = reader.read_u32_be()?;
             } else if chunck == BACKGROUND_COLOR {
                 reader.skip_ptr(8)?;
@@ -405,6 +440,11 @@ impl PngHeader {
                 }
                 header.is_apng = true;
                 header.num_frames = reader.read_u32_be()?;
+                crate::limits::check(
+                    header.num_frames as usize,
+                    crate::limits::current().frames,
+                    "APNG frame count",
+                )?;
                 header.num_plays = reader.read_u32_be()?;
                 let _crc = reader.read_u32_be()?;
             } else if chunck == FRAME_CONTROLE {
@@ -424,6 +464,11 @@ impl PngHeader {
                     dispose_op: reader.read_byte()?,
                     blend_op: reader.read_byte()?,
                 };
+                crate::limits::check(
+                    header.frame_controls.len().saturating_add(1),
+                    crate::limits::current().frames,
+                    "APNG frame controls",
+                )?;
                 header.frame_controls.push(frame_control);
                 let _crc = reader.read_u32_be()?;
             } else if chunck == SRGB {
@@ -438,11 +483,17 @@ impl PngHeader {
             } else if chunck == ICC_PROFILE {
                 // noimpl
                 reader.skip_ptr(8)?;
+                crate::limits::check(
+                    length as usize,
+                    crate::limits::current().metadata_bytes,
+                    "compressed ICC",
+                )?;
                 let icc_profile = reader.read_bytes_as_vec(length as usize)?;
                 header.iccprofile = Some(icc_profile);
                 let _crc = reader.read_u32_be()?;
             } else if chunck == EXIF_PROFILE {
                 reader.skip_ptr(8)?;
+                crate::limits::charge_metadata(length as usize)?;
                 let exif = reader.read_bytes_as_vec(length as usize)?;
                 header.exif = Some(exif);
                 let _crc = reader.read_u32_be()?;
@@ -450,6 +501,7 @@ impl PngHeader {
                 reader.skip_ptr(8)?;
                 #[cfg(feature = "c2pa")]
                 {
+                    crate::limits::charge_metadata(length as usize)?;
                     let mut c2pa = reader.read_bytes_as_vec(length as usize)?;
                     header.c2pa.get_or_insert_with(Vec::new).append(&mut c2pa);
                 }

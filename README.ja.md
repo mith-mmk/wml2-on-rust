@@ -13,6 +13,14 @@
 - 静止画に加えて、一部のアニメーション / マルチページ形式にも対応
 - 非 WASM ターゲットではファイル I/O helper も利用可能
 
+ファイル変換は同一ディレクトリの一時ファイルから出力を確定し、通常の符号化・書込み失敗時に既存出力を保持します。
+デコード入口には変更可能な資源上限があります。大きい信頼済み画像には
+`image_from_with_limits` / `image_decoder_with_limits` と `DecodeLimits` を使用できます。
+`FrameTransform` はコンパイル済みICC変換を再利用し、有効精度・alpha・timingを保持します。
+ネイティブAVIFの精度縮小は明示指定し、ImageBufferのWebPアニメーション符号化ではフレーム画素を借用します。
+既定上限とAPIの適用範囲は[実装・互換性記録](docs/review-plan-progress.md)、
+性能とトレードオフは[測定結果](docs/review-performance.md)を参照してください。
+
 ## 実装例
 
 `wml2-test/examples` を参照してください。

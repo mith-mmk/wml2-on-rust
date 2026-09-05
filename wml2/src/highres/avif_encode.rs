@@ -1,5 +1,9 @@
 //! Explicit adapter from typed WML2 frames to the standalone AVIF encoder.
 
+#[cfg(test)]
+#[path = "avif_encode_bench.rs"]
+mod review_bench;
+
 use avifenc_codec::{EncoderError, FrameBuffers, PlaneBuffer, PlaneLayout};
 
 pub use avifenc_codec::{NativeEncodeOptions, NativeSubsampling};
@@ -9,7 +13,7 @@ use super::{AlphaAssociation, ChannelModel, ChannelRole, HighresError, ImageFram
 /// Integer conversion requested before encoding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Quantization {
-    /// Reject a source whose meaningful precision is wider than the output.
+    /// Require source meaningful precision to equal the output depth.
     None,
     /// Discard low-order bits when reducing an integer source to the explicit
     /// output depth. The shift is derived from the source descriptor.
@@ -71,7 +75,25 @@ pub fn encode_native_with_quantization(
 ) -> Result<Vec<u8>, EncodeError> {
     frame.validate()?;
     validate_options(frame, options)?;
+    for plane in frame.descriptor().planes() {
+        quantize(0, plane.meaningful_bits(), options.bit_depth, quantization)?;
+    }
     let (color_roles, subsampling) = color_layout(frame.descriptor().model(), options.subsampling)?;
+    // Reject a spatial format mismatch before extracting any owned plane.
+    for (index, role) in color_roles.iter().copied().enumerate() {
+        let (_, descriptor, _) = find_role(frame, role)?;
+        let (sx, sy) = if index == 0 { (0, 0) } else { subsampling };
+        let expected_width = frame.descriptor().width().div_ceil(1u32 << sx);
+        let expected_height = frame.descriptor().height().div_ceil(1u32 << sy);
+        if descriptor.layout().width() != expected_width
+            || descriptor.layout().height() != expected_height
+        {
+            return Err(HighresError::Unsupported(
+                "AVIF output subsampling must match the native source planes".into(),
+            )
+            .into());
+        }
+    }
     let mut planes = Vec::with_capacity(color_roles.len() + 1);
     for (plane_index, role) in color_roles.into_iter().enumerate() {
         let plane = encode_role(frame, role, options.bit_depth, quantization)?;
@@ -190,7 +212,7 @@ fn encode_role(
     frame: &ImageFrame,
     role: ChannelRole,
     target_bits: u8,
-    quantization: Quantization,
+    _quantization: Quantization,
 ) -> Result<EncodedSamples, EncodeError> {
     let (plane_index, descriptor, offset) = find_role(frame, role)?;
     let layout = descriptor.layout();
@@ -201,48 +223,27 @@ fn encode_role(
     let length = width
         .checked_mul(height)
         .ok_or_else(|| HighresError::InvalidDimensions("plane sample count overflows".into()))?;
-    let mut samples = Vec::with_capacity(length);
-    for y in 0..height {
-        for x in 0..width {
-            let index = y
-                .checked_mul(layout.row_stride())
-                .and_then(|value| value.checked_add(x.checked_mul(layout.pixel_stride())?))
-                .and_then(|value| value.checked_add(offset))
-                .ok_or_else(|| HighresError::InvalidLayout("AVIF sample index overflows".into()))?;
-            let sample = match frame.pixels() {
-                PixelBuffer::U8(planes) => u16::from(
-                    *planes
-                        .as_slice()
-                        .get(plane_index)
-                        .ok_or_else(|| {
-                            HighresError::InvalidLayout("plane index is out of range".into())
-                        })?
-                        .samples()
-                        .get(index)
-                        .ok_or_else(|| {
-                            HighresError::InvalidLayout("sample index is out of range".into())
-                        })?,
-                ),
-                PixelBuffer::U16(planes) => *planes
-                    .as_slice()
-                    .get(plane_index)
-                    .ok_or_else(|| {
-                        HighresError::InvalidLayout("plane index is out of range".into())
-                    })?
-                    .samples()
-                    .get(index)
-                    .ok_or_else(|| {
-                        HighresError::InvalidLayout("sample index is out of range".into())
-                    })?,
-                PixelBuffer::F32(_) => unreachable!("F32 input is rejected before role extraction"),
-            };
-            samples.push(quantize(
-                sample,
-                descriptor.meaningful_bits(),
-                target_bits,
-                quantization,
-            )?);
-        }
+    let shift = descriptor.meaningful_bits() - target_bits;
+    let mut samples = Vec::new();
+    samples
+        .try_reserve_exact(length)
+        .map_err(|_| HighresError::InvalidDimensions("AVIF sample allocation failed".into()))?;
+    match frame.pixels() {
+        PixelBuffer::U8(planes) => extract_samples(
+            planes.as_slice()[plane_index].samples(),
+            layout,
+            offset,
+            shift,
+            &mut samples,
+        ),
+        PixelBuffer::U16(planes) => extract_samples(
+            planes.as_slice()[plane_index].samples(),
+            layout,
+            offset,
+            shift,
+            &mut samples,
+        ),
+        PixelBuffer::F32(_) => unreachable!("F32 rejected before extraction"),
     }
     Ok(EncodedSamples {
         samples,
@@ -255,6 +256,21 @@ struct EncodedSamples {
     samples: Vec<u16>,
     width: usize,
     height: usize,
+}
+
+fn extract_samples<T: Copy + Into<u16>>(
+    source: &[T],
+    layout: &super::PlaneLayout,
+    offset: usize,
+    shift: u8,
+    output: &mut Vec<u16>,
+) {
+    for y in 0..layout.height() as usize {
+        let row = y * layout.row_stride() + offset;
+        for x in 0..layout.width() as usize {
+            output.push(source[row + x * layout.pixel_stride()].into() >> shift);
+        }
+    }
 }
 
 fn find_role(
@@ -288,6 +304,11 @@ fn quantize(
     if source_bits > 16 || target_bits > 16 {
         return Err(HighresError::InvalidSamples(
             "AVIF integer precision is outside U16 storage".into(),
+        ));
+    }
+    if source_bits < target_bits {
+        return Err(HighresError::Unsupported(
+            "increasing integer precision requires an explicit conversion".into(),
         ));
     }
     if source_bits > target_bits {

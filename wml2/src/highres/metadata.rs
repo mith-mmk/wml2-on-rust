@@ -51,6 +51,7 @@ pub struct Av1ColorInformation {
     transfer: u16,
     matrix: u16,
     full_range: bool,
+    description_present: bool,
 }
 
 impl Av1ColorInformation {
@@ -60,7 +61,21 @@ impl Av1ColorInformation {
             transfer,
             matrix,
             full_range,
+            description_present: true,
         }
+    }
+    /// Preserve an omitted AV1 color_description without inventing explicit CICP.
+    pub const fn without_description(full_range: bool) -> Self {
+        Self {
+            primaries: 2,
+            transfer: 2,
+            matrix: 2,
+            full_range,
+            description_present: false,
+        }
+    }
+    pub const fn description_present(self) -> bool {
+        self.description_present
     }
     pub const fn primaries(self) -> u16 {
         self.primaries

@@ -323,6 +323,7 @@ fn encode_apng_normalizes_offset_first_frame_to_full_canvas() {
 }
 
 #[test]
+#[cfg(feature = "webp")]
 fn encode_viewer_error_sample_to_png_uses_full_canvas_first_frame() {
     let path = bundled_test_image_path("WML2Viewer_error.webp");
     let mut image = image_from_file(path.to_string_lossy().into_owned()).unwrap();

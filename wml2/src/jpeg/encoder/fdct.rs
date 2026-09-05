@@ -82,7 +82,7 @@ pub(crate) fn fdct_block(f: &[f32; 64]) -> [f32; 64] {
     }
 
     for i in 0..8 {
-        let f0 = zz[i + 0 * 8];
+        let f0 = zz[i];
         let f1 = zz[i + 1 * 8];
         let f2 = zz[i + 2 * 8];
         let f3 = zz[i + 3 * 8];
@@ -105,7 +105,7 @@ pub(crate) fn fdct_block(f: &[f32; 64]) -> [f32; 64] {
         let c1 = a1 + a2;
         let c2 = a1 - a2;
 
-        zz[i + 0 * 8] = c0 + c1;
+        zz[i] = c0 + c1;
         zz[i + 4 * 8] = c0 - c1;
         zz[i + 2 * 8] = c2 * m6 + c3 * m2;
         zz[i + 6 * 8] = c3 * m6 - c2 * m2;

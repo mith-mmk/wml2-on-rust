@@ -30,13 +30,6 @@ impl ByteWriter {
         write_u16_le(value, &mut self.bytes);
     }
 
-    /// Appends a little-endian 24-bit integer.
-    pub(crate) fn write_u24_le(&mut self, value: u32) {
-        self.write_byte((value & 0xff) as u8);
-        self.write_byte(((value >> 8) & 0xff) as u8);
-        self.write_byte(((value >> 16) & 0xff) as u8);
-    }
-
     /// Appends a little-endian 32-bit integer.
     pub(crate) fn write_u32_le(&mut self, value: u32) {
         write_u32_le(value, &mut self.bytes);

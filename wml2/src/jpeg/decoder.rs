@@ -477,8 +477,8 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
     let mut _f = [0_f32; 64];
     let mut vals = [0_u8; 64];
     let m0 = 1.847759;
-    let m1 = 1.4142135;
-    let m3 = 1.4142135;
+    let m1 = std::f32::consts::SQRT_2;
+    let m3 = std::f32::consts::SQRT_2;
     let m5 = 0.76536685;
     let m2 = m0 - m5;
     let m4 = m0 + m5;
@@ -493,7 +493,7 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
     let s7 = 0.09754512;
 
     for i in 0..8 {
-        let g0 = f[0 * 8 + i] as f32 * s0;
+        let g0 = f[i] as f32 * s0;
         let g1 = f[4 * 8 + i] as f32 * s4;
         let g2 = f[2 * 8 + i] as f32 * s2;
         let g3 = f[6 * 8 + i] as f32 * s6;
@@ -550,7 +550,7 @@ pub(crate) fn idct(f: &[i32]) -> Vec<u8> {
         let b6 = c6 - c7;
         let b7 = c7;
 
-        _f[0 * 8 + i] = b0 + b7;
+        _f[i] = b0 + b7;
         _f[1 * 8 + i] = b1 + b6;
         _f[2 * 8 + i] = b2 + b5;
         _f[3 * 8 + i] = b3 + b4;

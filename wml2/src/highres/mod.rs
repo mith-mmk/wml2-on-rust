@@ -7,6 +7,9 @@
 mod metadata;
 mod types;
 
+#[cfg(feature = "tiff")]
+pub mod tiff;
+
 pub use metadata::{
     Av1ColorInformation, CleanAperture, ColorInformationSet, ColorProvenance, FrameMetadata,
     NclxColorInformation, PixelAspectRatio, Rect, Rotation,

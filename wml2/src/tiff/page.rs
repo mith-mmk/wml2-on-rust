@@ -5,6 +5,30 @@ use super::{
 };
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;
+
+/// NewSubfileType bits 0/2 denote reduced images/masks; bit 1 is a normal
+/// document page. Old SubfileType 1 and 3 are also full-resolution pages.
+#[cfg(feature = "tiff")]
+pub(crate) fn is_display_page(page: &Tiff) -> bool {
+    page.newsubfiletype & 5 == 0 && matches!(page.subfiletype, 0 | 1 | 3)
+}
+
+/// The legacy output is RGB. A Gray/CMYK source profile is provenance, not
+/// a profile for the converted RGB pixels. Keep it in source metadata only.
+#[cfg(feature = "tiff")]
+pub(crate) fn rgba8_icc_profile(page: &Tiff) -> Option<&[u8]> {
+    let profile = page.icc_profile.as_deref()?;
+    if !matches!(page.photometric_interpretation, 2 | 6) {
+        return None;
+    }
+    if let Some(space) = profile.get(16..20) {
+        if space != b"RGB " {
+            return None;
+        }
+    }
+    Some(profile)
+}
+
 pub(crate) fn read_pages(reader: &mut dyn BinaryReader) -> Result<Tiff, Error> {
     let doc = TiffDocument::read(reader)?;
     let mut pages = Vec::new();
@@ -45,6 +69,24 @@ pub(crate) fn read_pages(reader: &mut dyn BinaryReader) -> Result<Tiff, Error> {
             }
         }
         let mut page = Tiff::from_headers(ifd.headers(doc.variant, doc.endian)?)?;
+        if page.photometric_interpretation == 5 {
+            for (tag, default) in [(0x14c, 1), (0x14e, 4)] {
+                let value = if let Some(entry) = ifd.entries.iter().find(|entry| entry.tag == tag) {
+                    if entry.type_id != 3 || entry.count != 1 {
+                        return Err(invalid("TIFF InkSet/NumberOfInks must contain one SHORT"));
+                    }
+                    entry.unsigned(doc.endian)?[0]
+                } else {
+                    default
+                };
+                if value != default {
+                    return Err(Box::new(crate::error::ImgError::new_const(
+                        crate::error::ImgErrorKind::NoSupportFormat,
+                        "TIFF separated color supports only InkSet=CMYK with four inks".into(),
+                    )));
+                }
+            }
+        }
         for entry in &ifd.entries {
             match entry.tag {
                 0xfe | 0xff => {

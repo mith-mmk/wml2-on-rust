@@ -21,6 +21,7 @@ mod packbits;
 
 use self::compression::decompress_block;
 use crate::tiff::block::{TiffBlock, blocks};
+use crate::tiff::page::is_display_page;
 mod compression;
 
 fn create_pallet(bits: usize, is_black_zero: bool) -> Vec<RGBA> {
@@ -1381,19 +1382,27 @@ pub fn decode<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let mut header = Tiff::new(reader)?;
-
-    let mut count = 1;
-    if header.multi_page.len() > 0 {
-        for append in header.multi_page.iter() {
-            if append.newsubfiletype == 0 && append.subfiletype == 0 {
-                count += 1;
-            }
-        }
+    let mut document = Tiff::new(reader)?;
+    let appended = std::mem::take(&mut *document.multi_page);
+    let mut pages = Vec::with_capacity(appended.len().saturating_add(1));
+    if is_display_page(&document) {
+        pages.push(document);
+        pages.extend(appended.into_iter().filter(is_display_page));
+    } else {
+        let mut iter = appended.into_iter();
+        let first = iter
+            .find(is_display_page)
+            .ok_or_else(|| std::io::Error::other("TIFF contains no display page"))?;
+        pages.push(first);
+        pages.extend(iter.filter(is_display_page));
     }
+    let count = pages.len();
+    let header = pages
+        .first()
+        .ok_or_else(|| std::io::Error::other("TIFF contains no display page"))?;
     option
         .drawer
-        .set_metadata("image pages", DataMap::UInt(count))?;
+        .set_metadata("image pages", DataMap::UInt(u64::try_from(count)?))?;
 
     option
         .drawer
@@ -1415,49 +1424,52 @@ pub fn decode<'decode, B: BinaryReader>(
         DataMap::Ascii(header.compression.to_string()),
     )?;
     if let Some(ref icc_profile) = header.icc_profile {
+        option.drawer.set_metadata(
+            "Source ICC Profile",
+            DataMap::ICCProfile(icc_profile.to_vec()),
+        )?;
+    }
+    if let Some(icc_profile) = crate::tiff::page::rgba8_icc_profile(&header) {
         option
             .drawer
             .set_metadata("ICC Profile", DataMap::ICCProfile(icc_profile.to_vec()))?;
     }
     let mut warnings = None;
 
-    let warn = compression_decode(reader, option, &mut header, true, count > 1)?;
+    let warn = compression_decode(reader, option, &pages[0], true, count > 1)?;
 
     warnings = ImgWarnings::append(warnings, warn);
 
     if count > 1 {
-        for append in header.multi_page.iter() {
-            if append.newsubfiletype == 0 && append.subfiletype == 0 {
-                let rect = ImageRect {
-                    width: append.width as usize,
-                    height: append.height as usize,
-                    start_x: append.startx as i32,
-                    start_y: append.starty as i32,
-                };
-                let opt = NextOptions {
-                    flag: NextOption::Next,
-                    await_time: 0,
-                    image_rect: Some(rect),
-                    dispose_option: None,
-                    blend: None,
-                };
+        for append in pages.iter().skip(1) {
+            let rect = ImageRect {
+                width: append.width as usize,
+                height: append.height as usize,
+                start_x: append.startx as i32,
+                start_y: append.starty as i32,
+            };
+            let opt = NextOptions {
+                flag: NextOption::Next,
+                await_time: 0,
+                image_rect: Some(rect),
+                dispose_option: None,
+                blend: None,
+            };
 
-                let result = option.drawer.next(Some(opt))?;
-                if let Some(response) = result {
-                    if response.response == ResponseCommand::Abort {
-                        return Ok(warnings);
-                    }
+            let result = option.drawer.next(Some(opt))?;
+            if let Some(response) = result {
+                if response.response == ResponseCommand::Abort {
+                    return Ok(warnings);
                 }
-                let header = &mut append.clone();
-                let result = compression_decode(reader, option, header, false, false);
-                match result {
-                    Ok(warn) => {
-                        warnings = ImgWarnings::append(warnings, warn);
-                    }
-                    Err(error) => {
-                        let warning = TiffWarning::new(error.to_string());
-                        warnings = ImgWarnings::add(warnings, Box::new(warning));
-                    }
+            }
+            let result = compression_decode(reader, option, append, false, false);
+            match result {
+                Ok(warn) => {
+                    warnings = ImgWarnings::append(warnings, warn);
+                }
+                Err(error) => {
+                    let warning = TiffWarning::new(error.to_string());
+                    warnings = ImgWarnings::add(warnings, Box::new(warning));
                 }
             }
         }

@@ -425,6 +425,51 @@ fn write_encoded_image(
     Ok(())
 }
 
+struct SplitFrame<'a> {
+    width: usize,
+    height: usize,
+    start_x: i32,
+    start_y: i32,
+    buffer: &'a [u8],
+    control: Option<&'a wml2::draw::NextOptions>,
+}
+
+fn is_tiff_image(image: &ImageBuffer) -> bool {
+    matches!(
+        image
+            .metadata
+            .as_ref()
+            .and_then(|metadata| metadata.get("Format")),
+        Some(DataMap::Ascii(format)) if format.eq_ignore_ascii_case("tiff")
+    )
+}
+
+fn split_frames(image: &ImageBuffer, include_primary: bool) -> Vec<SplitFrame<'_>> {
+    let animation = image.animation.as_deref().unwrap_or_default();
+    let mut frames = Vec::with_capacity(animation.len() + usize::from(include_primary));
+    if include_primary {
+        if let Some(buffer) = image.buffer.as_deref() {
+            frames.push(SplitFrame {
+                width: image.width,
+                height: image.height,
+                start_x: 0,
+                start_y: 0,
+                buffer,
+                control: None,
+            });
+        }
+    }
+    frames.extend(animation.iter().map(|layer| SplitFrame {
+        width: layer.width,
+        height: layer.height,
+        start_x: layer.start_x,
+        start_y: layer.start_y,
+        buffer: &layer.buffer,
+        control: Some(&layer.control),
+    }));
+    frames
+}
+
 fn write_split_images(
     config: &Config,
     input_file: &Path,
@@ -460,20 +505,36 @@ fn write_split_images(
         .ok_or("input file has no file name")?
         .to_string_lossy()
         .into_owned();
-    println!("Animation frames {}", animation.len());
-    for (index, layer) in animation.iter().enumerate() {
-        println!(
-            "{}: {} {} {}x{} {}ms blend {:?} dispose {:?}",
-            index,
-            layer.start_x,
-            layer.start_y,
-            layer.width,
-            layer.height,
-            layer.control.await_time,
-            layer.control.blend,
-            layer.control.dispose_option
+    let frames = split_frames(&image, is_tiff_image(&image));
+    println!("Animation frames {}", frames.len());
+    for (index, split_frame) in frames.iter().enumerate() {
+        if let Some(control) = split_frame.control {
+            println!(
+                "{}: {} {} {}x{} {}ms blend {:?} dispose {:?}",
+                index,
+                split_frame.start_x,
+                split_frame.start_y,
+                split_frame.width,
+                split_frame.height,
+                control.await_time,
+                control.blend,
+                control.dispose_option
+            );
+        } else {
+            println!(
+                "{}: {} {} {}x{} (base page)",
+                index,
+                split_frame.start_x,
+                split_frame.start_y,
+                split_frame.width,
+                split_frame.height
+            );
+        }
+        let mut frame = ImageBuffer::from_buffer(
+            split_frame.width,
+            split_frame.height,
+            split_frame.buffer.to_vec(),
         );
-        let mut frame = ImageBuffer::from_buffer(layer.width, layer.height, layer.buffer.clone());
         let output_file = config
             .output_dir
             .join(format!("{}_{:03}.{}", base_name, index, extension));
@@ -706,6 +767,53 @@ mod tests {
         assert!(should_split_output(&config, Path::new("frame.gif"), &image));
         let options = config.encode_options().unwrap();
         assert!(matches!(options.get("optimize"), Some(DataMap::UInt(7))));
+    }
+
+    #[test]
+    fn tiff_split_frames_include_first_page_before_animation() {
+        let first_page = vec![1, 2, 3, 4];
+        let second_page = vec![5, 6, 7, 8];
+        let mut image = ImageBuffer::from_buffer(1, 1, first_page.clone());
+        image.metadata = Some(HashMap::from([(
+            "Format".to_string(),
+            DataMap::Ascii("Tiff".to_string()),
+        )]));
+        image.animation = Some(vec![AnimationLayer {
+            width: 1,
+            height: 1,
+            start_x: 0,
+            start_y: 0,
+            buffer: second_page.clone(),
+            control: NextOptions::new(),
+        }]);
+
+        assert!(is_tiff_image(&image));
+        let frames = split_frames(&image, is_tiff_image(&image));
+        assert_eq!(frames.len(), 2);
+        assert_eq!(frames[0].buffer, first_page.as_slice());
+        assert_eq!(frames[1].buffer, second_page.as_slice());
+    }
+
+    #[test]
+    fn non_tiff_split_frames_keep_animation_only_contract() {
+        let mut image = ImageBuffer::from_buffer(1, 1, vec![1, 2, 3, 4]);
+        image.metadata = Some(HashMap::from([(
+            "Format".to_string(),
+            DataMap::Ascii("GIF".to_string()),
+        )]));
+        image.animation = Some(vec![AnimationLayer {
+            width: 1,
+            height: 1,
+            start_x: 0,
+            start_y: 0,
+            buffer: vec![5, 6, 7, 8],
+            control: NextOptions::new(),
+        }]);
+
+        assert!(!is_tiff_image(&image));
+        let frames = split_frames(&image, is_tiff_image(&image));
+        assert_eq!(frames.len(), 1);
+        assert_eq!(frames[0].buffer, &[5, 6, 7, 8]);
     }
 
     #[test]

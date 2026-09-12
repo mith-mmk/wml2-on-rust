@@ -326,6 +326,43 @@ fn decode(bytes: &[u8]) -> Vec<u8> {
 }
 
 #[test]
+fn legacy_icc_keeps_source_profiles_separate_from_rgb_output() {
+    use wml2::metadata::DataMap;
+    use wml2::tiff::header::DataPack;
+
+    for (photo, channels, signature, active) in [
+        (1, 1, b"GRAY", false),
+        (5, 4, b"CMYK", false),
+        (2, 3, b"RGB ", true),
+        (2, 3, b"CMYK", false),
+    ] {
+        let mut profile = vec![0; 128];
+        profile[16..20].copy_from_slice(signature);
+        let mut p = page(
+            1,
+            1,
+            &vec![8; channels],
+            channels as u16,
+            photo,
+            vec![vec![0; channels]],
+        );
+        p.icc = profile.clone();
+        for variant in [Variant::Classic, Variant::Big] {
+            let image = image_load(&build_pages(&[p.clone()], variant, false)).unwrap();
+            let metadata = image.metadata.unwrap();
+            assert!(matches!(metadata.get("Source ICC Profile"),
+                             Some(DataMap::ICCProfile(data)) if data == &profile));
+            assert_eq!(metadata.contains_key("ICC Profile"), active);
+            let Some(DataMap::Exif(headers)) = metadata.get("Tiff headers") else {
+                panic!("source TIFF metadata missing");
+            };
+            assert!(headers.headers.iter().any(|entry| entry.tagid == 34675
+                && matches!(&entry.data, DataPack::Undef(data) if data == &profile)));
+        }
+    }
+}
+
+#[test]
 fn associated_alpha_is_converted_to_straight_in_legacy_output() {
     for be in [false, true] {
         for bits in [8, 16] {

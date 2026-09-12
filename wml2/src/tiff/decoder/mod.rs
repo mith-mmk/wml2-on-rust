@@ -181,8 +181,13 @@ pub(crate) fn decode_samples_u16(
     let input_len = reader.seek(std::io::SeekFrom::End(0))?;
     for block in &block_list {
         block.validate_range(input_len)?;
-        let compressed = read_block(reader, block)?;
         let expected = block_expected_bytes(block, page)?;
+        crate::limits::check(
+            expected,
+            crate::limits::current().expanded_bytes,
+            "expanded TIFF block",
+        )?;
+        let compressed = read_block(reader, block)?;
         let mut data = decompress_block(
             &page.compression,
             &compressed,
@@ -326,8 +331,13 @@ fn decode_blocked<B: BinaryReader>(
                     )
                     .into());
                 }
-                let compressed = read_block(reader, &block)?;
                 let expected = block_expected_bytes(&block, header)?;
+                crate::limits::check(
+                    expected,
+                    crate::limits::current().expanded_bytes,
+                    "expanded TIFF block",
+                )?;
+                let compressed = read_block(reader, &block)?;
                 let mut data = decompress_block(
                     &header.compression,
                     &compressed,
@@ -360,27 +370,30 @@ fn decode_blocked<B: BinaryReader>(
                     }
                 }
             }
-            let mut draw_header = header.clone();
-            draw_header.width = u32::try_from(first.stored_width)?;
-            draw_header.height = u32::try_from(first.stored_height)?;
-            draw_header.planar_config = 1;
-            draw_header.predictor = 1;
-            draw_tile(
+            draw_tile_internal(
                 &tile,
                 first.y,
                 first.draw_height,
                 first.x,
                 first.draw_width,
                 option,
-                &draw_header,
+                header,
+                true,
+                Some(first.stored_width),
+                Some(first.stored_height),
             )?;
         }
         return Ok(None);
     }
 
     for block in &block_list {
-        let compressed = read_block(reader, block)?;
         let expected = block_expected_bytes(block, header)?;
+        crate::limits::check(
+            expected,
+            crate::limits::current().expanded_bytes,
+            "expanded TIFF block",
+        )?;
+        let compressed = read_block(reader, block)?;
         let mut data = decompress_block(
             &header.compression,
             &compressed,
@@ -400,19 +413,17 @@ fn decode_blocked<B: BinaryReader>(
                 header.tiff_headers.endian,
             )?;
         }
-        let mut draw_header = header.clone();
-        draw_header.width = u32::try_from(block.stored_width)?;
-        draw_header.height = u32::try_from(block.stored_height)?;
-        draw_header.predictor = 1;
-        draw_header.planar_config = 1;
-        draw_tile(
+        draw_tile_internal(
             &data,
             block.y,
             block.draw_height,
             block.x,
             block.draw_width,
             option,
-            &draw_header,
+            header,
+            true,
+            Some(block.stored_width),
+            Some(block.stored_height),
         )?;
     }
     Ok(None)
@@ -437,6 +448,21 @@ pub fn draw_tile(
     option: &mut DecodeOptions,
     header: &Tiff,
 ) -> Result<Option<ImgWarnings>, Error> {
+    draw_tile_internal(data, y, strip, x, width, option, header, false, None, None)
+}
+
+fn draw_tile_internal(
+    data: &[u8],
+    y: usize,
+    strip: usize,
+    x: usize,
+    width: usize,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+    prepared: bool,
+    stored_width: Option<usize>,
+    stored_height: Option<usize>,
+) -> Result<Option<ImgWarnings>, Error> {
     if data.is_empty() {
         return Err(Box::new(ImgError::new_const(
             ImgErrorKind::DecodeError,
@@ -445,22 +471,23 @@ pub fn draw_tile(
     }
 
     let mut data = data.to_owned();
-    let mut normalized_header = header.clone();
-    if normalized_header.predictor == 2 {
-        let channels = if normalized_header.planar_config == 2 {
+    let mut normalized_header = None;
+    if !prepared && header.predictor == 2 {
+        let mut normalized = header.clone();
+        let channels = if normalized.planar_config == 2 {
             1
         } else {
-            usize::from(normalized_header.samples_per_pixel)
+            usize::from(normalized.samples_per_pixel)
         };
-        let bits = *normalized_header
+        let bits = *normalized
             .bitspersamples
             .first()
             .ok_or_else(|| std::io::Error::other("TIFF has no BitsPerSample"))?;
-        let row_bits = if normalized_header.planar_config == 2 {
-            usize::try_from(normalized_header.width)?.checked_mul(usize::from(bits))
+        let row_bits = if normalized.planar_config == 2 {
+            usize::try_from(normalized.width)?.checked_mul(usize::from(bits))
         } else {
-            (normalized_header.width as usize).checked_mul(
-                normalized_header
+            (normalized.width as usize).checked_mul(
+                normalized
                     .bitspersamples
                     .iter()
                     .map(|value| usize::from(*value))
@@ -474,17 +501,21 @@ pub fn draw_tile(
         crate::tiff::predictor::apply_predictor(
             &mut data,
             row_bytes,
-            usize::try_from(normalized_header.height)?,
+            usize::try_from(normalized.height)?,
             bits,
             channels,
-            normalized_header.tiff_headers.endian,
+            normalized.tiff_headers.endian,
         )?;
-        normalized_header.predictor = 1;
+        normalized.predictor = 1;
+        normalized_header = Some(normalized);
     }
-    let header = &normalized_header;
+    let header = normalized_header.as_ref().unwrap_or(header);
+    let predictor = if prepared { 1 } else { header.predictor };
+    let stored_width = stored_width.unwrap_or(usize::try_from(header.width)?);
+    let stored_height = stored_height.unwrap_or(usize::try_from(header.height)?);
 
     // no debug
-    if header.planar_config == 2 && header.samples_per_pixel > 1 {
+    if !prepared && header.planar_config == 2 && header.samples_per_pixel > 1 {
         data = planar_to_chuncky(&data, header)?;
     }
 
@@ -604,7 +635,7 @@ pub fn draw_tile(
         _ => &[],
     };
 
-    let row_bits = usize::try_from(header.width)?
+    let row_bits = stored_width
         .checked_mul(usize::from(header.bitspersample))
         .ok_or_else(|| std::io::Error::other("TIFF row size overflows"))?;
     let row_len = row_bits
@@ -612,8 +643,9 @@ pub fn draw_tile(
         .map(|bits| bits / 8)
         .ok_or_else(|| std::io::Error::other("TIFF row size overflows"))?;
 
+    let draw_rows = strip.min(stored_height);
     let end_y = y
-        .checked_add(strip)
+        .checked_add(draw_rows)
         .ok_or_else(|| std::io::Error::other("TIFF row position overflows"))?;
     for (l, y) in (y..end_y).enumerate() {
         let mut buf = vec![];
@@ -633,7 +665,7 @@ pub fn draw_tile(
                 .ok_or_else(|| std::io::Error::other("TIFF row offset overflows"))?
         };
 
-        for pixel in 0..header.width as usize {
+        for pixel in 0..stored_width {
             match header.photometric_interpretation {
                 3 => {
                     let row_start = l
@@ -680,7 +712,7 @@ pub fn draw_tile(
                                 }
                                 let sample =
                                     u32::from(read_u16(&data, i, header.tiff_headers.endian));
-                                let alpha = if header.extra_samples.first().is_some()
+                                let alpha = if matches!(header.extra_samples.first(), Some(&1 | &2))
                                     && header.samples_per_pixel > 1
                                 {
                                     u32::from(read_u16(&data, i + 2, header.tiff_headers.endian))
@@ -727,7 +759,7 @@ pub fn draw_tile(
                                     return Ok(None);
                                 }
                                 let mut color = data[i];
-                                if header.predictor == 2 {
+                                if predictor == 2 {
                                     color += prevs[0];
                                     prevs[0] = color;
                                 }
@@ -748,7 +780,7 @@ pub fn draw_tile(
                                 return Ok(None);
                             }
                             let sample = read_u32(&data, i, header.tiff_headers.endian);
-                            let alpha = if header.extra_samples.first().is_some()
+                            let alpha = if matches!(header.extra_samples.first(), Some(&1 | &2))
                                 && header.samples_per_pixel > 1
                             {
                                 read_u32(&data, i + 4, header.tiff_headers.endian)
@@ -774,7 +806,7 @@ pub fn draw_tile(
                                     return Ok(None);
                                 }
                                 let associated = header.extra_samples.first() == Some(&1);
-                                let alpha = if header.extra_samples.first().is_some()
+                                let alpha = if matches!(header.extra_samples.first(), Some(&1 | &2))
                                     && header.samples_per_pixel > 1
                                 {
                                     u32::from(data[i + 1])
@@ -800,7 +832,7 @@ pub fn draw_tile(
                                 return Ok(None);
                             }
                             let mut color = data[i];
-                            if header.predictor == 2 {
+                            if predictor == 2 {
                                 color += prevs[0];
                                 prevs[0] = color;
                             }
@@ -961,7 +993,7 @@ pub fn draw_tile(
                         }
                     }
 
-                    if header.predictor == 2 {
+                    if predictor == 2 {
                         r += prevs[0];
                         prevs[0] = r;
                         g += prevs[1];
@@ -1175,7 +1207,7 @@ pub fn draw_tile(
                         }
                     }
 
-                    if header.predictor == 2 {
+                    if predictor == 2 {
                         y += prevs[0];
                         prevs[0] = y;
                         cb += prevs[1];
@@ -1298,14 +1330,6 @@ pub fn decode_ccitt_compresson<'decode, B: BinaryReader>(
     let input_len = reader.seek(std::io::SeekFrom::End(0))?;
     for block in block_list {
         block.validate_range(input_len)?;
-        let compressed = read_block(reader, &block)?;
-        let mut ccitt_header = header.clone();
-        ccitt_header.width = u32::try_from(block.stored_width)?;
-        ccitt_header.height = u32::try_from(block.stored_height)?;
-        ccitt_header.rows_per_strip = u32::try_from(block.stored_height)?;
-        ccitt_header.bitspersample = 8;
-        ccitt_header.bitspersamples = vec![8];
-        ccitt_header.planar_config = 1;
         let pixels = block
             .stored_width
             .checked_mul(block.stored_height)
@@ -1320,8 +1344,22 @@ pub fn decode_ccitt_compresson<'decode, B: BinaryReader>(
             crate::limits::current().expanded_bytes,
             "CCITT block expansion",
         )?;
+        let compressed = read_block(reader, &block)?;
+        let mut ccitt_header = Tiff::empty();
+        ccitt_header.width = u32::try_from(block.stored_width)?;
+        ccitt_header.height = u32::try_from(block.stored_height)?;
+        ccitt_header.rows_per_strip = u32::try_from(block.stored_height)?;
+        ccitt_header.bitspersample = 8;
+        ccitt_header.bitspersamples = vec![8];
+        ccitt_header.planar_config = 1;
+        ccitt_header.photometric_interpretation = header.photometric_interpretation;
+        ccitt_header.fill_order = header.fill_order;
+        ccitt_header.compression = header.compression.clone();
+        ccitt_header.t4_options = header.t4_options;
+        ccitt_header.t6_options = header.t6_options;
+        ccitt_header.tiff_headers.endian = header.tiff_headers.endian;
         let (data, _warning) = ccitt::decode(&compressed, &ccitt_header)?;
-        draw_tile(
+        draw_tile_internal(
             &data,
             block.y,
             block.draw_height,
@@ -1329,6 +1367,9 @@ pub fn decode_ccitt_compresson<'decode, B: BinaryReader>(
             block.draw_width,
             option,
             &ccitt_header,
+            true,
+            Some(block.stored_width),
+            Some(block.stored_height),
         )?;
     }
     Ok(None)

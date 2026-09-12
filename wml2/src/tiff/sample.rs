@@ -104,7 +104,7 @@ pub(crate) fn read_sample_with_fill_order(
         }
         let mut value = 0u32;
         for bit_index in bit..end_bit {
-            value |= u32::from((data[bit_index / 8] >> (bit_index % 8)) & 1) << (bit_index - bit);
+            value = (value << 1) | u32::from((data[bit_index / 8] >> (bit_index % 8)) & 1);
         }
         return Ok(value);
     }
@@ -230,7 +230,7 @@ mod tests {
         let packed = [0b00_01_11_10];
         assert_eq!(
             read_sample_with_fill_order(&packed, 2, Endian::BigEndian, 0, 2).unwrap(),
-            2
+            1
         );
         assert_eq!(
             read_sample_with_fill_order(&packed, 2, Endian::BigEndian, 1, 2).unwrap(),
@@ -238,7 +238,7 @@ mod tests {
         );
         assert_eq!(
             read_sample_with_fill_order(&packed, 2, Endian::BigEndian, 2, 2).unwrap(),
-            1
+            2
         );
         assert_eq!(
             read_sample_with_fill_order(&packed, 2, Endian::BigEndian, 3, 2).unwrap(),

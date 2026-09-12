@@ -82,14 +82,12 @@ pub(crate) fn blocks(header: &Tiff) -> Result<Vec<TiffBlock>, Error> {
         let tile_height = usize::try_from(header.tile_length)?;
         let image_width = usize::try_from(header.width)?;
         let image_height = usize::try_from(header.height)?;
-        let across = image_width
-            .checked_add(tile_width - 1)
-            .ok_or_else(|| io::Error::other("TIFF tile count overflows"))?
-            / tile_width;
-        let down = image_height
-            .checked_add(tile_height - 1)
-            .ok_or_else(|| io::Error::other("TIFF tile count overflows"))?
-            / tile_height;
+        let across = (image_width / tile_width)
+            .checked_add(usize::from(image_width % tile_width != 0))
+            .ok_or_else(|| io::Error::other("TIFF tile count overflows"))?;
+        let down = (image_height / tile_height)
+            .checked_add(usize::from(image_height % tile_height != 0))
+            .ok_or_else(|| io::Error::other("TIFF tile count overflows"))?;
         let per_plane = across
             .checked_mul(down)
             .ok_or_else(|| io::Error::other("TIFF tile count overflows"))?;
@@ -152,10 +150,9 @@ pub(crate) fn blocks(header: &Tiff) -> Result<Vec<TiffBlock>, Error> {
     } else {
         usize::try_from(header.rows_per_strip)?
     };
-    let strips_per_plane = height
-        .checked_add(rows - 1)
-        .ok_or_else(|| io::Error::other("TIFF strip count overflows"))?
-        / rows;
+    let strips_per_plane = (height / rows)
+        .checked_add(usize::from(height % rows != 0))
+        .ok_or_else(|| io::Error::other("TIFF strip count overflows"))?;
     let planes = if header.planar_config == 2 {
         usize::from(header.samples_per_pixel)
     } else {

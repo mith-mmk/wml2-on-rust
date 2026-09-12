@@ -8,6 +8,15 @@ use crate::tiff::decoder::Tiff;
 use crate::tiff::header::Compression;
 
 pub fn decode(buf: &[u8], header: &Tiff) -> Result<(Vec<u8>, bool), Error> {
+    decode_with_dimensions(buf, header, header.width as usize, header.height as usize)
+}
+
+pub fn decode_with_dimensions(
+    buf: &[u8],
+    header: &Tiff,
+    width: usize,
+    height: usize,
+) -> Result<(Vec<u8>, bool), Error> {
     let t4_options = header.t4_options;
     let t6_options = header.t6_options;
 
@@ -42,8 +51,6 @@ pub fn decode(buf: &[u8], header: &Tiff) -> Result<(Vec<u8>, bool), Error> {
 
     //    let photometric_interpretation = header.photometric_interpretation.clone();
 
-    let width = header.width as usize;
-    let height = header.height as usize;
     let is_lsb = header.fill_order == 2;
 
     decoder(buf, width, height, encoding, is_lsb)

@@ -12,14 +12,20 @@ pub(crate) fn decompress_block(
     expected_len: Option<usize>,
     fill_order_lsb: bool,
 ) -> Result<Vec<u8>, Error> {
+    let output_limit = expected_len.unwrap_or(crate::limits::current().expanded_bytes);
+    if let Some(expected) = expected_len {
+        crate::limits::check(
+            expected,
+            crate::limits::current().expanded_bytes,
+            "expanded TIFF block",
+        )?;
+    }
     let decoded = match compression {
         Compression::NoneCompression => {
-            if let Some(expected) = expected_len {
-                if compressed.len() > expected {
-                    return Err(
-                        io::Error::other("uncompressed TIFF block exceeds expected size").into(),
-                    );
-                }
+            if compressed.len() > output_limit {
+                return Err(
+                    io::Error::other("uncompressed TIFF block exceeds decode limit").into(),
+                );
             }
             compressed.to_vec()
         }
@@ -35,12 +41,9 @@ pub(crate) fn decompress_block(
             } else {
                 Lzwdecode::tiff(fill_order_lsb)
             };
-            let limit = expected_len.unwrap_or(usize::MAX);
-            decoder.decode_with_limit(compressed, limit)?
+            decoder.decode_with_limit(compressed, output_limit)?
         }
-        Compression::Packbits => {
-            packbits::decode_bounded(compressed, expected_len.unwrap_or(usize::MAX))?
-        }
+        Compression::Packbits => packbits::decode_bounded(compressed, output_limit)?,
         Compression::AdobeDeflate | Compression::DEFLATE => {
             let expected =
                 expected_len.ok_or_else(|| io::Error::other("Deflate block size is unknown"))?;

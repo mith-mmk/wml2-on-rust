@@ -40,7 +40,7 @@ $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 ### converter の例
 
 ```console
-$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]
+$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|deflate|jpeg|lossy|lossless>] [--bigtiff] [--predictor none|horizontal] [--exif copy] [--split]
 ```
 
 ## サポートフォーマット
@@ -52,7 +52,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | GIF          | O   | O   | パレット/LZW encoder、animation 対応                                                                                |
 | ICO          | x   | O   | BMP/PNG 内包の icon image を decode                                                                                 |
 | PNG          | O   | O   | PNG/APNG 対応、encoder は RGBA truecolor を出力                                                                     |
-| TIFF         | O   | O   | encode: none/LZW/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
+| TIFF         | O   | O   | encode: none/LZW/Deflate/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
 | AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                     |
 | PSD          | x   | O   | 既定で無効の `psd` feature。Pure RustでPSD v1の統合画像と基本ラスターレイヤーをdecode                                |
@@ -146,7 +146,7 @@ wml2 = { version = "0.0.30", default-features = false, features = ["jpeg", "png"
 `EncodeOptions::options` / `draw::convert(..., options)` で使える主なキー:
 
 - JPEG: `quality`
-- TIFF: `compression = none|lzw|lzw_msb|lzw_lsb|jpeg`
+- TIFF: `compression = none|lzw|lzw_msb|lzw_lsb|deflate|jpeg`
 - TIFF で `compression=jpeg`: `quality`
 - WebP: `optimize` (`0..=9`)
 - WebP lossy: `quality`
@@ -172,6 +172,7 @@ encode 対応:
 
 - 無圧縮
 - LZW
+- Deflate
 - JPEG (new-style TIFF JPEG, RGB のみ)
 
 decode 対応:
@@ -180,10 +181,19 @@ decode 対応:
 - LZW
 - PackBits
 - JPEG (new-style TIFF JPEG)
-- Adobe Deflate
+- Deflate (8 / 32946)
 - CCITT Huffman RLE
 - CCITT Group 3 Fax
 - CCITT Group 4 Fax
+
+Classic TIFF / BigTIFF の両エンディアン、strip/tile、複数IFDに対応します。
+`high-bit-depth` 有効時は `highres::tiff::decode_native()` で符号なし16-bitの
+Gray/RGB/RGBAを元精度で取得できます。従来APIの出力はRGBA8のままです。
+Device CMYKはKを含む基本近似で表示し、ICCとorientationはメタデータに保持します。
+
+TIFF出力には `predictor = none|horizontal` と `bigtiff = DataMap::UInt(1)` を
+明示指定できます。converterでは `--predictor` / `--bigtiff` を使います。
+対応範囲と使用例は [TIFF拡張](docs/tiff-extend.md) を参照してください。
 
 ## 基本的な decode
 

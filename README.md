@@ -42,7 +42,7 @@ $ cargo run -p wml2-test --example metadata --release -- <inputfile>
 ### Convert formats
 
 ```console
-$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]
+$ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> [-f gif|png|jpeg|bmp|tiff|webp] [-q <quality>] [-z <0-9>] [-c <none|lzw|lzw_msb|lzw_lsb|deflate|jpeg|lossy|lossless>] [--bigtiff] [--predictor none|horizontal] [--exif copy] [--split]
 ```
 
 ## Supported formats
@@ -54,7 +54,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | GIF     | O   | O   | palette/LZW encoder, animation supported                                                                            |
 | ICO     | x   | O   | decoder for BMP/PNG embedded icon images                                                                            |
 | PNG     | O   | O   | PNG/APNG; encoder writes RGBA truecolor                                                                             |
-| TIFF    | O   | O   | encode: none/LZW/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
+| TIFF    | O   | O   | encode: none/LZW/Deflate/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
 | AVIF    | O   | O   | decoder: `avif`; encoder: `avifenc` (`avifenc-rust`)                                                               |
 | PSD     | x   | O   | optional, non-default `psd` feature; Pure Rust PSD v1 merged-image and basic raster-layer decoding                 |
@@ -161,7 +161,7 @@ and `.avif` when the `avifenc` feature is enabled.
 Supported option keys in `EncodeOptions::options` / `draw::convert(..., options)`:
 
 - JPEG: `quality`
-- TIFF: `compression = none|lzw|lzw_msb|lzw_lsb|jpeg`
+- TIFF: `compression = none|lzw|lzw_msb|lzw_lsb|deflate|jpeg`
 - TIFF with `compression=jpeg`: `quality`
 - WebP: `optimize` (`0..=9`)
 - WebP lossy: `quality`
@@ -187,6 +187,7 @@ Encode supports:
 
 - no compression
 - LZW
+- Deflate
 - JPEG (new-style TIFF JPEG, RGB only)
 
 Decode supports:
@@ -195,10 +196,20 @@ Decode supports:
 - LZW
 - PackBits
 - JPEG (new-style TIFF JPEG)
-- Adobe Deflate
+- Deflate (8 / 32946)
 - CCITT Huffman RLE
 - CCITT Group 3 Fax
 - CCITT Group 4 Fax
+
+TIFF decoding supports Classic TIFF and BigTIFF in both byte orders, including
+strip/tile storage and multiple image IFDs. Unsigned 16-bit Gray/RGB/RGBA samples
+are available through `highres::tiff::decode_native()` when `high-bit-depth` is
+enabled; the legacy decoding API still returns RGBA8. Device CMYK uses a basic
+K-aware approximation; ICC and orientation are retained as metadata.
+
+TIFF encode options also include `predictor = none|horizontal` and an explicit
+`bigtiff = DataMap::UInt(1)`. The converter exposes `--predictor` and `--bigtiff`.
+See [TIFF extension details](docs/tiff-extend.md) for scope and examples.
 
 ## Basic decoding
 

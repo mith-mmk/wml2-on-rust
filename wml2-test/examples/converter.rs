@@ -64,6 +64,8 @@ struct Config {
     output_dir: PathBuf,
     format: OutputFormat,
     compression: Option<String>,
+    bigtiff: bool,
+    predictor: Option<String>,
     exif_copy: bool,
     quality: Option<u64>,
     optimize: Option<u64>,
@@ -88,7 +90,7 @@ impl Config {
 
         match format {
             OutputFormat::Tiff => match compression {
-                "none" | "lzw" | "lzw_msb" | "lzw_lsb" | "jpeg" => Ok(()),
+                "none" | "lzw" | "lzw_msb" | "lzw_lsb" | "deflate" | "jpeg" => Ok(()),
                 value => Err(format!("unsupported TIFF compression: {}", value).into()),
             },
             OutputFormat::Webp => match compression {
@@ -104,6 +106,8 @@ impl Config {
         let mut output_dir = None;
         let mut format = OutputFormat::Png;
         let mut compression = None;
+        let mut bigtiff = false;
+        let mut predictor = None;
         let mut exif_copy = false;
         let mut quality = None;
         let mut optimize = None;
@@ -133,6 +137,15 @@ impl Config {
                         return Err("missing value for -c".into());
                     }
                     compression = Some(args[index].to_ascii_lowercase());
+                }
+                "--bigtiff" => bigtiff = true,
+                "--predictor" => {
+                    index += 1;
+                    let value = args.get(index).ok_or("missing value for --predictor")?;
+                    if !matches!(value.as_str(), "none" | "horizontal") {
+                        return Err("--predictor must be none or horizontal".into());
+                    }
+                    predictor = Some(value.clone());
                 }
                 "--exif" => {
                     index += 1;
@@ -190,6 +203,9 @@ impl Config {
             return Err("--split is currently supported for GIF/PNG/TIFF/WebP output".into());
         }
         Self::validate_compression(&format, compression.as_deref())?;
+        if (bigtiff || predictor.is_some()) && !matches!(format, OutputFormat::Tiff) {
+            return Err("--bigtiff and --predictor require TIFF output".into());
+        }
         #[cfg(feature = "avifenc")]
         let speed_supported = matches!(format, OutputFormat::Avif);
         #[cfg(not(feature = "avifenc"))]
@@ -206,6 +222,8 @@ impl Config {
             output_dir,
             format,
             compression,
+            bigtiff,
+            predictor,
             exif_copy,
             quality,
             optimize,
@@ -247,6 +265,12 @@ impl Config {
                 }
             }
             OutputFormat::Tiff => {
+                if self.bigtiff {
+                    options.insert("bigtiff".into(), DataMap::UInt(1));
+                }
+                if let Some(predictor) = &self.predictor {
+                    options.insert("predictor".into(), DataMap::Ascii(predictor.clone()));
+                }
                 if let Some(compression) = &self.compression {
                     options.insert(
                         "compression".to_string(),
@@ -261,10 +285,7 @@ impl Config {
             }
             #[cfg(feature = "avifenc")]
             OutputFormat::Avif => {
-                options.insert(
-                    "speed".to_string(),
-                    DataMap::UInt(self.speed.unwrap_or(10)),
-                );
+                options.insert("speed".to_string(), DataMap::UInt(self.speed.unwrap_or(10)));
             }
             _ => {}
         }
@@ -292,7 +313,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => {
             eprintln!("{}", error);
             eprintln!(
-                "usage: converter [inputfiles...] -o <outputfolder> [-f {}] [-q <quality>] [-z <0-9>] [--speed <0-10>] [-c <none|lzw|lzw_msb|lzw_lsb|jpeg|lossy|lossless>] [--exif copy] [--split]",
+                "usage: converter [inputfiles...] -o <outputfolder> [-f {}] [-q <quality>] [-z <0-9>] [--speed <0-10>] [-c <none|lzw|lzw_msb|lzw_lsb|deflate|jpeg|lossy|lossless>] [--bigtiff] [--predictor none|horizontal] [--exif copy] [--split]",
                 OutputFormat::supported_formats_help()
             );
             return Err(error);
@@ -618,6 +639,8 @@ mod tests {
     fn dat_inputs_always_split_for_png_output() {
         let image = ImageBuffer::from_buffer(1, 1, vec![0, 0, 0, 0xff]);
         let config = Config {
+            bigtiff: false,
+            predictor: None,
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Png,
@@ -648,6 +671,8 @@ mod tests {
         }]);
 
         let config = Config {
+            bigtiff: false,
+            predictor: None,
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Png,
@@ -665,6 +690,8 @@ mod tests {
     fn explicit_split_is_available_for_webp_output() {
         let image = ImageBuffer::from_buffer(1, 1, vec![0, 0, 0, 0xff]);
         let config = Config {
+            bigtiff: false,
+            predictor: None,
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Webp,
@@ -684,6 +711,8 @@ mod tests {
     #[test]
     fn webp_lossy_compression_option_is_forwarded() {
         let config = Config {
+            bigtiff: false,
+            predictor: None,
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Webp,
@@ -703,6 +732,8 @@ mod tests {
     #[test]
     fn webp_lossless_compression_option_omits_quality() {
         let config = Config {
+            bigtiff: false,
+            predictor: None,
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Webp,
@@ -742,6 +773,8 @@ mod tests {
     #[test]
     fn tiff_compression_option_is_forwarded() {
         let config = Config {
+            bigtiff: false,
+            predictor: None,
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Tiff,
@@ -759,6 +792,40 @@ mod tests {
             Some(DataMap::Ascii(value)) if value == "jpeg"
         ));
         assert!(matches!(options.get("quality"), Some(DataMap::UInt(87))));
+    }
+
+    #[test]
+    fn parse_tiff_extension_options() {
+        let args: Vec<String> = [
+            "converter",
+            "input.png",
+            "-o",
+            "out",
+            "-f",
+            "tiff",
+            "-c",
+            "deflate",
+            "--bigtiff",
+            "--predictor",
+            "horizontal",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+        let options = Config::parse(&args).unwrap().encode_options().unwrap();
+        assert!(matches!(options.get("bigtiff"), Some(DataMap::UInt(1))));
+        assert!(
+            matches!(options.get("compression"), Some(DataMap::Ascii(value)) if value == "deflate")
+        );
+        assert!(
+            matches!(options.get("predictor"), Some(DataMap::Ascii(value)) if value == "horizontal")
+        );
+        let mut invalid = args.clone();
+        invalid[5] = "png".into();
+        assert!(Config::parse(&invalid).is_err());
+        let mut invalid = args;
+        *invalid.last_mut().unwrap() = "typo".into();
+        assert!(Config::parse(&invalid).is_err());
     }
 
     #[test]
@@ -798,6 +865,8 @@ mod tests {
     #[test]
     fn exif_copy_option_is_forwarded() {
         let config = Config {
+            bigtiff: false,
+            predictor: None,
             inputs: Vec::new(),
             output_dir: PathBuf::new(),
             format: OutputFormat::Png,

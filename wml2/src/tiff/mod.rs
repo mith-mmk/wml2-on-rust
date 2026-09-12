@@ -16,6 +16,8 @@ pub(crate) mod sample;
 #[cfg(feature = "tiff")]
 pub mod decoder;
 #[cfg(feature = "tiff")]
+pub(crate) mod encode_ifd;
+#[cfg(feature = "tiff")]
 pub mod encoder;
 #[cfg(feature = "exif")]
 pub mod header;

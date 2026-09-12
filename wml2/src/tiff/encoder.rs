@@ -10,9 +10,10 @@ use crate::error::{ImgError, ImgErrorKind};
 #[cfg(feature = "tiff-jpeg")]
 use crate::jpeg::encoder::{encode_rgba as encode_jpeg_rgba, quality_from_draw_options};
 use crate::metadata::{DataMap, get_exif_option};
-use crate::tiff::header::{
-    DataPack, Rational, TiffHeader, TiffHeaders, read_tags, tiff_pages_to_bytes,
+use crate::tiff::encode_ifd::{
+    StripLayout, TiffOutputVariant, encode_pages, encode_pages_with_layouts,
 };
+use crate::tiff::header::{DataPack, Rational, TiffHeader, TiffHeaders, read_tags};
 use bin_rs::Endian;
 use bin_rs::reader::BytesReader;
 
@@ -43,12 +44,15 @@ struct AnimationInfo {
 struct PagePlan {
     headers: TiffHeaders,
     pixel_data: Vec<u8>,
+    strip_offset: u64,
+    strip_byte_count: u64,
 }
 
 #[derive(Clone, Copy)]
 enum TiffCompressionMode {
     None,
     Lzw { is_lsb: bool },
+    Deflate { adobe: bool },
     Jpeg { quality: usize },
 }
 
@@ -57,6 +61,8 @@ impl TiffCompressionMode {
         match self {
             Self::None => 1,
             Self::Lzw { .. } => 5,
+            Self::Deflate { adobe: true } => 8,
+            Self::Deflate { adobe: false } => 32946,
             Self::Jpeg { .. } => 7,
         }
     }
@@ -136,6 +142,9 @@ fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMod
             "none" | "uncompressed" => Ok(TiffCompressionMode::None),
             "lzw" | "lzw_msb" => Ok(TiffCompressionMode::Lzw { is_lsb: false }),
             "lzw_lsb" => Ok(TiffCompressionMode::Lzw { is_lsb: true }),
+            "deflate" => Ok(TiffCompressionMode::Deflate { adobe: true }),
+            "adobe_deflate" => Ok(TiffCompressionMode::Deflate { adobe: true }),
+            "deflate_legacy" => Ok(TiffCompressionMode::Deflate { adobe: false }),
             #[cfg(feature = "tiff-jpeg")]
             "jpeg" | "jpg" => Ok(TiffCompressionMode::Jpeg {
                 quality: quality_from_draw_options(option),
@@ -152,6 +161,8 @@ fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMod
         },
         DataMap::UInt(1) | DataMap::SInt(1) => Ok(TiffCompressionMode::None),
         DataMap::UInt(5) | DataMap::SInt(5) => Ok(TiffCompressionMode::Lzw { is_lsb: false }),
+        DataMap::UInt(8) | DataMap::SInt(8) => Ok(TiffCompressionMode::Deflate { adobe: true }),
+        DataMap::UInt(32946) | DataMap::SInt(32946) => Ok(TiffCompressionMode::Deflate { adobe: false }),
         #[cfg(feature = "tiff-jpeg")]
         DataMap::UInt(7) | DataMap::SInt(7) => Ok(TiffCompressionMode::Jpeg {
             quality: quality_from_draw_options(option),
@@ -163,10 +174,69 @@ fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMod
         ))),
         _ => Err(Box::new(ImgError::new_const(
             ImgErrorKind::InvalidParameter,
-            "TIFF compression must be `none`, `lzw`, `lzw_msb`, `lzw_lsb`, `jpeg`, 1, 5, or 7"
+            "TIFF compression must be `none`, `lzw`, `lzw_msb`, `lzw_lsb`, `deflate`, `jpeg`, 1, 5, 8, 32946, or 7"
                 .to_string(),
         ))),
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TiffPredictorMode {
+    None,
+    Horizontal,
+}
+
+fn tiff_predictor(option: &DrawEncodeOptions<'_>) -> Result<TiffPredictorMode, Error> {
+    let Some(value) = option.options.as_ref().and_then(|map| map.get("predictor")) else {
+        return Ok(TiffPredictorMode::None);
+    };
+    match value {
+        DataMap::Ascii(value) => match value.to_ascii_lowercase().as_str() {
+            "none" | "1" => Ok(TiffPredictorMode::None),
+            "horizontal" | "2" => Ok(TiffPredictorMode::Horizontal),
+            _ => Err(Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "TIFF predictor must be `none`, `horizontal`, 1, or 2".to_string(),
+            ))),
+        },
+        DataMap::UInt(1) | DataMap::SInt(1) => Ok(TiffPredictorMode::None),
+        DataMap::UInt(2) | DataMap::SInt(2) => Ok(TiffPredictorMode::Horizontal),
+        _ => Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "TIFF predictor must be `none`, `horizontal`, 1, or 2".to_string(),
+        ))),
+    }
+}
+
+fn tiff_output_variant(option: &DrawEncodeOptions<'_>) -> Result<TiffOutputVariant, Error> {
+    let Some(value) = option.options.as_ref().and_then(|map| map.get("bigtiff")) else {
+        return Ok(TiffOutputVariant::Classic);
+    };
+    let enabled = match value {
+        DataMap::UInt(value) if *value == 0 || *value == 1 => *value == 1,
+        DataMap::SInt(value) if *value == 0 || *value == 1 => *value == 1,
+        DataMap::Ascii(value) => match value.to_ascii_lowercase().as_str() {
+            "true" | "yes" | "1" => true,
+            "false" | "no" | "0" => false,
+            _ => {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::InvalidParameter,
+                    "bigtiff must be true or false".to_string(),
+                )));
+            }
+        },
+        _ => {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "bigtiff must be a boolean".to_string(),
+            )));
+        }
+    };
+    Ok(if enabled {
+        TiffOutputVariant::BigTiff
+    } else {
+        TiffOutputVariant::Classic
+    })
 }
 
 fn parse_animation_info(profile: &ImageProfiles) -> Result<Option<AnimationInfo>, Error> {
@@ -414,6 +484,69 @@ fn rgba_to_tiff_samples(rgba: &[u8], with_alpha: bool) -> Vec<u8> {
     pixel_data
 }
 
+/// Encode TIFF horizontal differencing.  The source encoder currently emits
+/// 8-bit chunky samples, but keeping the operation sample based also makes
+/// the 16/32-bit path safe for callers that reuse this helper later.
+fn encode_horizontal_predictor(
+    data: &mut [u8],
+    width: usize,
+    height: usize,
+    channels: usize,
+    bits: u16,
+) -> Result<(), Error> {
+    if !matches!(bits, 8 | 16 | 32) || channels == 0 {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "unsupported TIFF predictor sample layout".to_string(),
+        )));
+    }
+    let bytes_per_sample = usize::from(bits / 8);
+    let row_bytes = width
+        .checked_mul(channels)
+        .and_then(|v| v.checked_mul(bytes_per_sample))
+        .ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::InvalidParameter,
+                "TIFF predictor row size overflow".to_string(),
+            )) as Error
+        })?;
+    let expected = row_bytes.checked_mul(height).ok_or_else(|| {
+        Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "TIFF predictor size overflow".to_string(),
+        )) as Error
+    })?;
+    if data.len() != expected {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "TIFF predictor buffer size mismatch".to_string(),
+        )));
+    }
+    for row in data.chunks_exact_mut(row_bytes) {
+        let original = row.to_vec();
+        for sample in channels..(width * channels) {
+            let current = sample * bytes_per_sample;
+            let previous = (sample - channels) * bytes_per_sample;
+            match bits {
+                8 => row[current] = original[current].wrapping_sub(original[previous]),
+                16 => {
+                    let c = u16::from_le_bytes([original[current], original[current + 1]]);
+                    let p = u16::from_le_bytes([original[previous], original[previous + 1]]);
+                    row[current..current + 2].copy_from_slice(&c.wrapping_sub(p).to_le_bytes());
+                }
+                32 => {
+                    let c = u32::from_le_bytes(original[current..current + 4].try_into().unwrap());
+                    let p =
+                        u32::from_le_bytes(original[previous..previous + 4].try_into().unwrap());
+                    row[current..current + 4].copy_from_slice(&c.wrapping_sub(p).to_le_bytes());
+                }
+                _ => unreachable!(),
+            }
+        }
+    }
+    Ok(())
+}
+
 fn first_ifd_tags(tags: &[TiffHeader]) -> &[TiffHeader] {
     let mut split_index = tags.len();
     for index in 1..tags.len() {
@@ -580,9 +713,11 @@ fn rational_tag(tagid: usize, numerator: u32, denominator: u32) -> TiffHeader {
 fn build_page_headers(
     width: usize,
     height: usize,
-    pixel_data_len: usize,
+    pixel_data_len: u64,
     with_alpha: bool,
     compression: TiffCompressionMode,
+    predictor: TiffPredictorMode,
+    output_variant: TiffOutputVariant,
     source: Option<&TiffHeaders>,
     icc_profile: Option<&[u8]>,
 ) -> Result<TiffHeaders, Error> {
@@ -598,12 +733,16 @@ fn build_page_headers(
             "TIFF height exceeds u32".to_string(),
         )) as Error
     })?;
-    let strip_byte_count = u32::try_from(pixel_data_len).map_err(|_| {
-        Box::new(ImgError::new_const(
-            ImgErrorKind::InvalidParameter,
-            "TIFF strip byte count exceeds u32".to_string(),
-        )) as Error
-    })?;
+    let strip_byte_count = match u32::try_from(pixel_data_len) {
+        Ok(value) => value,
+        Err(_) if output_variant == TiffOutputVariant::BigTiff => 0,
+        Err(_) => {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::EncodeError,
+                "TIFF strip byte count exceeds u32".to_string(),
+            )));
+        }
+    };
 
     let mut headers = TiffHeaders::empty(Endian::LittleEndian);
     if let Some(source) = source {
@@ -642,6 +781,17 @@ fn build_page_headers(
     upsert_tag(&mut headers.headers, long_tag(0x0116, height));
     upsert_tag(&mut headers.headers, long_tag(0x0117, strip_byte_count));
     upsert_tag(&mut headers.headers, short_tag(0x011c, 1));
+    upsert_tag(
+        &mut headers.headers,
+        short_tag(
+            0x013d,
+            if predictor == TiffPredictorMode::Horizontal {
+                2
+            } else {
+                1
+            },
+        ),
+    );
 
     ensure_tag(
         &mut headers.headers,
@@ -722,6 +872,8 @@ fn build_page_plan(
     height: usize,
     rgba: &[u8],
     compression: TiffCompressionMode,
+    predictor: TiffPredictorMode,
+    output_variant: TiffOutputVariant,
     source: Option<&TiffHeaders>,
     icc_profile: Option<&[u8]>,
 ) -> Result<PagePlan, Error> {
@@ -742,10 +894,22 @@ fn build_page_plan(
     }
 
     let with_alpha = compression.supports_alpha() && rgba_has_alpha(rgba);
-    let raw_pixel_data = rgba_to_tiff_samples(rgba, with_alpha);
+    let mut raw_pixel_data = rgba_to_tiff_samples(rgba, with_alpha);
+    if predictor == TiffPredictorMode::Horizontal {
+        encode_horizontal_predictor(
+            &mut raw_pixel_data,
+            width,
+            height,
+            if with_alpha { 4 } else { 3 },
+            8,
+        )?;
+    }
     let pixel_data = match compression {
         TiffCompressionMode::None => raw_pixel_data,
         TiffCompressionMode::Lzw { is_lsb } => encode_tiff(&raw_pixel_data, is_lsb)?,
+        TiffCompressionMode::Deflate { .. } => {
+            miniz_oxide::deflate::compress_to_vec_zlib(&raw_pixel_data, 8)
+        }
         #[cfg(feature = "tiff-jpeg")]
         TiffCompressionMode::Jpeg { quality } => encode_jpeg_rgba(width, height, rgba, quality)?,
         #[cfg(not(feature = "tiff-jpeg"))]
@@ -759,21 +923,38 @@ fn build_page_plan(
     let headers = build_page_headers(
         width,
         height,
-        pixel_data.len(),
+        u64::try_from(pixel_data.len()).map_err(|_| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::EncodeError,
+                "TIFF strip byte count exceeds platform range".to_string(),
+            )) as Error
+        })?,
         with_alpha,
         compression,
+        predictor,
+        output_variant,
         source,
         icc_profile,
     )?;
+    let strip_byte_count = u64::try_from(pixel_data.len()).map_err(|_| {
+        Box::new(ImgError::new_const(
+            ImgErrorKind::EncodeError,
+            "TIFF strip byte count exceeds platform range".to_string(),
+        )) as Error
+    })?;
     Ok(PagePlan {
         headers,
         pixel_data,
+        strip_offset: 0,
+        strip_byte_count,
     })
 }
 
 fn build_animation_pages(
     profile: &ImageProfiles,
     compression: TiffCompressionMode,
+    predictor: TiffPredictorMode,
+    output_variant: TiffOutputVariant,
     source: Option<&TiffHeaders>,
     icc_profile: Option<&[u8]>,
     animation: AnimationInfo,
@@ -786,6 +967,8 @@ fn build_animation_pages(
             profile.height,
             canvas,
             compression,
+            predictor,
+            output_variant,
             if index == 0 { source } else { None },
             if index == 0 { icc_profile } else { None },
         )?);
@@ -814,6 +997,19 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
         )) as Error
     })?;
     let compression = tiff_compression(image)?;
+    let predictor = tiff_predictor(image)?;
+    if predictor == TiffPredictorMode::Horizontal
+        && !matches!(
+            compression,
+            TiffCompressionMode::Lzw { .. } | TiffCompressionMode::Deflate { .. }
+        )
+    {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "TIFF horizontal predictor requires LZW or Deflate compression".to_string(),
+        )));
+    }
+    let output_variant = tiff_output_variant(image)?;
 
     let source =
         if let Some(exif) = get_exif_option(image.options.as_ref(), profile.metadata.as_ref())? {
@@ -827,6 +1023,8 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
         build_animation_pages(
             &profile,
             compression,
+            predictor,
+            output_variant,
             source.as_ref(),
             icc_profile.as_deref(),
             animation,
@@ -846,6 +1044,8 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
             profile.height,
             &rgba,
             compression,
+            predictor,
+            output_variant,
             source.as_ref(),
             icc_profile.as_deref(),
         )?]
@@ -853,33 +1053,43 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
 
     let provisional_headers: Vec<TiffHeaders> =
         pages.iter().map(|page| page.headers.clone()).collect();
-    let provisional_len = tiff_pages_to_bytes(&provisional_headers)?.len();
-    let mut strip_offset = u32::try_from(provisional_len).map_err(|_| {
+    let provisional_len = encode_pages(&provisional_headers, output_variant)?.len();
+    let mut strip_offset = u64::try_from(provisional_len).map_err(|_| {
         Box::new(ImgError::new_const(
-            ImgErrorKind::InvalidParameter,
-            "TIFF data offset exceeds u32".to_string(),
+            ImgErrorKind::EncodeError,
+            "TIFF data offset exceeds platform range".to_string(),
         )) as Error
     })?;
+    let mut layouts = Vec::with_capacity(pages.len());
 
     for page in &mut pages {
-        set_strip_offset(&mut page.headers, strip_offset)?;
-        strip_offset = strip_offset
-            .checked_add(u32::try_from(page.pixel_data.len()).map_err(|_| {
-                Box::new(ImgError::new_const(
-                    ImgErrorKind::InvalidParameter,
-                    "TIFF page data exceeds u32".to_string(),
-                )) as Error
-            })?)
-            .ok_or_else(|| {
-                Box::new(ImgError::new_const(
-                    ImgErrorKind::InvalidParameter,
-                    "TIFF data offset overflow".to_string(),
-                )) as Error
-            })?;
+        let byte_count = page.strip_byte_count;
+        page.strip_offset = strip_offset;
+        layouts.push(StripLayout {
+            offset: page.strip_offset,
+            byte_count,
+        });
+        if output_variant == TiffOutputVariant::Classic {
+            set_strip_offset(
+                &mut page.headers,
+                u32::try_from(strip_offset).map_err(|_| {
+                    Box::new(ImgError::new_const(
+                        ImgErrorKind::EncodeError,
+                        "TIFF data offset exceeds u32".to_string(),
+                    )) as Error
+                })?,
+            )?;
+        }
+        strip_offset = strip_offset.checked_add(byte_count).ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::EncodeError,
+                "TIFF data offset overflow".to_string(),
+            )) as Error
+        })?;
     }
 
     let headers: Vec<TiffHeaders> = pages.iter().map(|page| page.headers.clone()).collect();
-    let mut data = tiff_pages_to_bytes(&headers)?;
+    let mut data = encode_pages_with_layouts(&headers, output_variant, Some(&layouts))?;
     for page in pages {
         data.extend_from_slice(&page.pixel_data);
     }

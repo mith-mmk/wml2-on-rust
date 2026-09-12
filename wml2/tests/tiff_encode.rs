@@ -449,6 +449,96 @@ fn encode_lzw_tiff_via_public_api_roundtrips_pixels() {
 }
 
 #[test]
+fn encode_deflate_predictor_tiff_via_public_api_roundtrips_pixels() {
+    let mut rgba = Vec::with_capacity(13 * 9 * 4);
+    for y in 0..9 {
+        for x in 0..13 {
+            rgba.extend_from_slice(&[
+                (x * 19 + y * 3) as u8,
+                (x * 7 + y * 23) as u8,
+                (x * 29 + y * 11) as u8,
+                255,
+            ]);
+        }
+    }
+    let mut image = ImageBuffer::from_buffer(13, 9, rgba.clone());
+    let mut options = HashMap::new();
+    options.insert(
+        "compression".to_string(),
+        DataMap::Ascii("deflate".to_string()),
+    );
+    options.insert(
+        "predictor".to_string(),
+        DataMap::Ascii("horizontal".to_string()),
+    );
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(options),
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+    let decoded = image_load(&data).unwrap();
+    assert_eq!(decoded.buffer.as_ref().unwrap(), &rgba);
+    assert_eq!(
+        decoded
+            .metadata
+            .as_ref()
+            .unwrap()
+            .get("compression")
+            .unwrap()
+            .to_string(),
+        "Adobe Deflate"
+    );
+}
+
+#[test]
+fn encode_bigtiff_via_public_api_roundtrips_pixels() {
+    let rgba = solid_rgba(3, 2, [12, 34, 56, 255]);
+    let mut image = ImageBuffer::from_buffer(3, 2, rgba.clone());
+    let mut options = HashMap::new();
+    options.insert("bigtiff".to_string(), DataMap::UInt(1));
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(options),
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+    assert_eq!(&data[..4], b"II+\0");
+    let decoded = image_load(&data).unwrap();
+    assert_eq!(decoded.buffer.as_ref().unwrap(), &rgba);
+}
+
+#[test]
+fn reject_ambiguous_bigtiff_and_predictor_options() {
+    let mut image = ImageBuffer::from_buffer(1, 1, vec![1, 2, 3, 255]);
+    let mut options = HashMap::new();
+    options.insert("bigtiff".to_string(), DataMap::Ascii("tru".to_string()));
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(options),
+    };
+    assert!(image_encoder(&mut encode, ImageFormat::Tiff).is_err());
+
+    let mut image = ImageBuffer::from_buffer(1, 1, vec![1, 2, 3, 255]);
+    let mut options = HashMap::new();
+    options.insert(
+        "compression".to_string(),
+        DataMap::Ascii("none".to_string()),
+    );
+    options.insert(
+        "predictor".to_string(),
+        DataMap::Ascii("horizontal".to_string()),
+    );
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(options),
+    };
+    assert!(image_encoder(&mut encode, ImageFormat::Tiff).is_err());
+}
+
+#[test]
 #[cfg(feature = "tiff-jpeg")]
 fn encode_jpeg_tiff_via_public_api_matches_standalone_jpeg() {
     let mut rgba = Vec::with_capacity(11 * 7 * 4);

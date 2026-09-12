@@ -294,11 +294,7 @@ impl TiffDocument {
         let saved = reader.offset()?;
         let end = reader.seek(SeekFrom::End(0))?;
         reader.seek(SeekFrom::Start(saved))?;
-        crate::limits::check(
-            usize::try_from(end).map_err(|_| invalid("TIFF input size overflow"))?,
-            crate::limits::current().input_bytes,
-            "TIFF input",
-        )?;
+        crate::limits::check_input_length(end, crate::limits::current().input_bytes)?;
         let mut marker = [0; 2];
         reader.read_exact(&mut marker)?;
         let endian = match marker {

@@ -111,12 +111,11 @@ pub(crate) fn run<B: BinaryReader>(
     let offset = reader.offset()?;
     let end = reader.seek(std::io::SeekFrom::End(0))?;
     reader.seek(std::io::SeekFrom::Start(offset))?;
-    let length = usize::try_from(
-        end.checked_sub(offset)
-            .ok_or_else(|| std::io::Error::other("invalid input position"))?,
-    )?;
-    limits::check(length, limits.input_bytes, "input")?;
-    let signature = reader.read_bytes_no_move(length.min(8))?;
+    let length = end
+        .checked_sub(offset)
+        .ok_or_else(|| std::io::Error::other("invalid input position"))?;
+    limits::check_input_length(length, limits.input_bytes)?;
+    let signature = reader.read_bytes_no_move(usize::try_from(length.min(8))?)?;
     let handle_abort =
         signature.starts_with(b"\x89PNG\r\n\x1a\n") || signature.starts_with(&[0xff, 0xd8]);
     limits::scope(limits, || {

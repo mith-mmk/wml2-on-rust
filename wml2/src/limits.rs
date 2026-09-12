@@ -71,6 +71,18 @@ pub(crate) fn check(value: usize, limit: usize, name: &str) -> Result<(), Error>
     }
     Ok(())
 }
+
+/// Reader lengths and offsets remain u64 even on 32-bit hosts. The documented
+/// usize::MAX sentinel disables the input budget without narrowing the length.
+pub(crate) fn check_input_length(length: u64, limit: usize) -> Result<(), Error> {
+    if limit != usize::MAX && length > u64::try_from(limit)? {
+        return Err(Box::new(crate::error::ImgError::new_const(
+            crate::error::ImgErrorKind::OutOfMemory,
+            "input exceeds decode limit".into(),
+        )));
+    }
+    Ok(())
+}
 #[cfg(any(feature = "png", test))]
 pub(crate) fn charge_metadata(bytes: usize) -> Result<(), Error> {
     let total = metadata_used()
@@ -142,6 +154,14 @@ fn inflate_bounded(mut input: &[u8], limit: usize) -> Result<Vec<u8>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn sparse_reader_lengths_keep_finite_budgets_and_unlimited_offsets() {
+        let beyond_classic = u64::from(u32::MAX) + 1;
+        assert!(check_input_length(beyond_classic, 512 * 1024 * 1024).is_err());
+        assert!(check_input_length(beyond_classic, usize::MAX).is_ok());
+        assert!(check_input_length(8, 8).is_ok());
+        assert!(check_input_length(9, 8).is_err());
+    }
     #[test]
     fn inflation_and_aggregate_metadata_stop_at_the_budget() {
         let compressed = miniz_oxide::deflate::compress_to_vec_zlib(&vec![42; 4096], 6);

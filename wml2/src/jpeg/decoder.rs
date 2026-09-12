@@ -1506,10 +1506,31 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
+    decode_inner_with_color_space(reader, option, None)
+}
+
+// Containers such as TIFF define the stored color space independently of
+// JPEG component IDs and application markers. Standalone JPEG keeps its
+// existing header-based selection by passing None.
+pub(crate) fn decode_inner_with_color_space<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    color_space: Option<&str>,
+) -> Result<Option<ImgWarnings>, Error> {
     let mut warnings: Option<ImgWarnings> = None;
     // Make Huffman Table
     // Scan Header
     let mut header = JpegHaeder::new(reader, 0)?;
+
+    if let (Some(color_space), Some(frame)) = (color_space, header.frame_header.as_mut()) {
+        if frame.plane != 3 {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::DecodeError,
+                "TIFF RGB/YCbCr JPEG must have three components".to_string(),
+            )));
+        }
+        frame.color_space = color_space.to_string();
+    }
 
     if option.debug_flag > 0 {
         let boxstr = print_header(&header, option.debug_flag);

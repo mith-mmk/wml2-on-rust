@@ -3,7 +3,6 @@
 type Error = Box<dyn std::error::Error>;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
-use bin_rs::io::read_byte;
 
 const MAX_TABLE: usize = 4096;
 const MAX_CBL: usize = 12;
@@ -72,18 +71,19 @@ impl Lzwdecode {
     fn fill_bits(&mut self) {
         self.clear_dic();
         self.last_byte = 0;
+        let count = self.buffer.len().saturating_sub(self.ptr).min(3);
         let ptr = self.ptr;
         if self.is_lsb {
-            self.last_byte = read_byte(&self.buffer, ptr) as u32;
-            self.last_byte |= (read_byte(&self.buffer, ptr + 1) as u32) << 8;
-            self.last_byte |= (read_byte(&self.buffer, ptr + 2) as u32) << 16;
+            for i in 0..count {
+                self.last_byte |= u32::from(self.buffer[ptr + i]) << ((3 - count + i) * 8);
+            }
         } else {
-            self.last_byte = (read_byte(&self.buffer, ptr) as u32) << 16;
-            self.last_byte |= (read_byte(&self.buffer, ptr + 1) as u32) << 8;
-            self.last_byte |= read_byte(&self.buffer, ptr + 2) as u32;
+            for i in 0..count {
+                self.last_byte = (self.last_byte << 8) | u32::from(self.buffer[ptr + i]);
+            }
         }
-        self.left_bits = 24;
-        self.ptr = 3;
+        self.left_bits = count * 8;
+        self.ptr += count;
     }
 
     fn get_bits(&mut self) -> Result<usize, Error> {
@@ -157,6 +157,34 @@ impl Lzwdecode {
 
     // Multi chuck image data decoding is not debug.
     pub fn decode(&mut self, buf: &[u8]) -> Result<Vec<u8>, Error> {
+        self.decode_inner(buf, None)
+    }
+
+    /// Decode one complete compressed stream with a strict output budget.
+    /// Unlike the streaming API, incomplete input without EOI is an error.
+    pub fn decode_with_limit(&mut self, buf: &[u8], max_output: usize) -> Result<Vec<u8>, Error> {
+        self.decode_inner(buf, Some(max_output))
+    }
+
+    fn append_output(data: &mut Vec<u8>, bytes: &[u8], limit: Option<usize>) -> Result<(), Error> {
+        let length = data.len().checked_add(bytes.len()).ok_or_else(|| {
+            Box::new(ImgError::new_const(
+                ImgErrorKind::OutOfMemory,
+                "LZW output size overflow".into(),
+            )) as Error
+        })?;
+        if limit.is_some_and(|maximum| length > maximum) {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::OutOfMemory,
+                "LZW output exceeds decode limit".into(),
+            )));
+        }
+        data.try_reserve(bytes.len())?;
+        data.extend_from_slice(bytes);
+        Ok(())
+    }
+
+    fn decode_inner(&mut self, buf: &[u8], limit: Option<usize>) -> Result<Vec<u8>, Error> {
         self.buffer = buf.to_vec();
         if !self.is_init {
             self.fill_bits();
@@ -171,16 +199,18 @@ impl Lzwdecode {
         loop {
             let res = self.get_bits(); // GIF Lsb only Tiff use Lsb or Msb
             // If data is shotage,it returns values and waits a next buffer.
-            let code = if let Ok(code) = res {
-                code
-            } else {
-                return Ok(data);
+            let code = match res {
+                Ok(code) => code,
+                Err(error) if limit.is_some() => return Err(error),
+                Err(_) => return Ok(data),
             };
 
             if code == self.clear {
-                for p in &self.dic[self.prev_code] {
-                    data.push(*p);
-                }
+                let prev = self
+                    .dic
+                    .get(self.prev_code)
+                    .ok_or_else(Self::insufficient_bits_error)?;
+                Self::append_output(&mut data, prev, limit)?;
                 self.clear_dic();
             } else if code == self.end {
                 let prev = self.dic.get(self.prev_code).ok_or_else(|| {
@@ -189,9 +219,7 @@ impl Lzwdecode {
                         "invalid previous LZW code".to_string(),
                     )) as Error
                 })?;
-                for p in prev {
-                    data.push(*p);
-                }
+                Self::append_output(&mut data, prev, limit)?;
                 return Ok(data);
             } else if code > self.dic.len() {
                 let message = format!(
@@ -229,19 +257,18 @@ impl Lzwdecode {
                         })?;
                 }
                 if self.prev_code != self.end && self.prev_code != self.clear {
-                    let mut table: Vec<u8> = Vec::new();
                     let prev = self.dic.get(self.prev_code).ok_or_else(|| {
                         Box::new(ImgError::new_const(
                             ImgErrorKind::IllegalData,
                             "invalid previous LZW code".to_string(),
                         )) as Error
                     })?;
-                    for p in prev {
-                        data.push(*p);
-                        table.push(*p);
+                    Self::append_output(&mut data, prev, limit)?;
+                    if self.dic.len() < self.max_table {
+                        let mut table = prev.clone();
+                        table.push(append_code);
+                        self.dic.push(table);
                     }
-                    table.push(append_code);
-                    self.dic.push(table);
                     // Tiff LZW is increment entry value before next loop.
                     let next = self.dic.len() + self.is_tiff;
                     if next == self.bit_mask as usize + 1
@@ -254,6 +281,41 @@ impl Lzwdecode {
                 }
             }
             self.prev_code = code;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn bounded_tiff_lzw_checks_expansion_and_stream_end() {
+        for lsb in [false, true] {
+            let pixels = vec![7; 4096];
+            let encoded = crate::encoder::lzw::encode_tiff(&pixels, lsb).unwrap();
+            assert_eq!(
+                Lzwdecode::tiff(lsb)
+                    .decode_with_limit(&encoded, pixels.len())
+                    .unwrap(),
+                pixels
+            );
+            assert!(
+                Lzwdecode::tiff(lsb)
+                    .decode_with_limit(&encoded, 32)
+                    .is_err()
+            );
+            assert!(
+                Lzwdecode::tiff(lsb)
+                    .decode_with_limit(&encoded[..encoded.len() - 2], pixels.len())
+                    .is_err()
+            );
+            for len in 0..3 {
+                assert!(
+                    Lzwdecode::tiff(lsb)
+                        .decode_with_limit(&[0, 0][..len], 16)
+                        .is_err()
+                );
+            }
         }
     }
 }

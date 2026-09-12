@@ -58,13 +58,13 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
     }
     if buffer.len() >= 4 && buffer[0] == b'I' && buffer[1] == b'I' {
         let ver = bin_rs::io::read_u16_le(buffer, 2);
-        if ver == 42 {
+        if matches!(ver, 42 | 43) {
             return ImageFormat::Tiff;
         }
     }
     if buffer.len() >= 4 && buffer[0] == b'M' && buffer[1] == b'M' {
         let ver = bin_rs::io::read_u16_be(buffer, 2);
-        if ver == 42 {
+        if matches!(ver, 42 | 43) {
             return ImageFormat::Tiff;
         }
         return ImageFormat::Tiff;

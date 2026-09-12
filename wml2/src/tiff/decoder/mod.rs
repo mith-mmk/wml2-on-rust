@@ -4,7 +4,6 @@ type Error = Box<dyn std::error::Error>;
 #[cfg(feature = "tiff-jpeg")]
 use self::jpeg::decode_jpeg_compresson;
 use crate::color::RGBA;
-use crate::decoder::lzw::Lzwdecode;
 use crate::draw::*;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
@@ -19,6 +18,10 @@ mod ccitt;
 #[cfg(feature = "tiff-jpeg")]
 mod jpeg;
 mod packbits;
+
+use self::compression::decompress_block;
+use crate::tiff::block::{TiffBlock, blocks};
+mod compression;
 
 fn create_pallet(bits: usize, is_black_zero: bool) -> Vec<RGBA> {
     let color_max = 1 << bits;
@@ -49,29 +52,46 @@ fn create_pallet(bits: usize, is_black_zero: bool) -> Vec<RGBA> {
 }
 
 fn planar_to_chuncky(data: &[u8], header: &Tiff) -> Result<Vec<u8>, Error> {
-    let mut buf = vec![];
-    let mut total_length = 0;
-    for bits in &header.bitspersamples {
-        total_length += header.height as usize * header.width as usize * ((*bits as usize + 7) / 8);
+    let channels = usize::from(header.samples_per_pixel);
+    if channels <= 1 || header.bitspersamples.len() != channels {
+        return Ok(data.to_vec());
     }
-
-    if data.len() < total_length {
-        return Err(Box::new(ImgError::new_const(
-            ImgErrorKind::DecodeError,
-            "Data shotage.".to_string(),
-        )));
+    let bits = *header
+        .bitspersamples
+        .first()
+        .ok_or_else(|| std::io::Error::other("TIFF has no BitsPerSample"))?;
+    if bits < 8
+        || header
+            .bitspersamples
+            .iter()
+            .any(|value| *value != bits || *value % 8 != 0)
+    {
+        return Err(
+            std::io::Error::other("planar TIFF requires uniform byte-aligned samples").into(),
+        );
     }
-
-    let length = header.height as usize
-        * header.width as usize
-        * ((header.bitspersamples[0] as usize + 7) / 8);
-    for i in 0..length {
-        for j in 0..header.samples_per_pixel as usize {
-            buf.push(data[i + j * length]);
+    let sample_bytes = usize::from(bits / 8);
+    let pixels = (header.width as usize)
+        .checked_mul(header.height as usize)
+        .ok_or_else(|| std::io::Error::other("TIFF planar pixel count overflows"))?;
+    let plane_len = pixels
+        .checked_mul(sample_bytes)
+        .ok_or_else(|| std::io::Error::other("TIFF planar size overflows"))?;
+    let total = plane_len
+        .checked_mul(channels)
+        .ok_or_else(|| std::io::Error::other("TIFF planar size overflows"))?;
+    if data.len() < total {
+        return Err(std::io::Error::other("TIFF planar data is truncated").into());
+    }
+    let mut output = vec![0u8; total];
+    for pixel in 0..pixels {
+        for plane in 0..channels {
+            let src = plane * plane_len + pixel * sample_bytes;
+            let dst = (pixel * channels + plane) * sample_bytes;
+            output[dst..dst + sample_bytes].copy_from_slice(&data[src..src + sample_bytes]);
         }
     }
-
-    Ok(buf)
+    Ok(output)
 }
 
 fn has_bytes(data: &[u8], offset: usize, count: usize) -> bool {
@@ -79,6 +99,322 @@ fn has_bytes(data: &[u8], offset: usize, count: usize) -> bool {
         .checked_add(count)
         .map(|end| end <= data.len())
         .unwrap_or(false)
+}
+
+fn block_row_bytes(block: &TiffBlock, header: &Tiff) -> Result<usize, Error> {
+    let bits: usize = if header.planar_config == 2 {
+        usize::from(
+            *header
+                .bitspersamples
+                .get(block.plane)
+                .ok_or_else(|| std::io::Error::other("TIFF plane has no BitsPerSample"))?,
+        )
+    } else {
+        header
+            .bitspersamples
+            .iter()
+            .try_fold(0usize, |sum, bits| sum.checked_add(usize::from(*bits)))
+            .ok_or_else(|| std::io::Error::other("TIFF row bit count overflows"))?
+    };
+    block
+        .stored_width
+        .checked_mul(bits)
+        .and_then(|bits| bits.checked_add(7))
+        .map(|bits| bits / 8)
+        .ok_or_else(|| std::io::Error::other("TIFF block row size overflows").into())
+}
+
+fn block_expected_bytes(block: &TiffBlock, header: &Tiff) -> Result<usize, Error> {
+    block_row_bytes(block, header)?
+        .checked_mul(block.stored_height)
+        .ok_or_else(|| std::io::Error::other("TIFF block size overflows").into())
+}
+
+fn read_block<B: BinaryReader + ?Sized>(
+    reader: &mut B,
+    block: &TiffBlock,
+) -> Result<Vec<u8>, Error> {
+    reader.seek(std::io::SeekFrom::Start(block.offset))?;
+    let len = usize::try_from(block.compressed_len)
+        .map_err(|_| std::io::Error::other("TIFF block length does not fit usize"))?;
+    if len == 0 {
+        return Err(std::io::Error::other("TIFF block has zero compressed length").into());
+    }
+    let data = reader.read_bytes_as_vec(len)?;
+    if data.len() != len {
+        return Err(std::io::Error::other("TIFF block is truncated").into());
+    }
+    Ok(data)
+}
+
+/// Read the first TIFF page into interleaved native unsigned 16-bit samples.
+/// This is used by the optional high-resolution adapter and deliberately
+/// shares the block, compression, and Predictor implementations with RGBA8.
+#[cfg(feature = "high-bit-depth")]
+pub(crate) fn decode_samples_u16(
+    reader: &mut dyn BinaryReader,
+    page: &Tiff,
+) -> Result<Vec<u16>, Error> {
+    let channels = usize::from(page.samples_per_pixel);
+    if channels == 0 || page.bitspersamples.len() != channels {
+        return Err(std::io::Error::other("TIFF BitsPerSample/SamplesPerPixel mismatch").into());
+    }
+    if page.bitspersamples.iter().any(|bits| *bits != 16) {
+        return Err(std::io::Error::other("native TIFF output requires 16-bit samples").into());
+    }
+    let width = usize::try_from(page.width)?;
+    let height = usize::try_from(page.height)?;
+    let sample_bytes = crate::tiff::sample::sample_bytes(16)?;
+    let output_len = width
+        .checked_mul(height)
+        .and_then(|v| v.checked_mul(channels))
+        .and_then(|v| v.checked_mul(sample_bytes))
+        .ok_or_else(|| std::io::Error::other("TIFF native sample size overflows"))?;
+    crate::limits::check(
+        output_len,
+        crate::limits::current().expanded_bytes,
+        "expanded image",
+    )?;
+    let mut output = vec![0u8; output_len];
+    let block_list = blocks(page)?;
+    let input_len = reader.seek(std::io::SeekFrom::End(0))?;
+    for block in &block_list {
+        block.validate_range(input_len)?;
+        let compressed = read_block(reader, block)?;
+        let expected = block_expected_bytes(block, page)?;
+        let mut data = decompress_block(
+            &page.compression,
+            &compressed,
+            Some(expected),
+            page.fill_order == 2,
+        )?;
+        if page.predictor == 2 {
+            crate::tiff::predictor::apply_predictor(
+                &mut data,
+                block_row_bytes(block, page)?,
+                block.stored_height,
+                16,
+                if page.planar_config == 2 { 1 } else { channels },
+                page.tiff_headers.endian,
+            )?;
+        }
+        let source_row = if page.planar_config == 2 {
+            block.stored_width * 2
+        } else {
+            block.stored_width * channels * 2
+        };
+        for row in 0..block.draw_height {
+            for col in 0..block.draw_width {
+                let src = row * source_row
+                    + col
+                        * if page.planar_config == 2 {
+                            2
+                        } else {
+                            channels * 2
+                        };
+                let dst = ((block.y + row) * width + block.x + col) * channels * 2
+                    + if page.planar_config == 2 {
+                        block.plane * 2
+                    } else {
+                        0
+                    };
+                let src_end = src
+                    .checked_add(2)
+                    .ok_or_else(|| std::io::Error::other("TIFF native source offset overflows"))?;
+                let dst_end = dst.checked_add(2).ok_or_else(|| {
+                    std::io::Error::other("TIFF native destination offset overflows")
+                })?;
+                if src_end > data.len() || dst_end > output.len() {
+                    return Err(std::io::Error::other("TIFF native block is truncated").into());
+                }
+                if page.planar_config == 2 {
+                    output[dst..dst_end].copy_from_slice(&data[src..src_end]);
+                } else {
+                    let full_dst = ((block.y + row) * width + block.x + col) * channels * 2;
+                    let full_end = full_dst + channels * 2;
+                    if full_end > output.len() {
+                        return Err(
+                            std::io::Error::other("TIFF native destination overflows").into()
+                        );
+                    }
+                    output[full_dst..full_end].copy_from_slice(&data[src..src + channels * 2]);
+                }
+            }
+        }
+    }
+    crate::tiff::sample::decode_samples_u16(
+        &output,
+        width,
+        height,
+        &page.bitspersamples,
+        channels,
+        1,
+        page.tiff_headers.endian,
+        1,
+    )
+}
+
+fn decode_blocked<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+    initialize: bool,
+    animation: bool,
+) -> Result<Option<ImgWarnings>, Error> {
+    if initialize {
+        init_canvas(option, header, animation)?;
+    }
+    if header.photometric_interpretation == 6 {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::NoSupportFormat,
+            "TIFF YCbCr without JPEG compression is unsupported".into(),
+        )));
+    }
+    let block_list = blocks(header)?;
+    let input_len = reader.seek(std::io::SeekFrom::End(0))?;
+    for block in &block_list {
+        block.validate_range(input_len)?;
+    }
+
+    // A planar page is assembled by sample, so a high-bit-depth plane cannot
+    // accidentally be interleaved by byte offset. This path is intentionally
+    // byte-aligned; packed planar samples remain rejected as malformed by the
+    // common block contract rather than being silently corrupted.
+    if header.planar_config == 2 && header.samples_per_pixel > 1 {
+        let bits = *header
+            .bitspersamples
+            .first()
+            .ok_or_else(|| std::io::Error::other("TIFF has no BitsPerSample"))?;
+        if bits < 8 || header.bitspersamples.iter().any(|value| *value != bits) {
+            return Err(
+                std::io::Error::other("planar TIFF requires uniform byte-aligned samples").into(),
+            );
+        }
+        let sample_bytes = usize::from(bits / 8);
+        let channels = usize::from(header.samples_per_pixel);
+        if block_list.len() % channels != 0 {
+            return Err(std::io::Error::other(
+                "TIFF planar block count is not divisible by plane count",
+            )
+            .into());
+        }
+        let blocks_per_plane = block_list.len() / channels;
+        for local in 0..blocks_per_plane {
+            let first = block_list[local];
+            let tile_len = first
+                .stored_width
+                .checked_mul(first.stored_height)
+                .and_then(|v| v.checked_mul(channels))
+                .and_then(|v| v.checked_mul(sample_bytes))
+                .ok_or_else(|| std::io::Error::other("TIFF planar tile size overflows"))?;
+            crate::limits::check(
+                tile_len,
+                crate::limits::current().expanded_bytes,
+                "expanded TIFF block",
+            )?;
+            let mut tile = vec![0u8; tile_len];
+            for plane in 0..channels {
+                let block = block_list[plane * blocks_per_plane + local];
+                if block.x != first.x
+                    || block.y != first.y
+                    || block.stored_width != first.stored_width
+                    || block.stored_height != first.stored_height
+                {
+                    return Err(std::io::Error::other(
+                        "TIFF planar block geometry differs between planes",
+                    )
+                    .into());
+                }
+                let compressed = read_block(reader, &block)?;
+                let expected = block_expected_bytes(&block, header)?;
+                let mut data = decompress_block(
+                    &header.compression,
+                    &compressed,
+                    Some(expected),
+                    header.fill_order == 2,
+                )?;
+                if header.predictor == 2 {
+                    crate::tiff::predictor::apply_predictor(
+                        &mut data,
+                        block_row_bytes(&block, header)?,
+                        block.stored_height,
+                        bits,
+                        1,
+                        header.tiff_headers.endian,
+                    )?;
+                }
+                let source_row_bytes = block.stored_width * sample_bytes;
+                for row in 0..block.draw_height {
+                    for col in 0..block.draw_width {
+                        let src = row * source_row_bytes + col * sample_bytes;
+                        let dst = (row * first.stored_width * channels + col * channels + plane)
+                            * sample_bytes;
+                        if src + sample_bytes > data.len() || dst + sample_bytes > tile.len() {
+                            return Err(
+                                std::io::Error::other("TIFF planar block is truncated").into()
+                            );
+                        }
+                        tile[dst..dst + sample_bytes]
+                            .copy_from_slice(&data[src..src + sample_bytes]);
+                    }
+                }
+            }
+            let mut draw_header = header.clone();
+            draw_header.width = u32::try_from(first.stored_width)?;
+            draw_header.height = u32::try_from(first.stored_height)?;
+            draw_header.planar_config = 1;
+            draw_header.predictor = 1;
+            draw_tile(
+                &tile,
+                first.y,
+                first.draw_height,
+                first.x,
+                first.draw_width,
+                option,
+                &draw_header,
+            )?;
+        }
+        return Ok(None);
+    }
+
+    for block in &block_list {
+        let compressed = read_block(reader, block)?;
+        let expected = block_expected_bytes(block, header)?;
+        let mut data = decompress_block(
+            &header.compression,
+            &compressed,
+            Some(expected),
+            header.fill_order == 2,
+        )?;
+        if header.predictor == 2 {
+            crate::tiff::predictor::apply_predictor(
+                &mut data,
+                block_row_bytes(block, header)?,
+                block.stored_height,
+                *header
+                    .bitspersamples
+                    .first()
+                    .ok_or_else(|| std::io::Error::other("TIFF has no BitsPerSample"))?,
+                usize::from(header.samples_per_pixel),
+                header.tiff_headers.endian,
+            )?;
+        }
+        let mut draw_header = header.clone();
+        draw_header.width = u32::try_from(block.stored_width)?;
+        draw_header.height = u32::try_from(block.stored_height)?;
+        draw_header.predictor = 1;
+        draw_header.planar_config = 1;
+        draw_tile(
+            &data,
+            block.y,
+            block.draw_height,
+            block.x,
+            block.draw_width,
+            option,
+            &draw_header,
+        )?;
+    }
+    Ok(None)
 }
 
 pub fn draw_strip(
@@ -108,6 +444,43 @@ pub fn draw_tile(
     }
 
     let mut data = data.to_owned();
+    let mut normalized_header = header.clone();
+    if normalized_header.predictor == 2 {
+        let channels = if normalized_header.planar_config == 2 {
+            1
+        } else {
+            usize::from(normalized_header.samples_per_pixel)
+        };
+        let bits = *normalized_header
+            .bitspersamples
+            .first()
+            .ok_or_else(|| std::io::Error::other("TIFF has no BitsPerSample"))?;
+        let row_bits = if normalized_header.planar_config == 2 {
+            usize::try_from(normalized_header.width)?.checked_mul(usize::from(bits))
+        } else {
+            (normalized_header.width as usize).checked_mul(
+                normalized_header
+                    .bitspersamples
+                    .iter()
+                    .map(|value| usize::from(*value))
+                    .sum(),
+            )
+        };
+        let row_bytes = row_bits
+            .and_then(|value| value.checked_add(7))
+            .map(|value| value / 8)
+            .ok_or_else(|| std::io::Error::other("TIFF predictor row size overflows"))?;
+        crate::tiff::predictor::apply_predictor(
+            &mut data,
+            row_bytes,
+            usize::try_from(normalized_header.height)?,
+            bits,
+            channels,
+            normalized_header.tiff_headers.endian,
+        )?;
+        normalized_header.predictor = 1;
+    }
+    let header = &normalized_header;
 
     // no debug
     if header.planar_config == 2 && header.samples_per_pixel > 1 {
@@ -123,13 +496,18 @@ pub fn draw_tile(
             header.bitspersample
         };
         match header.photometric_interpretation {
-            0 => {
+            0 if header.bitspersample <= 8 && header.samples_per_pixel == 1 => {
                 // WhiteIsZero
                 Some(create_pallet(bitspersample as usize, false))
             }
-            1 => {
+            1 if header.bitspersample <= 8 && header.samples_per_pixel == 1 => {
                 // BlackIsZero
                 Some(create_pallet(bitspersample as usize, true))
+            }
+            0 | 1 => {
+                // High-bit-depth grayscale is normalized from its sample
+                // value below; it is not an indexed color table.
+                None
             }
             2 => {
                 if header.samples_per_pixel < 3 {
@@ -180,7 +558,7 @@ pub fn draw_tile(
         )));
     }
     let palette = match header.photometric_interpretation {
-        0 | 1 | 3 => {
+        0 | 1 if header.bitspersample <= 8 && header.samples_per_pixel == 1 => {
             let palette = color_table.as_deref().ok_or_else(|| {
                 Box::new(ImgError::new_const(
                     ImgErrorKind::DecodeError,
@@ -200,28 +578,128 @@ pub fn draw_tile(
             }
             palette
         }
+        3 => {
+            let palette = color_table.as_deref().ok_or_else(|| {
+                Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    "This is an index color image,but A color table is empty.".to_string(),
+                )) as Error
+            })?;
+            let required_len = 1usize
+                .checked_shl(u32::from(header.bitspersample))
+                .ok_or_else(|| std::io::Error::other("TIFF color table size overflows"))?;
+            if palette.len() < required_len {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    format!(
+                        "Color table is too short. expected at least {} entries, got {}",
+                        required_len,
+                        palette.len()
+                    ),
+                )));
+            }
+            palette
+        }
         _ => &[],
     };
 
-    let mut row_len = ((header.width as usize * header.bitspersample as usize) + 7) / 8;
-    if header.bitspersample == 4 {
-        row_len *= 2;
-    } else if header.bitspersample == 2 {
-        row_len *= 4;
-    } else if header.bitspersample == 1 {
-        row_len *= 8;
-    }
+    let row_bits = usize::try_from(header.width)?
+        .checked_mul(usize::from(header.bitspersample))
+        .ok_or_else(|| std::io::Error::other("TIFF row size overflows"))?;
+    let row_len = row_bits
+        .checked_add(7)
+        .map(|bits| bits / 8)
+        .ok_or_else(|| std::io::Error::other("TIFF row size overflows"))?;
 
-    for (l, y) in (y..(y + strip)).enumerate() {
+    let end_y = y
+        .checked_add(strip)
+        .ok_or_else(|| std::io::Error::other("TIFF row position overflows"))?;
+    for (l, y) in (y..end_y).enumerate() {
         let mut buf = vec![];
         let mut prevs = vec![0_u8; header.samples_per_pixel as usize];
-        let mut i = l * row_len;
+        // Packed grayscale branches below use `i` as a sample index (the
+        // byte offset is derived from it); byte-aligned branches use it as a
+        // byte offset. Reset both forms at each row so row padding is skipped.
+        let mut i = if header.bitspersample < 8 {
+            let samples_per_row = row_len
+                .checked_mul(8)
+                .and_then(|value| value.checked_div(usize::from(header.bitspersample)))
+                .ok_or_else(|| std::io::Error::other("TIFF packed row index overflows"))?;
+            l.checked_mul(samples_per_row)
+                .ok_or_else(|| std::io::Error::other("TIFF packed row index overflows"))?
+        } else {
+            l.checked_mul(row_len)
+                .ok_or_else(|| std::io::Error::other("TIFF row offset overflows"))?
+        };
 
-        for _ in 0..header.width as usize {
+        for pixel in 0..header.width as usize {
             match header.photometric_interpretation {
-                0 | 1 | 3 => {
+                3 => {
+                    let row_start = l
+                        .checked_mul(row_len)
+                        .ok_or_else(|| std::io::Error::other("TIFF palette row overflows"))?;
+                    let row_end = row_start
+                        .checked_add(row_len)
+                        .ok_or_else(|| std::io::Error::other("TIFF palette row overflows"))?;
+                    let row = data
+                        .get(row_start..row_end)
+                        .ok_or_else(|| std::io::Error::other("TIFF palette row is truncated"))?;
+                    let index = pixel
+                        .checked_mul(usize::from(header.samples_per_pixel))
+                        .ok_or_else(|| std::io::Error::other("TIFF palette index overflows"))?;
+                    let value = crate::tiff::sample::read_sample_with_fill_order(
+                        row,
+                        header.bitspersamples[0],
+                        header.tiff_headers.endian,
+                        index,
+                        header.fill_order,
+                    )?;
+                    let color = palette.get(usize::try_from(value)?).ok_or_else(|| {
+                        std::io::Error::other("TIFF palette index is out of range")
+                    })?;
+                    buf.extend_from_slice(&[color.red, color.green, color.blue, color.alpha]);
+                }
+                0 | 1 => {
                     match header.bitspersamples[0] {
                         16 => {
+                            if header.photometric_interpretation != 3
+                                && !(header.max_sample_values.len() == 1
+                                    && header.max_sample_values[0] == 32767
+                                    && header.tiff_headers.endian == bin_rs::Endian::LittleEndian)
+                            {
+                                let bytes = usize::from(header.samples_per_pixel)
+                                    .checked_mul(2)
+                                    .ok_or_else(|| {
+                                        std::io::Error::other(
+                                            "TIFF grayscale sample size overflows",
+                                        )
+                                    })?;
+                                if !has_bytes(&data, i, bytes) {
+                                    return Ok(None);
+                                }
+                                let sample =
+                                    u32::from(read_u16(&data, i, header.tiff_headers.endian));
+                                let alpha = if header.extra_samples.first().is_some()
+                                    && header.samples_per_pixel > 1
+                                {
+                                    u32::from(read_u16(&data, i + 2, header.tiff_headers.endian))
+                                } else {
+                                    u32::from(u16::MAX)
+                                };
+                                let rgba = crate::tiff::color::gray_to_rgba8(
+                                    sample >> 8,
+                                    255,
+                                    header.photometric_interpretation == 0,
+                                    alpha >> 8,
+                                    header.extra_samples.first() == Some(&1),
+                                );
+                                buf.push(rgba.red);
+                                buf.push(rgba.green);
+                                buf.push(rgba.blue);
+                                buf.push(rgba.alpha);
+                                i += bytes;
+                                continue;
+                            }
                             // Illegal tiff(TOWNS TIFF)
                             if header.max_sample_values.len() == 1
                                 && header.max_sample_values[0] == 32767
@@ -255,11 +733,67 @@ pub fn draw_tile(
                                 buf.push(color);
                                 buf.push(color);
                                 buf.push(color);
-                                buf.push(color);
+                                buf.push(0xff);
                                 i += header.bitspersamples[0] as usize / 8;
                             }
                         }
+                        32 => {
+                            let bytes = usize::from(header.samples_per_pixel)
+                                .checked_mul(4)
+                                .ok_or_else(|| {
+                                    std::io::Error::other("TIFF grayscale sample size overflows")
+                                })?;
+                            if !has_bytes(&data, i, bytes) {
+                                return Ok(None);
+                            }
+                            let sample = read_u32(&data, i, header.tiff_headers.endian);
+                            let alpha = if header.extra_samples.first().is_some()
+                                && header.samples_per_pixel > 1
+                            {
+                                read_u32(&data, i + 4, header.tiff_headers.endian)
+                            } else {
+                                u32::MAX
+                            };
+                            let rgba = crate::tiff::color::gray_to_rgba8(
+                                sample >> 24,
+                                255,
+                                header.photometric_interpretation == 0,
+                                alpha >> 24,
+                                header.extra_samples.first() == Some(&1),
+                            );
+                            buf.push(rgba.red);
+                            buf.push(rgba.green);
+                            buf.push(rgba.blue);
+                            buf.push(rgba.alpha);
+                            i += bytes;
+                        }
                         8 => {
+                            if header.samples_per_pixel > 1 {
+                                if !has_bytes(&data, i, usize::from(header.samples_per_pixel)) {
+                                    return Ok(None);
+                                }
+                                let associated = header.extra_samples.first() == Some(&1);
+                                let alpha = if header.extra_samples.first().is_some()
+                                    && header.samples_per_pixel > 1
+                                {
+                                    u32::from(data[i + 1])
+                                } else {
+                                    255
+                                };
+                                let rgba = crate::tiff::color::gray_to_rgba8(
+                                    u32::from(data[i]),
+                                    255,
+                                    header.photometric_interpretation == 0,
+                                    alpha,
+                                    associated,
+                                );
+                                buf.push(rgba.red);
+                                buf.push(rgba.green);
+                                buf.push(rgba.blue);
+                                buf.push(rgba.alpha);
+                                i += usize::from(header.samples_per_pixel);
+                                continue;
+                            }
                             if i >= data.len() {
                                 //return Err(Box::new(ImgError::new_const(ImgErrorKind::DecodeError,"Buffer shotage".to_string())));
                                 return Ok(None);
@@ -370,7 +904,7 @@ pub fn draw_tile(
                             g = data[i + 1];
                             b = data[i + 2];
                             a = if !header.extra_samples.is_empty()
-                                && header.extra_samples[0] == 2
+                                && (header.extra_samples[0] == 1 || header.extra_samples[0] == 2)
                                 && header.samples_per_pixel > 3
                             {
                                 data[i + 3]
@@ -389,7 +923,8 @@ pub fn draw_tile(
                                 g = (read_u16(&data, i + 2, header.tiff_headers.endian) >> 8) as u8;
                                 b = (read_u16(&data, i + 4, header.tiff_headers.endian) >> 8) as u8;
                                 a = if !header.extra_samples.is_empty()
-                                    && header.extra_samples[0] == 2
+                                    && (header.extra_samples[0] == 1
+                                        || header.extra_samples[0] == 2)
                                     && header.samples_per_pixel > 3
                                 {
                                     (read_u16(&data, i + 6, header.tiff_headers.endian) >> 8) as u8
@@ -408,7 +943,7 @@ pub fn draw_tile(
                             g = (read_u32(&data, i + 4, header.tiff_headers.endian) >> 24) as u8;
                             b = (read_u32(&data, i + 8, header.tiff_headers.endian) >> 24) as u8;
                             a = if !header.extra_samples.is_empty()
-                                && header.extra_samples[0] == 2
+                                && (header.extra_samples[0] == 1 || header.extra_samples[0] == 2)
                                 && header.samples_per_pixel > 3
                             {
                                 (read_u32(&data, i + 12, header.tiff_headers.endian) >> 24) as u8
@@ -437,6 +972,9 @@ pub fn draw_tile(
                             prevs[3] = a;
                         }
                     }
+                    if header.extra_samples.first() == Some(&1) && header.samples_per_pixel > 3 {
+                        (r, g, b) = crate::tiff::color::unassociate_alpha(r, g, b, a);
+                    }
                     buf.push(r);
                     buf.push(g);
                     buf.push(b);
@@ -445,95 +983,159 @@ pub fn draw_tile(
                 // 4 : Transparentary musk is not support
                 5 => {
                     //CMYK
-                    let (mut c, mut m, mut y, mut k, mut a);
-                    match header.bitspersamples[0] {
-                        //bit per samples same (8,8,8), but also (8,16,8) pattern
-                        8 => {
-                            if !has_bytes(&data, i, header.samples_per_pixel as usize) {
-                                return Ok(None);
-                            }
-                            c = data[i];
-                            m = data[i + 1];
-                            y = data[i + 2];
-                            k = data[i + 3];
-                            a = if !header.extra_samples.is_empty()
-                                && header.extra_samples[0] == 2
-                                && header.samples_per_pixel > 4
-                            {
-                                data[i + 4]
-                            } else {
-                                0xff
-                            };
-                            i += header.samples_per_pixel as usize;
+                    let bits = header.bitspersamples[0];
+                    let spp = usize::from(header.samples_per_pixel);
+                    let (c, m, y, k, a, maximum) = if bits == 8 {
+                        let bytes = spp;
+                        if !has_bytes(&data, i, bytes) {
+                            return Ok(None);
                         }
-                        16 => {
-                            let bytes = header.samples_per_pixel as usize * 2;
-                            if !has_bytes(&data, i, bytes) {
-                                return Ok(None);
-                            }
-                            c = (read_u16(&data, i, header.tiff_headers.endian) >> 8) as u8;
-                            m = (read_u16(&data, i + 2, header.tiff_headers.endian) >> 8) as u8;
-                            y = (read_u16(&data, i + 4, header.tiff_headers.endian) >> 8) as u8;
-                            k = (read_u16(&data, i + 6, header.tiff_headers.endian) >> 8) as u8;
-                            a = if !header.extra_samples.is_empty()
-                                && header.extra_samples[0] == 2
-                                && header.samples_per_pixel > 4
-                            {
-                                (read_u16(&data, i + 8, header.tiff_headers.endian) >> 8) as u8
-                            } else {
-                                0xff
-                            };
-                            i += header.samples_per_pixel as usize * 2;
+                        let alpha = if header.extra_samples.first() == Some(&2) && spp > 4 {
+                            u32::from(data[i + 4])
+                        } else {
+                            255
+                        };
+                        (
+                            u32::from(data[i]),
+                            u32::from(data[i + 1]),
+                            u32::from(data[i + 2]),
+                            u32::from(data[i + 3]),
+                            alpha,
+                            255,
+                        )
+                    } else if bits == 16 {
+                        let bytes = spp
+                            .checked_mul(2)
+                            .ok_or_else(|| std::io::Error::other("CMYK sample size overflows"))?;
+                        if !has_bytes(&data, i, bytes) {
+                            return Ok(None);
                         }
-                        32 => {
-                            let bytes = header.samples_per_pixel as usize * 4;
-                            if !has_bytes(&data, i, bytes) {
-                                return Ok(None);
-                            }
-                            c = (read_u32(&data, i, header.tiff_headers.endian) >> 24) as u8;
-                            m = (read_u32(&data, i + 4, header.tiff_headers.endian) >> 24) as u8;
-                            y = (read_u32(&data, i + 8, header.tiff_headers.endian) >> 24) as u8;
-                            k = (read_u32(&data, i + 12, header.tiff_headers.endian) >> 24) as u8;
-                            a = if !header.extra_samples.is_empty()
-                                && header.extra_samples[0] == 2
-                                && header.samples_per_pixel > 4
-                            {
-                                (read_u32(&data, i + 16, header.tiff_headers.endian) >> 24) as u8
-                            } else {
-                                0xff
-                            };
-                            i += header.samples_per_pixel as usize * 4;
+                        let alpha = if header.extra_samples.first() == Some(&2) && spp > 4 {
+                            u32::from(read_u16(&data, i + 8, header.tiff_headers.endian))
+                        } else {
+                            u32::from(u16::MAX)
+                        };
+                        (
+                            u32::from(read_u16(&data, i, header.tiff_headers.endian)),
+                            u32::from(read_u16(&data, i + 2, header.tiff_headers.endian)),
+                            u32::from(read_u16(&data, i + 4, header.tiff_headers.endian)),
+                            u32::from(read_u16(&data, i + 6, header.tiff_headers.endian)),
+                            alpha,
+                            u32::from(u16::MAX),
+                        )
+                    } else if bits == 32 {
+                        let bytes = spp
+                            .checked_mul(4)
+                            .ok_or_else(|| std::io::Error::other("CMYK sample size overflows"))?;
+                        if !has_bytes(&data, i, bytes) {
+                            return Ok(None);
                         }
-                        _ => {
-                            return Err(Box::new(ImgError::new_const(
-                                ImgErrorKind::DecodeError,
-                                "This bit per sample is not support.".to_string(),
-                            )));
+                        let alpha = if header.extra_samples.first() == Some(&2) && spp > 4 {
+                            read_u32(&data, i + 16, header.tiff_headers.endian)
+                        } else {
+                            u32::MAX
+                        };
+                        (
+                            read_u32(&data, i, header.tiff_headers.endian),
+                            read_u32(&data, i + 4, header.tiff_headers.endian),
+                            read_u32(&data, i + 8, header.tiff_headers.endian),
+                            read_u32(&data, i + 12, header.tiff_headers.endian),
+                            alpha,
+                            u32::MAX,
+                        )
+                    } else if bits < 8 {
+                        // Packed CMYK (for example, 6-bit samples) is read per
+                        // row so padding bits at the end of each row are ignored.
+                        let row_start = l
+                            .checked_mul(row_len)
+                            .ok_or_else(|| std::io::Error::other("CMYK row offset overflows"))?;
+                        let row_end = row_start
+                            .checked_add(row_len)
+                            .ok_or_else(|| std::io::Error::other("CMYK row end overflows"))?;
+                        if row_end > data.len() {
+                            return Ok(None);
                         }
+                        let sample_index = pixel
+                            .checked_mul(spp)
+                            .ok_or_else(|| std::io::Error::other("CMYK sample index overflows"))?;
+                        let row = &data[row_start..row_end];
+                        let c = crate::tiff::sample::read_sample_with_fill_order(
+                            row,
+                            bits,
+                            header.tiff_headers.endian,
+                            sample_index,
+                            header.fill_order,
+                        )?;
+                        let m = crate::tiff::sample::read_sample_with_fill_order(
+                            row,
+                            bits,
+                            header.tiff_headers.endian,
+                            sample_index.checked_add(1).ok_or_else(|| {
+                                std::io::Error::other("CMYK sample index overflows")
+                            })?,
+                            header.fill_order,
+                        )?;
+                        let y = crate::tiff::sample::read_sample_with_fill_order(
+                            row,
+                            bits,
+                            header.tiff_headers.endian,
+                            sample_index.checked_add(2).ok_or_else(|| {
+                                std::io::Error::other("CMYK sample index overflows")
+                            })?,
+                            header.fill_order,
+                        )?;
+                        let k = crate::tiff::sample::read_sample_with_fill_order(
+                            row,
+                            bits,
+                            header.tiff_headers.endian,
+                            sample_index.checked_add(3).ok_or_else(|| {
+                                std::io::Error::other("CMYK sample index overflows")
+                            })?,
+                            header.fill_order,
+                        )?;
+                        let alpha = if header.extra_samples.first() == Some(&2) && spp > 4 {
+                            crate::tiff::sample::read_sample_with_fill_order(
+                                row,
+                                bits,
+                                header.tiff_headers.endian,
+                                sample_index.checked_add(4).ok_or_else(|| {
+                                    std::io::Error::other("CMYK sample index overflows")
+                                })?,
+                                header.fill_order,
+                            )?
+                        } else {
+                            (1u32 << bits) - 1
+                        };
+                        (c, m, y, k, alpha, (1u32 << bits) - 1)
+                    } else {
+                        return Err(Box::new(ImgError::new_const(
+                            ImgErrorKind::DecodeError,
+                            "This bit per sample is not support.".to_string(),
+                        )));
+                    };
+                    if bits == 8 {
+                        i += spp;
+                    } else if bits == 16 {
+                        i += spp
+                            .checked_mul(2)
+                            .ok_or_else(|| std::io::Error::other("CMYK sample size overflows"))?;
+                    } else if bits == 32 {
+                        i += spp
+                            .checked_mul(4)
+                            .ok_or_else(|| std::io::Error::other("CMYK sample size overflows"))?;
+                    } else {
+                        // Keep the packed row cursor at the end of the row;
+                        // packed samples use sample_index above instead.
+                        i = l
+                            .checked_add(1)
+                            .and_then(|value| value.checked_mul(row_len))
+                            .ok_or_else(|| std::io::Error::other("CMYK row end overflows"))?;
                     }
-
-                    if header.predictor == 2 {
-                        y += prevs[0];
-                        prevs[0] = y;
-                        m += prevs[1];
-                        prevs[1] = m;
-                        c += prevs[2];
-                        prevs[2] = c;
-                        k += prevs[3];
-                        prevs[3] = k;
-                        if !header.extra_samples.is_empty() && header.extra_samples[0] == 2 {
-                            a += prevs[4];
-                            prevs[4] = a;
-                        }
-                    }
-                    let r = 255 - c;
-                    let g = 255 - m;
-                    let b = 255 - y;
-
-                    buf.push(r);
-                    buf.push(g);
-                    buf.push(b);
-                    buf.push(a);
+                    let rgba = crate::tiff::color::cmyk_to_rgba8(c, m, y, k, maximum, a);
+                    buf.push(rgba.red);
+                    buf.push(rgba.green);
+                    buf.push(rgba.blue);
+                    buf.push(rgba.alpha);
                 }
                 // not support
                 /*
@@ -641,37 +1243,6 @@ fn init_canvas(option: &mut DecodeOptions, header: &Tiff, animation: bool) -> Re
     Ok(())
 }
 
-fn read_strips<'decode, B: BinaryReader>(reader: &mut B, header: &Tiff) -> Result<Vec<u8>, Error> {
-    let mut data = vec![];
-    if header.strip_offsets.len() != header.strip_byte_counts.len() {
-        if header.strip_offsets.len() == 1
-            && header.strip_byte_counts.is_empty()
-            && header.compression == Compression::NoneCompression
-        {
-            let offset = header.strip_offsets[0] as u64;
-            reader.seek(std::io::SeekFrom::Start(offset))?;
-            let mut byte = 0;
-            for sample in &header.bitspersamples {
-                byte += (*sample as u32 + 7) / 8;
-            }
-
-            let strip_byte_counts = header.width * header.height * byte;
-            let buf = reader.read_bytes_as_vec(strip_byte_counts as usize)?;
-            return Ok(buf);
-        }
-        return Err(Box::new(ImgError::new_const(
-            ImgErrorKind::DecodeError,
-            "Mismach length, image strip offsets and strib byte counts.".to_string(),
-        )));
-    }
-    for (i, offset) in header.strip_offsets.iter().enumerate() {
-        reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
-        let mut buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
-        data.append(&mut buf);
-    }
-    Ok(data)
-}
-
 pub fn decode_lzw_compresson<'decode, B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -679,28 +1250,7 @@ pub fn decode_lzw_compresson<'decode, B: BinaryReader>(
     initialize: bool,
     animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let is_lsb = header.fill_order == 2; // 1: MSB 2: LSB
-    if initialize {
-        init_canvas(option, header, animation)?;
-    }
-    let mut y = 0;
-    let mut strip = header.rows_per_strip as usize;
-    for (i, offset) in header.strip_offsets.iter().enumerate() {
-        reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
-        let buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
-        let mut decoder = Lzwdecode::tiff(is_lsb);
-        let data = decoder.decode(&buf)?;
-        draw_strip(&data, y, strip, option, header)?;
-        y += strip;
-        if y >= header.height as usize {
-            break;
-        }
-        if y + strip >= header.height as usize {
-            strip = header.height as usize - y;
-        }
-    }
-
-    Ok(None)
+    decode_blocked(reader, option, header, initialize, animation)
 }
 
 pub fn decode_packbits_compresson<'decode, B: BinaryReader>(
@@ -710,13 +1260,7 @@ pub fn decode_packbits_compresson<'decode, B: BinaryReader>(
     initialize: bool,
     animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
-    if initialize {
-        init_canvas(option, header, animation)?;
-    }
-    let data = read_strips(reader, header)?;
-    let data = packbits::decode(&data)?;
-    let warnings = draw(&data, option, header)?;
-    Ok(warnings)
+    decode_blocked(reader, option, header, initialize, animation)
 }
 
 pub fn decode_deflate_compresson<'decode, B: BinaryReader>(
@@ -726,49 +1270,7 @@ pub fn decode_deflate_compresson<'decode, B: BinaryReader>(
     initialize: bool,
     animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
-    if initialize {
-        init_canvas(option, header, animation)?;
-    }
-    let data = read_strips(reader, header)?;
-    let width = header.width as usize;
-    let height = header.height as usize;
-    let row_bytes = if header.planar_config == 2 {
-        header
-            .bitspersamples
-            .iter()
-            .try_fold(0usize, |total, bits| {
-                width
-                    .checked_mul(*bits as usize)?
-                    .checked_add(7)?
-                    .checked_div(8)?
-                    .checked_add(total)
-            })
-    } else {
-        let bits = header
-            .bitspersamples
-            .iter()
-            .try_fold(0usize, |sum, bits| sum.checked_add(*bits as usize));
-        bits.and_then(|bits| width.checked_mul(bits))
-            .and_then(|v| v.checked_add(7))
-            .map(|v| v / 8)
-    };
-    let expected = row_bytes
-        .and_then(|row| row.checked_mul(height))
-        .ok_or_else(|| std::io::Error::other("TIFF expanded size overflow"))?;
-    let res = crate::limits::inflate_image(&data, expected);
-    match res {
-        Ok(data) => {
-            let warnings = draw(&data, option, header)?;
-            Ok(warnings)
-        }
-        Err(err) => {
-            let deflate_err = format!("{:?}", err);
-            Err(Box::new(ImgError::new_const(
-                ImgErrorKind::DecodeError,
-                deflate_err,
-            )))
-        }
-    }
+    decode_blocked(reader, option, header, initialize, animation)
 }
 
 pub fn decode_none_compresson<'decode, B: BinaryReader>(
@@ -778,12 +1280,7 @@ pub fn decode_none_compresson<'decode, B: BinaryReader>(
     initialize: bool,
     animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
-    if initialize {
-        init_canvas(option, header, animation)?;
-    }
-    let data = read_strips(reader, header)?;
-    let warnings = draw(&data, option, header)?;
-    Ok(warnings)
+    decode_blocked(reader, option, header, initialize, animation)
 }
 
 pub fn decode_ccitt_compresson<'decode, B: BinaryReader>(
@@ -796,37 +1293,44 @@ pub fn decode_ccitt_compresson<'decode, B: BinaryReader>(
     if initialize {
         init_canvas(option, header, animation)?;
     }
-    let warnings = None;
-
-    let header = &mut header.clone();
-
-    header.bitspersample = 8;
-    header.bitspersamples = [8].to_vec();
-
-    if header.compression == Compression::CCITTGroup3Fax {
-        let buf = read_strips(reader, header)?;
-        let (data, _warning) = ccitt::decode(&buf, header)?;
-        draw(&data, option, header)?;
-    } else {
-        // CCITGroup4FAX
-        let mut y = 0;
-        let mut strip = header.rows_per_strip as usize;
-        for (i, offset) in header.strip_offsets.iter().enumerate() {
-            reader.seek(std::io::SeekFrom::Start(*offset as u64))?;
-            let buf = reader.read_bytes_as_vec(header.strip_byte_counts[i] as usize)?;
-            let (data, _warning) = ccitt::decode(&buf, header)?;
-            draw_strip(&data, y, strip, option, header)?;
-            y += strip;
-            if y >= header.height as usize {
-                break;
-            }
-            if y + strip >= header.height as usize {
-                strip = header.height as usize - y;
-            }
-        }
+    let block_list = blocks(header)?;
+    let input_len = reader.seek(std::io::SeekFrom::End(0))?;
+    for block in block_list {
+        block.validate_range(input_len)?;
+        let compressed = read_block(reader, &block)?;
+        let mut ccitt_header = header.clone();
+        ccitt_header.width = u32::try_from(block.stored_width)?;
+        ccitt_header.height = u32::try_from(block.stored_height)?;
+        ccitt_header.rows_per_strip = u32::try_from(block.stored_height)?;
+        ccitt_header.bitspersample = 8;
+        ccitt_header.bitspersamples = vec![8];
+        ccitt_header.planar_config = 1;
+        let pixels = block
+            .stored_width
+            .checked_mul(block.stored_height)
+            .ok_or_else(|| std::io::Error::other("CCITT block pixel count overflows"))?;
+        crate::limits::check(
+            pixels,
+            crate::limits::current().pixels,
+            "CCITT block pixels",
+        )?;
+        crate::limits::check(
+            pixels,
+            crate::limits::current().expanded_bytes,
+            "CCITT block expansion",
+        )?;
+        let (data, _warning) = ccitt::decode(&compressed, &ccitt_header)?;
+        draw_tile(
+            &data,
+            block.y,
+            block.draw_height,
+            block.x,
+            block.draw_width,
+            option,
+            &ccitt_header,
+        )?;
     }
-
-    Ok(warnings)
+    Ok(None)
 }
 
 fn compression_decode<'decode, B: BinaryReader>(
@@ -858,7 +1362,7 @@ fn compression_decode<'decode, B: BinaryReader>(
         Compression::Packbits => {
             return decode_packbits_compresson(reader, option, header, initialize, animation);
         }
-        Compression::AdobeDeflate => {
+        Compression::AdobeDeflate | Compression::DEFLATE => {
             return decode_deflate_compresson(reader, option, header, initialize, animation);
         }
         Compression::CCITTHuffmanRLE
@@ -867,8 +1371,8 @@ fn compression_decode<'decode, B: BinaryReader>(
             return decode_ccitt_compresson(reader, option, header, initialize, animation);
         }
         _ => Err(Box::new(ImgError::new_const(
-            ImgErrorKind::DecodeError,
-            "Not suport compression".to_string(),
+            ImgErrorKind::NoSupportFormat,
+            "TIFF compression is not supported".to_string(),
         ))),
     }
 }

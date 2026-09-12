@@ -1,9 +1,17 @@
 //! TIFF format support, including EXIF-oriented metadata parsing.
 
+#[cfg(feature = "tiff")]
+pub(crate) mod block;
+#[cfg(feature = "tiff")]
+pub(crate) mod color;
 #[cfg(feature = "exif")]
 pub(crate) mod ifd;
 #[cfg(feature = "exif")]
 pub(crate) mod page;
+#[cfg(feature = "tiff")]
+pub(crate) mod predictor;
+#[cfg(feature = "tiff")]
+pub(crate) mod sample;
 
 #[cfg(feature = "tiff")]
 pub mod decoder;

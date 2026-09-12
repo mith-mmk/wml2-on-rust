@@ -569,25 +569,62 @@ fn source_headers(profile: &ImageProfiles) -> Option<TiffHeaders> {
     }
 }
 
+fn is_rgb_icc_profile(profile: &[u8]) -> bool {
+    // ICC v2/v4 stores the data color space at bytes 16..20.  Keep accepting
+    // the short opaque profiles historically accepted by WML2; a complete
+    // profile with a known non-RGB color space must not be attached to RGB(A)
+    // output without a color transform.
+    profile.len() < 20 || &profile[16..20] == b"RGB "
+}
+
+fn source_rgb_photometric(source: Option<&TiffHeaders>) -> Option<u16> {
+    source.and_then(|headers| {
+        first_ifd_tags(&headers.headers)
+            .iter()
+            .find(|tag| tag.tagid == 0x0106)
+            .and_then(|tag| match &tag.data {
+                DataPack::Short(values) => values.first().copied(),
+                _ => None,
+            })
+    })
+}
+
 fn exif_headers_from_bytes(bytes: &[u8]) -> Result<TiffHeaders, Error> {
     let mut reader = BytesReader::new(bytes);
     read_tags(&mut reader)
 }
 
 fn source_icc_profile(profile: &ImageProfiles, source: Option<&TiffHeaders>) -> Option<Vec<u8>> {
+    // The encoder always emits RGB(A) samples.  An ICC profile attached to a
+    // Gray, CMYK, or other source image describes that source color space and
+    // cannot be copied into an RGB TIFF without a color transform.  Keep the
+    // source profile in the input metadata, but do not write it as tag 0x8773
+    // on the RGB output where it would be falsely interpreted as RGB.
+    let source_photometric = source_rgb_photometric(source);
+
     if let Some(metadata) = &profile.metadata {
         if let Some(DataMap::ICCProfile(profile)) = metadata.get(ICC_PROFILE_METADATA_KEY) {
-            return Some(profile.clone());
+            // An explicitly supplied, complete RGB profile describes the
+            // pixels being written and takes precedence over source tags. A
+            // short opaque profile remains compatible only when the source
+            // was already RGB/YCbCr (or its color space is unknown).
+            let known_rgb = profile.len() >= 20 && is_rgb_icc_profile(profile);
+            let short_opaque = profile.len() < 20
+                && source_photometric.is_none_or(|value| value == 2 || value == 6);
+            return (known_rgb || short_opaque).then(|| profile.clone());
         }
     }
 
     let source = source?;
+    if source_photometric != Some(2) && source_photometric != Some(6) {
+        return None;
+    }
     first_ifd_tags(&source.headers)
         .iter()
         .find(|tag| tag.tagid == 0x8773)
         .and_then(|tag| match &tag.data {
             DataPack::Bytes(data) | DataPack::Undef(data) | DataPack::Unkown(data) => {
-                Some(data.clone())
+                is_rgb_icc_profile(data).then(|| data.clone())
             }
             _ => None,
         })
@@ -609,16 +646,28 @@ fn should_copy_source_tag(tagid: usize) -> bool {
             | 0x0115
             | 0x0116
             | 0x0117
+            | 0x0118
+            | 0x0119
             | 0x011c
             | 0x011e
             | 0x011f
+            | 0x012d
             | 0x013d
+            | 0x013e
+            | 0x013f
             | 0x0140
             | 0x0142
             | 0x0143
             | 0x0144
             | 0x0145
+            | 0x014c
+            | 0x014d
+            | 0x014e
             | 0x0152
+            | 0x0153
+            | 0x0154
+            | 0x0155
+            | 0x0156
             | 0x01b5
             | 0x0200
             | 0x0201
@@ -985,8 +1034,13 @@ fn build_animation_pages(
 /// and therefore store RGB only.
 ///
 /// Supported `EncodeOptions.options` keys:
-/// - `compression`: `none`, `lzw`, `lzw_msb`, `lzw_lsb`, or `jpeg`
+/// - `compression`: `none`, `lzw`, `lzw_msb`, `lzw_lsb`, `deflate`,
+///   `adobe_deflate`, `deflate_legacy`, or `jpeg`
 /// - `quality`: JPEG quality when `compression=jpeg`
+/// - `predictor`: `none` or `horizontal` (LZW and Deflate only)
+/// - `bigtiff`: `true`/`false` (or `0`/`1`) to select BigTIFF output
+///
+/// Deflate output uses the fixed zlib compression level 8.
 /// - `exif`: `Raw(bytes)`, `Exif(headers)`, or `Ascii("copy")`
 pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     let profile = image.drawer.encode_start(None)?;

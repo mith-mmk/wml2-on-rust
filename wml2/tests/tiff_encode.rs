@@ -231,6 +231,44 @@ fn exif_fixture() -> TiffHeaders {
     headers
 }
 
+fn source_with_stale_sample_format() -> TiffHeaders {
+    let mut headers = exif_fixture();
+    // This is metadata from an RGBA source.  The encoder drops an opaque
+    // alpha channel and emits RGB, so the four source SampleFormat values
+    // must not be copied to the output IFD unchanged.
+    headers.headers.push(TiffHeader {
+        tagid: 0x0153,
+        data: DataPack::Short(vec![1, 1, 1, 1]),
+        length: 4,
+    });
+    headers
+}
+
+fn source_with_pixel_dependent_tags() -> TiffHeaders {
+    let mut headers = source_with_stale_sample_format();
+    for (tagid, data, length) in [
+        (0x0118, DataPack::Short(vec![0]), 1),   // MinSampleValue
+        (0x0119, DataPack::Short(vec![255]), 1), // MaxSampleValue
+        (0x012d, DataPack::Short(vec![1]), 1),   // TransferFunction
+        (0x013e, DataPack::Rational(vec![Rational { n: 1, d: 1 }]), 1), // WhitePoint
+        (0x013f, DataPack::Rational(vec![Rational { n: 1, d: 1 }]), 1), // PrimaryChromaticities
+        (0x014c, DataPack::Short(vec![1]), 1),   // InkSet
+        (0x014d, DataPack::Ascii("Cyan\0Magenta".to_string()), 12), // InkNames
+        (0x014e, DataPack::Short(vec![4]), 1),   // NumberOfInks
+        (0x0154, DataPack::Short(vec![0]), 1),   // SMinSampleValue
+        (0x0155, DataPack::Short(vec![255]), 1), // SMaxSampleValue
+        (0x0156, DataPack::Short(vec![255]), 1), // TransferRange
+    ] {
+        headers.headers.push(TiffHeader {
+            tagid,
+            data,
+            length,
+        });
+    }
+    headers.headers.sort_by_key(|tag| tag.tagid);
+    headers
+}
+
 fn animated_png_bytes() -> Vec<u8> {
     let mut image = animated_image();
     let mut encode = EncodeOptions {
@@ -489,6 +527,246 @@ fn encode_deflate_predictor_tiff_via_public_api_roundtrips_pixels() {
             .to_string(),
         "Adobe Deflate"
     );
+}
+
+#[test]
+fn encode_rebuilds_pixel_dependent_sample_format_for_classic_and_bigtiff() {
+    let rgba = solid_rgba(5, 3, [12, 34, 56, 255]);
+    let compression_names = ["none", "lzw", "deflate"];
+
+    for bigtiff in [false, true] {
+        for compression in compression_names {
+            let mut image = ImageBuffer::from_buffer(5, 3, rgba.clone());
+            let mut metadata = HashMap::new();
+            metadata.insert(
+                "Tiff headers".to_string(),
+                DataMap::Exif(source_with_pixel_dependent_tags()),
+            );
+            image.metadata = Some(metadata);
+
+            let mut options = HashMap::new();
+            options.insert(
+                "compression".to_string(),
+                DataMap::Ascii(compression.to_string()),
+            );
+            if bigtiff {
+                options.insert("bigtiff".to_string(), DataMap::UInt(1));
+            }
+            let mut encode = EncodeOptions {
+                debug_flag: 0,
+                drawer: &mut image,
+                options: Some(options),
+            };
+            let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+            let decoded = image_load(&data).unwrap();
+            assert_eq!(decoded.buffer.as_ref().unwrap(), &rgba);
+
+            let headers = match decoded
+                .metadata
+                .as_ref()
+                .unwrap()
+                .get("Tiff headers")
+                .unwrap()
+            {
+                DataMap::Exif(headers) => headers,
+                other => panic!("unexpected TIFF metadata: {other:?}"),
+            };
+            let output_tags = first_ifd_tags(&headers.headers);
+            for tagid in [
+                0x0118, 0x0119, 0x012d, 0x013e, 0x013f, 0x014c, 0x014d, 0x014e, 0x0152, 0x0153,
+                0x0154, 0x0155, 0x0156,
+            ] {
+                assert!(
+                    output_tags.iter().all(|tag| tag.tagid != tagid),
+                    "source pixel-dependent tag 0x{tagid:04x} must not be copied for {compression}, bigtiff={bigtiff}"
+                );
+            }
+        }
+    }
+
+    #[cfg(feature = "tiff-jpeg")]
+    for bigtiff in [false, true] {
+        let mut image = ImageBuffer::from_buffer(5, 3, rgba.clone());
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            "Tiff headers".to_string(),
+            DataMap::Exif(source_with_stale_sample_format()),
+        );
+        image.metadata = Some(metadata);
+
+        let mut options = HashMap::new();
+        options.insert(
+            "compression".to_string(),
+            DataMap::Ascii("jpeg".to_string()),
+        );
+        options.insert("quality".to_string(), DataMap::UInt(90));
+        if bigtiff {
+            options.insert("bigtiff".to_string(), DataMap::UInt(1));
+        }
+        let mut encode = EncodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+            options: Some(options),
+        };
+        let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+        let decoded = image_load(&data).unwrap();
+        assert_eq!(decoded.width, 5);
+        assert_eq!(decoded.height, 3);
+        let headers = match decoded
+            .metadata
+            .as_ref()
+            .unwrap()
+            .get("Tiff headers")
+            .unwrap()
+        {
+            DataMap::Exif(headers) => headers,
+            other => panic!("unexpected TIFF metadata: {other:?}"),
+        };
+        assert!(
+            first_ifd_tags(&headers.headers)
+                .iter()
+                .all(|tag| tag.tagid != 0x0153)
+        );
+    }
+}
+
+#[test]
+fn encode_does_not_attach_non_rgb_source_icc_to_rgb_output() {
+    let rgba = solid_rgba(2, 2, [12, 34, 56, 255]);
+    let mut source = source_with_stale_sample_format();
+    source.headers.insert(
+        0,
+        TiffHeader {
+            tagid: 0x0106,
+            data: DataPack::Short(vec![5]), // CMYK
+            length: 1,
+        },
+    );
+    let mut image = ImageBuffer::from_buffer(2, 2, rgba);
+    let mut metadata = HashMap::new();
+    metadata.insert("Tiff headers".to_string(), DataMap::Exif(source));
+    metadata.insert(
+        "ICC Profile".to_string(),
+        DataMap::ICCProfile(vec![1, 2, 3, 4]),
+    );
+    image.metadata = Some(metadata);
+
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: None,
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+    let decoded = image_load(&data).unwrap();
+    let headers = match decoded
+        .metadata
+        .as_ref()
+        .unwrap()
+        .get("Tiff headers")
+        .unwrap()
+    {
+        DataMap::Exif(headers) => headers,
+        other => panic!("unexpected TIFF metadata: {other:?}"),
+    };
+    assert!(
+        first_ifd_tags(&headers.headers)
+            .iter()
+            .all(|tag| tag.tagid != 0x8773)
+    );
+}
+
+#[test]
+fn encode_does_not_attach_non_rgb_icc_signature_to_rgb_output() {
+    let rgba = solid_rgba(2, 2, [12, 34, 56, 255]);
+    let mut source = source_with_stale_sample_format();
+    source.headers.insert(
+        0,
+        TiffHeader {
+            tagid: 0x0106,
+            data: DataPack::Short(vec![2]), // RGB source
+            length: 1,
+        },
+    );
+    let mut image = ImageBuffer::from_buffer(2, 2, rgba);
+    let mut non_rgb_icc = vec![0; 128];
+    non_rgb_icc[16..20].copy_from_slice(b"CMYK");
+    let mut metadata = HashMap::new();
+    metadata.insert("Tiff headers".to_string(), DataMap::Exif(source));
+    metadata.insert("ICC Profile".to_string(), DataMap::ICCProfile(non_rgb_icc));
+    image.metadata = Some(metadata);
+
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: None,
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+    let decoded = image_load(&data).unwrap();
+    let headers = match decoded
+        .metadata
+        .as_ref()
+        .unwrap()
+        .get("Tiff headers")
+        .unwrap()
+    {
+        DataMap::Exif(headers) => headers,
+        other => panic!("unexpected TIFF metadata: {other:?}"),
+    };
+    assert!(
+        first_ifd_tags(&headers.headers)
+            .iter()
+            .all(|tag| tag.tagid != 0x8773)
+    );
+}
+
+#[test]
+fn encode_keeps_explicit_rgb_icc_after_non_rgb_source_conversion() {
+    let rgba = solid_rgba(2, 2, [12, 34, 56, 255]);
+    let mut source = source_with_stale_sample_format();
+    source.headers.insert(
+        0,
+        TiffHeader {
+            tagid: 0x0106,
+            data: DataPack::Short(vec![5]), // CMYK source converted to RGB
+            length: 1,
+        },
+    );
+    let mut image = ImageBuffer::from_buffer(2, 2, rgba);
+    let mut rgb_icc = vec![0; 128];
+    rgb_icc[16..20].copy_from_slice(b"RGB ");
+    let mut metadata = HashMap::new();
+    metadata.insert("Tiff headers".to_string(), DataMap::Exif(source));
+    metadata.insert(
+        "ICC Profile".to_string(),
+        DataMap::ICCProfile(rgb_icc.clone()),
+    );
+    image.metadata = Some(metadata);
+
+    let mut encode = EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: None,
+    };
+    let data = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+    let decoded = image_load(&data).unwrap();
+    let headers = match decoded
+        .metadata
+        .as_ref()
+        .unwrap()
+        .get("Tiff headers")
+        .unwrap()
+    {
+        DataMap::Exif(headers) => headers,
+        other => panic!("unexpected TIFF metadata: {other:?}"),
+    };
+    let icc = first_ifd_tags(&headers.headers)
+        .iter()
+        .find(|tag| tag.tagid == 0x8773)
+        .expect("explicit RGB ICC must be written to the RGB output");
+    match &icc.data {
+        DataPack::Undef(profile) => assert_eq!(profile, &rgb_icc),
+        other => panic!("unexpected ICC tag data: {other:?}"),
+    }
 }
 
 #[test]

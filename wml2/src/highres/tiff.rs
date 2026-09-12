@@ -13,23 +13,30 @@ fn unsupported(message: &str) -> Error {
         message.into(),
     ))
 }
-/// Decode the first page into Gray16, GrayAlpha16, RGB16 or RGBA16.
+/// Decode the first full-resolution page into Gray16, GrayAlpha16, RGB16 or RGBA16.
 /// Orientation is retained as metadata; samples are not rotated.
 pub fn decode_native(data: &[u8], limits: &DecodeLimits) -> Result<ImageFrame, Error> {
     crate::limits::scope(*limits, || {
         let mut reader = BytesReader::new(data);
         let page = Tiff::new(&mut reader)?;
-        decode_page(&mut reader, &page)
+        let display = std::iter::once(&page)
+            .chain(page.multi_page.iter())
+            .find(|page| crate::tiff::page::is_display_page(page))
+            .ok_or_else(|| unsupported("TIFF contains no full-resolution image page"))?;
+        decode_page(&mut reader, display)
     })
 }
-/// Decode every image IFD into an independent full-precision frame.
+/// Decode every full-resolution image page into an independent full-precision frame.
 pub fn decode_native_pages(data: &[u8], limits: &DecodeLimits) -> Result<Vec<ImageFrame>, Error> {
     crate::limits::scope(*limits, || {
         let mut reader = BytesReader::new(data);
         let first = Tiff::new(&mut reader)?;
         let mut frames = Vec::new();
         let mut total = 0usize;
-        for page in std::iter::once(&first).chain(first.multi_page.iter()) {
+        for page in std::iter::once(&first)
+            .chain(first.multi_page.iter())
+            .filter(|page| crate::tiff::page::is_display_page(page))
+        {
             let bytes = usize::try_from(page.width)?
                 .checked_mul(usize::try_from(page.height)?)
                 .and_then(|n| n.checked_mul(usize::from(page.samples_per_pixel)))
@@ -40,6 +47,9 @@ pub fn decode_native_pages(data: &[u8], limits: &DecodeLimits) -> Result<Vec<Ima
                 .ok_or_else(|| crate::tiff::ifd::invalid("TIFF native animation size overflow"))?;
             crate::limits::check(total, limits.animation_bytes, "TIFF native pages")?;
             frames.push(decode_page(&mut reader, page)?);
+        }
+        if frames.is_empty() {
+            return Err(unsupported("TIFF contains no full-resolution image page"));
         }
         Ok(frames)
     })
@@ -67,8 +77,13 @@ fn decode_page(
         match page.extra_samples.first() {
             Some(1) => AlphaAssociation::Premultiplied,
             Some(2) => AlphaAssociation::Straight,
-            // Preserve the legacy extra-channel convention without discarding samples.
-            None | Some(0) => AlphaAssociation::Straight,
+            // The typed image model cannot label an unspecified extra channel.
+            // Do not turn unknown samples into alpha or silently discard them.
+            None | Some(0) => {
+                return Err(unsupported(
+                    "Native TIFF cannot represent unspecified extra samples",
+                ));
+            }
             _ => return Err(unsupported("Unknown TIFF alpha association")),
         }
     } else if channels == roles.len() {

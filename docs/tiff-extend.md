@@ -34,9 +34,11 @@ fn read_tiff16(bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-`decode_native()` は最初のページ、`decode_native_pages()` は全ページを返す。対象は符号なしGray16、GrayAlpha16、RGB16、RGBA16。Predictorを16-bitで復元した後の値を保持する。WhiteIsZeroのGray値は黒0へ正規化する。ExtraSamplesのassociated alphaは `Premultiplied`、unassociated alphaは `Straight` として保持する。明示的なnative APIでは未指定の追加1チャンネルを `Straight` alphaと解釈し、元のExtraSamplesタグも残す。
+`decode_native()` は最初の通常ページ、`decode_native_pages()` は通常ページをすべて返す。縮小画像とマスクを除外し、旧SubfileType=1/3とNewSubfileTypeのページビットを通常ページとして扱う。対象は符号なしGray16、GrayAlpha16、RGB16、RGBA16。Predictorを16-bitで復元した後の値を保持する。WhiteIsZeroのGray値は黒0へ正規化する。ExtraSamplesのassociated alphaは `Premultiplied`、unassociated alphaは `Straight` として保持する。用途未指定の追加チャンネル（ExtraSamples=0またはタグなし）は現在のtypedモデルで意味を表現できないため、native APIでは `NoSupportFormat` を返す。legacy出力ではalphaと解釈せず、不透明として扱う。
 
 ICC、EXIF、TIFFタグとorientationはメタデータに保持する。Orientation 2〜8による自動回転は行わない。Device CMYKの表示は `(1-C)*(1-K)` 等の基本近似で、CMYK ICC変換やnative CMYK16保持は対象外。
+
+RGBA8出力の元ICCは `Source ICC Profile` とTIFFヘッダー内に保持する。`ICC Profile` は現在のRGB画素に適用できるプロファイルだけに使用し、Gray/CMYKの元ICCをRGB出力へ自動転記しない。InkSet=2などCMYK以外の色分解は明示的に未対応とする。
 
 従来のRGBA8出力ではRGB/Grayのassociated alphaをstraight alphaへ変換する。alphaが0の画素のRGBは0とする。native出力は関連付け済みサンプルと `Premultiplied` の意味をそのまま保持する。
 
@@ -69,7 +71,9 @@ cargo run -p wml2-test --example metadata -- <temporary-output>/input.png.tiff
 
 `wml2-test/scripts/tiff_oracle.py` はPillowでタグを調べ、converterとmetadataを実行し、ImageMagickによるRGBA8参照値との差分をJSONで返す。JPEGはPillow/libjpegを参照にする。`--converter`、`--metadata`、`--corpus`、`--output-dir` で場所を指定する。実行成功、画素一致、未対応を分けて報告する。
 
-### 検証結果（2026-09-12、Windows）
+レビュー後の修正、追加画像、32-bitの実行結果は [レビュー修正記録](tiff-extend-review-fixes.md) を参照してください。
+
+### 初期拡張の検証結果（a08bf058、2026-09-12、Windows）
 
 - ライブラリ全体: `cargo test -p wml2 --lib --tests --features high-bit-depth --locked` は169件成功、既存の1件がignored。
 - 最小feature構成22件、EXIF単独18件、doc test 12件、converter引数テスト13件成功。Clippyは成功（既存コードを含む警告あり）。Linux/macOS・32-bit・WasmのCIはこのローカル検証では未実行。

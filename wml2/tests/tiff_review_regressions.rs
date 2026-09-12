@@ -1,0 +1,496 @@
+#![cfg(feature = "tiff")]
+
+//! Reproductions for the a08bf058 review.  Every byte fixture is built in the
+//! test so CI does not rely on a downloaded corpus.
+
+use bin_rs::Endian;
+use miniz_oxide::deflate::compress_to_vec_zlib;
+use std::collections::HashMap;
+use wml2::draw::{EncodeOptions, ImageBuffer, image_encoder, image_from_with_limits, image_load};
+use wml2::limits::DecodeLimits;
+use wml2::metadata::DataMap;
+use wml2::tiff::header::{DataPack, TiffHeader, TiffHeaders};
+use wml2::util::ImageFormat;
+
+#[derive(Clone)]
+struct Spec {
+    width: u32,
+    height: u32,
+    bits: Vec<u16>,
+    samples: u16,
+    photo: u16,
+    compression: u16,
+    rows: u32,
+    fill_order: u16,
+    planar: u16,
+    tile: Option<(u32, u32)>,
+    blocks: Vec<Vec<u8>>,
+    extra: Vec<u16>,
+    new_subfile: u32,
+    subfile: u16,
+    ink_set: Option<u16>,
+    number_inks: Option<u16>,
+    ink_names: Option<Vec<u8>>,
+    color_map: Option<Vec<u16>>,
+}
+
+#[derive(Clone)]
+struct F {
+    tag: u16,
+    ty: u16,
+    payload: Vec<u8>,
+    at: Option<usize>,
+}
+fn u16b(v: u16, be: bool) -> [u8; 2] {
+    if be { v.to_be_bytes() } else { v.to_le_bytes() }
+}
+fn u32b(v: u32, be: bool) -> [u8; 4] {
+    if be { v.to_be_bytes() } else { v.to_le_bytes() }
+}
+fn s16(v: &[u16], be: bool) -> Vec<u8> {
+    v.iter().flat_map(|x| u16b(*x, be)).collect()
+}
+fn f(tag: u16, ty: u16, payload: Vec<u8>) -> F {
+    F {
+        tag,
+        ty,
+        payload,
+        at: None,
+    }
+}
+fn type_size(ty: u16) -> usize {
+    match ty {
+        1 | 2 | 6 | 7 => 1,
+        3 | 8 => 2,
+        4 | 9 | 11 | 13 => 4,
+        _ => 8,
+    }
+}
+
+fn fields(s: &Spec, be: bool, big: bool) -> Vec<F> {
+    let ot = if big { 16 } else { 4 };
+    let n = s.blocks.len();
+    let mut v = vec![
+        f(254, 4, u32b(s.new_subfile, be).to_vec()),
+        f(255, 3, s16(&[s.subfile], be)),
+        f(256, 4, u32b(s.width, be).to_vec()),
+        f(257, 4, u32b(s.height, be).to_vec()),
+        f(258, 3, s16(&s.bits, be)),
+        f(259, 3, s16(&[s.compression], be)),
+        f(262, 3, s16(&[s.photo], be)),
+        f(266, 3, s16(&[s.fill_order], be)),
+        f(273, ot, vec![0; n * if big { 8 } else { 4 }]),
+        f(277, 3, s16(&[s.samples], be)),
+        f(278, 4, u32b(s.rows, be).to_vec()),
+        f(279, ot, vec![0; n * if big { 8 } else { 4 }]),
+        f(284, 3, s16(&[s.planar], be)),
+        f(317, 3, s16(&[1], be)),
+    ];
+    if let Some((tw, th)) = s.tile {
+        v.retain(|x| !matches!(x.tag, 273 | 278 | 279));
+        v.push(f(322, 4, u32b(tw, be).to_vec()));
+        v.push(f(323, 4, u32b(th, be).to_vec()));
+        v.push(f(324, ot, vec![0; n * if big { 8 } else { 4 }]));
+        v.push(f(325, ot, vec![0; n * if big { 8 } else { 4 }]));
+    }
+    if !s.extra.is_empty() {
+        v.push(f(338, 3, s16(&s.extra, be)));
+    }
+    if let Some(vv) = s.ink_set {
+        v.push(f(332, 3, s16(&[vv], be)));
+    }
+    if let Some(vv) = s.number_inks {
+        v.push(f(334, 3, s16(&[vv], be)));
+    }
+    if let Some(vv) = &s.ink_names {
+        v.push(f(333, 2, vv.clone()));
+    }
+    if let Some(vv) = &s.color_map {
+        v.push(f(320, 3, s16(vv, be)));
+    }
+    v
+}
+
+fn write_f(out: &mut Vec<u8>, x: &F, slot: usize, be: bool) {
+    out.extend_from_slice(&u16b(x.tag, be));
+    out.extend_from_slice(&u16b(x.ty, be));
+    let count = (x.payload.len() / type_size(x.ty)) as u32;
+    out.extend_from_slice(&u32b(count, be));
+    if x.payload.len() <= slot {
+        out.extend_from_slice(&x.payload);
+        out.resize(out.len() + slot - x.payload.len(), 0);
+    } else {
+        out.extend_from_slice(&u32b(x.at.unwrap() as u32, be));
+    }
+}
+
+fn build(specs: &[Spec], big: bool, be: bool) -> Vec<u8> {
+    assert!(
+        !big,
+        "review fixtures use Classic TIFF; BigTIFF coverage is in tiff_extend"
+    );
+    let mut v = vec![0; 8];
+    let mut offsets = Vec::new();
+    let mut cursor = 8;
+    for s in specs {
+        let count = fields(s, be, big).len();
+        offsets.push(cursor);
+        cursor += 2 + count * 12 + 4;
+    }
+    v.resize(cursor, 0);
+    for (page, &ifd) in specs.iter().zip(&offsets) {
+        let mut fs = fields(page, be, big);
+        let mut data = v.len();
+        for x in &mut fs {
+            if x.payload.len() > 4 {
+                if data & 1 != 0 {
+                    data += 1;
+                }
+                x.at = Some(data);
+                data += x.payload.len();
+            }
+        }
+        let image_at = data;
+        let ot = if page.tile.is_some() { 324 } else { 273 };
+        let ct = if page.tile.is_some() { 325 } else { 279 };
+        let mut offs = Vec::new();
+        let mut counts = Vec::new();
+        let mut block_at = image_at;
+        for block in &page.blocks {
+            offs.extend_from_slice(&u32b(block_at as u32, be));
+            counts.extend_from_slice(&u32b(block.len() as u32, be));
+            block_at += block.len();
+        }
+        for x in &mut fs {
+            if x.tag == ot {
+                x.payload = offs.clone();
+            }
+            if x.tag == ct {
+                x.payload = counts.clone();
+            }
+        }
+        if v.len() < block_at {
+            v.resize(block_at, 0);
+        }
+        for x in &fs {
+            if let Some(at) = x.at {
+                v[at..at + x.payload.len()].copy_from_slice(&x.payload);
+            }
+        }
+        let mut dir = Vec::new();
+        dir.extend_from_slice(&u16b(fs.len() as u16, be));
+        for x in &fs {
+            write_f(&mut dir, x, 4, be);
+        }
+        let next = offsets
+            .get(offsets.iter().position(|&q| q == ifd).unwrap() + 1)
+            .copied()
+            .unwrap_or(0);
+        dir.extend_from_slice(&u32b(next as u32, be));
+        v[ifd..ifd + dir.len()].copy_from_slice(&dir);
+        let mut at = image_at;
+        for block in &page.blocks {
+            v[at..at + block.len()].copy_from_slice(block);
+            at += block.len();
+        }
+    }
+    v[0..2].copy_from_slice(if be { b"MM" } else { b"II" });
+    v[2..4].copy_from_slice(&u16b(42, be));
+    v[4..8].copy_from_slice(&u32b(8, be));
+    v
+}
+
+fn spec(
+    width: u32,
+    height: u32,
+    bits: &[u16],
+    samples: u16,
+    photo: u16,
+    blocks: Vec<Vec<u8>>,
+) -> Spec {
+    Spec {
+        width,
+        height,
+        bits: bits.to_vec(),
+        samples,
+        photo,
+        compression: 1,
+        rows: height,
+        fill_order: 1,
+        planar: 1,
+        tile: None,
+        blocks,
+        extra: Vec::new(),
+        new_subfile: 0,
+        subfile: 0,
+        ink_set: None,
+        number_inks: None,
+        ink_names: None,
+        color_map: None,
+    }
+}
+fn raw(width: usize, height: usize, channels: usize, value: u8) -> Vec<u8> {
+    vec![value; width * height * channels]
+}
+fn lzw(raw: &[u8]) -> Vec<u8> {
+    wml2::encoder::lzw::encode_tiff(raw, false).unwrap()
+}
+fn packbits(raw: &[u8]) -> Vec<u8> {
+    let mut v = Vec::new();
+    for c in raw.chunks(128) {
+        v.push((c.len() - 1) as u8);
+        v.extend_from_slice(c);
+    }
+    v
+}
+
+#[test]
+fn r1_storage_block_expansion_is_limited_for_all_compressions() {
+    let data = raw(16, 16, 1, 7);
+    for (compression, block) in [
+        (1, data.clone()),
+        (5, lzw(&data)),
+        (32773, packbits(&data)),
+        (8, compress_to_vec_zlib(&data, 6)),
+        (32946, compress_to_vec_zlib(&data, 6)),
+    ] {
+        let mut p = spec(1, 1, &[8], 1, 1, vec![block]);
+        p.compression = compression;
+        p.tile = Some((16, 16));
+        let bytes = build(&[p], false, false);
+        assert_eq!(image_load(&bytes).unwrap().buffer.unwrap(), [7, 7, 7, 255]);
+        let error = image_from_with_limits(
+            &bytes,
+            DecodeLimits {
+                expanded_bytes: 4,
+                ..DecodeLimits::default()
+            },
+        )
+        .err()
+        .expect("oversized block must be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("expanded TIFF block exceeds decode limit"),
+            "compression {compression}: {error}"
+        );
+    }
+}
+
+#[cfg(feature = "high-bit-depth")]
+#[test]
+fn r1_native_u16_storage_block_expansion_is_limited() {
+    let raw = vec![0; 16 * 16 * 2];
+    for (compression, block) in [
+        (1, raw.clone()),
+        (5, lzw(&raw)),
+        (32773, packbits(&raw)),
+        (8, compress_to_vec_zlib(&raw, 6)),
+        (32946, compress_to_vec_zlib(&raw, 6)),
+    ] {
+        let mut p = spec(1, 1, &[16], 1, 1, vec![block]);
+        p.compression = compression;
+        p.tile = Some((16, 16));
+        let bytes = build(&[p], false, false);
+        let frame = wml2::highres::tiff::decode_native(&bytes, &DecodeLimits::default()).unwrap();
+        assert_eq!(frame.pixels().u16_planes().unwrap()[0].samples(), &[0]);
+        let error = wml2::highres::tiff::decode_native(
+            &bytes,
+            &DecodeLimits {
+                expanded_bytes: 4,
+                ..DecodeLimits::default()
+            },
+        )
+        .err()
+        .expect("oversized block must be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("expanded TIFF block exceeds decode limit"),
+            "compression {compression}: {error}"
+        );
+    }
+}
+
+#[test]
+fn r2_opaque_rgba_reencodes_without_stale_four_sample_format() {
+    for bigtiff in [false, true] {
+        for compression in ["none", "lzw", "deflate"] {
+            let mut image = ImageBuffer::from_buffer(1, 1, vec![10, 20, 30, 255]);
+            let mut headers = TiffHeaders::empty(Endian::LittleEndian);
+            headers.headers.push(TiffHeader {
+                tagid: 0x0153,
+                data: DataPack::Short(vec![1, 1, 1, 1]),
+                length: 4,
+            });
+            image.metadata = Some(HashMap::from([(
+                "Tiff headers".to_string(),
+                DataMap::Exif(headers),
+            )]));
+            let mut options = HashMap::from([(
+                "compression".to_string(),
+                DataMap::Ascii(compression.to_string()),
+            )]);
+            if bigtiff {
+                options.insert("bigtiff".to_string(), DataMap::UInt(1));
+            }
+            let mut encode = EncodeOptions {
+                debug_flag: 0,
+                drawer: &mut image,
+                options: Some(options),
+            };
+            let bytes = image_encoder(&mut encode, ImageFormat::Tiff).unwrap();
+            let decoded = image_load(&bytes).unwrap();
+            assert_eq!(decoded.buffer.unwrap(), vec![10, 20, 30, 255]);
+        }
+    }
+}
+
+#[test]
+fn r3_subfiletype_and_new_subfiletype_pages_are_retained() {
+    for (new_subfile, subfile) in [(0, 1), (2, 0)] {
+        let first = spec(1, 1, &[8], 1, 1, vec![vec![1]]);
+        let mut second = spec(1, 1, &[8], 1, 1, vec![vec![2]]);
+        second.subfile = subfile;
+        second.new_subfile = new_subfile;
+        let image = image_load(&build(&[first, second], false, false)).unwrap();
+        assert_eq!(
+            image
+                .metadata
+                .unwrap()
+                .get("image pages")
+                .unwrap()
+                .to_string(),
+            "2"
+        );
+        assert_eq!(image.buffer.as_ref().unwrap(), &vec![1, 1, 1, 255]);
+        let frames = image.animation.as_ref().expect("second TIFF page");
+        assert_eq!(frames.len(), 1);
+        assert_eq!(frames[0].buffer, vec![2, 2, 2, 255]);
+    }
+}
+
+#[test]
+fn r3_first_thumbnail_is_skipped_before_normal_old_subfile_page() {
+    let mut thumbnail = spec(1, 1, &[8], 1, 1, vec![vec![9]]);
+    thumbnail.new_subfile = 1;
+    let normal = spec(1, 1, &[8], 1, 1, vec![vec![2]]);
+    let mut old_full = spec(1, 1, &[8], 1, 1, vec![vec![3]]);
+    old_full.subfile = 3;
+    let image = image_load(&build(&[thumbnail, normal, old_full], false, false)).unwrap();
+    assert_eq!(
+        image
+            .metadata
+            .as_ref()
+            .unwrap()
+            .get("image pages")
+            .unwrap()
+            .to_string(),
+        "2"
+    );
+    assert_eq!(image.buffer.as_ref().unwrap(), &vec![2, 2, 2, 255]);
+    assert_eq!(
+        image.animation.as_ref().unwrap()[0].buffer,
+        vec![3, 3, 3, 255]
+    );
+}
+
+#[cfg(feature = "high-bit-depth")]
+#[test]
+fn r3_native_first_thumbnail_is_skipped_and_two_16bit_pages_are_kept() {
+    let mut thumbnail = spec(1, 1, &[16], 1, 1, vec![vec![0x11, 0x11]]);
+    thumbnail.new_subfile = 1;
+    let normal = spec(1, 1, &[16], 1, 1, vec![vec![0x22, 0x22]]);
+    let mut old_full = spec(1, 1, &[16], 1, 1, vec![vec![0x33, 0x33]]);
+    old_full.subfile = 3;
+    let frames = wml2::highres::tiff::decode_native_pages(
+        &build(&[thumbnail, normal, old_full], false, false),
+        &DecodeLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(frames.len(), 2);
+    assert_eq!(
+        frames[0].pixels().u16_planes().unwrap()[0].samples(),
+        &[0x2222]
+    );
+    assert_eq!(
+        frames[1].pixels().u16_planes().unwrap()[0].samples(),
+        &[0x3333]
+    );
+}
+
+#[test]
+fn r4_extra_samples_zero_is_not_transparency() {
+    let mut p = spec(1, 1, &[8, 8], 2, 1, vec![vec![128, 0]]);
+    p.extra = vec![0];
+    let image = image_load(&build(&[p], false, false)).unwrap();
+    assert_eq!(image.buffer.unwrap(), vec![128, 128, 128, 255]);
+}
+
+#[cfg(feature = "high-bit-depth")]
+#[test]
+fn r4_native_unknown_extra_channels_are_rejected() {
+    let mut gray = spec(1, 1, &[16, 16], 2, 1, vec![vec![0x12, 0x34, 0x00, 0x01]]);
+    gray.extra = vec![0];
+    assert!(
+        wml2::highres::tiff::decode_native(&build(&[gray], false, false), &DecodeLimits::default())
+            .is_err()
+    );
+
+    let rgb = spec(
+        1,
+        1,
+        &[16, 16, 16, 16],
+        4,
+        2,
+        vec![vec![0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0]],
+    );
+    assert!(
+        wml2::highres::tiff::decode_native(&build(&[rgb], false, false), &DecodeLimits::default())
+            .is_err()
+    );
+}
+
+#[test]
+fn r5_fill_order_two_four_bit_palette_matches_libtiff_order() {
+    let mut cmap = vec![0u16; 16 * 3];
+    for (index, value) in [(1usize, 17u16), (2, 34)] {
+        cmap[index] = value << 8;
+        cmap[16 + index] = value << 8;
+        cmap[32 + index] = value << 8;
+    }
+    let mut p = spec(2, 1, &[4], 1, 3, vec![vec![0x48]]);
+    p.fill_order = 2;
+    let bytes = build_with_colormap(p, cmap, false);
+    assert_eq!(
+        image_load(&bytes).unwrap().buffer.unwrap(),
+        vec![17, 17, 17, 255, 34, 34, 34, 255]
+    );
+}
+
+fn build_with_colormap(mut p: Spec, cmap: Vec<u16>, be: bool) -> Vec<u8> {
+    p.color_map = Some(cmap);
+    build(&[p], false, be)
+}
+
+#[test]
+fn r6_rows_per_strip_u32_max_is_valid_for_small_image() {
+    let mut p = spec(1, 2, &[8], 1, 1, vec![vec![4, 5]]);
+    p.rows = u32::MAX;
+    assert_eq!(
+        image_load(&build(&[p], false, false))
+            .unwrap()
+            .buffer
+            .unwrap(),
+        vec![4, 4, 4, 255, 5, 5, 5, 255]
+    );
+}
+
+#[test]
+fn inkset_two_is_rejected_as_non_cmyk_separation() {
+    let mut p = spec(1, 1, &[8, 8, 8, 8], 4, 5, vec![vec![0, 0, 0, 0]]);
+    p.ink_set = Some(2);
+    p.number_inks = Some(4);
+    p.ink_names = Some(b"Cyan\0Magenta\0Yellow\0Black\0".to_vec());
+    assert!(image_load(&build(&[p], false, false)).is_err());
+}

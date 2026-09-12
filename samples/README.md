@@ -14,3 +14,14 @@ TIFF拡張の確認には、ファイル単位の出所とライセンスが記�
 - 検証用ハッシュ: `D:\data\samples\images\tiff\codec-corpus\SHA256SUMS.txt`
 
 詳細な仕様調査、採用範囲、ImageMagick/Pillowによる確認結果は [docs/tiff-extend-research.md](../docs/tiff-extend-research.md) に記録しています。
+
+## TIFFレビュー修正の再現画像
+
+`D:\data\samples\images\tiff\review-a08bf058\` に独自生成のTIFF 37枚を追加しました。格納tileの展開上限、SampleFormat、通常ページ、用途未指定の追加チャンネル、FillOrder=2、RowsPerStrip最大値、InkSet、Gray/RGB/RGBA 16-bit、planar、Classic/BigTIFFとLE/BEを含みます。第三者の画像は使っていません。正常入力30枚と意図した異常・未対応入力7枚を `manifest.json` で区別しています。
+
+- [生成器](../wml2-test/scripts/generate_tiff_review_samples.py): `--dest` で保存先を指定。外部Pythonパッケージは不要。
+- [実行検証器](../wml2-test/scripts/verify_tiff_review_samples.py): converter・metadataの実行、PNG画素／ページ数、PillowでのTIFF再保存確認。`--magick` で独立した全ページ比較を追加。
+- `encoder-roundtrip/` にClassic/BigTIFF × None/LZW/Deflateの再保存結果6枚を保持（合計43 TIFF）。
+- `validation/` に実行ログとJSON比較結果を保持。
+
+修正内容と再現コマンドは [レビュー修正記録](../docs/tiff-extend-review-fixes.md) に記載しています。

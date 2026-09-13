@@ -6,6 +6,23 @@ use super::{
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;
 
+/// Reject alpha models whose color-space-specific interpretation is not yet
+/// implemented. Unknown extra samples (0) remain opaque in legacy output.
+pub(crate) fn validate_alpha_support(page: &Tiff) -> Result<(), Error> {
+    let unsupported = match page.photometric_interpretation {
+        3 => matches!(page.extra_samples.first(), Some(1 | 2)),
+        5 => page.extra_samples.first() == Some(&1),
+        _ => false,
+    };
+    if unsupported {
+        return Err(Box::new(crate::error::ImgError::new_const(
+            crate::error::ImgErrorKind::NoSupportFormat,
+            "TIFF Palette alpha and associated CMYK alpha are unsupported".into(),
+        )));
+    }
+    Ok(())
+}
+
 /// NewSubfileType bits 0/2 denote reduced images/masks; bit 1 is a normal
 /// document page. Old SubfileType 1 and 3 are also full-resolution pages.
 #[cfg(feature = "tiff")]
@@ -199,6 +216,7 @@ pub(crate) fn read_pages(reader: &mut dyn BinaryReader) -> Result<Tiff, Error> {
                 return Err(invalid("Invalid TIFF ExtraSamples value"));
             }
         }
+        validate_alpha_support(&page)?;
         if page
             .bitspersamples
             .iter()

@@ -487,6 +487,57 @@ fn encode_lzw_tiff_via_public_api_roundtrips_pixels() {
 }
 
 #[test]
+fn encode_lzw_modes_preserves_legacy_tags_across_code_width_boundaries() {
+    let mut state = 17u32;
+    let mut rgba = Vec::new();
+    for _ in 0..4096 {
+        for _ in 0..3 {
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            rgba.push((state >> 24) as u8);
+        }
+        rgba.push(255);
+    }
+    for (compression, fill_order) in [("lzw", 1), ("lzw_lsb", 2)] {
+        for bigtiff in [false, true] {
+            for predictor in ["none", "horizontal"] {
+                let mut image = ImageBuffer::from_buffer(64, 64, rgba.clone());
+                let options = HashMap::from([
+                    ("compression".into(), DataMap::Ascii(compression.into())),
+                    ("bigtiff".into(), DataMap::Ascii(bigtiff.to_string())),
+                    ("predictor".into(), DataMap::Ascii(predictor.into())),
+                ]);
+                let data = image_encoder(
+                    &mut EncodeOptions {
+                        debug_flag: 0,
+                        drawer: &mut image,
+                        options: Some(options),
+                    },
+                    ImageFormat::Tiff,
+                )
+                .unwrap();
+                assert!(
+                    data.len() > 4096,
+                    "fixture must exercise dictionary width changes"
+                );
+                let tags = read_tags(&mut BytesReader::new(&data)).unwrap();
+                let fill = tags.headers.iter().find(|tag| tag.tagid == 0x010a).unwrap();
+                match &fill.data {
+                    DataPack::Short(values) => assert_eq!(values, &[fill_order]),
+                    other => panic!("unexpected FillOrder: {other:?}"),
+                }
+                let decoded = image_load(&data).unwrap();
+                assert_eq!((decoded.width, decoded.height), (64, 64));
+                assert_eq!(
+                    decoded.buffer.as_ref().unwrap(),
+                    &rgba,
+                    "{compression}, bigtiff={bigtiff}, predictor={predictor}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn encode_deflate_predictor_tiff_via_public_api_roundtrips_pixels() {
     let mut rgba = Vec::with_capacity(13 * 9 * 4);
     for y in 0..9 {

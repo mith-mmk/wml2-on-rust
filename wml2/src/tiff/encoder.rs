@@ -5,7 +5,6 @@ use crate::draw::{
     ENCODE_ANIMATION_FRAMES_KEY, EncodeOptions as DrawEncodeOptions, ImageProfiles,
     encode_animation_frame_key,
 };
-use crate::encoder::lzw::encode_tiff;
 use crate::error::{ImgError, ImgErrorKind};
 #[cfg(feature = "tiff-jpeg")]
 use crate::jpeg::encoder::{encode_rgba as encode_jpeg_rgba, quality_from_draw_options};
@@ -69,6 +68,8 @@ impl TiffCompressionMode {
 
     fn fill_order(self) -> u16 {
         match self {
+            // Preserve the wire format read by older WML2 releases. This is
+            // a legacy extension, not TIFF's standard LZW code packing.
             Self::Lzw { is_lsb: true } => 2,
             _ => 1,
         }
@@ -955,7 +956,12 @@ fn build_page_plan(
     }
     let pixel_data = match compression {
         TiffCompressionMode::None => raw_pixel_data,
-        TiffCompressionMode::Lzw { is_lsb } => encode_tiff(&raw_pixel_data, is_lsb)?,
+        TiffCompressionMode::Lzw { is_lsb: false } => {
+            crate::encoder::lzw::encode_tiff_standard(&raw_pixel_data)?
+        }
+        TiffCompressionMode::Lzw { is_lsb: true } => {
+            crate::encoder::lzw::encode_tiff_wml2_lsb(&raw_pixel_data)?
+        }
         TiffCompressionMode::Deflate { .. } => {
             miniz_oxide::deflate::compress_to_vec_zlib(&raw_pixel_data, 8)
         }
@@ -1039,6 +1045,10 @@ fn build_animation_pages(
 /// - `quality`: JPEG quality when `compression=jpeg`
 /// - `predictor`: `none` or `horizontal` (LZW and Deflate only)
 /// - `bigtiff`: `true`/`false` (or `0`/`1`) to select BigTIFF output
+///
+/// `lzw` and `lzw_msb` write standard MSB-first TIFF LZW. `lzw_lsb` preserves
+/// WML2's historical non-standard LSB-first, early-change stream and its
+/// FillOrder=2 tag; it is a compatibility option, not portable TIFF output.
 ///
 /// Deflate output uses the fixed zlib compression level 8.
 /// - `exif`: `Raw(bytes)`, `Exif(headers)`, or `Ascii("copy")`

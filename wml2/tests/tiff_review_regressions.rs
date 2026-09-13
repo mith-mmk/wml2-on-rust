@@ -474,6 +474,27 @@ fn build_with_colormap(mut p: Spec, cmap: Vec<u16>, be: bool) -> Vec<u8> {
 }
 
 #[test]
+fn lzw_code_order_is_independent_of_packed_sample_fill_order() {
+    let encoders = [
+        wml2::encoder::lzw::encode_tiff_standard,
+        wml2::encoder::lzw::encode_tiff_libtiff_compat,
+        wml2::encoder::lzw::encode_tiff_wml2_lsb,
+    ];
+    for encoder in encoders {
+        for (fill_order, packed) in [(1, 0x12), (2, 0x48)] {
+            let mut cmap = vec![0; 16 * 3];
+            cmap[1] = u16::MAX;
+            cmap[16 + 2] = u16::MAX;
+            let mut p = spec(2, 1, &[4], 1, 3, vec![encoder(&[packed]).unwrap()]);
+            p.compression = 5;
+            p.fill_order = fill_order;
+            let image = image_load(&build_with_colormap(p, cmap, false)).unwrap();
+            assert_eq!(image.buffer.unwrap(), [255, 0, 0, 255, 0, 255, 0, 255]);
+        }
+    }
+}
+
+#[test]
 fn r6_rows_per_strip_u32_max_is_valid_for_small_image() {
     let mut p = spec(1, 2, &[8], 1, 1, vec![vec![4, 5]]);
     p.rows = u32::MAX;
@@ -493,4 +514,139 @@ fn inkset_two_is_rejected_as_non_cmyk_separation() {
     p.number_inks = Some(4);
     p.ink_names = Some(b"Cyan\0Magenta\0Yellow\0Black\0".to_vec());
     assert!(image_load(&build(&[p], false, false)).is_err());
+}
+
+#[test]
+fn unsupported_color_alpha_is_rejected_before_drawing() {
+    for (photo, alpha, channels) in [(3, 1, 2usize), (3, 2, 2), (5, 1, 5)] {
+        for bits in [8, 16] {
+            for be in [false, true] {
+                for planar in [false, true] {
+                    for tiled in [false, true] {
+                        let pixels = if tiled { 256 } else { 1 };
+                        let bytes = pixels * usize::from(bits / 8);
+                        let blocks = if planar {
+                            vec![vec![0; bytes]; channels]
+                        } else {
+                            vec![vec![0; bytes * channels]]
+                        };
+                        let mut p =
+                            spec(1, 1, &vec![bits; channels], channels as u16, photo, blocks);
+                        p.extra = vec![alpha];
+                        p.planar = if planar { 2 } else { 1 };
+                        if tiled {
+                            p.tile = Some((16, 16));
+                        }
+                        if photo == 3 {
+                            p.color_map = Some(vec![0; 3 * (1usize << bits)]);
+                        }
+                        let error = image_load(&build(&[p], false, be))
+                            .err()
+                            .expect("unsupported alpha");
+                        assert!(error.to_string().contains("No Support format"), "{error}");
+                        assert!(
+                            error
+                                .to_string()
+                                .contains("Palette alpha and associated CMYK alpha"),
+                            "{error}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn cmyk_unassociated_alpha_survives_strip_tile_and_planar_decoding() {
+    let pixels = [
+        [255u16, 0, 0, 0, 85],
+        [0, 0, 0, 255, 255],
+        [0, 0, 0, 0, 0],
+        [85, 0, 0, 85, 170],
+    ];
+    for bits in [8, 16] {
+        for be in [false, true] {
+            for planar in [false, true] {
+                for tiled in [false, true] {
+                    let stored = if tiled { 256 } else { pixels.len() };
+                    let mut planes = vec![Vec::new(); if planar { 5 } else { 1 }];
+                    for index in 0..stored {
+                        for channel in 0..5 {
+                            let value = pixels.get(index).map_or(0, |p| p[channel]);
+                            let output = &mut planes[if planar { channel } else { 0 }];
+                            if bits == 16 {
+                                output.extend_from_slice(&u16b(value * 257, be));
+                            } else {
+                                output.push(value as u8);
+                            }
+                        }
+                    }
+                    let mut p = spec(4, 1, &[bits; 5], 5, 5, planes);
+                    p.extra = vec![2];
+                    p.planar = if planar { 2 } else { 1 };
+                    if tiled {
+                        p.tile = Some((16, 16));
+                    }
+                    assert_eq!(
+                        image_load(&build(&[p], false, be)).unwrap().buffer.unwrap(),
+                        [
+                            0, 255, 255, 85, 0, 0, 0, 255, 255, 255, 255, 0, 113, 170, 170, 170
+                        ]
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn palette_unspecified_extra_sample_is_opaque_and_does_not_resize_colormap() {
+    for extra in [vec![], vec![0]] {
+        let mut p = spec(2, 1, &[8, 8], 2, 3, vec![vec![1, 0, 2, 255]]);
+        let mut palette = vec![0; 3 * 256];
+        palette[1] = u16::MAX;
+        palette[256 + 2] = u16::MAX;
+        p.color_map = Some(palette);
+        p.extra = extra;
+        assert_eq!(
+            image_load(&build(&[p], false, false))
+                .unwrap()
+                .buffer
+                .unwrap(),
+            [255, 0, 0, 255, 0, 255, 0, 255]
+        );
+    }
+}
+
+#[test]
+fn borrowed_raw_drawing_restores_predictor_without_modifying_caller_bytes() {
+    for planar in [false, true] {
+        let samples = if planar {
+            [0xff, 1, 0x1ff, 1, 0x2ff, 1]
+        } else {
+            [0xff, 0x1ff, 0x2ff, 1, 1, 1]
+        };
+        let data = s16(&samples, false);
+        let original = data.clone();
+        let mut header = wml2::tiff::header::Tiff::empty();
+        header.width = 2;
+        header.height = 1;
+        header.samples_per_pixel = 3;
+        header.bitspersamples = vec![16; 3];
+        header.bitspersample = 48;
+        header.photometric_interpretation = 2;
+        header.predictor = 2;
+        header.planar_config = if planar { 2 } else { 1 };
+        header.tiff_headers.endian = Endian::LittleEndian;
+        let mut image = ImageBuffer::from_buffer(2, 1, vec![0; 8]);
+        let mut options = wml2::draw::DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+        };
+        wml2::tiff::decoder::draw_tile(&data, 0, 1, 0, 2, &mut options, &header).unwrap();
+        assert_eq!(data, original);
+        assert_eq!(header.predictor, 2);
+        assert_eq!(image.buffer.unwrap(), [0, 1, 2, 255, 1, 2, 3, 255]);
+    }
 }

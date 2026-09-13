@@ -38,9 +38,33 @@ impl Lzwdecode {
         Self::new(lzw_min_bits, true, false)
     }
 
-    /// for Tiff LZW
+    /// TIFF LZW with the legacy boolean code-order selector.
+    ///
+    /// New code should prefer [`Self::tiff_standard`],
+    /// [`Self::tiff_wml2_lsb`], or [`Self::tiff_libtiff_compat`] so that
+    /// TIFF FillOrder and LZW code packing are not confused.
     pub fn tiff(is_lsb: bool) -> Self {
-        Self::new(8, is_lsb, true)
+        if is_lsb {
+            Self::tiff_wml2_lsb()
+        } else {
+            Self::tiff_standard()
+        }
+    }
+
+    /// Standard TIFF LZW: MSB-first code packing and early code-width change.
+    pub fn tiff_standard() -> Self {
+        Self::new(8, false, true)
+    }
+
+    /// WML2's historical non-standard LSB-first TIFF extension.
+    pub fn tiff_wml2_lsb() -> Self {
+        Self::new(8, true, true)
+    }
+
+    /// LibTIFF's old TIFF LZW stream: LSB-first packing and late code-width
+    /// change. LibTIFF detects this format from the stream signature.
+    pub fn tiff_libtiff_compat() -> Self {
+        Self::new(8, true, false)
     }
 
     pub fn new(lzw_min_bits: usize, is_lsb: bool, is_tiff: bool) -> Self {

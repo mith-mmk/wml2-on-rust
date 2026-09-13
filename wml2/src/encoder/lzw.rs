@@ -180,14 +180,53 @@ pub fn encode_gif(data: &[u8], min_code_size: usize) -> Result<Vec<u8>, Error> {
     )
 }
 
-/// Encodes bytes as TIFF-compatible LZW data.
+/// Encodes bytes as TIFF LZW using the legacy boolean code-order selector.
+///
+/// `false` is standard TIFF MSB-first LZW. `true` preserves WML2's historical
+/// non-standard LSB-first extension. Prefer the named functions below when
+/// the stream format matters.
 pub fn encode_tiff(data: &[u8], is_lsb: bool) -> Result<Vec<u8>, Error> {
+    if is_lsb {
+        encode_tiff_wml2_lsb(data)
+    } else {
+        encode_tiff_standard(data)
+    }
+}
+
+/// Encodes bytes as standard TIFF LZW (MSB-first, early-change).
+pub fn encode_tiff_standard(data: &[u8]) -> Result<Vec<u8>, Error> {
     encode_with_flavor(
         data,
         LzwFlavor {
             min_code_size: 8,
-            is_lsb,
+            is_lsb: false,
             early_change: true,
+        },
+    )
+}
+
+/// Encodes bytes using WML2's historical non-standard LSB-first TIFF mode.
+pub fn encode_tiff_wml2_lsb(data: &[u8]) -> Result<Vec<u8>, Error> {
+    encode_with_flavor(
+        data,
+        LzwFlavor {
+            min_code_size: 8,
+            is_lsb: true,
+            early_change: true,
+        },
+    )
+}
+
+/// Encodes bytes in the old LibTIFF-compatible TIFF LZW format (LSB-first,
+/// late-change). This is retained for fixtures and interoperability tests;
+/// new TIFF output should use [`encode_tiff_standard`].
+pub fn encode_tiff_libtiff_compat(data: &[u8]) -> Result<Vec<u8>, Error> {
+    encode_with_flavor(
+        data,
+        LzwFlavor {
+            min_code_size: 8,
+            is_lsb: true,
+            early_change: false,
         },
     )
 }

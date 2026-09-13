@@ -188,12 +188,7 @@ pub(crate) fn decode_samples_u16(
             "expanded TIFF block",
         )?;
         let compressed = read_block(reader, block)?;
-        let mut data = decompress_block(
-            &page.compression,
-            &compressed,
-            Some(expected),
-            page.fill_order == 2,
-        )?;
+        let mut data = decompress_block(&page.compression, &compressed, Some(expected))?;
         if page.predictor == 2 {
             crate::tiff::predictor::apply_predictor(
                 &mut data,
@@ -338,12 +333,7 @@ fn decode_blocked<B: BinaryReader>(
                     "expanded TIFF block",
                 )?;
                 let compressed = read_block(reader, &block)?;
-                let mut data = decompress_block(
-                    &header.compression,
-                    &compressed,
-                    Some(expected),
-                    header.fill_order == 2,
-                )?;
+                let mut data = decompress_block(&header.compression, &compressed, Some(expected))?;
                 if header.predictor == 2 {
                     crate::tiff::predictor::apply_predictor(
                         &mut data,
@@ -394,12 +384,7 @@ fn decode_blocked<B: BinaryReader>(
             "expanded TIFF block",
         )?;
         let compressed = read_block(reader, block)?;
-        let mut data = decompress_block(
-            &header.compression,
-            &compressed,
-            Some(expected),
-            header.fill_order == 2,
-        )?;
+        let mut data = decompress_block(&header.compression, &compressed, Some(expected))?;
         if header.predictor == 2 {
             crate::tiff::predictor::apply_predictor(
                 &mut data,
@@ -463,6 +448,7 @@ fn draw_tile_internal(
     stored_width: Option<usize>,
     stored_height: Option<usize>,
 ) -> Result<Option<ImgWarnings>, Error> {
+    crate::tiff::page::validate_alpha_support(header)?;
     if data.is_empty() {
         return Err(Box::new(ImgError::new_const(
             ImgErrorKind::DecodeError,
@@ -470,24 +456,25 @@ fn draw_tile_internal(
         )));
     }
 
-    let mut data = data.to_owned();
-    let mut normalized_header = None;
-    if !prepared && header.predictor == 2 {
-        let mut normalized = header.clone();
-        let channels = if normalized.planar_config == 2 {
+    // Prepared blocks are already decoded and interleaved. Borrow their bytes;
+    // only the public raw drawing path needs ownership for predictor/planar work.
+    let mut data = std::borrow::Cow::Borrowed(data);
+    let mut predictor = if prepared { 1 } else { header.predictor };
+    if predictor == 2 {
+        let channels = if header.planar_config == 2 {
             1
         } else {
-            usize::from(normalized.samples_per_pixel)
+            usize::from(header.samples_per_pixel)
         };
-        let bits = *normalized
+        let bits = *header
             .bitspersamples
             .first()
             .ok_or_else(|| std::io::Error::other("TIFF has no BitsPerSample"))?;
-        let row_bits = if normalized.planar_config == 2 {
-            usize::try_from(normalized.width)?.checked_mul(usize::from(bits))
+        let row_bits = if header.planar_config == 2 {
+            usize::try_from(header.width)?.checked_mul(usize::from(bits))
         } else {
-            (normalized.width as usize).checked_mul(
-                normalized
+            usize::try_from(header.width)?.checked_mul(
+                header
                     .bitspersamples
                     .iter()
                     .map(|value| usize::from(*value))
@@ -498,29 +485,33 @@ fn draw_tile_internal(
             .and_then(|value| value.checked_add(7))
             .map(|value| value / 8)
             .ok_or_else(|| std::io::Error::other("TIFF predictor row size overflows"))?;
+        let predictor_rows = usize::try_from(header.height)?
+            .checked_mul(if header.planar_config == 2 {
+                usize::from(header.samples_per_pixel)
+            } else {
+                1
+            })
+            .ok_or_else(|| std::io::Error::other("TIFF predictor plane rows overflow"))?;
         crate::tiff::predictor::apply_predictor(
-            &mut data,
+            data.to_mut(),
             row_bytes,
-            usize::try_from(normalized.height)?,
+            predictor_rows,
             bits,
             channels,
-            normalized.tiff_headers.endian,
+            header.tiff_headers.endian,
         )?;
-        normalized.predictor = 1;
-        normalized_header = Some(normalized);
+        predictor = 1;
     }
-    let header = normalized_header.as_ref().unwrap_or(header);
-    let predictor = if prepared { 1 } else { header.predictor };
     let stored_width = stored_width.unwrap_or(usize::try_from(header.width)?);
     let stored_height = stored_height.unwrap_or(usize::try_from(header.height)?);
 
     // no debug
     if !prepared && header.planar_config == 2 && header.samples_per_pixel > 1 {
-        data = planar_to_chuncky(&data, header)?;
+        data = std::borrow::Cow::Owned(planar_to_chuncky(&data, header)?);
     }
 
-    let color_table: Option<Vec<RGBA>> = if let Some(color_table) = header.color_table.as_ref() {
-        Some(color_table.to_vec())
+    let color_table = if let Some(color_table) = header.color_table.as_ref() {
+        Some(std::borrow::Cow::Borrowed(color_table.as_slice()))
     } else {
         let bitspersample = if header.bitspersample >= 8 {
             8
@@ -530,11 +521,17 @@ fn draw_tile_internal(
         match header.photometric_interpretation {
             0 if header.bitspersample <= 8 && header.samples_per_pixel == 1 => {
                 // WhiteIsZero
-                Some(create_pallet(bitspersample as usize, false))
+                Some(std::borrow::Cow::Owned(create_pallet(
+                    bitspersample as usize,
+                    false,
+                )))
             }
             1 if header.bitspersample <= 8 && header.samples_per_pixel == 1 => {
                 // BlackIsZero
-                Some(create_pallet(bitspersample as usize, true))
+                Some(std::borrow::Cow::Owned(create_pallet(
+                    bitspersample as usize,
+                    true,
+                )))
             }
             0 | 1 => {
                 // High-bit-depth grayscale is normalized from its sample
@@ -553,7 +550,10 @@ fn draw_tile_internal(
             }
             3 => {
                 // RGB Palette
-                Some(create_pallet(bitspersample as usize, true))
+                Some(std::borrow::Cow::Owned(create_pallet(
+                    bitspersample as usize,
+                    true,
+                )))
             }
             5 => {
                 if header.samples_per_pixel < 4 {
@@ -617,8 +617,12 @@ fn draw_tile_internal(
                     "This is an index color image,but A color table is empty.".to_string(),
                 )) as Error
             })?;
+            let index_bits = header
+                .bitspersamples
+                .first()
+                .ok_or_else(|| std::io::Error::other("TIFF palette has no index BitsPerSample"))?;
             let required_len = 1usize
-                .checked_shl(u32::from(header.bitspersample))
+                .checked_shl(u32::from(*index_bits))
                 .ok_or_else(|| std::io::Error::other("TIFF color table size overflows"))?;
             if palette.len() < required_len {
                 return Err(Box::new(ImgError::new_const(

@@ -4,6 +4,8 @@
 
 レビュー文書のR1〜R6と追加確認事項を修正した。手元で取得できた添付はMarkdown文書のみで、文書中のZIP・Rustテスト・画像は使用していない。以下の再現用TIFFとRustテストを独自に作成し、WML2を実行して確認した。
 
+2026-09-13の追加指摘（CMYK/Palette alpha、LZW形式、外部oracle CI、作業メモリ）は [追加レビュー対応](tiff-extend-alpha-lzw-review.md) を参照。以下の実行件数は前回時点の記録として保持する。
+
 ## 修正内容
 
 | 指摘 | 修正と確認 |
@@ -39,7 +41,7 @@
 - Clippy成功（既存コードを含む警告あり）。変更したRustファイルをrustfmtで整形し、`git diff --check`成功。
 - Terraによる静的再レビューで、残る明確な問題の指摘なし。
 
-CIは`tiff-extend`のpushでも起動するようにし、Windows/macOSのTIFF回帰とWindows 32-bitの実行を追加した。GitHub上のCI、Linux/macOS/Wasmでの今回の実行は未確認。既存の特殊CCITT等の制限は[初期拡張文書](tiff-extend.md)に記載した範囲を維持する。
+CIは`tiff-extend`のpushでも起動するようにし、Windows/macOSのTIFF回帰とWindows 32-bitの実行を追加した。2026-09-13に[実行34673928648](https://github.com/mith-mmk/wml2-on-rust/actions/runs/34673928648)を確認し、対象コミット`798b735`のLinuxテスト、Windows/macOSのTIFF回帰、Windows i686テスト、Wasm・i686 Linuxのコンパイル確認はすべて成功していた。Wasmは実行テストではない。この結果は同コミットについての記録であり、後続の変更のCI成功を示すものではない。既存の特殊CCITT等の制限は[初期拡張文書](tiff-extend.md)に記載した範囲を維持する。
 
 ## 追加画像と外部比較
 

@@ -96,3 +96,59 @@ jobs:
         with:
           components: rustfmt
       - run: cargo fmt -p wml2 --check
+
+  tiff-oracle:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install TIFF oracle dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes imagemagick libtiff-tools python3-pil
+          convert --version
+          /usr/bin/python3 -c 'from PIL import Image; print("Pillow", Image.__version__)'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo generate-lockfile
+      - name: Build sample converter and metadata tools
+        run: cargo build -p wml2-test --locked --release --example converter --example metadata
+      - name: Generate TIFF review and alpha/LZW samples
+        env:
+          SAMPLE_ROOT: ${{ runner.temp }}/wml2-tiff-oracle/samples
+        run: |
+          /usr/bin/python3 wml2-test/scripts/generate_tiff_review_samples.py --dest "$SAMPLE_ROOT/review"
+          /usr/bin/python3 wml2-test/scripts/generate_tiff_alpha_lzw_samples.py --dest "$SAMPLE_ROOT/alpha-lzw"
+          /usr/bin/python3 wml2-test/scripts/generate_tiff_lzw_modes_samples.py --dest "$SAMPLE_ROOT/lzw-modes"
+      - name: Run converter metadata and independent LibTIFF oracle
+        env:
+          SAMPLE_ROOT: ${{ runner.temp }}/wml2-tiff-oracle/samples
+          REPORT_ROOT: ${{ runner.temp }}/wml2-tiff-oracle/reports
+        run: |
+          mkdir -p "$REPORT_ROOT"
+          /usr/bin/python3 wml2-test/scripts/verify_tiff_review_samples.py \
+            --samples "$SAMPLE_ROOT/review" \
+            --output "$REPORT_ROOT/review" \
+            --converter "$GITHUB_WORKSPACE/target/release/examples/converter" \
+            --metadata "$GITHUB_WORKSPACE/target/release/examples/metadata" \
+            --magick convert
+          /usr/bin/python3 wml2-test/scripts/verify_tiff_lzw_modes.py \
+            --samples "$SAMPLE_ROOT/lzw-modes" \
+            --output "$REPORT_ROOT/lzw-modes" \
+            --converter "$GITHUB_WORKSPACE/target/release/examples/converter" \
+            --metadata "$GITHUB_WORKSPACE/target/release/examples/metadata" \
+            --magick convert
+          /usr/bin/python3 wml2-test/scripts/verify_tiff_review_samples.py \
+            --samples "$SAMPLE_ROOT/alpha-lzw" \
+            --output "$REPORT_ROOT/alpha-lzw" \
+            --converter "$GITHUB_WORKSPACE/target/release/examples/converter" \
+            --metadata "$GITHUB_WORKSPACE/target/release/examples/metadata" \
+            --magick convert
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tiff-oracle-reports
+          path: ${{ runner.temp }}/wml2-tiff-oracle/reports

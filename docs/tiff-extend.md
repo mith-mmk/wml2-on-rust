@@ -40,6 +40,10 @@ ICC、EXIF、TIFFタグとorientationはメタデータに保持する。Orienta
 
 RGBA8出力の元ICCは `Source ICC Profile` とTIFFヘッダー内に保持する。`ICC Profile` は現在のRGB画素に適用できるプロファイルだけに使用し、Gray/CMYKの元ICCをRGB出力へ自動転記しない。InkSet=2などCMYK以外の色分解は明示的に未対応とする。
 
+CMYKはExtraSamples=2のunassociated alphaを保持する。CMYKのassociated alpha（1）とPaletteのalpha（1/2）は色モデル固有の処理が未実装のため、ページ解析時に`NoSupportFormat`で拒否する。透明度を捨てて成功させない。用途未指定の追加サンプル（0またはタグなし）は不透明として扱う。
+
+汎用block描画は復号済みバッファとColorMapを借用し、描画のためだけに全体を複製しない。公開のraw描画APIでは、Predictorやplanar復元が必要な場合に限り書き込み用バッファを確保する。`expanded_bytes`は個々の展開データや画像バッファの検査上限であり、入力・出力・一時バッファを合算したプロセスのピークメモリ上限ではない。
+
 従来のRGBA8出力ではRGB/Grayのassociated alphaをstraight alphaへ変換する。alphaが0の画素のRGBは0とする。native出力は関連付け済みサンプルと `Premultiplied` の意味をそのまま保持する。
 
 ## エンコード

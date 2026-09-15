@@ -7,7 +7,7 @@
 - Classic TIFF / BigTIFF、Little Endian / Big Endian、複数IFD。
 - None / LZW / Deflate（8・32946）/ PackBitsのstrip・tile共通処理。末端tileの格納寸法と描画寸法を区別する。
 - JPEG new-style、CCITTは既存デコーダを利用する。
-- Gray / RGB / RGBA / Palette / Device CMYK。符号なし整数サンプルと8/16-bit Predictor 2、planar画像を扱う。
+- Gray / RGB / RGBA / Palette / Device CMYK。符号なし整数サンプルと8/16-bit Predictor 2、planar画像を扱う。RGB/Grayのassociated alphaは16/32-bit元精度でunassociateしてからlegacy RGBA8へ量子化する。
 - IFDの循環、サイズ計算のオーバーフロー、壊れたブロック配列、入力外オフセット、切り詰められたブロックを拒否する。
 
 内部のoffset/countは `u64`。画像寸法は既存APIに合わせ `u32` のまま検証する。BigTIFFを読めることによって `DecodeLimits` が解除されることはない。4GiB超の疎な入力を読む場合も、呼び出し側が入力上限を明示する必要がある。
@@ -73,7 +73,7 @@ cargo run -p wml2-test --example metadata -- <temporary-output>/input.png.tiff
 
 外部スイートの出所とライセンスは [調査記録](tiff-extend-research.md) と [samples/README.md](../samples/README.md) に記載している。実行確認にはsampleのconverter/metadataを含める。
 
-`wml2-test/scripts/tiff_oracle.py` はPillowでタグを調べ、converterとmetadataを実行し、ImageMagickによるRGBA8参照値との差分をJSONで返す。JPEGはPillow/libjpegを参照にする。`--converter`、`--metadata`、`--corpus`、`--output-dir` で場所を指定する。実行成功、画素一致、未対応を分けて報告する。
+`wml2-test/scripts/tiff_oracle.py` はPillowでタグを調べ、converterとmetadataを実行し、ImageMagickによるRGBA8参照値との差分をJSONで返す。JPEGはPillow/libjpegを参照にする。`--converter`、`--metadata`、`--corpus`、`--output-dir` で場所を指定する。実行成功、画素一致、未対応を分けて報告する。用途不明のExtraSamplesなど参照実装の版差があるfixtureは、manifestの`oracle_policy=expected_only`でWML2期待値を必須にし、外部値を診断扱いにする。
 
 レビュー後の修正、追加画像、32-bitの実行結果は [レビュー修正記録](tiff-extend-review-fixes.md) を参照してください。
 

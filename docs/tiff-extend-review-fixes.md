@@ -6,6 +6,8 @@
 
 2026-09-13の追加指摘（CMYK/Palette alpha、LZW形式、外部oracle CI、作業メモリ）は [追加レビュー対応](tiff-extend-alpha-lzw-review.md) を参照。以下の実行件数は前回時点の記録として保持する。
 
+2026-09-15再レビューでは、ImageMagick 6.9の`ExtraSamples=0`解釈差をfixtureのexpected-only比較として分離し、Gray/RGBの16/32-bit associated alphaを元精度でunassociateしてからRGBA8へ量子化する回帰を追加した。main由来のGray4/FillOrder=2順序問題は別の既存制限として保持する。
+
 ## 修正内容
 
 | 指摘 | 修正と確認 |
@@ -14,7 +16,7 @@
 | R2 SampleFormat | 保存後の画素構成に依存する元SampleFormat・MinMax・TransferFunction・色度・Ink関連タグを除外。Classic/BigTIFFとNone/LZW/Deflate/JPEGで再読込。 |
 | R3 ページ選択 | 旧SubfileType=1/3とNewSubfileTypeのページbitを保持。縮小画像とmaskを除外し、最初の通常ページをlegacy/native双方の先頭にする。実行中に見つけたconverter `--split`の先頭ページ欠落も修正。 |
 | R4 extra channel | 明示的なExtraSamples=1/2のみalphaとして解釈。用途未指定の追加チャンネルはlegacyでは不透明、nativeでは`NoSupportFormat`。 |
-| R5 FillOrder | packed sampleのビットの重みを修正。4-bitパレットのFillOrder=2をLE/BEで確認。 |
+| R5 FillOrder | Paletteのpacked sampleのビットの重みを修正。4-bitパレットのFillOrder=2をLE/BEで確認。Gray4の旧分岐にはmain由来の画素順序問題が残るため、今回の取り込み修正とは分離して記録する。 |
 | R6 32-bit計算 | strip/tile数を加算オーバーフローのない切り上げ除算で求める。高さ2、RowsPerStrip=u32::MAXを32-bit Windowsで実行。 |
 | InkSet | CMYK以外のInkSetおよび4色でないNumberOfInksを未対応として拒否。 |
 | Tiffの複製 | generic block描画とCCITTでページ全体のcloneを廃止。格納寸法と処理済み状態を渡し、CCITTでは必要な項目だけを使用。 |

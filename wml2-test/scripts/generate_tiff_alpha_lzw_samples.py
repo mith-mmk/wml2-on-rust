@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from generate_tiff_review_samples import lzw_encode, make_tiff, page, p16
+from generate_tiff_review_samples import lzw_encode, make_tiff, page, p16, p32
 
 
 def cmyk_rgba(samples):
@@ -75,6 +75,37 @@ def main():
         make_tiff([page(1, 1, [8, 8], 2, 3, [bytes(tile_raw)], tile=(16, 16), extra=[2], color_map=cmap)]),
         width=1, height=1, expect_error=True, tags={"ExtraSamples": [2], "TileWidth": 16})
 
+    # Associated-alpha fixtures retain enough precision to catch a decoder
+    # that shifts to RGBA8 before unassociating the color samples. The
+    # expected values are calculated from the original integer ratios.
+    alpha16 = [100, 200, 300, 300]
+    gray16 = [100, 300]
+    # Keep the 32-bit external-oracle samples in the high 16 bits so
+    # ImageMagick Q16 can inspect their integer values without reducing a
+    # low-alpha probe to its own internal 16-bit cache. The Rust regression
+    # still uses a low-alpha 32-bit case to exercise the precision bug.
+    alpha32 = 0xFFFF0000
+    rgb32 = [alpha32 // 3, alpha32 * 2 // 3, alpha32, alpha32]
+    gray32 = [alpha32 // 3, alpha32]
+    for bits, rgb, gray, pack, label in [
+        (16, alpha16, gray16, p16, "16"),
+        (32, rgb32, gray32, p32, "32"),
+    ]:
+        for be, endian in ((False, "le"), (True, "be")):
+            alpha8 = 1 if bits == 16 else 255
+            expected_rgb = [85, 170, 255, alpha8]
+            expected_gray = [85, 85, 85, alpha8]
+            add(args.dest, manifest, f"associated_rgb{label}_{endian}.tif",
+                make_tiff([page(1, 1, [bits] * 4, 4, 2,
+                                 [b"".join(pack(value, be) for value in rgb)], extra=[1])], be=be),
+                width=1, height=1, expected_rgba=expected_rgb,
+                oracle_policy="expected_only", tags={"BitsPerSample": [bits], "ExtraSamples": [1]})
+            add(args.dest, manifest, f"associated_gray{label}_{endian}.tif",
+                make_tiff([page(1, 1, [bits] * 2, 2, 1,
+                                 [b"".join(pack(value, be) for value in gray)], extra=[1])], be=be),
+                width=1, height=1, expected_rgba=expected_gray,
+                oracle_policy="expected_only", tags={"BitsPerSample": [bits], "ExtraSamples": [1]})
+
     (args.dest / "manifest.json").write_text(
         json.dumps({"format": "TIFF alpha-lzw follow-up 2026-09-13", "samples": manifest}, indent=2) + "\n",
         encoding="utf-8")
@@ -82,7 +113,9 @@ def main():
         "# TIFF alpha and LZW fixtures\n\n"
         "The CMYK ExtraSamples=2 cases preserve explicit unassociated alpha and nonzero K.\n"
         "CMYK associated alpha and Palette alpha cases are explicit unsupported inputs.\n"
-        "All files are original generated test data and are compared by the local verifier.\n",
+        "Gray/RGB associated-alpha 16/32-bit LE/BE cases use formula-based expected RGBA;\n"
+        "the local verifier records, but does not require, version-specific oracle output.\n"
+        "All files are original generated test data.\n",
         encoding="utf-8")
     (args.dest / "LICENSE.txt").write_text(
         "Original generated test data, released under CC0 1.0.\n"

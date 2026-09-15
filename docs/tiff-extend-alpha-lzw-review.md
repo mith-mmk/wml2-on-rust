@@ -1,6 +1,6 @@
-# TIFF追加レビュー対応（2026-09-13）
+# TIFF追加レビュー対応（2026-09-15再レビュー）
 
-対象ブランチは `tiff-extend`。`798b735` に対する追加レビューのExtraSamples、LZW、外部oracleのCI化、描画時の複製、CI記録を扱う。
+対象ブランチは `tiff-extend`、対象HEADは `3ad92b3`。前回 `798b735` からの追加レビューで指摘されたExtraSamples、LZW、外部oracleのCI化、描画時の複製を確認し、今回の再レビューではCI比較方針と高色深度associated alphaの精度を更新した。
 
 ## ExtraSamples
 
@@ -36,17 +36,21 @@ Orientation 2〜8を自動回転しない従来設計を維持する。TIFFか�
 
 今回 `tiff-oracle` ジョブを追加し、独立生成TIFFをconverter/metadata実バイナリで読み、ImageMagick/LibTIFFで元画像の画素、Pillowで出力PNGと再保存TIFFを照合する。標準LZW・旧LibTIFF・WML2独自LSBはコード幅の9→10→11-bit境界を跨ぐ別fixtureとして扱う。この追加CIジョブ自体のGitHub上での実行は、ローカル検証とは区別する。
 
+ImageMagick 6.9系は `ExtraSamples=0` をalphaとして扱う版があるため、`r4_gray_extra_samples_unspecified.tif` はmanifestで `oracle_policy=expected_only` とする。このケースではWML2の期待RGBAとconverter/metadata成功を必須にし、ImageMagickの値は診断記録に留める。ImageMagick 7.1系と同じ完全一致を要求して、TIFF仕様上の用途不明チャンネルをalphaへ変換することはしない。生成される正常fixtureのタグは昇順に保ち、意図的な異常fixtureだけを別扱いにする。
+
 ## 最終検証
 
 - Windows x64: default + high-bit-depthのライブラリ・統合テスト199件成功、既存1件ignored。追加した「誤候補がEOIへ到達するが932バイトしかなく、正候補1024バイトを選ぶ」回帰1件も成功（計200件）。
 - Windows i686: tiff + high-bit-depthの単体・TIFF統合74件と同じ追加回帰1件、計75件成功。4GiB超のBigTIFFテストを含む。
 - 最小feature 23件、doc test 12件、converterの引数・frameテスト15件成功。Clippy成功（既存警告あり）、`cargo fmt -p wml2 --check`、Python構文、CI YAML、`git diff --check`成功。
 - 公開エンコーダの `lzw` / `lzw_lsb` × Classic / BigTIFF × Predictorなし / horizontalの8組で、4096画素のRGBA・寸法・FillOrderタグを確認。
-- 旧37枚と新15枚、計52ケースを最終converter/metadataで確認し、正常39枚・明示的拒否13枚が期待どおりになった。外部照合を要求する37ページはImageMagick/LibTIFFと完全一致。Classic/BigTIFF × None/LZW/Deflateの再保存6組もPillowで一致。
+- 旧37枚、alpha-LZW17枚、LZW6枚を最終converter/metadataで確認した。旧レビュー37ケース、LZW6ケース、alpha-LZW17ケースがすべて期待どおりで、旧レビューの外部照合37ページとLZWの必須外部照合2ケースはImageMagick/LibTIFFと一致した。Classic/BigTIFF × None/LZW/Deflateの再保存6組もPillowで一致した。
 - LZW6枚のうち標準MSB/FillOrder=1と旧LibTIFF/FillOrder=1は外部画素一致。WML2独自LSBの2枚と、それ以外のFillOrder=2変種2枚はWML2の期待画素に一致し、今回のImageMagick/LibTIFFは拒否した。後者を標準相互運用成功には数えない。
 - Terraによる最終静的レビューで明確な不具合の残指摘なし。今回の変更はローカルコミットまでで、追加CIジョブのGitHub上での実行は未確認。
+- 高色深度のassociated alphaは元の16/32-bit値でunassociateしてからRGBA8へ量子化する。Gray/RGB、LE/BE、16/32-bitの回帰を追加した。main由来のGray4/FillOrder=2の画素順序問題は今回の取り込み差分では修正せず、既存制限として残す。
+- F2の追加8画像はWML2の数式による期待RGBAを必須にし、ImageMagick 7.1の16-bit 4件は一致した。32-bit 4件はImageMagickのQ16 RGBA出力段階でassociated alphaの丸め差が出るため、channel統計の参照に留め、WML2期待値を外部値へ合わせていない。
 
-追加画像は `D:\data\samples\images\tiff\alpha-lzw-20260913`（9枚）と `lzw-modes-20260913`（6枚）。独自生成のCC0画像で、各保存先にmanifest、ライセンス、ハッシュ、validationを保持する。使用したツールはPillow 11.1.0、ImageMagick 7.1.2-21 Q16。旧 `review-a08bf058` のデータは保持した。
+追加画像は `D:\data\samples\images\tiff\alpha-lzw-20260913`（17枚）と `lzw-modes-20260913`（6枚）。独自生成のCC0画像で、各保存先にmanifest、ライセンス、ハッシュ、validationを保持する。使用したツールはPillow 11.1.0、ImageMagick 7.1.2-21 Q16。旧 `review-a08bf058` のデータは保持した。
 
 ## コミットと再現
 
@@ -55,5 +59,6 @@ Orientation 2〜8を自動回転しない従来設計を維持する。TIFFか�
 | 3: 未対応alphaのページ検証 | `de0a9d5` |
 | 2: LZW形式・借用描画・回帰 | `c18515d` |
 | 6: 標準／旧WML2エンコーダ契約 | `3e0ba22` |
+| Phase 1 review: 高色深度associated alpha | `5a4450e` |
 
 新しい画像の生成・検証コマンドは `.github/workflows/ci.yml` の `tiff-oracle` に記載した。Windowsでは `/usr/bin/python3` をPythonのパスに、`convert` をImageMagickの `magick.exe` に置き換え、converter/metadataと一時出力の場所を指定する。`--output` は存在しないディレクトリとし、今回の一時作業には `C:\temp\wml2-tiff-followup-20260913` を使用した。

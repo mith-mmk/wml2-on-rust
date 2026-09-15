@@ -6,6 +6,11 @@ Requires Pillow to inspect generated PNGs and re-encoded TIFFs. Optional
 Native U16 values and custom decode limits are covered by the Rust tests;
 this runner validates the legacy sample binaries. Outputs go below --output.
 Use a fresh output directory so stale converter results cannot pass a check.
+
+Manifest entries use ``oracle_policy=expected_only`` when a reference decoder
+has a documented version-specific interpretation difference. The WML2 expected
+RGBA check remains mandatory; the external decoder is then recorded as a
+diagnostic instead of being treated as a portable TIFF correctness oracle.
 """
 import argparse
 import json
@@ -65,6 +70,8 @@ def main():
     parser.add_argument("--converter", required=True)
     parser.add_argument("--metadata", required=True)
     parser.add_argument("--magick", help="optional ImageMagick executable for source pixel comparison")
+    parser.add_argument("--force-oracle", action="store_true",
+                        help="run the external comparison even for expected_only entries")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     manifest = json.loads((args.samples / "manifest.json").read_text(encoding="utf-8"))
@@ -108,14 +115,21 @@ def main():
                         actual.append(list(image.convert("RGBA").tobytes()))
                 if expected is not None and actual != expected:
                     raise ValueError(f"pixel mismatch: expected {expected}, actual {actual}")
+                oracle_policy = "required_match" if args.force_oracle else spec.get("oracle_policy", "required_match")
                 if args.magick:
+                    oracle_matches = []
                     for index, pixels in enumerate(actual):
                         reference = run([args.magick, f"{source}[{index}]", "-alpha", "on",
                                          "-depth", "8", "rgba:-"])
-                        if reference.returncode or list(reference.stdout) != pixels:
+                        matches = reference.returncode == 0 and list(reference.stdout) == pixels
+                        oracle_matches.append(matches)
+                        if oracle_policy == "required_match" and not matches:
                             raise ValueError("ImageMagick source pixels differ: " +
                                              reference.stderr.decode(errors="replace"))
                     result["oracle_pages_checked"] = len(actual)
+                    result["oracle_matches"] = oracle_matches
+                if args.magick and oracle_policy != "required_match":
+                    result["oracle_policy"] = oracle_policy
                 result.update(ok=True, pages=count, pixels_checked=expected is not None, rgba=actual)
                 if spec.get("check_encoder"):
                     result["encoder"] = check_encoder(args, source, spec, case)

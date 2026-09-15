@@ -111,6 +111,7 @@ def page_fields(page, be, big, blocks):
     if page.get("number_inks") is not None: f.append((334, 3, [page["number_inks"]]))
     if page.get("ink_names") is not None: f.append((333, 2, page["ink_names"]))
     if page.get("icc") is not None: f.append((34675, 7, page["icc"]))
+    f.sort(key=lambda item: item[0])
     return f
 
 
@@ -226,7 +227,8 @@ def main():
                    width=1, height=1, pages=2, expected_pages_rgba=[[1, 1, 1, 255], [2, 2, 2, 255]])
     add_sample(args.dest, manifest, "r4_gray_extra_samples_unspecified.tif",
                make_tiff([page(1, 1, [8, 8], 2, 1, [[128, 0]], extra=[0])]),
-               width=1, height=1, expected_rgba=[128, 128, 128, 255], expect_native_error="unknown extra channel")
+               width=1, height=1, expected_rgba=[128, 128, 128, 255],
+               expect_native_error="unknown extra channel", oracle_policy="expected_only")
     cmap = [0] * 48
     for i, value in ((1, 17), (2, 34)):
         cmap[i] = cmap[16 + i] = cmap[32 + i] = value * 257

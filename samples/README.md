@@ -30,7 +30,7 @@ TIFF拡張の確認には、ファイル単位の出所とライセンスが記�
 
 2026-09-13の追加レビュー用に、第三者の画像を使わない再現用TIFFを追加しました。
 
-- `D:\data\samples\images\tiff\alpha-lzw-20260913\`: CMYKの非乗算alphaと、明示的に未対応として拒否するCMYK乗算済みalpha・Palette alpha。LE/BE、BigTIFF、LZW、16-bit、planar、tileを含みます。
+- `D:\data\samples\images\tiff\alpha-lzw-20260913\`: 17枚。CMYKの非乗算alpha、明示的に未対応として拒否するCMYK乗算済みalpha・Palette alpha、Gray/RGB associated alphaの16/32-bit LE/BEを含みます。
 - `D:\data\samples\images\tiff\lzw-modes-20260913\`: 標準MSB、旧LibTIFF LSB late-change、WML2独自LSB early-change。9→10→11-bitのコード幅境界とFillOrderを分離して検証します。
 - [alpha生成器](../wml2-test/scripts/generate_tiff_alpha_lzw_samples.py)、[LZW生成器](../wml2-test/scripts/generate_tiff_lzw_modes_samples.py)、[LZW検証器](../wml2-test/scripts/verify_tiff_lzw_modes.py)。生成器は標準Pythonのみ、検証にはPillowとImageMagick/LibTIFFを使用します。
 - 各保存先の `manifest.json` に期待画素・正常／拒否・互換形式を記録し、`validation/` に実バイナリと外部oracleの比較結果を保持します。新しい `tiff-oracle` CIジョブでも生成・比較を実行します。

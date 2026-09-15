@@ -723,13 +723,24 @@ fn draw_tile_internal(
                                 } else {
                                     u32::from(u16::MAX)
                                 };
-                                let rgba = crate::tiff::color::gray_to_rgba8(
-                                    sample >> 8,
-                                    255,
-                                    header.photometric_interpretation == 0,
-                                    alpha >> 8,
-                                    header.extra_samples.first() == Some(&1),
-                                );
+                                let associated = header.extra_samples.first() == Some(&1);
+                                let rgba = if associated {
+                                    crate::tiff::color::gray_to_rgba8(
+                                        sample,
+                                        u32::from(u16::MAX),
+                                        header.photometric_interpretation == 0,
+                                        alpha,
+                                        true,
+                                    )
+                                } else {
+                                    crate::tiff::color::gray_to_rgba8(
+                                        sample >> 8,
+                                        255,
+                                        header.photometric_interpretation == 0,
+                                        alpha >> 8,
+                                        false,
+                                    )
+                                };
                                 buf.push(rgba.red);
                                 buf.push(rgba.green);
                                 buf.push(rgba.blue);
@@ -791,13 +802,24 @@ fn draw_tile_internal(
                             } else {
                                 u32::MAX
                             };
-                            let rgba = crate::tiff::color::gray_to_rgba8(
-                                sample >> 24,
-                                255,
-                                header.photometric_interpretation == 0,
-                                alpha >> 24,
-                                header.extra_samples.first() == Some(&1),
-                            );
+                            let associated = header.extra_samples.first() == Some(&1);
+                            let rgba = if associated {
+                                crate::tiff::color::gray_to_rgba8(
+                                    sample,
+                                    u32::MAX,
+                                    header.photometric_interpretation == 0,
+                                    alpha,
+                                    true,
+                                )
+                            } else {
+                                crate::tiff::color::gray_to_rgba8(
+                                    sample >> 24,
+                                    255,
+                                    header.photometric_interpretation == 0,
+                                    alpha >> 24,
+                                    false,
+                                )
+                            };
                             buf.push(rgba.red);
                             buf.push(rgba.green);
                             buf.push(rgba.blue);
@@ -956,17 +978,34 @@ fn draw_tile_internal(
                                 if !has_bytes(&data, i, bytes) {
                                     return Ok(None);
                                 }
-                                r = (read_u16(&data, i, header.tiff_headers.endian) >> 8) as u8;
-                                g = (read_u16(&data, i + 2, header.tiff_headers.endian) >> 8) as u8;
-                                b = (read_u16(&data, i + 4, header.tiff_headers.endian) >> 8) as u8;
-                                a = if !header.extra_samples.is_empty()
+                                let max = u32::from(u16::MAX);
+                                let r16 = u32::from(read_u16(&data, i, header.tiff_headers.endian));
+                                let g16 =
+                                    u32::from(read_u16(&data, i + 2, header.tiff_headers.endian));
+                                let b16 =
+                                    u32::from(read_u16(&data, i + 4, header.tiff_headers.endian));
+                                let a16 = if !header.extra_samples.is_empty()
                                     && (header.extra_samples[0] == 1
                                         || header.extra_samples[0] == 2)
                                     && header.samples_per_pixel > 3
                                 {
-                                    (read_u16(&data, i + 6, header.tiff_headers.endian) >> 8) as u8
+                                    u32::from(read_u16(&data, i + 6, header.tiff_headers.endian))
                                 } else {
-                                    0xff
+                                    max
+                                };
+                                if header.extra_samples.first() == Some(&1) {
+                                    (r, g, b) = crate::tiff::color::unassociate_alpha_precision(
+                                        r16, g16, b16, a16, max,
+                                    );
+                                } else {
+                                    r = (r16 >> 8) as u8;
+                                    g = (g16 >> 8) as u8;
+                                    b = (b16 >> 8) as u8;
+                                }
+                                a = if header.extra_samples.first() == Some(&1) {
+                                    crate::tiff::color::quantize(a16, max)
+                                } else {
+                                    (a16 >> 8) as u8
                                 };
                                 i += header.samples_per_pixel as usize * 2;
                             }
@@ -976,16 +1015,31 @@ fn draw_tile_internal(
                             if !has_bytes(&data, i, bytes) {
                                 return Ok(None);
                             }
-                            r = (read_u32(&data, i, header.tiff_headers.endian) >> 24) as u8;
-                            g = (read_u32(&data, i + 4, header.tiff_headers.endian) >> 24) as u8;
-                            b = (read_u32(&data, i + 8, header.tiff_headers.endian) >> 24) as u8;
-                            a = if !header.extra_samples.is_empty()
+                            let max = u32::MAX;
+                            let r32 = read_u32(&data, i, header.tiff_headers.endian);
+                            let g32 = read_u32(&data, i + 4, header.tiff_headers.endian);
+                            let b32 = read_u32(&data, i + 8, header.tiff_headers.endian);
+                            let a32 = if !header.extra_samples.is_empty()
                                 && (header.extra_samples[0] == 1 || header.extra_samples[0] == 2)
                                 && header.samples_per_pixel > 3
                             {
-                                (read_u32(&data, i + 12, header.tiff_headers.endian) >> 24) as u8
+                                read_u32(&data, i + 12, header.tiff_headers.endian)
                             } else {
-                                0xff
+                                max
+                            };
+                            if header.extra_samples.first() == Some(&1) {
+                                (r, g, b) = crate::tiff::color::unassociate_alpha_precision(
+                                    r32, g32, b32, a32, max,
+                                );
+                            } else {
+                                r = (r32 >> 24) as u8;
+                                g = (g32 >> 24) as u8;
+                                b = (b32 >> 24) as u8;
+                            }
+                            a = if header.extra_samples.first() == Some(&1) {
+                                crate::tiff::color::quantize(a32, max)
+                            } else {
+                                (a32 >> 24) as u8
                             };
                             i += header.samples_per_pixel as usize * 4;
                         }
@@ -1009,7 +1063,10 @@ fn draw_tile_internal(
                             prevs[3] = a;
                         }
                     }
-                    if header.extra_samples.first() == Some(&1) && header.samples_per_pixel > 3 {
+                    if header.extra_samples.first() == Some(&1)
+                        && header.samples_per_pixel > 3
+                        && header.bitspersamples[0] == 8
+                    {
                         (r, g, b) = crate::tiff::color::unassociate_alpha(r, g, b, a);
                     }
                     buf.push(r);

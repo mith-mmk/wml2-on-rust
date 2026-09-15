@@ -50,6 +50,11 @@ fn u32b(v: u32, be: bool) -> [u8; 4] {
 fn s16(v: &[u16], be: bool) -> Vec<u8> {
     v.iter().flat_map(|x| u16b(*x, be)).collect()
 }
+fn s32(v: &[u32], be: bool) -> Vec<u8> {
+    v.iter()
+        .flat_map(|x| if be { x.to_be_bytes() } else { x.to_le_bytes() })
+        .collect()
+}
 fn f(tag: u16, ty: u16, payload: Vec<u8>) -> F {
     F {
         tag,
@@ -490,6 +495,48 @@ fn lzw_code_order_is_independent_of_packed_sample_fill_order() {
             p.fill_order = fill_order;
             let image = image_load(&build_with_colormap(p, cmap, false)).unwrap();
             assert_eq!(image.buffer.unwrap(), [255, 0, 0, 255, 0, 255, 0, 255]);
+        }
+    }
+}
+
+#[test]
+fn associated_alpha_is_unassociated_before_high_depth_quantization() {
+    let alpha32 = 0x0100_0000u32;
+    let rgb32 = [alpha32 / 3, alpha32 * 2 / 3, alpha32, alpha32];
+    let gray32 = [alpha32 / 3, alpha32];
+    for be in [false, true] {
+        for (bits, rgb, gray, expected) in [
+            (
+                16,
+                s16(&[100, 200, 300, 300], be),
+                s16(&[100, 300], be),
+                [85, 170, 255, 1],
+            ),
+            (32, s32(&rgb32, be), s32(&gray32, be), [85, 170, 255, 1]),
+        ] {
+            let mut rgb_page = spec(1, 1, &[bits; 4], 4, 2, vec![rgb]);
+            rgb_page.extra = vec![1];
+            assert_eq!(
+                image_load(&build(&[rgb_page], false, be))
+                    .unwrap()
+                    .buffer
+                    .unwrap(),
+                expected,
+                "RGB{bits} {:?}",
+                if be { "BE" } else { "LE" }
+            );
+
+            let mut gray_page = spec(1, 1, &[bits; 2], 2, 1, vec![gray]);
+            gray_page.extra = vec![1];
+            assert_eq!(
+                image_load(&build(&[gray_page], false, be))
+                    .unwrap()
+                    .buffer
+                    .unwrap(),
+                [expected[0], expected[0], expected[0], expected[3]],
+                "Gray{bits} {:?}",
+                if be { "BE" } else { "LE" }
+            );
         }
     }
 }

@@ -50,8 +50,9 @@ ImageMagick 6.9系は `ExtraSamples=0` をalphaとして扱う版があるため
 - 高色深度のassociated alphaは元の16/32-bit値でunassociateしてからRGBA8へ量子化する。Gray/RGB、LE/BE、16/32-bitの回帰を追加した。main由来のGray4/FillOrder=2の画素順序問題は今回の取り込み差分では修正せず、既存制限として残す。
 - F2の追加8画像はWML2の数式による期待RGBAを必須にし、ImageMagick 7.1の16-bit 4件は一致した。32-bit 4件はImageMagickのQ16 RGBA出力段階でassociated alphaの丸め差が出るため、channel統計の参照に留め、WML2期待値を外部値へ合わせていない。
 - WhiteIsZeroのGray associated alphaは、8/16/32-bitの元精度で`M-S`を正規化してからunassociateする。A=0ではRGBを0に固定し、native U16の`M-S`表現とlegacy RGBA8のstraight表現を整合させる。LE/BE、部分透明・完全透明、native/legacyの回帰18件を確認した。
+- WhiteIsZeroの追加fixture 12枚を含むalpha corpus 29枚をconverter/metadataで確認し、期待RGBAと終了値を検証した。外部実装のWhiteIsZero alpha解釈はexpected-onlyの診断記録として保持する。
 
-追加画像は `D:\data\samples\images\tiff\alpha-lzw-20260913`（17枚）と `lzw-modes-20260913`（6枚）。独自生成のCC0画像で、各保存先にmanifest、ライセンス、ハッシュ、validationを保持する。使用したツールはPillow 11.1.0、ImageMagick 7.1.2-21 Q16。旧 `review-a08bf058` のデータは保持した。
+追加画像は `D:\data\samples\images\tiff\alpha-lzw-20260913`（29枚）と `lzw-modes-20260913`（6枚）。独自生成のCC0画像で、各保存先にmanifest、ライセンス、ハッシュ、validationを保持する。使用したツールはPillow 11.1.0、ImageMagick 7.1.2-21 Q16。旧 `review-a08bf058` のデータは保持した。
 
 ## コミットと再現
 

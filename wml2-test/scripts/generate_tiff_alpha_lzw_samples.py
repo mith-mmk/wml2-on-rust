@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the 2026-09-13 TIFF alpha/LZW follow-up corpus."""
+"""Generate the TIFF alpha/LZW follow-up corpus."""
 import argparse
 import hashlib
 import json
@@ -106,6 +106,33 @@ def main():
                 width=1, height=1, expected_rgba=expected_gray,
                 oracle_policy="expected_only", tags={"BitsPerSample": [bits], "ExtraSamples": [1]})
 
+    # WhiteIsZero associated alpha must normalize M-S before unassociating.
+    # Keep partial and fully transparent samples for both byte orders at every
+    # legacy bit depth; native U16 is checked by the Rust regression.
+    white_zero_cases = [
+        (8, [200, 128], [200, 0], None, "8"),
+        (16, [50_000, 60_000], [50_000, 0], p16, "16"),
+        (32, [0xC8C8_C8C8, 0x8080_8080], [0xC8C8_C8C8, 0], p32, "32"),
+    ]
+    for bits, partial, transparent, pack, label in white_zero_cases:
+        if bits == 8:
+            pack = lambda value, be: bytes([value])
+        for be, endian in ((False, "le"), (True, "be")):
+            for suffix, samples, expected in [
+                ("partial", partial, {8: [110, 110, 110, 128],
+                                      16: [66, 66, 66, 233],
+                                      32: [110, 110, 110, 128]}[bits]),
+                ("transparent", transparent, [0, 0, 0, 0]),
+            ]:
+                add(args.dest, manifest, f"whiteiszero_gray{label}_{endian}_{suffix}.tif",
+                    make_tiff([page(1, 1, [bits, bits], 2, 0,
+                                    [b"".join(pack(value, be) for value in samples)],
+                                    extra=[1])], be=be),
+                    width=1, height=1, expected_rgba=expected,
+                    oracle_policy="expected_only",
+                    tags={"PhotometricInterpretation": 0, "BitsPerSample": [bits, bits],
+                          "ExtraSamples": [1]})
+
     (args.dest / "manifest.json").write_text(
         json.dumps({"format": "TIFF alpha-lzw follow-up 2026-09-13", "samples": manifest}, indent=2) + "\n",
         encoding="utf-8")
@@ -113,7 +140,9 @@ def main():
         "# TIFF alpha and LZW fixtures\n\n"
         "The CMYK ExtraSamples=2 cases preserve explicit unassociated alpha and nonzero K.\n"
         "CMYK associated alpha and Palette alpha cases are explicit unsupported inputs.\n"
-        "Gray/RGB associated-alpha 16/32-bit LE/BE cases use formula-based expected RGBA;\n"
+        "Gray/RGB associated-alpha 16/32-bit LE/BE cases use formula-based expected RGBA.\n"
+        "WhiteIsZero Gray associated-alpha 8/16/32-bit partial/transparent cases\n"
+        "also use formula-based expected RGBA;\n"
         "the local verifier records, but does not require, version-specific oracle output.\n"
         "All files are original generated test data.\n",
         encoding="utf-8")

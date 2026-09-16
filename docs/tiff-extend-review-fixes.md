@@ -10,6 +10,8 @@
 
 2026-09-16再レビューでは、WhiteIsZeroのGray associated alphaについて、元精度で`M-S`を正規化してからalphaを解除する順序へ修正した。A=0のRGBを0に保ち、native U16の正規化値とlegacy RGBA8の結果をLE/BE、8/16/32-bitで確認した。
 
+同じ再レビュー用fixtureとしてWhiteIsZeroの8/16/32-bit・LE/BE・部分透明/完全透明12枚をalpha corpusへ追加し、合計29枚をconverter/metadataで検証した。
+
 ## 修正内容
 
 | 指摘 | 修正と確認 |

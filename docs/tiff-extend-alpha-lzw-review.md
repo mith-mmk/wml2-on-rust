@@ -1,6 +1,6 @@
-# TIFF追加レビュー対応（2026-09-15再レビュー）
+# TIFF追加レビュー対応（2026-09-16再レビュー）
 
-対象ブランチは `tiff-extend`、対象HEADは `3ad92b3`。前回 `798b735` からの追加レビューで指摘されたExtraSamples、LZW、外部oracleのCI化、描画時の複製を確認し、今回の再レビューではCI比較方針と高色深度associated alphaの精度を更新した。
+対象ブランチは `tiff-extend`、今回の修正コミットは `d0914d4`。前回 `3ad92b3` からの再レビューで指摘されたWhiteIsZeroとassociated alphaの処理順序を修正し、ExtraSamples、LZW、外部oracleのCI化、描画時の複製の対応を維持する。
 
 ## ExtraSamples
 
@@ -49,6 +49,7 @@ ImageMagick 6.9系は `ExtraSamples=0` をalphaとして扱う版があるため
 - Terraによる最終静的レビューで明確な不具合の残指摘なし。今回の変更はローカルコミットまでで、追加CIジョブのGitHub上での実行は未確認。
 - 高色深度のassociated alphaは元の16/32-bit値でunassociateしてからRGBA8へ量子化する。Gray/RGB、LE/BE、16/32-bitの回帰を追加した。main由来のGray4/FillOrder=2の画素順序問題は今回の取り込み差分では修正せず、既存制限として残す。
 - F2の追加8画像はWML2の数式による期待RGBAを必須にし、ImageMagick 7.1の16-bit 4件は一致した。32-bit 4件はImageMagickのQ16 RGBA出力段階でassociated alphaの丸め差が出るため、channel統計の参照に留め、WML2期待値を外部値へ合わせていない。
+- WhiteIsZeroのGray associated alphaは、8/16/32-bitの元精度で`M-S`を正規化してからunassociateする。A=0ではRGBを0に固定し、native U16の`M-S`表現とlegacy RGBA8のstraight表現を整合させる。LE/BE、部分透明・完全透明、native/legacyの回帰18件を確認した。
 
 追加画像は `D:\data\samples\images\tiff\alpha-lzw-20260913`（17枚）と `lzw-modes-20260913`（6枚）。独自生成のCC0画像で、各保存先にmanifest、ライセンス、ハッシュ、validationを保持する。使用したツールはPillow 11.1.0、ImageMagick 7.1.2-21 Q16。旧 `review-a08bf058` のデータは保持した。
 
@@ -60,5 +61,6 @@ ImageMagick 6.9系は `ExtraSamples=0` をalphaとして扱う版があるため
 | 2: LZW形式・借用描画・回帰 | `c18515d` |
 | 6: 標準／旧WML2エンコーダ契約 | `3e0ba22` |
 | Phase 1 review: 高色深度associated alpha | `5a4450e` |
+| Phase 1 review: WhiteIsZero順序 | `d0914d4` |
 
 新しい画像の生成・検証コマンドは `.github/workflows/ci.yml` の `tiff-oracle` に記載した。Windowsでは `/usr/bin/python3` をPythonのパスに、`convert` をImageMagickの `magick.exe` に置き換え、converter/metadataと一時出力の場所を指定する。`--output` は存在しないディレクトリとし、今回の一時作業には `C:\temp\wml2-tiff-followup-20260913` を使用した。

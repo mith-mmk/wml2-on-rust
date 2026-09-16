@@ -34,7 +34,7 @@ fn read_tiff16(bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-`decode_native()` は最初の通常ページ、`decode_native_pages()` は通常ページをすべて返す。縮小画像とマスクを除外し、旧SubfileType=1/3とNewSubfileTypeのページビットを通常ページとして扱う。対象は符号なしGray16、GrayAlpha16、RGB16、RGBA16。Predictorを16-bitで復元した後の値を保持する。WhiteIsZeroのGray値は黒0へ正規化する。ExtraSamplesのassociated alphaは `Premultiplied`、unassociated alphaは `Straight` として保持する。用途未指定の追加チャンネル（ExtraSamples=0またはタグなし）は現在のtypedモデルで意味を表現できないため、native APIでは `NoSupportFormat` を返す。legacy出力ではalphaと解釈せず、不透明として扱う。
+`decode_native()` は最初の通常ページ、`decode_native_pages()` は通常ページをすべて返す。縮小画像とマスクを除外し、旧SubfileType=1/3とNewSubfileTypeのページビットを通常ページとして扱う。対象は符号なしGray16、GrayAlpha16、RGB16、RGBA16。Predictorを16-bitで復元した後の値を保持する。WhiteIsZeroのGray値は黒0へ正規化し、associated alphaでは元サンプルの`M-S`を保持する。ExtraSamplesのassociated alphaは `Premultiplied`、unassociated alphaは `Straight` として保持する。用途未指定の追加チャンネル（ExtraSamples=0またはタグなし）は現在のtypedモデルで意味を表現できないため、native APIでは `NoSupportFormat` を返す。legacy出力ではalphaと解釈せず、不透明として扱う。
 
 ICC、EXIF、TIFFタグとorientationはメタデータに保持する。Orientation 2〜8による自動回転は行わない。Device CMYKの表示は `(1-C)*(1-K)` 等の基本近似で、CMYK ICC変換やnative CMYK16保持は対象外。
 
@@ -44,7 +44,7 @@ CMYKはExtraSamples=2のunassociated alphaを保持する。CMYKのassociated al
 
 汎用block描画は復号済みバッファとColorMapを借用し、描画のためだけに全体を複製しない。公開のraw描画APIでは、Predictorやplanar復元が必要な場合に限り書き込み用バッファを確保する。`expanded_bytes`は個々の展開データや画像バッファの検査上限であり、入力・出力・一時バッファを合算したプロセスのピークメモリ上限ではない。
 
-従来のRGBA8出力ではRGB/Grayのassociated alphaをstraight alphaへ変換する。alphaが0の画素のRGBは0とする。native出力は関連付け済みサンプルと `Premultiplied` の意味をそのまま保持する。
+従来のRGBA8出力ではRGB/Grayのassociated alphaをstraight alphaへ変換する。WhiteIsZeroは元精度で`M-S`を正規化してから解除し、alphaが0の画素のRGBは0とする。native出力は関連付け済みサンプルと `Premultiplied` の意味をそのまま保持する。
 
 ## エンコード
 

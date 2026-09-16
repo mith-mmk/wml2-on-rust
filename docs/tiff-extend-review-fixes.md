@@ -8,6 +8,8 @@
 
 2026-09-15再レビューでは、ImageMagick 6.9の`ExtraSamples=0`解釈差をfixtureのexpected-only比較として分離し、Gray/RGBの16/32-bit associated alphaを元精度でunassociateしてからRGBA8へ量子化する回帰を追加した。main由来のGray4/FillOrder=2順序問題は別の既存制限として保持する。
 
+2026-09-16再レビューでは、WhiteIsZeroのGray associated alphaについて、元精度で`M-S`を正規化してからalphaを解除する順序へ修正した。A=0のRGBを0に保ち、native U16の正規化値とlegacy RGBA8の結果をLE/BE、8/16/32-bitで確認した。
+
 ## 修正内容
 
 | 指摘 | 修正と確認 |

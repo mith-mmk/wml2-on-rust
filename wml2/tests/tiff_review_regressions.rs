@@ -541,6 +541,94 @@ fn associated_alpha_is_unassociated_before_high_depth_quantization() {
     }
 }
 
+#[cfg(feature = "high-bit-depth")]
+#[test]
+fn white_is_zero_associated_alpha_preserves_legacy_and_native_order() {
+    for be in [false, true] {
+        let mut gray8 = spec(1, 1, &[8, 8], 2, 0, vec![vec![200, 128]]);
+        gray8.extra = vec![1];
+        assert_eq!(
+            image_load(&build(&[gray8], false, be))
+                .unwrap()
+                .buffer
+                .unwrap(),
+            [110, 110, 110, 128],
+            "Gray8 {:?}",
+            if be { "BE" } else { "LE" }
+        );
+
+        let mut gray8_zero = spec(1, 1, &[8, 8], 2, 0, vec![vec![200, 0]]);
+        gray8_zero.extra = vec![1];
+        assert_eq!(
+            image_load(&build(&[gray8_zero], false, be))
+                .unwrap()
+                .buffer
+                .unwrap(),
+            [0, 0, 0, 0]
+        );
+
+        let mut gray16 = spec(1, 1, &[16, 16], 2, 0, vec![s16(&[50_000, 60_000], be)]);
+        gray16.extra = vec![1];
+        assert_eq!(
+            image_load(&build(&[gray16.clone()], false, be))
+                .unwrap()
+                .buffer
+                .unwrap(),
+            [66, 66, 66, 233],
+            "Gray16 {:?}",
+            if be { "BE" } else { "LE" }
+        );
+        let native = wml2::highres::tiff::decode_native(
+            &build(&[gray16], false, be),
+            &DecodeLimits::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            native.pixels().u16_planes().unwrap()[0].samples(),
+            &[15_535, 60_000]
+        );
+
+        let mut gray16_zero = spec(1, 1, &[16, 16], 2, 0, vec![s16(&[50_000, 0], be)]);
+        gray16_zero.extra = vec![1];
+        assert_eq!(
+            image_load(&build(&[gray16_zero], false, be))
+                .unwrap()
+                .buffer
+                .unwrap(),
+            [0, 0, 0, 0]
+        );
+
+        let mut gray32 = spec(
+            1,
+            1,
+            &[32, 32],
+            2,
+            0,
+            vec![s32(&[0xc8c8_c8c8, 0x8080_8080], be)],
+        );
+        gray32.extra = vec![1];
+        assert_eq!(
+            image_load(&build(&[gray32], false, be))
+                .unwrap()
+                .buffer
+                .unwrap(),
+            [110, 110, 110, 128],
+            "Gray32 {:?}",
+            if be { "BE" } else { "LE" }
+        );
+
+        let mut gray32_zero = spec(1, 1, &[32, 32], 2, 0, vec![s32(&[0xc8c8_c8c8, 0], be)]);
+        gray32_zero.extra = vec![1];
+        assert_eq!(
+            image_load(&build(&[gray32_zero], false, be))
+                .unwrap()
+                .buffer
+                .unwrap(),
+            [0, 0, 0, 0]
+        );
+    }
+}
+
 #[test]
 fn r6_rows_per_strip_u32_max_is_valid_for_small_image() {
     let mut p = spec(1, 2, &[8], 1, 1, vec![vec![4, 5]]);

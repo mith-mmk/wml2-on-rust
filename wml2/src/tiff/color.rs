@@ -69,6 +69,16 @@ pub(crate) fn gray_to_rgba8(
     alpha: u32,
     associated: bool,
 ) -> RGBA {
+    // WhiteIsZero is part of the sample normalization. For an associated
+    // alpha sample, the stored value is the premultiplied inverted gray
+    // value, so invert at source precision before unassociating. Doing this
+    // after alpha removal would turn transparent pixels back to white and
+    // diverge from the native TIFF path, which stores M - S.
+    let sample = if white_is_zero {
+        maximum.saturating_sub(sample.min(maximum))
+    } else {
+        sample
+    };
     let sample = if associated {
         if alpha == 0 || maximum == 0 {
             0
@@ -79,10 +89,7 @@ pub(crate) fn gray_to_rgba8(
     } else {
         sample
     };
-    let mut value = quantize(sample, maximum);
-    if white_is_zero {
-        value = 255 - value;
-    }
+    let value = quantize(sample, maximum);
     let alpha = quantize(alpha, maximum);
     let (red, green, blue) = (value, value, value);
     RGBA {
@@ -115,6 +122,25 @@ mod tests {
         assert_eq!(
             (gray.red, gray.green, gray.blue, gray.alpha),
             (30, 30, 30, 85)
+        );
+    }
+
+    #[test]
+    fn white_is_zero_is_normalized_before_unassociation() {
+        let gray = gray_to_rgba8(200, 255, true, 128, true);
+        assert_eq!(
+            (gray.red, gray.green, gray.blue, gray.alpha),
+            (110, 110, 110, 128)
+        );
+        let transparent = gray_to_rgba8(200, 255, true, 0, true);
+        assert_eq!(
+            (
+                transparent.red,
+                transparent.green,
+                transparent.blue,
+                transparent.alpha
+            ),
+            (0, 0, 0, 0)
         );
     }
 }

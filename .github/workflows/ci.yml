@@ -131,7 +131,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C .ci/codec-corpus rev-parse HEAD)" = "8e10d4d765667c1c49d74413878fc4bfb46dcf8d"
-          corpus="$(find .ci/codec-corpus -type d -name valid -print -quit)"
+          corpus=".ci/codec-corpus/tiff-conformance/valid"
           test -n "$corpus"
           for sample in \
             fax4.tiff \

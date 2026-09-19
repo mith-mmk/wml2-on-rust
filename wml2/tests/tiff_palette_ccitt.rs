@@ -168,3 +168,23 @@ fn ccitt_group4_horizontal_mode_decodes_a_white_scanline() {
     let image = image_load(&bytes).unwrap();
     assert_eq!(image.buffer.unwrap(), vec![255; 8 * 4]);
 }
+
+#[test]
+fn ccitt_group4_uncompressed_extension_decodes_a_white_scanline() {
+    // T.6 extension 7: enter uncompressed mode, encode five white pixels,
+    // then exit with three trailing white pixels and the next run tagged white.
+    let stream = "0000001111".to_owned() + "000001" + "0000000010";
+    let bytes = build_tiff(8, 1, 1, 0, 4, bits(&stream), None, false);
+    let image = image_load(&bytes).unwrap();
+    assert_eq!(image.buffer.unwrap(), vec![255; 8 * 4]);
+}
+
+#[test]
+fn ccitt_group4_reserved_extension_is_rejected_explicitly() {
+    let bytes = build_tiff(1, 1, 1, 0, 4, bits("0000001001"), None, false);
+    let error = match image_load(&bytes) {
+        Ok(_) => panic!("reserved Group 4 extensions must be rejected"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("extension 1"));
+}

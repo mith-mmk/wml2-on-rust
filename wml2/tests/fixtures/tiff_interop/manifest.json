@@ -1,0 +1,89 @@
+{
+  "corpus": {
+    "name": "imazen/codec-corpus TIFF conformance",
+    "repository": "https://github.com/imazen/codec-corpus",
+    "commit": "8e10d4d765667c1c49d74413878fc4bfb46dcf8d",
+    "source_index": "SOURCES.md",
+    "distribution": "external-only"
+  },
+  "samples": [
+    {
+      "name": "fax4.tiff",
+      "category": "ccitt-reserved-extension",
+      "license_source": "image-tiff (MIT)",
+      "sha256": "ddfcee5324f5b69cc1145276b4aa698fa08ede0b076aa0d183fe0761265ba503",
+      "bytes": 33630,
+      "width": 1080,
+      "height": 671,
+      "compression": 4,
+      "photometric": 1,
+      "expected": "explicit-reject-nonstandard-extension",
+      "oracle_policy": "expected_only"
+    },
+    {
+      "name": "dscf0013.tif",
+      "category": "non-jpeg-ycbcr",
+      "license_source": "libtiffpic (CC0)",
+      "sha256": "534ef0986c7a39e33b117fe67c0d3f8b7509ceaa248e31b447360b6e4a36a7c9",
+      "bytes": 654030,
+      "width": 640,
+      "height": 480,
+      "compression": 1,
+      "photometric": 6,
+      "expected": "decode",
+      "oracle_policy": "expected_only"
+    },
+    {
+      "name": "ycbcr-cat.tif",
+      "category": "non-jpeg-ycbcr",
+      "license_source": "libtiffpic (CC0)",
+      "sha256": "264d4955898a35ae70af0ec6eed0dbc49d7929f6c18c92a4ed6198f6db396f4b",
+      "bytes": 72766,
+      "width": 250,
+      "height": 325,
+      "compression": 5,
+      "photometric": 6,
+      "expected": "decode",
+      "oracle_policy": "expected_only"
+    },
+    {
+      "name": "ojpeg_chewey_subsamp21_multi_strip.tiff",
+      "category": "old-style-jpeg",
+      "license_source": "libtiff test images (libtiff license)",
+      "sha256": "fa829625035ed42a71d3baf0c4148903808b7c16c5e3a5a97a86909a969a57cb",
+      "bytes": 39752,
+      "width": 392,
+      "height": 575,
+      "compression": 6,
+      "photometric": 6,
+      "expected": "decode",
+      "oracle_policy": "expected_only"
+    },
+    {
+      "name": "ojpeg_single_strip_no_rowsperstrip.tiff",
+      "category": "old-style-jpeg",
+      "license_source": "libtiff test images (libtiff license)",
+      "sha256": "bb4e0c9436da88030de5bb4f1042326fb15593d81650cfb6c51be800059ca032",
+      "bytes": 8258,
+      "width": 234,
+      "height": 213,
+      "compression": 6,
+      "photometric": 6,
+      "expected": "decode",
+      "oracle_policy": "expected_only"
+    },
+    {
+      "name": "ojpeg_zackthecat_subsamp22_single_strip.tiff",
+      "category": "old-style-jpeg",
+      "license_source": "libtiff test images (libtiff license)",
+      "sha256": "0d31f2acb25bfbde4d79975572369c3e4bea8e978fc1935075a545e3f8321b6e",
+      "bytes": 8258,
+      "width": 234,
+      "height": 213,
+      "compression": 6,
+      "photometric": 6,
+      "expected": "decode",
+      "oracle_policy": "expected_only"
+    }
+  ]
+}

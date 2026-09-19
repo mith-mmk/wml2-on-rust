@@ -368,6 +368,17 @@ pub struct Tiff {
     pub t4_options: u32,
     pub t6_options: u32,      // G4
     pub jpeg_tables: Vec<u8>, // jpeg(new)
+    pub ycbcr_coefficients: Vec<Rational>,
+    pub ycbcr_sub_sampling: Vec<u16>,
+    pub ycbcr_positioning: u16,
+    pub reference_black_white: Vec<Rational>,
+    pub jpeg_proc: u16,
+    pub jpeg_restart_interval: u16,
+    pub jpeg_interchange_format: Option<u64>,
+    pub jpeg_interchange_format_length: Option<u64>,
+    pub jpeg_q_tables: Vec<u64>,
+    pub jpeg_dc_tables: Vec<u64>,
+    pub jpeg_ac_tables: Vec<u64>,
 
     // metadata
     pub tiff_headers: TiffHeaders,
@@ -412,6 +423,28 @@ impl Tiff {
             t4_options: 0,
             t6_options: 0,
             jpeg_tables: vec![],
+            ycbcr_coefficients: vec![
+                Rational { n: 299, d: 1000 },
+                Rational { n: 587, d: 1000 },
+                Rational { n: 114, d: 1000 },
+            ],
+            ycbcr_sub_sampling: vec![2, 2],
+            ycbcr_positioning: 1,
+            reference_black_white: vec![
+                Rational { n: 0, d: 1 },
+                Rational { n: 255, d: 1 },
+                Rational { n: 128, d: 1 },
+                Rational { n: 255, d: 1 },
+                Rational { n: 128, d: 1 },
+                Rational { n: 255, d: 1 },
+            ],
+            jpeg_proc: 1,
+            jpeg_restart_interval: 0,
+            jpeg_interchange_format: None,
+            jpeg_interchange_format_length: None,
+            jpeg_q_tables: vec![],
+            jpeg_dc_tables: vec![],
+            jpeg_ac_tables: vec![],
             tiff_headers: TiffHeaders::empty(Endian::LittleEndian),
             icc_profile: None,
             multi_page: Box::<Vec<Tiff>>::default(),
@@ -663,6 +696,65 @@ impl Tiff {
                     //Jpeg Tables
                     if let DataPack::Undef(d) = &header.data {
                         current.jpeg_tables = d.to_vec();
+                    }
+                }
+                0x0211 => {
+                    if let DataPack::Rational(d) = &header.data {
+                        current.ycbcr_coefficients = d.to_vec();
+                    }
+                }
+                0x0212 => {
+                    if let DataPack::Short(d) = &header.data {
+                        current.ycbcr_sub_sampling = d.to_vec();
+                    }
+                }
+                0x0213 => {
+                    if let DataPack::Short(d) = &header.data {
+                        current.ycbcr_positioning = d[0];
+                    }
+                }
+                0x0214 => {
+                    if let DataPack::Rational(d) = &header.data {
+                        current.reference_black_white = d.to_vec();
+                    } else if let DataPack::Long(d) = &header.data {
+                        current.reference_black_white =
+                            d.iter().map(|value| Rational { n: *value, d: 1 }).collect();
+                    }
+                }
+                0x0200 => {
+                    if let DataPack::Short(d) = &header.data {
+                        current.jpeg_proc = d[0];
+                    }
+                }
+                0x0201 => {
+                    if let DataPack::Long(d) = &header.data {
+                        let offset = u64::from(d[0]);
+                        current.jpeg_interchange_format = (offset != 0).then_some(offset);
+                    }
+                }
+                0x0202 => {
+                    if let DataPack::Long(d) = &header.data {
+                        current.jpeg_interchange_format_length = Some(u64::from(d[0]));
+                    }
+                }
+                0x0203 => {
+                    if let DataPack::Short(d) = &header.data {
+                        current.jpeg_restart_interval = d[0];
+                    }
+                }
+                0x0207 => {
+                    if let DataPack::Long(d) = &header.data {
+                        current.jpeg_q_tables = d.iter().map(|value| u64::from(*value)).collect();
+                    }
+                }
+                0x0208 => {
+                    if let DataPack::Long(d) = &header.data {
+                        current.jpeg_dc_tables = d.iter().map(|value| u64::from(*value)).collect();
+                    }
+                }
+                0x0209 => {
+                    if let DataPack::Long(d) = &header.data {
+                        current.jpeg_ac_tables = d.iter().map(|value| u64::from(*value)).collect();
                     }
                 }
                 0x8773 => {

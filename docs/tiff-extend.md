@@ -6,7 +6,9 @@
 
 - Classic TIFF / BigTIFF、Little Endian / Big Endian、複数IFD。
 - None / LZW / Deflate（8・32946）/ PackBitsのstrip・tile共通処理。末端tileの格納寸法と描画寸法を区別する。
-- JPEG new-style、CCITTは既存デコーダを利用する。
+- JPEG new-style、CCITTは既存デコーダを利用する。CCITT Group 4 は T.6 の標準 2D extension 7 だけを扱い、予約値・IBM MMR系の拡張は暗黙変換せず説明付きで拒否する。
+- 非JPEG YCbCr（None/LZW、strip/tile、8-bit contiguous 3成分）は、Data Unitの復元、Predictor 2、YCbCrCoefficients、YCbCrSubSampling、YCbCrPositioning、ReferenceBlackWhiteを適用してRGBA8へ変換する。native U16 APIの対象には追加しない。
+- old-style JPEG（Compression=6）は、baseline sequential・8-bit・3成分YCbCrに限定し、JPEGInterchangeFormatまたはJPEGQ/DCT/AC tableから標準JPEGを再構成して既存JPEG decoderへ渡す。strip/tile、multi-strip、RowsPerStrip省略を扱う。
 - Gray / RGB / RGBA / Palette / Device CMYK。符号なし整数サンプルと8/16-bit Predictor 2、planar画像を扱う。RGB/Grayのassociated alphaは16/32-bit元精度でunassociateしてからlegacy RGBA8へ量子化する。
 - IFDの循環、サイズ計算のオーバーフロー、壊れたブロック配列、入力外オフセット、切り詰められたブロックを拒否する。
 
@@ -65,15 +67,15 @@ cargo run -p wml2-test --example converter -- input.png -o <temporary-output> -f
 cargo run -p wml2-test --example metadata -- <temporary-output>/input.png.tiff
 ```
 
-エンコーダへの入力は従来のRGBA8契約。native U16入力のエンコード、tile出力、DNG現像、浮動小数点、Old-style JPEG、LogLuv等は今回の必須範囲に含まない。JPEGを使わないraw YCbCrは従来同様に未対応。
+エンコーダへの入力は従来のRGBA8契約。native U16入力のエンコード、tile出力、DNG現像、浮動小数点、raw YCbCrのエンコード、Old-style JPEGのエンコード、LogLuv等は今回の必須範囲に含まない。
 
 ## テストと外部データ
 
-`wml2/tests/tiff_extend.rs` の生成fixtureは外部画像ファイルに依存しない。正常系、異常入力、4GiB超の疑似readerを検証する。既存の `tiff_encode` とEXIF・他形式の回帰も維持する。
+`wml2/tests/tiff_extend.rs` の生成fixtureは外部画像ファイルに依存しない。正常系、異常入力、4GiB超の疑似readerを検証する。`tiff_ycbcr.rs` は1x1/2x1/2x2、係数・範囲、positioning、Predictorを、`tiff_jpeg_extend.rs` はold-style JPEGのstrip/tile、table欠落・範囲外参照を検証する。既存の `tiff_encode` とEXIF・他形式の回帰も維持する。
 
 外部スイートの出所とライセンスは [調査記録](tiff-extend-research.md) と [samples/README.md](../samples/README.md) に記載している。実行確認にはsampleのconverter/metadataを含める。
 
-`wml2-test/scripts/tiff_oracle.py` はPillowでタグを調べ、converterとmetadataを実行し、ImageMagickによるRGBA8参照値との差分をJSONで返す。JPEGはPillow/libjpegを参照にする。`--converter`、`--metadata`、`--corpus`、`--output-dir` で場所を指定する。実行成功、画素一致、未対応を分けて報告する。用途不明のExtraSamplesなど参照実装の版差があるfixtureは、manifestの`oracle_policy=expected_only`でWML2期待値を必須にし、外部値を診断扱いにする。
+`wml2-test/scripts/tiff_oracle.py` はPillowでタグを調べ、converterとmetadataを実行し、ImageMagickまたはPillow/libjpegによるRGBA8参照値との差分をJSONで返す。`Compression=6/7`、非JPEG YCbCr、特殊faxはmanifestの`oracle_policy=expected_only`でWML2期待値を必須にし、外部値を診断扱いに分離する。`--converter`、`--metadata`、`--corpus`、`--manifest`、`--output-dir` で場所を指定する。実行成功、画素一致、未対応を分けて報告する。
 
 レビュー後の修正、追加画像、32-bitの実行結果は [レビュー修正記録](tiff-extend-review-fixes.md) を参照してください。
 
@@ -96,6 +98,6 @@ cargo run -p wml2-test --example metadata -- <temporary-output>/input.png.tiff
 
 - `cramps-tile.tif` / `quad-tile.tif`: stripとtile配列の同時指定。曖昧な入力として拒否。
 - `deflate-last-strip-extra-data.tiff`: 最終stripの可視寸法を超える展開データ。ブロック展開上限により拒否。
-- `dscf0013.tif` / `ycbcr-cat.tif`: JPEG以外のYCbCr。
-- `fax4.tiff`: 既存CCITTの2D extension 7は未対応。
+- `fax4.tiff`: 実データはT.6 extension 7ではなく予約値6/2/1へ到達するため、IBM MMR系を含む未対応拡張として明示的に拒否する。標準extension 7は生成fixtureで対応する。
+- old-style JPEG 3件、`dscf0013.tif`、`ycbcr-cat.tif`: decode対象へ移行したため、拒否一覧から除外した。外部画素比較はmanifestのexpected-only policyで診断扱いにする。
 - `lzw-single-strip.tiff`: EOI欠落。独立解析で可視画素はPillowと一致するが、54,049コード中EOIは0回で、最後に5bitしか残っていない。[TIFF 6.0 p61](https://www.itu.int/itudoc/itu-t/com16/tiff-fx/docs/tiff6.pdf#page=61)に従い不完全なストリームを拒否する。

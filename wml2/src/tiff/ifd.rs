@@ -220,15 +220,22 @@ impl Parser<'_> {
         let mut tags = HashSet::new();
         for _ in 0..count {
             let tag = self.reader.read_u16()?;
-            if !tags.insert(tag) {
-                return Err(invalid("Duplicate TIFF tag within IFD"));
-            }
             let type_id = self.reader.read_u16()?;
             let count = if big {
                 self.reader.read_u64()?
             } else {
                 u64::from(self.reader.read_u32()?)
             };
+            // A legacy old-style JPEG writer used zeroed directory slots for
+            // omitted fields. They carry no payload and are not TIFF entries.
+            if type_id == 0 && count == 0 {
+                let mut ignored = [0u8; 8];
+                self.reader.read_exact(&mut ignored[..slot])?;
+                continue;
+            }
+            if !tags.insert(tag) {
+                return Err(invalid("Duplicate TIFF tag within IFD"));
+            }
             let width: u64 = match type_id {
                 1 | 2 | 6 | 7 => 1,
                 3 | 8 => 2,

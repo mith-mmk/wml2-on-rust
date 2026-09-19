@@ -11,13 +11,21 @@ use crate::warning::ImgWarnings;
 type Error = Box<dyn std::error::Error>;
 
 #[derive(Clone, Copy)]
+enum UncompressedFormat {
+    Legacy,
+    Rgba8,
+    Bgra8,
+    Bgrx8,
+}
+
+#[derive(Clone, Copy)]
 enum Compression {
-    Uncompressed,
+    Uncompressed(UncompressedFormat),
     Bc1,
     Bc2,
     Bc3,
-    Bc4,
-    Bc5,
+    Bc4 { signed: bool },
+    Bc5 { signed: bool },
 }
 
 fn le32(data: &[u8], offset: usize) -> Result<u32, Error> {
@@ -40,7 +48,35 @@ fn color565(value: u16) -> [u8; 3] {
     ]
 }
 
-fn decode_bc4(block: &[u8]) -> [u8; 16] {
+fn decode_bc4(block: &[u8], signed: bool) -> [u8; 16] {
+    if signed {
+        let a0 = i16::from(i8::from_ne_bytes([block[0]]));
+        let a1 = i16::from(i8::from_ne_bytes([block[1]]));
+        let mut table = [0i16; 8];
+        table[0] = a0;
+        table[1] = a1;
+        if a0 > a1 {
+            for i in 1..7 {
+                table[i + 1] = ((7 - i) as i16 * a0 + i as i16 * a1) / 7;
+            }
+        } else {
+            for i in 1..5 {
+                table[i + 1] = ((5 - i) as i16 * a0 + i as i16 * a1) / 5;
+            }
+            table[6] = -128;
+            table[7] = 127;
+        }
+        let mut bits = 0u64;
+        for (i, &byte) in block[2..8].iter().enumerate() {
+            bits |= u64::from(byte) << (8 * i);
+        }
+        let mut result = [0u8; 16];
+        for (i, value) in result.iter_mut().enumerate() {
+            *value = (table[((bits >> (3 * i)) & 7) as usize] + 128) as u8;
+        }
+        return result;
+    }
+
     let a0 = block[0];
     let a1 = block[1];
     let mut table = [0u8; 8];
@@ -117,31 +153,31 @@ fn decode_block(block: &[u8], compression: Compression) -> Result<[[u8; 4]; 16],
             Ok(result)
         }
         Compression::Bc3 => {
-            let alpha = decode_bc4(block);
+            let alpha = decode_bc4(block, false);
             let mut result = decode_bc1(&block[8..], false);
             for i in 0..16 {
                 result[i][3] = alpha[i];
             }
             Ok(result)
         }
-        Compression::Bc4 => {
-            let red = decode_bc4(block);
+        Compression::Bc4 { signed } => {
+            let red = decode_bc4(block, signed);
             let mut result = [[0u8; 4]; 16];
             for i in 0..16 {
                 result[i] = [red[i], red[i], red[i], 255];
             }
             Ok(result)
         }
-        Compression::Bc5 => {
-            let red = decode_bc4(&block[..8]);
-            let green = decode_bc4(&block[8..16]);
+        Compression::Bc5 { signed } => {
+            let red = decode_bc4(&block[..8], signed);
+            let green = decode_bc4(&block[8..16], signed);
             let mut result = [[0u8; 4]; 16];
             for i in 0..16 {
                 result[i] = [red[i], green[i], 0, 255];
             }
             Ok(result)
         }
-        Compression::Uncompressed => Err(err(
+        Compression::Uncompressed(_) => Err(err(
             ImgErrorKind::IllegalData,
             "DDS block compression is missing",
         )),
@@ -153,8 +189,10 @@ fn compression_from_fourcc(fourcc: &[u8]) -> Option<Compression> {
         b"DXT1" => Some(Compression::Bc1),
         b"DXT2" | b"DXT3" => Some(Compression::Bc2),
         b"DXT4" | b"DXT5" => Some(Compression::Bc3),
-        b"ATI1" | b"BC4U" | b"BC4S" => Some(Compression::Bc4),
-        b"ATI2" | b"BC5U" | b"BC5S" => Some(Compression::Bc5),
+        b"ATI1" | b"BC4U" => Some(Compression::Bc4 { signed: false }),
+        b"BC4S" => Some(Compression::Bc4 { signed: true }),
+        b"ATI2" | b"BC5U" => Some(Compression::Bc5 { signed: false }),
+        b"BC5S" => Some(Compression::Bc5 { signed: true }),
         _ => None,
     }
 }
@@ -164,8 +202,13 @@ fn compression_from_dxgi(value: u32) -> Option<Compression> {
         71 | 72 => Some(Compression::Bc1),
         74 | 75 => Some(Compression::Bc2),
         77 | 78 => Some(Compression::Bc3),
-        80 | 81 => Some(Compression::Bc4),
-        83 | 84 => Some(Compression::Bc5),
+        27..=29 => Some(Compression::Uncompressed(UncompressedFormat::Rgba8)),
+        80 => Some(Compression::Bc4 { signed: false }),
+        81 => Some(Compression::Bc4 { signed: true }),
+        83 => Some(Compression::Bc5 { signed: false }),
+        84 => Some(Compression::Bc5 { signed: true }),
+        87 | 90 | 91 => Some(Compression::Uncompressed(UncompressedFormat::Bgra8)),
+        88 | 92 | 93 => Some(Compression::Uncompressed(UncompressedFormat::Bgrx8)),
         _ => None,
     }
 }
@@ -285,9 +328,32 @@ pub fn decode<B: BinaryReader>(
                 .ok_or_else(|| err(ImgErrorKind::NoSupportFormat, "Unsupported DDS compression"))?
         }
     } else {
-        Compression::Uncompressed
+        Compression::Uncompressed(UncompressedFormat::Legacy)
     };
-    let output = if matches!(compression, Compression::Uncompressed) {
+    let output = if matches!(compression, Compression::Uncompressed(_)) {
+        let legacy_bit_count = usize::try_from(le32(&data, 88)?)?;
+        let legacy_masks = [
+            le32(&data, 92)?,
+            le32(&data, 96)?,
+            le32(&data, 100)?,
+            le32(&data, 104)?,
+        ];
+        let (bit_count, masks) = match compression {
+            Compression::Uncompressed(UncompressedFormat::Legacy) => {
+                (legacy_bit_count, legacy_masks)
+            }
+            Compression::Uncompressed(UncompressedFormat::Rgba8) => {
+                (32, [0x0000_00ff, 0x0000_ff00, 0x00ff_0000, 0xff00_0000])
+            }
+            Compression::Uncompressed(UncompressedFormat::Bgra8) => {
+                (32, [0x00ff_0000, 0x0000_ff00, 0x0000_00ff, 0xff00_0000])
+            }
+            Compression::Uncompressed(UncompressedFormat::Bgrx8) => {
+                (32, [0x00ff_0000, 0x0000_ff00, 0x0000_00ff, 0])
+            }
+            _ => unreachable!("compressed DDS reached uncompressed path"),
+        };
+        let bytes_per_pixel = bit_count.div_ceil(8);
         decode_uncompressed(
             &data,
             data_offset,
@@ -296,19 +362,14 @@ pub fn decode<B: BinaryReader>(
             if pf_flags & 0x8 != 0 {
                 pitch_or_linear
             } else {
-                width * (usize::try_from(le32(&data, 88)?)? / 8)
+                width * bytes_per_pixel
             },
             pf_flags,
-            usize::try_from(le32(&data, 88)?)?,
-            [
-                le32(&data, 92)?,
-                le32(&data, 96)?,
-                le32(&data, 100)?,
-                le32(&data, 104)?,
-            ],
+            bit_count,
+            masks,
         )?
     } else {
-        let block_bytes = if matches!(compression, Compression::Bc1 | Compression::Bc4) {
+        let block_bytes = if matches!(compression, Compression::Bc1 | Compression::Bc4 { .. }) {
             8
         } else {
             16

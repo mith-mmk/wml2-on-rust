@@ -132,6 +132,31 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         return ImageFormat::Jpeg;
     }
 
+    #[cfg(not(feature = "noretoro"))]
+    if buffer.len() >= 58 {
+        let pixel = buffer[8];
+        let start_x = bin_rs::io::read_u16_le(buffer, 0);
+        let start_y = bin_rs::io::read_u16_le(buffer, 2);
+        let end_x = bin_rs::io::read_u16_le(buffer, 4);
+        let end_y = bin_rs::io::read_u16_le(buffer, 6);
+        let valid_dimensions = if pixel == 1 {
+            start_x <= end_x && start_y <= end_y
+        } else {
+            start_x < end_x && start_y < end_y
+        };
+        if (pixel == 0 || pixel == 1 || pixel == 8)
+            && valid_dimensions
+            && start_x <= 80
+            && (end_x <= 80 || pixel == 1)
+        {
+            return ImageFormat::Vsp;
+        }
+        let page_count = bin_rs::io::read_u16_le(buffer, 0);
+        if page_count > 0 && page_count <= 0x10 {
+            return ImageFormat::Vsp;
+        }
+    }
+
     #[cfg(all(feature = "dds", not(feature = "noretoro")))]
     if buffer.len() >= 4 && buffer.starts_with(b"DDS ") {
         return ImageFormat::Dds;
@@ -168,21 +193,6 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         && (buffer[2] == 2 || (buffer[1] <= 1 && buffer[3] <= 1))
     {
         return ImageFormat::Q4;
-    }
-
-    #[cfg(not(feature = "noretoro"))]
-    if buffer.len() >= 10 {
-        let pixel = buffer[8];
-        let start_x = bin_rs::io::read_u16_le(buffer, 0);
-        let end_x = bin_rs::io::read_u16_le(buffer, 4);
-        if (pixel == 0 || pixel == 1 || pixel == 8) && start_x <= 80 && (end_x <= 80 || pixel == 1)
-        {
-            return ImageFormat::Vsp;
-        }
-        let page_count = bin_rs::io::read_u16_le(buffer, 0);
-        if page_count > 0 && page_count <= 0x10 {
-            return ImageFormat::Vsp;
-        }
     }
     ImageFormat::Unknown
 }

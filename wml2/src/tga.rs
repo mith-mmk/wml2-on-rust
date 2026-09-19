@@ -175,6 +175,9 @@ pub fn decode<B: BinaryReader>(
     let output_len = pixels_count
         .checked_mul(4)
         .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "TGA output size overflow"))?;
+    let limits = crate::limits::current();
+    crate::limits::check(pixels_count, limits.pixels, "pixels")?;
+    crate::limits::check(output_len, limits.expanded_bytes, "RGBA image")?;
     let mut decoded = Vec::with_capacity(output_len);
     let mut cursor = image_offset;
     let rle = image_type >= 9;

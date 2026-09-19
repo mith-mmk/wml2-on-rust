@@ -597,13 +597,25 @@ pub fn decode<B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let data = read_all(reader)?;
     let (base, header) = parse_header(&data)?;
-    let mut canvas_width = header.width;
-    let mut canvas_height = header.height;
+    let canvas_width = header.width;
+    let canvas_height = header.height;
     let mut position = base + header.size;
     let mut blocks = Vec::new();
     while let Some(block) = parse_block(&data, position)? {
-        canvas_width = canvas_width.max(block.x + block.width);
-        canvas_height = canvas_height.max(block.y + block.height);
+        let right = block
+            .x
+            .checked_add(block.width)
+            .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "PIC2 block x overflow"))?;
+        let bottom = block
+            .y
+            .checked_add(block.height)
+            .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "PIC2 block y overflow"))?;
+        if right > canvas_width || bottom > canvas_height {
+            return Err(err(
+                ImgErrorKind::IllegalData,
+                "PIC2 block is outside canvas",
+            ));
+        }
         position += block.size;
         blocks.push(block);
     }

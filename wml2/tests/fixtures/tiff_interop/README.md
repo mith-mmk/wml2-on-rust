@@ -20,6 +20,10 @@ python wml2-test/scripts/verify_tiff_interop_samples.py `
   --manifest wml2/tests/fixtures/tiff_interop/manifest.json
 cargo test -p wml2 --test tiff_interop --test tiff_ycbcr --test tiff_jpeg_extend `
   --no-default-features --features tiff-jpeg,idct_llm
+cargo test -p wml2 --test tiff_interop --no-default-features --features tiff `
+  -- --ignored
+cargo test -p wml2 --test tiff_interop --no-default-features --features tiff-jpeg,idct_llm `
+  -- --ignored
 ```
 
 The oracle harness is optional and is run against the same local corpus:

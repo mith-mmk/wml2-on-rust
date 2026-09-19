@@ -200,6 +200,29 @@ fn ycbcr_2x1_accepts_cosited_positioning() {
 }
 
 #[test]
+fn ycbcr_subsampling_restores_predictor_rows() {
+    let decoded: [u8; 12] = [80, 90, 128, 200, 100, 110, 130, 210, 120, 130, 140, 220];
+    let mut encoded = decoded;
+    for index in (3..encoded.len()).rev() {
+        encoded[index] = encoded[index].wrapping_sub(encoded[index - 3]);
+    }
+    let bytes = build_ycbcr_tiff(6, 1, (2, 1), 2, Some(2), encoded.to_vec());
+    let image = image_load(&bytes).unwrap();
+    assert_eq!(
+        image.buffer.unwrap(),
+        [
+            rgb(80, 128, 200),
+            rgb(90, 128, 200),
+            rgb(100, 130, 210),
+            rgb(110, 130, 210),
+            rgb(120, 140, 220),
+            rgb(130, 140, 220),
+        ]
+        .concat()
+    );
+}
+
+#[test]
 fn ycbcr_uses_coefficients_and_reference_ranges() {
     let bytes = build_ycbcr_tiff_with(
         2,

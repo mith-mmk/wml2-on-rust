@@ -237,14 +237,10 @@ pub(crate) fn decode<B: BinaryReader>(
         let compressed = read_block(reader, block)?;
         let mut data = decompress_block(&header.compression, &compressed, Some(expected))?;
         if header.predictor == 2 {
-            let row_bytes = if horizontal == 1 && vertical == 1 {
-                block.stored_width * 3
-            } else {
-                return Err(io::Error::other(
-                    "TIFF Predictor 2 with subsampled YCbCr is unsupported",
-                )
-                .into());
-            };
+            let row_bytes = expected
+                .checked_div(storage_height)
+                .filter(|_| expected % storage_height == 0)
+                .ok_or_else(|| io::Error::other("TIFF YCbCr predictor row size is invalid"))?;
             crate::tiff::predictor::apply_predictor(
                 &mut data,
                 row_bytes,

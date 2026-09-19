@@ -728,7 +728,8 @@ impl Tiff {
                 }
                 0x0201 => {
                     if let DataPack::Long(d) = &header.data {
-                        current.jpeg_interchange_format = Some(u64::from(d[0]));
+                        let offset = u64::from(d[0]);
+                        current.jpeg_interchange_format = (offset != 0).then_some(offset);
                     }
                 }
                 0x0202 => {

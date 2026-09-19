@@ -406,6 +406,12 @@ fn old_jpeg_tiff(
             data: u16v(1),
         },
         Field {
+            tag: 513,
+            kind: 4,
+            count: 1,
+            data: u32v(0),
+        },
+        Field {
             tag: 530,
             kind: 3,
             count: 2,

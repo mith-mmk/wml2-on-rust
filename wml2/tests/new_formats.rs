@@ -47,6 +47,19 @@ fn pcx_2x1() -> Vec<u8> {
     data
 }
 
+fn pcx_large_header() -> Vec<u8> {
+    let mut data = vec![0u8; 128];
+    data[0] = 0x0a;
+    data[1] = 5;
+    data[2] = 1;
+    data[3] = 8;
+    data[65] = 1;
+    put_le16(&mut data, 8, 1023);
+    put_le16(&mut data, 10, 1023);
+    put_le16(&mut data, 66, 1024);
+    data
+}
+
 fn dds_2x1() -> Vec<u8> {
     let mut data = vec![0u8; 128];
     data[0..4].copy_from_slice(b"DDS ");
@@ -208,6 +221,54 @@ fn pic2_checks_decode_limits_before_allocating_output() {
             .to_string()
             .contains("RGBA image exceeds decode limit")
     );
+}
+
+#[test]
+fn pcx_checks_decode_limits_before_allocating_output() {
+    let result = image_from_with_limits(
+        &pcx_large_header(),
+        DecodeLimits {
+            pixels: 1,
+            expanded_bytes: 4,
+            ..DecodeLimits::default()
+        },
+    );
+    let error = match result {
+        Ok(_) => panic!("the PCX pixel budget must be enforced"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("pixels exceeds decode limit"));
+}
+
+#[test]
+fn dds_checks_decode_limits_before_allocating_output() {
+    let mut uncompressed = dds_2x1();
+    put_le32(&mut uncompressed, 12, 1024);
+    put_le32(&mut uncompressed, 16, 1024);
+    put_le32(&mut uncompressed, 20, 4096);
+
+    let mut compressed = dds_fourcc_1x1(b"DXT1", &[0u8; 8]);
+    put_le32(&mut compressed, 12, 1024);
+    put_le32(&mut compressed, 16, 1024);
+
+    for data in [uncompressed, compressed] {
+        let result = image_from_with_limits(
+            &data,
+            DecodeLimits {
+                pixels: 1,
+                expanded_bytes: 4,
+                ..DecodeLimits::default()
+            },
+        );
+        let error = match result {
+            Ok(_) => panic!("the DDS pixel budget must be enforced"),
+            Err(error) => error,
+        };
+        assert!(
+            error.to_string().contains("pixels exceeds decode limit"),
+            "unexpected DDS error: {error}"
+        );
+    }
 }
 
 #[cfg(feature = "vsp")]

@@ -132,6 +132,8 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         return ImageFormat::Jpeg;
     }
 
+    // A valid VSP header can satisfy this broad TGA signature. VSP intentionally
+    // has lower priority here, so keep the TGA-first order unchanged.
     #[cfg(all(feature = "tga", not(feature = "noretoro")))]
     if buffer.len() >= 18
         && buffer[1] <= 1

@@ -258,6 +258,19 @@ fn extract_mask(value: u32, mask: u32) -> u8 {
     ((u64::from(normalized) * 255 + u64::from(maximum) / 2) / u64::from(maximum)) as u8
 }
 
+fn checked_output_len(width: usize, height: usize) -> Result<usize, Error> {
+    let pixels = width
+        .checked_mul(height)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "DDS image size overflow"))?;
+    let output_len = pixels
+        .checked_mul(4)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "DDS output size overflow"))?;
+    let limits = crate::limits::current();
+    crate::limits::check(pixels, limits.pixels, "pixels")?;
+    crate::limits::check(output_len, limits.expanded_bytes, "RGBA image")?;
+    Ok(output_len)
+}
+
 fn decode_uncompressed(
     data: &[u8],
     offset: usize,
@@ -268,8 +281,12 @@ fn decode_uncompressed(
     bit_count: usize,
     masks: [u32; 4],
 ) -> Result<Vec<u8>, Error> {
+    let output_len = checked_output_len(width, height)?;
     let bytes_per_pixel = bit_count.div_ceil(8);
-    if !matches!(bytes_per_pixel, 1 | 2 | 3 | 4) || pitch < width * bytes_per_pixel {
+    let minimum_pitch = width
+        .checked_mul(bytes_per_pixel)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "DDS scanline size overflow"))?;
+    if !matches!(bytes_per_pixel, 1 | 2 | 3 | 4) || pitch < minimum_pitch {
         return Err(err(
             ImgErrorKind::IllegalData,
             "Unsupported DDS pixel layout",
@@ -285,7 +302,7 @@ fn decode_uncompressed(
     let source = data
         .get(offset..end)
         .ok_or_else(|| err(ImgErrorKind::IllegalData, "DDS pixel data is truncated"))?;
-    let mut output = vec![0u8; width * height * 4];
+    let mut output = vec![0u8; output_len];
     let luminance = flags & 0x0002_0000 != 0;
     let alpha_only = flags & 0x0000_0002 != 0 && flags & 0x0000_0040 == 0;
     for y in 0..height {
@@ -404,6 +421,7 @@ pub fn decode<B: BinaryReader>(
             masks,
         )?
     } else {
+        let output_len = checked_output_len(width, height)?;
         let block_bytes = if matches!(compression, Compression::Bc1 | Compression::Bc4 { .. }) {
             8
         } else {
@@ -423,7 +441,7 @@ pub fn decode<B: BinaryReader>(
         let compressed = data
             .get(data_offset..data_offset + image_bytes)
             .ok_or_else(|| err(ImgErrorKind::IllegalData, "DDS block data is truncated"))?;
-        let mut output = vec![0u8; width * height * 4];
+        let mut output = vec![0u8; output_len];
         for by in 0..blocks_h {
             for bx in 0..blocks_w {
                 let block_offset = (by * blocks_w + bx) * block_bytes;

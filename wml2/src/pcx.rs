@@ -129,7 +129,13 @@ pub fn decode<B: BinaryReader>(
     let pixels_count = width
         .checked_mul(height)
         .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "PCX image size overflow"))?;
-    let mut output = vec![0u8; pixels_count * 4];
+    let output_len = pixels_count
+        .checked_mul(4)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "PCX output size overflow"))?;
+    let limits = crate::limits::current();
+    crate::limits::check(pixels_count, limits.pixels, "pixels")?;
+    crate::limits::check(output_len, limits.expanded_bytes, "RGBA image")?;
+    let mut output = vec![0u8; output_len];
     let mut cursor = 128usize;
     for y in 0..height {
         if cursor >= image_end {

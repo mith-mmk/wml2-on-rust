@@ -102,15 +102,15 @@ fn dds_fourcc_1x1(fourcc: &[u8; 4], pixel: &[u8]) -> Vec<u8> {
     data
 }
 
-fn pic2_1x1(block_x: u16) -> Vec<u8> {
+fn pic2_image(width: u16, height: u16, block_x: u16, block_y: u16) -> Vec<u8> {
     let mut data = vec![0u8; 153];
     data[0..4].copy_from_slice(b"P2DT");
     put_be32(&mut data, 106, 124);
     put_be16(&mut data, 110, 24);
     put_be16(&mut data, 112, 1);
     put_be16(&mut data, 114, 1);
-    put_be16(&mut data, 116, 1);
-    put_be16(&mut data, 118, 1);
+    put_be16(&mut data, 116, width);
+    put_be16(&mut data, 118, height);
 
     let block = 124;
     data[block..block + 4].copy_from_slice(b"P2BM");
@@ -118,9 +118,13 @@ fn pic2_1x1(block_x: u16) -> Vec<u8> {
     put_be16(&mut data, block + 10, 1);
     put_be16(&mut data, block + 12, 1);
     put_be16(&mut data, block + 14, block_x);
-    put_be16(&mut data, block + 16, 0);
+    put_be16(&mut data, block + 16, block_y);
     data[block + 26..block + 29].copy_from_slice(&[0, 0, 255]);
     data
+}
+
+fn pic2_1x1(block_x: u16) -> Vec<u8> {
+    pic2_image(1, 1, block_x, 0)
 }
 
 #[test]
@@ -185,15 +189,46 @@ fn rejects_pic2_blocks_outside_the_declared_canvas() {
     assert!(error.to_string().contains("outside canvas"));
 }
 
+#[test]
+fn pic2_checks_decode_limits_before_allocating_output() {
+    let result = image_from_with_limits(
+        &pic2_image(1024, 1024, 0, 0),
+        DecodeLimits {
+            pixels: usize::MAX,
+            expanded_bytes: 4,
+            ..DecodeLimits::default()
+        },
+    );
+    let error = match result {
+        Ok(_) => panic!("the PIC2 pixel budget must be enforced"),
+        Err(error) => error,
+    };
+    assert!(
+        error
+            .to_string()
+            .contains("RGBA image exceeds decode limit")
+    );
+}
+
 #[cfg(feature = "vsp")]
 #[test]
 fn vsp_detection_precedes_tga_detection() {
-    let mut data = tga_2x1();
-    data[4] = 8;
-    data[6] = 3;
+    let mut data = vec![0u8; 58];
+    put_le16(&mut data, 0, 0);
+    put_le16(&mut data, 2, 0);
+    put_le16(&mut data, 4, 8);
+    put_le16(&mut data, 6, 1);
     data[8] = 0;
-    data.resize(58, 0);
     assert!(matches!(format_check(&data), ImageFormat::Vsp));
+}
+
+#[test]
+fn tga_is_not_detected_as_vsp() {
+    let mut data = tga_2x1();
+    data[0] = 1;
+    data.insert(18, 0);
+    data.resize(58, 0);
+    assert!(matches!(format_check(&data), ImageFormat::Tga));
 }
 
 #[test]
@@ -220,6 +255,32 @@ fn decodes_signed_bc4_and_bc5() {
             .buffer
             .unwrap(),
         [128, 0, 0, 255]
+    );
+}
+
+#[test]
+fn decodes_premultiplied_dxt2_and_dxt4() {
+    let mut dxt2 = [0u8; 16];
+    dxt2[..8].fill(0x88);
+    dxt2[8..10].copy_from_slice(&0x4000u16.to_le_bytes());
+    assert_eq!(
+        image_load(&dds_fourcc_1x1(b"DXT2", &dxt2))
+            .unwrap()
+            .buffer
+            .unwrap(),
+        [124, 0, 0, 136]
+    );
+
+    let mut dxt4 = [0u8; 16];
+    dxt4[0] = 136;
+    dxt4[1] = 0;
+    dxt4[8..10].copy_from_slice(&0x4000u16.to_le_bytes());
+    assert_eq!(
+        image_load(&dds_fourcc_1x1(b"DXT4", &dxt4))
+            .unwrap()
+            .buffer
+            .unwrap(),
+        [124, 0, 0, 136]
     );
 }
 

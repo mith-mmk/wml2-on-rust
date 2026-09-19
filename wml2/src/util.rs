@@ -132,6 +132,17 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         return ImageFormat::Jpeg;
     }
 
+    #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+    if buffer.len() >= 18
+        && buffer[1] <= 1
+        && matches!(buffer[2], 1 | 2 | 3 | 9 | 10 | 11)
+        && bin_rs::io::read_u16_le(buffer, 12) > 0
+        && bin_rs::io::read_u16_le(buffer, 14) > 0
+        && matches!(buffer[16], 8 | 15 | 16 | 24 | 32)
+    {
+        return ImageFormat::Tga;
+    }
+
     #[cfg(not(feature = "noretoro"))]
     if buffer.len() >= 58 {
         let pixel = buffer[8];
@@ -172,16 +183,6 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         && bin_rs::io::read_u16_le(buffer, 10) >= bin_rs::io::read_u16_le(buffer, 6)
     {
         return ImageFormat::Pcx;
-    }
-    #[cfg(all(feature = "tga", not(feature = "noretoro")))]
-    if buffer.len() >= 18
-        && buffer[1] <= 1
-        && matches!(buffer[2], 1 | 2 | 3 | 9 | 10 | 11)
-        && bin_rs::io::read_u16_le(buffer, 12) > 0
-        && bin_rs::io::read_u16_le(buffer, 14) > 0
-        && matches!(buffer[16], 8 | 15 | 16 | 24 | 32)
-    {
-        return ImageFormat::Tga;
     }
     #[cfg(all(feature = "pic2", not(feature = "noretoro")))]
     if buffer.starts_with(b"P2DT") || (buffer.len() >= 132 && buffer[128..].starts_with(b"P2DT")) {

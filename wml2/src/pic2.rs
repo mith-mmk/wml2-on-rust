@@ -622,7 +622,13 @@ pub fn decode<B: BinaryReader>(
     let canvas_pixels = canvas_width
         .checked_mul(canvas_height)
         .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "PIC2 canvas size overflow"))?;
-    let mut output = vec![0u8; canvas_pixels * 4];
+    let output_len = canvas_pixels
+        .checked_mul(4)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "PIC2 output size overflow"))?;
+    let limits = crate::limits::current();
+    crate::limits::check(canvas_pixels, limits.pixels, "pixels")?;
+    crate::limits::check(output_len, limits.expanded_bytes, "RGBA image")?;
+    let mut output = vec![0u8; output_len];
     let mut decoded_block = false;
     for block in blocks {
         if block.width == 0 || block.height == 0 {

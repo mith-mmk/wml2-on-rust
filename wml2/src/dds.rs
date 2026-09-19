@@ -22,8 +22,8 @@ enum UncompressedFormat {
 enum Compression {
     Uncompressed(UncompressedFormat),
     Bc1,
-    Bc2,
-    Bc3,
+    Bc2 { premultiplied: bool },
+    Bc3 { premultiplied: bool },
     Bc4 { signed: bool },
     Bc5 { signed: bool },
 }
@@ -136,10 +136,25 @@ fn decode_bc1(block: &[u8], allow_transparent: bool) -> [[u8; 4]; 16] {
     result
 }
 
+fn unpremultiply(value: u8, alpha: u8) -> u8 {
+    if alpha == 0 {
+        0
+    } else {
+        ((u16::from(value) * 255 + u16::from(alpha) / 2) / u16::from(alpha)).min(255) as u8
+    }
+}
+
+fn unpremultiply_rgb(pixel: &mut [u8; 4]) {
+    let alpha = pixel[3];
+    pixel[0] = unpremultiply(pixel[0], alpha);
+    pixel[1] = unpremultiply(pixel[1], alpha);
+    pixel[2] = unpremultiply(pixel[2], alpha);
+}
+
 fn decode_block(block: &[u8], compression: Compression) -> Result<[[u8; 4]; 16], Error> {
     match compression {
         Compression::Bc1 => Ok(decode_bc1(block, true)),
-        Compression::Bc2 => {
+        Compression::Bc2 { premultiplied } => {
             let colors = decode_bc1(&block[8..], false);
             let mut result = colors;
             for i in 0..16 {
@@ -149,14 +164,20 @@ fn decode_block(block: &[u8], compression: Compression) -> Result<[[u8; 4]; 16],
                     block[i / 2] >> 4
                 };
                 result[i][3] = alpha * 17;
+                if premultiplied {
+                    unpremultiply_rgb(&mut result[i]);
+                }
             }
             Ok(result)
         }
-        Compression::Bc3 => {
+        Compression::Bc3 { premultiplied } => {
             let alpha = decode_bc4(block, false);
             let mut result = decode_bc1(&block[8..], false);
             for i in 0..16 {
                 result[i][3] = alpha[i];
+                if premultiplied {
+                    unpremultiply_rgb(&mut result[i]);
+                }
             }
             Ok(result)
         }
@@ -187,8 +208,18 @@ fn decode_block(block: &[u8], compression: Compression) -> Result<[[u8; 4]; 16],
 fn compression_from_fourcc(fourcc: &[u8]) -> Option<Compression> {
     match fourcc {
         b"DXT1" => Some(Compression::Bc1),
-        b"DXT2" | b"DXT3" => Some(Compression::Bc2),
-        b"DXT4" | b"DXT5" => Some(Compression::Bc3),
+        b"DXT2" => Some(Compression::Bc2 {
+            premultiplied: true,
+        }),
+        b"DXT3" => Some(Compression::Bc2 {
+            premultiplied: false,
+        }),
+        b"DXT4" => Some(Compression::Bc3 {
+            premultiplied: true,
+        }),
+        b"DXT5" => Some(Compression::Bc3 {
+            premultiplied: false,
+        }),
         b"ATI1" | b"BC4U" => Some(Compression::Bc4 { signed: false }),
         b"BC4S" => Some(Compression::Bc4 { signed: true }),
         b"ATI2" | b"BC5U" => Some(Compression::Bc5 { signed: false }),
@@ -200,8 +231,12 @@ fn compression_from_fourcc(fourcc: &[u8]) -> Option<Compression> {
 fn compression_from_dxgi(value: u32) -> Option<Compression> {
     match value {
         71 | 72 => Some(Compression::Bc1),
-        74 | 75 => Some(Compression::Bc2),
-        77 | 78 => Some(Compression::Bc3),
+        74 | 75 => Some(Compression::Bc2 {
+            premultiplied: false,
+        }),
+        77 | 78 => Some(Compression::Bc3 {
+            premultiplied: false,
+        }),
         27..=29 => Some(Compression::Uncompressed(UncompressedFormat::Rgba8)),
         80 => Some(Compression::Bc4 { signed: false }),
         81 => Some(Compression::Bc4 { signed: true }),

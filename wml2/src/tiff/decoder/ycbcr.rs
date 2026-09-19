@@ -169,7 +169,7 @@ fn decode_block(
     header: &Tiff,
     horizontal: usize,
     vertical: usize,
-    storage_height: usize,
+    physical_height: usize,
     option: &mut DecodeOptions,
 ) -> Result<(), Error> {
     let units_x = block.stored_width.div_ceil(horizontal);
@@ -179,7 +179,7 @@ fn decode_block(
         for col in 0..block.draw_width {
             let unit_x = chroma_index(col, horizontal, header.ycbcr_positioning).min(units_x - 1);
             let unit_y = chroma_index(row, vertical, header.ycbcr_positioning)
-                .min(storage_height.div_ceil(vertical) - 1);
+                .min(physical_height.div_ceil(vertical) - 1);
             let unit = (unit_y * units_x + unit_x) * samples_per_unit;
             let y_index = unit + (row % vertical) * horizontal + (col % horizontal);
             let cb_index = unit + horizontal * vertical;
@@ -227,7 +227,7 @@ pub(crate) fn decode<B: BinaryReader>(
         // full padded strip, so retry with RowsPerStrip only when the
         // compressed stream proves that form was used.
         let short_height = block.stored_height;
-        let mut storage_height = short_height;
+        let mut physical_height = short_height;
         let short_expected = expected_bytes(block, short_height, horizontal, vertical)?;
         crate::limits::check(
             short_expected,
@@ -255,7 +255,7 @@ pub(crate) fn decode<B: BinaryReader>(
                     match decompress_block(&header.compression, &compressed, Some(padded_expected))
                     {
                         Ok(data) => {
-                            storage_height = padded_height;
+                            physical_height = padded_height;
                             expected = padded_expected;
                             data
                         }
@@ -265,14 +265,18 @@ pub(crate) fn decode<B: BinaryReader>(
                 Err(error) => return Err(error),
             };
         if header.predictor == 2 {
+            // A vertically subsampled data unit contains multiple visible
+            // rows. Predictor rows are the physical unit rows, not the
+            // visible pixel rows in the strip.
+            let physical_rows = physical_height.div_ceil(vertical);
             let row_bytes = expected
-                .checked_div(storage_height)
-                .filter(|_| expected % storage_height == 0)
+                .checked_div(physical_rows)
+                .filter(|_| expected % physical_rows == 0)
                 .ok_or_else(|| io::Error::other("TIFF YCbCr predictor row size is invalid"))?;
             crate::tiff::predictor::apply_predictor(
                 &mut data,
                 row_bytes,
-                storage_height,
+                physical_rows,
                 8,
                 3,
                 header.tiff_headers.endian,
@@ -284,7 +288,7 @@ pub(crate) fn decode<B: BinaryReader>(
             header,
             horizontal,
             vertical,
-            storage_height,
+            physical_height,
             option,
         )?;
     }

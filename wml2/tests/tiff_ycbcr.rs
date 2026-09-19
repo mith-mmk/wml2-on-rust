@@ -322,6 +322,31 @@ fn ycbcr_subsampling_restores_predictor_rows() {
 }
 
 #[test]
+fn ycbcr_vertical_subsampling_restores_physical_predictor_rows() {
+    let decoded: [u8; 12] = [80, 90, 100, 110, 128, 200, 120, 130, 140, 150, 130, 210];
+    let mut encoded = decoded;
+    for index in (3..encoded.len()).rev() {
+        encoded[index] = encoded[index].wrapping_sub(encoded[index - 3]);
+    }
+    let bytes = build_ycbcr_tiff(4, 2, (2, 2), 1, Some(2), encoded.to_vec());
+    let image = image_load(&bytes).unwrap();
+    assert_eq!(
+        image.buffer.unwrap(),
+        [
+            rgb(80, 128, 200),
+            rgb(90, 128, 200),
+            rgb(120, 130, 210),
+            rgb(130, 130, 210),
+            rgb(100, 128, 200),
+            rgb(110, 128, 200),
+            rgb(140, 130, 210),
+            rgb(150, 130, 210),
+        ]
+        .concat()
+    );
+}
+
+#[test]
 fn ycbcr_final_strip_uses_its_short_storage_height() {
     let samples = [
         80, 128, 200, 90, 128, 200, 100, 130, 210, 110, 130, 210, 120, 140, 220, 130, 140, 220,

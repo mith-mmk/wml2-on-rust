@@ -28,6 +28,20 @@ enum Compression {
     Bc5 { signed: bool },
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scanline_size_multiplication_is_checked() {
+        crate::limits::scope(crate::limits::DecodeLimits::unlimited(), || {
+            let error = decode_uncompressed(&[], 0, usize::MAX / 4, 1, 0, 0, 64, [0; 4])
+                .expect_err("scanline size overflow must be reported");
+            assert!(error.to_string().contains("DDS scanline size overflow"));
+        });
+    }
+}
+
 fn le32(data: &[u8], offset: usize) -> Result<u32, Error> {
     let bytes = data
         .get(offset..offset + 4)
@@ -363,15 +377,43 @@ pub fn decode<B: BinaryReader>(
             "DDS dimensions must be non-zero",
         ));
     }
+    let header_flags = le32(&data, 8)?;
     let pitch_or_linear = usize::try_from(le32(&data, 20)?)
         .map_err(|_| err(ImgErrorKind::IllegalData, "DDS pitch is invalid"))?;
     let mipmaps = le32(&data, 28)?;
+    if le32(&data, 76)? != 32 {
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "DDS pixel format size is invalid",
+        ));
+    }
     let pf_flags = le32(&data, 80)?;
     let fourcc = &data[84..88];
     let mut data_offset = 128usize;
     let compression = if pf_flags & 0x4 != 0 {
         if fourcc == b"DX10" {
             let dxgi = le32(&data, 128)?;
+            let resource_dimension = le32(&data, 132)?;
+            let misc_flags = le32(&data, 136)?;
+            let array_size = le32(&data, 140)?;
+            if resource_dimension != 3 {
+                return Err(err(
+                    ImgErrorKind::NoSupportFormat,
+                    "Unsupported DDS DX10 resource dimension",
+                ));
+            }
+            if array_size != 1 {
+                return Err(err(
+                    ImgErrorKind::NoSupportFormat,
+                    "Unsupported DDS DX10 array size",
+                ));
+            }
+            if misc_flags & 0x4 != 0 {
+                return Err(err(
+                    ImgErrorKind::NoSupportFormat,
+                    "Unsupported DDS DX10 cubemap",
+                ));
+            }
             data_offset = 148;
             compression_from_dxgi(dxgi)
                 .ok_or_else(|| err(ImgErrorKind::NoSupportFormat, "Unsupported DDS DX10 format"))?
@@ -411,10 +453,12 @@ pub fn decode<B: BinaryReader>(
             data_offset,
             width,
             height,
-            if pf_flags & 0x8 != 0 {
+            if header_flags & 0x8 != 0 {
                 pitch_or_linear
             } else {
-                width * bytes_per_pixel
+                width.checked_mul(bytes_per_pixel).ok_or_else(|| {
+                    err(ImgErrorKind::InvalidParameter, "DDS scanline size overflow")
+                })?
             },
             pf_flags,
             bit_count,

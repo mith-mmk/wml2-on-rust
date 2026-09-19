@@ -90,6 +90,12 @@ pub fn decode<B: BinaryReader>(
         ));
     }
     let planes = usize::from(data[65]);
+    if bits_per_plane == 8 && !matches!(planes, 1 | 3 | 4) {
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "Unsupported PCX pixel layout",
+        ));
+    }
     let bytes_per_line = usize::from(le16(&data, 66)?);
     let minimum_line = width
         .checked_mul(usize::from(bits_per_plane))
@@ -113,6 +119,12 @@ pub fn decode<B: BinaryReader>(
     } else {
         None
     };
+    if bits_per_plane == 8 && planes == 1 && palette256.is_none() {
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "PCX 256-color palette is missing",
+        ));
+    }
     let image_end = palette256.map_or(data.len(), |_| data.len() - 769);
     let mut palette16 = [[0u8; 3]; 16];
     for (index, rgb) in palette16.iter_mut().enumerate() {

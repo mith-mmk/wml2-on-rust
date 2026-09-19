@@ -57,6 +57,8 @@ fn pcx_large_header() -> Vec<u8> {
     put_le16(&mut data, 8, 1023);
     put_le16(&mut data, 10, 1023);
     put_le16(&mut data, 66, 1024);
+    data.push(12);
+    data.extend_from_slice(&[0u8; 768]);
     data
 }
 
@@ -167,6 +169,39 @@ fn decodes_minimal_dds() {
     let image = image_load(&dds_2x1()).expect("DDS should decode");
     assert_eq!((image.width, image.height), (2, 1));
     assert_eq!(image.buffer.unwrap(), vec![255, 0, 0, 255, 0, 255, 0, 255]);
+}
+
+#[test]
+fn dds_uses_ddsd_pitch_from_header_flags() {
+    let mut data = dds_2x1();
+    put_le32(&mut data, 8, 0x1007);
+    put_le32(&mut data, 20, 4);
+    put_le32(&mut data, 80, 0x48);
+
+    let image = image_load(&data).expect("DDSD_PITCH is a header flag");
+    assert_eq!(image.buffer.unwrap(), vec![255, 0, 0, 255, 0, 255, 0, 255]);
+}
+
+#[test]
+fn pcx_rejects_eight_bit_two_plane_layouts() {
+    let mut data = pcx_2x1();
+    data[65] = 2;
+    let error = match image_load(&data) {
+        Ok(_) => panic!("8-bit two-plane PCX must be rejected"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("Unsupported PCX pixel layout"));
+}
+
+#[test]
+fn pcx_rejects_eight_bit_single_plane_without_palette() {
+    let mut data = pcx_2x1();
+    data.truncate(130);
+    let error = match image_load(&data) {
+        Ok(_) => panic!("8-bit PCX without a palette must be rejected"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("256-color palette is missing"));
 }
 
 #[test]
@@ -284,12 +319,56 @@ fn vsp_detection_precedes_tga_detection() {
 }
 
 #[test]
-fn tga_is_not_detected_as_vsp() {
-    let mut data = tga_2x1();
-    data[0] = 1;
-    data.insert(18, 0);
-    data.resize(58, 0);
+fn tga_detection_wins_for_an_overlapping_vsp_signature() {
+    let mut data = vec![0u8; 58];
+    put_le16(&mut data, 0, 0);
+    put_le16(&mut data, 2, 2);
+    put_le16(&mut data, 4, 8);
+    put_le16(&mut data, 6, 3);
+    data[8] = 0;
+    data[2] = 2;
+    put_le16(&mut data, 12, 2);
+    put_le16(&mut data, 14, 1);
+    data[16] = 24;
     assert!(matches!(format_check(&data), ImageFormat::Tga));
+}
+
+#[test]
+fn dds_rejects_invalid_pixel_format_size() {
+    let mut data = dds_2x1();
+    put_le32(&mut data, 76, 0);
+    let error = match image_load(&data) {
+        Ok(_) => panic!("invalid DDS pixel format size must be rejected"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("pixel format size"));
+}
+
+#[test]
+fn dds_rejects_dx10_non_2d_surfaces() {
+    let mut volume = dds_dx10_1x1(27, &[0, 0, 255, 255]);
+    put_le32(&mut volume, 132, 4);
+    let error = match image_load(&volume) {
+        Ok(_) => panic!("DX10 3D textures must be rejected"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("resource dimension"));
+
+    let mut array = dds_dx10_1x1(27, &[0, 0, 255, 255]);
+    put_le32(&mut array, 140, 2);
+    let error = match image_load(&array) {
+        Ok(_) => panic!("DX10 arrays must be rejected"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("array size"));
+
+    let mut cube = dds_dx10_1x1(27, &[0, 0, 255, 255]);
+    put_le32(&mut cube, 136, 0x4);
+    let error = match image_load(&cube) {
+        Ok(_) => panic!("DX10 cubemaps must be rejected"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("cubemap"));
 }
 
 #[test]

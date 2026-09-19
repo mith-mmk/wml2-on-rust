@@ -54,7 +54,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | GIF     | O   | O   | palette/LZW encoder, animation supported                                                                            |
 | ICO     | x   | O   | decoder for BMP/PNG embedded icon images                                                                            |
 | PNG     | O   | O   | PNG/APNG; encoder writes RGBA truecolor                                                                             |
-| TIFF    | O   | O   | encode: none/LZW/Deflate/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
+| TIFF    | O   | O   | encode: none/LZW/Deflate/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/old-style baseline JPEG/Adobe Deflate/YCbCr/RGBA8/CCITT Huffman RLE/CCITT Group 3/4 Fax/T.6 extension 7 |
 | WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
 | AVIF    | O   | O   | decoder: `avif`; encoder: `avifenc` (`avifenc-rust`)                                                               |
 | PSD     | x   | O   | optional, non-default `psd` feature; Pure Rust PSD v1 merged-image and basic raster-layer decoding                 |
@@ -195,11 +195,13 @@ Decode supports:
 - no compression
 - LZW
 - PackBits
-- JPEG (new-style TIFF JPEG)
+- JPEG (new-style TIFF JPEG and the supported old-style baseline YCbCr form)
+- raw YCbCr (8-bit decode to RGBA8; none/LZW strip/tile)
 - Deflate (8 / 32946)
 - CCITT Huffman RLE
 - CCITT Group 3 Fax
 - CCITT Group 4 Fax
+- CCITT Group 4 T.6 extension 7 (other extensions, including IBM MMR variants, are rejected explicitly)
 
 TIFF decoding supports Classic TIFF and BigTIFF in both byte orders, including
 strip/tile storage and multiple image IFDs. Unsigned 16-bit Gray/RGB/RGBA samples

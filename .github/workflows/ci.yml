@@ -68,12 +68,17 @@ jobs:
       - run: cargo test -p wml2 --test review_regressions --no-default-features --features png
       - name: TIFF container and review regressions
         run: cargo test -p wml2 --test tiff_extend --test tiff_review_regressions --no-default-features --features tiff,high-bit-depth
+      - name: TIFF interoperability fixtures
+        run: cargo test -p wml2 --test tiff_interop --test tiff_ycbcr --test tiff_jpeg_extend --no-default-features --features tiff-jpeg,idct_llm
       - name: Install 32-bit Windows target
         if: runner.os == 'Windows'
         run: rustup target add i686-pc-windows-msvc
       - name: TIFF 32-bit offsets and strip geometry
         if: runner.os == 'Windows'
         run: cargo test -p wml2 --target i686-pc-windows-msvc --test tiff_extend --test tiff_review_regressions --no-default-features --features tiff,high-bit-depth
+      - name: TIFF 32-bit interoperability fixtures
+        if: runner.os == 'Windows'
+        run: cargo test -p wml2 --target i686-pc-windows-msvc --test tiff_interop --test tiff_ycbcr --test tiff_jpeg_extend --no-default-features --features tiff-jpeg,idct_llm
   compile:
     runs-on: ubuntu-latest
     strategy:
@@ -87,7 +92,7 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check -p wml2 --lib --target ${{ matrix.target }} --features high-bit-depth,color-management,avifenc,psd
+      - run: cargo check -p wml2 --lib --target ${{ matrix.target }} --features high-bit-depth,color-management,avifenc,psd,tiff-jpeg,idct_llm
   format:
     runs-on: ubuntu-latest
     steps:

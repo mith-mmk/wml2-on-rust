@@ -1183,7 +1183,7 @@ fn image_decoder_inner<B: BinaryReader>(
     let current = reader.offset()?;
     let end = reader.seek(SeekFrom::End(0))?;
     reader.seek(SeekFrom::Start(current))?;
-    let sample_len = usize::try_from((end - current).min(128)).map_err(|_| {
+    let sample_len = usize::try_from((end - current).min(256)).map_err(|_| {
         Box::new(ImgError::new_const(
             ImgErrorKind::InvalidParameter,
             "input sample size overflow".to_string(),
@@ -1229,6 +1229,26 @@ fn image_decoder_inner<B: BinaryReader>(
         #[cfg(feature = "tiff")]
         Tiff => {
             return crate::tiff::decoder::decode(reader, option);
+        }
+        #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+        Tga => {
+            return crate::tga::decode(reader, option);
+        }
+        #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+        Pcx => {
+            return crate::pcx::decode(reader, option);
+        }
+        #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+        Dds => {
+            return crate::dds::decode(reader, option);
+        }
+        #[cfg(all(feature = "pic2", not(feature = "noretoro")))]
+        Pic2 => {
+            return crate::pic2::decode(reader, option);
+        }
+        #[cfg(all(feature = "q4", not(feature = "noretoro")))]
+        Q4 => {
+            return crate::q4::decode(reader, option);
         }
         #[cfg(all(feature = "mag", not(feature = "noretoro")))]
         Mag => {

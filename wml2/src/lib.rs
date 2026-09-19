@@ -96,6 +96,16 @@ pub fn get_decoder_extentions() -> Vec<String> {
         "webp".to_string(),
         #[cfg(feature = "avif")]
         "avif".to_string(),
+        #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+        "tga".to_string(),
+        #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+        "pcx".to_string(),
+        #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+        "dds".to_string(),
+        #[cfg(all(feature = "pic2", not(feature = "noretoro")))]
+        "p2".to_string(),
+        #[cfg(all(feature = "q4", not(feature = "noretoro")))]
+        "q4".to_string(),
         #[cfg(all(feature = "mag", not(feature = "noretoro")))]
         "mag".to_string(),
         #[cfg(all(feature = "maki", not(feature = "noretoro")))]
@@ -178,7 +188,12 @@ pub mod psd;
     all(feature = "pcd", not(feature = "noretoro")),
     all(feature = "pi", not(feature = "noretoro")),
     all(feature = "pic", not(feature = "noretoro")),
-    all(feature = "vsp", not(feature = "noretoro"))
+    all(feature = "vsp", not(feature = "noretoro")),
+    all(feature = "tga", not(feature = "noretoro")),
+    all(feature = "pcx", not(feature = "noretoro")),
+    all(feature = "dds", not(feature = "noretoro")),
+    all(feature = "pic2", not(feature = "noretoro")),
+    all(feature = "q4", not(feature = "noretoro"))
 ))]
 mod retro;
 #[cfg(any(feature = "tiff", feature = "exif"))]
@@ -191,10 +206,20 @@ pub mod warning;
 #[cfg(feature = "avif")]
 pub mod avif;
 pub mod color;
+#[cfg(all(feature = "dds", not(feature = "noretoro")))]
+pub mod dds;
 pub mod decoder;
 #[cfg(feature = "high-bit-depth")]
 pub mod highres;
 pub mod metadata;
+#[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+pub mod pcx;
+#[cfg(all(feature = "pic2", not(feature = "noretoro")))]
+pub mod pic2;
+#[cfg(all(feature = "q4", not(feature = "noretoro")))]
+pub mod q4;
+#[cfg(all(feature = "tga", not(feature = "noretoro")))]
+pub mod tga;
 #[cfg(feature = "webp")]
 pub mod webp;
 

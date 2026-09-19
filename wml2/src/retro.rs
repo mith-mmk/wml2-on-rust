@@ -77,6 +77,31 @@ pub(crate) fn draw_rgb(
     Ok(())
 }
 
+pub(crate) fn draw_rgba(
+    option: &mut DecodeOptions,
+    width: usize,
+    height: usize,
+    pixels: &[u8],
+) -> Result<(), Error> {
+    let expected = width
+        .checked_mul(height)
+        .and_then(|value| value.checked_mul(4))
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "RGBA image size overflow"))?;
+    if pixels.len() < expected {
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "RGBA image data is truncated",
+        ));
+    }
+    option
+        .drawer
+        .init(width, height, crate::draw::InitOptions::new())?;
+    option
+        .drawer
+        .draw(0, 0, width, height, &pixels[..expected], None)?;
+    Ok(())
+}
+
 pub(crate) struct ByteCursor<'a> {
     data: &'a [u8],
     offset: usize,

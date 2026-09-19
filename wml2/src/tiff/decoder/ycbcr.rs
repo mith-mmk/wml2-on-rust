@@ -222,20 +222,48 @@ pub(crate) fn decode<B: BinaryReader>(
     let input_len = reader.seek(std::io::SeekFrom::End(0))?;
     for block in &block_list {
         block.validate_range(input_len)?;
-        let storage_height = match block.kind {
-            TiffBlockKind::Strip if header.rows_per_strip != 0 => {
-                usize::try_from(header.rows_per_strip)?
-            }
-            _ => block.stored_height,
-        };
-        let expected = expected_bytes(block, storage_height, horizontal, vertical)?;
+        // The final strip can be physically short even when RowsPerStrip is
+        // larger. Prefer its actual stored height; some encoders retain the
+        // full padded strip, so retry with RowsPerStrip only when the
+        // compressed stream proves that form was used.
+        let short_height = block.stored_height;
+        let mut storage_height = short_height;
+        let short_expected = expected_bytes(block, short_height, horizontal, vertical)?;
         crate::limits::check(
-            expected,
+            short_expected,
             crate::limits::current().expanded_bytes,
             "expanded TIFF YCbCr block",
         )?;
         let compressed = read_block(reader, block)?;
-        let mut data = decompress_block(&header.compression, &compressed, Some(expected))?;
+        let mut expected = short_expected;
+        let mut data =
+            match decompress_block(&header.compression, &compressed, Some(short_expected)) {
+                Ok(data) => data,
+                Err(short_error)
+                    if block.kind == TiffBlockKind::Strip
+                        && header.rows_per_strip != 0
+                        && usize::try_from(header.rows_per_strip)? > short_height =>
+                {
+                    let padded_height = usize::try_from(header.rows_per_strip)?;
+                    let padded_expected =
+                        expected_bytes(block, padded_height, horizontal, vertical)?;
+                    crate::limits::check(
+                        padded_expected,
+                        crate::limits::current().expanded_bytes,
+                        "expanded TIFF padded YCbCr block",
+                    )?;
+                    match decompress_block(&header.compression, &compressed, Some(padded_expected))
+                    {
+                        Ok(data) => {
+                            storage_height = padded_height;
+                            expected = padded_expected;
+                            data
+                        }
+                        Err(_) => return Err(short_error),
+                    }
+                }
+                Err(error) => return Err(error),
+            };
         if header.predictor == 2 {
             let row_bytes = expected
                 .checked_div(storage_height)

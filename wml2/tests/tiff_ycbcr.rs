@@ -149,6 +149,105 @@ fn build_ycbcr_tiff_with(
     output
 }
 
+fn build_ycbcr_multi_strip_tiff(
+    width: u32,
+    height: u32,
+    rows_per_strip: u32,
+    samples: &[u8],
+) -> Vec<u8> {
+    let be = false;
+    let row_bytes = usize::try_from(width).unwrap() * 3;
+    let rows = usize::try_from(rows_per_strip).unwrap();
+    let strips: Vec<_> = (0..usize::try_from(height).unwrap())
+        .step_by(rows)
+        .map(|start| {
+            let end = (start + rows).min(usize::try_from(height).unwrap());
+            samples[start * row_bytes..end * row_bytes].to_vec()
+        })
+        .collect();
+    let strip_count = u32::try_from(strips.len()).unwrap();
+    let mut fields = vec![
+        entry(256, 4, 1, u32v(width, be).to_vec()),
+        entry(257, 4, 1, u32v(height, be).to_vec()),
+        entry(258, 3, 3, shorts(&[8, 8, 8], be)),
+        entry(259, 3, 1, shorts(&[1], be)),
+        entry(262, 3, 1, shorts(&[6], be)),
+        entry(273, 4, strip_count, vec![0; strips.len() * 4]),
+        entry(277, 3, 1, shorts(&[3], be)),
+        entry(278, 4, 1, u32v(rows_per_strip, be).to_vec()),
+        entry(
+            279,
+            4,
+            strip_count,
+            strips
+                .iter()
+                .flat_map(|strip| u32v(u32::try_from(strip.len()).unwrap(), be))
+                .collect(),
+        ),
+        entry(
+            529,
+            5,
+            3,
+            rationals(&[(299, 1000), (587, 1000), (114, 1000)], be),
+        ),
+        entry(530, 3, 2, shorts(&[1, 1], be)),
+        entry(531, 3, 1, shorts(&[1], be)),
+        entry(
+            532,
+            5,
+            6,
+            rationals(
+                &[(0, 1), (255, 1), (128, 1), (255, 1), (128, 1), (255, 1)],
+                be,
+            ),
+        ),
+    ];
+    fields.sort_by_key(|field| field.tag);
+    let ifd_len = 2 + fields.len() * 12 + 4;
+    let mut output = vec![0; 8 + ifd_len];
+    let mut cursor = output.len();
+    for field in &mut fields {
+        if field.payload.len() > 4 {
+            cursor += cursor & 1;
+            field.offset = Some(cursor);
+            cursor += field.payload.len();
+        }
+    }
+    let mut strip_offsets = Vec::with_capacity(strips.len() * 4);
+    let mut strip_cursor = cursor;
+    for strip in &strips {
+        strip_offsets.extend_from_slice(&u32v(u32::try_from(strip_cursor).unwrap(), be));
+        strip_cursor += strip.len();
+    }
+    for field in &mut fields {
+        if field.tag == 273 {
+            field.payload = strip_offsets.clone();
+        }
+    }
+    output.resize(strip_cursor, 0);
+    for field in &fields {
+        if let Some(offset) = field.offset {
+            output[offset..offset + field.payload.len()].copy_from_slice(&field.payload);
+        }
+    }
+    let mut offset = cursor;
+    for strip in &strips {
+        output[offset..offset + strip.len()].copy_from_slice(strip);
+        offset += strip.len();
+    }
+    let mut ifd = Vec::with_capacity(ifd_len);
+    ifd.extend_from_slice(&u16v(u16::try_from(fields.len()).unwrap(), be));
+    for field in &fields {
+        write_entry(&mut ifd, field, be);
+    }
+    ifd.extend_from_slice(&[0; 4]);
+    output[8..8 + ifd.len()].copy_from_slice(&ifd);
+    output[0..2].copy_from_slice(b"II");
+    output[2..4].copy_from_slice(&u16v(42, be));
+    output[4..8].copy_from_slice(&u32v(8, be));
+    output
+}
+
 fn rgb(y: u8, cb: u8, cr: u8) -> [u8; 4] {
     let y = f32::from(y);
     let cb = f32::from(cb) - 128.0;
@@ -220,6 +319,17 @@ fn ycbcr_subsampling_restores_predictor_rows() {
         ]
         .concat()
     );
+}
+
+#[test]
+fn ycbcr_final_strip_uses_its_short_storage_height() {
+    let samples = [
+        80, 128, 200, 90, 128, 200, 100, 130, 210, 110, 130, 210, 120, 140, 220, 130, 140, 220,
+    ];
+    let bytes = build_ycbcr_multi_strip_tiff(2, 3, 2, &samples);
+    let image = image_load(&bytes).unwrap();
+    assert_eq!((image.width, image.height), (2, 3));
+    assert_eq!(image.buffer.unwrap().len(), 2 * 3 * 4);
 }
 
 #[test]

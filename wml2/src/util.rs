@@ -15,6 +15,12 @@ pub enum ImageFormat {
     Webp, // RIFF . . . . WEBP
     #[cfg(feature = "avif")]
     Avif, // ISO BMFF ftyp avif/avis
+    #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+    Tga,
+    #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+    Pcx,
+    #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+    Dds,
     //
     // Japanse old format
     #[cfg(not(feature = "noretoro"))]
@@ -25,7 +31,10 @@ pub enum ImageFormat {
     Pi,
     #[cfg(not(feature = "noretoro"))]
     Pic,
+    #[cfg(all(feature = "pic2", not(feature = "noretoro")))]
     Pic2,
+    #[cfg(all(feature = "q4", not(feature = "noretoro")))]
+    Q4,
     #[cfg(not(feature = "noretoro"))]
     Vsp,
     #[cfg(not(feature = "noretoro"))]
@@ -69,6 +78,7 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         }
         return ImageFormat::Tiff;
     }
+    #[cfg(not(feature = "noretoro"))]
     if buffer.len() >= 6 && buffer.starts_with(b"MAKI02") {
         return ImageFormat::Mag;
     }
@@ -122,12 +132,35 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         return ImageFormat::Jpeg;
     }
 
+    // A valid VSP header can satisfy this broad TGA signature. VSP intentionally
+    // has lower priority here, so keep the TGA-first order unchanged.
+    #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+    if buffer.len() >= 18
+        && buffer[1] <= 1
+        && matches!(buffer[2], 1 | 2 | 3 | 9 | 10 | 11)
+        && bin_rs::io::read_u16_le(buffer, 12) > 0
+        && bin_rs::io::read_u16_le(buffer, 14) > 0
+        && matches!(buffer[16], 8 | 15 | 16 | 24 | 32)
+    {
+        return ImageFormat::Tga;
+    }
+
     #[cfg(not(feature = "noretoro"))]
-    if buffer.len() >= 10 {
+    if buffer.len() >= 58 {
         let pixel = buffer[8];
         let start_x = bin_rs::io::read_u16_le(buffer, 0);
+        let start_y = bin_rs::io::read_u16_le(buffer, 2);
         let end_x = bin_rs::io::read_u16_le(buffer, 4);
-        if (pixel == 0 || pixel == 1 || pixel == 8) && start_x <= 80 && (end_x <= 80 || pixel == 1)
+        let end_y = bin_rs::io::read_u16_le(buffer, 6);
+        let valid_dimensions = if pixel == 1 {
+            start_x <= end_x && start_y <= end_y
+        } else {
+            start_x < end_x && start_y < end_y
+        };
+        if (pixel == 0 || pixel == 1 || pixel == 8)
+            && valid_dimensions
+            && start_x <= 80
+            && (end_x <= 80 || pixel == 1)
         {
             return ImageFormat::Vsp;
         }
@@ -135,6 +168,34 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         if page_count > 0 && page_count <= 0x10 {
             return ImageFormat::Vsp;
         }
+    }
+
+    #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+    if buffer.len() >= 4 && buffer.starts_with(b"DDS ") {
+        return ImageFormat::Dds;
+    }
+    #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+    if buffer.len() >= 128
+        && buffer[0] == 0x0a
+        && buffer[2] == 1
+        && matches!(buffer[3], 1 | 2 | 4 | 8)
+        && buffer[65] > 0
+        && buffer[65] <= 4
+        && bin_rs::io::read_u16_le(buffer, 8) >= bin_rs::io::read_u16_le(buffer, 4)
+        && bin_rs::io::read_u16_le(buffer, 10) >= bin_rs::io::read_u16_le(buffer, 6)
+    {
+        return ImageFormat::Pcx;
+    }
+    #[cfg(all(feature = "pic2", not(feature = "noretoro")))]
+    if buffer.starts_with(b"P2DT") || (buffer.len() >= 132 && buffer[128..].starts_with(b"P2DT")) {
+        return ImageFormat::Pic2;
+    }
+    #[cfg(all(feature = "q4", not(feature = "noretoro")))]
+    if buffer.len() >= 16
+        && buffer[11..16] == *b"MAJYO"
+        && (buffer[2] == 2 || (buffer[1] <= 1 && buffer[3] <= 1))
+    {
+        return ImageFormat::Q4;
     }
     ImageFormat::Unknown
 }
@@ -179,6 +240,16 @@ pub fn decoder_supports_format(format: &ImageFormat) -> bool {
         ImageFormat::Webp => true,
         #[cfg(feature = "avif")]
         ImageFormat::Avif => true,
+        #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+        ImageFormat::Tga => true,
+        #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+        ImageFormat::Pcx => true,
+        #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+        ImageFormat::Dds => true,
+        #[cfg(all(feature = "pic2", not(feature = "noretoro")))]
+        ImageFormat::Pic2 => true,
+        #[cfg(all(feature = "q4", not(feature = "noretoro")))]
+        ImageFormat::Q4 => true,
         #[cfg(all(feature = "mag", not(feature = "noretoro")))]
         ImageFormat::Mag => true,
         #[cfg(all(feature = "maki", not(feature = "noretoro")))]

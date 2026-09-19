@@ -1,6 +1,7 @@
 //! Legacy retro-format module toggles.
 
 use bin_rs::reader::BinaryReader;
+use std::io::SeekFrom;
 
 use crate::draw::DecodeOptions;
 use crate::error::{ImgError, ImgErrorKind};
@@ -12,11 +13,77 @@ pub(crate) fn err(kind: ImgErrorKind, message: &str) -> Error {
 }
 
 pub(crate) fn read_all<B: BinaryReader>(reader: &mut B) -> Result<Vec<u8>, Error> {
-    let mut buffer = Vec::new();
-    while let Ok(byte) = reader.read_byte() {
-        buffer.push(byte);
+    let current = reader.offset()?;
+    let end = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(current))?;
+    let length = end
+        .checked_sub(current)
+        .ok_or_else(|| std::io::Error::other("invalid input position"))?;
+    let length = usize::try_from(length)?;
+    Ok(reader.read_bytes_as_vec(length)?)
+}
+
+#[cfg(all(test, not(target_family = "wasm")))]
+mod tests {
+    use super::*;
+    use bin_rs::reader::{BytesReader, StreamReader};
+    use std::io::{self, BufReader, ErrorKind, Read, Seek};
+
+    struct FailingReader {
+        data: Vec<u8>,
+        logical_len: u64,
+        position: u64,
     }
-    Ok(buffer)
+
+    impl Read for FailingReader {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            if self.position >= self.data.len() as u64 {
+                return Err(io::Error::new(ErrorKind::Other, "injected read failure"));
+            }
+            let start = self.position as usize;
+            let length = buffer.len().min(self.data.len().saturating_sub(start));
+            buffer[..length].copy_from_slice(&self.data[start..start + length]);
+            self.position += length as u64;
+            Ok(length)
+        }
+    }
+
+    impl Seek for FailingReader {
+        fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+            let next = match position {
+                SeekFrom::Start(value) => i128::from(value),
+                SeekFrom::End(value) => i128::from(self.logical_len) + i128::from(value),
+                SeekFrom::Current(value) => i128::from(self.position) + i128::from(value),
+            };
+            if next < 0 || next > i128::from(u64::MAX) {
+                return Err(io::Error::new(ErrorKind::InvalidInput, "invalid seek"));
+            }
+            self.position = next as u64;
+            Ok(self.position)
+        }
+    }
+
+    #[test]
+    fn read_all_reads_bytes_reader_to_end() {
+        let mut reader = BytesReader::new(&[1, 2, 3]);
+        assert_eq!(read_all(&mut reader).unwrap(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn read_all_propagates_stream_io_errors() {
+        let failing = FailingReader {
+            data: vec![1, 2],
+            logical_len: 4,
+            position: 0,
+        };
+        let mut reader = StreamReader::new(BufReader::new(failing));
+        let error = read_all(&mut reader).expect_err("I/O errors must not become EOF");
+        let error = error
+            .downcast_ref::<io::Error>()
+            .expect("the original I/O error should be preserved");
+        assert_eq!(error.kind(), ErrorKind::Other);
+        assert_eq!(error.to_string(), "injected read failure");
+    }
 }
 
 pub(crate) fn clamp8(value: i32) -> u8 {
@@ -74,6 +141,31 @@ pub(crate) fn draw_rgb(
         rgba[dst + 3] = 0xff;
     }
     option.drawer.draw(0, 0, width, height, &rgba, None)?;
+    Ok(())
+}
+
+pub(crate) fn draw_rgba(
+    option: &mut DecodeOptions,
+    width: usize,
+    height: usize,
+    pixels: &[u8],
+) -> Result<(), Error> {
+    let expected = width
+        .checked_mul(height)
+        .and_then(|value| value.checked_mul(4))
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "RGBA image size overflow"))?;
+    if pixels.len() < expected {
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "RGBA image data is truncated",
+        ));
+    }
+    option
+        .drawer
+        .init(width, height, crate::draw::InitOptions::new())?;
+    option
+        .drawer
+        .draw(0, 0, width, height, &pixels[..expected], None)?;
     Ok(())
 }
 

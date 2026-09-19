@@ -106,6 +106,25 @@ name = "psd_feature_off"
 path = "tests/psd_feature_off.rs"
 
 [[test]]
+name = "new_formats"
+path = "tests/new_formats.rs"
+required-features = ["tga", "pcx", "dds", "pic2"]
+
+[[test]]
+name = "collected_formats"
+path = "tests/collected_formats.rs"
+required-features = ["tga", "pcx", "dds", "pic2"]
+
+[[test]]
+name = "retro_feature_off"
+path = "tests/retro_feature_off.rs"
+
+[[test]]
+name = "q4_formats"
+path = "tests/q4_formats.rs"
+required-features = ["q4"]
+
+[[test]]
 name = "highres_typed"
 path = "tests/highres_typed.rs"
 required-features = ["high-bit-depth"]
@@ -176,6 +195,11 @@ maki = []
 pcd = []
 pi = []
 pic = []
+pic2 = []
+tga = []
+pcx = []
+dds = []
+q4 = []
 vsp = []
 
 

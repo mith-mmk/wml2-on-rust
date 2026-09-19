@@ -62,6 +62,16 @@ path = "tests/tiff_encode.rs"
 required-features = ["tiff"]
 
 [[test]]
+name = "tiff_interop"
+path = "tests/tiff_interop.rs"
+required-features = ["tiff"]
+
+[[test]]
+name = "tiff_ycbcr"
+path = "tests/tiff_ycbcr.rs"
+required-features = ["tiff"]
+
+[[test]]
 name = "webp_encode"
 path = "tests/webp_encode.rs"
 required-features = ["webp"]

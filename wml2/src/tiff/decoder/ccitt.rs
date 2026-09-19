@@ -18,7 +18,6 @@ pub fn decode_with_dimensions(
     height: usize,
 ) -> Result<(Vec<u8>, bool), Error> {
     let t4_options = header.t4_options;
-    let t6_options = header.t6_options;
 
     let encoding = match header.compression {
         Compression::CCITTHuffmanRLE => {
@@ -41,11 +40,10 @@ pub fn decode_with_dimensions(
         }
     };
 
-    if t4_options & 0x2 > 0 || t6_options & 0x2 > 0 {
-        //        encoding = 0;   // UNCOMPRESSED
+    if !matches!(encoding, Encoder::G4) && t4_options & 0x2 > 0 {
         return Err(Box::new(ImgError::new_const(
             ImgErrorKind::DecodeError,
-            "Uncompress mode is not support".to_string(),
+            "CCITT Group 3 uncompressed mode is unsupported".to_string(),
         )));
     }
 

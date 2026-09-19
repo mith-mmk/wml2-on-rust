@@ -68,12 +68,17 @@ jobs:
       - run: cargo test -p wml2 --test review_regressions --no-default-features --features png
       - name: TIFF container and review regressions
         run: cargo test -p wml2 --test tiff_extend --test tiff_review_regressions --no-default-features --features tiff,high-bit-depth
+      - name: TIFF interoperability fixtures
+        run: cargo test -p wml2 --test tiff_interop --test tiff_ycbcr --test tiff_jpeg_extend --no-default-features --features tiff-jpeg,idct_llm
       - name: Install 32-bit Windows target
         if: runner.os == 'Windows'
         run: rustup target add i686-pc-windows-msvc
       - name: TIFF 32-bit offsets and strip geometry
         if: runner.os == 'Windows'
         run: cargo test -p wml2 --target i686-pc-windows-msvc --test tiff_extend --test tiff_review_regressions --no-default-features --features tiff,high-bit-depth
+      - name: TIFF 32-bit interoperability fixtures
+        if: runner.os == 'Windows'
+        run: cargo test -p wml2 --target i686-pc-windows-msvc --test tiff_interop --test tiff_ycbcr --test tiff_jpeg_extend --no-default-features --features tiff-jpeg,idct_llm
   compile:
     runs-on: ubuntu-latest
     strategy:
@@ -87,7 +92,7 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check -p wml2 --lib --target ${{ matrix.target }} --features high-bit-depth,color-management,avifenc,psd
+      - run: cargo check -p wml2 --lib --target ${{ matrix.target }} --features high-bit-depth,color-management,avifenc,psd,tiff-jpeg,idct_llm
   format:
     runs-on: ubuntu-latest
     steps:
@@ -114,6 +119,32 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo generate-lockfile
+      - name: Checkout pinned TIFF interoperability corpus
+        uses: actions/checkout@v4
+        with:
+          repository: imazen/codec-corpus
+          ref: 8e10d4d765667c1c49d74413878fc4bfb46dcf8d
+          path: .ci/codec-corpus
+          fetch-depth: 1
+      - name: Verify and expose external TIFF corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .ci/codec-corpus rev-parse HEAD)" = "8e10d4d765667c1c49d74413878fc4bfb46dcf8d"
+          corpus="$(find .ci/codec-corpus -type d -name valid -print -quit)"
+          test -n "$corpus"
+          for sample in \
+            fax4.tiff \
+            ojpeg_single_strip_no_rowsperstrip.tiff \
+            ojpeg_zackthecat_subsamp22_single_strip.tiff; do
+            test -f "$corpus/$sample"
+          done
+          /usr/bin/python3 wml2-test/scripts/verify_tiff_interop_samples.py \
+            --corpus "$corpus" \
+            --manifest wml2/tests/fixtures/tiff_interop/manifest.json
+          echo "WML2_TIFF_CORPUS=$GITHUB_WORKSPACE/$corpus" >> "$GITHUB_ENV"
+      - name: Run pinned external TIFF interoperability tests
+        run: cargo test -p wml2 --locked --test tiff_interop --no-default-features --features tiff-jpeg,idct_llm -- --ignored
       - name: Build sample converter and metadata tools
         run: cargo build -p wml2-test --locked --release --example converter --example metadata
       - name: Generate TIFF review and alpha/LZW samples

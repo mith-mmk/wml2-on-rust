@@ -18,6 +18,7 @@ mod ccitt;
 #[cfg(feature = "tiff-jpeg")]
 mod jpeg;
 mod packbits;
+mod ycbcr;
 
 use self::compression::decompress_block;
 use crate::tiff::block::{TiffBlock, blocks};
@@ -266,10 +267,8 @@ fn decode_blocked<B: BinaryReader>(
         init_canvas(option, header, animation)?;
     }
     if header.photometric_interpretation == 6 {
-        return Err(Box::new(ImgError::new_const(
-            ImgErrorKind::NoSupportFormat,
-            "TIFF YCbCr without JPEG compression is unsupported".into(),
-        )));
+        ycbcr::decode(reader, option, header, false, animation)?;
+        return Ok(None);
     }
     let block_list = blocks(header)?;
     let input_len = reader.seek(std::io::SeekFrom::End(0))?;

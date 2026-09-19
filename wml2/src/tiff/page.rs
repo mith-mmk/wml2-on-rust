@@ -72,6 +72,25 @@ pub(crate) fn read_pages(reader: &mut dyn BinaryReader) -> Result<Tiff, Error> {
             {
                 return Err(invalid("TIFF scalar tag must contain one value"));
             }
+            if matches!(entry.tag, 0x211 | 0x214) && entry.type_id != 5 {
+                return Err(invalid("TIFF YCbCr range tag must have RATIONAL type"));
+            }
+            if entry.tag == 0x211 && entry.count != 3 {
+                return Err(invalid("TIFF YCbCrCoefficients must contain three values"));
+            }
+            if entry.tag == 0x214 && entry.count != 6 {
+                return Err(invalid("TIFF ReferenceBlackWhite must contain six values"));
+            }
+            if entry.tag == 0x212 && (entry.type_id != 3 || entry.count != 2) {
+                return Err(invalid(
+                    "TIFF YCbCrSubSampling must contain two SHORT values",
+                ));
+            }
+            if entry.tag == 0x213 && (entry.type_id != 3 || entry.count != 1) {
+                return Err(invalid(
+                    "TIFF YCbCrPositioning must contain one SHORT value",
+                ));
+            }
             if matches!(
                 entry.tag,
                 0x102 | 0x103 | 0x106 | 0x10a | 0x115 | 0x11c | 0x13d | 0x140 | 0x152 | 0x153

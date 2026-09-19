@@ -60,3 +60,27 @@ fn external_non_jpeg_ycbcr_samples_decode_when_configured() {
         );
     }
 }
+
+#[cfg(feature = "tiff-jpeg")]
+#[test]
+fn external_old_style_jpeg_samples_decode_when_configured() {
+    for (name, dimensions) in [
+        ("ojpeg_chewey_subsamp21_multi_strip.tiff", (392, 575)),
+        ("ojpeg_single_strip_no_rowsperstrip.tiff", (234, 213)),
+        ("ojpeg_zackthecat_subsamp22_single_strip.tiff", (234, 213)),
+    ] {
+        let Some(bytes) = external_sample(name) else {
+            eprintln!(
+                "skipping external TIFF samples; set WML2_TIFF_CORPUS to the corpus valid directory"
+            );
+            return;
+        };
+        let image = wml2::draw::image_load(&bytes)
+            .unwrap_or_else(|error| panic!("{name} should decode as old-style JPEG: {error}"));
+        assert_eq!((image.width, image.height), dimensions);
+        assert_eq!(
+            image.buffer.as_ref().map(Vec::len),
+            Some(dimensions.0 * dimensions.1 * 4)
+        );
+    }
+}

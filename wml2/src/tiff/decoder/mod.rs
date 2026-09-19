@@ -2,7 +2,7 @@
 
 type Error = Box<dyn std::error::Error>;
 #[cfg(feature = "tiff-jpeg")]
-use self::jpeg::decode_jpeg_compresson;
+use self::jpeg::{decode_jpeg_compresson, decode_old_jpeg_compresson};
 use crate::color::RGBA;
 use crate::draw::*;
 use crate::error::ImgError;
@@ -1458,6 +1458,18 @@ fn compression_decode<'decode, B: BinaryReader>(
                 return Err(Box::new(ImgError::new_const(
                     ImgErrorKind::NoSupportFormat,
                     "TIFF JPEG compression support is disabled by feature flags".to_string(),
+                )));
+            }
+        }
+        Compression::OldJpeg => {
+            #[cfg(feature = "tiff-jpeg")]
+            return decode_old_jpeg_compresson(reader, option, header, initialize, animation);
+            #[cfg(not(feature = "tiff-jpeg"))]
+            {
+                let _ = (reader, option, header, initialize, animation);
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::NoSupportFormat,
+                    "TIFF old-style JPEG support is disabled by feature flags".to_string(),
                 )));
             }
         }

@@ -72,8 +72,13 @@ pub(crate) fn read_pages(reader: &mut dyn BinaryReader) -> Result<Tiff, Error> {
             {
                 return Err(invalid("TIFF scalar tag must contain one value"));
             }
-            if matches!(entry.tag, 0x211 | 0x214) && entry.type_id != 5 {
-                return Err(invalid("TIFF YCbCr range tag must have RATIONAL type"));
+            if entry.tag == 0x211 && entry.type_id != 5 {
+                return Err(invalid("TIFF YCbCrCoefficients must have RATIONAL type"));
+            }
+            if entry.tag == 0x214 && !matches!(entry.type_id, 4 | 5) {
+                return Err(invalid(
+                    "TIFF ReferenceBlackWhite must have RATIONAL or LONG type",
+                ));
             }
             if entry.tag == 0x211 && entry.count != 3 {
                 return Err(invalid("TIFF YCbCrCoefficients must contain three values"));
@@ -90,6 +95,19 @@ pub(crate) fn read_pages(reader: &mut dyn BinaryReader) -> Result<Tiff, Error> {
                 return Err(invalid(
                     "TIFF YCbCrPositioning must contain one SHORT value",
                 ));
+            }
+            if matches!(entry.tag, 0x200 | 0x203) && (entry.type_id != 3 || entry.count != 1) {
+                return Err(invalid(
+                    "TIFF JPEGProc/JPEGRestartInterval must contain one SHORT value",
+                ));
+            }
+            if matches!(entry.tag, 0x201 | 0x202) && (entry.type_id != 4 || entry.count != 1) {
+                return Err(invalid(
+                    "TIFF JPEG interchange field must contain one LONG value",
+                ));
+            }
+            if matches!(entry.tag, 0x207..=0x209) && entry.type_id != 4 {
+                return Err(invalid("TIFF JPEG table offsets must have LONG type"));
             }
             if matches!(
                 entry.tag,

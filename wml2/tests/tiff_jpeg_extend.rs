@@ -292,6 +292,280 @@ fn assert_tiled_pixels(width: u32, height: u32) {
     }
 }
 
+fn jpeg_marker_payload(data: &[u8], code: u8) -> Vec<u8> {
+    let marker = [0xff, code];
+    let start = data.windows(2).position(|window| window == marker).unwrap();
+    let length = u16::from_be_bytes([data[start + 2], data[start + 3]]) as usize;
+    data[start + 4..start + 2 + length].to_vec()
+}
+
+fn old_jpeg_fixture_parts(jpeg: &[u8], tables: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
+    let quantization = jpeg_marker_payload(tables, 0xdb);
+    let dc = jpeg_marker_payload(tables, 0xc4);
+    let ac_start = tables
+        .windows(2)
+        .enumerate()
+        .filter_map(|(index, window)| (window == [0xff, 0xc4]).then_some(index))
+        .nth(1)
+        .unwrap();
+    let ac = {
+        let length = u16::from_be_bytes([tables[ac_start + 2], tables[ac_start + 3]]) as usize;
+        tables[ac_start + 5..ac_start + 2 + length].to_vec()
+    };
+    let scan = jpeg
+        .windows(2)
+        .position(|window| window == [0xff, 0xda])
+        .unwrap();
+    let scan_length = u16::from_be_bytes([jpeg[scan + 2], jpeg[scan + 3]]) as usize;
+    let entropy_start = scan + 2 + scan_length;
+    let entropy_end = jpeg.len() - 2;
+    (
+        quantization[1..].to_vec(),
+        dc[1..].to_vec(),
+        ac[1..].to_vec(),
+        jpeg[entropy_start..entropy_end].to_vec(),
+    )
+}
+
+fn old_jpeg_tiff(
+    entropy: &[u8],
+    quantization: &[u8],
+    dc: &[u8],
+    ac: &[u8],
+    tile: bool,
+    omit_q_tables: bool,
+) -> Vec<u8> {
+    #[derive(Clone)]
+    struct Field {
+        tag: u16,
+        kind: u16,
+        count: u32,
+        data: Vec<u8>,
+    }
+    let u16v = |value: u16| value.to_le_bytes().to_vec();
+    let u32v = |value: u32| value.to_le_bytes().to_vec();
+    let mut fields = vec![
+        Field {
+            tag: 256,
+            kind: 4,
+            count: 1,
+            data: u32v(8),
+        },
+        Field {
+            tag: 257,
+            kind: 4,
+            count: 1,
+            data: u32v(8),
+        },
+        Field {
+            tag: 258,
+            kind: 3,
+            count: 3,
+            data: [u16v(8), u16v(8), u16v(8)].concat(),
+        },
+        Field {
+            tag: 259,
+            kind: 3,
+            count: 1,
+            data: u16v(6),
+        },
+        Field {
+            tag: 262,
+            kind: 3,
+            count: 1,
+            data: u16v(6),
+        },
+        Field {
+            tag: if tile { 324 } else { 273 },
+            kind: 4,
+            count: 1,
+            data: vec![0; 4],
+        },
+        Field {
+            tag: 277,
+            kind: 3,
+            count: 1,
+            data: u16v(3),
+        },
+        Field {
+            tag: 279,
+            kind: 4,
+            count: 1,
+            data: u32v(entropy.len() as u32),
+        },
+        Field {
+            tag: 284,
+            kind: 3,
+            count: 1,
+            data: u16v(1),
+        },
+        Field {
+            tag: 512,
+            kind: 3,
+            count: 1,
+            data: u16v(1),
+        },
+        Field {
+            tag: 530,
+            kind: 3,
+            count: 2,
+            data: [u16v(1), u16v(1)].concat(),
+        },
+        Field {
+            tag: 519,
+            kind: 4,
+            count: 3,
+            data: vec![0; 12],
+        },
+        Field {
+            tag: 520,
+            kind: 4,
+            count: 3,
+            data: vec![0; 12],
+        },
+        Field {
+            tag: 521,
+            kind: 4,
+            count: 3,
+            data: vec![0; 12],
+        },
+    ];
+    if omit_q_tables {
+        fields.retain(|field| field.tag != 519);
+    }
+    if tile {
+        fields.push(Field {
+            tag: 322,
+            kind: 4,
+            count: 1,
+            data: u32v(8),
+        });
+        fields.push(Field {
+            tag: 323,
+            kind: 4,
+            count: 1,
+            data: u32v(8),
+        });
+        fields.push(Field {
+            tag: 325,
+            kind: 4,
+            count: 1,
+            data: u32v(entropy.len() as u32),
+        });
+        fields.retain(|field| field.tag != 279);
+    } else {
+        fields.push(Field {
+            tag: 278,
+            kind: 4,
+            count: 1,
+            data: u32v(8),
+        });
+    }
+    fields.sort_by_key(|field| field.tag);
+
+    let base = 8 + 2 + fields.len() * 12 + 4;
+    let extra_len: usize = fields
+        .iter()
+        .filter(|field| field.data.len() > 4)
+        .map(|field| field.data.len())
+        .sum();
+    let blob_start = base + extra_len;
+    let table_bytes = quantization.len() + dc.len() + ac.len();
+    let image_offset = blob_start + table_bytes;
+    let q_offset = blob_start;
+    let dc_offset = q_offset + quantization.len();
+    let ac_offset = dc_offset + dc.len();
+    let image_tag = if tile { 324 } else { 273 };
+    let q_offsets = [q_offset as u32; 3]
+        .map(|value| value.to_le_bytes())
+        .concat();
+    let dc_offsets = [dc_offset as u32; 3]
+        .map(|value| value.to_le_bytes())
+        .concat();
+    let ac_offsets = [ac_offset as u32; 3]
+        .map(|value| value.to_le_bytes())
+        .concat();
+    for field in &mut fields {
+        match field.tag {
+            519 => field.data = q_offsets.clone(),
+            520 => field.data = dc_offsets.clone(),
+            521 => field.data = ac_offsets.clone(),
+            tag if tag == image_tag => field.data = u32v(image_offset as u32),
+            _ => {}
+        }
+    }
+    let mut output = b"II\x2a\0\x08\0\0\0".to_vec();
+    output.extend_from_slice(&(fields.len() as u16).to_le_bytes());
+    let mut extra = Vec::new();
+    for field in &fields {
+        output.extend_from_slice(&field.tag.to_le_bytes());
+        output.extend_from_slice(&field.kind.to_le_bytes());
+        output.extend_from_slice(&field.count.to_le_bytes());
+        if field.data.len() > 4 {
+            output.extend_from_slice(&((base + extra.len()) as u32).to_le_bytes());
+            extra.extend_from_slice(&field.data);
+        } else {
+            output.extend_from_slice(&field.data);
+            output.resize(output.len() + 4 - field.data.len(), 0);
+        }
+    }
+    output.extend_from_slice(&[0; 4]);
+    output.extend_from_slice(&extra);
+    output.extend_from_slice(quantization);
+    output.extend_from_slice(dc);
+    output.extend_from_slice(ac);
+    output.extend_from_slice(entropy);
+    output
+}
+
+#[test]
+fn old_style_jpeg_rebuilds_generated_table_form_strip_and_tile() {
+    let (jpeg, tables) = jpeg_with_components(*b"RGB", true, [200, 20, 50], 8);
+    let (quantization, dc, ac, entropy) = old_jpeg_fixture_parts(&jpeg, &tables);
+    for tile in [false, true] {
+        let data = old_jpeg_tiff(&entropy, &quantization, &dc, &ac, tile, false);
+        let image = image_load(&data).unwrap();
+        assert_eq!((image.width, image.height), (8, 8));
+        assert_eq!(image.buffer.unwrap().len(), 8 * 8 * 4);
+    }
+}
+
+#[test]
+fn old_style_jpeg_rejects_missing_table_offsets() {
+    let (jpeg, tables) = jpeg_with_components(*b"RGB", true, [200, 20, 50], 8);
+    let (quantization, dc, ac, entropy) = old_jpeg_fixture_parts(&jpeg, &tables);
+    let data = old_jpeg_tiff(&entropy, &quantization, &dc, &ac, false, true);
+    let error = match image_load(&data) {
+        Ok(_) => panic!("missing JPEG table offsets must be rejected"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("missing"), "{error}");
+}
+
+#[test]
+fn old_style_jpeg_rejects_out_of_range_table_pointer() {
+    let (jpeg, tables) = jpeg_with_components(*b"RGB", true, [200, 20, 50], 8);
+    let (quantization, dc, ac, entropy) = old_jpeg_fixture_parts(&jpeg, &tables);
+    let mut data = old_jpeg_tiff(&entropy, &quantization, &dc, &ac, false, false);
+    let ifd = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
+    let count = u16::from_le_bytes(data[ifd..ifd + 2].try_into().unwrap()) as usize;
+    for index in 0..count {
+        let entry = ifd + 2 + index * 12;
+        let tag = u16::from_le_bytes(data[entry..entry + 2].try_into().unwrap());
+        if tag == 519 {
+            let values =
+                u32::from_le_bytes(data[entry + 8..entry + 12].try_into().unwrap()) as usize;
+            data[values..values + 4].copy_from_slice(&u32::MAX.to_le_bytes());
+            break;
+        }
+    }
+    let error = match image_load(&data) {
+        Ok(_) => panic!("out-of-range JPEG table pointers must be rejected"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("outside"), "{error}");
+}
+
 #[test]
 fn jpeg_tiles_continue_across_when_tile_height_equals_image_height() {
     assert_tiled_pixels(32, 16);

@@ -85,7 +85,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.30", features = ["psd"] }
+wml2 = { version = "0.0.31", features = ["psd"] }
 ```
 
 対応データはRGBA8へ変換します。16-bit値は丸めて8-bitへ縮小します。統合画像では
@@ -123,17 +123,17 @@ PSB、1/32-bit、Lab、Multichannelは未対応として拒否します。マス
 
 ```toml
 [dependencies]
-wml2 = "0.0.30"
+wml2 = "0.0.31"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.30", features = ["noretoro"] }
+wml2 = { version = "0.0.31", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.30", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.31", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -357,6 +357,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.28`: 任意featureのPure Rust PSD v1 decoderを追加（統合画像と基本ラスターレイヤーpreview）
 - `0.0.29`: 追加型の高色深度buffer、明示的Gray/RGB ICC変換、AVIF native 8/10/12-bit静止画integration
 - `0.0.30`: 資源上限の強化、callback abort時の安全性、高解像度ICC/AVIF回帰検証、WebP core互換整理
+- `0.0.31`: TIFF/BigTIFFのデコード・エンコード拡張、ブロック単位の展開上限、Predictor対応、高色深度TIFF native frame
 
 ## License
 

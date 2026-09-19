@@ -9,7 +9,7 @@
   "samples": [
     {
       "name": "fax4.tiff",
-      "category": "ccitt-group4-extension-7",
+      "category": "ccitt-reserved-extension",
       "license_source": "image-tiff (MIT)",
       "sha256": "ddfcee5324f5b69cc1145276b4aa698fa08ede0b076aa0d183fe0761265ba503",
       "bytes": 33630,
@@ -17,7 +17,7 @@
       "height": 671,
       "compression": 4,
       "photometric": 1,
-      "expected": "decode"
+      "expected": "explicit-reject-nonstandard-extension"
     },
     {
       "name": "dscf0013.tif",

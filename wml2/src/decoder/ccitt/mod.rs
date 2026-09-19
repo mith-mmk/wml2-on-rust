@@ -347,7 +347,9 @@ impl BitReader {
         }
 
         if bits == 10 {
-            self.skip_bits(10);
+            // The table lookup uses the seven-bit extension prefix. The
+            // following three bits select the extension number.
+            self.skip_bits(7);
             let n = self.look_bits(3)?;
             self.skip_bits(3);
             return Ok(Mode::Ext2D(n));
@@ -359,6 +361,75 @@ impl BitReader {
     // skip next byte
     fn flush(&mut self) {
         self.left_bits -= self.left_bits % 8;
+    }
+}
+
+fn append_uncompressed_bit(
+    codes: &mut Vec<usize>,
+    a0: &mut usize,
+    width: usize,
+    black: bool,
+) -> Result<(), Error> {
+    if *a0 >= width {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::DecodeError,
+            "CCITT uncompressed mode exceeds row width".to_string(),
+        )));
+    }
+    let current_black = (codes.len() - 2) & 1 != 0;
+    if current_black != black {
+        codes.push(*a0);
+    }
+    *a0 += 1;
+    Ok(())
+}
+
+fn decode_uncompressed_mode(
+    reader: &mut BitReader,
+    codes: &mut Vec<usize>,
+    a0: &mut usize,
+    width: usize,
+) -> Result<(), Error> {
+    let mut zeroes = 0usize;
+    loop {
+        if reader.get_bits(1)? == 0 {
+            zeroes = zeroes
+                .checked_add(1)
+                .ok_or_else(|| std::io::Error::other("CCITT uncompressed code overflows"))?;
+            if zeroes > 10 {
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::DecodeError,
+                    "invalid CCITT uncompressed mode code".to_string(),
+                )));
+            }
+            continue;
+        }
+
+        if zeroes <= 5 {
+            for _ in 0..zeroes {
+                append_uncompressed_bit(codes, a0, width, false)?;
+            }
+            if zeroes < 5 {
+                append_uncompressed_bit(codes, a0, width, true)?;
+            }
+            zeroes = 0;
+            continue;
+        }
+
+        // The 1 terminates the reserved zero prefix. The following tag bit
+        // selects the colour of the next compressed run; the prefix itself
+        // contributes zeroes - 5 white pixels to the current row.
+        for _ in 0..(zeroes - 5) {
+            append_uncompressed_bit(codes, a0, width, false)?;
+        }
+        let next_black = reader.get_bits(1)? != 0;
+        if *a0 < width {
+            let current_black = (codes.len() - 2) & 1 != 0;
+            if current_black != next_black {
+                codes.push(*a0);
+            }
+        }
+        return Ok(());
     }
 }
 
@@ -509,7 +580,13 @@ pub fn decoder(
                     codes_ptr = codes_ptr.saturating_sub(2);
                 }
                 Mode::Ext2D(n) => {
-                    let message = format!("not support 2D Ext({}) for CCITT decoder", n);
+                    if n == 7 {
+                        decode_uncompressed_mode(&mut reader, &mut codes, &mut a0, width)?;
+                        continue;
+                    }
+                    let message = format!(
+                        "unsupported CCITT Group 4 extension {n}; only T.6 extension 7 is supported"
+                    );
                     return Err(Box::new(ImgError::new_const(
                         ImgErrorKind::DecodeError,
                         message,

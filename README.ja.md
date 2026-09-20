@@ -53,6 +53,11 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | ICO          | x   | O   | BMP/PNG 内包の icon image を decode                                                                                 |
 | PNG          | O   | O   | PNG/APNG 対応、encoder は RGBA truecolor を出力                                                                     |
 | TIFF         | O   | O   | encode: none/LZW/Deflate/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
+| TGA          | x   | O   | `tga` feature。非圧縮/RLE true-color、indexed、grayscaleをdecode                                      |
+| PCX          | x   | O   | `pcx` feature。1/2/4/8-bit paletteとmulti-planeをdecode                                           |
+| DDS          | x   | O   | `dds` feature。非圧縮およびBC/DXT block textureをdecode                                             |
+| PIC2         | x   | O   | `pic2` feature。block-based形式をdecode                                                              |
+| Q4           | x   | O   | `q4` feature。Q4 rasterをdecode                                                                       |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
 | AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                     |
 | PSD          | x   | O   | 既定で無効の `psd` feature。Pure RustでPSD v1の統合画像と基本ラスターレイヤーをdecode                                |
@@ -63,10 +68,16 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | VSP/DAT      | x   | O   | 日本の旧画像形式/コンテナ。`noretoro` 指定時は無効                                                                  |
 | PCD          | x   | O   | Photo CD base4 decode。`noretoro` 指定時は無効                                                                      |
 
+retro decoderの画素互換は、可能な範囲でImageMagickに合わせています。単一planeの
+1-bit PCXはbinaryの白黒へ変換し、bit 0を白、bit 1を黒とします。TGAの5-bit色値は
+`floor(value * 255 / 31)`で8-bit化し、alphaが0のTGA画素はRGBも0へ正規化します。
+一方、未使用color mapを持つtrue-color TGAは、ImageMagickが拒否する
+`b5-unused-cmap.tga`を含め、WML2では引き続き受け入れます。
+
 ## Feature
 
 - `default`: 標準の decoder/encoder、EXIF/C2PA対応、埋め込みフォーマット bridge、`idct_llm` を有効化。`psd`、`avif`、`avifenc` は含まない
-- フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `webp`, `psd`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `tga`, `pcx`, `dds`, `pic2`, `q4`, `webp`, `psd`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
 - `psd`: Pure RustのPSD v1 decoder。8/16-bit RGB・Grayscale・CMYKと8-bit Indexedに対応し、統合画像とレイヤーチャンネルのRaw、PackBits RLE、ZIP、ZIP predictionをdecode
 - `avif`: `avif-rust` による AVIF decoder、`avifenc`: 独立サブモジュール `avifenc-rust` による AVIF encoder
 - `high-bit-depth`: 追加型のU8/U16/F32 bufferとnative metadata API。ICCには依存しない
@@ -85,7 +96,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.31", features = ["psd"] }
+wml2 = { version = "0.0.32", features = ["psd"] }
 ```
 
 対応データはRGBA8へ変換します。16-bit値は丸めて8-bitへ縮小します。統合画像では
@@ -123,17 +134,17 @@ PSB、1/32-bit、Lab、Multichannelは未対応として拒否します。マス
 
 ```toml
 [dependencies]
-wml2 = "0.0.31"
+wml2 = "0.0.32"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.31", features = ["noretoro"] }
+wml2 = { version = "0.0.32", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.31", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.32", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -358,6 +369,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.29`: 追加型の高色深度buffer、明示的Gray/RGB ICC変換、AVIF native 8/10/12-bit静止画integration
 - `0.0.30`: 資源上限の強化、callback abort時の安全性、高解像度ICC/AVIF回帰検証、WebP core互換整理
 - `0.0.31`: TIFF/BigTIFFのデコード・エンコード拡張、ブロック単位の展開上限、Predictor対応、高色深度TIFF native frame
+- `0.0.32`: PCX、TGA、DDS、PIC2、Q4 decoder対応、ImageMagick互換のPCX/TGA画素正規化、converter/metadata回帰検証
 
 ## License
 

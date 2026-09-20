@@ -182,7 +182,10 @@ pub fn decode<B: BinaryReader>(
                     }
                     index
                 };
-                if bits_per_plane == 8 {
+                if bits_per_plane == 1 && planes == 1 {
+                    let value = if index == 0 { 255 } else { 0 };
+                    [value, value, value, 255]
+                } else if bits_per_plane == 8 {
                     palette256_values.map_or_else(
                         || palette_color(&palette16, index),
                         |palette| palette_color(&palette, index),

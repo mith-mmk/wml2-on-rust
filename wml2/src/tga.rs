@@ -18,7 +18,7 @@ fn le16(data: &[u8], offset: usize) -> Result<u16, Error> {
 }
 
 fn scale5(value: u8) -> u8 {
-    (value << 3) | (value >> 2)
+    (u16::from(value) * 255 / 31) as u8
 }
 
 fn decode_color(data: &[u8], depth: u8, alpha_bits: u8) -> Result<[u8; 4], Error> {
@@ -30,15 +30,23 @@ fn decode_color(data: &[u8], depth: u8, alpha_bits: u8) -> Result<[u8; 4], Error
             } else {
                 255
             };
-            Ok([
-                scale5(((value >> 10) & 0x1f) as u8),
-                scale5(((value >> 5) & 0x1f) as u8),
-                scale5((value & 0x1f) as u8),
-                alpha,
-            ])
+            let red = scale5(((value >> 10) & 0x1f) as u8);
+            let green = scale5(((value >> 5) & 0x1f) as u8);
+            let blue = scale5((value & 0x1f) as u8);
+            if alpha == 0 {
+                Ok([0, 0, 0, 0])
+            } else {
+                Ok([red, green, blue, alpha])
+            }
         }
         24 => Ok([data[2], data[1], data[0], 255]),
-        32 => Ok([data[2], data[1], data[0], data[3]]),
+        32 => {
+            if data[3] == 0 {
+                Ok([0, 0, 0, 0])
+            } else {
+                Ok([data[2], data[1], data[0], data[3]])
+            }
+        }
         _ => Err(err(
             ImgErrorKind::IllegalData,
             "Unsupported TGA color depth",
@@ -46,7 +54,13 @@ fn decode_color(data: &[u8], depth: u8, alpha_bits: u8) -> Result<[u8; 4], Error
     }
 }
 
-fn palette_color(palette: &[u8], start: u16, depth: u8, index: u16) -> Result<[u8; 4], Error> {
+fn palette_color(
+    palette: &[u8],
+    start: u16,
+    depth: u8,
+    index: u16,
+    alpha_bits: u8,
+) -> Result<[u8; 4], Error> {
     let relative = index.checked_sub(start).ok_or_else(|| {
         err(
             ImgErrorKind::IllegalData,
@@ -67,7 +81,7 @@ fn palette_color(palette: &[u8], start: u16, depth: u8, index: u16) -> Result<[u
         })?;
     match depth {
         8 => Ok([entry[0], entry[0], entry[0], 255]),
-        15 | 16 | 24 | 32 => decode_color(entry, depth, if depth == 16 { 1 } else { 0 }),
+        15 | 16 | 24 | 32 => decode_color(entry, depth, alpha_bits),
         _ => Err(err(
             ImgErrorKind::IllegalData,
             "Unsupported TGA palette depth",
@@ -96,12 +110,18 @@ fn decode_pixel(
                     ));
                 }
             };
-            palette_color(palette, palette_start, palette_depth, index)
+            palette_color(palette, palette_start, palette_depth, index, alpha_bits)
         }
         2 => decode_color(data, pixel_depth, alpha_bits),
         3 => match pixel_depth {
             8 => Ok([data[0], data[0], data[0], 255]),
-            16 => Ok([data[0], data[0], data[0], data[1]]),
+            16 => {
+                if data[1] == 0 {
+                    Ok([0, 0, 0, 0])
+                } else {
+                    Ok([data[0], data[0], data[0], data[1]])
+                }
+            }
             _ => Err(err(
                 ImgErrorKind::IllegalData,
                 "Unsupported TGA grayscale depth",
@@ -178,9 +198,30 @@ pub fn decode<B: BinaryReader>(
     let limits = crate::limits::current();
     crate::limits::check(pixels_count, limits.pixels, "pixels")?;
     crate::limits::check(output_len, limits.expanded_bytes, "RGBA image")?;
+    let rle = image_type >= 9;
+    // ImageMagick treats a declared 1-bit alpha plane with no set bits as
+    // opaque, so retain that compatibility for uncompressed 16-bit true-color
+    // samples while honoring the alpha plane when it contains an opaque bit.
+    let alpha_bits = if pixel_depth == 16 && alpha_bits > 0 && base_type == 2 && !rle {
+        let image_bytes = pixels_count
+            .checked_mul(bytes_per_pixel)
+            .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA image size overflow"))?;
+        let image_end = image_offset
+            .checked_add(image_bytes)
+            .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA image offset overflow"))?;
+        let image_data = data
+            .get(image_offset..image_end)
+            .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA pixel data is truncated"))?;
+        if image_data.chunks_exact(2).any(|pixel| pixel[1] & 0x80 != 0) {
+            alpha_bits
+        } else {
+            0
+        }
+    } else {
+        alpha_bits
+    };
     let mut decoded = Vec::with_capacity(output_len);
     let mut cursor = image_offset;
-    let rle = image_type >= 9;
     while decoded.len() / 4 < pixels_count {
         let (count, run) = if rle {
             let packet = *data

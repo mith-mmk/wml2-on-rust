@@ -7,6 +7,7 @@ license = "MIT"
 description = "Image decoder/encoder test and samples."
 authors = ["MITH@mmk"]
 readme = "README.md"
+publish = false
 
 [features]
 default = []
@@ -19,7 +20,7 @@ encoding_rs = "0.8"
 
 [dependencies.wml2]
 path = "../wml2"
-features = ["multithread"]
+features = ["multithread", "tga", "pcx", "dds", "pic2", "q4"]
 
 [dependencies.icc-profile]
 version = "0.0.6"

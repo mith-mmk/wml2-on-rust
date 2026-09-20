@@ -28,6 +28,56 @@ fn tga_2x1() -> Vec<u8> {
     data
 }
 
+fn tga_16bit_scaled() -> Vec<u8> {
+    let mut data = vec![0u8; 18];
+    data[2] = 2;
+    put_le16(&mut data, 12, 1);
+    put_le16(&mut data, 14, 1);
+    data[16] = 16;
+    let value = (5u16 << 10) | (27u16 << 5) | 24;
+    data.extend_from_slice(&value.to_le_bytes());
+    data
+}
+
+fn tga_transparent_32bit() -> Vec<u8> {
+    let mut data = vec![0u8; 18];
+    data[2] = 2;
+    put_le16(&mut data, 12, 1);
+    put_le16(&mut data, 14, 1);
+    data[16] = 32;
+    data[17] = 8;
+    data.extend_from_slice(&[115, 156, 24, 0]);
+    data
+}
+
+fn tga_truecolor_with_unused_cmap() -> Vec<u8> {
+    let mut data = vec![0u8; 18];
+    data[1] = 1;
+    data[2] = 2;
+    put_le16(&mut data, 5, 1);
+    data[7] = 24;
+    put_le16(&mut data, 12, 1);
+    put_le16(&mut data, 14, 1);
+    data[16] = 24;
+    data.extend_from_slice(&[0, 255, 0]);
+    data.extend_from_slice(&[0, 0, 255]);
+    data
+}
+
+fn tga_indexed_16bit_palette() -> Vec<u8> {
+    let mut data = vec![0u8; 18];
+    data[1] = 1;
+    data[2] = 1;
+    put_le16(&mut data, 5, 1);
+    data[7] = 16;
+    put_le16(&mut data, 12, 1);
+    put_le16(&mut data, 14, 1);
+    data[16] = 8;
+    data.extend_from_slice(&[0x00, 0x7c]);
+    data.push(0);
+    data
+}
+
 fn pcx_2x1() -> Vec<u8> {
     let mut data = vec![0u8; 128];
     data[0] = 0x0a;
@@ -44,6 +94,22 @@ fn pcx_2x1() -> Vec<u8> {
     palette[0..3].copy_from_slice(&[255, 0, 0]);
     palette[3..6].copy_from_slice(&[0, 255, 0]);
     data.extend_from_slice(&palette);
+    data
+}
+
+fn pcx_1bit_colored_palette() -> Vec<u8> {
+    let mut data = vec![0u8; 128];
+    data[0] = 0x0a;
+    data[1] = 5;
+    data[2] = 1;
+    data[3] = 1;
+    data[65] = 1;
+    put_le16(&mut data, 8, 1);
+    put_le16(&mut data, 10, 0);
+    put_le16(&mut data, 66, 1);
+    data[16..19].copy_from_slice(&[255, 0, 0]);
+    data[19..22].copy_from_slice(&[0, 255, 0]);
+    data.push(0x40);
     data
 }
 
@@ -179,6 +245,40 @@ fn decodes_minimal_pcx() {
     let image = image_load(&pcx_2x1()).expect("PCX should decode");
     assert_eq!((image.width, image.height), (2, 1));
     assert_eq!(image.buffer.unwrap(), vec![255, 0, 0, 255, 0, 255, 0, 255]);
+}
+
+#[test]
+fn pcx_single_bit_plane_matches_imagemagick_binary_output() {
+    let image = image_load(&pcx_1bit_colored_palette()).expect("1-bit PCX should decode");
+    assert_eq!(
+        image.buffer.unwrap(),
+        vec![255, 255, 255, 255, 0, 0, 0, 255]
+    );
+}
+
+#[test]
+fn tga_16bit_colors_use_imagemagick_8bit_quantization() {
+    let image = image_load(&tga_16bit_scaled()).expect("16-bit TGA should decode");
+    assert_eq!(image.buffer.unwrap(), vec![41, 222, 197, 255]);
+}
+
+#[test]
+fn tga_zero_alpha_clears_rgb() {
+    let image = image_load(&tga_transparent_32bit()).expect("transparent TGA should decode");
+    assert_eq!(image.buffer.unwrap(), vec![0, 0, 0, 0]);
+}
+
+#[test]
+fn tga_truecolor_accepts_an_unused_color_map() {
+    let image = image_load(&tga_truecolor_with_unused_cmap())
+        .expect("true-color TGA may carry an unused color map");
+    assert_eq!(image.buffer.unwrap(), vec![255, 0, 0, 255]);
+}
+
+#[test]
+fn tga_indexed_16bit_palette_without_alpha_is_opaque() {
+    let image = image_load(&tga_indexed_16bit_palette()).expect("indexed TGA should decode");
+    assert_eq!(image.buffer.unwrap(), vec![255, 0, 0, 255]);
 }
 
 #[test]

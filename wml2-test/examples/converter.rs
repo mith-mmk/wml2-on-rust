@@ -685,6 +685,54 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
     use wml2::draw::{AnimationLayer, NextOptions};
 
+    fn put_le16(buffer: &mut [u8], offset: usize, value: u16) {
+        buffer[offset..offset + 2].copy_from_slice(&value.to_le_bytes());
+    }
+
+    fn pcx_2x1() -> Vec<u8> {
+        let mut data = vec![0u8; 128];
+        data[0] = 0x0a;
+        data[1] = 5;
+        data[2] = 1;
+        data[3] = 8;
+        data[65] = 1;
+        put_le16(&mut data, 8, 1);
+        put_le16(&mut data, 66, 2);
+        data.extend_from_slice(&[0, 1]);
+        data.push(12);
+        let mut palette = vec![0u8; 768];
+        palette[0..3].copy_from_slice(&[255, 0, 0]);
+        palette[3..6].copy_from_slice(&[0, 255, 0]);
+        data.extend_from_slice(&palette);
+        data
+    }
+
+    fn tga_2x1() -> Vec<u8> {
+        let mut data = vec![0u8; 18];
+        data[2] = 2;
+        put_le16(&mut data, 12, 2);
+        put_le16(&mut data, 14, 1);
+        data[16] = 24;
+        data.extend_from_slice(&[0, 0, 255, 0, 255, 0]);
+        data
+    }
+
+    fn bmp_config(output_dir: PathBuf) -> Config {
+        Config {
+            inputs: Vec::new(),
+            output_dir,
+            format: OutputFormat::Bmp,
+            compression: None,
+            bigtiff: false,
+            predictor: None,
+            exif_copy: false,
+            quality: None,
+            optimize: None,
+            speed: None,
+            split: false,
+        }
+    }
+
     fn unique_temp_path(name: &str) -> PathBuf {
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -694,6 +742,50 @@ mod tests {
             "wml2-converter-{name}-{}-{unique}.tmp",
             std::process::id()
         ))
+    }
+
+    #[test]
+    fn converter_decodes_pcx_to_bmp() {
+        let input = unique_temp_path("fixture").with_extension("PCX");
+        let output_dir = unique_temp_path("output");
+        fs::create_dir_all(&output_dir).unwrap();
+        fs::write(&input, pcx_2x1()).unwrap();
+
+        convert_one(&bmp_config(output_dir.clone()), &input).unwrap();
+
+        let output = output_dir.join(format!(
+            "{}.bmp",
+            input.file_name().unwrap().to_string_lossy()
+        ));
+        let bytes = fs::read(&output).unwrap();
+        assert!(bytes.starts_with(b"BM"));
+        let image = wml2::draw::image_load(&bytes).unwrap();
+        assert_eq!(image.buffer.unwrap(), vec![255, 0, 0, 255, 0, 255, 0, 255]);
+
+        let _ = fs::remove_file(input);
+        let _ = fs::remove_dir_all(output_dir);
+    }
+
+    #[test]
+    fn converter_decodes_tga_to_bmp() {
+        let input = unique_temp_path("fixture").with_extension("TGA");
+        let output_dir = unique_temp_path("output");
+        fs::create_dir_all(&output_dir).unwrap();
+        fs::write(&input, tga_2x1()).unwrap();
+
+        convert_one(&bmp_config(output_dir.clone()), &input).unwrap();
+
+        let output = output_dir.join(format!(
+            "{}.bmp",
+            input.file_name().unwrap().to_string_lossy()
+        ));
+        let bytes = fs::read(&output).unwrap();
+        assert!(bytes.starts_with(b"BM"));
+        let image = wml2::draw::image_load(&bytes).unwrap();
+        assert_eq!(image.buffer.unwrap(), vec![255, 0, 0, 255, 0, 255, 0, 255]);
+
+        let _ = fs::remove_file(input);
+        let _ = fs::remove_dir_all(output_dir);
     }
 
     #[test]

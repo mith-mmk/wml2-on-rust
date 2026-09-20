@@ -88,6 +88,21 @@ fn old_jpeg_error(message: impl Into<String>) -> Error {
     std::io::Error::other(message.into()).into()
 }
 
+fn append_old_jpeg_payload(output: &mut Vec<u8>, payload: &[u8]) -> Result<(), Error> {
+    let new_len = output
+        .len()
+        .checked_add(payload.len())
+        .ok_or_else(|| old_jpeg_error("old-style JPEG assembly size overflows"))?;
+    crate::limits::check(
+        new_len,
+        crate::limits::current().expanded_bytes,
+        "old-style JPEG assembly",
+    )?;
+    output.try_reserve(payload.len())?;
+    output.extend_from_slice(payload);
+    Ok(())
+}
+
 fn read_at<B: BinaryReader>(
     reader: &mut B,
     offset: u64,
@@ -118,9 +133,9 @@ fn append_marker(output: &mut Vec<u8>, code: u8, payload: &[u8]) -> Result<(), E
         .ok_or_else(|| old_jpeg_error("old-style JPEG marker length overflows"))?;
     let length = u16::try_from(length)
         .map_err(|_| old_jpeg_error("old-style JPEG marker payload is too large"))?;
-    output.extend_from_slice(&[0xff, code]);
-    output.extend_from_slice(&length.to_be_bytes());
-    output.extend_from_slice(payload);
+    append_old_jpeg_payload(output, &[0xff, code])?;
+    append_old_jpeg_payload(output, &length.to_be_bytes())?;
+    append_old_jpeg_payload(output, payload)?;
     Ok(())
 }
 
@@ -175,7 +190,8 @@ fn old_jpeg_header<B: BinaryReader>(
             "old-style JPEG has unsupported YCbCrSubSampling",
         ));
     }
-    let mut output = vec![0xff, 0xd8];
+    let mut output = Vec::new();
+    append_old_jpeg_payload(&mut output, &[0xff, 0xd8])?;
     for (id, offset) in header.jpeg_q_tables.iter().enumerate() {
         let table = read_at(reader, *offset, 64, input_len)?;
         let mut payload = Vec::with_capacity(65);
@@ -230,15 +246,20 @@ fn old_jpeg_header<B: BinaryReader>(
 fn read_block_payload<B: BinaryReader>(
     reader: &mut B,
     block: &TiffBlock,
+    assembled_len: usize,
     input_len: u64,
 ) -> Result<Vec<u8>, Error> {
     block.validate_range(input_len)?;
-    read_at(
-        reader,
-        block.offset,
-        usize::try_from(block.compressed_len)?,
-        input_len,
-    )
+    let payload_len = usize::try_from(block.compressed_len)?;
+    let new_len = assembled_len
+        .checked_add(payload_len)
+        .ok_or_else(|| old_jpeg_error("old-style JPEG assembly size overflows"))?;
+    crate::limits::check(
+        new_len,
+        crate::limits::current().expanded_bytes,
+        "old-style JPEG assembly",
+    )?;
+    read_at(reader, block.offset, payload_len, input_len)
 }
 
 fn assemble_interchange<B: BinaryReader>(
@@ -255,6 +276,11 @@ fn assemble_interchange<B: BinaryReader>(
         .ok_or_else(|| old_jpeg_error("old-style JPEG interchange length is missing"))?;
     let length = usize::try_from(length)
         .map_err(|_| old_jpeg_error("old-style JPEG interchange length is too large"))?;
+    crate::limits::check(
+        length,
+        crate::limits::current().expanded_bytes,
+        "old-style JPEG assembly",
+    )?;
     let mut output = read_at(reader, offset, length, input_len)?;
     if !output.starts_with(&[0xff, 0xd8]) {
         return Err(old_jpeg_error(
@@ -265,7 +291,7 @@ fn assemble_interchange<B: BinaryReader>(
         output.truncate(output.len() - 2);
     }
     for (index, block) in blocks.iter().enumerate() {
-        let payload = read_block_payload(reader, block, input_len)?;
+        let payload = read_block_payload(reader, block, output.len(), input_len)?;
         if index == 0 {
             if !payload.starts_with(&[0xff, 0xda]) {
                 return Err(old_jpeg_error(
@@ -277,10 +303,10 @@ fn assemble_interchange<B: BinaryReader>(
                 "old-style JPEG continuation strip unexpectedly contains a scan marker",
             ));
         }
-        output.extend_from_slice(&payload);
+        append_old_jpeg_payload(&mut output, &payload)?;
     }
     if !output.ends_with(&[0xff, 0xd9]) {
-        output.extend_from_slice(&[0xff, 0xd9]);
+        append_old_jpeg_payload(&mut output, &[0xff, 0xd9])?;
     }
     Ok(output)
 }
@@ -295,15 +321,15 @@ fn assemble_tables<B: BinaryReader>(
 ) -> Result<Vec<u8>, Error> {
     let mut output = old_jpeg_header(reader, header, width, height, input_len)?;
     for block in blocks {
-        let payload = read_block_payload(reader, block, input_len)?;
+        let payload = read_block_payload(reader, block, output.len(), input_len)?;
         if payload.starts_with(&[0xff, 0xd8]) || payload.starts_with(&[0xff, 0xda]) {
             return Err(old_jpeg_error(
                 "old-style JPEG table form payload must contain entropy data only",
             ));
         }
-        output.extend_from_slice(&payload);
+        append_old_jpeg_payload(&mut output, &payload)?;
     }
-    output.extend_from_slice(&[0xff, 0xd9]);
+    append_old_jpeg_payload(&mut output, &[0xff, 0xd9])?;
     Ok(output)
 }
 
@@ -418,6 +444,58 @@ pub fn decode_old_jpeg_compresson<'decode, B: BinaryReader>(
         option,
     )?;
     Ok(warning)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn old_jpeg_assembly_append_respects_expanded_byte_limit() {
+        let result = crate::limits::scope(
+            crate::limits::DecodeLimits {
+                expanded_bytes: 4,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || {
+                let mut output = vec![0u8; 4];
+                append_old_jpeg_payload(&mut output, &[0])
+            },
+        );
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("old-style JPEG assembly")
+        );
+    }
+
+    #[test]
+    fn old_jpeg_block_payload_is_limited_before_read() {
+        let block = TiffBlock {
+            kind: TiffBlockKind::Strip,
+            offset: 0,
+            compressed_len: 5,
+            x: 0,
+            y: 0,
+            stored_width: 1,
+            stored_height: 1,
+            draw_width: 1,
+            draw_height: 1,
+            plane: 0,
+        };
+        let mut reader = bin_rs::reader::BytesReader::new(&[0; 5]);
+        let result = crate::limits::scope(
+            crate::limits::DecodeLimits {
+                expanded_bytes: 4,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || read_block_payload(&mut reader, &block, 0, 5),
+        );
+        assert!(result.is_err());
+        assert_eq!(reader.offset().unwrap(), 0);
+    }
 }
 
 // Tiff in JPEG is a multi parts image.

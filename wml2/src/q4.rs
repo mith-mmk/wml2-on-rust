@@ -27,6 +27,25 @@ const PALETTE_ORDER: [u8; 16] = [
     0x00, 0x02, 0x04, 0x06, 0x01, 0x03, 0x05, 0x07, 0x08, 0x0a, 0x0c, 0x0e, 0x09, 0x0b, 0x0d, 0x0f,
 ];
 
+fn output_layout() -> Result<(usize, usize), Error> {
+    let expected_pixels = WIDTH
+        .checked_mul(HEIGHT)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "Q4 image size overflow"))?;
+    crate::limits::check(expected_pixels, crate::limits::current().pixels, "pixels")?;
+    let output_len = expected_pixels.checked_mul(4).ok_or_else(|| {
+        err(
+            ImgErrorKind::InvalidParameter,
+            "Q4 RGBA image size overflow",
+        )
+    })?;
+    crate::limits::check(
+        output_len,
+        crate::limits::current().expanded_bytes,
+        "RGBA image",
+    )?;
+    Ok((expected_pixels, output_len))
+}
+
 fn le16(data: &[u8], offset: usize) -> Result<u16, Error> {
     let bytes = data
         .get(offset..offset + 2)
@@ -386,8 +405,9 @@ pub fn decode<B: BinaryReader>(
         }
     }
 
-    let expected_pixels = WIDTH * HEIGHT;
-    let mut indices = Vec::with_capacity(expected_pixels);
+    let (expected_pixels, output_len) = output_layout()?;
+    let mut indices = Vec::new();
+    indices.try_reserve_exact(expected_pixels)?;
     while cursor < data.len() {
         let header = data
             .get(cursor..cursor + BLOCK_HEADER_SIZE)
@@ -440,7 +460,8 @@ pub fn decode<B: BinaryReader>(
         )));
     }
 
-    let mut output = Vec::with_capacity(expected_pixels * 4);
+    let mut output = Vec::new();
+    output.try_reserve_exact(output_len)?;
     for index in indices {
         let color = palette[usize::from(index)];
         output.extend_from_slice(&[color[0], color[1], color[2], 255]);
@@ -456,4 +477,22 @@ pub fn decode<B: BinaryReader>(
         .set_metadata("height", DataMap::UInt(HEIGHT as u64))?;
     draw_rgba(option, WIDTH, HEIGHT, &output)?;
     Ok(None)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn q4_output_layout_respects_expanded_byte_limit() {
+        let result = crate::limits::scope(
+            crate::limits::DecodeLimits {
+                expanded_bytes: WIDTH * HEIGHT * 4 - 1,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            output_layout,
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("RGBA image"));
+    }
 }

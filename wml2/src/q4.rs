@@ -300,6 +300,7 @@ fn decode_palette(data: &[u8]) -> Result<[[u8; 3]; 16], Error> {
 fn decode_pixels(data: &[u8], expected: usize, output: &mut Vec<u8>) -> Result<(), Error> {
     let mut offset = 0usize;
     let block_start = output.len();
+    let mut repeated_color = 0u8;
     while output.len() - block_start < expected {
         let token = *data
             .get(offset)
@@ -337,16 +338,14 @@ fn decode_pixels(data: &[u8], expected: usize, output: &mut Vec<u8>) -> Result<(
                     .get(offset)
                     .ok_or_else(|| err(ImgErrorKind::IllegalData, "Q4 pixel RLE is truncated"))?;
                 offset += 1;
-                (
-                    PALETTE_ORDER[usize::from(palette_index)],
-                    usize::from(high) * 17 + usize::from(low),
-                )
+                repeated_color = PALETTE_ORDER[usize::from(palette_index)];
+                (repeated_color, usize::from(high) * 17 + usize::from(low))
             } else {
                 let low = *data
                     .get(offset)
                     .ok_or_else(|| err(ImgErrorKind::IllegalData, "Q4 pixel RLE is truncated"))?;
                 offset += 1;
-                (0, usize::from(repeat) * 17 + usize::from(low))
+                (repeated_color, usize::from(repeat) * 17 + usize::from(low))
             }
         };
         let remaining = expected - (output.len() - block_start);
@@ -494,5 +493,19 @@ mod tests {
         );
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("RGBA image"));
+    }
+
+    #[test]
+    fn q4_rle_repeat_reuses_the_previous_palette_color() {
+        let mut output = Vec::new();
+
+        decode_pixels(
+            &[0x10, 0x00, 0x01, 0x01, 0x00, 0x10, 0x01, 0x00],
+            34,
+            &mut output,
+        )
+        .expect("valid Q4 RLE should decode");
+
+        assert_eq!(output, vec![PALETTE_ORDER[1]; 34]);
     }
 }

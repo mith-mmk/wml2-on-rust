@@ -42,7 +42,17 @@ fn expand_bits(value: u32, bits: u8) -> u8 {
     if bits >= 8 {
         value as u8
     } else {
-        ((value * 255 + ((1u32 << bits) - 1) / 2) / ((1u32 << bits) - 1)) as u8
+        let mut shift = 8i16 - i16::from(bits);
+        let mut expanded = 0u32;
+        while shift >= 0 {
+            expanded |= if shift > 0 {
+                value << shift
+            } else {
+                value >> -shift
+            };
+            shift -= i16::from(bits);
+        }
+        expanded as u8
     }
 }
 
@@ -216,7 +226,7 @@ impl<'a> Arithmetic<'a> {
         let mut value = (1i32 << width.min(7)) - 1;
         for bit in 0..width {
             if self.decode_bit(context + 8 + bit)? {
-                value |= 1 << bit;
+                value += 1 << bit;
             }
         }
         Ok(value)
@@ -692,4 +702,14 @@ pub fn decode<B: BinaryReader>(
         .set_metadata("header flags", DataMap::UInt(u64::from(header.flag)))?;
     draw_rgba(option, canvas_width, canvas_height, &output)?;
     Ok(None)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pic2_15bit_colors_use_reference_bit_padding() {
+        assert_eq!(packed_to_rgba(0x7fff, 15), [248, 248, 248, 255]);
+    }
 }

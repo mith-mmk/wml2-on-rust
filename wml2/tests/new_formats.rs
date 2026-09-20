@@ -82,6 +82,23 @@ fn dds_2x1() -> Vec<u8> {
     data
 }
 
+fn dds_alpha_only_1x1(alpha: u8) -> Vec<u8> {
+    let mut data = vec![0u8; 128];
+    data[0..4].copy_from_slice(b"DDS ");
+    put_le32(&mut data, 4, 124);
+    put_le32(&mut data, 8, 0x100f);
+    put_le32(&mut data, 12, 1);
+    put_le32(&mut data, 16, 1);
+    put_le32(&mut data, 20, 1);
+    put_le32(&mut data, 76, 32);
+    put_le32(&mut data, 80, 0x2);
+    put_le32(&mut data, 88, 8);
+    put_le32(&mut data, 104, 0xff);
+    put_le32(&mut data, 108, 0x1000);
+    data.push(alpha);
+    data
+}
+
 fn dds_dx10_1x1(dxgi: u32, pixel: &[u8]) -> Vec<u8> {
     let mut data = vec![0u8; 148];
     data[0..4].copy_from_slice(b"DDS ");
@@ -180,6 +197,12 @@ fn dds_uses_ddsd_pitch_from_header_flags() {
 
     let image = image_load(&data).expect("DDSD_PITCH is a header flag");
     assert_eq!(image.buffer.unwrap(), vec![255, 0, 0, 255, 0, 255, 0, 255]);
+}
+
+#[test]
+fn dds_alpha_only_uses_the_alpha_mask() {
+    let image = image_load(&dds_alpha_only_1x1(0x80)).expect("alpha-only DDS should decode");
+    assert_eq!(image.buffer.as_deref(), Some(&[0, 0, 0, 0x80][..]));
 }
 
 #[test]

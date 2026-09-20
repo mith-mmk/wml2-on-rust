@@ -344,16 +344,7 @@ fn decode_uncompressed(
                 )
             };
             let dst = (y * width + x) * 4;
-            output[dst..dst + 4].copy_from_slice(&[
-                r,
-                g,
-                b,
-                if alpha_only {
-                    extract_mask(value, masks[0])
-                } else {
-                    alpha
-                },
-            ]);
+            output[dst..dst + 4].copy_from_slice(&[r, g, b, alpha]);
         }
     }
     Ok(output)

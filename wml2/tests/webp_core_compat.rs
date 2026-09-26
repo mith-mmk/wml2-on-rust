@@ -31,6 +31,7 @@ fn fixed_external_core_matches_retained_public_api() {
             }
         );
     }
+    // webp-rust 0.3.2 fixes lossy chroma conversion, changing these byte snapshots.
     for (quality, method) in [(10., 0), (75., 3), (100., 6)] {
         let a = local::LossyEncodingConfig {
             quality,
@@ -48,9 +49,9 @@ fn fixed_external_core_matches_retained_public_api() {
         assert_eq!(
             (left.len(), fingerprint(&left)),
             match method {
-                0 => (114, 17945640528437259438),
-                3 => (206, 5312609572275966343),
-                _ => (372, 5378051818230996603),
+                0 => (138, 11919863120113901756),
+                3 => (260, 1669460351440240245),
+                _ => (416, 12933884274185595718),
             }
         );
     }
@@ -63,7 +64,7 @@ fn fixed_external_core_matches_retained_public_api() {
     let left = local::encode_lossy_rgba_to_webp(width, height, &alpha).unwrap();
     assert_eq!(
         (left.len(), fingerprint(&left)),
-        (220, 18123144170571642535)
+        (274, 12699800231815007630)
     );
 }
 

@@ -109,7 +109,7 @@ explicitly:
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.32", features = ["psd"] }
+wml2 = { version = "0.0.33", features = ["psd"] }
 ```
 
 The decoder converts supported input to RGBA8. It rounds 16-bit samples down to
@@ -150,17 +150,17 @@ the decoder does not approximate it by compositing layers.
 
 ```toml
 [dependencies]
-wml2 = "0.0.32"
+wml2 = "0.0.33"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.32", features = ["noretoro"] }
+wml2 = { version = "0.0.33", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.32", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.33", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options
@@ -389,6 +389,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.30`: resource-limit hardening, callback-abort safety, high-resolution ICC/AVIF regressions, and WebP core compatibility cleanup
 - `0.0.31`: extended TIFF/BigTIFF decoding and encoding, bounded block decompression, predictor support, and high-depth native TIFF frames
 - `0.0.32`: PCX, TGA, DDS, PIC2, and Q4 decoder support, ImageMagick-compatible PCX/TGA pixel normalization, and converter/metadata regression coverage
+- `0.0.33`: update to `webp-rust` 0.3.2 for stricter VP8 decoding, ICC-aware animation headers, and corrected lossy chroma conversion
 
 ## License
 

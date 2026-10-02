@@ -48,7 +48,22 @@ pub trait DrawCallback: Sync + Send {
         height: usize,
         option: Option<InitOptions>,
     ) -> Result<Option<CallbackResponse>, Error>;
-    /// Writes RGBA pixels into a rectangle.
+    /// Declares the source bytes delivered by subsequent draws. This does not
+    /// request a decoder output format. Existing callbacks accept packed RGBA8
+    /// only; unsupported declarations fail before the legacy initializer runs.
+    #[cfg(feature = "image-buffer-ex")]
+    fn init_ex(&mut self, width: usize, height: usize, option: Option<InitOptionsEx>) -> Response {
+        let option = option.unwrap_or_default();
+        if option.source_format != PixelFormatEx::Rgba8 || option.source_stride.is_some() {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::NoSupportFormat,
+                "legacy callback requires packed RGBA8".to_string(),
+            )));
+        }
+        self.init(width, height, option.legacy)
+    }
+    /// Writes pixels into a rectangle. Legacy `init` declares packed RGBA8;
+    /// with `image-buffer-ex`, `init_ex` declares the incoming byte layout.
     fn draw(
         &mut self,
         start_x: usize,
@@ -77,6 +92,12 @@ pub trait DrawCallback: Sync + Send {
         value: DataMap,
     ) -> Result<Option<CallbackResponse>, Error>;
 }
+
+#[cfg(feature = "image-buffer-ex")]
+#[path = "image_buffer_ex.rs"]
+pub(crate) mod image_buffer_ex;
+#[cfg(feature = "image-buffer-ex")]
+pub use image_buffer_ex::{ImageBufferEx, InitOptionsEx, PixelFormatEx, PrecisionConversion};
 
 /// Supplies image data to encoders.
 pub trait PickCallback: Sync + Send {
@@ -437,6 +458,33 @@ fn zeroed_bytes(length: usize) -> Result<Vec<u8>, Error> {
     Ok(bytes)
 }
 
+// Shared allocation/background and row-copy kernels for legacy and EX buffers.
+fn initialized_bytes(length: usize, pixel: Option<&[u8]>) -> Result<Vec<u8>, Error> {
+    let mut bytes = zeroed_bytes(length)?;
+    if let Some(pixel) = pixel {
+        for destination in bytes.chunks_exact_mut(pixel.len()) {
+            destination.copy_from_slice(pixel);
+        }
+    }
+    Ok(bytes)
+}
+
+fn copy_rows(
+    destination: &mut [u8],
+    source: &[u8],
+    source_stride: usize,
+    destination_stride: usize,
+    offset: usize,
+    row_bytes: usize,
+    height: usize,
+) {
+    for row in 0..height {
+        let src = row * source_stride;
+        let dst = offset + row * destination_stride;
+        destination[dst..dst + row_bytes].copy_from_slice(&source[src..src + row_bytes]);
+    }
+}
+
 fn clipped_rect(
     x: usize,
     y: usize,
@@ -524,17 +572,15 @@ impl DrawCallback for ImageBuffer {
             animation: false,
             loop_count: 0,
         });
-        let mut buffer = zeroed_bytes(buffersize)?;
-        if let Some(background) = &option.background {
-            for pixel in buffer.chunks_exact_mut(4) {
-                pixel.copy_from_slice(&[
-                    background.red,
-                    background.green,
-                    background.blue,
-                    background.alpha,
-                ]);
-            }
-        }
+        let pixel = option.background.as_ref().map(|background| {
+            [
+                background.red,
+                background.green,
+                background.blue,
+                background.alpha,
+            ]
+        });
+        let buffer = initialized_bytes(buffersize, pixel.as_ref().map(|p| p.as_slice()))?;
         self.width = width;
         self.height = height;
         self.buffer = Some(buffer);
@@ -596,11 +642,15 @@ impl DrawCallback for ImageBuffer {
         if data.len() < source_end || buffer.len() < destination_end {
             return Err(buffer_error("insufficient draw buffer"));
         }
-        for y in 0..h {
-            let src = y * source_stride;
-            let dst = (start_y + y) * destination_stride + start_x * 4;
-            buffer[dst..dst + row_bytes].copy_from_slice(&data[src..src + row_bytes]);
-        }
+        copy_rows(
+            buffer,
+            data,
+            source_stride,
+            destination_stride,
+            start_y * destination_stride + start_x * 4,
+            row_bytes,
+            h,
+        );
         Ok(None)
     }
 

@@ -189,6 +189,8 @@ psd = []
 avif = ["dep:avif_codec"]
 avifenc = ["avif", "dep:avifenc_codec"]
 high-bit-depth = []
+# Checked byte-based callback storage, independent of typed high-resolution frames.
+image-buffer-ex = []
 color-management = ["high-bit-depth", "dep:icc_profile"]
 mag = []
 maki = []

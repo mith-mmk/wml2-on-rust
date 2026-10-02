@@ -267,6 +267,8 @@ mod tests {
         fail: bool,
         initializations: usize,
         draws: usize,
+        #[cfg(feature = "image-buffer-ex")]
+        source: Option<(PixelFormatEx, Option<usize>)>,
     }
     impl DrawCallback for Probe {
         fn init(&mut self, _: usize, _: usize, _: Option<InitOptions>) -> Response {
@@ -277,8 +279,10 @@ mod tests {
             Ok(self.abort.then(CallbackResponse::abort))
         }
         #[cfg(feature = "image-buffer-ex")]
-        fn init_ex(&mut self, w: usize, h: usize, _: Option<InitOptionsEx>) -> Response {
-            self.init(w, h, None)
+        fn init_ex(&mut self, w: usize, h: usize, option: Option<InitOptionsEx>) -> Response {
+            let option = option.unwrap_or_default();
+            self.source = Some((option.source_format, option.source_stride));
+            self.init(w, h, option.legacy)
         }
         fn draw(
             &mut self,
@@ -336,6 +340,12 @@ mod tests {
                 assert_eq!(guard.canvas, (0, 0));
                 assert!(guard.draw(0, 0, 1, 1, &[0; 4], None).is_err());
                 assert!(guard.next(None).is_err());
+                #[cfg(feature = "image-buffer-ex")]
+                if !abort {
+                    assert!(guard.init_ex(2, 3, None).is_err());
+                    assert!(!guard.ready);
+                    assert_eq!(guard.bytes, 0);
+                }
                 drop(guard);
                 assert_eq!(probe.draws, 0);
             }
@@ -408,6 +418,7 @@ mod tests {
         drop(guard);
         assert_eq!(probe.initializations, 1);
         assert_eq!(probe.draws, 1);
+        assert_eq!(probe.source, Some((PixelFormatEx::Gray12, Some(5))));
     }
     #[cfg(feature = "image-buffer-ex")]
     #[test]

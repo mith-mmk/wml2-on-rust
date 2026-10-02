@@ -117,6 +117,20 @@ pub struct InitOptionsEx {
 /// bytes separately from the storage selected by `with_storage`. Both callback
 /// initializers enter the same private routine without calling each other.
 /// Encoders require an explicit `to_rgba8` precision conversion.
+///
+/// ```
+/// use wml2::draw::{DrawCallback, ImageBufferEx, InitOptionsEx,
+///     PixelFormatEx, PrecisionConversion};
+/// let mut image = ImageBufferEx::with_storage(
+///     PixelFormatEx::Rgba16, PrecisionConversion::Exact);
+/// image.init_ex(1, 1, Some(InitOptionsEx {
+///     source_format: PixelFormatEx::Gray12, ..Default::default()
+/// })).unwrap();
+/// image.draw(0, 0, 1, 1, &[0xff, 0x0f], None).unwrap();
+/// assert_eq!(image.bytes().unwrap(), &[0xff; 8]);
+/// let legacy = image.to_rgba8(PrecisionConversion::Exact).unwrap();
+/// assert_eq!(legacy.buffer.unwrap(), [255; 4]);
+/// ```
 pub struct ImageBufferEx {
     width: usize,
     height: usize,
@@ -198,13 +212,16 @@ impl ImageBufferEx {
         // Failed initialization invalidates the old callback target.
         self.buffer = None;
         let (stride, length) = self.format.extent(width, height, None)?;
-        option.source_format.row_bytes(width)?;
-        if let Some(source_stride) = option.source_stride {
-            option.source_format.validate_stride(source_stride)?;
-            source_stride
-                .checked_mul(height)
-                .ok_or_else(|| ex_error("EX source size overflow"))?;
-        }
+        let source_row = option.source_format.row_bytes(width)?;
+        let source_stride = if let Some(stride) = option.source_stride {
+            option.source_format.validate_stride(stride)?;
+            stride.max(source_row)
+        } else {
+            source_row
+        };
+        let source_length = source_stride
+            .checked_mul(height)
+            .ok_or_else(|| ex_error("EX source size overflow"))?;
         if option.legacy.as_ref().is_some_and(|o| o.animation) {
             return Err(ex_error("EX animation initialization is unsupported"));
         }
@@ -214,6 +231,7 @@ impl ImageBufferEx {
             .checked_mul(height)
             .ok_or_else(|| ex_error("EX pixel count overflow"))?;
         crate::limits::check(pixels, limits.pixels, "EX pixels")?;
+        crate::limits::check(source_length, limits.expanded_bytes, "EX source canvas")?;
         crate::limits::check(length, limits.expanded_bytes, "EX storage")?;
         crate::limits::check(length, limits.animation_bytes, "EX canvas storage")?;
         let background = option.legacy.as_ref().and_then(|o| o.background.as_ref());
@@ -280,8 +298,7 @@ impl ImageBufferEx {
         convert_rows(
             &mut output,
             source,
-            self.width,
-            self.height,
+            (self.width, self.height),
             self.stride,
             self.format,
             format,
@@ -344,8 +361,7 @@ impl DrawCallback for ImageBufferEx {
             convert_rows(
                 &mut converted,
                 data,
-                width,
-                height,
+                (width, height),
                 source_stride,
                 self.source_format,
                 self.format,
@@ -469,13 +485,13 @@ fn convert_pixel(
 fn convert_rows(
     destination: &mut [u8],
     source: &[u8],
-    width: usize,
-    height: usize,
+    size: (usize, usize),
     stride: usize,
     src: PixelFormatEx,
     dst: PixelFormatEx,
     conversion: PrecisionConversion,
 ) -> Result<(), Error> {
+    let (width, height) = size;
     check_conversion(src, dst)?;
     if src == dst {
         let row = dst.row_bytes(width)?;
@@ -505,7 +521,8 @@ impl ImageBufferEx {
     /// Copies only pixels from a typed highres frame. Metadata, timing, and
     /// color information remain on the original frame; no such data is mapped
     /// to the unrelated legacy callback metadata. Full-resolution Gray without
-    /// alpha or straight RGBA at uniformly 8/12/16 bits is supported. Planar,
+    /// alpha or straight RGBA at uniformly 8/12/16 bits is supported. Eight-bit
+    /// samples may reside in U8 or U16 planes. Planar,
     /// interleaved, and padded highres layouts are read by their channel roles.
     pub fn from_highres_pixels(frame: &crate::highres::ImageFrame) -> Result<Self, Error> {
         use crate::highres::{
@@ -541,7 +558,7 @@ impl ImageBufferEx {
             (false, 16, PixelBuffer::U16(_)) => PixelFormatEx::Rgba16,
             _ => {
                 return Err(ex_error(
-                    "EX highres adapter supports only U8/8 and U16/12/16",
+                    "EX highres adapter supports only U8/8 and U16/8/12/16",
                 ));
             }
         };

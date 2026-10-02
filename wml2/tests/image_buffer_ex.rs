@@ -309,3 +309,82 @@ fn highres_pixel_only_roundtrips_six_formats_and_rejects_unsupported() {
     .unwrap();
     assert!(ImageBufferEx::from_highres_pixels(&ImageFrame::new(yuv, pixels).unwrap()).is_err());
 }
+
+#[cfg(feature = "high-bit-depth")]
+#[test]
+fn highres_padded_planar_u16_at_eight_bits_preserves_roles_only() {
+    use wml2::highres::*;
+    let roles = [
+        ChannelRole::Alpha,
+        ChannelRole::Blue,
+        ChannelRole::Red,
+        ChannelRole::Green,
+    ];
+    let layout = PlaneLayout::new(1, 2, 3, 1, vec![0], Subsampling::FULL).unwrap();
+    let color = ColorInformationSet::new().with_nclx(NclxColorInformation::new(9, 16, 0, true));
+    let descriptor = ImageDescriptor::new(
+        1,
+        2,
+        ChannelModel::RGB,
+        roles
+            .iter()
+            .map(|role| PlaneDescriptor::planar(layout.clone(), *role, 8).unwrap())
+            .collect(),
+    )
+    .unwrap()
+    .with_alpha(AlphaAssociation::Straight)
+    .unwrap()
+    .with_color_information(color.clone());
+    let pixels = PixelBuffer::u16(
+        roles
+            .iter()
+            .enumerate()
+            .map(|(i, _)| {
+                Plane::new(
+                    layout.clone(),
+                    vec![(i + 1) as u16, 65535, 65535, (i + 11) as u16],
+                )
+                .unwrap()
+            })
+            .collect(),
+    )
+    .unwrap();
+    let timing = FrameTiming::new(1000, 4, 5).unwrap();
+    let frame = ImageFrame::new(descriptor, pixels)
+        .unwrap()
+        .with_timing(timing);
+    let bytes = ImageBufferEx::from_highres_pixels(&frame).unwrap();
+    assert_eq!(bytes.bytes().unwrap(), [3, 4, 2, 1, 13, 14, 12, 11]);
+    assert!(bytes.metadata.is_none());
+    assert_eq!(frame.timing(), Some(timing));
+    assert_eq!(frame.descriptor().color_information(), &color);
+    let exported = bytes.to_highres_pixels().unwrap();
+    assert!(exported.timing().is_none());
+    assert_eq!(
+        exported.descriptor().color_information(),
+        &ColorInformationSet::default()
+    );
+}
+
+#[cfg(feature = "png")]
+#[test]
+fn unchanged_png_decoder_to_ex_and_explicit_legacy_encoder_adapter() {
+    use wml2::util::ImageFormat;
+    let pixels = vec![1, 2, 3, 4, 255, 0, 64, 255];
+    let mut source = ImageBuffer::from_buffer(2, 1, pixels.clone());
+    let encoded = image_to(&mut source, ImageFormat::Png, None).unwrap();
+    let mut ex = ImageBufferEx::with_storage(PixelFormatEx::Rgba16, PrecisionConversion::Exact);
+    image_loader(
+        &encoded,
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut ex,
+        },
+    )
+    .unwrap();
+    assert_eq!(ex.format(), PixelFormatEx::Rgba16);
+    let mut adapter = ex.to_rgba8(PrecisionConversion::Exact).unwrap();
+    assert_eq!(adapter.buffer.as_ref().unwrap(), &pixels);
+    let encoded = image_to(&mut adapter, ImageFormat::Png, None).unwrap();
+    assert_eq!(image_from(&encoded).unwrap().buffer.unwrap(), pixels);
+}

@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         rust: ['1.91.0', stable]
-        features: [default, minimal, image-buffer-ex, 'image-buffer-ex,high-bit-depth', high-bit-depth, color-management, 'avif,high-bit-depth', 'avifenc,high-bit-depth', 'avifenc,high-bit-depth,multithread', 'jpeg,idct_llm', 'jpeg,idct_aan', 'jpeg,idct_slower', 'jpeg,idct_llm,multithread', 'png,psd,tiff']
+        features: [default, minimal, image-buffer-ex, 'image-buffer-ex,high-bit-depth', 'png,image-buffer-ex,high-bit-depth', high-bit-depth, color-management, 'avif,high-bit-depth', 'avifenc,high-bit-depth', 'avifenc,high-bit-depth,multithread', 'jpeg,idct_llm', 'jpeg,idct_aan', 'jpeg,idct_slower', 'jpeg,idct_llm,multithread', 'png,psd,tiff']
     steps:
       - uses: actions/checkout@v4
         with:

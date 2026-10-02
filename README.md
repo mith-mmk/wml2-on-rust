@@ -85,6 +85,43 @@ unchanged. Run the retro-format external regression gate from the workspace
 root with `pwsh -File wml2-test/scripts/verify_retro_examples.ps1
 -SampleRoot <sample_root> -OutputRoot <output_dir>`.
 
+With `image-buffer-ex`, `draw::ImageBufferEx` stores bytes in `PixelFormatEx`:
+Gray8/12/16 or Rgba8/12/16 (straight alpha), defaulting to Rgba8. Twelve- and
+sixteen-bit samples occupy two little-endian bytes; twelve-bit values must
+have zero high four bits. Typed alignment, YUV, ten-bit, animation, and native
+codec output negotiation are outside this API.
+
+`DrawCallback::init_ex` and `InitOptionsEx` declare the **source** format and
+optional byte stride for subsequent draw rectangles. `InitOptions::with_format`
+adds this declaration to existing options. `ImageBufferEx::with_storage`
+separately selects internal storage and `PrecisionConversion::Exact` or `Round`.
+Exact rejects nonintegral normalized range scaling; Round explicitly rounds to
+nearest, including alpha. Gray expands to RGB with opaque alpha; RGBA to Gray
+requires an external color conversion. Backgrounds remain declared as RGBA8,
+scaled with the same policy; Gray backgrounds must be opaque neutral colors.
+
+Source strides include final row padding; strict EX draws require exactly
+stride times height bytes and validate even pixels clipped off the canvas.
+A stride describes each tile, so it may be smaller than a full canvas row.
+Canvas source budgets use the larger of the packed canvas row and declared
+stride, multiplied by height; EX storage is budgeted independently. Existing
+`ImageBuffer` fields and legacy permissive clipping remain compatible.
+Failed EX initialization invalidates its previous drawing target; legacy
+`ImageBuffer` retains its atomic failure behavior. Any callback Abort prevents
+further init/draw/next forwarding within that decode operation. A callback
+implementing only the old methods accepts packed RGBA8 `init_ex`
+declarations and rejects other formats or explicit strides before calling init.
+If a custom type already defines `init_ex`, use `DrawCallback::init_ex` to
+explicitly select the trait method.
+
+Legacy encoders use the explicit `ImageBufferEx::to_rgba8` adapter. With both
+`image-buffer-ex` and `high-bit-depth`, `from_highres_pixels` and
+`to_highres_pixels` copy representable full-resolution Gray or straight RGBA
+pixels through the existing `highres::ImageFrame`/`PixelBuffer` types. These
+pixel-only adapters keep highres metadata, timing, and color information
+separate; callers must retain and attach them explicitly. Premultiplied alpha,
+YUV, F32, and ten-bit frames are rejected.
+
 ## Features
 
 - `default`: enables the standard decoders/encoders, EXIF/C2PA support, embedded-format bridges, and `idct_llm`; it does not enable `psd`, `avif`, or `avifenc`
@@ -92,6 +129,7 @@ root with `pwsh -File wml2-test/scripts/verify_retro_examples.ps1
 - `psd`: enables Pure Rust PSD v1 decoding for 8/16-bit RGB, Grayscale, and CMYK plus 8-bit Indexed images; Raw, PackBits RLE, ZIP, and ZIP prediction are supported for both merged-image and layer-channel data
 - `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the standalone `avifenc-rust` submodule
 - `high-bit-depth`: additive typed U8/U16/F32 buffer and native metadata APIs; it has no ICC dependency
+- `image-buffer-ex`: default-off checked byte-based Gray/RGBA 8/12/16-bit callback storage, independent of `high-bit-depth`
 - `color-management`: depends on `high-bit-depth` and adds explicit Gray/RGB ICC transforms through `icc-profile`
 - metadata feature: `exif`
 - embedded-format bridge features: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`

@@ -389,7 +389,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.30`: resource-limit hardening, callback-abort safety, high-resolution ICC/AVIF regressions, and WebP core compatibility cleanup
 - `0.0.31`: extended TIFF/BigTIFF decoding and encoding, bounded block decompression, predictor support, and high-depth native TIFF frames
 - `0.0.32`: PCX, TGA, DDS, PIC2, and Q4 decoder support, ImageMagick-compatible PCX/TGA pixel normalization, and converter/metadata regression coverage
-- `0.0.33`: update to `webp-rust` 0.3.2 for stricter VP8 decoding, ICC-aware animation headers, and corrected lossy chroma conversion
+- [0.0.33 release notes](docs/releases/0.0.33.md)
+
+For subsequent releases, maintain the version-specific notes using the
+[release maintenance guide](docs/RELEASING.md).
 
 ## License
 

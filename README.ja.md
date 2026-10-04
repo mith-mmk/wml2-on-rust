@@ -370,7 +370,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.30`: 資源上限の強化、callback abort時の安全性、高解像度ICC/AVIF回帰検証、WebP core互換整理
 - `0.0.31`: TIFF/BigTIFFのデコード・エンコード拡張、ブロック単位の展開上限、Predictor対応、高色深度TIFF native frame
 - `0.0.32`: PCX、TGA、DDS、PIC2、Q4 decoder対応、ImageMagick互換のPCX/TGA画素正規化、converter/metadata回帰検証
-- `0.0.33`: `webp-rust` 0.3.2 に更新。VP8 の厳密なデコード、ICCP を含むアニメーションヘッダー対応、非可逆圧縮の色差変換修正を反映
+- [0.0.33 リリースノート](docs/releases/0.0.33.md)
+
+今後の変更履歴は版別ノートを正本として、[リリース保守手順](docs/RELEASING.md)に沿って更新します。
 
 ## License
 

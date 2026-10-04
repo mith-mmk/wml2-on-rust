@@ -1,12 +1,48 @@
-name: build
+name: release
 
 on:
   push:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate tag, commit, version, and release body
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          python -B .github/scripts/release_notes.py \
+            --tag "$RELEASE_TAG" --expected-sha "$RELEASE_SHA" \
+            --output "$RUNNER_TEMP/release-body.md"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-body
+          path: ${{ runner.temp }}/release-body.md
+          if-no-files-found: error
+
   build:
+    needs: [checks, prepare]
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -16,7 +52,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.sha }}
           submodules: recursive
+          persist-credentials: false
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -44,7 +82,7 @@ jobs:
           done
           if (( ${#files[@]} == 0 )); then
             echo "No example binaries to zip"
-            exit 0
+            exit 1
           fi
           zip ../examples-${{ matrix.os }}.zip "${files[@]}"
 
@@ -52,18 +90,48 @@ jobs:
         with:
           name: examples-${{ matrix.os }}
           path: target/release/examples-${{ matrix.os }}.zip
+          if-no-files-found: error
 
   release:
-    needs: build
+    needs: [checks, prepare, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/download-artifact@v4
         with:
+          pattern: examples-*
           path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-body
+          path: notes
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/**/*.zip
-          overwrite_files: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test -s notes/release-body.md
+          for os in ubuntu-latest windows-latest macos-latest; do
+            test -s "dist/examples-$os.zip"
+          done
+          # Recheck the remote tag immediately before publication. No checkout or
+          # repository-supplied scripts run in this write-permission job.
+          tag_sha=$(gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" --jq .object.sha)
+          tag_type=$(gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" --jq .object.type)
+          while [[ "$tag_type" == tag ]]; do
+            tag_object=$(gh api "repos/$GH_REPO/git/tags/$tag_sha")
+            tag_sha=$(jq -r .object.sha <<< "$tag_object")
+            tag_type=$(jq -r .object.type <<< "$tag_object")
+          done
+          test "$tag_type" = commit
+          test "$tag_sha" = "$RELEASE_SHA"
+          # create fails when a Release already exists; never silently edit it.
+          gh release create "$RELEASE_TAG" --verify-tag --target "$RELEASE_SHA" \
+            --title "WML2 $RELEASE_TAG" --notes-file notes/release-body.md dist/*.zip

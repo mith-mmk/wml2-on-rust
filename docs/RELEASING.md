@@ -32,7 +32,7 @@ these files. Write user-visible summaries for direct commits as well as PRs.
    publication. This workflow creates GitHub Releases, not crates.io publications.
 6. Adopt the validated library in affected viewers afterward. Record downstream
    checks when relevant, not for every documentation/workflow change. Viewer
-   version display is `<viewer version>-<Lib version>`.
+   version display is `<viewer version>-lib<Lib version>`.
 
 ## Existing 0.0.33 draft
 

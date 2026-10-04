@@ -11,7 +11,7 @@ Write "None" if there is no compatibility impact. -->
 ## Downstream checks (if applicable)
 <!-- Affected library/viewer and result, pending check, or "Not applicable".
 Validate the library first; viewer checks follow when affected.
-Viewer version display uses <viewer version>-<Lib version>. -->
+Viewer version display uses <viewer version>-lib<Lib version>. -->
 
 ## Related issues
 <!-- Use Closes #123 only when this PR completes its acceptance conditions. -->

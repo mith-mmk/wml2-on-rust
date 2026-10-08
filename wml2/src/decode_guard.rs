@@ -217,6 +217,27 @@ pub(crate) fn run<B: BinaryReader>(
     limits: DecodeLimits,
     decode: impl FnOnce(&mut B, &mut DecodeOptions) -> Result<Option<ImgWarnings>, Error>,
 ) -> Result<Option<ImgWarnings>, Error> {
+    run_inner(reader, options, limits, false, decode)
+}
+
+/// EX decode applies Abort consistently across supported static formats.
+#[cfg(feature = "image-buffer-ex")]
+pub(crate) fn run_ex<B: BinaryReader>(
+    reader: &mut B,
+    options: &mut DecodeOptions,
+    limits: DecodeLimits,
+    decode: impl FnOnce(&mut B, &mut DecodeOptions) -> Result<Option<ImgWarnings>, Error>,
+) -> Result<Option<ImgWarnings>, Error> {
+    run_inner(reader, options, limits, true, decode)
+}
+
+fn run_inner<B: BinaryReader>(
+    reader: &mut B,
+    options: &mut DecodeOptions,
+    limits: DecodeLimits,
+    ex: bool,
+    decode: impl FnOnce(&mut B, &mut DecodeOptions) -> Result<Option<ImgWarnings>, Error>,
+) -> Result<Option<ImgWarnings>, Error> {
     let offset = reader.offset()?;
     let end = reader.seek(std::io::SeekFrom::End(0))?;
     reader.seek(std::io::SeekFrom::Start(offset))?;
@@ -226,7 +247,7 @@ pub(crate) fn run<B: BinaryReader>(
     limits::check_input_length(length, limits.input_bytes)?;
     let signature = reader.read_bytes_no_move(usize::try_from(length.min(8))?)?;
     let handle_abort =
-        signature.starts_with(b"\x89PNG\r\n\x1a\n") || signature.starts_with(&[0xff, 0xd8]);
+        ex || signature.starts_with(b"\x89PNG\r\n\x1a\n") || signature.starts_with(&[0xff, 0xd8]);
     limits::scope(limits, || {
         let mut guard = Guard {
             drawer: options.drawer,

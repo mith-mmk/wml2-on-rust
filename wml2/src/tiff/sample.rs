@@ -9,7 +9,7 @@ fn invalid(message: impl Into<String>) -> Error {
     io::Error::other(message.into()).into()
 }
 
-#[cfg(feature = "high-bit-depth")]
+#[cfg(any(feature = "high-bit-depth", feature = "image-buffer-ex"))]
 pub(crate) fn sample_bytes(bits: u16) -> Result<usize, Error> {
     if bits == 0 || bits > 32 || bits % 8 != 0 {
         return Err(invalid(format!(
@@ -111,10 +111,10 @@ pub(crate) fn read_sample_with_fill_order(
     read_sample(data, bits, endian, index)
 }
 
-/// Decode a complete byte-aligned 16-bit page to interleaved native samples.
+/// Decode a complete byte-aligned unsigned 8/16-bit page to interleaved native samples.
 /// Predictor restoration is performed before conversion and before any
 /// 8-bit legacy quantization.
-#[cfg(feature = "high-bit-depth")]
+#[cfg(any(feature = "high-bit-depth", feature = "image-buffer-ex"))]
 pub(crate) fn decode_samples_u16(
     data: &[u8],
     width: usize,
@@ -128,9 +128,11 @@ pub(crate) fn decode_samples_u16(
     if bits_per_sample.len() != samples_per_pixel || samples_per_pixel == 0 {
         return Err(invalid("TIFF BitsPerSample/SamplesPerPixel mismatch"));
     }
-    if bits_per_sample.iter().any(|bits| *bits != 16) {
+    let depth = bits_per_sample[0];
+    let bytes = sample_bytes(depth)?;
+    if !matches!(depth, 8 | 16) || bits_per_sample.iter().any(|bits| *bits != depth) {
         return Err(invalid(
-            "native TIFF sample output currently requires 16-bit samples",
+            "native TIFF sample output requires uniform 8/16-bit samples",
         ));
     }
     let pixels = width
@@ -141,18 +143,28 @@ pub(crate) fn decode_samples_u16(
         .ok_or_else(|| io::Error::other("TIFF sample count overflows"))?;
     let plane_values = pixels;
     let expected = values
-        .checked_mul(2)
+        .checked_mul(bytes)
         .ok_or_else(|| io::Error::other("TIFF sample byte count overflows"))?;
     if data.len() < expected {
-        return Err(invalid("TIFF 16-bit sample data is truncated"));
+        return Err(invalid("TIFF native sample data is truncated"));
     }
-    let mut output = vec![0u16; values];
+    let allocated = values
+        .checked_mul(2)
+        .ok_or_else(|| invalid("TIFF sample allocation overflows"))?;
+    crate::limits::check(
+        allocated,
+        crate::limits::current().expanded_bytes,
+        "TIFF sample storage",
+    )?;
+    let mut output = Vec::new();
+    output.try_reserve_exact(values)?;
+    output.resize(values, 0u16);
     if planar_config == 1 {
         let row_samples = width
             .checked_mul(samples_per_pixel)
             .ok_or_else(|| io::Error::other("TIFF row sample count overflows"))?;
         let row_bytes = row_samples
-            .checked_mul(2)
+            .checked_mul(bytes)
             .ok_or_else(|| io::Error::other("TIFF row byte count overflows"))?;
         let mut restored = data[..expected].to_vec();
         if predictor == 2 {
@@ -160,37 +172,37 @@ pub(crate) fn decode_samples_u16(
                 &mut restored,
                 row_bytes,
                 height,
-                16,
+                depth,
                 samples_per_pixel,
                 endian,
             )?;
         }
         for i in 0..values {
-            output[i] = read_sample(&restored, 16, endian, i)? as u16;
+            output[i] = read_sample(&restored, depth, endian, i)? as u16;
         }
     } else if planar_config == 2 {
         for plane in 0..samples_per_pixel {
             let start = plane
                 .checked_mul(plane_values)
-                .and_then(|v| v.checked_mul(2))
+                .and_then(|v| v.checked_mul(bytes))
                 .ok_or_else(|| io::Error::other("TIFF plane offset overflows"))?;
             let end = start
-                .checked_add(plane_values * 2)
+                .checked_add(plane_values * bytes)
                 .ok_or_else(|| io::Error::other("TIFF plane end overflows"))?;
             let mut plane_data = data[start..end].to_vec();
             if predictor == 2 {
                 crate::tiff::predictor::apply_predictor(
                     &mut plane_data,
-                    width * 2,
+                    width * bytes,
                     height,
-                    16,
+                    depth,
                     1,
                     endian,
                 )?;
             }
             for i in 0..plane_values {
                 output[i * samples_per_pixel + plane] =
-                    read_sample(&plane_data, 16, endian, i)? as u16;
+                    read_sample(&plane_data, depth, endian, i)? as u16;
             }
         }
     } else {

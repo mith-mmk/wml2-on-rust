@@ -12,6 +12,9 @@
 //! preserve metadata, and encode BMP, GIF, JPEG, PNG/APNG, TIFF, and WebP output.
 //!
 //! # Example
+//! The EXIF match arm is available with the `exif` feature. Decoding a file
+//! also requires its format feature (for example, `png` or `jpeg`).
+//!
 //! ```rust
 //! use wml2::draw::*;
 //! use wml2::metadata::DataMap;
@@ -40,6 +43,7 @@
 //!                 DataMap::Ascii(string) => {
 //!                     println!("{}: {}",key,string);
 //!                 },
+//!                 #[cfg(feature = "exif")]
 //!                 DataMap::Exif(value) => {
 //!                     println!("=============== EXIF START ==============");
 //!                     let string = value.to_string();

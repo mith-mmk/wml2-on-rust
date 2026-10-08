@@ -454,7 +454,7 @@ fn buffer_error(message: &str) -> Error {
     ))
 }
 
-fn zeroed_bytes(length: usize) -> Result<Vec<u8>, Error> {
+pub(crate) fn zeroed_bytes(length: usize) -> Result<Vec<u8>, Error> {
     let mut bytes = Vec::new();
     bytes.try_reserve_exact(length)?;
     bytes.resize(length, 0);
@@ -1250,6 +1250,103 @@ pub fn image_from_with_limits(
         limits,
     )?;
     Ok(image)
+}
+
+/// Decode static PNG/TIFF pixels with an explicit storage format and precision
+/// policy. Unlike the RGBA8 API, the codec declares Gray8/16 or Rgba8/16 source
+/// bytes before drawing; conversion is owned by [`ImageBufferEx`].
+/// PNG packed Gray expands to Gray8; palette/RGB/GrayAlpha expand to straight
+/// RGBA at their sample depth. TIFF supports unsigned 8/16-bit Gray/RGB with
+/// optional straight alpha, and retains orientation without rotating samples.
+/// Other codecs, APNG, multi-page TIFF and premultiplied TIFF are unsupported.
+/// ICC/gamma information is metadata, with no color or display transforms.
+///
+/// The example requires `png` in addition to `image-buffer-ex`.
+/// ```
+/// # #[cfg(feature = "png")]
+/// # {
+/// use wml2::draw::{image_from_ex, image_to, ImageBuffer, PixelFormatEx,
+///     PrecisionConversion};
+/// use wml2::util::ImageFormat;
+/// let mut source = ImageBuffer::from_buffer(1, 1, vec![1, 2, 3, 255]);
+/// let png = image_to(&mut source, ImageFormat::Png, None).unwrap();
+/// let image = image_from_ex(&png, PixelFormatEx::Rgba16,
+///     PrecisionConversion::Exact).unwrap();
+/// assert_eq!(image.bytes().unwrap(), &[1, 1, 2, 2, 3, 3, 255, 255]);
+/// # }
+/// ```
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_from_ex(
+    buffer: &[u8],
+    storage: PixelFormatEx,
+    precision: PrecisionConversion,
+) -> Result<ImageBufferEx, Error> {
+    image_from_ex_with_limits(
+        buffer,
+        storage,
+        precision,
+        crate::limits::DecodeLimits::default(),
+    )
+}
+
+/// Decode EX pixels with independent input, source, storage and metadata budgets.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_from_ex_with_limits(
+    buffer: &[u8],
+    storage: PixelFormatEx,
+    precision: PrecisionConversion,
+    limits: crate::limits::DecodeLimits,
+) -> Result<ImageBufferEx, Error> {
+    let mut image = ImageBufferEx::with_storage(storage, precision);
+    image_decoder_ex_with_limits(
+        &mut BytesReader::new(buffer),
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+        },
+        limits,
+    )?;
+    Ok(image)
+}
+
+/// Decode static PNG/TIFF into an EX-aware callback using the default limits.
+/// Legacy callbacks only accept the packed RGBA8 source declarations; they
+/// reject Gray/high-depth input rather than interpreting its bytes as RGBA8.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_decoder_ex<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    image_decoder_ex_with_limits(reader, option, crate::limits::DecodeLimits::default())
+}
+
+/// EX callback decode with explicit limits; the same Guard enforces source
+/// declarations and suppresses further callback forwarding after Abort.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_decoder_ex_with_limits<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Option<ImgWarnings>, Error> {
+    crate::decode_guard::run_ex(reader, option, limits, |reader, _option| {
+        let offset = reader.offset()?;
+        let end = reader.seek(SeekFrom::End(0))?;
+        reader.seek(SeekFrom::Start(offset))?;
+        let length = end
+            .checked_sub(offset)
+            .ok_or_else(|| std::io::Error::other("invalid input position"))?;
+        let sample = reader.read_bytes_no_move(usize::try_from(length.min(256))?)?;
+        match format_check(&sample) {
+            #[cfg(feature = "png")]
+            ImageFormat::Png => crate::png::decoder::decode_ex_inner(reader, _option),
+            #[cfg(feature = "tiff")]
+            ImageFormat::Tiff => crate::tiff::decoder::decode_ex_inner(reader, _option),
+            _ => Err(Box::new(ImgError::new_const(
+                ImgErrorKind::NoSupportFormat,
+                "EX decoding supports enabled static PNG/TIFF only".into(),
+            )) as Error),
+        }
+    })
 }
 
 pub fn image_decoder<B: BinaryReader>(

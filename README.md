@@ -146,8 +146,34 @@ let rgba = image.encode_pick_ex(0, 0, 1, 1,
 assert_eq!(rgba.bytes(), &[0xff; 8]);
 ```
 
-Legacy encoders use the explicit `ImageBufferEx::to_rgba8` adapter; no codec
-has been changed to consume EX bytes or automatically reduce their precision. With both
+With `image-buffer-ex` plus `png` and/or `tiff`, `image_from_ex(bytes,
+storage_format, precision)` and `image_decoder_ex` explicitly select the new
+static decode path. PNG filtering/inflate/Adam7 remain shared with legacy
+decoding. Native 16-bit PNG samples arrive as LE Gray16/Rgba16 without losing
+their low byte; 8-bit PNG remains Gray8/Rgba8. Packed Gray expands to Gray8,
+and palette, RGB and GrayAlpha expand to straight RGBA. TIFF reuses native
+strip/tile, compression, endian, planar and Predictor 1/2 reconstruction for
+uniform unsigned 8/16-bit Gray/RGB and optional explicitly straight alpha.
+EX TIFF compression supports None/LZW/PackBits/Deflate; JPEG and CCITT remain
+on the legacy path.
+WhiteIsZero is inverted at source precision; orientation is metadata and does
+not rotate pixels. Source declarations describe codec output, while the
+caller chooses independent storage and Exact/Round conversion. The ordinary
+RGBA8 entry points and their legacy 16-to-8 high-byte reduction are unchanged.
+
+EX PNG preserves bKGD as raw `PNG Background` metadata (PNG wire byte order),
+instead of narrowing it through the legacy RGBA8 background or compositing
+straight-alpha pixels. ICC data is retained as `Source ICC Profile`; no
+ICC/gamma/HDR transform is performed or implied by Gray-to-RGBA expansion.
+APNG, multi-display-page TIFF, premultiplied/unspecified TIFF alpha, other
+photometric models/depths/codecs, and AVIF EX integration remain unsupported.
+`image_from_ex_with_limits`/`image_decoder_ex_with_limits` enforce existing
+limits independently on input, source, storage, output rows and metadata;
+the TIFF native reconstruction also budgets its temporary u16 sample storage.
+EX Abort stops subsequent callback forwarding for both codecs.
+
+Legacy encoders use the explicit `ImageBufferEx::to_rgba8` adapter; encoders
+are not connected to EX bytes and do not automatically reduce their precision. With both
 `image-buffer-ex` and `high-bit-depth`, `from_highres_pixels` and
 `to_highres_pixels` copy representable full-resolution Gray or straight RGBA
 pixels through the existing `highres::ImageFrame`/`PixelBuffer` types. These

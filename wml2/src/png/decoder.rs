@@ -139,7 +139,7 @@ pub(crate) fn validate_frame(header: &PngHeader, frame: &FrameControl) -> Result
     Ok(())
 }
 
-fn load(
+fn load<const EX: bool>(
     header: &mut PngHeader,
     buffer: &[u8],
     option: &mut DecodeOptions,
@@ -164,7 +164,14 @@ fn load(
         let row_bytes = (w * channels * depth).div_ceil(8);
         let mut previous = vec![0u8; row_bytes];
         let mut row = vec![0u8; row_bytes];
-        let mut rgba = vec![0u8; w * 4];
+        let pixel_bytes = 4;
+        #[cfg(feature = "image-buffer-ex")]
+        let pixel_bytes = if EX {
+            ex_format(header).bytes_per_pixel()
+        } else {
+            pixel_bytes
+        };
+        let mut rgba = vec![0u8; w * pixel_bytes];
         for py in 0..h {
             let filter = buffer[cursor];
             cursor += 1;
@@ -204,6 +211,16 @@ fn load(
             };
             for x in 0..w {
                 let i = x * channels;
+                #[cfg(feature = "image-buffer-ex")]
+                if EX {
+                    write_ex_pixel(
+                        header,
+                        &sample,
+                        i,
+                        &mut rgba[x * pixel_bytes..(x + 1) * pixel_bytes],
+                    )?;
+                    continue;
+                }
                 let mut pixel = match header.color_type {
                     0 | 4 => {
                         let g = reduce(sample(i));
@@ -264,7 +281,7 @@ fn load(
                         sy + py * dy,
                         1,
                         1,
-                        &rgba[x * 4..x * 4 + 4],
+                        &rgba[x * pixel_bytes..(x + 1) * pixel_bytes],
                         None,
                     )?;
                 }
@@ -273,6 +290,94 @@ fn load(
         }
     }
     Ok(None)
+}
+
+#[cfg(feature = "image-buffer-ex")]
+fn ex_format(header: &PngHeader) -> PixelFormatEx {
+    let gray = header.color_type == 0 && header.transparency.is_none();
+    match (gray, header.bitpersample == 16) {
+        (true, false) => PixelFormatEx::Gray8,
+        (true, true) => PixelFormatEx::Gray16,
+        (false, false) => PixelFormatEx::Rgba8,
+        (false, true) => PixelFormatEx::Rgba16,
+    }
+}
+
+#[cfg(feature = "image-buffer-ex")]
+fn write_ex_pixel(
+    header: &PngHeader,
+    sample: &impl Fn(usize) -> u16,
+    index: usize,
+    output: &mut [u8],
+) -> Result<(), Error> {
+    let format = ex_format(header);
+    let maximum = if format.bits() == 16 { 65535 } else { 255 };
+    let unpack = |i| {
+        let value = sample(i);
+        if header.bitpersample < 8 {
+            (u32::from(value) * 255 / ((1u32 << header.bitpersample) - 1)) as u16
+        } else {
+            value
+        }
+    };
+    let mut pixel = match header.color_type {
+        0 | 4 => {
+            let g = unpack(index);
+            [
+                g,
+                g,
+                g,
+                if header.color_type == 4 {
+                    unpack(index + 1)
+                } else {
+                    maximum
+                },
+            ]
+        }
+        2 | 6 => [
+            unpack(index),
+            unpack(index + 1),
+            unpack(index + 2),
+            if header.color_type == 6 {
+                unpack(index + 3)
+            } else {
+                maximum
+            },
+        ],
+        3 => {
+            let p = palette_entries(header)?
+                .get(sample(index) as usize)
+                .ok_or_else(|| {
+                    png_error(ImgErrorKind::IllegalData, "PNG palette index out of range")
+                })?;
+            [
+                u16::from(p.red),
+                u16::from(p.green),
+                u16::from(p.blue),
+                u16::from(p.alpha),
+            ]
+        }
+        _ => unreachable!(),
+    };
+    if let Some(trns) = &header.transparency {
+        let transparent = match header.color_type {
+            0 if trns.len() == 2 => sample(index) == u16::from_be_bytes([trns[0], trns[1]]),
+            2 if trns.len() == 6 => (0..3)
+                .all(|c| sample(index + c) == u16::from_be_bytes([trns[c * 2], trns[c * 2 + 1]])),
+            _ => false,
+        };
+        if transparent {
+            pixel[3] = 0;
+        }
+    }
+    for (channel, value) in pixel[..format.channels()].iter().enumerate() {
+        if format.bits() == 16 {
+            output[channel * 2..channel * 2 + 2].copy_from_slice(&value.to_le_bytes());
+        } else {
+            output[channel] = *value as u8;
+        }
+    }
+    Ok(())
 }
 
 fn next_options(frame_control: &FrameControl) -> NextOptions {
@@ -324,7 +429,29 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
+    decode_inner_mode::<B, false>(reader, option)
+}
+
+#[cfg(feature = "image-buffer-ex")]
+pub(crate) fn decode_ex_inner<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    decode_inner_mode::<B, true>(reader, option)
+}
+
+fn decode_inner_mode<B: BinaryReader, const EX: bool>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
     let mut header = PngHeader::new(reader, option.debug_flag)?;
+    #[cfg(feature = "image-buffer-ex")]
+    if EX && header.is_apng {
+        return Err(png_error(
+            ImgErrorKind::NoSupportFormat,
+            "EX PNG animation is unsupported",
+        ));
+    }
     expected_length(&header)?;
     for frame in &header.frame_controls {
         validate_frame(&header, frame)?;
@@ -388,6 +515,41 @@ pub(crate) fn decode_inner<B: BinaryReader>(
         })
     };
 
+    #[cfg(feature = "image-buffer-ex")]
+    if EX {
+        // bKGD is a source hint, not pixel data. Preserve it without rounding
+        // through legacy RGBA8 or compositing the straight-alpha samples.
+        if let Some(background) = &header.background_color {
+            let bytes = match background {
+                BacgroundColor::Grayscale(g) => g.to_be_bytes().to_vec(),
+                BacgroundColor::TrueColor((r, g, b)) => {
+                    [r.to_be_bytes(), g.to_be_bytes(), b.to_be_bytes()].concat()
+                }
+                BacgroundColor::Index(i) => vec![*i],
+            };
+            option
+                .drawer
+                .set_metadata("PNG Background", crate::metadata::DataMap::Raw(bytes))?;
+        }
+        option.drawer.init_ex(
+            header.width as usize,
+            header.height as usize,
+            Some(InitOptionsEx {
+                source_format: ex_format(&header),
+                source_stride: None,
+                legacy: Some(InitOptions {
+                    loop_count: 0,
+                    background: None,
+                    animation: false,
+                }),
+            }),
+        )?;
+    } else {
+        option
+            .drawer
+            .init(header.width as usize, header.height as usize, opt)?;
+    }
+    #[cfg(not(feature = "image-buffer-ex"))]
     option
         .drawer
         .init(header.width as usize, header.height as usize, opt)?;
@@ -450,7 +612,7 @@ pub(crate) fn decode_inner<B: BinaryReader>(
                         let decomressed = inflate_image(&header, &buffer);
                         match decomressed {
                             Ok(debuffer) => {
-                                load(&mut header.clone(), &debuffer, option)?;
+                                load::<EX>(&mut header.clone(), &debuffer, option)?;
                                 if !header.frame_controls.is_empty() {
                                     let frame_control = &header.frame_controls[0];
                                     let next = next_options(frame_control);
@@ -458,7 +620,7 @@ pub(crate) fn decode_inner<B: BinaryReader>(
                                     if let Some(response) = result {
                                         if response.response == ResponseCommand::Continue {
                                             allow_multi_image = true;
-                                            load(&mut header.clone(), &debuffer, option)?;
+                                            load::<EX>(&mut header.clone(), &debuffer, option)?;
                                             // Image = Animation Frame 0
                                         }
                                     }
@@ -488,7 +650,7 @@ pub(crate) fn decode_inner<B: BinaryReader>(
                             let decomressed = inflate_image(&header, &buffer);
                             match decomressed {
                                 Ok(debuffer) => {
-                                    load(&mut header, &debuffer, option)?;
+                                    load::<EX>(&mut header, &debuffer, option)?;
                                 }
                                 Err(err) => {
                                     let message = format!("Uncompressed Error {:?}", err);
@@ -559,7 +721,7 @@ pub(crate) fn decode_inner<B: BinaryReader>(
                             let decomressed = inflate_image(&header, &buffer);
                             match decomressed {
                                 Ok(debuffer) => {
-                                    load(&mut header, &debuffer, option)?;
+                                    load::<EX>(&mut header, &debuffer, option)?;
                                 }
                                 Err(err) => {
                                     let message = format!("Uncompressed Error {:?}", err);
@@ -640,6 +802,12 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     }
     let map = make_metadata(&header)?;
     for (key, value) in &map {
+        #[cfg(feature = "image-buffer-ex")]
+        let key = if EX && key == "ICC Profile" {
+            "Source ICC Profile"
+        } else {
+            key
+        };
         option.drawer.set_metadata(key, value.clone())?;
     }
 

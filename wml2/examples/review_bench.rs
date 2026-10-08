@@ -44,7 +44,7 @@ unsafe impl GlobalAlloc for Meter {
 }
 #[global_allocator]
 static ALLOCATOR: Meter = Meter;
-#[cfg(any(feature = "jpeg", feature = "webp"))]
+#[cfg(any(feature = "jpeg", feature = "webp", feature = "png", feature = "tiff"))]
 fn hash(data: &[u8]) -> u64 {
     data.iter().fold(0xcbf29ce484222325, |h, b| {
         (h ^ u64::from(*b)).wrapping_mul(0x100000001b3)
@@ -70,6 +70,31 @@ fn main() {
         .and_then(|v| v.parse().ok())
         .unwrap_or(7);
     println!("case,iteration,ns,allocations,allocated_bytes,peak_live_bytes,first_draw_ns,hash");
+    #[cfg(any(feature = "png", feature = "tiff"))]
+    if mode == "decode-file" {
+        let path = std::env::args()
+            .nth(3)
+            .expect("decode-file <repeat> <path>");
+        let encoded = std::fs::read(path).unwrap();
+        for i in 0..repeat {
+            measure("decode-file", i, || {
+                let mut sink = Sink {
+                    image: ImageBuffer::new(),
+                    start: Instant::now(),
+                    first: 0,
+                };
+                image_loader(
+                    &encoded,
+                    &mut DecodeOptions {
+                        debug_flag: 0,
+                        drawer: &mut sink,
+                    },
+                )
+                .unwrap();
+                (hash(sink.image.buffer.as_ref().unwrap()), sink.first)
+            });
+        }
+    }
     if mode == "draw" {
         let mut image = ImageBuffer::from_buffer(3840, 2160, vec![0; 3840 * 2160 * 4]);
         let pixels: Vec<u8> = (0..3840 * 2160 * 4).map(|i| (i * 17) as u8).collect();
@@ -158,13 +183,13 @@ fn main() {
         icc_bench(repeat);
     }
 }
-#[cfg(feature = "jpeg")]
+#[cfg(any(feature = "jpeg", feature = "png", feature = "tiff"))]
 struct Sink {
     image: ImageBuffer,
     start: Instant,
     first: u128,
 }
-#[cfg(feature = "jpeg")]
+#[cfg(any(feature = "jpeg", feature = "png", feature = "tiff"))]
 impl DrawCallback for Sink {
     fn init(&mut self, w: usize, h: usize, o: Option<InitOptions>) -> Response {
         self.image.init(w, h, o)

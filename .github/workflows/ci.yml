@@ -169,7 +169,7 @@ jobs:
             --manifest wml2/tests/fixtures/tiff_interop/manifest.json
           echo "WML2_TIFF_CORPUS=$GITHUB_WORKSPACE/$corpus" >> "$GITHUB_ENV"
       - name: Run pinned external TIFF interoperability tests
-        run: cargo test -p wml2 --locked --test tiff_interop --no-default-features --features tiff-jpeg,idct_llm -- --ignored
+        run: cargo test -p wml2 --locked --test tiff_interop --no-default-features --features tiff-jpeg,idct_llm,image-buffer-ex -- --ignored
       - name: Build sample converter and metadata tools
         run: cargo build -p wml2-test --locked --release --example converter --example metadata
       - name: Generate TIFF review and alpha/LZW samples

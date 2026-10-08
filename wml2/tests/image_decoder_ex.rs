@@ -371,6 +371,78 @@ mod tiff {
     fn put32(n: u32, be: bool) -> [u8; 4] {
         if be { n.to_be_bytes() } else { n.to_le_bytes() }
     }
+    #[derive(Clone, Copy, Debug)]
+    enum CompressionFixture {
+        None,
+        Deflate,
+        Lzw,
+        PackBits,
+    }
+    impl CompressionFixture {
+        fn tag(self) -> u16 {
+            match self {
+                Self::None => 1,
+                Self::Deflate => 8,
+                Self::Lzw => 5,
+                Self::PackBits => 32773,
+            }
+        }
+        fn encode(self, data: &[u8]) -> Vec<u8> {
+            match self {
+                Self::None => data.to_vec(),
+                Self::Deflate => miniz_oxide::deflate::compress_to_vec_zlib(data, 6),
+                Self::Lzw => {
+                    // Independent TIFF MSB-first 9-bit literal stream. Frequent
+                    // Clear codes deliberately keep the dictionary below a width
+                    // transition; this does not call WML2's LZW encoder.
+                    let mut codes = Vec::new();
+                    for block in data.chunks(128) {
+                        codes.push(256u16);
+                        codes.extend(block.iter().map(|v| u16::from(*v)));
+                    }
+                    codes.push(257);
+                    let mut bytes = vec![0; (codes.len() * 9).div_ceil(8)];
+                    for (i, code) in codes.iter().enumerate() {
+                        for bit in 0..9 {
+                            let offset = i * 9 + bit;
+                            bytes[offset / 8] |=
+                                (((code >> (8 - bit)) & 1) as u8) << (7 - offset % 8);
+                        }
+                    }
+                    bytes
+                }
+                Self::PackBits => {
+                    // A no-op, bounded literal packets, and repeat packets.
+                    // Every repeated pair is encoded independently of the decoder.
+                    let mut bytes = vec![128];
+                    let mut i = 0;
+                    while i < data.len() {
+                        let run = data[i..]
+                            .iter()
+                            .take_while(|b| **b == data[i])
+                            .count()
+                            .min(128);
+                        if run >= 2 {
+                            bytes.extend_from_slice(&[(1i16 - run as i16) as i8 as u8, data[i]]);
+                            i += run;
+                        } else {
+                            let start = i;
+                            i += 1;
+                            while i < data.len()
+                                && i - start < 128
+                                && !(i + 1 < data.len() && data[i] == data[i + 1])
+                            {
+                                i += 1;
+                            }
+                            bytes.push((i - start - 1) as u8);
+                            bytes.extend_from_slice(&data[start..i]);
+                        }
+                    }
+                    bytes
+                }
+            }
+        }
+    }
     // Independent classic-TIFF writer: only tags and sample bytes, no WML2 encoder.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn fixture(
@@ -383,6 +455,37 @@ mod tiff {
         predictor: bool,
         tiled: bool,
         compressed: bool,
+        values: &[u16],
+    ) -> Vec<u8> {
+        fixture_with_compression(
+            size,
+            depth,
+            photo,
+            alpha,
+            be,
+            planar,
+            predictor,
+            tiled,
+            if compressed {
+                CompressionFixture::Deflate
+            } else {
+                CompressionFixture::None
+            },
+            values,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn fixture_with_compression(
+        size: (usize, usize),
+        depth: u16,
+        photo: u16,
+        alpha: Option<u16>,
+        be: bool,
+        planar: bool,
+        predictor: bool,
+        tiled: bool,
+        compression: CompressionFixture,
         values: &[u16],
     ) -> Vec<u8> {
         let (width, height) = size;
@@ -421,11 +524,7 @@ mod tiff {
                         }
                     }
                 }
-                payloads.push(if compressed {
-                    miniz_oxide::deflate::compress_to_vec_zlib(&data, 6)
-                } else {
-                    data
-                });
+                payloads.push(compression.encode(&data));
             }
         }
         let shorts = |v: &[u16]| v.iter().flat_map(|n| put16(*n, be)).collect::<Vec<_>>();
@@ -434,7 +533,7 @@ mod tiff {
             (256, 4, 1, longs(&[width as u32])),
             (257, 4, 1, longs(&[height as u32])),
             (258, 3, channels, shorts(&vec![depth; channels])),
-            (259, 3, 1, shorts(&[if compressed { 8 } else { 1 }])),
+            (259, 3, 1, shorts(&[compression.tag()])),
             (262, 3, 1, shorts(&[photo])),
             (274, 3, 1, shorts(&[6])),
             (277, 3, 1, shorts(&[channels as u16])),
@@ -505,6 +604,214 @@ mod tiff {
             out.extend(p);
         }
         out
+    }
+    fn verify_compressed_ex(compression: CompressionFixture) {
+        for depth in [8, 16] {
+            for rgba in [false, true] {
+                let (format, values, expected) = match (depth, rgba) {
+                    (8, false) => (
+                        PixelFormatEx::Gray8,
+                        vec![0, 1, 18, 127, 128, 255],
+                        vec![0, 1, 18, 127, 128, 255],
+                    ),
+                    (16, false) => (
+                        PixelFormatEx::Gray16,
+                        vec![0, 1, 0x1234, 0x7fff, 0x8001, 65535],
+                        vec![0, 0, 1, 0, 0x34, 0x12, 0xff, 0x7f, 1, 0x80, 0xff, 0xff],
+                    ),
+                    (8, true) => (
+                        PixelFormatEx::Rgba8,
+                        vec![
+                            1, 18, 171, 128, 255, 0, 127, 0, 4, 5, 6, 255, 8, 9, 10, 11, 12, 13,
+                            14, 15, 16, 17, 18, 19,
+                        ],
+                        vec![
+                            1, 18, 171, 128, 255, 0, 127, 0, 4, 5, 6, 255, 8, 9, 10, 11, 12, 13,
+                            14, 15, 16, 17, 18, 19,
+                        ],
+                    ),
+                    _ => (
+                        PixelFormatEx::Rgba16,
+                        vec![
+                            1, 0x1234, 0xabcd, 0x8001, 65535, 0, 0x7fff, 0, 4, 5, 6, 65535, 8, 9,
+                            10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                        ],
+                        words(&[
+                            1, 0x1234, 0xabcd, 0x8001, 65535, 0, 0x7fff, 0, 4, 5, 6, 65535, 8, 9,
+                            10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                        ]),
+                    ),
+                };
+                for be in [false, true] {
+                    for planar in [false, true] {
+                        for tiled in [false, true] {
+                            for predictor in [false, true] {
+                                let data = fixture_with_compression(
+                                    (3, 2),
+                                    depth,
+                                    if rgba { 2 } else { 1 },
+                                    if rgba { Some(2) } else { None },
+                                    be,
+                                    planar,
+                                    predictor,
+                                    tiled,
+                                    compression,
+                                    &values,
+                                );
+                                let mut image =
+                                    image_from_ex(&data, format, PrecisionConversion::Exact)
+                                        .unwrap();
+                                assert_eq!(
+                                    image.bytes().unwrap(),
+                                    expected,
+                                    "{compression:?} {format:?} BE{be} planar{planar} tiled{tiled} predictor{predictor}"
+                                );
+                                assert_eq!(
+                                    (image.width(), image.height(), image.stride()),
+                                    (3, 2, 3 * format.bytes_per_pixel())
+                                );
+                                // Odd output padding is never copied from block storage.
+                                let tile = image
+                                    .encode_pick_ex(
+                                        2,
+                                        1,
+                                        1,
+                                        1,
+                                        PixelOutputEx {
+                                            format,
+                                            stride: Some(format.bytes_per_pixel() + 1),
+                                            conversion: PrecisionConversion::Exact,
+                                        },
+                                        None,
+                                    )
+                                    .unwrap()
+                                    .unwrap();
+                                let mut expected_tile =
+                                    expected[expected.len() - format.bytes_per_pixel()..].to_vec();
+                                expected_tile.push(0);
+                                assert_eq!(tile.bytes(), expected_tile);
+                                if depth == 8 {
+                                    let mut legacy = Vec::new();
+                                    if rgba {
+                                        legacy.extend_from_slice(&expected);
+                                    } else {
+                                        for value in &expected {
+                                            legacy
+                                                .extend_from_slice(&[*value, *value, *value, 255]);
+                                        }
+                                    }
+                                    assert_eq!(image_from(&data).unwrap().buffer.unwrap(), legacy);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Clear codes across packets, 128-byte literals and long repeats.
+            let mut values: Vec<u16> = (0..130)
+                .map(|v| if depth == 8 { v } else { 0x1200 + v })
+                .collect();
+            values.extend([0; 128]);
+            let data = fixture_with_compression(
+                (258, 1),
+                depth,
+                1,
+                None,
+                false,
+                false,
+                false,
+                false,
+                compression,
+                &values,
+            );
+            let format = if depth == 8 {
+                PixelFormatEx::Gray8
+            } else {
+                PixelFormatEx::Gray16
+            };
+            let image = image_from_ex(&data, format, PrecisionConversion::Exact).unwrap();
+            let mut expected = if depth == 8 {
+                (0u8..130).collect::<Vec<_>>()
+            } else {
+                (0u8..130).flat_map(|low| [low, 0x12]).collect::<Vec<_>>()
+            };
+            expected.resize(expected.len() + 128 * format.bytes_per_sample(), 0);
+            assert_eq!(image.bytes().unwrap(), expected);
+            assert!(
+                image_from_ex(&data[..data.len() - 1], format, PrecisionConversion::Exact).is_err()
+            );
+        }
+    }
+    #[test]
+    fn lzw_ex_preserves_known_gray_rgba_eight_sixteen_values() {
+        verify_compressed_ex(CompressionFixture::Lzw);
+    }
+    #[test]
+    fn packbits_ex_preserves_known_gray_rgba_eight_sixteen_values() {
+        verify_compressed_ex(CompressionFixture::PackBits);
+    }
+    #[test]
+    fn libtiff_lzw_packbits_ex_gray_eight_sixteen_match_original_pattern() {
+        // Generated once by Pillow/libtiff, never by a WML2 encoder. The known
+        // original sample pattern is specified in fixtures/ex-tiff-compression.md.
+        for (depth, compression, data) in [
+            (8, 5, include_bytes!("fixtures/ex-gray8-lzw.tif").as_slice()),
+            (
+                16,
+                5,
+                include_bytes!("fixtures/ex-gray16-lzw.tif").as_slice(),
+            ),
+            (
+                8,
+                32773,
+                include_bytes!("fixtures/ex-gray8-packbits.tif").as_slice(),
+            ),
+            (
+                16,
+                32773,
+                include_bytes!("fixtures/ex-gray16-packbits.tif").as_slice(),
+            ),
+        ] {
+            let format = if depth == 8 {
+                PixelFormatEx::Gray8
+            } else {
+                PixelFormatEx::Gray16
+            };
+            let image = image_from_ex(data, format, PrecisionConversion::Exact).unwrap();
+            let values: Vec<u16> = (0..3u32)
+                .flat_map(|y| {
+                    (0..257).map(move |x| {
+                        if depth == 8 {
+                            ((x * 37 + y * 83 + (x / 7) * 11) % 256) as u16
+                        } else {
+                            ((x * 257 + y * 4660 + (x / 17) * 31) % 65536) as u16
+                        }
+                    })
+                })
+                .collect();
+            assert_eq!(
+                (values[0], values[1], values[2]),
+                if depth == 8 {
+                    (0, 37, 74)
+                } else {
+                    (0, 257, 514)
+                }
+            );
+            let expected = if depth == 8 {
+                values.iter().map(|v| *v as u8).collect()
+            } else {
+                words(&values)
+            };
+            assert_eq!(
+                (image.width(), image.height(), image.stride()),
+                (257, 3, 257 * format.bytes_per_pixel())
+            );
+            assert_eq!(
+                image.bytes().unwrap(),
+                expected,
+                "depth{depth} compression{compression}"
+            );
+        }
     }
     #[test]
     fn native_gray_rgba_endian_planar_predictor_deflate_and_edge_tiles() {

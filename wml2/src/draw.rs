@@ -97,7 +97,10 @@ pub trait DrawCallback: Sync + Send {
 #[path = "image_buffer_ex.rs"]
 pub(crate) mod image_buffer_ex;
 #[cfg(feature = "image-buffer-ex")]
-pub use image_buffer_ex::{ImageBufferEx, InitOptionsEx, PixelFormatEx, PrecisionConversion};
+pub use image_buffer_ex::{
+    ImageBufferEx, ImageProfilesEx, InitOptionsEx, PickCallbackEx, PixelBytesEx, PixelFormatEx,
+    PixelOutputEx, PrecisionConversion, convert_pixels_ex,
+};
 
 /// Supplies image data to encoders.
 pub trait PickCallback: Sync + Send {

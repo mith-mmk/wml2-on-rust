@@ -137,7 +137,40 @@ declarations and rejects other formats or explicit strides before calling init.
 If a custom type already defines `init_ex`, use `DrawCallback::init_ex` to
 explicitly select the trait method.
 
-Legacy encoders use the explicit `ImageBufferEx::to_rgba8` adapter. With both
+`convert_pixels_ex` is the public source-to-output byte converter shared by EX
+drawing and picking. It validates declared source dimensions, stride, exact
+byte length, and all addressed samples before conversion, and checks source
+and output budgets before allocation. `PixelOutputEx` requires an explicit
+format and Exact/Round policy; its optional byte stride describes each output
+rectangle, including final row padding. Output padding is zeroed. The returned
+`PixelBytesEx` carries actual dimensions, format, stride, and owned bytes.
+
+`PickCallbackEx` is separate from the unchanged legacy `PickCallback`, and is
+implemented for `ImageBufferEx` and existing `ImageBuffer`. `encode_start_ex`
+returns `ImageProfilesEx`, wrapping the unchanged legacy profile plus the
+**storage** format/stride. Initialization backgrounds remain RGBA8 in that
+profile, and legacy callback metadata is retained. `encode_pick_ex` requires
+an explicit **output** `PixelOutputEx` alongside optional legacy `PickOptions`;
+it accepts only nonempty rectangles fully inside the canvas and checks
+precision without modifying storage. The picker also checks current canvas
+pixel/source-byte budgets, including existing padding. Publicly mutable
+legacy buffer fields are revalidated at each EX start/pick. EX animation
+picking is unsupported. EncoderOptions and EndOptions keep their old meaning.
+
+```rust
+use wml2::draw::{ImageBufferEx, PickCallbackEx, PixelFormatEx,
+    PixelOutputEx, PrecisionConversion};
+
+let mut image = ImageBufferEx::from_bytes(
+    1, 1, PixelFormatEx::Gray12, None, vec![0xff, 0x0f]).unwrap();
+let rgba = image.encode_pick_ex(0, 0, 1, 1,
+    PixelOutputEx::new(PixelFormatEx::Rgba16, PrecisionConversion::Exact),
+    None).unwrap().unwrap();
+assert_eq!(rgba.bytes(), &[0xff; 8]);
+```
+
+Legacy encoders use the explicit `ImageBufferEx::to_rgba8` adapter; no codec
+has been changed to consume EX bytes or automatically reduce their precision. With both
 `image-buffer-ex` and `high-bit-depth`, `from_highres_pixels` and
 `to_highres_pixels` copy representable full-resolution Gray or straight RGBA
 pixels through the existing `highres::ImageFrame`/`PixelBuffer` types. These

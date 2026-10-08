@@ -206,10 +206,12 @@ fn legacy_fields_and_rgba8_equivalence_remain_mutable() {
 // No init_ex method: an unchanged legacy implementation remains source-compatible.
 struct OldCallback {
     initializations: usize,
+    option: Option<InitOptions>,
 }
 impl DrawCallback for OldCallback {
-    fn init(&mut self, _: usize, _: usize, _: Option<InitOptions>) -> Response {
+    fn init(&mut self, _: usize, _: usize, option: Option<InitOptions>) -> Response {
         self.initializations += 1;
+        self.option = option;
         Ok(None)
     }
     fn draw(
@@ -238,7 +240,10 @@ impl DrawCallback for OldCallback {
 }
 #[test]
 fn provided_trait_initializer_only_forwards_packed_rgba8() {
-    let mut old = OldCallback { initializations: 0 };
+    let mut old = OldCallback {
+        initializations: 0,
+        option: None,
+    };
     old.init_ex(1, 1, None).unwrap();
     for format in [
         PixelFormatEx::Gray8,
@@ -387,4 +392,444 @@ fn unchanged_png_decoder_to_ex_and_explicit_legacy_encoder_adapter() {
     assert_eq!(adapter.buffer.as_ref().unwrap(), &pixels);
     let encoded = image_to(&mut adapter, ImageFormat::Png, None).unwrap();
     assert_eq!(image_from(&encoded).unwrap().buffer.unwrap(), pixels);
+}
+
+#[test]
+fn public_converter_six_format_matrix_exact_round_with_padding() {
+    let formats = [
+        PixelFormatEx::Gray8,
+        PixelFormatEx::Gray12,
+        PixelFormatEx::Gray16,
+        PixelFormatEx::Rgba8,
+        PixelFormatEx::Rgba12,
+        PixelFormatEx::Rgba16,
+    ];
+    for source in formats {
+        for target in formats {
+            let source_max = (1u32 << source.bits()) - 1;
+            let target_max = (1u32 << target.bits()) - 1;
+            let source_stride = 2 * source.bytes_per_pixel() + 1;
+            let target_stride = 2 * target.bytes_per_pixel() + 1;
+            let mut input = vec![255; source_stride * 2];
+            let mut values = Vec::new();
+            for y in 0..2 {
+                for x in 0..2 {
+                    let mut pixel = Vec::new();
+                    for channel in 0..source.channels() {
+                        let value = [0, 1, source_max / 2, source_max][(y * 2 + x + channel) % 4];
+                        pixel.push(value as u16);
+                    }
+                    let offset = y * source_stride + x * source.bytes_per_pixel();
+                    input[offset..offset + source.bytes_per_pixel()]
+                        .copy_from_slice(&samples(source, &pixel));
+                    values.push(pixel);
+                }
+            }
+            for policy in [PrecisionConversion::Exact, PrecisionConversion::Round] {
+                let request = PixelOutputEx {
+                    format: target,
+                    stride: Some(target_stride),
+                    conversion: policy,
+                };
+                let result = convert_pixels_ex(&input, 2, 2, source, Some(source_stride), request);
+                if source.channels() == 4 && target.channels() == 1 {
+                    assert!(result.is_err(), "{source:?} -> {target:?}");
+                    continue;
+                }
+                let mut expected = vec![0; target_stride * 2];
+                let mut exact = true;
+                for y in 0..2 {
+                    for x in 0..2 {
+                        let mut pixel = Vec::new();
+                        for channel in 0..target.channels() {
+                            let value = if source.channels() == 1 && channel == 3 {
+                                source_max
+                            } else {
+                                u32::from(
+                                    values[y * 2 + x]
+                                        [if source.channels() == 1 { 0 } else { channel }],
+                                )
+                            };
+                            let numerator = u64::from(value) * u64::from(target_max);
+                            let denominator = u64::from(source_max);
+                            exact &= numerator % denominator == 0;
+                            let rounded = (numerator
+                                + if policy == PrecisionConversion::Round {
+                                    denominator / 2
+                                } else {
+                                    0
+                                })
+                                / denominator;
+                            pixel.push(rounded as u16);
+                        }
+                        let offset = y * target_stride + x * target.bytes_per_pixel();
+                        expected[offset..offset + target.bytes_per_pixel()]
+                            .copy_from_slice(&samples(target, &pixel));
+                    }
+                }
+                if policy == PrecisionConversion::Exact && !exact {
+                    assert!(
+                        result.is_err(),
+                        "{source:?} -> {target:?} must reject lossy scaling"
+                    );
+                } else {
+                    let result = result.unwrap();
+                    assert_eq!(
+                        result.bytes(),
+                        expected,
+                        "{source:?} -> {target:?} {policy:?}"
+                    );
+                    assert_eq!(
+                        (
+                            result.width(),
+                            result.height(),
+                            result.format(),
+                            result.stride()
+                        ),
+                        (2, 2, target, target_stride)
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn public_converter_rejects_bad_source_output_and_overflow() {
+    let output = PixelOutputEx::new(PixelFormatEx::Gray16, PrecisionConversion::Exact);
+    for (width, height, stride, bytes) in [
+        (0, 1, None, vec![]),
+        (1, 0, None, vec![]),
+        (1, 1, Some(1), vec![0]),
+        (1, 1, None, vec![0]),
+        (1, 1, None, vec![0, 16]),
+        (usize::MAX, 1, None, vec![]),
+        (1, 2, Some(usize::MAX), vec![]),
+    ] {
+        assert!(
+            convert_pixels_ex(&bytes, width, height, PixelFormatEx::Gray12, stride, output)
+                .is_err()
+        );
+    }
+    for stride in [0, 1, usize::MAX] {
+        assert!(
+            convert_pixels_ex(
+                &[0; 4],
+                1,
+                2,
+                PixelFormatEx::Gray12,
+                None,
+                PixelOutputEx {
+                    stride: Some(stride),
+                    ..output
+                }
+            )
+            .is_err()
+        );
+    }
+    // Padding is excluded from sample validation and regenerated as zero.
+    let result = convert_pixels_ex(
+        &[1, 0, 255, 2, 0, 255],
+        1,
+        2,
+        PixelFormatEx::Gray12,
+        Some(3),
+        PixelOutputEx {
+            format: PixelFormatEx::Gray12,
+            stride: Some(5),
+            conversion: PrecisionConversion::Exact,
+        },
+    )
+    .unwrap();
+    assert_eq!(result.bytes(), [1, 0, 0, 0, 0, 2, 0, 0, 0, 0]);
+}
+
+#[test]
+fn picker_reads_padded_canvas_tiles_and_roundtrips_through_draw() {
+    let mut source = ImageBufferEx::from_bytes(
+        2,
+        2,
+        PixelFormatEx::Gray12,
+        Some(5),
+        vec![1, 0, 255, 15, 255, 2, 0, 255, 15, 255],
+    )
+    .unwrap();
+    let request = PixelOutputEx {
+        format: PixelFormatEx::Rgba12,
+        stride: Some(9),
+        conversion: PrecisionConversion::Exact,
+    };
+    let tile = source
+        .encode_pick_ex(1, 0, 1, 2, request, Some(PickOptions {}))
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        tile.bytes(),
+        [
+            255, 15, 255, 15, 255, 15, 255, 15, 0, 255, 15, 255, 15, 255, 15, 255, 15, 0
+        ]
+    );
+    let mut target = ImageBufferEx::with_storage(PixelFormatEx::Rgba16, PrecisionConversion::Exact);
+    target
+        .init_ex(1, 2, options(tile.format(), Some(tile.stride())))
+        .unwrap();
+    target.draw(0, 0, 1, 2, tile.bytes(), None).unwrap();
+    let back = target
+        .encode_pick_ex(
+            0,
+            0,
+            1,
+            2,
+            PixelOutputEx::new(PixelFormatEx::Rgba12, PrecisionConversion::Exact),
+            None,
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(back.bytes(), [255, 15].repeat(8));
+}
+
+#[test]
+fn picker_bounds_stride_precision_errors_leave_storage_unchanged() {
+    let mut image = ImageBufferEx::from_bytes(
+        2,
+        2,
+        PixelFormatEx::Rgba16,
+        None,
+        samples(PixelFormatEx::Rgba16, &[1; 16]),
+    )
+    .unwrap();
+    let before = image.bytes().unwrap().to_vec();
+    let output = PixelOutputEx::new(PixelFormatEx::Rgba16, PrecisionConversion::Exact);
+    for (x, y, width, height) in [
+        (0, 0, 0, 1),
+        (0, 0, 1, 0),
+        (2, 0, 1, 1),
+        (0, 2, 1, 1),
+        (1, 1, 2, 1),
+        (1, 1, 1, 2),
+        (usize::MAX, 0, 1, 1),
+        (0, usize::MAX, 1, 1),
+    ] {
+        assert!(
+            image
+                .encode_pick_ex(x, y, width, height, output, None)
+                .is_err()
+        );
+    }
+    for stride in [0, 7, usize::MAX] {
+        assert!(
+            image
+                .encode_pick_ex(
+                    0,
+                    0,
+                    1,
+                    2,
+                    PixelOutputEx {
+                        stride: Some(stride),
+                        ..output
+                    },
+                    None
+                )
+                .is_err()
+        );
+    }
+    assert!(
+        image
+            .encode_pick_ex(
+                0,
+                0,
+                1,
+                1,
+                PixelOutputEx::new(PixelFormatEx::Rgba8, PrecisionConversion::Exact),
+                None
+            )
+            .is_err()
+    );
+    let rounded = image
+        .encode_pick_ex(
+            0,
+            0,
+            1,
+            1,
+            PixelOutputEx::new(PixelFormatEx::Rgba8, PrecisionConversion::Round),
+            None,
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(rounded.bytes(), [0; 4]);
+    assert_eq!(image.bytes().unwrap(), before);
+    assert!(ImageBufferEx::new().encode_start_ex(None).is_err());
+    assert!(
+        ImageBufferEx::new()
+            .encode_pick_ex(0, 0, 1, 1, output, None)
+            .is_err()
+    );
+}
+
+#[test]
+fn ex_picker_profiles_preserve_background_metadata_and_reinitialization() {
+    let mut image = ImageBufferEx::with_storage(PixelFormatEx::Rgba16, PrecisionConversion::Exact);
+    image
+        .init(
+            1,
+            1,
+            Some(InitOptions {
+                loop_count: 4,
+                animation: false,
+                background: Some(RGBA {
+                    red: 17,
+                    green: 34,
+                    blue: 51,
+                    alpha: 68,
+                }),
+            }),
+        )
+        .unwrap();
+    image
+        .set_metadata("example", wml2::metadata::DataMap::UInt(19))
+        .unwrap();
+    let profile = image
+        .encode_start_ex(Some(EncoderOptions {}))
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        (
+            profile.legacy.width,
+            profile.legacy.height,
+            profile.format,
+            profile.stride
+        ),
+        (1, 1, PixelFormatEx::Rgba16, 8)
+    );
+    let background = profile.legacy.background.unwrap();
+    assert_eq!(
+        (
+            background.red,
+            background.green,
+            background.blue,
+            background.alpha
+        ),
+        (17, 34, 51, 68)
+    );
+    assert!(profile.legacy.metadata.unwrap().contains_key("example"));
+    assert!(
+        image
+            .metadata_ex()
+            .unwrap()
+            .unwrap()
+            .contains_key("example")
+    );
+    assert!(
+        image
+            .to_rgba8(PrecisionConversion::Exact)
+            .unwrap()
+            .background_color
+            .is_some()
+    );
+    image.encode_end_ex(Some(EndOptions {})).unwrap();
+    image.init_ex(1, 1, None).unwrap();
+    assert!(
+        image
+            .encode_start_ex(None)
+            .unwrap()
+            .unwrap()
+            .legacy
+            .background
+            .is_none()
+    );
+    assert!(image.init_ex(0, 1, None).is_err());
+    assert!(image.encode_start_ex(None).is_err());
+}
+
+#[test]
+fn legacy_buffer_ex_picker_revalidates_mutable_fields_and_keeps_legacy_api() {
+    let mut legacy = ImageBuffer::from_buffer(2, 1, vec![1, 2, 3, 4, 5, 6, 7, 8]);
+    let profile = legacy
+        .encode_start_ex(Some(EncoderOptions {}))
+        .unwrap()
+        .unwrap();
+    assert_eq!((profile.format, profile.stride), (PixelFormatEx::Rgba8, 8));
+    let requested = legacy
+        .encode_pick_ex(
+            1,
+            0,
+            1,
+            1,
+            PixelOutputEx::new(PixelFormatEx::Rgba16, PrecisionConversion::Exact),
+            Some(PickOptions {}),
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(requested.bytes(), [5, 5, 6, 6, 7, 7, 8, 8]);
+    assert_eq!(
+        legacy.encode_pick(1, 0, 1, 1, None).unwrap().unwrap(),
+        [5, 6, 7, 8]
+    );
+    legacy.encode_end_ex(Some(EndOptions {})).unwrap();
+    legacy.width = 3;
+    assert!(legacy.encode_start_ex(None).is_err());
+    assert!(
+        legacy
+            .encode_pick_ex(
+                0,
+                0,
+                1,
+                1,
+                PixelOutputEx::new(PixelFormatEx::Rgba8, PrecisionConversion::Exact),
+                None
+            )
+            .is_err()
+    );
+    legacy.width = 1;
+    legacy.buffer = Some(vec![1, 2, 3, 4]);
+    assert_eq!(
+        legacy
+            .encode_pick_ex(
+                0,
+                0,
+                1,
+                1,
+                PixelOutputEx::new(PixelFormatEx::Rgba8, PrecisionConversion::Exact),
+                None
+            )
+            .unwrap()
+            .unwrap()
+            .bytes(),
+        [1, 2, 3, 4]
+    );
+}
+
+#[test]
+fn provided_legacy_initializer_preserves_all_declared_legacy_options() {
+    let mut callback = OldCallback {
+        initializations: 0,
+        option: None,
+    };
+    let option = InitOptions {
+        loop_count: 23,
+        animation: true,
+        background: Some(RGBA {
+            red: 11,
+            green: 22,
+            blue: 33,
+            alpha: 44,
+        }),
+    };
+    callback
+        .init_ex(1, 1, Some(option.with_format(PixelFormatEx::Rgba8)))
+        .unwrap();
+    let received = callback.option.take().unwrap();
+    assert_eq!(received.loop_count, 23);
+    assert!(received.animation);
+    let background = received.background.unwrap();
+    assert_eq!(
+        (
+            background.red,
+            background.green,
+            background.blue,
+            background.alpha
+        ),
+        (11, 22, 33, 44)
+    );
+    assert_eq!(callback.initializations, 1);
 }

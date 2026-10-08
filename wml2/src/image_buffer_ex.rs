@@ -21,7 +21,8 @@ impl InitOptions {
 
 /// Supported interleaved byte layouts. No alignment of the byte buffer is assumed.
 /// 12/16-bit samples are little-endian u16; 12-bit samples use the low 12 bits
-/// and must have their high four bits clear. RGBA uses straight alpha.
+/// and must have their high four bits clear. Valid integer ranges are
+/// 0..=255, 0..=4095, and 0..=65535 respectively. RGBA uses straight alpha.
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PixelFormatEx {
@@ -99,6 +100,210 @@ pub enum PrecisionConversion {
     Round,
 }
 
+/// Explicit output request for conversion or EX pixel retrieval. The format
+/// and precision policy must be supplied; there is no implicit narrowing.
+/// `stride` is in bytes for the requested rectangle, with padding after every
+/// row including the last. `None` selects packed output; padding is zeroed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PixelOutputEx {
+    pub format: PixelFormatEx,
+    pub stride: Option<usize>,
+    pub conversion: PrecisionConversion,
+}
+impl PixelOutputEx {
+    pub fn new(format: PixelFormatEx, conversion: PrecisionConversion) -> Self {
+        Self {
+            format,
+            stride: None,
+            conversion,
+        }
+    }
+}
+
+/// Owned bytes returned by an EX conversion or picker, with their actual
+/// layout. Dimensions and byte layout are checked before construction.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PixelBytesEx {
+    width: usize,
+    height: usize,
+    format: PixelFormatEx,
+    stride: usize,
+    bytes: Vec<u8>,
+}
+impl PixelBytesEx {
+    pub fn width(&self) -> usize {
+        self.width
+    }
+    pub fn height(&self) -> usize {
+        self.height
+    }
+    pub fn format(&self) -> PixelFormatEx {
+        self.format
+    }
+    pub fn stride(&self) -> usize {
+        self.stride
+    }
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.bytes
+    }
+}
+
+/// EX storage declaration alongside the unchanged legacy image profile.
+/// `format` and `stride` describe the stored canvas; each pick independently
+/// requests its output layout. Background, if present, remains legacy RGBA8.
+#[derive(Debug)]
+pub struct ImageProfilesEx {
+    pub legacy: ImageProfiles,
+    pub format: PixelFormatEx,
+    pub stride: usize,
+}
+
+/// Supplies explicitly requested Gray/RGBA bytes to future EX-aware consumers.
+/// This separate, feature-gated trait does not change legacy `PickCallback`
+/// implementers or the byte format consumed by existing codecs.
+pub trait PickCallbackEx: Sync + Send {
+    /// Reports the stored canvas. The encoder options retain their legacy
+    /// meaning; this does not negotiate or select a codec's native format.
+    fn encode_start_ex(
+        &mut self,
+        option: Option<EncoderOptions>,
+    ) -> Result<Option<ImageProfilesEx>, Error>;
+    /// Reads a nonempty rectangle fully inside the stored canvas, converting
+    /// storage to the explicit output request. Bounds/stride/precision errors
+    /// return no output and leave storage unchanged. Legacy pick options are
+    /// supplied separately so their meaning remains unchanged.
+    fn encode_pick_ex(
+        &mut self,
+        start_x: usize,
+        start_y: usize,
+        width: usize,
+        height: usize,
+        output: PixelOutputEx,
+        option: Option<PickOptions>,
+    ) -> Result<Option<PixelBytesEx>, Error>;
+    fn encode_end_ex(&mut self, option: Option<EndOptions>) -> Result<(), Error>;
+    /// Returns legacy callback metadata, independently of highres frame/color
+    /// information or timing.
+    fn metadata_ex(&mut self) -> Result<Option<HashMap<String, DataMap>>, Error>;
+}
+
+/// Converts declared source bytes into an explicitly requested byte layout.
+/// Source length must equal its stride times height, including final padding.
+/// Every addressed source sample is validated; padding bytes are ignored.
+/// Odd byte strides are supported without alignment casts. Gray expands to
+/// RGB with opaque alpha; RGBA to Gray is unsupported. Exact/Round scale the
+/// normalized integer range, including alpha, without color/ICC/HDR transforms.
+/// Pixel and source/output byte budgets are checked before output allocation.
+///
+/// ```
+/// use wml2::draw::{convert_pixels_ex, PixelFormatEx, PixelOutputEx,
+///     PrecisionConversion};
+/// let rgba = convert_pixels_ex(&[0xff, 0x0f], 1, 1,
+///     PixelFormatEx::Gray12, None,
+///     PixelOutputEx::new(PixelFormatEx::Rgba16, PrecisionConversion::Exact))?;
+/// assert_eq!(rgba.bytes(), &[0xff; 8]);
+/// assert_eq!(rgba.stride(), 8);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+pub fn convert_pixels_ex(
+    source: &[u8],
+    width: usize,
+    height: usize,
+    source_format: PixelFormatEx,
+    source_stride: Option<usize>,
+    output: PixelOutputEx,
+) -> Result<PixelBytesEx, Error> {
+    let (source_stride, length) = source_format.extent(width, height, source_stride)?;
+    check_pixel_budget(width, height)?;
+    crate::limits::check(
+        length,
+        crate::limits::current().expanded_bytes,
+        "EX conversion source",
+    )?;
+    validate_bytes(source, width, height, source_format, source_stride, length)?;
+    convert_validated_region(source, width, height, source_format, source_stride, output)
+}
+
+fn check_pixel_budget(width: usize, height: usize) -> Result<(), Error> {
+    let pixels = width
+        .checked_mul(height)
+        .ok_or_else(|| ex_error("EX pixel count overflow"))?;
+    crate::limits::check(pixels, crate::limits::current().pixels, "EX pixels")
+}
+
+// The source region has already been validated against its owning canvas or
+// public source declaration. Its final row need not include canvas padding.
+fn convert_validated_region(
+    source: &[u8],
+    width: usize,
+    height: usize,
+    source_format: PixelFormatEx,
+    source_stride: usize,
+    output: PixelOutputEx,
+) -> Result<PixelBytesEx, Error> {
+    check_conversion(source_format, output.format)?;
+    let (stride, length) = output.format.extent(width, height, output.stride)?;
+    check_pixel_budget(width, height)?;
+    crate::limits::check(
+        length,
+        crate::limits::current().expanded_bytes,
+        "EX conversion output",
+    )?;
+    let mut bytes = zeroed_bytes(length)?;
+    convert_rows(
+        &mut bytes,
+        source,
+        (width, height),
+        (source_format, source_stride),
+        (output.format, stride),
+        output.conversion,
+    )?;
+    Ok(PixelBytesEx {
+        width,
+        height,
+        format: output.format,
+        stride,
+        bytes,
+    })
+}
+
+fn pick_region(
+    source: &[u8],
+    canvas: (usize, usize),
+    storage: (PixelFormatEx, usize),
+    start: (usize, usize),
+    size: (usize, usize),
+    output: PixelOutputEx,
+) -> Result<PixelBytesEx, Error> {
+    let (x, y) = start;
+    let (width, height) = size;
+    let (format, stride) = storage;
+    let (canvas_width, canvas_height) = canvas;
+    if width == 0 || height == 0 {
+        return Err(ex_error("EX pick dimensions must be nonzero"));
+    }
+    let end_x = x
+        .checked_add(width)
+        .ok_or_else(|| ex_error("EX pick x overflow"))?;
+    let end_y = y
+        .checked_add(height)
+        .ok_or_else(|| ex_error("EX pick y overflow"))?;
+    if end_x > canvas_width || end_y > canvas_height {
+        return Err(ex_error("EX pick rectangle exceeds canvas"));
+    }
+    let offset = y
+        .checked_mul(stride)
+        .and_then(|row| {
+            x.checked_mul(format.bytes_per_pixel())
+                .and_then(|column| row.checked_add(column))
+        })
+        .ok_or_else(|| ex_error("EX pick offset overflow"))?;
+    convert_validated_region(&source[offset..], width, height, format, stride, output)
+}
+
 /// Describes incoming bytes, never the drawer's internal storage or a request
 /// to a codec. `source_stride` is in bytes for each draw rectangle, including
 /// padding after its final row; `None` means packed for that rectangle's width.
@@ -116,7 +321,8 @@ pub struct InitOptionsEx {
 /// Checked byte-based static image storage. Initialization declares incoming
 /// bytes separately from the storage selected by `with_storage`. Both callback
 /// initializers enter the same private routine without calling each other.
-/// Encoders require an explicit `to_rgba8` precision conversion.
+/// Legacy encoders require an explicit `to_rgba8` precision conversion;
+/// EX-aware consumers use `PickCallbackEx` with an explicit output request.
 ///
 /// ```
 /// use wml2::draw::{DrawCallback, ImageBufferEx, InitOptionsEx,
@@ -137,6 +343,7 @@ pub struct ImageBufferEx {
     format: PixelFormatEx,
     stride: usize,
     buffer: Option<Vec<u8>>,
+    background_color: Option<RGBA>,
     source_format: PixelFormatEx,
     source_stride: Option<usize>,
     conversion: PrecisionConversion,
@@ -158,6 +365,7 @@ impl ImageBufferEx {
             format,
             stride: 0,
             buffer: None,
+            background_color: None,
             source_format: PixelFormatEx::Rgba8,
             source_stride: None,
             conversion,
@@ -211,6 +419,7 @@ impl ImageBufferEx {
     fn initialize(&mut self, width: usize, height: usize, option: InitOptionsEx) -> Response {
         // Failed initialization invalidates the old callback target.
         self.buffer = None;
+        self.background_color = None;
         let (stride, length) = self.format.extent(width, height, None)?;
         let source_row = option.source_format.row_bytes(width)?;
         let source_stride = if let Some(stride) = option.source_stride {
@@ -267,6 +476,7 @@ impl ImageBufferEx {
         self.stride = stride;
         self.source_format = option.source_format;
         self.source_stride = option.source_stride;
+        self.background_color = background.cloned();
         self.buffer = Some(buffer);
         Ok(None)
     }
@@ -277,6 +487,7 @@ impl ImageBufferEx {
         let bytes = self.converted_bytes(PixelFormatEx::Rgba8, conversion)?;
         let mut image = ImageBuffer::from_buffer(self.width, self.height, bytes);
         image.metadata = self.metadata.clone();
+        image.background_color = self.background_color.clone();
         Ok(image)
     }
     fn converted_bytes(
@@ -288,23 +499,15 @@ impl ImageBufferEx {
             .buffer
             .as_ref()
             .ok_or_else(|| ex_error("EX buffer is not initialized"))?;
-        let (_, length) = format.extent(self.width, self.height, None)?;
-        crate::limits::check(
-            length,
-            crate::limits::current().expanded_bytes,
-            "EX conversion",
-        )?;
-        let mut output = zeroed_bytes(length)?;
-        convert_rows(
-            &mut output,
+        Ok(convert_pixels_ex(
             source,
-            (self.width, self.height),
-            self.stride,
+            self.width,
+            self.height,
             self.format,
-            format,
-            conversion,
-        )?;
-        Ok(output)
+            Some(self.stride),
+            PixelOutputEx::new(format, conversion),
+        )?
+        .into_bytes())
     }
 }
 impl DrawCallback for ImageBufferEx {
@@ -336,6 +539,12 @@ impl DrawCallback for ImageBufferEx {
         let (source_stride, length) =
             self.source_format
                 .extent(width, height, self.source_stride)?;
+        check_pixel_budget(width, height)?;
+        crate::limits::check(
+            length,
+            crate::limits::current().expanded_bytes,
+            "EX draw source",
+        )?;
         validate_bytes(
             data,
             width,
@@ -351,27 +560,19 @@ impl DrawCallback for ImageBufferEx {
         let clip = clipped_rect(x, y, width, height, self.width, self.height)?;
         // Validate precision even in the clipped-away portion, before mutation.
         if self.source_format != self.format {
-            let (_, length) = self.format.extent(width, height, None)?;
-            crate::limits::check(
-                length,
-                crate::limits::current().expanded_bytes,
-                "EX conversion",
-            )?;
-            let mut converted = zeroed_bytes(length)?;
-            convert_rows(
-                &mut converted,
+            let converted = convert_validated_region(
                 data,
-                (width, height),
-                source_stride,
+                width,
+                height,
                 self.source_format,
-                self.format,
-                self.conversion,
+                source_stride,
+                PixelOutputEx::new(self.format, self.conversion),
             )?;
             if let Some((w, h)) = clip {
                 copy_rows(
                     self.buffer.as_mut().unwrap(),
-                    &converted,
-                    self.format.row_bytes(width)?,
+                    converted.bytes(),
+                    converted.stride(),
                     self.stride,
                     y * self.stride + x * self.format.bytes_per_pixel(),
                     self.format.row_bytes(w)?,
@@ -486,22 +687,30 @@ fn convert_rows(
     destination: &mut [u8],
     source: &[u8],
     size: (usize, usize),
-    stride: usize,
-    src: PixelFormatEx,
-    dst: PixelFormatEx,
+    source_layout: (PixelFormatEx, usize),
+    output_layout: (PixelFormatEx, usize),
     conversion: PrecisionConversion,
 ) -> Result<(), Error> {
     let (width, height) = size;
+    let (src, source_stride) = source_layout;
+    let (dst, output_stride) = output_layout;
     check_conversion(src, dst)?;
     if src == dst {
         let row = dst.row_bytes(width)?;
-        copy_rows(destination, source, stride, row, 0, row, height);
+        copy_rows(
+            destination,
+            source,
+            source_stride,
+            output_stride,
+            0,
+            row,
+            height,
+        );
         return Ok(());
     }
-    let mut offset = 0;
     for y in 0..height {
         for x in 0..width {
-            let base = y * stride + x * src.bytes_per_pixel();
+            let base = y * source_stride + x * src.bytes_per_pixel();
             let pixel = convert_pixel(
                 &source[base..base + src.bytes_per_pixel()],
                 src,
@@ -509,11 +718,145 @@ fn convert_rows(
                 conversion,
             )?;
             let length = dst.bytes_per_pixel();
+            let offset = y * output_stride + x * length;
             destination[offset..offset + length].copy_from_slice(&pixel[..length]);
-            offset += length;
         }
     }
     Ok(())
+}
+
+impl ImageBufferEx {
+    fn ex_pixels(&self) -> Result<&[u8], Error> {
+        let source = self
+            .buffer
+            .as_deref()
+            .ok_or_else(|| ex_error("EX buffer is not initialized"))?;
+        check_pixel_budget(self.width, self.height)?;
+        crate::limits::check(
+            source.len(),
+            crate::limits::current().expanded_bytes,
+            "EX picker source",
+        )?;
+        Ok(source)
+    }
+}
+
+impl PickCallbackEx for ImageBufferEx {
+    fn encode_start_ex(
+        &mut self,
+        _: Option<EncoderOptions>,
+    ) -> Result<Option<ImageProfilesEx>, Error> {
+        self.ex_pixels()?;
+        Ok(Some(ImageProfilesEx {
+            legacy: ImageProfiles {
+                width: self.width,
+                height: self.height,
+                background: self.background_color.clone(),
+                metadata: self.metadata.clone(),
+            },
+            format: self.format,
+            stride: self.stride,
+        }))
+    }
+    fn encode_pick_ex(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+        output: PixelOutputEx,
+        _: Option<PickOptions>,
+    ) -> Result<Option<PixelBytesEx>, Error> {
+        let source = self.ex_pixels()?;
+        Ok(Some(pick_region(
+            source,
+            (self.width, self.height),
+            (self.format, self.stride),
+            (x, y),
+            (width, height),
+            output,
+        )?))
+    }
+    fn encode_end_ex(&mut self, _: Option<EndOptions>) -> Result<(), Error> {
+        Ok(())
+    }
+    fn metadata_ex(&mut self) -> Result<Option<HashMap<String, DataMap>>, Error> {
+        Ok(self.metadata.clone())
+    }
+}
+
+impl ImageBuffer {
+    // The publicly mutable legacy fields are validated afresh for the strict
+    // EX entry points, without changing the old permissive encoder behavior.
+    fn ex_pixels(&self) -> Result<(&[u8], usize), Error> {
+        if self
+            .animation
+            .as_ref()
+            .is_some_and(|frames| !frames.is_empty())
+        {
+            return Err(ex_error("EX animation picking is unsupported"));
+        }
+        let source = self
+            .buffer
+            .as_deref()
+            .ok_or_else(|| ex_error("EX buffer is not initialized"))?;
+        let (stride, length) = PixelFormatEx::Rgba8.extent(self.width, self.height, None)?;
+        check_pixel_budget(self.width, self.height)?;
+        crate::limits::check(
+            length,
+            crate::limits::current().expanded_bytes,
+            "EX picker source",
+        )?;
+        validate_bytes(
+            source,
+            self.width,
+            self.height,
+            PixelFormatEx::Rgba8,
+            stride,
+            length,
+        )?;
+        Ok((source, stride))
+    }
+}
+impl PickCallbackEx for ImageBuffer {
+    fn encode_start_ex(
+        &mut self,
+        option: Option<EncoderOptions>,
+    ) -> Result<Option<ImageProfilesEx>, Error> {
+        let (_, stride) = self.ex_pixels()?;
+        Ok(
+            PickCallback::encode_start(self, option)?.map(|legacy| ImageProfilesEx {
+                legacy,
+                format: PixelFormatEx::Rgba8,
+                stride,
+            }),
+        )
+    }
+    fn encode_pick_ex(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+        output: PixelOutputEx,
+        _: Option<PickOptions>,
+    ) -> Result<Option<PixelBytesEx>, Error> {
+        let (source, stride) = self.ex_pixels()?;
+        Ok(Some(pick_region(
+            source,
+            (self.width, self.height),
+            (PixelFormatEx::Rgba8, stride),
+            (x, y),
+            (width, height),
+            output,
+        )?))
+    }
+    fn encode_end_ex(&mut self, option: Option<EndOptions>) -> Result<(), Error> {
+        PickCallback::encode_end(self, option)
+    }
+    fn metadata_ex(&mut self) -> Result<Option<HashMap<String, DataMap>>, Error> {
+        PickCallback::metadata(self)
+    }
 }
 
 #[cfg(feature = "high-bit-depth")]
@@ -673,5 +1016,60 @@ impl ImageBufferEx {
             PixelBuffer::u16(vec![Plane::new(layout, samples)?])?
         };
         Ok(ImageFrame::new(descriptor, pixels)?)
+    }
+}
+
+#[cfg(test)]
+mod conversion_budget_tests {
+    use super::*;
+    #[test]
+    fn converter_and_pickers_enforce_source_output_and_canvas_budgets() {
+        let mut image =
+            ImageBufferEx::from_bytes(2, 1, PixelFormatEx::Rgba16, None, vec![0; 16]).unwrap();
+        let mut legacy = ImageBuffer::from_buffer(2, 1, vec![0; 8]);
+        let output = PixelOutputEx::new(PixelFormatEx::Rgba8, PrecisionConversion::Exact);
+        crate::limits::scope(
+            crate::limits::DecodeLimits {
+                expanded_bytes: 8,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || {
+                let error = convert_pixels_ex(&[0; 16], 2, 1, PixelFormatEx::Rgba16, None, output)
+                    .unwrap_err();
+                assert!(error.to_string().contains("source"));
+                assert!(image.encode_start_ex(None).is_err());
+                assert!(image.encode_pick_ex(0, 0, 1, 1, output, None).is_err());
+                legacy.encode_start_ex(None).unwrap();
+                legacy.encode_pick_ex(0, 0, 1, 1, output, None).unwrap();
+                let error = convert_pixels_ex(
+                    &[0; 2],
+                    2,
+                    1,
+                    PixelFormatEx::Gray8,
+                    None,
+                    PixelOutputEx::new(PixelFormatEx::Rgba16, PrecisionConversion::Exact),
+                )
+                .unwrap_err();
+                assert!(error.to_string().contains("output"));
+            },
+        );
+        crate::limits::scope(
+            crate::limits::DecodeLimits {
+                pixels: 1,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || {
+                assert!(
+                    convert_pixels_ex(&[0; 2], 2, 1, PixelFormatEx::Gray8, None, output).is_err()
+                );
+                assert!(image.encode_start_ex(None).is_err());
+                assert!(image.encode_pick_ex(0, 0, 1, 1, output, None).is_err());
+                assert!(legacy.encode_start_ex(None).is_err());
+                assert!(legacy.encode_pick_ex(0, 0, 1, 1, output, None).is_err());
+            },
+        );
+        // A scoped failure doesn't alter the stored pixels or future validity.
+        image.encode_start_ex(None).unwrap();
+        assert_eq!(image.bytes().unwrap(), [0; 16]);
     }
 }

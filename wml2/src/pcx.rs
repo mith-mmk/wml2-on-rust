@@ -1,4 +1,4 @@
-//! ZSoft PCX decoder.
+//! ZSoft PCX decoding and 24-bit RGB encoding.
 
 use bin_rs::reader::BinaryReader;
 
@@ -65,7 +65,12 @@ pub fn decode<B: BinaryReader>(
         return Err(err(ImgErrorKind::IllegalData, "Not a PCX image"));
     }
     let bits_per_plane = data[3];
-    if !matches!(bits_per_plane, 1 | 2 | 4 | 8) || data[65] == 0 || data[65] > 4 {
+    // The header palette has only 16 entries. Reject wider packed indices.
+    if !matches!(bits_per_plane, 1 | 2 | 4 | 8)
+        || data[65] == 0
+        || data[65] > 4
+        || (bits_per_plane < 8 && u16::from(bits_per_plane) * u16::from(data[65]) > 4)
+    {
         return Err(err(
             ImgErrorKind::IllegalData,
             "Unsupported PCX pixel layout",
@@ -209,4 +214,95 @@ pub fn decode<B: BinaryReader>(
         .set_metadata("height", DataMap::UInt(height as u64))?;
     draw_rgba(option, width, height, &output)?;
     Ok(None)
+}
+
+/// Encodes version-5, 24-bit RGB PCX with row-local RLE.
+///
+/// PCX RGB has no alpha channel. Nonopaque input is rejected unless the
+/// `alpha` option is explicitly `DataMap::Ascii("discard")`. The default
+/// `"reject"` preserves callers from accidental transparency loss.
+pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
+    let discard_alpha = match option.options.as_ref().and_then(|m| m.get("alpha")) {
+        None => false,
+        Some(DataMap::Ascii(value)) if value == "reject" => false,
+        Some(DataMap::Ascii(value)) if value == "discard" => true,
+        _ => {
+            return Err(err(
+                ImgErrorKind::InvalidParameter,
+                "PCX alpha must be reject or discard",
+            ));
+        }
+    };
+    let profile = option
+        .drawer
+        .encode_start(None)?
+        .ok_or_else(|| err(ImgErrorKind::EncodeError, "PCX image profile is missing"))?;
+    let width = profile.width;
+    let height = profile.height;
+    // BytesPerLine is even and stored in u16; 65535-wide images cannot fit.
+    if width == 0 || width > 65534 || height == 0 || height > 65536 {
+        return Err(err(
+            ImgErrorKind::InvalidParameter,
+            "PCX dimensions exceed header limits",
+        ));
+    }
+    let stride = (width + 1) & !1;
+    let pixels = width
+        .checked_mul(height)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "PCX image size overflow"))?;
+    let rgba_len = pixels
+        .checked_mul(4)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "PCX image size overflow"))?;
+    let limits = crate::limits::current();
+    crate::limits::check(pixels, limits.pixels, "pixels")?;
+    crate::limits::check(rgba_len, limits.expanded_bytes, "RGBA image")?;
+    let mut output = vec![0u8; 128];
+    output[0] = 10;
+    output[1] = 5;
+    output[2] = 1;
+    output[3] = 8;
+    output[8..10].copy_from_slice(&((width - 1) as u16).to_le_bytes());
+    output[10..12].copy_from_slice(&((height - 1) as u16).to_le_bytes());
+    output[65] = 3;
+    output[66..68].copy_from_slice(&(stride as u16).to_le_bytes());
+    output[68..70].copy_from_slice(&1u16.to_le_bytes());
+    let mut row = vec![0u8; stride * 3];
+    for y in 0..height {
+        let source = option
+            .drawer
+            .encode_pick(0, y, width, 1, None)?
+            .ok_or_else(|| err(ImgErrorKind::EncodeError, "PCX source row is missing"))?;
+        if source.len() != width * 4 {
+            return Err(err(
+                ImgErrorKind::EncodeError,
+                "PCX source row must contain exactly RGBA8 pixels",
+            ));
+        }
+        for (x, pixel) in source.chunks_exact(4).enumerate() {
+            if !discard_alpha && pixel[3] != 255 {
+                return Err(err(
+                    ImgErrorKind::EncodeError,
+                    "PCX RGB cannot preserve alpha; use alpha=discard explicitly",
+                ));
+            }
+            for channel in 0..3 {
+                row[channel * stride + x] = pixel[channel];
+            }
+        }
+        let mut offset = 0;
+        while offset < row.len() {
+            let value = row[offset];
+            let mut count = 1usize;
+            while count < 63 && offset + count < row.len() && row[offset + count] == value {
+                count += 1;
+            }
+            if count > 1 || value & 0xc0 == 0xc0 {
+                output.push(0xc0 | count as u8);
+            }
+            output.push(value);
+            offset += count;
+        }
+    }
+    option.drawer.encode_end(None)?;
+    Ok(output)
 }

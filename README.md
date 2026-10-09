@@ -400,3 +400,5 @@ MIT License (C) 2022-2026
 MITH@mmk https://mith-mmk.github.io/
 
 TGA encoder: `depth = UInt(24|32)` defaults to 32; `compression = Ascii("none"|"rle")` defaults to RLE. 32-bit output retains straight alpha and transparent RGB; 24-bit explicitly discards alpha without compositing. Output has top-left origin and row-bounded packets. Palette/grayscale encoding, metadata/extension writing and legacy Huffman image types 32/33 remain unsupported. Existing transparent-pixel decode normalization remains unchanged.
+
+PCX encoding uses version-5 24-bit RGB with row-local RLE and even scanline padding. Nonopaque RGBA8 input is rejected by default; `alpha = DataMap::Ascii("discard")` explicitly discards alpha. Low-bit layouts requiring more than the header’s 16 palette colors are rejected.

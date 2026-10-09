@@ -56,8 +56,8 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | PNG     | O   | O   | PNG/APNG; encoder writes RGBA truecolor                                                                             |
 | TIFF    | O   | O   | encode: none/LZW/Deflate/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/old-style baseline JPEG/Adobe Deflate/YCbCr/RGBA8/CCITT Huffman RLE/CCITT Group 3/4 Fax/T.6 extension 7 |
 | TGA     | O   | O   | `tga`: raw/RLE true-color, grayscale and exact indexed encoding; decode also supports legacy 2/4-way interleave |
-| PCX     | x   | O   | optional `pcx` feature; 1/2/4/8-bit palette and multi-plane decode                                               |
-| DDS     | x   | O   | optional `dds` feature; uncompressed and BC/DXT block texture decode                                              |
+| PCX     | O   | O   | optional `pcx` feature; 1/2/4/8-bit palette and multi-plane decode                                               |
+| DDS     | O   | O   | optional `dds` feature; uncompressed and BC/DXT block texture decode                                              |
 | PIC2    | x   | O   | optional `pic2` feature; block-based decode                                                                        |
 | Q4      | x   | O   | optional `q4` feature; Q4 raster decode                                                                            |
 | WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
@@ -401,6 +401,6 @@ MITH@mmk https://mith-mmk.github.io/
 
 TGA encoder: `color_type = Ascii("truecolor"|"grayscale"|"indexed")` defaults to truecolor; `compression = Ascii("none"|"rle")` defaults to RLE. Truecolor `depth = UInt(24|32)` defaults to32; 24 explicitly discards alpha. Grayscale depth8/16 defaults to16, requires equal RGB channels, and depth8 rejects nonopaque pixels. Indexed depth8 uses at most256 exact colors, with `palette_depth = UInt(24|32)` default32; palette24 rejects nonopaque pixels. No implicit luminance conversion or quantization occurs. 16-bit index encoding is deferred because common external decoders disagree. Straight alpha and transparent RGB are retained on wire; existing zero-alpha decode normalization remains. Output is top-left with row-bounded packets. Extension metadata and Huffman image types32/33 remain unsupported.
 
-PCX encoding uses version-5 24-bit RGB with row-local RLE and even scanline padding. Nonopaque RGBA8 input is rejected by default; `alpha = DataMap::Ascii("discard")` explicitly discards alpha. Low-bit layouts requiring more than the header’s 16 palette colors are rejected.
+PCX encoding uses version-5 RGB (`color_type = Ascii("rgb")`, default) or exact indexed output (`color_type = Ascii("indexed")`, at most 256 RGB colors). Both use row-local RLE and even scanline padding. Indexed output never quantizes colors and rejects more than 256 colors. Nonopaque RGBA8 input is rejected by default; `alpha = DataMap::Ascii("discard")` explicitly discards alpha. Low-bit layouts requiring more than the header’s 16 palette colors are rejected.
 
 DDS encoding preserves straight RGBA8 in uncompressed BGRA8 storage (one 2D image, no mipmaps). Legacy cubemap/volume decoding is explicitly rejected; BC6H/BC7, texture arrays and additional surface selection remain unsupported. Encoded DDS size is checked against the active expanded-byte limit.

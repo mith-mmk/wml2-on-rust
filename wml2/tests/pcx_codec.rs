@@ -177,3 +177,126 @@ fn palette_modes_up_to_four_total_bits_remain_supported() {
         );
     }
 }
+
+fn indexed_encode(
+    width: usize,
+    height: usize,
+    pixels: Vec<u8>,
+    alpha: Option<&str>,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let mut image = ImageBuffer::from_buffer(width, height, pixels);
+    let mut settings = std::collections::HashMap::new();
+    settings.insert("color_type".into(), DataMap::Ascii("indexed".into()));
+    if let Some(alpha) = alpha {
+        settings.insert("alpha".into(), DataMap::Ascii(alpha.into()));
+    }
+    wml2::pcx::encode(&mut EncodeOptions {
+        debug_flag: 0,
+        drawer: &mut image,
+        options: Some(settings),
+    })
+}
+
+#[test]
+fn indexed_palette_order_padding_and_roundtrip() {
+    let pixels = vec![
+        30, 20, 10, 255, 1, 2, 3, 255, 30, 20, 10, 255, 4, 5, 6, 255, 1, 2, 3, 255, 4, 5, 6, 255,
+    ];
+    let bytes = indexed_encode(3, 2, pixels.clone(), None).unwrap();
+    assert_eq!(bytes[65], 1);
+    assert_eq!(bytes[66], 4);
+    assert_eq!(bytes[bytes.len() - 769], 12);
+    assert_eq!(
+        &bytes[bytes.len() - 768..bytes.len() - 759],
+        &[30, 20, 10, 1, 2, 3, 4, 5, 6]
+    );
+    assert!(bytes[bytes.len() - 759..].iter().all(|v| *v == 0));
+    assert_eq!(image_load(&bytes).unwrap().buffer.unwrap(), pixels);
+    assert_eq!(indexed_encode(3, 2, pixels, None).unwrap(), bytes);
+}
+
+#[test]
+fn indexed_accepts_256_colors_and_rejects_257_without_quantization() {
+    let mut pixels: Vec<u8> = (0..256).flat_map(|i| [i as u8, 0, 0, 255]).collect();
+    let bytes = indexed_encode(256, 1, pixels.clone(), None).unwrap();
+    assert_eq!(image_load(&bytes).unwrap().buffer.unwrap(), pixels);
+    pixels.extend_from_slice(&[0, 1, 0, 255]);
+    assert!(
+        indexed_encode(257, 1, pixels, None)
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("256 exact")
+    );
+}
+
+#[test]
+fn indexed_alpha_policy_is_explicit() {
+    assert!(indexed_encode(1, 1, vec![1, 2, 3, 0], None).is_err());
+    let bytes = indexed_encode(1, 1, vec![1, 2, 3, 0], Some("discard")).unwrap();
+    assert_eq!(
+        image_load(&bytes).unwrap().buffer.unwrap(),
+        vec![1, 2, 3, 255]
+    );
+}
+
+#[test]
+#[ignore = "manual Pillow indexed interoperability artifact"]
+fn pcx_indexed_external_artifact() {
+    let pixels: Vec<u8> = (0..257 * 11)
+        .flat_map(|i| [(i % 256) as u8, 0, 0, 255])
+        .collect();
+    let bytes = indexed_encode(257, 11, pixels.clone(), None).unwrap();
+    let path = std::env::var("WML2_PCX_INDEXED_ARTIFACT").unwrap();
+    std::fs::write(&path, bytes).unwrap();
+    std::fs::write(format!("{path}.rgba"), pixels).unwrap();
+    if let Ok(path) = std::env::var("WML2_PCX_INDEXED_EXTERNAL") {
+        let image = image_load(&std::fs::read(&path).unwrap()).unwrap();
+        assert_eq!(
+            image.buffer.unwrap(),
+            std::fs::read(format!("{path}.rgba")).unwrap()
+        );
+    }
+}
+
+#[test]
+fn indexed_checks_dimensions_and_source_rows() {
+    assert!(indexed_encode(65535, 1, vec![], None).is_err());
+    assert!(indexed_encode(2, 1, vec![255; 4], None).is_err());
+    let mut image = ImageBuffer::from_buffer(1, 1, vec![0, 0, 0, 255]);
+    for value in [DataMap::Ascii("gray".into()), DataMap::UInt(1)] {
+        let options = Some([("color_type".into(), value)].into_iter().collect());
+        assert!(
+            wml2::pcx::encode(&mut EncodeOptions {
+                debug_flag: 0,
+                drawer: &mut image,
+                options
+            })
+            .is_err()
+        );
+    }
+}
+
+#[test]
+fn indexed_encoder_honors_pixel_and_expanded_limits() {
+    for (pixel_limit, byte_limit) in [(1, usize::MAX), (usize::MAX, 7)] {
+        let mut image = ImageBuffer::from_buffer(2, 1, vec![255; 8]);
+        let mut limits = wml2::limits::DecodeLimits::unlimited();
+        limits.pixels = pixel_limit;
+        limits.expanded_bytes = byte_limit;
+        let options = Some(
+            [("color_type".into(), DataMap::Ascii("indexed".into()))]
+                .into_iter()
+                .collect(),
+        );
+        assert!(
+            wml2::draw::image_to_with_limits(
+                &mut image,
+                wml2::util::ImageFormat::Pcx,
+                options,
+                limits
+            )
+            .is_err()
+        );
+    }
+}

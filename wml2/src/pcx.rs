@@ -231,12 +231,27 @@ pub fn decode<B: BinaryReader>(
     Ok(None)
 }
 
-/// Encodes version-5, 24-bit RGB PCX with row-local RLE.
+/// Encodes version-5 PCX with row-local RLE.
+///
+/// `color_type` accepts `Ascii("rgb")` (default) or `Ascii("indexed")`.
+/// Indexed output preserves up to 256 exact RGB colors without quantization;
+/// palette entries follow first pixel occurrence in row-major order.
 ///
 /// PCX RGB has no alpha channel. Nonopaque input is rejected unless the
 /// `alpha` option is explicitly `DataMap::Ascii("discard")`. The default
 /// `"reject"` preserves callers from accidental transparency loss.
 pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
+    let indexed = match option.options.as_ref().and_then(|m| m.get("color_type")) {
+        None => false,
+        Some(DataMap::Ascii(value)) if value == "rgb" => false,
+        Some(DataMap::Ascii(value)) if value == "indexed" => true,
+        _ => {
+            return Err(err(
+                ImgErrorKind::InvalidParameter,
+                "PCX color_type must be rgb or indexed",
+            ));
+        }
+    };
     let discard_alpha = match option.options.as_ref().and_then(|m| m.get("alpha")) {
         None => false,
         Some(DataMap::Ascii(value)) if value == "reject" => false,
@@ -278,10 +293,12 @@ pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Er
     output[3] = 8;
     output[8..10].copy_from_slice(&((width - 1) as u16).to_le_bytes());
     output[10..12].copy_from_slice(&((height - 1) as u16).to_le_bytes());
-    output[65] = 3;
+    output[65] = if indexed { 1 } else { 3 };
     output[66..68].copy_from_slice(&(stride as u16).to_le_bytes());
     output[68..70].copy_from_slice(&1u16.to_le_bytes());
-    let mut row = vec![0u8; stride * 3];
+    let mut row = vec![0u8; stride * if indexed { 1 } else { 3 }];
+    let mut colors = std::collections::HashMap::<[u8; 3], u8>::new();
+    let mut palette = Vec::<[u8; 3]>::new();
     for y in 0..height {
         let source = option
             .drawer
@@ -297,11 +314,30 @@ pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Er
             if !discard_alpha && pixel[3] != 255 {
                 return Err(err(
                     ImgErrorKind::EncodeError,
-                    "PCX RGB cannot preserve alpha; use alpha=discard explicitly",
+                    "PCX cannot preserve alpha; use alpha=discard explicitly",
                 ));
             }
-            for channel in 0..3 {
-                row[channel * stride + x] = pixel[channel];
+            if indexed {
+                let rgb = [pixel[0], pixel[1], pixel[2]];
+                let index = if let Some(index) = colors.get(&rgb) {
+                    *index
+                } else {
+                    if palette.len() == 256 {
+                        return Err(err(
+                            ImgErrorKind::EncodeError,
+                            "PCX indexed output requires at most 256 exact RGB colors",
+                        ));
+                    }
+                    let index = palette.len() as u8;
+                    palette.push(rgb);
+                    colors.insert(rgb, index);
+                    index
+                };
+                row[x] = index;
+            } else {
+                for channel in 0..3 {
+                    row[channel * stride + x] = pixel[channel];
+                }
             }
         }
         let mut offset = 0;
@@ -317,6 +353,13 @@ pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Er
             output.push(value);
             offset += count;
         }
+    }
+    if indexed {
+        output.push(12);
+        for rgb in &palette {
+            output.extend_from_slice(rgb);
+        }
+        output.resize(output.len() + (256 - palette.len()) * 3, 0);
     }
     option.drawer.encode_end(None)?;
     Ok(output)

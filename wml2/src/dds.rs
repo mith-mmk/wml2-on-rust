@@ -180,6 +180,9 @@ fn decode_bc4(block: &[u8], signed: bool) -> [u8; 16] {
     result
 }
 
+// This small kernel also serves BC2/BC3. Keep it in the block dispatcher so
+// header-handling changes do not add an out-of-line call to every BC1 block.
+#[inline(always)]
 fn decode_bc1(block: &[u8], allow_transparent: bool) -> [[u8; 4]; 16] {
     let c0 = u16::from_le_bytes([block[0], block[1]]);
     let c1 = u16::from_le_bytes([block[2], block[3]]);

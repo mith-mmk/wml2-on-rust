@@ -137,6 +137,8 @@ pub fn get_can_decode(buffer: &[u8]) -> Result<bool, Box<dyn std::error::Error>>
 pub fn get_encode_extentions() -> Vec<String> {
     #[allow(unused_mut)]
     let mut exts = Vec::new();
+    #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+    exts.push("dds".to_string());
     #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
     exts.push("pcx".to_string());
     #[cfg(feature = "bmp")]

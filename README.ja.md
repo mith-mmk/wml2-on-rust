@@ -55,7 +55,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | TIFF         | O   | O   | encode: none/LZW/Deflate/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
 | TGA     | O   | O   | `tga`: decode indexed/true-color/grayscale, raw/RLE and legacy 2/4-way interleave; encode 24/32-bit true-color raw/RLE |
 | PCX          | O   | O   | `pcx` feature。1/2/4/8-bit paletteとmulti-planeをdecode                                           |
-| DDS          | x   | O   | `dds` feature。非圧縮およびBC/DXT block textureをdecode                                             |
+| DDS          | O   | O   | `dds` feature。非圧縮およびBC/DXT block textureをdecode                                             |
 | PIC2         | x   | O   | `pic2` feature。block-based形式をdecode                                                              |
 | Q4           | x   | O   | `q4` feature。Q4 rasterをdecode                                                                       |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
@@ -383,3 +383,5 @@ MITH@mmk https://mith-mmk.github.io/
 TGA encoder: `depth = UInt(24|32)` defaults to 32; `compression = Ascii("none"|"rle")` defaults to RLE. 32-bit output retains straight alpha and transparent RGB; 24-bit explicitly discards alpha without compositing. Output has top-left origin and row-bounded packets. Palette/grayscale encoding, metadata/extension writing and legacy Huffman image types 32/33 remain unsupported. Existing transparent-pixel decode normalization remains unchanged.
 
 PCX encoding uses version-5 24-bit RGB with row-local RLE and even scanline padding. Nonopaque RGBA8 input is rejected by default; `alpha = DataMap::Ascii("discard")` explicitly discards alpha. Low-bit layouts requiring more than the header’s 16 palette colors are rejected.
+
+DDS encoding preserves straight RGBA8 in uncompressed BGRA8 storage (one 2D image, no mipmaps). Legacy cubemap/volume decoding is explicitly rejected; BC6H/BC7, texture arrays and additional surface selection remain unsupported. Encoded DDS size is checked against the active expanded-byte limit.

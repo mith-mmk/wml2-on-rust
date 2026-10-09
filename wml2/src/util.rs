@@ -269,6 +269,8 @@ pub fn decoder_supports_format(format: &ImageFormat) -> bool {
 /// Returns whether an encoder for `format` is enabled in the current build.
 pub fn encoder_supports_format(format: &ImageFormat) -> bool {
     match format {
+        #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+        ImageFormat::Dds => true,
         #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
         ImageFormat::Pcx => true,
         #[cfg(all(feature = "tga", not(feature = "noretoro")))]

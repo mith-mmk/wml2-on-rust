@@ -1,8 +1,9 @@
-//! DirectDraw Surface decoder for common legacy and DX10 texture layouts.
+//! DirectDraw Surface decoder for common legacy and DX10 texture layouts,
+//! and an uncompressed RGBA8 encoder for a single 2D surface.
 
 use bin_rs::reader::BinaryReader;
 
-use crate::draw::DecodeOptions;
+use crate::draw::{DecodeOptions, EncodeOptions};
 use crate::error::ImgErrorKind;
 use crate::metadata::DataMap;
 use crate::retro::{draw_rgba, err, read_all};
@@ -39,6 +40,31 @@ mod tests {
                 .expect_err("scanline size overflow must be reported");
             assert!(error.to_string().contains("DDS scanline size overflow"));
         });
+    }
+
+    #[test]
+    fn encoder_checks_pixels_and_encoded_size_before_reading_rows() {
+        for (pixels, expanded_bytes, expected) in [
+            (0, 132, "pixels"),
+            (1, 3, "RGBA image"),
+            (1, 131, "encoded DDS"),
+        ] {
+            let limits = crate::limits::DecodeLimits {
+                pixels,
+                expanded_bytes,
+                ..crate::limits::DecodeLimits::unlimited()
+            };
+            crate::limits::scope(limits, || {
+                let mut source = crate::draw::ImageBuffer::from_buffer(1, 1, vec![0; 4]);
+                let error = encode(&mut EncodeOptions {
+                    debug_flag: 0,
+                    drawer: &mut source,
+                    options: None,
+                })
+                .unwrap_err();
+                assert!(error.to_string().contains(expected), "{error}");
+            });
+        }
     }
 }
 
@@ -380,6 +406,23 @@ pub fn decode<B: BinaryReader>(
     }
     let pf_flags = le32(&data, 80)?;
     let fourcc = &data[84..88];
+    // The callback exposes a single 2D image, not faces or volume slices.
+    // DX10 has its own resource checks below; old-style files use caps2.
+    if fourcc != b"DX10" || pf_flags & 0x4 == 0 {
+        let caps2 = le32(&data, 112)?;
+        if caps2 & 0x0000_fe00 != 0 {
+            return Err(err(
+                ImgErrorKind::NoSupportFormat,
+                "Unsupported DDS legacy cubemap",
+            ));
+        }
+        if caps2 & 0x0020_0000 != 0 || header_flags & 0x0080_0000 != 0 {
+            return Err(err(
+                ImgErrorKind::NoSupportFormat,
+                "Unsupported DDS legacy volume texture",
+            ));
+        }
+    }
     let mut data_offset = 128usize;
     let compression = if pf_flags & 0x4 != 0 {
         if fourcc == b"DX10" {
@@ -510,4 +553,78 @@ pub fn decode<B: BinaryReader>(
         .set_metadata("mipmap count", DataMap::UInt(u64::from(mipmaps)))?;
     draw_rgba(option, width, height, &output)?;
     Ok(None)
+}
+
+/// Encodes one 2D image as an uncompressed legacy DDS with 32-bit BGRA storage.
+///
+/// The source callback supplies straight RGBA8. All four channels are preserved;
+/// rows are stored top to bottom with no padding, mipmaps, or extra surfaces.
+/// No compression or encoder options are currently supported.
+pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
+    let profile = image
+        .drawer
+        .encode_start(None)?
+        .ok_or_else(|| err(ImgErrorKind::EncodeError, "DDS source profile is missing"))?;
+    let width = u32::try_from(profile.width)
+        .map_err(|_| err(ImgErrorKind::InvalidParameter, "DDS width exceeds u32"))?;
+    let height = u32::try_from(profile.height)
+        .map_err(|_| err(ImgErrorKind::InvalidParameter, "DDS height exceeds u32"))?;
+    if width == 0 || height == 0 {
+        return Err(err(
+            ImgErrorKind::InvalidParameter,
+            "DDS dimensions must be non-zero",
+        ));
+    }
+    let pitch = width
+        .checked_mul(4)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "DDS pitch exceeds u32"))?;
+    let row_len = usize::try_from(pitch)?;
+    let pixels_len = checked_output_len(profile.width, profile.height)?;
+    let total = pixels_len
+        .checked_add(128)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "DDS encoded size overflow"))?;
+    crate::limits::check(
+        total,
+        crate::limits::current().expanded_bytes,
+        "encoded DDS",
+    )?;
+    let mut data = Vec::new();
+    data.try_reserve_exact(total)
+        .map_err(|_| err(ImgErrorKind::EncodeError, "DDS output allocation failed"))?;
+    data.resize(128, 0);
+    data[..4].copy_from_slice(b"DDS ");
+    for (offset, value) in [
+        (4, 124),
+        (8, 0x100f),
+        (12, height),
+        (16, width),
+        (20, pitch),
+        (76, 32),
+        (80, 0x41),
+        (88, 32),
+        (92, 0x00ff_0000),
+        (96, 0x0000_ff00),
+        (100, 0x0000_00ff),
+        (104, 0xff00_0000),
+        (108, 0x1000),
+    ] {
+        data[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+    }
+    for y in 0..profile.height {
+        let row = image
+            .drawer
+            .encode_pick(0, y, profile.width, 1, None)?
+            .ok_or_else(|| err(ImgErrorKind::EncodeError, "DDS source row is missing"))?;
+        if row.len() != row_len {
+            return Err(err(
+                ImgErrorKind::EncodeError,
+                "DDS source row has an invalid RGBA8 length",
+            ));
+        }
+        for pixel in row.chunks_exact(4) {
+            data.extend_from_slice(&[pixel[2], pixel[1], pixel[0], pixel[3]]);
+        }
+    }
+    image.drawer.encode_end(None)?;
+    Ok(data)
 }

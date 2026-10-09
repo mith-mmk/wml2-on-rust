@@ -676,6 +676,97 @@ fn decode_uncompressed(
     Ok(output)
 }
 
+// Keep the compressed pixel loop independent of header/metadata handling.
+#[inline(never)]
+fn decode_compressed(
+    data: &[u8],
+    data_offset: usize,
+    width: usize,
+    height: usize,
+    compression: Compression,
+) -> Result<Vec<u8>, Error> {
+    let output_len = checked_output_len(width, height)?;
+    let block_bytes = if matches!(compression, Compression::Bc1 | Compression::Bc4 { .. }) {
+        8
+    } else {
+        16
+    };
+    let blocks_w = width.div_ceil(4);
+    let blocks_h = height.div_ceil(4);
+    let image_bytes = blocks_w
+        .checked_mul(blocks_h)
+        .and_then(|value| value.checked_mul(block_bytes))
+        .ok_or_else(|| {
+            err(
+                ImgErrorKind::InvalidParameter,
+                "DDS block image size overflow",
+            )
+        })?;
+    let image_end = data_offset.checked_add(image_bytes).ok_or_else(|| {
+        err(
+            ImgErrorKind::InvalidParameter,
+            "DDS block image offset overflow",
+        )
+    })?;
+    let compressed = data
+        .get(data_offset..image_end)
+        .ok_or_else(|| err(ImgErrorKind::IllegalData, "DDS block data is truncated"))?;
+    let mut output = vec![0u8; output_len];
+    for by in 0..blocks_h {
+        for bx in 0..blocks_w {
+            let block_offset = (by * blocks_w + bx) * block_bytes;
+            let block = &compressed[block_offset..block_offset + block_bytes];
+            let pixels = decode_block(block, compression)?;
+            for py in 0..4 {
+                for px in 0..4 {
+                    let x = bx * 4 + px;
+                    let y = by * 4 + py;
+                    if x < width && y < height {
+                        let dst = (y * width + x) * 4;
+                        output[dst..dst + 4].copy_from_slice(&pixels[py * 4 + px]);
+                    }
+                }
+            }
+        }
+    }
+    Ok(output)
+}
+
+// Keep optional alpha normalization out of the block decode loop's codegen
+// and avoid carrying another live mode/discriminant across that hot loop.
+#[inline(never)]
+fn finish_dx10_alpha(
+    data: &[u8],
+    output: &mut [u8],
+    option: &mut DecodeOptions,
+) -> Result<(), Error> {
+    if &data[84..88] != b"DX10" || le32(data, 80)? & 4 == 0 {
+        return Ok(());
+    }
+    // Already validated before any pixel allocation; the input is immutable.
+    let mode = le32(data, 144)?;
+    match mode {
+        2 => {
+            for pixel in output.chunks_exact_mut(4) {
+                let alpha = pixel[3];
+                for channel in &mut pixel[..3] {
+                    *channel = unpremultiply(*channel, alpha);
+                }
+            }
+        }
+        3 => {
+            for pixel in output.chunks_exact_mut(4) {
+                pixel[3] = 255;
+            }
+        }
+        _ => {}
+    }
+    option
+        .drawer
+        .set_metadata("DDS alpha mode", DataMap::UInt(u64::from(mode)))?;
+    Ok(())
+}
+
 pub fn decode<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -730,6 +821,17 @@ pub fn decode<B: BinaryReader>(
             let resource_dimension = le32(&data, 132)?;
             let misc_flags = le32(&data, 136)?;
             let array_size = le32(&data, 140)?;
+            // Microsoft DDS_HEADER_DXT10: the low three bits specify alpha;
+            // unknown retains the legacy straight-alpha assumption. Reserved
+            // bits and custom fourth-channel semantics cannot be interpreted
+            // by this RGBA8 callback path.
+            let flags2 = le32(&data, 144)?;
+            if flags2 > 3 {
+                return Err(err(
+                    ImgErrorKind::NoSupportFormat,
+                    "Unsupported DDS DX10 alpha mode or reserved flags",
+                ));
+            }
             if resource_dimension != 3 {
                 return Err(err(
                     ImgErrorKind::NoSupportFormat,
@@ -758,7 +860,7 @@ pub fn decode<B: BinaryReader>(
     } else {
         Compression::Uncompressed(UncompressedFormat::Legacy)
     };
-    let output = if matches!(compression, Compression::Uncompressed(_)) {
+    let mut output = if matches!(compression, Compression::Uncompressed(_)) {
         let legacy_bit_count = usize::try_from(le32(&data, 88)?)?;
         let legacy_masks = [
             le32(&data, 92)?,
@@ -799,46 +901,9 @@ pub fn decode<B: BinaryReader>(
             masks,
         )?
     } else {
-        let output_len = checked_output_len(width, height)?;
-        let block_bytes = if matches!(compression, Compression::Bc1 | Compression::Bc4 { .. }) {
-            8
-        } else {
-            16
-        };
-        let blocks_w = width.div_ceil(4);
-        let blocks_h = height.div_ceil(4);
-        let image_bytes = blocks_w
-            .checked_mul(blocks_h)
-            .and_then(|value| value.checked_mul(block_bytes))
-            .ok_or_else(|| {
-                err(
-                    ImgErrorKind::InvalidParameter,
-                    "DDS block image size overflow",
-                )
-            })?;
-        let compressed = data
-            .get(data_offset..data_offset + image_bytes)
-            .ok_or_else(|| err(ImgErrorKind::IllegalData, "DDS block data is truncated"))?;
-        let mut output = vec![0u8; output_len];
-        for by in 0..blocks_h {
-            for bx in 0..blocks_w {
-                let block_offset = (by * blocks_w + bx) * block_bytes;
-                let block = &compressed[block_offset..block_offset + block_bytes];
-                let pixels = decode_block(block, compression)?;
-                for py in 0..4 {
-                    for px in 0..4 {
-                        let x = bx * 4 + px;
-                        let y = by * 4 + py;
-                        if x < width && y < height {
-                            let dst = (y * width + x) * 4;
-                            output[dst..dst + 4].copy_from_slice(&pixels[py * 4 + px]);
-                        }
-                    }
-                }
-            }
-        }
-        output
+        decode_compressed(&data, data_offset, width, height, compression)?
     };
+    finish_dx10_alpha(&data, &mut output, option)?;
     option
         .drawer
         .set_metadata("Format", DataMap::Ascii("DDS".to_string()))?;

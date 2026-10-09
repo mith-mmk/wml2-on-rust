@@ -1,4 +1,4 @@
-//! Local inspection helper. A successful decode does not prove correct pixels.
+//! Local inspection helper. Use an independent oracle to validate the pixels.
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut arguments = std::env::args().skip(1);
@@ -16,6 +16,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("unexpected Q4 alpha".into());
     }
     std::fs::write(output, pixels)?;
-    eprintln!("640x400 RGBA8; current decoder failed visual inspection");
+    eprintln!("640x400 RGBA8; compare against an independent oracle");
     Ok(())
 }

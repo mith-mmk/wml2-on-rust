@@ -170,14 +170,12 @@ fn decodes_collected_q4_samples() {
         assert_eq!((image.width, image.height), (640, 400));
         let buffer = image.buffer.as_ref().expect("Q4 image should have pixels");
         assert_eq!(buffer.len(), 640 * 400 * 4);
-        // The old 30000.Q4 pixel expectations came from this decoder, whose
-        // output failed visual inspection. They are not an independent oracle.
-        // This smoke test only checks transport/layout and opaque output.
+        // Keep external-oracle pixels out of the repository. This local sample
+        // test checks transport/layout and opaque output; full compatibility is
+        // recorded in docs/q4-ifxld4-analysis.md.
         assert!(buffer.chunks_exact(4).all(|pixel| pixel[3] == 255));
         count += 1;
     }
     assert!(count >= 1, "at least one Q4 sample is required");
-    eprintln!(
-        "decoded {count} local Q4 samples; layout smoke test only, visual correctness failed"
-    );
+    eprintln!("decoded {count} local Q4 samples; layout smoke test only");
 }

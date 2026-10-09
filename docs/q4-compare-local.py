@@ -31,7 +31,10 @@ def main():
     samples = []
     report = {
         'head': subprocess.check_output(['git', '-C', str(args.repo), 'rev-parse', 'HEAD'], text=True).strip(),
-        'working_tree_status': subprocess.check_output(['git', '-C', str(args.repo), 'status', '--porcelain'], text=True),
+        'working_tree_status': subprocess.check_output(
+            ['git', '-C', str(args.repo), 'status', '--porcelain', '--ignore-submodules=all'],
+            text=True,
+        ),
         'dump_sha256': sha(args.dump),
         'oracle_binary_sha256': sha(args.oracle_binary) if args.oracle_binary else None,
         'oracle_version': args.oracle_version,

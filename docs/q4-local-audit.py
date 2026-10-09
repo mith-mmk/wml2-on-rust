@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Numeric Q4 diagnostics. Neither a specification nor an independent oracle.
+"""Numeric Q4 diagnostics based on the recovered ifxld4.spi decoder model.
 
-The byte/count model follows current WML2 behavior. Predictor alternatives are
-unverified hypotheses. This tool writes JSON only and does not modify images.
+The opcode model follows the plugin disassembly documented in
+q4-ifxld4-analysis.md. This tool writes JSON only and does not modify images.
 """
 import argparse
 import hashlib
@@ -77,6 +77,7 @@ def decompress(data):
 
 def tokens(rle, expected):
     offset = written = 0
+    repeat_color = 0
     result = []
     while written < expected:
         start = offset
@@ -93,9 +94,10 @@ def tokens(rle, expected):
                 offset += 3
                 if color >= 16:
                     raise ValueError('invalid color')
+                repeat_color = color
                 kind = 'explicit_color'
             else:
-                color, low, kind = None, rle[offset], 'unverified_opcode'
+                color, low, kind = repeat_color, rle[offset], 'repeat_color'
                 offset += 1
             count = high*17 + low
         else:
@@ -109,29 +111,6 @@ def tokens(rle, expected):
     return result, offset
 
 
-def assumed_expand(blocks, reset=False, first_previous=False, width=WIDTH):
-    output = []
-    for block in blocks:
-        origin = len(output) if reset else 0
-        for event in block:
-            color, count = event['color'], event['count']
-            for _ in range(count):
-                if color is not None:
-                    value = color
-                elif len(output)-origin >= width:
-                    value = output[-width]
-                elif first_previous and len(output)>origin:
-                    value = output[-1]
-                else:
-                    value = 0
-                output.append(value)
-    return output
-
-
-def model_events(pairs):
-    return [{'color': color, 'count': count} for color, count in pairs]
-
-
 class ModelChecks(unittest.TestCase):
     def test_count_model(self):
         events, used = tokens(bytes([3,16,0,5,1,2]), 20)
@@ -141,19 +120,19 @@ class ModelChecks(unittest.TestCase):
         with self.assertRaises(ValueError):
             tokens(bytes([16,1,2]),18)
 
-    def test_assumed_initial_row(self):
-        blocks = [model_events([(3,1),(None,2),(2,1)])]
-        self.assertEqual(assumed_expand(blocks,width=4),[3,0,0,2])
-        self.assertEqual(assumed_expand(blocks,first_previous=True,width=4),[3,3,3,2])
+    def test_repeat_uses_last_explicit_color(self):
+        events, _ = tokens(bytes([16,0,5,0,2,16,1,2]), 21)
+        self.assertEqual([(e['color'],e['count']) for e in events], [(5,2),(5,19)])
 
-    def test_assumed_cross_row_overlap(self):
-        blocks = [model_events([(1,1),(2,1),(3,1),(4,1),(None,6)])]
-        self.assertEqual(assumed_expand(blocks,width=4),[1,2,3,4,1,2,3,4,1,2])
+    def test_literal_does_not_change_repeat_color(self):
+        events, _ = tokens(bytes([3,16,1,0]), 18)
+        self.assertEqual([(e['color'],e['count']) for e in events], [(3,1),(0,17)])
 
-    def test_assumed_block_carry(self):
-        blocks = [model_events([(1,1),(2,1),(3,1),(4,1)]),model_events([(None,4)])]
-        self.assertEqual(assumed_expand(blocks,width=4),[1,2,3,4,1,2,3,4])
-        self.assertEqual(assumed_expand(blocks,reset=True,width=4),[1,2,3,4,0,0,0,0])
+    def test_repeat_color_resets_for_each_block(self):
+        first, _ = tokens(bytes([16,0,5,0,1]), 1)
+        second, _ = tokens(bytes([16,1,0]), 17)
+        self.assertEqual(first[0]['color'], 5)
+        self.assertEqual(second[0]['color'], 0)
 
 
 def audit_file(path, trace):
@@ -163,7 +142,7 @@ def audit_file(path, trace):
     palette_end = 22+int.from_bytes(data[16:18],'little')
     if palette_end > len(data):
         raise ValueError('truncated palette payload')
-    cursor, position, blocks, reports = palette_end, 0, [], []
+    cursor, position, reports = palette_end, 0, []
     for _ in range(bool(data[4]&2)+bool(data[4]&8)):
         if cursor+6 > len(data):
             raise ValueError('truncated auxiliary header')
@@ -184,23 +163,21 @@ def audit_file(path, trace):
             raise ValueError('image blocks exceed canvas')
         rle, emissions, bit_stats = decompress(payload)
         events, used = tokens(rle, expected)
-        blocks.append(events)
-        boundary, traced = [], []
+        repeats, traced = [], []
         emission_index = 0
         for event in events:
             for key in ranges:
                 if event[key] is not None:
                     ranges[key].add(event[key])
             start = position+event['block_pixel']
-            if event['kind']=='unverified_opcode':
+            if event['kind']=='repeat_color':
                 detail = {'global_pixel': start, 'block_pixel': event['block_pixel'],
-                    'count': event['count'], 'first_canvas_row': start<WIDTH,
+                    'color': event['color'], 'count': event['count'],
+                    'first_canvas_row': start<WIDTH,
                     'first_block_row': event['block_pixel']<WIDTH,
                     'crosses_row': start % WIDTH+event['count']>WIDTH,
-                    'output_end':start+event['count'],
-                    'hypothetical_source_start':start-WIDTH,
-                    'hypothetical_source_end':start+event['count']-WIDTH}
-                boundary.append(detail)
+                    'output_end':start+event['count']}
+                repeats.append(detail)
                 if trace:
                     while emissions[emission_index]['rle_end']<=event['rle_start']:
                         emission_index += 1
@@ -210,20 +187,14 @@ def audit_file(path, trace):
                         related.append(emissions[i]); i += 1
                     traced.append({**detail, 'rle_bytes':list(rle[event['rle_start']:event['rle_end']]),
                         'compressed_payload_byte':cursor+6, 'emissions':related})
-        short = len(boundary)
+        repeated = len(repeats)
         colored = sum(e['kind']=='explicit_color' for e in events)
         tail = rle[used:]
-        variants = {}
-        for kind,count in [('all',short+colored),('short',short),('colored',colored)]:
-            # A zero-byte tail is a sequence of literal pixels. Other tails
-            # need separate parsing, so do not infer an expanded size for them.
-            variants[kind] = ({str(delta):len(tail)+delta*count for delta in [-1,1]}
-                              if not any(tail) else None)
         report = {'offset':cursor,'declared_pixels':expected,
             'count_model_exact':sum(e['count'] for e in events)==expected,
             'tail_bytes':len(tail),'tail_all_zero':not any(tail),
-            'short_runs':short,'explicit_color_runs':colored,'bound_events':boundary,
-            'fixed_token_count_variants_expanded_minus_declared':variants,'bit_stats':bit_stats}
+            'repeat_color_runs':repeated,'explicit_color_runs':colored,
+            'repeat_events':repeats,'bit_stats':bit_stats}
         if trace:
             report['opcode_provenance'] = traced
         reports.append(report)
@@ -231,20 +202,9 @@ def audit_file(path, trace):
         cursor += 6+size
     if position!=PIXELS:
         raise ValueError(f'canvas count mismatch: {position}')
-    outputs = {name:assumed_expand(blocks,reset,previous) for name,reset,previous in
-        [('carry_zero',False,False),('carry_previous',False,True),
-         ('reset_zero',True,False),('reset_previous',True,True)]}
-    differences = {}
-    for name,output in outputs.items():
-        assert len(output)==PIXELS
-        changed = [i for i,(a,b) in enumerate(zip(outputs['carry_zero'],output)) if a!=b]
-        differences[name] = {'changed_pixels':len(changed),
-            'first_difference':changed[0] if changed else None,
-            'first_row_changed':sum(i<WIDTH for i in changed)}
     return {'file':path.name,'input_sha256':hashlib.sha256(data).hexdigest(),
         'input_bytes':len(data),'header':list(data[:22]),
-        'token_ranges':{k:sorted(v) for k,v in ranges.items()},'blocks':reports,
-        'provisional_predictors_relative_to_carry_zero':differences}
+        'token_ranges':{k:sorted(v) for k,v in ranges.items()},'blocks':reports}
 
 
 def main():
@@ -266,9 +226,9 @@ def main():
     if not files:
         parser.error('input directory has no Q4 files')
     images = [audit_file(path,args.trace) for path in files]
-    report = {'status':'current_model_visual_failed_independent_oracle_missing',
-        'scope':'Numeric current-model diagnostics; unverified opcode/predictor hypotheses, not an independent oracle.',
-        'first_row_and_block_reset_semantics':'unverified',
+    report = {'status':'ifxld4_spi_rle_model_confirmed',
+        'scope':'Numeric diagnostics for the ifxld4.spi RLE model; not an independent image comparison.',
+        'repeat_color_state':'zero at each block; updated only by explicit-color runs',
         'trace_scope':'Emission code bits only; dictionary content depends on earlier codes.',
         'image_count':len(images),'images':images}
     args.output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')

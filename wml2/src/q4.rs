@@ -3,7 +3,8 @@
 //! Q4 stores a fixed 640x400 image with a 16-colour palette.  Each palette
 //! and image block is compressed by the same two-stage stream: an adaptive
 //! MSB-first bit code followed by a small LZW-style dictionary.  The decoded
-//! bytes are then expanded from the format's nibble RLE.
+//! bytes are then expanded from the format's nibble RLE. Short runs reuse the
+//! most recent explicitly selected colour within the current image block.
 
 use bin_rs::reader::BinaryReader;
 
@@ -300,6 +301,7 @@ fn decode_palette(data: &[u8]) -> Result<[[u8; 3]; 16], Error> {
 fn decode_pixels(data: &[u8], expected: usize, output: &mut Vec<u8>) -> Result<(), Error> {
     let mut offset = 0usize;
     let block_start = output.len();
+    let mut repeat_color = 0u8;
     while output.len() - block_start < expected {
         let token = *data
             .get(offset)
@@ -337,16 +339,14 @@ fn decode_pixels(data: &[u8], expected: usize, output: &mut Vec<u8>) -> Result<(
                     .get(offset)
                     .ok_or_else(|| err(ImgErrorKind::IllegalData, "Q4 pixel RLE is truncated"))?;
                 offset += 1;
-                (
-                    PALETTE_ORDER[usize::from(palette_index)],
-                    usize::from(high) * 17 + usize::from(low),
-                )
+                repeat_color = PALETTE_ORDER[usize::from(palette_index)];
+                (repeat_color, usize::from(high) * 17 + usize::from(low))
             } else {
                 let low = *data
                     .get(offset)
                     .ok_or_else(|| err(ImgErrorKind::IllegalData, "Q4 pixel RLE is truncated"))?;
                 offset += 1;
-                (0, usize::from(repeat) * 17 + usize::from(low))
+                (repeat_color, usize::from(repeat) * 17 + usize::from(low))
             }
         };
         let remaining = expected - (output.len() - block_start);
@@ -538,14 +538,21 @@ mod tests {
     }
 
     #[test]
-    fn exact_runs_preserve_previous_blocks_and_allow_unused_tail() {
+    fn repeat_runs_use_last_explicit_color_and_reset_each_block() {
         let mut output = vec![9, 8];
         decode_pixels(&[0x10, 1, 0, 0xff], 17, &mut output).unwrap();
         assert_eq!(&output[..2], &[9, 8]);
         assert_eq!(&output[2..], &[0; 17]);
         let mut colored = Vec::new();
-        decode_pixels(&[0x10, 0, 3, 1, 2], 19, &mut colored).unwrap();
-        assert_eq!(colored, vec![PALETTE_ORDER[3]; 19]);
+        decode_pixels(&[0x10, 0, 3, 0, 2, 0x10, 1, 2], 21, &mut colored).unwrap();
+        assert_eq!(colored, vec![PALETTE_ORDER[3]; 21]);
+
+        // ifxld4.spi keeps the most recent explicit run colour in BL. A
+        // literal does not update it, and each image block starts from zero.
+        let mut literal_then_repeat = Vec::new();
+        decode_pixels(&[5, 0x10, 1, 0], 18, &mut literal_then_repeat).unwrap();
+        assert_eq!(literal_then_repeat[0], PALETTE_ORDER[5]);
+        assert_eq!(&literal_then_repeat[1..], &[0; 17]);
     }
 
     #[test]

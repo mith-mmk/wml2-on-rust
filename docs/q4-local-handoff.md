@@ -2,7 +2,7 @@
 
 対象branchは`codex/p2-q4-boundaries`、baseは`187ef7cb72cdaf8d98550ecc0e5daf58920a7646`です。詳細とcommit経緯は[状態記録](q4-status.md)および`git log`を参照してください。まだpush・merge・releaseしていません。この文書はローカル作業の準備で、環境移動を実施したものではありません。
 
-**正式decoderの出力はユーザー視覚検品に不合格です。** smoke test成功は正しい復号を意味しません。前行コピーは診断仮説で、正式実装に採用していません。性的内容を含むサンプルや誤復号で内容が判断できない画像は、チャット・Driveへ提示しません。画像と外部バイナリはrepoに同梱しません。
+**横帯は修正済みです。** `ifxld4.spi`の逆アセンブルで短縮runが直前の明示run色を継続すると確認し、RECOIL 6.4.5の28画像とRGB全画素が一致しました。解析根拠は[`ifxld4.spi`解析](q4-ifxld4-analysis.md)を参照してください。性的内容を含むサンプルはチャット・Driveへ提示しません。画像と外部バイナリはrepoに同梱しません。
 
 ## 入力とテスト
 
@@ -25,7 +25,7 @@ WML2_Q4_SAMPLE_ROOT=/absolute/path/to/sample-root \
   --test q4_formats -- --include-ignored
 ```
 
-`q4-local-audit.py`は数値のみを記録し、画像を表示・作成しません。入力hash、header、bitcode／辞書展開、RLE位置、run長、出力位置と予測参照候補、初行・行跨ぎ・block履歴の条件を扱います。RLEの予測意味は仮定として分離します。小テストは仮定の計算確認で、形式互換の証明ではありません。
+`q4-local-audit.py`は数値のみを記録し、画像を表示・作成しません。入力hash、header、bitcode／辞書展開、RLE位置、run長、出力位置、明示色と短縮runの関係を扱います。RLE規則は`ifxld4.spi`の解析結果に合わせていますが、このscript単独は独立画像比較の代替ではありません。
 
 ## 現在の出力と独立oracleの比較
 
@@ -38,7 +38,7 @@ cargo run -p wml2 --release --no-default-features --features q4 \
   --example q4_dump_rgba -- .test-q4-input/example.Q4 .test-q4-current.rgba
 ```
 
-RECOIL 6.4.5のユーザー直接添付debは親環境で179580bytes、次のSHA256が公式掲載値と一致しました。WML2環境では展開・実行・比較していません。ローカルに配置したファイルを改めて照合してください。
+RECOIL 6.4.5のユーザー直接添付debは179580bytesで、次のSHA256が公式掲載値と一致しました。ローカルで展開・実行し、28画像を比較済みです。再実行時も配置したファイルを照合してください。
 
 ```text
 3248d027c1ceb894aba180c6b6fbd899197d4d4cf440e63ff2cbf877fc0901f3
@@ -48,7 +48,7 @@ RECOIL 6.4.5のユーザー直接添付debは親環境で179580bytes、次のSHA
 sha256sum recoil-2png_6.4.5-1_amd64.deb
 ```
 
-必要なバイナリの展開・実行はユーザーのローカル作業として行います。展開した`recoil-2png`のhelpに従って、同じ入力から独立PNGを作り、`.test-q4-oracle/`に`入力stem.png`という名前で置いてください。CLIのflagsはこの環境で確認していないため、ここでは推測しません。実行versionとbinary hashを記録し、oracle画像を別のWML2出力で代用しません。
+展開後のCLIは`recoil2png -o OUTPUT.png INPUT.Q4`、versionは6.4.5でした。同じ入力から独立PNGを作り、`.test-q4-oracle/`に`入力stem.png`という名前で置きます。実行versionとbinary hashを記録し、oracle画像を別のWML2出力で代用しません。今回使った`recoil2png`のSHA256は`4ade6d82068381dd1ea500324a564e8b3c764607e5b2de626f6122f5df7cd2a7`です。
 
 ```bash
 python3 docs/q4-compare-local.py \
@@ -62,9 +62,9 @@ python3 docs/q4-compare-local.py \
 
 ## 切り分け結果と次の焦点
 
-- 別構造LZWとの196stream一致は辞書層の内部整合性を支持します。bit解釈の独立証明ではありません。
-- 今回のRLE値は0〜16で、signed8解釈との差はありません。countの一律±1は宣言画素数に合いません。
-- 非zero-repeatをindex0で埋める処理が横帯に対応し、前行コピー仮説で改善します。初行補完・block履歴持越し・順次コピーの意味は未確定です。
-- 原資料、Susie命令解析、独立oracleのいずれも手元にありません。初行やblock条件を見た目だけで決めず、独立PNGの最初の相違を命令トレースと突き合わせてください。
+- 別構造LZWとの196stream一致とRECOIL全画素一致により、辞書層・bit解釈・RLEの有効corpus互換性を確認しました。
+- `ifxld4.spi`のRLE routineは短縮runを直前の明示run色で展開します。literalは保持色を更新せず、保持色はimage blockごとに0へ戻ります。
+- 修正前の前行コピー仮説、初行補完、block履歴持越しは棄却しました。
+- decoderの安全境界はpluginの未検査挙動を模倣せず、既存の予算・checked arithmetic・run/block/canvas上限を維持します。
 
-元出力を保持したまま、修正版は別の`.test*`出力directoryへ保存します。命令／予測規則に根拠を得てから最小修正と回帰testを入れ、全28画像の相違と表示可能な資料を検品します。decoder変更時はrepoのAGENTS.mdに従い表示確認とbenchmarkも行います。
+元出力・独立PNG・比較reportは別の`.test*`directoryへ保存します。decoder変更時はrepoのAGENTS.mdに従い表示確認とbenchmarkも行います。

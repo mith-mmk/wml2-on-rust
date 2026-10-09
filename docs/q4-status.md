@@ -35,6 +35,16 @@ RECOIL 6.4.5による独立PNG比較は未実行です。入力/出力reportは2
 
 2026-10-09追補: 親環境が正式なSediment `download_file`でユーザーの直接添付 `file_000000003e008209a293b213afcf1868`（`recoil-2png_6.4.5-1_amd64.deb`）を取得し、サイズ179580byte、SHA256 `3248d027c1ceb894aba180c6b6fbd899197d4d4cf440e63ff2cbf877fc0901f3` と公式掲載値の一致を報告しました。このハッシュは親環境での確認結果であり、WML2作業環境への配置・展開・実行は行っていません。28画像の独立比較は引き続き未完了です。
 
+## decoder追補検証
+
+手計算ベクトルでMSB読み取り・3→4→5bit幅遷移、辞書の等値参照・既存entry再利用・最終entry出力を確認しました。既存の入力切れ時flushと`next > current`終了も挙動として明記し、一般仕様の証明とは区別しています。
+
+literal-only streamと行別のpalette色から期待RGBAを別々に構成し、全640×400画素を比較しました。280＋280＋80画素で一行を作り、最初の280画素でblockを分割することで、行の途中のblock境界をまたいでも行配置が維持されることを確認します。短いblock header/payload、canvas不足・超過も確認しました。このベクトルはdecoder出力を期待値に使いませんが、現在の解析モデルの検証であり、独立converterの代替ではありません。
+
+28実画像のheader/blockを別途走査すると、168blockの宣言画素数は48000または16000で、すべて行境界で終わり、全画像が256000画素を埋めます。auxiliary blockはありません。このためauxiliaryの正常系、一般的な辞書終了・padding、予約header/palette byteの意味はcorpusから確定できません。行途中のblock分割も一般仕様としての受理を証明するものではありません。
+
+この追補はunit 35件＋integration 5件成功（ignored sample testを明示実行し28画像を復号）。新規5件のテストは未関与の担当による独立レビューを実施しました。再現する実装不具合は見つからず、production decoderの変更はありません。表示・benchmarkは前回のproduction変更時の結果を保持し、テストのみの追補では再実行していません。
+
 ## 性能測定
 
 Rust1.91 release、CPU固定、base/head順序を交互にした12 paired run/画像/CPU。各processで10回warmup後、100回decodeを計測しました。baselineは変更前Q4を含む`8d00e2c`で、共通入力予算検査はfinalと同じです。これは比較用binaryの出所であり、このbranchの祖先ではありません。全pairで出力hash/sizeは一致しました。

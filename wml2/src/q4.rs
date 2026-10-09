@@ -599,6 +599,47 @@ mod tests {
     }
 
     #[test]
+    fn stage1_width_controls_cross_bytes_without_emitting_codes() {
+        // Hand-packed MSB stream: 010 | 001 | 1111 | 0001 | 10001 | 00000.
+        // Width controls 001 and 0001 grow 3 -> 4 -> 5; values map to value - 2.
+        assert_eq!(decode_stage1(&[0x47, 0xc6, 0x20]).unwrap(), [0, 13, 15]);
+        // Explicit stop ignores subsequent bytes; synthetic zeros also stop a
+        // short stream. This preserves the decoder's padding contract, whose
+        // general format semantics remain independently unverified.
+        assert_eq!(decode_stage1(&[0x40]).unwrap(), [0]);
+        assert_eq!(decode_stage1(&[0x40, 0xff, 0xff]).unwrap(), [0]);
+    }
+
+    #[test]
+    fn bit_reader_crosses_bytes_and_failed_reads_preserve_position() {
+        let mut reader = BitReader::new(&[0xb3, 0x69]);
+        assert_eq!(reader.read_bits(3), Some(0b101));
+        assert_eq!(reader.read_bits(7), Some(0b1001101));
+        assert_eq!(reader.read_bits(7), None);
+        assert_eq!(reader.bit_offset, 10);
+        assert_eq!(reader.read_bits(6), Some(0b101001));
+        assert_eq!(reader.read_bits(1), None);
+    }
+
+    #[test]
+    fn dictionary_equality_and_reuse_have_hand_derived_output() {
+        // current starts at 17. Equality synthesizes previous + its first
+        // byte: [2], then [2,2], then [2,2,2] are emitted in turn.
+        assert_eq!(decode_stage2(&[2, 17, 18]).unwrap(), [2; 6]);
+        // Literal 2 followed by 3 installs entry 17 = [2,3]. Reusing it
+        // must retain both bytes even after subsequent dictionary writes.
+        assert_eq!(decode_stage2(&[2, 3, 17]).unwrap(), [2, 3, 2, 3]);
+        assert_eq!(decode_stage2(&[2, 3, 17, 18]).unwrap(), [2, 3, 2, 3, 3, 2]);
+        // Missing next code currently flushes the final previous entry.
+        assert_eq!(decode_stage2(&[2]).unwrap(), [2]);
+        // An out-of-range next code currently terminates before emission.
+        // These assertions describe existing behavior, not independent proof
+        // that the general file format requires this termination convention.
+        assert!(decode_stage2(&[2, 18]).unwrap().is_empty());
+        assert_eq!(decode_stage2(&[2, 3, 19]).unwrap(), [2]);
+    }
+
+    #[test]
     fn dictionary_first_code_and_storage_are_bounded() {
         assert!(decode_stage2(&[]).is_err());
         assert!(decode_stage2(&[INITIAL_DICTIONARY as u16]).is_err());

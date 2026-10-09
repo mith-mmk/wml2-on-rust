@@ -139,6 +139,8 @@ pub fn get_encode_extentions() -> Vec<String> {
     let mut exts = Vec::new();
     #[cfg(feature = "bmp")]
     exts.push("bmp".to_string());
+    #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+    exts.push("tga".to_string());
     #[cfg(feature = "gif")]
     exts.push("gif".to_string());
     #[cfg(feature = "jpeg")]

@@ -55,7 +55,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | ICO     | x   | O   | decoder for BMP/PNG embedded icon images                                                                            |
 | PNG     | O   | O   | PNG/APNG; encoder writes RGBA truecolor                                                                             |
 | TIFF    | O   | O   | encode: none/LZW/Deflate/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/old-style baseline JPEG/Adobe Deflate/YCbCr/RGBA8/CCITT Huffman RLE/CCITT Group 3/4 Fax/T.6 extension 7 |
-| TGA     | x   | O   | optional `tga` feature; uncompressed/RLE true-color, indexed, and grayscale decode                               |
+| TGA     | O   | O   | `tga`: decode indexed/true-color/grayscale, raw/RLE and legacy 2/4-way interleave; encode 24/32-bit true-color raw/RLE |
 | PCX     | x   | O   | optional `pcx` feature; 1/2/4/8-bit palette and multi-plane decode                                               |
 | DDS     | x   | O   | optional `dds` feature; uncompressed and BC/DXT block texture decode                                              |
 | PIC2    | x   | O   | optional `pic2` feature; block-based decode                                                                        |
@@ -398,3 +398,5 @@ MIT License (C) 2022-2026
 ## Author
 
 MITH@mmk https://mith-mmk.github.io/
+
+TGA encoder: `depth = UInt(24|32)` defaults to 32; `compression = Ascii("none"|"rle")` defaults to RLE. 32-bit output retains straight alpha and transparent RGB; 24-bit explicitly discards alpha without compositing. Output has top-left origin and row-bounded packets. Palette/grayscale encoding, metadata/extension writing and legacy Huffman image types 32/33 remain unsupported. Existing transparent-pixel decode normalization remains unchanged.

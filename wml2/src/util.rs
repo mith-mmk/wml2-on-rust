@@ -269,6 +269,8 @@ pub fn decoder_supports_format(format: &ImageFormat) -> bool {
 /// Returns whether an encoder for `format` is enabled in the current build.
 pub fn encoder_supports_format(format: &ImageFormat) -> bool {
     match format {
+        #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+        ImageFormat::Tga => true,
         #[cfg(feature = "gif")]
         ImageFormat::Gif => true,
         #[cfg(feature = "jpeg")]

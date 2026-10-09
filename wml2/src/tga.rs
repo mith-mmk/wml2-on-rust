@@ -1,4 +1,12 @@
-//! Truevision TGA decoder.
+//! Truevision TGA decoder and encoder.
+//!
+//! Encoding accepts RGBA8 via `PickCallback`. `depth = UInt(24|32)` defaults
+//! to 32 (straight alpha retained); 24 explicitly discards alpha without
+//! compositing. `compression = Ascii("none"|"rle")` defaults to RLE.
+//! Output is top-left BGR/BGRA, with packets confined to individual rows.
+//! Color mapping, grayscale encoding, extension metadata and interleaving
+//! are not emitted. Transparent RGB is preserved in the file; the existing
+//! decoder normalizes zero-alpha pixels to black.
 
 use bin_rs::reader::BinaryReader;
 
@@ -155,10 +163,10 @@ pub fn decode<B: BinaryReader>(
     }
     let pixel_depth = data[16];
     let alpha_bits = data[17] & 0x0f;
-    if data[17] & 0xc0 != 0 {
+    if data[17] & 0xc0 == 0xc0 {
         return Err(err(
             ImgErrorKind::IllegalData,
-            "Interleaved TGA images are unsupported",
+            "Reserved TGA interleaving mode",
         ));
     }
     let image_id_end = 18usize
@@ -277,7 +285,31 @@ pub fn decode<B: BinaryReader>(
     let mut output = vec![0u8; output_len];
     let top_origin = data[17] & 0x20 != 0;
     let right_origin = data[17] & 0x10 != 0;
+    // Legacy TGA interleave stores all rows of one phase before the next.
+    let interleave = match (data[17] >> 6) & 3 {
+        1 => 2,
+        2 => 4,
+        _ => 1,
+    };
     for stored_y in 0..height {
+        let logical_y = if interleave == 1 {
+            stored_y
+        } else {
+            let mut row = stored_y;
+            let mut phase = 0;
+            loop {
+                let count = if phase < height {
+                    (height - phase).div_ceil(interleave)
+                } else {
+                    0
+                };
+                if row < count {
+                    break phase + row * interleave;
+                }
+                row -= count;
+                phase += 1;
+            }
+        };
         for stored_x in 0..width {
             let x = if right_origin {
                 width - 1 - stored_x
@@ -285,9 +317,9 @@ pub fn decode<B: BinaryReader>(
                 stored_x
             };
             let y = if top_origin {
-                stored_y
+                logical_y
             } else {
-                height - 1 - stored_y
+                height - 1 - logical_y
             };
             let src = (stored_y * width + stored_x) * 4;
             let dst = (y * width + x) * 4;
@@ -305,4 +337,132 @@ pub fn decode<B: BinaryReader>(
         .set_metadata("height", DataMap::UInt(height as u64))?;
     draw_rgba(option, width, height, &output)?;
     Ok(None)
+}
+
+/// Encodes an RGBA8 callback source as 24/32-bit true-color TGA.
+pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
+    let mut depth = 32usize;
+    let mut rle = true;
+    if let Some(options) = &option.options {
+        if let Some(value) = options.get("depth") {
+            depth = match value {
+                DataMap::UInt(24) => 24,
+                DataMap::UInt(32) => 32,
+                _ => {
+                    return Err(err(
+                        ImgErrorKind::InvalidParameter,
+                        "TGA depth must be UInt(24) or UInt(32)",
+                    ));
+                }
+            };
+        }
+        if let Some(value) = options.get("compression") {
+            rle = match value {
+                DataMap::Ascii(value) if value.eq_ignore_ascii_case("none") => false,
+                DataMap::Ascii(value) if value.eq_ignore_ascii_case("rle") => true,
+                _ => {
+                    return Err(err(
+                        ImgErrorKind::InvalidParameter,
+                        "TGA compression must be none or rle",
+                    ));
+                }
+            };
+        }
+    }
+    let profile = option
+        .drawer
+        .encode_start(None)?
+        .ok_or_else(|| err(ImgErrorKind::EncodeError, "TGA source profile is missing"))?;
+    let (width, height) = (profile.width, profile.height);
+    if width == 0 || height == 0 || width > u16::MAX as usize || height > u16::MAX as usize {
+        return Err(err(
+            ImgErrorKind::InvalidParameter,
+            "TGA dimensions must be 1..=65535",
+        ));
+    }
+    let row_len = width
+        .checked_mul(4)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "TGA row size overflow"))?;
+    let pixels = width
+        .checked_mul(height)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "TGA image size overflow"))?;
+    let bytes_per_pixel = depth / 8;
+    let output_bound = pixels
+        .checked_mul(bytes_per_pixel + usize::from(rle))
+        .and_then(|n| n.checked_add(44))
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "TGA output size overflow"))?;
+    let limits = crate::limits::current();
+    crate::limits::check(pixels, limits.pixels, "TGA pixels")?;
+    crate::limits::check(
+        pixels
+            .checked_mul(4)
+            .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "TGA source size overflow"))?,
+        limits.expanded_bytes,
+        "TGA source",
+    )?;
+    crate::limits::check(output_bound, limits.expanded_bytes, "TGA encoded bytes")?;
+    let mut output = vec![0; 18];
+    output[2] = if rle { 10 } else { 2 };
+    output[12..14].copy_from_slice(&(width as u16).to_le_bytes());
+    output[14..16].copy_from_slice(&(height as u16).to_le_bytes());
+    output[16] = depth as u8;
+    output[17] = 0x20 | if depth == 32 { 8 } else { 0 };
+    for y in 0..height {
+        let rgba = option
+            .drawer
+            .encode_pick(0, y, width, 1, None)?
+            .ok_or_else(|| err(ImgErrorKind::EncodeError, "TGA source row is missing"))?;
+        if rgba.len() != row_len {
+            return Err(err(
+                ImgErrorKind::EncodeError,
+                "TGA source row must contain exactly width * 4 RGBA8 bytes",
+            ));
+        }
+        let mut row = Vec::with_capacity(width * bytes_per_pixel);
+        for pixel in rgba.chunks_exact(4) {
+            row.extend_from_slice(&[pixel[2], pixel[1], pixel[0]]);
+            if depth == 32 {
+                row.push(pixel[3]);
+            }
+        }
+        if rle {
+            encode_rle_row(&row, bytes_per_pixel, &mut output);
+        } else {
+            output.extend_from_slice(&row);
+        }
+    }
+    // A valid v2 footer with no extension/developer areas.
+    output.extend_from_slice(&[0; 8]);
+    output.extend_from_slice(b"TRUEVISION-XFILE.\0");
+    option.drawer.encode_end(None)?;
+    Ok(output)
+}
+
+fn encode_rle_row(row: &[u8], bpp: usize, output: &mut Vec<u8>) {
+    let pixels = row.len() / bpp;
+    let pixel = |index: usize| &row[index * bpp..(index + 1) * bpp];
+    let run_length = |index: usize| {
+        let mut count = 1;
+        while count < 128 && index + count < pixels && pixel(index + count) == pixel(index) {
+            count += 1;
+        }
+        count
+    };
+    let mut index = 0;
+    while index < pixels {
+        let run = run_length(index);
+        if run >= 2 {
+            output.push(0x80 | (run - 1) as u8);
+            output.extend_from_slice(pixel(index));
+            index += run;
+        } else {
+            let start = index;
+            index += 1;
+            while index < pixels && index - start < 128 && run_length(index) < 2 {
+                index += 1;
+            }
+            output.push((index - start - 1) as u8);
+            output.extend_from_slice(&row[start * bpp..index * bpp]);
+        }
+    }
 }

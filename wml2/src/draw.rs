@@ -954,6 +954,8 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
         Some("png") | Some("apng") => Ok(ImageFormat::Png),
         Some("jpg") | Some("jpeg") => Ok(ImageFormat::Jpeg),
         Some("bmp") => Ok(ImageFormat::Bmp),
+        #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+        Some("tga") => Ok(ImageFormat::Tga),
         Some("tif") | Some("tiff") => Ok(ImageFormat::Tiff),
         Some("webp") => Ok(ImageFormat::Webp),
         #[cfg(feature = "avifenc")]
@@ -1350,6 +1352,10 @@ pub fn image_encoder(_option: &mut EncodeOptions, format: ImageFormat) -> Result
     use crate::util::ImageFormat::*;
 
     match format {
+        #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+        Tga => {
+            return crate::tga::encode(_option);
+        }
         #[cfg(feature = "gif")]
         Gif => {
             return crate::gif::encoder::encode(_option);

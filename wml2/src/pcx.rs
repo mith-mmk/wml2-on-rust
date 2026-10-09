@@ -1,4 +1,12 @@
-//! ZSoft PCX decoding and 24-bit RGB encoding.
+//! ZSoft PCX decoding and RGB/indexed encoding.
+//!
+//! Legacy palette convention: version 0/3 low-depth color images use the
+//! standard EGA palette, except packed 2-bit, one-plane version 0/2/3 images,
+//! which use ZSoft's CGA header controls. Version 4/5 uses RGB header palettes.
+//! CGA C=1 requests a display-dependent monochrome interpretation and is
+//! explicitly unsupported. Single-plane 1-bit output retains the established
+//! white-zero/black-one convention regardless of header colors or version.
+//! This layout/version convention does not identify the original display.
 
 use bin_rs::reader::BinaryReader;
 
@@ -56,6 +64,56 @@ fn palette_color(palette: &[[u8; 3]], index: usize) -> [u8; 4] {
     [rgb[0], rgb[1], rgb[2], 255]
 }
 
+// RGBI's conventional 16-color palette, including brown at index 6.
+const EGA_PALETTE: [[u8; 3]; 16] = [
+    [0, 0, 0],
+    [0, 0, 170],
+    [0, 170, 0],
+    [0, 170, 170],
+    [170, 0, 0],
+    [170, 0, 170],
+    [170, 85, 0],
+    [170, 170, 170],
+    [85, 85, 85],
+    [85, 85, 255],
+    [85, 255, 85],
+    [85, 255, 255],
+    [255, 85, 85],
+    [255, 85, 255],
+    [255, 255, 85],
+    [255, 255, 255],
+];
+
+fn legacy_palette(data: &[u8], bits: u8, planes: usize) -> Result<[[u8; 3]; 16], Error> {
+    let mut palette = [[0; 3]; 16];
+    for (index, rgb) in palette.iter_mut().enumerate() {
+        rgb.copy_from_slice(&data[16 + index * 3..19 + index * 3]);
+    }
+    if bits == 2 && planes == 1 && matches!(data[1], 0 | 2 | 3) {
+        // ZSoft defines C/P/I in bits 7/6/5; lower bits are ignored.
+        let control = data[19];
+        if control & 0x80 != 0 {
+            return Err(err(
+                ImgErrorKind::NoSupportFormat,
+                "PCX CGA monochrome display interpretation is unsupported",
+            ));
+        }
+        let indices = if control & 0x40 == 0 {
+            [2, 4, 6]
+        } else {
+            [3, 5, 7]
+        };
+        let intensity = if control & 0x20 != 0 { 8 } else { 0 };
+        palette[0] = EGA_PALETTE[usize::from(data[16] >> 4)];
+        for (slot, index) in indices.into_iter().enumerate() {
+            palette[slot + 1] = EGA_PALETTE[index + intensity];
+        }
+    } else if bits < 8 && matches!(data[1], 0 | 3) {
+        palette = EGA_PALETTE;
+    }
+    Ok(palette)
+}
+
 pub fn decode<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -63,6 +121,12 @@ pub fn decode<B: BinaryReader>(
     let data = read_all(reader)?;
     if data.len() < 128 || data[0] != 0x0a || data[2] != 1 {
         return Err(err(ImgErrorKind::IllegalData, "Not a PCX image"));
+    }
+    if !matches!(data[1], 0 | 2 | 3 | 4 | 5) {
+        return Err(err(
+            ImgErrorKind::NoSupportFormat,
+            "Unsupported PCX version",
+        ));
     }
     let bits_per_plane = data[3];
     // The header palette has only 16 entries. Reject wider packed indices.
@@ -131,11 +195,7 @@ pub fn decode<B: BinaryReader>(
         ));
     }
     let image_end = palette256.map_or(data.len(), |_| data.len() - 769);
-    let mut palette16 = [[0u8; 3]; 16];
-    for (index, rgb) in palette16.iter_mut().enumerate() {
-        let offset = 16 + index * 3;
-        rgb.copy_from_slice(&data[offset..offset + 3]);
-    }
+    let palette16 = legacy_palette(&data, bits_per_plane, planes)?;
     let palette256_values = palette256.map(|bytes| {
         let mut palette = [[0u8; 3]; 256];
         for (index, rgb) in palette.iter_mut().enumerate() {
@@ -231,6 +291,55 @@ pub fn decode<B: BinaryReader>(
     Ok(None)
 }
 
+#[inline(always)]
+fn reserve_encoded(output: &mut Vec<u8>, additional: usize, limit: usize) -> Result<(), Error> {
+    let next_len = output
+        .len()
+        .checked_add(additional)
+        .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "PCX encoded size overflow"))?;
+    crate::limits::check(next_len, limit, "PCX encoded bytes")?;
+    if next_len > output.capacity() {
+        // Grow geometrically without reserving beyond the caller's byte budget.
+        let capacity = output
+            .capacity()
+            .checked_mul(2)
+            .unwrap_or(next_len)
+            .max(next_len)
+            .min(limit);
+        output.try_reserve_exact(capacity - output.len())?;
+    }
+    Ok(())
+}
+
+fn encode_rle_row<const CHECKED: bool>(
+    row: &[u8],
+    output: &mut Vec<u8>,
+    limit: usize,
+) -> Result<(), Error> {
+    let mut offset = 0;
+    while offset < row.len() {
+        let value = row[offset];
+        let mut count = 1usize;
+        while count < 63 && offset + count < row.len() && row[offset + count] == value {
+            count += 1;
+        }
+        let encoded_count = if count > 1 || value & 0xc0 == 0xc0 {
+            2
+        } else {
+            1
+        };
+        if CHECKED {
+            reserve_encoded(output, encoded_count, limit)?;
+        }
+        if encoded_count == 2 {
+            output.push(0xc0 | count as u8);
+        }
+        output.push(value);
+        offset += count;
+    }
+    Ok(())
+}
+
 /// Encodes version-5 PCX with row-local RLE.
 ///
 /// `color_type` accepts `Ascii("rgb")` (default) or `Ascii("indexed")`.
@@ -286,6 +395,7 @@ pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Er
     let limits = crate::limits::current();
     crate::limits::check(pixels, limits.pixels, "pixels")?;
     crate::limits::check(rgba_len, limits.expanded_bytes, "RGBA image")?;
+    crate::limits::check(128, limits.expanded_bytes, "PCX encoded bytes")?;
     let mut output = vec![0u8; 128];
     output[0] = 10;
     output[1] = 5;
@@ -340,21 +450,30 @@ pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Er
                 }
             }
         }
-        let mut offset = 0;
-        while offset < row.len() {
-            let value = row[offset];
-            let mut count = 1usize;
-            while count < 63 && offset + count < row.len() && row[offset + count] == value {
-                count += 1;
-            }
-            if count > 1 || value & 0xc0 == 0xc0 {
-                output.push(0xc0 | count as u8);
-            }
-            output.push(value);
-            offset += count;
+        // If a whole row's worst-case encoding fits, one reservation proves
+        // every following packet safe. Near the limit, check actual packets
+        // instead; compressible rows are never rejected by an upper bound.
+        let row_bound = row.len().checked_mul(2).ok_or_else(|| {
+            err(
+                ImgErrorKind::InvalidParameter,
+                "PCX encoded row size overflow",
+            )
+        })?;
+        let whole_row_fits = output
+            .len()
+            .checked_add(row_bound)
+            .is_some_and(|length| length <= limits.expanded_bytes);
+        if whole_row_fits {
+            reserve_encoded(&mut output, row_bound, limits.expanded_bytes)?;
+        }
+        if whole_row_fits {
+            encode_rle_row::<false>(&row, &mut output, limits.expanded_bytes)?;
+        } else {
+            encode_rle_row::<true>(&row, &mut output, limits.expanded_bytes)?;
         }
     }
     if indexed {
+        reserve_encoded(&mut output, 769, limits.expanded_bytes)?;
         output.push(12);
         for rgb in &palette {
             output.extend_from_slice(rgb);

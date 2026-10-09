@@ -55,7 +55,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | ICO     | x   | O   | decoder for BMP/PNG embedded icon images                                                                            |
 | PNG     | O   | O   | PNG/APNG; encoder writes RGBA truecolor                                                                             |
 | TIFF    | O   | O   | encode: none/LZW/Deflate/JPEG(new); decode: none/LZW/PackBits/JPEG(new)/old-style baseline JPEG/Adobe Deflate/YCbCr/RGBA8/CCITT Huffman RLE/CCITT Group 3/4 Fax/T.6 extension 7 |
-| TGA     | O   | O   | `tga`: decode indexed/true-color/grayscale, raw/RLE and legacy 2/4-way interleave; encode 24/32-bit true-color raw/RLE |
+| TGA     | O   | O   | `tga`: raw/RLE true-color, grayscale and exact indexed encoding; decode also supports legacy 2/4-way interleave |
 | PCX     | x   | O   | optional `pcx` feature; 1/2/4/8-bit palette and multi-plane decode                                               |
 | DDS     | x   | O   | optional `dds` feature; uncompressed and BC/DXT block texture decode                                              |
 | PIC2    | x   | O   | optional `pic2` feature; block-based decode                                                                        |
@@ -399,7 +399,7 @@ MIT License (C) 2022-2026
 
 MITH@mmk https://mith-mmk.github.io/
 
-TGA encoder: `depth = UInt(24|32)` defaults to 32; `compression = Ascii("none"|"rle")` defaults to RLE. 32-bit output retains straight alpha and transparent RGB; 24-bit explicitly discards alpha without compositing. Output has top-left origin and row-bounded packets. Palette/grayscale encoding, metadata/extension writing and legacy Huffman image types 32/33 remain unsupported. Existing transparent-pixel decode normalization remains unchanged.
+TGA encoder: `color_type = Ascii("truecolor"|"grayscale"|"indexed")` defaults to truecolor; `compression = Ascii("none"|"rle")` defaults to RLE. Truecolor `depth = UInt(24|32)` defaults to32; 24 explicitly discards alpha. Grayscale depth8/16 defaults to16, requires equal RGB channels, and depth8 rejects nonopaque pixels. Indexed depth8 uses at most256 exact colors, with `palette_depth = UInt(24|32)` default32; palette24 rejects nonopaque pixels. No implicit luminance conversion or quantization occurs. 16-bit index encoding is deferred because common external decoders disagree. Straight alpha and transparent RGB are retained on wire; existing zero-alpha decode normalization remains. Output is top-left with row-bounded packets. Extension metadata and Huffman image types32/33 remain unsupported.
 
 PCX encoding uses version-5 24-bit RGB with row-local RLE and even scanline padding. Nonopaque RGBA8 input is rejected by default; `alpha = DataMap::Ascii("discard")` explicitly discards alpha. Low-bit layouts requiring more than the header’s 16 palette colors are rejected.
 

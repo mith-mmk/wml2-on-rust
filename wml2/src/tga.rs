@@ -1,12 +1,17 @@
 //! Truevision TGA decoder and encoder.
 //!
-//! Encoding accepts RGBA8 via `PickCallback`. `depth = UInt(24|32)` defaults
+//! Encoding accepts RGBA8 via `PickCallback`. `color_type` selects truecolor
+//! (default), grayscale or indexed. Grayscale requires equal RGB channels;
+//! indexed uses exact colors without quantization. Gray8/palette24 reject
+//! nonopaque alpha. Grayscale depth 8/16 defaults to 16; indexed uses depth 8
+//! only, palette_depth 24/32 defaults to 32 (up to 256 exact colors).
+//! 16-bit index encoding is deferred because external decoders disagree.
+//! Truecolor `depth = UInt(24|32)` defaults
 //! to 32 (straight alpha retained); 24 explicitly discards alpha without
 //! compositing. `compression = Ascii("none"|"rle")` defaults to RLE.
 //! Output is top-left BGR/BGRA, with packets confined to individual rows.
-//! Color mapping, grayscale encoding, extension metadata and interleaving
-//! are not emitted. Transparent RGB is preserved in the file; the existing
-//! decoder normalizes zero-alpha pixels to black.
+//! Extension metadata and interleaved encoding are not emitted. Transparent RGB
+//! is preserved in the file; the decoder normalizes zero-alpha pixels to black.
 
 use bin_rs::reader::BinaryReader;
 
@@ -339,36 +344,69 @@ pub fn decode<B: BinaryReader>(
     Ok(None)
 }
 
-/// Encodes an RGBA8 callback source as 24/32-bit true-color TGA.
+/// Encodes RGBA8 as true-color, exact indexed color, or grayscale TGA.
 pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
-    let mut depth = 32usize;
-    let mut rle = true;
-    if let Some(options) = &option.options {
-        if let Some(value) = options.get("depth") {
-            depth = match value {
-                DataMap::UInt(24) => 24,
-                DataMap::UInt(32) => 32,
-                _ => {
-                    return Err(err(
-                        ImgErrorKind::InvalidParameter,
-                        "TGA depth must be UInt(24) or UInt(32)",
-                    ));
-                }
-            };
-        }
-        if let Some(value) = options.get("compression") {
-            rle = match value {
-                DataMap::Ascii(value) if value.eq_ignore_ascii_case("none") => false,
-                DataMap::Ascii(value) if value.eq_ignore_ascii_case("rle") => true,
-                _ => {
-                    return Err(err(
-                        ImgErrorKind::InvalidParameter,
-                        "TGA compression must be none or rle",
-                    ));
-                }
-            };
-        }
+    #[derive(Clone, Copy, PartialEq)]
+    enum Kind {
+        TrueColor,
+        Grayscale,
+        Indexed,
     }
+    let options = option.options.as_ref();
+    let get = |key: &str| options.and_then(|o| o.get(key));
+    let kind = match get("color_type") {
+        None => Kind::TrueColor,
+        Some(DataMap::Ascii(v)) if v.eq_ignore_ascii_case("truecolor") => Kind::TrueColor,
+        Some(DataMap::Ascii(v)) if v.eq_ignore_ascii_case("grayscale") => Kind::Grayscale,
+        Some(DataMap::Ascii(v)) if v.eq_ignore_ascii_case("indexed") => Kind::Indexed,
+        _ => {
+            return Err(err(
+                ImgErrorKind::InvalidParameter,
+                "TGA color_type must be truecolor, grayscale or indexed",
+            ));
+        }
+    };
+    let depth = match get("depth") {
+        None => match kind {
+            Kind::TrueColor => 32,
+            Kind::Grayscale => 16,
+            Kind::Indexed => 8,
+        },
+        Some(DataMap::UInt(v))
+            if (kind == Kind::TrueColor && matches!(v, 24 | 32))
+                || (kind == Kind::Grayscale && matches!(v, 8 | 16))
+                || (kind == Kind::Indexed && *v == 8) =>
+        {
+            *v as usize
+        }
+        _ => {
+            return Err(err(
+                ImgErrorKind::InvalidParameter,
+                "TGA depth must be 24/32 for truecolor, 8/16 for grayscale, or 8 for indexed",
+            ));
+        }
+    };
+    let palette_depth = match (kind, get("palette_depth")) {
+        (_, None) => 32,
+        (Kind::Indexed, Some(DataMap::UInt(v))) if matches!(v, 24 | 32) => *v as usize,
+        _ => {
+            return Err(err(
+                ImgErrorKind::InvalidParameter,
+                "TGA palette_depth is indexed-only UInt(24) or UInt(32)",
+            ));
+        }
+    };
+    let rle = match get("compression") {
+        None => true,
+        Some(DataMap::Ascii(v)) if v.eq_ignore_ascii_case("none") => false,
+        Some(DataMap::Ascii(v)) if v.eq_ignore_ascii_case("rle") => true,
+        _ => {
+            return Err(err(
+                ImgErrorKind::InvalidParameter,
+                "TGA compression must be none or rle",
+            ));
+        }
+    };
     let profile = option
         .drawer
         .encode_start(None)?
@@ -387,9 +425,15 @@ pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Er
         .checked_mul(height)
         .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "TGA image size overflow"))?;
     let bytes_per_pixel = depth / 8;
+    let palette_capacity = if depth == 8 { 256 } else { u16::MAX as usize };
+    let palette_bound = if kind == Kind::Indexed {
+        pixels.min(palette_capacity) * (palette_depth / 8)
+    } else {
+        0
+    };
     let output_bound = pixels
         .checked_mul(bytes_per_pixel + usize::from(rle))
-        .and_then(|n| n.checked_add(44))
+        .and_then(|n| n.checked_add(44 + palette_bound))
         .ok_or_else(|| err(ImgErrorKind::InvalidParameter, "TGA output size overflow"))?;
     let limits = crate::limits::current();
     crate::limits::check(pixels, limits.pixels, "TGA pixels")?;
@@ -402,11 +446,27 @@ pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Er
     )?;
     crate::limits::check(output_bound, limits.expanded_bytes, "TGA encoded bytes")?;
     let mut output = vec![0; 18];
-    output[2] = if rle { 10 } else { 2 };
+    let base_type = match kind {
+        Kind::TrueColor => 2,
+        Kind::Grayscale => 3,
+        Kind::Indexed => 1,
+    };
+    output[2] = base_type + if rle { 8 } else { 0 };
+    if kind == Kind::Indexed {
+        output[1] = 1;
+        output[7] = palette_depth as u8;
+    }
     output[12..14].copy_from_slice(&(width as u16).to_le_bytes());
     output[14..16].copy_from_slice(&(height as u16).to_le_bytes());
     output[16] = depth as u8;
-    output[17] = 0x20 | if depth == 32 { 8 } else { 0 };
+    let alpha = match kind {
+        Kind::TrueColor => depth == 32,
+        Kind::Grayscale => depth == 16,
+        Kind::Indexed => palette_depth == 32,
+    };
+    output[17] = 0x20 | if alpha { 8 } else { 0 };
+    let mut palette = Vec::<u8>::new();
+    let mut indices = std::collections::HashMap::<[u8; 4], u16>::new();
     for y in 0..height {
         let rgba = option
             .drawer
@@ -419,10 +479,62 @@ pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Er
             ));
         }
         let mut row = Vec::with_capacity(width * bytes_per_pixel);
-        for pixel in rgba.chunks_exact(4) {
-            row.extend_from_slice(&[pixel[2], pixel[1], pixel[0]]);
-            if depth == 32 {
-                row.push(pixel[3]);
+        match kind {
+            Kind::TrueColor => {
+                if depth == 32 {
+                    pack_truecolor::<4>(&rgba, &mut row);
+                } else {
+                    pack_truecolor::<3>(&rgba, &mut row);
+                }
+            }
+            Kind::Grayscale => {
+                for pixel in rgba.chunks_exact(4) {
+                    if pixel[0] != pixel[1] || pixel[1] != pixel[2] {
+                        return Err(err(
+                            ImgErrorKind::InvalidParameter,
+                            "TGA grayscale requires equal RGB channels; no implicit luminance conversion",
+                        ));
+                    }
+                    if depth == 8 && pixel[3] != 255 {
+                        return Err(err(
+                            ImgErrorKind::InvalidParameter,
+                            "TGA grayscale8 cannot preserve alpha; use depth 16",
+                        ));
+                    }
+                    row.push(pixel[0]);
+                    if depth == 16 {
+                        row.push(pixel[3]);
+                    }
+                }
+            }
+            Kind::Indexed => {
+                for pixel in rgba.chunks_exact(4) {
+                    if palette_depth == 24 && pixel[3] != 255 {
+                        return Err(err(
+                            ImgErrorKind::InvalidParameter,
+                            "TGA 24-bit palette cannot preserve alpha; use palette_depth 32",
+                        ));
+                    }
+                    let color = [pixel[0], pixel[1], pixel[2], pixel[3]];
+                    let index = if let Some(index) = indices.get(&color) {
+                        *index
+                    } else {
+                        if indices.len() >= palette_capacity {
+                            return Err(err(
+                                ImgErrorKind::InvalidParameter,
+                                "TGA indexed color capacity exceeded; no implicit quantization",
+                            ));
+                        }
+                        let index = indices.len() as u16;
+                        indices.insert(color, index);
+                        palette.extend_from_slice(&[pixel[2], pixel[1], pixel[0]]);
+                        if palette_depth == 32 {
+                            palette.push(pixel[3]);
+                        }
+                        index
+                    };
+                    row.push(index as u8);
+                }
             }
         }
         if rle {
@@ -431,11 +543,26 @@ pub fn encode(option: &mut crate::draw::EncodeOptions<'_>) -> Result<Vec<u8>, Er
             output.extend_from_slice(&row);
         }
     }
+    if kind == Kind::Indexed {
+        output[5..7].copy_from_slice(&(indices.len() as u16).to_le_bytes());
+        // Payload was gathered in one callback pass; insert the completed map
+        // before it without a second, potentially changing source read.
+        output.splice(18..18, palette);
+    }
     // A valid v2 footer with no extension/developer areas.
     output.extend_from_slice(&[0; 8]);
     output.extend_from_slice(b"TRUEVISION-XFILE.\0");
     option.drawer.encode_end(None)?;
     Ok(output)
+}
+
+fn pack_truecolor<const BPP: usize>(rgba: &[u8], row: &mut Vec<u8>) {
+    for pixel in rgba.chunks_exact(4) {
+        row.extend_from_slice(&[pixel[2], pixel[1], pixel[0]]);
+        if BPP == 4 {
+            row.push(pixel[3]);
+        }
+    }
 }
 
 fn encode_rle_row(row: &[u8], bpp: usize, output: &mut Vec<u8>) {

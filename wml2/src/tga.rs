@@ -13,6 +13,16 @@
 //! Extension metadata and interleaved encoding are not emitted. Transparent RGB
 //! is preserved in the file; the decoder normalizes zero-alpha pixels to black.
 
+//! TGA2 extension attributes 0/1 ignore stored alpha, 3 uses straight alpha,
+//! and 4 is converted from premultiplied to straight RGBA8 (nearest integer,
+//! saturation, alpha-zero RGB black). Undefined-retained type2 and unknown
+//! types fail explicitly because unused attribute bits cannot be represented
+//! faithfully by RGBA8. Explicit useful-alpha storage must agree with the
+//! descriptor's alpha bit count. Without an extension, legacy interpretation
+//! and the all-zero 16-bit alpha compatibility fallback are unchanged.
+//! Referenced post-image areas are bounds-checked and excluded from pixels;
+//! ancillary metadata content and overlapping metadata semantics are not decoded.
+
 use bin_rs::reader::BinaryReader;
 
 use crate::draw::DecodeOptions;
@@ -30,6 +40,104 @@ fn le16(data: &[u8], offset: usize) -> Result<u16, Error> {
     Ok(u16::from_le_bytes([bytes[0], bytes[1]]))
 }
 
+fn le32(data: &[u8], offset: usize) -> Result<usize, Error> {
+    let bytes: [u8; 4] = data
+        .get(offset..offset + 4)
+        .ok_or_else(|| {
+            err(
+                ImgErrorKind::IllegalData,
+                "TGA metadata offset is truncated",
+            )
+        })?
+        .try_into()?;
+    usize::try_from(u32::from_le_bytes(bytes))
+        .map_err(|_| err(ImgErrorKind::IllegalData, "TGA metadata offset overflow"))
+}
+
+fn metadata_range(data: &[u8], footer: usize, start: usize, size: usize) -> Result<&[u8], Error> {
+    let end = start
+        .checked_add(size)
+        .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA metadata size overflow"))?;
+    if start < 18 || end > footer {
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "TGA metadata lies outside the post-image area",
+        ));
+    }
+    data.get(start..end)
+        .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA metadata is truncated"))
+}
+
+// Return the earliest referenced post-image area, so malformed pixel payloads
+// cannot borrow bytes from a valid v2 footer or ancillary block.
+fn post_image(data: &[u8], height: usize, pixel_depth: u8) -> Result<(usize, Option<u8>), Error> {
+    if data.len() < 26 || !data.ends_with(b"TRUEVISION-XFILE.\0") {
+        return Ok((data.len(), None));
+    }
+    let footer = data.len() - 26;
+    if footer < 18 {
+        return Err(err(
+            ImgErrorKind::IllegalData,
+            "TGA footer overlaps the image header",
+        ));
+    }
+    let mut end = footer;
+    let extension = le32(data, footer)?;
+    let developer = le32(data, footer + 4)?;
+    let mut attributes = None;
+    if extension != 0 {
+        let header = metadata_range(data, footer, extension, 2)?;
+        let size = usize::from(u16::from_le_bytes([header[0], header[1]]));
+        if size < 495 {
+            return Err(err(
+                ImgErrorKind::IllegalData,
+                "TGA extension must contain at least 495 bytes",
+            ));
+        }
+        let block = metadata_range(data, footer, extension, size)?;
+        let value = block[494];
+        if value == 2 || value > 4 {
+            return Err(err(
+                ImgErrorKind::NoSupportFormat,
+                "TGA undefined or unsupported attributes cannot be represented as RGBA8",
+            ));
+        }
+        attributes = Some(value);
+        end = end.min(extension);
+        for (field, size) in [(482, 2048), (490, height * 4)] {
+            let offset = le32(block, field)?;
+            if offset != 0 {
+                metadata_range(data, footer, offset, size)?;
+                end = end.min(offset);
+            }
+        }
+        let stamp = le32(block, 486)?;
+        if stamp != 0 {
+            let header = metadata_range(data, footer, stamp, 2)?;
+            let size = 2 + usize::from(header[0])
+                * usize::from(header[1])
+                * usize::from(pixel_depth.div_ceil(8));
+            metadata_range(data, footer, stamp, size)?;
+            end = end.min(stamp);
+        }
+    }
+    if developer != 0 {
+        let header = metadata_range(data, footer, developer, 2)?;
+        let count = usize::from(u16::from_le_bytes([header[0], header[1]]));
+        let block = metadata_range(data, footer, developer, 2 + count * 10)?;
+        end = end.min(developer);
+        for entry in block[2..].chunks_exact(10) {
+            let offset = le32(entry, 2)?;
+            let size = le32(entry, 6)?;
+            if size != 0 {
+                metadata_range(data, footer, offset, size)?;
+                end = end.min(offset);
+            }
+        }
+    }
+    Ok((end, attributes))
+}
+
 fn scale5(value: u8) -> u8 {
     (u16::from(value) * 255 / 31) as u8
 }
@@ -38,7 +146,7 @@ fn decode_color(data: &[u8], depth: u8, alpha_bits: u8) -> Result<[u8; 4], Error
     match depth {
         15 | 16 => {
             let value = u16::from_le_bytes([data[0], data[1]]);
-            let alpha = if depth == 16 && alpha_bits > 0 {
+            let alpha = if depth == 16 && alpha_bits > 0 && alpha_bits != 255 {
                 if value & 0x8000 != 0 { 255 } else { 0 }
             } else {
                 255
@@ -54,7 +162,9 @@ fn decode_color(data: &[u8], depth: u8, alpha_bits: u8) -> Result<[u8; 4], Error
         }
         24 => Ok([data[2], data[1], data[0], 255]),
         32 => {
-            if data[3] == 0 {
+            if alpha_bits == 255 {
+                Ok([data[2], data[1], data[0], 255])
+            } else if data[3] == 0 {
                 Ok([0, 0, 0, 0])
             } else {
                 Ok([data[2], data[1], data[0], data[3]])
@@ -129,7 +239,9 @@ fn decode_pixel(
         3 => match pixel_depth {
             8 => Ok([data[0], data[0], data[0], 255]),
             16 => {
-                if data[1] == 0 {
+                if alpha_bits == 255 {
+                    Ok([data[0], data[0], data[0], 255])
+                } else if data[1] == 0 {
                     Ok([0, 0, 0, 0])
                 } else {
                     Ok([data[0], data[0], data[0], data[1]])
@@ -168,6 +280,33 @@ pub fn decode<B: BinaryReader>(
     }
     let pixel_depth = data[16];
     let alpha_bits = data[17] & 0x0f;
+    let (image_end, attributes) = post_image(&data, height, pixel_depth)?;
+    let data = &data[..image_end];
+    // Sentinel 255 means explicitly ignore stored attributes, before legacy
+    // transparent-RGB normalization. Type2 cannot be carried as unused bits
+    // through RGBA8, so it is explicitly rejected above.
+    if matches!(attributes, Some(3 | 4)) {
+        let expected = match (base_type, pixel_depth, data[7]) {
+            (1, _, 16) | (2, 16, _) => 1,
+            (1, _, 32) | (2, 32, _) | (3, 16, _) => 8,
+            _ => {
+                return Err(err(
+                    ImgErrorKind::IllegalData,
+                    "TGA useful alpha requires alpha-bearing storage",
+                ));
+            }
+        };
+        if alpha_bits != expected {
+            return Err(err(
+                ImgErrorKind::IllegalData,
+                "TGA alpha bits conflict with useful-alpha extension",
+            ));
+        }
+    }
+    let alpha_bits = match attributes {
+        Some(0 | 1) => 255,
+        _ => alpha_bits,
+    };
     if data[17] & 0xc0 == 0xc0 {
         return Err(err(
             ImgErrorKind::IllegalData,
@@ -215,24 +354,25 @@ pub fn decode<B: BinaryReader>(
     // ImageMagick treats a declared 1-bit alpha plane with no set bits as
     // opaque, so retain that compatibility for uncompressed 16-bit true-color
     // samples while honoring the alpha plane when it contains an opaque bit.
-    let alpha_bits = if pixel_depth == 16 && alpha_bits > 0 && base_type == 2 && !rle {
-        let image_bytes = pixels_count
-            .checked_mul(bytes_per_pixel)
-            .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA image size overflow"))?;
-        let image_end = image_offset
-            .checked_add(image_bytes)
-            .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA image offset overflow"))?;
-        let image_data = data
-            .get(image_offset..image_end)
-            .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA pixel data is truncated"))?;
-        if image_data.chunks_exact(2).any(|pixel| pixel[1] & 0x80 != 0) {
-            alpha_bits
+    let alpha_bits =
+        if attributes.is_none() && pixel_depth == 16 && alpha_bits > 0 && base_type == 2 && !rle {
+            let image_bytes = pixels_count
+                .checked_mul(bytes_per_pixel)
+                .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA image size overflow"))?;
+            let image_end = image_offset
+                .checked_add(image_bytes)
+                .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA image offset overflow"))?;
+            let image_data = data
+                .get(image_offset..image_end)
+                .ok_or_else(|| err(ImgErrorKind::IllegalData, "TGA pixel data is truncated"))?;
+            if image_data.chunks_exact(2).any(|pixel| pixel[1] & 0x80 != 0) {
+                alpha_bits
+            } else {
+                0
+            }
         } else {
-            0
-        }
-    } else {
-        alpha_bits
-    };
+            alpha_bits
+        };
     let mut decoded = Vec::with_capacity(output_len);
     let mut cursor = image_offset;
     while decoded.len() / 4 < pixels_count {
@@ -287,6 +427,16 @@ pub fn decode<B: BinaryReader>(
             }
         }
     }
+    if attributes == Some(4) {
+        for pixel in decoded.chunks_exact_mut(4) {
+            let alpha = u32::from(pixel[3]);
+            if alpha != 0 {
+                for channel in &mut pixel[..3] {
+                    *channel = ((u32::from(*channel) * 255 + alpha / 2) / alpha).min(255) as u8;
+                }
+            }
+        }
+    }
     let mut output = vec![0u8; output_len];
     let top_origin = data[17] & 0x20 != 0;
     let right_origin = data[17] & 0x10 != 0;
@@ -330,6 +480,11 @@ pub fn decode<B: BinaryReader>(
             let dst = (y * width + x) * 4;
             output[dst..dst + 4].copy_from_slice(&decoded[src..src + 4]);
         }
+    }
+    if let Some(value) = attributes {
+        option
+            .drawer
+            .set_metadata("TGA Attributes Type", DataMap::UInt(u64::from(value)))?;
     }
     option
         .drawer

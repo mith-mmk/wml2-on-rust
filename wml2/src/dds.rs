@@ -27,6 +27,7 @@ enum Compression {
     Bc3 { premultiplied: bool },
     Bc4 { signed: bool },
     Bc5 { signed: bool },
+    Bc7,
 }
 
 #[cfg(test)]
@@ -191,6 +192,111 @@ fn unpremultiply_rgb(pixel: &mut [u8; 4]) {
     pixel[2] = unpremultiply(pixel[2], alpha);
 }
 
+// BC7 single-subset modes have no partition tables. Fields are consumed LSB
+// first, in the order illustrated by Microsoft's BC7 Format Mode Reference:
+// https://learn.microsoft.com/en-us/windows/win32/direct3d11/bc7-format-mode-reference
+// The endpoint expansion, fix-up index and interpolation are specified in:
+// https://learn.microsoft.com/en-us/windows/win32/direct3d11/bc7-format
+fn decode_bc7(block: &[u8]) -> Result<[[u8; 4]; 16], Error> {
+    let bytes: [u8; 16] = block.try_into().map_err(|_| {
+        err(
+            ImgErrorKind::IllegalData,
+            "DDS BC7 block must contain 16 bytes",
+        )
+    })?;
+    let mode = bytes[0].trailing_zeros();
+    // The reserved mode (no set bit in the first byte) produces zero texels.
+    if mode == 8 {
+        return Ok([[0; 4]; 16]);
+    }
+    if !matches!(mode, 4..=6) {
+        return Err(err(
+            ImgErrorKind::NoSupportFormat,
+            "DDS BC7 partitioned modes 0, 1, 2, 3 and 7 are not implemented",
+        ));
+    }
+    let mut bits = u128::from_le_bytes(bytes) >> (mode + 1);
+    let mut take = |count: u32| {
+        let value = (bits & ((1u128 << count) - 1)) as u8;
+        bits >>= count;
+        value
+    };
+    let rotation = if mode == 6 { 0 } else { take(2) };
+    let selector = if mode == 4 { take(1) } else { 0 };
+    let color_bits = if mode == 4 { 5 } else { 7 };
+    let alpha_bits = match mode {
+        4 => 6,
+        5 => 8,
+        _ => 7,
+    };
+    let mut endpoints = [[0u8; 4]; 2];
+    for channel in 0..4 {
+        let count = if channel == 3 { alpha_bits } else { color_bits };
+        for endpoint in &mut endpoints {
+            endpoint[channel] = take(count);
+        }
+    }
+    if mode == 6 {
+        for endpoint in &mut endpoints {
+            let pbit = take(1);
+            for value in endpoint {
+                *value = (*value << 1) | pbit;
+            }
+        }
+    } else {
+        for endpoint in &mut endpoints {
+            for (channel, value) in endpoint.iter_mut().enumerate() {
+                let count = if channel == 3 { alpha_bits } else { color_bits };
+                let aligned = u16::from(*value) << (8 - count);
+                *value = (aligned | (aligned >> count)) as u8;
+            }
+        }
+    }
+    let first_width = if mode == 6 { 4 } else { 2 };
+    let mut first = [0u8; 16];
+    for (pixel, index) in first.iter_mut().enumerate() {
+        *index = take(first_width - u32::from(pixel == 0));
+    }
+    let second_width = if mode == 4 { 3 } else { 2 };
+    let mut second = [0u8; 16];
+    if mode != 6 {
+        for (pixel, index) in second.iter_mut().enumerate() {
+            *index = take(second_width - u32::from(pixel == 0));
+        }
+    }
+    // Mode 4's selector assigns the first (2-bit) stream to color when zero,
+    // and to alpha when one. Mode 5 always puts color in the first stream.
+    let weights = |width: u32, index: u8| -> u16 {
+        const TWO: [u16; 4] = [0, 21, 43, 64];
+        const THREE: [u16; 8] = [0, 9, 18, 27, 37, 46, 55, 64];
+        const FOUR: [u16; 16] = [0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64];
+        match width {
+            2 => TWO[index as usize],
+            3 => THREE[index as usize],
+            _ => FOUR[index as usize],
+        }
+    };
+    let mut output = [[0u8; 4]; 16];
+    for (pixel, rgba) in output.iter_mut().enumerate() {
+        for (channel, value) in rgba.iter_mut().enumerate() {
+            let use_second = mode != 6 && ((channel == 3) != (selector != 0));
+            let weight = if use_second {
+                weights(second_width, second[pixel])
+            } else {
+                weights(first_width, first[pixel])
+            };
+            *value = (((64 - weight) * u16::from(endpoints[0][channel])
+                + weight * u16::from(endpoints[1][channel])
+                + 32)
+                >> 6) as u8;
+        }
+        if rotation != 0 {
+            rgba.swap(3, usize::from(rotation - 1));
+        }
+    }
+    Ok(output)
+}
+
 fn decode_block(block: &[u8], compression: Compression) -> Result<[[u8; 4]; 16], Error> {
     match compression {
         Compression::Bc1 => Ok(decode_bc1(block, true)),
@@ -238,6 +344,7 @@ fn decode_block(block: &[u8], compression: Compression) -> Result<[[u8; 4]; 16],
             }
             Ok(result)
         }
+        Compression::Bc7 => decode_bc7(block),
         Compression::Uncompressed(_) => Err(err(
             ImgErrorKind::IllegalData,
             "DDS block compression is missing",
@@ -282,6 +389,7 @@ fn compression_from_dxgi(value: u32) -> Option<Compression> {
         81 => Some(Compression::Bc4 { signed: true }),
         83 => Some(Compression::Bc5 { signed: false }),
         84 => Some(Compression::Bc5 { signed: true }),
+        98 | 99 => Some(Compression::Bc7),
         87 | 90 | 91 => Some(Compression::Uncompressed(UncompressedFormat::Bgra8)),
         88 | 92 | 93 => Some(Compression::Uncompressed(UncompressedFormat::Bgrx8)),
         _ => None,

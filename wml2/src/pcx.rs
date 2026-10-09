@@ -7,6 +7,8 @@
 //! explicitly unsupported. Single-plane 1-bit output retains the established
 //! white-zero/black-one convention regardless of header colors or version.
 //! This layout/version convention does not identify the original display.
+//! Header versions and C/P/I fields follow the ZSoft Technical Reference Manual
+//! (1988): <https://msxcomputermagazine.nl/mccm/millennium/milc/formats/topic_0.htm>.
 
 use bin_rs::reader::BinaryReader;
 

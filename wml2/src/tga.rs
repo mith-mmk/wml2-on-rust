@@ -22,6 +22,10 @@
 //! and the all-zero 16-bit alpha compatibility fallback are unchanged.
 //! Referenced post-image areas are bounds-checked and excluded from pixels;
 //! ancillary metadata content and overlapping metadata semantics are not decoded.
+//! Alpha codes follow the Attributes Type table in Truevision TGA 2.0: it lists
+//! 4 as premultiplied, although the following example refers to 3. The table
+//! determines this decoder's interpretation.
+//! Specification: <https://raw.githubusercontent.com/DEAKSoftware/Truevision-TGA/master/truevision-tga.pdf>
 
 use bin_rs::reader::BinaryReader;
 

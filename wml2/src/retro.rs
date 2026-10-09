@@ -19,6 +19,7 @@ pub(crate) fn read_all<B: BinaryReader>(reader: &mut B) -> Result<Vec<u8>, Error
     let length = end
         .checked_sub(current)
         .ok_or_else(|| std::io::Error::other("invalid input position"))?;
+    crate::limits::check_input_length(length, crate::limits::current().input_bytes)?;
     let length = usize::try_from(length)?;
     Ok(reader.read_bytes_as_vec(length)?)
 }
@@ -83,6 +84,29 @@ mod tests {
             .expect("the original I/O error should be preserved");
         assert_eq!(error.kind(), ErrorKind::Other);
         assert_eq!(error.to_string(), "injected read failure");
+    }
+
+    #[test]
+    fn read_all_checks_input_budget_before_reading_or_narrowing() {
+        let failing = FailingReader {
+            data: Vec::new(),
+            logical_len: u64::from(u32::MAX) + 1,
+            position: 0,
+        };
+        let mut reader = StreamReader::new(BufReader::new(failing));
+        let result = crate::limits::scope(
+            crate::limits::DecodeLimits {
+                input_bytes: 3,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || read_all(&mut reader),
+        );
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("input exceeds decode limit")
+        );
     }
 }
 

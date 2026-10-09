@@ -1,3 +1,5 @@
+#![cfg(not(feature = "noretoro"))]
+
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -32,10 +34,10 @@ fn rejects_truncated_q4() {
 }
 
 #[test]
+#[ignore = "requires local Q4 samples; does not establish independent compatibility"]
 fn decodes_collected_q4_samples() {
-    let Some(root) = env::var_os("WML2_Q4_SAMPLE_ROOT") else {
-        return;
-    };
+    let root = env::var_os("WML2_Q4_SAMPLE_ROOT")
+        .expect("set WML2_Q4_SAMPLE_ROOT to a directory containing samples/*.Q4");
     let root = Path::new(&root).join("samples");
     let mut count = 0;
     for entry in fs::read_dir(&root).expect("Q4 sample directory should be readable") {
@@ -68,4 +70,5 @@ fn decodes_collected_q4_samples() {
         count += 1;
     }
     assert!(count >= 1, "at least one Q4 sample is required");
+    eprintln!("decoded {count} local Q4 samples; independent oracle is unverified");
 }

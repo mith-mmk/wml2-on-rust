@@ -350,7 +350,13 @@ fn decode_pixels(data: &[u8], expected: usize, output: &mut Vec<u8>) -> Result<(
             }
         };
         let remaining = expected - (output.len() - block_start);
-        output.extend(std::iter::repeat_n(color, count.min(remaining)));
+        if count > remaining {
+            return Err(err(
+                ImgErrorKind::IllegalData,
+                "Q4 pixel run exceeds the declared block size",
+            ));
+        }
+        output.extend(std::iter::repeat_n(color, count));
     }
     Ok(())
 }
@@ -370,6 +376,9 @@ pub fn decode<B: BinaryReader>(
     if declared_size != 0 && declared_size > data.len() {
         return Err(err(ImgErrorKind::IllegalData, "Q4 file is truncated"));
     }
+    // The fixed canvas cannot fit smaller budgets; reject before allocating
+    // palette/dictionary scratch for an image that cannot be returned.
+    let (expected_pixels, output_len) = output_layout()?;
 
     let palette_compressed_len = usize::from(le16(&data, 16)?);
     let palette_end = HEADER_SIZE
@@ -405,7 +414,6 @@ pub fn decode<B: BinaryReader>(
         }
     }
 
-    let (expected_pixels, output_len) = output_layout()?;
     let mut indices = Vec::new();
     indices.try_reserve_exact(expected_pixels)?;
     while cursor < data.len() {
@@ -482,6 +490,198 @@ pub fn decode<B: BinaryReader>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn decode_error(data: &[u8]) -> String {
+        let mut reader = bin_rs::reader::BytesReader::new(data);
+        let mut image = crate::draw::ImageBuffer::new();
+        let mut options = DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+        };
+        let error = decode(&mut reader, &mut options).unwrap_err();
+        assert!(image.buffer.is_none());
+        error.to_string()
+    }
+
+    #[test]
+    fn rejects_truncated_headers_and_declared_file_lengths() {
+        let mut header = [0u8; HEADER_SIZE];
+        header[2] = 2;
+        header[11..16].copy_from_slice(b"MAJYO");
+        for length in 0..HEADER_SIZE {
+            assert!(decode_error(&header[..length]).contains("Not a Q4"));
+        }
+        header[8..11].copy_from_slice(&[0xff; 3]);
+        assert!(decode_error(&header).contains("file is truncated"));
+    }
+
+    #[test]
+    fn rejects_missing_auxiliary_payload_and_empty_image_blocks() {
+        // Ninety-six literal zero codes produce a valid all-zero palette in
+        // the existing stream model; this is a parser-boundary vector only.
+        let palette: Vec<_> = [0x49, 0x24, 0x92].into_iter().cycle().take(36).collect();
+        assert_eq!(decode_block(&palette).unwrap(), vec![0; PALETTE_BYTES]);
+        let mut file = vec![0u8; HEADER_SIZE];
+        file[2] = 2;
+        file[11..16].copy_from_slice(b"MAJYO");
+        file[16..18].copy_from_slice(&(palette.len() as u16).to_le_bytes());
+        file.extend_from_slice(&palette);
+        file[4] = 2;
+        assert!(decode_error(&file).contains("auxiliary block is truncated"));
+        file.extend_from_slice(&[0xff, 0xff, 0, 0, 0, 0]);
+        assert!(decode_error(&file).contains("auxiliary block is truncated"));
+        file[4] = 0;
+        assert!(decode_error(&file).contains("image block is truncated"));
+        file.truncate(HEADER_SIZE + palette.len());
+        file.extend_from_slice(&[0; BLOCK_HEADER_SIZE]);
+        assert!(decode_error(&file).contains("image block is empty"));
+    }
+
+    #[test]
+    fn exact_runs_preserve_previous_blocks_and_allow_unused_tail() {
+        let mut output = vec![9, 8];
+        decode_pixels(&[0x10, 1, 0, 0xff], 17, &mut output).unwrap();
+        assert_eq!(&output[..2], &[9, 8]);
+        assert_eq!(&output[2..], &[0; 17]);
+        let mut colored = Vec::new();
+        decode_pixels(&[0x10, 0, 3, 1, 2], 19, &mut colored).unwrap();
+        assert_eq!(colored, vec![PALETTE_ORDER[3]; 19]);
+    }
+
+    #[test]
+    fn rejects_truncated_and_invalid_pixel_tokens() {
+        for bytes in [
+            &[][..],
+            &[0x10],
+            &[0x10, 1],
+            &[0x10, 0],
+            &[0x10, 0, 3],
+            &[0x10, 0, 3, 1],
+            &[0x11],
+            &[0x10, 0, 16, 1, 2],
+        ] {
+            assert!(
+                decode_pixels(bytes, 19, &mut Vec::new()).is_err(),
+                "{bytes:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn palette_components_and_size_are_bounded() {
+        assert!(decode_palette(&[0; PALETTE_BYTES - 1]).is_err());
+        let mut palette = [0; PALETTE_BYTES];
+        palette[1] = 15;
+        assert_eq!(decode_palette(&palette).unwrap()[0], [255, 0, 0]);
+        palette[1] = 16;
+        assert!(decode_palette(&palette).is_err());
+    }
+
+    #[test]
+    fn dictionary_first_code_and_storage_are_bounded() {
+        assert!(decode_stage2(&[]).is_err());
+        assert!(decode_stage2(&[INITIAL_DICTIONARY as u16]).is_err());
+        let result = decode_stage2(&vec![0; MAX_WORK_BUFFER]);
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("dictionary storage")
+        );
+    }
+
+    #[test]
+    fn code_count_and_bit_width_are_bounded() {
+        // MSB-first 010 repeated: code zero, without increasing bit width.
+        let bytes: Vec<_> = [0x49, 0x24, 0x92]
+            .into_iter()
+            .cycle()
+            .take((MAX_WORK_BUFFER / 2 + 1).div_ceil(8) * 3)
+            .collect();
+        assert!(
+            decode_stage1(&bytes)
+                .unwrap_err()
+                .to_string()
+                .contains("stream is too large")
+        );
+        let mut bits = Vec::new();
+        for width in 3..=16 {
+            bits.extend(std::iter::repeat_n(0u8, width - 1));
+            bits.push(1);
+        }
+        let mut bytes = vec![0u8; bits.len().div_ceil(8)];
+        for (i, bit) in bits.into_iter().enumerate() {
+            bytes[i / 8] |= bit << (7 - i % 8);
+        }
+        assert!(
+            decode_stage1(&bytes)
+                .unwrap_err()
+                .to_string()
+                .contains("width is unsupported")
+        );
+    }
+
+    #[test]
+    fn output_layout_checks_pixel_and_byte_thresholds() {
+        for limits in [
+            crate::limits::DecodeLimits {
+                pixels: WIDTH * HEIGHT - 1,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            crate::limits::DecodeLimits {
+                expanded_bytes: WIDTH * HEIGHT * 4 - 1,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+        ] {
+            assert!(crate::limits::scope(limits, output_layout).is_err());
+        }
+        assert_eq!(
+            crate::limits::scope(
+                crate::limits::DecodeLimits {
+                    pixels: WIDTH * HEIGHT,
+                    expanded_bytes: WIDTH * HEIGHT * 4,
+                    ..crate::limits::DecodeLimits::unlimited()
+                },
+                output_layout
+            )
+            .unwrap(),
+            (WIDTH * HEIGHT, WIDTH * HEIGHT * 4)
+        );
+    }
+
+    #[test]
+    fn rejects_run_longer_than_the_declared_block() {
+        let mut output = Vec::new();
+        let result = decode_pixels(&[0x10, 1, 0], 16, &mut output);
+        assert!(
+            result.is_err(),
+            "a 17-pixel run must not be silently clipped"
+        );
+        assert!(output.is_empty());
+    }
+
+    #[test]
+    fn rejects_impossible_output_before_palette_decompression() {
+        use bin_rs::reader::BytesReader;
+        let mut header = [0u8; HEADER_SIZE];
+        header[2] = 2;
+        header[11..16].copy_from_slice(b"MAJYO");
+        let mut reader = BytesReader::new(&header);
+        let mut image = crate::draw::ImageBuffer::new();
+        let mut options = DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+        };
+        let result = crate::limits::scope(
+            crate::limits::DecodeLimits {
+                expanded_bytes: 0,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || decode(&mut reader, &mut options),
+        );
+        assert!(result.unwrap_err().to_string().contains("RGBA image"));
+        assert!(image.buffer.is_none());
+    }
 
     #[test]
     fn q4_output_layout_respects_expanded_byte_limit() {

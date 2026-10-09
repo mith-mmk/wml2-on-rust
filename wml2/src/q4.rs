@@ -549,6 +549,27 @@ mod tests {
     }
 
     #[test]
+    fn pixel_runs_accept_maximum_counts_and_zero_length_boundaries() {
+        // Parser arithmetic vectors, not independently verified Q4 files:
+        // both count encodings support the full high/low-byte range.
+        let maximum = 255 * 17 + 255;
+        for tokens in [&[0x10, 255, 255][..], &[0x10, 0, 3, 255, 255][..]] {
+            let mut output = vec![9, 8];
+            decode_pixels(tokens, maximum, &mut output).unwrap();
+            assert_eq!(&output[..2], &[9, 8]);
+            assert_eq!(output.len(), maximum + 2);
+            assert!(decode_pixels(tokens, maximum - 1, &mut Vec::new()).is_err());
+        }
+        // Preserve existing helper behavior; the file parser still rejects
+        // image blocks with zero declared size. Zero-run semantics are unverified.
+        let mut output = vec![9];
+        decode_pixels(&[0x10, 0, 3, 0, 0, 2], 1, &mut output).unwrap();
+        assert_eq!(output, [9, PALETTE_ORDER[2]]);
+        decode_pixels(&[], 0, &mut output).unwrap();
+        assert_eq!(output, [9, PALETTE_ORDER[2]]);
+    }
+
+    #[test]
     fn rejects_truncated_and_invalid_pixel_tokens() {
         for bytes in [
             &[][..],

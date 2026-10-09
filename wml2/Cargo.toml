@@ -14,6 +14,10 @@ categories = ["multimedia::images","encoding"]
 [lib]
 crate-type = ["rlib"] 
 
+[[example]]
+name = "q4_dump_rgba"
+required-features = ["q4"]
+
 [[test]]
 name = "avif_decode"
 path = "tests/avif_decode.rs"

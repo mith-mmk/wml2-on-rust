@@ -170,19 +170,14 @@ fn decodes_collected_q4_samples() {
         assert_eq!((image.width, image.height), (640, 400));
         let buffer = image.buffer.as_ref().expect("Q4 image should have pixels");
         assert_eq!(buffer.len(), 640 * 400 * 4);
-        if path.file_name().is_some_and(|name| name == "30000.Q4") {
-            for (pixel, rgb) in [
-                (0usize, [255, 255, 255]),
-                (639, [221, 255, 238]),
-                (640, [255, 255, 255]),
-                (1000, [221, 255, 238]),
-            ] {
-                let offset = pixel * 4;
-                assert_eq!(&buffer[offset..offset + 4], &[rgb[0], rgb[1], rgb[2], 255]);
-            }
-        }
+        // The old 30000.Q4 pixel expectations came from this decoder, whose
+        // output failed visual inspection. They are not an independent oracle.
+        // This smoke test only checks transport/layout and opaque output.
+        assert!(buffer.chunks_exact(4).all(|pixel| pixel[3] == 255));
         count += 1;
     }
     assert!(count >= 1, "at least one Q4 sample is required");
-    eprintln!("decoded {count} local Q4 samples; independent oracle is unverified");
+    eprintln!(
+        "decoded {count} local Q4 samples; layout smoke test only, visual correctness failed"
+    );
 }

@@ -162,45 +162,60 @@ pub fn decode<B: BinaryReader>(
             ));
         }
         let row = read_row(&data[..image_end], &mut cursor, row_len)?;
-        for x in 0..width {
-            let rgba = if bits_per_plane == 8 && planes >= 3 {
-                let r = row[x];
-                let g = row[bytes_per_line + x];
-                let b = row[bytes_per_line * 2 + x];
-                let a = if planes >= 4 {
-                    row[bytes_per_line * 3 + x]
-                } else {
-                    255
-                };
-                [r, g, b, a]
-            } else {
-                let index = if bits_per_plane == 8 {
-                    usize::from(row[x])
-                } else {
-                    let mut index = 0usize;
-                    for plane in 0..planes {
-                        index |= usize::from(sample_plane(
-                            &row[plane * bytes_per_line..],
-                            x,
-                            bits_per_plane,
-                        )) << (plane * usize::from(bits_per_plane));
-                    }
-                    index
-                };
-                if bits_per_plane == 1 && planes == 1 {
-                    let value = if index == 0 { 255 } else { 0 };
-                    [value, value, value, 255]
-                } else if bits_per_plane == 8 {
-                    palette256_values.map_or_else(
-                        || palette_color(&palette16, index),
-                        |palette| palette_color(&palette, index),
-                    )
-                } else {
-                    palette_color(&palette16, index)
+        if bits_per_plane == 8 && planes >= 3 {
+            let output_row = &mut output[y * width * 4..(y + 1) * width * 4];
+            let red = &row[..width];
+            let green = &row[bytes_per_line..bytes_per_line + width];
+            let blue = &row[bytes_per_line * 2..bytes_per_line * 2 + width];
+            if planes == 4 {
+                let alpha = &row[bytes_per_line * 3..bytes_per_line * 3 + width];
+                for ((((pixel, r), g), b), a) in output_row
+                    .chunks_exact_mut(4)
+                    .zip(red)
+                    .zip(green)
+                    .zip(blue)
+                    .zip(alpha)
+                {
+                    pixel.copy_from_slice(&[*r, *g, *b, *a]);
                 }
-            };
-            let dst = (y * width + x) * 4;
-            output[dst..dst + 4].copy_from_slice(&rgba);
+            } else {
+                for (((pixel, r), g), b) in
+                    output_row.chunks_exact_mut(4).zip(red).zip(green).zip(blue)
+                {
+                    pixel.copy_from_slice(&[*r, *g, *b, 255]);
+                }
+            }
+        } else {
+            for x in 0..width {
+                let rgba = {
+                    let index = if bits_per_plane == 8 {
+                        usize::from(row[x])
+                    } else {
+                        let mut index = 0usize;
+                        for plane in 0..planes {
+                            index |= usize::from(sample_plane(
+                                &row[plane * bytes_per_line..],
+                                x,
+                                bits_per_plane,
+                            )) << (plane * usize::from(bits_per_plane));
+                        }
+                        index
+                    };
+                    if bits_per_plane == 1 && planes == 1 {
+                        let value = if index == 0 { 255 } else { 0 };
+                        [value, value, value, 255]
+                    } else if bits_per_plane == 8 {
+                        palette256_values.as_ref().map_or_else(
+                            || palette_color(&palette16, index),
+                            |palette| palette_color(palette, index),
+                        )
+                    } else {
+                        palette_color(&palette16, index)
+                    }
+                };
+                let dst = (y * width + x) * 4;
+                output[dst..dst + 4].copy_from_slice(&rgba);
+            }
         }
     }
     option

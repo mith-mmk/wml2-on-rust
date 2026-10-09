@@ -455,6 +455,30 @@ fn encoded_budget_includes_header_escaped_rle_and_palette_exactly() {
 }
 
 #[test]
+fn padded_scanline_is_bounded_independently_of_small_rgba_output() {
+    let mut data = old_pcx(5, 8, 3, 1, &[]);
+    data[66..68].copy_from_slice(&65535u16.to_le_bytes());
+    let mut remaining = 65535usize * 3;
+    while remaining > 0 {
+        let count = remaining.min(63);
+        data.extend_from_slice(&[0xc0 | count as u8, 0]);
+        remaining -= count;
+    }
+    let limits = wml2::limits::DecodeLimits {
+        expanded_bytes: 4,
+        ..wml2::limits::DecodeLimits::unlimited()
+    };
+    let error = wml2::draw::image_from_with_limits(&data, limits)
+        .err()
+        .unwrap();
+    assert!(
+        error
+            .to_string()
+            .contains("PCX scanline exceeds decode limit")
+    );
+}
+
+#[test]
 fn old_pcx_signature_precedes_broad_tga_and_vsp_signatures() {
     for version in [0, 2, 3] {
         let mut data = old_pcx(version, 2, 1, 4, &[0x1b, 0]);

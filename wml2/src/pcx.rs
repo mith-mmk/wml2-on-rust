@@ -214,6 +214,7 @@ pub fn decode<B: BinaryReader>(
     let limits = crate::limits::current();
     crate::limits::check(pixels_count, limits.pixels, "pixels")?;
     crate::limits::check(output_len, limits.expanded_bytes, "RGBA image")?;
+    crate::limits::check(row_len, limits.expanded_bytes, "PCX scanline")?;
     let mut output = vec![0u8; output_len];
     let mut cursor = 128usize;
     for y in 0..height {

@@ -10,6 +10,16 @@ use wml2::limits::DecodeLimits;
 // 4x4 tile in a 4x768 DX10/BC7_UNORM image, no additional surfaces/mips.
 const EXTERNAL_DDS: &[u8] = include_bytes!("fixtures/dds-bc7-single-subset.dds");
 const EXTERNAL_RGBA: &[u8] = include_bytes!("fixtures/dds-bc7-single-subset.rgba");
+// Two arbitrary raw blocks per partition, mode0 partitions0..15 and modes
+// 1/2/3/7 partitions0..63, seed0xBC701237; header and mode/partition fields
+// are independently constructed, expected RGBA from Pillow12.3.0.
+const PARTITIONED_DDS: &[u8] = include_bytes!("fixtures/dds-bc7-partitioned.dds");
+const PARTITIONED_RGBA: &[u8] = include_bytes!("fixtures/dds-bc7-partitioned.rgba");
+// Five endpoint/index/p-bit patterns for each mode's first/last partition.
+const TARGETED_DDS: &[u8] = include_bytes!("fixtures/dds-bc7-targeted.dds");
+const TARGETED_RGBA: &[u8] = include_bytes!("fixtures/dds-bc7-targeted.rgba");
+const MIXED_DDS: &[u8] = include_bytes!("fixtures/dds-bc7-mixed-clipped.dds");
+const MIXED_RGBA: &[u8] = include_bytes!("fixtures/dds-bc7-mixed-clipped.rgba");
 
 #[test]
 fn all_single_subset_modes_match_independent_pillow_decoder() {
@@ -55,15 +65,45 @@ fn one_block(block: [u8; 16], width: u32, height: u32) -> Vec<u8> {
 }
 
 #[test]
-fn partitioned_modes_fail_explicitly_until_implemented() {
-    for mode in [0, 1, 2, 3, 7] {
-        let mut block = [0; 16];
-        block[0] = 1 << mode;
-        let error = image_load(&one_block(block, 4, 4)).err().unwrap();
-        assert!(
-            error.to_string().contains("BC7 partitioned modes"),
-            "{error}"
-        );
+fn all_partitioned_modes_and_partition_tables_match_pillow() {
+    for dxgi in [98u32, 99] {
+        let mut bytes = PARTITIONED_DDS.to_vec();
+        bytes[128..132].copy_from_slice(&dxgi.to_le_bytes());
+        let image = image_load(&bytes).unwrap();
+        assert_eq!((image.width, image.height), (4, 2176));
+        assert_eq!(image.buffer.unwrap(), PARTITIONED_RGBA);
+    }
+}
+
+#[test]
+fn partitioned_endpoint_extremes_pbits_indices_and_anchors_match_pillow() {
+    let image = image_load(TARGETED_DDS).unwrap();
+    assert_eq!((image.width, image.height), (4, 208));
+    assert_eq!(image.buffer.unwrap(), TARGETED_RGBA);
+    // Explicit mode7 transparent-black and opaque-white vectors.
+    assert_eq!(&TARGETED_RGBA[50 * 64..51 * 64], &[0; 64]);
+    assert_eq!(&TARGETED_RGBA[51 * 64..52 * 64], &[255; 64]);
+    // RGB-only partitioned modes always synthesize opaque alpha.
+    assert!(
+        PARTITIONED_RGBA[..(16 + 3 * 64) * 2 * 64]
+            .chunks_exact(4)
+            .all(|v| v[3] == 255)
+    );
+}
+
+#[test]
+fn partitioned_partial_tiles_and_mixed_modes_preserve_pixel_positions() {
+    let mixed = image_load(MIXED_DDS).unwrap();
+    assert_eq!((mixed.width, mixed.height), (5, 7));
+    assert_eq!(mixed.buffer.unwrap(), MIXED_RGBA);
+    for (index, block) in TARGETED_DDS[148..].chunks_exact(16).enumerate() {
+        let image = image_load(&one_block(block.try_into().unwrap(), 3, 2)).unwrap();
+        let rgba = &TARGETED_RGBA[index * 64..index * 64 + 64];
+        let expected: Vec<u8> = [0, 1]
+            .into_iter()
+            .flat_map(|y| rgba[y * 16..y * 16 + 12].iter().copied())
+            .collect();
+        assert_eq!(image.buffer.unwrap(), expected);
     }
 }
 

@@ -44,6 +44,41 @@ mod tests {
     }
 
     #[test]
+    fn bc7_partition_tables_have_valid_subsets_and_fixup_anchors() {
+        for partition in 0..64 {
+            for subsets in [2usize, 3] {
+                let (pattern, anchors) = if subsets == 2 {
+                    (
+                        BC7_PARTITION_TWO[partition],
+                        [0, BC7_ANCHOR_TWO[partition], 0],
+                    )
+                } else {
+                    (
+                        BC7_PARTITION_THREE[partition],
+                        [
+                            0,
+                            BC7_ANCHOR_THREE_SECOND[partition],
+                            BC7_ANCHOR_THREE_THIRD[partition],
+                        ],
+                    )
+                };
+                assert_eq!(pattern & 3, 0);
+                let mut seen = [false; 3];
+                for pixel in 0..16 {
+                    let subset = ((pattern >> (pixel * 2)) & 3) as usize;
+                    assert!(subset < subsets);
+                    seen[subset] = true;
+                }
+                for (subset, anchor) in anchors[..subsets].iter().enumerate() {
+                    assert!(*anchor < 16);
+                    assert_eq!((pattern >> (u32::from(*anchor) * 2)) & 3, subset as u32);
+                    assert!(seen[subset]);
+                }
+            }
+        }
+    }
+
+    #[test]
     fn encoder_checks_pixels_and_encoded_size_before_reading_rows() {
         for (pixels, expanded_bytes, expected) in [
             (0, 132, "pixels"),
@@ -192,6 +227,74 @@ fn unpremultiply_rgb(pixel: &mut [u8; 4]) {
     pixel[2] = unpremultiply(pixel[2], alpha);
 }
 
+// BC7 partition and anchor data adapted from Microsoft DirectXTex
+// BC6HBC7.cpp, commit 1acf4ebe6330e06b7eb52e8db63d4f824ad77427:
+// https://github.com/microsoft/DirectXTex/blob/1acf4ebe6330e06b7eb52e8db63d4f824ad77427/DirectXTex/BC6HBC7.cpp
+// Values checked against Khronos ARB_texture_compression_bptc revision9,
+// Tables P2/P3/A2/A3a/A3b (specification data, not decoder implementation).
+// The following license applies to the adapted table data:
+// MIT License
+//
+// Copyright (c) Microsoft Corporation.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE
+
+const BC7_PARTITION_TWO: [u32; 64] = [
+    0x50505050, 0x40404040, 0x54545454, 0x54505040, 0x50404000, 0x55545450, 0x55545040, 0x54504000,
+    0x50400000, 0x55555450, 0x55544000, 0x54400000, 0x55555440, 0x55550000, 0x55555500, 0x55000000,
+    0x55150100, 0x00004054, 0x15010000, 0x00405054, 0x00004050, 0x15050100, 0x05010000, 0x40505054,
+    0x00404050, 0x05010100, 0x14141414, 0x05141450, 0x01155440, 0x00555500, 0x15014054, 0x05414150,
+    0x44444444, 0x55005500, 0x11441144, 0x05055050, 0x05500550, 0x11114444, 0x41144114, 0x44111144,
+    0x15055054, 0x01055040, 0x05041050, 0x05455150, 0x14414114, 0x50050550, 0x41411414, 0x00141400,
+    0x00041504, 0x00105410, 0x10541000, 0x04150400, 0x50410514, 0x41051450, 0x05415014, 0x14054150,
+    0x41050514, 0x41505014, 0x40011554, 0x54150140, 0x50505500, 0x00555050, 0x15151010, 0x54540404,
+];
+
+const BC7_PARTITION_THREE: [u32; 64] = [
+    0xaa685050, 0x6a5a5040, 0x5a5a4200, 0x5450a0a8, 0xa5a50000, 0xa0a05050, 0x5555a0a0, 0x5a5a5050,
+    0xaa550000, 0xaa555500, 0xaaaa5500, 0x90909090, 0x94949494, 0xa4a4a4a4, 0xa9a59450, 0x2a0a4250,
+    0xa5945040, 0x0a425054, 0xa5a5a500, 0x55a0a0a0, 0xa8a85454, 0x6a6a4040, 0xa4a45000, 0x1a1a0500,
+    0x0050a4a4, 0xaaa59090, 0x14696914, 0x69691400, 0xa08585a0, 0xaa821414, 0x50a4a450, 0x6a5a0200,
+    0xa9a58000, 0x5090a0a8, 0xa8a09050, 0x24242424, 0x00aa5500, 0x24924924, 0x24499224, 0x50a50a50,
+    0x500aa550, 0xaaaa4444, 0x66660000, 0xa5a0a5a0, 0x50a050a0, 0x69286928, 0x44aaaa44, 0x66666600,
+    0xaa444444, 0x54a854a8, 0x95809580, 0x96969600, 0xa85454a8, 0x80959580, 0xaa141414, 0x96960000,
+    0xaaaa1414, 0xa05050a0, 0xa0a5a5a0, 0x96000000, 0x40804080, 0xa9a8a9a8, 0xaaaaaa44, 0x2a4a5254,
+];
+
+const BC7_ANCHOR_TWO: [u8; 64] = [
+    15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 2, 8, 2, 2, 8, 8, 15, 2, 8,
+    2, 2, 8, 8, 2, 2, 15, 15, 6, 8, 2, 8, 15, 15, 2, 8, 2, 2, 2, 15, 15, 6, 6, 2, 6, 8, 15, 15, 2,
+    2, 15, 15, 15, 15, 15, 2, 2, 15,
+];
+
+const BC7_ANCHOR_THREE_SECOND: [u8; 64] = [
+    3, 3, 15, 15, 8, 3, 15, 15, 8, 8, 6, 6, 6, 5, 3, 3, 3, 3, 8, 15, 3, 3, 6, 10, 5, 8, 8, 6, 8, 5,
+    15, 15, 8, 15, 3, 5, 6, 10, 8, 15, 15, 3, 15, 5, 15, 15, 15, 15, 3, 15, 5, 5, 5, 8, 5, 10, 5,
+    10, 8, 13, 15, 12, 3, 3,
+];
+
+const BC7_ANCHOR_THREE_THIRD: [u8; 64] = [
+    15, 8, 8, 3, 15, 15, 3, 8, 15, 15, 15, 15, 15, 15, 15, 8, 15, 8, 15, 3, 15, 8, 15, 8, 3, 15, 6,
+    10, 15, 15, 10, 8, 15, 3, 15, 10, 10, 8, 9, 10, 6, 15, 8, 15, 3, 6, 6, 8, 15, 3, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 3, 15, 15, 8,
+];
+
 // BC7 single-subset modes have no partition tables. Fields are consumed LSB
 // first, in the order illustrated by Microsoft's BC7 Format Mode Reference:
 // https://learn.microsoft.com/en-us/windows/win32/direct3d11/bc7-format-mode-reference
@@ -210,10 +313,7 @@ fn decode_bc7(block: &[u8]) -> Result<[[u8; 4]; 16], Error> {
         return Ok([[0; 4]; 16]);
     }
     if !matches!(mode, 4..=6) {
-        return Err(err(
-            ImgErrorKind::NoSupportFormat,
-            "DDS BC7 partitioned modes 0, 1, 2, 3 and 7 are not implemented",
-        ));
+        return Ok(decode_bc7_partitioned(bytes, mode));
     }
     let mut bits = u128::from_le_bytes(bytes) >> (mode + 1);
     let mut take = |count: u32| {
@@ -295,6 +395,98 @@ fn decode_bc7(block: &[u8]) -> Result<[[u8; 4]; 16], Error> {
         }
     }
     Ok(output)
+}
+
+fn decode_bc7_partitioned(bytes: [u8; 16], mode: u32) -> [[u8; 4]; 16] {
+    let (subsets, partition_bits, color_bits, index_bits, has_pbits) = match mode {
+        0 => (3, 4, 4, 3, true),
+        1 => (2, 6, 6, 3, true),
+        2 => (3, 6, 5, 2, false),
+        3 => (2, 6, 7, 2, true),
+        7 => (2, 6, 5, 2, true),
+        _ => unreachable!("single-subset and reserved BC7 modes are handled separately"),
+    };
+    let mut bits = u128::from_le_bytes(bytes) >> (mode + 1);
+    let mut take = |count: u32| {
+        let value = (bits & ((1u128 << count) - 1)) as u8;
+        bits >>= count;
+        value
+    };
+    let partition = usize::from(take(partition_bits));
+    let channels = if mode == 7 { 4 } else { 3 };
+    let endpoint_count = subsets * 2;
+    let mut endpoints = [[0u8; 4]; 6];
+    for channel in 0..channels {
+        for endpoint in &mut endpoints[..endpoint_count] {
+            endpoint[channel] = take(color_bits);
+        }
+    }
+    if has_pbits {
+        if mode == 1 {
+            // Shared P-bits apply to both RGB endpoints of each subset.
+            for pair in endpoints[..endpoint_count].chunks_exact_mut(2) {
+                let pbit = take(1);
+                for endpoint in pair {
+                    for value in &mut endpoint[..channels] {
+                        *value = (*value << 1) | pbit;
+                    }
+                }
+            }
+        } else {
+            for endpoint in &mut endpoints[..endpoint_count] {
+                let pbit = take(1);
+                for value in &mut endpoint[..channels] {
+                    *value = (*value << 1) | pbit;
+                }
+            }
+        }
+    }
+    let precision = color_bits + u32::from(has_pbits);
+    for endpoint in &mut endpoints[..endpoint_count] {
+        for value in &mut endpoint[..channels] {
+            let aligned = u16::from(*value) << (8 - precision);
+            *value = (aligned | (aligned >> precision)) as u8;
+        }
+        if channels == 3 {
+            endpoint[3] = 255;
+        }
+    }
+    let (pattern, anchors) = if subsets == 2 {
+        (
+            BC7_PARTITION_TWO[partition],
+            [0, BC7_ANCHOR_TWO[partition], 0],
+        )
+    } else {
+        (
+            BC7_PARTITION_THREE[partition],
+            [
+                0,
+                BC7_ANCHOR_THREE_SECOND[partition],
+                BC7_ANCHOR_THREE_THIRD[partition],
+            ],
+        )
+    };
+    const WEIGHTS_TWO: [u16; 4] = [0, 21, 43, 64];
+    const WEIGHTS_THREE: [u16; 8] = [0, 9, 18, 27, 37, 46, 55, 64];
+    let mut output = [[0u8; 4]; 16];
+    for (pixel, rgba) in output.iter_mut().enumerate() {
+        let subset = ((pattern >> (pixel * 2)) & 3) as usize;
+        let index = usize::from(take(
+            index_bits - u32::from(usize::from(anchors[subset]) == pixel),
+        ));
+        let weight = if index_bits == 2 {
+            WEIGHTS_TWO[index]
+        } else {
+            WEIGHTS_THREE[index]
+        };
+        for (channel, value) in rgba.iter_mut().enumerate() {
+            *value = (((64 - weight) * u16::from(endpoints[subset * 2][channel])
+                + weight * u16::from(endpoints[subset * 2 + 1][channel])
+                + 32)
+                >> 6) as u8;
+        }
+    }
+    output
 }
 
 fn decode_block(block: &[u8], compression: Compression) -> Result<[[u8; 4]; 16], Error> {

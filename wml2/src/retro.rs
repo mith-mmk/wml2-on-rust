@@ -101,6 +101,94 @@ mod tests {
         assert_eq!(error.kind(), ErrorKind::Other);
         assert_eq!(error.to_string(), "injected read failure");
     }
+
+    #[test]
+    fn read_all_budget_counts_remaining_bytes_and_restores_position_on_rejection() {
+        let mut reader = BytesReader::new(&[1, 2, 3, 4, 5]);
+        reader.seek(SeekFrom::Start(2)).unwrap();
+        let limits = crate::limits::DecodeLimits {
+            input_bytes: 2,
+            ..crate::limits::DecodeLimits::unlimited()
+        };
+        assert!(crate::limits::scope(limits, || read_all(&mut reader)).is_err());
+        assert_eq!(reader.offset().unwrap(), 2);
+        let limits = crate::limits::DecodeLimits {
+            input_bytes: 3,
+            ..limits
+        };
+        assert_eq!(
+            crate::limits::scope(limits, || read_all(&mut reader)).unwrap(),
+            [3, 4, 5]
+        );
+        assert_eq!(reader.offset().unwrap(), 5);
+    }
+
+    #[test]
+    fn read_all_accepts_empty_and_unlimited_streams() {
+        let mut empty = BytesReader::new(&[]);
+        assert!(
+            crate::limits::scope(
+                crate::limits::DecodeLimits {
+                    input_bytes: 0,
+                    ..crate::limits::DecodeLimits::unlimited()
+                },
+                || read_all(&mut empty)
+            )
+            .unwrap()
+            .is_empty()
+        );
+        let mut stream = StreamReader::new(BufReader::new(std::io::Cursor::new(vec![1, 2, 3])));
+        stream.seek(SeekFrom::Start(1)).unwrap();
+        assert_eq!(
+            crate::limits::scope(crate::limits::DecodeLimits::unlimited(), || read_all(
+                &mut stream
+            ))
+            .unwrap(),
+            [2, 3]
+        );
+    }
+
+    #[test]
+    fn read_all_default_budget_rejects_oversized_stream_before_io() {
+        let failing = FailingReader {
+            data: Vec::new(),
+            logical_len: crate::limits::DecodeLimits::default().input_bytes as u64 + 1,
+            position: 0,
+        };
+        let mut reader = StreamReader::new(BufReader::new(failing));
+        assert!(
+            crate::limits::scope(crate::limits::DecodeLimits::default(), || read_all(
+                &mut reader
+            ))
+            .unwrap_err()
+            .to_string()
+            .contains("input exceeds decode limit")
+        );
+        assert_eq!(reader.offset().unwrap(), 0);
+    }
+
+    #[test]
+    fn read_all_checks_input_budget_before_reading_or_narrowing() {
+        let failing = FailingReader {
+            data: Vec::new(),
+            logical_len: u64::from(u32::MAX) + 1,
+            position: 0,
+        };
+        let mut reader = StreamReader::new(BufReader::new(failing));
+        let result = crate::limits::scope(
+            crate::limits::DecodeLimits {
+                input_bytes: 3,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || read_all(&mut reader),
+        );
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("input exceeds decode limit")
+        );
+    }
 }
 
 pub(crate) fn clamp8(value: i32) -> u8 {

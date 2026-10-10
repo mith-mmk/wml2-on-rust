@@ -1,6 +1,7 @@
 [package]
 name = "wml2"
-version = "0.0.34"
+version = "0.0.35"
+readme = "../README.md"
 repository = "https://github.com/mith-mmk/wml2-on-rust"
 homepage = "https://mith-mmk.github.io/"
 authors = ["mith-mmk <47620686+mith-mmk@users.noreply.github.com>"]

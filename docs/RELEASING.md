@@ -18,6 +18,10 @@ these files. Write user-visible summaries for direct commits as well as PRs.
    `python -B .github/scripts/release_notes.py`. Inspect `git log` and `git diff`
    between the exact tags, including submodule pins. Main and feature branches
    may contain unreleased work; never copy that into an older version's notes.
+   Run `cargo publish -p wml2 --dry-run --locked` and inspect the actual package:
+   it must contain a root `README.md`, and its normalized `Cargo.toml` must
+   select that file. Compare the packaged README with the repository source;
+   a README elsewhere in the repository or test fixtures is not sufficient.
 4. After review and separate publication authorization, merge and tag the intended
    commit as `v<version>`. The tag must contain these workflows, script and notes.
    The release workflow calls the same CI at that commit (all existing matrices,

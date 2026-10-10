@@ -132,6 +132,21 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
         return ImageFormat::Jpeg;
     }
 
+    // PCX has a stronger signature than the broad TGA/VSP heuristics.
+    // In particular, version 0 PCX starts with the VSP page count 10.
+    #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+    if buffer.len() >= 128
+        && buffer[0] == 0x0a
+        && buffer[2] == 1
+        && matches!(buffer[3], 1 | 2 | 4 | 8)
+        && buffer[65] > 0
+        && buffer[65] <= 4
+        && bin_rs::io::read_u16_le(buffer, 8) >= bin_rs::io::read_u16_le(buffer, 4)
+        && bin_rs::io::read_u16_le(buffer, 10) >= bin_rs::io::read_u16_le(buffer, 6)
+    {
+        return ImageFormat::Pcx;
+    }
+
     // A valid VSP header can satisfy this broad TGA signature. VSP intentionally
     // has lower priority here, so keep the TGA-first order unchanged.
     #[cfg(all(feature = "tga", not(feature = "noretoro")))]
@@ -173,18 +188,6 @@ pub fn format_check(buffer: &[u8]) -> ImageFormat {
     #[cfg(all(feature = "dds", not(feature = "noretoro")))]
     if buffer.len() >= 4 && buffer.starts_with(b"DDS ") {
         return ImageFormat::Dds;
-    }
-    #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
-    if buffer.len() >= 128
-        && buffer[0] == 0x0a
-        && buffer[2] == 1
-        && matches!(buffer[3], 1 | 2 | 4 | 8)
-        && buffer[65] > 0
-        && buffer[65] <= 4
-        && bin_rs::io::read_u16_le(buffer, 8) >= bin_rs::io::read_u16_le(buffer, 4)
-        && bin_rs::io::read_u16_le(buffer, 10) >= bin_rs::io::read_u16_le(buffer, 6)
-    {
-        return ImageFormat::Pcx;
     }
     #[cfg(all(feature = "pic2", not(feature = "noretoro")))]
     if buffer.starts_with(b"P2DT") || (buffer.len() >= 132 && buffer[128..].starts_with(b"P2DT")) {
@@ -269,6 +272,12 @@ pub fn decoder_supports_format(format: &ImageFormat) -> bool {
 /// Returns whether an encoder for `format` is enabled in the current build.
 pub fn encoder_supports_format(format: &ImageFormat) -> bool {
     match format {
+        #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+        ImageFormat::Dds => true,
+        #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+        ImageFormat::Pcx => true,
+        #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+        ImageFormat::Tga => true,
         #[cfg(feature = "gif")]
         ImageFormat::Gif => true,
         #[cfg(feature = "jpeg")]

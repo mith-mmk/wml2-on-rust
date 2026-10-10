@@ -12,6 +12,9 @@
 //! preserve metadata, and encode BMP, GIF, JPEG, PNG/APNG, TIFF, and WebP output.
 //!
 //! # Example
+//! The EXIF match arm is available with the `exif` feature. Decoding a file
+//! also requires its format feature (for example, `png` or `jpeg`).
+//!
 //! ```rust
 //! use wml2::draw::*;
 //! use wml2::metadata::DataMap;
@@ -40,6 +43,7 @@
 //!                 DataMap::Ascii(string) => {
 //!                     println!("{}: {}",key,string);
 //!                 },
+//!                 #[cfg(feature = "exif")]
 //!                 DataMap::Exif(value) => {
 //!                     println!("=============== EXIF START ==============");
 //!                     let string = value.to_string();
@@ -133,8 +137,14 @@ pub fn get_can_decode(buffer: &[u8]) -> Result<bool, Box<dyn std::error::Error>>
 pub fn get_encode_extentions() -> Vec<String> {
     #[allow(unused_mut)]
     let mut exts = Vec::new();
+    #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+    exts.push("dds".to_string());
+    #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+    exts.push("pcx".to_string());
     #[cfg(feature = "bmp")]
     exts.push("bmp".to_string());
+    #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+    exts.push("tga".to_string());
     #[cfg(feature = "gif")]
     exts.push("gif".to_string());
     #[cfg(feature = "jpeg")]

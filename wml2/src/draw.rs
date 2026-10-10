@@ -820,7 +820,11 @@ pub struct EncodeOptions<'a> {
 /// Decodes an image from memory into an [`ImageBuffer`].
 ///
 /// # Examples
+/// This example requires the `png` feature.
+///
 /// ```rust
+/// # #[cfg(feature = "png")]
+/// # {
 /// use wml2::draw::{ImageBuffer, image_from, image_to};
 /// use wml2::util::ImageFormat;
 ///
@@ -830,6 +834,7 @@ pub struct EncodeOptions<'a> {
 /// let image = image_from(&png).unwrap();
 /// assert_eq!(image.width, 1);
 /// assert_eq!(image.height, 1);
+/// # }
 /// ```
 pub fn image_from(buffer: &[u8]) -> Result<ImageBuffer, Error> {
     image_load(buffer)
@@ -949,6 +954,12 @@ fn format_from_output_path(output_file: &str) -> Result<ImageFormat, Error> {
         Some("png") | Some("apng") => Ok(ImageFormat::Png),
         Some("jpg") | Some("jpeg") => Ok(ImageFormat::Jpeg),
         Some("bmp") => Ok(ImageFormat::Bmp),
+        #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+        Some("tga") => Ok(ImageFormat::Tga),
+        #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+        Some("pcx") => Ok(ImageFormat::Pcx),
+        #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+        Some("dds") => Ok(ImageFormat::Dds),
         Some("tif") | Some("tiff") => Ok(ImageFormat::Tiff),
         Some("webp") => Ok(ImageFormat::Webp),
         #[cfg(feature = "avifenc")]
@@ -1011,7 +1022,11 @@ pub fn convert(
 /// Decodes an image from memory into an [`ImageBuffer`].
 ///
 /// # Examples
+/// This example requires the `png` feature.
+///
 /// ```rust
+/// # #[cfg(feature = "png")]
+/// # {
 /// use wml2::draw::{ImageBuffer, image_load, image_to};
 /// use wml2::util::ImageFormat;
 ///
@@ -1021,6 +1036,7 @@ pub fn convert(
 /// let image = image_load(&png).unwrap();
 /// assert_eq!(image.width, 2);
 /// assert_eq!(image.height, 1);
+/// # }
 /// ```
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
     let mut ib = ImageBuffer::new();
@@ -1037,7 +1053,11 @@ pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
 /// Decodes an in-memory image into a custom [`DrawCallback`].
 ///
 /// # Examples
+/// This example requires the `png` feature.
+///
 /// ```rust
+/// # #[cfg(feature = "png")]
+/// # {
 /// use wml2::draw::{DecodeOptions, ImageBuffer, image_loader, image_to};
 /// use wml2::util::ImageFormat;
 ///
@@ -1052,6 +1072,7 @@ pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
 /// image_loader(&png, &mut options).unwrap();
 /// assert_eq!(target.width, 1);
 /// assert_eq!(target.height, 1);
+/// # }
 /// ```
 pub fn image_loader(
     buffer: &[u8],
@@ -1066,7 +1087,11 @@ pub fn image_loader(
 /// Decodes an image stream into a custom [`DrawCallback`].
 ///
 /// # Examples
+/// This example requires the `png` feature.
+///
 /// ```rust
+/// # #[cfg(feature = "png")]
+/// # {
 /// use std::io::Cursor;
 /// use wml2::draw::{DecodeOptions, ImageBuffer, image_reader, image_to};
 /// use wml2::util::ImageFormat;
@@ -1082,6 +1107,7 @@ pub fn image_loader(
 /// image_reader(Cursor::new(png), &mut options).unwrap();
 /// assert_eq!(target.width, 1);
 /// assert_eq!(target.height, 1);
+/// # }
 /// ```
 #[cfg(not(target_family = "wasm"))]
 pub fn image_reader<R: BufRead + Seek>(
@@ -1097,7 +1123,11 @@ pub fn image_reader<R: BufRead + Seek>(
 /// Encodes an image source to an arbitrary writer.
 ///
 /// # Examples
+/// This example requires the `png` feature.
+///
 /// ```rust
+/// # #[cfg(feature = "png")]
+/// # {
 /// use wml2::draw::{EncodeOptions, ImageBuffer, image_writer};
 /// use wml2::util::ImageFormat;
 ///
@@ -1110,6 +1140,7 @@ pub fn image_reader<R: BufRead + Seek>(
 /// let mut buffer = Vec::new();
 /// image_writer(&mut buffer, &mut options, ImageFormat::Png).unwrap();
 /// assert!(buffer.starts_with(&[0x89, b'P', b'N', b'G']));
+/// # }
 /// ```
 pub fn image_writer<W: Write>(
     mut writer: W,
@@ -1125,7 +1156,11 @@ pub fn image_writer<W: Write>(
 /// Detects the input format and dispatches to the matching decoder.
 ///
 /// # Examples
+/// This example requires the `png` feature.
+///
 /// ```rust
+/// # #[cfg(feature = "png")]
+/// # {
 /// use bin_rs::reader::BytesReader;
 /// use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder, image_to};
 /// use wml2::util::ImageFormat;
@@ -1142,6 +1177,7 @@ pub fn image_writer<W: Write>(
 /// image_decoder(&mut reader, &mut options).unwrap();
 /// assert_eq!(target.width, 1);
 /// assert_eq!(target.height, 1);
+/// # }
 /// ```
 /// Decode with explicit resource limits without changing `DecodeOptions`.
 pub fn image_decoder_with_limits<B: BinaryReader>(
@@ -1297,7 +1333,11 @@ fn image_decoder_inner<B: BinaryReader>(
 /// Dispatches to the matching encoder for `format`.
 ///
 /// # Examples
+/// This example requires the `png` feature.
+///
 /// ```rust
+/// # #[cfg(feature = "png")]
+/// # {
 /// use wml2::draw::{EncodeOptions, ImageBuffer, image_encoder};
 /// use wml2::util::ImageFormat;
 ///
@@ -1309,12 +1349,25 @@ fn image_decoder_inner<B: BinaryReader>(
 /// };
 /// let png = image_encoder(&mut options, ImageFormat::Png).unwrap();
 /// assert!(png.starts_with(&[0x89, b'P', b'N', b'G']));
+/// # }
 /// ```
 pub fn image_encoder(_option: &mut EncodeOptions, format: ImageFormat) -> Result<Vec<u8>, Error> {
     #[allow(unused_imports)]
     use crate::util::ImageFormat::*;
 
     match format {
+        #[cfg(all(feature = "tga", not(feature = "noretoro")))]
+        Tga => {
+            return crate::tga::encode(_option);
+        }
+        #[cfg(all(feature = "pcx", not(feature = "noretoro")))]
+        Pcx => {
+            return crate::pcx::encode(_option);
+        }
+        #[cfg(all(feature = "dds", not(feature = "noretoro")))]
+        Dds => {
+            return crate::dds::encode(_option);
+        }
         #[cfg(feature = "gif")]
         Gif => {
             return crate::gif::encoder::encode(_option);
@@ -1359,13 +1412,18 @@ pub fn image_encoder(_option: &mut EncodeOptions, format: ImageFormat) -> Result
 /// `compression`, WebP `quality`/`optimize`, or `exif`.
 ///
 /// # Examples
+/// This example requires the `png` feature.
+///
 /// ```rust
+/// # #[cfg(feature = "png")]
+/// # {
 /// use wml2::draw::{ImageBuffer, image_to};
 /// use wml2::util::ImageFormat;
 ///
 /// let mut image = ImageBuffer::from_buffer(1, 1, vec![255, 0, 0, 255]);
 /// let png = image_to(&mut image, ImageFormat::Png, None).unwrap();
 /// assert!(png.starts_with(&[0x89, b'P', b'N', b'G']));
+/// # }
 /// ```
 pub fn image_to(
     image: &mut ImageBuffer,

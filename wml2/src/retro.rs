@@ -19,6 +19,7 @@ pub(crate) fn read_all<B: BinaryReader>(reader: &mut B) -> Result<Vec<u8>, Error
     let length = end
         .checked_sub(current)
         .ok_or_else(|| std::io::Error::other("invalid input position"))?;
+    crate::limits::check_input_length(length, crate::limits::current().input_bytes)?;
     let length = usize::try_from(length)?;
     Ok(reader.read_bytes_as_vec(length)?)
 }
@@ -67,6 +68,22 @@ mod tests {
     fn read_all_reads_bytes_reader_to_end() {
         let mut reader = BytesReader::new(&[1, 2, 3]);
         assert_eq!(read_all(&mut reader).unwrap(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn read_all_checks_input_budget_before_reading_or_allocating() {
+        let failing = FailingReader {
+            data: vec![],
+            logical_len: 3,
+            position: 0,
+        };
+        let mut reader = StreamReader::new(BufReader::new(failing));
+        let limits = crate::limits::DecodeLimits {
+            input_bytes: 2,
+            ..crate::limits::DecodeLimits::unlimited()
+        };
+        let error = crate::limits::scope(limits, || read_all(&mut reader)).unwrap_err();
+        assert!(error.to_string().contains("input exceeds decode limit"));
     }
 
     #[test]

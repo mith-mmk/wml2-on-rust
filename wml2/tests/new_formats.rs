@@ -1,3 +1,5 @@
+#![cfg(not(feature = "noretoro"))]
+
 use wml2::draw::{image_from_with_limits, image_load};
 use wml2::limits::DecodeLimits;
 use wml2::util::{ImageFormat, format_check};

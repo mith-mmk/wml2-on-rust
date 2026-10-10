@@ -53,11 +53,11 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | ICO          | x   | O   | BMP/PNG 内包の icon image を decode                                                                                 |
 | PNG          | O   | O   | PNG/APNG 対応、encoder は RGBA truecolor を出力                                                                     |
 | TIFF         | O   | O   | encode: none/LZW/Deflate/JPEG(new)、decode: none/LZW/PackBits/JPEG(new)/Adobe Deflate/CCITT Huffman RLE/CCITT Group 3/4 Fax |
-| TGA     | O   | O   | `tga`: raw/RLE true-color, grayscale and exact indexed encoding; decode also supports legacy 2/4-way interleave |
-| PCX          | O   | O   | `pcx` feature。1/2/4/8-bit paletteとmulti-planeをdecode                                           |
-| DDS          | O   | O   | `dds` feature。非圧縮およびBC/DXT block textureをdecode                                             |
+| TGA | O | O | `tga`: raw/RLE true-color / grayscale / exact indexedのencode、旧2/4-way interleaveのdecode |
+| PCX | O | O | `pcx`: RGB / exact indexedのencode、旧palette / multi-planeのdecode |
+| DDS | O | O | `dds`: BGRA8のencode、非圧縮 / BC1–5 / BC7のdecode（単一2Dの先頭mip） |
 | PIC2         | x   | O   | `pic2` feature。block-based形式をdecode                                                              |
-| Q4           | x   | O   | `q4` feature。Q4 rasterをdecode                                                                       |
+| Q4 | x | O | `q4`: 保持色run修正済みのQ4/XLD4 raster decode |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
 | AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                     |
 | PSD          | x   | O   | 既定で無効の `psd` feature。Pure RustでPSD v1の統合画像と基本ラスターレイヤーをdecode                                |
@@ -74,6 +74,26 @@ retro decoderの画素互換は、可能な範囲でImageMagickに合わせて�
 一方、未使用color mapを持つtrue-color TGAは、ImageMagickが拒否する
 `b5-unused-cmap.tga`を含め、WML2では引き続き受け入れます。
 
+## TGA / PCX / DDS / Q4 の任意機能
+
+これらの任意codecは既定では有効になりません。
+
+```toml
+[dependencies]
+wml2 = { version = "0.0.34", features = ["tga", "pcx", "dds", "q4"] }
+```
+
+TGA encoder: `color_type = Ascii("truecolor"|"grayscale"|"indexed")` defaults to truecolor; `compression = Ascii("none"|"rle")` defaults to RLE. Truecolor `depth = UInt(24|32)` defaults to32; 24 explicitly discards alpha. Grayscale depth8/16 defaults to16, requires equal RGB channels, and depth8 rejects nonopaque pixels. Indexed depth8 uses at most256 exact colors, with `palette_depth = UInt(24|32)` default32; palette24 rejects nonopaque pixels. No implicit luminance conversion or quantization occurs. 16-bit index encoding is deferred because common external decoders disagree. Straight alpha and transparent RGB are retained on wire; existing zero-alpha decode normalization remains. Output is top-left with row-bounded packets. TGA 2.0 extension alpha types0/1 ignore stored alpha, type3 uses straight alpha, and type4 converts premultiplied samples to straight RGBA8 using nearest rounding and saturation. Type2 (undefined alpha that must be retained) and reserved types are explicitly unsupported because RGBA8 cannot preserve unused attribute bits independently of alpha. Explicit useful alpha must agree with the header/storage. Without an extension, legacy alpha behavior is retained. Pixel reads stop before the v2 footer and referenced ancillary areas; invalid offsets and truncated metadata are rejected. Other extension metadata and Huffman image types32/33 remain unsupported.
+
+PCX encoding uses version-5 RGB (`color_type = Ascii("rgb")`, default) or exact indexed output (`color_type = Ascii("indexed")`, at most 256 RGB colors). Both use row-local RLE and even scanline padding. Indexed output never quantizes colors and rejects more than 256 colors. Nonopaque RGBA8 input is rejected by default; `alpha = DataMap::Ascii("discard")` explicitly discards alpha. Low-bit layouts requiring more than the header’s 16 palette colors are rejected. Encoded size, including the 128-byte header, RLE expansion and indexed palette footer, is checked incrementally against the active expanded-byte limit. The decoder uses the default EGA palette for version0/3 low-bit color images without palette information. For old version0/2/3 packed 2-bit single-plane images, it interprets the CGA background/P/I fields; the C=1 monochrome setting is explicitly unsupported because its RGB reconstruction is ambiguous. Version4/5 packed images use the RGB header palette. Existing single-plane 1-bit white/black behavior remains unchanged. Unknown versions are rejected. PCX header detection precedes broad TGA/VSP heuristics so old files reach the PCX decoder.
+
+DDS encoding preserves straight RGBA8 in uncompressed BGRA8 storage (one 2D image, no mipmaps). Legacy cubemap/volume decoding is explicitly rejected. DX10 BC7 (DXGI 98/99) decoding supports all eight modes, including partitioned modes and fixup anchors. The sRGB variant retains encoded channel values without an implicit transfer conversion. DX10 alpha modes0/1 retain straight interpretation, mode2 is unpremultiplied, and mode3 forces opaque alpha. Custom/reserved alpha modes are rejected. BC6H, texture arrays and additional surface selection remain unsupported. Encoded DDS size is checked against the active expanded-byte limit.
+
+TGA/PCX/DDS remaining decoder gaps and optional extensions: [codec status](docs/codec-status.md).
+
+Q4/XLD4は`ifxld4.spi`の解析で確認した保持色runを使って復号し、従来の横帯を修正しました。
+28画像でRECOIL 6.4.5とRGB全画素が一致しています。詳細は[Q4検証記録](docs/q4-status.md)を参照してください。
+
 ## Feature
 
 - `default`: 標準の decoder/encoder、EXIF/C2PA対応、埋め込みフォーマット bridge、`idct_llm` を有効化。`psd`、`avif`、`avifenc` は含まない
@@ -87,7 +107,7 @@ retro decoderの画素互換は、可能な範囲でImageMagickに合わせて�
 - JPEG IDCT feature: `idct_llm` (default), `idct_aan`, `idct_slower` のいずれか 1 つを選択
 - JPEG encoder 用 toggle: `fdct_slower`
 - その他の toggle: `multithread`, `SJIS`, `noretoro`
-- `noretoro`: これで gate されている旧フォーマット decoder、`MAG`, `MAKI`, `PCD`, `PI`, `PIC`, `VSP/DAT` を無効化
+- `noretoro`: `MAG`, `MAKI`, `PCD`, `PI`, `PIC`, `VSP/DAT`, `TGA`, `PCX`, `DDS`, `PIC2`, `Q4`の旧形式codecを無効化
 - `c2pa`: PNG と JPEG のメタデータ内の C2PA manifest store の解析を有効化
 
 ## PSD decode
@@ -96,7 +116,7 @@ retro decoderの画素互換は、可能な範囲でImageMagickに合わせて�
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.33", features = ["psd"] }
+wml2 = { version = "0.0.34", features = ["psd"] }
 ```
 
 対応データはRGBA8へ変換します。16-bit値は丸めて8-bitへ縮小します。統合画像では
@@ -134,17 +154,17 @@ PSB、1/32-bit、Lab、Multichannelは未対応として拒否します。マス
 
 ```toml
 [dependencies]
-wml2 = "0.0.33"
+wml2 = "0.0.34"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.33", features = ["noretoro"] }
+wml2 = { version = "0.0.34", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.33", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.34", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -370,6 +390,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.30`: 資源上限の強化、callback abort時の安全性、高解像度ICC/AVIF回帰検証、WebP core互換整理
 - `0.0.31`: TIFF/BigTIFFのデコード・エンコード拡張、ブロック単位の展開上限、Predictor対応、高色深度TIFF native frame
 - `0.0.32`: PCX、TGA、DDS、PIC2、Q4 decoder対応、ImageMagick互換のPCX/TGA画素正規化、converter/metadata回帰検証
+- [0.0.34 リリースノート](docs/releases/0.0.34.md)
 - [0.0.33 リリースノート](docs/releases/0.0.33.md)
 
 今後の変更履歴は版別ノートを正本として、[リリース保守手順](docs/RELEASING.md)に沿って更新します。
@@ -381,11 +402,3 @@ MIT License (C) 2022-2026
 ## Author
 
 MITH@mmk https://mith-mmk.github.io/
-
-TGA encoder: `color_type = Ascii("truecolor"|"grayscale"|"indexed")` defaults to truecolor; `compression = Ascii("none"|"rle")` defaults to RLE. Truecolor `depth = UInt(24|32)` defaults to32; 24 explicitly discards alpha. Grayscale depth8/16 defaults to16, requires equal RGB channels, and depth8 rejects nonopaque pixels. Indexed depth8 uses at most256 exact colors, with `palette_depth = UInt(24|32)` default32; palette24 rejects nonopaque pixels. No implicit luminance conversion or quantization occurs. 16-bit index encoding is deferred because common external decoders disagree. Straight alpha and transparent RGB are retained on wire; existing zero-alpha decode normalization remains. Output is top-left with row-bounded packets. TGA 2.0 extension alpha types0/1 ignore stored alpha, type3 uses straight alpha, and type4 converts premultiplied samples to straight RGBA8 using nearest rounding and saturation. Type2 (undefined alpha that must be retained) and reserved types are explicitly unsupported because RGBA8 cannot preserve unused attribute bits independently of alpha. Explicit useful alpha must agree with the header/storage. Without an extension, legacy alpha behavior is retained. Pixel reads stop before the v2 footer and referenced ancillary areas; invalid offsets and truncated metadata are rejected. Other extension metadata and Huffman image types32/33 remain unsupported.
-
-PCX encoding uses version-5 RGB (`color_type = Ascii("rgb")`, default) or exact indexed output (`color_type = Ascii("indexed")`, at most 256 RGB colors). Both use row-local RLE and even scanline padding. Indexed output never quantizes colors and rejects more than 256 colors. Nonopaque RGBA8 input is rejected by default; `alpha = DataMap::Ascii("discard")` explicitly discards alpha. Low-bit layouts requiring more than the header’s 16 palette colors are rejected. Encoded size, including the 128-byte header, RLE expansion and indexed palette footer, is checked incrementally against the active expanded-byte limit. The decoder uses the default EGA palette for version0/3 low-bit color images without palette information. For old version0/2/3 packed 2-bit single-plane images, it interprets the CGA background/P/I fields; the C=1 monochrome setting is explicitly unsupported because its RGB reconstruction is ambiguous. Version4/5 packed images use the RGB header palette. Existing single-plane 1-bit white/black behavior remains unchanged. Unknown versions are rejected. PCX header detection precedes broad TGA/VSP heuristics so old files reach the PCX decoder.
-
-DDS encoding preserves straight RGBA8 in uncompressed BGRA8 storage (one 2D image, no mipmaps). Legacy cubemap/volume decoding is explicitly rejected. DX10 BC7 (DXGI 98/99) decoding supports all eight modes, including partitioned modes and fixup anchors. The sRGB variant retains encoded channel values without an implicit transfer conversion. DX10 alpha modes0/1 retain straight interpretation, mode2 is unpremultiplied, and mode3 forces opaque alpha. Custom/reserved alpha modes are rejected. BC6H, texture arrays and additional surface selection remain unsupported. Encoded DDS size is checked against the active expanded-byte limit.
-
-TGA/PCX/DDS remaining decoder gaps and optional extensions: [codec status](docs/codec-status.md).

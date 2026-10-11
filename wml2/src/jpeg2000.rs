@@ -1,4 +1,4 @@
-//! Experimental JPEG 2000 decoder: unsigned Gray8, <=1024x1024, reversible 5/3,
+//! Experimental JPEG 2000 decoder: unsigned Gray8/RGB8, <=1024x1024, reversible 5/3,
 //! zero to five decompositions, one tile/layer, LRCP, 16x16 blocks, style zero.
 //! Unsupported profiles return errors before any image callback.
 use crate::draw::{DecodeOptions, InitOptions, ResponseCommand};
@@ -49,7 +49,7 @@ fn box_at(data: &[u8], p: usize) -> Result<(&[u8], &[u8], usize), Error> {
     let b = bytes(data, p, size)?;
     Ok((kind, &b[8..], p + size))
 }
-type Codestream<'a> = (&'a [u8], Option<(usize, usize)>);
+type Codestream<'a> = (&'a [u8], Option<(usize, usize, usize)>);
 fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
     if data.starts_with(&[255, 79]) {
         return Ok((data, None));
@@ -60,7 +60,7 @@ fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
     let mut p = 12;
     let mut brand = false;
     let mut dimensions = None;
-    let mut color = false;
+    let mut color = None;
     let mut codestream = None;
     while p < data.len() {
         let (kind, b, next) = box_at(data, p)?;
@@ -86,7 +86,7 @@ fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
                             if dimensions.is_some() || q != 0 || h.len() != 14 {
                                 return Err(bad("invalid image header"));
                             }
-                            if u16be(h, 8)? != 1
+                            if !matches!(u16be(h, 8)?, 1 | 3)
                                 || h[10] != 7
                                 || h[11] != 7
                                 || h[12] != 0
@@ -94,27 +94,38 @@ fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
                             {
                                 return Err(unsupported("JP2 image header profile"));
                             }
-                            dimensions = Some((u32be(h, 4)? as usize, u32be(h, 0)? as usize));
+                            dimensions = Some((
+                                u32be(h, 4)? as usize,
+                                u32be(h, 0)? as usize,
+                                usize::from(u16be(h, 8)?),
+                            ));
                         }
                         b"colr" => {
-                            if color || h.len() != 7 {
+                            if color.is_some() || h.len() != 7 {
                                 return Err(bad("invalid colour box"));
                             }
-                            if h[..3] != [1, 0, 0] || u32be(h, 3)? != 17 {
-                                return Err(unsupported("only enumerated grayscale colour"));
+                            let space = u32be(h, 3)?;
+                            if h[..3] != [1, 0, 0] || !matches!(space, 16 | 17) {
+                                return Err(unsupported(
+                                    "only enumerated grayscale or sRGB colour",
+                                ));
                             }
-                            color = true;
+                            color = Some(space);
                         }
                         _ => return Err(unsupported("JP2 header box")),
                     }
                     q = n;
                 }
-                if dimensions.is_none() || !color {
+                if dimensions.is_none() || color.is_none() {
                     return Err(bad("incomplete JP2 header"));
+                }
+                let components = dimensions.unwrap().2;
+                if color != Some(if components == 1 { 17 } else { 16 }) {
+                    return Err(unsupported("JP2 colour and component count differ"));
                 }
             }
             b"jp2c" => {
-                if !brand || dimensions.is_none() || !color || codestream.is_some() {
+                if !brand || dimensions.is_none() || color.is_none() || codestream.is_some() {
                     return Err(bad("invalid codestream box order"));
                 }
                 codestream = Some(b);
@@ -354,6 +365,19 @@ fn packets_multiple(
     mb: &[u8],
 ) -> Result<Vec<i32>, Error> {
     let mut plane = vec![0; w * h];
+    packets_planes(data, w, h, levels, &[mb], std::slice::from_mut(&mut plane))?;
+    Ok(plane)
+}
+// LRCP orders each resolution's component packets before the next resolution.
+// Components use independent tag trees and coefficient planes.
+fn packets_planes(
+    data: &[u8],
+    w: usize,
+    h: usize,
+    levels: u8,
+    mb: &[&[u8]],
+    planes: &mut [Vec<i32>],
+) -> Result<(), Error> {
     // QCD and LRCP order: deepest LL, then HL/LH/HH from coarse to fine.
     // All bands occupy disjoint rectangles in a nested quadrant layout.
     let factor = 1usize << levels;
@@ -378,83 +402,85 @@ fn packets_multiple(
             usize::from(resolution) * 3 - 2
         };
         let count = if resolution == 0 { 1 } else { 3 };
-        let mut bits = Bits::new(&data[p..]);
-        let mut blocks = Vec::new();
-        if bits.bit()? {
-            for b in first..first + count {
-                let (bx, by, bw, bh, orientation) = bands[b];
-                if bw == 0 || bh == 0 {
-                    continue;
-                }
-                let nx = bw.div_ceil(16);
-                let ny = bh.div_ceil(16);
-                // Keep the existing single-block path free of tree allocations.
-                let multiple = nx > 1 || ny > 1;
-                let mut inclusion = multiple.then(|| TagTree::new(nx, ny));
-                let mut zero_planes = multiple.then(|| TagTree::new(nx, ny));
-                for cy in 0..ny {
-                    for cx in 0..nx {
-                        let included = match &mut inclusion {
-                            Some(tree) => tree.below(cx, cy, 1, &mut bits)?,
-                            None => bits.bit()?,
-                        };
-                        if !included {
-                            continue;
-                        }
-                        let mut threshold = 1;
-                        while !match &mut zero_planes {
-                            Some(tree) => tree.below(cx, cy, threshold, &mut bits)?,
-                            None => bits.bit()?,
-                        } {
-                            if threshold >= mb[b] {
-                                return Err(bad("invalid zero bit-plane tag"));
+        for (plane, mb) in planes.iter_mut().zip(mb) {
+            let mut bits = Bits::new(&data[p..]);
+            let mut blocks = Vec::new();
+            if bits.bit()? {
+                for b in first..first + count {
+                    let (bx, by, bw, bh, orientation) = bands[b];
+                    if bw == 0 || bh == 0 {
+                        continue;
+                    }
+                    let nx = bw.div_ceil(16);
+                    let ny = bh.div_ceil(16);
+                    // Keep the existing single-block path free of tree allocations.
+                    let multiple = nx > 1 || ny > 1;
+                    let mut inclusion = multiple.then(|| TagTree::new(nx, ny));
+                    let mut zero_planes = multiple.then(|| TagTree::new(nx, ny));
+                    for cy in 0..ny {
+                        for cx in 0..nx {
+                            let included = match &mut inclusion {
+                                Some(tree) => tree.below(cx, cy, 1, &mut bits)?,
+                                None => bits.bit()?,
+                            };
+                            if !included {
+                                continue;
                             }
-                            threshold += 1;
-                        }
-                        let planes = mb[b] - (threshold - 1);
-                        let passes = bits.passes()?;
-                        if passes != u32::from(planes) * 3 - 2 {
-                            return Err(unsupported("partial code-block passes"));
-                        }
-                        let mut lblock = 3;
-                        while bits.bit()? {
-                            lblock += 1;
-                            if lblock > 32 {
-                                return Err(bad("code-block length overflow"));
+                            let mut threshold = 1;
+                            while !match &mut zero_planes {
+                                Some(tree) => tree.below(cx, cy, threshold, &mut bits)?,
+                                None => bits.bit()?,
+                            } {
+                                if threshold >= mb[b] {
+                                    return Err(bad("invalid zero bit-plane tag"));
+                                }
+                                threshold += 1;
                             }
+                            let planes = mb[b] - (threshold - 1);
+                            let passes = bits.passes()?;
+                            if passes != u32::from(planes) * 3 - 2 {
+                                return Err(unsupported("partial code-block passes"));
+                            }
+                            let mut lblock = 3;
+                            while bits.bit()? {
+                                lblock += 1;
+                                if lblock > 32 {
+                                    return Err(bad("code-block length overflow"));
+                                }
+                            }
+                            let length = bits.number(lblock + passes.ilog2())? as usize;
+                            if length == 0 {
+                                return Err(bad("empty arithmetic segment"));
+                            }
+                            blocks.push((
+                                bx + cx * 16,
+                                by + cy * 16,
+                                (bw - cx * 16).min(16),
+                                (bh - cy * 16).min(16),
+                                orientation,
+                                planes,
+                                length,
+                            ));
                         }
-                        let length = bits.number(lblock + passes.ilog2())? as usize;
-                        if length == 0 {
-                            return Err(bad("empty arithmetic segment"));
-                        }
-                        blocks.push((
-                            bx + cx * 16,
-                            by + cy * 16,
-                            (bw - cx * 16).min(16),
-                            (bh - cy * 16).min(16),
-                            orientation,
-                            planes,
-                            length,
-                        ));
                     }
                 }
             }
-        }
-        bits.align()?;
-        p += bits.pos;
-        for (x, y, bw, bh, orientation, planes, length) in blocks {
-            let values = tier1::decode(bytes(data, p, length)?, bw, bh, orientation, planes)?;
-            p += length;
-            for row in 0..bh {
-                plane[(y + row) * w + x..(y + row) * w + x + bw]
-                    .copy_from_slice(&values[row * bw..(row + 1) * bw]);
+            bits.align()?;
+            p += bits.pos;
+            for (x, y, bw, bh, orientation, planes, length) in blocks {
+                let values = tier1::decode(bytes(data, p, length)?, bw, bh, orientation, planes)?;
+                p += length;
+                for row in 0..bh {
+                    plane[(y + row) * w + x..(y + row) * w + x + bw]
+                        .copy_from_slice(&values[row * bw..(row + 1) * bw]);
+                }
             }
         }
     }
     if p != data.len() {
         return Err(bad("trailing tile data"));
     }
-    Ok(plane)
+    Ok(())
 }
 // Whole-sample symmetric extension. div_euclid implements the required floor
 // for negative coefficients, unlike Rust's truncating integer division.
@@ -552,6 +578,35 @@ fn inverse53_multilevel(
 fn gray8(coefficient: i32) -> u8 {
     (coefficient.clamp(-128, 127) + 128) as u8
 }
+fn synthesize(plane: &mut [i32], w: usize, h: usize, levels: u8) -> Result<(), Error> {
+    if levels == 1 {
+        inverse53(plane, w, h);
+    } else if levels > 1 {
+        inverse53_multilevel(plane, w, h, levels)?;
+    }
+    Ok(())
+}
+fn quant_planes(q: &[u8], levels: u8) -> Result<Vec<u8>, Error> {
+    if q.len() != 2 + 3 * usize::from(levels) {
+        return Err(bad("QCD band count"));
+    }
+    if q[0] & 31 != 0 {
+        return Err(unsupported("quantization"));
+    }
+    q[1..]
+        .iter()
+        .map(|&band| {
+            if band & 7 != 0 {
+                return Err(bad("QCD reserved bits"));
+            }
+            (q[0] >> 5)
+                .checked_add(band >> 3)
+                .and_then(|v| v.checked_sub(1))
+                .filter(|&v| v > 0 && v <= 16)
+                .ok_or_else(|| unsupported("coefficient precision"))
+        })
+        .collect()
+}
 fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
     let (s, dimensions) = container(data)?;
     if !s.starts_with(&[255, 79]) || u16be(s, 2)? != 0xff51 {
@@ -561,6 +616,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
     let mut size = None;
     let mut coding = None;
     let mut quant = None;
+    let mut component_quant = [None; 3];
     loop {
         let marker = u16be(s, p)?;
         let length = usize::from(u16be(s, p + 2)?);
@@ -570,8 +626,15 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
         let b = bytes(s, p + 4, length - 2)?;
         match marker {
             0xff51 => {
-                if size.is_some() || b.len() != 39 {
+                if size.is_some() || b.len() < 36 {
                     return Err(bad("invalid SIZ"));
+                }
+                let components = usize::from(u16be(b, 34)?);
+                if !matches!(components, 1 | 3) {
+                    return Err(unsupported("only Gray8 or RGB8 components"));
+                }
+                if b.len() != 36 + 3 * components {
+                    return Err(bad("SIZ component length"));
                 }
                 let w = u32be(b, 2)? as usize;
                 let h = u32be(b, 6)? as usize;
@@ -587,25 +650,24 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     || u32be(b, 22)? as usize != h
                     || u32be(b, 26)? != 0
                     || u32be(b, 30)? != 0
-                    || u16be(b, 34)? != 1
-                    || b[36..] != [7, 1, 1]
+                    || !b[36..].chunks_exact(3).all(|c| c == [7, 1, 1])
                 {
                     return Err(unsupported(
-                        "SIZ: Gray8, zero origin, one tile, dimensions <=1024 required",
+                        "SIZ: unsigned Gray8/RGB8, no subsampling, zero origin, one tile, dimensions <=1024 required",
                     ));
                 }
-                if dimensions.is_some_and(|d| d != (w, h)) {
-                    return Err(bad("JP2 and SIZ dimensions differ"));
+                if dimensions.is_some_and(|d| d != (w, h, components)) {
+                    return Err(bad("JP2 and SIZ dimensions or component count differ"));
                 }
                 let limits = crate::limits::current();
                 crate::limits::check(w * h, limits.pixels, "pixels")?;
                 crate::limits::check(
-                    w * h * 64 + 8192,
+                    w * h * 64 * components + 8192,
                     limits.expanded_bytes,
                     "JPEG2000 workspace",
                 )?;
                 crate::limits::check(1, limits.frames, "frames")?;
-                size = Some((w, h));
+                size = Some((w, h, components));
             }
             0xff52 => {
                 if coding.is_some() || b.len() != 10 {
@@ -633,6 +695,20 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 }
                 quant = Some(b);
             }
+            0xff5d => {
+                let components = size.ok_or_else(|| bad("QCC before SIZ"))?.2;
+                if components != 3 {
+                    return Err(unsupported("QCC requires RGB8"));
+                }
+                if b.len() < 2 {
+                    return Err(bad("invalid QCC"));
+                }
+                let component = usize::from(b[0]);
+                if component >= components || component_quant[component].is_some() {
+                    return Err(bad("invalid or duplicate QCC component"));
+                }
+                component_quant[component] = Some(&b[1..]);
+            }
             0xff64 => {
                 if b.len() < 2 {
                     return Err(bad("invalid COM"));
@@ -643,32 +719,20 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 if b.len() != 8 || u16be(b, 0)? != 0 || b[6] != 0 || b[7] != 1 {
                     return Err(unsupported("one tile-part required"));
                 }
-                let (w, h) = size.ok_or_else(|| bad("missing SIZ"))?;
+                let (w, h, components) = size.ok_or_else(|| bad("missing SIZ"))?;
                 let levels = coding.ok_or_else(|| bad("missing COD"))?;
                 if w < (1usize << levels) || h < (1usize << levels) {
                     return Err(unsupported(
                         "each dimension must be at least 2^decomposition levels",
                     ));
                 }
-                let q = quant.ok_or_else(|| bad("missing QCD"))?;
-                let bands = 1 + 3 * usize::from(levels);
-                if q.len() != bands + 1 {
-                    return Err(bad("QCD band count"));
-                }
-                if q[0] & 31 != 0 {
-                    return Err(unsupported("quantization"));
-                }
-                let mut mb = Vec::new();
-                for &qband in &q[1..] {
-                    if qband & 7 != 0 {
-                        return Err(bad("QCD reserved bits"));
-                    }
-                    let depth = (q[0] >> 5)
-                        .checked_add(qband >> 3)
-                        .and_then(|v| v.checked_sub(1))
-                        .filter(|&v| v > 0 && v <= 16)
-                        .ok_or_else(|| unsupported("coefficient precision"))?;
-                    mb.push(depth);
+                let default_quant = quant.ok_or_else(|| bad("missing QCD"))?;
+                let mut component_mb = Vec::with_capacity(components);
+                for override_quant in &component_quant[..components] {
+                    component_mb.push(quant_planes(
+                        override_quant.unwrap_or(default_quant),
+                        levels,
+                    )?);
                 }
                 let part = u32be(b, 2)? as usize;
                 if part < 14 {
@@ -682,17 +746,29 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 {
                     return Err(bad("tile boundary, SOD or EOC"));
                 }
-                let mut plane = packets(&tile[14..], w, h, levels, &mb)?;
-                if levels == 1 {
-                    inverse53(&mut plane, w, h);
-                } else if levels > 1 {
-                    inverse53_multilevel(&mut plane, w, h, levels)?;
-                }
                 let mut rgba = Vec::with_capacity(w * h * 4);
-                for v in plane {
-                    // Clamp before shifting: equivalent to a wide DC shift, without overflow.
-                    let v = gray8(v);
-                    rgba.extend_from_slice(&[v, v, v, 255]);
+                if components == 1 {
+                    let mut plane = packets(&tile[14..], w, h, levels, &component_mb[0])?;
+                    synthesize(&mut plane, w, h, levels)?;
+                    for v in plane {
+                        let v = gray8(v);
+                        rgba.extend_from_slice(&[v, v, v, 255]);
+                    }
+                } else {
+                    let mut planes = vec![vec![0; w * h]; components];
+                    let mb: Vec<_> = component_mb.iter().map(Vec::as_slice).collect();
+                    packets_planes(&tile[14..], w, h, levels, &mb, &mut planes)?;
+                    for plane in &mut planes {
+                        synthesize(plane, w, h, levels)?;
+                    }
+                    for i in 0..w * h {
+                        rgba.extend_from_slice(&[
+                            gray8(planes[0][i]),
+                            gray8(planes[1][i]),
+                            gray8(planes[2][i]),
+                            255,
+                        ]);
+                    }
                 }
                 return Ok((w, h, rgba));
             }
@@ -701,7 +777,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
         p += length + 2;
     }
 }
-/// Decode the supported small lossless grayscale profile into ordinary RGBA8.
+/// Decode the supported lossless Gray8/RGB8 profile into ordinary RGBA8.
 pub fn decode<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,

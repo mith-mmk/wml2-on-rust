@@ -462,3 +462,29 @@ fn multilevel_boundaries_and_corruption() {
         let _ = image_load(&data);
     }
 }
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn rgb_oracle_pixels() {
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = include_str!("fixtures/review/jpeg2000-rgb-manifest.txt");
+    let mut checked = 0;
+    for line in manifest.lines().skip(1) {
+        let name = line.split_whitespace().nth(1).unwrap();
+        if !name.ends_with(".j2k") && !name.ends_with(".jp2") {
+            continue;
+        }
+        let stem = name.split("_mct").next().unwrap();
+        let source = std::fs::read(format!("{root}{stem}.rgb")).unwrap();
+        let data = std::fs::read(format!("{root}{name}")).unwrap();
+        let image = wml2::draw::image_load(&data).unwrap_or_else(|e| panic!("{name}: {e}"));
+        let expected: Vec<_> = source
+            .chunks_exact(3)
+            .flat_map(|p| [p[0], p[1], p[2], 255])
+            .collect();
+        assert_eq!(image.width * image.height * 3, source.len(), "{name}");
+        assert_eq!(image.buffer.unwrap(), expected, "{name}");
+        checked += 1;
+    }
+    assert_eq!(checked, 74);
+}

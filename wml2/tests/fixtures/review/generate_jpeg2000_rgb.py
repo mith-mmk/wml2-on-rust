@@ -16,8 +16,12 @@ cases = [(1, 1, 0), (1, 33, 0), (33, 1, 0), (2, 2, 1), (3, 5, 0),
          (17, 19, 4), (31, 33, 0), (32, 32, 5), (33, 35, 5), (65, 49, 2),
          (65, 49, 5), (257, 129, 3), (257, 129, 5), (1024, 1024, 5)]
 manifest = [f'Pillow {__version__} OpenJPEG {features.version_codec("jpg_2000")}']
+source_count = 0
 for w, h, level in cases:
-    for pattern in (['ramp'] if w == 1024 else ['noise', 'mixed']):
+    patterns = ['ramp'] if w == 1024 else ['noise', 'mixed']
+    if (w, h, level) in [(1, 1, 0), (17, 19, 1), (33, 35, 5)]:
+        patterns += ['neutral', 'monochrome', 'flat']
+    for pattern in patterns:
         pixels = bytearray()
         palette = [(0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0),
                    (0, 0, 255), (1, 2, 3), (3, 2, 1), (127, 128, 129)]
@@ -30,12 +34,19 @@ for w, h, level in cases:
                     rgb = palette[(x + 3 * y) % len(palette)]
                 elif pattern == 'ramp':
                     rgb = ((x + y) % 256, (x * 3 + y) % 256, (x + y * 5) % 256)
+                elif pattern == 'neutral':
+                    rgb = (128, 128, 128)
+                elif pattern == 'monochrome':
+                    rgb = ((x + y * 7) % 256,) * 3
+                elif pattern == 'flat':
+                    rgb = (255, 0, 255)
                 pixels.extend(rgb)
         pixels = bytes(pixels)
         stem = f'jp2_rgb_{w}x{h}_d{level}_{pattern}'
         source = Image.frombytes('RGB', (w, h), pixels)
         raw = root / f'{stem}.rgb'
         raw.write_bytes(pixels)
+        source_count += 1
         manifest.append(f'{hashlib.sha256(pixels).hexdigest()} {raw.name}')
         for mct in args.mct:
             for ext in ['j2k', 'jp2']:
@@ -50,4 +61,4 @@ for w, h, level in cases:
                 assert encoded[cod + 8] == mct, path
                 manifest.append(f'{hashlib.sha256(encoded).hexdigest()} {path.name}')
 (root / 'jpeg2000-rgb-manifest.txt').write_text('\n'.join(manifest) + '\n')
-print(manifest[0], 'sources:', 37, 'encodings:', 74 * len(args.mct))
+print(manifest[0], 'sources:', source_count, 'encodings:', source_count * 2 * len(args.mct))

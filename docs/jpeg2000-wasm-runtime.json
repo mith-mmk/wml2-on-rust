@@ -1,0 +1,47 @@
+{
+  "base_sha": "d1e128f01812d591e67f9811d8dab0c5c4eb85fb",
+  "initial_minimal": {
+    "runtime": "v24.19.0",
+    "fixtures": 330,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 43188224,
+    "target": "wasm32-unknown-unknown",
+    "default_features": false,
+    "git_head": "d1e128f01812d591e67f9811d8dab0c5c4eb85fb",
+    "wasm_sha256": "5e1aab322be94811a1873602cea9d5521f79f5f740f354adcaf01fabce797b3b",
+    "checks": [
+      "RGBA pixels",
+      "dimensions",
+      "exact limits",
+      "short limits",
+      "limit scope restoration",
+      "callbacks",
+      "init/draw abort",
+      "truncation rejected before callbacks"
+    ]
+  },
+  "review_default": {
+    "runtime": "v24.19.0",
+    "fixtures": 366,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 43319296,
+    "target": "wasm32-unknown-unknown",
+    "default_features": true,
+    "git_head": "d1e128f01812d591e67f9811d8dab0c5c4eb85fb",
+    "wasm_sha256": "ed802690a63e547ab27e502a139ba76c4f140555f700d718e2c8327d62af0ac5",
+    "checks": [
+      "RGBA pixels",
+      "dimensions",
+      "exact limits",
+      "short limits",
+      "limit scope restoration",
+      "callbacks",
+      "init/draw abort",
+      "truncation rejected before callbacks"
+    ]
+  },
+  "review": "No concrete RGB/API regression found; fixed dimensions, neutral/monochrome/flat packets and distinct per-component QCC precision coverage added",
+  "distinct_qcc_native_oracles": 3
+}

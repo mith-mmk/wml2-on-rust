@@ -532,6 +532,13 @@ fn rgb_oracle_pixels() {
         let source = std::fs::read(format!("{root}{stem}.rgb")).unwrap();
         let data = std::fs::read(format!("{root}{name}")).unwrap();
         let image = wml2::draw::image_load(&data).unwrap_or_else(|e| panic!("{name}: {e}"));
+        let shape = stem.split('_').nth(2).unwrap();
+        let (width, height) = shape.split_once('x').unwrap();
+        let expected_shape = (
+            width.parse::<usize>().unwrap(),
+            height.parse::<usize>().unwrap(),
+        );
+        assert_eq!((image.width, image.height), expected_shape, "{name}");
         let expected: Vec<_> = source
             .chunks_exact(3)
             .flat_map(|p| [p[0], p[1], p[2], 255])
@@ -540,7 +547,7 @@ fn rgb_oracle_pixels() {
         assert_eq!(image.buffer.unwrap(), expected, "{name}");
         checked += 1;
     }
-    assert_eq!(checked, 148);
+    assert_eq!(checked, 184);
 }
 
 #[cfg(feature = "jpeg2000")]
@@ -621,6 +628,21 @@ mod rgb_bounds {
         }
         let gray = include_bytes!("fixtures/review/jp2_16x16_d1_noise.j2k");
         assert!(image_load(&with_qcc(gray, 0, quant)).is_err());
+    }
+    #[test]
+    fn qcc_different_component_precision_matches_oracle() {
+        // QCC raises this component's Mb from 9 to 10; its zero-plane tag
+        // compensates so the coded bit depth and RGB pixels remain unchanged.
+        // Ignoring QCC makes the full coding-pass check fail for these inputs.
+        for data in [
+            &include_bytes!("fixtures/review/jp2_qcc_1x1_d0_c0.j2k")[..],
+            &include_bytes!("fixtures/review/jp2_qcc_1x1_d0_c1.j2k")[..],
+            &include_bytes!("fixtures/review/jp2_qcc_1x1_d0_c2.j2k")[..],
+        ] {
+            let image = image_load(data).unwrap();
+            assert_eq!((image.width, image.height), (1, 1));
+            assert_eq!(image.buffer.unwrap(), [31, 83, 197, 255]);
+        }
     }
     #[test]
     fn component_profiles_and_container_consistency() {

@@ -296,7 +296,22 @@ pub(super) fn decode(
     orientation: u8,
     planes: u8,
 ) -> Result<Vec<i32>, Error> {
-    if w == 0 || h == 0 || w > 16 || h > 16 || planes == 0 || planes > 16 {
+    // Keep the proven small-block bounds visible to the optimizer. The wider
+    // domain otherwise slows existing 16x16 Gray inputs in release builds.
+    if w <= 16 && h <= 16 {
+        decode_bounded::<16>(data, w, h, orientation, planes)
+    } else {
+        decode_bounded::<1024>(data, w, h, orientation, planes)
+    }
+}
+fn decode_bounded<const AXIS: usize>(
+    data: &[u8],
+    w: usize,
+    h: usize,
+    orientation: u8,
+    planes: u8,
+) -> Result<Vec<i32>, Error> {
+    if w == 0 || h == 0 || w > AXIS || h > AXIS || w * h > 4096 || planes == 0 || planes > 16 {
         return Err(bad("invalid code-block geometry or bit depth"));
     }
     let n = w * h;
@@ -323,4 +338,21 @@ pub(super) fn decode(
         }
     }
     Ok(block.value)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn bounded_code_block_area() {
+        for (w, h) in [(0, 4), (4, 0), (1025, 4), (4, 1025), (64, 65), (1024, 5)] {
+            let error = decode(&[], w, h, 0, 1).unwrap_err().to_string();
+            assert!(error.contains("geometry"), "{w}x{h}: {error}");
+        }
+        // Cropped dimensions need not be powers of two, but stay within area.
+        for (w, h) in [(64, 64), (1024, 4), (4, 1024), (63, 65)] {
+            let error = decode(&[], w, h, 0, 1).unwrap_err().to_string();
+            assert!(error.contains("arithmetic"), "{w}x{h}: {error}");
+        }
+    }
 }

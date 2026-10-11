@@ -43,5 +43,53 @@
     ]
   },
   "review": "No concrete RGB/API regression found; fixed dimensions, neutral/monochrome/flat packets and distinct per-component QCC precision coverage added",
-  "distinct_qcc_native_oracles": 3
+  "distinct_qcc_native_oracles": 3,
+  "block_extension_minimal": {
+    "runtime": "v24.19.0",
+    "fixtures": 687,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 47382528,
+    "target": "wasm32-unknown-unknown",
+    "default_features": false,
+    "git_head": "938f7e9bf7589473e8e82491025e21158c77da36",
+    "working_tree_dirty": true,
+    "rust_source_sha256": "acf751e00a27a0e28e8ed0f85417fc9814453ce7e37667fe46ebe13cbeb81c4f",
+    "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+    "wasm_sha256": "1c9bdc7aafe9a73d104ad4609c71481d34fd4cbdc23b454ce4ee1bac19005561",
+    "checks": [
+      "RGBA pixels",
+      "dimensions",
+      "exact limits",
+      "short limits",
+      "limit scope restoration",
+      "callbacks",
+      "init/draw abort",
+      "truncation rejected before callbacks"
+    ]
+  },
+  "block_extension_default": {
+    "runtime": "v24.19.0",
+    "fixtures": 687,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 47513600,
+    "target": "wasm32-unknown-unknown",
+    "default_features": true,
+    "git_head": "938f7e9bf7589473e8e82491025e21158c77da36",
+    "working_tree_dirty": true,
+    "rust_source_sha256": "acf751e00a27a0e28e8ed0f85417fc9814453ce7e37667fe46ebe13cbeb81c4f",
+    "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+    "wasm_sha256": "c68aeca31b6470fda6a03fc77fd8273e3f8711153fc43bede98d6ddae5a7e3fe",
+    "checks": [
+      "RGBA pixels",
+      "dimensions",
+      "exact limits",
+      "short limits",
+      "limit scope restoration",
+      "callbacks",
+      "init/draw abort",
+      "truncation rejected before callbacks"
+    ]
+  }
 }

@@ -52,14 +52,114 @@ python3 wml2-test/scripts/verify_jpeg2000_wasm.py
 python3 wml2-test/scripts/verify_jpeg2000_wasm.py --default-features
 ```
 
-## Next useful profile step
+## Code-block geometry extension
 
-Code-block geometry is the next dependency to remove: COD, packet partitioning
-and the otherwise dimension-independent Tier-1 loops currently force 16×16,
-which rejects common default 64×64 OpenJPEG encodings. The next implementation
-will read validated block dimensions from COD, use them in partition/tag-tree
-geometry, and retain the legacy 16×16 fast path and existing budgets. Tile/layer,
-wavelet, progression, precision and color constraints remain independently
-checked. Multi-layer partial-pass continuation, 9/7, multiple tiles, other
-progressions, component subsampling, signed/high-bit-depth output and general
-JP2 color/palette/ICC handling remain later work.
+Code-block geometry was the next dependency removed: COD, packet partitioning
+and Tier-1 previously forced 16×16, rejecting common default 64×64 encodings.
+The decoder now accepts all 45 power-of-two block width/height pairs, each axis
+4–1024 with area at most 4096, as bounded by
+[T.800 Table A.18](https://www.itu.int/rec/T-REC-T.800-200208-S/en).
+COD validates both exponent offsets and their sum before shifting. Packet grids,
+tag trees, cropped edge dimensions and placement use the declared dimensions.
+Tier-1 validates actual dimensions and area before allocating its arrays.
+
+Existing small Gray images keep their single-block packet parser when the
+declared block can cover the canvas; smaller declared blocks use the shared
+multiple-block parser. Actual Tier-1 blocks no larger than 16×16 use a dedicated
+const-bound instantiation of the same algorithm. Larger blocks use a 1024-axis
+instantiation with the same 4096-area and bit-depth checks. This retains the
+optimizer's small-block bounds without duplicating coefficient algorithms.
+
+Independent review found no concrete defect in exponent/area guards, fast-path
+selection, zero-origin band placement or tag-tree geometry. The expanded charge
+remains `64 * width * height * components + 8192` before allocations. One
+resolution/component's descriptors and trees are retained at a time, and actual
+cropped block scratch is at most eight bytes per coefficient (4096 coefficients
+maximum); minimum 4×4 blocks increase descriptors/tree nodes within that
+conservative budget. No public API, RGBA8 output, feature defaults, version or
+production dependency changed.
+
+## Geometry verification
+
+`generate_jpeg2000_blocks.py` creates 318 encodings: all 45 shapes with partial
+edges (270); 64×64 blocks at levels 0–5 on 257×129 (36); unspecified/default
+OpenJPEG 64×64 blocks on 65×67 (6); and 1024×1024 level-5 64×64 blocks (6).
+Gray, independent RGB and RCT RGB each contribute 106 raw J2K/JP2 encodings.
+All nine maximum-area block shapes are exercised at level zero so their full
+dimensions reach Tier-1. The independent oracle verifies source pixels, mode,
+dimensions and actual SIZ/COD fields. Repeated generation produced the same
+manifest SHA256 `c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee`.
+Encoding/source hashes and parameters are in `jpeg2000-blocks-manifest.txt`.
+
+Rust public APIs match every new source RGBA byte and dimension, pass the exact
+geometry-scaled memory budget and reject a budget one byte shorter. Additional
+tests reject exponent offsets above 8 and areas above 4096 before output
+initialization; guard actual Tier-1 dimensions; and exercise repaired short
+tile payloads, invalid marker lengths and bounded header/body mutations for
+4×4, 64×64, 1024×4 and 4×1024 blocks in Gray/RCT RGB. A case-selection count
+error in the new mutation test was corrected before the final passing run.
+
+Seeded variable-block random checks matched all 144 pixel comparisons across
+24 geometries, both containers, Gray and both RGB MCT flags. The script's
+`--vary-blocks` option selects from all legal shapes; results are recorded in
+`jpeg2000-blocks-random.json`. Fixed encodings total 687: 182 Gray, 184 RGB,
+three distinct-QCC images and 318 geometry images. Actual public-API decoded
+4×4/64×64/1024×4 RGB output images were displayed and matched OpenJPEG pixels.
+
+Final ordinary release workspace regression passed 350 tests, 0 failures and
+12 existing ignored. Feature-off minimal lib/detection passed 16 tests. Clippy,
+formatting and diff checks passed; Clippy has existing warnings elsewhere and
+none in the JPEG2000 code. WASM execution in Node v24.19.0 passes all 687 fixed
+encodings with minimal and default-plus-JPEG2000 features, including pixels,
+limits, callbacks/Abort, truncation and scope restoration. Module/source hashes
+and memory sizes are recorded in `jpeg2000-wasm-runtime.json`.
+
+## Performance and specialization
+
+The first widened Tier-1 implementation slowed 16×16 Gray noise by about 22%
+wall/CPU time. A longer CPU-affined follow-up still showed about 15%, so this
+was addressed rather than dismissed as scheduling noise. Preserving a dedicated
+16-axis instantiation brought a short paired sample to +2.6%; the final longer
+paired sample was −5.2% CPU for that input. Output hashes matched in every pair.
+Both initial and follow-up data are retained alongside the final measurements.
+
+Final B/H/H/B/H/B, three processes per version, fixed CPU affinity, 100 warmups,
+Rust 1.91 release; public-API whole-process CPU means in microseconds/call:
+
+| Existing 16×16-block input | Base | Extension | Change |
+| --- | ---: | ---: | ---: |
+| Gray 16×16 level-1 noise, 30,000 calls | 60.807 | 57.659 | −5.18% |
+| Gray 65×49 level-1 noise, 500 calls | 1314.136 | 1288.392 | −1.96% |
+| RGB 16×16 level-1 noise/RCT, 5,000 calls | 401.857 | 371.945 | −7.44% |
+| RGB 65×49 level-2 noise/RCT, 200 calls | 4882.829 | 5181.328 | +6.11% |
+
+The last input's wall mean was +12.94%, whereas earlier CPU samples were about
+−12.7%. Shared-host variation remains material; these observations do not
+guarantee no slowdown across systems. Whole-process CPU includes startup,
+warmups and export, divided by total calls. Detailed rows, wall times and hashes
+are in `jpeg2000-blocks-benchmark-final.json`; initial and follow-up files are
+`jpeg2000-blocks-benchmark.json` and `jpeg2000-blocks-benchmark-repeat.json`.
+
+## Reproduction and remaining work
+
+```sh
+python3 wml2/tests/fixtures/review/generate_jpeg2000_blocks.py
+cargo test --workspace --release --features wml2/jpeg2000
+cargo build -p wml2 --release --no-default-features --features jpeg2000 \
+  --example jpeg2000_verify
+python3 wml2/tests/fixtures/review/check_jpeg2000_rgb_random.py \
+  /absolute/path/to/release/examples/jpeg2000_verify --cases 24 --vary-blocks
+python3 wml2-test/scripts/verify_jpeg2000_wasm.py
+python3 wml2-test/scripts/verify_jpeg2000_wasm.py --default-features
+```
+
+The supported profile remains Gray8 or equal unsampled RGB8/RCT, zero origins,
+one tile/part/layer, LRCP, levels 0–5 (each axis at least 2^levels and at most
+1024), reversible 5/3, style zero, full coding passes and supported enumerated
+JP2 colors. Multi-layer partial-pass continuation needs persistent MQ/block/
+tag-tree state; multiple tiles and nonzero origins need new positioning rules;
+other progressions need new packet ordering. 9/7, subsampling, signed/high-bit-
+depth/alpha, component coding overrides, ROI, precinct overrides/SOP/EPH,
+general JP2 palette/ICC boxes and extended lengths remain unsupported.
+Browser UI, Windows/macOS, optional AVIF-specific matrices and external corpus
+validation remain untested. No merge, release or remote CI completion was done.

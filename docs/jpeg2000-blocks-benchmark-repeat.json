@@ -1,0 +1,117 @@
+{
+  "cpu_affinity": [
+    0
+  ],
+  "order": "B/H/H/B/H/B",
+  "warmups": 100,
+  "rows": [
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "base",
+      "iterations": 50000,
+      "result": "16x16, 50000 decodes, 55.620 us/decode",
+      "wall_us_per_decode": 55.62,
+      "cpu_us_per_decode": 55.66803057823197,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "head",
+      "iterations": 50000,
+      "result": "16x16, 50000 decodes, 67.659 us/decode",
+      "wall_us_per_decode": 67.659,
+      "cpu_us_per_decode": 67.71886788686852,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "head",
+      "iterations": 50000,
+      "result": "16x16, 50000 decodes, 66.404 us/decode",
+      "wall_us_per_decode": 66.404,
+      "cpu_us_per_decode": 66.45504081754856,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "base",
+      "iterations": 50000,
+      "result": "16x16, 50000 decodes, 55.794 us/decode",
+      "wall_us_per_decode": 55.794,
+      "cpu_us_per_decode": 55.832717909822144,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "head",
+      "iterations": 50000,
+      "result": "16x16, 50000 decodes, 66.293 us/decode",
+      "wall_us_per_decode": 66.293,
+      "cpu_us_per_decode": 66.31153070796991,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "base",
+      "iterations": 50000,
+      "result": "16x16, 50000 decodes, 62.398 us/decode",
+      "wall_us_per_decode": 62.398,
+      "cpu_us_per_decode": 62.47148759505793,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "base",
+      "iterations": 10000,
+      "result": "16x16, 10000 decodes, 352.810 us/decode",
+      "wall_us_per_decode": 352.81,
+      "cpu_us_per_decode": 352.8151668151672,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "head",
+      "iterations": 10000,
+      "result": "16x16, 10000 decodes, 334.882 us/decode",
+      "wall_us_per_decode": 334.882,
+      "cpu_us_per_decode": 335.8952578952578,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "head",
+      "iterations": 10000,
+      "result": "16x16, 10000 decodes, 329.497 us/decode",
+      "wall_us_per_decode": 329.497,
+      "cpu_us_per_decode": 330.2153252153254,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "base",
+      "iterations": 10000,
+      "result": "16x16, 10000 decodes, 330.340 us/decode",
+      "wall_us_per_decode": 330.34,
+      "cpu_us_per_decode": 330.1776061776066,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "head",
+      "iterations": 10000,
+      "result": "16x16, 10000 decodes, 323.387 us/decode",
+      "wall_us_per_decode": 323.387,
+      "cpu_us_per_decode": 323.3532323532316,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "base",
+      "iterations": 10000,
+      "result": "16x16, 10000 decodes, 388.178 us/decode",
+      "wall_us_per_decode": 388.178,
+      "cpu_us_per_decode": 388.03019503019533,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    }
+  ]
+}

@@ -1,0 +1,228 @@
+{
+  "base_sha": "938f7e9bf7589473e8e82491025e21158c77da36",
+  "source_sha256": "acf751e00a27a0e28e8ed0f85417fc9814453ce7e37667fe46ebe13cbeb81c4f",
+  "tier1_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+  "order": "B/H/H/B/H/B",
+  "warmups": 100,
+  "cpu_affinity": [
+    0
+  ],
+  "rows": [
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "base",
+      "iterations": 30000,
+      "result": "16x16, 30000 decodes, 62.919 us/decode",
+      "wall_us_per_decode": 62.919,
+      "cpu_us_per_decode": 62.947576492475335,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "head",
+      "iterations": 30000,
+      "result": "16x16, 30000 decodes, 56.307 us/decode",
+      "wall_us_per_decode": 56.307,
+      "cpu_us_per_decode": 56.35600146174546,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "head",
+      "iterations": 30000,
+      "result": "16x16, 30000 decodes, 58.632 us/decode",
+      "wall_us_per_decode": 58.632,
+      "cpu_us_per_decode": 58.752865353310504,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "base",
+      "iterations": 30000,
+      "result": "16x16, 30000 decodes, 59.084 us/decode",
+      "wall_us_per_decode": 59.084,
+      "cpu_us_per_decode": 59.175210125909445,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "head",
+      "iterations": 30000,
+      "result": "16x16, 30000 decodes, 57.818 us/decode",
+      "wall_us_per_decode": 57.818,
+      "cpu_us_per_decode": 57.86824357994751,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_16x16_d1_noise.jp2",
+      "version": "base",
+      "iterations": 30000,
+      "result": "16x16, 30000 decodes, 60.228 us/decode",
+      "wall_us_per_decode": 60.228,
+      "cpu_us_per_decode": 60.29836218065842,
+      "output_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "jp2_multi_65x49_d1_noise.jp2",
+      "version": "base",
+      "iterations": 500,
+      "result": "65x49, 500 decodes, 1305.791 us/decode",
+      "wall_us_per_decode": 1305.791,
+      "cpu_us_per_decode": 1306.8069883527464,
+      "output_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681"
+    },
+    {
+      "input": "jp2_multi_65x49_d1_noise.jp2",
+      "version": "head",
+      "iterations": 500,
+      "result": "65x49, 500 decodes, 1242.453 us/decode",
+      "wall_us_per_decode": 1242.453,
+      "cpu_us_per_decode": 1252.6156405990018,
+      "output_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681"
+    },
+    {
+      "input": "jp2_multi_65x49_d1_noise.jp2",
+      "version": "head",
+      "iterations": 500,
+      "result": "65x49, 500 decodes, 1308.418 us/decode",
+      "wall_us_per_decode": 1308.418,
+      "cpu_us_per_decode": 1320.394342762063,
+      "output_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681"
+    },
+    {
+      "input": "jp2_multi_65x49_d1_noise.jp2",
+      "version": "base",
+      "iterations": 500,
+      "result": "65x49, 500 decodes, 1301.173 us/decode",
+      "wall_us_per_decode": 1301.173,
+      "cpu_us_per_decode": 1308.2961730449258,
+      "output_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681"
+    },
+    {
+      "input": "jp2_multi_65x49_d1_noise.jp2",
+      "version": "head",
+      "iterations": 500,
+      "result": "65x49, 500 decodes, 1276.248 us/decode",
+      "wall_us_per_decode": 1276.248,
+      "cpu_us_per_decode": 1292.16638935108,
+      "output_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681"
+    },
+    {
+      "input": "jp2_multi_65x49_d1_noise.jp2",
+      "version": "base",
+      "iterations": 500,
+      "result": "65x49, 500 decodes, 1336.360 us/decode",
+      "wall_us_per_decode": 1336.36,
+      "cpu_us_per_decode": 1327.3061564059894,
+      "output_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "base",
+      "iterations": 5000,
+      "result": "16x16, 5000 decodes, 323.792 us/decode",
+      "wall_us_per_decode": 323.792,
+      "cpu_us_per_decode": 323.5745932170169,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "head",
+      "iterations": 5000,
+      "result": "16x16, 5000 decodes, 329.528 us/decode",
+      "wall_us_per_decode": 329.528,
+      "cpu_us_per_decode": 329.3952166241912,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "head",
+      "iterations": 5000,
+      "result": "16x16, 5000 decodes, 395.077 us/decode",
+      "wall_us_per_decode": 395.077,
+      "cpu_us_per_decode": 394.9053126837868,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "base",
+      "iterations": 5000,
+      "result": "16x16, 5000 decodes, 338.702 us/decode",
+      "wall_us_per_decode": 338.702,
+      "cpu_us_per_decode": 341.12017251519393,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "head",
+      "iterations": 5000,
+      "result": "16x16, 5000 decodes, 386.968 us/decode",
+      "wall_us_per_decode": 386.968,
+      "cpu_us_per_decode": 391.53538521858405,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_16x16_d1_noise_mct1.jp2",
+      "version": "base",
+      "iterations": 5000,
+      "result": "16x16, 5000 decodes, 542.443 us/decode",
+      "wall_us_per_decode": 542.443,
+      "cpu_us_per_decode": 540.8753185649877,
+      "output_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+    },
+    {
+      "input": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "version": "base",
+      "iterations": 200,
+      "result": "65x49, 200 decodes, 4681.497 us/decode",
+      "wall_us_per_decode": 4681.497,
+      "cpu_us_per_decode": 4785.953488372092,
+      "output_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e"
+    },
+    {
+      "input": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "version": "head",
+      "iterations": 200,
+      "result": "65x49, 200 decodes, 6157.093 us/decode",
+      "wall_us_per_decode": 6157.093,
+      "cpu_us_per_decode": 5709.584717607965,
+      "output_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e"
+    },
+    {
+      "input": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "version": "head",
+      "iterations": 200,
+      "result": "65x49, 200 decodes, 5264.460 us/decode",
+      "wall_us_per_decode": 5264.46,
+      "cpu_us_per_decode": 5193.338870431907,
+      "output_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e"
+    },
+    {
+      "input": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "version": "base",
+      "iterations": 200,
+      "result": "65x49, 200 decodes, 4759.018 us/decode",
+      "wall_us_per_decode": 4759.018,
+      "cpu_us_per_decode": 5097.06644518273,
+      "output_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e"
+    },
+    {
+      "input": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "version": "head",
+      "iterations": 200,
+      "result": "65x49, 200 decodes, 4675.417 us/decode",
+      "wall_us_per_decode": 4675.417,
+      "cpu_us_per_decode": 4641.059800664437,
+      "output_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e"
+    },
+    {
+      "input": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "version": "base",
+      "iterations": 200,
+      "result": "65x49, 200 decodes, 4812.696 us/decode",
+      "wall_us_per_decode": 4812.696,
+      "cpu_us_per_decode": 4765.468438538215,
+      "output_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 //! Experimental JPEG 2000 decoder: unsigned Gray8/RGB8, <=1024x1024, reversible 5/3,
-//! zero to five decompositions, one tile/layer, LRCP, 16x16 blocks, style zero.
+//! zero to five decompositions, one tile/layer, LRCP, bounded blocks, style zero.
 //! Unsupported profiles return errors before any image callback.
 use crate::draw::{DecodeOptions, InitOptions, ResponseCommand};
 use crate::error::{ImgError, ImgErrorKind};
@@ -277,11 +277,18 @@ impl TagTree {
 }
 // Preserve the already-verified small-image parser and its allocation behavior.
 // Large-image packets use shared tag trees and independently positioned blocks.
-fn packets(data: &[u8], w: usize, h: usize, levels: u8, mb: &[u8]) -> Result<Vec<i32>, Error> {
-    if w <= 16 && h <= 16 && levels <= 1 {
+fn packets(
+    data: &[u8],
+    w: usize,
+    h: usize,
+    levels: u8,
+    mb: &[u8],
+    block: (usize, usize),
+) -> Result<Vec<i32>, Error> {
+    if w <= 16 && h <= 16 && levels <= 1 && w <= block.0 && h <= block.1 {
         packets_single(data, w, h, levels, mb)
     } else {
-        packets_multiple(data, w, h, levels, mb)
+        packets_multiple(data, w, h, levels, mb, block)
     }
 }
 fn packets_single(
@@ -363,9 +370,18 @@ fn packets_multiple(
     h: usize,
     levels: u8,
     mb: &[u8],
+    block: (usize, usize),
 ) -> Result<Vec<i32>, Error> {
     let mut plane = vec![0; w * h];
-    packets_planes(data, w, h, levels, &[mb], std::slice::from_mut(&mut plane))?;
+    packets_planes(
+        data,
+        w,
+        h,
+        levels,
+        &[mb],
+        std::slice::from_mut(&mut plane),
+        block,
+    )?;
     Ok(plane)
 }
 // LRCP orders each resolution's component packets before the next resolution.
@@ -377,9 +393,11 @@ fn packets_planes(
     levels: u8,
     mb: &[&[u8]],
     planes: &mut [Vec<i32>],
+    block: (usize, usize),
 ) -> Result<(), Error> {
     // QCD and LRCP order: deepest LL, then HL/LH/HH from coarse to fine.
     // All bands occupy disjoint rectangles in a nested quadrant layout.
+    let (block_width, block_height) = block;
     let factor = 1usize << levels;
     let mut bands = Vec::with_capacity(1 + 3 * usize::from(levels));
     bands.push((0, 0, w.div_ceil(factor), h.div_ceil(factor), 0));
@@ -411,8 +429,8 @@ fn packets_planes(
                     if bw == 0 || bh == 0 {
                         continue;
                     }
-                    let nx = bw.div_ceil(16);
-                    let ny = bh.div_ceil(16);
+                    let nx = bw.div_ceil(block_width);
+                    let ny = bh.div_ceil(block_height);
                     // Keep the existing single-block path free of tree allocations.
                     let multiple = nx > 1 || ny > 1;
                     let mut inclusion = multiple.then(|| TagTree::new(nx, ny));
@@ -453,10 +471,10 @@ fn packets_planes(
                                 return Err(bad("empty arithmetic segment"));
                             }
                             blocks.push((
-                                bx + cx * 16,
-                                by + cy * 16,
-                                (bw - cx * 16).min(16),
-                                (bh - cy * 16).min(16),
+                                bx + cx * block_width,
+                                by + cy * block_height,
+                                (bw - cx * block_width).min(block_width),
+                                (bh - cy * block_height).min(block_height),
                                 orientation,
                                 planes,
                                 length,
@@ -685,19 +703,23 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     || u16be(b, 2)? != 1
                     || b[4] > 1
                     || b[5] > 5
-                    || b[6] != 2
-                    || b[7] != 2
+                    || b[6] > 8
+                    || b[7] > 8
+                    || u16::from(b[6]) + u16::from(b[7]) > 8
                     || b[8] != 0
                     || b[9] != 1
                 {
                     return Err(unsupported(
-                        "COD: one layer, LRCP, 0..5 levels, 16x16 block, style zero, reversible transform required",
+                        "COD: one layer, LRCP, 0..5 levels, power-of-two blocks 4..1024 with area <=4096, style zero, reversible transform required",
                     ));
                 }
                 if b[4] == 1 && size.ok_or_else(|| bad("COD before SIZ"))?.2 != 3 {
                     return Err(unsupported("RCT requires three components"));
                 }
-                coding = Some((b[5], b[4] == 1));
+                // T.800 Table A.18: offsets add two to each exponent; their
+                // sum must be <=8, bounding every full block to 4096 samples.
+                let block = (1usize << (b[6] + 2), 1usize << (b[7] + 2));
+                coding = Some((b[5], b[4] == 1, block));
             }
             0xff5c => {
                 if quant.is_some() || b.is_empty() {
@@ -730,7 +752,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     return Err(unsupported("one tile-part required"));
                 }
                 let (w, h, components) = size.ok_or_else(|| bad("missing SIZ"))?;
-                let (levels, rct) = coding.ok_or_else(|| bad("missing COD"))?;
+                let (levels, rct, block) = coding.ok_or_else(|| bad("missing COD"))?;
                 if w < (1usize << levels) || h < (1usize << levels) {
                     return Err(unsupported(
                         "each dimension must be at least 2^decomposition levels",
@@ -758,7 +780,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 }
                 let mut rgba = Vec::with_capacity(w * h * 4);
                 if components == 1 {
-                    let mut plane = packets(&tile[14..], w, h, levels, &component_mb[0])?;
+                    let mut plane = packets(&tile[14..], w, h, levels, &component_mb[0], block)?;
                     synthesize(&mut plane, w, h, levels)?;
                     for v in plane {
                         let v = gray8(v);
@@ -767,7 +789,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 } else {
                     let mut planes = vec![vec![0; w * h]; components];
                     let mb: Vec<_> = component_mb.iter().map(Vec::as_slice).collect();
-                    packets_planes(&tile[14..], w, h, levels, &mb, &mut planes)?;
+                    packets_planes(&tile[14..], w, h, levels, &mb, &mut planes, block)?;
                     for plane in &mut planes {
                         synthesize(plane, w, h, levels)?;
                     }

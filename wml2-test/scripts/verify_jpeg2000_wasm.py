@@ -21,9 +21,19 @@ fixtures = repo / 'wml2/tests/fixtures/review'
 work = repo / '.test-jpeg2000-wasm'
 work.mkdir(exist_ok=True)
 cases = []
+block_sources = {}
+block_manifest = fixtures / 'jpeg2000-blocks-manifest.txt'
+if block_manifest.exists():
+    for line in block_manifest.read_text().splitlines()[1:]:
+        fields = line.split()
+        assert len(fields) == 11
+        block_sources[fields[1]] = fields
 for path in sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')):
     stem = path.stem.split('_mct')[0]
-    sources = [fixtures / (stem + ext) for ext in ['.rgb', '.gray']]
+    if path.name in block_sources:
+        sources = [fixtures / block_sources[path.name][3]]
+    else:
+        sources = [fixtures / (stem + ext) for ext in ['.rgb', '.gray']]
     sources = [source for source in sources if source.exists()]
     if not sources:
         continue
@@ -44,11 +54,11 @@ edition = "2024"
 path = "lib.rs"
 crate-type = ["cdylib"]
 [dependencies]
-wml2 = {{ path = {json.dumps(str(repo / 'wml2'))}, default-features = {default}, features = ["jpeg2000"] }}
+wml2 = {{ path = {json.dumps(str(repo / 'wml2'), ensure_ascii=False)}, default-features = {default}, features = ["jpeg2000"] }}
 bin-rs = {{ version = "0.0.10", features = ["util"] }}
 ''')
 entries = '\n'.join(
-    f'Case {{ encoded: include_bytes!({json.dumps(str(p))}), source: include_bytes!({json.dumps(str(s))}), '
+    f'Case {{ encoded: include_bytes!({json.dumps(str(p), ensure_ascii=False)}), source: include_bytes!({json.dumps(str(s), ensure_ascii=False)}), '
     f'w: {w}, h: {h}, components: {n} }},' for p, s, w, h, n in cases)
 rust = r'''
 use bin_rs::reader::BytesReader;
@@ -148,6 +158,9 @@ report = json.loads(result)
 assert report['fixtures'] == len(cases) and report['all_passed']
 report.update({'target': 'wasm32-unknown-unknown', 'default_features': args.default_features,
                'git_head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip(),
+               'working_tree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo, text=True).strip()),
+               'rust_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000.rs').read_bytes()).hexdigest(),
+               'tier1_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000_tier1.rs').read_bytes()).hexdigest(),
                'wasm_sha256': hashlib.sha256(wasm.read_bytes()).hexdigest(),
                'checks': ['RGBA pixels', 'dimensions', 'exact limits', 'short limits',
                           'limit scope restoration', 'callbacks', 'init/draw abort',

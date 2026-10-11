@@ -79,8 +79,8 @@ mod enabled {
             (cod + 7, 2),
             (cod + 8, 1),
             (cod + 9, 6),
-            (cod + 10, 3),
-            (cod + 11, 3),
+            (cod + 10, 9),
+            (cod + 11, 9),
             (cod + 12, 1),
             (cod + 13, 0),
             (siz + 40, 15),
@@ -714,4 +714,154 @@ mod rgb_bounds {
             let _ = image_load(&data);
         }
     }
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn code_block_geometry_matches_oracle() {
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!("{root}jpeg2000-blocks-manifest.txt")).unwrap();
+    let mut checked = 0;
+    for line in manifest.lines().skip(1) {
+        let fields: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(fields.len(), 11);
+        let name = fields[1];
+        let source = std::fs::read(format!("{root}{}", fields[3])).unwrap();
+        let number = |index: usize| fields[index].parse::<usize>().unwrap();
+        let (w, h, bw, bh, levels, components, mct) = (
+            number(4),
+            number(5),
+            number(6),
+            number(7),
+            number(8),
+            number(9),
+            number(10),
+        );
+        let data = std::fs::read(format!("{root}{name}")).unwrap();
+        let cod = data.windows(2).position(|b| b == [255, 0x52]).unwrap();
+        assert_eq!(
+            (
+                1usize << (data[cod + 10] + 2),
+                1usize << (data[cod + 11] + 2)
+            ),
+            (bw, bh)
+        );
+        assert_eq!(
+            (usize::from(data[cod + 9]), usize::from(data[cod + 8])),
+            (levels, mct)
+        );
+        let image = wml2::draw::image_load(&data).unwrap_or_else(|e| panic!("{name}: {e}"));
+        assert_eq!((image.width, image.height), (w, h), "{name}");
+        assert_eq!(source.len(), w * h * components);
+        let expected: Vec<_> = source
+            .chunks_exact(components)
+            .flat_map(|p| {
+                if components == 1 {
+                    [p[0], p[0], p[0], 255]
+                } else {
+                    [p[0], p[1], p[2], 255]
+                }
+            })
+            .collect();
+        assert_eq!(image.buffer.unwrap(), expected, "{name}");
+        // The same geometry-scaled budget covers all accepted block shapes.
+        let mut limits = wml2::limits::DecodeLimits::unlimited();
+        limits.expanded_bytes = w * h * components * 64 + 8192;
+        limits.pixels = w * h;
+        assert!(
+            wml2::draw::image_from_with_limits(&data, limits).is_ok(),
+            "{name}"
+        );
+        limits.expanded_bytes -= 1;
+        assert!(
+            wml2::draw::image_from_with_limits(&data, limits).is_err(),
+            "{name}"
+        );
+        checked += 1;
+    }
+    assert_eq!(checked, 318);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn invalid_code_block_exponents_are_rejected_before_callbacks() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder};
+    for input in [
+        &include_bytes!("fixtures/review/jp2_16x16_d1_noise.j2k")[..],
+        &include_bytes!("fixtures/review/jp2_rgb_16x16_d1_noise_mct1.j2k")[..],
+    ] {
+        let cod = input.windows(2).position(|b| b == [255, 0x52]).unwrap();
+        for (x, y) in [(9, 0), (0, 9), (255, 255), (5, 4), (8, 1), (1, 8)] {
+            let mut bad = input.to_vec();
+            bad[cod + 10] = x;
+            bad[cod + 11] = y;
+            let mut image = ImageBuffer::new();
+            let result = image_decoder(
+                &mut BytesReader::new(&bad),
+                &mut DecodeOptions {
+                    drawer: &mut image,
+                    debug_flag: 0,
+                },
+            );
+            assert!(result.is_err());
+            assert!(image.buffer.is_none(), "invalid block initialized output");
+        }
+    }
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn variable_code_block_corruption_stays_bounded() {
+    use wml2::draw::image_load;
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!("{root}jpeg2000-blocks-manifest.txt")).unwrap();
+    let mut checked = 0;
+    for line in manifest.lines().skip(1) {
+        let fields: Vec<_> = line.split_whitespace().collect();
+        let shape = (
+            fields[6].parse::<usize>().unwrap(),
+            fields[7].parse::<usize>().unwrap(),
+        );
+        if !fields[1].ends_with(".j2k")
+            || fields[8] != "0"
+            || !matches!(shape, (4, 4) | (64, 64) | (1024, 4) | (4, 1024))
+            || (fields[9] == "3" && fields[10] != "1")
+        {
+            continue;
+        }
+        // Select the full-block/partial-edge matrix, excluding the separate
+        // 257x129 multilevel cases that share the same nominal block shape.
+        if fields[4].parse::<usize>().unwrap() != (shape.0 + 3).min(1024)
+            || fields[5].parse::<usize>().unwrap() != (shape.1 + 5).min(1024)
+        {
+            continue;
+        }
+        let data = std::fs::read(format!("{root}{}", fields[1])).unwrap();
+        let marker = |m| data.windows(2).position(|b| b == [255, m]).unwrap();
+        let sot = marker(0x90);
+        for n in [0, 1, 2, 4, 8, 16, 32] {
+            let mut bad = data[..sot + 14 + n].to_vec();
+            bad[sot + 6..sot + 10].copy_from_slice(&((14 + n) as u32).to_be_bytes());
+            bad.extend_from_slice(&[255, 217]);
+            assert!(image_load(&bad).is_err(), "{} short {n}", fields[1]);
+        }
+        for m in [0x51, 0x52, 0x5c, 0x90] {
+            for length in [0u16, 1, 65535] {
+                let mut bad = data.clone();
+                let p = marker(m);
+                bad[p + 2..p + 4].copy_from_slice(&length.to_be_bytes());
+                assert!(image_load(&bad).is_err());
+            }
+        }
+        for n in 0..32 {
+            for mask in [1, 128, 255] {
+                let mut bad = data.clone();
+                bad[sot + 14 + n] ^= mask;
+                let _ = image_load(&bad);
+            }
+        }
+        checked += 1;
+    }
+    assert_eq!(checked, 8);
 }

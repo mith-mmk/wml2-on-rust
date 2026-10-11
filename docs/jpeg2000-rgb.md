@@ -7,6 +7,8 @@ opaque RGBA8 callback/output buffer, default features and codec dependencies are
 preserved. Rust decoding has no OpenJPEG dependency.
 
 Current support includes both independent RGB components and reversible RCT.
+The later [continuation](jpeg2000-continuation.md) adds bounded code-block shapes
+and actual WASM execution verification; counts below record the RGB milestone.
 The descriptions of stage 1 below record its intermediate commit, not the final
 profile. Stable `jpeg2000` is kept at the verified Gray commit; this work is on
 `codex/jpeg2000-rgb-reimplementation-20261011`.

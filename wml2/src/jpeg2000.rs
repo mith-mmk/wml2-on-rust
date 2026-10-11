@@ -1,4 +1,4 @@
-//! Experimental JPEG 2000 decoder: unsigned Gray8, <=16x16, reversible 5/3,
+//! Experimental JPEG 2000 decoder: unsigned Gray8, <=1024x1024, reversible 5/3,
 //! zero/one decomposition, one tile/layer, LRCP, 16x16 code-blocks, style zero.
 //! Unsupported profiles return errors before any image callback.
 use crate::draw::{DecodeOptions, InitOptions, ResponseCommand};
@@ -206,7 +206,80 @@ impl<'a> Bits<'a> {
         Ok(37 + self.number(7)?)
     }
 }
+// Stateful single-layer tag trees. Each node stores the lowest possible value
+// and its decoded value; parent information is shared by successive leaves.
+#[derive(Clone, Copy)]
+struct TagNode {
+    low: u8,
+    value: u8,
+}
+struct TagTree {
+    levels: Vec<(usize, usize, Vec<TagNode>)>,
+}
+impl TagTree {
+    fn new(mut w: usize, mut h: usize) -> Self {
+        let mut levels = Vec::new();
+        loop {
+            levels.push((
+                w,
+                h,
+                vec![
+                    TagNode {
+                        low: 0,
+                        value: u8::MAX
+                    };
+                    w * h
+                ],
+            ));
+            if w == 1 && h == 1 {
+                break;
+            }
+            w = w.div_ceil(2);
+            h = h.div_ceil(2);
+        }
+        Self { levels }
+    }
+    fn below(
+        &mut self,
+        x: usize,
+        y: usize,
+        threshold: u8,
+        bits: &mut Bits<'_>,
+    ) -> Result<bool, Error> {
+        let mut low = 0;
+        for depth in (0..self.levels.len()).rev() {
+            let (w, _, nodes) = &mut self.levels[depth];
+            let node = &mut nodes[(y >> depth) * *w + (x >> depth)];
+            node.low = node.low.max(low);
+            while node.low < threshold && node.low < node.value {
+                if bits.bit()? {
+                    node.value = node.low;
+                } else {
+                    node.low += 1;
+                }
+            }
+            low = node.low.min(node.value);
+        }
+        let (w, _, nodes) = &self.levels[0];
+        Ok(nodes[y * *w + x].value < threshold)
+    }
+}
+// Preserve the already-verified small-image parser and its allocation behavior.
+// Large-image packets use shared tag trees and independently positioned blocks.
 fn packets(data: &[u8], w: usize, h: usize, levels: u8, mb: &[u8]) -> Result<Vec<i32>, Error> {
+    if w <= 16 && h <= 16 {
+        packets_single(data, w, h, levels, mb)
+    } else {
+        packets_multiple(data, w, h, levels, mb)
+    }
+}
+fn packets_single(
+    data: &[u8],
+    w: usize,
+    h: usize,
+    levels: u8,
+    mb: &[u8],
+) -> Result<Vec<i32>, Error> {
     let mut plane = vec![0; w * h];
     let lw = if levels == 0 { w } else { w.div_ceil(2) };
     let lh = if levels == 0 { h } else { h.div_ceil(2) };
@@ -260,6 +333,103 @@ fn packets(data: &[u8], w: usize, h: usize, levels: u8, mb: &[u8]) -> Result<Vec
         p += bits.pos;
         for (b, planes, length) in blocks {
             let (x, y, bw, bh, orientation) = bands[b];
+            let values = tier1::decode(bytes(data, p, length)?, bw, bh, orientation, planes)?;
+            p += length;
+            for row in 0..bh {
+                plane[(y + row) * w + x..(y + row) * w + x + bw]
+                    .copy_from_slice(&values[row * bw..(row + 1) * bw]);
+            }
+        }
+    }
+    if p != data.len() {
+        return Err(bad("trailing tile data"));
+    }
+    Ok(plane)
+}
+fn packets_multiple(
+    data: &[u8],
+    w: usize,
+    h: usize,
+    levels: u8,
+    mb: &[u8],
+) -> Result<Vec<i32>, Error> {
+    let mut plane = vec![0; w * h];
+    let lw = if levels == 0 { w } else { w.div_ceil(2) };
+    let lh = if levels == 0 { h } else { h.div_ceil(2) };
+    let bands = [
+        (0, 0, lw, lh, 0),
+        (lw, 0, w / 2, lh, 1),
+        (0, lh, lw, h / 2, 2),
+        (lw, lh, w / 2, h / 2, 3),
+    ];
+    let mut p = 0;
+    for resolution in 0..=levels {
+        let indices: &[usize] = if resolution == 0 { &[0] } else { &[1, 2, 3] };
+        let mut bits = Bits::new(&data[p..]);
+        let mut blocks = Vec::new();
+        if bits.bit()? {
+            for &b in indices {
+                let (bx, by, bw, bh, orientation) = bands[b];
+                if bw == 0 || bh == 0 {
+                    continue;
+                }
+                let nx = bw.div_ceil(16);
+                let ny = bh.div_ceil(16);
+                // Keep the existing single-block path free of tree allocations.
+                let multiple = nx > 1 || ny > 1;
+                let mut inclusion = multiple.then(|| TagTree::new(nx, ny));
+                let mut zero_planes = multiple.then(|| TagTree::new(nx, ny));
+                for cy in 0..ny {
+                    for cx in 0..nx {
+                        let included = match &mut inclusion {
+                            Some(tree) => tree.below(cx, cy, 1, &mut bits)?,
+                            None => bits.bit()?,
+                        };
+                        if !included {
+                            continue;
+                        }
+                        let mut threshold = 1;
+                        while !match &mut zero_planes {
+                            Some(tree) => tree.below(cx, cy, threshold, &mut bits)?,
+                            None => bits.bit()?,
+                        } {
+                            if threshold >= mb[b] {
+                                return Err(bad("invalid zero bit-plane tag"));
+                            }
+                            threshold += 1;
+                        }
+                        let planes = mb[b] - (threshold - 1);
+                        let passes = bits.passes()?;
+                        if passes != u32::from(planes) * 3 - 2 {
+                            return Err(unsupported("partial code-block passes"));
+                        }
+                        let mut lblock = 3;
+                        while bits.bit()? {
+                            lblock += 1;
+                            if lblock > 32 {
+                                return Err(bad("code-block length overflow"));
+                            }
+                        }
+                        let length = bits.number(lblock + passes.ilog2())? as usize;
+                        if length == 0 {
+                            return Err(bad("empty arithmetic segment"));
+                        }
+                        blocks.push((
+                            bx + cx * 16,
+                            by + cy * 16,
+                            (bw - cx * 16).min(16),
+                            (bh - cy * 16).min(16),
+                            orientation,
+                            planes,
+                            length,
+                        ));
+                    }
+                }
+            }
+        }
+        bits.align()?;
+        p += bits.pos;
+        for (x, y, bw, bh, orientation, planes, length) in blocks {
             let values = tier1::decode(bytes(data, p, length)?, bw, bh, orientation, planes)?;
             p += length;
             for row in 0..bh {
@@ -339,8 +509,8 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     return Err(bad("zero dimensions"));
                 }
                 if u16be(b, 0)? != 0
-                    || w > 16
-                    || h > 16
+                    || w > 1024
+                    || h > 1024
                     || u32be(b, 10)? != 0
                     || u32be(b, 14)? != 0
                     || u32be(b, 18)? as usize != w
@@ -351,7 +521,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     || b[36..] != [7, 1, 1]
                 {
                     return Err(unsupported(
-                        "SIZ: Gray8, zero origin, one tile, dimensions <=16 required",
+                        "SIZ: Gray8, zero origin, one tile, dimensions <=1024 required",
                     ));
                 }
                 if dimensions.is_some_and(|d| d != (w, h)) {
@@ -478,6 +648,24 @@ pub fn decode<B: BinaryReader>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shared_tag_tree_values() {
+        let mut bits = Bits::new(&[0xca, 0x20]);
+        let mut tree = TagTree::new(2, 2);
+        for (i, value) in [0, 2, 1, 3].into_iter().enumerate() {
+            for threshold in 1..=value {
+                assert!(!tree.below(i % 2, i / 2, threshold, &mut bits).unwrap());
+            }
+            assert!(tree.below(i % 2, i / 2, value + 1, &mut bits).unwrap());
+        }
+        assert_eq!((bits.pos, bits.left), (2, 5));
+        let mut bits = Bits::new(&[0xc8]);
+        let mut tree = TagTree::new(2, 2);
+        for (i, included) in [true, false, false, true].into_iter().enumerate() {
+            assert_eq!(tree.below(i % 2, i / 2, 1, &mut bits).unwrap(), included);
+        }
+        assert_eq!(bits.left, 3);
+    }
     #[test]
     fn lifting_edges() {
         assert_eq!(inverse_line(&[13, 2]), vec![12, 14]);

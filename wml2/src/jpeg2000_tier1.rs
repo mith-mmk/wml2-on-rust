@@ -158,6 +158,8 @@ impl Block {
     fn significant(&self, x: usize, y: usize, dx: isize, dy: isize) -> bool {
         self.neighbor(x, y, dx, dy).is_some_and(|i| self.sig[i])
     }
+    // Keep coefficient-loop bounds visible when forming neighbor contexts.
+    #[inline(always)]
     fn context(&self, x: usize, y: usize) -> usize {
         let mut h =
             usize::from(self.significant(x, y, -1, 0)) + usize::from(self.significant(x, y, 1, 0));

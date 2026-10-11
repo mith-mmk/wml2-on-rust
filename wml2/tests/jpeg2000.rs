@@ -253,3 +253,92 @@ fn feature_off() {
     );
     assert!(!wml2::get_decoder_extentions().iter().any(|v| v == "jp2"));
 }
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn multiple_blocks_match_oracle() {
+    for (w, h) in [
+        (17, 19),
+        (31, 33),
+        (65, 49),
+        (257, 129),
+        (1, 513),
+        (513, 1),
+        (1024, 1024),
+    ] {
+        for level in 0..if w > 1 && h > 1 { 2 } else { 1 } {
+            let patterns: &[&str] = if w == 1024 {
+                &["ramp"]
+            } else {
+                &["noise", "mixed"]
+            };
+            for pattern in patterns {
+                let stem = format!(
+                    "{}/tests/fixtures/review/jp2_multi_{w}x{h}_d{level}_{pattern}",
+                    env!("CARGO_MANIFEST_DIR")
+                );
+                let gray = std::fs::read(format!("{stem}.gray")).unwrap();
+                let expected: Vec<_> = gray.iter().flat_map(|&v| [v, v, v, 255]).collect();
+                for ext in ["j2k", "jp2"] {
+                    let data = std::fs::read(format!("{stem}.{ext}")).unwrap();
+                    let image = wml2::draw::image_load(&data)
+                        .unwrap_or_else(|e| panic!("{stem}.{ext}: {e}"));
+                    assert_eq!((image.width, image.height), (w, h));
+                    assert_eq!(image.buffer.unwrap(), expected, "{stem}.{ext}");
+                }
+            }
+        }
+    }
+}
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn multiple_block_bounds_and_limits() {
+    use wml2::draw::{image_from_with_limits, image_load};
+    use wml2::limits::DecodeLimits;
+    let raw = include_bytes!("fixtures/review/jp2_multi_65x49_d1_noise.j2k");
+    let mut limits = DecodeLimits::unlimited();
+    limits.pixels = 65 * 49;
+    limits.expanded_bytes = 65 * 49 * 64 + 8192;
+    assert!(image_from_with_limits(raw, limits).is_ok());
+    for field in 0..2 {
+        let mut limited = limits;
+        if field == 0 {
+            limited.pixels -= 1;
+        } else {
+            limited.expanded_bytes -= 1;
+        }
+        assert!(image_from_with_limits(raw, limited).is_err());
+    }
+    let siz = raw.windows(2).position(|b| b == [255, 0x51]).unwrap();
+    let cod = raw.windows(2).position(|b| b == [255, 0x52]).unwrap();
+    let sot = raw.windows(2).position(|b| b == [255, 0x90]).unwrap();
+    for dimension in [0u32, 1025, u32::MAX] {
+        let mut bad = raw.to_vec();
+        bad[siz + 6..siz + 10].copy_from_slice(&dimension.to_be_bytes());
+        bad[siz + 22..siz + 26].copy_from_slice(&dimension.to_be_bytes());
+        assert!(image_load(&bad).is_err());
+    }
+    for level in [2, 32, 255] {
+        let mut bad = raw.to_vec();
+        bad[cod + 9] = level;
+        assert!(
+            image_load(&bad)
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("Unsupported")
+        );
+    }
+    // Repair outer Psot/EOC so short packet headers and bodies reach the parser.
+    for n in [0, 1, 2, 3, 4, 8, 16, 32] {
+        let mut bad = raw[..sot + 14 + n].to_vec();
+        bad[sot + 6..sot + 10].copy_from_slice(&((14 + n) as u32).to_be_bytes());
+        bad.extend_from_slice(&[255, 217]);
+        assert!(image_load(&bad).is_err(), "tile payload {n}");
+    }
+    // Body/header corruption may encode another legal image; always require safety.
+    for n in 0..128 {
+        let mut bad = raw.to_vec();
+        bad[sot + 14 + n] ^= 255;
+        let _ = image_load(&bad);
+    }
+}

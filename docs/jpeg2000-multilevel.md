@@ -1,5 +1,8 @@
 # Reversible Gray JPEG2000: up to five decomposition levels
 
+This document records the verified Gray milestone. The subsequent supported
+RGB8/RCT profile and its checks are documented in [RGB8 extension](jpeg2000-rgb.md).
+
 This extends the native Rust decoder at `3c824158974a4cd6d2fce93d31e0d3e57eb658ec`.
 The supported profile now includes **0–5 reversible 5/3 decomposition levels**.
 Each image axis must be at least `2^levels` and at most 1024. Thus 4×4 at level 2,

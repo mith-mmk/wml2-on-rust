@@ -134,6 +134,7 @@ mod enabled {
         events: Vec<&'static str>,
         abort: Option<&'static str>,
         fail: Option<&'static str>,
+        rgb: bool,
     }
     impl Drawer {
         fn event(&mut self, name: &'static str) -> Result<Option<CallbackResponse>, Error> {
@@ -167,10 +168,19 @@ mod enabled {
             _: Option<DrawOptions>,
         ) -> Result<Option<CallbackResponse>, Error> {
             assert_eq!((x, y, w, h, b.len()), (0, 0, 16, 16, 1024));
-            assert!(
-                b.chunks_exact(4)
-                    .all(|p| p[0] == p[1] && p[1] == p[2] && p[3] == 255)
-            );
+            if self.rgb {
+                let source = include_bytes!("fixtures/review/jp2_rgb_16x16_d1_noise.rgb");
+                let expected: Vec<_> = source
+                    .chunks_exact(3)
+                    .flat_map(|p| [p[0], p[1], p[2], 255])
+                    .collect();
+                assert_eq!(b, expected);
+            } else {
+                assert!(
+                    b.chunks_exact(4)
+                        .all(|p| p[0] == p[1] && p[1] == p[2] && p[3] == 255)
+                );
+            }
             self.event("draw")
         }
         fn terminate(
@@ -231,6 +241,50 @@ mod enabled {
         let mut drawer = Drawer::default();
         assert!(decode(&RAW[..RAW.len() - 1], &mut drawer).is_err());
         assert!(drawer.events.is_empty());
+    }
+    #[test]
+    fn rgb_callbacks_and_invalid_inputs_emit_no_callbacks() {
+        for raw in [
+            &include_bytes!("fixtures/review/jp2_rgb_16x16_d1_noise_mct0.j2k")[..],
+            &include_bytes!("fixtures/review/jp2_rgb_16x16_d1_noise_mct1.j2k")[..],
+        ] {
+            for abort in [None, Some("init"), Some("draw")] {
+                let mut drawer = Drawer {
+                    rgb: true,
+                    abort,
+                    ..Default::default()
+                };
+                decode(raw, &mut drawer).unwrap();
+                assert_eq!(
+                    drawer.events,
+                    if abort == Some("init") {
+                        vec!["init", "terminate"]
+                    } else {
+                        vec!["init", "draw", "terminate"]
+                    }
+                );
+            }
+            for fail in ["init", "draw", "terminate"] {
+                let mut drawer = Drawer {
+                    rgb: true,
+                    fail: Some(fail),
+                    ..Default::default()
+                };
+                assert!(decode(raw, &mut drawer).is_err());
+                assert_eq!(drawer.events.last(), Some(&fail));
+            }
+            let cod = marker(raw, 0x52);
+            for (offset, value) in [(cod + 8, 2), (cod + 13, 0)] {
+                let mut bad = raw.to_vec();
+                bad[offset] = value;
+                let mut drawer = Drawer::default();
+                assert!(decode(&bad, &mut drawer).is_err());
+                assert!(drawer.events.is_empty());
+            }
+            let mut drawer = Drawer::default();
+            assert!(decode(&raw[..raw.len() - 1], &mut drawer).is_err());
+            assert!(drawer.events.is_empty());
+        }
     }
     #[test]
     fn deterministic_mutations_do_not_panic() {
@@ -486,5 +540,156 @@ fn rgb_oracle_pixels() {
         assert_eq!(image.buffer.unwrap(), expected, "{name}");
         checked += 1;
     }
-    assert_eq!(checked, 74);
+    assert_eq!(checked, 148);
+}
+
+#[cfg(feature = "jpeg2000")]
+mod rgb_bounds {
+    use wml2::draw::{image_from_with_limits, image_load};
+    use wml2::limits::DecodeLimits;
+    const RAW: &[u8] = include_bytes!("fixtures/review/jp2_rgb_16x16_d1_noise_mct1.j2k");
+    const JP2: &[u8] = include_bytes!("fixtures/review/jp2_rgb_16x16_d1_noise_mct1.jp2");
+    fn marker(data: &[u8], value: u8) -> usize {
+        data.windows(2).position(|b| b == [255, value]).unwrap()
+    }
+    fn with_qcc(data: &[u8], component: u8, quant: &[u8]) -> Vec<u8> {
+        let sot = marker(data, 0x90);
+        let mut result = data[..sot].to_vec();
+        result.extend_from_slice(&[255, 0x5d]);
+        result.extend_from_slice(&((quant.len() + 3) as u16).to_be_bytes());
+        result.push(component);
+        result.extend_from_slice(quant);
+        result.extend_from_slice(&data[sot..]);
+        result
+    }
+    #[test]
+    fn exact_rgb_resource_limits() {
+        for raw in [
+            RAW,
+            &include_bytes!("fixtures/review/jp2_rgb_16x16_d1_noise_mct0.j2k")[..],
+            &include_bytes!("fixtures/review/jp2_rgb_33x35_d5_noise_mct1.j2k")[..],
+        ] {
+            let siz = marker(raw, 0x51);
+            let w = u32::from_be_bytes(raw[siz + 6..siz + 10].try_into().unwrap()) as usize;
+            let h = u32::from_be_bytes(raw[siz + 10..siz + 14].try_into().unwrap()) as usize;
+            let mut limit = DecodeLimits::unlimited();
+            limit.input_bytes = raw.len();
+            limit.pixels = w * h;
+            limit.expanded_bytes = w * h * 64 * 3 + 8192;
+            limit.frames = 1;
+            limit.metadata_bytes = 64;
+            assert!(image_from_with_limits(raw, limit).is_ok());
+            for field in 0..5 {
+                let mut short = limit;
+                match field {
+                    0 => short.input_bytes -= 1,
+                    1 => short.pixels -= 1,
+                    2 => short.expanded_bytes -= 1,
+                    3 => short.frames = 0,
+                    _ => short.metadata_bytes = 0,
+                }
+                assert!(image_from_with_limits(raw, short).is_err(), "limit {field}");
+            }
+        }
+    }
+    #[test]
+    fn qcc_overrides_and_rejection() {
+        let qcd = marker(RAW, 0x5c);
+        let length = usize::from(u16::from_be_bytes(
+            RAW[qcd + 2..qcd + 4].try_into().unwrap(),
+        ));
+        let quant = &RAW[qcd + 4..qcd + 2 + length];
+        let expected = image_load(RAW).unwrap().buffer.unwrap();
+        let mut data = RAW.to_vec();
+        for component in 0..3 {
+            data = with_qcc(&data, component, quant);
+            assert_eq!(image_load(&data).unwrap().buffer.unwrap(), expected);
+        }
+        let mut invalid_default = data.clone();
+        invalid_default[qcd + 4] = 0x42;
+        assert!(image_load(&invalid_default).is_err());
+        assert!(image_load(&with_qcc(&data, 1, quant)).is_err());
+        for component in [3, 255] {
+            assert!(image_load(&with_qcc(RAW, component, quant)).is_err());
+        }
+        assert!(image_load(&with_qcc(RAW, 1, &[])).is_err());
+        assert!(image_load(&with_qcc(RAW, 1, &quant[..quant.len() - 1])).is_err());
+        for (index, value) in [(0, 0x42), (1, 0xff), (1, 0xf8)] {
+            let mut bad_quant = quant.to_vec();
+            bad_quant[index] = value;
+            assert!(image_load(&with_qcc(RAW, 1, &bad_quant)).is_err());
+        }
+        let gray = include_bytes!("fixtures/review/jp2_16x16_d1_noise.j2k");
+        assert!(image_load(&with_qcc(gray, 0, quant)).is_err());
+    }
+    #[test]
+    fn component_profiles_and_container_consistency() {
+        let siz = marker(RAW, 0x51);
+        let cod = marker(RAW, 0x52);
+        for component in 0..3 {
+            for (field, value) in [(0, 15), (0, 135), (1, 0), (1, 2), (2, 0), (2, 2)] {
+                let mut data = RAW.to_vec();
+                data[siz + 40 + 3 * component + field] = value;
+                assert!(image_load(&data).is_err());
+            }
+        }
+        for count in [0u16, 1, 2, 4, 65535] {
+            let mut data = RAW.to_vec();
+            data[siz + 38..siz + 40].copy_from_slice(&count.to_be_bytes());
+            assert!(image_load(&data).is_err());
+        }
+        for (offset, value) in [(cod + 8, 2), (cod + 9, 6), (cod + 13, 0)] {
+            let mut data = RAW.to_vec();
+            data[offset] = value;
+            assert!(image_load(&data).is_err());
+        }
+        for (offset, values) in [
+            (siz + 6, [0u32, 1025, u32::MAX]),
+            (siz + 10, [0u32, 1025, u32::MAX]),
+        ] {
+            for value in values {
+                let mut data = RAW.to_vec();
+                data[offset..offset + 4].copy_from_slice(&value.to_be_bytes());
+                assert!(image_load(&data).is_err());
+            }
+        }
+        let ihdr = JP2.windows(4).position(|b| b == b"ihdr").unwrap();
+        let colr = JP2.windows(4).position(|b| b == b"colr").unwrap();
+        for (offset, value) in [(ihdr + 13, 1), (ihdr + 11, 17), (colr + 10, 17)] {
+            let mut data = JP2.to_vec();
+            data[offset] = value;
+            assert!(image_load(&data).is_err());
+        }
+    }
+    #[test]
+    fn rgb_truncation_and_mutations() {
+        for raw in [RAW, JP2] {
+            for end in 0..raw.len() {
+                assert!(image_load(&raw[..end]).is_err(), "prefix {end}");
+            }
+            let mut extra = raw.to_vec();
+            extra.push(0);
+            assert!(image_load(&extra).is_err());
+            for offset in 0..raw.len() {
+                for mask in [1, 128, 255] {
+                    let mut data = raw.to_vec();
+                    data[offset] ^= mask;
+                    let _ = image_load(&data);
+                }
+            }
+        }
+        let raw = include_bytes!("fixtures/review/jp2_rgb_33x35_d5_noise_mct1.j2k");
+        let sot = marker(raw, 0x90);
+        for n in [0, 1, 2, 4, 8, 16, 32, 64] {
+            let mut data = raw[..sot + 14 + n].to_vec();
+            data[sot + 6..sot + 10].copy_from_slice(&((14 + n) as u32).to_be_bytes());
+            data.extend_from_slice(&[255, 217]);
+            assert!(image_load(&data).is_err());
+        }
+        for n in 0..128 {
+            let mut data = raw.to_vec();
+            data[sot + 14 + n] ^= 255;
+            let _ = image_load(&data);
+        }
+    }
 }

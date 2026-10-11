@@ -1,0 +1,7690 @@
+{
+  "seed": 200083,
+  "geometries": 128,
+  "comparisons": 768,
+  "matched": true,
+  "pillow": "12.3.0",
+  "openjpeg": "2.5.4",
+  "cases": [
+    {
+      "case": 0,
+      "width": 31,
+      "height": 6,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4bfa5e3f266e395c000af3ebe14c32c49a77c4ed98e28c9deb412ccbc93121ac"
+    },
+    {
+      "case": 0,
+      "width": 31,
+      "height": 6,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4bfa5e3f266e395c000af3ebe14c32c49a77c4ed98e28c9deb412ccbc93121ac"
+    },
+    {
+      "case": 0,
+      "width": 31,
+      "height": 6,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "96a50037f3d4d4f8fd648d0602cd0f4f70d1f3fb81c12b734279df11917b955e"
+    },
+    {
+      "case": 0,
+      "width": 31,
+      "height": 6,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "96a50037f3d4d4f8fd648d0602cd0f4f70d1f3fb81c12b734279df11917b955e"
+    },
+    {
+      "case": 0,
+      "width": 31,
+      "height": 6,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "54c3d162b9bb5ea2daf16120b2e80c46cee90673b9858b06cb9176d48bba0274"
+    },
+    {
+      "case": 0,
+      "width": 31,
+      "height": 6,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "54c3d162b9bb5ea2daf16120b2e80c46cee90673b9858b06cb9176d48bba0274"
+    },
+    {
+      "case": 1,
+      "width": 17,
+      "height": 84,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e701f58600721b09da4e1689a73dbf25d2a440dac63e93c1ad7fe2495b11f92c"
+    },
+    {
+      "case": 1,
+      "width": 17,
+      "height": 84,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e701f58600721b09da4e1689a73dbf25d2a440dac63e93c1ad7fe2495b11f92c"
+    },
+    {
+      "case": 1,
+      "width": 17,
+      "height": 84,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "3f7c9876ccbd04d20469c115a7484f88f5cc9394267ed3314e07103ca75cfbc5"
+    },
+    {
+      "case": 1,
+      "width": 17,
+      "height": 84,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "3f7c9876ccbd04d20469c115a7484f88f5cc9394267ed3314e07103ca75cfbc5"
+    },
+    {
+      "case": 1,
+      "width": 17,
+      "height": 84,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "243c19a1ce4d3e48231925e8b4e9e42fa6766fd7f901dfd0bac89e0a8f61ccc1"
+    },
+    {
+      "case": 1,
+      "width": 17,
+      "height": 84,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "243c19a1ce4d3e48231925e8b4e9e42fa6766fd7f901dfd0bac89e0a8f61ccc1"
+    },
+    {
+      "case": 2,
+      "width": 86,
+      "height": 85,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "937c4581d7f522dc68d260f67d0dfbbdf41595283fe69de82906bd28be950446"
+    },
+    {
+      "case": 2,
+      "width": 86,
+      "height": 85,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "937c4581d7f522dc68d260f67d0dfbbdf41595283fe69de82906bd28be950446"
+    },
+    {
+      "case": 2,
+      "width": 86,
+      "height": 85,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "ffbeedff2eaf8555010292b6a25ccc9e4f24d05203d68b10e288f351fb0f5adb"
+    },
+    {
+      "case": 2,
+      "width": 86,
+      "height": 85,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "ffbeedff2eaf8555010292b6a25ccc9e4f24d05203d68b10e288f351fb0f5adb"
+    },
+    {
+      "case": 2,
+      "width": 86,
+      "height": 85,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "295c3c14bfe682c326fbb5d2dd15d9f24bc72406d9604cdc743cc3bc99f54df7"
+    },
+    {
+      "case": 2,
+      "width": 86,
+      "height": 85,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "295c3c14bfe682c326fbb5d2dd15d9f24bc72406d9604cdc743cc3bc99f54df7"
+    },
+    {
+      "case": 3,
+      "width": 6,
+      "height": 33,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "80fc7d2fac248004c10a47804e3b04d0e7b1eaf37b4ecee5fa2d1d5d6d91643e"
+    },
+    {
+      "case": 3,
+      "width": 6,
+      "height": 33,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "80fc7d2fac248004c10a47804e3b04d0e7b1eaf37b4ecee5fa2d1d5d6d91643e"
+    },
+    {
+      "case": 3,
+      "width": 6,
+      "height": 33,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "d80e525aa01bacb93b4ff114947f19d809d9234336b24356089ed7e6e4a11853"
+    },
+    {
+      "case": 3,
+      "width": 6,
+      "height": 33,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "d80e525aa01bacb93b4ff114947f19d809d9234336b24356089ed7e6e4a11853"
+    },
+    {
+      "case": 3,
+      "width": 6,
+      "height": 33,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b6487274a4274fb871a69782b4065e252c0664a1556368c624143c0ee1249040"
+    },
+    {
+      "case": 3,
+      "width": 6,
+      "height": 33,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b6487274a4274fb871a69782b4065e252c0664a1556368c624143c0ee1249040"
+    },
+    {
+      "case": 4,
+      "width": 34,
+      "height": 76,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "3195ecc6a1740e29f75da71bda5249425dff611310dae0e15c158d02b08f476f"
+    },
+    {
+      "case": 4,
+      "width": 34,
+      "height": 76,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "3195ecc6a1740e29f75da71bda5249425dff611310dae0e15c158d02b08f476f"
+    },
+    {
+      "case": 4,
+      "width": 34,
+      "height": 76,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "f97f5c54fdc1a14c13a7a6cc86ef784cdbb57b1dc6ffb47c6991026cb45e4e2a"
+    },
+    {
+      "case": 4,
+      "width": 34,
+      "height": 76,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "f97f5c54fdc1a14c13a7a6cc86ef784cdbb57b1dc6ffb47c6991026cb45e4e2a"
+    },
+    {
+      "case": 4,
+      "width": 34,
+      "height": 76,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "724fde122d37f50d7dfc9742ab4c79d842020c39a3371b5942d3d0c391e73924"
+    },
+    {
+      "case": 4,
+      "width": 34,
+      "height": 76,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "724fde122d37f50d7dfc9742ab4c79d842020c39a3371b5942d3d0c391e73924"
+    },
+    {
+      "case": 5,
+      "width": 66,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d435b08930eedac22e9cb1d979ca5ce6a4104ae5a2fc69bad27ad235483dc63f"
+    },
+    {
+      "case": 5,
+      "width": 66,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d435b08930eedac22e9cb1d979ca5ce6a4104ae5a2fc69bad27ad235483dc63f"
+    },
+    {
+      "case": 5,
+      "width": 66,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "1a60277d3ddac8f89c9e5c62ca417524aef7bf931d287f0af003c0f62269abd5"
+    },
+    {
+      "case": 5,
+      "width": 66,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "1a60277d3ddac8f89c9e5c62ca417524aef7bf931d287f0af003c0f62269abd5"
+    },
+    {
+      "case": 5,
+      "width": 66,
+      "height": 23,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e53cf4bfe9a76ab599dc3c9f0b233e765d15a3a078b45c2c920a104878cddb9e"
+    },
+    {
+      "case": 5,
+      "width": 66,
+      "height": 23,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e53cf4bfe9a76ab599dc3c9f0b233e765d15a3a078b45c2c920a104878cddb9e"
+    },
+    {
+      "case": 6,
+      "width": 8,
+      "height": 81,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "28fdbe8c3613b3cd5d653fa73346ff260f86e72182597842832c3214eda15b71"
+    },
+    {
+      "case": 6,
+      "width": 8,
+      "height": 81,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "28fdbe8c3613b3cd5d653fa73346ff260f86e72182597842832c3214eda15b71"
+    },
+    {
+      "case": 6,
+      "width": 8,
+      "height": 81,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "09a952112fbe63317de8c3789347d9925ace896d76006da68396c6336e8d93e3"
+    },
+    {
+      "case": 6,
+      "width": 8,
+      "height": 81,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "09a952112fbe63317de8c3789347d9925ace896d76006da68396c6336e8d93e3"
+    },
+    {
+      "case": 6,
+      "width": 8,
+      "height": 81,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "9f79482e4f4bd1a179f5ae927bf27ea600fb3adc92cedcd5e20197b6fd1a3fc9"
+    },
+    {
+      "case": 6,
+      "width": 8,
+      "height": 81,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "9f79482e4f4bd1a179f5ae927bf27ea600fb3adc92cedcd5e20197b6fd1a3fc9"
+    },
+    {
+      "case": 7,
+      "width": 31,
+      "height": 59,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "9710945448ba42f272a19e93a634c0e29844bf1660cca5874ac9d6cd44d05a1d"
+    },
+    {
+      "case": 7,
+      "width": 31,
+      "height": 59,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "9710945448ba42f272a19e93a634c0e29844bf1660cca5874ac9d6cd44d05a1d"
+    },
+    {
+      "case": 7,
+      "width": 31,
+      "height": 59,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "715cd4e1656315f4fab765f60483a4cc9f7f0a8b638529597ab0f9f1c2069cbe"
+    },
+    {
+      "case": 7,
+      "width": 31,
+      "height": 59,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "715cd4e1656315f4fab765f60483a4cc9f7f0a8b638529597ab0f9f1c2069cbe"
+    },
+    {
+      "case": 7,
+      "width": 31,
+      "height": 59,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1419a6a6d686b4d4d97ea157993eac8ad860fffccb67b176f20263c4d6eeb63a"
+    },
+    {
+      "case": 7,
+      "width": 31,
+      "height": 59,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1419a6a6d686b4d4d97ea157993eac8ad860fffccb67b176f20263c4d6eeb63a"
+    },
+    {
+      "case": 8,
+      "width": 42,
+      "height": 10,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "337cf8d55e77f383bbf44e95f81e2d597375d6922bd15e56c83c823a27c9053e"
+    },
+    {
+      "case": 8,
+      "width": 42,
+      "height": 10,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "337cf8d55e77f383bbf44e95f81e2d597375d6922bd15e56c83c823a27c9053e"
+    },
+    {
+      "case": 8,
+      "width": 42,
+      "height": 10,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "858937152b6c8604ca27b170c35e1365e240c6fdff83703c7d8978cef891206b"
+    },
+    {
+      "case": 8,
+      "width": 42,
+      "height": 10,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "858937152b6c8604ca27b170c35e1365e240c6fdff83703c7d8978cef891206b"
+    },
+    {
+      "case": 8,
+      "width": 42,
+      "height": 10,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "20417cf79bd461ef26418c4296cd96418628358128b050aa9f1302b6bb5d14c8"
+    },
+    {
+      "case": 8,
+      "width": 42,
+      "height": 10,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "20417cf79bd461ef26418c4296cd96418628358128b050aa9f1302b6bb5d14c8"
+    },
+    {
+      "case": 9,
+      "width": 54,
+      "height": 14,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a83b1efa222a3bacd6d53b301b7f9eaee73bef3e6a5aad09ab16984ebe5395f8"
+    },
+    {
+      "case": 9,
+      "width": 54,
+      "height": 14,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a83b1efa222a3bacd6d53b301b7f9eaee73bef3e6a5aad09ab16984ebe5395f8"
+    },
+    {
+      "case": 9,
+      "width": 54,
+      "height": 14,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "6ccffbd29f4269e0b312c058f73d8891cfa5e98dfd83e74a1e058cd891989dff"
+    },
+    {
+      "case": 9,
+      "width": 54,
+      "height": 14,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "6ccffbd29f4269e0b312c058f73d8891cfa5e98dfd83e74a1e058cd891989dff"
+    },
+    {
+      "case": 9,
+      "width": 54,
+      "height": 14,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "5875ddce8643fcb50607e3072a598f37b516092b55f16cbb5cf8a67d5e50d2a1"
+    },
+    {
+      "case": 9,
+      "width": 54,
+      "height": 14,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "5875ddce8643fcb50607e3072a598f37b516092b55f16cbb5cf8a67d5e50d2a1"
+    },
+    {
+      "case": 10,
+      "width": 14,
+      "height": 13,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "ccf86a5ab5d3548fe4c98a083ec5c0188562f94507cf700d4c3fae48c66f8fbd"
+    },
+    {
+      "case": 10,
+      "width": 14,
+      "height": 13,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "ccf86a5ab5d3548fe4c98a083ec5c0188562f94507cf700d4c3fae48c66f8fbd"
+    },
+    {
+      "case": 10,
+      "width": 14,
+      "height": 13,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "18815ab266109edf0e9729a3f1e5cb75daaf8684dfb8b7b40971a80bf19d99d5"
+    },
+    {
+      "case": 10,
+      "width": 14,
+      "height": 13,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "18815ab266109edf0e9729a3f1e5cb75daaf8684dfb8b7b40971a80bf19d99d5"
+    },
+    {
+      "case": 10,
+      "width": 14,
+      "height": 13,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "fc315059a5504fc7a02e19007e9514b4855c31f73cb74b44806a0498c1d7d5ac"
+    },
+    {
+      "case": 10,
+      "width": 14,
+      "height": 13,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "fc315059a5504fc7a02e19007e9514b4855c31f73cb74b44806a0498c1d7d5ac"
+    },
+    {
+      "case": 11,
+      "width": 31,
+      "height": 41,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c3d1540e6b615729736ae42d5ce924c51d07232cf4ad3491af4d69d541a337a2"
+    },
+    {
+      "case": 11,
+      "width": 31,
+      "height": 41,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c3d1540e6b615729736ae42d5ce924c51d07232cf4ad3491af4d69d541a337a2"
+    },
+    {
+      "case": 11,
+      "width": 31,
+      "height": 41,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "e39a212e838c16235695ae2009e68f31e39a2b4e740a7b015941bdd097c2867d"
+    },
+    {
+      "case": 11,
+      "width": 31,
+      "height": 41,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "e39a212e838c16235695ae2009e68f31e39a2b4e740a7b015941bdd097c2867d"
+    },
+    {
+      "case": 11,
+      "width": 31,
+      "height": 41,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c315ce629349a074a65181c3d0917e79a2546d4ac63c0f6cb85da09154a8838e"
+    },
+    {
+      "case": 11,
+      "width": 31,
+      "height": 41,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c315ce629349a074a65181c3d0917e79a2546d4ac63c0f6cb85da09154a8838e"
+    },
+    {
+      "case": 12,
+      "width": 52,
+      "height": 71,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1064a59d5fb309f1373ae2fe3ddf7e880ef89b4a6354858b5ab1b22b05433f55"
+    },
+    {
+      "case": 12,
+      "width": 52,
+      "height": 71,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1064a59d5fb309f1373ae2fe3ddf7e880ef89b4a6354858b5ab1b22b05433f55"
+    },
+    {
+      "case": 12,
+      "width": 52,
+      "height": 71,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "e351501d489d758a060a0e7b0bd5a0ee67024ae8ae913e434570778188296d00"
+    },
+    {
+      "case": 12,
+      "width": 52,
+      "height": 71,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "e351501d489d758a060a0e7b0bd5a0ee67024ae8ae913e434570778188296d00"
+    },
+    {
+      "case": 12,
+      "width": 52,
+      "height": 71,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e15ffe11f48996a731ab66eb2c5f3c68f58c39df75908e1a18f1f4cd14e486b5"
+    },
+    {
+      "case": 12,
+      "width": 52,
+      "height": 71,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e15ffe11f48996a731ab66eb2c5f3c68f58c39df75908e1a18f1f4cd14e486b5"
+    },
+    {
+      "case": 13,
+      "width": 48,
+      "height": 62,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "26fb6b5ac696461d74d3c88aa21f0c18710b0a976915965af7ceb3bdf38d5c69"
+    },
+    {
+      "case": 13,
+      "width": 48,
+      "height": 62,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "26fb6b5ac696461d74d3c88aa21f0c18710b0a976915965af7ceb3bdf38d5c69"
+    },
+    {
+      "case": 13,
+      "width": 48,
+      "height": 62,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "64b71f28c1730b4d38a45f9b41106f4b830dc76a23104ac1466ff02e745b1b71"
+    },
+    {
+      "case": 13,
+      "width": 48,
+      "height": 62,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "64b71f28c1730b4d38a45f9b41106f4b830dc76a23104ac1466ff02e745b1b71"
+    },
+    {
+      "case": 13,
+      "width": 48,
+      "height": 62,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2799206dbd12d519c6946b6f7f2e8d3d86a375ad6b3928062b8d3c7a58c35880"
+    },
+    {
+      "case": 13,
+      "width": 48,
+      "height": 62,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2799206dbd12d519c6946b6f7f2e8d3d86a375ad6b3928062b8d3c7a58c35880"
+    },
+    {
+      "case": 14,
+      "width": 34,
+      "height": 83,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "fa7360572796c3bcb2c95299ef5f7246e8044faaeb2249eca3a253e4e9070bba"
+    },
+    {
+      "case": 14,
+      "width": 34,
+      "height": 83,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "fa7360572796c3bcb2c95299ef5f7246e8044faaeb2249eca3a253e4e9070bba"
+    },
+    {
+      "case": 14,
+      "width": 34,
+      "height": 83,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "15539878370e5e6ee2bcbd1cbc4b0e945c668e7eab61773b374872046a2a636e"
+    },
+    {
+      "case": 14,
+      "width": 34,
+      "height": 83,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "15539878370e5e6ee2bcbd1cbc4b0e945c668e7eab61773b374872046a2a636e"
+    },
+    {
+      "case": 14,
+      "width": 34,
+      "height": 83,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "26120c902888ce3d0b07c94462e3a36376c54a02ab15d756795ed4e994cee886"
+    },
+    {
+      "case": 14,
+      "width": 34,
+      "height": 83,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "26120c902888ce3d0b07c94462e3a36376c54a02ab15d756795ed4e994cee886"
+    },
+    {
+      "case": 15,
+      "width": 40,
+      "height": 92,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "abf774d4d2555236ce74476845c2460a94a59f93487189399cd9924a488ebd1a"
+    },
+    {
+      "case": 15,
+      "width": 40,
+      "height": 92,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "abf774d4d2555236ce74476845c2460a94a59f93487189399cd9924a488ebd1a"
+    },
+    {
+      "case": 15,
+      "width": 40,
+      "height": 92,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "c7cc22dc7e8e0fa8ecddb0de5388916df45cbb343463b168fd58cf158c6b4178"
+    },
+    {
+      "case": 15,
+      "width": 40,
+      "height": 92,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "c7cc22dc7e8e0fa8ecddb0de5388916df45cbb343463b168fd58cf158c6b4178"
+    },
+    {
+      "case": 15,
+      "width": 40,
+      "height": 92,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "71a34b6d20ff9d9f0e4fb4ba1a0bb6655a2cd657a45866326df85f486ae7890e"
+    },
+    {
+      "case": 15,
+      "width": 40,
+      "height": 92,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "71a34b6d20ff9d9f0e4fb4ba1a0bb6655a2cd657a45866326df85f486ae7890e"
+    },
+    {
+      "case": 16,
+      "width": 1,
+      "height": 36,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "ab55003d8ff2e29604b6e68f9b2ed1c6d87bb69ec9236a8b99e05f9bed67e466"
+    },
+    {
+      "case": 16,
+      "width": 1,
+      "height": 36,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "ab55003d8ff2e29604b6e68f9b2ed1c6d87bb69ec9236a8b99e05f9bed67e466"
+    },
+    {
+      "case": 16,
+      "width": 1,
+      "height": 36,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "65d2c5b922ce647a7bfab1c105e8e967b1f296de3fde13328ae5cb2b43632b1e"
+    },
+    {
+      "case": 16,
+      "width": 1,
+      "height": 36,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "65d2c5b922ce647a7bfab1c105e8e967b1f296de3fde13328ae5cb2b43632b1e"
+    },
+    {
+      "case": 16,
+      "width": 1,
+      "height": 36,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1c385f4d175d290429486be853507fec19979d1a5ef0191e34b217d019432059"
+    },
+    {
+      "case": 16,
+      "width": 1,
+      "height": 36,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1c385f4d175d290429486be853507fec19979d1a5ef0191e34b217d019432059"
+    },
+    {
+      "case": 17,
+      "width": 49,
+      "height": 85,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a29d08a9cd4a0766cf45e36d56a21b6650909aae377ec0da278b19aaf0d95fc4"
+    },
+    {
+      "case": 17,
+      "width": 49,
+      "height": 85,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a29d08a9cd4a0766cf45e36d56a21b6650909aae377ec0da278b19aaf0d95fc4"
+    },
+    {
+      "case": 17,
+      "width": 49,
+      "height": 85,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "c97963705389ce4d48f2f38b12829ed05ea65e8b8ca5cfec7375e845940deee4"
+    },
+    {
+      "case": 17,
+      "width": 49,
+      "height": 85,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "c97963705389ce4d48f2f38b12829ed05ea65e8b8ca5cfec7375e845940deee4"
+    },
+    {
+      "case": 17,
+      "width": 49,
+      "height": 85,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2769cc3e363e0ff6fd046127e28c42ca936f52ca7d2d3d8b95cf1b3da96292db"
+    },
+    {
+      "case": 17,
+      "width": 49,
+      "height": 85,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2769cc3e363e0ff6fd046127e28c42ca936f52ca7d2d3d8b95cf1b3da96292db"
+    },
+    {
+      "case": 18,
+      "width": 59,
+      "height": 7,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4959a7de45302875bc75b78c1dbde0ed4ba23b7affe68764531d0cacb06133ba"
+    },
+    {
+      "case": 18,
+      "width": 59,
+      "height": 7,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4959a7de45302875bc75b78c1dbde0ed4ba23b7affe68764531d0cacb06133ba"
+    },
+    {
+      "case": 18,
+      "width": 59,
+      "height": 7,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "2909bf6720cece7faaa7df2fc340022ac04622bc19c1bfa148b982abeb641c0a"
+    },
+    {
+      "case": 18,
+      "width": 59,
+      "height": 7,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "2909bf6720cece7faaa7df2fc340022ac04622bc19c1bfa148b982abeb641c0a"
+    },
+    {
+      "case": 18,
+      "width": 59,
+      "height": 7,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "9e1e6e1ffe17a65b3ed24eac72260b256aad0b2fbed2354b3a6e3cee2289f4c2"
+    },
+    {
+      "case": 18,
+      "width": 59,
+      "height": 7,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "9e1e6e1ffe17a65b3ed24eac72260b256aad0b2fbed2354b3a6e3cee2289f4c2"
+    },
+    {
+      "case": 19,
+      "width": 83,
+      "height": 88,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e56fd9faf96bfbcb8bc6edbcd35bc8fed9fb91532622bbdff9db54b6a6b9e1ae"
+    },
+    {
+      "case": 19,
+      "width": 83,
+      "height": 88,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e56fd9faf96bfbcb8bc6edbcd35bc8fed9fb91532622bbdff9db54b6a6b9e1ae"
+    },
+    {
+      "case": 19,
+      "width": 83,
+      "height": 88,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "1e1ccb34351ec478387097c68250e9284b3d69151953f9f53464949b97e6901e"
+    },
+    {
+      "case": 19,
+      "width": 83,
+      "height": 88,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "1e1ccb34351ec478387097c68250e9284b3d69151953f9f53464949b97e6901e"
+    },
+    {
+      "case": 19,
+      "width": 83,
+      "height": 88,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "23b32e86025a68da6b551d22cd19d9dbae42f57955dde431c5a0723652804469"
+    },
+    {
+      "case": 19,
+      "width": 83,
+      "height": 88,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "23b32e86025a68da6b551d22cd19d9dbae42f57955dde431c5a0723652804469"
+    },
+    {
+      "case": 20,
+      "width": 95,
+      "height": 81,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "79a54511bb6dd11328924636f8fb0ddac435e8f8f1275fb0a59596f105e0abfa"
+    },
+    {
+      "case": 20,
+      "width": 95,
+      "height": 81,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "79a54511bb6dd11328924636f8fb0ddac435e8f8f1275fb0a59596f105e0abfa"
+    },
+    {
+      "case": 20,
+      "width": 95,
+      "height": 81,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "25f6dd54d4dc734d3d847a23706f71d5f3ffc0d94e3ba2c92a6109ce7e9f06ea"
+    },
+    {
+      "case": 20,
+      "width": 95,
+      "height": 81,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "25f6dd54d4dc734d3d847a23706f71d5f3ffc0d94e3ba2c92a6109ce7e9f06ea"
+    },
+    {
+      "case": 20,
+      "width": 95,
+      "height": 81,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a60d976e5dabc4e456701d3804adcaf813ca7f73444071c18ce0dcbfbdb182cc"
+    },
+    {
+      "case": 20,
+      "width": 95,
+      "height": 81,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a60d976e5dabc4e456701d3804adcaf813ca7f73444071c18ce0dcbfbdb182cc"
+    },
+    {
+      "case": 21,
+      "width": 17,
+      "height": 38,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "f5a64de4f583feaaa1cd873d5e51122bf57e10e9b4a7e4aec583bc0997429cc7"
+    },
+    {
+      "case": 21,
+      "width": 17,
+      "height": 38,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "f5a64de4f583feaaa1cd873d5e51122bf57e10e9b4a7e4aec583bc0997429cc7"
+    },
+    {
+      "case": 21,
+      "width": 17,
+      "height": 38,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "c9ba9601e0765c48203b8d2b60fce5f2e1981142004cb3e9fd9bbe06f1a1de04"
+    },
+    {
+      "case": 21,
+      "width": 17,
+      "height": 38,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "c9ba9601e0765c48203b8d2b60fce5f2e1981142004cb3e9fd9bbe06f1a1de04"
+    },
+    {
+      "case": 21,
+      "width": 17,
+      "height": 38,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c7b19efed9f9046b04c6cd32621ea55ad1a2bedfed237997b68caed3e5fb14f6"
+    },
+    {
+      "case": 21,
+      "width": 17,
+      "height": 38,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c7b19efed9f9046b04c6cd32621ea55ad1a2bedfed237997b68caed3e5fb14f6"
+    },
+    {
+      "case": 22,
+      "width": 56,
+      "height": 77,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2d0898b574f39f85f93cb440c1af5381a706fca6bf1f152cae1aaaee6dea6cf6"
+    },
+    {
+      "case": 22,
+      "width": 56,
+      "height": 77,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2d0898b574f39f85f93cb440c1af5381a706fca6bf1f152cae1aaaee6dea6cf6"
+    },
+    {
+      "case": 22,
+      "width": 56,
+      "height": 77,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "a107b416af85247ad9e69718fdbdd14b4e67115a36efaae7166188799c9d306c"
+    },
+    {
+      "case": 22,
+      "width": 56,
+      "height": 77,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "a107b416af85247ad9e69718fdbdd14b4e67115a36efaae7166188799c9d306c"
+    },
+    {
+      "case": 22,
+      "width": 56,
+      "height": 77,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d4e748a5bdfc9d8314cfdd4e0c8020bf1ce18015a000c751b49ce89b52c14c23"
+    },
+    {
+      "case": 22,
+      "width": 56,
+      "height": 77,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d4e748a5bdfc9d8314cfdd4e0c8020bf1ce18015a000c751b49ce89b52c14c23"
+    },
+    {
+      "case": 23,
+      "width": 41,
+      "height": 9,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7c2d5474aa0c984a68ac7f4e5f6fcbf0e5eb340874f604420873ed0278b5b923"
+    },
+    {
+      "case": 23,
+      "width": 41,
+      "height": 9,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7c2d5474aa0c984a68ac7f4e5f6fcbf0e5eb340874f604420873ed0278b5b923"
+    },
+    {
+      "case": 23,
+      "width": 41,
+      "height": 9,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "cbff14dc4e3d21dd6e217f916ee32917b490aca8f3374292f7dd18851e8ae9a6"
+    },
+    {
+      "case": 23,
+      "width": 41,
+      "height": 9,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "cbff14dc4e3d21dd6e217f916ee32917b490aca8f3374292f7dd18851e8ae9a6"
+    },
+    {
+      "case": 23,
+      "width": 41,
+      "height": 9,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a9527953abd18e54260985c916ae0446a72568cd4026b7441853a3ef47b1949a"
+    },
+    {
+      "case": 23,
+      "width": 41,
+      "height": 9,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a9527953abd18e54260985c916ae0446a72568cd4026b7441853a3ef47b1949a"
+    },
+    {
+      "case": 24,
+      "width": 52,
+      "height": 55,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "f6aea7ae60a8c25827997ae9e3fb477bc4738a12d85951c702637cef8468dc3e"
+    },
+    {
+      "case": 24,
+      "width": 52,
+      "height": 55,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "f6aea7ae60a8c25827997ae9e3fb477bc4738a12d85951c702637cef8468dc3e"
+    },
+    {
+      "case": 24,
+      "width": 52,
+      "height": 55,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "742dda60ee302a19886d8967369a7f534669d70957b9dfea9bfd1c2562127ceb"
+    },
+    {
+      "case": 24,
+      "width": 52,
+      "height": 55,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "742dda60ee302a19886d8967369a7f534669d70957b9dfea9bfd1c2562127ceb"
+    },
+    {
+      "case": 24,
+      "width": 52,
+      "height": 55,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e9b0ce13041c1da5634943f3aa162c756b37ae5501dc1fe1ea7a498821f006c8"
+    },
+    {
+      "case": 24,
+      "width": 52,
+      "height": 55,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e9b0ce13041c1da5634943f3aa162c756b37ae5501dc1fe1ea7a498821f006c8"
+    },
+    {
+      "case": 25,
+      "width": 39,
+      "height": 64,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "20a1a788b3dc86ebef1b4954356a8e7f6f302be81a747f865e44e44bd165b34c"
+    },
+    {
+      "case": 25,
+      "width": 39,
+      "height": 64,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "20a1a788b3dc86ebef1b4954356a8e7f6f302be81a747f865e44e44bd165b34c"
+    },
+    {
+      "case": 25,
+      "width": 39,
+      "height": 64,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "c50db12fcacd366c95599b10a474d6c7f5181e9bee9446688d3dc6f2ef3a3f3f"
+    },
+    {
+      "case": 25,
+      "width": 39,
+      "height": 64,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "c50db12fcacd366c95599b10a474d6c7f5181e9bee9446688d3dc6f2ef3a3f3f"
+    },
+    {
+      "case": 25,
+      "width": 39,
+      "height": 64,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7897a1d1ecdc0d3f560aa0b983339672b81104fa9c349f77368ae0ec186d4094"
+    },
+    {
+      "case": 25,
+      "width": 39,
+      "height": 64,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7897a1d1ecdc0d3f560aa0b983339672b81104fa9c349f77368ae0ec186d4094"
+    },
+    {
+      "case": 26,
+      "width": 53,
+      "height": 93,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "402521b130a8145c661f4ef96439ded51124520fbe2bb7880dc0715ca5a828eb"
+    },
+    {
+      "case": 26,
+      "width": 53,
+      "height": 93,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "402521b130a8145c661f4ef96439ded51124520fbe2bb7880dc0715ca5a828eb"
+    },
+    {
+      "case": 26,
+      "width": 53,
+      "height": 93,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "0dd9e71ac7046ad2a337d2d1ca9019c37f1865d1e1e9a84f04bf1862e48cdfec"
+    },
+    {
+      "case": 26,
+      "width": 53,
+      "height": 93,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "0dd9e71ac7046ad2a337d2d1ca9019c37f1865d1e1e9a84f04bf1862e48cdfec"
+    },
+    {
+      "case": 26,
+      "width": 53,
+      "height": 93,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "97724551a283acbbbcce8285cd33c68eed7e85cdde3f1b06f6de1f773b766a01"
+    },
+    {
+      "case": 26,
+      "width": 53,
+      "height": 93,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "97724551a283acbbbcce8285cd33c68eed7e85cdde3f1b06f6de1f773b766a01"
+    },
+    {
+      "case": 27,
+      "width": 94,
+      "height": 1,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "bc3ec5f24749398a066649c069bb439ba13b91437c83c067f3fe48eac7b1feb1"
+    },
+    {
+      "case": 27,
+      "width": 94,
+      "height": 1,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "bc3ec5f24749398a066649c069bb439ba13b91437c83c067f3fe48eac7b1feb1"
+    },
+    {
+      "case": 27,
+      "width": 94,
+      "height": 1,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "2b34f47127034b8e48c18cbe981b5f889d5725dae48dccaa7971fe0df3a62299"
+    },
+    {
+      "case": 27,
+      "width": 94,
+      "height": 1,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "2b34f47127034b8e48c18cbe981b5f889d5725dae48dccaa7971fe0df3a62299"
+    },
+    {
+      "case": 27,
+      "width": 94,
+      "height": 1,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "f6e8c47fd0f665219acfb16368e59487e443ea95d30bbd7b035b6c4fb09d37ef"
+    },
+    {
+      "case": 27,
+      "width": 94,
+      "height": 1,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "f6e8c47fd0f665219acfb16368e59487e443ea95d30bbd7b035b6c4fb09d37ef"
+    },
+    {
+      "case": 28,
+      "width": 50,
+      "height": 22,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "87d4bc8994a2ac9aaed2951ace70fbf4c2dc6e1eecb8d9faf307958efe432993"
+    },
+    {
+      "case": 28,
+      "width": 50,
+      "height": 22,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "87d4bc8994a2ac9aaed2951ace70fbf4c2dc6e1eecb8d9faf307958efe432993"
+    },
+    {
+      "case": 28,
+      "width": 50,
+      "height": 22,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "aecd7d248b04d624eb8370e4515bed6969a28752c010f6fd5c80c953d1e5401f"
+    },
+    {
+      "case": 28,
+      "width": 50,
+      "height": 22,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "aecd7d248b04d624eb8370e4515bed6969a28752c010f6fd5c80c953d1e5401f"
+    },
+    {
+      "case": 28,
+      "width": 50,
+      "height": 22,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b28c85c3bdd05720dc7e541a7f09e5c5eda145124bf5baf968dfeade0134133d"
+    },
+    {
+      "case": 28,
+      "width": 50,
+      "height": 22,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b28c85c3bdd05720dc7e541a7f09e5c5eda145124bf5baf968dfeade0134133d"
+    },
+    {
+      "case": 29,
+      "width": 83,
+      "height": 40,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "14923594bd226e8f64d62d8c6e93860ab22b6b422dc8b8d311121ef201ea0442"
+    },
+    {
+      "case": 29,
+      "width": 83,
+      "height": 40,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "14923594bd226e8f64d62d8c6e93860ab22b6b422dc8b8d311121ef201ea0442"
+    },
+    {
+      "case": 29,
+      "width": 83,
+      "height": 40,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "0ae440842e10cb4967ad53fcf9b2820ad718037abeb5385b88f29254d9764930"
+    },
+    {
+      "case": 29,
+      "width": 83,
+      "height": 40,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "0ae440842e10cb4967ad53fcf9b2820ad718037abeb5385b88f29254d9764930"
+    },
+    {
+      "case": 29,
+      "width": 83,
+      "height": 40,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "695b27c30fe6d0d4cd5e02439ed028aacd310f6fe420933d62eb1096d0e5e95b"
+    },
+    {
+      "case": 29,
+      "width": 83,
+      "height": 40,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "695b27c30fe6d0d4cd5e02439ed028aacd310f6fe420933d62eb1096d0e5e95b"
+    },
+    {
+      "case": 30,
+      "width": 8,
+      "height": 44,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "fc066c20286cacc20e31b7a9e159079d9159abf144b673ec87317331059528e3"
+    },
+    {
+      "case": 30,
+      "width": 8,
+      "height": 44,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "fc066c20286cacc20e31b7a9e159079d9159abf144b673ec87317331059528e3"
+    },
+    {
+      "case": 30,
+      "width": 8,
+      "height": 44,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "0be50aec2474e64cf02c2dbc872fcb143a2bd4e671c6d0feca9f9e63ee2d8654"
+    },
+    {
+      "case": 30,
+      "width": 8,
+      "height": 44,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "0be50aec2474e64cf02c2dbc872fcb143a2bd4e671c6d0feca9f9e63ee2d8654"
+    },
+    {
+      "case": 30,
+      "width": 8,
+      "height": 44,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "160cbe1e8298a95daa415693e42f97718eb67b2a6d107c06f21d8efe23e3e67d"
+    },
+    {
+      "case": 30,
+      "width": 8,
+      "height": 44,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "160cbe1e8298a95daa415693e42f97718eb67b2a6d107c06f21d8efe23e3e67d"
+    },
+    {
+      "case": 31,
+      "width": 92,
+      "height": 7,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "64f350e3873122363964c98cd0ce219190b08d1a1032c80f15c0df292d0e52ce"
+    },
+    {
+      "case": 31,
+      "width": 92,
+      "height": 7,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "64f350e3873122363964c98cd0ce219190b08d1a1032c80f15c0df292d0e52ce"
+    },
+    {
+      "case": 31,
+      "width": 92,
+      "height": 7,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "65f8e06a0ca119b12031e22347bdc886a19ef97a9db83d678baf0c3c3aa4a3c7"
+    },
+    {
+      "case": 31,
+      "width": 92,
+      "height": 7,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "65f8e06a0ca119b12031e22347bdc886a19ef97a9db83d678baf0c3c3aa4a3c7"
+    },
+    {
+      "case": 31,
+      "width": 92,
+      "height": 7,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d3767d10086532f8752573a85d77808dcb19615ae1387800a788e64f8d94ff53"
+    },
+    {
+      "case": 31,
+      "width": 92,
+      "height": 7,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d3767d10086532f8752573a85d77808dcb19615ae1387800a788e64f8d94ff53"
+    },
+    {
+      "case": 32,
+      "width": 42,
+      "height": 91,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c1364a594c1498273c0bc2fc320b37d416bc0c43b0a529125da10c0d226112eb"
+    },
+    {
+      "case": 32,
+      "width": 42,
+      "height": 91,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c1364a594c1498273c0bc2fc320b37d416bc0c43b0a529125da10c0d226112eb"
+    },
+    {
+      "case": 32,
+      "width": 42,
+      "height": 91,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "4b23f2fd45b1c2bf42d18088f321d8a8e1f0ab4f635cce023b3583c325e85626"
+    },
+    {
+      "case": 32,
+      "width": 42,
+      "height": 91,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "4b23f2fd45b1c2bf42d18088f321d8a8e1f0ab4f635cce023b3583c325e85626"
+    },
+    {
+      "case": 32,
+      "width": 42,
+      "height": 91,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c36ee55ea8256b6d66475a10bc503aa323755e1e629085c9e7ebf5ac2d67ed2e"
+    },
+    {
+      "case": 32,
+      "width": 42,
+      "height": 91,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c36ee55ea8256b6d66475a10bc503aa323755e1e629085c9e7ebf5ac2d67ed2e"
+    },
+    {
+      "case": 33,
+      "width": 60,
+      "height": 15,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4bcdac43b236236e031c80d407ee136cf58744c005a7033e6a49d1cba3e39134"
+    },
+    {
+      "case": 33,
+      "width": 60,
+      "height": 15,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4bcdac43b236236e031c80d407ee136cf58744c005a7033e6a49d1cba3e39134"
+    },
+    {
+      "case": 33,
+      "width": 60,
+      "height": 15,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "aeea33abd7825a005a6521494b4339a691fcc1544d94cd20b8b822188ad4d62f"
+    },
+    {
+      "case": 33,
+      "width": 60,
+      "height": 15,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "aeea33abd7825a005a6521494b4339a691fcc1544d94cd20b8b822188ad4d62f"
+    },
+    {
+      "case": 33,
+      "width": 60,
+      "height": 15,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "021d9d5adb281adfd03a40a0dcc60b6ad9861ac6edb9d4e01f405d06c182680f"
+    },
+    {
+      "case": 33,
+      "width": 60,
+      "height": 15,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "021d9d5adb281adfd03a40a0dcc60b6ad9861ac6edb9d4e01f405d06c182680f"
+    },
+    {
+      "case": 34,
+      "width": 43,
+      "height": 24,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "bd346b73a3875b96d4a199caabe52f03acea0adef7ea012629da3f0526198cbc"
+    },
+    {
+      "case": 34,
+      "width": 43,
+      "height": 24,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "bd346b73a3875b96d4a199caabe52f03acea0adef7ea012629da3f0526198cbc"
+    },
+    {
+      "case": 34,
+      "width": 43,
+      "height": 24,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "26f2d37ecdae4a125545acc98ccde3a1a31c520687958f2e09fe40ce004d3f51"
+    },
+    {
+      "case": 34,
+      "width": 43,
+      "height": 24,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "26f2d37ecdae4a125545acc98ccde3a1a31c520687958f2e09fe40ce004d3f51"
+    },
+    {
+      "case": 34,
+      "width": 43,
+      "height": 24,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "afc521f69b835c0e8429b72f34195c4732f8b984967d689dc6ba33c76e90ef87"
+    },
+    {
+      "case": 34,
+      "width": 43,
+      "height": 24,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "afc521f69b835c0e8429b72f34195c4732f8b984967d689dc6ba33c76e90ef87"
+    },
+    {
+      "case": 35,
+      "width": 59,
+      "height": 2,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2bfbaeef5516e9d5a8a6a10d55b86c0069b808fcbdfc40c7e3cc165566c0df74"
+    },
+    {
+      "case": 35,
+      "width": 59,
+      "height": 2,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2bfbaeef5516e9d5a8a6a10d55b86c0069b808fcbdfc40c7e3cc165566c0df74"
+    },
+    {
+      "case": 35,
+      "width": 59,
+      "height": 2,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "6ad91229d2a792a672e6c4da1cfa066330a606468f115b64225c00fe1026a777"
+    },
+    {
+      "case": 35,
+      "width": 59,
+      "height": 2,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "6ad91229d2a792a672e6c4da1cfa066330a606468f115b64225c00fe1026a777"
+    },
+    {
+      "case": 35,
+      "width": 59,
+      "height": 2,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e3419b2138fc1a3aabf33bbe1d2080ab0da3aa5e1ac6e82f995cfa3ba186269e"
+    },
+    {
+      "case": 35,
+      "width": 59,
+      "height": 2,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e3419b2138fc1a3aabf33bbe1d2080ab0da3aa5e1ac6e82f995cfa3ba186269e"
+    },
+    {
+      "case": 36,
+      "width": 81,
+      "height": 40,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "8d77942f632bddcfe96ae17b06f00f2a4998f2bb02291a864c6b601ee95f5e62"
+    },
+    {
+      "case": 36,
+      "width": 81,
+      "height": 40,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "8d77942f632bddcfe96ae17b06f00f2a4998f2bb02291a864c6b601ee95f5e62"
+    },
+    {
+      "case": 36,
+      "width": 81,
+      "height": 40,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "66191533de7b2b97b27f3332e8d46ae215d9a0ab60576cd567d2614d58edb395"
+    },
+    {
+      "case": 36,
+      "width": 81,
+      "height": 40,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "66191533de7b2b97b27f3332e8d46ae215d9a0ab60576cd567d2614d58edb395"
+    },
+    {
+      "case": 36,
+      "width": 81,
+      "height": 40,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a7018a17d8fa643c52a6b51673ed13b4b06ae80d4bcd4eaa0041c3f077914b40"
+    },
+    {
+      "case": 36,
+      "width": 81,
+      "height": 40,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a7018a17d8fa643c52a6b51673ed13b4b06ae80d4bcd4eaa0041c3f077914b40"
+    },
+    {
+      "case": 37,
+      "width": 67,
+      "height": 84,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "8a5421105bf9e16ec102495f715253870c186c9f0c452e5ce51aa999172cdc29"
+    },
+    {
+      "case": 37,
+      "width": 67,
+      "height": 84,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "8a5421105bf9e16ec102495f715253870c186c9f0c452e5ce51aa999172cdc29"
+    },
+    {
+      "case": 37,
+      "width": 67,
+      "height": 84,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "04f3b43dc9665439d9d18766bac04e40f5c21485f87ee7bb9c1c68d8d34cd1e7"
+    },
+    {
+      "case": 37,
+      "width": 67,
+      "height": 84,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "04f3b43dc9665439d9d18766bac04e40f5c21485f87ee7bb9c1c68d8d34cd1e7"
+    },
+    {
+      "case": 37,
+      "width": 67,
+      "height": 84,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "95c7acb222e82330bba28df2819162cde76d21d9f38d4671453b9db087d2f1e6"
+    },
+    {
+      "case": 37,
+      "width": 67,
+      "height": 84,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "95c7acb222e82330bba28df2819162cde76d21d9f38d4671453b9db087d2f1e6"
+    },
+    {
+      "case": 38,
+      "width": 8,
+      "height": 55,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "3432b8e04a08ef17176c7061febd402190aff85c0530520b37156d9dbdb4882c"
+    },
+    {
+      "case": 38,
+      "width": 8,
+      "height": 55,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "3432b8e04a08ef17176c7061febd402190aff85c0530520b37156d9dbdb4882c"
+    },
+    {
+      "case": 38,
+      "width": 8,
+      "height": 55,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "85763156c3dede47d91804f191ebf76c9dd4869d577ccec3a8966c9850db0740"
+    },
+    {
+      "case": 38,
+      "width": 8,
+      "height": 55,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "85763156c3dede47d91804f191ebf76c9dd4869d577ccec3a8966c9850db0740"
+    },
+    {
+      "case": 38,
+      "width": 8,
+      "height": 55,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "ec39a706f46875a9d76f6154a32e73f215b5e66f5edb6fa2e49790c1785894bf"
+    },
+    {
+      "case": 38,
+      "width": 8,
+      "height": 55,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "ec39a706f46875a9d76f6154a32e73f215b5e66f5edb6fa2e49790c1785894bf"
+    },
+    {
+      "case": 39,
+      "width": 41,
+      "height": 48,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1da4261bd984256c5fea48312e861abb0faac48a33471e82e96894bb5711f406"
+    },
+    {
+      "case": 39,
+      "width": 41,
+      "height": 48,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1da4261bd984256c5fea48312e861abb0faac48a33471e82e96894bb5711f406"
+    },
+    {
+      "case": 39,
+      "width": 41,
+      "height": 48,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "3ca64b9c9241585a7980a8ca1f034643ba5bb0e758cae5551c02e646680f0827"
+    },
+    {
+      "case": 39,
+      "width": 41,
+      "height": 48,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "3ca64b9c9241585a7980a8ca1f034643ba5bb0e758cae5551c02e646680f0827"
+    },
+    {
+      "case": 39,
+      "width": 41,
+      "height": 48,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "8355f8ec5ce951c04b283b168861250a922ee1388d27cd9f2a10e0dda2b3d15c"
+    },
+    {
+      "case": 39,
+      "width": 41,
+      "height": 48,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "8355f8ec5ce951c04b283b168861250a922ee1388d27cd9f2a10e0dda2b3d15c"
+    },
+    {
+      "case": 40,
+      "width": 70,
+      "height": 89,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7a3f780775ef2d7c947046aef8f56c8e31bafff5d8c3246f1c7d04a8a880644c"
+    },
+    {
+      "case": 40,
+      "width": 70,
+      "height": 89,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7a3f780775ef2d7c947046aef8f56c8e31bafff5d8c3246f1c7d04a8a880644c"
+    },
+    {
+      "case": 40,
+      "width": 70,
+      "height": 89,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "b226b6a16af0cbdcf2db681ed3dd77f06b5a2cc1e9b92c53b7627622eb965220"
+    },
+    {
+      "case": 40,
+      "width": 70,
+      "height": 89,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "b226b6a16af0cbdcf2db681ed3dd77f06b5a2cc1e9b92c53b7627622eb965220"
+    },
+    {
+      "case": 40,
+      "width": 70,
+      "height": 89,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2c89a1117302ada596d109b16c6de3a42dabbc90f642c7e901b18f09220f4934"
+    },
+    {
+      "case": 40,
+      "width": 70,
+      "height": 89,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2c89a1117302ada596d109b16c6de3a42dabbc90f642c7e901b18f09220f4934"
+    },
+    {
+      "case": 41,
+      "width": 18,
+      "height": 5,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "572815f4dfa7a16fd5d7f21067d1e2dcd2f71d05f95512eca22d17612588507a"
+    },
+    {
+      "case": 41,
+      "width": 18,
+      "height": 5,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "572815f4dfa7a16fd5d7f21067d1e2dcd2f71d05f95512eca22d17612588507a"
+    },
+    {
+      "case": 41,
+      "width": 18,
+      "height": 5,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "f93bbdbdd6ddd6046f649feb56d63564c0f8c785416c483a4c147a443b879b82"
+    },
+    {
+      "case": 41,
+      "width": 18,
+      "height": 5,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "f93bbdbdd6ddd6046f649feb56d63564c0f8c785416c483a4c147a443b879b82"
+    },
+    {
+      "case": 41,
+      "width": 18,
+      "height": 5,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d2e7f24a0b5fb142139b1ab3cdad79a82da98dc5c9e64606bfd3812917a241da"
+    },
+    {
+      "case": 41,
+      "width": 18,
+      "height": 5,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d2e7f24a0b5fb142139b1ab3cdad79a82da98dc5c9e64606bfd3812917a241da"
+    },
+    {
+      "case": 42,
+      "width": 23,
+      "height": 26,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "01f11acbc7040d24eea9b1537e79681e84bc1bbf0af34d4d285fdb389610b2ff"
+    },
+    {
+      "case": 42,
+      "width": 23,
+      "height": 26,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "01f11acbc7040d24eea9b1537e79681e84bc1bbf0af34d4d285fdb389610b2ff"
+    },
+    {
+      "case": 42,
+      "width": 23,
+      "height": 26,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "6337317b8f94472bc8c34816adfdc61d66eb87af49b21b275e4cbcc27cab554d"
+    },
+    {
+      "case": 42,
+      "width": 23,
+      "height": 26,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "6337317b8f94472bc8c34816adfdc61d66eb87af49b21b275e4cbcc27cab554d"
+    },
+    {
+      "case": 42,
+      "width": 23,
+      "height": 26,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d9cae1847d898ce2e2ad85dcab00b62d9b332fd5025b572478e91cf64ca20c59"
+    },
+    {
+      "case": 42,
+      "width": 23,
+      "height": 26,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d9cae1847d898ce2e2ad85dcab00b62d9b332fd5025b572478e91cf64ca20c59"
+    },
+    {
+      "case": 43,
+      "width": 5,
+      "height": 33,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "ba5c75bcc562683f1b5022598463c90604b43735e67c037ceaa1a32a18c4ca6b"
+    },
+    {
+      "case": 43,
+      "width": 5,
+      "height": 33,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "ba5c75bcc562683f1b5022598463c90604b43735e67c037ceaa1a32a18c4ca6b"
+    },
+    {
+      "case": 43,
+      "width": 5,
+      "height": 33,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "d88256bfbad45b021f8ef87f5a8020efcc2a805ccc371f862cef813ab7372e64"
+    },
+    {
+      "case": 43,
+      "width": 5,
+      "height": 33,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "d88256bfbad45b021f8ef87f5a8020efcc2a805ccc371f862cef813ab7372e64"
+    },
+    {
+      "case": 43,
+      "width": 5,
+      "height": 33,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "35087ab16ce6dcece4b1534d7e5b2a8b92e806262912ee9ca7765323cff94d3d"
+    },
+    {
+      "case": 43,
+      "width": 5,
+      "height": 33,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "35087ab16ce6dcece4b1534d7e5b2a8b92e806262912ee9ca7765323cff94d3d"
+    },
+    {
+      "case": 44,
+      "width": 59,
+      "height": 77,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d29e281bdf7d990b161e1f51f0c56264dca1173ac9242cd0aad84e2edea0cd58"
+    },
+    {
+      "case": 44,
+      "width": 59,
+      "height": 77,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d29e281bdf7d990b161e1f51f0c56264dca1173ac9242cd0aad84e2edea0cd58"
+    },
+    {
+      "case": 44,
+      "width": 59,
+      "height": 77,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "adebff3b9d6263f84cbb579535e8a2b7e23d4d36b0885ff3bfc1af17278a64e4"
+    },
+    {
+      "case": 44,
+      "width": 59,
+      "height": 77,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "adebff3b9d6263f84cbb579535e8a2b7e23d4d36b0885ff3bfc1af17278a64e4"
+    },
+    {
+      "case": 44,
+      "width": 59,
+      "height": 77,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "9bdafb6c425c35e957f1df759412717b1857a3b85bf930840d2601e3d5b19255"
+    },
+    {
+      "case": 44,
+      "width": 59,
+      "height": 77,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "9bdafb6c425c35e957f1df759412717b1857a3b85bf930840d2601e3d5b19255"
+    },
+    {
+      "case": 45,
+      "width": 6,
+      "height": 73,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "dd90d93113217edab713cba69fdfbe56a208657a99b5c597c6ac980d8474363a"
+    },
+    {
+      "case": 45,
+      "width": 6,
+      "height": 73,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "dd90d93113217edab713cba69fdfbe56a208657a99b5c597c6ac980d8474363a"
+    },
+    {
+      "case": 45,
+      "width": 6,
+      "height": 73,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "9a61745386425d25ed67efa12feea0846cfa89d410a2eeb8fc4178baf48d4502"
+    },
+    {
+      "case": 45,
+      "width": 6,
+      "height": 73,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "9a61745386425d25ed67efa12feea0846cfa89d410a2eeb8fc4178baf48d4502"
+    },
+    {
+      "case": 45,
+      "width": 6,
+      "height": 73,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "3e10f83fa06f64c82f5b97b385e57053cb5377b503ecf426fdc187061f845a29"
+    },
+    {
+      "case": 45,
+      "width": 6,
+      "height": 73,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "3e10f83fa06f64c82f5b97b385e57053cb5377b503ecf426fdc187061f845a29"
+    },
+    {
+      "case": 46,
+      "width": 21,
+      "height": 41,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1329234fa89a630b45d93c188df82ecc34b669ad68bfbf53ede9c9cbfa20f7f1"
+    },
+    {
+      "case": 46,
+      "width": 21,
+      "height": 41,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1329234fa89a630b45d93c188df82ecc34b669ad68bfbf53ede9c9cbfa20f7f1"
+    },
+    {
+      "case": 46,
+      "width": 21,
+      "height": 41,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "4f9894a3bfc094600ddf098f2d4a564a88273bad665e77a6ccbe73ab334ccecd"
+    },
+    {
+      "case": 46,
+      "width": 21,
+      "height": 41,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "4f9894a3bfc094600ddf098f2d4a564a88273bad665e77a6ccbe73ab334ccecd"
+    },
+    {
+      "case": 46,
+      "width": 21,
+      "height": 41,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "cb7c30e087e4543f3819ae96da71c64ca52e355aa17d1e975a2196af25a5b6a2"
+    },
+    {
+      "case": 46,
+      "width": 21,
+      "height": 41,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "cb7c30e087e4543f3819ae96da71c64ca52e355aa17d1e975a2196af25a5b6a2"
+    },
+    {
+      "case": 47,
+      "width": 86,
+      "height": 45,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "796e82122a1b2c8828aed805f7bc3079aed4772855d2ea2e6e88730291f097db"
+    },
+    {
+      "case": 47,
+      "width": 86,
+      "height": 45,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "796e82122a1b2c8828aed805f7bc3079aed4772855d2ea2e6e88730291f097db"
+    },
+    {
+      "case": 47,
+      "width": 86,
+      "height": 45,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "00b11c26cfebef589080f79978ef15c41ea20fd494029db1d561f315df9d32b8"
+    },
+    {
+      "case": 47,
+      "width": 86,
+      "height": 45,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "00b11c26cfebef589080f79978ef15c41ea20fd494029db1d561f315df9d32b8"
+    },
+    {
+      "case": 47,
+      "width": 86,
+      "height": 45,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7f8b4986dfd962763f8fac33250eb3893a373dd63bf7609e33a459eb418e31f5"
+    },
+    {
+      "case": 47,
+      "width": 86,
+      "height": 45,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7f8b4986dfd962763f8fac33250eb3893a373dd63bf7609e33a459eb418e31f5"
+    },
+    {
+      "case": 48,
+      "width": 71,
+      "height": 88,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "9baa502a3ee4d60fa85b0c420264989112e8f449d558d94284eaed8de994b8fc"
+    },
+    {
+      "case": 48,
+      "width": 71,
+      "height": 88,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "9baa502a3ee4d60fa85b0c420264989112e8f449d558d94284eaed8de994b8fc"
+    },
+    {
+      "case": 48,
+      "width": 71,
+      "height": 88,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "b1d36825285f1a5bbb2bfc5902bea6ead197a6030f0142338a32b4c5f5e9838a"
+    },
+    {
+      "case": 48,
+      "width": 71,
+      "height": 88,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "b1d36825285f1a5bbb2bfc5902bea6ead197a6030f0142338a32b4c5f5e9838a"
+    },
+    {
+      "case": 48,
+      "width": 71,
+      "height": 88,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "8349116492f63f0dfb3d121bcd8cb9deb43a064f40711d4599d1634c40212368"
+    },
+    {
+      "case": 48,
+      "width": 71,
+      "height": 88,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "8349116492f63f0dfb3d121bcd8cb9deb43a064f40711d4599d1634c40212368"
+    },
+    {
+      "case": 49,
+      "width": 24,
+      "height": 56,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "31702180942dcbe0e0531821cfa102dc89bb356102a9d55193fdb8d400429ffb"
+    },
+    {
+      "case": 49,
+      "width": 24,
+      "height": 56,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "31702180942dcbe0e0531821cfa102dc89bb356102a9d55193fdb8d400429ffb"
+    },
+    {
+      "case": 49,
+      "width": 24,
+      "height": 56,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "b0663e21bb38ff96e334fbd3792011f67d3dc2bdf0582d91ec064a4f523177a9"
+    },
+    {
+      "case": 49,
+      "width": 24,
+      "height": 56,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "b0663e21bb38ff96e334fbd3792011f67d3dc2bdf0582d91ec064a4f523177a9"
+    },
+    {
+      "case": 49,
+      "width": 24,
+      "height": 56,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "da29aac18f661e7ff79c57b3253c05dce4561e61cc94a645c56c4ac034d1ab0d"
+    },
+    {
+      "case": 49,
+      "width": 24,
+      "height": 56,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "da29aac18f661e7ff79c57b3253c05dce4561e61cc94a645c56c4ac034d1ab0d"
+    },
+    {
+      "case": 50,
+      "width": 21,
+      "height": 59,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b440a6085a80c966d126998cd54b26685df0db61c3dc3bab7c48ec3604f28cea"
+    },
+    {
+      "case": 50,
+      "width": 21,
+      "height": 59,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b440a6085a80c966d126998cd54b26685df0db61c3dc3bab7c48ec3604f28cea"
+    },
+    {
+      "case": 50,
+      "width": 21,
+      "height": 59,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "a4d97dc80959499a0b6449a1ea9f853057faea65affcc81f8d30840daf73d3c3"
+    },
+    {
+      "case": 50,
+      "width": 21,
+      "height": 59,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "a4d97dc80959499a0b6449a1ea9f853057faea65affcc81f8d30840daf73d3c3"
+    },
+    {
+      "case": 50,
+      "width": 21,
+      "height": 59,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "cc907021ffe14493cb54eccfafa3c867088e8659a19227ccf364fea19e0dff3c"
+    },
+    {
+      "case": 50,
+      "width": 21,
+      "height": 59,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "cc907021ffe14493cb54eccfafa3c867088e8659a19227ccf364fea19e0dff3c"
+    },
+    {
+      "case": 51,
+      "width": 19,
+      "height": 22,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "11c39720142e2c38fe6bffc5ffa0e4b11cab1c843d8335c0f6aab17c5dbeb1a5"
+    },
+    {
+      "case": 51,
+      "width": 19,
+      "height": 22,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "11c39720142e2c38fe6bffc5ffa0e4b11cab1c843d8335c0f6aab17c5dbeb1a5"
+    },
+    {
+      "case": 51,
+      "width": 19,
+      "height": 22,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "3224f3e41b19a3acb6a01dff9e056844ab6848ede81d93d693f9126dc246a5b8"
+    },
+    {
+      "case": 51,
+      "width": 19,
+      "height": 22,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "3224f3e41b19a3acb6a01dff9e056844ab6848ede81d93d693f9126dc246a5b8"
+    },
+    {
+      "case": 51,
+      "width": 19,
+      "height": 22,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "0666671450fc6151f3bc288653e93c9c067e54f61adb5a61720446f1e206a106"
+    },
+    {
+      "case": 51,
+      "width": 19,
+      "height": 22,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "0666671450fc6151f3bc288653e93c9c067e54f61adb5a61720446f1e206a106"
+    },
+    {
+      "case": 52,
+      "width": 12,
+      "height": 25,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "08cad78983e412111055dc86b707ffa1a72ec0138e8967d59a81f0e2906b925f"
+    },
+    {
+      "case": 52,
+      "width": 12,
+      "height": 25,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "08cad78983e412111055dc86b707ffa1a72ec0138e8967d59a81f0e2906b925f"
+    },
+    {
+      "case": 52,
+      "width": 12,
+      "height": 25,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "b4ef529bb8b407df502c1859a3af05f5d1bd24285103f0ba0dec8fc9b3c4a87a"
+    },
+    {
+      "case": 52,
+      "width": 12,
+      "height": 25,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "b4ef529bb8b407df502c1859a3af05f5d1bd24285103f0ba0dec8fc9b3c4a87a"
+    },
+    {
+      "case": 52,
+      "width": 12,
+      "height": 25,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "94fe1ff3124ac0d147582c2806109440f67089737496560d78ade84103ab58de"
+    },
+    {
+      "case": 52,
+      "width": 12,
+      "height": 25,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "94fe1ff3124ac0d147582c2806109440f67089737496560d78ade84103ab58de"
+    },
+    {
+      "case": 53,
+      "width": 16,
+      "height": 61,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "79a5bec132bc91993862121c6b3d02487143342cb79929e914db187b6be7cb2d"
+    },
+    {
+      "case": 53,
+      "width": 16,
+      "height": 61,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "79a5bec132bc91993862121c6b3d02487143342cb79929e914db187b6be7cb2d"
+    },
+    {
+      "case": 53,
+      "width": 16,
+      "height": 61,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "5b176c4590849acd79ea421987178f53e466c21279c49aeb54b3d35c13f0b699"
+    },
+    {
+      "case": 53,
+      "width": 16,
+      "height": 61,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "5b176c4590849acd79ea421987178f53e466c21279c49aeb54b3d35c13f0b699"
+    },
+    {
+      "case": 53,
+      "width": 16,
+      "height": 61,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1f53cccee9e569f717b3aefb792b120f8c909fa053958f658d0e5fd2d9725141"
+    },
+    {
+      "case": 53,
+      "width": 16,
+      "height": 61,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1f53cccee9e569f717b3aefb792b120f8c909fa053958f658d0e5fd2d9725141"
+    },
+    {
+      "case": 54,
+      "width": 14,
+      "height": 57,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7a6b36612da6f2129266d5de708464b72e33f5e1ca3ba52108e7d35d707df130"
+    },
+    {
+      "case": 54,
+      "width": 14,
+      "height": 57,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7a6b36612da6f2129266d5de708464b72e33f5e1ca3ba52108e7d35d707df130"
+    },
+    {
+      "case": 54,
+      "width": 14,
+      "height": 57,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "2901a38d5956f4bed2ef93a4f4aef969ee0d2574ea0ba1c3b9f35613532f9d99"
+    },
+    {
+      "case": 54,
+      "width": 14,
+      "height": 57,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "2901a38d5956f4bed2ef93a4f4aef969ee0d2574ea0ba1c3b9f35613532f9d99"
+    },
+    {
+      "case": 54,
+      "width": 14,
+      "height": 57,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "240f96d16149c59d13b65909185900612c4d43b4ec1f79cf20a1e222f35690e4"
+    },
+    {
+      "case": 54,
+      "width": 14,
+      "height": 57,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "240f96d16149c59d13b65909185900612c4d43b4ec1f79cf20a1e222f35690e4"
+    },
+    {
+      "case": 55,
+      "width": 64,
+      "height": 63,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1d5c690a687ef82d4bb23c6131bc6521218ae8c192562d8975c80a262e51aa32"
+    },
+    {
+      "case": 55,
+      "width": 64,
+      "height": 63,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1d5c690a687ef82d4bb23c6131bc6521218ae8c192562d8975c80a262e51aa32"
+    },
+    {
+      "case": 55,
+      "width": 64,
+      "height": 63,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "342cc59a0001358bf1dea5cbf8ea6fb68a39a7aaae3230f055f882d4d881a1cf"
+    },
+    {
+      "case": 55,
+      "width": 64,
+      "height": 63,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "342cc59a0001358bf1dea5cbf8ea6fb68a39a7aaae3230f055f882d4d881a1cf"
+    },
+    {
+      "case": 55,
+      "width": 64,
+      "height": 63,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "5632b89e93196676c1a8a60529513f0decf72c84bcd3c3f61993ff59b0ab9939"
+    },
+    {
+      "case": 55,
+      "width": 64,
+      "height": 63,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "5632b89e93196676c1a8a60529513f0decf72c84bcd3c3f61993ff59b0ab9939"
+    },
+    {
+      "case": 56,
+      "width": 96,
+      "height": 48,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "3afa64d46884df3f42372ae6a4771bd1a4677e5d85a98bfee99c7d229ed3a23c"
+    },
+    {
+      "case": 56,
+      "width": 96,
+      "height": 48,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "3afa64d46884df3f42372ae6a4771bd1a4677e5d85a98bfee99c7d229ed3a23c"
+    },
+    {
+      "case": 56,
+      "width": 96,
+      "height": 48,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "1e084eb8df146d7ebbbaf7cc9fd17cc0bf0f43d18ea3b138929277d16e8f09de"
+    },
+    {
+      "case": 56,
+      "width": 96,
+      "height": 48,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "1e084eb8df146d7ebbbaf7cc9fd17cc0bf0f43d18ea3b138929277d16e8f09de"
+    },
+    {
+      "case": 56,
+      "width": 96,
+      "height": 48,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7940679ef54b3ecd53e79c92ca2febe0bd5b26af93946a13dbe767d32a7cb27f"
+    },
+    {
+      "case": 56,
+      "width": 96,
+      "height": 48,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7940679ef54b3ecd53e79c92ca2febe0bd5b26af93946a13dbe767d32a7cb27f"
+    },
+    {
+      "case": 57,
+      "width": 90,
+      "height": 60,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2c5a168e81eb223371c8adb1103e5dae54cb38416c6f8ce10cb543e218591144"
+    },
+    {
+      "case": 57,
+      "width": 90,
+      "height": 60,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2c5a168e81eb223371c8adb1103e5dae54cb38416c6f8ce10cb543e218591144"
+    },
+    {
+      "case": 57,
+      "width": 90,
+      "height": 60,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "b52f04a563763670adc95194e9bf47b8c5b054addac13429f623dab54434114b"
+    },
+    {
+      "case": 57,
+      "width": 90,
+      "height": 60,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "b52f04a563763670adc95194e9bf47b8c5b054addac13429f623dab54434114b"
+    },
+    {
+      "case": 57,
+      "width": 90,
+      "height": 60,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "3d07dc524fce50299b306949cffd6bde7a32bed0807b7d953a2163626e530db2"
+    },
+    {
+      "case": 57,
+      "width": 90,
+      "height": 60,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "3d07dc524fce50299b306949cffd6bde7a32bed0807b7d953a2163626e530db2"
+    },
+    {
+      "case": 58,
+      "width": 42,
+      "height": 78,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "f6cc83332528a3532dcbb343ed222428e627bd7a27b5b9873d30f7127516c509"
+    },
+    {
+      "case": 58,
+      "width": 42,
+      "height": 78,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "f6cc83332528a3532dcbb343ed222428e627bd7a27b5b9873d30f7127516c509"
+    },
+    {
+      "case": 58,
+      "width": 42,
+      "height": 78,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "65d37fdd74822405f8c2f32d71b748732f8ba8dfd6973f1b90a471859d9ac2e3"
+    },
+    {
+      "case": 58,
+      "width": 42,
+      "height": 78,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "65d37fdd74822405f8c2f32d71b748732f8ba8dfd6973f1b90a471859d9ac2e3"
+    },
+    {
+      "case": 58,
+      "width": 42,
+      "height": 78,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "40396d4136ffba2a9a217708c6d2325367e0261c8a66871d13664a99887f60c3"
+    },
+    {
+      "case": 58,
+      "width": 42,
+      "height": 78,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "40396d4136ffba2a9a217708c6d2325367e0261c8a66871d13664a99887f60c3"
+    },
+    {
+      "case": 59,
+      "width": 81,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "6b1a78e19a1cf38c38a8ed3c1a79cb6d937d58bdc0f61f07604fd8d19af77b66"
+    },
+    {
+      "case": 59,
+      "width": 81,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "6b1a78e19a1cf38c38a8ed3c1a79cb6d937d58bdc0f61f07604fd8d19af77b66"
+    },
+    {
+      "case": 59,
+      "width": 81,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "a1a3dc12643001b6491eb26528148672783c11b939f0ee380f758d117a09a3ea"
+    },
+    {
+      "case": 59,
+      "width": 81,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "a1a3dc12643001b6491eb26528148672783c11b939f0ee380f758d117a09a3ea"
+    },
+    {
+      "case": 59,
+      "width": 81,
+      "height": 23,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "176b76afe28bf18ec704d82b5f81c816fcd0ea9dd44ff4a51e6dcd7c58efcd57"
+    },
+    {
+      "case": 59,
+      "width": 81,
+      "height": 23,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "176b76afe28bf18ec704d82b5f81c816fcd0ea9dd44ff4a51e6dcd7c58efcd57"
+    },
+    {
+      "case": 60,
+      "width": 62,
+      "height": 64,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a8432e8318b07502b53b534eaee12be85fbb9f8418386f0ac43a72cc42c19120"
+    },
+    {
+      "case": 60,
+      "width": 62,
+      "height": 64,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a8432e8318b07502b53b534eaee12be85fbb9f8418386f0ac43a72cc42c19120"
+    },
+    {
+      "case": 60,
+      "width": 62,
+      "height": 64,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "023f47a7eef8bc3b744f963e17b605d148e5984215105b9aeae818110ec1a4a5"
+    },
+    {
+      "case": 60,
+      "width": 62,
+      "height": 64,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "023f47a7eef8bc3b744f963e17b605d148e5984215105b9aeae818110ec1a4a5"
+    },
+    {
+      "case": 60,
+      "width": 62,
+      "height": 64,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "38faaaa1518b5e59769e2570eb83beaa34dd535672eb3a2df73840c7941933cc"
+    },
+    {
+      "case": 60,
+      "width": 62,
+      "height": 64,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "38faaaa1518b5e59769e2570eb83beaa34dd535672eb3a2df73840c7941933cc"
+    },
+    {
+      "case": 61,
+      "width": 57,
+      "height": 95,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7c78d2cb6aa78815767a66e8530c53bb985098d42beacb61641d53efc0713e3f"
+    },
+    {
+      "case": 61,
+      "width": 57,
+      "height": 95,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7c78d2cb6aa78815767a66e8530c53bb985098d42beacb61641d53efc0713e3f"
+    },
+    {
+      "case": 61,
+      "width": 57,
+      "height": 95,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "703f8bc2f396de8b06d2aa0dbd9e7e9796be0929bfeeb6bead6d8647b480b003"
+    },
+    {
+      "case": 61,
+      "width": 57,
+      "height": 95,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "703f8bc2f396de8b06d2aa0dbd9e7e9796be0929bfeeb6bead6d8647b480b003"
+    },
+    {
+      "case": 61,
+      "width": 57,
+      "height": 95,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2a82fce6b22971a7e54299dca72b6fb2dc2a08f976bfe7843f5fd3af516875ed"
+    },
+    {
+      "case": 61,
+      "width": 57,
+      "height": 95,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2a82fce6b22971a7e54299dca72b6fb2dc2a08f976bfe7843f5fd3af516875ed"
+    },
+    {
+      "case": 62,
+      "width": 2,
+      "height": 13,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1e865667ef6917ca5f60c25c2fdb8a586246518e1b88f2fa23fae828854c2dbc"
+    },
+    {
+      "case": 62,
+      "width": 2,
+      "height": 13,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1e865667ef6917ca5f60c25c2fdb8a586246518e1b88f2fa23fae828854c2dbc"
+    },
+    {
+      "case": 62,
+      "width": 2,
+      "height": 13,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "78d50db9f571193bdf1fb597188a53fcd709dba1776b8331a89a84859390c830"
+    },
+    {
+      "case": 62,
+      "width": 2,
+      "height": 13,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "78d50db9f571193bdf1fb597188a53fcd709dba1776b8331a89a84859390c830"
+    },
+    {
+      "case": 62,
+      "width": 2,
+      "height": 13,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "fb5706067a254794faac8b9368e3a600603daab40a94b42a9302a0ca270726b4"
+    },
+    {
+      "case": 62,
+      "width": 2,
+      "height": 13,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "fb5706067a254794faac8b9368e3a600603daab40a94b42a9302a0ca270726b4"
+    },
+    {
+      "case": 63,
+      "width": 40,
+      "height": 57,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d402950ad7ccbcfedafd6b06739fcc41e264f219d7a05ddb1c9aeeaa2099caa7"
+    },
+    {
+      "case": 63,
+      "width": 40,
+      "height": 57,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d402950ad7ccbcfedafd6b06739fcc41e264f219d7a05ddb1c9aeeaa2099caa7"
+    },
+    {
+      "case": 63,
+      "width": 40,
+      "height": 57,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "a192efb558bec9fca7d881333e974468aafdb4d7d72dbeb4fcf3ca49e1c30253"
+    },
+    {
+      "case": 63,
+      "width": 40,
+      "height": 57,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "a192efb558bec9fca7d881333e974468aafdb4d7d72dbeb4fcf3ca49e1c30253"
+    },
+    {
+      "case": 63,
+      "width": 40,
+      "height": 57,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "915e1f8bea7b335f471931f4134a845513cc56275bf85030db0798c6195bfeee"
+    },
+    {
+      "case": 63,
+      "width": 40,
+      "height": 57,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "915e1f8bea7b335f471931f4134a845513cc56275bf85030db0798c6195bfeee"
+    },
+    {
+      "case": 64,
+      "width": 74,
+      "height": 90,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "403cc36b8f26bc193849b08112d334abce1117505616b7b916b37c4b12ec1807"
+    },
+    {
+      "case": 64,
+      "width": 74,
+      "height": 90,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "403cc36b8f26bc193849b08112d334abce1117505616b7b916b37c4b12ec1807"
+    },
+    {
+      "case": 64,
+      "width": 74,
+      "height": 90,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "e067715aea9b082a8a912bd4588bf5390cee86cc1239315ab9f4dc91420bfbfc"
+    },
+    {
+      "case": 64,
+      "width": 74,
+      "height": 90,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "e067715aea9b082a8a912bd4588bf5390cee86cc1239315ab9f4dc91420bfbfc"
+    },
+    {
+      "case": 64,
+      "width": 74,
+      "height": 90,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "befeafed1cdd2b9e3b0f696b43a5567907e1989f2d9f372f2533ae34ef724fe3"
+    },
+    {
+      "case": 64,
+      "width": 74,
+      "height": 90,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "befeafed1cdd2b9e3b0f696b43a5567907e1989f2d9f372f2533ae34ef724fe3"
+    },
+    {
+      "case": 65,
+      "width": 41,
+      "height": 64,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "f9d06672f277930ea43963ac77d3b86a5d3dc90419b414c1f1b9f20fe6bba35b"
+    },
+    {
+      "case": 65,
+      "width": 41,
+      "height": 64,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "f9d06672f277930ea43963ac77d3b86a5d3dc90419b414c1f1b9f20fe6bba35b"
+    },
+    {
+      "case": 65,
+      "width": 41,
+      "height": 64,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "7073c161d9f5f9c7bbd02c670fbe86f724d00ff21b9501a3fa48c39f0aa6e87d"
+    },
+    {
+      "case": 65,
+      "width": 41,
+      "height": 64,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "7073c161d9f5f9c7bbd02c670fbe86f724d00ff21b9501a3fa48c39f0aa6e87d"
+    },
+    {
+      "case": 65,
+      "width": 41,
+      "height": 64,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "9c4437991d2f3b78934e093c427d0dd14257d3cf918d6b7b0bf7cecb6788b520"
+    },
+    {
+      "case": 65,
+      "width": 41,
+      "height": 64,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "9c4437991d2f3b78934e093c427d0dd14257d3cf918d6b7b0bf7cecb6788b520"
+    },
+    {
+      "case": 66,
+      "width": 77,
+      "height": 5,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1e055ef4943159faf1959861a073e97e332206efb2d66af711ac737a62acfe0b"
+    },
+    {
+      "case": 66,
+      "width": 77,
+      "height": 5,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1e055ef4943159faf1959861a073e97e332206efb2d66af711ac737a62acfe0b"
+    },
+    {
+      "case": 66,
+      "width": 77,
+      "height": 5,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "b395bdae09d71fe2cc729a824318531e52bf59b23960e10c32f3b7bbbbb34081"
+    },
+    {
+      "case": 66,
+      "width": 77,
+      "height": 5,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "b395bdae09d71fe2cc729a824318531e52bf59b23960e10c32f3b7bbbbb34081"
+    },
+    {
+      "case": 66,
+      "width": 77,
+      "height": 5,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e0db67a76661e1f6f1d051d2cb3d949690f52c493a8a39ccd5d25d0c3176dce5"
+    },
+    {
+      "case": 66,
+      "width": 77,
+      "height": 5,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e0db67a76661e1f6f1d051d2cb3d949690f52c493a8a39ccd5d25d0c3176dce5"
+    },
+    {
+      "case": 67,
+      "width": 66,
+      "height": 85,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7e536aa465f8ebeb1dcaa9ff84e679025acc018ca3a74ddd5b59f1886fb01065"
+    },
+    {
+      "case": 67,
+      "width": 66,
+      "height": 85,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7e536aa465f8ebeb1dcaa9ff84e679025acc018ca3a74ddd5b59f1886fb01065"
+    },
+    {
+      "case": 67,
+      "width": 66,
+      "height": 85,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "821357225e09bc944b6f12b50cf7bdad0679b438ccb4b08b91bf530363689888"
+    },
+    {
+      "case": 67,
+      "width": 66,
+      "height": 85,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "821357225e09bc944b6f12b50cf7bdad0679b438ccb4b08b91bf530363689888"
+    },
+    {
+      "case": 67,
+      "width": 66,
+      "height": 85,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "405f03484792c5116584577e787fc67a2d1464001f337a633047f55c3e66f8b0"
+    },
+    {
+      "case": 67,
+      "width": 66,
+      "height": 85,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "405f03484792c5116584577e787fc67a2d1464001f337a633047f55c3e66f8b0"
+    },
+    {
+      "case": 68,
+      "width": 13,
+      "height": 3,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "677f2c32b2a2ae825898cf1ba6ce5ddaa1e18a875f29a9594b2820cac774a4b8"
+    },
+    {
+      "case": 68,
+      "width": 13,
+      "height": 3,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "677f2c32b2a2ae825898cf1ba6ce5ddaa1e18a875f29a9594b2820cac774a4b8"
+    },
+    {
+      "case": 68,
+      "width": 13,
+      "height": 3,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "c2b586114a5e93a12fd5c842cb090c17a8dee7cb1ef172618ebca903543f4efb"
+    },
+    {
+      "case": 68,
+      "width": 13,
+      "height": 3,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "c2b586114a5e93a12fd5c842cb090c17a8dee7cb1ef172618ebca903543f4efb"
+    },
+    {
+      "case": 68,
+      "width": 13,
+      "height": 3,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4259f1ee25902743c54abfea37136ee838d2a6d037ed802d16f9db82622da7d4"
+    },
+    {
+      "case": 68,
+      "width": 13,
+      "height": 3,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4259f1ee25902743c54abfea37136ee838d2a6d037ed802d16f9db82622da7d4"
+    },
+    {
+      "case": 69,
+      "width": 45,
+      "height": 44,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2834a22aa7079c24f1a847c9ecc4bbdf4d03274ad3fa6e6d6f94653673035395"
+    },
+    {
+      "case": 69,
+      "width": 45,
+      "height": 44,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2834a22aa7079c24f1a847c9ecc4bbdf4d03274ad3fa6e6d6f94653673035395"
+    },
+    {
+      "case": 69,
+      "width": 45,
+      "height": 44,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "c70608aae6cf3525f5aeea3eb417e8884a25d4945eafcb4cad73f51995c7dc78"
+    },
+    {
+      "case": 69,
+      "width": 45,
+      "height": 44,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "c70608aae6cf3525f5aeea3eb417e8884a25d4945eafcb4cad73f51995c7dc78"
+    },
+    {
+      "case": 69,
+      "width": 45,
+      "height": 44,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a299770edafd6054a5262d41a4fefea8da7169633e62cbf91f5035661d3c4094"
+    },
+    {
+      "case": 69,
+      "width": 45,
+      "height": 44,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a299770edafd6054a5262d41a4fefea8da7169633e62cbf91f5035661d3c4094"
+    },
+    {
+      "case": 70,
+      "width": 9,
+      "height": 39,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "daaf10fb17f57d1cad5d5c2568c40d93260eaaf3fe689b9a20fa61df5b100e05"
+    },
+    {
+      "case": 70,
+      "width": 9,
+      "height": 39,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "daaf10fb17f57d1cad5d5c2568c40d93260eaaf3fe689b9a20fa61df5b100e05"
+    },
+    {
+      "case": 70,
+      "width": 9,
+      "height": 39,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "31e35fd4399d5202c5229f497e95b4e1d159842f32fbdd3de667958a7b3e7e8a"
+    },
+    {
+      "case": 70,
+      "width": 9,
+      "height": 39,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "31e35fd4399d5202c5229f497e95b4e1d159842f32fbdd3de667958a7b3e7e8a"
+    },
+    {
+      "case": 70,
+      "width": 9,
+      "height": 39,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c9b27475fef8ab507cf1c860cd2b2dc7216c49fbc60e11caca7ad7d62abf6c97"
+    },
+    {
+      "case": 70,
+      "width": 9,
+      "height": 39,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c9b27475fef8ab507cf1c860cd2b2dc7216c49fbc60e11caca7ad7d62abf6c97"
+    },
+    {
+      "case": 71,
+      "width": 55,
+      "height": 41,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "49b0f4d37fe571d48b566cb09c3725518c2b96b99bc3814417c3113a908bbeea"
+    },
+    {
+      "case": 71,
+      "width": 55,
+      "height": 41,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "49b0f4d37fe571d48b566cb09c3725518c2b96b99bc3814417c3113a908bbeea"
+    },
+    {
+      "case": 71,
+      "width": 55,
+      "height": 41,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "4b71a39d417b95f2e37809db6d827428bbd7d5439f8e35db99ff4f50594ed72a"
+    },
+    {
+      "case": 71,
+      "width": 55,
+      "height": 41,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "4b71a39d417b95f2e37809db6d827428bbd7d5439f8e35db99ff4f50594ed72a"
+    },
+    {
+      "case": 71,
+      "width": 55,
+      "height": 41,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1916d0831d45d99b43619ae42754d39d1cb8670bca66c5bb103753dafd73c160"
+    },
+    {
+      "case": 71,
+      "width": 55,
+      "height": 41,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1916d0831d45d99b43619ae42754d39d1cb8670bca66c5bb103753dafd73c160"
+    },
+    {
+      "case": 72,
+      "width": 87,
+      "height": 73,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "0a187eff91f028c3e2d0073d8f0b84ed0e8caf9132d819027630ab6f0297a2b1"
+    },
+    {
+      "case": 72,
+      "width": 87,
+      "height": 73,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "0a187eff91f028c3e2d0073d8f0b84ed0e8caf9132d819027630ab6f0297a2b1"
+    },
+    {
+      "case": 72,
+      "width": 87,
+      "height": 73,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "ad561de6cd214e701a1c75b464e0fc73deaa1a6f8aea166729f674b17a637a95"
+    },
+    {
+      "case": 72,
+      "width": 87,
+      "height": 73,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "ad561de6cd214e701a1c75b464e0fc73deaa1a6f8aea166729f674b17a637a95"
+    },
+    {
+      "case": 72,
+      "width": 87,
+      "height": 73,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "095e7b10005eb27f7a143917676b6886ed6cf3ee9646e70eb5b061f91455a131"
+    },
+    {
+      "case": 72,
+      "width": 87,
+      "height": 73,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "095e7b10005eb27f7a143917676b6886ed6cf3ee9646e70eb5b061f91455a131"
+    },
+    {
+      "case": 73,
+      "width": 53,
+      "height": 46,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "70fe3819249057b481750d3a315f70a771703adda67c62c45b9d1ce0defb2e96"
+    },
+    {
+      "case": 73,
+      "width": 53,
+      "height": 46,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "70fe3819249057b481750d3a315f70a771703adda67c62c45b9d1ce0defb2e96"
+    },
+    {
+      "case": 73,
+      "width": 53,
+      "height": 46,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "0042f5684ca5e0a37b08109bdd70af8ba9d59f704736065cd5d6354f2f1ad098"
+    },
+    {
+      "case": 73,
+      "width": 53,
+      "height": 46,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "0042f5684ca5e0a37b08109bdd70af8ba9d59f704736065cd5d6354f2f1ad098"
+    },
+    {
+      "case": 73,
+      "width": 53,
+      "height": 46,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "0992a9b9899a91d1d2d30be1d7f9387ebb26dd8c78eeae437e39503a9fbce5b7"
+    },
+    {
+      "case": 73,
+      "width": 53,
+      "height": 46,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "0992a9b9899a91d1d2d30be1d7f9387ebb26dd8c78eeae437e39503a9fbce5b7"
+    },
+    {
+      "case": 74,
+      "width": 28,
+      "height": 79,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1f34644071693b770702eef77162561f36e5e0fe1da5ff182b0fb2471b6d45aa"
+    },
+    {
+      "case": 74,
+      "width": 28,
+      "height": 79,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1f34644071693b770702eef77162561f36e5e0fe1da5ff182b0fb2471b6d45aa"
+    },
+    {
+      "case": 74,
+      "width": 28,
+      "height": 79,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "6dacdd23b3937867432aacd2dc9a742d212a6c6e60f7aa18519c422bd86f8868"
+    },
+    {
+      "case": 74,
+      "width": 28,
+      "height": 79,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "6dacdd23b3937867432aacd2dc9a742d212a6c6e60f7aa18519c422bd86f8868"
+    },
+    {
+      "case": 74,
+      "width": 28,
+      "height": 79,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4c2531d96aec0b565bb1914ec472b395c4c160cb5912c218a660188b992bd2a0"
+    },
+    {
+      "case": 74,
+      "width": 28,
+      "height": 79,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4c2531d96aec0b565bb1914ec472b395c4c160cb5912c218a660188b992bd2a0"
+    },
+    {
+      "case": 75,
+      "width": 62,
+      "height": 78,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "aa3acd41022b3641dc9777c1d4a725585f3e0bccf27a0730df35e4e60d4292db"
+    },
+    {
+      "case": 75,
+      "width": 62,
+      "height": 78,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "aa3acd41022b3641dc9777c1d4a725585f3e0bccf27a0730df35e4e60d4292db"
+    },
+    {
+      "case": 75,
+      "width": 62,
+      "height": 78,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "655a1d7854c9b28bf67ff5e6d053f94b3be662dee94ae0a0d6abc41a8e5ba4aa"
+    },
+    {
+      "case": 75,
+      "width": 62,
+      "height": 78,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "655a1d7854c9b28bf67ff5e6d053f94b3be662dee94ae0a0d6abc41a8e5ba4aa"
+    },
+    {
+      "case": 75,
+      "width": 62,
+      "height": 78,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "aa2504d0c542fc84fd669fb469853d6f762f7e2bb444501398d77a82c611c9ba"
+    },
+    {
+      "case": 75,
+      "width": 62,
+      "height": 78,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "aa2504d0c542fc84fd669fb469853d6f762f7e2bb444501398d77a82c611c9ba"
+    },
+    {
+      "case": 76,
+      "width": 73,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b8feb21bbc224734c735482cb360bb28baa64ed4f76d277866ab4c46729d580f"
+    },
+    {
+      "case": 76,
+      "width": 73,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b8feb21bbc224734c735482cb360bb28baa64ed4f76d277866ab4c46729d580f"
+    },
+    {
+      "case": 76,
+      "width": 73,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "77aee526b2a4a569086b1c20b1d93da4354c19ec84a4f23b8ac432a37e9cc3f0"
+    },
+    {
+      "case": 76,
+      "width": 73,
+      "height": 23,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "77aee526b2a4a569086b1c20b1d93da4354c19ec84a4f23b8ac432a37e9cc3f0"
+    },
+    {
+      "case": 76,
+      "width": 73,
+      "height": 23,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "6596554683ae9a58940da242bd17bab3fffeea8cd76f8bead0145f0edcce7566"
+    },
+    {
+      "case": 76,
+      "width": 73,
+      "height": 23,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "6596554683ae9a58940da242bd17bab3fffeea8cd76f8bead0145f0edcce7566"
+    },
+    {
+      "case": 77,
+      "width": 50,
+      "height": 81,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "07e3cd8696a541027731725c6dd4d2185327734a7804c1dacee675832e8a9fb8"
+    },
+    {
+      "case": 77,
+      "width": 50,
+      "height": 81,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "07e3cd8696a541027731725c6dd4d2185327734a7804c1dacee675832e8a9fb8"
+    },
+    {
+      "case": 77,
+      "width": 50,
+      "height": 81,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "4a04a000be518816dd3182106b537669909afad6ae5242b201c5ff0b5ea836e0"
+    },
+    {
+      "case": 77,
+      "width": 50,
+      "height": 81,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "4a04a000be518816dd3182106b537669909afad6ae5242b201c5ff0b5ea836e0"
+    },
+    {
+      "case": 77,
+      "width": 50,
+      "height": 81,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7c8c2710d03d749bd7eaa124cb1d092f6b370f99ff2f423a4f7e8a7d9b34a643"
+    },
+    {
+      "case": 77,
+      "width": 50,
+      "height": 81,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7c8c2710d03d749bd7eaa124cb1d092f6b370f99ff2f423a4f7e8a7d9b34a643"
+    },
+    {
+      "case": 78,
+      "width": 11,
+      "height": 71,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "0ac7623005e63409b63767e54986600d1c7713a54b6d139c8b823a12d0bfe5b6"
+    },
+    {
+      "case": 78,
+      "width": 11,
+      "height": 71,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "0ac7623005e63409b63767e54986600d1c7713a54b6d139c8b823a12d0bfe5b6"
+    },
+    {
+      "case": 78,
+      "width": 11,
+      "height": 71,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "9bad4db6fc70678e0ea0c01e3db9856dd60b3720136992617ed10c7ec332bf4e"
+    },
+    {
+      "case": 78,
+      "width": 11,
+      "height": 71,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "9bad4db6fc70678e0ea0c01e3db9856dd60b3720136992617ed10c7ec332bf4e"
+    },
+    {
+      "case": 78,
+      "width": 11,
+      "height": 71,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "73f65184b1736c538a2d9add917db5c944fc0a6e9ade215756649f1f5368fa18"
+    },
+    {
+      "case": 78,
+      "width": 11,
+      "height": 71,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "73f65184b1736c538a2d9add917db5c944fc0a6e9ade215756649f1f5368fa18"
+    },
+    {
+      "case": 79,
+      "width": 71,
+      "height": 27,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "3da028a9745ff2ff487b3140988f53769a3c75339d5d83d97b569f846e87bf4a"
+    },
+    {
+      "case": 79,
+      "width": 71,
+      "height": 27,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "3da028a9745ff2ff487b3140988f53769a3c75339d5d83d97b569f846e87bf4a"
+    },
+    {
+      "case": 79,
+      "width": 71,
+      "height": 27,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "1185118f33bc89f57a9bcde00a8a166fc1f720452bd533788070942a26d3d5e5"
+    },
+    {
+      "case": 79,
+      "width": 71,
+      "height": 27,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "1185118f33bc89f57a9bcde00a8a166fc1f720452bd533788070942a26d3d5e5"
+    },
+    {
+      "case": 79,
+      "width": 71,
+      "height": 27,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "6a8c5ffe83b6431480ee7358413f50174636fa7628d1fbbcc5867d24296caecd"
+    },
+    {
+      "case": 79,
+      "width": 71,
+      "height": 27,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "6a8c5ffe83b6431480ee7358413f50174636fa7628d1fbbcc5867d24296caecd"
+    },
+    {
+      "case": 80,
+      "width": 37,
+      "height": 52,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "cd093ef8b72102a9155506f0c5d7dff5cb564811b217e5f9949418f70e2e8c43"
+    },
+    {
+      "case": 80,
+      "width": 37,
+      "height": 52,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "cd093ef8b72102a9155506f0c5d7dff5cb564811b217e5f9949418f70e2e8c43"
+    },
+    {
+      "case": 80,
+      "width": 37,
+      "height": 52,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "363e931773d04a2793b74d62573e0287822106df10b1310fc414b34db3806086"
+    },
+    {
+      "case": 80,
+      "width": 37,
+      "height": 52,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "363e931773d04a2793b74d62573e0287822106df10b1310fc414b34db3806086"
+    },
+    {
+      "case": 80,
+      "width": 37,
+      "height": 52,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e28d39c7acd05d7d1bb9f782ceac94f2914d8553ab2fa06d9b3a594633190df1"
+    },
+    {
+      "case": 80,
+      "width": 37,
+      "height": 52,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e28d39c7acd05d7d1bb9f782ceac94f2914d8553ab2fa06d9b3a594633190df1"
+    },
+    {
+      "case": 81,
+      "width": 91,
+      "height": 35,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "397a4eb995bfe3b1281b1855cdecff25fc020b69fc962aafb6a192f7b3565263"
+    },
+    {
+      "case": 81,
+      "width": 91,
+      "height": 35,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "397a4eb995bfe3b1281b1855cdecff25fc020b69fc962aafb6a192f7b3565263"
+    },
+    {
+      "case": 81,
+      "width": 91,
+      "height": 35,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "2b818119c7bab0f26a2dc9e2666dbfc7b8c72be1434162856d428c4dfb786e82"
+    },
+    {
+      "case": 81,
+      "width": 91,
+      "height": 35,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "2b818119c7bab0f26a2dc9e2666dbfc7b8c72be1434162856d428c4dfb786e82"
+    },
+    {
+      "case": 81,
+      "width": 91,
+      "height": 35,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "945084346dfc6db44b74b0b390d432554dbb5b136241e749e5dbb7f5f57b6c7a"
+    },
+    {
+      "case": 81,
+      "width": 91,
+      "height": 35,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "945084346dfc6db44b74b0b390d432554dbb5b136241e749e5dbb7f5f57b6c7a"
+    },
+    {
+      "case": 82,
+      "width": 52,
+      "height": 15,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "30d2ec68aa1998e00f168287d581820fa85833192c263fe390632a77c80296cf"
+    },
+    {
+      "case": 82,
+      "width": 52,
+      "height": 15,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "30d2ec68aa1998e00f168287d581820fa85833192c263fe390632a77c80296cf"
+    },
+    {
+      "case": 82,
+      "width": 52,
+      "height": 15,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "3a0b6e3cc70ef7dcd2e938dffa58508487551e1dc4da57218371ea656a788487"
+    },
+    {
+      "case": 82,
+      "width": 52,
+      "height": 15,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "3a0b6e3cc70ef7dcd2e938dffa58508487551e1dc4da57218371ea656a788487"
+    },
+    {
+      "case": 82,
+      "width": 52,
+      "height": 15,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1bec5e3616b8dbed2199ddaea35c205f80a3c3e16a3d7439967fa5ab655a4d37"
+    },
+    {
+      "case": 82,
+      "width": 52,
+      "height": 15,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1bec5e3616b8dbed2199ddaea35c205f80a3c3e16a3d7439967fa5ab655a4d37"
+    },
+    {
+      "case": 83,
+      "width": 31,
+      "height": 67,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "654a288d7040d7a519a983c986b7c3797889522669092db67c1fec9b77b78fea"
+    },
+    {
+      "case": 83,
+      "width": 31,
+      "height": 67,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "654a288d7040d7a519a983c986b7c3797889522669092db67c1fec9b77b78fea"
+    },
+    {
+      "case": 83,
+      "width": 31,
+      "height": 67,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "d1c735a63ccab792df5c399558221c618893671affce1602911ff9b9b0d2f205"
+    },
+    {
+      "case": 83,
+      "width": 31,
+      "height": 67,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "d1c735a63ccab792df5c399558221c618893671affce1602911ff9b9b0d2f205"
+    },
+    {
+      "case": 83,
+      "width": 31,
+      "height": 67,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4e602dd8af2d9133a468914f0a0ac0027c5f2c33273ba27579e4f32449a6d84a"
+    },
+    {
+      "case": 83,
+      "width": 31,
+      "height": 67,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4e602dd8af2d9133a468914f0a0ac0027c5f2c33273ba27579e4f32449a6d84a"
+    },
+    {
+      "case": 84,
+      "width": 68,
+      "height": 69,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "446e8672e709d6753bd30cd4eea95eb9f80104c286332b451e2d8ea7b9bb8533"
+    },
+    {
+      "case": 84,
+      "width": 68,
+      "height": 69,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "446e8672e709d6753bd30cd4eea95eb9f80104c286332b451e2d8ea7b9bb8533"
+    },
+    {
+      "case": 84,
+      "width": 68,
+      "height": 69,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "873627c6f98dbe03fa91e00258fa788df65c32b69dcd252a8321c3910e434bca"
+    },
+    {
+      "case": 84,
+      "width": 68,
+      "height": 69,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "873627c6f98dbe03fa91e00258fa788df65c32b69dcd252a8321c3910e434bca"
+    },
+    {
+      "case": 84,
+      "width": 68,
+      "height": 69,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4be143595ba2fadbc9651a99ca1575245db2dc5e45ccfa89765455dd809de7c9"
+    },
+    {
+      "case": 84,
+      "width": 68,
+      "height": 69,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4be143595ba2fadbc9651a99ca1575245db2dc5e45ccfa89765455dd809de7c9"
+    },
+    {
+      "case": 85,
+      "width": 49,
+      "height": 71,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7dad3219be7646c6cf76f96744847110651ce600cbe0ae122c14772b1e472ce5"
+    },
+    {
+      "case": 85,
+      "width": 49,
+      "height": 71,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7dad3219be7646c6cf76f96744847110651ce600cbe0ae122c14772b1e472ce5"
+    },
+    {
+      "case": 85,
+      "width": 49,
+      "height": 71,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "2229d512b695e1a2c4cfa0f5840f2cefcf3fd081e4c2b1decbfa4d04001e95a6"
+    },
+    {
+      "case": 85,
+      "width": 49,
+      "height": 71,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "2229d512b695e1a2c4cfa0f5840f2cefcf3fd081e4c2b1decbfa4d04001e95a6"
+    },
+    {
+      "case": 85,
+      "width": 49,
+      "height": 71,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "cc76a3474964dd495531220c4e37204799ae2d5ed9efa930472cfaacf0ac19b4"
+    },
+    {
+      "case": 85,
+      "width": 49,
+      "height": 71,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "cc76a3474964dd495531220c4e37204799ae2d5ed9efa930472cfaacf0ac19b4"
+    },
+    {
+      "case": 86,
+      "width": 52,
+      "height": 94,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b773fa2616029e50f4091339599f110a3eaf972570fab15e9b7638afefea8c58"
+    },
+    {
+      "case": 86,
+      "width": 52,
+      "height": 94,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b773fa2616029e50f4091339599f110a3eaf972570fab15e9b7638afefea8c58"
+    },
+    {
+      "case": 86,
+      "width": 52,
+      "height": 94,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "d34a510306487aabce9b077abe673caefa26b643fc5c2bada98aa3401672da26"
+    },
+    {
+      "case": 86,
+      "width": 52,
+      "height": 94,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "d34a510306487aabce9b077abe673caefa26b643fc5c2bada98aa3401672da26"
+    },
+    {
+      "case": 86,
+      "width": 52,
+      "height": 94,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2fc73dc9d720b27418b0c99ac74f54948617499ad5996c0ed8870109a8c6a3f1"
+    },
+    {
+      "case": 86,
+      "width": 52,
+      "height": 94,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2fc73dc9d720b27418b0c99ac74f54948617499ad5996c0ed8870109a8c6a3f1"
+    },
+    {
+      "case": 87,
+      "width": 64,
+      "height": 96,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7512d69edaa51e8f8b1ab151362949646ca34476d559aebb82a5ef5613839c85"
+    },
+    {
+      "case": 87,
+      "width": 64,
+      "height": 96,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7512d69edaa51e8f8b1ab151362949646ca34476d559aebb82a5ef5613839c85"
+    },
+    {
+      "case": 87,
+      "width": 64,
+      "height": 96,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "ebe46e53507ccba57366aa19c3c81578070f6fcfd1fe92d369f8b42217263c9f"
+    },
+    {
+      "case": 87,
+      "width": 64,
+      "height": 96,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "ebe46e53507ccba57366aa19c3c81578070f6fcfd1fe92d369f8b42217263c9f"
+    },
+    {
+      "case": 87,
+      "width": 64,
+      "height": 96,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "86bb406129b9f14563fa1f442920ff9c75ce14563b642c76c4eaaa668c4e9a7f"
+    },
+    {
+      "case": 87,
+      "width": 64,
+      "height": 96,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "86bb406129b9f14563fa1f442920ff9c75ce14563b642c76c4eaaa668c4e9a7f"
+    },
+    {
+      "case": 88,
+      "width": 32,
+      "height": 65,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4d941011dee2e8ba6e25f1d35442c50f806cb39d9a425bf6e8e5639b91fa604a"
+    },
+    {
+      "case": 88,
+      "width": 32,
+      "height": 65,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4d941011dee2e8ba6e25f1d35442c50f806cb39d9a425bf6e8e5639b91fa604a"
+    },
+    {
+      "case": 88,
+      "width": 32,
+      "height": 65,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "72d7d04e63f27ee23f8c6cf99bf2e3a3ea42f15ad699d89a636089301c2db05e"
+    },
+    {
+      "case": 88,
+      "width": 32,
+      "height": 65,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "72d7d04e63f27ee23f8c6cf99bf2e3a3ea42f15ad699d89a636089301c2db05e"
+    },
+    {
+      "case": 88,
+      "width": 32,
+      "height": 65,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "209f90a94e485d4002ba896ad2d00810952e8e7fcb4a6fb71880b014b66b42d1"
+    },
+    {
+      "case": 88,
+      "width": 32,
+      "height": 65,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "209f90a94e485d4002ba896ad2d00810952e8e7fcb4a6fb71880b014b66b42d1"
+    },
+    {
+      "case": 89,
+      "width": 22,
+      "height": 96,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "56a452126369cd1f36e073a78a0689635eb17b950284138baa3d0d6c814b2cc8"
+    },
+    {
+      "case": 89,
+      "width": 22,
+      "height": 96,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "56a452126369cd1f36e073a78a0689635eb17b950284138baa3d0d6c814b2cc8"
+    },
+    {
+      "case": 89,
+      "width": 22,
+      "height": 96,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "05fa74dc15fed7a871acfe9b26a3fb5aef6bf955601364cf5640598f988771b6"
+    },
+    {
+      "case": 89,
+      "width": 22,
+      "height": 96,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "05fa74dc15fed7a871acfe9b26a3fb5aef6bf955601364cf5640598f988771b6"
+    },
+    {
+      "case": 89,
+      "width": 22,
+      "height": 96,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "8e3ab1954beb6db260d7f01c2763b902b1abbb5f9546430d5faf9b6767057fc1"
+    },
+    {
+      "case": 89,
+      "width": 22,
+      "height": 96,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "8e3ab1954beb6db260d7f01c2763b902b1abbb5f9546430d5faf9b6767057fc1"
+    },
+    {
+      "case": 90,
+      "width": 65,
+      "height": 49,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "820fbe0e7960bc8f969ff65187b36eddf9e2cbe22a7d729ef09b5f731f0eebc1"
+    },
+    {
+      "case": 90,
+      "width": 65,
+      "height": 49,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "820fbe0e7960bc8f969ff65187b36eddf9e2cbe22a7d729ef09b5f731f0eebc1"
+    },
+    {
+      "case": 90,
+      "width": 65,
+      "height": 49,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "d58d942e31088362fa755a09273d2ead2ed50c7fbdf27c1db939785c6b74fa3d"
+    },
+    {
+      "case": 90,
+      "width": 65,
+      "height": 49,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "d58d942e31088362fa755a09273d2ead2ed50c7fbdf27c1db939785c6b74fa3d"
+    },
+    {
+      "case": 90,
+      "width": 65,
+      "height": 49,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "855cf48e677dc4536bef278a483485d292797858d218f853bbe75da38cf2318a"
+    },
+    {
+      "case": 90,
+      "width": 65,
+      "height": 49,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "855cf48e677dc4536bef278a483485d292797858d218f853bbe75da38cf2318a"
+    },
+    {
+      "case": 91,
+      "width": 21,
+      "height": 6,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "18b55652f2f97d3613f1e83bd06f4e58f3bd61eae9faca37ce5b8c93c2bd129f"
+    },
+    {
+      "case": 91,
+      "width": 21,
+      "height": 6,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "18b55652f2f97d3613f1e83bd06f4e58f3bd61eae9faca37ce5b8c93c2bd129f"
+    },
+    {
+      "case": 91,
+      "width": 21,
+      "height": 6,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "a47187d8da1dd6d8ecc98fdc088959848dd80fcdad4d0d892367487f1ee741c8"
+    },
+    {
+      "case": 91,
+      "width": 21,
+      "height": 6,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "a47187d8da1dd6d8ecc98fdc088959848dd80fcdad4d0d892367487f1ee741c8"
+    },
+    {
+      "case": 91,
+      "width": 21,
+      "height": 6,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "624561b378ae44c1569ce106dee8770fe0bd1ca4d7844664eca315b2ea6931b4"
+    },
+    {
+      "case": 91,
+      "width": 21,
+      "height": 6,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "624561b378ae44c1569ce106dee8770fe0bd1ca4d7844664eca315b2ea6931b4"
+    },
+    {
+      "case": 92,
+      "width": 65,
+      "height": 40,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "6c07e0deadcf6ea6e338c8339d90cdbbe11d9a21e62e14b38b9c60e3e678a05d"
+    },
+    {
+      "case": 92,
+      "width": 65,
+      "height": 40,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "6c07e0deadcf6ea6e338c8339d90cdbbe11d9a21e62e14b38b9c60e3e678a05d"
+    },
+    {
+      "case": 92,
+      "width": 65,
+      "height": 40,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "56f1923a02cdae18c69fc040c0c193b7f7e3198d73f5f1239c2c7177e9cceb06"
+    },
+    {
+      "case": 92,
+      "width": 65,
+      "height": 40,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "56f1923a02cdae18c69fc040c0c193b7f7e3198d73f5f1239c2c7177e9cceb06"
+    },
+    {
+      "case": 92,
+      "width": 65,
+      "height": 40,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4acaafb0afd465dca0648ae7dbf2bfe19fe5750e18a499033d5d484f36fcb14d"
+    },
+    {
+      "case": 92,
+      "width": 65,
+      "height": 40,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4acaafb0afd465dca0648ae7dbf2bfe19fe5750e18a499033d5d484f36fcb14d"
+    },
+    {
+      "case": 93,
+      "width": 64,
+      "height": 82,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "de15bfe012cae9819edd80314f53141d61c1760475e119cbdb6cea6cbc5659be"
+    },
+    {
+      "case": 93,
+      "width": 64,
+      "height": 82,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "de15bfe012cae9819edd80314f53141d61c1760475e119cbdb6cea6cbc5659be"
+    },
+    {
+      "case": 93,
+      "width": 64,
+      "height": 82,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "58a2339a1f9f2d29d19b66b6c7a3a6e6b48c08cda6b267fd5f1c2769949f81d6"
+    },
+    {
+      "case": 93,
+      "width": 64,
+      "height": 82,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "58a2339a1f9f2d29d19b66b6c7a3a6e6b48c08cda6b267fd5f1c2769949f81d6"
+    },
+    {
+      "case": 93,
+      "width": 64,
+      "height": 82,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "ddce2d2dc0b13a954401741088a1a72cccd724c8bdb9133a8c32e4e2e09c76b5"
+    },
+    {
+      "case": 93,
+      "width": 64,
+      "height": 82,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "ddce2d2dc0b13a954401741088a1a72cccd724c8bdb9133a8c32e4e2e09c76b5"
+    },
+    {
+      "case": 94,
+      "width": 25,
+      "height": 43,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "bb503af38606f9aec1bdf221c237e34f9fdb0b1bd07d348c84f4b9c0295893bd"
+    },
+    {
+      "case": 94,
+      "width": 25,
+      "height": 43,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "bb503af38606f9aec1bdf221c237e34f9fdb0b1bd07d348c84f4b9c0295893bd"
+    },
+    {
+      "case": 94,
+      "width": 25,
+      "height": 43,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "81ddf4183042b5bd68fd175b0f2b430133f67fc46fa9914aa14a1d2d46655321"
+    },
+    {
+      "case": 94,
+      "width": 25,
+      "height": 43,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "81ddf4183042b5bd68fd175b0f2b430133f67fc46fa9914aa14a1d2d46655321"
+    },
+    {
+      "case": 94,
+      "width": 25,
+      "height": 43,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "9acc65190049b4798440bc0268b8174f89c2cc75f806d4f6072750835a4887d1"
+    },
+    {
+      "case": 94,
+      "width": 25,
+      "height": 43,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "9acc65190049b4798440bc0268b8174f89c2cc75f806d4f6072750835a4887d1"
+    },
+    {
+      "case": 95,
+      "width": 34,
+      "height": 24,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "8396e8c62126c1847d9c9b5f007203eeedcbb5f4f6402ea669a74412d66258ad"
+    },
+    {
+      "case": 95,
+      "width": 34,
+      "height": 24,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "8396e8c62126c1847d9c9b5f007203eeedcbb5f4f6402ea669a74412d66258ad"
+    },
+    {
+      "case": 95,
+      "width": 34,
+      "height": 24,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "1ab860cd6bfd1bbddc7018222d094ed48c13ed0d962746a3a7c3f2fa0dc0c2bb"
+    },
+    {
+      "case": 95,
+      "width": 34,
+      "height": 24,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "1ab860cd6bfd1bbddc7018222d094ed48c13ed0d962746a3a7c3f2fa0dc0c2bb"
+    },
+    {
+      "case": 95,
+      "width": 34,
+      "height": 24,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a584cc3a728ec245858c1ae8a745ac69d939d3d60eafeae539b413d3831ee231"
+    },
+    {
+      "case": 95,
+      "width": 34,
+      "height": 24,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a584cc3a728ec245858c1ae8a745ac69d939d3d60eafeae539b413d3831ee231"
+    },
+    {
+      "case": 96,
+      "width": 18,
+      "height": 57,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b949eb328e20dcaf97c2a6c7574983ff5bedc3e2ba6e306d66a28940c473fd0a"
+    },
+    {
+      "case": 96,
+      "width": 18,
+      "height": 57,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b949eb328e20dcaf97c2a6c7574983ff5bedc3e2ba6e306d66a28940c473fd0a"
+    },
+    {
+      "case": 96,
+      "width": 18,
+      "height": 57,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "8ae037beddae461cd3506aa9cd75256738640b7de585211face4715020d3bb3e"
+    },
+    {
+      "case": 96,
+      "width": 18,
+      "height": 57,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "8ae037beddae461cd3506aa9cd75256738640b7de585211face4715020d3bb3e"
+    },
+    {
+      "case": 96,
+      "width": 18,
+      "height": 57,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1dec0954872ece47f6a8f5a6927a4b94417e21d9569c884229f3bdc8df73b9a0"
+    },
+    {
+      "case": 96,
+      "width": 18,
+      "height": 57,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1dec0954872ece47f6a8f5a6927a4b94417e21d9569c884229f3bdc8df73b9a0"
+    },
+    {
+      "case": 97,
+      "width": 13,
+      "height": 4,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "76064b90452f5286750590b93281e60394c24ce8059c36f953111fc1bb664058"
+    },
+    {
+      "case": 97,
+      "width": 13,
+      "height": 4,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "76064b90452f5286750590b93281e60394c24ce8059c36f953111fc1bb664058"
+    },
+    {
+      "case": 97,
+      "width": 13,
+      "height": 4,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "2f97c6a43cfa89b29a41cfe6d6fb53a14f70835b4dc17dbd5807b125fb3bb1a9"
+    },
+    {
+      "case": 97,
+      "width": 13,
+      "height": 4,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "2f97c6a43cfa89b29a41cfe6d6fb53a14f70835b4dc17dbd5807b125fb3bb1a9"
+    },
+    {
+      "case": 97,
+      "width": 13,
+      "height": 4,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1dcbfd1115ce322c5c125346b7514c0f0fbfb80deb63f6776bf53a92e4b7fb75"
+    },
+    {
+      "case": 97,
+      "width": 13,
+      "height": 4,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1dcbfd1115ce322c5c125346b7514c0f0fbfb80deb63f6776bf53a92e4b7fb75"
+    },
+    {
+      "case": 98,
+      "width": 54,
+      "height": 96,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "157f4d2983dddd54f61898921a65ab49a2ed8a62bc526c3879af64344d2c08dd"
+    },
+    {
+      "case": 98,
+      "width": 54,
+      "height": 96,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "157f4d2983dddd54f61898921a65ab49a2ed8a62bc526c3879af64344d2c08dd"
+    },
+    {
+      "case": 98,
+      "width": 54,
+      "height": 96,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "c78135fa8809bd62cf1fa46ef16c73e189955e6160754460ab5a588278551a68"
+    },
+    {
+      "case": 98,
+      "width": 54,
+      "height": 96,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "c78135fa8809bd62cf1fa46ef16c73e189955e6160754460ab5a588278551a68"
+    },
+    {
+      "case": 98,
+      "width": 54,
+      "height": 96,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "411c47224eb0a9c2f0bb462540954c46b201b71573352ab9b9cb0169bb1d7e30"
+    },
+    {
+      "case": 98,
+      "width": 54,
+      "height": 96,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "411c47224eb0a9c2f0bb462540954c46b201b71573352ab9b9cb0169bb1d7e30"
+    },
+    {
+      "case": 99,
+      "width": 83,
+      "height": 64,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "dcf04cfc3a56650ec9ee38d0f3fb8a104324c869f6f3361c04a39446ea13d505"
+    },
+    {
+      "case": 99,
+      "width": 83,
+      "height": 64,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "dcf04cfc3a56650ec9ee38d0f3fb8a104324c869f6f3361c04a39446ea13d505"
+    },
+    {
+      "case": 99,
+      "width": 83,
+      "height": 64,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "27fe2798630bfa5fa1e7e275eb4563481f134416a63cf16c1c3b3592931f7dbe"
+    },
+    {
+      "case": 99,
+      "width": 83,
+      "height": 64,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "27fe2798630bfa5fa1e7e275eb4563481f134416a63cf16c1c3b3592931f7dbe"
+    },
+    {
+      "case": 99,
+      "width": 83,
+      "height": 64,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "26fc8e7fb03dc73f059bb826654dc73c0f6559143b81056ce68a38da32a56137"
+    },
+    {
+      "case": 99,
+      "width": 83,
+      "height": 64,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "26fc8e7fb03dc73f059bb826654dc73c0f6559143b81056ce68a38da32a56137"
+    },
+    {
+      "case": 100,
+      "width": 69,
+      "height": 16,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "71ffdf3a317e4c05bef249e8b7b5d5e60673bba5322fe4243f1cb2e96a111325"
+    },
+    {
+      "case": 100,
+      "width": 69,
+      "height": 16,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "71ffdf3a317e4c05bef249e8b7b5d5e60673bba5322fe4243f1cb2e96a111325"
+    },
+    {
+      "case": 100,
+      "width": 69,
+      "height": 16,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "b78b016c3863bc0382bd9f23375238e0206086ace1187f5f60d318b6fd6422e8"
+    },
+    {
+      "case": 100,
+      "width": 69,
+      "height": 16,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "b78b016c3863bc0382bd9f23375238e0206086ace1187f5f60d318b6fd6422e8"
+    },
+    {
+      "case": 100,
+      "width": 69,
+      "height": 16,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "940e9a4bee8c7ed5f7aeca273a163ab41d6ce039f1a8591ac37eab07a115f707"
+    },
+    {
+      "case": 100,
+      "width": 69,
+      "height": 16,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "940e9a4bee8c7ed5f7aeca273a163ab41d6ce039f1a8591ac37eab07a115f707"
+    },
+    {
+      "case": 101,
+      "width": 19,
+      "height": 68,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2ae9e06cf692059487d21808b4fbb2c691398f805b58c092c08786c0ff9bc8bf"
+    },
+    {
+      "case": 101,
+      "width": 19,
+      "height": 68,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2ae9e06cf692059487d21808b4fbb2c691398f805b58c092c08786c0ff9bc8bf"
+    },
+    {
+      "case": 101,
+      "width": 19,
+      "height": 68,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "77ed94594727991128378d4127895733f53d952ef4d7fd36d3656efa5eade9f8"
+    },
+    {
+      "case": 101,
+      "width": 19,
+      "height": 68,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "77ed94594727991128378d4127895733f53d952ef4d7fd36d3656efa5eade9f8"
+    },
+    {
+      "case": 101,
+      "width": 19,
+      "height": 68,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "2e6b974907e0f4982c45e5a1c2409a93d4ec362827e63e36fa1b6b89d2ef7e45"
+    },
+    {
+      "case": 101,
+      "width": 19,
+      "height": 68,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "2e6b974907e0f4982c45e5a1c2409a93d4ec362827e63e36fa1b6b89d2ef7e45"
+    },
+    {
+      "case": 102,
+      "width": 75,
+      "height": 20,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b7c9406af95a405521cac8885ad0140a5ebd392b6451da2f227cd0b25401467d"
+    },
+    {
+      "case": 102,
+      "width": 75,
+      "height": 20,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b7c9406af95a405521cac8885ad0140a5ebd392b6451da2f227cd0b25401467d"
+    },
+    {
+      "case": 102,
+      "width": 75,
+      "height": 20,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "3a382ca5a3de1bbc23ac353701bf064fe763b0dcbdf9d5f6f6178fe9438bbe4a"
+    },
+    {
+      "case": 102,
+      "width": 75,
+      "height": 20,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "3a382ca5a3de1bbc23ac353701bf064fe763b0dcbdf9d5f6f6178fe9438bbe4a"
+    },
+    {
+      "case": 102,
+      "width": 75,
+      "height": 20,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "177253907f8e3121dbd370a9073a2c55149b8d07ed94fc3495e1152cde43ee4d"
+    },
+    {
+      "case": 102,
+      "width": 75,
+      "height": 20,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "177253907f8e3121dbd370a9073a2c55149b8d07ed94fc3495e1152cde43ee4d"
+    },
+    {
+      "case": 103,
+      "width": 65,
+      "height": 55,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "0b2f4e24fd3a4a03795cec0401304ac75b4ea9fadeb6a4a244f4a4d820516e49"
+    },
+    {
+      "case": 103,
+      "width": 65,
+      "height": 55,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "0b2f4e24fd3a4a03795cec0401304ac75b4ea9fadeb6a4a244f4a4d820516e49"
+    },
+    {
+      "case": 103,
+      "width": 65,
+      "height": 55,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "d3ebb78a403f7bba21e0636409cfe78213ff5ed04ecc56c327227438649ce5ef"
+    },
+    {
+      "case": 103,
+      "width": 65,
+      "height": 55,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "d3ebb78a403f7bba21e0636409cfe78213ff5ed04ecc56c327227438649ce5ef"
+    },
+    {
+      "case": 103,
+      "width": 65,
+      "height": 55,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a020daf0d0065ba8aacab4ad87dbae1769faddf34157f6ed63b1a556927c79de"
+    },
+    {
+      "case": 103,
+      "width": 65,
+      "height": 55,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a020daf0d0065ba8aacab4ad87dbae1769faddf34157f6ed63b1a556927c79de"
+    },
+    {
+      "case": 104,
+      "width": 87,
+      "height": 91,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7e22b27655df3256034b9523b2822aec4cb335bee76af1694b03368c18c09d59"
+    },
+    {
+      "case": 104,
+      "width": 87,
+      "height": 91,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7e22b27655df3256034b9523b2822aec4cb335bee76af1694b03368c18c09d59"
+    },
+    {
+      "case": 104,
+      "width": 87,
+      "height": 91,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "0d49cd1bd9dd408d57f536201d077cfde8a6b4fdc227d1f530e5d4252a49df5d"
+    },
+    {
+      "case": 104,
+      "width": 87,
+      "height": 91,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "0d49cd1bd9dd408d57f536201d077cfde8a6b4fdc227d1f530e5d4252a49df5d"
+    },
+    {
+      "case": 104,
+      "width": 87,
+      "height": 91,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "76e6df303d772c278a43ac64e3321c213ba65e21de235e1dc6c582d1ae7eb227"
+    },
+    {
+      "case": 104,
+      "width": 87,
+      "height": 91,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "76e6df303d772c278a43ac64e3321c213ba65e21de235e1dc6c582d1ae7eb227"
+    },
+    {
+      "case": 105,
+      "width": 31,
+      "height": 26,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e9e102f94f898fa37622ba7005bcf364a6442d89be91bcd3ac2a374cea88a36b"
+    },
+    {
+      "case": 105,
+      "width": 31,
+      "height": 26,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e9e102f94f898fa37622ba7005bcf364a6442d89be91bcd3ac2a374cea88a36b"
+    },
+    {
+      "case": 105,
+      "width": 31,
+      "height": 26,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "42b8000b0aa59273bd6cd516de27f942f701a6b4e59e540e7eb84eadef1c8c65"
+    },
+    {
+      "case": 105,
+      "width": 31,
+      "height": 26,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "42b8000b0aa59273bd6cd516de27f942f701a6b4e59e540e7eb84eadef1c8c65"
+    },
+    {
+      "case": 105,
+      "width": 31,
+      "height": 26,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "9a54bb67a03f2cfcf1bc98376648f95af52c4098f66e0232924649a37bf958b3"
+    },
+    {
+      "case": 105,
+      "width": 31,
+      "height": 26,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "9a54bb67a03f2cfcf1bc98376648f95af52c4098f66e0232924649a37bf958b3"
+    },
+    {
+      "case": 106,
+      "width": 3,
+      "height": 11,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "36e60eee2f14b5be7c477a22632b6ba9f0be0e334f9e590ee2404e23217a4638"
+    },
+    {
+      "case": 106,
+      "width": 3,
+      "height": 11,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "36e60eee2f14b5be7c477a22632b6ba9f0be0e334f9e590ee2404e23217a4638"
+    },
+    {
+      "case": 106,
+      "width": 3,
+      "height": 11,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "6b69331b1cf78aa668534b9c46a8370b2f00016f2073d45893e4bbbe8541daec"
+    },
+    {
+      "case": 106,
+      "width": 3,
+      "height": 11,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "6b69331b1cf78aa668534b9c46a8370b2f00016f2073d45893e4bbbe8541daec"
+    },
+    {
+      "case": 106,
+      "width": 3,
+      "height": 11,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "ab5fa6dcff57bb5632ad1a7953998d19b31e9f9f09dac4ea4276c2e8f8d17e99"
+    },
+    {
+      "case": 106,
+      "width": 3,
+      "height": 11,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "ab5fa6dcff57bb5632ad1a7953998d19b31e9f9f09dac4ea4276c2e8f8d17e99"
+    },
+    {
+      "case": 107,
+      "width": 54,
+      "height": 64,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1c81a229957045e1ba8e00d8efcbad04348eb42c3b4228fe39e804570e1e8f68"
+    },
+    {
+      "case": 107,
+      "width": 54,
+      "height": 64,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1c81a229957045e1ba8e00d8efcbad04348eb42c3b4228fe39e804570e1e8f68"
+    },
+    {
+      "case": 107,
+      "width": 54,
+      "height": 64,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "efdb70d3f343552e42402f6c3c140d7e3648a4f42737fbecc6f2ce4c28ffea2f"
+    },
+    {
+      "case": 107,
+      "width": 54,
+      "height": 64,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "efdb70d3f343552e42402f6c3c140d7e3648a4f42737fbecc6f2ce4c28ffea2f"
+    },
+    {
+      "case": 107,
+      "width": 54,
+      "height": 64,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "64babaf45cae5c73634d36cc98c6938538ae94cb4a0d5e99165f9d9ee857026f"
+    },
+    {
+      "case": 107,
+      "width": 54,
+      "height": 64,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "64babaf45cae5c73634d36cc98c6938538ae94cb4a0d5e99165f9d9ee857026f"
+    },
+    {
+      "case": 108,
+      "width": 19,
+      "height": 87,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "3adbcd57d9a317aacfe10c066e88a80842007136dfd12dffac70989631f425cd"
+    },
+    {
+      "case": 108,
+      "width": 19,
+      "height": 87,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "3adbcd57d9a317aacfe10c066e88a80842007136dfd12dffac70989631f425cd"
+    },
+    {
+      "case": 108,
+      "width": 19,
+      "height": 87,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "d3200d645598831c68fe89a8ed37bee9f68bbee800a3e976d9a45931a198a74f"
+    },
+    {
+      "case": 108,
+      "width": 19,
+      "height": 87,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "d3200d645598831c68fe89a8ed37bee9f68bbee800a3e976d9a45931a198a74f"
+    },
+    {
+      "case": 108,
+      "width": 19,
+      "height": 87,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c5ef24b9be69e30cb642e69fba2397726cf22148f998c0f6383e3b5bf2e48066"
+    },
+    {
+      "case": 108,
+      "width": 19,
+      "height": 87,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c5ef24b9be69e30cb642e69fba2397726cf22148f998c0f6383e3b5bf2e48066"
+    },
+    {
+      "case": 109,
+      "width": 6,
+      "height": 26,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "06e109bc7db226e6212b6034865323f37d803574a7324d5f8ae48927d36981fe"
+    },
+    {
+      "case": 109,
+      "width": 6,
+      "height": 26,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "06e109bc7db226e6212b6034865323f37d803574a7324d5f8ae48927d36981fe"
+    },
+    {
+      "case": 109,
+      "width": 6,
+      "height": 26,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "83a975740b54bf2d0f9665d3edbff0ff153f8f0cc22e9f3195318b8527420d26"
+    },
+    {
+      "case": 109,
+      "width": 6,
+      "height": 26,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "83a975740b54bf2d0f9665d3edbff0ff153f8f0cc22e9f3195318b8527420d26"
+    },
+    {
+      "case": 109,
+      "width": 6,
+      "height": 26,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "fa43818afd1cb365fca7c75ab5ad044bd671b7a011705d66a12d6470ea0a1c80"
+    },
+    {
+      "case": 109,
+      "width": 6,
+      "height": 26,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "fa43818afd1cb365fca7c75ab5ad044bd671b7a011705d66a12d6470ea0a1c80"
+    },
+    {
+      "case": 110,
+      "width": 25,
+      "height": 4,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "4a656035a889f4b154fbd6838963574c7389ade78b3c3802a2cca051be951a51"
+    },
+    {
+      "case": 110,
+      "width": 25,
+      "height": 4,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "4a656035a889f4b154fbd6838963574c7389ade78b3c3802a2cca051be951a51"
+    },
+    {
+      "case": 110,
+      "width": 25,
+      "height": 4,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "5d949c90db937ba065c96686de42b029c3d117ad65e709e080d855876ee2448b"
+    },
+    {
+      "case": 110,
+      "width": 25,
+      "height": 4,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "5d949c90db937ba065c96686de42b029c3d117ad65e709e080d855876ee2448b"
+    },
+    {
+      "case": 110,
+      "width": 25,
+      "height": 4,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "32ea45f8a59cbf576964ca7c874f8019c52888ca98a3378125ca1e07d0612cc6"
+    },
+    {
+      "case": 110,
+      "width": 25,
+      "height": 4,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "32ea45f8a59cbf576964ca7c874f8019c52888ca98a3378125ca1e07d0612cc6"
+    },
+    {
+      "case": 111,
+      "width": 96,
+      "height": 45,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "cc0e4a3eb1e747626868e92f2342e291ac705b2abfabb2a505e3e4553bd163d1"
+    },
+    {
+      "case": 111,
+      "width": 96,
+      "height": 45,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "cc0e4a3eb1e747626868e92f2342e291ac705b2abfabb2a505e3e4553bd163d1"
+    },
+    {
+      "case": 111,
+      "width": 96,
+      "height": 45,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "dc49b96069f56f646b0b429a17bae905bc6bcbd994644daa6c1b036897df6ea0"
+    },
+    {
+      "case": 111,
+      "width": 96,
+      "height": 45,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "dc49b96069f56f646b0b429a17bae905bc6bcbd994644daa6c1b036897df6ea0"
+    },
+    {
+      "case": 111,
+      "width": 96,
+      "height": 45,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7a04aa970d2daa33c882ff78794c39fa6a654ef45ee4b4330df9e3fe3b22952b"
+    },
+    {
+      "case": 111,
+      "width": 96,
+      "height": 45,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7a04aa970d2daa33c882ff78794c39fa6a654ef45ee4b4330df9e3fe3b22952b"
+    },
+    {
+      "case": 112,
+      "width": 93,
+      "height": 6,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "14405352adfb4937afaaee1e08c3151228193d8bd0a9eb3923aa520399227949"
+    },
+    {
+      "case": 112,
+      "width": 93,
+      "height": 6,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "14405352adfb4937afaaee1e08c3151228193d8bd0a9eb3923aa520399227949"
+    },
+    {
+      "case": 112,
+      "width": 93,
+      "height": 6,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "7c97a7e532f8b0b1875c297d47da1942cbf7d965816503a4d9771013d433dd4b"
+    },
+    {
+      "case": 112,
+      "width": 93,
+      "height": 6,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "7c97a7e532f8b0b1875c297d47da1942cbf7d965816503a4d9771013d433dd4b"
+    },
+    {
+      "case": 112,
+      "width": 93,
+      "height": 6,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "828bf9fc975c5091bd695e545bc9c6ecc82603fe1ceaba83d47afb873daf5a9f"
+    },
+    {
+      "case": 112,
+      "width": 93,
+      "height": 6,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "828bf9fc975c5091bd695e545bc9c6ecc82603fe1ceaba83d47afb873daf5a9f"
+    },
+    {
+      "case": 113,
+      "width": 71,
+      "height": 29,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "65ef427fbfe9f04e1330dd7b3b289682223099bb1d4a19db3efcedf5f62ecd96"
+    },
+    {
+      "case": 113,
+      "width": 71,
+      "height": 29,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "65ef427fbfe9f04e1330dd7b3b289682223099bb1d4a19db3efcedf5f62ecd96"
+    },
+    {
+      "case": 113,
+      "width": 71,
+      "height": 29,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "a9ac71fa7364aa7dd8e2fddc990248f90e1605fada6a319f05746f5901c1cb44"
+    },
+    {
+      "case": 113,
+      "width": 71,
+      "height": 29,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "a9ac71fa7364aa7dd8e2fddc990248f90e1605fada6a319f05746f5901c1cb44"
+    },
+    {
+      "case": 113,
+      "width": 71,
+      "height": 29,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "12a0d16bcd084c339c1b6f8833f667b8375eccb5aa744621bff9376431f439b2"
+    },
+    {
+      "case": 113,
+      "width": 71,
+      "height": 29,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "12a0d16bcd084c339c1b6f8833f667b8375eccb5aa744621bff9376431f439b2"
+    },
+    {
+      "case": 114,
+      "width": 60,
+      "height": 51,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "f98ab8f206e4270d93f7a23e777a0ae598304e349ba6be069a393714cb69b126"
+    },
+    {
+      "case": 114,
+      "width": 60,
+      "height": 51,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "f98ab8f206e4270d93f7a23e777a0ae598304e349ba6be069a393714cb69b126"
+    },
+    {
+      "case": 114,
+      "width": 60,
+      "height": 51,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "ee48422dac5fcafdbc736f7a614ba49bbad87a582cf5e35064fb18b8f43bd726"
+    },
+    {
+      "case": 114,
+      "width": 60,
+      "height": 51,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "ee48422dac5fcafdbc736f7a614ba49bbad87a582cf5e35064fb18b8f43bd726"
+    },
+    {
+      "case": 114,
+      "width": 60,
+      "height": 51,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c97e4daf47386b3d0797560d5c62788e24954e51566fa1781156e12b01797009"
+    },
+    {
+      "case": 114,
+      "width": 60,
+      "height": 51,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c97e4daf47386b3d0797560d5c62788e24954e51566fa1781156e12b01797009"
+    },
+    {
+      "case": 115,
+      "width": 93,
+      "height": 80,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d68c10400208049d70aaa5113f51c402d05d5f8ac7f110392f5933c643e166d5"
+    },
+    {
+      "case": 115,
+      "width": 93,
+      "height": 80,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d68c10400208049d70aaa5113f51c402d05d5f8ac7f110392f5933c643e166d5"
+    },
+    {
+      "case": 115,
+      "width": 93,
+      "height": 80,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "f7e55d02b3c681e43154838e1402ff31846f67b2920f9142b9bfeda99dd2b8aa"
+    },
+    {
+      "case": 115,
+      "width": 93,
+      "height": 80,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "f7e55d02b3c681e43154838e1402ff31846f67b2920f9142b9bfeda99dd2b8aa"
+    },
+    {
+      "case": 115,
+      "width": 93,
+      "height": 80,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "40ca21cf84cd304932bb20c979b04c3ab3df9f475dfb457608d86233b1845e62"
+    },
+    {
+      "case": 115,
+      "width": 93,
+      "height": 80,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "40ca21cf84cd304932bb20c979b04c3ab3df9f475dfb457608d86233b1845e62"
+    },
+    {
+      "case": 116,
+      "width": 62,
+      "height": 8,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "faf33ffb4912bd0fd4159dabc28e298139b60ccdfd7e7869ae5dab8d0c9faefa"
+    },
+    {
+      "case": 116,
+      "width": 62,
+      "height": 8,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "faf33ffb4912bd0fd4159dabc28e298139b60ccdfd7e7869ae5dab8d0c9faefa"
+    },
+    {
+      "case": 116,
+      "width": 62,
+      "height": 8,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "54343478ebd8fbb754561b2476ec3a4df2c1da757ce4b24ea1e093a358d0afd7"
+    },
+    {
+      "case": 116,
+      "width": 62,
+      "height": 8,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "54343478ebd8fbb754561b2476ec3a4df2c1da757ce4b24ea1e093a358d0afd7"
+    },
+    {
+      "case": 116,
+      "width": 62,
+      "height": 8,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d94a7a96d9791870003a68bc57da0aabe02e2ae6ca02ff385d6086418e92034a"
+    },
+    {
+      "case": 116,
+      "width": 62,
+      "height": 8,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d94a7a96d9791870003a68bc57da0aabe02e2ae6ca02ff385d6086418e92034a"
+    },
+    {
+      "case": 117,
+      "width": 9,
+      "height": 64,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c8dadff20f163005d9c2abbc2fa60794f44cb448944e35f77d53a6b8ad5744af"
+    },
+    {
+      "case": 117,
+      "width": 9,
+      "height": 64,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c8dadff20f163005d9c2abbc2fa60794f44cb448944e35f77d53a6b8ad5744af"
+    },
+    {
+      "case": 117,
+      "width": 9,
+      "height": 64,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "09a1946385bd677c31340357a184277a2bfcd3a5d125cd0a393c2664ca92884f"
+    },
+    {
+      "case": 117,
+      "width": 9,
+      "height": 64,
+      "level": 3,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "09a1946385bd677c31340357a184277a2bfcd3a5d125cd0a393c2664ca92884f"
+    },
+    {
+      "case": 117,
+      "width": 9,
+      "height": 64,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "217b96ae680db0d7a0a4eb43fa91532c3b5a3593982fc473a45e3a89017032cc"
+    },
+    {
+      "case": 117,
+      "width": 9,
+      "height": 64,
+      "level": 3,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "217b96ae680db0d7a0a4eb43fa91532c3b5a3593982fc473a45e3a89017032cc"
+    },
+    {
+      "case": 118,
+      "width": 20,
+      "height": 63,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "5631291d5a208864a5e68fc5569b0ab3c3b3a645fa50bd863d20c1dc899ba5e6"
+    },
+    {
+      "case": 118,
+      "width": 20,
+      "height": 63,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "5631291d5a208864a5e68fc5569b0ab3c3b3a645fa50bd863d20c1dc899ba5e6"
+    },
+    {
+      "case": 118,
+      "width": 20,
+      "height": 63,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "dbf58573500913c5d662d0ee253be617925880960700ffc3facf966152fe529f"
+    },
+    {
+      "case": 118,
+      "width": 20,
+      "height": 63,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "dbf58573500913c5d662d0ee253be617925880960700ffc3facf966152fe529f"
+    },
+    {
+      "case": 118,
+      "width": 20,
+      "height": 63,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "61201f84c871580619fa6636ef13bf9406fc2bc1c75f08610417b29703c02182"
+    },
+    {
+      "case": 118,
+      "width": 20,
+      "height": 63,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "61201f84c871580619fa6636ef13bf9406fc2bc1c75f08610417b29703c02182"
+    },
+    {
+      "case": 119,
+      "width": 86,
+      "height": 68,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "fc0e4ec4ca976b4a1e09a9db466ce1533a4ac23c4788aca80585fe7505c14699"
+    },
+    {
+      "case": 119,
+      "width": 86,
+      "height": 68,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "fc0e4ec4ca976b4a1e09a9db466ce1533a4ac23c4788aca80585fe7505c14699"
+    },
+    {
+      "case": 119,
+      "width": 86,
+      "height": 68,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "4e9ccf0c58a1af40cb63ccbf21795f23a76ff7d9d628c9ff9a6368727d10007a"
+    },
+    {
+      "case": 119,
+      "width": 86,
+      "height": 68,
+      "level": 5,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "4e9ccf0c58a1af40cb63ccbf21795f23a76ff7d9d628c9ff9a6368727d10007a"
+    },
+    {
+      "case": 119,
+      "width": 86,
+      "height": 68,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d1cad500fd0680c5bee94bb0e2d6cf4dc087cc67e23aa9fad655bfa96842c792"
+    },
+    {
+      "case": 119,
+      "width": 86,
+      "height": 68,
+      "level": 5,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d1cad500fd0680c5bee94bb0e2d6cf4dc087cc67e23aa9fad655bfa96842c792"
+    },
+    {
+      "case": 120,
+      "width": 77,
+      "height": 13,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "5183a2d1c44b9b660c1b9228877c7bfa5abaa21b21a085ad9e1d908f80bde289"
+    },
+    {
+      "case": 120,
+      "width": 77,
+      "height": 13,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "5183a2d1c44b9b660c1b9228877c7bfa5abaa21b21a085ad9e1d908f80bde289"
+    },
+    {
+      "case": 120,
+      "width": 77,
+      "height": 13,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "2068f54f62c348027399a7bc3e5674ad60b6a307a01392d27146fb122cf68211"
+    },
+    {
+      "case": 120,
+      "width": 77,
+      "height": 13,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "2068f54f62c348027399a7bc3e5674ad60b6a307a01392d27146fb122cf68211"
+    },
+    {
+      "case": 120,
+      "width": 77,
+      "height": 13,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "9c4e0ec558c65286f518627a00bd66f5b72e3bb44e92968d3c5fea0f85d54d0c"
+    },
+    {
+      "case": 120,
+      "width": 77,
+      "height": 13,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "9c4e0ec558c65286f518627a00bd66f5b72e3bb44e92968d3c5fea0f85d54d0c"
+    },
+    {
+      "case": 121,
+      "width": 68,
+      "height": 39,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "6e0d50a48e5ce1446d73b161feccd5e597db46b9dfa20e0a4f70bc7bbfb66859"
+    },
+    {
+      "case": 121,
+      "width": 68,
+      "height": 39,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "6e0d50a48e5ce1446d73b161feccd5e597db46b9dfa20e0a4f70bc7bbfb66859"
+    },
+    {
+      "case": 121,
+      "width": 68,
+      "height": 39,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "051644c7f0de70dac5083c1919ab3cc42e2393ef244d5d94e53e28c892e5c17e"
+    },
+    {
+      "case": 121,
+      "width": 68,
+      "height": 39,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "051644c7f0de70dac5083c1919ab3cc42e2393ef244d5d94e53e28c892e5c17e"
+    },
+    {
+      "case": 121,
+      "width": 68,
+      "height": 39,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a25252a6ab93628f6ad5b69dad4ebeb0ecab03128f4034c37bf43d5befe1479b"
+    },
+    {
+      "case": 121,
+      "width": 68,
+      "height": 39,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a25252a6ab93628f6ad5b69dad4ebeb0ecab03128f4034c37bf43d5befe1479b"
+    },
+    {
+      "case": 122,
+      "width": 89,
+      "height": 31,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "3bc7c4e7652ee80bcab943354899e5cc1c9734ef575e71d59e2b1f973a8fb4b1"
+    },
+    {
+      "case": 122,
+      "width": 89,
+      "height": 31,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "3bc7c4e7652ee80bcab943354899e5cc1c9734ef575e71d59e2b1f973a8fb4b1"
+    },
+    {
+      "case": 122,
+      "width": 89,
+      "height": 31,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "6f95abdc3f003f3598912d9fd5fed55ed1d52eed3a8d6fb428038f5379816b0e"
+    },
+    {
+      "case": 122,
+      "width": 89,
+      "height": 31,
+      "level": 2,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "6f95abdc3f003f3598912d9fd5fed55ed1d52eed3a8d6fb428038f5379816b0e"
+    },
+    {
+      "case": 122,
+      "width": 89,
+      "height": 31,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "74b6c405d61ccd34578569b5182e5d562d030f25d65908edac16d9c50962cb1b"
+    },
+    {
+      "case": 122,
+      "width": 89,
+      "height": 31,
+      "level": 2,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "74b6c405d61ccd34578569b5182e5d562d030f25d65908edac16d9c50962cb1b"
+    },
+    {
+      "case": 123,
+      "width": 46,
+      "height": 2,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "fece7e4465101cf296021cb74487a82b66d96cb58f94bcbe997d6d3be4d2c618"
+    },
+    {
+      "case": 123,
+      "width": 46,
+      "height": 2,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "fece7e4465101cf296021cb74487a82b66d96cb58f94bcbe997d6d3be4d2c618"
+    },
+    {
+      "case": 123,
+      "width": 46,
+      "height": 2,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "a64b6e50a65595bdb3448b0b91c7d7af23364440a785b5980eaf61633a6b694b"
+    },
+    {
+      "case": 123,
+      "width": 46,
+      "height": 2,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "a64b6e50a65595bdb3448b0b91c7d7af23364440a785b5980eaf61633a6b694b"
+    },
+    {
+      "case": 123,
+      "width": 46,
+      "height": 2,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a1ccbe853348404be68fa2db78f4f6ef7cdd4b04cdb1cabc92195c3f6045f746"
+    },
+    {
+      "case": 123,
+      "width": 46,
+      "height": 2,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a1ccbe853348404be68fa2db78f4f6ef7cdd4b04cdb1cabc92195c3f6045f746"
+    },
+    {
+      "case": 124,
+      "width": 3,
+      "height": 7,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "14ae25b45a1ffca5bae2e646f977b50a7c20e16616f9651457feb674fd256ac3"
+    },
+    {
+      "case": 124,
+      "width": 3,
+      "height": 7,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "14ae25b45a1ffca5bae2e646f977b50a7c20e16616f9651457feb674fd256ac3"
+    },
+    {
+      "case": 124,
+      "width": 3,
+      "height": 7,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "027f71659f3c74eedb85fa1d5562f97ece8de94456538fe0ad15d054f2c67027"
+    },
+    {
+      "case": 124,
+      "width": 3,
+      "height": 7,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "027f71659f3c74eedb85fa1d5562f97ece8de94456538fe0ad15d054f2c67027"
+    },
+    {
+      "case": 124,
+      "width": 3,
+      "height": 7,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "f45cf83b8f5de59aa66de721c565400f0a559b465d8932f6231b9491b8cd2e63"
+    },
+    {
+      "case": 124,
+      "width": 3,
+      "height": 7,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "f45cf83b8f5de59aa66de721c565400f0a559b465d8932f6231b9491b8cd2e63"
+    },
+    {
+      "case": 125,
+      "width": 16,
+      "height": 26,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "6943b6433eba8c03831404531020e70a25ac0b9272eb8ecff3b21066144d7315"
+    },
+    {
+      "case": 125,
+      "width": 16,
+      "height": 26,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "6943b6433eba8c03831404531020e70a25ac0b9272eb8ecff3b21066144d7315"
+    },
+    {
+      "case": 125,
+      "width": 16,
+      "height": 26,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "be13d46323aef8ec979232ce69e6031881287a204e2314b507b513183607738f"
+    },
+    {
+      "case": 125,
+      "width": 16,
+      "height": 26,
+      "level": 4,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "be13d46323aef8ec979232ce69e6031881287a204e2314b507b513183607738f"
+    },
+    {
+      "case": 125,
+      "width": 16,
+      "height": 26,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "c18d9c5678c87b3dc5d2369fd55865a59715951d3a35f23db1f31c6ea567cb0d"
+    },
+    {
+      "case": 125,
+      "width": 16,
+      "height": 26,
+      "level": 4,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "c18d9c5678c87b3dc5d2369fd55865a59715951d3a35f23db1f31c6ea567cb0d"
+    },
+    {
+      "case": 126,
+      "width": 26,
+      "height": 48,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "6ce8ebff135c202f7e6f6333564c2d0a9a49ee23a4ba6721ece9a8fc9a247546"
+    },
+    {
+      "case": 126,
+      "width": 26,
+      "height": 48,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "6ce8ebff135c202f7e6f6333564c2d0a9a49ee23a4ba6721ece9a8fc9a247546"
+    },
+    {
+      "case": 126,
+      "width": 26,
+      "height": 48,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "89365e8c0b0df189860126203ce5de31246048ad51fec452cfd63ae932dcfd0b"
+    },
+    {
+      "case": 126,
+      "width": 26,
+      "height": 48,
+      "level": 0,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "89365e8c0b0df189860126203ce5de31246048ad51fec452cfd63ae932dcfd0b"
+    },
+    {
+      "case": 126,
+      "width": 26,
+      "height": 48,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "47dcd20d42f9d0d74dc03794d15fc2d581a2f40322c85f96f309382381ba67a4"
+    },
+    {
+      "case": 126,
+      "width": 26,
+      "height": 48,
+      "level": 0,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "47dcd20d42f9d0d74dc03794d15fc2d581a2f40322c85f96f309382381ba67a4"
+    },
+    {
+      "case": 127,
+      "width": 43,
+      "height": 62,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b527351cc214889a07b43aa16e317846041802ea36f178f873cf3c7fdc197e09"
+    },
+    {
+      "case": 127,
+      "width": 43,
+      "height": 62,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b527351cc214889a07b43aa16e317846041802ea36f178f873cf3c7fdc197e09"
+    },
+    {
+      "case": 127,
+      "width": 43,
+      "height": 62,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "de73eadd997aa0fdaff5246fa64d17ad57a5f51dccf1c441be3b98bb938c6ec9"
+    },
+    {
+      "case": 127,
+      "width": 43,
+      "height": 62,
+      "level": 1,
+      "mode": "RGB",
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "de73eadd997aa0fdaff5246fa64d17ad57a5f51dccf1c441be3b98bb938c6ec9"
+    },
+    {
+      "case": 127,
+      "width": 43,
+      "height": 62,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "efa3bd7a20f0177b8c46b47bd7bfeb3ab721c0d69668bf4374e374a6ec553828"
+    },
+    {
+      "case": 127,
+      "width": 43,
+      "height": 62,
+      "level": 1,
+      "mode": "L",
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "efa3bd7a20f0177b8c46b47bd7bfeb3ab721c0d69668bf4374e374a6ec553828"
+    }
+  ]
+}

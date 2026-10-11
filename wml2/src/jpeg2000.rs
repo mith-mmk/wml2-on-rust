@@ -578,6 +578,13 @@ fn inverse53_multilevel(
 fn gray8(coefficient: i32) -> u8 {
     (coefficient.clamp(-128, 127) + 128) as u8
 }
+// ITU-T T.800 G.2.2: inverse RCT after wavelet synthesis and before DC shift.
+// Floor division matters for negative chroma sums. Wide intermediates also
+// handle legal entropy mutations yielding extreme reconstructed coefficients.
+fn inverse_rct(y: i32, cb: i32, cr: i32) -> [u8; 3] {
+    let green = i64::from(y) - (i64::from(cb) + i64::from(cr)).div_euclid(4);
+    [green + i64::from(cr), green, green + i64::from(cb)].map(|v| (v + 128).clamp(0, 255) as u8)
+}
 fn synthesize(plane: &mut [i32], w: usize, h: usize, levels: u8) -> Result<(), Error> {
     if levels == 1 {
         inverse53(plane, w, h);
@@ -676,7 +683,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 if b[0] != 0
                     || b[1] != 0
                     || u16be(b, 2)? != 1
-                    || b[4] != 0
+                    || b[4] > 1
                     || b[5] > 5
                     || b[6] != 2
                     || b[7] != 2
@@ -687,7 +694,10 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                         "COD: one layer, LRCP, 0..5 levels, 16x16 block, style zero, reversible transform required",
                     ));
                 }
-                coding = Some(b[5]);
+                if b[4] == 1 && size.ok_or_else(|| bad("COD before SIZ"))?.2 != 3 {
+                    return Err(unsupported("RCT requires three components"));
+                }
+                coding = Some((b[5], b[4] == 1));
             }
             0xff5c => {
                 if quant.is_some() || b.is_empty() {
@@ -720,19 +730,19 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     return Err(unsupported("one tile-part required"));
                 }
                 let (w, h, components) = size.ok_or_else(|| bad("missing SIZ"))?;
-                let levels = coding.ok_or_else(|| bad("missing COD"))?;
+                let (levels, rct) = coding.ok_or_else(|| bad("missing COD"))?;
                 if w < (1usize << levels) || h < (1usize << levels) {
                     return Err(unsupported(
                         "each dimension must be at least 2^decomposition levels",
                     ));
                 }
                 let default_quant = quant.ok_or_else(|| bad("missing QCD"))?;
-                let mut component_mb = Vec::with_capacity(components);
-                for override_quant in &component_quant[..components] {
-                    component_mb.push(quant_planes(
-                        override_quant.unwrap_or(default_quant),
-                        levels,
-                    )?);
+                let mut component_mb = vec![quant_planes(default_quant, levels)?; components];
+                for (component, override_quant) in component_quant[..components].iter().enumerate()
+                {
+                    if let Some(q) = override_quant {
+                        component_mb[component] = quant_planes(q, levels)?;
+                    }
                 }
                 let part = u32be(b, 2)? as usize;
                 if part < 14 {
@@ -761,13 +771,13 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     for plane in &mut planes {
                         synthesize(plane, w, h, levels)?;
                     }
-                    for i in 0..w * h {
-                        rgba.extend_from_slice(&[
-                            gray8(planes[0][i]),
-                            gray8(planes[1][i]),
-                            gray8(planes[2][i]),
-                            255,
-                        ]);
+                    for ((&v0, &v1), &v2) in planes[0].iter().zip(&planes[1]).zip(&planes[2]) {
+                        let rgb = if rct {
+                            inverse_rct(v0, v1, v2)
+                        } else {
+                            [gray8(v0), gray8(v1), gray8(v2)]
+                        };
+                        rgba.extend_from_slice(&[rgb[0], rgb[1], rgb[2], 255]);
                     }
                 }
                 return Ok((w, h, rgba));
@@ -799,6 +809,23 @@ pub fn decode<B: BinaryReader>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn inverse_rct_negative_rounding_and_extremes() {
+        assert_eq!(inverse_rct(-128, 0, 0), [0, 0, 0]);
+        assert_eq!(inverse_rct(127, 0, 0), [255, 255, 255]);
+        assert_eq!(inverse_rct(-1, -1, -2), [126, 128, 127]);
+        // Independent forward transform round trips across unsigned extremes.
+        for r in [0i32, 1, 127, 128, 254, 255] {
+            for g in [0i32, 1, 127, 128, 254, 255] {
+                for b in [0i32, 1, 127, 128, 254, 255] {
+                    let y = (r + 2 * g + b).div_euclid(4) - 128;
+                    assert_eq!(inverse_rct(y, b - g, r - g), [r as u8, g as u8, b as u8]);
+                }
+            }
+        }
+        assert_eq!(inverse_rct(i32::MAX, i32::MIN, i32::MAX), [255, 255, 128]);
+        assert_eq!(inverse_rct(i32::MIN, i32::MAX, i32::MIN), [0, 0, 128]);
+    }
     #[test]
     fn shared_tag_tree_values() {
         let mut bits = Bits::new(&[0xca, 0x20]);

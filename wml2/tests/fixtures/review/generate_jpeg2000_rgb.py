@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image, features, __version__
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--mct', type=int, nargs='+', choices=[0, 1], default=[0])
+parser.add_argument('--mct', type=int, nargs='+', choices=[0, 1], default=[0, 1])
 args = parser.parse_args()
 root = Path('wml2/tests/fixtures/review')
 cases = [(1, 1, 0), (1, 33, 0), (33, 1, 0), (2, 2, 1), (3, 5, 0),

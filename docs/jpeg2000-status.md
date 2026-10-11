@@ -1,7 +1,8 @@
 # JPEG2000 first implementation milestone
 
-Historical first milestone. For the current 1024×1024, 0–5-level profile,
-see [multilevel extension](jpeg2000-multilevel.md).
+Historical first milestone. For the 1024×1024, 0–5-level Gray profile,
+see [multilevel extension](jpeg2000-multilevel.md); for RGB8 with and without RCT,
+see [RGB8 extension](jpeg2000-rgb.md).
 
 This is a **new implementation from public main e42d2cf** (WML2 0.0.35), not
 restoration of previously lost unpublished code. The package version, existing

@@ -1,5 +1,8 @@
 # JPEG2000 reversible Gray: multiple code-blocks
 
+Historical multiple-block milestone. See [multilevel extension](jpeg2000-multilevel.md)
+for the current 0–5-level profile.
+
 This extends the native Rust decoder at `15263f540f83abff2d6b1ebd2c38b8d727326499`.
 The supported image size is now **1–1024 pixels on each axis**, using multiple
 16×16 code-blocks. Single unsigned Gray8, one tile/tile-part/layer, LRCP, style

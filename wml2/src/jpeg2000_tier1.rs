@@ -203,6 +203,8 @@ impl Block {
             .filter(|&i| self.sig[i])
             .map_or(0, |i| if self.negative[i] { -1 } else { 1 })
     }
+    // Called in coefficient loops with already-validated coordinates.
+    #[inline(always)]
     fn make_significant(&mut self, mq: &mut Mq<'_>, x: usize, y: usize, plane: u8) {
         let h = (self.signed_neighbor(x, y, -1, 0) + self.signed_neighbor(x, y, 1, 0)).signum();
         let v = (self.signed_neighbor(x, y, 0, -1) + self.signed_neighbor(x, y, 0, 1)).signum();

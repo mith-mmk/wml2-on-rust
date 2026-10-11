@@ -1,5 +1,5 @@
 //! Experimental JPEG 2000 decoder: unsigned Gray8, <=1024x1024, reversible 5/3,
-//! zero/one decomposition, one tile/layer, LRCP, 16x16 code-blocks, style zero.
+//! zero to five decompositions, one tile/layer, LRCP, 16x16 blocks, style zero.
 //! Unsupported profiles return errors before any image callback.
 use crate::draw::{DecodeOptions, InitOptions, ResponseCommand};
 use crate::error::{ImgError, ImgErrorKind};
@@ -267,7 +267,7 @@ impl TagTree {
 // Preserve the already-verified small-image parser and its allocation behavior.
 // Large-image packets use shared tag trees and independently positioned blocks.
 fn packets(data: &[u8], w: usize, h: usize, levels: u8, mb: &[u8]) -> Result<Vec<i32>, Error> {
-    if w <= 16 && h <= 16 {
+    if w <= 16 && h <= 16 && levels <= 1 {
         packets_single(data, w, h, levels, mb)
     } else {
         packets_multiple(data, w, h, levels, mb)
@@ -354,21 +354,34 @@ fn packets_multiple(
     mb: &[u8],
 ) -> Result<Vec<i32>, Error> {
     let mut plane = vec![0; w * h];
-    let lw = if levels == 0 { w } else { w.div_ceil(2) };
-    let lh = if levels == 0 { h } else { h.div_ceil(2) };
-    let bands = [
-        (0, 0, lw, lh, 0),
-        (lw, 0, w / 2, lh, 1),
-        (0, lh, lw, h / 2, 2),
-        (lw, lh, w / 2, h / 2, 3),
-    ];
+    // QCD and LRCP order: deepest LL, then HL/LH/HH from coarse to fine.
+    // All bands occupy disjoint rectangles in a nested quadrant layout.
+    let factor = 1usize << levels;
+    let mut bands = Vec::with_capacity(1 + 3 * usize::from(levels));
+    bands.push((0, 0, w.div_ceil(factor), h.div_ceil(factor), 0));
+    for depth in (1..=levels).rev() {
+        let rw = w.div_ceil(1usize << (depth - 1));
+        let rh = h.div_ceil(1usize << (depth - 1));
+        let lw = rw.div_ceil(2);
+        let lh = rh.div_ceil(2);
+        bands.extend([
+            (lw, 0, rw / 2, lh, 1),
+            (0, lh, lw, rh / 2, 2),
+            (lw, lh, rw / 2, rh / 2, 3),
+        ]);
+    }
     let mut p = 0;
     for resolution in 0..=levels {
-        let indices: &[usize] = if resolution == 0 { &[0] } else { &[1, 2, 3] };
+        let first = if resolution == 0 {
+            0
+        } else {
+            usize::from(resolution) * 3 - 2
+        };
+        let count = if resolution == 0 { 1 } else { 3 };
         let mut bits = Bits::new(&data[p..]);
         let mut blocks = Vec::new();
         if bits.bit()? {
-            for &b in indices {
+            for b in first..first + count {
                 let (bx, by, bw, bh, orientation) = bands[b];
                 if bw == 0 || bh == 0 {
                     continue;
@@ -482,6 +495,63 @@ fn inverse53(plane: &mut [i32], w: usize, h: usize) {
         }
     }
 }
+// New multilevel synthesis uses wide intermediates and checked storage.
+// Legacy zero/one-level synthesis is retained above for its proven fast path.
+fn inverse_line_checked(packed: &[i32]) -> Result<Vec<i32>, Error> {
+    let n = packed.len();
+    let low = n.div_ceil(2);
+    let mut out = vec![0i64; n];
+    for i in 0..low {
+        out[2 * i] = i64::from(packed[i]);
+    }
+    for i in 0..n / 2 {
+        out[2 * i + 1] = i64::from(packed[low + i]);
+    }
+    if n > 1 {
+        for i in (0..n).step_by(2) {
+            let left = if i == 0 { 1 } else { i - 1 };
+            let right = if i + 1 == n { i - 1 } else { i + 1 };
+            out[i] -= (out[left] + out[right] + 2).div_euclid(4);
+        }
+        for i in (1..n).step_by(2) {
+            let right = if i + 1 == n { i - 1 } else { i + 1 };
+            out[i] += (out[i - 1] + out[right]).div_euclid(2);
+        }
+    }
+    out.into_iter()
+        .map(|v| i32::try_from(v).map_err(|_| bad("wavelet coefficient overflow")))
+        .collect()
+}
+// Keep checked multilevel synthesis out of the legacy decode hot path.
+#[inline(never)]
+fn inverse53_multilevel(
+    plane: &mut [i32],
+    stride: usize,
+    height: usize,
+    levels: u8,
+) -> Result<(), Error> {
+    // Grow the reconstructed LL rectangle from deepest resolution to the canvas.
+    // Region row indexing always uses the full canvas stride.
+    for depth in (1..=levels).rev() {
+        let rw = stride.div_ceil(1usize << (depth - 1));
+        let rh = height.div_ceil(1usize << (depth - 1));
+        for y in 0..rh {
+            let row = inverse_line_checked(&plane[y * stride..y * stride + rw])?;
+            plane[y * stride..y * stride + rw].copy_from_slice(&row);
+        }
+        for x in 0..rw {
+            let packed: Vec<_> = (0..rh).map(|y| plane[y * stride + x]).collect();
+            let column = inverse_line_checked(&packed)?;
+            for y in 0..rh {
+                plane[y * stride + x] = column[y];
+            }
+        }
+    }
+    Ok(())
+}
+fn gray8(coefficient: i32) -> u8 {
+    (coefficient.clamp(-128, 127) + 128) as u8
+}
 fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
     let (s, dimensions) = container(data)?;
     if !s.starts_with(&[255, 79]) || u16be(s, 2)? != 0xff51 {
@@ -545,14 +615,14 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     || b[1] != 0
                     || u16be(b, 2)? != 1
                     || b[4] != 0
-                    || b[5] > 1
+                    || b[5] > 5
                     || b[6] != 2
                     || b[7] != 2
                     || b[8] != 0
                     || b[9] != 1
                 {
                     return Err(unsupported(
-                        "COD: one layer, LRCP, 0/1 levels, 16x16 block, style zero, reversible transform required",
+                        "COD: one layer, LRCP, 0..5 levels, 16x16 block, style zero, reversible transform required",
                     ));
                 }
                 coding = Some(b[5]);
@@ -575,11 +645,13 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 }
                 let (w, h) = size.ok_or_else(|| bad("missing SIZ"))?;
                 let levels = coding.ok_or_else(|| bad("missing COD"))?;
-                if levels == 1 && (w < 2 || h < 2) {
-                    return Err(unsupported("decomposed singleton dimension"));
+                if w < (1usize << levels) || h < (1usize << levels) {
+                    return Err(unsupported(
+                        "each dimension must be at least 2^decomposition levels",
+                    ));
                 }
                 let q = quant.ok_or_else(|| bad("missing QCD"))?;
-                let bands = if levels == 0 { 1 } else { 4 };
+                let bands = 1 + 3 * usize::from(levels);
                 if q.len() != bands + 1 {
                     return Err(bad("QCD band count"));
                 }
@@ -613,10 +685,13 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 let mut plane = packets(&tile[14..], w, h, levels, &mb)?;
                 if levels == 1 {
                     inverse53(&mut plane, w, h);
+                } else if levels > 1 {
+                    inverse53_multilevel(&mut plane, w, h, levels)?;
                 }
                 let mut rgba = Vec::with_capacity(w * h * 4);
                 for v in plane {
-                    let v = (v + 128).clamp(0, 255) as u8;
+                    // Clamp before shifting: equivalent to a wide DC shift, without overflow.
+                    let v = gray8(v);
                     rgba.extend_from_slice(&[v, v, v, 255]);
                 }
                 return Ok((w, h, rgba));
@@ -665,6 +740,47 @@ mod tests {
             assert_eq!(tree.below(i % 2, i / 2, 1, &mut bits).unwrap(), included);
         }
         assert_eq!(bits.left, 3);
+    }
+    #[test]
+    fn checked_lifting_matches_and_detects_overflow() {
+        for width in 1..=33 {
+            let packed: Vec<_> = (0..width)
+                .map(|x| ((x * 73 + width * 11) % 257) as i32 - 128)
+                .collect();
+            assert_eq!(
+                inverse_line_checked(&packed).unwrap(),
+                inverse_line(&packed)
+            );
+        }
+        assert_eq!(inverse_line_checked(&[-5, 0, -3]).unwrap(), vec![-4, -5, 1]);
+        assert_eq!(inverse_line_checked(&[i32::MIN]).unwrap(), vec![i32::MIN]);
+        for packed in [[i32::MAX, i32::MAX], [i32::MIN, i32::MIN]] {
+            assert!(
+                inverse_line_checked(&packed)
+                    .unwrap_err()
+                    .to_string()
+                    .contains("overflow")
+            );
+        }
+    }
+    #[test]
+    fn dc_shift_extremes_match_wide_reference() {
+        for v in [
+            i32::MIN,
+            -1024,
+            -129,
+            -128,
+            -127,
+            -1,
+            0,
+            126,
+            127,
+            128,
+            1024,
+            i32::MAX,
+        ] {
+            assert_eq!(gray8(v), (i64::from(v) + 128).clamp(0, 255) as u8);
+        }
     }
     #[test]
     fn lifting_edges() {

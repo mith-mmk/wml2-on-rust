@@ -1,7 +1,7 @@
 # JPEG2000 first implementation milestone
 
-Historical first milestone. For the current 1024×1024 multiple-block profile,
-see [multiple-block extension](jpeg2000-multiple-blocks.md).
+Historical first milestone. For the current 1024×1024, 0–5-level profile,
+see [multilevel extension](jpeg2000-multilevel.md).
 
 This is a **new implementation from public main e42d2cf** (WML2 0.0.35), not
 restoration of previously lost unpublished code. The package version, existing

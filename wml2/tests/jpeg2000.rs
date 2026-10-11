@@ -78,7 +78,7 @@ mod enabled {
             (cod + 5, 1),
             (cod + 7, 2),
             (cod + 8, 1),
-            (cod + 9, 2),
+            (cod + 9, 6),
             (cod + 10, 3),
             (cod + 11, 3),
             (cod + 12, 1),
@@ -317,7 +317,7 @@ fn multiple_block_bounds_and_limits() {
         bad[siz + 22..siz + 26].copy_from_slice(&dimension.to_be_bytes());
         assert!(image_load(&bad).is_err());
     }
-    for level in [2, 32, 255] {
+    for level in [6, 32, 255] {
         let mut bad = raw.to_vec();
         bad[cod + 9] = level;
         assert!(
@@ -340,5 +340,125 @@ fn multiple_block_bounds_and_limits() {
         let mut bad = raw.to_vec();
         bad[sot + 14 + n] ^= 255;
         let _ = image_load(&bad);
+    }
+}
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn multilevel_oracles() {
+    for (w, h, level) in [
+        (4, 4, 2),
+        (5, 7, 2),
+        (8, 8, 3),
+        (9, 11, 3),
+        (16, 16, 4),
+        (17, 19, 4),
+        (32, 32, 5),
+        (33, 35, 5),
+        (65, 49, 2),
+        (65, 49, 5),
+        (257, 129, 3),
+        (257, 129, 5),
+        (1024, 1024, 5),
+    ] {
+        let patterns: &[&str] = if w == 1024 {
+            &["ramp"]
+        } else {
+            &["noise", "mixed"]
+        };
+        for pattern in patterns {
+            let stem = format!(
+                "{}/tests/fixtures/review/jp2_deep_{w}x{h}_d{level}_{pattern}",
+                env!("CARGO_MANIFEST_DIR")
+            );
+            let gray = std::fs::read(format!("{stem}.gray")).unwrap();
+            let expected: Vec<_> = gray.iter().flat_map(|&v| [v, v, v, 255]).collect();
+            for ext in ["j2k", "jp2"] {
+                let data = std::fs::read(format!("{stem}.{ext}")).unwrap();
+                let image =
+                    wml2::draw::image_load(&data).unwrap_or_else(|e| panic!("{stem}.{ext}: {e}"));
+                assert_eq!((image.width, image.height), (w, h));
+                assert_eq!(image.buffer.unwrap(), expected, "{stem}.{ext}");
+            }
+        }
+    }
+}
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn multilevel_boundaries_and_corruption() {
+    use wml2::draw::{image_from_with_limits, image_load};
+    use wml2::limits::DecodeLimits;
+    let raw = include_bytes!("fixtures/review/jp2_deep_33x35_d5_noise.j2k");
+    let siz = raw.windows(2).position(|b| b == [255, 0x51]).unwrap();
+    let cod = raw.windows(2).position(|b| b == [255, 0x52]).unwrap();
+    let sot = raw.windows(2).position(|b| b == [255, 0x90]).unwrap();
+    let qcd = raw.windows(2).position(|b| b == [255, 0x5c]).unwrap();
+    let mut limits = DecodeLimits::unlimited();
+    limits.pixels = 33 * 35;
+    limits.expanded_bytes = 33 * 35 * 64 + 8192;
+    assert!(image_from_with_limits(raw, limits).is_ok());
+    for field in 0..2 {
+        let mut short = limits;
+        if field == 0 {
+            short.pixels -= 1;
+        } else {
+            short.expanded_bytes -= 1;
+        }
+        assert!(image_from_with_limits(raw, short).is_err());
+    }
+    for (w, h) in [(31u32, 35u32), (33, 31)] {
+        let mut data = raw.to_vec();
+        for (p, v) in [(siz + 6, w), (siz + 10, h), (siz + 22, w), (siz + 26, h)] {
+            data[p..p + 4].copy_from_slice(&v.to_be_bytes());
+        }
+        assert!(
+            image_load(&data)
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("2^decomposition")
+        );
+    }
+    for level in [6, 32, 255] {
+        let mut data = raw.to_vec();
+        data[cod + 9] = level;
+        assert!(
+            image_load(&data)
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("Unsupported")
+        );
+    }
+    for level in [0, 1, 2, 3, 4] {
+        let mut data = raw.to_vec();
+        data[cod + 9] = level;
+        assert!(
+            image_load(&data)
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("QCD band count")
+        );
+    }
+    let mut data = raw.to_vec();
+    data[qcd + 4] = 0xe0;
+    data[qcd + 5] = 0xf8;
+    assert!(
+        image_load(&data)
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("precision")
+    );
+    for n in [0, 1, 2, 4, 8, 16, 32, 64] {
+        let mut data = raw[..sot + 14 + n].to_vec();
+        data[sot + 6..sot + 10].copy_from_slice(&((14 + n) as u32).to_be_bytes());
+        data.extend_from_slice(&[255, 217]);
+        assert!(image_load(&data).is_err(), "short multilevel packet {n}");
+    }
+    for n in 0..128 {
+        let mut data = raw.to_vec();
+        data[sot + 14 + n] ^= 255;
+        let _ = image_load(&data);
     }
 }

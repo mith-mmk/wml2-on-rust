@@ -1,5 +1,8 @@
 # Bounded JPEG2000 multiple tile-parts
 
+The later [unknown/mixed total extension](jpeg2000-unknown-tile-parts.md) records
+support added after this checkpoint.
+
 Continuation of `0f35f184424abd20d4f6bbfa4c1c6103b4e584c1` on
 `codex/jpeg2000-rgb-reimplementation-20261011`. Ordinary remote read/fetch
 matched that SHA before implementation. Repository AGENTS.md, Rust 1.91.0,

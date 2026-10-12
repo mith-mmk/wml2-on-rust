@@ -9,6 +9,18 @@ description = "Pure Rust multi-format image decoding and encoding library suppor
 edition = "2024"
 rust-version = "1.91"
 license = "MIT"
+# Large source/oracle matrices remain in Git for contributor verification.
+# They are not needed to build the library; omit their integration target too.
+exclude = [
+    "tests/jpeg2000.rs",
+    "tests/fixtures/review/jp2*",
+    "tests/fixtures/review/unsupported_jp2*",
+    "tests/fixtures/review/oracle_origins_*",
+    "tests/fixtures/review/jpeg2000-*",
+    "tests/fixtures/review/generate_jpeg2000*.py",
+    "tests/fixtures/review/check_jpeg2000*.py",
+    "tests/fixtures/review/benchmark_jpeg2000*.py",
+]
 keywords = ["image","codec","jpeg","webp","png"]
 categories = ["multimedia::images","encoding"]
 

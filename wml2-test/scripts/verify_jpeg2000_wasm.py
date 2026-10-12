@@ -27,7 +27,8 @@ for manifest_name, field_count in [('jpeg2000-blocks-manifest.txt', 11),
                                    ('jpeg2000-origins-manifest.txt', 14),
                                    ('jpeg2000-global-origins-manifest.txt', 18),
                                    ('jpeg2000-parts-manifest.txt', 20),
-                                   ('jpeg2000-unknown-parts-manifest.txt', 20)]:
+                                   ('jpeg2000-unknown-parts-manifest.txt', 20),
+                                   ('jpeg2000-terminal-parts-manifest.txt', 20)]:
     manifest = fixtures / manifest_name
     if manifest.exists():
         for line in manifest.read_text().splitlines()[1:]:
@@ -71,6 +72,12 @@ if parts_unsupported.exists():
 unknown_unsupported = fixtures / 'jpeg2000-unknown-parts-unsupported-manifest.txt'
 if unknown_unsupported.exists():
     for line in unknown_unsupported.read_text().splitlines()[1:]:
+        fields = line.split()
+        assert len(fields) == 21
+        rejected.append(fixtures / fields[1])
+terminal_unsupported = fixtures / 'jpeg2000-terminal-parts-unsupported-manifest.txt'
+if terminal_unsupported.exists():
+    for line in terminal_unsupported.read_text().splitlines()[1:]:
         fields = line.split()
         assert len(fields) == 21
         rejected.append(fixtures / fields[1])
@@ -214,7 +221,8 @@ pub extern "C" fn run_rejections() -> u32 {
         let mut last = p;
         while data[p..p+2] == [255,0x90] {
             last = p;
-            p += u32::from_be_bytes(data[p+6..p+10].try_into().unwrap()) as usize;
+            let length = u32::from_be_bytes(data[p+6..p+10].try_into().unwrap()) as usize;
+            p = if length == 0 { data.len()-2 } else { p+length };
             count += 1;
         }
         if count < 2 { continue; }
@@ -234,6 +242,20 @@ pub extern "C" fn run_rejections() -> u32 {
     }
     0
 }
+#[unsafe(no_mangle)]
+pub extern "C" fn run_direct_guard() -> u32 {
+    let data = CASES.iter().find(|c| c.encoded.starts_with(&[255,79]) && c.w==16 && c.h==16 && c.components==1).unwrap().encoded;
+    let mut p=2;
+    while data[p..p+2] != [255,144] { p+=usize::from(u16::from_be_bytes([data[p+2],data[p+3]]))+2; }
+    let mut large=data[..p].to_vec();
+    let mut comment=vec![0;65537]; comment[..6].copy_from_slice(&[255,100,255,255,0,1]);
+    for _ in 0..513 {large.extend_from_slice(&comment);}
+    large.extend_from_slice(&data[p..]);
+    let mut image=ImageBuffer::new();
+    if wml2::jpeg2000::decode(&mut BytesReader::new(&large), &mut DecodeOptions{drawer:&mut image,debug_flag:0}).is_ok() || image.buffer.is_some() {return 1;}
+    if wml2::jpeg2000::decode(&mut BytesReader::new(data), &mut DecodeOptions{drawer:&mut image,debug_flag:0}).is_err() {return 2;}
+    0
+}
 '''.replace('REJECTED_ENTRIES', rejected_entries).replace('ENTRIES', entries)
 (work / 'lib.rs').write_text(rust)
 # Snapshot the tested inputs before building; edits/commits during the runtime
@@ -242,6 +264,8 @@ build_context = {
     'git_head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip(),
     'working_tree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo, text=True).strip()),
     'rust_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000.rs').read_bytes()).hexdigest(),
+    'dispatch_source_sha256': hashlib.sha256((repo / 'wml2/src/draw.rs').read_bytes()).hexdigest(),
+    'format_source_sha256': hashlib.sha256((repo / 'wml2/src/util.rs').read_bytes()).hexdigest(),
     'tier1_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000_tier1.rs').read_bytes()).hexdigest(),
     'fixture_manifest_sha256': {
         p.name: hashlib.sha256(p.read_bytes()).hexdigest()
@@ -263,6 +287,8 @@ for (let index = 0; index < count; index++) {
   const status = instance.exports.run_case(index);
   if (status !== 0) throw new Error(`Fixture ${index}: failure status ${status}`);
 }
+const guardStatus = instance.exports.run_direct_guard();
+if (guardStatus !== 0) throw new Error(`Direct guard: failure status ${guardStatus}`);
 const rejected = instance.exports.rejected_count();
 const rejectionStatus = instance.exports.run_rejections();
 if (rejectionStatus !== 0) throw new Error(`Rejections: failure status ${rejectionStatus}`);
@@ -277,7 +303,7 @@ report.update({**build_context, 'target': 'wasm32-unknown-unknown', 'default_fea
                'source_exact_fixtures': len(cases) - int(compatibility_path.exists()),
                'encoder_compatibility_fixtures': int(compatibility_path.exists()),
                'wasm_sha256': hashlib.sha256(wasm.read_bytes()).hexdigest(),
-               'checks': ['RGBA pixels', 'dimensions', 'exact limits', 'short limits',
+               'checks': ['direct API default metadata aggregation and scope restoration', 'RGBA pixels', 'dimensions', 'exact limits', 'short limits',
                           'limit scope restoration', 'callbacks', 'init/draw abort',
                           'truncation rejected before callbacks', 'unsupported and malformed tile/part profiles rejected before callbacks',
                           'late tile framing, missing tile and repaired short packet rejection']})

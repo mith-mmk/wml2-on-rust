@@ -1,4 +1,5 @@
 use wml2::util::{ImageFormat, decoder_supports_format, format_check};
+#[cfg(feature = "jpeg2000")]
 #[test]
 fn detection() {
     for b in [&[255, 79][..], b"\x00\x00\x00\x0cjP  \x0d\x0a\x87\x0a"] {
@@ -302,6 +303,10 @@ mod enabled {
 #[cfg(not(feature = "jpeg2000"))]
 #[test]
 fn feature_off() {
+    for magic in [&[255, 79][..], b"\x00\x00\x00\x0cjP  \x0d\x0a\x87\x0a"] {
+        assert!(matches!(format_check(magic), ImageFormat::Unknown));
+        assert!(!decoder_supports_format(&format_check(magic)));
+    }
     assert!(
         wml2::draw::image_load(include_bytes!("fixtures/review/jp2_16x16_d1_noise.j2k")).is_err()
     );
@@ -985,7 +990,6 @@ fn invalid_tile_structure_is_rejected_before_callbacks() {
                 (11, vec![2]),
                 (2, vec![0, 9]),
                 (2, vec![0, 11]),
-                (6, vec![0, 0, 0, 0]),
                 (6, vec![0, 0, 0, 13]),
                 (6, vec![255, 255, 255, 255]),
                 (12, vec![255, 0x52]),
@@ -1485,7 +1489,7 @@ fn global_reference_extent_bound_rejects_valid_inputs_before_callbacks() {
 }
 
 #[cfg(feature = "jpeg2000")]
-fn tile_part_oracles(manifest_name: &str, expected_count: usize) {
+fn tile_part_oracles(manifest_name: &str, expected_count: usize, first_level: usize) {
     use wml2::draw::image_from_with_limits;
     use wml2::limits::DecodeLimits;
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
@@ -1544,19 +1548,19 @@ fn tile_part_oracles(manifest_name: &str, expected_count: usize) {
     assert_eq!(count, expected_count);
     assert_eq!(maximum_parts, 18);
     assert_eq!(modes, [(1, 0), (3, 0), (3, 1)].into_iter().collect());
-    assert_eq!(levels, (1..=5).collect());
+    assert_eq!(levels, (first_level..=5).collect());
 }
 
 #[cfg(feature = "jpeg2000")]
 #[test]
 fn multiple_tile_parts_match_source_and_exact_workspace() {
-    tile_part_oracles("jpeg2000-parts-manifest.txt", 126);
+    tile_part_oracles("jpeg2000-parts-manifest.txt", 126, 1);
 }
 
 #[cfg(feature = "jpeg2000")]
 #[test]
 fn unknown_and_mixed_tile_counts_match_source_and_exact_workspace() {
-    tile_part_oracles("jpeg2000-unknown-parts-manifest.txt", 156);
+    tile_part_oracles("jpeg2000-unknown-parts-manifest.txt", 156, 1);
 }
 
 #[cfg(feature = "jpeg2000")]
@@ -1679,4 +1683,149 @@ fn unknown_tile_count_corruption_rejected_before_callbacks() {
         count += 1;
     }
     assert_eq!(count, 54);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn terminal_zero_length_parts_match_source_and_limits() {
+    tile_part_oracles("jpeg2000-terminal-parts-manifest.txt", 54, 0);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn malformed_terminal_parts_reject_before_callbacks() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder};
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!(
+        "{root}jpeg2000-terminal-parts-unsupported-manifest.txt"
+    ))
+    .unwrap();
+    let mut count = 0;
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(f.len(), 21);
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let mut image = ImageBuffer::new();
+        assert!(
+            image_decoder(
+                &mut BytesReader::new(&data),
+                &mut DecodeOptions {
+                    drawer: &mut image,
+                    debug_flag: 0,
+                }
+            )
+            .is_err(),
+            "{}",
+            f[1]
+        );
+        assert!(image.buffer.is_none(), "{}", f[1]);
+        count += 1;
+    }
+    assert_eq!(count, 18);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn metadata_accumulates_across_comments_and_boxes() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder_with_limits, image_load};
+    use wml2::limits::DecodeLimits;
+    let raw = include_bytes!("fixtures/review/jp2_16x16_d1_noise.j2k");
+    let mut p = 2;
+    let mut used = 0;
+    while raw[p..p + 2] != [255, 144] {
+        let length = u16::from_be_bytes(raw[p + 2..p + 4].try_into().unwrap()) as usize;
+        if raw[p..p + 2] == [255, 100] {
+            used += length - 2;
+        }
+        p += length + 2;
+    }
+    let mut comments = raw.to_vec();
+    let comment = [255, 100, 0, 9, 0, 1, b'A', b'B', b'C', b'D', b'E'];
+    comments.splice(p..p, comment.into_iter().chain(comment));
+    let mut boxes = include_bytes!("fixtures/review/jp2_16x16_d1_noise.jp2").to_vec();
+    let mut box_start = 12;
+    while &boxes[box_start + 4..box_start + 8] != b"jp2c" {
+        box_start +=
+            u32::from_be_bytes(boxes[box_start..box_start + 4].try_into().unwrap()) as usize;
+    }
+    let mut sot = box_start + 10;
+    while boxes[sot..sot + 2] != [255, 144] {
+        sot += usize::from(u16::from_be_bytes(
+            boxes[sot + 2..sot + 4].try_into().unwrap(),
+        )) + 2;
+    }
+    boxes[sot + 6..sot + 10].fill(0);
+    // Psot=0 ends at the codestream box's EOC, even with trailing free boxes.
+    let free = [0, 0, 0, 13, b'f', b'r', b'e', b'e', 1, 2, 3, 4, 5];
+    boxes.extend_from_slice(&free);
+    boxes.extend_from_slice(&free);
+    let expected = image_load(raw).unwrap().buffer;
+    for (data, extra) in [(comments, 14), (boxes, 10)] {
+        for short in [false, true] {
+            let limits = DecodeLimits {
+                metadata_bytes: used + extra - usize::from(short),
+                ..DecodeLimits::default()
+            };
+            let mut image = ImageBuffer::new();
+            let result = image_decoder_with_limits(
+                &mut BytesReader::new(&data),
+                &mut DecodeOptions {
+                    drawer: &mut image,
+                    debug_flag: 0,
+                },
+                limits,
+            );
+            assert_eq!(result.is_err(), short);
+            if short {
+                assert!(image.buffer.is_none());
+            } else {
+                assert_eq!(image.buffer, expected);
+            }
+        }
+    }
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn public_decoder_applies_default_metadata_scope() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_load};
+    let raw = include_bytes!("fixtures/review/jp2_16x16_d1_noise.j2k");
+    let mut p = 2;
+    while raw[p..p + 2] != [255, 144] {
+        p += usize::from(u16::from_be_bytes(raw[p + 2..p + 4].try_into().unwrap())) + 2;
+    }
+    let mut oversized = raw[..p].to_vec();
+    // Every COM fits its u16 length and the default metadata budget individually;
+    // together they exceed 32MiB. This failed through the public direct API.
+    let mut comment = vec![0; 65537];
+    comment[..6].copy_from_slice(&[255, 100, 255, 255, 0, 1]);
+    for _ in 0..513 {
+        oversized.extend_from_slice(&comment);
+    }
+    oversized.extend_from_slice(&raw[p..]);
+    assert!(image_load(&oversized).is_err());
+    let mut image = ImageBuffer::new();
+    let error = wml2::jpeg2000::decode(
+        &mut BytesReader::new(&oversized),
+        &mut DecodeOptions {
+            drawer: &mut image,
+            debug_flag: 0,
+        },
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains("metadata exceeds decode limit"));
+    assert!(image.buffer.is_none());
+    // The failed scope must not poison a later direct decode.
+    wml2::jpeg2000::decode(
+        &mut BytesReader::new(raw),
+        &mut DecodeOptions {
+            drawer: &mut image,
+            debug_flag: 0,
+        },
+    )
+    .unwrap();
+    assert_eq!(image.buffer, image_load(raw).unwrap().buffer);
 }

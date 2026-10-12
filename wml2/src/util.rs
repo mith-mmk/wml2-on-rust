@@ -4,16 +4,15 @@ use bin_rs::io::read_string;
 
 /// Image formats recognized by [`format_check`].
 pub enum ImageFormat {
-    Gif,      // GIF87a , GIF89a
-    Jpeg,     // 0xfffe
-    Jpeg2000, // Raw SOC or JP2 signature (availability is feature gated)
-    Bmp,      // BM
-    Ico,      // 00 00 01 00
-    Tiff,     // II/MM
-    Png,      // [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]
+    Gif,  // GIF87a , GIF89a
+    Jpeg, // 0xfffe
+    Bmp,  // BM
+    Ico,  // 00 00 01 00
+    Tiff, // II/MM
+    Png,  // [0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]
     #[cfg(feature = "psd")]
     Psd, // 8BPS, version checked by the decoder
-    Webp,     // RIFF . . . . WEBP
+    Webp, // RIFF . . . . WEBP
     #[cfg(feature = "avif")]
     Avif, // ISO BMFF ftyp avif/avis
     #[cfg(all(feature = "tga", not(feature = "noretoro")))]
@@ -42,10 +41,13 @@ pub enum ImageFormat {
     Pcd,
     RiffFormat(String),
     Unknown,
+    #[cfg(feature = "jpeg2000")]
+    Jpeg2000, // Raw SOC or JP2 signature
 }
 
 /// Detects an image format from the leading bytes of `buffer`.
 pub fn format_check(buffer: &[u8]) -> ImageFormat {
+    #[cfg(feature = "jpeg2000")]
     if buffer.starts_with(&[0xff, 0x4f])
         || buffer.starts_with(b"\x00\x00\x00\x0cjP  \x0d\x0a\x87\x0a")
     {

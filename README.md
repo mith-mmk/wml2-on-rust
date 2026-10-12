@@ -62,6 +62,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | Q4 | x | O | `q4`: Q4/XLD4 raster decoding with corrected repeat-color runs |
 | WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
 | AVIF    | O   | O   | decoder: `avif`; encoder: `avifenc` (`avifenc-rust`)                                                               |
+| JPEG2000 | x | O | opt-in `jpeg2000`; bounded lossless Gray8/RGB8 J2K/JP2 [profile and validation](docs/jpeg2000.md) |
 | PSD     | x   | O   | optional, non-default `psd` feature; Pure Rust PSD v1 merged-image and basic raster-layer decoding                 |
 | MAG     | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
 | MAKI    | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
@@ -109,7 +110,7 @@ for 28 reference images. See the [Q4 validation record](docs/q4-status.md).
 ## Features
 
 - `default`: enables the standard decoders/encoders, EXIF/C2PA support, embedded-format bridges, and `idct_llm`; it does not enable `psd`, `avif`, or `avifenc`
-- format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `tga`, `pcx`, `dds`, `pic2`, `q4`, `webp`, `psd`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
+- format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `tga`, `pcx`, `dds`, `pic2`, `q4`, `webp`, `psd`, `jpeg2000`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
 - `psd`: enables Pure Rust PSD v1 decoding for 8/16-bit RGB, Grayscale, and CMYK plus 8-bit Indexed images; Raw, PackBits RLE, ZIP, and ZIP prediction are supported for both merged-image and layer-channel data
 - `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the standalone `avifenc-rust` submodule
 - `high-bit-depth`: additive typed U8/U16/F32 buffer and native metadata APIs; it has no ICC dependency
@@ -122,6 +123,16 @@ for 28 reference images. See the [Q4 validation record](docs/q4-status.md).
 - `multithread`: enables the existing JPEG threading path and, when combined with `avifenc`, opts into `avifenc-rust`'s native parallel keyframe search; it is not enabled by default, which keeps the default/WASM build single-threaded
 - `noretoro`: disables the gated retro codecs: `MAG`, `MAKI`, `PCD`, `PI`, `PIC`, `VSP/DAT`, `TGA`, `PCX`, `DDS`, `PIC2`, and `Q4`
 - `c2pa`: enables parsing of C2PA manifest stores in PNG and JPEG metadata
+
+## JPEG2000 decoding
+
+Repository builds can enable the non-default `jpeg2000` feature. The pure Rust
+decoder accepts the documented lossless Gray8/RGB8 subset and returns RGBA8.
+Lossy 9/7, multiple quality layers, subsampling and ICC/palette profiles are
+explicitly unsupported. See the [current profile and PR evidence](docs/jpeg2000.md)
+for dimensions, coding/framing limits, budgets and reproduction commands.
+The feature adds `ImageFormat::Jpeg2000`; feature-off format detection and the
+existing enum surface remain unchanged. This branch has not been released.
 
 ## PSD decoding
 

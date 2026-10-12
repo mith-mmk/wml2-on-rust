@@ -1,7 +1,13 @@
-//! Experimental JPEG 2000 decoder: unsigned Gray8/RGB8, <=1024x1024, reversible 5/3,
-//! zero to five decompositions, <=256 raster tiles, one part/layer per tile,
-//! LRCP, bounded blocks, style zero.
-//! Unsupported profiles return errors before any image callback.
+//! Bounded lossless JPEG 2000 decoder enabled by the `jpeg2000` feature.
+//!
+//! Raw J2K and enumerated Gray/sRGB JP2 produce ordinary RGBA8. Supported inputs
+//! have unsigned Gray8 or equal, unsampled RGB8 components, reversible 5/3,
+//! zero to five decompositions, LRCP, one quality layer and full coding passes.
+//! Canvas/tile axes are <=1024, reference ends <=32768, and raster tiles <=256.
+//! Each tile has <=18 nonempty, contiguous, packet-aligned parts, with known,
+//! zero or mixed correct totals. Only the final codestream part may use Psot=0.
+//! Other coding profiles return errors before image callbacks. See the current
+//! profile and validation overview in `docs/jpeg2000.md`.
 use crate::draw::{DecodeOptions, InitOptions, ResponseCommand};
 use crate::error::{ImgError, ImgErrorKind};
 use crate::warning::ImgWarnings;
@@ -945,7 +951,21 @@ fn tile_part<'a>(
     if *declared != 0 && part_index >= *declared {
         return Err(bad("tile-part exceeds declared count"));
     }
-    let length = u32be(b, 2)? as usize;
+    let stated_length = u32be(b, 2)? as usize;
+    // T.800 A.4.2: Psot=0 extends only the final codestream part to EOC.
+    // The container gives a bounded slice; use its verified suffix rather
+    // than searching for marker-like bytes inside packet data.
+    let length = if stated_length == 0 {
+        let payload_end = s
+            .strip_suffix(&[255, 217])
+            .ok_or_else(|| bad("terminal tile-part requires EOC"))?
+            .len();
+        payload_end
+            .checked_sub(p)
+            .ok_or_else(|| bad("terminal tile-part extent"))?
+    } else {
+        stated_length
+    };
     if length <= 14 {
         return Err(bad("nonempty tile-part required"));
     }
@@ -1271,6 +1291,17 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
 }
 /// Decode the supported lossless Gray8/RGB8 profile into ordinary RGBA8.
 pub fn decode<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    crate::decode_guard::run(
+        reader,
+        option,
+        crate::limits::DecodeLimits::default(),
+        decode_inner,
+    )
+}
+pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {

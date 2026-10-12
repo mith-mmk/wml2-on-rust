@@ -1,0 +1,3 @@
+# Generated JPEG2000 oracle/provenance data; review generators and summaries.
+wml2/tests/fixtures/review/jpeg2000-*-proof.json linguist-generated=true
+docs/jpeg2000-*-random.json linguist-generated=true

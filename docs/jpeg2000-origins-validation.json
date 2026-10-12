@@ -1,0 +1,240 @@
+{
+  "baseline_git": "44d39af873ffd983f04dd87112825f2c75bd856c",
+  "implementation_git": "236ca6ad08e2157c645758c644e457bd7b1e8a70",
+  "rust_source_sha256": "b3f5e99387519955447f66ba957ceb7ce2d7b6b8c99abae147a7b302be26e9ad",
+  "production_matches_saved_commit": true,
+  "scope": {
+    "components": [
+      "Gray8",
+      "RGB8 MCT0",
+      "RGB8 RCT"
+    ],
+    "global_image_and_tile_grid_origins": 0,
+    "arbitrary_tile_origins": true,
+    "actual_tile_axis_min": 1,
+    "canvas_axis_max": 1024,
+    "tile_axis_max": 1024,
+    "max_tiles": 256,
+    "tile_order": "raster",
+    "tile_parts": 1,
+    "layers": 1,
+    "levels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "transform": "reversible5/3"
+  },
+  "workspace": {
+    "passed": 357,
+    "failed": 0,
+    "ignored": 12,
+    "targets": 43,
+    "command": "cargo test --workspace --offline --release --features wml2/jpeg2000"
+  },
+  "feature_off_passed": 16,
+  "new_source_exact_oracles": 210,
+  "promoted_old_rejections_source_exact": 18,
+  "negative_new_valid_encodings": 6,
+  "negative_previous_count_encodings": 6,
+  "positive_manifest_sha256": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+  "all_file_source_hashes_verified": true,
+  "random_source_exact_geometries": 24,
+  "random_source_exact_comparisons": 144,
+  "compatibility_only_geometries": 10,
+  "compatibility_only_comparisons": 60,
+  "fixed_compatibility_regression": "wml2/tests/fixtures/review/oracle_origins_22x11_d4_gray_b8x4_t20x22_singleton.json",
+  "oracle_limit": "Pillow12.3/OpenJPEG2.5.4 can issue incorrect deep/tiny-edge forward coefficients; isolated by entropy/forward coefficient proof, source-exact canonical promotions and separately labelled compatibility trials. No more comparator investigation needed for this stage.",
+  "found_and_fixed": "odd-origin negative singleton used floor instead of ordinary /2; fixed regression and random comparisons now pass",
+  "wasm_minimal": {
+    "runtime": "v24.19.0",
+    "fixtures": 1078,
+    "rejected_fixtures": 12,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 63176704,
+    "git_head": "236ca6ad08e2157c645758c644e457bd7b1e8a70",
+    "working_tree_dirty": false,
+    "rust_source_sha256": "b3f5e99387519955447f66ba957ceb7ce2d7b6b8c99abae147a7b302be26e9ad",
+    "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+    "fixture_manifest_sha256": {
+      "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+      "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+      "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+      "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+      "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+      "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+      "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+      "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+      "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4"
+    },
+    "target": "wasm32-unknown-unknown",
+    "default_features": false,
+    "wasm_sha256": "d37a1502d6440238297550d43688cfe189534863bf3bc5b6282a481be3185e37",
+    "checks": [
+      "RGBA pixels",
+      "dimensions",
+      "exact limits",
+      "short limits",
+      "limit scope restoration",
+      "callbacks",
+      "init/draw abort",
+      "truncation rejected before callbacks",
+      "unsupported tile profiles rejected before callbacks",
+      "late tile framing, missing tile and repaired short packet rejection"
+    ]
+  },
+  "wasm_default": {
+    "runtime": "v24.19.0",
+    "fixtures": 1078,
+    "rejected_fixtures": 12,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 63307776,
+    "git_head": "44d39af873ffd983f04dd87112825f2c75bd856c",
+    "working_tree_dirty": true,
+    "rust_source_sha256": "b3f5e99387519955447f66ba957ceb7ce2d7b6b8c99abae147a7b302be26e9ad",
+    "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+    "fixture_manifest_sha256": {
+      "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+      "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+      "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+      "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+      "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+      "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+      "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+      "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+      "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4"
+    },
+    "target": "wasm32-unknown-unknown",
+    "default_features": true,
+    "wasm_sha256": "77755869ef70e064975883484d72b60c33d8781e1db96414470adcd4b23ebd15",
+    "checks": [
+      "RGBA pixels",
+      "dimensions",
+      "exact limits",
+      "short limits",
+      "limit scope restoration",
+      "callbacks",
+      "init/draw abort",
+      "truncation rejected before callbacks",
+      "unsupported tile profiles rejected before callbacks",
+      "late tile framing, missing tile and repaired short packet rejection"
+    ]
+  },
+  "independent_review": "no remaining actionable correctness/resource/API defects; final cleanup checked at current source hash",
+  "benchmarks": [
+    {
+      "case": "Gray16",
+      "wall_us_per_call": {
+        "baseline": 68.34464092003158,
+        "current": 62.15258874020422,
+        "change_percent": -9.060040548128024
+      },
+      "cpu_us_per_call": {
+        "baseline": 68.13121380242073,
+        "current": 62.06237887999291,
+        "change_percent": -8.907569062291076
+      }
+    },
+    {
+      "case": "Gray65",
+      "wall_us_per_call": {
+        "baseline": 1357.0984631159672,
+        "current": 1249.180359956636,
+        "change_percent": -7.95212035768913
+      },
+      "cpu_us_per_call": {
+        "baseline": 1356.3494176372706,
+        "current": 1248.359400998337,
+        "change_percent": -7.96181391274896
+      }
+    },
+    {
+      "case": "RGB16",
+      "wall_us_per_call": {
+        "baseline": 309.1808673462391,
+        "current": 311.97628275505286,
+        "change_percent": 0.9041359618424671
+      },
+      "cpu_us_per_call": {
+        "baseline": 309.09664771613416,
+        "current": 311.8766254982689,
+        "change_percent": 0.8993878784113507
+      }
+    },
+    {
+      "case": "RGB65",
+      "wall_us_per_call": {
+        "baseline": 4154.124622371673,
+        "current": 4254.772738649919,
+        "change_percent": 2.4228477820866345
+      },
+      "cpu_us_per_call": {
+        "baseline": 4150.56367663344,
+        "current": 4246.934662236994,
+        "change_percent": 2.321877053617971
+      }
+    },
+    {
+      "case": "Gray256tiles",
+      "wall_us_per_call": {
+        "baseline": 782.5907576274785,
+        "current": 810.106214642676,
+        "change_percent": 3.5159445402363376
+      },
+      "cpu_us_per_call": {
+        "baseline": 781.6206322795368,
+        "current": 809.3377703826964,
+        "change_percent": 3.546111368929017
+      }
+    },
+    {
+      "case": "RGB9tiles",
+      "wall_us_per_call": {
+        "baseline": 119573.21180716087,
+        "current": 124270.89066665906,
+        "change_percent": 3.9287050907976573
+      },
+      "cpu_us_per_call": {
+        "baseline": 119534.38292011016,
+        "current": 124235.66942148758,
+        "change_percent": 3.93299934841298
+      }
+    }
+  ],
+  "performance_caveat": "short affined sample -8.91 to +3.93 percent CPU versus44d39af; older +6.11 percent larger-RGB observation remains separate; no cumulative or cross-host guarantee",
+  "display_outputs": [
+    {
+      "file": "display-0.ppm",
+      "sha256": "3e7b79f3071b693606c877d6332303f7fd2b8f62359f1f9f17ca04880f35923b"
+    },
+    {
+      "file": "display-1.ppm",
+      "sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46"
+    },
+    {
+      "file": "display-2.ppm",
+      "sha256": "3cf6d521189167d5a994b129bbfc19e51faeb535bbd81db467728c4c8996fd7f"
+    },
+    {
+      "file": "display-3.ppm",
+      "sha256": "0ff15f637e45fd4116e043446e843b204f2072828472da5044f0edf7fde80be6"
+    }
+  ],
+  "api_rgba8_other_codecs_version_preserved": "WML2 0.0.35; no production dependency/default/public API change",
+  "remaining": [
+    "nonzero global image/tile grid origins",
+    "multiple layers/parts",
+    "arbitrary tile order",
+    "tile-header overrides",
+    "9/7",
+    "subsampling",
+    "high-bit-depth/signed/alpha",
+    "browser UI/other OS/optional AVIF/external corpus"
+  ],
+  "access_blockers": []
+}

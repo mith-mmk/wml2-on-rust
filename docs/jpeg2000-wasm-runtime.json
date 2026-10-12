@@ -163,5 +163,81 @@
       "unsupported tile profiles rejected before callbacks",
       "late tile framing, missing tile and repaired short packet rejection"
     ]
+  },
+  "origins_minimal": {
+    "runtime": "v24.19.0",
+    "fixtures": 1078,
+    "rejected_fixtures": 12,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 63176704,
+    "git_head": "236ca6ad08e2157c645758c644e457bd7b1e8a70",
+    "working_tree_dirty": false,
+    "rust_source_sha256": "b3f5e99387519955447f66ba957ceb7ce2d7b6b8c99abae147a7b302be26e9ad",
+    "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+    "fixture_manifest_sha256": {
+      "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+      "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+      "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+      "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+      "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+      "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+      "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+      "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+      "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4"
+    },
+    "target": "wasm32-unknown-unknown",
+    "default_features": false,
+    "wasm_sha256": "d37a1502d6440238297550d43688cfe189534863bf3bc5b6282a481be3185e37",
+    "checks": [
+      "RGBA pixels",
+      "dimensions",
+      "exact limits",
+      "short limits",
+      "limit scope restoration",
+      "callbacks",
+      "init/draw abort",
+      "truncation rejected before callbacks",
+      "unsupported tile profiles rejected before callbacks",
+      "late tile framing, missing tile and repaired short packet rejection"
+    ]
+  },
+  "origins_default": {
+    "runtime": "v24.19.0",
+    "fixtures": 1078,
+    "rejected_fixtures": 12,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 63307776,
+    "git_head": "44d39af873ffd983f04dd87112825f2c75bd856c",
+    "working_tree_dirty": true,
+    "rust_source_sha256": "b3f5e99387519955447f66ba957ceb7ce2d7b6b8c99abae147a7b302be26e9ad",
+    "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+    "fixture_manifest_sha256": {
+      "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+      "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+      "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+      "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+      "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+      "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+      "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+      "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+      "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4"
+    },
+    "target": "wasm32-unknown-unknown",
+    "default_features": true,
+    "wasm_sha256": "77755869ef70e064975883484d72b60c33d8781e1db96414470adcd4b23ebd15",
+    "checks": [
+      "RGBA pixels",
+      "dimensions",
+      "exact limits",
+      "short limits",
+      "limit scope restoration",
+      "callbacks",
+      "init/draw abort",
+      "truncation rejected before callbacks",
+      "unsupported tile profiles rejected before callbacks",
+      "late tile framing, missing tile and repaired short packet rejection"
+    ]
   }
 }

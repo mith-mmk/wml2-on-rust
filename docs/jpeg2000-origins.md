@@ -84,9 +84,49 @@ ignored tests across 43 targets including doctests. The pixel tests exercise
 exact/one-short input, pixels, workspace and one-frame budgets. Additional tests
 cover zero resolutions, odd singleton overflow/reflection, repaired short tile
 payloads, late framing, marker/packet mutations, callbacks before errors and
-rejection of nonzero global origins. Final Clippy/formatting, image display,
-actual minimal/default WASM execution and paired performance results will be
-recorded at the completion checkpoint.
+rejection of nonzero global origins. Feature-off minimal regression passed 16 tests. Clippy and formatting/diff
+checks pass; the 11 existing warnings elsewhere remain, with none in JPEG2000.
+Public-API output images were displayed and compared with OpenJPEG, including
+Gray, a deep nonzero singleton edge, flat empty packets and a 1024 canvas.
+Final minimal and default-codec real WASM execution passed 1078 pixel/API cases
+each (1077 source-exact fixed encodings plus the singleton compatibility case)
+and 12 over-limit inputs. Node.js v24.19.0 instantiates the actual module without
+host imports. Checks include every RGBA byte/dimension, exact and one-short
+limits, scope restoration, callbacks/Abort, truncation, late tile framing,
+missing tiles and repaired short packet rejection before callbacks.
+
+Both modules report source SHA256
+`b3f5e99387519955447f66ba957ceb7ce2d7b6b8c99abae147a7b302be26e9ad`,
+matching implementation commit `236ca6a`. Minimal was built from that clean
+checkpoint; default was built before commit with the identical source/fixture
+hashes, recorded honestly as a dirty-tree snapshot. Linear memory was
+63,176,704 bytes (minimal) and 63,307,776 bytes (default). Module/source/manifest
+hashes and full results are in `jpeg2000-wasm-runtime.json` and
+`jpeg2000-origins-validation.json`. This is real WASM execution, not browser UI.
+
+## Paired performance sample
+
+Immutable release verifiers compare baseline `44d39af` with implementation
+`236ca6a`, fixed CPU affinity, B/H/H/B/H/B (three processes per version),
+100 warmups, Rust 1.91. No concurrent CPU tests ran during timing. All paired
+PPM hashes match. Whole-process CPU microseconds/call, including startup and
+export, divided by timed calls plus 101:
+
+| Existing input | Baseline | Extension | Change |
+| --- | ---: | ---: | ---: |
+| Gray16 | 68.131 | 62.062 | -8.91% |
+| Gray65 | 1356.349 | 1248.359 | -7.96% |
+| RGB16 | 309.097 | 311.877 | +0.90% |
+| RGB65 | 4150.564 | 4246.935 | +2.32% |
+| Gray256tiles | 781.621 | 809.338 | +3.55% |
+| RGB9tiles | 119534.383 | 124235.669 | +3.93% |
+
+The short sample shows no large deterioration across these six inputs. It
+does not establish no regression on other hosts or a cumulative guarantee.
+The earlier larger-RGB +6.11% observation used an older baseline and remains
+a separate caveat. Raw CPU/wall rows, hashes and measurement conditions are in
+`jpeg2000-origins-benchmark.json`. Newly supported geometries cannot be decoded
+by the baseline and are not included in the paired timings.
 
 ## Reproduction and remaining scope
 

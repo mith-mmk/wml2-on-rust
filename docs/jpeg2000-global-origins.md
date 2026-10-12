@@ -1,5 +1,8 @@
 # Bounded nonzero JPEG2000 image and tile-grid origins
 
+The later [bounded tile-part extension](jpeg2000-tile-parts.md) records support
+added after this checkpoint.
+
 Continuation of `8d8c209901fd5f29cbeffb5f8d3a288ad1bf1a08` on
 `codex/jpeg2000-rgb-reimplementation-20261011`. Normal remote read/fetch matched
 that SHA. Repository AGENTS.md and the available `.agents/skills` locations were

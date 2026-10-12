@@ -1,5 +1,5 @@
 //! Experimental JPEG 2000 decoder: unsigned Gray8/RGB8, <=1024x1024, reversible 5/3,
-//! zero to five decompositions, <=256 aligned raster tiles, one part/layer per tile,
+//! zero to five decompositions, <=256 raster tiles, one part/layer per tile,
 //! LRCP, bounded blocks, style zero.
 //! Unsupported profiles return errors before any image callback.
 use crate::draw::{DecodeOptions, InitOptions, ResponseCommand};
@@ -428,16 +428,36 @@ fn packets_planes_grid<const GLOBAL: bool>(
     let (block_width, block_height) = grid.block;
     let factor = 1usize << levels;
     let mut bands = Vec::with_capacity(1 + 3 * usize::from(levels));
-    bands.push((0, 0, w.div_ceil(factor), h.div_ceil(factor), 0));
+    let (x0, y0) = grid.origin;
+    let (x1, y1) = (x0 + w, y0 + h);
+    let (llw, llh) = if GLOBAL {
+        (
+            x1.div_ceil(factor) - x0.div_ceil(factor),
+            y1.div_ceil(factor) - y0.div_ceil(factor),
+        )
+    } else {
+        (w.div_ceil(factor), h.div_ceil(factor))
+    };
+    bands.push((0, 0, llw, llh, 0));
     for depth in (1..=levels).rev() {
-        let rw = w.div_ceil(1usize << (depth - 1));
-        let rh = h.div_ceil(1usize << (depth - 1));
-        let lw = rw.div_ceil(2);
-        let lh = rh.div_ceil(2);
+        let (rw, rh, lw, lh) = if GLOBAL {
+            let parent = 1usize << (depth - 1);
+            let child = 1usize << depth;
+            (
+                x1.div_ceil(parent) - x0.div_ceil(parent),
+                y1.div_ceil(parent) - y0.div_ceil(parent),
+                x1.div_ceil(child) - x0.div_ceil(child),
+                y1.div_ceil(child) - y0.div_ceil(child),
+            )
+        } else {
+            let rw = w.div_ceil(1usize << (depth - 1));
+            let rh = h.div_ceil(1usize << (depth - 1));
+            (rw, rh, rw.div_ceil(2), rh.div_ceil(2))
+        };
         bands.extend([
-            (lw, 0, rw / 2, lh, 1),
-            (0, lh, lw, rh / 2, 2),
-            (lw, lh, rw / 2, rh / 2, 3),
+            (lw, 0, rw - lw, lh, 1),
+            (0, lh, lw, rh - lh, 2),
+            (lw, lh, rw - lw, rh - lh, 3),
         ]);
     }
     let mut p = 0;
@@ -453,17 +473,16 @@ fn packets_planes_grid<const GLOBAL: bool>(
         } else {
             levels - resolution + 1
         };
-        // T.800 B.5/B.7: code-block grids start at global sub-band zero,
-        // not at the tile boundary. Alignment by 2^levels makes both low-
-        // and high-pass band origins equal to the shifted tile origin.
-        let (ox, oy) = if GLOBAL {
-            (
-                (grid.origin.0 >> depth) % block_width,
-                (grid.origin.1 >> depth) % block_height,
-            )
-        } else {
-            (0, 0)
-        };
+        if GLOBAL {
+            let factor = 1usize << (levels - resolution);
+            // A zero-area resolution has no precincts or packets. A nonempty
+            // resolution with empty high bands still has its packet header.
+            if x1.div_ceil(factor) == x0.div_ceil(factor)
+                || y1.div_ceil(factor) == y0.div_ceil(factor)
+            {
+                continue;
+            }
+        }
         for (plane, mb) in planes.iter_mut().zip(mb) {
             let mut bits = Bits::new(&data[p..]);
             let mut blocks = Vec::new();
@@ -473,6 +492,18 @@ fn packets_planes_grid<const GLOBAL: bool>(
                     if bw == 0 || bh == 0 {
                         continue;
                     }
+                    // T.800 B.5/B.7: global grids; low/high sub-band
+                    // coordinates differ when the tile origin is unaligned.
+                    let (ox, oy) = if GLOBAL {
+                        (
+                            subband_start(x0, depth, orientation == 1 || orientation == 3)
+                                % block_width,
+                            subband_start(y0, depth, orientation == 2 || orientation == 3)
+                                % block_height,
+                        )
+                    } else {
+                        (0, 0)
+                    };
                     let nx = (bw + ox).div_ceil(block_width);
                     let ny = (bh + oy).div_ceil(block_height);
                     // Keep the existing single-block path free of tree allocations.
@@ -558,6 +589,82 @@ fn packets_planes_grid<const GLOBAL: bool>(
     }
     if p != data.len() {
         return Err(bad("trailing tile data"));
+    }
+    Ok(())
+}
+// ceil((origin - high*2^(depth-1))/2^depth), rewritten so the
+// intermediate stays nonnegative even for a high-pass band at origin zero.
+fn subband_start(origin: usize, depth: u8, high: bool) -> usize {
+    let factor = 1usize << depth;
+    let offset = if high { factor / 2 } else { factor };
+    (origin + offset - 1) / factor
+}
+// T.800 F.3.6/F.3.8: global-even samples undo the update first, then
+// global-odd samples undo prediction, using whole-sample reflection.
+fn inverse_line_at(packed: &[i32], origin: usize) -> Result<Vec<i32>, Error> {
+    let n = packed.len();
+    if n <= 1 {
+        // F.3.6 uses plain division for the odd singleton, unlike the floor
+        // in lifting. Valid forward coefficients are even; tolerate mutated
+        // negative odd coefficients with integer division toward zero.
+        return Ok(packed
+            .iter()
+            .map(|&v| if origin % 2 == 1 { v / 2 } else { v })
+            .collect());
+    }
+    let odd = origin % 2;
+    let low = (n + 1 - odd) / 2;
+    let mut out = vec![0i64; n];
+    for (i, value) in out.iter_mut().enumerate() {
+        let index = if (i + odd) & 1 == 0 {
+            i / 2
+        } else {
+            low + i / 2
+        };
+        *value = i64::from(packed[index]);
+    }
+    for i in (odd..n).step_by(2) {
+        let l = if i == 0 { 1 } else { i - 1 };
+        let r = if i + 1 == n { i - 1 } else { i + 1 };
+        out[i] -= (out[l] + out[r] + 2).div_euclid(4);
+    }
+    for i in (1 - odd..n).step_by(2) {
+        let l = if i == 0 { 1 } else { i - 1 };
+        let r = if i + 1 == n { i - 1 } else { i + 1 };
+        out[i] += (out[l] + out[r]).div_euclid(2);
+    }
+    out.into_iter()
+        .map(|v| i32::try_from(v).map_err(|_| bad("wavelet coefficient overflow")))
+        .collect()
+}
+#[inline(never)]
+fn synthesize_unaligned(
+    plane: &mut [i32],
+    w: usize,
+    h: usize,
+    levels: u8,
+    origin: (usize, usize),
+) -> Result<(), Error> {
+    let (x0, y0) = origin;
+    let (x1, y1) = (x0 + w, y0 + h);
+    for depth in (1..=levels).rev() {
+        let factor = 1usize << (depth - 1);
+        let (rx, ry) = (x0.div_ceil(factor), y0.div_ceil(factor));
+        let (rw, rh) = (x1.div_ceil(factor) - rx, y1.div_ceil(factor) - ry);
+        if rw == 0 || rh == 0 {
+            continue;
+        }
+        for y in 0..rh {
+            let row = inverse_line_at(&plane[y * w..y * w + rw], rx)?;
+            plane[y * w..y * w + rw].copy_from_slice(&row);
+        }
+        for x in 0..rw {
+            let packed: Vec<_> = (0..rh).map(|y| plane[y * w + x]).collect();
+            let column = inverse_line_at(&packed, ry)?;
+            for y in 0..rh {
+                plane[y * w + x] = column[y];
+            }
+        }
     }
     Ok(())
 }
@@ -740,8 +847,13 @@ fn tile_pixels(
                 BlockGrid { block, origin },
             )?;
         }
+        let factor = 1usize << levels;
         for plane in &mut planes {
-            synthesize(plane, w, h, levels)?;
+            if origin.0 & (factor - 1) == 0 && origin.1 & (factor - 1) == 0 {
+                synthesize(plane, w, h, levels)?;
+            } else {
+                synthesize_unaligned(plane, w, h, levels, origin)?;
+            }
         }
         if planes.len() == 1 {
             for &v in &planes[0] {
@@ -777,18 +889,6 @@ fn tiles(
     } = size;
     let nx = w.div_ceil(tile_w);
     let ny = h.div_ceil(tile_h);
-    let factor = 1usize << coding.levels;
-    // Alignment keeps the existing even-first lifting kernel valid at every
-    // resolution. Check the smallest (last) tile on each axis before decoding.
-    if (nx > 1 && tile_w % factor != 0)
-        || (ny > 1 && tile_h % factor != 0)
-        || w - (nx - 1) * tile_w < factor
-        || h - (ny - 1) * tile_h < factor
-    {
-        return Err(unsupported(
-            "tiles must have aligned origins and dimensions >=2^decomposition levels",
-        ));
-    }
     let count = nx * ny; // SIZ bounded to 256 before any coefficient allocation.
     // Retain the single-tile allocation/move path. Multi-tile scratch is dropped
     // after each row copy; only the whole-canvas RGBA output survives.
@@ -1011,6 +1111,18 @@ pub fn decode<B: BinaryReader>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn odd_origin_singleton_reflection_and_overflow() {
+        assert_eq!(inverse_line_at(&[], 1).unwrap(), Vec::<i32>::new());
+        assert_eq!(inverse_line_at(&[-3], 0).unwrap(), vec![-3]);
+        assert_eq!(inverse_line_at(&[-3], 1).unwrap(), vec![-1]);
+        assert_eq!(inverse_line_at(&[6], 1).unwrap(), vec![3]);
+        // Odd-start two-sample forward lifting of [3,4] produces low=4,
+        // high=3-4=-1; reflection duplicates the sole neighbour at each end.
+        assert_eq!(inverse_line_at(&[4, -1], 1).unwrap(), vec![3, 4]);
+        assert!(inverse_line_at(&[i32::MAX, i32::MIN], 1).is_err());
+        assert!(inverse_line_at(&[i32::MIN, i32::MAX], 1).is_err());
+    }
     #[test]
     fn inverse_rct_negative_rounding_and_extremes() {
         assert_eq!(inverse_rct(-128, 0, 0), [0, 0, 0]);

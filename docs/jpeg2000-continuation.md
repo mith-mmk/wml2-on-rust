@@ -1,5 +1,8 @@
 # JPEG2000 continuation: review, WASM execution and next profile
 
+The latest [origin-aware tile extension](jpeg2000-origins.md) supersedes the
+alignment/small-edge restrictions of the earlier multi-tile stage.
+
 Resume point: `d1e128f01812d591e67f9811d8dab0c5c4eb85fb` on
 `codex/jpeg2000-rgb-reimplementation-20261011`. Normal Git remote read/fetch
 matched that SHA; stable `jpeg2000` remained at `7043bf083203234c1193cf1c22a70ab61d6dc3df`.

@@ -23,14 +23,34 @@ work.mkdir(exist_ok=True)
 cases = []
 mapped_sources = {}
 for manifest_name, field_count in [('jpeg2000-blocks-manifest.txt', 11),
-                                   ('jpeg2000-tiles-manifest.txt', 14)]:
+                                   ('jpeg2000-tiles-manifest.txt', 14),
+                                   ('jpeg2000-origins-manifest.txt', 14)]:
     manifest = fixtures / manifest_name
     if manifest.exists():
         for line in manifest.read_text().splitlines()[1:]:
             fields = line.split()
             assert len(fields) == field_count
             mapped_sources[fields[1]] = fields
-for path in sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')):
+promoted = []
+unsupported_manifest = fixtures / 'jpeg2000-tiles-unsupported-manifest.txt'
+rejected = []
+if unsupported_manifest.exists():
+    for line in unsupported_manifest.read_text().splitlines()[1:]:
+        fields = line.split()
+        assert len(fields) == 15
+        if fields[14] == 'count':
+            rejected.append(fixtures / fields[1])
+        else:
+            promoted.append(fixtures / fields[1])
+            mapped_sources[fields[1]] = fields
+origins_unsupported = fixtures / 'jpeg2000-origins-unsupported-manifest.txt'
+if origins_unsupported.exists():
+    for line in origins_unsupported.read_text().splitlines()[1:]:
+        fields = line.split()
+        assert len(fields) == 15 and fields[14] == 'count'
+        rejected.append(fixtures / fields[1])
+paths = sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')) + promoted
+for path in paths:
     stem = path.stem.split('_mct')[0]
     if path.name in mapped_sources:
         sources = [fixtures / mapped_sources[path.name][3]]
@@ -45,14 +65,11 @@ for path in sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')
     components = 3 if source.suffix == '.rgb' else 1
     assert source.stat().st_size == w * h * components
     cases.append((path, source, w, h, components))
+compatibility_name = 'oracle_origins_22x11_d4_gray_b8x4_t20x22_singleton'
+compatibility_path = fixtures / (compatibility_name + '.j2k')
+if compatibility_path.exists():
+    cases.append((compatibility_path, fixtures / (compatibility_name + '.expected.gray'), 22, 11, 1))
 assert cases, 'no fixtures found'
-rejected = []
-unsupported_manifest = fixtures / 'jpeg2000-tiles-unsupported-manifest.txt'
-if unsupported_manifest.exists():
-    for line in unsupported_manifest.read_text().splitlines()[1:]:
-        fields = line.split()
-        assert len(fields) == 15
-        rejected.append(fixtures / fields[1])
 default = str(args.default_features).lower()
 (work / 'Cargo.toml').write_text(f'''[package]
 name = "jpeg2000-wasm-verification"

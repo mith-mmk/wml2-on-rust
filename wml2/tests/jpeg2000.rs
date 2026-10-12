@@ -464,13 +464,9 @@ fn multilevel_boundaries_and_corruption() {
         for (p, v) in [(siz + 6, w), (siz + 10, h), (siz + 22, w), (siz + 26, h)] {
             data[p..p + 4].copy_from_slice(&v.to_be_bytes());
         }
-        assert!(
-            image_load(&data)
-                .err()
-                .unwrap()
-                .to_string()
-                .contains("2^decomposition")
-        );
+        // Small axes are supported now; this mutated header still disagrees
+        // with the original packed coefficient/packet layout.
+        assert!(image_load(&data).is_err());
     }
     for level in [6, 32, 255] {
         let mut data = raw.to_vec();
@@ -1030,10 +1026,6 @@ fn invalid_tile_structure_is_rejected_before_callbacks() {
                 bad[offset..offset + 4].copy_from_slice(&value.to_be_bytes());
                 reject(&bad);
             }
-            let mut misaligned = data.clone();
-            let value = u32::from_be_bytes(data[offset..offset + 4].try_into().unwrap());
-            misaligned[offset..offset + 4].copy_from_slice(&(value + 1).to_be_bytes());
-            reject(&misaligned);
         }
         let mut excessive = data.clone();
         excessive[24..28].copy_from_slice(&1u32.to_be_bytes());
@@ -1067,38 +1059,222 @@ fn invalid_tile_structure_is_rejected_before_callbacks() {
 
 #[cfg(feature = "jpeg2000")]
 #[test]
-fn unsupported_tile_profiles_rejected_before_callbacks() {
+fn previous_tile_origin_rejections_become_pixel_oracles() {
     use bin_rs::reader::BytesReader;
-    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder};
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder, image_from_with_limits};
+    use wml2::limits::DecodeLimits;
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
     let manifest =
         std::fs::read_to_string(format!("{root}jpeg2000-tiles-unsupported-manifest.txt")).unwrap();
-    let mut reasons = std::collections::BTreeSet::new();
-    let mut count = 0;
+    let (mut accepted, mut rejected) = (0, 0);
     for line in manifest.lines().skip(1) {
-        let fields: Vec<_> = line.split_whitespace().collect();
-        assert_eq!(fields.len(), 15);
-        let data = std::fs::read(format!("{root}{}", fields[1])).unwrap();
+        let f: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(f.len(), 15);
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        if f[14] == "count" {
+            let mut image = ImageBuffer::new();
+            assert!(
+                image_decoder(
+                    &mut BytesReader::new(&data),
+                    &mut DecodeOptions {
+                        drawer: &mut image,
+                        debug_flag: 0,
+                    }
+                )
+                .is_err()
+            );
+            assert!(image.buffer.is_none());
+            rejected += 1;
+        } else {
+            let n = |i: usize| f[i].parse::<usize>().unwrap();
+            let (w, h, c) = (n(4), n(5), n(9));
+            let source = std::fs::read(format!("{root}{}", f[3])).unwrap();
+            let expected: Vec<_> = source
+                .chunks_exact(c)
+                .flat_map(|p| {
+                    if c == 1 {
+                        [p[0], p[0], p[0], 255]
+                    } else {
+                        [p[0], p[1], p[2], 255]
+                    }
+                })
+                .collect();
+            let mut limits = DecodeLimits::unlimited();
+            limits.pixels = w * h;
+            limits.expanded_bytes = w * h * c * 64 + 8192;
+            limits.frames = 1;
+            let image =
+                image_from_with_limits(&data, limits).unwrap_or_else(|e| panic!("{}: {e}", f[1]));
+            assert_eq!((image.width, image.height), (w, h));
+            assert_eq!(image.buffer.unwrap(), expected, "{}", f[1]);
+            limits.expanded_bytes -= 1;
+            assert!(image_from_with_limits(&data, limits).is_err());
+            accepted += 1;
+        }
+    }
+    assert_eq!((accepted, rejected), (18, 6));
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn arbitrary_tile_origins_match_oracles_and_limits() {
+    use wml2::draw::image_from_with_limits;
+    use wml2::limits::DecodeLimits;
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!("{root}jpeg2000-origins-manifest.txt")).unwrap();
+    let mut count = 0;
+    let mut modes = std::collections::BTreeSet::new();
+    let mut levels = std::collections::BTreeSet::new();
+    let mut one_sample_edges = 0;
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(f.len(), 14);
+        let n = |i: usize| f[i].parse::<usize>().unwrap();
+        let (w, h, c, tw, th) = (n(4), n(5), n(9), n(11), n(12));
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let source = std::fs::read(format!("{root}{}", f[3])).unwrap();
+        assert_eq!(source.len(), w * h * c);
+        let expected: Vec<_> = source
+            .chunks_exact(c)
+            .flat_map(|p| {
+                if c == 1 {
+                    [p[0], p[0], p[0], 255]
+                } else {
+                    [p[0], p[1], p[2], 255]
+                }
+            })
+            .collect();
+        let mut limits = DecodeLimits::unlimited();
+        limits.pixels = w * h;
+        limits.input_bytes = data.len();
+        limits.expanded_bytes = w * h * c * 64 + 8192;
+        limits.frames = 1;
+        let image =
+            image_from_with_limits(&data, limits).unwrap_or_else(|e| panic!("{}: {e}", f[1]));
+        assert_eq!((image.width, image.height), (w, h));
+        assert_eq!(image.buffer.unwrap(), expected, "{}", f[1]);
+        for field in 0..4 {
+            let mut short = limits;
+            match field {
+                0 => short.input_bytes -= 1,
+                1 => short.pixels -= 1,
+                2 => short.expanded_bytes -= 1,
+                _ => short.frames = 0,
+            }
+            assert!(
+                image_from_with_limits(&data, short).is_err(),
+                "{} limit {field}",
+                f[1]
+            );
+        }
+        assert_eq!(n(13), w.div_ceil(tw) * h.div_ceil(th));
+        modes.insert((c, n(10)));
+        levels.insert(n(8));
+        if w % tw == 1 || h % th == 1 {
+            one_sample_edges += 1;
+        }
+        count += 1;
+    }
+    assert_eq!(count, 210);
+    assert_eq!(modes, [(1, 0), (3, 0), (3, 1)].into_iter().collect());
+    assert_eq!(levels, (0..=5).collect());
+    assert!(one_sample_edges >= 60);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn unaligned_tile_corruption_stays_bounded_and_before_callbacks() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder, image_load};
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!("{root}jpeg2000-origins-manifest.txt")).unwrap();
+    let reject = |data: &[u8]| {
         let mut image = ImageBuffer::new();
         assert!(
             image_decoder(
-                &mut BytesReader::new(&data),
+                &mut BytesReader::new(data),
                 &mut DecodeOptions {
                     drawer: &mut image,
                     debug_flag: 0,
                 }
             )
-            .is_err(),
-            "{}",
-            fields[1]
+            .is_err()
         );
-        assert!(image.buffer.is_none(), "{} initialized output", fields[1]);
-        reasons.insert(fields[14]);
-        count += 1;
+        assert!(image.buffer.is_none());
+    };
+    let mut modes = std::collections::BTreeSet::new();
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        let levels = f[8].parse::<usize>().unwrap();
+        let mode = (f[9], f[10]);
+        if !f[1].ends_with(".j2k")
+            || levels < 2
+            || modes.contains(&mode)
+            || f[13].parse::<usize>().unwrap() < 4
+            || f[11].parse::<usize>().unwrap() % (1 << levels) == 0
+        {
+            continue;
+        }
+        modes.insert(mode);
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let mut p = 2;
+        while data[p..p + 2] != [255, 0x90] {
+            p += usize::from(u16::from_be_bytes([data[p + 2], data[p + 3]])) + 2;
+        }
+        let mut parts = Vec::new();
+        while data[p..p + 2] == [255, 0x90] {
+            let end = p + u32::from_be_bytes(data[p + 6..p + 10].try_into().unwrap()) as usize;
+            parts.push((p, end));
+            p = end;
+        }
+        for (start, end) in [parts[1], *parts.last().unwrap()] {
+            for n in [start, start + 1, start + 12, start + 14, end - 1] {
+                reject(&data[..n]);
+            }
+            for (offset, bytes) in [
+                (2, vec![0, 9]),
+                (4, vec![255, 255]),
+                (10, vec![1]),
+                (11, vec![2]),
+                (12, vec![255, 0x52]),
+                (6, vec![255, 255, 255, 255]),
+            ] {
+                let mut bad = data.clone();
+                bad[start + offset..start + offset + bytes.len()].copy_from_slice(&bytes);
+                reject(&bad);
+            }
+            let mut no_body = data[..start + 14].to_vec();
+            no_body[start + 6..start + 10].copy_from_slice(&14u32.to_be_bytes());
+            no_body.extend_from_slice(&data[end..]);
+            reject(&no_body);
+            for offset in start + 14..end.min(start + 46) {
+                for mask in [1, 128, 255] {
+                    let mut changed = data.clone();
+                    changed[offset] ^= mask;
+                    let _ = image_load(&changed);
+                }
+            }
+        }
+        // Overall image/tile-grid offsets are still outside this profile.
+        for offset in [16, 20, 32, 36] {
+            let mut bad = data.clone();
+            bad[offset..offset + 4].copy_from_slice(&1u32.to_be_bytes());
+            reject(&bad);
+        }
     }
-    assert_eq!(count, 24);
-    assert_eq!(
-        reasons,
-        ["misaligned", "tiny", "count"].into_iter().collect()
+    assert_eq!(modes.len(), 3);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn odd_negative_singleton_matches_independent_oracle() {
+    let data =
+        include_bytes!("fixtures/review/oracle_origins_22x11_d4_gray_b8x4_t20x22_singleton.j2k");
+    let expected = include_bytes!(
+        "fixtures/review/oracle_origins_22x11_d4_gray_b8x4_t20x22_singleton.expected.gray"
     );
+    let image = wml2::draw::image_load(data).unwrap();
+    assert_eq!((image.width, image.height), (22, 11));
+    let rgba: Vec<_> = expected.iter().flat_map(|&v| [v, v, v, 255]).collect();
+    assert_eq!(image.buffer.unwrap(), rgba);
 }

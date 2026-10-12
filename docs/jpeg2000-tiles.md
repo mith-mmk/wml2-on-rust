@@ -1,5 +1,8 @@
 # Bounded JPEG2000 multi-tile decoding
 
+The subsequent [origin-aware extension](jpeg2000-origins.md) removes the
+per-tile alignment and small-edge restrictions described below.
+
 Continuation of `a186462192ed4f189dde79004ad3927bbb3df691` on
 `codex/jpeg2000-rgb-reimplementation-20261011`. Normal GitHub read/fetch matched
 that SHA. Rust 1.91.0, wasm32-unknown-unknown target, and Node v24.19.0 are

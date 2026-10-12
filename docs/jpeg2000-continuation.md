@@ -153,12 +153,12 @@ python3 wml2-test/scripts/verify_jpeg2000_wasm.py
 python3 wml2-test/scripts/verify_jpeg2000_wasm.py --default-features
 ```
 
-The supported profile remains Gray8 or equal unsampled RGB8/RCT, zero origins,
-one tile/part/layer, LRCP, levels 0–5 (each axis at least 2^levels and at most
-1024), reversible 5/3, style zero, full coding passes and supported enumerated
-JP2 colors. Multi-layer partial-pass continuation needs persistent MQ/block/
-tag-tree state; multiple tiles and nonzero origins need new positioning rules;
-other progressions need new packet ordering. 9/7, subsampling, signed/high-bit-
+The subsequent [bounded multi-tile extension](jpeg2000-tiles.md) accepts at most
+256 raster tiles with one part/layer each, aligned tile origins and no tile-header
+overrides. The other Gray8/equal unsampled RGB8/RCT, LRCP, levels 0–5, reversible
+5/3, style-zero and full-pass constraints remain. Multi-layer partial-pass
+continuation needs persistent MQ/block/tag-tree state; arbitrary wavelet origins
+and other progressions still need new positioning/packet ordering. 9/7, subsampling, signed/high-bit-
 depth/alpha, component coding overrides, ROI, precinct overrides/SOP/EPH,
 general JP2 palette/ICC boxes and extended lengths remain unsupported.
 Browser UI, Windows/macOS, optional AVIF-specific matrices and external corpus

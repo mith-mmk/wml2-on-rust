@@ -1,5 +1,6 @@
 //! Experimental JPEG 2000 decoder: unsigned Gray8/RGB8, <=1024x1024, reversible 5/3,
-//! zero to five decompositions, one tile/layer, LRCP, bounded blocks, style zero.
+//! zero to five decompositions, <=256 aligned raster tiles, one part/layer per tile,
+//! LRCP, bounded blocks, style zero.
 //! Unsupported profiles return errors before any image callback.
 use crate::draw::{DecodeOptions, InitOptions, ResponseCommand};
 use crate::error::{ImgError, ImgErrorKind};
@@ -395,9 +396,36 @@ fn packets_planes(
     planes: &mut [Vec<i32>],
     block: (usize, usize),
 ) -> Result<(), Error> {
+    packets_planes_grid::<false>(
+        data,
+        w,
+        h,
+        levels,
+        mb,
+        planes,
+        BlockGrid {
+            block,
+            origin: (0, 0),
+        },
+    )
+}
+#[derive(Clone, Copy)]
+struct BlockGrid {
+    block: (usize, usize),
+    origin: (usize, usize),
+}
+fn packets_planes_grid<const GLOBAL: bool>(
+    data: &[u8],
+    w: usize,
+    h: usize,
+    levels: u8,
+    mb: &[&[u8]],
+    planes: &mut [Vec<i32>],
+    grid: BlockGrid,
+) -> Result<(), Error> {
     // QCD and LRCP order: deepest LL, then HL/LH/HH from coarse to fine.
     // All bands occupy disjoint rectangles in a nested quadrant layout.
-    let (block_width, block_height) = block;
+    let (block_width, block_height) = grid.block;
     let factor = 1usize << levels;
     let mut bands = Vec::with_capacity(1 + 3 * usize::from(levels));
     bands.push((0, 0, w.div_ceil(factor), h.div_ceil(factor), 0));
@@ -420,6 +448,22 @@ fn packets_planes(
             usize::from(resolution) * 3 - 2
         };
         let count = if resolution == 0 { 1 } else { 3 };
+        let depth = if resolution == 0 {
+            levels
+        } else {
+            levels - resolution + 1
+        };
+        // T.800 B.5/B.7: code-block grids start at global sub-band zero,
+        // not at the tile boundary. Alignment by 2^levels makes both low-
+        // and high-pass band origins equal to the shifted tile origin.
+        let (ox, oy) = if GLOBAL {
+            (
+                (grid.origin.0 >> depth) % block_width,
+                (grid.origin.1 >> depth) % block_height,
+            )
+        } else {
+            (0, 0)
+        };
         for (plane, mb) in planes.iter_mut().zip(mb) {
             let mut bits = Bits::new(&data[p..]);
             let mut blocks = Vec::new();
@@ -429,8 +473,8 @@ fn packets_planes(
                     if bw == 0 || bh == 0 {
                         continue;
                     }
-                    let nx = bw.div_ceil(block_width);
-                    let ny = bh.div_ceil(block_height);
+                    let nx = (bw + ox).div_ceil(block_width);
+                    let ny = (bh + oy).div_ceil(block_height);
                     // Keep the existing single-block path free of tree allocations.
                     let multiple = nx > 1 || ny > 1;
                     let mut inclusion = multiple.then(|| TagTree::new(nx, ny));
@@ -470,11 +514,28 @@ fn packets_planes(
                             if length == 0 {
                                 return Err(bad("empty arithmetic segment"));
                             }
+                            let (x, y, width, height) = if GLOBAL {
+                                let x = (cx * block_width).saturating_sub(ox);
+                                let y = (cy * block_height).saturating_sub(oy);
+                                (
+                                    x,
+                                    y,
+                                    ((cx + 1) * block_width - ox).min(bw) - x,
+                                    ((cy + 1) * block_height - oy).min(bh) - y,
+                                )
+                            } else {
+                                (
+                                    cx * block_width,
+                                    cy * block_height,
+                                    (bw - cx * block_width).min(block_width),
+                                    (bh - cy * block_height).min(block_height),
+                                )
+                            };
                             blocks.push((
-                                bx + cx * block_width,
-                                by + cy * block_height,
-                                (bw - cx * block_width).min(block_width),
-                                (bh - cy * block_height).min(block_height),
+                                bx + x,
+                                by + y,
+                                width,
+                                height,
                                 orientation,
                                 planes,
                                 length,
@@ -632,6 +693,148 @@ fn quant_planes(q: &[u8], levels: u8) -> Result<Vec<u8>, Error> {
         })
         .collect()
 }
+#[derive(Clone, Copy)]
+struct Size {
+    w: usize,
+    h: usize,
+    components: usize,
+    tile_w: usize,
+    tile_h: usize,
+}
+#[derive(Clone, Copy)]
+struct Coding {
+    levels: u8,
+    rct: bool,
+    block: (usize, usize),
+}
+fn tile_pixels(
+    data: &[u8],
+    w: usize,
+    h: usize,
+    origin: (usize, usize),
+    coding: Coding,
+    component_mb: &[Vec<u8>],
+) -> Result<Vec<u8>, Error> {
+    let Coding { levels, rct, block } = coding;
+    let mut rgba = Vec::with_capacity(w * h * 4);
+    if component_mb.len() == 1 && origin == (0, 0) {
+        let mut plane = packets(data, w, h, levels, &component_mb[0], block)?;
+        synthesize(&mut plane, w, h, levels)?;
+        for v in plane {
+            let v = gray8(v);
+            rgba.extend_from_slice(&[v, v, v, 255]);
+        }
+    } else {
+        let mut planes = vec![vec![0; w * h]; component_mb.len()];
+        let mb: Vec<_> = component_mb.iter().map(Vec::as_slice).collect();
+        if origin == (0, 0) {
+            packets_planes(data, w, h, levels, &mb, &mut planes, block)?;
+        } else {
+            packets_planes_grid::<true>(
+                data,
+                w,
+                h,
+                levels,
+                &mb,
+                &mut planes,
+                BlockGrid { block, origin },
+            )?;
+        }
+        for plane in &mut planes {
+            synthesize(plane, w, h, levels)?;
+        }
+        if planes.len() == 1 {
+            for &v in &planes[0] {
+                let v = gray8(v);
+                rgba.extend_from_slice(&[v, v, v, 255]);
+            }
+        } else {
+            for ((&v0, &v1), &v2) in planes[0].iter().zip(&planes[1]).zip(&planes[2]) {
+                let rgb = if rct {
+                    inverse_rct(v0, v1, v2)
+                } else {
+                    [gray8(v0), gray8(v1), gray8(v2)]
+                };
+                rgba.extend_from_slice(&[rgb[0], rgb[1], rgb[2], 255]);
+            }
+        }
+    }
+    Ok(rgba)
+}
+fn tiles(
+    s: &[u8],
+    mut p: usize,
+    size: Size,
+    coding: Coding,
+    component_mb: &[Vec<u8>],
+) -> Result<Vec<u8>, Error> {
+    let Size {
+        w,
+        h,
+        tile_w,
+        tile_h,
+        ..
+    } = size;
+    let nx = w.div_ceil(tile_w);
+    let ny = h.div_ceil(tile_h);
+    let factor = 1usize << coding.levels;
+    // Alignment keeps the existing even-first lifting kernel valid at every
+    // resolution. Check the smallest (last) tile on each axis before decoding.
+    if (nx > 1 && tile_w % factor != 0)
+        || (ny > 1 && tile_h % factor != 0)
+        || w - (nx - 1) * tile_w < factor
+        || h - (ny - 1) * tile_h < factor
+    {
+        return Err(unsupported(
+            "tiles must have aligned origins and dimensions >=2^decomposition levels",
+        ));
+    }
+    let count = nx * ny; // SIZ bounded to 256 before any coefficient allocation.
+    // Retain the single-tile allocation/move path. Multi-tile scratch is dropped
+    // after each row copy; only the whole-canvas RGBA output survives.
+    let mut rgba = if count == 1 {
+        Vec::new()
+    } else {
+        vec![0; w * h * 4]
+    };
+    for index in 0..count {
+        if u16be(s, p)? != 0xff90 || u16be(s, p + 2)? != 10 {
+            return Err(bad("SOT required for every tile"));
+        }
+        let b = bytes(s, p + 4, 8)?;
+        if usize::from(u16be(b, 0)?) != index || b[6] != 0 || b[7] != 1 {
+            return Err(unsupported("raster tiles, one tile-part per tile required"));
+        }
+        let part = u32be(b, 2)? as usize;
+        if part < 14 {
+            return Err(bad("tile-part size"));
+        }
+        let tile = bytes(s, p, part)?;
+        if tile[12..14] != [255, 147] {
+            return Err(unsupported(
+                "tile-header overrides are unsupported; SOD required",
+            ));
+        }
+        let x = (index % nx) * tile_w;
+        let y = (index / nx) * tile_h;
+        let tw = tile_w.min(w - x);
+        let th = tile_h.min(h - y);
+        let pixels = tile_pixels(&tile[14..], tw, th, (x, y), coding, component_mb)?;
+        if count == 1 {
+            rgba = pixels;
+        } else {
+            for row in 0..th {
+                rgba[((y + row) * w + x) * 4..((y + row) * w + x + tw) * 4]
+                    .copy_from_slice(&pixels[row * tw * 4..(row + 1) * tw * 4]);
+            }
+        }
+        p += part;
+    }
+    if bytes(s, p, 2)? != [255, 217] || p + 2 != s.len() {
+        return Err(bad("tile count, EOC or trailing data"));
+    }
+    Ok(rgba)
+}
 fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
     let (s, dimensions) = container(data)?;
     if !s.starts_with(&[255, 79]) || u16be(s, 2)? != 0xff51 {
@@ -666,20 +869,28 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 if w == 0 || h == 0 {
                     return Err(bad("zero dimensions"));
                 }
+                let tile_w = u32be(b, 18)? as usize;
+                let tile_h = u32be(b, 22)? as usize;
+                if tile_w == 0 || tile_h == 0 {
+                    return Err(bad("zero tile dimensions"));
+                }
                 if u16be(b, 0)? != 0
                     || w > 1024
                     || h > 1024
                     || u32be(b, 10)? != 0
                     || u32be(b, 14)? != 0
-                    || u32be(b, 18)? as usize != w
-                    || u32be(b, 22)? as usize != h
+                    || tile_w > 1024
+                    || tile_h > 1024
                     || u32be(b, 26)? != 0
                     || u32be(b, 30)? != 0
                     || !b[36..].chunks_exact(3).all(|c| c == [7, 1, 1])
                 {
                     return Err(unsupported(
-                        "SIZ: unsigned Gray8/RGB8, no subsampling, zero origin, one tile, dimensions <=1024 required",
+                        "SIZ: unsigned Gray8/RGB8, no subsampling, zero origin, canvas/tile dimensions <=1024 required",
                     ));
+                }
+                if w.div_ceil(tile_w) * h.div_ceil(tile_h) > 256 {
+                    return Err(unsupported("at most 256 tiles required"));
                 }
                 if dimensions.is_some_and(|d| d != (w, h, components)) {
                     return Err(bad("JP2 and SIZ dimensions or component count differ"));
@@ -692,7 +903,13 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     "JPEG2000 workspace",
                 )?;
                 crate::limits::check(1, limits.frames, "frames")?;
-                size = Some((w, h, components));
+                size = Some(Size {
+                    w,
+                    h,
+                    components,
+                    tile_w,
+                    tile_h,
+                });
             }
             0xff52 => {
                 if coding.is_some() || b.len() != 10 {
@@ -713,13 +930,17 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                         "COD: one layer, LRCP, 0..5 levels, power-of-two blocks 4..1024 with area <=4096, style zero, reversible transform required",
                     ));
                 }
-                if b[4] == 1 && size.ok_or_else(|| bad("COD before SIZ"))?.2 != 3 {
+                if b[4] == 1 && size.ok_or_else(|| bad("COD before SIZ"))?.components != 3 {
                     return Err(unsupported("RCT requires three components"));
                 }
                 // T.800 Table A.18: offsets add two to each exponent; their
                 // sum must be <=8, bounding every full block to 4096 samples.
                 let block = (1usize << (b[6] + 2), 1usize << (b[7] + 2));
-                coding = Some((b[5], b[4] == 1, block));
+                coding = Some(Coding {
+                    levels: b[5],
+                    rct: b[4] == 1,
+                    block,
+                });
             }
             0xff5c => {
                 if quant.is_some() || b.is_empty() {
@@ -728,7 +949,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 quant = Some(b);
             }
             0xff5d => {
-                let components = size.ok_or_else(|| bad("QCC before SIZ"))?.2;
+                let components = size.ok_or_else(|| bad("QCC before SIZ"))?.components;
                 if components != 3 {
                     return Err(unsupported("QCC requires RGB8"));
                 }
@@ -748,61 +969,20 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 crate::limits::charge_metadata(b.len())?;
             }
             0xff90 => {
-                if b.len() != 8 || u16be(b, 0)? != 0 || b[6] != 0 || b[7] != 1 {
-                    return Err(unsupported("one tile-part required"));
-                }
-                let (w, h, components) = size.ok_or_else(|| bad("missing SIZ"))?;
-                let (levels, rct, block) = coding.ok_or_else(|| bad("missing COD"))?;
-                if w < (1usize << levels) || h < (1usize << levels) {
-                    return Err(unsupported(
-                        "each dimension must be at least 2^decomposition levels",
-                    ));
-                }
+                let size = size.ok_or_else(|| bad("missing SIZ"))?;
+                let coding = coding.ok_or_else(|| bad("missing COD"))?;
                 let default_quant = quant.ok_or_else(|| bad("missing QCD"))?;
-                let mut component_mb = vec![quant_planes(default_quant, levels)?; components];
-                for (component, override_quant) in component_quant[..components].iter().enumerate()
+                let mut component_mb =
+                    vec![quant_planes(default_quant, coding.levels)?; size.components];
+                for (component, override_quant) in
+                    component_quant[..size.components].iter().enumerate()
                 {
                     if let Some(q) = override_quant {
-                        component_mb[component] = quant_planes(q, levels)?;
+                        component_mb[component] = quant_planes(q, coding.levels)?;
                     }
                 }
-                let part = u32be(b, 2)? as usize;
-                if part < 14 {
-                    return Err(bad("tile-part size"));
-                }
-                let tile = bytes(s, p, part)?;
-                let end = p + part;
-                if bytes(s, end, 2)? != [255, 217]
-                    || end + 2 != s.len()
-                    || tile[12..14] != [255, 147]
-                {
-                    return Err(bad("tile boundary, SOD or EOC"));
-                }
-                let mut rgba = Vec::with_capacity(w * h * 4);
-                if components == 1 {
-                    let mut plane = packets(&tile[14..], w, h, levels, &component_mb[0], block)?;
-                    synthesize(&mut plane, w, h, levels)?;
-                    for v in plane {
-                        let v = gray8(v);
-                        rgba.extend_from_slice(&[v, v, v, 255]);
-                    }
-                } else {
-                    let mut planes = vec![vec![0; w * h]; components];
-                    let mb: Vec<_> = component_mb.iter().map(Vec::as_slice).collect();
-                    packets_planes(&tile[14..], w, h, levels, &mb, &mut planes, block)?;
-                    for plane in &mut planes {
-                        synthesize(plane, w, h, levels)?;
-                    }
-                    for ((&v0, &v1), &v2) in planes[0].iter().zip(&planes[1]).zip(&planes[2]) {
-                        let rgb = if rct {
-                            inverse_rct(v0, v1, v2)
-                        } else {
-                            [gray8(v0), gray8(v1), gray8(v2)]
-                        };
-                        rgba.extend_from_slice(&[rgb[0], rgb[1], rgb[2], 255]);
-                    }
-                }
-                return Ok((w, h, rgba));
+                let rgba = tiles(s, p, size, coding, &component_mb)?;
+                return Ok((size.w, size.h, rgba));
             }
             _ => return Err(unsupported("codestream marker")),
         }

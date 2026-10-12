@@ -865,3 +865,240 @@ fn variable_code_block_corruption_stays_bounded() {
     }
     assert_eq!(checked, 8);
 }
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn tiled_images_match_oracle_and_canvas_limits() {
+    use wml2::draw::image_from_with_limits;
+    use wml2::limits::DecodeLimits;
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!("{root}jpeg2000-tiles-manifest.txt")).unwrap();
+    let mut modes = std::collections::BTreeSet::new();
+    let mut levels_seen = std::collections::BTreeSet::new();
+    let mut maximum_tiles = 0;
+    let mut checked = 0;
+    for line in manifest.lines().skip(1) {
+        let fields: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(fields.len(), 14);
+        let n = |i: usize| fields[i].parse::<usize>().unwrap();
+        let (w, h, components, count) = (n(4), n(5), n(9), n(13));
+        assert_eq!(count, w.div_ceil(n(11)) * h.div_ceil(n(12)));
+        assert!(count > 1 && count <= 256);
+        let name = fields[1];
+        let data = std::fs::read(format!("{root}{name}")).unwrap();
+        let source = std::fs::read(format!("{root}{}", fields[3])).unwrap();
+        assert_eq!(source.len(), w * h * components);
+        let expected: Vec<_> = source
+            .chunks_exact(components)
+            .flat_map(|p| {
+                if components == 1 {
+                    [p[0], p[0], p[0], 255]
+                } else {
+                    [p[0], p[1], p[2], 255]
+                }
+            })
+            .collect();
+        let mut limits = DecodeLimits::unlimited();
+        limits.input_bytes = data.len();
+        limits.pixels = w * h;
+        limits.expanded_bytes = w * h * components * 64 + 8192;
+        limits.frames = 1; // Tiles are portions of one frame.
+        let image = image_from_with_limits(&data, limits).unwrap_or_else(|e| panic!("{name}: {e}"));
+        assert_eq!((image.width, image.height), (w, h), "{name}");
+        assert_eq!(image.buffer.unwrap(), expected, "{name}");
+        for which in 0..4 {
+            let mut short = limits;
+            match which {
+                0 => short.input_bytes -= 1,
+                1 => short.pixels -= 1,
+                2 => short.expanded_bytes -= 1,
+                _ => short.frames = 0,
+            }
+            assert!(
+                image_from_with_limits(&data, short).is_err(),
+                "{name}: limit {which}"
+            );
+        }
+        modes.insert((components, n(10)));
+        levels_seen.insert(n(8));
+        maximum_tiles = maximum_tiles.max(count);
+        checked += 1;
+    }
+    assert!(checked >= 60);
+    assert_eq!(modes, [(1, 0), (3, 0), (3, 1)].into_iter().collect());
+    assert_eq!(levels_seen, (0..=5).collect());
+    assert_eq!(maximum_tiles, 256);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn invalid_tile_structure_is_rejected_before_callbacks() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder};
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!("{root}jpeg2000-tiles-manifest.txt")).unwrap();
+    let reject = |data: &[u8]| {
+        let mut image = ImageBuffer::new();
+        assert!(
+            image_decoder(
+                &mut BytesReader::new(data),
+                &mut DecodeOptions {
+                    drawer: &mut image,
+                    debug_flag: 0,
+                }
+            )
+            .is_err()
+        );
+        assert!(image.buffer.is_none(), "invalid tiling initialized output");
+    };
+    let mut selected = std::collections::BTreeSet::new();
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        let levels = f[8].parse::<usize>().unwrap();
+        let mode = (f[9], f[10]);
+        if !f[1].ends_with(".j2k")
+            || levels == 0
+            || f[13].parse::<usize>().unwrap() < 4
+            || selected.contains(&mode)
+        {
+            continue;
+        }
+        selected.insert(mode);
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let mut p = 2;
+        while data[p..p + 2] != [255, 0x90] {
+            p += usize::from(u16::from_be_bytes([data[p + 2], data[p + 3]])) + 2;
+        }
+        let mut parts = Vec::new();
+        while data[p..p + 2] == [255, 0x90] {
+            let len = u32::from_be_bytes(data[p + 6..p + 10].try_into().unwrap()) as usize;
+            parts.push((p, p + len));
+            p += len;
+        }
+        assert_eq!(parts.len(), f[13].parse::<usize>().unwrap());
+        let (first, first_end) = parts[0];
+        let (second, second_end) = parts[1];
+        let (last, _) = *parts.last().unwrap();
+        for start in [first, second, last] {
+            // Invalid IDs/part counts/length/SOD on an early or late tile must
+            // not emit a partially reconstructed canvas.
+            for (offset, bytes) in [
+                (4, vec![255, 255]),
+                (10, vec![1]),
+                (11, vec![0]),
+                (11, vec![2]),
+                (2, vec![0, 9]),
+                (2, vec![0, 11]),
+                (6, vec![0, 0, 0, 0]),
+                (6, vec![0, 0, 0, 13]),
+                (6, vec![255, 255, 255, 255]),
+                (12, vec![255, 0x52]),
+            ] {
+                let mut bad = data.clone();
+                bad[start + offset..start + offset + bytes.len()].copy_from_slice(&bytes);
+                reject(&bad);
+            }
+            for end in [start, start + 1, start + 12, start + 14] {
+                reject(&data[..end]);
+            }
+        }
+        let mut duplicate = data.clone();
+        duplicate[second + 4..second + 6].copy_from_slice(&[0, 0]);
+        reject(&duplicate);
+        let mut swapped = data[..first].to_vec();
+        swapped.extend_from_slice(&data[second..second_end]);
+        swapped.extend_from_slice(&data[first..first_end]);
+        swapped.extend_from_slice(&data[second_end..]);
+        reject(&swapped);
+        let mut missing = data[..second].to_vec();
+        missing.extend_from_slice(&data[second_end..]);
+        reject(&missing);
+        let mut early_eoc = data[..second].to_vec();
+        early_eoc.extend_from_slice(&[255, 217]);
+        reject(&early_eoc);
+        let mut extra = data[..data.len() - 2].to_vec();
+        extra.extend_from_slice(&data[first..first_end]);
+        extra.extend_from_slice(&[255, 217]);
+        reject(&extra);
+        let mut trailing = data.clone();
+        trailing.push(0);
+        reject(&trailing);
+        // SIZ starts immediately after SOC; tile dimensions are at 24/28.
+        for offset in [24, 28] {
+            for value in [0u32, 1025, u32::MAX] {
+                let mut bad = data.clone();
+                bad[offset..offset + 4].copy_from_slice(&value.to_be_bytes());
+                reject(&bad);
+            }
+            let mut misaligned = data.clone();
+            let value = u32::from_be_bytes(data[offset..offset + 4].try_into().unwrap());
+            misaligned[offset..offset + 4].copy_from_slice(&(value + 1).to_be_bytes());
+            reject(&misaligned);
+        }
+        let mut excessive = data.clone();
+        excessive[24..28].copy_from_slice(&1u32.to_be_bytes());
+        excessive[28..32].copy_from_slice(&1u32.to_be_bytes());
+        reject(&excessive);
+        // Repaired tile lengths reach the packet parser instead of only
+        // failing outer framing. Require rejection of missing packet bodies.
+        for n in [0, 1, 2, 4] {
+            if first + 14 + n >= first_end {
+                continue;
+            }
+            let mut short = data[..first + 14 + n].to_vec();
+            short[first + 6..first + 10].copy_from_slice(&((14 + n) as u32).to_be_bytes());
+            short.extend_from_slice(&data[first_end..]);
+            reject(&short);
+        }
+        for (start, end) in [parts[0], parts[1], *parts.last().unwrap()] {
+            for offset in 14..(end - start).min(46) {
+                for mask in [1, 128, 255] {
+                    let mut changed = data.clone();
+                    changed[start + offset] ^= mask;
+                    // A mutation may encode different valid pixels. It must
+                    // remain bounded and never panic.
+                    let _ = wml2::draw::image_load(&changed);
+                }
+            }
+        }
+    }
+    assert_eq!(selected.len(), 3);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn unsupported_tile_profiles_rejected_before_callbacks() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder};
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest =
+        std::fs::read_to_string(format!("{root}jpeg2000-tiles-unsupported-manifest.txt")).unwrap();
+    let mut reasons = std::collections::BTreeSet::new();
+    let mut count = 0;
+    for line in manifest.lines().skip(1) {
+        let fields: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(fields.len(), 15);
+        let data = std::fs::read(format!("{root}{}", fields[1])).unwrap();
+        let mut image = ImageBuffer::new();
+        assert!(
+            image_decoder(
+                &mut BytesReader::new(&data),
+                &mut DecodeOptions {
+                    drawer: &mut image,
+                    debug_flag: 0,
+                }
+            )
+            .is_err(),
+            "{}",
+            fields[1]
+        );
+        assert!(image.buffer.is_none(), "{} initialized output", fields[1]);
+        reasons.insert(fields[14]);
+        count += 1;
+    }
+    assert_eq!(count, 24);
+    assert_eq!(
+        reasons,
+        ["misaligned", "tiny", "count"].into_iter().collect()
+    );
+}

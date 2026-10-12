@@ -21,17 +21,19 @@ fixtures = repo / 'wml2/tests/fixtures/review'
 work = repo / '.test-jpeg2000-wasm'
 work.mkdir(exist_ok=True)
 cases = []
-block_sources = {}
-block_manifest = fixtures / 'jpeg2000-blocks-manifest.txt'
-if block_manifest.exists():
-    for line in block_manifest.read_text().splitlines()[1:]:
-        fields = line.split()
-        assert len(fields) == 11
-        block_sources[fields[1]] = fields
+mapped_sources = {}
+for manifest_name, field_count in [('jpeg2000-blocks-manifest.txt', 11),
+                                   ('jpeg2000-tiles-manifest.txt', 14)]:
+    manifest = fixtures / manifest_name
+    if manifest.exists():
+        for line in manifest.read_text().splitlines()[1:]:
+            fields = line.split()
+            assert len(fields) == field_count
+            mapped_sources[fields[1]] = fields
 for path in sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')):
     stem = path.stem.split('_mct')[0]
-    if path.name in block_sources:
-        sources = [fixtures / block_sources[path.name][3]]
+    if path.name in mapped_sources:
+        sources = [fixtures / mapped_sources[path.name][3]]
     else:
         sources = [fixtures / (stem + ext) for ext in ['.rgb', '.gray']]
     sources = [source for source in sources if source.exists()]
@@ -44,6 +46,13 @@ for path in sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')
     assert source.stat().st_size == w * h * components
     cases.append((path, source, w, h, components))
 assert cases, 'no fixtures found'
+rejected = []
+unsupported_manifest = fixtures / 'jpeg2000-tiles-unsupported-manifest.txt'
+if unsupported_manifest.exists():
+    for line in unsupported_manifest.read_text().splitlines()[1:]:
+        fields = line.split()
+        assert len(fields) == 15
+        rejected.append(fixtures / fields[1])
 default = str(args.default_features).lower()
 (work / 'Cargo.toml').write_text(f'''[package]
 name = "jpeg2000-wasm-verification"
@@ -60,6 +69,8 @@ bin-rs = {{ version = "0.0.10", features = ["util"] }}
 entries = '\n'.join(
     f'Case {{ encoded: include_bytes!({json.dumps(str(p), ensure_ascii=False)}), source: include_bytes!({json.dumps(str(s), ensure_ascii=False)}), '
     f'w: {w}, h: {h}, components: {n} }},' for p, s, w, h, n in cases)
+rejected_entries = '\n'.join(
+    f'include_bytes!({json.dumps(str(p), ensure_ascii=False)}),' for p in rejected)
 rust = r'''
 use bin_rs::reader::BytesReader;
 use wml2::draw::*;
@@ -69,6 +80,9 @@ type Error = Box<dyn std::error::Error>;
 struct Case { encoded: &'static [u8], source: &'static [u8], w: usize, h: usize, components: usize }
 static CASES: &[Case] = &[
 ENTRIES
+];
+static REJECTED: &[&[u8]] = &[
+REJECTED_ENTRIES
 ];
 fn pixels_match(case: &Case, pixels: &[u8]) -> bool {
     pixels.len() == case.w * case.h * 4 && pixels.chunks_exact(4).enumerate().all(|(i,p)| {
@@ -131,7 +145,53 @@ pub extern "C" fn run_case(index: u32) -> u32 {
     if image_load(case.encoded).is_err() { return 13; }
     0
 }
-'''.replace('ENTRIES', entries)
+fn rejected_before_callbacks(data: &[u8]) -> bool {
+    let mut probe = Probe { case: &CASES[0], abort: 0, events: Vec::new() };
+    image_decoder(&mut BytesReader::new(data), &mut DecodeOptions {
+        drawer: &mut probe, debug_flag: 0,
+    }).is_err() && probe.events.is_empty()
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn rejected_count() -> u32 { REJECTED.len() as u32 }
+#[unsafe(no_mangle)]
+pub extern "C" fn run_rejections() -> u32 {
+    for data in REJECTED {
+        if !rejected_before_callbacks(data) { return 1; }
+    }
+    // Validate late framing after earlier tiles, and repaired short packets.
+    for case in CASES {
+        let data = case.encoded;
+        if !data.starts_with(&[255,79]) { continue; }
+        let mut p = 2;
+        while data[p..p+2] != [255,0x90] {
+            p += usize::from(u16::from_be_bytes([data[p+2],data[p+3]])) + 2;
+        }
+        let first = p;
+        let mut count = 0;
+        let mut last = p;
+        while data[p..p+2] == [255,0x90] {
+            last = p;
+            p += u32::from_be_bytes(data[p+6..p+10].try_into().unwrap()) as usize;
+            count += 1;
+        }
+        if count < 2 { continue; }
+        for (offset,value) in [(4,255),(10,1),(11,2),(12,0)] {
+            let mut bad = data.to_vec();
+            bad[last+offset] = value;
+            if !rejected_before_callbacks(&bad) { return 2; }
+        }
+        let mut missing = data[..last].to_vec();
+        missing.extend_from_slice(&[255,217]);
+        if !rejected_before_callbacks(&missing) { return 3; }
+        let mut short = data[..first+14].to_vec();
+        short[first+6..first+10].copy_from_slice(&14u32.to_be_bytes());
+        let first_end = first + u32::from_be_bytes(data[first+6..first+10].try_into().unwrap()) as usize;
+        short.extend_from_slice(&data[first_end..]);
+        if !rejected_before_callbacks(&short) { return 4; }
+    }
+    0
+}
+'''.replace('REJECTED_ENTRIES', rejected_entries).replace('ENTRIES', entries)
 (work / 'lib.rs').write_text(rust)
 subprocess.run(['cargo', 'build', '--offline', '--release', '--manifest-path',
                 str(work / 'Cargo.toml'), '--target', 'wasm32-unknown-unknown'], check=True)
@@ -149,7 +209,10 @@ for (let index = 0; index < count; index++) {
   const status = instance.exports.run_case(index);
   if (status !== 0) throw new Error(`Fixture ${index}: failure status ${status}`);
 }
-console.log(JSON.stringify({runtime:process.version, fixtures:count, all_passed:true,
+const rejected = instance.exports.rejected_count();
+const rejectionStatus = instance.exports.run_rejections();
+if (rejectionStatus !== 0) throw new Error(`Rejections: failure status ${rejectionStatus}`);
+console.log(JSON.stringify({runtime:process.version, fixtures:count, rejected_fixtures:rejected, all_passed:true,
   host_imports:imports, memory_bytes:instance.exports.memory.buffer.byteLength}));
 '''
 (work / 'run.cjs').write_text(runner)
@@ -161,9 +224,13 @@ report.update({'target': 'wasm32-unknown-unknown', 'default_features': args.defa
                'working_tree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo, text=True).strip()),
                'rust_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000.rs').read_bytes()).hexdigest(),
                'tier1_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000_tier1.rs').read_bytes()).hexdigest(),
+               'fixture_manifest_sha256': {
+                   p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                   for p in fixtures.glob('jpeg2000-*-manifest.txt')},
                'wasm_sha256': hashlib.sha256(wasm.read_bytes()).hexdigest(),
                'checks': ['RGBA pixels', 'dimensions', 'exact limits', 'short limits',
                           'limit scope restoration', 'callbacks', 'init/draw abort',
-                          'truncation rejected before callbacks']})
+                          'truncation rejected before callbacks', 'unsupported tile profiles rejected before callbacks',
+                          'late tile framing, missing tile and repaired short packet rejection']})
 (work / ('default-report.json' if args.default_features else 'minimal-report.json')).write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps(report))

@@ -1483,3 +1483,150 @@ fn global_reference_extent_bound_rejects_valid_inputs_before_callbacks() {
     }
     assert_eq!(count, 12);
 }
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn multiple_tile_parts_match_source_and_exact_workspace() {
+    use wml2::draw::image_from_with_limits;
+    use wml2::limits::DecodeLimits;
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!("{root}jpeg2000-parts-manifest.txt")).unwrap();
+    let mut modes = std::collections::BTreeSet::new();
+    let mut levels = std::collections::BTreeSet::new();
+    let mut maximum_parts = 0;
+    let mut count = 0;
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(f.len(), 20);
+        let n = |i: usize| f[i].parse::<usize>().unwrap();
+        let (w, h, c, extra) = (n(4), n(5), n(9), n(19));
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let source = std::fs::read(format!("{root}{}", f[3])).unwrap();
+        assert_eq!(source.len(), w * h * c);
+        let expected: Vec<_> = source
+            .chunks_exact(c)
+            .flat_map(|p| {
+                if c == 1 {
+                    [p[0], p[0], p[0], 255]
+                } else {
+                    [p[0], p[1], p[2], 255]
+                }
+            })
+            .collect();
+        let mut limits = DecodeLimits::unlimited();
+        limits.input_bytes = data.len();
+        limits.pixels = w * h;
+        limits.expanded_bytes = w * h * c * 64 + 8192 + extra;
+        limits.frames = 1;
+        let image =
+            image_from_with_limits(&data, limits).unwrap_or_else(|e| panic!("{}: {e}", f[1]));
+        assert_eq!((image.width, image.height), (w, h), "{}", f[1]);
+        assert_eq!(image.buffer.unwrap(), expected, "{}", f[1]);
+        for field in 0..4 {
+            let mut short = limits;
+            match field {
+                0 => short.input_bytes -= 1,
+                1 => short.pixels -= 1,
+                2 => short.expanded_bytes -= 1,
+                _ => short.frames = 0,
+            }
+            assert!(
+                image_from_with_limits(&data, short).is_err(),
+                "{} limit{field}",
+                f[1]
+            );
+        }
+        assert_eq!(extra > 0, n(18) > 1, "{}", f[1]);
+        modes.insert((c, n(10)));
+        levels.insert(n(8));
+        maximum_parts = maximum_parts.max(n(18));
+        count += 1;
+    }
+    assert_eq!(count, 126);
+    assert_eq!(maximum_parts, 18);
+    assert_eq!(modes, [(1, 0), (3, 0), (3, 1)].into_iter().collect());
+    assert_eq!(levels, (1..=5).collect());
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn unsupported_and_malformed_tile_parts_rejected_before_callbacks() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder, image_load};
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let reject = |data: &[u8]| {
+        let mut image = ImageBuffer::new();
+        assert!(
+            image_decoder(
+                &mut BytesReader::new(data),
+                &mut DecodeOptions {
+                    drawer: &mut image,
+                    debug_flag: 0,
+                }
+            )
+            .is_err()
+        );
+        assert!(image.buffer.is_none());
+    };
+    let manifest =
+        std::fs::read_to_string(format!("{root}jpeg2000-parts-unsupported-manifest.txt")).unwrap();
+    let mut reasons = std::collections::BTreeSet::new();
+    let mut count = 0;
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(f.len(), 21);
+        reject(&std::fs::read(format!("{root}{}", f[1])).unwrap());
+        reasons.insert(f[20]);
+        count += 1;
+    }
+    assert!(count >= 12 && reasons.len() >= 4);
+    let manifest = std::fs::read_to_string(format!("{root}jpeg2000-parts-manifest.txt")).unwrap();
+    let mut modes = std::collections::BTreeSet::new();
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        let mode = (f[9], f[10]);
+        if !f[1].ends_with(".j2k") || modes.contains(&mode) {
+            continue;
+        }
+        modes.insert(mode);
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let mut p = 2;
+        while data[p..p + 2] != [255, 0x90] {
+            p += usize::from(u16::from_be_bytes([data[p + 2], data[p + 3]])) + 2;
+        }
+        let mut parts = Vec::new();
+        while data[p..p + 2] == [255, 0x90] {
+            let end = p + u32::from_be_bytes(data[p + 6..p + 10].try_into().unwrap()) as usize;
+            parts.push((p, end));
+            p = end;
+        }
+        for (start, end) in [parts[0], *parts.last().unwrap()] {
+            for n in [start, start + 1, start + 12, start + 14, end - 1] {
+                reject(&data[..n]);
+            }
+            for (offset, bytes) in [
+                (4, vec![255, 255]),
+                (6, vec![255, 255, 255, 255]),
+                (10, vec![255]),
+                (11, vec![0]),
+                (12, vec![255, 0x52]),
+            ] {
+                let mut bad = data.clone();
+                bad[start + offset..start + offset + bytes.len()].copy_from_slice(&bytes);
+                reject(&bad);
+            }
+            let mut short = data[..start + 14].to_vec();
+            short[start + 6..start + 10].copy_from_slice(&14u32.to_be_bytes());
+            short.extend_from_slice(&data[end..]);
+            reject(&short);
+            for offset in start + 14..end.min(start + 38) {
+                for mask in [1, 128, 255] {
+                    let mut changed = data.clone();
+                    changed[offset] ^= mask;
+                    let _ = image_load(&changed);
+                }
+            }
+        }
+    }
+    assert_eq!(modes.len(), 3);
+}

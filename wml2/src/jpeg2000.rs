@@ -276,10 +276,37 @@ impl TagTree {
         Ok(nodes[y * *w + x].value < threshold)
     }
 }
+#[derive(Clone, Copy)]
+struct PacketData<'a> {
+    bytes: &'a [u8],
+    part_ends: &'a [usize],
+}
+impl PacketData<'_> {
+    fn packet_end(&self, p: usize, part: &mut usize) -> Result<(), Error> {
+        if let Some(&end) = self.part_ends.get(*part) {
+            if p > end {
+                return Err(bad("tile-part boundary splits a packet"));
+            }
+            if p == end {
+                *part += 1;
+            }
+        }
+        Ok(())
+    }
+    fn finish(&self, p: usize, part: usize) -> Result<(), Error> {
+        if p != self.bytes.len() {
+            return Err(bad("trailing tile data"));
+        }
+        if part != self.part_ends.len() {
+            return Err(bad("unconsumed tile-part boundary"));
+        }
+        Ok(())
+    }
+}
 // Preserve the already-verified small-image parser and its allocation behavior.
 // Large-image packets use shared tag trees and independently positioned blocks.
-fn packets(
-    data: &[u8],
+fn packets<const SPLIT: bool>(
+    input: PacketData<'_>,
     w: usize,
     h: usize,
     levels: u8,
@@ -287,18 +314,20 @@ fn packets(
     block: (usize, usize),
 ) -> Result<Vec<i32>, Error> {
     if w <= 16 && h <= 16 && levels <= 1 && w <= block.0 && h <= block.1 {
-        packets_single(data, w, h, levels, mb)
+        packets_single::<SPLIT>(input, w, h, levels, mb)
     } else {
-        packets_multiple(data, w, h, levels, mb, block)
+        packets_multiple::<SPLIT>(input, w, h, levels, mb, block)
     }
 }
-fn packets_single(
-    data: &[u8],
+fn packets_single<const SPLIT: bool>(
+    input: PacketData<'_>,
     w: usize,
     h: usize,
     levels: u8,
     mb: &[u8],
 ) -> Result<Vec<i32>, Error> {
+    let data = input.bytes;
+    let mut part_index = 0;
     let mut plane = vec![0; w * h];
     let lw = if levels == 0 { w } else { w.div_ceil(2) };
     let lh = if levels == 0 { h } else { h.div_ceil(2) };
@@ -359,14 +388,19 @@ fn packets_single(
                     .copy_from_slice(&values[row * bw..(row + 1) * bw]);
             }
         }
+        if SPLIT {
+            input.packet_end(p, &mut part_index)?;
+        }
     }
-    if p != data.len() {
+    if SPLIT {
+        input.finish(p, part_index)?;
+    } else if p != data.len() {
         return Err(bad("trailing tile data"));
     }
     Ok(plane)
 }
-fn packets_multiple(
-    data: &[u8],
+fn packets_multiple<const SPLIT: bool>(
+    input: PacketData<'_>,
     w: usize,
     h: usize,
     levels: u8,
@@ -374,8 +408,8 @@ fn packets_multiple(
     block: (usize, usize),
 ) -> Result<Vec<i32>, Error> {
     let mut plane = vec![0; w * h];
-    packets_planes(
-        data,
+    packets_planes::<SPLIT>(
+        input,
         w,
         h,
         levels,
@@ -387,8 +421,8 @@ fn packets_multiple(
 }
 // LRCP orders each resolution's component packets before the next resolution.
 // Components use independent tag trees and coefficient planes.
-fn packets_planes(
-    data: &[u8],
+fn packets_planes<const SPLIT: bool>(
+    input: PacketData<'_>,
     w: usize,
     h: usize,
     levels: u8,
@@ -396,8 +430,8 @@ fn packets_planes(
     planes: &mut [Vec<i32>],
     block: (usize, usize),
 ) -> Result<(), Error> {
-    packets_planes_grid::<false>(
-        data,
+    packets_planes_grid::<false, SPLIT>(
+        input,
         w,
         h,
         levels,
@@ -414,8 +448,8 @@ struct BlockGrid {
     block: (usize, usize),
     origin: (usize, usize),
 }
-fn packets_planes_grid<const GLOBAL: bool>(
-    data: &[u8],
+fn packets_planes_grid<const GLOBAL: bool, const SPLIT: bool>(
+    input: PacketData<'_>,
     w: usize,
     h: usize,
     levels: u8,
@@ -423,6 +457,8 @@ fn packets_planes_grid<const GLOBAL: bool>(
     planes: &mut [Vec<i32>],
     grid: BlockGrid,
 ) -> Result<(), Error> {
+    let data = input.bytes;
+    let mut part_index = 0;
     // QCD and LRCP order: deepest LL, then HL/LH/HH from coarse to fine.
     // All bands occupy disjoint rectangles in a nested quadrant layout.
     let (block_width, block_height) = grid.block;
@@ -585,9 +621,14 @@ fn packets_planes_grid<const GLOBAL: bool>(
                         .copy_from_slice(&values[row * bw..(row + 1) * bw]);
                 }
             }
+            if SPLIT {
+                input.packet_end(p, &mut part_index)?;
+            }
         }
     }
-    if p != data.len() {
+    if SPLIT {
+        input.finish(p, part_index)?;
+    } else if p != data.len() {
         return Err(bad("trailing tile data"));
     }
     Ok(())
@@ -816,8 +857,8 @@ struct Coding {
     rct: bool,
     block: (usize, usize),
 }
-fn tile_pixels(
-    data: &[u8],
+fn tile_pixels<const SPLIT: bool>(
+    input: PacketData<'_>,
     w: usize,
     h: usize,
     origin: (usize, usize),
@@ -827,7 +868,7 @@ fn tile_pixels(
     let Coding { levels, rct, block } = coding;
     let mut rgba = Vec::with_capacity(w * h * 4);
     if component_mb.len() == 1 && origin == (0, 0) {
-        let mut plane = packets(data, w, h, levels, &component_mb[0], block)?;
+        let mut plane = packets::<SPLIT>(input, w, h, levels, &component_mb[0], block)?;
         synthesize(&mut plane, w, h, levels)?;
         for v in plane {
             let v = gray8(v);
@@ -837,10 +878,10 @@ fn tile_pixels(
         let mut planes = vec![vec![0; w * h]; component_mb.len()];
         let mb: Vec<_> = component_mb.iter().map(Vec::as_slice).collect();
         if origin == (0, 0) {
-            packets_planes(data, w, h, levels, &mb, &mut planes, block)?;
+            packets_planes::<SPLIT>(input, w, h, levels, &mb, &mut planes, block)?;
         } else {
-            packets_planes_grid::<true>(
-                data,
+            packets_planes_grid::<true, SPLIT>(
+                input,
                 w,
                 h,
                 levels,
@@ -875,6 +916,32 @@ fn tile_pixels(
     }
     Ok(rgba)
 }
+fn tile_part(
+    s: &[u8],
+    p: usize,
+    tile_index: usize,
+    part_index: u8,
+    parts: u8,
+) -> Result<&[u8], Error> {
+    if u16be(s, p)? != 0xff90 || u16be(s, p + 2)? != 10 {
+        return Err(bad("SOT required for every tile-part"));
+    }
+    let b = bytes(s, p + 4, 8)?;
+    if usize::from(u16be(b, 0)?) != tile_index || b[6] != part_index || b[7] != parts {
+        return Err(bad("tile-part ID, sequence or count"));
+    }
+    let length = u32be(b, 2)? as usize;
+    if length <= 14 {
+        return Err(bad("nonempty tile-part required"));
+    }
+    let part = bytes(s, p, length)?;
+    if part[12..14] != [255, 147] {
+        return Err(unsupported(
+            "tile-header overrides are unsupported; SOD required",
+        ));
+    }
+    Ok(part)
+}
 fn tiles(
     s: &[u8],
     mut p: usize,
@@ -903,23 +970,13 @@ fn tiles(
         vec![0; w * h * 4]
     };
     for index in 0..count {
-        if u16be(s, p)? != 0xff90 || u16be(s, p + 2)? != 10 {
-            return Err(bad("SOT required for every tile"));
+        // One LRCP layer, one precinct: at most six resolutions times three
+        // components, with every supported part containing a whole packet.
+        let parts = bytes(s, p + 11, 1)?[0];
+        if !(1..=18).contains(&parts) {
+            return Err(unsupported("known 1..18 tile-parts required"));
         }
-        let b = bytes(s, p + 4, 8)?;
-        if usize::from(u16be(b, 0)?) != index || b[6] != 0 || b[7] != 1 {
-            return Err(unsupported("raster tiles, one tile-part per tile required"));
-        }
-        let part = u32be(b, 2)? as usize;
-        if part < 14 {
-            return Err(bad("tile-part size"));
-        }
-        let tile = bytes(s, p, part)?;
-        if tile[12..14] != [255, 147] {
-            return Err(unsupported(
-                "tile-header overrides are unsupported; SOD required",
-            ));
-        }
+        let first = tile_part(s, p, index, 0, parts)?;
         // T.800 B.3: intersect the nominal tile with the image interval.
         // Coefficients keep reference-grid coordinates; drawing uses the
         // cropped image's local origin and does not allocate global padding.
@@ -929,7 +986,63 @@ fn tiles(
         let y = nominal_y.max(y0);
         let tw = (nominal_x + tile_w).min(x1) - x;
         let th = (nominal_y + tile_h).min(y1) - y;
-        let pixels = tile_pixels(&tile[14..], tw, th, (x, y), coding, component_mb)?;
+        let pixels = if parts == 1 {
+            p += first.len();
+            tile_pixels::<false>(
+                PacketData {
+                    bytes: &first[14..],
+                    part_ends: &[],
+                },
+                tw,
+                th,
+                (x, y),
+                coding,
+                component_mb,
+            )?
+        } else {
+            // Gather at most 18 borrowed payloads first; validate all lengths
+            // and charge the extra join allocation before reserving/copying.
+            let mut bodies = Vec::with_capacity(usize::from(parts));
+            let mut ends = Vec::with_capacity(usize::from(parts));
+            let mut total = 0usize;
+            for part_index in 0..parts {
+                let part = if part_index == 0 {
+                    first
+                } else {
+                    tile_part(s, p, index, part_index, parts)?
+                };
+                let body = &part[14..];
+                total = total
+                    .checked_add(body.len())
+                    .ok_or_else(|| bad("joined tile data overflow"))?;
+                bodies.push(body);
+                ends.push(total);
+                p += part.len();
+            }
+            let required = (w * h * size.components * 64 + 8192)
+                .checked_add(total)
+                .ok_or_else(|| bad("JPEG2000 workspace overflow"))?;
+            crate::limits::check(
+                required,
+                crate::limits::current().expanded_bytes,
+                "JPEG2000 joined tile workspace",
+            )?;
+            let mut joined = Vec::with_capacity(total);
+            for body in bodies {
+                joined.extend_from_slice(body);
+            }
+            tile_pixels::<true>(
+                PacketData {
+                    bytes: &joined,
+                    part_ends: &ends,
+                },
+                tw,
+                th,
+                (x, y),
+                coding,
+                component_mb,
+            )?
+        };
         let (out_x, out_y) = (x - x0, y - y0);
         if count == 1 {
             rgba = pixels;
@@ -939,7 +1052,6 @@ fn tiles(
                     .copy_from_slice(&pixels[row * tw * 4..(row + 1) * tw * 4]);
             }
         }
-        p += part;
     }
     if bytes(s, p, 2)? != [255, 217] || p + 2 != s.len() {
         return Err(bad("tile count, EOC or trailing data"));

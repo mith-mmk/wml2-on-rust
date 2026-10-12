@@ -25,7 +25,8 @@ mapped_sources = {}
 for manifest_name, field_count in [('jpeg2000-blocks-manifest.txt', 11),
                                    ('jpeg2000-tiles-manifest.txt', 14),
                                    ('jpeg2000-origins-manifest.txt', 14),
-                                   ('jpeg2000-global-origins-manifest.txt', 18)]:
+                                   ('jpeg2000-global-origins-manifest.txt', 18),
+                                   ('jpeg2000-parts-manifest.txt', 20)]:
     manifest = fixtures / manifest_name
     if manifest.exists():
         for line in manifest.read_text().splitlines()[1:]:
@@ -56,6 +57,12 @@ if global_unsupported.exists():
         fields = line.split()
         assert len(fields) == 19
         rejected.append(fixtures / fields[1])
+parts_unsupported = fixtures / 'jpeg2000-parts-unsupported-manifest.txt'
+if parts_unsupported.exists():
+    for line in parts_unsupported.read_text().splitlines()[1:]:
+        fields = line.split()
+        assert len(fields) == 21
+        rejected.append(fixtures / fields[1])
 paths = sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')) + promoted
 for path in paths:
     stem = path.stem.split('_mct')[0]
@@ -71,11 +78,12 @@ for path in paths:
     w, h = map(int, re.search(r'_(\d+)x(\d+)_', stem).groups())
     components = 3 if source.suffix == '.rgb' else 1
     assert source.stat().st_size == w * h * components
-    cases.append((path, source, w, h, components))
+    extra_workspace = int(mapped_sources[path.name][19]) if path.name in mapped_sources and len(mapped_sources[path.name]) == 20 else 0
+    cases.append((path, source, w, h, components, extra_workspace))
 compatibility_name = 'oracle_origins_22x11_d4_gray_b8x4_t20x22_singleton'
 compatibility_path = fixtures / (compatibility_name + '.j2k')
 if compatibility_path.exists():
-    cases.append((compatibility_path, fixtures / (compatibility_name + '.expected.gray'), 22, 11, 1))
+    cases.append((compatibility_path, fixtures / (compatibility_name + '.expected.gray'), 22, 11, 1, 0))
 assert cases, 'no fixtures found'
 default = str(args.default_features).lower()
 (work / 'Cargo.toml').write_text(f'''[package]
@@ -92,7 +100,7 @@ bin-rs = {{ version = "0.0.10", features = ["util"] }}
 ''')
 entries = '\n'.join(
     f'Case {{ encoded: include_bytes!({json.dumps(str(p), ensure_ascii=False)}), source: include_bytes!({json.dumps(str(s), ensure_ascii=False)}), '
-    f'w: {w}, h: {h}, components: {n} }},' for p, s, w, h, n in cases)
+    f'w: {w}, h: {h}, components: {n}, extra_workspace: {extra} }},' for p, s, w, h, n, extra in cases)
 rejected_entries = '\n'.join(
     f'include_bytes!({json.dumps(str(p), ensure_ascii=False)}),' for p in rejected)
 rust = r'''
@@ -101,7 +109,7 @@ use wml2::draw::*;
 use wml2::limits::DecodeLimits;
 use wml2::metadata::DataMap;
 type Error = Box<dyn std::error::Error>;
-struct Case { encoded: &'static [u8], source: &'static [u8], w: usize, h: usize, components: usize }
+struct Case { encoded: &'static [u8], source: &'static [u8], w: usize, h: usize, components: usize, extra_workspace: usize }
 static CASES: &[Case] = &[
 ENTRIES
 ];
@@ -144,7 +152,7 @@ pub extern "C" fn run_case(index: u32) -> u32 {
     let mut limit = DecodeLimits::unlimited();
     limit.input_bytes = case.encoded.len();
     limit.pixels = case.w * case.h;
-    limit.expanded_bytes = case.w * case.h * case.components * 64 + 8192;
+    limit.expanded_bytes = case.w * case.h * case.components * 64 + 8192 + case.extra_workspace;
     limit.frames = 1;
     limit.metadata_bytes = 64;
     // Repeated finite scopes exercise WASM's thread-local limits and restoration.
@@ -199,7 +207,7 @@ pub extern "C" fn run_rejections() -> u32 {
             count += 1;
         }
         if count < 2 { continue; }
-        for (offset,value) in [(4,255),(10,1),(11,2),(12,0)] {
+        for (offset,value) in [(4,255),(10,255),(11,0),(12,0)] {
             let mut bad = data.to_vec();
             bad[last+offset] = value;
             if !rejected_before_callbacks(&bad) { return 2; }
@@ -255,10 +263,12 @@ result = subprocess.check_output(['node', str(work / 'run.cjs'), str(wasm)], tex
 report = json.loads(result)
 assert report['fixtures'] == len(cases) and report['all_passed']
 report.update({**build_context, 'target': 'wasm32-unknown-unknown', 'default_features': args.default_features,
+               'source_exact_fixtures': len(cases) - int(compatibility_path.exists()),
+               'encoder_compatibility_fixtures': int(compatibility_path.exists()),
                'wasm_sha256': hashlib.sha256(wasm.read_bytes()).hexdigest(),
                'checks': ['RGBA pixels', 'dimensions', 'exact limits', 'short limits',
                           'limit scope restoration', 'callbacks', 'init/draw abort',
-                          'truncation rejected before callbacks', 'unsupported tile profiles rejected before callbacks',
+                          'truncation rejected before callbacks', 'unsupported and malformed tile/part profiles rejected before callbacks',
                           'late tile framing, missing tile and repaired short packet rejection']})
 (work / ('default-report.json' if args.default_features else 'minimal-report.json')).write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps(report))

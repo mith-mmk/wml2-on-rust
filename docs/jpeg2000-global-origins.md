@@ -51,7 +51,7 @@ dependencies and WML2 0.0.35 are unchanged.
 ## Fixed and random evidence
 
 `generate_jpeg2000_global_origins.py` creates 126 source-exact encodings:
-Gray/RGB/MCT0/RGB/RCT each contribute 42 J2K/JP2 files. The matrix covers all
+Gray, RGB/MCT0 and RGB/RCT each contribute 42 J2K/JP2 files. The matrix covers all
 levels, different image/grid starts, clipped first/last tiles, parity, large
 coordinates, the exact 32768 bound, 1024² actual canvas, 256 tiles and a 1×1
 image at nonzero origin. Thirty encodings use explicitly normalized empty
@@ -85,8 +85,51 @@ coordinates, uncovered first tiles, invalid grid placement, excessive actual
 sizes and reference ends, early/late tile framing, repaired short bodies and
 bounded packet mutations. Valid over-reference-bound files reject before
 output initialization. Initial Clippy had only the 11 existing warnings
-elsewhere; no JPEG2000 warning was added. Final WASM, display, feature-off and
-paired performance records will be added at completion.
+elsewhere; no JPEG2000 warning was added. Feature-off minimal regression passed 16 tests. Formatting/diff/Python syntax
+checks pass. Public-API PPM output images were displayed and independently
+matched OpenJPEG, including different image/grid starts, level5, 1×1 and the
+1024 canvas.
+
+Final minimal and default-codec real WASM runs each pass 1204 pixel/API cases
+(1203 source-exact fixed encodings plus the prior singleton compatibility case)
+and 24 over-limit inputs. Node.js v24.19.0 instantiates the actual module without
+host imports, checking every RGBA byte, dimensions, exact/one-short limits,
+limit scope restoration, callbacks/Abort, truncation and late tile/missing/
+repaired-short-packet rejection before callbacks. Both modules report source
+SHA256 `fffd891662a4e332ad31f48e4f60b48690d07d04c50475afd47fde37f1bf06da`,
+matching checkpoint `f47cbdf`. Minimal was built before that commit with the
+identical source/fixtures; default was built from the clean checkpoint.
+Linear memory was 70,582,272 bytes (minimal) and 70,713,344 bytes (default),
+including embedded fixed test data. Module/source/manifest hashes are in
+`jpeg2000-wasm-runtime.json`. This is real WASM execution, not browser UI.
+
+## Paired performance
+
+Immutable release verifiers compare baseline `8d8c209` with checkpoint
+`f47cbdf`, fixed CPU affinity, B/H/H/B/H/B (three processes per version),
+100 warmups, Rust 1.91. No concurrent CPU tests ran during timing, and all
+paired output hashes match. Whole-process CPU microseconds/call, including
+export/startup and divided by timed calls plus 101:
+
+| Existing input | Baseline | Extension | CPU change |
+| --- | ---: | ---: | ---: |
+| Gray16 | 54.749 | 54.258 | -0.90% |
+| Gray65 | 1301.889 | 1258.846 | -3.31% |
+| RGB16 | 318.740 | 313.023 | -1.79% |
+| RGB65 | 4285.348 | 4421.379 | +3.17% |
+| Gray256tiles | 806.996 | 805.863 | -0.14% |
+| RGB9tiles | 126568.036 | 120941.441 | -4.45% |
+| RGB2oddtiles | 211.853 | 210.460 | -0.66% |
+
+No major deterioration appears in these seven short samples. Shared-host
+variation remains material, and this does not prove no cumulative or cross-
+host regression. The historical larger-RGB +6.11% sample concerned an older
+baseline and remains a separate caveat. New nonzero-global-origin inputs
+cannot be decoded by the baseline and are excluded from paired timings.
+Raw CPU/wall rows and binary/input/output hashes are in
+`jpeg2000-global-origins-benchmark.json`. Full verification and scope records
+are in `jpeg2000-global-origins-validation.json`; random cases are in
+`jpeg2000-global-origins-random.json`.
 
 ## Reproduction and exclusions
 

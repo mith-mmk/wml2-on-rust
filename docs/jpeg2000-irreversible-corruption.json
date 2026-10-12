@@ -1,0 +1,37 @@
+{
+  "head": "d8c56fe5bebab9693768c6aaac4900474ce3faf3",
+  "source_sha256": {
+    "wml2/src/jpeg2000.rs": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+    "wml2/src/jpeg2000_tier1.rs": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb",
+    "wml2/src/jpeg2000_irreversible.rs": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9",
+    "wml2/src/draw.rs": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d",
+    "wml2/src/decode_guard.rs": "ab2118b0e3d494daf88e97c2dfcad232f338bffa3d789d4d0e5017d350f26035",
+    "wml2/src/util.rs": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+    "wml2/src/lib.rs": "c5544f48ceca9bb58721e9c5d2fbc220af68b5001ca7fefc4db2eab8fefe70cf"
+  },
+  "seed": "b427c83197ae51d3",
+  "fixture_count": 12,
+  "mutation_cases": 3000,
+  "accepted": 743,
+  "rejected": 2257,
+  "panics": 0,
+  "errors_after_initialization": 0,
+  "profile": "Rust1.91 debug; finite input/pixels/expanded/metadata/frame/animation limits",
+  "harness_sha256": "4dd7b4110458c97b460df452d2178dec4b03e4dd9e76fd48a7d5aa41b3749714",
+  "log_sha256": "4117a5e1553ce7a58a7abf11207bfb225f409845d440ec696b1ca24ee3aea47d",
+  "fixture_sha256": {
+    "jp2_irreversible_d0_c1_m0_r2.j2k": "5fe111a12fbc56bf2ca4c99a8721745ebef379f0db70511cc56781decba2fc58",
+    "jp2_irreversible_d0_c3_m0_r4.jp2": "edf125ef62d7b1b0411c8e9c9c6e28e0b3ae59f0f1e1ad43cba0861c8c1b71ce",
+    "jp2_irreversible_d0_c3_m1_r10.j2k": "2572874b7a0af8b4e61f29d0498e0d412764ddbb84aed0aa914dde93376c5f68",
+    "jp2_irreversible_d5_c1_m0_r2_multipart_known.jp2": "0d24aa9bc31cd996dc68ff33efd542179d927a622b7a1a70bfce2b4be3738fc4",
+    "jp2_irreversible_d5_c3_m0_r2_multipart_unknown.j2k": "e7a2f2a6c7f6e039fc8b4aec4969f7869cb57f73a91ea71c96a1eae58b12ea32",
+    "jp2_irreversible_d5_c3_m1_r2_multipart_unknown_terminal_zero.jp2": "971676adb7175879bddfd0fe933775eb766f487a59db71f16231e19693e8852c",
+    "jp2_irreversible_d0_c1_m0_rdefault_rescaled_Mb24.j2k": "708d33cf40894207d6e63379e306e0d8c386525664e51aae279f41e9b9ad9866",
+    "jp2_irreversible_d0_c3_m1_rdefault_rescaled_Mb24.jp2": "b9cfddf94cccf29d69aae9aee1eeae1d041e5dead6b199b44fbf7361ec21753b",
+    "jp2_irreversible_variant_d5_c1_m0_rdefault_derived_deep.jp2": "c2085e035844a6b9241988c3de36e75fc14220d5e826464ccd76e5607a364da4",
+    "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep.j2k": "6a087951249f8c91e13a8fbdf0a3da7991e4484ba41c8dd89060df99ca2eeb9e",
+    "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c1.jp2": "1a53637b402b900a80b5da31560242144293f08a7b4f655d149d51f8dc451bcd",
+    "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2.j2k": "d6be5cb2f11531c4e3a60fb514a2d5072a62704e7d638ea2369f6a1151b813ee"
+  },
+  "rejection_contract": "Checked by caller-owned ImageBuffer; accepted mutations may be legal alternate images. JP2 box lengths repaired for insert/delete."
+}

@@ -1,0 +1,64 @@
+{
+  "production_source_sha256": {
+    "jpeg2000_irreversible.rs": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9",
+    "jpeg2000.rs": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+    "jpeg2000_tier1.rs": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb"
+  },
+  "contact_sheet_sha256": "a185eeb1b39e79dfb3d6c5cff87fa365db5f83489694c7bc6f8acb90051232ef",
+  "outputs": [
+    {
+      "file": "jp2_irreversible_d0_c1_m0_r4.j2k",
+      "ppm_sha256": "4694714e5a2538115277896a97df377c1dc40635a5f03d0330a90fe8660956f7",
+      "max_abs_error": 0,
+      "oracle_comparison": true
+    },
+    {
+      "file": "jp2_irreversible_d1_c3_m0_r10.j2k",
+      "ppm_sha256": "742644607c8a359e31c103dfacd22ae617695ec3885bdd730f609fa8ce23a74e",
+      "max_abs_error": 0,
+      "oracle_comparison": true
+    },
+    {
+      "file": "jp2_irreversible_d5_c3_m1_r2.j2k",
+      "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8",
+      "max_abs_error": 1,
+      "oracle_comparison": true
+    },
+    {
+      "file": "jp2_irreversible_tiles256_c3_m1_rdefault.j2k",
+      "ppm_sha256": "36409112b91f8ad8e4e64ee473e4c2f31b73662d2272ba3601c00d6d962e4595",
+      "max_abs_error": 1,
+      "oracle_comparison": true
+    },
+    {
+      "file": "jp2_irreversible_d5_c3_m1_r2_multipart_unknown_terminal_zero.j2k",
+      "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8",
+      "max_abs_error": 1,
+      "oracle_comparison": true
+    },
+    {
+      "file": "jp2_irreversible_canvas_c3_m1_r4.j2k",
+      "ppm_sha256": "f8ea58a36fc32bb37af281727c0698e4c5501935f38e0d975977900c791d1381",
+      "max_abs_error": 1,
+      "oracle_comparison": true
+    },
+    {
+      "file": "jp2_irreversible_tiny_c1_m0_rdefault.j2k",
+      "ppm_sha256": "699c96ca6248830a7510dd24d94172041cff1a47e117d1a68f532d621dc2f451",
+      "max_abs_error": 0,
+      "oracle_comparison": true
+    },
+    {
+      "file": "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep.j2k",
+      "ppm_sha256": "8545427b26d3045c1b5cf84037b0df7479123fa285c540660292d825618a89c7",
+      "max_abs_error": 1,
+      "oracle_comparison": true
+    },
+    {
+      "file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2.j2k",
+      "ppm_sha256": "d6bb44a46b477893334c49f84830d046c5e1dbcf1385444beabf5c7f5ab532f1",
+      "max_abs_error": 1,
+      "oracle_comparison": true
+    }
+  ]
+}

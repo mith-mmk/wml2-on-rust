@@ -1,6 +1,6 @@
 # JPEG2000 first implementation milestone
 
-Historical first milestone. For the 1024×1024, 0–5-level Gray profile,
+Historical first milestone. The [current supported profile and PR gates](jpeg2000.md) supersede the support/API statements below. For the 1024×1024, 0–5-level Gray profile,
 see [multilevel extension](jpeg2000-multilevel.md); for RGB8 with and without RCT,
 see [RGB8 extension](jpeg2000-rgb.md).
 

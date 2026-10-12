@@ -1,5 +1,8 @@
 # JPEG2000 continuation: review, WASM execution and next profile
 
+The subsequent [nonzero global-origin extension](jpeg2000-global-origins.md)
+supersedes the earlier zero-global-origin restriction.
+
 The latest [origin-aware tile extension](jpeg2000-origins.md) supersedes the
 alignment/small-edge restrictions of the earlier multi-tile stage.
 

@@ -1255,10 +1255,10 @@ fn unaligned_tile_corruption_stays_bounded_and_before_callbacks() {
                 }
             }
         }
-        // Overall image/tile-grid offsets are still outside this profile.
+        // Oversized image/tile-grid coordinates remain invalid.
         for offset in [16, 20, 32, 36] {
             let mut bad = data.clone();
-            bad[offset..offset + 4].copy_from_slice(&1u32.to_be_bytes());
+            bad[offset..offset + 4].copy_from_slice(&u32::MAX.to_be_bytes());
             reject(&bad);
         }
     }
@@ -1277,4 +1277,209 @@ fn odd_negative_singleton_matches_independent_oracle() {
     assert_eq!((image.width, image.height), (22, 11));
     let rgba: Vec<_> = expected.iter().flat_map(|&v| [v, v, v, 255]).collect();
     assert_eq!(image.buffer.unwrap(), rgba);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn global_origin_oracles_and_cropped_limits() {
+    use wml2::draw::image_from_with_limits;
+    use wml2::limits::DecodeLimits;
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest =
+        std::fs::read_to_string(format!("{root}jpeg2000-global-origins-manifest.txt")).unwrap();
+    let mut count = 0;
+    let mut modes = std::collections::BTreeSet::new();
+    let mut levels = std::collections::BTreeSet::new();
+    let mut large_origin = false;
+    let mut clipped_first = false;
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(f.len(), 18);
+        let n = |i: usize| f[i].parse::<usize>().unwrap();
+        let (w, h, c, x0, y0, tx0, ty0) = (n(4), n(5), n(9), n(14), n(15), n(16), n(17));
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let source = std::fs::read(format!("{root}{}", f[3])).unwrap();
+        assert_eq!(source.len(), w * h * c);
+        let expected: Vec<_> = source
+            .chunks_exact(c)
+            .flat_map(|p| {
+                if c == 1 {
+                    [p[0], p[0], p[0], 255]
+                } else {
+                    [p[0], p[1], p[2], 255]
+                }
+            })
+            .collect();
+        let mut limits = DecodeLimits::unlimited();
+        limits.input_bytes = data.len();
+        limits.pixels = w * h;
+        limits.expanded_bytes = w * h * c * 64 + 8192;
+        limits.frames = 1;
+        let image =
+            image_from_with_limits(&data, limits).unwrap_or_else(|e| panic!("{}: {e}", f[1]));
+        assert_eq!((image.width, image.height), (w, h), "{}", f[1]);
+        assert_eq!(image.buffer.unwrap(), expected, "{}", f[1]);
+        for field in 0..4 {
+            let mut short = limits;
+            match field {
+                0 => short.input_bytes -= 1,
+                1 => short.pixels -= 1,
+                2 => short.expanded_bytes -= 1,
+                _ => short.frames = 0,
+            }
+            assert!(
+                image_from_with_limits(&data, short).is_err(),
+                "{} limit{field}",
+                f[1]
+            );
+        }
+        assert_eq!(
+            n(13),
+            (x0 + w - tx0).div_ceil(n(11)) * (y0 + h - ty0).div_ceil(n(12))
+        );
+        large_origin |= x0 > 30000 || y0 > 30000;
+        clipped_first |= x0 != tx0 || y0 != ty0;
+        modes.insert((c, n(10)));
+        levels.insert(n(8));
+        count += 1;
+    }
+    assert_eq!(count, 126);
+    assert!(large_origin && clipped_first);
+    assert_eq!(modes, [(1, 0), (3, 0), (3, 1)].into_iter().collect());
+    assert_eq!(levels, (0..=5).collect());
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn invalid_global_geometry_rejected_before_callbacks() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder, image_load};
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest =
+        std::fs::read_to_string(format!("{root}jpeg2000-global-origins-manifest.txt")).unwrap();
+    let reject = |data: &[u8]| {
+        let mut image = ImageBuffer::new();
+        assert!(
+            image_decoder(
+                &mut BytesReader::new(data),
+                &mut DecodeOptions {
+                    drawer: &mut image,
+                    debug_flag: 0
+                }
+            )
+            .is_err()
+        );
+        assert!(image.buffer.is_none());
+    };
+    let mut modes = std::collections::BTreeSet::new();
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        let mode = (f[9], f[10]);
+        if !f[1].ends_with(".j2k")
+            || modes.contains(&mode)
+            || f[8] == "0"
+            || f[13].parse::<usize>().unwrap() < 4
+        {
+            continue;
+        }
+        modes.insert(mode);
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let read = |p: usize| u32::from_be_bytes(data[p..p + 4].try_into().unwrap());
+        for p in [8, 12, 16, 20, 24, 28, 32, 36] {
+            let mut huge = data.clone();
+            huge[p..p + 4].copy_from_slice(&u32::MAX.to_be_bytes());
+            reject(&huge);
+        }
+        for (extent, origin, grid, tile) in [(8, 16, 32, 24), (12, 20, 36, 28)] {
+            for (p, value) in [
+                (origin, read(extent)),
+                (origin, read(extent) + 1),
+                (grid, read(origin) + 1),
+                (tile, 0),
+                (extent, read(origin) + 1025),
+                (extent, 32769),
+            ] {
+                let mut bad = data.clone();
+                bad[p..p + 4].copy_from_slice(&value.to_be_bytes());
+                reject(&bad);
+            }
+            // First nominal tile must intersect the image; equality fails too.
+            let mut uncovered = data.clone();
+            uncovered[origin..origin + 4].copy_from_slice(&(read(grid) + read(tile)).to_be_bytes());
+            reject(&uncovered);
+        }
+        let mut p = 2;
+        while data[p..p + 2] != [255, 0x90] {
+            p += usize::from(u16::from_be_bytes([data[p + 2], data[p + 3]])) + 2;
+        }
+        let mut parts = Vec::new();
+        while data[p..p + 2] == [255, 0x90] {
+            let end = p + u32::from_be_bytes(data[p + 6..p + 10].try_into().unwrap()) as usize;
+            parts.push((p, end));
+            p = end;
+        }
+        for (start, end) in [parts[0], *parts.last().unwrap()] {
+            for n in [start, start + 1, start + 12, start + 14, end - 1] {
+                reject(&data[..n]);
+            }
+            for (offset, bytes) in [
+                (4, vec![255, 255]),
+                (6, vec![255, 255, 255, 255]),
+                (10, vec![1]),
+                (11, vec![2]),
+                (12, vec![255, 0x52]),
+            ] {
+                let mut bad = data.clone();
+                bad[start + offset..start + offset + bytes.len()].copy_from_slice(&bytes);
+                reject(&bad);
+            }
+            let mut short = data[..start + 14].to_vec();
+            short[start + 6..start + 10].copy_from_slice(&14u32.to_be_bytes());
+            short.extend_from_slice(&data[end..]);
+            reject(&short);
+            for offset in start + 14..end.min(start + 38) {
+                for mask in [1, 128, 255] {
+                    let mut changed = data.clone();
+                    changed[offset] ^= mask;
+                    let _ = image_load(&changed);
+                }
+            }
+        }
+    }
+    assert_eq!(modes.len(), 3);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn global_reference_extent_bound_rejects_valid_inputs_before_callbacks() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder};
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!(
+        "{root}jpeg2000-global-origins-unsupported-manifest.txt"
+    ))
+    .unwrap();
+    let mut count = 0;
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(f.len(), 19);
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let mut image = ImageBuffer::new();
+        let error = image_decoder(
+            &mut BytesReader::new(&data),
+            &mut DecodeOptions {
+                drawer: &mut image,
+                debug_flag: 0,
+            },
+        )
+        .unwrap_err();
+        assert!(
+            error.to_string().contains("reference extents"),
+            "{}: {error}",
+            f[1]
+        );
+        assert!(image.buffer.is_none());
+        count += 1;
+    }
+    assert_eq!(count, 12);
 }

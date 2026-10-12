@@ -807,6 +807,8 @@ struct Size {
     components: usize,
     tile_w: usize,
     tile_h: usize,
+    image_origin: (usize, usize),
+    tile_origin: (usize, usize),
 }
 #[derive(Clone, Copy)]
 struct Coding {
@@ -885,10 +887,13 @@ fn tiles(
         h,
         tile_w,
         tile_h,
+        image_origin: (x0, y0),
+        tile_origin: (tx0, ty0),
         ..
     } = size;
-    let nx = w.div_ceil(tile_w);
-    let ny = h.div_ceil(tile_h);
+    let (x1, y1) = (x0 + w, y0 + h);
+    let nx = (x1 - tx0).div_ceil(tile_w);
+    let ny = (y1 - ty0).div_ceil(tile_h);
     let count = nx * ny; // SIZ bounded to 256 before any coefficient allocation.
     // Retain the single-tile allocation/move path. Multi-tile scratch is dropped
     // after each row copy; only the whole-canvas RGBA output survives.
@@ -915,16 +920,22 @@ fn tiles(
                 "tile-header overrides are unsupported; SOD required",
             ));
         }
-        let x = (index % nx) * tile_w;
-        let y = (index / nx) * tile_h;
-        let tw = tile_w.min(w - x);
-        let th = tile_h.min(h - y);
+        // T.800 B.3: intersect the nominal tile with the image interval.
+        // Coefficients keep reference-grid coordinates; drawing uses the
+        // cropped image's local origin and does not allocate global padding.
+        let nominal_x = tx0 + (index % nx) * tile_w;
+        let nominal_y = ty0 + (index / nx) * tile_h;
+        let x = nominal_x.max(x0);
+        let y = nominal_y.max(y0);
+        let tw = (nominal_x + tile_w).min(x1) - x;
+        let th = (nominal_y + tile_h).min(y1) - y;
         let pixels = tile_pixels(&tile[14..], tw, th, (x, y), coding, component_mb)?;
+        let (out_x, out_y) = (x - x0, y - y0);
         if count == 1 {
             rgba = pixels;
         } else {
             for row in 0..th {
-                rgba[((y + row) * w + x) * 4..((y + row) * w + x + tw) * 4]
+                rgba[((out_y + row) * w + out_x) * 4..((out_y + row) * w + out_x + tw) * 4]
                     .copy_from_slice(&pixels[row * tw * 4..(row + 1) * tw * 4]);
             }
         }
@@ -964,32 +975,49 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 if b.len() != 36 + 3 * components {
                     return Err(bad("SIZ component length"));
                 }
-                let w = u32be(b, 2)? as usize;
-                let h = u32be(b, 6)? as usize;
+                let x1 = u32be(b, 2)? as usize;
+                let y1 = u32be(b, 6)? as usize;
+                let x0 = u32be(b, 10)? as usize;
+                let y0 = u32be(b, 14)? as usize;
+                let w = x1
+                    .checked_sub(x0)
+                    .ok_or_else(|| bad("image origin beyond extent"))?;
+                let h = y1
+                    .checked_sub(y0)
+                    .ok_or_else(|| bad("image origin beyond extent"))?;
                 if w == 0 || h == 0 {
                     return Err(bad("zero dimensions"));
                 }
                 let tile_w = u32be(b, 18)? as usize;
                 let tile_h = u32be(b, 22)? as usize;
+                let tx0 = u32be(b, 26)? as usize;
+                let ty0 = u32be(b, 30)? as usize;
                 if tile_w == 0 || tile_h == 0 {
                     return Err(bad("zero tile dimensions"));
                 }
                 if u16be(b, 0)? != 0
                     || w > 1024
                     || h > 1024
-                    || u32be(b, 10)? != 0
-                    || u32be(b, 14)? != 0
                     || tile_w > 1024
                     || tile_h > 1024
-                    || u32be(b, 26)? != 0
-                    || u32be(b, 30)? != 0
                     || !b[36..].chunks_exact(3).all(|c| c == [7, 1, 1])
                 {
                     return Err(unsupported(
-                        "SIZ: unsigned Gray8/RGB8, no subsampling, zero origin, canvas/tile dimensions <=1024 required",
+                        "SIZ: unsigned Gray8/RGB8, no subsampling, canvas/tile dimensions <=1024 required",
                     ));
                 }
-                if w.div_ceil(tile_w) * h.div_ceil(tile_h) > 256 {
+                // Implicit precincts are 32768 on each resolution's grid.
+                // Bounding reference extents keeps every tile/resolution in
+                // that first precinct, without allocating the blank prefix.
+                if x1 > 32768 || y1 > 32768 {
+                    return Err(unsupported("reference extents must be <=32768"));
+                }
+                // These guards precede additions/counts: offsets and tile
+                // lengths are now small, and the first tile must intersect.
+                if tx0 > x0 || ty0 > y0 || tx0 + tile_w <= x0 || ty0 + tile_h <= y0 {
+                    return Err(bad("tile grid must cover the image origin"));
+                }
+                if (x1 - tx0).div_ceil(tile_w) * (y1 - ty0).div_ceil(tile_h) > 256 {
                     return Err(unsupported("at most 256 tiles required"));
                 }
                 if dimensions.is_some_and(|d| d != (w, h, components)) {
@@ -1009,6 +1037,8 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     components,
                     tile_w,
                     tile_h,
+                    image_origin: (x0, y0),
+                    tile_origin: (tx0, ty0),
                 });
             }
             0xff52 => {

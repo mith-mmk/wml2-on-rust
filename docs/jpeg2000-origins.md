@@ -1,5 +1,8 @@
 # JPEG2000 unaligned tile origins and small edges
 
+The subsequent [nonzero global-origin extension](jpeg2000-global-origins.md)
+supersedes the earlier zero-global-origin restriction.
+
 Continuation from `44d39af873ffd983f04dd87112825f2c75bd856c`, on
 `codex/jpeg2000-rgb-reimplementation-20261011`. Normal remote read/fetch matched
 that SHA. Repository AGENTS.md and the empty/absent additional `.agents/skills`

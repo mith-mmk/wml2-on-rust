@@ -24,7 +24,8 @@ cases = []
 mapped_sources = {}
 for manifest_name, field_count in [('jpeg2000-blocks-manifest.txt', 11),
                                    ('jpeg2000-tiles-manifest.txt', 14),
-                                   ('jpeg2000-origins-manifest.txt', 14)]:
+                                   ('jpeg2000-origins-manifest.txt', 14),
+                                   ('jpeg2000-global-origins-manifest.txt', 18)]:
     manifest = fixtures / manifest_name
     if manifest.exists():
         for line in manifest.read_text().splitlines()[1:]:
@@ -48,6 +49,12 @@ if origins_unsupported.exists():
     for line in origins_unsupported.read_text().splitlines()[1:]:
         fields = line.split()
         assert len(fields) == 15 and fields[14] == 'count'
+        rejected.append(fixtures / fields[1])
+global_unsupported = fixtures / 'jpeg2000-global-origins-unsupported-manifest.txt'
+if global_unsupported.exists():
+    for line in global_unsupported.read_text().splitlines()[1:]:
+        fields = line.split()
+        assert len(fields) == 19
         rejected.append(fixtures / fields[1])
 paths = sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')) + promoted
 for path in paths:

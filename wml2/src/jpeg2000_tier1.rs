@@ -135,7 +135,7 @@ impl<'a> Mq<'a> {
         d
     }
 }
-struct Block {
+struct Block<const MIDPOINT: bool> {
     w: usize,
     h: usize,
     orientation: u8,
@@ -144,8 +144,9 @@ struct Block {
     negative: Vec<bool>,
     visited: Vec<bool>,
     refined: Vec<bool>,
+    last_plane: Vec<u8>,
 }
-impl Block {
+impl<const MIDPOINT: bool> Block<MIDPOINT> {
     fn neighbor(&self, x: usize, y: usize, dx: isize, dy: isize) -> Option<usize> {
         let x = x.checked_add_signed(dx)?;
         let y = y.checked_add_signed(dy)?;
@@ -221,6 +222,9 @@ impl Block {
         self.negative[i] = mq.bit(cx) ^ prediction;
         self.sig[i] = true;
         self.value[i] = 1 << plane;
+        if MIDPOINT {
+            self.last_plane[i] = plane;
+        }
     }
     fn propagation(&mut self, mq: &mut Mq<'_>, plane: u8) {
         for stripe in (0..self.h).step_by(4) {
@@ -255,6 +259,9 @@ impl Block {
                             self.value[i] |= 1 << plane;
                         }
                         self.refined[i] = true;
+                        if MIDPOINT {
+                            self.last_plane[i] = plane;
+                        }
                     }
                 }
             }
@@ -299,23 +306,50 @@ pub(super) fn decode(
     // Keep the proven small-block bounds visible to the optimizer. The wider
     // domain otherwise slows existing 16x16 Gray inputs in release builds.
     if w <= 16 && h <= 16 {
-        decode_bounded::<16>(data, w, h, orientation, planes)
+        decode_bounded::<16, false>(data, w, h, orientation, planes, 0)
     } else {
-        decode_bounded::<1024>(data, w, h, orientation, planes)
+        decode_bounded::<1024, false>(data, w, h, orientation, planes, 0)
     }
 }
-fn decode_bounded<const AXIS: usize>(
+// Doubled sign-magnitude reconstruction with r=1/2 (T.800 E-6).
+// Per-coefficient precision matters when rate control stops at sigprop/refinement.
+pub(super) fn decode_irreversible(
     data: &[u8],
     w: usize,
     h: usize,
     orientation: u8,
     planes: u8,
+    passes: u32,
 ) -> Result<Vec<i32>, Error> {
-    if w == 0 || h == 0 || w > AXIS || h > AXIS || w * h > 4096 || planes == 0 || planes > 16 {
+    if w <= 16 && h <= 16 {
+        decode_bounded::<16, true>(data, w, h, orientation, planes, passes)
+    } else {
+        decode_bounded::<1024, true>(data, w, h, orientation, planes, passes)
+    }
+}
+fn decode_bounded<const AXIS: usize, const MIDPOINT: bool>(
+    data: &[u8],
+    w: usize,
+    h: usize,
+    orientation: u8,
+    planes: u8,
+    passes: u32,
+) -> Result<Vec<i32>, Error> {
+    if w == 0
+        || h == 0
+        || w > AXIS
+        || h > AXIS
+        || w * h > 4096
+        || planes == 0
+        || planes > if MIDPOINT { 24 } else { 16 }
+    {
         return Err(bad("invalid code-block geometry or bit depth"));
     }
+    if MIDPOINT && (passes == 0 || passes > u32::from(planes) * 3 - 2) {
+        return Err(bad("invalid code-block pass count"));
+    }
     let n = w * h;
-    let mut block = Block {
+    let mut block: Block<MIDPOINT> = Block {
         w,
         h,
         orientation,
@@ -324,15 +358,32 @@ fn decode_bounded<const AXIS: usize>(
         negative: vec![false; n],
         visited: vec![false; n],
         refined: vec![false; n],
+        last_plane: if MIDPOINT { vec![0; n] } else { Vec::new() },
     };
     let mut mq = Mq::new(data)?;
     block.cleanup(&mut mq, planes - 1);
+    let mut decoded = 1;
     for plane in (0..planes - 1).rev() {
+        if MIDPOINT && decoded == passes {
+            break;
+        }
         block.propagation(&mut mq, plane);
+        decoded += 1;
+        if MIDPOINT && decoded == passes {
+            break;
+        }
         block.refinement(&mut mq, plane);
+        decoded += 1;
+        if MIDPOINT && decoded == passes {
+            break;
+        }
         block.cleanup(&mut mq, plane);
+        decoded += 1;
     }
     for i in 0..n {
+        if MIDPOINT && block.sig[i] {
+            block.value[i] = 2 * block.value[i] + (1 << block.last_plane[i]);
+        }
         if block.negative[i] {
             block.value[i] = -block.value[i];
         }

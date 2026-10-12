@@ -94,7 +94,7 @@ def read_plt(encoded):
             assert c in [1, 3] and body[36:] == bytes([7, 1, 1]) * c
             profile.update(w=xe - xo, h=ye - yo, xo=xo, yo=yo, gx=gx, gy=gy, tw=tw, th=th, components=c)
         elif data[p:p + 2] == bytes.fromhex('ff52'):
-            assert len(body) == 10 and body[:4] == bytes([0, 0, 0, 1]) and body[8:] == bytes([0, 1])
+            assert len(body) == 10 and body[:4] == bytes([0, 0, 0, 1]) and body[8] == 0 and body[9] in (0, 1)
             profile.update(levels=body[5], mct=body[4], cbw=1 << (body[6] + 2), cbh=1 << (body[7] + 2))
         p += n + 2
     main = data[:p]

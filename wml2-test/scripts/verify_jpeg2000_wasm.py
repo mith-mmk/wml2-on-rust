@@ -28,12 +28,16 @@ for manifest_name, field_count in [('jpeg2000-blocks-manifest.txt', 11),
                                    ('jpeg2000-global-origins-manifest.txt', 18),
                                    ('jpeg2000-parts-manifest.txt', 20),
                                    ('jpeg2000-unknown-parts-manifest.txt', 20),
-                                   ('jpeg2000-terminal-parts-manifest.txt', 20)]:
+                                   ('jpeg2000-terminal-parts-manifest.txt', 20),
+                                   ('jpeg2000-irreversible-manifest.txt', 23),
+                                   ('jpeg2000-irreversible-variants-manifest.txt', 23)]:
     manifest = fixtures / manifest_name
     if manifest.exists():
         for line in manifest.read_text().splitlines()[1:]:
             fields = line.split()
             assert len(fields) == field_count
+            if field_count == 23:
+                fields[2:4] = fields[20:22] # decoded oracle, not original source
             mapped_sources[fields[1]] = fields
 promoted = []
 unsupported_manifest = fixtures / 'jpeg2000-tiles-unsupported-manifest.txt'
@@ -81,8 +85,17 @@ if terminal_unsupported.exists():
         fields = line.split()
         assert len(fields) == 21
         rejected.append(fixtures / fields[1])
+irreversible_rejected = fixtures / 'jpeg2000-irreversible-unsupported-manifest.txt'
+if irreversible_rejected.exists():
+    for line in irreversible_rejected.read_text().splitlines()[1:]:
+        fields = line.split()
+        assert len(fields) == 4
+        rejected.append(fixtures / fields[1])
 paths = sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')) + promoted
+rejected_names = {path.name for path in rejected}
 for path in paths:
+    if path.name in rejected_names:
+        continue
     stem = path.stem.split('_mct')[0]
     if path.name in mapped_sources:
         sources = [fixtures / mapped_sources[path.name][3]]
@@ -93,15 +106,16 @@ for path in paths:
         continue
     assert len(sources) == 1, stem
     source = sources[0]
-    w, h = map(int, re.search(r'_(\d+)x(\d+)_', stem).groups())
-    components = 3 if source.suffix == '.rgb' else 1
+    w, h = map(int, mapped_sources[path.name][4:6]) if path.name in mapped_sources else map(int, re.search(r'_(\d+)x(\d+)_', stem).groups())
+    components = int(mapped_sources[path.name][9]) if path.name in mapped_sources else 3 if source.suffix == '.rgb' else 1
     assert source.stat().st_size == w * h * components
-    extra_workspace = int(mapped_sources[path.name][19]) if path.name in mapped_sources and len(mapped_sources[path.name]) == 20 else 0
-    cases.append((path, source, w, h, components, extra_workspace))
+    extra_workspace = int(mapped_sources[path.name][19]) if path.name in mapped_sources and len(mapped_sources[path.name]) >= 20 else 0
+    tolerance = int(mapped_sources[path.name][22]) if path.name in mapped_sources and len(mapped_sources[path.name]) == 23 else 0
+    cases.append((path, source, w, h, components, extra_workspace, tolerance))
 compatibility_name = 'oracle_origins_22x11_d4_gray_b8x4_t20x22_singleton'
 compatibility_path = fixtures / (compatibility_name + '.j2k')
 if compatibility_path.exists():
-    cases.append((compatibility_path, fixtures / (compatibility_name + '.expected.gray'), 22, 11, 1, 0))
+    cases.append((compatibility_path, fixtures / (compatibility_name + '.expected.gray'), 22, 11, 1, 0, 0))
 assert cases, 'no fixtures found'
 default = str(args.default_features).lower()
 (work / 'Cargo.toml').write_text(f'''[package]
@@ -118,7 +132,7 @@ bin-rs = {{ version = "0.0.10", features = ["util"] }}
 ''')
 entries = '\n'.join(
     f'Case {{ encoded: include_bytes!({json.dumps(str(p), ensure_ascii=False)}), source: include_bytes!({json.dumps(str(s), ensure_ascii=False)}), '
-    f'w: {w}, h: {h}, components: {n}, extra_workspace: {extra} }},' for p, s, w, h, n, extra in cases)
+    f'w: {w}, h: {h}, components: {n}, extra_workspace: {extra}, tolerance: {tolerance} }},' for p, s, w, h, n, extra, tolerance in cases)
 rejected_entries = '\n'.join(
     f'include_bytes!({json.dumps(str(p), ensure_ascii=False)}),' for p in rejected)
 rust = r'''
@@ -127,7 +141,7 @@ use wml2::draw::*;
 use wml2::limits::DecodeLimits;
 use wml2::metadata::DataMap;
 type Error = Box<dyn std::error::Error>;
-struct Case { encoded: &'static [u8], source: &'static [u8], w: usize, h: usize, components: usize, extra_workspace: usize }
+struct Case { encoded: &'static [u8], source: &'static [u8], w: usize, h: usize, components: usize, extra_workspace: usize, tolerance: u8 }
 static CASES: &[Case] = &[
 ENTRIES
 ];
@@ -137,7 +151,7 @@ REJECTED_ENTRIES
 fn pixels_match(case: &Case, pixels: &[u8]) -> bool {
     pixels.len() == case.w * case.h * 4 && pixels.chunks_exact(4).enumerate().all(|(i,p)| {
         let source = &case.source[i * case.components..(i+1)*case.components];
-        p[3] == 255 && if case.components == 1 { p[..3] == [source[0];3] } else { p[..3] == *source }
+        p[3] == 255 && p[..3].iter().enumerate().all(|(c,&v)| v.abs_diff(source[if case.components == 1 {0} else {c}]) <= case.tolerance)
     })
 }
 struct Probe<'a> { case: &'a Case, abort: u8, events: Vec<u8> }
@@ -266,10 +280,11 @@ build_context = {
     'rust_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000.rs').read_bytes()).hexdigest(),
     'dispatch_source_sha256': hashlib.sha256((repo / 'wml2/src/draw.rs').read_bytes()).hexdigest(),
     'format_source_sha256': hashlib.sha256((repo / 'wml2/src/util.rs').read_bytes()).hexdigest(),
+    'irreversible_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000_irreversible.rs').read_bytes()).hexdigest(),
     'tier1_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000_tier1.rs').read_bytes()).hexdigest(),
     'fixture_manifest_sha256': {
         p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-        for p in fixtures.glob('jpeg2000-*-manifest.txt')},
+        for p in fixtures.glob('jpeg2000-*-manifest.*')},
 }
 subprocess.run(['cargo', 'build', '--offline', '--release', '--manifest-path',
                 str(work / 'Cargo.toml'), '--target', 'wasm32-unknown-unknown'], check=True)
@@ -300,7 +315,9 @@ result = subprocess.check_output(['node', str(work / 'run.cjs'), str(wasm)], tex
 report = json.loads(result)
 assert report['fixtures'] == len(cases) and report['all_passed']
 report.update({**build_context, 'target': 'wasm32-unknown-unknown', 'default_features': args.default_features,
-               'source_exact_fixtures': len(cases) - int(compatibility_path.exists()),
+               'source_exact_fixtures': sum(c[-1] == 0 for c in cases) - int(compatibility_path.exists()),
+               'irreversible_oracle_fixtures': sum(c[-1] > 0 for c in cases),
+               'irreversible_max_abs_error_policy': 1,
                'encoder_compatibility_fixtures': int(compatibility_path.exists()),
                'wasm_sha256': hashlib.sha256(wasm.read_bytes()).hexdigest(),
                'checks': ['direct API default metadata aggregation and scope restoration', 'RGBA pixels', 'dimensions', 'exact limits', 'short limits',

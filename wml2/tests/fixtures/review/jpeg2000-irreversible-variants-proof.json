@@ -1,0 +1,212 @@
+{
+  "jp2_irreversible_variant_d1_c1_m0_rdefault_derived_deep": {
+    "base_file": "jp2_irreversible_d1_c1_m0_rdefault.jp2",
+    "base_sha256": "538c61986af861c05562c626dbdaaaeaa9d7348f20acf9813b02adfd4bc7d997",
+    "final_sha256": "840ad54c037df865a7eddf67298771bddc47a6ef2a50b40febbb98426eb2f0b8",
+    "original_tile_group_sha256": "14ac856723c4bb3b6ecc436d1f339198b5000fc3c0e378012d3c7397795b6046",
+    "tile_parts_unchanged": true,
+    "header_operation": "derived_deep",
+    "expected_sha256": "162cdc58d222c77cbe08691902fda86a157370921393bf7115d80f017490a2dc",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d1_c3_m0_rdefault_derived_deep": {
+    "base_file": "jp2_irreversible_d1_c3_m0_rdefault.jp2",
+    "base_sha256": "9393e29f97483959ec5d109442d56ab0cf20581aa94c62bf33b7a529a5528317",
+    "final_sha256": "a8291c27847e20d9d9a6f96a9dedb2ff091709cf41264b4bf5be0ed739c1fb10",
+    "original_tile_group_sha256": "71158aab3bb74dd43e342fd9e1d100e2e41966a21dcf2d0e98f4e560906bafcf",
+    "tile_parts_unchanged": true,
+    "header_operation": "derived_deep",
+    "expected_sha256": "3ab2cfd5b4de8f44e6cce467385a638cc96d11e330c2870b686ace2e65a65bcb",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c0": {
+    "base_file": "jp2_irreversible_d1_c3_m0_rdefault.jp2",
+    "base_sha256": "9393e29f97483959ec5d109442d56ab0cf20581aa94c62bf33b7a529a5528317",
+    "final_sha256": "bf7150c317d60a5a43fc67c274b9e683c249895bfa0307fa94e09d641e436934",
+    "original_tile_group_sha256": "71158aab3bb74dd43e342fd9e1d100e2e41966a21dcf2d0e98f4e560906bafcf",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c0",
+    "expected_sha256": "8940f41e75add2eab8d78d9c20e0cbaa76ec95bc37b4199ed001c30ceee147ad",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c1": {
+    "base_file": "jp2_irreversible_d1_c3_m0_rdefault.jp2",
+    "base_sha256": "9393e29f97483959ec5d109442d56ab0cf20581aa94c62bf33b7a529a5528317",
+    "final_sha256": "35c854084e3bb965e71bda7093be77bb73b9ba3a41eaf9a86e29a4ca41294b83",
+    "original_tile_group_sha256": "71158aab3bb74dd43e342fd9e1d100e2e41966a21dcf2d0e98f4e560906bafcf",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c1",
+    "expected_sha256": "52f15a5ee0bfc97f23c3581936e2e009284be3ea0ba64e244e9861dbbdc956a4",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c2": {
+    "base_file": "jp2_irreversible_d1_c3_m0_rdefault.jp2",
+    "base_sha256": "9393e29f97483959ec5d109442d56ab0cf20581aa94c62bf33b7a529a5528317",
+    "final_sha256": "65c88412dd135af49d11ceefc9d8a11fbc80bacc6585bf3d48588c6d4dd4fdcc",
+    "original_tile_group_sha256": "71158aab3bb74dd43e342fd9e1d100e2e41966a21dcf2d0e98f4e560906bafcf",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c2",
+    "expected_sha256": "f30547d4b2deb466c04cffd3cf0c0efcaf7919d7c7a3ee3642a80a6ddf20617f",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d1_c3_m1_rdefault_derived_deep": {
+    "base_file": "jp2_irreversible_d1_c3_m1_rdefault.jp2",
+    "base_sha256": "8c5b6ad2e8c49f5021196a9492b32fa6d5179857173f17080599c0050c4031b3",
+    "final_sha256": "6c0251621f41edbc0acfec8a635857ce3b5b82b94eacef8a68b0a731717877a9",
+    "original_tile_group_sha256": "9e23675fa18c2ced9fce1a1fc2b75e893d64741c761309a62121e797dba75258",
+    "tile_parts_unchanged": true,
+    "header_operation": "derived_deep",
+    "expected_sha256": "dfbfe5c4ab33a758ff2a6c4e634b13f4b85882302bc606d0973bdf05efee7e6e",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c0": {
+    "base_file": "jp2_irreversible_d1_c3_m1_rdefault.jp2",
+    "base_sha256": "8c5b6ad2e8c49f5021196a9492b32fa6d5179857173f17080599c0050c4031b3",
+    "final_sha256": "bef8ec37e21d7c0e4228fe1d354d0061b5a876bf817cbe16ea11e744c117b661",
+    "original_tile_group_sha256": "9e23675fa18c2ced9fce1a1fc2b75e893d64741c761309a62121e797dba75258",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c0",
+    "expected_sha256": "2ce03b18d367c58ff5a2eccc3c35a8454f82dca0b0ee5a8121218ec2bddca7b3",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c1": {
+    "base_file": "jp2_irreversible_d1_c3_m1_rdefault.jp2",
+    "base_sha256": "8c5b6ad2e8c49f5021196a9492b32fa6d5179857173f17080599c0050c4031b3",
+    "final_sha256": "8767a640b16c2ca4ebc33210c333f7cf65b01ae9785f9516554298880ca514aa",
+    "original_tile_group_sha256": "9e23675fa18c2ced9fce1a1fc2b75e893d64741c761309a62121e797dba75258",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c1",
+    "expected_sha256": "f928de450e34d6890a538cd4e3ea4fc66a14d5b6c1900f542d1e277182f9b9de",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c2": {
+    "base_file": "jp2_irreversible_d1_c3_m1_rdefault.jp2",
+    "base_sha256": "8c5b6ad2e8c49f5021196a9492b32fa6d5179857173f17080599c0050c4031b3",
+    "final_sha256": "d619f64aafb11db8baaffb405d182aaa46488aa91a1c808d69f8e3b44e6d0664",
+    "original_tile_group_sha256": "9e23675fa18c2ced9fce1a1fc2b75e893d64741c761309a62121e797dba75258",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c2",
+    "expected_sha256": "32c3a9d058c9e03e2629739a6c91d0bd2cd7437ddcd84642b5dda237fa841b29",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d3_c1_m0_rdefault_derived_deep": {
+    "base_file": "jp2_irreversible_d3_c1_m0_rdefault.jp2",
+    "base_sha256": "859b833304748eaea2d312d2ec967d2cef9ea814dc345293ea2b663cef8cb9ee",
+    "final_sha256": "5b5ba5201db5d2cded2b34f0b928499df75f3225d96f86e28c330ebc14790692",
+    "original_tile_group_sha256": "1d7709c43e7d242a4cd5894e362e8c7d41663fa71d38f0c29bbca9704d338095",
+    "tile_parts_unchanged": true,
+    "header_operation": "derived_deep",
+    "expected_sha256": "38ec2ec21ecf29eac17a5376121960a12083ca0a30f51e532f0db47a9b6cc4da",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d3_c3_m0_rdefault_derived_deep": {
+    "base_file": "jp2_irreversible_d3_c3_m0_rdefault.jp2",
+    "base_sha256": "7a48d876d6eb4dfda649a7aa61063d0debccbed971382fd4c7bc5579e5d686de",
+    "final_sha256": "d027e58267bfef85501862b5de1412ad720775f39902ed7554d158e8b6effacc",
+    "original_tile_group_sha256": "bfa8bfb9aec54f9384046f394bb6e3a7fc3b3e81dab4275fa77440d1de6dff35",
+    "tile_parts_unchanged": true,
+    "header_operation": "derived_deep",
+    "expected_sha256": "004110fbc76e5bf139da8e3a6d16910a2aa53ed2d9ff46a9d0303cb6d1f13833",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d3_c3_m1_rdefault_derived_deep": {
+    "base_file": "jp2_irreversible_d3_c3_m1_rdefault.jp2",
+    "base_sha256": "d1db75f40b770d4b23aa8c991faa4b38b02a562437e4807c9568669511bdb215",
+    "final_sha256": "e6aa6f1751d827a59571e9879998e9c5e9a90fcda534cf0466aeaab1ca671f80",
+    "original_tile_group_sha256": "427d5687f42944a0965ff33694f10b917f0eb35190726ce20b7056a58d0922d9",
+    "tile_parts_unchanged": true,
+    "header_operation": "derived_deep",
+    "expected_sha256": "61fb838536b878aea94d9fbad8cb79ffcfd4a38ca9b1948cccd4439b2943e48b",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d5_c1_m0_rdefault_derived_deep": {
+    "base_file": "jp2_irreversible_d5_c1_m0_rdefault.jp2",
+    "base_sha256": "f26b59adb6d4ad01a41ecee5014649c3ff53593da92bae04abf01aa4d3bc231a",
+    "final_sha256": "c2085e035844a6b9241988c3de36e75fc14220d5e826464ccd76e5607a364da4",
+    "original_tile_group_sha256": "47d3e172d9c2ccde46a849711e9ae60f57603de6361e3fa8adb0b16ea62a60ef",
+    "tile_parts_unchanged": true,
+    "header_operation": "derived_deep",
+    "expected_sha256": "3cb6aa1f72371727687114de2355f858610f88d36a8234d90738ef29a33ce7bc",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d5_c3_m0_rdefault_derived_deep": {
+    "base_file": "jp2_irreversible_d5_c3_m0_rdefault.jp2",
+    "base_sha256": "fba7a0dd4a427a8a337fca893071d7e9cd5921e9c2e4667a056cd37a3fccc2cd",
+    "final_sha256": "0efc66213be223eb92b32f391bb2dbdb0d3d6eba4e81793ebd56c135971c9003",
+    "original_tile_group_sha256": "c57abcb2d74725895078676bd71573432d12661aeb8c2729ef52b35a0f33b3be",
+    "tile_parts_unchanged": true,
+    "header_operation": "derived_deep",
+    "expected_sha256": "c93ab545e6f97c82e391473b08d57b98851d03106ea023f45dfd30ae5c8368d1",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c0": {
+    "base_file": "jp2_irreversible_d5_c3_m0_rdefault.jp2",
+    "base_sha256": "fba7a0dd4a427a8a337fca893071d7e9cd5921e9c2e4667a056cd37a3fccc2cd",
+    "final_sha256": "3ddd7c46e18799a838871e8b7a65fe5088b06faf41ea51e263081784dc1325e9",
+    "original_tile_group_sha256": "c57abcb2d74725895078676bd71573432d12661aeb8c2729ef52b35a0f33b3be",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c0",
+    "expected_sha256": "8f471a97069d51656b8605a86784d85762792866e0c2d0369bb7280fcd5a6e73",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c1": {
+    "base_file": "jp2_irreversible_d5_c3_m0_rdefault.jp2",
+    "base_sha256": "fba7a0dd4a427a8a337fca893071d7e9cd5921e9c2e4667a056cd37a3fccc2cd",
+    "final_sha256": "1a53637b402b900a80b5da31560242144293f08a7b4f655d149d51f8dc451bcd",
+    "original_tile_group_sha256": "c57abcb2d74725895078676bd71573432d12661aeb8c2729ef52b35a0f33b3be",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c1",
+    "expected_sha256": "e34045b64d2833c8b3307fc056d1f3b9e41f8513748d416ecc6003d6f6c204a3",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c2": {
+    "base_file": "jp2_irreversible_d5_c3_m0_rdefault.jp2",
+    "base_sha256": "fba7a0dd4a427a8a337fca893071d7e9cd5921e9c2e4667a056cd37a3fccc2cd",
+    "final_sha256": "0a6f04e5b55b7b63fcf4dff7a528a18543018fe8c08a31338be4eeb3e4459e2a",
+    "original_tile_group_sha256": "c57abcb2d74725895078676bd71573432d12661aeb8c2729ef52b35a0f33b3be",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c2",
+    "expected_sha256": "31357fa1d54fd815e0223cb767757b2d9c731906d02004833038bbdec4d6ab2a",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep": {
+    "base_file": "jp2_irreversible_d5_c3_m1_rdefault.jp2",
+    "base_sha256": "ab6575aa543b3b93f48c351a41bbc7230b8e7bdb58dd778a701748d3c6413949",
+    "final_sha256": "5f77292385c0c4d0f86746e7cf5625d3e531602a33e6240d05ab3f615e35d0ba",
+    "original_tile_group_sha256": "b9693b03431e1167df2e92c47097b19c0686a1b170be960907f4792567786eb3",
+    "tile_parts_unchanged": true,
+    "header_operation": "derived_deep",
+    "expected_sha256": "c44c760590b383c8de86b3f16475cbe5543dc5d8aeb640eb6ea8962740cf3f05",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c0": {
+    "base_file": "jp2_irreversible_d5_c3_m1_rdefault.jp2",
+    "base_sha256": "ab6575aa543b3b93f48c351a41bbc7230b8e7bdb58dd778a701748d3c6413949",
+    "final_sha256": "542575e54a4ca5f42192f0b488071a1acf9af137ff8f91718c79de012c1a39a4",
+    "original_tile_group_sha256": "b9693b03431e1167df2e92c47097b19c0686a1b170be960907f4792567786eb3",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c0",
+    "expected_sha256": "883dd9f0159f43b859c62dd2ef253e56aaf1ae5b5a85b60fbd251cf48893c600",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c1": {
+    "base_file": "jp2_irreversible_d5_c3_m1_rdefault.jp2",
+    "base_sha256": "ab6575aa543b3b93f48c351a41bbc7230b8e7bdb58dd778a701748d3c6413949",
+    "final_sha256": "aa98faddba25dcfaf0716ee48cd1cef93d36cd02649d33c430e28f488547dd8b",
+    "original_tile_group_sha256": "b9693b03431e1167df2e92c47097b19c0686a1b170be960907f4792567786eb3",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c1",
+    "expected_sha256": "e34b58417f1b6c44b99b9c4cfcc25ffdc4b772b4a182385dbe142015f79ac580",
+    "source_quality_is_not_decoder_error": true
+  },
+  "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2": {
+    "base_file": "jp2_irreversible_d5_c3_m1_rdefault.jp2",
+    "base_sha256": "ab6575aa543b3b93f48c351a41bbc7230b8e7bdb58dd778a701748d3c6413949",
+    "final_sha256": "d6211c82c3afecd0fc460a70c64e66db980d6bdcf234b3b65c76a78b908d49c4",
+    "original_tile_group_sha256": "b9693b03431e1167df2e92c47097b19c0686a1b170be960907f4792567786eb3",
+    "tile_parts_unchanged": true,
+    "header_operation": "qcc_c2",
+    "expected_sha256": "58eb4f2a8171c034f8f9378093400d40dfc61f7ebfa747fde2f6752c047b34c9",
+    "source_quality_is_not_decoder_error": true
+  }
+}

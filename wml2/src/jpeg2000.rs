@@ -1,8 +1,9 @@
-//! Bounded lossless JPEG 2000 decoder enabled by the `jpeg2000` feature.
+//! Bounded 8bit JPEG 2000 decoder enabled by the `jpeg2000` feature.
 //!
 //! Raw J2K and enumerated Gray/sRGB JP2 produce ordinary RGBA8. Supported inputs
-//! have unsigned Gray8 or equal, unsampled RGB8 components, reversible 5/3,
-//! zero to five decompositions, LRCP, one quality layer and full coding passes.
+//! have unsigned Gray8 or equal, unsampled RGB8 components, 5/3 or 9/7,
+//! zero to five decompositions, LRCP, and one quality layer. Reversible coding
+//! requires full passes; irreversible coding also accepts rate-truncated passes.
 //! Canvas/tile axes are <=1024, reference ends <=32768, and raster tiles <=256.
 //! Each tile has <=18 nonempty, contiguous, packet-aligned parts, with known,
 //! zero or mixed correct totals. Only the final codestream part may use Psot=0.
@@ -13,8 +14,11 @@ use crate::error::{ImgError, ImgErrorKind};
 use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
 use std::io::SeekFrom;
+#[path = "jpeg2000_irreversible.rs"]
+mod irreversible;
 #[path = "jpeg2000_tier1.rs"]
 mod tier1;
+use irreversible::{quant_irreversible, tile_pixels_irreversible};
 type Error = Box<dyn std::error::Error>;
 fn bad(message: &str) -> Error {
     Box::new(ImgError::new_const(
@@ -436,7 +440,7 @@ fn packets_planes<const SPLIT: bool>(
     planes: &mut [Vec<i32>],
     block: (usize, usize),
 ) -> Result<(), Error> {
-    packets_planes_grid::<false, SPLIT>(
+    packets_planes_grid::<false, SPLIT, false>(
         input,
         w,
         h,
@@ -449,28 +453,17 @@ fn packets_planes<const SPLIT: bool>(
         },
     )
 }
-#[derive(Clone, Copy)]
-struct BlockGrid {
-    block: (usize, usize),
-    origin: (usize, usize),
-}
-fn packets_planes_grid<const GLOBAL: bool, const SPLIT: bool>(
-    input: PacketData<'_>,
+type Band = (usize, usize, usize, usize, u8);
+#[inline]
+fn subbands<const GLOBAL: bool>(
     w: usize,
     h: usize,
     levels: u8,
-    mb: &[&[u8]],
-    planes: &mut [Vec<i32>],
-    grid: BlockGrid,
-) -> Result<(), Error> {
-    let data = input.bytes;
-    let mut part_index = 0;
-    // QCD and LRCP order: deepest LL, then HL/LH/HH from coarse to fine.
-    // All bands occupy disjoint rectangles in a nested quadrant layout.
-    let (block_width, block_height) = grid.block;
+    origin: (usize, usize),
+) -> Vec<Band> {
     let factor = 1usize << levels;
     let mut bands = Vec::with_capacity(1 + 3 * usize::from(levels));
-    let (x0, y0) = grid.origin;
+    let (x0, y0) = origin;
     let (x1, y1) = (x0 + w, y0 + h);
     let (llw, llh) = if GLOBAL {
         (
@@ -502,6 +495,30 @@ fn packets_planes_grid<const GLOBAL: bool, const SPLIT: bool>(
             (lw, lh, rw - lw, rh - lh, 3),
         ]);
     }
+    bands
+}
+#[derive(Clone, Copy)]
+struct BlockGrid {
+    block: (usize, usize),
+    origin: (usize, usize),
+}
+fn packets_planes_grid<const GLOBAL: bool, const SPLIT: bool, const IRREVERSIBLE: bool>(
+    input: PacketData<'_>,
+    w: usize,
+    h: usize,
+    levels: u8,
+    mb: &[&[u8]],
+    planes: &mut [Vec<i32>],
+    grid: BlockGrid,
+) -> Result<(), Error> {
+    let data = input.bytes;
+    let mut part_index = 0;
+    // QCD and LRCP order: deepest LL, then HL/LH/HH from coarse to fine.
+    // All bands occupy disjoint rectangles in a nested quadrant layout.
+    let (block_width, block_height) = grid.block;
+    let (x0, y0) = grid.origin;
+    let (x1, y1) = (x0 + w, y0 + h);
+    let bands = subbands::<GLOBAL>(w, h, levels, grid.origin);
     let mut p = 0;
     for resolution in 0..=levels {
         let first = if resolution == 0 {
@@ -573,7 +590,10 @@ fn packets_planes_grid<const GLOBAL: bool, const SPLIT: bool>(
                             }
                             let planes = mb[b] - (threshold - 1);
                             let passes = bits.passes()?;
-                            if passes != u32::from(planes) * 3 - 2 {
+                            if passes > u32::from(planes) * 3 - 2 {
+                                return Err(bad("invalid code-block pass count"));
+                            }
+                            if !IRREVERSIBLE && passes != u32::from(planes) * 3 - 2 {
                                 return Err(unsupported("partial code-block passes"));
                             }
                             let mut lblock = 3;
@@ -611,6 +631,7 @@ fn packets_planes_grid<const GLOBAL: bool, const SPLIT: bool>(
                                 height,
                                 orientation,
                                 planes,
+                                passes,
                                 length,
                             ));
                         }
@@ -619,8 +640,19 @@ fn packets_planes_grid<const GLOBAL: bool, const SPLIT: bool>(
             }
             bits.align()?;
             p += bits.pos;
-            for (x, y, bw, bh, orientation, planes, length) in blocks {
-                let values = tier1::decode(bytes(data, p, length)?, bw, bh, orientation, planes)?;
+            for (x, y, bw, bh, orientation, planes, passes, length) in blocks {
+                let values = if IRREVERSIBLE {
+                    tier1::decode_irreversible(
+                        bytes(data, p, length)?,
+                        bw,
+                        bh,
+                        orientation,
+                        planes,
+                        passes,
+                    )?
+                } else {
+                    tier1::decode(bytes(data, p, length)?, bw, bh, orientation, planes)?
+                };
                 p += length;
                 for row in 0..bh {
                     plane[(y + row) * w + x..(y + row) * w + x + bw]
@@ -860,7 +892,8 @@ struct Size {
 #[derive(Clone, Copy)]
 struct Coding {
     levels: u8,
-    rct: bool,
+    mct: bool,
+    irreversible: bool,
     block: (usize, usize),
 }
 fn tile_pixels<const SPLIT: bool>(
@@ -870,8 +903,22 @@ fn tile_pixels<const SPLIT: bool>(
     origin: (usize, usize),
     coding: Coding,
     component_mb: &[Vec<u8>],
+    component_steps: &[Vec<f64>],
 ) -> Result<Vec<u8>, Error> {
-    let Coding { levels, rct, block } = coding;
+    if coding.irreversible {
+        return tile_pixels_irreversible::<SPLIT>(
+            input,
+            w,
+            h,
+            origin,
+            coding,
+            component_mb,
+            component_steps,
+        );
+    }
+    let Coding {
+        levels, mct, block, ..
+    } = coding;
     let mut rgba = Vec::with_capacity(w * h * 4);
     if component_mb.len() == 1 && origin == (0, 0) {
         let mut plane = packets::<SPLIT>(input, w, h, levels, &component_mb[0], block)?;
@@ -886,7 +933,7 @@ fn tile_pixels<const SPLIT: bool>(
         if origin == (0, 0) {
             packets_planes::<SPLIT>(input, w, h, levels, &mb, &mut planes, block)?;
         } else {
-            packets_planes_grid::<true, SPLIT>(
+            packets_planes_grid::<true, SPLIT, false>(
                 input,
                 w,
                 h,
@@ -911,7 +958,7 @@ fn tile_pixels<const SPLIT: bool>(
             }
         } else {
             for ((&v0, &v1), &v2) in planes[0].iter().zip(&planes[1]).zip(&planes[2]) {
-                let rgb = if rct {
+                let rgb = if mct {
                     inverse_rct(v0, v1, v2)
                 } else {
                     [gray8(v0), gray8(v1), gray8(v2)]
@@ -993,6 +1040,7 @@ fn tiles(
     size: Size,
     coding: Coding,
     component_mb: &[Vec<u8>],
+    component_steps: &[Vec<f64>],
 ) -> Result<Vec<u8>, Error> {
     let Size {
         w,
@@ -1043,6 +1091,7 @@ fn tiles(
                 (x, y),
                 coding,
                 component_mb,
+                component_steps,
             )?
         } else {
             // Gather at most 18 borrowed payloads first; validate all lengths
@@ -1099,6 +1148,7 @@ fn tiles(
                 (x, y),
                 coding,
                 component_mb,
+                component_steps,
             )?
         };
         let (out_x, out_y) = (x - x0, y - y0);
@@ -1224,21 +1274,22 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     || b[7] > 8
                     || u16::from(b[6]) + u16::from(b[7]) > 8
                     || b[8] != 0
-                    || b[9] != 1
+                    || b[9] > 1
                 {
                     return Err(unsupported(
-                        "COD: one layer, LRCP, 0..5 levels, power-of-two blocks 4..1024 with area <=4096, style zero, reversible transform required",
+                        "COD: one layer, LRCP, 0..5 levels, power-of-two blocks 4..1024 with area <=4096, style zero, 5/3 or 9/7 transform required",
                     ));
                 }
                 if b[4] == 1 && size.ok_or_else(|| bad("COD before SIZ"))?.components != 3 {
-                    return Err(unsupported("RCT requires three components"));
+                    return Err(unsupported("MCT requires three components"));
                 }
                 // T.800 Table A.18: offsets add two to each exponent; their
                 // sum must be <=8, bounding every full block to 4096 samples.
                 let block = (1usize << (b[6] + 2), 1usize << (b[7] + 2));
                 coding = Some(Coding {
                     levels: b[5],
-                    rct: b[4] == 1,
+                    mct: b[4] == 1,
+                    irreversible: b[9] == 0,
                     block,
                 });
             }
@@ -1272,16 +1323,32 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 let size = size.ok_or_else(|| bad("missing SIZ"))?;
                 let coding = coding.ok_or_else(|| bad("missing COD"))?;
                 let default_quant = quant.ok_or_else(|| bad("missing QCD"))?;
-                let mut component_mb =
-                    vec![quant_planes(default_quant, coding.levels)?; size.components];
+                // Validate mandatory QCD even when all components have QCC.
+                let (default_mb, default_steps) = if coding.irreversible {
+                    quant_irreversible(default_quant, coding.levels)?
+                } else {
+                    (quant_planes(default_quant, coding.levels)?, Vec::new())
+                };
+                let mut component_mb = vec![default_mb; size.components];
+                let mut component_steps = if coding.irreversible {
+                    vec![default_steps; size.components]
+                } else {
+                    Vec::new()
+                };
                 for (component, override_quant) in
                     component_quant[..size.components].iter().enumerate()
                 {
                     if let Some(q) = override_quant {
-                        component_mb[component] = quant_planes(q, coding.levels)?;
+                        if coding.irreversible {
+                            let (mb, steps) = quant_irreversible(q, coding.levels)?;
+                            component_mb[component] = mb;
+                            component_steps[component] = steps;
+                        } else {
+                            component_mb[component] = quant_planes(q, coding.levels)?;
+                        }
                     }
                 }
-                let rgba = tiles(s, p, size, coding, &component_mb)?;
+                let rgba = tiles(s, p, size, coding, &component_mb, &component_steps)?;
                 return Ok((size.w, size.h, rgba));
             }
             _ => return Err(unsupported("codestream marker")),
@@ -1289,7 +1356,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
         p += length + 2;
     }
 }
-/// Decode the supported lossless Gray8/RGB8 profile into ordinary RGBA8.
+/// Decode the supported unsigned Gray8/RGB8 profile into ordinary RGBA8.
 pub fn decode<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -1373,7 +1440,7 @@ mod tests {
     fn checked_lifting_matches_and_detects_overflow() {
         for width in 1..=33 {
             let packed: Vec<_> = (0..width)
-                .map(|x| ((x * 73 + width * 11) % 257) as i32 - 128)
+                .map(|x| ((x * 73 + width * 11) % 257) - 128)
                 .collect();
             assert_eq!(
                 inverse_line_checked(&packed).unwrap(),

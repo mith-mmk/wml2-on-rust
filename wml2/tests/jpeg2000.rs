@@ -1829,3 +1829,229 @@ fn public_decoder_applies_default_metadata_scope() {
     .unwrap();
     assert_eq!(image.buffer, image_load(raw).unwrap().buffer);
 }
+
+#[cfg(feature = "jpeg2000")]
+mod irreversible_tests {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::*;
+    use wml2::limits::DecodeLimits;
+    use wml2::metadata::DataMap;
+    type Error = Box<dyn std::error::Error>;
+    const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    fn pixels(expected: &[u8], actual: &[u8], components: usize, tolerance: u8) -> bool {
+        actual.len() == expected.len() / components * 4
+            && actual
+                .chunks_exact(4)
+                .zip(expected.chunks_exact(components))
+                .all(|(a, e)| {
+                    a[3] == 255
+                        && (0..3).all(|c| {
+                            a[c].abs_diff(e[if components == 1 { 0 } else { c }]) <= tolerance
+                        })
+                })
+    }
+    struct Probe<'a> {
+        expected: &'a [u8],
+        w: usize,
+        h: usize,
+        components: usize,
+        tolerance: u8,
+        abort: u8,
+        events: Vec<u8>,
+    }
+    impl DrawCallback for Probe<'_> {
+        fn init(
+            &mut self,
+            w: usize,
+            h: usize,
+            _: Option<InitOptions>,
+        ) -> Result<Option<CallbackResponse>, Error> {
+            assert_eq!((w, h), (self.w, self.h));
+            self.events.push(1);
+            Ok((self.abort == 1).then(CallbackResponse::abort))
+        }
+        fn draw(
+            &mut self,
+            x: usize,
+            y: usize,
+            w: usize,
+            h: usize,
+            a: &[u8],
+            _: Option<DrawOptions>,
+        ) -> Result<Option<CallbackResponse>, Error> {
+            assert_eq!((x, y, w, h), (0, 0, self.w, self.h));
+            assert!(pixels(self.expected, a, self.components, self.tolerance));
+            self.events.push(2);
+            Ok((self.abort == 2).then(CallbackResponse::abort))
+        }
+        fn terminate(
+            &mut self,
+            _: Option<TerminateOptions>,
+        ) -> Result<Option<CallbackResponse>, Error> {
+            self.events.push(3);
+            Ok(None)
+        }
+        fn next(&mut self, _: Option<NextOptions>) -> Result<Option<CallbackResponse>, Error> {
+            panic!("unexpected next")
+        }
+        fn verbose(
+            &mut self,
+            _: &str,
+            _: Option<VerboseOptions>,
+        ) -> Result<Option<CallbackResponse>, Error> {
+            panic!("unexpected verbose")
+        }
+        fn set_metadata(&mut self, _: &str, _: DataMap) -> Result<Option<CallbackResponse>, Error> {
+            panic!("unexpected metadata")
+        }
+    }
+    #[test]
+    fn fixed_oracle_pixels_limits_and_callbacks() {
+        let mut text =
+            std::fs::read_to_string(format!("{ROOT}jpeg2000-irreversible-manifest.txt")).unwrap();
+        let variants =
+            std::fs::read_to_string(format!("{ROOT}jpeg2000-irreversible-variants-manifest.txt"))
+                .unwrap();
+        text.extend(variants.lines().skip(1).flat_map(|line| [line, "\n"]));
+        let mut modes = std::collections::BTreeSet::new();
+        let mut levels = std::collections::BTreeSet::new();
+        let mut count = 0;
+        for line in text.lines().skip(1) {
+            let f: Vec<_> = line.split_whitespace().collect();
+            assert_eq!(f.len(), 23);
+            let n = |i: usize| f[i].parse::<usize>().unwrap();
+            let (w, h, c) = (n(4), n(5), n(9));
+            let tolerance = n(22) as u8;
+            assert_eq!(tolerance, 1);
+            let data = std::fs::read(format!("{ROOT}{}", f[1])).unwrap();
+            let expected = std::fs::read(format!("{ROOT}{}", f[21])).unwrap();
+            assert_eq!(expected.len(), w * h * c);
+            let image = image_load(&data).unwrap_or_else(|e| panic!("{}: {e}", f[1]));
+            assert_eq!((image.width, image.height), (w, h));
+            assert!(
+                pixels(&expected, image.buffer.as_ref().unwrap(), c, tolerance),
+                "{}",
+                f[1]
+            );
+            let limit = DecodeLimits {
+                input_bytes: data.len(),
+                pixels: w * h,
+                expanded_bytes: w * h * c * 64 + 8192 + n(19),
+                frames: 1,
+                metadata_bytes: 64,
+                ..DecodeLimits::unlimited()
+            };
+            let limited = image_from_with_limits(&data, limit)
+                .unwrap_or_else(|e| panic!("{} limit: {e}", f[1]));
+            assert!(pixels(
+                &expected,
+                limited.buffer.as_ref().unwrap(),
+                c,
+                tolerance
+            ));
+            for field in 0..5 {
+                let mut short = limit;
+                match field {
+                    0 => short.input_bytes -= 1,
+                    1 => short.pixels -= 1,
+                    2 => short.expanded_bytes -= 1,
+                    3 => short.frames = 0,
+                    _ => short.metadata_bytes = 0,
+                }
+                let mut image = ImageBuffer::new();
+                assert!(
+                    image_decoder_with_limits(
+                        &mut BytesReader::new(&data),
+                        &mut DecodeOptions {
+                            drawer: &mut image,
+                            debug_flag: 0
+                        },
+                        short
+                    )
+                    .is_err(),
+                    "{} limit{field}",
+                    f[1]
+                );
+                assert!(image.buffer.is_none());
+            }
+            for abort in 0..=2 {
+                let mut probe = Probe {
+                    expected: &expected,
+                    w,
+                    h,
+                    components: c,
+                    tolerance,
+                    abort,
+                    events: Vec::new(),
+                };
+                image_decoder(
+                    &mut BytesReader::new(&data),
+                    &mut DecodeOptions {
+                        drawer: &mut probe,
+                        debug_flag: 0,
+                    },
+                )
+                .unwrap();
+                assert_eq!(
+                    probe.events,
+                    if abort == 1 {
+                        vec![1, 3]
+                    } else {
+                        vec![1, 2, 3]
+                    },
+                    "{}",
+                    f[1]
+                );
+            }
+            let mut image = ImageBuffer::new();
+            assert!(
+                image_decoder(
+                    &mut BytesReader::new(&data[..data.len() - 1]),
+                    &mut DecodeOptions {
+                        drawer: &mut image,
+                        debug_flag: 0
+                    }
+                )
+                .is_err()
+            );
+            assert!(image.buffer.is_none());
+            assert!(image_load(&data).is_ok()); // finite/error scopes restored
+            modes.insert((c, n(10)));
+            levels.insert(n(8));
+            count += 1;
+        }
+        assert_eq!(count, 256);
+        assert_eq!(modes.len(), 3);
+        assert_eq!(levels.len(), 6);
+    }
+    #[test]
+    fn malformed_and_unsupported_profiles_reject_before_init() {
+        let text = std::fs::read_to_string(format!(
+            "{ROOT}jpeg2000-irreversible-unsupported-manifest.txt"
+        ))
+        .unwrap();
+        let mut count = 0;
+        for line in text.lines().skip(1) {
+            let f: Vec<_> = line.split_whitespace().collect();
+            assert_eq!(f.len(), 4);
+            let data = std::fs::read(format!("{ROOT}{}", f[1])).unwrap();
+            let mut image = ImageBuffer::new();
+            assert!(
+                image_decoder(
+                    &mut BytesReader::new(&data),
+                    &mut DecodeOptions {
+                        drawer: &mut image,
+                        debug_flag: 0
+                    }
+                )
+                .is_err(),
+                "{} {}",
+                f[1],
+                f[3]
+            );
+            assert!(image.buffer.is_none(), "{}", f[1]);
+            count += 1;
+        }
+        assert!(count >= 32);
+    }
+}

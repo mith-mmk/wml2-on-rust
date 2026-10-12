@@ -60,7 +60,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | Q4 | x | O | `q4`: 保持色run修正済みのQ4/XLD4 raster decode |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
 | AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                     |
-| JPEG2000 | x | O | 非既定の `jpeg2000`。上限付きlossless Gray8/RGB8 J2K/JP2。[対応範囲と検証](docs/jpeg2000.md) |
+| JPEG2000 | x | O | 非既定の `jpeg2000`。上限付き8bit Gray/RGB5/3・9/7 J2K/JP2。[対応範囲と検証](docs/jpeg2000.md) |
 | PSD          | x   | O   | 既定で無効の `psd` feature。Pure RustでPSD v1の統合画像と基本ラスターレイヤーをdecode                                |
 | MAG          | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
 | MAKI         | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
@@ -114,7 +114,7 @@ Q4/XLD4は`ifxld4.spi`の解析で確認した保持色runを使って復号し�
 ## JPEG2000 のデコード
 
 このリポジトリでは非既定の `jpeg2000` feature でPure Rust decoderを有効にできます。
-対応するlossless Gray8/RGB8の部分集合をRGBA8へ変換します。lossy 9/7、多層、
+可逆5/3・非可逆9/7の上限付きGray8/RGB8をRGBA8へ変換します。多層、
 subsampling、ICC/paletteは明示的に未対応です。[現行の仕様とPR検証](docs/jpeg2000.md)に
 寸法・coding/framing・資源上限と再現手順をまとめています。
 有効時に `ImageFormat::Jpeg2000` を追加し、無効時の形式検出と既存enumは維持します。

@@ -924,7 +924,7 @@ fn tiled_images_match_oracle_and_canvas_limits() {
         maximum_tiles = maximum_tiles.max(count);
         checked += 1;
     }
-    assert!(checked >= 60);
+    assert_eq!(checked, 162);
     assert_eq!(modes, [(1, 0), (3, 0), (3, 1)].into_iter().collect());
     assert_eq!(levels_seen, (0..=5).collect());
     assert_eq!(maximum_tiles, 256);

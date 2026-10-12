@@ -193,6 +193,17 @@ pub extern "C" fn run_rejections() -> u32 {
 }
 '''.replace('REJECTED_ENTRIES', rejected_entries).replace('ENTRIES', entries)
 (work / 'lib.rs').write_text(rust)
+# Snapshot the tested inputs before building; edits/commits during the runtime
+# must not change the provenance attached to an already-built module.
+build_context = {
+    'git_head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip(),
+    'working_tree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo, text=True).strip()),
+    'rust_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000.rs').read_bytes()).hexdigest(),
+    'tier1_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000_tier1.rs').read_bytes()).hexdigest(),
+    'fixture_manifest_sha256': {
+        p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in fixtures.glob('jpeg2000-*-manifest.txt')},
+}
 subprocess.run(['cargo', 'build', '--offline', '--release', '--manifest-path',
                 str(work / 'Cargo.toml'), '--target', 'wasm32-unknown-unknown'], check=True)
 target = Path(os.environ.get('CARGO_TARGET_DIR', str(work / 'target')))
@@ -219,14 +230,7 @@ console.log(JSON.stringify({runtime:process.version, fixtures:count, rejected_fi
 result = subprocess.check_output(['node', str(work / 'run.cjs'), str(wasm)], text=True)
 report = json.loads(result)
 assert report['fixtures'] == len(cases) and report['all_passed']
-report.update({'target': 'wasm32-unknown-unknown', 'default_features': args.default_features,
-               'git_head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip(),
-               'working_tree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo, text=True).strip()),
-               'rust_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000.rs').read_bytes()).hexdigest(),
-               'tier1_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000_tier1.rs').read_bytes()).hexdigest(),
-               'fixture_manifest_sha256': {
-                   p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                   for p in fixtures.glob('jpeg2000-*-manifest.txt')},
+report.update({**build_context, 'target': 'wasm32-unknown-unknown', 'default_features': args.default_features,
                'wasm_sha256': hashlib.sha256(wasm.read_bytes()).hexdigest(),
                'checks': ['RGBA pixels', 'dimensions', 'exact limits', 'short limits',
                           'limit scope restoration', 'callbacks', 'init/draw abort',

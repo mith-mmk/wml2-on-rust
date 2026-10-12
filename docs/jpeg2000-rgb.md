@@ -1,5 +1,8 @@
 # JPEG2000 RGB8 extension
 
+The later [bounded multi-tile extension](jpeg2000-tiles.md) supersedes this
+initial implementation's one-tile restriction.
+
 Reimplemented from verified Gray commit `7043bf083203234c1193cf1c22a70ab61d6dc3df`.
 The separately preserved unpublished RGB ZIP has not been downloaded or used.
 WML2 remains 0.0.35; the nondefault `jpeg2000` feature, existing public API,

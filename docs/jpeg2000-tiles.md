@@ -71,13 +71,42 @@ none in JPEG2000; formatting and diff checks pass. Seeded random verification
 checks 18 tile/block geometries, 108 pixel comparisons, both containers and all
 three component/MCT profiles (`check_jpeg2000_tiles_random.py`).
 
-## Remaining verification at this checkpoint
+## WASM execution and performance
 
-Actual minimal and default-codec WASM execution and the short paired performance
-comparison are in progress; their final results and artifact hashes will be
-recorded separately. The previous larger-RGB CPU sample of +6.11% remains a
-performance caveat pending the new paired sample. No general speed guarantee
-is implied by the native correctness results.
+Final minimal and default-codec WASM runs passed all 849 positive fixtures
+and 24 unsupported tile profiles in Node.js v24.19.0, with no host imports,
+using the final normalized empty-packet bytes and saved production source.
+Module/source/manifest hashes and memory sizes are recorded in
+`jpeg2000-wasm-runtime.json` and `jpeg2000-tiles-validation.json`. Both runs
+report source SHA256 `3178fc02932d9eb61355f9e210166aa85fb40d07e0db29d9775118abdd849085`,
+matching the saved implementation commit `95b3347`. Dirty-state snapshots
+reflect only follow-up harness/test-assertion/docs changes. Linear memory was
+60,555,264 bytes (minimal) and 60,686,336 bytes (default).
+The runtime also checks pixels/dimensions, exact and one-short limits, scope
+restoration, callbacks/Abort, truncation and late tile framing/missing-tile/
+repaired-short-packet rejection before callbacks. This is real WebAssembly
+execution, rather than only compilation; browser UI remains untested.
+
+A short fixed-CPU B/H/H/B/H/B sample compared the immutable baseline
+`a186462` verifier with the extension, three processes per version, 100
+warmups and Rust 1.91 release. No parallel CPU tests ran during timing. All
+paired output hashes matched. Whole-process CPU microseconds per decode:
+
+| Existing input | Baseline | Extension | CPU change |
+| --- | ---: | ---: | ---: |
+| Gray16 | 69.518 | 67.241 | -3.27% |
+| Gray65 | 1458.260 | 1422.280 | -2.47% |
+| RGB16 | 335.098 | 331.315 | -1.13% |
+| RGB65 | 4400.032 | 4324.710 | -1.71% |
+
+The larger RGB sample improved 1.71% relative to a186462 in this run. The
+previous +6.11% observation concerned the earlier code-block extension versus
+its preceding baseline; this new comparison does not erase it or establish
+no cumulative regression. Shared-host variation remains material, and the
+short sample is not a general performance guarantee. Whole-process figures
+include startup, warmups and export. Raw rows, wall times, fixture/output/
+binary hashes are in `jpeg2000-tiles-benchmark.json`; the random oracle cases
+are recorded in `jpeg2000-tiles-random.json`.
 
 ## Reproduction and exclusions
 

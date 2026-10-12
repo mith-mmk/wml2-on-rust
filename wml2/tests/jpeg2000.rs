@@ -981,7 +981,7 @@ fn invalid_tile_structure_is_rejected_before_callbacks() {
             for (offset, bytes) in [
                 (4, vec![255, 255]),
                 (10, vec![1]),
-                (11, vec![0]),
+                (11, vec![19]),
                 (11, vec![2]),
                 (2, vec![0, 9]),
                 (2, vec![0, 11]),
@@ -1485,12 +1485,11 @@ fn global_reference_extent_bound_rejects_valid_inputs_before_callbacks() {
 }
 
 #[cfg(feature = "jpeg2000")]
-#[test]
-fn multiple_tile_parts_match_source_and_exact_workspace() {
+fn tile_part_oracles(manifest_name: &str, expected_count: usize) {
     use wml2::draw::image_from_with_limits;
     use wml2::limits::DecodeLimits;
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
-    let manifest = std::fs::read_to_string(format!("{root}jpeg2000-parts-manifest.txt")).unwrap();
+    let manifest = std::fs::read_to_string(format!("{root}{manifest_name}")).unwrap();
     let mut modes = std::collections::BTreeSet::new();
     let mut levels = std::collections::BTreeSet::new();
     let mut maximum_parts = 0;
@@ -1542,10 +1541,22 @@ fn multiple_tile_parts_match_source_and_exact_workspace() {
         maximum_parts = maximum_parts.max(n(18));
         count += 1;
     }
-    assert_eq!(count, 126);
+    assert_eq!(count, expected_count);
     assert_eq!(maximum_parts, 18);
     assert_eq!(modes, [(1, 0), (3, 0), (3, 1)].into_iter().collect());
     assert_eq!(levels, (1..=5).collect());
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn multiple_tile_parts_match_source_and_exact_workspace() {
+    tile_part_oracles("jpeg2000-parts-manifest.txt", 126);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn unknown_and_mixed_tile_counts_match_source_and_exact_workspace() {
+    tile_part_oracles("jpeg2000-unknown-parts-manifest.txt", 156);
 }
 
 #[cfg(feature = "jpeg2000")]
@@ -1575,6 +1586,11 @@ fn unsupported_and_malformed_tile_parts_rejected_before_callbacks() {
     for line in manifest.lines().skip(1) {
         let f: Vec<_> = line.split_whitespace().collect();
         assert_eq!(f.len(), 21);
+        if f[20] == "unsupported_unknown_TNsot" {
+            // Promoted into the unknown-part positive manifest without rewriting
+            // the original saved fixture or its source.
+            continue;
+        }
         reject(&std::fs::read(format!("{root}{}", f[1])).unwrap());
         reasons.insert(f[20]);
         count += 1;
@@ -1608,7 +1624,7 @@ fn unsupported_and_malformed_tile_parts_rejected_before_callbacks() {
                 (4, vec![255, 255]),
                 (6, vec![255, 255, 255, 255]),
                 (10, vec![255]),
-                (11, vec![0]),
+                (11, vec![19]),
                 (12, vec![255, 0x52]),
             ] {
                 let mut bad = data.clone();
@@ -1629,4 +1645,38 @@ fn unsupported_and_malformed_tile_parts_rejected_before_callbacks() {
         }
     }
     assert_eq!(modes.len(), 3);
+}
+
+#[cfg(feature = "jpeg2000")]
+#[test]
+fn unknown_tile_count_corruption_rejected_before_callbacks() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder};
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+    let manifest = std::fs::read_to_string(format!(
+        "{root}jpeg2000-unknown-parts-unsupported-manifest.txt"
+    ))
+    .unwrap();
+    let mut count = 0;
+    for line in manifest.lines().skip(1) {
+        let f: Vec<_> = line.split_whitespace().collect();
+        assert_eq!(f.len(), 21);
+        let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
+        let mut image = ImageBuffer::new();
+        assert!(
+            image_decoder(
+                &mut BytesReader::new(&data),
+                &mut DecodeOptions {
+                    drawer: &mut image,
+                    debug_flag: 0,
+                }
+            )
+            .is_err(),
+            "{}",
+            f[1]
+        );
+        assert!(image.buffer.is_none(), "{}", f[1]);
+        count += 1;
+    }
+    assert_eq!(count, 54);
 }

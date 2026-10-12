@@ -916,19 +916,34 @@ fn tile_pixels<const SPLIT: bool>(
     }
     Ok(rgba)
 }
-fn tile_part(
-    s: &[u8],
+fn tile_part<'a>(
+    s: &'a [u8],
     p: usize,
     tile_index: usize,
     part_index: u8,
-    parts: u8,
-) -> Result<&[u8], Error> {
+    declared: &mut u8,
+) -> Result<&'a [u8], Error> {
     if u16be(s, p)? != 0xff90 || u16be(s, p + 2)? != 10 {
         return Err(bad("SOT required for every tile-part"));
     }
     let b = bytes(s, p + 4, 8)?;
-    if usize::from(u16be(b, 0)?) != tile_index || b[6] != part_index || b[7] != parts {
-        return Err(bad("tile-part ID, sequence or count"));
+    if usize::from(u16be(b, 0)?) != tile_index || b[6] != part_index {
+        return Err(bad("tile-part ID or sequence"));
+    }
+    // T.800 A.4.2 permits each header's TNsot to be zero or the correct total.
+    // Nonzero declarations agree, including when a later part supplies it.
+    let total = b[7];
+    if total > 18 || part_index >= 18 {
+        return Err(unsupported("at most 18 tile-parts supported"));
+    }
+    if total != 0 {
+        if *declared != 0 && *declared != total {
+            return Err(bad("inconsistent tile-part count"));
+        }
+        *declared = total;
+    }
+    if *declared != 0 && part_index >= *declared {
+        return Err(bad("tile-part exceeds declared count"));
     }
     let length = u32be(b, 2)? as usize;
     if length <= 14 {
@@ -941,6 +956,16 @@ fn tile_part(
         ));
     }
     Ok(part)
+}
+// Psot, never marker scanning inside packet data, locates the next header.
+// Other IDs end a contiguous tile group; the outer raster/EOC checks validate
+// whether that ID or EOC is legal at this position.
+fn same_tile(s: &[u8], p: usize, index: usize) -> Result<bool, Error> {
+    match u16be(s, p)? {
+        0xff90 => Ok(usize::from(u16be(s, p + 4)?) == index),
+        0xffd9 => Ok(false),
+        _ => Err(bad("SOT or EOC required after tile-part")),
+    }
 }
 fn tiles(
     s: &[u8],
@@ -972,11 +997,11 @@ fn tiles(
     for index in 0..count {
         // One LRCP layer, one precinct: at most six resolutions times three
         // components, with every supported part containing a whole packet.
-        let parts = bytes(s, p + 11, 1)?[0];
-        if !(1..=18).contains(&parts) {
-            return Err(unsupported("known 1..18 tile-parts required"));
-        }
-        let first = tile_part(s, p, index, 0, parts)?;
+        let mut declared = 0;
+        let first = tile_part(s, p, index, 0, &mut declared)?;
+        // Keep known single-part tiles on their borrowed fast path. Unknown
+        // single-part groups only need one bounded next-header lookahead.
+        let single = declared == 1 || (declared == 0 && !same_tile(s, p + first.len(), index)?);
         // T.800 B.3: intersect the nominal tile with the image interval.
         // Coefficients keep reference-grid coordinates; drawing uses the
         // cropped image's local origin and does not allocate global padding.
@@ -986,7 +1011,7 @@ fn tiles(
         let y = nominal_y.max(y0);
         let tw = (nominal_x + tile_w).min(x1) - x;
         let th = (nominal_y + tile_h).min(y1) - y;
-        let pixels = if parts == 1 {
+        let pixels = if single {
             p += first.len();
             tile_pixels::<false>(
                 PacketData {
@@ -1002,15 +1027,12 @@ fn tiles(
         } else {
             // Gather at most 18 borrowed payloads first; validate all lengths
             // and charge the extra join allocation before reserving/copying.
-            let mut bodies = Vec::with_capacity(usize::from(parts));
-            let mut ends = Vec::with_capacity(usize::from(parts));
+            let mut bodies = Vec::with_capacity(18);
+            let mut ends = Vec::with_capacity(18);
             let mut total = 0usize;
-            for part_index in 0..parts {
-                let part = if part_index == 0 {
-                    first
-                } else {
-                    tile_part(s, p, index, part_index, parts)?
-                };
+            let mut actual = 0u8;
+            let mut part = first;
+            loop {
                 let body = &part[14..];
                 total = total
                     .checked_add(body.len())
@@ -1018,6 +1040,22 @@ fn tiles(
                 bodies.push(body);
                 ends.push(total);
                 p += part.len();
+                actual += 1;
+                if declared != 0 && actual == declared {
+                    break;
+                }
+                if !same_tile(s, p, index)? {
+                    break;
+                }
+                // Bound actual parts even if every TNsot is zero. No 19th
+                // body or coefficient scratch is allocated on this path.
+                if actual == 18 {
+                    return Err(unsupported("at most 18 tile-parts supported"));
+                }
+                part = tile_part(s, p, index, actual, &mut declared)?;
+            }
+            if declared != 0 && actual != declared {
+                return Err(bad("incomplete declared tile-part count"));
             }
             let required = (w * h * size.components * 64 + 8192)
                 .checked_add(total)

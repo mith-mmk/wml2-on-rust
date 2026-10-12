@@ -26,7 +26,8 @@ for manifest_name, field_count in [('jpeg2000-blocks-manifest.txt', 11),
                                    ('jpeg2000-tiles-manifest.txt', 14),
                                    ('jpeg2000-origins-manifest.txt', 14),
                                    ('jpeg2000-global-origins-manifest.txt', 18),
-                                   ('jpeg2000-parts-manifest.txt', 20)]:
+                                   ('jpeg2000-parts-manifest.txt', 20),
+                                   ('jpeg2000-unknown-parts-manifest.txt', 20)]:
     manifest = fixtures / manifest_name
     if manifest.exists():
         for line in manifest.read_text().splitlines()[1:]:
@@ -60,6 +61,16 @@ if global_unsupported.exists():
 parts_unsupported = fixtures / 'jpeg2000-parts-unsupported-manifest.txt'
 if parts_unsupported.exists():
     for line in parts_unsupported.read_text().splitlines()[1:]:
+        fields = line.split()
+        assert len(fields) == 21
+        if fields[20] == 'unsupported_unknown_TNsot':
+            promoted.append(fixtures / fields[1])
+            mapped_sources[fields[1]] = fields[:20]
+        else:
+            rejected.append(fixtures / fields[1])
+unknown_unsupported = fixtures / 'jpeg2000-unknown-parts-unsupported-manifest.txt'
+if unknown_unsupported.exists():
+    for line in unknown_unsupported.read_text().splitlines()[1:]:
         fields = line.split()
         assert len(fields) == 21
         rejected.append(fixtures / fields[1])
@@ -207,7 +218,7 @@ pub extern "C" fn run_rejections() -> u32 {
             count += 1;
         }
         if count < 2 { continue; }
-        for (offset,value) in [(4,255),(10,255),(11,0),(12,0)] {
+        for (offset,value) in [(4,255),(10,255),(11,19),(12,0)] {
             let mut bad = data.to_vec();
             bad[last+offset] = value;
             if !rejected_before_callbacks(&bad) { return 2; }

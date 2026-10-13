@@ -135,15 +135,66 @@ subsampling, alpha models and color transforms need separate scoped decisions.
 
 ## Validation and reproduction
 
-Current-source local results, display checks, performance measurements and
-immutable-source hashes are recorded in `image-buffer-ex-validation.json`.
-Historical EX branch results are not counted as newly executed tests.
+The [final validation record](image-buffer-ex-validation.json) preserves source,
+fixture/helper/output hashes and links independent review and raw measurements.
+Final native runtime source matches clean checkpoint
+`59082ef43ce53d4d8805b5285e5bf2e31aab2907`; later evidence changes do not modify
+production code. Historical EX branch results are not counted as newly executed
+tests. Current local results:
+
+| Configuration / check | Result |
+| --- | --- |
+| Ordinary workspace, EX + high-bit-depth + optional retro codecs | 394 passed, 0 failed, 13 existing ignored; 48 targets including doctests |
+| Minimal EX, no default codecs | 70 passed, 0 failed; 30 targets including doctests |
+| Feature-off minimal | 39 passed, 0 failed; 30 targets including doctests |
+| Format / diff checks | Passed |
+| Clippy all-targets and focused new targets | Passed with existing/inherited library/test warnings; no new access/boundary-test warning, not a -Dwarnings gate |
+| Actual minimal wasm32 runtime, Node v24.19.0 | 13 smoke groups passed, no host imports; six formats/highres/legacy view/PNG/four TIFF fixtures |
+| Native pixel/display checks | Five images retain every native16bit sample exactly; explicit Round preview also matches independent expectations |
+
+The [WASM record](image-buffer-ex-wasm.json) is execution evidence, not only a
+build. Its13smoke groups do not claim the complete native workspace matrix ran
+in WASM. An initial standalone harness misstated existing TIFF geometry/pattern;
+that harness assertion was corrected to the existing generator/manifest, with
+no production changes. The committed portable helper passes from a clean tree.
+[Display sheet](image-buffer-ex-display.png) and [pixel/output hashes](image-buffer-ex-display.json)
+cover8/16bit LZW/PackBits Gray and independently generated RGBA16 with low bits.
+
+An [independent API review](image-buffer-ex-review.json) closed the static-loop
+compatibility finding and checked native access, bounded conversion, source
+contracts, shared legacy fields and preservation of main's newer codecs/release
+files. Independent boundary tests pass; the review is not a general security or
+complete codec-conformance proof.
+
+The [paired main comparison](image-buffer-ex-benchmark.json) uses identical
+measurement helpers, immutable release binaries, fixed CPU affinity,
+B/C/C/B/C/B,3processes/version,2warmup and7timed batches per case/process.
+Eight legacy draw/pick/JPEG/TIFF cases have matching measured pixel digests and
+unchanged allocation counts. No material increase appears in these samples;
+large shared-host variation includes baseline outliers. All raw rows are
+retained, and negative means do not establish guaranteed speedups. Timing is
+per-body wall time, with process CPU/startup separately recorded.
+
+The [same-row encoder-view comparison](image-buffer-ex-encoder-view-benchmark.json)
+retains a1024×768RGBA16 canvas and requests the same packed RGBA8 row using
+explicit Round. Whole-canvas copy followed by picking allocates3,149,824bytes;
+the borrowed adapter allocates4,096bytes. Pixel hashes match. These samples
+average15.931ms versus23.776μs for that one-row request, not a whole-image codec
+throughput comparison. The allocation reduction confirms that borrowing avoids
+an additional complete RGBA8 canvas while retaining native samples.
+
+Browser viewer/UI, other OS, the full CI matrix and every optional AVIF/ICC
+configuration were not executed here. There was no CI wait, merge, publication,
+version change or new PR creation.
 
 ```sh
 cargo test --workspace --release --features wml2/image-buffer-ex,wml2/high-bit-depth,wml2/tga,wml2/pcx,wml2/dds,wml2/q4
 cargo test -p wml2 --no-default-features --features image-buffer-ex
 cargo test -p wml2 --no-default-features
 cargo build -p wml2 --release --target wasm32-unknown-unknown --no-default-features --features image-buffer-ex,high-bit-depth,png,tiff
+python3 wml2-test/scripts/verify_image_buffer_ex_wasm.py --output .test-ex-wasm
+python3 wml2-test/scripts/generate_ex_access_sample.py --output .test-ex-access.tif
+cargo run -p wml2 --release --features image-buffer-ex --example review_bench -- ex-view 9
 cargo run -p wml2 --release --features image-buffer-ex,png,tiff --example ex_decode -- input.tif preview.png native.rgba16le
 ```
 

@@ -1,0 +1,29 @@
+{
+  "runtime": "v24.19.0",
+  "cases": 13,
+  "all_passed": true,
+  "host_imports": [],
+  "memory_bytes": 1507328,
+  "target": "wasm32-unknown-unknown",
+  "features": "image-buffer-ex,high-bit-depth,png,tiff; no defaults",
+  "git_head": "59082ef43ce53d4d8805b5285e5bf2e31aab2907",
+  "working_tree_dirty": false,
+  "scope": "six native/highres layouts, static legacy bridge, explicit encoder precision/PNG handoff, low-bit highres handoff, four independent LZW/PackBits TIFF fixtures with all pixels and short pixel limit",
+  "wasm_sha256": "6f91fa17685bedaced4c6065b9630a3f00035423837136d47c50ab4de26a4924",
+  "harness_sha256": "b0d652bab8e536915565c564401a5fc62cb893d27175b3027f4ffc45507dc3f8",
+  "helper_sha256": "78bebf3a4cf5d2211b2219288c57b6d394b9413e6b945e2cfca1bab7394d78b1",
+  "source_sha256": {
+    "wml2/src/image_buffer_ex.rs": "382debb26934affa4c0f59f015df9ca1e42725ec5dfc8945643d9f651000d0d4",
+    "wml2/src/draw.rs": "af51e10bdbe99e5b6616d632f9a97a002b2916205f79e2fde78603b970fa6ed4",
+    "wml2/src/decode_guard.rs": "688966093b2b5009fb693a2a2e5ca68c2411de3deccbb617f5420ca265cf45f2",
+    "wml2/src/png/decoder.rs": "182feda26c6c32c9eb25c94e2d1124d36d47b69a6b3e9e3eddfc41a91db0be0a",
+    "wml2/src/tiff/decoder/ex.rs": "fa6220d5afaa0851ce59c0568083f5443b4616792a01d2a33a5da041df1e8e99"
+  },
+  "fixture_sha256": {
+    "ex-gray16-lzw.tif": "73962aec4bfb500c4521ad72ff0b0e2ee1529d158d3670c3b834ea292b3ed576",
+    "ex-gray16-packbits.tif": "bd6292d382494d1226d466e9d20b4adc29f74306140e8b2696a6014b0a9593f1",
+    "ex-gray8-lzw.tif": "c319f03575609ae0369b57d3e6d4b064a5f1e83e6d51cf3d48bcfed543ae2555",
+    "ex-gray8-packbits.tif": "942ab09aac6408e9fcd3a483936d5867c3297c2272448831110958c0f31e2280"
+  },
+  "initial_probe_note": "Earlier standalone smoke harness initially misstated existing TIFF dimensions/pattern; corrected to generator/manifest. Final committed portable helper passes all13 without production changes."
+}

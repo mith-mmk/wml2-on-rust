@@ -108,6 +108,12 @@ for 28 reference images. See the [Q4 validation record](docs/q4-status.md).
 
 ## ImageBufferEx
 
+Repository builds can enable the non-default `image-buffer-ex` feature.
+[Current support and precision/compatibility contracts](docs/image-buffer-ex.md)
+cover checked Gray/RGBA8/12/16 storage, native borrowed pixels, explicit conversion,
+static PNG/TIFF source declarations and legacy encoder views. This branch work
+has not been released; WML2 remains 0.0.35.
+
 With `image-buffer-ex`, `draw::ImageBufferEx` stores bytes in `PixelFormatEx`:
 Gray8/12/16 or Rgba8/12/16 (straight alpha), defaulting to Rgba8. Twelve- and
 sixteen-bit samples occupy two little-endian bytes; twelve-bit values must

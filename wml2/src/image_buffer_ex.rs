@@ -416,6 +416,64 @@ impl ImageBufferEx {
         self.buffer.as_deref()
     }
 
+    /// Incoming draw layout from the last successful initialization, or the
+    /// supplied layout of `from_bytes`. This is not the encoded file's color
+    /// type: codecs may expand RGB, palettes or packed Gray before drawing.
+    /// Returns None before initialization or after a failed initialization.
+    pub fn source_format(&self) -> Option<PixelFormatEx> {
+        self.buffer.as_ref().map(|_| self.source_format)
+    }
+
+    /// Explicit incoming stride per draw rectangle; None means packed for
+    /// that rectangle's width. Meaningful while `source_format()` is Some;
+    /// `from_bytes` retains its storage stride but subsequent draws are packed.
+    /// This is independent of the stored canvas stride.
+    pub fn source_stride(&self) -> Option<usize> {
+        self.source_stride
+    }
+
+    /// The selected source-to-storage precision policy. Picker and legacy
+    /// encoder requests independently choose their own conversion policy.
+    pub fn precision_conversion(&self) -> PrecisionConversion {
+        self.conversion
+    }
+
+    /// Borrows one stored pixel without allocation, conversion or narrowing.
+    /// Interpret its bytes using `format()`: 12/16-bit samples are little-endian
+    /// and RGBA alpha is straight. Row padding is never returned. Coordinates
+    /// must lie inside the canvas; source canvas resource limits still apply.
+    pub fn pixel_bytes(&self, x: usize, y: usize) -> Result<&[u8], Error> {
+        let source = self.ex_pixels()?;
+        if x >= self.width || y >= self.height {
+            return Err(ex_error("EX pixel exceeds canvas"));
+        }
+        let length = self.format.bytes_per_pixel();
+        let offset = y
+            .checked_mul(self.stride)
+            .and_then(|row| {
+                x.checked_mul(length)
+                    .and_then(|column| row.checked_add(column))
+            })
+            .ok_or_else(|| ex_error("EX pixel offset overflow"))?;
+        let end = offset
+            .checked_add(length)
+            .ok_or_else(|| ex_error("EX pixel extent overflow"))?;
+        source
+            .get(offset..end)
+            .ok_or_else(|| ex_error("EX pixel storage is incomplete"))
+    }
+
+    /// Borrows this static canvas for existing RGBA8 encoders with an explicit
+    /// precision policy. Each requested rectangle is converted independently;
+    /// high-depth storage is retained and no whole-canvas RGBA8 copy is needed.
+    /// Exact conversion may fail when a requested sample is not representable.
+    pub fn legacy_picker(&self, conversion: PrecisionConversion) -> LegacyPickAdapterEx<'_> {
+        LegacyPickAdapterEx {
+            image: self,
+            conversion,
+        }
+    }
+
     fn initialize(&mut self, width: usize, height: usize, option: InitOptionsEx) -> Response {
         // Failed initialization invalidates the old callback target.
         self.buffer = None;
@@ -508,6 +566,90 @@ impl ImageBufferEx {
             PixelOutputEx::new(format, conversion),
         )?
         .into_bytes())
+    }
+}
+
+/// A checked static legacy RGBA8 buffer can transfer ownership into EX without
+/// copying its pixels. Background and callback metadata are retained. The
+/// publicly mutable dimensions and exact byte length are validated afresh.
+/// Animation/frame/timing state is rejected rather than silently discarded.
+/// The dormant zero loop count set by legacy static initialization is accepted.
+impl TryFrom<ImageBuffer> for ImageBufferEx {
+    type Error = Error;
+
+    fn try_from(mut image: ImageBuffer) -> Result<Self, Error> {
+        if image.animation.is_some()
+            || image.current.is_some()
+            || image.loop_count.is_some_and(|count| count != 0)
+            || image.first_wait_time.is_some()
+        {
+            return Err(ex_error(
+                "EX legacy bridge requires static pixels without animation state",
+            ));
+        }
+        image.ex_pixels()?;
+        let mut target = Self::from_bytes(
+            image.width,
+            image.height,
+            PixelFormatEx::Rgba8,
+            None,
+            image
+                .buffer
+                .take()
+                .ok_or_else(|| ex_error("EX buffer is not initialized"))?,
+        )?;
+        target.background_color = image.background_color;
+        target.metadata = image.metadata;
+        Ok(target)
+    }
+}
+
+/// Explicit RGBA8 encoder view of an EX canvas. Obtained from `legacy_picker`;
+/// it implements the unchanged legacy PickCallback and never mutates storage.
+/// Rectangles must be nonempty and fully inside the canvas, as for EX picking.
+pub struct LegacyPickAdapterEx<'a> {
+    image: &'a ImageBufferEx,
+    conversion: PrecisionConversion,
+}
+
+impl PickCallback for LegacyPickAdapterEx<'_> {
+    fn encode_start(&mut self, _: Option<EncoderOptions>) -> Result<Option<ImageProfiles>, Error> {
+        self.image.ex_pixels()?;
+        Ok(Some(ImageProfiles {
+            width: self.image.width,
+            height: self.image.height,
+            background: self.image.background_color.clone(),
+            metadata: self.image.metadata.clone(),
+        }))
+    }
+
+    fn encode_pick(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+        _: Option<PickOptions>,
+    ) -> Result<Option<Vec<u8>>, Error> {
+        Ok(Some(
+            pick_region(
+                self.image.ex_pixels()?,
+                (self.image.width, self.image.height),
+                (self.image.format, self.image.stride),
+                (x, y),
+                (width, height),
+                PixelOutputEx::new(PixelFormatEx::Rgba8, self.conversion),
+            )?
+            .into_bytes(),
+        ))
+    }
+
+    fn encode_end(&mut self, _: Option<EndOptions>) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn metadata(&mut self) -> Result<Option<HashMap<String, DataMap>>, Error> {
+        Ok(self.image.metadata.clone())
     }
 }
 impl DrawCallback for ImageBufferEx {
@@ -871,8 +1013,11 @@ impl ImageBufferEx {
         use crate::highres::{
             AlphaAssociation, ChannelModel, ChannelRole, PixelBuffer, Subsampling,
         };
-        frame.validate()?;
         let descriptor = frame.descriptor();
+        let width = usize::try_from(descriptor.width())?;
+        let height = usize::try_from(descriptor.height())?;
+        check_pixel_budget(width, height)?;
+        frame.validate()?;
         let gray = descriptor.model() == ChannelModel::Gray
             && descriptor.alpha() == AlphaAssociation::None;
         let rgba = descriptor.model() == ChannelModel::RGB
@@ -915,8 +1060,6 @@ impl ImageBufferEx {
                 ChannelRole::Alpha,
             ]
         };
-        let width = usize::try_from(descriptor.width())?;
-        let height = usize::try_from(descriptor.height())?;
         let (_, length) = format.extent(width, height, None)?;
         crate::limits::check(
             length,
@@ -1022,6 +1165,41 @@ impl ImageBufferEx {
 #[cfg(test)]
 mod conversion_budget_tests {
     use super::*;
+    #[cfg(feature = "high-bit-depth")]
+    #[test]
+    fn highres_import_checks_pixel_budget_before_scanning_or_copying() {
+        use crate::highres::{ImageDescriptor, ImageFrame, PixelBuffer, Plane};
+        let descriptor = ImageDescriptor::gray(2, 1, 12).unwrap();
+        let pixels = PixelBuffer::u16(vec![
+            Plane::new(descriptor.planes()[0].layout().clone(), vec![1, 4095]).unwrap(),
+        ])
+        .unwrap();
+        let mut frame = ImageFrame::new(descriptor, pixels).unwrap();
+        crate::limits::scope(
+            crate::limits::DecodeLimits {
+                pixels: 1,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || {
+                let error = ImageBufferEx::from_highres_pixels(&frame).err().unwrap();
+                assert!(error.to_string().contains("EX pixels"));
+            },
+        );
+        // Malformed samples would be scanned by validate: the pixel limit must
+        // take precedence, demonstrating it is checked before the copy phase.
+        frame.pixels_mut().u16_planes_mut().unwrap()[0].samples_mut()[1] = 0xf000;
+        crate::limits::scope(
+            crate::limits::DecodeLimits {
+                pixels: 1,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || {
+                let error = ImageBufferEx::from_highres_pixels(&frame).err().unwrap();
+                assert!(error.to_string().contains("EX pixels"));
+            },
+        );
+        assert!(ImageBufferEx::from_highres_pixels(&frame).is_err());
+    }
     #[test]
     fn converter_and_pickers_enforce_source_output_and_canvas_budgets() {
         let mut image =
@@ -1039,6 +1217,19 @@ mod conversion_budget_tests {
                 assert!(error.to_string().contains("source"));
                 assert!(image.encode_start_ex(None).is_err());
                 assert!(image.encode_pick_ex(0, 0, 1, 1, output, None).is_err());
+                assert!(image.pixel_bytes(0, 0).is_err());
+                assert!(
+                    image
+                        .legacy_picker(PrecisionConversion::Round)
+                        .encode_start(None)
+                        .is_err()
+                );
+                assert!(
+                    image
+                        .legacy_picker(PrecisionConversion::Round)
+                        .encode_pick(0, 0, 1, 1, None)
+                        .is_err()
+                );
                 legacy.encode_start_ex(None).unwrap();
                 legacy.encode_pick_ex(0, 0, 1, 1, output, None).unwrap();
                 let error = convert_pixels_ex(
@@ -1066,6 +1257,16 @@ mod conversion_budget_tests {
                 assert!(image.encode_pick_ex(0, 0, 1, 1, output, None).is_err());
                 assert!(legacy.encode_start_ex(None).is_err());
                 assert!(legacy.encode_pick_ex(0, 0, 1, 1, output, None).is_err());
+                assert!(image.pixel_bytes(0, 0).is_err());
+                assert!(
+                    image
+                        .legacy_picker(PrecisionConversion::Round)
+                        .encode_start(None)
+                        .is_err()
+                );
+                assert!(
+                    ImageBufferEx::try_from(ImageBuffer::from_buffer(2, 1, vec![0; 8])).is_err()
+                );
             },
         );
         // A scoped failure doesn't alter the stored pixels or future validity.

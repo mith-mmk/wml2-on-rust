@@ -77,6 +77,23 @@ fn main() {
         .unwrap_or(7);
     println!("case,iteration,ns,allocations,allocated_bytes,peak_live_bytes,first_draw_ns,hash");
     #[cfg(feature = "image-buffer-ex")]
+    if mode == "decode-ex-file" {
+        let encoded = std::fs::read(
+            std::env::args()
+                .nth(3)
+                .expect("decode-ex-file <repeat> <path>"),
+        )
+        .unwrap();
+        for i in 0..repeat {
+            measure("decode-ex-file", i, || {
+                let image =
+                    image_from_ex(&encoded, PixelFormatEx::Rgba16, PrecisionConversion::Exact)
+                        .unwrap();
+                (hash(image.bytes().unwrap()), 0)
+            });
+        }
+    }
+    #[cfg(feature = "image-buffer-ex")]
     if mode == "ex-view" {
         let (width, height) = (1024, 768);
         let pixels: Vec<u8> = (0..width * height)

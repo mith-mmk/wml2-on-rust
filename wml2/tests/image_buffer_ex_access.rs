@@ -3,6 +3,35 @@ use wml2::color::RGBA;
 use wml2::draw::*;
 use wml2::metadata::DataMap;
 
+#[cfg(feature = "tiff")]
+#[test]
+fn independent_tiff_source_declaration_and_all_native_low_bits_are_accessible() {
+    let input = include_bytes!("fixtures/ex-access-rgba16.tif");
+    let image = image_from_ex(input, PixelFormatEx::Rgba16, PrecisionConversion::Exact).unwrap();
+    assert_eq!((image.width(), image.height()), (65, 33));
+    assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba16));
+    assert_eq!(image.source_stride(), None);
+    for y in 0..33 {
+        for x in 0..65 {
+            let expected = [
+                (x * 997 + y * 137 + 1) % 65536,
+                (x * 337 + y * 2003 + 129) % 65536,
+                (x * 503 + y * 719 + 32768) % 65536,
+                65535,
+            ];
+            let bytes: Vec<_> = expected
+                .iter()
+                .flat_map(|v| (*v as u16).to_le_bytes())
+                .collect();
+            assert_eq!(image.pixel_bytes(x, y).unwrap(), bytes);
+        }
+    }
+    assert_eq!(
+        image.pixel_bytes(0, 0).unwrap(),
+        &[1, 0, 129, 0, 0, 128, 255, 255]
+    );
+}
+
 #[test]
 fn incoming_declaration_is_distinct_from_storage_and_invalidated_on_failure() {
     let mut image = ImageBufferEx::with_storage(PixelFormatEx::Rgba16, PrecisionConversion::Round);

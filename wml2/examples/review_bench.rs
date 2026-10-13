@@ -44,7 +44,13 @@ unsafe impl GlobalAlloc for Meter {
 }
 #[global_allocator]
 static ALLOCATOR: Meter = Meter;
-#[cfg(any(feature = "jpeg", feature = "webp", feature = "png", feature = "tiff"))]
+#[cfg(any(
+    feature = "jpeg",
+    feature = "webp",
+    feature = "png",
+    feature = "tiff",
+    feature = "image-buffer-ex"
+))]
 fn hash(data: &[u8]) -> u64 {
     data.iter().fold(0xcbf29ce484222325, |h, b| {
         (h ^ u64::from(*b)).wrapping_mul(0x100000001b3)
@@ -70,6 +76,39 @@ fn main() {
         .and_then(|v| v.parse().ok())
         .unwrap_or(7);
     println!("case,iteration,ns,allocations,allocated_bytes,peak_live_bytes,first_draw_ns,hash");
+    #[cfg(feature = "image-buffer-ex")]
+    if mode == "ex-view" {
+        let (width, height) = (1024, 768);
+        let pixels: Vec<u8> = (0..width * height)
+            .flat_map(|i| {
+                [
+                    (i * 997 + 1) as u16,
+                    (i * 337 + 129) as u16,
+                    (i * 503 + 32768) as u16,
+                    65535,
+                ]
+                .into_iter()
+                .flat_map(u16::to_le_bytes)
+            })
+            .collect();
+        let image =
+            ImageBufferEx::from_bytes(width, height, PixelFormatEx::Rgba16, None, pixels).unwrap();
+        for i in 0..repeat {
+            measure("ex-copy-then-pick-row", i, || {
+                let mut legacy = image.to_rgba8(PrecisionConversion::Round).unwrap();
+                let bytes = legacy.encode_pick(0, 0, width, 1, None).unwrap().unwrap();
+                (hash(&bytes), 0)
+            });
+            measure("ex-borrowed-pick-row", i, || {
+                let bytes = image
+                    .legacy_picker(PrecisionConversion::Round)
+                    .encode_pick(0, 0, width, 1, None)
+                    .unwrap()
+                    .unwrap();
+                (hash(&bytes), 0)
+            });
+        }
+    }
     #[cfg(any(feature = "png", feature = "tiff"))]
     if mode == "decode-file" {
         let path = std::env::args()

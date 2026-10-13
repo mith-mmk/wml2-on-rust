@@ -1,0 +1,144 @@
+{
+  "baseline_git": "a25cb29e653bb968824cd4e6671464448eba430a",
+  "candidate_runtime_git": "93ebfe1eb08add242fb09f5f1d3b6b82bd647a9c",
+  "measurement_helper_worktree_change_only": true,
+  "identical_helper_on_both_versions": true,
+  "measurement_helper_sha256": "53dc2b29917393f0db29fb7ee6e6c056e8d9bb84003e848e7bb694906ec74fab",
+  "cpu_affinity": 0,
+  "order": [
+    "baseline",
+    "current",
+    "current",
+    "baseline",
+    "current",
+    "baseline"
+  ],
+  "processes_per_version": 3,
+  "warmups_per_process": 10,
+  "timed_per_process": 1000,
+  "measurement": "per-call body walltime; fixedCPU, no concurrent CPU jobs; default+EX/highbit/png/tiff on both",
+  "binary_sha256": {
+    "tiff-review-a25-bench": "97b11c520caf2b23f5802906d7f4711dfa6f32a0113664e54bafe3f31e1f17c8",
+    "tiff-review-bench": "74b225537248625758ee23c018e850c2a6d98b92e90c5d5fdddff4a4a918c97d"
+  },
+  "summary": [
+    {
+      "mode": "decode-ex-file",
+      "input": "ex-gray16-lzw.tif",
+      "baseline_us": 356.260504,
+      "current_us": 282.39538799999997,
+      "change_percent": -20.733456324981802,
+      "output_hashes_match": true,
+      "allocated_bytes": {
+        "baseline": 247938,
+        "current": 247938
+      },
+      "median_us": {
+        "baseline": 218.797,
+        "current": 220.4415
+      },
+      "process_mean_us": {
+        "baseline": [
+          456.34376000000003,
+          316.98623,
+          295.451522
+        ],
+        "current": [
+          327.592098,
+          259.347032,
+          260.24703400000004
+        ]
+      }
+    },
+    {
+      "mode": "decode-ex-file",
+      "input": "ex-gray8-packbits.tif",
+      "baseline_us": 53.995271,
+      "current_us": 57.04580966666667,
+      "change_percent": 5.649640441042814,
+      "output_hashes_match": true,
+      "allocated_bytes": {
+        "baseline": 26954,
+        "current": 26954
+      },
+      "median_us": {
+        "baseline": 37.995,
+        "current": 37.9405
+      },
+      "process_mean_us": {
+        "baseline": [
+          52.016499,
+          53.190366999999995,
+          56.778947
+        ],
+        "current": [
+          50.899708,
+          50.633292000000004,
+          69.60442900000001
+        ]
+      }
+    },
+    {
+      "mode": "decode-ex-file",
+      "input": "ex-access-rgba16.tif",
+      "baseline_us": 164.55403,
+      "current_us": 165.67352966666667,
+      "change_percent": 0.6803234576914674,
+      "output_hashes_match": true,
+      "allocated_bytes": {
+        "baseline": 175803,
+        "current": 175803
+      },
+      "median_us": {
+        "baseline": 131.192,
+        "current": 131.45
+      },
+      "process_mean_us": {
+        "baseline": [
+          173.07282,
+          157.436745,
+          163.152525
+        ],
+        "current": [
+          157.851566,
+          158.80035500000002,
+          180.368668
+        ]
+      }
+    },
+    {
+      "mode": "decode-file",
+      "input": "ex-gray16-lzw.tif",
+      "baseline_us": 289.84802033333335,
+      "current_us": 230.14688333333334,
+      "change_percent": -20.597393396491736,
+      "output_hashes_match": true,
+      "allocated_bytes": {
+        "baseline": 247322,
+        "current": 247322
+      },
+      "median_us": {
+        "baseline": 203.5265,
+        "current": 191.737
+      },
+      "process_mean_us": {
+        "baseline": [
+          231.919419,
+          262.900381,
+          374.724261
+        ],
+        "current": [
+          230.15259099999997,
+          226.13253,
+          234.155529
+        ]
+      }
+    }
+  ],
+  "scope": "paired existingFillOrder1 paths; baselinecannotcorrectlydecodecanonicalFillOrder2, newpathcoverage comesfrompixel/oracle tests",
+  "limitations": "Sharedhost timings notcrosshost guarantee; everyrawrowretained",
+  "raw_rows": 24240,
+  "raw_artifact": "image-buffer-ex-tiff-benchmark-raw.json.gz",
+  "raw_sha256": "4b196026d65057ff29c910146a3766cf9956a9c5992801e9baa66e727f766266",
+  "compressed_sha256": "1cd377298f69aa9b8258bf8f2df2276c51f13e3ce8450b9ea7e21c5a6856137a"
+}

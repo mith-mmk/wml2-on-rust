@@ -135,12 +135,20 @@ subsampling, alpha models and color transforms need separate scoped decisions.
 
 ## Validation and reproduction
 
-The [final validation record](image-buffer-ex-validation.json) preserves source,
+The [TIFF follow-up](image-buffer-ex-tiff-review.md) and its
+[current validation record](image-buffer-ex-tiff-validation.json) document the
+FillOrder fix, SampleFormat rejection contract, 408 passing workspace tests,
+82 actual WASM groups and 54 exact native oracle exports. Production TIFF
+source matches `93ebfe1`; the clean measurement/WASM checkpoint is `637dec1`.
+The original supplied review ZIP could not be downloaded through Library;
+the follow-up distinguishes that gap from independently executed equivalents.
+
+The [initial continuation validation record](image-buffer-ex-validation.json) preserves source,
 fixture/helper/output hashes and links independent review and raw measurements.
 Final native runtime source matches clean checkpoint
 `59082ef43ce53d4d8805b5285e5bf2e31aab2907`; later evidence changes do not modify
 production code. Historical EX branch results are not counted as newly executed
-tests. Current local results:
+tests. Initial continuation results (before the TIFF follow-up):
 
 | Configuration / check | Result |
 | --- | --- |

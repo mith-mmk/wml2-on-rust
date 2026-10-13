@@ -1,0 +1,1198 @@
+{
+  "oracle_library": "libtiff.so.6",
+  "oracle_version": "LIBTIFF, Version 4.7.0\nCopyright (c) 1988-1996 Sam Leffler\nCopyright (c) 1991-1996 Silicon Graphics, Inc.",
+  "oracle_api": "TIFFReadScanline",
+  "count": 54,
+  "standard_cases": 48,
+  "canonical_old_lsb_cases": 6,
+  "cases": [
+    {
+      "file": "ex-review-fill1-gray8-le-raw-p1.tif",
+      "sha256": "d513fd28c6f147f54cc4c03ddee51f4aa9a27206fb554aa44200b3d3c876a3ff",
+      "depth": 8,
+      "endian": "le",
+      "codec": "raw",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-raw-p1.tif",
+      "sha256": "25461a1b0e343600b616539573382804fe9d83b9ffa3541c2469b2d17480a083",
+      "depth": 8,
+      "endian": "le",
+      "codec": "raw",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-le-packbits-p1.tif",
+      "sha256": "9e160e82781a361fa59d3841f4b01c1ae9775de40e3e63c7a363dc05d2d66c72",
+      "depth": 8,
+      "endian": "le",
+      "codec": "packbits",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-packbits-p1.tif",
+      "sha256": "f063a656b46597a4fa8c53cbf53a64e0929cd7778068ddcfc824ce10227dd0a2",
+      "depth": 8,
+      "endian": "le",
+      "codec": "packbits",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-le-lzw-p1.tif",
+      "sha256": "55b4cf43fa40811bf2faf39ee146b32f86c7a82d814870d37e0d68a732a4447c",
+      "depth": 8,
+      "endian": "le",
+      "codec": "lzw",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-lzw-p1.tif",
+      "sha256": "96b1885832b6fba38538befddf97a57f26d57573568957d47fedd85ad8d564eb",
+      "depth": 8,
+      "endian": "le",
+      "codec": "lzw",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-le-lzw-p2.tif",
+      "sha256": "2c670230e907a9c014336a9c407783ff93cc2ce0caf45624c4f043b55aeff82b",
+      "depth": 8,
+      "endian": "le",
+      "codec": "lzw",
+      "predictor": 2,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-lzw-p2.tif",
+      "sha256": "b56e05f9a204f4e9c5bcd6ead197f90fb68370bcdbb6141522fff5c5dbfa5da2",
+      "depth": 8,
+      "endian": "le",
+      "codec": "lzw",
+      "predictor": 2,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-le-deflate-p1.tif",
+      "sha256": "030c593ffb088a409ec6d9fd9597615ee2fb481217dfde14802182fb60fe4e17",
+      "depth": 8,
+      "endian": "le",
+      "codec": "deflate",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-deflate-p1.tif",
+      "sha256": "38edacef1dad0f291ec58e762047c703bf7c3473cac23682397e66bb26cfb2d7",
+      "depth": 8,
+      "endian": "le",
+      "codec": "deflate",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-le-deflate-p2.tif",
+      "sha256": "bc1963b3428d0792bf5a21e1f7fca2dd0ee798af68ad9ef6c3ba954f78b6d8b4",
+      "depth": 8,
+      "endian": "le",
+      "codec": "deflate",
+      "predictor": 2,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-deflate-p2.tif",
+      "sha256": "8a1155c6ee9dccb012b93647ac5f1abd3c60a9003eae2e74a35c518d452b2809",
+      "depth": 8,
+      "endian": "le",
+      "codec": "deflate",
+      "predictor": 2,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-be-raw-p1.tif",
+      "sha256": "c53e4f2292cc2d04ed8aa5d94b29c79cb27a2a8cc5b6e5bfb2980c31a01bf7c9",
+      "depth": 8,
+      "endian": "be",
+      "codec": "raw",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-be-raw-p1.tif",
+      "sha256": "10f4dfea19328dc1330d3ba1c80cb226c52e974c04bbc06874eb49639eca6bda",
+      "depth": 8,
+      "endian": "be",
+      "codec": "raw",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-be-packbits-p1.tif",
+      "sha256": "22517ffecc293d18787c3ec30c0c7ccd5a21317501afa3ceddb47eccab9b4dbe",
+      "depth": 8,
+      "endian": "be",
+      "codec": "packbits",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-be-packbits-p1.tif",
+      "sha256": "e2d60576a1d024574adccc5956fae673a35f18be65256d20f9f972f409073107",
+      "depth": 8,
+      "endian": "be",
+      "codec": "packbits",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-be-lzw-p1.tif",
+      "sha256": "e5b75d5c5cd1e1ba94e85c9ff392b83f71260bc4c85a099df918705cb0ea4166",
+      "depth": 8,
+      "endian": "be",
+      "codec": "lzw",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-be-lzw-p1.tif",
+      "sha256": "ebb5c0cc1d9cbbf49b1546efd27e9dfa2faf2bb7d7fd531dee27ff675e0b38aa",
+      "depth": 8,
+      "endian": "be",
+      "codec": "lzw",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-be-lzw-p2.tif",
+      "sha256": "2346778f0faefe234d9471361d68c14783f464eb1456b27ceda7b9353445bbe1",
+      "depth": 8,
+      "endian": "be",
+      "codec": "lzw",
+      "predictor": 2,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-be-lzw-p2.tif",
+      "sha256": "80da61075b3956853d3e8b3896bb24d9d1ba0dcfc129c8fab1f5973367f62097",
+      "depth": 8,
+      "endian": "be",
+      "codec": "lzw",
+      "predictor": 2,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-be-deflate-p1.tif",
+      "sha256": "ec4c764cc6a147c1d9c0c33f879efb6e2c3d320c55e44d703ca1cf6f0c6c03a2",
+      "depth": 8,
+      "endian": "be",
+      "codec": "deflate",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-be-deflate-p1.tif",
+      "sha256": "0806085e11d25d5073e4fd787d07353da7ab7c1dbdea315e697535828d7e1ad5",
+      "depth": 8,
+      "endian": "be",
+      "codec": "deflate",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray8-be-deflate-p2.tif",
+      "sha256": "1e49e19b68f18c77178aac73e61cb20fbb79681630df0af40afedc85d2199214",
+      "depth": 8,
+      "endian": "be",
+      "codec": "deflate",
+      "predictor": 2,
+      "fill_order": 1,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-be-deflate-p2.tif",
+      "sha256": "c78f94f6bd17af7edc3011641e30212e094b51906c81637aa32da142dc11e900",
+      "depth": 8,
+      "endian": "be",
+      "codec": "deflate",
+      "predictor": 2,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-le-raw-p1.tif",
+      "sha256": "6131760de2e0139ecfa78f59fb7fd63b5b2030c90799a1fa9a581912be50c78a",
+      "depth": 16,
+      "endian": "le",
+      "codec": "raw",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-le-raw-p1.tif",
+      "sha256": "17ad7959ad784f3ef9970db0cd546c0569382877878eb133ee278a2d798e9ad2",
+      "depth": 16,
+      "endian": "le",
+      "codec": "raw",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-le-packbits-p1.tif",
+      "sha256": "210750210b00d2d245d64b9d45d4d6ea60d7939ecf3f7bb9735fb33f94a1cfa7",
+      "depth": 16,
+      "endian": "le",
+      "codec": "packbits",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-le-packbits-p1.tif",
+      "sha256": "a805c17412a35de7fb323aaf0bafaa167cbbc274ddd952230d2414627c5eec1d",
+      "depth": 16,
+      "endian": "le",
+      "codec": "packbits",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-le-lzw-p1.tif",
+      "sha256": "ebcac26178e426b5a7ee8b8d57c5d93bf86a269eaddf64e8c6cc5567c091c427",
+      "depth": 16,
+      "endian": "le",
+      "codec": "lzw",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-le-lzw-p1.tif",
+      "sha256": "004ced67c3e8949e49fc05ac80e8e1bd61e36640c7652305495c1075fc98aad6",
+      "depth": 16,
+      "endian": "le",
+      "codec": "lzw",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-le-lzw-p2.tif",
+      "sha256": "cac600e63bf2560617c4eb2219f9d9686f876eeef7b7c433d1a3ee4ce5b3d8fc",
+      "depth": 16,
+      "endian": "le",
+      "codec": "lzw",
+      "predictor": 2,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-le-lzw-p2.tif",
+      "sha256": "15ce20497b491c93524551bd7c6f6d35dbd0c45a3d4c339a3595551b19432c52",
+      "depth": 16,
+      "endian": "le",
+      "codec": "lzw",
+      "predictor": 2,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-le-deflate-p1.tif",
+      "sha256": "e2045e5dd0c7de3d2d43f5ed6ed0faf8a5e7d9fb9b03e6edf33105b3754a1224",
+      "depth": 16,
+      "endian": "le",
+      "codec": "deflate",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-le-deflate-p1.tif",
+      "sha256": "28a5dad5028dc6b12c1eedb67568947238e2d02462990e6c1650205bca7f5bba",
+      "depth": 16,
+      "endian": "le",
+      "codec": "deflate",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-le-deflate-p2.tif",
+      "sha256": "8eb09991632884bae44addc364ef1cfcb301ad3258e658fab912f8bb2b74a68c",
+      "depth": 16,
+      "endian": "le",
+      "codec": "deflate",
+      "predictor": 2,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-le-deflate-p2.tif",
+      "sha256": "c3c61ac2cb4e03a2a44468d7af861f458a6b7d1cecf368fa283de4e2212dfddf",
+      "depth": 16,
+      "endian": "le",
+      "codec": "deflate",
+      "predictor": 2,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-be-raw-p1.tif",
+      "sha256": "206e41714bc7cd0572f8d61a7e08f03958342bb2b6f251eb78ae4a656012309e",
+      "depth": 16,
+      "endian": "be",
+      "codec": "raw",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-be-raw-p1.tif",
+      "sha256": "ed1798cf324f902b421afcfdac38606fca95863c44e106318874513edffb53c7",
+      "depth": 16,
+      "endian": "be",
+      "codec": "raw",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-be-packbits-p1.tif",
+      "sha256": "11e2e19a0408b46e8b70f0a9256272f404d9a561c5478fb26eaca264d7eaf89f",
+      "depth": 16,
+      "endian": "be",
+      "codec": "packbits",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-be-packbits-p1.tif",
+      "sha256": "4a73294d57894be4b16a19f68f78f2614845a1c294795f5954013ee5da9139c1",
+      "depth": 16,
+      "endian": "be",
+      "codec": "packbits",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-be-lzw-p1.tif",
+      "sha256": "a74e8cbc85d4ca1dcca02fd5e881e1af560e3799f556220299c1c5209e85cb38",
+      "depth": 16,
+      "endian": "be",
+      "codec": "lzw",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-be-lzw-p1.tif",
+      "sha256": "484e0566de3d400df043fcf8efc20a825abbc5240fef2d45645067c2a10eb9c3",
+      "depth": 16,
+      "endian": "be",
+      "codec": "lzw",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-be-lzw-p2.tif",
+      "sha256": "96ec021d7b41532976652a6222f0112f9dfe65bd592a28192533159d5874ccee",
+      "depth": 16,
+      "endian": "be",
+      "codec": "lzw",
+      "predictor": 2,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-be-lzw-p2.tif",
+      "sha256": "3c8d83ab785a4e0aa342b6ec69bfbd411a90a772f59bf287dfbe3070f5fe23ec",
+      "depth": 16,
+      "endian": "be",
+      "codec": "lzw",
+      "predictor": 2,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-be-deflate-p1.tif",
+      "sha256": "8faaa2b0f9a0d1ced665af7585b34c754c0e8128462b517d750559129f4db553",
+      "depth": 16,
+      "endian": "be",
+      "codec": "deflate",
+      "predictor": 1,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-be-deflate-p1.tif",
+      "sha256": "f6d6231ebbdc27d68f3e67d454096097b7a16c4867d79cb6bd7d2fdd69ddf9d4",
+      "depth": 16,
+      "endian": "be",
+      "codec": "deflate",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill1-gray16-be-deflate-p2.tif",
+      "sha256": "2c475f3c2f72fd326012aef07dca8f635f1a0d39c04e54355f1422d4b52e1f7b",
+      "depth": 16,
+      "endian": "be",
+      "codec": "deflate",
+      "predictor": 2,
+      "fill_order": 1,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray16-be-deflate-p2.tif",
+      "sha256": "0d46da70eaf2f6068b857d07ac8165151cd788217508e91c39768bd2d8a28ebf",
+      "depth": 16,
+      "endian": "be",
+      "codec": "deflate",
+      "predictor": 2,
+      "fill_order": 2,
+      "samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        4660,
+        32769,
+        65535
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-old-lsb-first1.tif",
+      "sha256": "6e60e48aab82277fcf0cc732472a9fe57a8d8201c4e9f90b65348f8791293981",
+      "depth": 8,
+      "endian": "le",
+      "codec": "old-lsb",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        1,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        1,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-old-lsb-first64.tif",
+      "sha256": "3779783770262c6e210a0ee06bc44a736ea8eb93af39491e4fd3cc79d8a025bb",
+      "depth": 8,
+      "endian": "le",
+      "codec": "old-lsb",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        64,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        64,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-old-lsb-first65.tif",
+      "sha256": "f2bd85c57beb086d3daa24bf046bac1d5b32b7d6c7b88785124b8d144853d2e3",
+      "depth": 8,
+      "endian": "le",
+      "codec": "old-lsb",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        65,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        65,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-old-lsb-first127.tif",
+      "sha256": "9182a17ff3b07dbb36201c8ebcf492b3c7a203acbf40034e5411728aa98fa363",
+      "depth": 8,
+      "endian": "le",
+      "codec": "old-lsb",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        127,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        127,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-old-lsb-first128.tif",
+      "sha256": "df425a1075f8193f19027ca88a1527a12aaa9c50f7a64e3742134ba14221b035",
+      "depth": 8,
+      "endian": "le",
+      "codec": "old-lsb",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        128,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        128,
+        2,
+        128,
+        255
+      ]
+    },
+    {
+      "file": "ex-review-fill2-gray8-le-old-lsb-first255.tif",
+      "sha256": "8ea1c1d9e7b6302dfa880b83ece1831ba8ac9aa79940ccb88b21664bd5e9484e",
+      "depth": 8,
+      "endian": "le",
+      "codec": "old-lsb",
+      "predictor": 1,
+      "fill_order": 2,
+      "samples": [
+        255,
+        2,
+        128,
+        255
+      ],
+      "oracle_status": 1,
+      "oracle_samples": [
+        255,
+        2,
+        128,
+        255
+      ]
+    }
+  ]
+}

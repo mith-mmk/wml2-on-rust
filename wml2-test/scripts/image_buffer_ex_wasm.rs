@@ -170,5 +170,623 @@ pub extern "C" fn verify_ex() -> u32 {
         }
         count += 1;
     }
+    for (input, format, expected) in REVIEW_FILL {
+        let image = image_from_ex(input, *format, PrecisionConversion::Exact).unwrap();
+        let bytes: Vec<u8> = if format.bits() == 8 {
+            expected.iter().map(|v| *v as u8).collect()
+        } else {
+            expected.iter().flat_map(|v| v.to_le_bytes()).collect()
+        };
+        assert_eq!(image.bytes().unwrap(), bytes);
+        if format.bits() == 16 {
+            let native =
+                wml2::highres::tiff::decode_native(input, &DecodeLimits::default()).unwrap();
+            assert_eq!(
+                native.pixels().u16_planes().unwrap()[0].samples(),
+                *expected
+            );
+        }
+        count += 1;
+    }
+    for (input, accept, expected) in REVIEW_SAMPLE_FORMAT {
+        let result = image_from_ex(input, PixelFormatEx::Gray16, PrecisionConversion::Exact);
+        if *accept {
+            let bytes: Vec<u8> = expected.iter().flat_map(|v| v.to_le_bytes()).collect();
+            assert_eq!(result.unwrap().bytes().unwrap(), bytes);
+        } else {
+            assert!(
+                result
+                    .err()
+                    .unwrap()
+                    .to_string()
+                    .contains("non-unsigned SampleFormat")
+            );
+        }
+        count += 1;
+    }
+    for encoder in [
+        wml2::encoder::lzw::encode_tiff_libtiff_compat,
+        wml2::encoder::lzw::encode_tiff_wml2_lsb,
+    ] {
+        for depth in [8u8, 16] {
+            for be in [false, true] {
+                let input = REVIEW_FILL
+                    .iter()
+                    .find(|(bytes, format, _)| {
+                        format.bits() == depth
+                            && bytes[0] == if be { b'M' } else { b'I' }
+                            && field_value(bytes, 259, be) == 5
+                            && field_value(bytes, 266, be) == 2
+                            && field_value(bytes, 317, be) == 0
+                    })
+                    .unwrap();
+                let raw: Vec<u8> = if depth == 8 {
+                    input.2.iter().map(|v| *v as u8).collect()
+                } else {
+                    input
+                        .2
+                        .iter()
+                        .flat_map(|v| if be { v.to_be_bytes() } else { v.to_le_bytes() })
+                        .collect()
+                };
+                let compressed = encoder(&raw).unwrap();
+                let mut modified = input.0[..field_value(input.0, 273, be) as usize].to_vec();
+                let offset = field_offset(&modified, 279, be).unwrap();
+                let size = compressed.len() as u32;
+                modified[offset + 8..offset + 12].copy_from_slice(&if be {
+                    size.to_be_bytes()
+                } else {
+                    size.to_le_bytes()
+                });
+                modified.extend(compressed);
+                let image = image_from_ex(&modified, input.1, PrecisionConversion::Exact).unwrap();
+                let expected: Vec<u8> = if depth == 8 {
+                    input.2.iter().map(|v| *v as u8).collect()
+                } else {
+                    input.2.iter().flat_map(|v| v.to_le_bytes()).collect()
+                };
+                assert_eq!(image.bytes().unwrap(), expected);
+                count += 1;
+            }
+        }
+    }
+    let collision = REVIEW_FILL
+        .iter()
+        .find(|(_, _, v)| *v == [64, 2, 128, 255])
+        .unwrap();
+    assert!(
+        image_from_ex_with_limits(
+            collision.0,
+            PixelFormatEx::Gray8,
+            PrecisionConversion::Exact,
+            DecodeLimits {
+                expanded_bytes: 8,
+                ..DecodeLimits::unlimited()
+            }
+        )
+        .is_err()
+    );
+    assert_eq!(
+        image_from_ex(
+            collision.0,
+            PixelFormatEx::Gray8,
+            PrecisionConversion::Exact
+        )
+        .unwrap()
+        .bytes()
+        .unwrap(),
+        [64, 2, 128, 255]
+    );
+    count += 1;
     count
 }
+
+fn word16(data: &[u8], be: bool) -> u16 {
+    if be {
+        u16::from_be_bytes(data.try_into().unwrap())
+    } else {
+        u16::from_le_bytes(data.try_into().unwrap())
+    }
+}
+fn field_offset(data: &[u8], tag: u16, be: bool) -> Option<usize> {
+    (0..word16(&data[8..10], be) as usize)
+        .map(|i| 10 + i * 12)
+        .find(|i| word16(&data[*i..*i + 2], be) == tag)
+}
+fn field_value(data: &[u8], tag: u16, be: bool) -> u32 {
+    let Some(i) = field_offset(data, tag, be) else {
+        return 0;
+    };
+    if word16(&data[i + 2..i + 4], be) == 3 {
+        word16(&data[i + 8..i + 10], be) as u32
+    } else if be {
+        u32::from_be_bytes(data[i + 8..i + 12].try_into().unwrap())
+    } else {
+        u32::from_le_bytes(data[i + 8..i + 12].try_into().unwrap())
+    }
+}
+
+const REVIEW_FILL: &[(&[u8], PixelFormatEx, &[u16])] = &[
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-le-raw-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-raw-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-le-packbits-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-packbits-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-le-lzw-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-lzw-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-le-lzw-p2.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-lzw-p2.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-le-deflate-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-deflate-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-le-deflate-p2.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-deflate-p2.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-be-raw-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-be-raw-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-be-packbits-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-be-packbits-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-be-lzw-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-be-lzw-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-be-lzw-p2.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-be-lzw-p2.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-be-deflate-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-be-deflate-p1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray8-be-deflate-p2.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-be-deflate-p2.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-le-raw-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-le-raw-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-le-packbits-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-le-packbits-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-le-lzw-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-le-lzw-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-le-lzw-p2.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-le-lzw-p2.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-le-deflate-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-le-deflate-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-le-deflate-p2.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-le-deflate-p2.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-be-raw-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-be-raw-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-be-packbits-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-be-packbits-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-be-lzw-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-be-lzw-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-be-lzw-p2.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-be-lzw-p2.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-be-deflate-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-be-deflate-p1.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill1-gray16-be-deflate-p2.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray16-be-deflate-p2.tif"
+        )),
+        PixelFormatEx::Gray16,
+        &[1, 4660, 32769, 65535],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-old-lsb-first1.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[1, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-old-lsb-first64.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[64, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-old-lsb-first65.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[65, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-old-lsb-first127.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[127, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-old-lsb-first128.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[128, 2, 128, 255],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-fill2-gray8-le-old-lsb-first255.tif"
+        )),
+        PixelFormatEx::Gray8,
+        &[255, 2, 128, 255],
+    ),
+];
+const REVIEW_SAMPLE_FORMAT: &[(&[u8], bool, &[u16])] = &[
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-sampleformat-signed8.tif"
+        )),
+        false,
+        &[],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-sampleformat-signed16.tif"
+        )),
+        false,
+        &[],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-sampleformat-float16.tif"
+        )),
+        false,
+        &[],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-sampleformat-float32.tif"
+        )),
+        false,
+        &[],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-sampleformat-unsigned16le.tif"
+        )),
+        true,
+        &[32768, 65535, 0, 32767],
+    ),
+    (
+        include_bytes!(concat!(
+            env!("WML2_EX_FIXTURES"),
+            "/ex-review-sampleformat-unsigned16be.tif"
+        )),
+        true,
+        &[32768, 65535, 0, 32767],
+    ),
+];

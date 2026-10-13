@@ -12,6 +12,9 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
+    // The common page parser checks SampleFormat (including every channel),
+    // defaults an absent tag to unsigned and rejects signed/float/undefined
+    // declarations before this EX initializer is reached.
     let document = Tiff::new(reader)?;
     let mut pages = std::iter::once(&document)
         .chain(document.multi_page.iter())

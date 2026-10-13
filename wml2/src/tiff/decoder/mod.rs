@@ -167,6 +167,8 @@ pub(crate) fn decode_samples_u16(
 /// Read a TIFF page into interleaved unsigned 8/16-bit samples stored as u16.
 /// Shared by EX and the strictly 16-bit high-resolution adapter; block,
 /// compression and Predictor implementations are also shared with RGBA8.
+/// Pages come from Tiff::new/read_pages, which validates SampleFormat's SHORT
+/// declaration/count and rejects every non-unsigned value before callbacks.
 #[cfg(any(feature = "high-bit-depth", feature = "image-buffer-ex"))]
 pub(crate) fn decode_unsigned_samples(
     reader: &mut dyn BinaryReader,
@@ -206,8 +208,13 @@ pub(crate) fn decode_unsigned_samples(
             crate::limits::current().expanded_bytes,
             "expanded TIFF block",
         )?;
-        let compressed = read_block(reader, block)?;
-        let mut data = decompress_block(&page.compression, &compressed, Some(expected))?;
+        let mut compressed = read_block(reader, block)?;
+        let mut data = compression::decompress_native_block(
+            &page.compression,
+            &mut compressed,
+            expected,
+            page.fill_order,
+        )?;
         if page.predictor == 2 {
             crate::tiff::predictor::apply_predictor(
                 &mut data,

@@ -151,9 +151,126 @@ pub(crate) fn decompress_block(
     Ok(decoded)
 }
 
+/// Native unsigned samples use LibTIFF's wire FillOrder convention: normalize
+/// the compressed bytes before generic decoding, including PackBits controls.
+/// Byte reversal is separate from sample endian conversion and Predictor.
+/// This is intentionally not the legacy packed-sample/CCITT/JPEG entry point.
+#[cfg(any(feature = "high-bit-depth", feature = "image-buffer-ex"))]
+pub(crate) fn decompress_native_block(
+    compression: &Compression,
+    compressed: &mut [u8],
+    expected: usize,
+    fill_order: u16,
+) -> Result<Vec<u8>, Error> {
+    if fill_order == 1
+        || !matches!(
+            compression,
+            Compression::NoneCompression
+                | Compression::LZW
+                | Compression::Packbits
+                | Compression::AdobeDeflate
+                | Compression::DEFLATE
+        )
+    {
+        return decompress_block(compression, compressed, Some(expected));
+    }
+    if fill_order != 2 {
+        return Err(io::Error::other("invalid native TIFF FillOrder").into());
+    }
+    // Historical WML2/old-LibTIFF LSB-code streams have a distinct raw Clear
+    // signature from canonical, byte-reversed standard MSB LZW. Their payload
+    // samples were not reversed by that compatibility encoder. Keep the strict
+    // existing early/late candidate checks; never infer sample order from endian.
+    let legacy_lsb = matches!(compression, Compression::LZW) && lzw_lsb_signature(compressed);
+    for byte in compressed.iter_mut() {
+        *byte = byte.reverse_bits();
+    }
+    let normalized = decompress_block(compression, compressed, Some(expected));
+    if !legacy_lsb {
+        return normalized;
+    }
+    if normalized.is_ok() {
+        // A normalized candidate remains live while the old LSB decoder can
+        // compare two expanded code-width candidates. Charge all three first.
+        let bytes = expected
+            .checked_mul(3)
+            .ok_or_else(|| io::Error::other("TIFF FillOrder candidate size overflows"))?;
+        crate::limits::check(
+            bytes,
+            crate::limits::current().expanded_bytes,
+            "TIFF FillOrder candidate buffers",
+        )?;
+    }
+    for byte in compressed.iter_mut() {
+        *byte = byte.reverse_bits();
+    }
+    let compatibility = decompress_block(compression, compressed, Some(expected));
+    match (normalized, compatibility) {
+        (Ok(normalized), Ok(compatibility)) if normalized != compatibility => {
+            Err(io::Error::other("ambiguous native TIFF FillOrder LZW candidates differ").into())
+        }
+        (Ok(data), _) | (Err(_), Ok(data)) => Ok(data),
+        (Err(error), Err(_)) => Err(error),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(any(feature = "high-bit-depth", feature = "image-buffer-ex"))]
+    #[test]
+    fn native_fill_order_normalizes_packbits_controls_and_preserves_codec_boundaries() {
+        let mut compressed = vec![0xc0, 0x80, 0x40, 0x01, 0xff];
+        assert_eq!(
+            decompress_native_block(&Compression::Packbits, &mut compressed, 4, 2).unwrap(),
+            [1, 2, 128, 255]
+        );
+        assert_eq!(compressed, [3, 1, 2, 128, 255]);
+        for codec in [
+            Compression::CCITTHuffmanRLE,
+            Compression::CCITTGroup3Fax,
+            Compression::CCITTGroup4Fax,
+            Compression::OldJpeg,
+            Compression::Jpeg,
+        ] {
+            let mut input = [0xc0, 0x80];
+            assert!(decompress_native_block(&codec, &mut input, 4, 2).is_err());
+            assert_eq!(input, [0xc0, 0x80]);
+        }
+    }
+
+    #[cfg(any(feature = "high-bit-depth", feature = "image-buffer-ex"))]
+    #[test]
+    fn native_old_lsb_signature_collision_charges_live_candidates_before_comparison() {
+        let original = codes9(&[256, 64, 2, 128, 255, 257], true);
+        let wire: Vec<u8> = original.iter().map(|v| v.reverse_bits()).collect();
+        assert!(lzw_lsb_signature(&wire));
+        crate::limits::scope(
+            crate::limits::DecodeLimits {
+                expanded_bytes: 8,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || {
+                let mut input = wire.clone();
+                let error =
+                    decompress_native_block(&Compression::LZW, &mut input, 4, 2).unwrap_err();
+                assert!(error.to_string().contains("FillOrder candidate buffers"));
+            },
+        );
+        crate::limits::scope(
+            crate::limits::DecodeLimits {
+                expanded_bytes: 12,
+                ..crate::limits::DecodeLimits::unlimited()
+            },
+            || {
+                assert_eq!(
+                    decompress_native_block(&Compression::LZW, &mut wire.clone(), 4, 2).unwrap(),
+                    [64, 2, 128, 255]
+                );
+            },
+        );
+    }
 
     fn codes9(codes: &[u16], lsb: bool) -> Vec<u8> {
         let mut data = vec![0u8; (codes.len() * 9).div_ceil(8)];

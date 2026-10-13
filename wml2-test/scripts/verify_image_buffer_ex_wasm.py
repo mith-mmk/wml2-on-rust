@@ -50,7 +50,7 @@ def main():
   if (imports.length) throw Error('unexpected host imports');
   const instance = await WebAssembly.instantiate(module, {});
   const cases = instance.exports.verify_ex();
-  if (cases !== 13) throw Error('case count mismatch');
+  if (cases !== 82) throw Error('case count mismatch');
   process.stdout.write(JSON.stringify({runtime:process.version,cases,
     all_passed:true,host_imports:imports,
     memory_bytes:instance.exports.memory.buffer.byteLength}) + '\\n');
@@ -70,7 +70,9 @@ def main():
             ['git', 'status', '--porcelain'], cwd=root, text=True)),
         'scope': 'six native/highres layouts, static legacy bridge, explicit encoder '
                  'precision/PNG handoff, low-bit highres handoff, four independent '
-                 'LZW/PackBits TIFF fixtures with all pixels and short pixel limit',
+                 'LZW/PackBits TIFF fixtures with all pixels and short pixel limit; '
+                 '54 FillOrder oracle cases,6 SampleFormat cases,8 LSB compatibility '
+                 'cases and candidate-budget scope restoration',
         'wasm_sha256': digest(wasm), 'harness_sha256': digest(harness),
         'helper_sha256': digest(Path(__file__)),
         'source_sha256': {str(path.relative_to(root)): digest(path) for path in [
@@ -78,7 +80,7 @@ def main():
             root / 'wml2/src/decode_guard.rs', root / 'wml2/src/png/decoder.rs',
             root / 'wml2/src/tiff/decoder/ex.rs']},
         'fixture_sha256': {path.name: digest(path) for path in
-                           sorted((root / 'wml2/tests/fixtures').glob('ex-gray*-*.tif'))},
+                           sorted((root / 'wml2/tests/fixtures').glob('ex-*.tif'))},
     })
     (out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report, indent=2))

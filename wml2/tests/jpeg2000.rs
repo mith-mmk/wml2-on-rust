@@ -5,6 +5,43 @@ mod expanded_profile {
     use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder_with_limits, image_load};
     use wml2::limits::DecodeLimits;
     #[test]
+    fn tile_qcc_precedence_is_independent_of_header_order() {
+        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+        let manifest =
+            std::fs::read_to_string(format!("{root}jpeg2000-qcc-order-manifest.txt")).unwrap();
+        let mut canonical = None;
+        for line in manifest.lines() {
+            let f: Vec<_> = line.split_whitespace().collect();
+            let input = std::fs::read(format!("{root}{}", f[0])).unwrap();
+            let expected = std::fs::read(format!("{root}{}", f[1])).unwrap();
+            let image = image_load(&input).unwrap_or_else(|e| panic!("{}: {e}", f[0]));
+            assert_eq!(
+                (image.width, image.height),
+                (f[2].parse().unwrap(), f[3].parse().unwrap())
+            );
+            let pixels = image.buffer.unwrap();
+            assert_eq!(pixels.len(), expected.len());
+            assert!(
+                pixels
+                    .iter()
+                    .zip(&expected)
+                    .all(|(&a, &b)| a.abs_diff(b) <= 1),
+                "{} disagrees with canonical independent oracle",
+                f[0]
+            );
+            if let Some(ref previous) = canonical {
+                assert_eq!(
+                    &pixels, previous,
+                    "{} changed pixels with equivalent markers",
+                    f[0]
+                );
+            } else {
+                canonical = Some(pixels);
+            }
+        }
+        assert_eq!(manifest.lines().count(), 24);
+    }
+    #[test]
     fn independent_multilayer_progression_precinct_alpha_and_depth_oracles() {
         let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
         let manifest =

@@ -396,6 +396,17 @@ fn component_index<'a>(b: &'a [u8], nc: usize) -> Result<(usize, &'a [u8]), Erro
     }
     Ok((index, bytes(b, n, b.len() - n)?))
 }
+// T.800 A.3/A.6: default/component precedence is independent of the order
+// of marker segments in either the main header or the first tile-part header.
+fn marker_priority(m: u16) -> u8 {
+    match m {
+        0xff52 => 0,
+        0xff53 => 1,
+        0xff5c => 2,
+        0xff5d => 3,
+        _ => 4,
+    }
+}
 fn marker(m: u16, b: &[u8], cfg: &mut Config) -> Result<(), Error> {
     match m {
         0xff52 => cod(b, cfg)?,
@@ -1345,13 +1356,7 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
     if !seen_cod || !seen_qcd {
         return Err(bad("COD/QCD required"));
     }
-    main_header.sort_by_key(|(m, _)| match m {
-        0xff52 => 0,
-        0xff53 => 1,
-        0xff5c => 2,
-        0xff5d => 3,
-        _ => 4,
-    });
+    main_header.sort_by_key(|&(m, _)| marker_priority(m));
     for (m, b) in main_header {
         marker(m, b, &mut cfg)?;
     }
@@ -1461,6 +1466,7 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
         let mut ppt = BTreeMap::new();
         let mut plt = BTreeMap::new();
         let mut part_poc = Vec::new();
+        let mut tile_header = Vec::new();
         while u16be(s, q)? != 0xff93 {
             let (m, b, next) = segment(s, q)?;
             if next > end {
@@ -1470,16 +1476,11 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 0xff30..=0xff3f => {}
                 0xff61 => insert_packed(&mut ppt, b)?,
                 0xff58 => insert_packed(&mut plt, b)?,
-                0xff5f => {
-                    tile.config.poc.clear();
-                    marker(m, b, &mut tile.config)?;
-                    part_poc = tile.config.poc.clone();
-                }
                 _ => {
                     if index != 0 && matches!(m, 0xff52 | 0xff53 | 0xff5c | 0xff5d | 0xff5e) {
                         return Err(bad("coding override after first tile-part"));
                     }
-                    marker(m, b, &mut tile.config)?;
+                    tile_header.push((m, b));
                 }
             }
             q = next;
@@ -1487,6 +1488,16 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
         q += 2;
         if q > end {
             return Err(bad("tile header extent"));
+        }
+        tile_header.sort_by_key(|&(m, _)| marker_priority(m));
+        for (m, b) in tile_header {
+            if m == 0xff5f {
+                tile.config.poc.clear();
+            }
+            marker(m, b, &mut tile.config)?;
+            if m == 0xff5f {
+                part_poc = tile.config.poc.clone();
+            }
         }
         let mut headers = packed(&ppt)?;
         if !ppm.is_empty() {

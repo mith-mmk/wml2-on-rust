@@ -12,7 +12,7 @@ work=args.work_dir.resolve()
 assert work.name.startswith('.test')
 work.mkdir(exist_ok=True)
 cases=[]
-for manifest in ['jpeg2000-general-manifest.txt','jpeg2000-general-reactivated-manifest.txt']:
+for manifest in ['jpeg2000-general-manifest.txt','jpeg2000-general-reactivated-manifest.txt','jpeg2000-qcc-order-manifest.txt']:
     for line in (fixtures/manifest).read_text().splitlines():
         input,reference,width,height,tolerance=line.split()
         cases.append((fixtures/input,fixtures/reference,int(width),int(height),4,int(tolerance)))

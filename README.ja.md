@@ -60,7 +60,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | Q4 | x | O | `q4`: 保持色run修正済みのQ4/XLD4 raster decode |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
 | AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                     |
-| JPEG2000 | x | O | 非既定の `jpeg2000`。上限付き8bit Gray/RGB5/3・9/7 J2K/JP2。[対応範囲と検証](docs/jpeg2000.md) |
+| JPEG2000 | x | O | 非既定の `jpeg2000`。1–8bit Gray/RGB/alpha、5/3・9/7・HTJ2KのJ2K/JP2。[対応範囲と検証](docs/jpeg2000.md) |
 | PSD          | x   | O   | 既定で無効の `psd` feature。Pure RustでPSD v1の統合画像と基本ラスターレイヤーをdecode                                |
 | MAG          | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
 | MAKI         | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
@@ -81,7 +81,7 @@ retro decoderの画素互換は、可能な範囲でImageMagickに合わせて�
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.35", features = ["tga", "pcx", "dds", "q4"] }
+wml2 = { version = "0.0.36", features = ["tga", "pcx", "dds", "q4"] }
 ```
 
 TGA encoder: `color_type = Ascii("truecolor"|"grayscale"|"indexed")` defaults to truecolor; `compression = Ascii("none"|"rle")` defaults to RLE. Truecolor `depth = UInt(24|32)` defaults to32; 24 explicitly discards alpha. Grayscale depth8/16 defaults to16, requires equal RGB channels, and depth8 rejects nonopaque pixels. Indexed depth8 uses at most256 exact colors, with `palette_depth = UInt(24|32)` default32; palette24 rejects nonopaque pixels. No implicit luminance conversion or quantization occurs. 16-bit index encoding is deferred because common external decoders disagree. Straight alpha and transparent RGB are retained on wire; existing zero-alpha decode normalization remains. Output is top-left with row-bounded packets. TGA 2.0 extension alpha types0/1 ignore stored alpha, type3 uses straight alpha, and type4 converts premultiplied samples to straight RGBA8 using nearest rounding and saturation. Type2 (undefined alpha that must be retained) and reserved types are explicitly unsupported because RGBA8 cannot preserve unused attribute bits independently of alpha. Explicit useful alpha must agree with the header/storage. Without an extension, legacy alpha behavior is retained. Pixel reads stop before the v2 footer and referenced ancillary areas; invalid offsets and truncated metadata are rejected. Other extension metadata and Huffman image types32/33 remain unsupported.
@@ -113,12 +113,17 @@ Q4/XLD4は`ifxld4.spi`の解析で確認した保持色runを使って復号し�
 
 ## JPEG2000 のデコード
 
-このリポジトリでは非既定の `jpeg2000` feature でPure Rust decoderを有効にできます。
-可逆5/3・非可逆9/7の上限付きGray8/RGB8をRGBA8へ変換します。多層、
-subsampling、ICC/paletteは明示的に未対応です。[現行の仕様とPR検証](docs/jpeg2000.md)に
-寸法・coding/framing・資源上限と再現手順をまとめています。
+0.0.36から非既定の `jpeg2000` feature でPure Rust decoderを有効にできます。
+
+```toml
+wml2 = { version = "0.0.36", features = ["jpeg2000"] }
+```
+
+符号付き・符号なし1–8bitのGray/RGB、alpha、palette、sYCCをRGBA8へ変換します。
+可逆5/3・非可逆9/7、複数品質レイヤー、Part 1の全5進行順、precinct、
+subsampling、ROI、HTJ2KのHTONLYブロックに対応します。高ビット深度とICCは次段階です。
+[対応範囲と検証記録](docs/jpeg2000.md)に寸法・符号化・資源上限と再現手順をまとめています。
 有効時に `ImageFormat::Jpeg2000` を追加し、無効時の形式検出と既存enumは維持します。
-このbranchの変更はまだリリースしていません。
 
 ## PSD decode
 
@@ -126,7 +131,7 @@ subsampling、ICC/paletteは明示的に未対応です。[現行の仕様とPR�
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.35", features = ["psd"] }
+wml2 = { version = "0.0.36", features = ["psd"] }
 ```
 
 対応データはRGBA8へ変換します。16-bit値は丸めて8-bitへ縮小します。統合画像では
@@ -164,17 +169,17 @@ PSB、1/32-bit、Lab、Multichannelは未対応として拒否します。マス
 
 ```toml
 [dependencies]
-wml2 = "0.0.35"
+wml2 = "0.0.36"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.35", features = ["noretoro"] }
+wml2 = { version = "0.0.36", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.35", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.36", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -400,6 +405,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.30`: 資源上限の強化、callback abort時の安全性、高解像度ICC/AVIF回帰検証、WebP core互換整理
 - `0.0.31`: TIFF/BigTIFFのデコード・エンコード拡張、ブロック単位の展開上限、Predictor対応、高色深度TIFF native frame
 - `0.0.32`: PCX、TGA、DDS、PIC2、Q4 decoder対応、ImageMagick互換のPCX/TGA画素正規化、converter/metadata回帰検証
+- [0.0.36 リリースノート](docs/releases/0.0.36.md)
 - [0.0.35 リリースノート](docs/releases/0.0.35.md)
 - [0.0.34 リリースノート](docs/releases/0.0.34.md)
 - [0.0.33 リリースノート](docs/releases/0.0.33.md)

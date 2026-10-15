@@ -44,21 +44,46 @@ fn u32be(data: &[u8], p: usize) -> Result<u32, Error> {
 }
 const SIGNATURE: &[u8] = b"\x00\x00\x00\x0cjP  \x0d\x0a\x87\x0a";
 fn box_at(data: &[u8], p: usize) -> Result<(&[u8], &[u8], usize), Error> {
-    let size = u32be(data, p)? as usize;
+    let size = u32be(data, p)?;
     let kind = bytes(data, p + 4, 4)?;
-    if size == 1 {
-        return Err(unsupported("extended box lengths"));
-    }
-    let size = if size == 0 && kind == b"jp2c" {
-        data.len() - p
-    } else {
-        size
+    let (size, header) = match size {
+        0 => (data.len() - p, 8),
+        1 => (
+            usize::try_from(u64::from_be_bytes(bytes(data, p + 8, 8)?.try_into()?))?,
+            16,
+        ),
+        n => (usize::try_from(n)?, 8),
     };
-    if size < 8 {
+    if size < header {
         return Err(bad("invalid box length"));
     }
     let b = bytes(data, p, size)?;
-    Ok((kind, &b[8..], p + size))
+    Ok((kind, &b[header..], p + size))
+}
+fn resolution_box(data: &[u8]) -> Result<(), Error> {
+    let mut p = 0;
+    let mut seen = [false; 2];
+    while p < data.len() {
+        if u32be(data, p)? == 0 {
+            return Err(bad("zero-length resolution child"));
+        }
+        let (kind, b, next) = box_at(data, p)?;
+        if let Some(index) = match kind {
+            b"resc" => Some(0),
+            b"resd" => Some(1),
+            _ => None,
+        } {
+            if seen[index] || b.len() != 10 || u16be(b, 2)? == 0 || u16be(b, 6)? == 0 {
+                return Err(bad("invalid resolution box"));
+            }
+            seen[index] = true;
+        }
+        p = next;
+    }
+    if !seen.iter().any(|&value| value) {
+        return Err(bad("empty resolution box"));
+    }
+    Ok(())
 }
 type Codestream<'a> = (&'a [u8], Option<(usize, usize, usize)>);
 fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
@@ -90,7 +115,13 @@ fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
                     return Err(bad("invalid JP2 header order"));
                 }
                 let mut q = 0;
+                let mut resolution = false;
                 while q < b.len() {
+                    // A zero-length nested box must extend to EOF along with
+                    // its parent; jp2h must instead end before the codestream.
+                    if u32be(b, q)? == 0 {
+                        return Err(bad("zero-length JP2 header child"));
+                    }
                     let (k, h, n) = box_at(b, q)?;
                     match k {
                         b"ihdr" => {
@@ -100,8 +131,8 @@ fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
                             if !matches!(u16be(h, 8)?, 1 | 3)
                                 || h[10] != 7
                                 || h[11] != 7
-                                || h[12] != 0
-                                || h[13] != 0
+                                || h[12] > 1
+                                || h[13] > 1
                             {
                                 return Err(unsupported("JP2 image header profile"));
                             }
@@ -112,18 +143,51 @@ fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
                             ));
                         }
                         b"colr" => {
-                            if color.is_some() || h.len() != 7 {
+                            if color.is_some() {
+                                // T.800 I.5.3.3: later colour specifications
+                                // do not replace the first understood one.
+                                crate::limits::charge_metadata(h.len())?;
+                                q = n;
+                                continue;
+                            }
+                            if h.len() < 3 {
+                                return Err(bad("invalid colour box"));
+                            }
+                            if h[0] != 1 {
+                                if h[0] == 2 {
+                                    return Err(unsupported("ICC colour profile"));
+                                }
+                                crate::limits::charge_metadata(h.len())?;
+                                q = n;
+                                continue;
+                            }
+                            if h.len() != 7 {
                                 return Err(bad("invalid colour box"));
                             }
                             let space = u32be(h, 3)?;
-                            if h[..3] != [1, 0, 0] || !matches!(space, 16 | 17) {
+                            // PREC and APPROX are ignored by JP2 readers (I.5.3.3).
+                            if !matches!(space, 16 | 17) {
                                 return Err(unsupported(
                                     "only enumerated grayscale or sRGB colour",
                                 ));
                             }
                             color = Some(space);
                         }
-                        _ => return Err(unsupported("JP2 header box")),
+                        b"pclr" | b"cmap" | b"cdef" | b"bpcc" => {
+                            return Err(unsupported("JP2 channel mapping or sample layout"));
+                        }
+                        b"res " => {
+                            if resolution {
+                                return Err(bad("duplicate resolution box"));
+                            }
+                            resolution_box(h)?;
+                            resolution = true;
+                            crate::limits::charge_metadata(h.len())?;
+                        }
+                        b"jp2h" | b"jp2c" | b"ftyp" | b"jP  " => {
+                            return Err(bad("misplaced JP2 header box"));
+                        }
+                        _ => crate::limits::charge_metadata(h.len())?,
                     }
                     q = n;
                 }
@@ -141,8 +205,10 @@ fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
                 }
                 codestream = Some(b);
             }
-            b"free" => crate::limits::charge_metadata(b.len())?,
-            _ => return Err(unsupported("JP2 top-level box")),
+            b"jP  " | b"ihdr" | b"colr" | b"bpcc" | b"pclr" | b"cmap" | b"cdef" => {
+                return Err(bad("misplaced JP2 structural box"));
+            }
+            _ => crate::limits::charge_metadata(b.len())?,
         }
         p = next;
     }
@@ -895,6 +961,44 @@ struct Coding {
     mct: bool,
     irreversible: bool,
     block: (usize, usize),
+    precincts: Option<[u8; 6]>,
+}
+fn single_precinct(
+    coding: Coding,
+    w: usize,
+    h: usize,
+    origin: (usize, usize),
+) -> Result<(), Error> {
+    let Some(precincts) = coding.precincts else {
+        return Ok(());
+    };
+    for resolution in 0..=coding.levels {
+        let factor = 1usize << (coding.levels - resolution);
+        let (x0, y0) = (origin.0.div_ceil(factor), origin.1.div_ceil(factor));
+        let (x1, y1) = (
+            (origin.0 + w).div_ceil(factor),
+            (origin.1 + h).div_ceil(factor),
+        );
+        if x0 == x1 || y0 == y1 {
+            continue;
+        }
+        let entry = precincts[usize::from(resolution)];
+        let (px, py) = (entry & 15, entry >> 4);
+        let shift = u32::from(resolution != 0);
+        // Keep exactly the existing code-block grid, with one packet for each
+        // nonempty component/resolution. Smaller or crossing precincts need
+        // a different packet iterator and remain explicitly unsupported.
+        if (x0 >> px) != ((x1 - 1) >> px)
+            || (y0 >> py) != ((y1 - 1) >> py)
+            || (1usize << px) < coding.block.0 << shift
+            || (1usize << py) < coding.block.1 << shift
+        {
+            return Err(unsupported(
+                "multiple precincts or precinct-clipped code-blocks",
+            ));
+        }
+    }
+    Ok(())
 }
 fn tile_pixels<const SPLIT: bool>(
     input: PacketData<'_>,
@@ -905,6 +1009,7 @@ fn tile_pixels<const SPLIT: bool>(
     component_mb: &[Vec<u8>],
     component_steps: &[Vec<f64>],
 ) -> Result<Vec<u8>, Error> {
+    single_precinct(coding, w, h, origin)?;
     if coding.irreversible {
         return tile_pixels_irreversible::<SPLIT>(
             input,
@@ -1215,7 +1320,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 if tile_w == 0 || tile_h == 0 {
                     return Err(bad("zero tile dimensions"));
                 }
-                if u16be(b, 0)? != 0
+                if !matches!(u16be(b, 0)?, 0..=2)
                     || w > 1024
                     || h > 1024
                     || tile_w > 1024
@@ -1262,10 +1367,26 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 });
             }
             0xff52 => {
-                if coding.is_some() || b.len() != 10 {
+                if coding.is_some() || b.len() < 10 {
                     return Err(bad("invalid COD"));
                 }
-                if b[0] != 0
+                if b[5] > 5 {
+                    return Err(unsupported("more than five decompositions"));
+                }
+                let precincts = if b[0] & 1 != 0 {
+                    if b.len() != 11 + usize::from(b[5]) {
+                        return Err(bad("COD precinct count"));
+                    }
+                    let mut entries = [0; 6];
+                    entries[..=usize::from(b[5])].copy_from_slice(&b[10..]);
+                    Some(entries)
+                } else {
+                    if b.len() != 10 {
+                        return Err(bad("invalid COD"));
+                    }
+                    None
+                };
+                if b[0] & !1 != 0
                     || b[1] != 0
                     || u16be(b, 2)? != 1
                     || b[4] > 1
@@ -1291,6 +1412,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                     mct: b[4] == 1,
                     irreversible: b[9] == 0,
                     block,
+                    precincts,
                 });
             }
             0xff5c => {

@@ -1,5 +1,186 @@
 use wml2::util::{ImageFormat, decoder_supports_format, format_check};
 #[cfg(feature = "jpeg2000")]
+mod jp2_compatibility {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder_with_limits, image_load};
+    use wml2::limits::DecodeLimits;
+    const RAW: &[u8] = include_bytes!("fixtures/review/jp2_16x16_d1_noise.j2k");
+    const JP2: &[u8] = include_bytes!("fixtures/review/jp2_16x16_d1_noise.jp2");
+    fn marker(data: &[u8], value: u8) -> usize {
+        data.windows(2).position(|b| b == [255, value]).unwrap()
+    }
+    fn box_bytes(kind: &[u8; 4], payload: &[u8]) -> Vec<u8> {
+        let mut v = ((payload.len() + 8) as u32).to_be_bytes().to_vec();
+        v.extend_from_slice(kind);
+        v.extend_from_slice(payload);
+        v
+    }
+    fn replace_header(data: &[u8], f: impl FnOnce(&mut Vec<u8>)) -> Vec<u8> {
+        let at = data.windows(4).position(|b| b == b"jp2h").unwrap() - 4;
+        let end = at + u32::from_be_bytes(data[at..at + 4].try_into().unwrap()) as usize;
+        let mut h = data[at + 8..end].to_vec();
+        f(&mut h);
+        let mut result = data[..at].to_vec();
+        result.extend(box_bytes(b"jp2h", &h));
+        result.extend_from_slice(&data[end..]);
+        result
+    }
+    fn same_pixels(data: &[u8]) {
+        assert_eq!(
+            image_load(data).unwrap().buffer,
+            image_load(RAW).unwrap().buffer
+        );
+    }
+    #[test]
+    fn ancillary_boxes_and_metadata_budget() {
+        let mut data = JP2.to_vec();
+        let additions: Vec<_> = [
+            box_bytes(b"xml ", b"<x/>"),
+            box_bytes(b"uuid", &[7; 19]),
+            box_bytes(b"asoc", b"opaque"),
+            box_bytes(b"zzzz", &[1, 2, 3]),
+        ]
+        .concat();
+        data.splice(32..32, additions);
+        let mut resolution = vec![0, 1, 0, 1, 0, 1, 0, 1, 0, 0];
+        let res = box_bytes(b"res ", &box_bytes(b"resc", &resolution));
+        data = replace_header(&data, |h| h.extend_from_slice(&res));
+        same_pixels(&data);
+        let com = marker(RAW, 0x64);
+        let used = usize::from(u16::from_be_bytes(
+            RAW[com + 2..com + 4].try_into().unwrap(),
+        )) - 2;
+        let metadata = 4 + 19 + 6 + 3 + 18;
+        for short in [false, true] {
+            let mut image = ImageBuffer::new();
+            let result = image_decoder_with_limits(
+                &mut BytesReader::new(&data),
+                &mut DecodeOptions {
+                    drawer: &mut image,
+                    debug_flag: 0,
+                },
+                DecodeLimits {
+                    metadata_bytes: used + metadata - usize::from(short),
+                    ..DecodeLimits::default()
+                },
+            );
+            assert_eq!(result.is_err(), short);
+            if short {
+                assert!(image.buffer.is_none());
+            }
+        }
+        resolution[2..4].fill(0);
+        let malformed = replace_header(JP2, |h| {
+            h.extend(box_bytes(b"res ", &box_bytes(b"resc", &resolution)))
+        });
+        assert!(image_load(&malformed).is_err());
+    }
+    #[test]
+    fn first_colour_box_and_reserved_fields() {
+        let mut data = JP2.to_vec();
+        let colr = data.windows(4).position(|b| b == b"colr").unwrap();
+        data[colr + 5] = 255;
+        data[colr + 6] = 3;
+        let second = box_bytes(b"colr", &[2, 0, 0, 1, 2, 3, 4]);
+        let data = replace_header(&data, |h| h.extend_from_slice(&second));
+        same_pixels(&data);
+        let unknown_first = replace_header(JP2, |h| {
+            let colr = h.windows(4).position(|b| b == b"colr").unwrap() - 4;
+            h.splice(colr..colr, box_bytes(b"colr", &[99, 0, 0, 9]));
+        });
+        same_pixels(&unknown_first);
+        let mut icc_first = JP2.to_vec();
+        icc_first[colr + 4] = 2;
+        assert!(image_load(&icc_first).is_err());
+    }
+    #[test]
+    fn ihdr_flags_and_extended_box_lengths() {
+        let mut data = JP2.to_vec();
+        let ihdr = data.windows(4).position(|b| b == b"ihdr").unwrap();
+        data[ihdr + 16] = 1;
+        data[ihdr + 17] = 1;
+        data.extend(box_bytes(b"jp2i", b"rights metadata"));
+        same_pixels(&data);
+        for offset in [ihdr + 16, ihdr + 17] {
+            let mut invalid = data.clone();
+            invalid[offset] = 2;
+            assert!(image_load(&invalid).is_err());
+        }
+        let at = JP2.windows(4).position(|b| b == b"jp2c").unwrap() - 4;
+        let payload = &JP2[at + 8..];
+        let mut extended = JP2[..at].to_vec();
+        extended.extend_from_slice(&1u32.to_be_bytes());
+        extended.extend_from_slice(b"jp2c");
+        extended.extend_from_slice(&((payload.len() + 16) as u64).to_be_bytes());
+        extended.extend_from_slice(payload);
+        same_pixels(&extended);
+        for length in [0u64, 15, u64::MAX] {
+            let mut bad = extended.clone();
+            bad[at + 8..at + 16].copy_from_slice(&length.to_be_bytes());
+            assert!(image_load(&bad).is_err());
+        }
+        let mut terminal = JP2.to_vec();
+        terminal.extend_from_slice(&[0, 0, 0, 0, b'f', b'r', b'e', b'e', 7]);
+        same_pixels(&terminal);
+    }
+    #[test]
+    fn part1_profiles_and_single_precinct_headers() {
+        let siz = marker(RAW, 0x51);
+        for profile in [0u16, 1, 2] {
+            let mut data = RAW.to_vec();
+            data[siz + 4..siz + 6].copy_from_slice(&profile.to_be_bytes());
+            same_pixels(&data);
+        }
+        for profile in [3u16, 0x4000, 0xffff] {
+            let mut data = RAW.to_vec();
+            data[siz + 4..siz + 6].copy_from_slice(&profile.to_be_bytes());
+            assert!(image_load(&data).is_err());
+        }
+        let cod = marker(RAW, 0x52);
+        let length = usize::from(u16::from_be_bytes(
+            RAW[cod + 2..cod + 4].try_into().unwrap(),
+        ));
+        let mut explicit = RAW.to_vec();
+        explicit[cod + 4] = 1;
+        explicit[cod + 2..cod + 4].copy_from_slice(&((length + 2) as u16).to_be_bytes());
+        explicit.splice(cod + 2 + length..cod + 2 + length, [0x55, 0x55]);
+        same_pixels(&explicit);
+        let mut split = explicit.clone();
+        split[cod + 2 + length..cod + 4 + length].fill(0x11);
+        assert!(image_load(&split).is_err());
+        let mut bad_count = explicit;
+        bad_count.remove(cod + 2 + length);
+        assert!(image_load(&bad_count).is_err());
+    }
+    #[test]
+    fn bounded_optional_boxes_do_not_hide_layout_changes() {
+        for kind in [b"pclr", b"cmap", b"cdef", b"bpcc", b"jp2c", b"jp2h"] {
+            let data = replace_header(JP2, |h| h.extend(box_bytes(kind, &[0; 8])));
+            assert!(image_load(&data).is_err());
+        }
+        let zero_child = replace_header(JP2, |h| {
+            h.extend_from_slice(&[0, 0, 0, 0, b'z', b'z', b'z', b'z']);
+        });
+        assert!(image_load(&zero_child).is_err());
+        let resolution = box_bytes(
+            b"res ",
+            &box_bytes(b"resc", &[0, 1, 0, 1, 0, 1, 0, 1, 0, 0]),
+        );
+        let duplicate = replace_header(JP2, |h| {
+            h.extend_from_slice(&resolution);
+            h.extend_from_slice(&resolution);
+        });
+        assert!(image_load(&duplicate).is_err());
+        let mut short_extended = JP2.to_vec();
+        short_extended.extend_from_slice(&[0, 0, 0, 1, b'u', b'u', b'i', b'd']);
+        for extra in 0..8 {
+            let mut data = short_extended.clone();
+            data.extend(vec![0; extra]);
+            assert!(image_load(&data).is_err());
+        }
+    }
+}
+#[cfg(feature = "jpeg2000")]
 #[test]
 fn detection() {
     for b in [&[255, 79][..], b"\x00\x00\x00\x0cjP  \x0d\x0a\x87\x0a"] {

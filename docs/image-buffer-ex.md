@@ -30,6 +30,12 @@ and allocation. Unrelated current codecs/release files remain intact.
 
 ## Declarations and precision
 
+For a runnable example of input declarations, independent storage, encoder
+requests, ICC collection and failure behavior, see the
+[Callback implementation guide](image-buffer-ex-callbacks.md) and
+[five-scenario example](../wml2/examples/ex_callback_contracts.rs). The guide
+distinguishes current metadata delivery order from future API proposals.
+
 `InitOptionsEx::source_format` and `source_stride` describe bytes delivered by
 subsequent draw rectangles. `ImageBufferEx::with_storage` independently selects
 stored format and source-to-storage precision policy. `PixelOutputEx` chooses
@@ -134,6 +140,11 @@ contract here preserves supported unsigned integer samples; signed/float/HDR,
 subsampling, alpha models and color transforms need separate scoped decisions.
 
 ## Validation and reproduction
+
+The [Callback guide and validation](image-buffer-ex-callbacks.md) add executable
+examples and contract tests without changing runtime code. Its separate
+[validation record](image-buffer-ex-callback-validation.json) identifies the
+checks rerun for that documentation follow-up.
 
 The [TIFF follow-up](image-buffer-ex-tiff-review.md) and its
 [current validation record](image-buffer-ex-tiff-validation.json) document the

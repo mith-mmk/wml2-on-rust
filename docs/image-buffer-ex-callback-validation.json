@@ -1,0 +1,141 @@
+{
+  "date_utc": "2026-10-15T03:56:22.581786+00:00",
+  "branch": "codex/image-buffer-ex-continuation-20261013",
+  "baseline_commit": "9ec7f072c300edb0e318a169f466bdd6a17f5a7e",
+  "tested_state": "baseline commit plus new sample/contract tests and documentation; exact file hashes below; final evidence commit changes no runtime code",
+  "toolchain": "rustc1.91.0 (f8297e351 2025-10-28); cargo1.91.0 (ea2d97820 2025-10-10); x86_64-unknown-linux-gnu",
+  "isolated_targets": [
+    "/workspace/.test-ex-callback-target",
+    "/workspace/.test-ex-callback-min-target"
+  ],
+  "gates": {
+    "targeted": {
+      "command": "cargo test -p wml2 --offline --no-default-features --features image-buffer-ex,png,tiff,high-bit-depth --test image_buffer_ex_callback_contracts",
+      "targets_including_doctests": 1,
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0,
+      "profile": "test/debug",
+      "log_sha256": "6b2738a61efeb13f5e5481391ce30d5a26f54cfa279e8408d1aca589ec0f1315"
+    },
+    "workspace": {
+      "command": "cargo test --workspace --offline --release --features wml2/image-buffer-ex,wml2/high-bit-depth,wml2/tga,wml2/pcx,wml2/dds,wml2/q4",
+      "targets_including_doctests": 51,
+      "passed": 417,
+      "failed": 0,
+      "ignored": 13,
+      "profile": "release",
+      "log_sha256": "0f5f683f9524d94ac5d54e4e0a250a9d25f71534a84e9aab5e2d937302028ec4"
+    },
+    "minimal-ex": {
+      "command": "cargo test -p wml2 --offline --no-default-features --features image-buffer-ex",
+      "targets_including_doctests": 33,
+      "passed": 77,
+      "failed": 0,
+      "ignored": 0,
+      "profile": "test/debug",
+      "log_sha256": "a0b2a3502ae0587b4ee1cac5084ae40e389f8e371a1913860577f7843d61dc7d"
+    },
+    "feature-off": {
+      "command": "cargo test -p wml2 --offline --no-default-features",
+      "targets_including_doctests": 33,
+      "passed": 39,
+      "failed": 0,
+      "ignored": 0,
+      "profile": "test/debug",
+      "log_sha256": "d023ec02ee604a21fcd257d6a8982d25582a29f7b0281fce6ae95efac916c043"
+    },
+    "png-only": {
+      "command": "cargo test -p wml2 --offline --no-default-features --features image-buffer-ex,png --test image_buffer_ex_callback_contracts",
+      "targets_including_doctests": 1,
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0,
+      "profile": "test/debug",
+      "log_sha256": "2fb2a960a18ba3ec05579a5f27993f8080a9b7bae3dc1b5ef0c60d1786e63702"
+    },
+    "tiff-only": {
+      "command": "cargo test -p wml2 --offline --no-default-features --features image-buffer-ex,tiff --test image_buffer_ex_callback_contracts",
+      "targets_including_doctests": 1,
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0,
+      "profile": "test/debug",
+      "log_sha256": "3acb83aae49dd3ebf1e4b2f5d532ba4881fadbc90a8a411b1394ddf4e4c984bd"
+    }
+  },
+  "examples": {
+    "minimal": {
+      "command": "cargo run -p wml2 --offline --no-default-features --features image-buffer-ex --example ex_callback_contracts",
+      "status": "passed",
+      "stdout": [
+        "5 callback scenarios passed; ICC collection only, no color transform"
+      ],
+      "log_sha256": "ec1367c1ca01af7148b40c76c508a5de585b05239090bd4550e46273c2e1ae45"
+    },
+    "codecs": {
+      "command": "cargo run -p wml2 --offline --no-default-features --features image-buffer-ex,png,tiff --example ex_callback_contracts -- wml2/tests/fixtures/ex-access-rgba16.tif",
+      "status": "passed",
+      "stdout": [
+        "5 callback scenarios passed; ICC collection only, no color transform",
+        "65x33 Some(Rgba16) input -> Rgba16 storage; 0 source ICC bytes collected; no transform"
+      ],
+      "log_sha256": "f6cad3546b43259240727e8f05f87a0f2645593055f06d46895e214780de6d13"
+    }
+  },
+  "format_diff_check": "passed",
+  "clippy": {
+    "command": "cargo clippy -p wml2 --offline --no-default-features --features image-buffer-ex,png,tiff,high-bit-depth --example ex_callback_contracts --test image_buffer_ex_callback_contracts",
+    "status": "passed",
+    "new_sample_test_diagnostics": 0,
+    "inherited_library_warnings": 73,
+    "not_Dwarnings": true,
+    "log_sha256": "c7f52e32568bf08370b6d16789021a8e66b2c5d1896850714d16297cd73f732c"
+  },
+  "sample_test_and_guide_sha256": {
+    "wml2/examples/ex_callback_contracts.rs": "54ea30955f54279e81720c99d25e8d2b3a7953b3084ff9cff8001bf0d28a4d71",
+    "wml2/tests/image_buffer_ex_callback_contracts.rs": "c62c00828d6c37fa25798c99ce343542b0e57e19bba38c8fdeb3dcc6419ee9fb",
+    "docs/image-buffer-ex-callbacks.md": "3e2bc3887d1d3a744c444274ee9651304031ff425f4cbc07043b7fef4ee6d582"
+  },
+  "runtime_modified": false,
+  "baseline_runtime_tree": "bca4a9d41d5da45786c384f528f981010152fbe3",
+  "contract_tests": [
+    "buffered_metadata_survives_preinit_and_late_delivery_without_transform",
+    "buffered_external_stage_never_runs_on_error_warning_or_missing_completion",
+    "failed_imagebufferex_initialization_invalidates_old_pixels_not_just_new_draw",
+    "decoder_metadata_order::tiff_icc_in_header_is_delivered_after_draw",
+    "legacy_default_rejects_before_legacy_init_and_preserves_old_target",
+    "rgba16_to_twelve_round_scales_alpha_and_uses_declared_byte_stride",
+    "rgba16_to_twelve_exact_success_then_late_failure_preserves_entire_canvas",
+    "documented_five_callback_scenarios_execute",
+    "decoder_metadata_order::png_icc_before_idat_is_still_delivered_after_draw"
+  ],
+  "source_audit": {
+    "legacy_default": "wml2/src/draw.rs:55-63; packedRGBA8/None stride accepted, others rejected before init",
+    "initialization_failure": "wml2/src/image_buffer_ex.rs:477-481; invalidates oldbuffer first; guard may reject before initializer is invoked",
+    "atomic_draw": "wml2/src/image_buffer_ex.rs:651-722; validates complete source and converts temporary before copying, prior draws retained",
+    "precision": "wml2/src/image_buffer_ex.rs:807-818; full normalized integer range including straight alpha; no implicit ICC",
+    "png_metadata": "wml2/src/png/decoder.rs:518-548 optional pre-init PNGBackground; final SourceICC at803-814 afterdraw",
+    "tiff_metadata": "wml2/src/tiff/decoder/ex.rs:113-129 draw then SourceICC then terminate",
+    "completion_limit": "PNG warning-return branch785-795 skips final metadata; terminate alone is not success; sample rejects warnings and never returns Abort"
+  },
+  "unimplemented_proposals": [
+    "opt-in color metadata readiness or explicit preflight API",
+    "encoder capability negotiation/native PickCallbackEx codec connection"
+  ],
+  "not_executed_this_followup": [
+    "actual ICC color transform (sample intentionally collects only)",
+    "WASM build/runtime",
+    "browser/image display",
+    "benchmark",
+    "other OS",
+    "complete CI/AVIF feature matrix",
+    "main/JPEG2000 validation"
+  ],
+  "scope_reason": "documentation/sample/tests only; no decoder/encoder/runtime change; previous WASM/display/benchmark records are historical, not newly executed",
+  "protected_remote_observed_before": {
+    "main": "b78b1f7a6afb2867e7ec17fc296634784752813c",
+    "codex/jpeg2000-rgb-reimplementation-20261011": "5506a515dfc1a190283e17b54161103502b28867"
+  },
+  "actions": "normal commit/push only to EX branch; no merge, release, new PR, CI monitoring or changes to main/JPEG worktree/processes"
+}

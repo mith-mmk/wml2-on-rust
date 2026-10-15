@@ -113,6 +113,10 @@ Q4/XLD4は`ifxld4.spi`の解析で確認した保持色runを使って復号し�
 
 ## ImageBufferEx
 
+[Callback 実装仕様と動くサンプル](docs/image-buffer-ex-callbacks.md)に、入力宣言・
+保存形式・エンコーダ出力要求の分離、ICC metadata の後処理、Exact／Round と
+失敗時の契約をまとめています。
+
 このbranchでは非既定の`image-buffer-ex`でGray/RGBA8・12・16bitを精度を保って格納します。
 source・storage・picker outputを別々に宣言し、8bit化はExact／Roundを明示して実行します。
 単一pixelの借用参照、静止画の旧ImageBufferからの検査付き所有権移譲、

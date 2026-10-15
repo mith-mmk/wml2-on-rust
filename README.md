@@ -114,6 +114,10 @@ cover checked Gray/RGBA8/12/16 storage, native borrowed pixels, explicit convers
 static PNG/TIFF source declarations and legacy encoder views. This branch work
 has not been released; WML2 remains 0.0.35.
 
+[Callback guide and runnable sample](docs/image-buffer-ex-callbacks.md) separate
+input declarations, storage and encoder output requests, including late ICC
+metadata collection and Exact/Round failure behavior.
+
 With `image-buffer-ex`, `draw::ImageBufferEx` stores bytes in `PixelFormatEx`:
 Gray8/12/16 or Rgba8/12/16 (straight alpha), defaulting to Rgba8. Twelve- and
 sixteen-bit samples occupy two little-endian bytes; twelve-bit values must

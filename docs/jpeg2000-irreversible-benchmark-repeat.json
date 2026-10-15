@@ -1,0 +1,104 @@
+{
+  "baseline_git": "3dcd7dd8a49c665675dcddec0c77ff04621d8e2d",
+  "working_tree_dirty": false,
+  "candidate_git": "d8c56fe5bebab9693768c6aaac4900474ce3faf3",
+  "cpu_affinity": 0,
+  "order": "B/H/H/B/H/B",
+  "rust": "1.91.0 release",
+  "warmup_calls": 100,
+  "measurement": "whole-process wall and child CPU / total calls, including export/startup",
+  "source_sha256": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+  "baseline_binary_sha256": "d079ec0533cac35b6a5fd4178297483f8c27268a6f04ae0f181d62e33907e04a",
+  "candidate_binary_sha256": "54e8210a1e298930f0af49f2026a68537745fe379acb6ab37dcc6974160b54bf",
+  "stable_gray": false,
+  "limitations": "shared-host sample, not a general performance guarantee; paired inputs must be supported by both binaries; only Gray is supported by the original stable baseline",
+  "summary": [
+    {
+      "case": "Gray256tiles",
+      "wall_us_per_call": {
+        "baseline": 836.9494245258352,
+        "current": 833.224429314946,
+        "change_percent": -0.445068136942639
+      },
+      "cpu_us_per_call": {
+        "baseline": 820.4195294607537,
+        "current": 832.4936498022068,
+        "change_percent": 1.47170074673737
+      }
+    }
+  ],
+  "rows": [
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "baseline",
+      "iterations": 1500,
+      "total_calls": 1601,
+      "wall_us_per_call": 846.5418956883985,
+      "cpu_us_per_call": 845.7520299812617,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 1500 decodes, 847.479 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "current",
+      "iterations": 1500,
+      "total_calls": 1601,
+      "wall_us_per_call": 828.9993441608638,
+      "cpu_us_per_call": 827.6976889444097,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 1500 decodes, 821.398 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "current",
+      "iterations": 1500,
+      "total_calls": 1601,
+      "wall_us_per_call": 833.7578638372413,
+      "cpu_us_per_call": 833.2754528419737,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 1500 decodes, 828.569 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "baseline",
+      "iterations": 1500,
+      "total_calls": 1601,
+      "wall_us_per_call": 800.86650093672,
+      "cpu_us_per_call": 800.4072454715799,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 1500 decodes, 795.433 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "current",
+      "iterations": 1500,
+      "total_calls": 1601,
+      "wall_us_per_call": 836.9160799467328,
+      "cpu_us_per_call": 836.507807620237,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 1500 decodes, 833.957 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "baseline",
+      "iterations": 1500,
+      "total_calls": 1601,
+      "wall_us_per_call": 863.4398769523872,
+      "cpu_us_per_call": 815.0993129294193,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 1500 decodes, 811.829 us/decode"
+    }
+  ]
+}

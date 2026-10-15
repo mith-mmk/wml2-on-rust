@@ -1,0 +1,32 @@
+[
+  {
+    "version": "base",
+    "result": "16x16, 30000 decodes, 28.106 us/decode",
+    "whole_process_cpu_us_per_call": 28.266602438457195
+  },
+  {
+    "version": "head",
+    "result": "16x16, 30000 decodes, 28.643 us/decode",
+    "whole_process_cpu_us_per_call": 28.75990830869407
+  },
+  {
+    "version": "head",
+    "result": "16x16, 30000 decodes, 28.912 us/decode",
+    "whole_process_cpu_us_per_call": 28.983090262781968
+  },
+  {
+    "version": "base",
+    "result": "16x16, 30000 decodes, 29.685 us/decode",
+    "whole_process_cpu_us_per_call": 29.873027474170303
+  },
+  {
+    "version": "head",
+    "result": "16x16, 30000 decodes, 31.027 us/decode",
+    "whole_process_cpu_us_per_call": 31.099166140659765
+  },
+  {
+    "version": "base",
+    "result": "16x16, 30000 decodes, 29.797 us/decode",
+    "whole_process_cpu_us_per_call": 29.899305670907943
+  }
+]

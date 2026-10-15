@@ -1,0 +1,38 @@
+{
+  "base_sha": "7043bf083203234c1193cf1c22a70ab61d6dc3df",
+  "branch": "codex/jpeg2000-rgb-reimplementation-20261011",
+  "rust": "1.91.0",
+  "wml2_version": "0.0.35",
+  "workspace": {
+    "command": "cargo test --workspace --offline --features wml2/jpeg2000",
+    "passed": 345,
+    "failed": 0,
+    "ignored": 12,
+    "targets": 43
+  },
+  "feature_off": {
+    "passed": 16,
+    "failed": 0
+  },
+  "fixed_pixels": {
+    "gray_encodings": 182,
+    "rgb_encodings": 148,
+    "all_matched": true
+  },
+  "random_pixels": {
+    "seed": 200083,
+    "geometries": 128,
+    "comparisons": 768,
+    "all_matched": true
+  },
+  "wasm": {
+    "target": "wasm32-unknown-unknown",
+    "minimal_build": "passed",
+    "default_plus_jpeg2000_build": "passed",
+    "runtime_execution": "not tested"
+  },
+  "clippy": "passed; no diagnostics in JPEG2000 code; existing diagnostics elsewhere",
+  "display": "Rust RGB RCT-off and level-5 RCT-on public API outputs inspected; exact OpenJPEG pixels",
+  "fmt": "passed",
+  "diff_check": "passed"
+}

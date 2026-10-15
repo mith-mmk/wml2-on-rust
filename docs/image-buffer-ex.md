@@ -1,7 +1,9 @@
 # ImageBufferEx: checked integer storage and explicit legacy views
 
 Repository branch work based on main `e42d2cf` and the existing EX branch
-`c1203f4`. WML2 remains 0.0.35. Enable `image-buffer-ex` explicitly; default
+`c1203f4`. The continuation now incorporates main's 0.0.36 update; the EX
+additions remain unreleased. See the [main merge record](image-buffer-ex-main-merge.md).
+Enable `image-buffer-ex` explicitly; default
 features, production dependencies and existing legacy fields/signatures remain
 unchanged. This work has not been merged or released.
 

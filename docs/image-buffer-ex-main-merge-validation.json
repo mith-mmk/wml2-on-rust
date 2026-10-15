@@ -1,0 +1,181 @@
+{
+  "date_utc": "2026-10-15T06:30:15.565246+00:00",
+  "branch": "codex/image-buffer-ex-continuation-20261013",
+  "merge_direction": "main → EX; normal two-parent merge, no rebase/force push",
+  "parents": {
+    "EX": "c201461e93b84b6284c953fe68ac31d80dc77319",
+    "main": "5b12608a90026a913ddafd90bfb3f8ec53d14c83"
+  },
+  "merge_source_check": {
+    "ex_runtime_and_callback_sample_unchanged_from": "c201461e93b84b6284c953fe68ac31d80dc77319",
+    "checked_ex_files": [
+      "wml2/src/image_buffer_ex.rs",
+      "wml2/src/decode_guard.rs",
+      "wml2/src/png/decoder.rs",
+      "wml2/src/tiff/decoder/ex.rs",
+      "wml2/src/tiff/decoder/mod.rs",
+      "wml2/src/tiff/decoder/compression.rs",
+      "wml2/examples/ex_callback_contracts.rs",
+      "wml2/tests/image_buffer_ex_callback_contracts.rs"
+    ],
+    "main_jpeg2000_and_shared_limits_exact_from": "5b12608a90026a913ddafd90bfb3f8ec53d14c83",
+    "checked_main_files": [
+      "wml2/src/jpeg2000_irreversible.rs",
+      "wml2/src/jpeg2000_general.rs",
+      "wml2/src/jpeg2000.rs",
+      "wml2/src/jpeg2000_ht_tables.rs",
+      "wml2/src/jpeg2000_tier1.rs",
+      "wml2/src/jpeg2000_ht.rs",
+      "wml2/tests/jpeg2000.rs",
+      "wml2/src/limits.rs",
+      "wml2/src/error.rs",
+      "wml2/src/lib.rs",
+      "wml2/src/util.rs"
+    ],
+    "conflicts": [
+      ".github/workflows/ci.yml",
+      "README.ja.md"
+    ],
+    "resolution": "Union of EX and JPEG2000 CI feature entries; retain both README sections; inherit main0.0.36 and clarify EX remains unreleased"
+  },
+  "skills_instructions_search": "not present in EX/main trees, workspace .agents, or original worktree .agents/skills",
+  "toolchain": "Rust/Cargo1.91.0; Linux x86_64; Nodev24.19.0",
+  "tested_worktree": "pending --no-ff --no-commit merge; sources remained unchanged during tests; source/test/example subtree IDs verified again after final merge commit",
+  "tested_subtrees": {
+    "wml2/src": "a2b80fc4674c8e204bbcf05414efb5cef015b3fc",
+    "wml2/tests": "518592a7dbd6b256e225c8fa37c8f70b12347423",
+    "wml2/examples": "cfb38caab2d2697943b32c19c0a6a00094f668f1"
+  },
+  "gates": {
+    "workspace": {
+      "command": "cargo test --workspace --offline --release --features wml2/jpeg2000,wml2/image-buffer-ex,wml2/high-bit-depth,wml2/tga,wml2/pcx,wml2/dds,wml2/q4",
+      "targets": 52,
+      "passed": 474,
+      "failed": 0,
+      "ignored": 13,
+      "log_sha256": "8f3bb1990fbf9d0a86c6ba086bf3e8ff096f4d91b84cac052481c2e320327b89"
+    },
+    "feature-off": {
+      "command": "cargo test -p wml2 --offline --no-default-features",
+      "targets": 34,
+      "passed": 40,
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "aefbdf26ff4e5016acf3ff80d37d4b6153aceb43f5244bddde54146b4889f960"
+    },
+    "minimal-ex": {
+      "command": "cargo test -p wml2 --offline --no-default-features --features image-buffer-ex",
+      "targets": 34,
+      "passed": 78,
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "860d6ddfc08cf61097a21ccbc5419f845da67979ed5aafa776f8232f0f71f87f"
+    },
+    "jpeg2000-only-release": {
+      "command": "cargo test -p wml2 --offline --release --no-default-features --features jpeg2000 --lib --tests",
+      "targets": 33,
+      "passed": 84,
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "59943b771656c624be223c02a0aece99cad8597ac79e755aa590b997858f615d"
+    }
+  },
+  "workspace_focus_targets": {
+    "jpeg2000": {
+      "passed": 48,
+      "failed": 0,
+      "ignored": 0
+    },
+    "image_buffer_ex_callback_contracts": {
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    "image_decoder_ex": {
+      "passed": 13,
+      "failed": 0,
+      "ignored": 0
+    },
+    "tiff_ex_fill_order": {
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    "tiff_ex_sample_format": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "wasm": {
+    "EX_groups": 82,
+    "JPEG2000_expanded_cases": 72,
+    "all_passed": true,
+    "record": "image-buffer-ex-main-merge-wasm.json"
+  },
+  "samples": {
+    "minimal_EX": "5 scenarios passed",
+    "EX_plus_jpeg2000_png_tiff": "5 scenarios and65x33RGBA16TIFF passed",
+    "source_sha256": "54ea30955f54279e81720c99d25e8d2b3a7953b3084ff9cff8001bf0d28a4d71",
+    "jpeg_ex_interop": "JPEG2000 legacy callback -> EX RGBA16: all samples equal RGBA8*257; native EX codec entry still rejects JPEG2000",
+    "interop_harness_sha256": "e458bf92f5724da4aeede55e9b2106fbb3212cb76e3dd24edf2c7599b2b345d7"
+  },
+  "fmt_diff_checks": "passed",
+  "clippy": {
+    "status": "passed",
+    "command": "cargo clippy --workspace --all-targets --offline --features wml2/jpeg2000,wml2/image-buffer-ex,wml2/high-bit-depth,wml2/tga,wml2/pcx,wml2/dds,wml2/q4",
+    "warning_headers": 255,
+    "new_callback_sample_test_diagnostics": 0,
+    "inherited_warnings_not_Dwarnings": true,
+    "log_sha256": "256c52ba9abc3c0b60dd41269c2459e526d0581d33ba07a3346f0803509f3ecb"
+  },
+  "release_metadata": {
+    "unit_tests": 6,
+    "all_passed": true,
+    "notes_validation": "0.0.36 inherited from main; no publication operation",
+    "test_log_sha256": "4667889f57ee1bcc99f7363be65135885f302d0e4706c6b62f0eea948a5a86ba",
+    "notes_log_sha256": "5fbf3b4cede1d994e5d975964c891a325236033dfabee6dc9d42f720bc285de4"
+  },
+  "display": {
+    "viewed": true,
+    "record": "image-buffer-ex-main-merge-display.png",
+    "description": "3JPEG2000 PPM exports plus explicit Round EX PNG preview, source-exact JPEG RGB checked in18paired rows",
+    "EX_native": {
+      "case": "65x33 independent RGBA16 TIFF",
+      "all_samples_source_exact": true,
+      "samples": 8580,
+      "native_sha256": "f4e5c5a5f2d93fbac6fd7d408e0375ff96b88323d7d6ff0c306712fa7d665798",
+      "preview_sha256": "110664cb934d1681b6d9f955b07981a03312ca455e53de4e8be9a84b97c7a1d7"
+    }
+  },
+  "benchmark": {
+    "record": "image-buffer-ex-main-merge-benchmark.json",
+    "selected_cases": 3,
+    "order": "B/C/C/B/C/B",
+    "all_output_hashes_match_and_source_exact": true,
+    "limitations": "same minimal JPEG2000 features (EX off) both; sharedhost and selectedpaths, no all-workload guarantee"
+  },
+  "auxiliary_attempts": {
+    "jpeg_debug": {
+      "status": "interrupted_optional_debug_run",
+      "session_id": 37427,
+      "exit_code": 130,
+      "reason": "large JPEG oracle corpus still running after8min; use release feature matrix for complete JPEG-only results",
+      "replacement": "jpeg2000-only-release.log",
+      "process_inspection": "read of /proc/12443/cwd denied; no escalation/retry of that read; own task stopped with session Ctrl-C",
+      "cleanup": "own debug cargo/test argv and parent relationship verified; remaining child terminated, no permissions/configuration change"
+    },
+    "baseline_first_build": "failed due empty optional avif path manifest in temporary main checkout; existing matching dependency sources materialized and final build succeeded; no merge-runtime fix needed",
+    "baseline_initial_log_sha256": "782d9ca92f7c42e2c6a8329a0f087effe0d89a1f2f8807b4b4e5a067ef046e06",
+    "baseline_final_log_sha256": "dcb714ed613e355f040e2c3db3b59fbaa761e82c1d102c5fc70db035619b6ab8"
+  },
+  "not_executed": [
+    "Windows/macOS/32bitnative",
+    "full optional AVIF/ICC feature matrix and external corpora",
+    "full historical JPEG2000 WASM corpus (expanded72case runner used)",
+    "actual ICC transform",
+    "native high-depthJPEG2000",
+    "CI monitoring"
+  ],
+  "source_policy": "no manual runtime changes, no feature expansion; imported mainJPEGimplementation exactly; default features and opt-inEX/JPEG2000 preserved"
+}

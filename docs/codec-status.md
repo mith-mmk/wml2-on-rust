@@ -1,6 +1,6 @@
 # TGA / PCX / DDS 対応状況
 
-EXは`feat/image-buffer-ex-compat`に分離し、このcodec branchには含めません。`jpeg2000`は同じmainから独立したbranchで、backendは未選択です。
+EXは`feat/image-buffer-ex-compat`に分離し、このcodec branchには含めません。JPEG2000は非既定featureのPure Rust lossless decoderを実装しています。[現行の対応範囲・検証](jpeg2000.md)を参照してください。
 
 対象は `codex/p1-retro-limits` の通常の RGBA8 callback 経路です。既存の公開 callback、options の field、既定 feature は変更していません。以下の形式は feature を有効にした場合だけ利用でき、`noretoro` では無効になります。
 
@@ -24,4 +24,4 @@ EXは`feat/image-buffer-ex-compat`に分離し、このcodec branchには含め�
 
 `input_bytes`は通常入口とretroの直接decodeで入力確保前に検査します。pixel/output制限、PCX scanline、各encoderのheader/RLE/paletteを含む出力量も検査します。`expanded_bytes`は個々の展開buffer・出力サイズの制限で、同時に存在する全bufferやallocator overheadを含む合計peak heap/RSS上限ではありません。
 
-BC7は独立Pillow fixtureで全mode・partition・anchor・p-bitを比較しました。TGA属性0/1/3と現行PCX RGB/indexedは外部decoderとの全画素一致を確認しました。TGA属性4と旧EGA/CGAは仕様vectorと実際のWML表示で確認しています。ImageMagickはこれらの解釈に対応しないため、その不一致を外部oracle成功とは扱っていません。JPEG2000の依存やbackendは追加していません。
+BC7は独立Pillow fixtureで全mode・partition・anchor・p-bitを比較しました。TGA属性0/1/3と現行PCX RGB/indexedは外部decoderとの全画素一致を確認しました。TGA属性4と旧EGA/CGAは仕様vectorと実際のWML表示で確認しています。ImageMagickはこれらの解釈に対応しないため、その不一致を外部oracle成功とは扱っていません。このretro形式の検証はJPEG2000を対象に含みません。JPEG2000の現行状態は[専用記録](jpeg2000.md)に分離しています。

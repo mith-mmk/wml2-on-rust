@@ -1,0 +1,12 @@
+{
+  "small_band_block_excess_max": 2.5,
+  "packet_blocks_bound": "M<=tileA/4+9 for1..3disjointbands. Bothaxes>=4 implynx<=w/2,ny<=h/2; if one axis<=3, nx<=min(w,2) andny<=h/4+1.5; ifboth<=3, directmaxexcess3 perband.",
+  "block_descriptor_bytes_64bit": 48,
+  "descriptor_capacity_bound": "<=max(4,2*M), hence <=24*tileA+1056 bytes; transient old+new reallocation <=36*tileA+1488 bytes.",
+  "tier1_value_and_flags": "9*Bbytes <=9*A; B<=4096 andB<=A",
+  "packet_peak_including_whole_output": "T1phase <=(4*C+33)*tileA+4*wholeA+boundedheaders. Packet-header/tree phase including Vec growth <=(4*C+38)*tileA+4*wholeA+boundedheaders. Both fit64*C*wholeA+8192; joined payload charged separately.",
+  "float_peak_bound": "<=12*C*tileA+16*tileA+4*wholeA+boundedheaders; outputphase8*C*tileA+4*tileA+4*wholeA",
+  "doubled_24plane_abs_max": 33554431,
+  "loose_finite_filter_bound_5levels": 6.827891219509276e+19,
+  "loose_ict_float_bound": 2.1849251902429685e+20
+}

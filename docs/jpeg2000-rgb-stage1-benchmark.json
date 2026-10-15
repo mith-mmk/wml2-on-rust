@@ -1,0 +1,50 @@
+[
+  {
+    "input": "jp2_16x16_d1_noise.jp2",
+    "version": "base",
+    "result": "16x16, 10000 decodes, 21.682 us/decode",
+    "sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+  },
+  {
+    "input": "jp2_16x16_d1_noise.jp2",
+    "version": "head",
+    "result": "16x16, 10000 decodes, 21.668 us/decode",
+    "sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+  },
+  {
+    "input": "jp2_16x16_d1_noise.jp2",
+    "version": "head",
+    "result": "16x16, 10000 decodes, 21.614 us/decode",
+    "sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+  },
+  {
+    "input": "jp2_16x16_d1_noise.jp2",
+    "version": "base",
+    "result": "16x16, 10000 decodes, 22.343 us/decode",
+    "sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+  },
+  {
+    "input": "jp2_deep_257x129_d5_mixed.jp2",
+    "version": "base",
+    "result": "257x129, 100 decodes, 5784.919 us/decode",
+    "sha256": "ecbc65d3b239fb2df3f1f26771030296f997690377ab0ee461477b17dc0e85ff"
+  },
+  {
+    "input": "jp2_deep_257x129_d5_mixed.jp2",
+    "version": "head",
+    "result": "257x129, 100 decodes, 5901.741 us/decode",
+    "sha256": "ecbc65d3b239fb2df3f1f26771030296f997690377ab0ee461477b17dc0e85ff"
+  },
+  {
+    "input": "jp2_deep_257x129_d5_mixed.jp2",
+    "version": "head",
+    "result": "257x129, 100 decodes, 5708.627 us/decode",
+    "sha256": "ecbc65d3b239fb2df3f1f26771030296f997690377ab0ee461477b17dc0e85ff"
+  },
+  {
+    "input": "jp2_deep_257x129_d5_mixed.jp2",
+    "version": "base",
+    "result": "257x129, 100 decodes, 5393.538 us/decode",
+    "sha256": "ecbc65d3b239fb2df3f1f26771030296f997690377ab0ee461477b17dc0e85ff"
+  }
+]

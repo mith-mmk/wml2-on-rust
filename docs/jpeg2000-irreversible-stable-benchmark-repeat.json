@@ -1,0 +1,104 @@
+{
+  "baseline_git": "7043bf083203234c1193cf1c22a70ab61d6dc3df",
+  "working_tree_dirty": false,
+  "candidate_git": "d8c56fe5bebab9693768c6aaac4900474ce3faf3",
+  "cpu_affinity": 0,
+  "order": "B/H/H/B/H/B",
+  "rust": "1.91.0 release",
+  "warmup_calls": 100,
+  "measurement": "whole-process wall and child CPU / total calls, including export/startup",
+  "source_sha256": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+  "baseline_binary_sha256": "b3e0a69ae2582b4184d565addde2b176a0746117ba240fee5eea583817e57f90",
+  "candidate_binary_sha256": "54e8210a1e298930f0af49f2026a68537745fe379acb6ab37dcc6974160b54bf",
+  "stable_gray": true,
+  "limitations": "shared-host sample, not a general performance guarantee; paired inputs must be supported by both binaries; only Gray is supported by the original stable baseline",
+  "summary": [
+    {
+      "case": "Gray16",
+      "wall_us_per_call": {
+        "baseline": 69.93992487689387,
+        "current": 54.56092674886473,
+        "change_percent": -21.988868525522133
+      },
+      "cpu_us_per_call": {
+        "baseline": 69.79054616485944,
+        "current": 54.53873245949915,
+        "change_percent": -21.853695870687705
+      }
+    }
+  ],
+  "rows": [
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "baseline",
+      "iterations": 90000,
+      "total_calls": 90101,
+      "wall_us_per_call": 54.03601039946164,
+      "cpu_us_per_call": 53.72834929690015,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 90000 decodes, 53.980 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "current",
+      "iterations": 90000,
+      "total_calls": 90101,
+      "wall_us_per_call": 54.25836533445338,
+      "cpu_us_per_call": 54.208044305834555,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 90000 decodes, 54.201 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "current",
+      "iterations": 90000,
+      "total_calls": 90101,
+      "wall_us_per_call": 54.27490946826521,
+      "cpu_us_per_call": 54.26687828104016,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 90000 decodes, 54.223 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "baseline",
+      "iterations": 90000,
+      "total_calls": 90101,
+      "wall_us_per_call": 54.88865791720843,
+      "cpu_us_per_call": 54.881532946360196,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 90000 decodes, 54.834 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "current",
+      "iterations": 90000,
+      "total_calls": 90101,
+      "wall_us_per_call": 55.14950544387561,
+      "cpu_us_per_call": 55.141274791622735,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 90000 decodes, 55.123 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "baseline",
+      "iterations": 90000,
+      "total_calls": 90101,
+      "wall_us_per_call": 100.89510631401156,
+      "cpu_us_per_call": 100.76175625131796,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 90000 decodes, 100.867 us/decode"
+    }
+  ]
+}

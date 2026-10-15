@@ -1,0 +1,1416 @@
+{
+  "production_sha256": {
+    "jpeg2000.rs": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780",
+    "util.rs": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+    "draw.rs": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d"
+  },
+  "metadata_repro": {
+    "input_bytes": 33619780,
+    "injected_com_bytes": 33617403,
+    "minimal_feature": {
+      "image_load": "metadata exceeds decode limit",
+      "public_decode": "metadata exceeds decode limit",
+      "drawn_dimensions": [
+        0,
+        0
+      ]
+    },
+    "default_codecs_plus_jpeg2000": {
+      "image_load": "metadata exceeds decode limit",
+      "public_decode": "metadata exceeds decode limit",
+      "drawn_dimensions": [
+        0,
+        0
+      ]
+    }
+  },
+  "exhaustive_match": {
+    "feature_off": "compiled and ran (png)",
+    "default_features_without_jpeg2000": "compiled and ran (png)",
+    "workspace_features_plus_jpeg2000_explicit_added_arm": "compiled and ran (png)"
+  },
+  "remaining_actionable_production_findings": [],
+  "large_regression_checks": "Owned by root; not duplicated",
+  "profile_documentation": "docs/jpeg2000.md checked against production source by independent reviewer; QCC wording corrected.",
+  "documentation_followup": {
+    "finding": "QCC scope must explicitly be RGB-only; other profile/API/budget statements match source",
+    "resolution": "docs/jpeg2000.md now explicitly states RGB-only QCC and Gray QCC unsupported."
+  },
+  "robustness_prior_source_snapshot": {
+    "reviewed_head": "bf89cb0d4cf7be71e99d5f40ff78d28c39dbc3f3",
+    "reviewed_source_sha256": {
+      "wml2/src/jpeg2000.rs": "e4e9b714f02c9a41a0bb363a0989221d9b8043a24e12e181572ef7ca44174a5c",
+      "wml2/src/jpeg2000_tier1.rs": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329"
+    },
+    "rust_profile": "debug / Rust1.91.0 / jpeg2000-only",
+    "seed": "aff76704481c104c",
+    "fixture_count": 36,
+    "mutation_cases": 10800,
+    "accepted": 792,
+    "rejected": 10008,
+    "panics": 0,
+    "errors_after_imagebuffer_initialization": 0,
+    "metadata_boundaries": [
+      "metadata_COM_exact=49 one_below_rejected_before_callbacks=true",
+      "metadata_free_exact=45 one_below_rejected_before_callbacks=true"
+    ],
+    "harness_sha256": "1981a578868d44bb59954220f028ac83b0fae1b900dbf8912f79b61b9986ae38",
+    "log_sha256": "ddc9a41ccac736a06be729b7a38b57740a7c0c4444708cc4ca3ca48b163db8f3",
+    "critical_major_actionables": [],
+    "minor_documentation": [
+      "module profile still says one part/layer per tile",
+      "README/README.ja lack opt-in JPEG2000/current bounded-profile entry"
+    ],
+    "suggested_focused_test": "JPEG2000 metadata aggregate: duplicate COM and JP2 free boxes, exact budget accepts, one-below fails before init; isolated harness verifies implementation currently works.",
+    "limitations": "Deterministic bounded mutations are not exhaustive corruption detection or proof against every panic. Accepted entropy mutations may be legal alternate images; assertions only check safety and pre-callback errors. Test fixtures restricted to small encoded files under2000bytes."
+  },
+  "workspace_regression": {
+    "passed": 368,
+    "failed": 0,
+    "ignored": 12,
+    "targets": 43
+  },
+  "feature_off_passed": 15,
+  "clippy_existing_warnings": 11,
+  "source_hashes": {
+    "wml2/src/jpeg2000.rs": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780",
+    "wml2/src/jpeg2000_tier1.rs": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+    "wml2/src/util.rs": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+    "wml2/src/draw.rs": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d"
+  },
+  "tested_checkpoint": "9b5cd2d3c3b4a5b27f95fa172992afafdad3204e",
+  "stable_baseline": {
+    "git": "7043bf083203234c1193cf1c22a70ab61d6dc3df",
+    "source_sha256": "39a314d10cdb9569fd16ccb8bd0634d5266336172ce820c0b0aae3d7fd615455",
+    "binary_sha256": "b3e0a69ae2582b4184d565addde2b176a0746117ba240fee5eea583817e57f90"
+  },
+  "terminal_framing_independent_robustness": {
+    "scope": "Only new final Psot=0 framing: terminal header, payload and EOC deterministic multi-byte/insertion/deletion mutations. JP2 codestream box lengths repaired after edits to reach decoder framing.",
+    "seed": "bc14804107677ffa",
+    "fixture_count": 10,
+    "mutation_cases": 3000,
+    "accepted": 861,
+    "rejected": 2139,
+    "panics": 0,
+    "errors_after_imagebuffer_initialization": 0,
+    "rust_profile": "Rust1.91.0 debug (overflow checks), jpeg2000-only",
+    "source_sha256": {
+      "wml2/src/jpeg2000.rs": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780",
+      "wml2/src/jpeg2000_tier1.rs": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+      "wml2/src/draw.rs": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d",
+      "wml2/src/decode_guard.rs": "ab2118b0e3d494daf88e97c2dfcad232f338bffa3d789d4d0e5017d350f26035",
+      "wml2/src/util.rs": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+      "wml2/src/lib.rs": "c5544f48ceca9bb58721e9c5d2fbc220af68b5001ca7fefc4db2eab8fefe70cf"
+    },
+    "harness_sha256": "be334af425e91574090f86e55a497a9159596e4b20b0523b52ac9bfaa67e28b8",
+    "log_sha256": "46c73fe48fc9a8623fee127b26294d310c28643f29a2eabc24120f59102304cf",
+    "binary_sha256": "57a8d151fc203daa76a6f5450a8be59224b35df585ddc0d96471ed0f38f3f7a8",
+    "manifest_sha256": "46489bc5b2c7e9163907e0c2552303b0358dd769d101e3d3670e7461640bc7a2",
+    "fixtures": [
+      {
+        "file": "jp2_terminal_16x16_d0_noise.j2k",
+        "encoded_sha256": "bf4800add27d4214f9097d8230b4166873b5c3948cbccac0f4bf159977bdd7a7",
+        "source_file": "jp2_16x16_d0_noise.gray",
+        "source_sha256": "9800d45cb4906f375f6cc9ff7f4e10eb9961e0a2d36720db4b8ec9c140afc7d9",
+        "components": 1,
+        "mct": 0,
+        "levels": 0,
+        "max_parts_per_tile": 1
+      },
+      {
+        "file": "jp2_terminal_16x16_d0_noise.jp2",
+        "encoded_sha256": "037b1d1138edd10b273c2ad59516fd8c34341803991147446340e518d6fed894",
+        "source_file": "jp2_16x16_d0_noise.gray",
+        "source_sha256": "9800d45cb4906f375f6cc9ff7f4e10eb9961e0a2d36720db4b8ec9c140afc7d9",
+        "components": 1,
+        "mct": 0,
+        "levels": 0,
+        "max_parts_per_tile": 1
+      },
+      {
+        "file": "jp2_terminal_rgb_16x16_d0_noise_mct0.j2k",
+        "encoded_sha256": "5b7644583b7ad13c1cada8fd6084cddc0ea6b9ca9e986c6186e5aff3a6006157",
+        "source_file": "jp2_rgb_16x16_d0_noise.rgb",
+        "source_sha256": "4c6341fee95c1f855764c8a8046264fc239fdb4884ef54c654cb34f32eb865da",
+        "components": 3,
+        "mct": 0,
+        "levels": 0,
+        "max_parts_per_tile": 1
+      },
+      {
+        "file": "jp2_terminal_rgb_16x16_d0_noise_mct0.jp2",
+        "encoded_sha256": "a96bbd6c391be14d79ec085d4fc12893b86ee7442a681a99c9231188f5404840",
+        "source_file": "jp2_rgb_16x16_d0_noise.rgb",
+        "source_sha256": "4c6341fee95c1f855764c8a8046264fc239fdb4884ef54c654cb34f32eb865da",
+        "components": 3,
+        "mct": 0,
+        "levels": 0,
+        "max_parts_per_tile": 1
+      },
+      {
+        "file": "jp2_terminal_rgb_16x16_d0_noise_mct1.j2k",
+        "encoded_sha256": "c77f3b0e1de6bbf34e2daf0d18dc539960de6a5f5904e21020d3a40071c6a86b",
+        "source_file": "jp2_rgb_16x16_d0_noise.rgb",
+        "source_sha256": "4c6341fee95c1f855764c8a8046264fc239fdb4884ef54c654cb34f32eb865da",
+        "components": 3,
+        "mct": 1,
+        "levels": 0,
+        "max_parts_per_tile": 1
+      },
+      {
+        "file": "jp2_terminal_rgb_16x16_d0_noise_mct1.jp2",
+        "encoded_sha256": "8c30887838f4b0377b83f4b59aacaeee7956bfa3e9940d6559e71d0943f09f37",
+        "source_file": "jp2_rgb_16x16_d0_noise.rgb",
+        "source_sha256": "4c6341fee95c1f855764c8a8046264fc239fdb4884ef54c654cb34f32eb865da",
+        "components": 3,
+        "mct": 1,
+        "levels": 0,
+        "max_parts_per_tile": 1
+      },
+      {
+        "file": "jp2_terminal_unknown_parts_1x1_d5_gray_b4x4_t32x32_o31x47_g30x46_flat_packet_mct0_all_zero.j2k",
+        "encoded_sha256": "75fb084ca13651b821bec7c4a8b2863ba31d230b06bfd62cdd4599761f1eff71",
+        "source_file": "jp2_parts_1x1_d5_gray_b4x4_t32x32_o31x47_g30x46_flat_packet.gray",
+        "source_sha256": "76be8b528d0075f7aae98d6fa57a6d3c83ae480a8469e668d7b0af968995ac71",
+        "components": 1,
+        "mct": 0,
+        "levels": 5,
+        "max_parts_per_tile": 1
+      },
+      {
+        "file": "jp2_terminal_unknown_parts_1x1_d5_gray_b4x4_t32x32_o31x47_g30x46_flat_packet_mct0_all_zero.jp2",
+        "encoded_sha256": "3007db08f4308ac84663c697ca26ac44363923ea6b558ab48fab3b0117de4fc5",
+        "source_file": "jp2_parts_1x1_d5_gray_b4x4_t32x32_o31x47_g30x46_flat_packet.gray",
+        "source_sha256": "76be8b528d0075f7aae98d6fa57a6d3c83ae480a8469e668d7b0af968995ac71",
+        "components": 1,
+        "mct": 0,
+        "levels": 5,
+        "max_parts_per_tile": 1
+      },
+      {
+        "file": "jp2_terminal_unknown_parts_1x1_d5_rgb_b4x4_t32x32_o31x47_g30x46_flat_packet_mct0_all_zero.j2k",
+        "encoded_sha256": "3626949fbe0a57235b73b323a29dde7d44f3516918b7d20a776a197f90a3d751",
+        "source_file": "jp2_parts_1x1_d5_rgb_b4x4_t32x32_o31x47_g30x46_flat_packet.rgb",
+        "source_sha256": "8ae40a3583aef6697d2c2eff57eb915ed0bda54aaa92812ad97982743ac06f37",
+        "components": 3,
+        "mct": 0,
+        "levels": 5,
+        "max_parts_per_tile": 3
+      },
+      {
+        "file": "jp2_terminal_unknown_parts_1x1_d5_rgb_b4x4_t32x32_o31x47_g30x46_flat_packet_mct1_all_zero.jp2",
+        "encoded_sha256": "4f8ac72960bcecfdd9427ed1ef8125c46f2ffb8eeb673ec34b902dc3ebc46158",
+        "source_file": "jp2_parts_1x1_d5_rgb_b4x4_t32x32_o31x47_g30x46_flat_packet.rgb",
+        "source_sha256": "8ae40a3583aef6697d2c2eff57eb915ed0bda54aaa92812ad97982743ac06f37",
+        "components": 3,
+        "mct": 1,
+        "levels": 5,
+        "max_parts_per_tile": 3
+      }
+    ],
+    "critical_major_actionables": [],
+    "limitations": "Accepted mutations may encode legal alternate outputs; checks establish observed bounded safety and pre-init error behavior only. Tiny/small inputs, deterministic3000 cases, not exhaustive."
+  },
+  "new_terminal_display": {
+    "source_sha256": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780",
+    "contact_sheet_sha256": "c4a72a13c7c0ce0d65a03675c01043b4a4ac6e4b4299f257903fa1daa1804e3c",
+    "outputs": [
+      {
+        "fixture": "jp2_terminal_16x16_d0_noise.j2k",
+        "encoded_sha256": "bf4800add27d4214f9097d8230b4166873b5c3948cbccac0f4bf159977bdd7a7",
+        "public_ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+        "oracle_pixel_match": true
+      },
+      {
+        "fixture": "jp2_terminal_rgb_16x16_d0_noise_mct0.j2k",
+        "encoded_sha256": "5b7644583b7ad13c1cada8fd6084cddc0ea6b9ca9e986c6186e5aff3a6006157",
+        "public_ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+        "oracle_pixel_match": true
+      },
+      {
+        "fixture": "jp2_terminal_rgb_16x16_d0_noise_mct1.j2k",
+        "encoded_sha256": "c77f3b0e1de6bbf34e2daf0d18dc539960de6a5f5904e21020d3a40071c6a86b",
+        "public_ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+        "oracle_pixel_match": true
+      },
+      {
+        "fixture": "jp2_terminal_unknown_parts_28x32_d2_rgb_b4x4_t12x14_o5x7_g2x3_noise_packet_mct0_late_known.j2k",
+        "encoded_sha256": "98c57adb106ae171889145b376ddc2de9c38b7c4fb60c7cda086d9e48dacc410",
+        "public_ppm_sha256": "61b5730681fc4d83443adf7418ec0bf17e58f13cf8d1230d366bba8bde666760",
+        "oracle_pixel_match": true
+      },
+      {
+        "fixture": "jp2_terminal_parts_33x35_d5_rgb_b16x16_t64x64_o2x4_g0x0_mixed_packet_mct1.j2k",
+        "encoded_sha256": "d141133dac03aa84bdb3b45476d875100bcad206a74921505cf41120b76f8e41",
+        "public_ppm_sha256": "3e00ab01f31e3cdeb120a930fba12cae976eaf49be70ee79f7b6269e6550f0d3",
+        "oracle_pixel_match": true
+      },
+      {
+        "fixture": "jp2_terminal_parts_79x78_d1_rgb_b16x16_t5x5_o101x205_g100x203_mixed_packet_mct1.j2k",
+        "encoded_sha256": "8e88b8046a09a3f92fb3c4a75680060c8c860f9483e46a8be92a6327e7267360",
+        "public_ppm_sha256": "5a75b2a82bff87ce1fdb91eac71841e874890d7bc499d9fa839d0dd55cd7398e",
+        "oracle_pixel_match": true
+      },
+      {
+        "fixture": "jp2_terminal_unknown_parts_1x1_d5_gray_b4x4_t32x32_o31x47_g30x46_flat_packet_mct0_all_zero.j2k",
+        "encoded_sha256": "75fb084ca13651b821bec7c4a8b2863ba31d230b06bfd62cdd4599761f1eff71",
+        "public_ppm_sha256": "699c96ca6248830a7510dd24d94172041cff1a47e117d1a68f532d621dc2f451",
+        "oracle_pixel_match": true
+      },
+      {
+        "fixture": "jp2_terminal_unknown_parts_1024x1024_d5_rgb_b64x64_t256x256_o37x41_g5x9_ramp_pair_mct1_all_zero.j2k",
+        "encoded_sha256": "d542eebaddc3d25ac5571a6e3667ef2432ef86e4aaea653f21d25e8b1d9cc4c6",
+        "public_ppm_sha256": "0e7ee996893ab6b5a380e3d7b4d17991d42e5e91372f369b2c7aa2956c4f818e",
+        "oracle_pixel_match": true
+      },
+      {
+        "fixture": "jp2_terminal_parts_97x101_d4_gray_b4x4_t35x37_o5x7_g2x3_noise_packet_mct0.j2k",
+        "encoded_sha256": "187c935d645af58ece96b6e2db790c1bcbe622ff13e19a1b6a049ce3cc402511",
+        "public_ppm_sha256": "978b5b9370ca54048bef2d5971ce2bc21464e0752038d37ad237a57cb6b6e277",
+        "oracle_pixel_match": true
+      }
+    ]
+  },
+  "new_terminal_random": {
+    "seed": 1413829197,
+    "geometries": 24,
+    "pixel_comparisons": 144,
+    "multipart_comparisons": 124,
+    "all_passed": true,
+    "attempted_geometries": 30,
+    "source_exact_geometries": 24,
+    "compatibility_only_comparisons": 36,
+    "encoder_roundtrip_mismatches": 36,
+    "oracle_limit": "Known encoder-issued coefficient mismatches are recorded separately; every attempted file still matches Rust to OpenJPEG output.",
+    "pillow": "12.3.0",
+    "openjpeg": "2.5.4",
+    "decoder_sha256": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780"
+  },
+  "package": {
+    "bytes": 438791,
+    "sha256": "fb09ec76109ddb6b9ea00133d2248987a37f35e715deb633b06498ac6192f905",
+    "files": 195,
+    "cargo_archive_verification": "passed",
+    "large_oracle_corpus_excluded": true,
+    "production_decoder_sources_present": true,
+    "cargo_vcs_info": {
+      "git": {
+        "sha1": "9b5cd2d3c3b4a5b27f95fa172992afafdad3204e"
+      },
+      "path_in_vcs": "wml2"
+    }
+  },
+  "wasm": {
+    "minimal": {
+      "runtime": "v24.19.0",
+      "fixtures": 1540,
+      "rejected_fixtures": 138,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 284098560,
+      "git_head": "9b5cd2d3c3b4a5b27f95fa172992afafdad3204e",
+      "working_tree_dirty": false,
+      "rust_source_sha256": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780",
+      "dispatch_source_sha256": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d",
+      "format_source_sha256": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+      "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+      "fixture_manifest_sha256": {
+        "jpeg2000-global-origins-unsupported-manifest.txt": "4c72c0b75f304356bf4732ead07d557aa4626ca1b946c15425b971f650d78dfa",
+        "jpeg2000-unknown-parts-unsupported-manifest.txt": "a44e2b706d9297da37364bffd464191626aa66941fa0a02a4d688a39d40e13ed",
+        "jpeg2000-global-origins-manifest.txt": "aca54751a8c1bcc80dfc49c5d532490d46d57b9d93a174a9665f48986feec7f3",
+        "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+        "jpeg2000-parts-manifest.txt": "77e18ee586617a8fd1e9bde635febfe17bf6bd4887eb360d38f8c68efdc3bd4e",
+        "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+        "jpeg2000-terminal-parts-manifest.txt": "46489bc5b2c7e9163907e0c2552303b0358dd769d101e3d3670e7461640bc7a2",
+        "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+        "jpeg2000-terminal-parts-unsupported-manifest.txt": "08aad79cbe7d79137fe0a67ef588d30d2252138f7e9f4003714effff881584e1",
+        "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+        "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+        "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+        "jpeg2000-unknown-parts-manifest.txt": "c396e8af87f7cc87bfc0ef9a226eda0de06930ab79759543edfe1c1e1632a482",
+        "jpeg2000-parts-unsupported-manifest.txt": "9ed79222f6b8e1bd4bb9671d4588ee5b1386f92ef6a5885a3c590b6e239ae491",
+        "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+        "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+        "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4"
+      },
+      "target": "wasm32-unknown-unknown",
+      "default_features": false,
+      "source_exact_fixtures": 1539,
+      "encoder_compatibility_fixtures": 1,
+      "wasm_sha256": "8f6846bed7e5ccb8b25e7fc816121a96bb8bab5b6b8a9ed00b8c870d4847db8d",
+      "checks": [
+        "direct API default metadata aggregation and scope restoration",
+        "RGBA pixels",
+        "dimensions",
+        "exact limits",
+        "short limits",
+        "limit scope restoration",
+        "callbacks",
+        "init/draw abort",
+        "truncation rejected before callbacks",
+        "unsupported and malformed tile/part profiles rejected before callbacks",
+        "late tile framing, missing tile and repaired short packet rejection"
+      ]
+    },
+    "default": {
+      "runtime": "v24.19.0",
+      "fixtures": 1540,
+      "rejected_fixtures": 138,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 284164096,
+      "git_head": "9b5cd2d3c3b4a5b27f95fa172992afafdad3204e",
+      "working_tree_dirty": false,
+      "rust_source_sha256": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780",
+      "dispatch_source_sha256": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d",
+      "format_source_sha256": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+      "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+      "fixture_manifest_sha256": {
+        "jpeg2000-global-origins-unsupported-manifest.txt": "4c72c0b75f304356bf4732ead07d557aa4626ca1b946c15425b971f650d78dfa",
+        "jpeg2000-unknown-parts-unsupported-manifest.txt": "a44e2b706d9297da37364bffd464191626aa66941fa0a02a4d688a39d40e13ed",
+        "jpeg2000-global-origins-manifest.txt": "aca54751a8c1bcc80dfc49c5d532490d46d57b9d93a174a9665f48986feec7f3",
+        "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+        "jpeg2000-parts-manifest.txt": "77e18ee586617a8fd1e9bde635febfe17bf6bd4887eb360d38f8c68efdc3bd4e",
+        "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+        "jpeg2000-terminal-parts-manifest.txt": "46489bc5b2c7e9163907e0c2552303b0358dd769d101e3d3670e7461640bc7a2",
+        "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+        "jpeg2000-terminal-parts-unsupported-manifest.txt": "08aad79cbe7d79137fe0a67ef588d30d2252138f7e9f4003714effff881584e1",
+        "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+        "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+        "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+        "jpeg2000-unknown-parts-manifest.txt": "c396e8af87f7cc87bfc0ef9a226eda0de06930ab79759543edfe1c1e1632a482",
+        "jpeg2000-parts-unsupported-manifest.txt": "9ed79222f6b8e1bd4bb9671d4588ee5b1386f92ef6a5885a3c590b6e239ae491",
+        "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+        "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+        "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4"
+      },
+      "target": "wasm32-unknown-unknown",
+      "default_features": true,
+      "source_exact_fixtures": 1539,
+      "encoder_compatibility_fixtures": 1,
+      "wasm_sha256": "ba57374e0c0ca6df8b7d2471f90c177983eda09ba7c703d97e8d7f4d4813e9f7",
+      "checks": [
+        "direct API default metadata aggregation and scope restoration",
+        "RGBA pixels",
+        "dimensions",
+        "exact limits",
+        "short limits",
+        "limit scope restoration",
+        "callbacks",
+        "init/draw abort",
+        "truncation rejected before callbacks",
+        "unsupported and malformed tile/part profiles rejected before callbacks",
+        "late tile framing, missing tile and repaired short packet rejection"
+      ]
+    }
+  },
+  "evidence_files": {
+    "docs/jpeg2000-terminal-parts-random.json": "09a4538c17fa01776d29ad1acb399c50eb071c55d1a9311159361658212a2e3f",
+    "docs/jpeg2000-pr-display.json": "203d29b0f76032597ccd5198bf1470d07d877b0ee06e8a51ac3dc8034951ff5a",
+    "docs/jpeg2000-pr-display.png": "c4a72a13c7c0ce0d65a03675c01043b4a4ac6e4b4299f257903fa1daa1804e3c",
+    "docs/jpeg2000-wasm-runtime.json": "d56280073e6651c473765b28683b9ac1d637fa586c9ac1eabad888ea6f0c53d9",
+    "wml2/tests/fixtures/review/jpeg2000-terminal-parts-proof.json": "bf29999555c5b806b6fd6d411a24a4d070995817552a807ebb8d57a68619be12",
+    "wml2/tests/fixtures/review/jpeg2000-terminal-parts-manifest.txt": "46489bc5b2c7e9163907e0c2552303b0358dd769d101e3d3670e7461640bc7a2",
+    "wml2/tests/fixtures/review/jpeg2000-terminal-parts-unsupported-manifest.txt": "08aad79cbe7d79137fe0a67ef588d30d2252138f7e9f4003714effff881584e1",
+    "docs/jpeg2000-pr-benchmark.json": "94db528a0ade100132be4d0765e6c4265359fc0c737530b90a07d6741d466afc",
+    "docs/jpeg2000-pr-benchmark-stable.json": "67f628a6b0b32ac90276b3c1485331b94e1815cefb9590efb7cc99f70d0281b2",
+    "wml2/tests/fixtures/review/benchmark_jpeg2000.py": "476d0a2926321545e79e682eece6b7534605d1e71f3ef0562f32136000bcede6"
+  },
+  "performance": {
+    "benchmark": {
+      "baseline_git": "bf89cb0d4cf7be71e99d5f40ff78d28c39dbc3f3",
+      "working_tree_dirty": true,
+      "candidate_git": "9b5cd2d3c3b4a5b27f95fa172992afafdad3204e",
+      "cpu_affinity": 0,
+      "order": "B/H/H/B/H/B",
+      "rust": "1.91.0 release",
+      "warmup_calls": 100,
+      "measurement": "whole-process wall and child CPU / total calls, including export/startup",
+      "source_sha256": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780",
+      "baseline_binary_sha256": "efe87ca564ac25ef3e5b8dde54975ab6698bb73c2cc5197e07c5ddaf7f0fa3b5",
+      "candidate_binary_sha256": "d079ec0533cac35b6a5fd4178297483f8c27268a6f04ae0f181d62e33907e04a",
+      "stable_gray": false,
+      "limitations": "shared-host sample, not a general performance guarantee; paired inputs must be supported by both binaries; only Gray is supported by the original stable baseline",
+      "summary": [
+        {
+          "case": "Gray16",
+          "wall_us_per_call": {
+            "baseline": 70.12690212951155,
+            "current": 60.920369766177664,
+            "change_percent": -13.128388797684387
+          },
+          "cpu_us_per_call": {
+            "baseline": 70.01252450084712,
+            "current": 60.84559759919381,
+            "change_percent": -13.093267193275393
+          }
+        },
+        {
+          "case": "Gray65",
+          "wall_us_per_call": {
+            "baseline": 1233.9466949533387,
+            "current": 1252.0338613412898,
+            "change_percent": 1.465798033409782
+          },
+          "cpu_us_per_call": {
+            "baseline": 1232.8330560177467,
+            "current": 1251.1824736550193,
+            "change_percent": 1.4883943570222158
+          }
+        },
+        {
+          "case": "RGB16",
+          "wall_us_per_call": {
+            "baseline": 355.09305097022553,
+            "current": 333.90245553157143,
+            "change_percent": -5.96761760917448
+          },
+          "cpu_us_per_call": {
+            "baseline": 354.8253937136509,
+            "current": 333.7962491014833,
+            "change_percent": -5.926617706831438
+          }
+        },
+        {
+          "case": "RGB65",
+          "wall_us_per_call": {
+            "baseline": 4325.709972319947,
+            "current": 4125.397400883629,
+            "change_percent": -4.630744379954043
+          },
+          "cpu_us_per_call": {
+            "baseline": 4324.014396456254,
+            "current": 4122.596899224807,
+            "change_percent": -4.6581134742871955
+          }
+        },
+        {
+          "case": "Gray256tiles",
+          "wall_us_per_call": {
+            "baseline": 809.3121314489383,
+            "current": 780.9300881887839,
+            "change_percent": -3.5069341181555136
+          },
+          "cpu_us_per_call": {
+            "baseline": 808.4653355518624,
+            "current": 780.1059345535217,
+            "change_percent": -3.507806674108349
+          }
+        },
+        {
+          "case": "RGB9tiles",
+          "wall_us_per_call": {
+            "baseline": 128259.37752617788,
+            "current": 132758.4072451795,
+            "change_percent": 3.5077588912228785
+          },
+          "cpu_us_per_call": {
+            "baseline": 128226.95867768597,
+            "current": 132666.79063360885,
+            "change_percent": 3.462479342649738
+          }
+        },
+        {
+          "case": "RGB2oddtiles",
+          "wall_us_per_call": {
+            "baseline": 201.9870808362281,
+            "current": 200.69927278218788,
+            "change_percent": -0.6375695161832562
+          },
+          "cpu_us_per_call": {
+            "baseline": 201.3212231304909,
+            "current": 200.24371783227053,
+            "change_percent": -0.5352169440784427
+          }
+        }
+      ],
+      "rows": [
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 106.9140284376349,
+          "cpu_us_per_call": 106.62688947211055,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 106.555 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "current",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 72.55923261677921,
+          "cpu_us_per_call": 72.40417261884986,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 72.195 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "current",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 57.37593385597864,
+          "cpu_us_per_call": 57.36228032291286,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 57.306 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 51.39092229488713,
+          "cpu_us_per_call": 51.37473838078466,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 51.302 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "current",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 52.82594282577514,
+          "cpu_us_per_call": 52.77033985581872,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 52.725 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 52.07575565601262,
+          "cpu_us_per_call": 52.035945649646145,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 51.978 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1274.0128502525163,
+          "cpu_us_per_call": 1272.7737104825273,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1238.933 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1275.0267420950893,
+          "cpu_us_per_call": 1274.2512479201343,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1251.584 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1241.7737570695483,
+          "cpu_us_per_call": 1241.0682196339424,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1222.832 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1218.0615158043818,
+          "cpu_us_per_call": 1216.6788685524102,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1210.927 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1239.3010848592317,
+          "cpu_us_per_call": 1238.2279534109812,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1229.456 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1209.7657188031178,
+          "cpu_us_per_call": 1209.0465890183023,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1201.746 us/decode"
+        },
+        {
+          "case": "RGB16",
+          "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+          "version": "baseline",
+          "iterations": 5000,
+          "total_calls": 5101,
+          "wall_us_per_call": 328.5526737894528,
+          "cpu_us_per_call": 328.40325426386954,
+          "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+          "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+          "timed_output": "16x16, 5000 decodes, 328.684 us/decode"
+        },
+        {
+          "case": "RGB16",
+          "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+          "version": "current",
+          "iterations": 5000,
+          "total_calls": 5101,
+          "wall_us_per_call": 322.078192510961,
+          "cpu_us_per_call": 321.97059400117627,
+          "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+          "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+          "timed_output": "16x16, 5000 decodes, 322.226 us/decode"
+        },
+        {
+          "case": "RGB16",
+          "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+          "version": "current",
+          "iterations": 5000,
+          "total_calls": 5101,
+          "wall_us_per_call": 312.44780494032915,
+          "cpu_us_per_call": 312.35953734561826,
+          "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+          "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+          "timed_output": "16x16, 5000 decodes, 312.476 us/decode"
+        },
+        {
+          "case": "RGB16",
+          "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+          "version": "baseline",
+          "iterations": 5000,
+          "total_calls": 5101,
+          "wall_us_per_call": 310.76440286214614,
+          "cpu_us_per_call": 310.6569300137229,
+          "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+          "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+          "timed_output": "16x16, 5000 decodes, 310.512 us/decode"
+        },
+        {
+          "case": "RGB16",
+          "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+          "version": "current",
+          "iterations": 5000,
+          "total_calls": 5101,
+          "wall_us_per_call": 367.1813691434242,
+          "cpu_us_per_call": 367.05861595765526,
+          "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+          "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+          "timed_output": "16x16, 5000 decodes, 367.811 us/decode"
+        },
+        {
+          "case": "RGB16",
+          "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+          "version": "baseline",
+          "iterations": 5000,
+          "total_calls": 5101,
+          "wall_us_per_call": 425.9620762590776,
+          "cpu_us_per_call": 425.4159968633602,
+          "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+          "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+          "timed_output": "16x16, 5000 decodes, 424.356 us/decode"
+        },
+        {
+          "case": "RGB65",
+          "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+          "version": "baseline",
+          "iterations": 200,
+          "total_calls": 301,
+          "wall_us_per_call": 4420.438933559361,
+          "cpu_us_per_call": 4419.009966777407,
+          "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+          "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+          "timed_output": "65x49, 200 decodes, 4231.322 us/decode"
+        },
+        {
+          "case": "RGB65",
+          "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+          "version": "current",
+          "iterations": 200,
+          "total_calls": 301,
+          "wall_us_per_call": 4184.860574743193,
+          "cpu_us_per_call": 4181.229235880395,
+          "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+          "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+          "timed_output": "65x49, 200 decodes, 4195.217 us/decode"
+        },
+        {
+          "case": "RGB65",
+          "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+          "version": "current",
+          "iterations": 200,
+          "total_calls": 301,
+          "wall_us_per_call": 4122.365093020822,
+          "cpu_us_per_call": 4119.285714285709,
+          "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+          "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+          "timed_output": "65x49, 200 decodes, 4077.453 us/decode"
+        },
+        {
+          "case": "RGB65",
+          "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+          "version": "baseline",
+          "iterations": 200,
+          "total_calls": 301,
+          "wall_us_per_call": 4286.0937375427175,
+          "cpu_us_per_call": 4284.076411960139,
+          "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+          "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+          "timed_output": "65x49, 200 decodes, 4192.309 us/decode"
+        },
+        {
+          "case": "RGB65",
+          "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+          "version": "current",
+          "iterations": 200,
+          "total_calls": 301,
+          "wall_us_per_call": 4068.966534886872,
+          "cpu_us_per_call": 4067.275747508318,
+          "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+          "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+          "timed_output": "65x49, 200 decodes, 4048.804 us/decode"
+        },
+        {
+          "case": "RGB65",
+          "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+          "version": "baseline",
+          "iterations": 200,
+          "total_calls": 301,
+          "wall_us_per_call": 4270.597245857763,
+          "cpu_us_per_call": 4268.956810631217,
+          "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+          "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+          "timed_output": "65x49, 200 decodes, 4136.847 us/decode"
+        },
+        {
+          "case": "Gray256tiles",
+          "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 836.9379983364547,
+          "cpu_us_per_call": 836.3677204659047,
+          "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+          "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+          "timed_output": "64x64, 500 decodes, 815.924 us/decode"
+        },
+        {
+          "case": "Gray256tiles",
+          "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 784.4979633944622,
+          "cpu_us_per_call": 783.6855241264514,
+          "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+          "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+          "timed_output": "64x64, 500 decodes, 781.365 us/decode"
+        },
+        {
+          "case": "Gray256tiles",
+          "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 774.6161297870705,
+          "cpu_us_per_call": 773.7970049916809,
+          "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+          "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+          "timed_output": "64x64, 500 decodes, 765.022 us/decode"
+        },
+        {
+          "case": "Gray256tiles",
+          "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 794.8071164743508,
+          "cpu_us_per_call": 793.9750415973424,
+          "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+          "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+          "timed_output": "64x64, 500 decodes, 779.396 us/decode"
+        },
+        {
+          "case": "Gray256tiles",
+          "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 783.6761713848189,
+          "cpu_us_per_call": 782.835274542433,
+          "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+          "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+          "timed_output": "64x64, 500 decodes, 764.664 us/decode"
+        },
+        {
+          "case": "Gray256tiles",
+          "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 796.1912795360093,
+          "cpu_us_per_call": 795.0532445923402,
+          "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+          "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+          "timed_output": "64x64, 500 decodes, 786.906 us/decode"
+        },
+        {
+          "case": "RGB9tiles",
+          "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+          "version": "baseline",
+          "iterations": 20,
+          "total_calls": 121,
+          "wall_us_per_call": 115313.97145454847,
+          "cpu_us_per_call": 115300.52066115708,
+          "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+          "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+          "timed_output": "355x485, 20 decodes, 116817.284 us/decode"
+        },
+        {
+          "case": "RGB9tiles",
+          "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+          "version": "current",
+          "iterations": 20,
+          "total_calls": 121,
+          "wall_us_per_call": 132877.16603306102,
+          "cpu_us_per_call": 132719.75206611573,
+          "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+          "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+          "timed_output": "355x485, 20 decodes, 138880.117 us/decode"
+        },
+        {
+          "case": "RGB9tiles",
+          "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+          "version": "current",
+          "iterations": 20,
+          "total_calls": 121,
+          "wall_us_per_call": 148737.83517353985,
+          "cpu_us_per_call": 148694.26446280995,
+          "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+          "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+          "timed_output": "355x485, 20 decodes, 192510.935 us/decode"
+        },
+        {
+          "case": "RGB9tiles",
+          "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+          "version": "baseline",
+          "iterations": 20,
+          "total_calls": 121,
+          "wall_us_per_call": 149322.6029917483,
+          "cpu_us_per_call": 149270.45454545444,
+          "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+          "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+          "timed_output": "355x485, 20 decodes, 122690.993 us/decode"
+        },
+        {
+          "case": "RGB9tiles",
+          "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+          "version": "current",
+          "iterations": 20,
+          "total_calls": 121,
+          "wall_us_per_call": 116660.22052893763,
+          "cpu_us_per_call": 116586.35537190089,
+          "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+          "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+          "timed_output": "355x485, 20 decodes, 125788.368 us/decode"
+        },
+        {
+          "case": "RGB9tiles",
+          "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+          "version": "baseline",
+          "iterations": 20,
+          "total_calls": 121,
+          "wall_us_per_call": 120141.55813223684,
+          "cpu_us_per_call": 120109.90082644639,
+          "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+          "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+          "timed_output": "355x485, 20 decodes, 112837.908 us/decode"
+        },
+        {
+          "case": "RGB2oddtiles",
+          "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+          "version": "baseline",
+          "iterations": 1000,
+          "total_calls": 1101,
+          "wall_us_per_call": 197.64787829329862,
+          "cpu_us_per_call": 196.67302452316216,
+          "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+          "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+          "timed_output": "34x35, 1000 decodes, 195.529 us/decode"
+        },
+        {
+          "case": "RGB2oddtiles",
+          "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+          "version": "current",
+          "iterations": 1000,
+          "total_calls": 1101,
+          "wall_us_per_call": 194.67346230701548,
+          "cpu_us_per_call": 194.0835603996448,
+          "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+          "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+          "timed_output": "34x35, 1000 decodes, 190.062 us/decode"
+        },
+        {
+          "case": "RGB2oddtiles",
+          "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+          "version": "current",
+          "iterations": 1000,
+          "total_calls": 1101,
+          "wall_us_per_call": 213.21860944694052,
+          "cpu_us_per_call": 212.85649409626146,
+          "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+          "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+          "timed_output": "34x35, 1000 decodes, 203.314 us/decode"
+        },
+        {
+          "case": "RGB2oddtiles",
+          "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+          "version": "baseline",
+          "iterations": 1000,
+          "total_calls": 1101,
+          "wall_us_per_call": 199.56142325321176,
+          "cpu_us_per_call": 198.93188010899797,
+          "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+          "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+          "timed_output": "34x35, 1000 decodes, 197.965 us/decode"
+        },
+        {
+          "case": "RGB2oddtiles",
+          "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+          "version": "current",
+          "iterations": 1000,
+          "total_calls": 1101,
+          "wall_us_per_call": 194.20574659260762,
+          "cpu_us_per_call": 193.79109900090532,
+          "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+          "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+          "timed_output": "34x35, 1000 decodes, 193.195 us/decode"
+        },
+        {
+          "case": "RGB2oddtiles",
+          "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+          "version": "baseline",
+          "iterations": 1000,
+          "total_calls": 1101,
+          "wall_us_per_call": 208.75194096217396,
+          "cpu_us_per_call": 208.35876475931258,
+          "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+          "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+          "timed_output": "34x35, 1000 decodes, 208.302 us/decode"
+        }
+      ]
+    },
+    "benchmark-stable": {
+      "baseline_git": "7043bf083203234c1193cf1c22a70ab61d6dc3df",
+      "working_tree_dirty": true,
+      "candidate_git": "9b5cd2d3c3b4a5b27f95fa172992afafdad3204e",
+      "cpu_affinity": 0,
+      "order": "B/H/H/B/H/B",
+      "rust": "1.91.0 release",
+      "warmup_calls": 100,
+      "measurement": "whole-process wall and child CPU / total calls, including export/startup",
+      "source_sha256": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780",
+      "baseline_binary_sha256": "b3e0a69ae2582b4184d565addde2b176a0746117ba240fee5eea583817e57f90",
+      "candidate_binary_sha256": "d079ec0533cac35b6a5fd4178297483f8c27268a6f04ae0f181d62e33907e04a",
+      "stable_gray": true,
+      "limitations": "shared-host sample, not a general performance guarantee; paired inputs must be supported by both binaries; only Gray is supported by the original stable baseline",
+      "summary": [
+        {
+          "case": "Gray16",
+          "wall_us_per_call": {
+            "baseline": 52.891246281946096,
+            "current": 50.99608705134454,
+            "change_percent": -3.583124550514616
+          },
+          "cpu_us_per_call": {
+            "baseline": 52.828743231121884,
+            "current": 50.94892749964011,
+            "change_percent": -3.5583199911792707
+          }
+        },
+        {
+          "case": "Gray65",
+          "wall_us_per_call": {
+            "baseline": 1239.485656682946,
+            "current": 1218.657031611664,
+            "change_percent": -1.6804248567928282
+          },
+          "cpu_us_per_call": {
+            "baseline": 1238.5906821963392,
+            "current": 1217.7659456461442,
+            "change_percent": -1.6813251423196118
+          }
+        },
+        {
+          "case": "GrayDeep65",
+          "wall_us_per_call": {
+            "baseline": 1378.0038768723368,
+            "current": 1383.669429838787,
+            "change_percent": 0.41114201937582084
+          },
+          "cpu_us_per_call": {
+            "baseline": 1377.2290626733206,
+            "current": 1382.3632834165267,
+            "change_percent": 0.37279352304981916
+          }
+        },
+        {
+          "case": "GrayDeep257",
+          "wall_us_per_call": {
+            "baseline": 13577.503417301245,
+            "current": 13322.424195937823,
+            "change_percent": -1.8786901650739707
+          },
+          "cpu_us_per_call": {
+            "baseline": 13573.152671755746,
+            "current": 13310.809160305344,
+            "change_percent": -1.932811910355292
+          }
+        }
+      ],
+      "rows": [
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 52.017553968316875,
+          "cpu_us_per_call": 51.91315903126142,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 51.790 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "current",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 50.93104418456684,
+          "cpu_us_per_call": 50.82950732533803,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 50.820 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "current",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 51.01251984983894,
+          "cpu_us_per_call": 50.9933224809807,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 50.939 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 55.42016544301368,
+          "cpu_us_per_call": 55.361084349357135,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 55.330 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "current",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 51.04469711962784,
+          "cpu_us_per_call": 51.02395269260158,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 50.903 us/decode"
+        },
+        {
+          "case": "Gray16",
+          "fixture": "jp2_16x16_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 30000,
+          "total_calls": 30101,
+          "wall_us_per_call": 51.23601943450773,
+          "cpu_us_per_call": 51.21198631274709,
+          "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+          "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+          "timed_output": "16x16, 30000 decodes, 51.078 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1226.6177687167924,
+          "cpu_us_per_call": 1225.7437603993335,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1221.121 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1227.508685519865,
+          "cpu_us_per_call": 1226.693843594011,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1204.011 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1234.2604492495504,
+          "cpu_us_per_call": 1233.1048252911785,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1221.192 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1251.349603996146,
+          "cpu_us_per_call": 1250.3410981697193,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1246.028 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1194.2019600655765,
+          "cpu_us_per_call": 1193.4991680532435,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1191.614 us/decode"
+        },
+        {
+          "case": "Gray65",
+          "fixture": "jp2_multi_65x49_d1_noise.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1240.4895973358998,
+          "cpu_us_per_call": 1239.6871880199649,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+          "timed_output": "65x49, 500 decodes, 1236.456 us/decode"
+        },
+        {
+          "case": "GrayDeep65",
+          "fixture": "jp2_deep_65x49_d5_noise.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1392.4878985018038,
+          "cpu_us_per_call": 1391.8585690515824,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "341ab64efdfddaea8d50585f3709c60816b049d3598df2ee7383f3d60714f0cc",
+          "timed_output": "65x49, 500 decodes, 1384.106 us/decode"
+        },
+        {
+          "case": "GrayDeep65",
+          "fixture": "jp2_deep_65x49_d5_noise.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1347.1050682189907,
+          "cpu_us_per_call": 1346.0532445923457,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "341ab64efdfddaea8d50585f3709c60816b049d3598df2ee7383f3d60714f0cc",
+          "timed_output": "65x49, 500 decodes, 1346.279 us/decode"
+        },
+        {
+          "case": "GrayDeep65",
+          "fixture": "jp2_deep_65x49_d5_noise.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1358.132514143167,
+          "cpu_us_per_call": 1357.5091514143069,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "341ab64efdfddaea8d50585f3709c60816b049d3598df2ee7383f3d60714f0cc",
+          "timed_output": "65x49, 500 decodes, 1360.962 us/decode"
+        },
+        {
+          "case": "GrayDeep65",
+          "fixture": "jp2_deep_65x49_d5_noise.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1374.0659334459833,
+          "cpu_us_per_call": 1373.026622296167,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "341ab64efdfddaea8d50585f3709c60816b049d3598df2ee7383f3d60714f0cc",
+          "timed_output": "65x49, 500 decodes, 1367.573 us/decode"
+        },
+        {
+          "case": "GrayDeep65",
+          "fixture": "jp2_deep_65x49_d5_noise.j2k",
+          "version": "current",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1445.7707071542034,
+          "cpu_us_per_call": 1443.5274542429272,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "341ab64efdfddaea8d50585f3709c60816b049d3598df2ee7383f3d60714f0cc",
+          "timed_output": "65x49, 500 decodes, 1433.757 us/decode"
+        },
+        {
+          "case": "GrayDeep65",
+          "fixture": "jp2_deep_65x49_d5_noise.j2k",
+          "version": "baseline",
+          "iterations": 500,
+          "total_calls": 601,
+          "wall_us_per_call": 1367.4577986692236,
+          "cpu_us_per_call": 1366.8019966722125,
+          "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+          "encoded_sha256": "341ab64efdfddaea8d50585f3709c60816b049d3598df2ee7383f3d60714f0cc",
+          "timed_output": "65x49, 500 decodes, 1347.334 us/decode"
+        },
+        {
+          "case": "GrayDeep257",
+          "fixture": "jp2_deep_257x129_d5_noise.j2k",
+          "version": "baseline",
+          "iterations": 30,
+          "total_calls": 131,
+          "wall_us_per_call": 13407.136076315483,
+          "cpu_us_per_call": 13404.305343511465,
+          "ppm_sha256": "dc13fa716a590bd33540cdc0ce031c8e5f7c77a76a1980324a5bc2488fedad76",
+          "encoded_sha256": "1f474481a6c951c98b15b7be324d993d54562fd4c474e9f340254030db15c50d",
+          "timed_output": "257x129, 30 decodes, 13300.425 us/decode"
+        },
+        {
+          "case": "GrayDeep257",
+          "fixture": "jp2_deep_257x129_d5_noise.j2k",
+          "version": "current",
+          "iterations": 30,
+          "total_calls": 131,
+          "wall_us_per_call": 13911.282076345506,
+          "cpu_us_per_call": 13889.809160305353,
+          "ppm_sha256": "dc13fa716a590bd33540cdc0ce031c8e5f7c77a76a1980324a5bc2488fedad76",
+          "encoded_sha256": "1f474481a6c951c98b15b7be324d993d54562fd4c474e9f340254030db15c50d",
+          "timed_output": "257x129, 30 decodes, 13009.825 us/decode"
+        },
+        {
+          "case": "GrayDeep257",
+          "fixture": "jp2_deep_257x129_d5_noise.j2k",
+          "version": "current",
+          "iterations": 30,
+          "total_calls": 131,
+          "wall_us_per_call": 13001.950771002657,
+          "cpu_us_per_call": 12993.687022900755,
+          "ppm_sha256": "dc13fa716a590bd33540cdc0ce031c8e5f7c77a76a1980324a5bc2488fedad76",
+          "encoded_sha256": "1f474481a6c951c98b15b7be324d993d54562fd4c474e9f340254030db15c50d",
+          "timed_output": "257x129, 30 decodes, 12846.159 us/decode"
+        },
+        {
+          "case": "GrayDeep257",
+          "fixture": "jp2_deep_257x129_d5_noise.j2k",
+          "version": "baseline",
+          "iterations": 30,
+          "total_calls": 131,
+          "wall_us_per_call": 13271.676015274561,
+          "cpu_us_per_call": 13266.778625954228,
+          "ppm_sha256": "dc13fa716a590bd33540cdc0ce031c8e5f7c77a76a1980324a5bc2488fedad76",
+          "encoded_sha256": "1f474481a6c951c98b15b7be324d993d54562fd4c474e9f340254030db15c50d",
+          "timed_output": "257x129, 30 decodes, 13210.797 us/decode"
+        },
+        {
+          "case": "GrayDeep257",
+          "fixture": "jp2_deep_257x129_d5_noise.j2k",
+          "version": "current",
+          "iterations": 30,
+          "total_calls": 131,
+          "wall_us_per_call": 13054.039740465309,
+          "cpu_us_per_call": 13048.931297709922,
+          "ppm_sha256": "dc13fa716a590bd33540cdc0ce031c8e5f7c77a76a1980324a5bc2488fedad76",
+          "encoded_sha256": "1f474481a6c951c98b15b7be324d993d54562fd4c474e9f340254030db15c50d",
+          "timed_output": "257x129, 30 decodes, 12868.602 us/decode"
+        },
+        {
+          "case": "GrayDeep257",
+          "fixture": "jp2_deep_257x129_d5_noise.j2k",
+          "version": "baseline",
+          "iterations": 30,
+          "total_calls": 131,
+          "wall_us_per_call": 14053.698160313692,
+          "cpu_us_per_call": 14048.374045801547,
+          "ppm_sha256": "dc13fa716a590bd33540cdc0ce031c8e5f7c77a76a1980324a5bc2488fedad76",
+          "encoded_sha256": "1f474481a6c951c98b15b7be324d993d54562fd4c474e9f340254030db15c50d",
+          "timed_output": "257x129, 30 decodes, 16146.035 us/decode"
+        }
+      ]
+    }
+  },
+  "pr_readiness": {
+    "supported_contract_and_unsupported_errors": true,
+    "existing_api_and_default_codecs": true,
+    "native_workspace_regression": true,
+    "native_feature_off": true,
+    "source_exact_pixels": true,
+    "independent_oracle_compatibility_separately_counted": true,
+    "malformed_input_resource_limits_and_callbacks": true,
+    "actual_minimal_and_default_wasm_runtime": true,
+    "image_display": true,
+    "paired_recent_and_original_stable_gray_performance": true,
+    "cargo_package_archive_verification": true,
+    "independent_actionable_findings_resolved": true,
+    "review_documentation_complete": true
+  },
+  "remaining_blockers": [],
+  "limitations": [
+    "Bounded lossless subset, explicit unsupported profiles listed in docs/jpeg2000.md.",
+    "Actual Node WASM does not establish browser UI, other OS or optional AVIF matrices.",
+    "Shared-host performance samples are not a cross-host guarantee.",
+    "Deterministic mutations do not establish rejection of every legal alternate entropy stream."
+  ]
+}

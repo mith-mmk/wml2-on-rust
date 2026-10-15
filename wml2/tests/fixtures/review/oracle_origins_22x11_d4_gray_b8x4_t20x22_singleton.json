@@ -1,0 +1,23 @@
+{
+  "purpose": "Compatibility regression for negative odd singleton division; independent OpenJPEG expected pixels, not a source-exact encoder roundtrip.",
+  "width": 22,
+  "height": 11,
+  "levels": 4,
+  "block": [
+    8,
+    4
+  ],
+  "tile": [
+    20,
+    22
+  ],
+  "files": {
+    "j2k": "9e95c1b596ebcfebd31582bd515f46e31b451c590fd031cedaba5764f723dbc0",
+    "source.gray": "2823d1495cd05bde510b1f63a4c5e4a556bd95589bf3b5971e206bcd82e41a03",
+    "expected.gray": "d834608382b73d0a06925aaf989e63cd7928b8f8612a1e6553dce05f9a6c419f"
+  },
+  "encoder_source_exact": false,
+  "source_oracle_pixels_different": 22,
+  "singleton_rule": "T.800 F.3.6 plain division by2, truncating integer division; lifting floor divisions unchanged",
+  "openjpeg": "2.5.4 via Pillow12.3.0"
+}

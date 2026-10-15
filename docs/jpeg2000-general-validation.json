@@ -1,0 +1,2514 @@
+{
+  "date": "2026-10-15",
+  "base_commit": "913aa89a5d907fe1c95d9b31b56c8972a07e5339",
+  "source_sha256": {
+    "wml2/src/jpeg2000.rs": "0ca54918afb2f845e81b9ec3a7017f5de469aae593df0ffc5cd673b65f3803c5",
+    "wml2/src/jpeg2000_general.rs": "58d340d95c4c05e1a7718cb5097b49a67c2da5c9a183af4156b2b22d4eb68449",
+    "wml2/src/jpeg2000_ht.rs": "c28b8dcd0b5576faa65a4de4948567aef81f99d46f5f3671450b8aedbcbd4ad4",
+    "wml2/src/jpeg2000_ht_tables.rs": "0e25b83b15f10e97f83c9b7c28c2f7eb140835780d49a424eed15092abe89189",
+    "wml2/src/jpeg2000_irreversible.rs": "45a39d841f2e69a6e8645a788e3c5301b8edebab299e5240ac87efdb29011e0b",
+    "wml2/src/jpeg2000_tier1.rs": "b0b765bffc408a9b853a8e1b7527809aff823a831c8023dfc48c0d8a9661761a",
+    "wml2/src/error.rs": "06abfba1523c7789f150a9cd95994e32aa31bbdf58cc3823470b6ee0f920bb6e",
+    "wml2/src/limits.rs": "9d642ea060d3fdd36a3845b4b4faeaf777afaeab38ef6f467df889b3171bfc06"
+  },
+  "native": {
+    "workspace": {
+      "passed": 379,
+      "failed": 0,
+      "ignored": 12
+    },
+    "feature_off": {
+      "passed": 37,
+      "failed": 0,
+      "ignored": 0
+    },
+    "rust_1_91_check": "passed",
+    "clippy": "passed with style warnings; not -D warnings"
+  },
+  "expanded_actual_wasm": [
+    {
+      "passed": 48,
+      "failed": 0,
+      "default_features": false,
+      "wasm_sha256": "6ea28c2ea4565b95271c36cc5810fc4971ece1cb1abd688443b2d048529db51d",
+      "source_sha256": {
+        "wml2/src/jpeg2000.rs": "0ca54918afb2f845e81b9ec3a7017f5de469aae593df0ffc5cd673b65f3803c5",
+        "wml2/src/jpeg2000_general.rs": "58d340d95c4c05e1a7718cb5097b49a67c2da5c9a183af4156b2b22d4eb68449",
+        "wml2/src/jpeg2000_ht.rs": "c28b8dcd0b5576faa65a4de4948567aef81f99d46f5f3671450b8aedbcbd4ad4",
+        "wml2/src/jpeg2000_ht_tables.rs": "0e25b83b15f10e97f83c9b7c28c2f7eb140835780d49a424eed15092abe89189",
+        "wml2/src/jpeg2000_irreversible.rs": "45a39d841f2e69a6e8645a788e3c5301b8edebab299e5240ac87efdb29011e0b",
+        "wml2/src/jpeg2000_tier1.rs": "b0b765bffc408a9b853a8e1b7527809aff823a831c8023dfc48c0d8a9661761a",
+        "wml2/src/limits.rs": "9d642ea060d3fdd36a3845b4b4faeaf777afaeab38ef6f467df889b3171bfc06",
+        "wml2/src/error.rs": "06abfba1523c7789f150a9cd95994e32aa31bbdf58cc3823470b6ee0f920bb6e"
+      },
+      "cases": [
+        "jp2_general_L_LRCP_0.jp2",
+        "jp2_general_L_RLCP_0.jp2",
+        "jp2_general_L_RPCL_0.jp2",
+        "jp2_general_L_PCRL_0.jp2",
+        "jp2_general_L_CPRL_0.jp2",
+        "jp2_general_L_LRCP_1.jp2",
+        "jp2_general_L_RLCP_1.jp2",
+        "jp2_general_L_RPCL_1.jp2",
+        "jp2_general_L_PCRL_1.jp2",
+        "jp2_general_L_CPRL_1.jp2",
+        "jp2_general_RGB_LRCP_0.jp2",
+        "jp2_general_RGB_RLCP_0.jp2",
+        "jp2_general_RGB_RPCL_0.jp2",
+        "jp2_general_RGB_PCRL_0.jp2",
+        "jp2_general_RGB_CPRL_0.jp2",
+        "jp2_general_RGB_LRCP_1.jp2",
+        "jp2_general_RGB_RLCP_1.jp2",
+        "jp2_general_RGB_RPCL_1.jp2",
+        "jp2_general_RGB_PCRL_1.jp2",
+        "jp2_general_RGB_CPRL_1.jp2",
+        "jp2_general_levels6.jp2",
+        "jp2_general_LA.jp2",
+        "jp2_general_RGBA.jp2",
+        "jp2_irreversible_reject_gray_QCC.j2k",
+        "jp2_irreversible_reject_multiple_quality_layers.j2k",
+        "jp2_irreversible_reject_ROI_maxshift0.j2k",
+        "jp2_irreversible_reject_SOP_may_be_used.j2k",
+        "jp2_irreversible_reject_identical_tile_COD.j2k",
+        "jp2_irreversible_reject_gray_QCC.jp2",
+        "jp2_irreversible_reject_multiple_quality_layers.jp2",
+        "jp2_irreversible_reject_ROI_maxshift0.jp2",
+        "jp2_irreversible_reject_SOP_may_be_used.jp2",
+        "jp2_irreversible_reject_identical_tile_COD.jp2",
+        "jp2_general_ht_zero.j2k",
+        "jp2_general_ht_one.j2k",
+        "jp2_general_ht_u32_boundary.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_gray_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct0.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_gray_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct0.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct0.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct0.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct1.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct1.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_gray_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct0.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_gray_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct0.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct0.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct0.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct1.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct1.jp2"
+      ]
+    },
+    {
+      "passed": 48,
+      "failed": 0,
+      "default_features": true,
+      "wasm_sha256": "4718cd53285b1009c24c7f16ed93f30b9a827e7f7bf3870e34ea4c97fdb183bf",
+      "source_sha256": {
+        "wml2/src/jpeg2000.rs": "0ca54918afb2f845e81b9ec3a7017f5de469aae593df0ffc5cd673b65f3803c5",
+        "wml2/src/jpeg2000_general.rs": "58d340d95c4c05e1a7718cb5097b49a67c2da5c9a183af4156b2b22d4eb68449",
+        "wml2/src/jpeg2000_ht.rs": "c28b8dcd0b5576faa65a4de4948567aef81f99d46f5f3671450b8aedbcbd4ad4",
+        "wml2/src/jpeg2000_ht_tables.rs": "0e25b83b15f10e97f83c9b7c28c2f7eb140835780d49a424eed15092abe89189",
+        "wml2/src/jpeg2000_irreversible.rs": "45a39d841f2e69a6e8645a788e3c5301b8edebab299e5240ac87efdb29011e0b",
+        "wml2/src/jpeg2000_tier1.rs": "b0b765bffc408a9b853a8e1b7527809aff823a831c8023dfc48c0d8a9661761a",
+        "wml2/src/limits.rs": "9d642ea060d3fdd36a3845b4b4faeaf777afaeab38ef6f467df889b3171bfc06",
+        "wml2/src/error.rs": "06abfba1523c7789f150a9cd95994e32aa31bbdf58cc3823470b6ee0f920bb6e"
+      },
+      "cases": [
+        "jp2_general_L_LRCP_0.jp2",
+        "jp2_general_L_RLCP_0.jp2",
+        "jp2_general_L_RPCL_0.jp2",
+        "jp2_general_L_PCRL_0.jp2",
+        "jp2_general_L_CPRL_0.jp2",
+        "jp2_general_L_LRCP_1.jp2",
+        "jp2_general_L_RLCP_1.jp2",
+        "jp2_general_L_RPCL_1.jp2",
+        "jp2_general_L_PCRL_1.jp2",
+        "jp2_general_L_CPRL_1.jp2",
+        "jp2_general_RGB_LRCP_0.jp2",
+        "jp2_general_RGB_RLCP_0.jp2",
+        "jp2_general_RGB_RPCL_0.jp2",
+        "jp2_general_RGB_PCRL_0.jp2",
+        "jp2_general_RGB_CPRL_0.jp2",
+        "jp2_general_RGB_LRCP_1.jp2",
+        "jp2_general_RGB_RLCP_1.jp2",
+        "jp2_general_RGB_RPCL_1.jp2",
+        "jp2_general_RGB_PCRL_1.jp2",
+        "jp2_general_RGB_CPRL_1.jp2",
+        "jp2_general_levels6.jp2",
+        "jp2_general_LA.jp2",
+        "jp2_general_RGBA.jp2",
+        "jp2_irreversible_reject_gray_QCC.j2k",
+        "jp2_irreversible_reject_multiple_quality_layers.j2k",
+        "jp2_irreversible_reject_ROI_maxshift0.j2k",
+        "jp2_irreversible_reject_SOP_may_be_used.j2k",
+        "jp2_irreversible_reject_identical_tile_COD.j2k",
+        "jp2_irreversible_reject_gray_QCC.jp2",
+        "jp2_irreversible_reject_multiple_quality_layers.jp2",
+        "jp2_irreversible_reject_ROI_maxshift0.jp2",
+        "jp2_irreversible_reject_SOP_may_be_used.jp2",
+        "jp2_irreversible_reject_identical_tile_COD.jp2",
+        "jp2_general_ht_zero.j2k",
+        "jp2_general_ht_one.j2k",
+        "jp2_general_ht_u32_boundary.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_gray_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct0.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_gray_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct0.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct0.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct0.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct1.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o32768x15_g32766x12_noise_extent_x_mct1.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_gray_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct0.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_gray_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct0.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct0.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct0.jp2",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct1.j2k",
+        "unsupported_jp2_global_origins_17x19_d1_rgb_b16x16_t32x32_o15x32768_g12x32766_noise_extent_y_mct1.jp2"
+      ]
+    }
+  ],
+  "established_actual_wasm": [
+    {
+      "runtime": "v24.15.0",
+      "fixtures": 1796,
+      "rejected_fixtures": 140,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 296288256,
+      "git_head": "913aa89a5d907fe1c95d9b31b56c8972a07e5339",
+      "working_tree_dirty": true,
+      "rust_source_sha256": "a8cb281b21fd4b27f238158903bed1549b9d651c9837539fb2bfa71ca5c17932",
+      "dispatch_source_sha256": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d",
+      "format_source_sha256": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+      "irreversible_source_sha256": "45a39d841f2e69a6e8645a788e3c5301b8edebab299e5240ac87efdb29011e0b",
+      "tier1_source_sha256": "b0b765bffc408a9b853a8e1b7527809aff823a831c8023dfc48c0d8a9661761a",
+      "fixture_manifest_sha256": {
+        "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+        "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+        "jpeg2000-general-manifest.json": "268aea400e607d7f45b15bf0de3b7477da37d73ce6a4f5fb1a7dbd6efd8dc135",
+        "jpeg2000-general-manifest.txt": "c4e73ae4b8d20440dd6fff0e59b94484f398f34a50c27185ed2497cf92a289c7",
+        "jpeg2000-general-reactivated-manifest.txt": "de52074b06eccce838804718ebc380b0c0f227210568860e9b6ad2037ea4689b",
+        "jpeg2000-global-origins-manifest.txt": "aca54751a8c1bcc80dfc49c5d532490d46d57b9d93a174a9665f48986feec7f3",
+        "jpeg2000-global-origins-unsupported-manifest.txt": "4c72c0b75f304356bf4732ead07d557aa4626ca1b946c15425b971f650d78dfa",
+        "jpeg2000-irreversible-manifest.json": "d9cbbdd15d1dc3fa0c8211dd9d0084fdbb43c5466ebdf315c5ffbedcea30833f",
+        "jpeg2000-irreversible-manifest.txt": "939777d41e5ec8afe2137c18def2fec11134a94be6724e39ef31042f655057a7",
+        "jpeg2000-irreversible-unsupported-manifest.txt": "61723bda09a5e3516359cdf08bce666a91154635b49279bd9d9b36707206732a",
+        "jpeg2000-irreversible-variants-manifest.json": "c344d5184188b98c9a58a8218c1ea92f9fef3a7ad4845f5a1b1f73afd4f54db0",
+        "jpeg2000-irreversible-variants-manifest.txt": "2a0edc401ffba12cdf85a4d4202bcd52f1ac5d8c89e3414182e3bdfefcbf2a9d",
+        "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+        "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+        "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4",
+        "jpeg2000-parts-manifest.txt": "77e18ee586617a8fd1e9bde635febfe17bf6bd4887eb360d38f8c68efdc3bd4e",
+        "jpeg2000-parts-unsupported-manifest.txt": "9ed79222f6b8e1bd4bb9671d4588ee5b1386f92ef6a5885a3c590b6e239ae491",
+        "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+        "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+        "jpeg2000-terminal-parts-manifest.txt": "46489bc5b2c7e9163907e0c2552303b0358dd769d101e3d3670e7461640bc7a2",
+        "jpeg2000-terminal-parts-unsupported-manifest.txt": "08aad79cbe7d79137fe0a67ef588d30d2252138f7e9f4003714effff881584e1",
+        "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+        "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+        "jpeg2000-unknown-parts-manifest.txt": "c396e8af87f7cc87bfc0ef9a226eda0de06930ab79759543edfe1c1e1632a482",
+        "jpeg2000-unknown-parts-unsupported-manifest.txt": "a44e2b706d9297da37364bffd464191626aa66941fa0a02a4d688a39d40e13ed"
+      },
+      "target": "wasm32-unknown-unknown",
+      "default_features": false,
+      "source_exact_fixtures": 1539,
+      "irreversible_oracle_fixtures": 256,
+      "irreversible_max_abs_error_policy": 1,
+      "encoder_compatibility_fixtures": 1,
+      "wasm_sha256": "574002014698da9a9d5cd4f9953fcb16b6e309adb1a5294e7e36253cbe82e0cd",
+      "checks": [
+        "direct API default metadata aggregation and scope restoration",
+        "RGBA pixels",
+        "dimensions",
+        "exact limits",
+        "short limits",
+        "limit scope restoration",
+        "callbacks",
+        "init/draw abort",
+        "truncation rejected before callbacks",
+        "unsupported and malformed tile/part profiles rejected before callbacks",
+        "late tile framing, missing tile and repaired short packet rejection"
+      ]
+    },
+    {
+      "runtime": "v24.15.0",
+      "fixtures": 1796,
+      "rejected_fixtures": 140,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 296419328,
+      "git_head": "913aa89a5d907fe1c95d9b31b56c8972a07e5339",
+      "working_tree_dirty": true,
+      "rust_source_sha256": "a8cb281b21fd4b27f238158903bed1549b9d651c9837539fb2bfa71ca5c17932",
+      "dispatch_source_sha256": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d",
+      "format_source_sha256": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+      "irreversible_source_sha256": "45a39d841f2e69a6e8645a788e3c5301b8edebab299e5240ac87efdb29011e0b",
+      "tier1_source_sha256": "b0b765bffc408a9b853a8e1b7527809aff823a831c8023dfc48c0d8a9661761a",
+      "fixture_manifest_sha256": {
+        "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+        "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+        "jpeg2000-general-manifest.json": "268aea400e607d7f45b15bf0de3b7477da37d73ce6a4f5fb1a7dbd6efd8dc135",
+        "jpeg2000-general-manifest.txt": "c4e73ae4b8d20440dd6fff0e59b94484f398f34a50c27185ed2497cf92a289c7",
+        "jpeg2000-general-reactivated-manifest.txt": "de52074b06eccce838804718ebc380b0c0f227210568860e9b6ad2037ea4689b",
+        "jpeg2000-global-origins-manifest.txt": "aca54751a8c1bcc80dfc49c5d532490d46d57b9d93a174a9665f48986feec7f3",
+        "jpeg2000-global-origins-unsupported-manifest.txt": "4c72c0b75f304356bf4732ead07d557aa4626ca1b946c15425b971f650d78dfa",
+        "jpeg2000-irreversible-manifest.json": "d9cbbdd15d1dc3fa0c8211dd9d0084fdbb43c5466ebdf315c5ffbedcea30833f",
+        "jpeg2000-irreversible-manifest.txt": "939777d41e5ec8afe2137c18def2fec11134a94be6724e39ef31042f655057a7",
+        "jpeg2000-irreversible-unsupported-manifest.txt": "61723bda09a5e3516359cdf08bce666a91154635b49279bd9d9b36707206732a",
+        "jpeg2000-irreversible-variants-manifest.json": "c344d5184188b98c9a58a8218c1ea92f9fef3a7ad4845f5a1b1f73afd4f54db0",
+        "jpeg2000-irreversible-variants-manifest.txt": "2a0edc401ffba12cdf85a4d4202bcd52f1ac5d8c89e3414182e3bdfefcbf2a9d",
+        "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+        "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+        "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4",
+        "jpeg2000-parts-manifest.txt": "77e18ee586617a8fd1e9bde635febfe17bf6bd4887eb360d38f8c68efdc3bd4e",
+        "jpeg2000-parts-unsupported-manifest.txt": "9ed79222f6b8e1bd4bb9671d4588ee5b1386f92ef6a5885a3c590b6e239ae491",
+        "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+        "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+        "jpeg2000-terminal-parts-manifest.txt": "46489bc5b2c7e9163907e0c2552303b0358dd769d101e3d3670e7461640bc7a2",
+        "jpeg2000-terminal-parts-unsupported-manifest.txt": "08aad79cbe7d79137fe0a67ef588d30d2252138f7e9f4003714effff881584e1",
+        "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+        "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+        "jpeg2000-unknown-parts-manifest.txt": "c396e8af87f7cc87bfc0ef9a226eda0de06930ab79759543edfe1c1e1632a482",
+        "jpeg2000-unknown-parts-unsupported-manifest.txt": "a44e2b706d9297da37364bffd464191626aa66941fa0a02a4d688a39d40e13ed"
+      },
+      "target": "wasm32-unknown-unknown",
+      "default_features": true,
+      "source_exact_fixtures": 1539,
+      "irreversible_oracle_fixtures": 256,
+      "irreversible_max_abs_error_policy": 1,
+      "encoder_compatibility_fixtures": 1,
+      "wasm_sha256": "8f70dfe4e184a53e9c730c8575328ab93e2e0fd7e7d5aa2b183f7abfd44b1bdd",
+      "checks": [
+        "direct API default metadata aggregation and scope restoration",
+        "RGBA pixels",
+        "dimensions",
+        "exact limits",
+        "short limits",
+        "limit scope restoration",
+        "callbacks",
+        "init/draw abort",
+        "truncation rejected before callbacks",
+        "unsupported and malformed tile/part profiles rejected before callbacks",
+        "late tile framing, missing tile and repaired short packet rejection"
+      ]
+    }
+  ],
+  "established_runtime_snapshot_note": "Established runtime checks preceded final general-path allocation guards and module-documentation refresh. Final general-path source is checked by both 48-case runtime builds and native regression.",
+  "external_converter": {
+    "totals": {
+      "inputs": 114,
+      "converted": 89,
+      "failed": 25,
+      "new_converted": 75,
+      "previous_pngs_preserved": 14,
+      "deferred_high_depth_or_icc": 21,
+      "other_errors": 4
+    },
+    "converter_sha256": "7f0c2e5caec8b355fde585d32836f860d0c972687b3df6d0db4e2e495fa29b56",
+    "all_input_hashes_preserved": true,
+    "previous_pngs_preserved": 14,
+    "files": [
+      {
+        "relative_input": "ffmpeg_balloons.j2c",
+        "input_sha256": "9e5de36f6460bdce5d6b0e7145106114a4f903c6ecdc0130d53d20c792670b25",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          750,
+          520
+        ],
+        "output_sha256": "7cbdb17007bda4cf8a109f92eeef5bf0af9024a3f14ff4d8c1bc0cd963c7cf35",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "gdal_513x513.jp2",
+        "input_sha256": "af92c1ef37e014760780e42c050b85a51b01487957ff9f249ec7745e561682bd",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          513,
+          513
+        ],
+        "output_sha256": "a1b9c78a59574635d8f5662a9b62b93951c72682357b38f63863314573201a8e",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "gdal_byte.jp2",
+        "input_sha256": "ef330c025133f062b4cca8c8171f8aef4f245be975c5e534dc9ce463689c3aa0",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          100,
+          100
+        ],
+        "output_sha256": "b56e096ca1661ee6c2007389c1f6ede3fbae0e850a9409f7250ac07ab2ffa8fd",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "gdal_byte_image_origin_not_zero.jp2",
+        "input_sha256": "e8f68113614335eefe8cc666bc81dcefff494f1d159675f798be4d11dc464b90",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          20,
+          20
+        ],
+        "output_sha256": "636d13b528b59bb087910b15540fb820481d2f8d6f6f495ad6ed283eefc7695d",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "gdal_byte_lossless_openjp2_golden.jp2",
+        "input_sha256": "b5c347d8343ac969d6e60fa381090c0ad47afbebdf7c672573c3d69e09aadb1f",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          20,
+          20
+        ],
+        "output_sha256": "636d13b528b59bb087910b15540fb820481d2f8d6f6f495ad6ed283eefc7695d",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "gdal_byte_tlm_plt.jp2",
+        "input_sha256": "c2bccd9839cd4cb24ac6bc84fd888d707bbf1d873af07616fa020e05ab491a49",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          20,
+          20
+        ],
+        "output_sha256": "636d13b528b59bb087910b15540fb820481d2f8d6f6f495ad6ed283eefc7695d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "gdal_gtsmall_10_uint16.jp2",
+        "input_sha256": "6993b5af7904940aa8b5892db0d507037138e8470f2ae53b1c7b2c201d811026",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "gdal_gtsmall_10_uint16.jp2: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "gdal_gtsmall_11_int16.jp2",
+        "input_sha256": "72fbabd617d3d929c3bbb374fddefcb116634af1599ed6030cb63f588804b34a",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "gdal_gtsmall_11_int16.jp2: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "gdal_rgb16_ecwsdk.jp2",
+        "input_sha256": "86cf3c0a005b640e1cc9bd8dcf9f5955897b6576551383fc89f9d18adf32a507",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "gdal_rgb16_ecwsdk.jp2: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "gdal_stefan_full_rgba.jp2",
+        "input_sha256": "53ecd23500a0f7921f8af6ef39b101a776503a797462ed10dcde77790b0916d5",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          162,
+          150
+        ],
+        "output_sha256": "8416a7ea20695336f227641f97ecc91365ab52a85d19dcb03e39df6cdfed7324",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "gdal_stefan_full_rgba_alpha_1bit.jp2",
+        "input_sha256": "4db7425f6c3307409a244561808e2be74f68c4ed9a2a442d212b34d007666aa7",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow RGB; 1-bit alpha normalized to 0/255",
+        "oracle_max_error": 0,
+        "size": [
+          162,
+          150
+        ],
+        "output_sha256": "a1333dc726cb6214e2c570c8996bf026c0549ae0a027416c5d2ac2dd4fb87561",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "gdal_tile_size_16.jp2",
+        "input_sha256": "b8c7311c652ce2ae3c5a1a8d106150142f2d97cdc7b1bbd76f36c48c7ec72e42",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          256,
+          256
+        ],
+        "output_sha256": "02bac68b45ce34627105da32c8926ad4d15769ae7a96d1d0382db23ba5ef8218",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "gdal_uint32_2x2_lossless_nbits_20.j2k",
+        "input_sha256": "3dbd91f39fddabac3404433d96e9ff5152bacdaf1b1a24aecb485c14fa5e455d",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "gdal_uint32_2x2_lossless_nbits_20.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_Marrin.jp2",
+        "input_sha256": "3d7f0c3660dc0a17354b9e988b2d963d8fda0db9ba5c1df2f8aece905102d36b",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_Marrin.jp2: Illegal data: JPEG2000: missing packets: 12/24\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": false,
+        "deferred_icc": false,
+        "category": "exceptional input / no RGBA mapping"
+      },
+      {
+        "relative_input": "openjpeg_basn4a08.jp2",
+        "input_sha256": "a1588c802ae4792a61aa0b37e609ec3d8b7efae9c6e52df28c4031a4180aac47",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          32,
+          32
+        ],
+        "output_sha256": "0fea5f84b58be1b04957ba458f6d7be1b27dd19451f4cf7c08c254ab1a7bb61c",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_basn6a08.jp2",
+        "input_sha256": "9506ffa6406010622ddd4ab169cb7e9d9a57d5acf4a1499f5af1301202893b9f",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          32,
+          32
+        ],
+        "output_sha256": "1197c664634991c3773dae02a08683e103468ef5eb76a430e1d957058b151c2c",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_buxI.j2k",
+        "input_sha256": "8fb4b026f66764894c1050c3d13b659e12d952be1a262b89280c41f91733440b",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_buxI.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_buxR.j2k",
+        "input_sha256": "d43e714c7637f0bcc9001ac5f990fb6565a099d11ee3c80839d9780431fe913d",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_buxR.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_conformance_a1_mono.j2c",
+        "input_sha256": "fcdef2e91367a6e2e94849e7fdc818f186eb9685d6e7cdeab6d49d4399c8064a",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          303,
+          179
+        ],
+        "output_sha256": "7cf421d914e78fa56df11a6315221410f5d5c76a0c5b2468aefd3ef7b15c702f",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "openjpeg_conformance_a2_colr.j2c",
+        "input_sha256": "fb9f75203ec45fa88bcb98f583e086a42c172da272a9038fc538d6a568a73a12",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          149
+        ],
+        "output_sha256": "23094de18b79fa238ac73505a7d78625d663a72946d49aebc11e03bcb4712f0d",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "openjpeg_conformance_a3_mono.j2c",
+        "input_sha256": "35e2a38ebfad1a1f626e0684a0021ee9397e853100619be26e51bcb6b6fc7ee6",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          303,
+          179
+        ],
+        "output_sha256": "7cf421d914e78fa56df11a6315221410f5d5c76a0c5b2468aefd3ef7b15c702f",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "openjpeg_conformance_a4_colr.j2c",
+        "input_sha256": "558c23bda95e902dc879f0cecbc2a67f524678217096d875618c3ffd1ddc2fec",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream OpenJPEG-data PPM",
+        "oracle_max_error": 0,
+        "size": [
+          4336,
+          1037
+        ],
+        "output_sha256": "65c12831a542c140db4908e7e1583bbbddfe50bc98659bb4f44bbad4716fb0d0",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_a5_mono.j2c",
+        "input_sha256": "778236f572254390472d6271879c71a0d6508fb850fe86b919dc36753859e0e0",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          303,
+          179
+        ],
+        "output_sha256": "7cf421d914e78fa56df11a6315221410f5d5c76a0c5b2468aefd3ef7b15c702f",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_a6_mono_colr.j2c",
+        "input_sha256": "0991410ac3588b922ec8b72362b1149a63e8b117be76298eb5378696757968d4",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream OpenJPEG-data per-component PGM",
+        "oracle_max_error": 0,
+        "size": [
+          3323,
+          891
+        ],
+        "output_sha256": "53d13a76fe0d304f46f4083465d13bd17c4d0f81c75e05eeb2032c82ec7138f7",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_b1_mono.j2c",
+        "input_sha256": "e4d59f0bf721bb9d0878f7d15a858e44f1c0d7b19449a6f7cdca2fb3cd586826",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          303,
+          179
+        ],
+        "output_sha256": "7cf421d914e78fa56df11a6315221410f5d5c76a0c5b2468aefd3ef7b15c702f",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "openjpeg_conformance_b2_mono.j2c",
+        "input_sha256": "f77e0269a1ff7028a116efcab5a97becfccc7e85bb5d58e1493bbf363971ded4",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_b2_mono.j2c: Illegal data: JPEG2000: incomplete tile/header directory\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": false,
+        "deferred_icc": false,
+        "category": "exceptional input / no RGBA mapping"
+      },
+      {
+        "relative_input": "openjpeg_conformance_b3_mono.j2c",
+        "input_sha256": "58a74bd5e1c395d56aee9bf34e3c3a21ea1a8d6789c6d50da2a7f848f44d86fd",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          303,
+          179
+        ],
+        "output_sha256": "7cf421d914e78fa56df11a6315221410f5d5c76a0c5b2468aefd3ef7b15c702f",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_c1_mono.j2c",
+        "input_sha256": "7ed01bd12e2123579b3177200162c9f6b684dc9ee92585cc4f89d2a7cd9e9b50",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          303,
+          179
+        ],
+        "output_sha256": "7cf421d914e78fa56df11a6315221410f5d5c76a0c5b2468aefd3ef7b15c702f",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_c2_mono.j2c",
+        "input_sha256": "488b87bd0849c565016a163f23627ba51f63236a77d2bdcf42e48c088a6b4afd",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          303,
+          179
+        ],
+        "output_sha256": "7cf421d914e78fa56df11a6315221410f5d5c76a0c5b2468aefd3ef7b15c702f",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_d1_colr.j2c",
+        "input_sha256": "2ae646d5ac862a8d242a16791cdcee7d09b7014611c0ad0b3b6e9d86e0e3db09",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          149
+        ],
+        "output_sha256": "23094de18b79fa238ac73505a7d78625d663a72946d49aebc11e03bcb4712f0d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_d2_colr.j2c",
+        "input_sha256": "93d15b6eb0e13bf8dbda4426c15eb7fe2cb2b7949cb7d562ee316a8bbd9415cc",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          149
+        ],
+        "output_sha256": "23094de18b79fa238ac73505a7d78625d663a72946d49aebc11e03bcb4712f0d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_e1_colr.j2c",
+        "input_sha256": "a85d660414998c4390e61004a7c8d9d788b93e9f98210a2e0ad068b960ea535d",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          149
+        ],
+        "output_sha256": "23094de18b79fa238ac73505a7d78625d663a72946d49aebc11e03bcb4712f0d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_e2_colr.j2c",
+        "input_sha256": "dd990146bd92a4ade81f26f4a7187a83251755745779a64965ca8de06d1c84eb",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream OpenJPEG-data PPM",
+        "oracle_max_error": 0,
+        "size": [
+          1023,
+          594
+        ],
+        "output_sha256": "600f4350b637191534d3dcabeb5a3f16f3af701589d5b9dc396a35d44dbb92f0",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_f1_mono.j2c",
+        "input_sha256": "0311a126c25e5c9631d1bf634dd9ddd6d90da24e03be6c186a78eed71a1d04c3",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          303,
+          179
+        ],
+        "output_sha256": "7cf421d914e78fa56df11a6315221410f5d5c76a0c5b2468aefd3ef7b15c702f",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_f2_mono.j2c",
+        "input_sha256": "0c9a9ff964f58629544d81e8405091f7393dcc304ff067212500635ebb63e3f6",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          303,
+          179
+        ],
+        "output_sha256": "7cf421d914e78fa56df11a6315221410f5d5c76a0c5b2468aefd3ef7b15c702f",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_file1.jp2",
+        "input_sha256": "4e3d51df7bc66cf367162acfff88b0889d2b2c79ea8d99d93b2d2bd165398deb",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          768,
+          512
+        ],
+        "output_sha256": "4ff0dbaa8faecfd283a3746074638e1c2ff0a8e1d59a801a7fef358f6156fc6c",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "openjpeg_conformance_file2.jp2",
+        "input_sha256": "c87b78e7c3298ddb5e2c4b9a27485ae52ed0906184ae4eecf13b7525ad160960",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "ImageMagick JPEG2000; sYCC CDEF channel order",
+        "oracle_max_error": 1,
+        "size": [
+          480,
+          640
+        ],
+        "output_sha256": "e8001a24dab66398bf6b9986dce4ed595af809842de3f899a331c940d513d7bc",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_file3.jp2",
+        "input_sha256": "fe922461d6928f9b9c86c222a133c42c19d119351400d5e8dd6a1e60db437e66",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          480,
+          640
+        ],
+        "output_sha256": "477736ab15512fa5283552613ca5f3c780ee27b8c0b369a3fc56c30d6083f4a9",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_file4.jp2",
+        "input_sha256": "b3474f23bcf622f4f82c8ede5c473a4a1bae1c287b713fbd8447442e37edcee0",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          768,
+          512
+        ],
+        "output_sha256": "0e77c34cd4de891205c75ed6f6b148603b8136d2b8cd4400bccbd90d994da99f",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "openjpeg_conformance_file5.jp2",
+        "input_sha256": "b47d7d162d6f31b7b159b6df8a60c24146f6893d14a4043a570c6ece99c063d3",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_file5.jp2: Unsupported feature: JPEG2000: ICC colour profile deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": false,
+        "deferred_icc": true,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_conformance_file6.jp2",
+        "input_sha256": "78ae553dc97b22352a2417aba739160e3b6c5b187b2efb867fb50f9814f1bc67",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_file6.jp2: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_conformance_file7.jp2",
+        "input_sha256": "c9e6c845fde3db494035b9be8728239da45791b3269687a043a1fcedd8d11dbf",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_file7.jp2: Unsupported feature: JPEG2000: ICC colour profile deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": true,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_conformance_file8.jp2",
+        "input_sha256": "81e8a8bae1e3d7e632091a120a8a6650a04636b2276a550889b153290348eb01",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_file8.jp2: Unsupported feature: JPEG2000: ICC colour profile deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": false,
+        "deferred_icc": true,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_conformance_file9.jp2",
+        "input_sha256": "6dfea011b013b62353fedcce9520e7c061dbbe8bf0c06d9edad4ac8889274b91",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          768,
+          512
+        ],
+        "output_sha256": "0cadc92c7e9fa264164269a4e4452697225a4cbc15061c9a19cecf548cfe4736",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_g1_colr.j2c",
+        "input_sha256": "e292d2317f4bc4fb444073e9ae77f95ea59e376d2c2c54a991049209274d07de",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          149
+        ],
+        "output_sha256": "23094de18b79fa238ac73505a7d78625d663a72946d49aebc11e03bcb4712f0d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_g2_colr.j2c",
+        "input_sha256": "b59354b8bcccd0cb85a22e77fe2ea0e213c508228354a9935f45e9a100af1971",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          149
+        ],
+        "output_sha256": "23094de18b79fa238ac73505a7d78625d663a72946d49aebc11e03bcb4712f0d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_g3_colr.j2c",
+        "input_sha256": "9109b94831477e76dec18723ac1163a40992b7e6080f7cc46f81764716277c29",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          149
+        ],
+        "output_sha256": "23094de18b79fa238ac73505a7d78625d663a72946d49aebc11e03bcb4712f0d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_g4_colr.j2c",
+        "input_sha256": "b4f779dbfbe7252e6fc07eee3bf180e12a63cdec67e462408f729cb7f966a68d",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          149
+        ],
+        "output_sha256": "23094de18b79fa238ac73505a7d78625d663a72946d49aebc11e03bcb4712f0d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_01.j2k",
+        "input_sha256": "a61ea8d21ad0f7f9b76796e0f841c3e125240f83e308e3b8d626f4356b9a1113",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          128,
+          128
+        ],
+        "output_sha256": "2665a960aba09e87a413860eecaf4e9ef11b595fdb115629be3ef74f341e02f5",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_02.j2k",
+        "input_sha256": "150c8554b827c25b48029f3455b43ce3c029a26bea06eea2c60076c868bb07be",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream PGX; signed full-range normalization and reference-grid nearest sampling",
+        "oracle_max_error": 0,
+        "size": [
+          127,
+          126
+        ],
+        "output_sha256": "7d0306da19da5561c8c4d07ec420464e8c0fa51b59ed7582f54ccd7780144b43",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_03.j2k",
+        "input_sha256": "0aa26db75e8414d554e1fa93a0c7e101f16bb203f1fe06983fdd0c01fa61ddee",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream PGX; signed full-range normalization and reference-grid nearest sampling",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          256
+        ],
+        "output_sha256": "4ce635f42587b4d1dcc882ed71b1d6b2e01c5b1c42fbd54f96aaafc90cce4f1f",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_04.j2k",
+        "input_sha256": "3d35a4eeffb00e150bb69611afec80fba9570d5fca18a04c4e644badfd052c6f",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          640,
+          480
+        ],
+        "output_sha256": "bd02e2682c75f38263b5235be091852e7c54e9ae9dccccae1a0650dac5256e66",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_05.j2k",
+        "input_sha256": "35f3840030802898d5ff2fc6ff39eea3b8080cad65db859830b869d48579cf9f",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream PGX per component; reference-grid nearest sampling",
+        "oracle_max_error": 1,
+        "size": [
+          1024,
+          1024
+        ],
+        "output_sha256": "2c8811cddd07de748ee1a451e6f3ba0d802a00dab2078519c5af8c18b88ebb3d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_06.j2k",
+        "input_sha256": "8a98292f29c4f04ef57c9a2974a1c254cca8297ce270c8baeb911bfe975c013d",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_p0_06.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_07.j2k",
+        "input_sha256": "46c4f5d64880a2df20d3faa22f6697384a6599dedb1b283e41a2efb1009cd9d1",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_p0_07.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_08.j2k",
+        "input_sha256": "4eb4eb2b356e16640ee94a24327fb66385c387657863072d774d633cf4379ef8",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_p0_08.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_09.j2k",
+        "input_sha256": "409c62a227497e7f2fc7e49055c02530cce742b6b385800b8a5aa4ae5bfab1a4",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          17,
+          37
+        ],
+        "output_sha256": "506cadac1bf2f8f5def29ec3b45bb622e6f43b4e3209b99ce6c80ba179612f79",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_10.j2k",
+        "input_sha256": "0146480434740e7580ec5a413fd19654a2f1273dd7db25dc5d0b75ab98a9d706",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          256
+        ],
+        "output_sha256": "edf30036a2c020ab6f4edaf3f3496be51029595a803a5712c903a68c4a3957c9",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_11.j2k",
+        "input_sha256": "d20d8a13b570ef4adb0c8d4166568b043d00124c2db652ce7f78d85ac1d77b62",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          128,
+          1
+        ],
+        "output_sha256": "9b61b2d7d30f3c676a54a996b37e00f723275cac5480ccdf30d2c822e7c7a9d4",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_12.j2k",
+        "input_sha256": "741885b801b7b8a901b61792f52e0d67d05b7a87a7fc2a718c92cb6c969416fc",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          3,
+          5
+        ],
+        "output_sha256": "0274a88536820c25b161338eba9f595a3c205dd3bf1aabd43789257153b09b0b",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_13.j2k",
+        "input_sha256": "12463d0c67e803fac6637d384263abbb6b546826419ecb725aed18fd45bcabb0",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_p0_13.j2k: Unsupported feature: JPEG2000: multicomponent image requires an explicit display mapping\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": false,
+        "deferred_icc": false,
+        "category": "exceptional input / no RGBA mapping"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_14.j2k",
+        "input_sha256": "3e8df4a1dc7e5edcd9478d2e5d350e16f802ef8da3161d63a979f94906440e54",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          49,
+          49
+        ],
+        "output_sha256": "c81c496b65d27c22364d3b0769e5a93b5145c05d82fca79fbfa89d179b22a60e",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_15.j2k",
+        "input_sha256": "0aa26db75e8414d554e1fa93a0c7e101f16bb203f1fe06983fdd0c01fa61ddee",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream PGX; signed full-range normalization and reference-grid nearest sampling",
+        "oracle_max_error": 0,
+        "size": [
+          256,
+          256
+        ],
+        "output_sha256": "4ce635f42587b4d1dcc882ed71b1d6b2e01c5b1c42fbd54f96aaafc90cce4f1f",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p0_16.j2k",
+        "input_sha256": "853d78ff805eff1aa9d6b97cea42ea4975d334b0d4d6b36f217baa0bc1314d27",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          128,
+          128
+        ],
+        "output_sha256": "2665a960aba09e87a413860eecaf4e9ef11b595fdb115629be3ef74f341e02f5",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p1_01.j2k",
+        "input_sha256": "26919bf56968ab57137bb478badb0bde8d2d53dfa26233935eecfbd40f235b81",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream PGX; signed full-range normalization and reference-grid nearest sampling",
+        "oracle_max_error": 0,
+        "size": [
+          122,
+          99
+        ],
+        "output_sha256": "c8ad7bc73513065a6f541bcd9ad9e30616ba4500b8c8ce9ec4b51eca3c22888b",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p1_02.j2k",
+        "input_sha256": "9fb9a26fbd769ea4fce1ca450ed605764af9931783eba49b3551b3a37b7a6f87",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          640,
+          480
+        ],
+        "output_sha256": "bd02e2682c75f38263b5235be091852e7c54e9ae9dccccae1a0650dac5256e66",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p1_03.j2k",
+        "input_sha256": "0ff5572be1d0411550ceaf3b935f2c9f100bbd0399efbb8d48143add8d56ffb7",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream PGX per component; reference-grid nearest sampling",
+        "oracle_max_error": 1,
+        "size": [
+          1024,
+          1024
+        ],
+        "output_sha256": "9f333678af52a0efe90eceb78cc4c0b2b1ba148a5e4fe247c0ee2119af474ed6",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p1_04.j2k",
+        "input_sha256": "fbbe812a6ce6abfc5d1eef02c2e3838c023c24f0ff0b1dcd79c4e1d018b3351f",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_conformance_p1_04.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p1_05.j2k",
+        "input_sha256": "6b1eb070cb40585a9c0ce8569a957dcdbb1948e6129c0af50ec38ee9c0cef994",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          512,
+          512
+        ],
+        "output_sha256": "136803863fd2f93a55225851208f46db86fd0013fd2f776cbec51f7bc85bbfed",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p1_06.j2k",
+        "input_sha256": "08a7fb96ba93bb3cd57183eee56ee92e91cb58193a378c6a4208d8cf1877459b",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          12,
+          12
+        ],
+        "output_sha256": "1625ffeb32436c157d2d0cb1f15ad0fe88d9ae050b4280b1fa5266721e24fe6c",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_p1_07.j2k",
+        "input_sha256": "59576c42568098e4e5d9967eefb0a59b0002fedd7776c201c2c9f9aeb3cf1949",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "upstream PGX per component; reference-grid nearest sampling",
+        "oracle_max_error": 0,
+        "size": [
+          8,
+          12
+        ],
+        "output_sha256": "a3110bf2e00de092aca6d3dfa2877ee3a3764657acc249c8724b2e3141346605",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_subsampling_1.jp2",
+        "input_sha256": "f670eca22afcef910205c4af2478a310ce4a0c01434fe13994695e000d43f3f9",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG sYCC; bounded conversion rounding difference",
+        "oracle_max_error": 2,
+        "size": [
+          1280,
+          1024
+        ],
+        "output_sha256": "30e4b3633709330dfee60de916fccb7235a8e4ec9f8caa98cd9ef954c3ef3f1f",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_subsampling_2.jp2",
+        "input_sha256": "fc891e0852f13a484df07db802024512d47c6a88d45d42cb01de258582caa1a8",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          1280,
+          1024
+        ],
+        "output_sha256": "a312013d4ea5668561481428cf12c1f8e295c1e98c650b5418aacbaa77c77ea1",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_zoo1.jp2",
+        "input_sha256": "42e767e42436649b3ee0dc3589af02501cf4592b81ff7d70201cc10b223bbc00",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG sYCC; bounded conversion rounding difference",
+        "oracle_max_error": 3,
+        "size": [
+          3906,
+          2602
+        ],
+        "output_sha256": "bbe35862b25cd18a03cb5aef86b422cbe01a65edd6aa71d263c72b51369cda7c",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_conformance_zoo2.jp2",
+        "input_sha256": "4022bf677f35d35f092eada25769a6f8add65f727ad57d2b3f9593bf6ebda1f3",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          3906,
+          2602
+        ],
+        "output_sha256": "7734afc1cd61a4d0c633fbbf7c0ba9bc3d3315d1c80446fe2f7512e1acda5e83",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_htj2k_Bretagne1_ht.j2k",
+        "input_sha256": "fa82708024118771d58d90231e406ec40ad3eedf623927697c3659c123d89ec4",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          640,
+          480
+        ],
+        "output_sha256": "d715f7f0d8358f8b97c1b6fae96ff55e006f7855dcf2faede52140b77900c040",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_htj2k_Bretagne1_ht_lossy.j2k",
+        "input_sha256": "372c5b8c5f136c8cabca266d1af7bd8078c0fee14441e7dc850f228d28152d2d",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          640,
+          480
+        ],
+        "output_sha256": "6c1c6220d8ed576b3b87592082dd3f1fa0c09fac33f20683ba5de72454c13e76",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "openjpeg_relax.jp2",
+        "input_sha256": "1e0bec38b4d172eafe7f22622ab88128cc97330a2235b6b5531c3c13d345e687",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_relax.jp2: Unsupported feature: JPEG2000: ICC colour profile deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": false,
+        "deferred_icc": true,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_test_lossless.j2k",
+        "input_sha256": "3d802613b69f9c88ace4f084ff9eaa0b982b5cab20dc7063333cf3b0a690e371",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_test_lossless.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "openjpeg_text_GBR.jp2",
+        "input_sha256": "8ad44827d5a2e47f4b6b975f79e4cc03f45ce93c3127fba0bc5611369fcd3f7d",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "openjpeg_text_GBR.jp2: Unsupported feature: JPEG2000: ICC colour profile deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": false,
+        "deferred_icc": true,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "pillow_00r1_graya_la.jp2",
+        "input_sha256": "21d0c885ed2120a3b0803ecefc282c3b79e73d59a886ca3eb0b73b9d21621607",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "pillow_00r1_graya_la.jp2: Illegal data: JPEG2000: excess packet data\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": false,
+        "deferred_icc": false,
+        "category": "exceptional input / no RGBA mapping"
+      },
+      {
+        "relative_input": "pillow_16bit.cropped.j2k",
+        "input_sha256": "8a7a11211d79e65091f4c5bcaf56f99ad7a88f8733067af854afbd8c73bc6527",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "pillow_16bit.cropped.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "pillow_16bit.cropped.jp2",
+        "input_sha256": "e6c85abfbfce4d3a3332ada0859c9bce2440e117d7af3a545761befb32ffbccb",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "pillow_16bit.cropped.jp2: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "pillow_9bit.j2k",
+        "input_sha256": "d63fc3f5aa06203ee0219b4d33c3883b3626723aba64795f8a9f8c34b35c561e",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "pillow_9bit.j2k: Unsupported feature: JPEG2000: high sample depth deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": true,
+        "deferred_icc": false,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "pillow_balloon_eciRGBv2_aware.jp2",
+        "input_sha256": "8e89a52006cd01ef42f05e8238363584591bb5e56b83237d5b36b68347a4a081",
+        "previous_status": "failed",
+        "status": "failed",
+        "error": "pillow_balloon_eciRGBv2_aware.jp2: Unsupported feature: JPEG2000: ICC colour profile deferred\nError: \"1 file(s) failed\"",
+        "deferred_high_depth": false,
+        "deferred_icc": true,
+        "category": "deferred high depth / ICC"
+      },
+      {
+        "relative_input": "pillow_comment.jp2",
+        "input_sha256": "5fc67b40654602b0f372995e5b5b4177ca8b32b3a7d21401966ff606fe9d4062",
+        "previous_status": "converted",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          1,
+          1
+        ],
+        "output_sha256": "2e82814e16ffc27e58df3a74d7b5f9cf5ba79fdd688bfe322540a97739a266dc",
+        "output_action": "existing identical PNG retained"
+      },
+      {
+        "relative_input": "pillow_rgb_trns_ycbc.j2k",
+        "input_sha256": "d653d62a999f9360ae5cb3355b841a0e4fd6b9a6f97f8f92a79f76b9b05c346b",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          64,
+          64
+        ],
+        "output_sha256": "e2996fd7217b67da325a7cf9af1be9d75e9695600795d0a4d1396eb560b72370",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "pillow_rgb_trns_ycbc.jp2",
+        "input_sha256": "a56d6c02936d352995e8d8eea8c79d1432c07de82850b2ff9a842d8103dda8c0",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          64,
+          64
+        ],
+        "output_sha256": "e2996fd7217b67da325a7cf9af1be9d75e9695600795d0a4d1396eb560b72370",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "pillow_test-card-lossless.jp2",
+        "input_sha256": "0095420ff07a0fd7c6a9b6366079d6ff3eac58863f98ea832316927240747730",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          640,
+          480
+        ],
+        "output_sha256": "f7bf43e0bffd47908abac9a3048c7bf8837d680af1887324b459c2e95cf254ca",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "pillow_test-card-lossy-tiled.jp2",
+        "input_sha256": "501ec46ef5dbee691c1162031dff0dd3f13e9c43faec9c2340374f09535bbcd4",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 0,
+        "size": [
+          640,
+          480
+        ],
+        "output_sha256": "c3fb57f322bf6808c9c876726bf140d37a12be970a85dc90358896f8219e6e12",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_001.jp2",
+        "input_sha256": "30372469582ef5047e0657a88552c7aa554286d7e85288ce9716e2e553eda057",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          4407,
+          5904
+        ],
+        "output_sha256": "09b5b4c8395bcf3c3f0493a86e0a7eb47605bf650b38bf60ecf86f5919b468ec",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_002.jp2",
+        "input_sha256": "db8016284fc2105860b037fdf115f1684aa5008e8df78e8f8655a28b06ec3200",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8265,
+          5958
+        ],
+        "output_sha256": "a0c3e70ef38774082552590aee5fbbda1fcbd168699ef627c64b838ae67c5d69",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_003.jp2",
+        "input_sha256": "a416a05e47d92ef34de8af9737ef617ac72125334d9dc0b15aed8fb85074c0be",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8321,
+          6013
+        ],
+        "output_sha256": "3d6c4dff0d4ce8557e458ea5a8af1793482e4a01d0ebe9c1c5763b912d705133",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_004.jp2",
+        "input_sha256": "675c14e42873950712726aa50e0c1fcfa7ae197c2e8cbd26bd1c1ba34694ba16",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          7965,
+          5908
+        ],
+        "output_sha256": "e99a5e308776861e6ea71f3286d99794164dbe0ea65ed3a01f856ffe25dbb00b",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_005.jp2",
+        "input_sha256": "f92250c6d5f6f2e194a762ee14451593965ba1a8e54e7d567ac00fd773b6ee6e",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8237,
+          5953
+        ],
+        "output_sha256": "189dbf759dc9e0bf44a80898c04f2033d6625a08a4d74a6d515c3ea713a7ec59",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_006.jp2",
+        "input_sha256": "4808ca0f1dfca7bda43add2c012e62d3b3d02f7d9cc93929a200261c0114c886",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          10014,
+          6020
+        ],
+        "output_sha256": "fd64a09ba4fd75024685ca92bfe2999582f4abeb15f4677492e68f34a6fd2566",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_007.jp2",
+        "input_sha256": "d6e1a904535857366adbd438b501111047156cf556eaa8088f45675d20668db7",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8164,
+          6009
+        ],
+        "output_sha256": "03aa639a0cec0c01d42beee27e95b2791367eccbf44b9655e2f17aa8a636076c",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_008.jp2",
+        "input_sha256": "9d73563d1128b9ff3e7716a695432f54fe3a7670aae98ec121458976fe34a524",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8166,
+          5904
+        ],
+        "output_sha256": "0f07b28ce7a9ea5b67689c6c9d6c25961d5554a93142424015c1da9e47c61b1d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_009.jp2",
+        "input_sha256": "74821af3b22f1a7395388b508c5343b99f8403ed4b4bc6afff7c07eb6b40bbd6",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8220,
+          5961
+        ],
+        "output_sha256": "e029599b4314ebd3875db33ac4d6bf64b2099643fdf1967bbabff0d30cf89157",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_010.jp2",
+        "input_sha256": "4aa0b029548afe1b68de974582485f7c0420f0bb2daa76fa195b7e9257d0a644",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8256,
+          5964
+        ],
+        "output_sha256": "d8f0cf3a2a16ced4a8016ac6c0d83ae9ad998b643a29b3a1eeb49a669f3bec33",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_011.jp2",
+        "input_sha256": "b9f1914bc45f798c9e956e34943984355c85e6f12536ddc77ca3feaba3f9079f",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8025,
+          5897
+        ],
+        "output_sha256": "38330815a0246e53375f1c51d91e7dc82cfd41de11f56a2eaa8e8cb131d12b1b",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_012.jp2",
+        "input_sha256": "abbeb35e48c9e9a8e00678769aeebbc87a37a1909657f701367a4c917d7e72dd",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8241,
+          5910
+        ],
+        "output_sha256": "b2cd715a870345ce0b0b782358a9a8c3543f1e4150acaf711481a13c09026b9d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_013.jp2",
+        "input_sha256": "9746f9d66244c5020916e97632c88fd2f3a75580bf4b2b0d2385fe6923a2b3e7",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8235,
+          5968
+        ],
+        "output_sha256": "9db37df37121ba1eb0a3a6d1ffd0f78f92489206eaf1c1649c1270fae274bfc8",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_014.jp2",
+        "input_sha256": "a31fc33e1e100f4aea29da1e5aba2f0375b4dda5302539727c144e41f2233404",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8125,
+          5937
+        ],
+        "output_sha256": "f3545d5332aed1b8466f2a29bd133ef74053528bca46291fd76b9f40b4a090a9",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_015.jp2",
+        "input_sha256": "9beef556a4ad3ba12c62c554afcb2c3f2ae8005f10817360f0c226f62594c88f",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8145,
+          5929
+        ],
+        "output_sha256": "619bcc41302817b3a526e9c5cd04297422e0bd26a19493ab3e49e769481bfa78",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_016.jp2",
+        "input_sha256": "93ca0fbdd8810c60a88795b64dd1ba772b1dad6bdc1934985e0a917f4c36bf25",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8112,
+          5921
+        ],
+        "output_sha256": "aab6cca561da02e3546bf744329dc2df630a01698a0f4152bd94f6ee47e03147",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_017.jp2",
+        "input_sha256": "df642a67e6d648ef05683a249223b30172444e1d702a68d4af2165378459cd5a",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8171,
+          5937
+        ],
+        "output_sha256": "9af879030f789ce95bbcd4ce50b60e92c1f9e4a7bcf0a0387d6f7b79caf1bb2d",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_018.jp2",
+        "input_sha256": "b11420c0a736235cbf217a709a440936df671beb5dfdb7297cd762f0a80231ed",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8230,
+          5949
+        ],
+        "output_sha256": "5fc40c5e71df67f44b1955bb0ba1e13cdb9769940932c9132a8b39483a21b0e1",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_019.jp2",
+        "input_sha256": "f267dd231bd912ef909233c244490c744274cdaa6f08b7186343822f25866a2e",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8214,
+          5935
+        ],
+        "output_sha256": "f28fe75482f32fcd0f799a8c9676d1b35ed84eb554f90d3218baba8f246809ec",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_020.jp2",
+        "input_sha256": "5c194959b8daf5362cbae0d0216f431a498675d8a1df1738faf3c6ce16e53338",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8196,
+          5935
+        ],
+        "output_sha256": "6f1f04812bd01c984937ea16e18b53eaddd20aab0ce96d6035939dabdf3d9d88",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_021.jp2",
+        "input_sha256": "07cad0fef5fd0b6c087338a32acd7850945a22dc7fc1dedb2c2806a1b994db0f",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8244,
+          5950
+        ],
+        "output_sha256": "41a72c67f8a06748bbbb509570d6dea32021239118328af7455bc158ed37bed3",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_022.jp2",
+        "input_sha256": "4ad535aa908b5260a84edffbc58c22ebf78a0cdc8d8aed3969758b5af151363d",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8331,
+          5976
+        ],
+        "output_sha256": "8ca68ce7ac275e5bc2534ca84477288d57424984da8a5f2a25af01653532f215",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_023.jp2",
+        "input_sha256": "4e32a87693d82d68ae6bdbe508e30d1137310a842c48cccb0e5a11798308d250",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          8295,
+          5956
+        ],
+        "output_sha256": "6507e876d650a4ffad605a0c9e41f9e3a38eeee7a4f2a6e50e0315bc058f289c",
+        "output_action": "new validated PNG copied"
+      },
+      {
+        "relative_input": "風俗画報 明治22年2月10日\\m220210_024.jp2",
+        "input_sha256": "ac47887a6f209853c2189e97c32894436a17d7cf032ae8ffd3d7b4f5db9c592e",
+        "previous_status": "failed",
+        "status": "converted",
+        "oracle": "Pillow/OpenJPEG RGBA",
+        "oracle_max_error": 1,
+        "size": [
+          4451,
+          5931
+        ],
+        "output_sha256": "32a7654c86222ab5ef516c875891bbefb17dddd30013459cb37474042522091c",
+        "output_action": "new validated PNG copied"
+      }
+    ]
+  },
+  "independent_alternative_oracles": {
+    "upstream_commit": "39524bd3a601d90ed8e0177559400d23945f96a9",
+    "references": {
+      "a4_colr.ppm": "29130dfd0e970bea6735fafe35b8983be56f7bbe0b644f598db3b5d6e37039b6",
+      "a6_mono_colr_0.pgm": "050f7bb306619727606a3ca461001405441b7bc61eb12c50580b0a29d79bcf7f",
+      "a6_mono_colr_1.pgm": "6bc429fb71fd0224247b091beca04171e8a85359ebc36521a8729f11c086417a",
+      "a6_mono_colr_2.pgm": "e3cc74a05d5bb9ee2edc4589675e54446b48f7190b1192582669f80f7be54148",
+      "a6_mono_colr_3.pgm": "82416e43e8edf30def88a82e051ae0faa5665a5e8108257f029e391c2253e065",
+      "c1p0_02_0.pgx": "f8928b6d8d200c7dbc56e754c1826caf773d99e52c2c1bc4bbfdea7bc1e0d236",
+      "c1p0_03_0.pgx": "edbdfc559b314d6ec3b3f75d94c50ba2b65040cf02ef0017a97ba92e9fedaa86",
+      "c1p0_05_0.pgx": "87122bc8f4a15c2b507d3d766c91b3fee54142c1935c0cdef43444a319f0a77f",
+      "c1p0_05_1.pgx": "92876bda577d5ea7b2ba7c4c2c2a646251043f681f9e3cbf4f92260fac3ee3b7",
+      "c1p0_05_2.pgx": "8183c2a7682d34b62cb09a747ab803207282f882590f5a533e61a9d6b1922511",
+      "c1p0_05_3.pgx": "1d52fc3949c1110036d7f478f378a11bc7d91a2d02743d6c5eccde72e345cc6f",
+      "c1p0_15_0.pgx": "edbdfc559b314d6ec3b3f75d94c50ba2b65040cf02ef0017a97ba92e9fedaa86",
+      "c1p1_01_0.pgx": "fd1730adccecdfa90c31e895ea58083670ccedbe6fe053b20c3bb7c7cf8fb96b",
+      "c1p1_03_0.pgx": "416ff6c9b3d917ff20d3bd6405e224049137d04ed80dec9f8f42dfa070deb794",
+      "c1p1_03_1.pgx": "9cfbc8ebb61d6447cc4fc98d8cca63016a288037a4609b7424685fd72a984ca1",
+      "c1p1_03_2.pgx": "71fd301fb0da107998a8805a46faff754c14316d1544e4159778b43055b210a5",
+      "c1p1_03_3.pgx": "1d52fc3949c1110036d7f478f378a11bc7d91a2d02743d6c5eccde72e345cc6f",
+      "c1p1_07_0.pgx": "ee0f0dd90be110241c60dbed84e03c94ff4f83d5cbdae603db9182f24cf5f8a4",
+      "c1p1_07_1.pgx": "b72f60a12ec7dcb1360cc9adfd86bfb2e81d929262df5e0167d00c02e61b4df4",
+      "e2_colr.ppm": "8a0fb6d7a60514931d2cde618e4a07069d756a4f06202e09f145d123a8116b3c"
+    },
+    "comparisons": [
+      {
+        "file": "openjpeg_conformance_a4_colr.j2c",
+        "oracle": "upstream OpenJPEG-data PPM",
+        "max_error": 0
+      },
+      {
+        "file": "openjpeg_conformance_e2_colr.j2c",
+        "oracle": "upstream OpenJPEG-data PPM",
+        "max_error": 0
+      },
+      {
+        "file": "openjpeg_conformance_a6_mono_colr.j2c",
+        "oracle": "upstream OpenJPEG-data per-component PGM",
+        "max_error": 0
+      },
+      {
+        "file": "openjpeg_conformance_p0_02.j2k",
+        "oracle": "upstream PGX; signed full-range normalization and reference-grid nearest sampling",
+        "max_error": 0
+      },
+      {
+        "file": "openjpeg_conformance_p0_03.j2k",
+        "oracle": "upstream PGX; signed full-range normalization and reference-grid nearest sampling",
+        "max_error": 0
+      },
+      {
+        "file": "openjpeg_conformance_p0_15.j2k",
+        "oracle": "upstream PGX; signed full-range normalization and reference-grid nearest sampling",
+        "max_error": 0
+      },
+      {
+        "file": "openjpeg_conformance_p1_01.j2k",
+        "oracle": "upstream PGX; signed full-range normalization and reference-grid nearest sampling",
+        "max_error": 0
+      },
+      {
+        "file": "openjpeg_conformance_p0_05.j2k",
+        "oracle": "upstream PGX per component; reference-grid nearest sampling",
+        "max_error": 1
+      },
+      {
+        "file": "openjpeg_conformance_p1_03.j2k",
+        "oracle": "upstream PGX per component; reference-grid nearest sampling",
+        "max_error": 1
+      },
+      {
+        "file": "openjpeg_conformance_p1_07.j2k",
+        "oracle": "upstream PGX per component; reference-grid nearest sampling",
+        "max_error": 0
+      },
+      {
+        "file": "gdal_stefan_full_rgba_alpha_1bit.jp2",
+        "oracle": "Pillow RGB; 1-bit alpha normalized to 0/255",
+        "max_error": 0
+      },
+      {
+        "file": "openjpeg_conformance_file2.jp2",
+        "oracle": "ImageMagick JPEG2000; sYCC CDEF channel order",
+        "max_error": 1
+      },
+      {
+        "file": "openjpeg_conformance_subsampling_1.jp2",
+        "oracle": "Pillow/OpenJPEG sYCC; bounded conversion rounding difference",
+        "max_error": 2
+      },
+      {
+        "file": "openjpeg_conformance_zoo1.jp2",
+        "oracle": "Pillow/OpenJPEG sYCC; bounded conversion rounding difference",
+        "max_error": 3
+      }
+    ]
+  },
+  "display": {
+    "sheet_sha256": "d45668732968a115fbea70524c2e06601e1a785e151487bf77ada5a06c2ce9a6",
+    "files": [
+      {
+        "file": "openjpeg_htj2k_Bretagne1_ht.j2k",
+        "png_sha256": "d715f7f0d8358f8b97c1b6fae96ff55e006f7855dcf2faede52140b77900c040"
+      },
+      {
+        "file": "openjpeg_htj2k_Bretagne1_ht_lossy.j2k",
+        "png_sha256": "6c1c6220d8ed576b3b87592082dd3f1fa0c09fac33f20683ba5de72454c13e76"
+      },
+      {
+        "file": "openjpeg_conformance_file2.jp2",
+        "png_sha256": "e8001a24dab66398bf6b9986dce4ed595af809842de3f899a331c940d513d7bc"
+      },
+      {
+        "file": "openjpeg_conformance_a4_colr.j2c",
+        "png_sha256": "65c12831a542c140db4908e7e1583bbbddfe50bc98659bb4f44bbad4716fb0d0"
+      },
+      {
+        "file": "openjpeg_conformance_e2_colr.j2c",
+        "png_sha256": "600f4350b637191534d3dcabeb5a3f16f3af701589d5b9dc396a35d44dbb92f0"
+      },
+      {
+        "file": "openjpeg_conformance_a6_mono_colr.j2c",
+        "png_sha256": "53d13a76fe0d304f46f4083465d13bd17c4d0f81c75e05eeb2032c82ec7138f7"
+      },
+      {
+        "file": "openjpeg_conformance_p0_03.j2k",
+        "png_sha256": "4ce635f42587b4d1dcc882ed71b1d6b2e01c5b1c42fbd54f96aaafc90cce4f1f"
+      },
+      {
+        "file": "openjpeg_conformance_p1_07.j2k",
+        "png_sha256": "a3110bf2e00de092aca6d3dfa2877ee3a3764657acc249c8724b2e3141346605"
+      },
+      {
+        "file": "gdal_stefan_full_rgba_alpha_1bit.jp2",
+        "png_sha256": "a1333dc726cb6214e2c570c8996bf026c0549ae0a027416c5d2ac2dd4fb87561"
+      },
+      {
+        "file": "m220210_002.jp2",
+        "png_sha256": "a0c3e70ef38774082552590aee5fbbda1fcbd168699ef627c64b838ae67c5d69"
+      },
+      {
+        "file": "m220210_014.jp2",
+        "png_sha256": "f3545d5332aed1b8466f2a29bd133ef74053528bca46291fd76b9f40b4a090a9"
+      },
+      {
+        "file": "m220210_024.jp2",
+        "png_sha256": "32a7654c86222ab5ef516c875891bbefb17dddd30013459cb37474042522091c"
+      }
+    ]
+  },
+  "benchmark": {
+    "base_commit": "913aa89a5d907fe1c95d9b31b56c8972a07e5339",
+    "candidate_source_sha256": "0ca54918afb2f845e81b9ec3a7017f5de469aae593df0ffc5cd673b65f3803c5",
+    "baseline_binary_sha256": "07287ebbf29429403cf630e1479e567b305e085a4562a0e4b61320ef0baa4f32",
+    "candidate_binary_sha256": "8d441b6441e4de29d5774e95ad9ecd808b0f44c4a3f1b15a31780b8b14792454",
+    "compiler": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "profile": "release, no default features, jpeg2000",
+    "cpu_affinity_mask": 1,
+    "method": "8 alternating base/head pairs per case; inherited fixed CPU affinity; verifier 100 warmup calls; internal decode-loop timings",
+    "limitation": "Single Windows host sample; no cross-host performance guarantee",
+    "summary": [
+      {
+        "case": "Gray16",
+        "median_paired_change_percent": -1.156,
+        "base_median_us": 27.4535,
+        "head_median_us": 27.149
+      },
+      {
+        "case": "RGB16",
+        "median_paired_change_percent": -1.19,
+        "base_median_us": 90.12700000000001,
+        "head_median_us": 89.605
+      },
+      {
+        "case": "LossyRGB",
+        "median_paired_change_percent": 0.544,
+        "base_median_us": 397.468,
+        "head_median_us": 400.254
+      },
+      {
+        "case": "JP2Gray16",
+        "median_paired_change_percent": -1.536,
+        "base_median_us": 27.578000000000003,
+        "head_median_us": 27.204500000000003
+      }
+    ],
+    "rows": [
+      {
+        "case": "Gray16",
+        "pair": 0,
+        "version": "base",
+        "us_per_decode": 27.657,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 0,
+        "version": "head",
+        "us_per_decode": 26.764,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 1,
+        "version": "head",
+        "us_per_decode": 26.931,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 1,
+        "version": "base",
+        "us_per_decode": 27.373,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 2,
+        "version": "base",
+        "us_per_decode": 27.325,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 2,
+        "version": "head",
+        "us_per_decode": 27.758,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 3,
+        "version": "head",
+        "us_per_decode": 27.119,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 3,
+        "version": "base",
+        "us_per_decode": 28.093,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 4,
+        "version": "base",
+        "us_per_decode": 27.477,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 4,
+        "version": "head",
+        "us_per_decode": 27.093,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 5,
+        "version": "head",
+        "us_per_decode": 27.348,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 5,
+        "version": "base",
+        "us_per_decode": 27.371,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 6,
+        "version": "base",
+        "us_per_decode": 27.43,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 6,
+        "version": "head",
+        "us_per_decode": 27.179,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 7,
+        "version": "head",
+        "us_per_decode": 27.604,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "Gray16",
+        "pair": 7,
+        "version": "base",
+        "us_per_decode": 27.656,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "RGB16",
+        "pair": 0,
+        "version": "base",
+        "us_per_decode": 91.397,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 0,
+        "version": "head",
+        "us_per_decode": 90.039,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 1,
+        "version": "head",
+        "us_per_decode": 90.536,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 1,
+        "version": "base",
+        "us_per_decode": 90.5,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 2,
+        "version": "base",
+        "us_per_decode": 90.229,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 2,
+        "version": "head",
+        "us_per_decode": 91.868,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 3,
+        "version": "head",
+        "us_per_decode": 90.498,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 3,
+        "version": "base",
+        "us_per_decode": 91.196,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 4,
+        "version": "base",
+        "us_per_decode": 90.025,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 4,
+        "version": "head",
+        "us_per_decode": 88.077,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 5,
+        "version": "head",
+        "us_per_decode": 87.013,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 5,
+        "version": "base",
+        "us_per_decode": 89.786,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 6,
+        "version": "base",
+        "us_per_decode": 89.477,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 6,
+        "version": "head",
+        "us_per_decode": 87.33,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 7,
+        "version": "head",
+        "us_per_decode": 89.171,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "RGB16",
+        "pair": 7,
+        "version": "base",
+        "us_per_decode": 89.976,
+        "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 0,
+        "version": "base",
+        "us_per_decode": 394.665,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 0,
+        "version": "head",
+        "us_per_decode": 399.196,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 1,
+        "version": "head",
+        "us_per_decode": 402.81,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 1,
+        "version": "base",
+        "us_per_decode": 403.514,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 2,
+        "version": "base",
+        "us_per_decode": 397.704,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 2,
+        "version": "head",
+        "us_per_decode": 400.31,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 3,
+        "version": "head",
+        "us_per_decode": 400.393,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 3,
+        "version": "base",
+        "us_per_decode": 398.669,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 4,
+        "version": "base",
+        "us_per_decode": 395.807,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 4,
+        "version": "head",
+        "us_per_decode": 407.468,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 5,
+        "version": "head",
+        "us_per_decode": 400.198,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 5,
+        "version": "base",
+        "us_per_decode": 403.074,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 6,
+        "version": "base",
+        "us_per_decode": 397.232,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 6,
+        "version": "head",
+        "us_per_decode": 398.551,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 7,
+        "version": "head",
+        "us_per_decode": 400.038,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "LossyRGB",
+        "pair": 7,
+        "version": "base",
+        "us_per_decode": 395.403,
+        "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 0,
+        "version": "base",
+        "us_per_decode": 27.55,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 0,
+        "version": "head",
+        "us_per_decode": 27.073,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 1,
+        "version": "head",
+        "us_per_decode": 27.196,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 1,
+        "version": "base",
+        "us_per_decode": 27.437,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 2,
+        "version": "base",
+        "us_per_decode": 27.446,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 2,
+        "version": "head",
+        "us_per_decode": 26.965,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 3,
+        "version": "head",
+        "us_per_decode": 27.213,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 3,
+        "version": "base",
+        "us_per_decode": 27.704,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 4,
+        "version": "base",
+        "us_per_decode": 27.676,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 4,
+        "version": "head",
+        "us_per_decode": 27.466,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 5,
+        "version": "head",
+        "us_per_decode": 27.319,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 5,
+        "version": "base",
+        "us_per_decode": 27.477,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 6,
+        "version": "base",
+        "us_per_decode": 27.779,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 6,
+        "version": "head",
+        "us_per_decode": 27.084,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 7,
+        "version": "head",
+        "us_per_decode": 27.236,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      },
+      {
+        "case": "JP2Gray16",
+        "pair": 7,
+        "version": "base",
+        "us_per_decode": 27.606,
+        "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+      }
+    ]
+  },
+  "package": {
+    "verified": true,
+    "files": 199,
+    "bytes": 464900,
+    "sha256": "ab362828c4cd1b0304ff0890150759489970c68477caf76428b851eaade05cbb",
+    "development_fixtures_excluded": true
+  },
+  "fixture_hashes": {
+    "jp2_general_ht_one.j2k": "5bbefbc9705ff2f7a00a269961f0b0bb5f5c7d7b61263c7376c3cf815e243459",
+    "jp2_general_ht_u32_boundary.j2k": "fe6d5317fa9356d71c2fc34694c57de9fc6f63b371df3c6dfd8a117e538b204d",
+    "jp2_general_ht_zero.j2k": "c0104ac7673610e5f44d04dff84eaf5733b812817d0b8d7af00d4d4c744117f6",
+    "jp2_general_L_CPRL_0.jp2": "53bda0892424e74191f988a66644fe4ee33f544a4cbfc5d8a36e4217fdfebef5",
+    "jp2_general_L_CPRL_0.rgba": "b5e5888f9027fddbf4c69345a8eea3af0d35627349c2656c68b4f91c569c1611",
+    "jp2_general_L_CPRL_1.jp2": "d5f27f6cb4270ee8cf9b0bcedff131e8b44b5f863b0a163cb119a302572b9800",
+    "jp2_general_L_CPRL_1.rgba": "2ac6d2ef58a76ddf4f5956781329e9bddb2b0352138d2a70a74caeb60c34c5e5",
+    "jp2_general_L_LRCP_0.jp2": "6198f475b3d945214493dd24edb7a435d7ae9675b81e7d00b3738f59cde418d4",
+    "jp2_general_L_LRCP_0.rgba": "b5e5888f9027fddbf4c69345a8eea3af0d35627349c2656c68b4f91c569c1611",
+    "jp2_general_L_LRCP_1.jp2": "64d753c1abb80b1bb8f5e1bcd548749682a65179e909f0123c5714faea831001",
+    "jp2_general_L_LRCP_1.rgba": "2ac6d2ef58a76ddf4f5956781329e9bddb2b0352138d2a70a74caeb60c34c5e5",
+    "jp2_general_L_PCRL_0.jp2": "7e17f0d4177dacd29fba0613b0a318558b21df752fbff7cd95bdd31b8088ad63",
+    "jp2_general_L_PCRL_0.rgba": "b5e5888f9027fddbf4c69345a8eea3af0d35627349c2656c68b4f91c569c1611",
+    "jp2_general_L_PCRL_1.jp2": "a59331d9bb13e3465b87e357a0bb163a6c48d1910ab1c02e5965b95296bc6112",
+    "jp2_general_L_PCRL_1.rgba": "2ac6d2ef58a76ddf4f5956781329e9bddb2b0352138d2a70a74caeb60c34c5e5",
+    "jp2_general_L_RLCP_0.jp2": "293ef2fadde9bc0d5fc1b11c24814fa23b643709c843f7cce8fd66b1160eedc5",
+    "jp2_general_L_RLCP_0.rgba": "b5e5888f9027fddbf4c69345a8eea3af0d35627349c2656c68b4f91c569c1611",
+    "jp2_general_L_RLCP_1.jp2": "dcfcb46611555f4bca33e328dcb8c3f0ebc455cff7de0e158e4406c38d529a76",
+    "jp2_general_L_RLCP_1.rgba": "2ac6d2ef58a76ddf4f5956781329e9bddb2b0352138d2a70a74caeb60c34c5e5",
+    "jp2_general_L_RPCL_0.jp2": "b2e9c78da18524da8d80c305d80b8df5c999989ff9ac03efd31cddeb9e8de6a5",
+    "jp2_general_L_RPCL_0.rgba": "b5e5888f9027fddbf4c69345a8eea3af0d35627349c2656c68b4f91c569c1611",
+    "jp2_general_L_RPCL_1.jp2": "f3df90d3ead913cd68f134d0f927d9473c6717b9048e5d1f0b3cba3bf485662b",
+    "jp2_general_L_RPCL_1.rgba": "2ac6d2ef58a76ddf4f5956781329e9bddb2b0352138d2a70a74caeb60c34c5e5",
+    "jp2_general_LA.jp2": "3a5622f3977a76cc2622a0c45fd3940e06c9e396f1a0f760d943bfc1e8316a03",
+    "jp2_general_LA.rgba": "d2d402064489d1faced92696c5784b5c26873a58b6839a64ca79dcdcf450507c",
+    "jp2_general_levels6.jp2": "85577881a4cbd7521d479cd37d15c1720970f681a070cc99d237ed3c847d7977",
+    "jp2_general_levels6.rgba": "60cb85ef8fd0097b06d2ba6f3a7550633d7bf4ba2e32f16259f6f364feb4b925",
+    "jp2_general_reenabled_gray_QCC.j2k.rgba": "25dc1fd3afa8ec66d846c698d4e25718fd24dd43eddc4282b687013fcaacd408",
+    "jp2_general_reenabled_gray_QCC.jp2.rgba": "25dc1fd3afa8ec66d846c698d4e25718fd24dd43eddc4282b687013fcaacd408",
+    "jp2_general_reenabled_identical_tile_COD.j2k.rgba": "617f1d8d463261241109d8762814756012317c98fb23ad1550043cbdccf65884",
+    "jp2_general_reenabled_identical_tile_COD.jp2.rgba": "617f1d8d463261241109d8762814756012317c98fb23ad1550043cbdccf65884",
+    "jp2_general_reenabled_multiple_quality_layers.j2k.rgba": "33f86905dc9c01eb4508b9d5b212b3bfa01f4bc4856ba49fa9bcd506de11b6c3",
+    "jp2_general_reenabled_multiple_quality_layers.jp2.rgba": "33f86905dc9c01eb4508b9d5b212b3bfa01f4bc4856ba49fa9bcd506de11b6c3",
+    "jp2_general_reenabled_ROI_maxshift0.j2k.rgba": "617f1d8d463261241109d8762814756012317c98fb23ad1550043cbdccf65884",
+    "jp2_general_reenabled_ROI_maxshift0.jp2.rgba": "617f1d8d463261241109d8762814756012317c98fb23ad1550043cbdccf65884",
+    "jp2_general_reenabled_SOP_may_be_used.j2k.rgba": "617f1d8d463261241109d8762814756012317c98fb23ad1550043cbdccf65884",
+    "jp2_general_reenabled_SOP_may_be_used.jp2.rgba": "617f1d8d463261241109d8762814756012317c98fb23ad1550043cbdccf65884",
+    "jp2_general_RGB_CPRL_0.jp2": "4f76da9786bb7752250670c061ed69cbec08534bfacc84dfdc481253fab76e5b",
+    "jp2_general_RGB_CPRL_0.rgba": "04c9dee7f93a3e5d59d9bff5648c2afeb94bf2c0178ddeb010ef92d0ca6afc6c",
+    "jp2_general_RGB_CPRL_1.jp2": "bc7c21a7d5923de7adb76b566ff7274c3b079ef082d550e042102c41d1171075",
+    "jp2_general_RGB_CPRL_1.rgba": "3d91d2902218bc1c52029b35ed97d73e1f810d90c79eadcdea1b3b16fc864df7",
+    "jp2_general_RGB_LRCP_0.jp2": "f1db574e316966106b04b26f58bff02852203d097d98ff5fcb1fbb2627f4d921",
+    "jp2_general_RGB_LRCP_0.rgba": "04c9dee7f93a3e5d59d9bff5648c2afeb94bf2c0178ddeb010ef92d0ca6afc6c",
+    "jp2_general_RGB_LRCP_1.jp2": "5cc9a5faca7684779dcfc575a4e92e632f87eed3bf16b685e1bb8fcede920a76",
+    "jp2_general_RGB_LRCP_1.rgba": "3d91d2902218bc1c52029b35ed97d73e1f810d90c79eadcdea1b3b16fc864df7",
+    "jp2_general_RGB_PCRL_0.jp2": "baa8cc9acc4ad8064accbbd55a1b72cbbc5da8c922fc99f044458bcbf10aac1d",
+    "jp2_general_RGB_PCRL_0.rgba": "04c9dee7f93a3e5d59d9bff5648c2afeb94bf2c0178ddeb010ef92d0ca6afc6c",
+    "jp2_general_RGB_PCRL_1.jp2": "29794c895eda02e9a4e2c17fecb95bed43dbeec0ec9e52f2b5a777002a4ce65c",
+    "jp2_general_RGB_PCRL_1.rgba": "3d91d2902218bc1c52029b35ed97d73e1f810d90c79eadcdea1b3b16fc864df7",
+    "jp2_general_RGB_RLCP_0.jp2": "de682bd283d0515d77c27dca3fa65e90207b58ca7122e1c8b101775d10e69648",
+    "jp2_general_RGB_RLCP_0.rgba": "04c9dee7f93a3e5d59d9bff5648c2afeb94bf2c0178ddeb010ef92d0ca6afc6c",
+    "jp2_general_RGB_RLCP_1.jp2": "d59faf7bb2aa98dfd049d463fa01109598d29ec0d404029ff48a0fcfc265c312",
+    "jp2_general_RGB_RLCP_1.rgba": "3d91d2902218bc1c52029b35ed97d73e1f810d90c79eadcdea1b3b16fc864df7",
+    "jp2_general_RGB_RPCL_0.jp2": "85d7332f0472dfdc224e7ba27b3e2857a5abb3e0a32b2eec66155b15ac23e5c5",
+    "jp2_general_RGB_RPCL_0.rgba": "04c9dee7f93a3e5d59d9bff5648c2afeb94bf2c0178ddeb010ef92d0ca6afc6c",
+    "jp2_general_RGB_RPCL_1.jp2": "614e307d397a7f36d7e4b846ab440d99c7d16884b7ad1d595fa2bbb7b6ebdb7a",
+    "jp2_general_RGB_RPCL_1.rgba": "3d91d2902218bc1c52029b35ed97d73e1f810d90c79eadcdea1b3b16fc864df7",
+    "jp2_general_RGBA.jp2": "2bddb232abd0d61cbae5f95462a6482486b707d33126f8858ad037cdb25fbf92",
+    "jp2_general_RGBA.rgba": "d5ffdc34d0a80213bf78396dc4f7db292e9cd79f45a84ed4364047a7895ffc3e"
+  },
+  "limitations": [
+    "Windows host performance only",
+    "High depth and ICC deferred",
+    "HTMIXED and per-colour alpha associations unsupported",
+    "Missing declared tiles or trailing quality-layer packets reject; no recovery",
+    "No per-component export for the 257-component raw file",
+    "No crate release or CI wait in this change"
+  ]
+}

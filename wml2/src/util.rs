@@ -41,10 +41,18 @@ pub enum ImageFormat {
     Pcd,
     RiffFormat(String),
     Unknown,
+    #[cfg(feature = "jpeg2000")]
+    Jpeg2000, // Raw SOC or JP2 signature
 }
 
 /// Detects an image format from the leading bytes of `buffer`.
 pub fn format_check(buffer: &[u8]) -> ImageFormat {
+    #[cfg(feature = "jpeg2000")]
+    if buffer.starts_with(&[0xff, 0x4f])
+        || buffer.starts_with(b"\x00\x00\x00\x0cjP  \x0d\x0a\x87\x0a")
+    {
+        return ImageFormat::Jpeg2000;
+    }
     #[cfg(feature = "psd")]
     if buffer.len() >= 4 && buffer.starts_with(b"8BPS") {
         return ImageFormat::Psd;
@@ -225,6 +233,8 @@ mod tests {
 /// Returns whether a decoder for `format` is enabled in the current build.
 pub fn decoder_supports_format(format: &ImageFormat) -> bool {
     match format {
+        #[cfg(feature = "jpeg2000")]
+        ImageFormat::Jpeg2000 => true,
         #[cfg(feature = "gif")]
         ImageFormat::Gif => true,
         #[cfg(feature = "jpeg")]

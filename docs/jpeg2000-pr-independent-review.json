@@ -1,0 +1,36 @@
+{
+  "production_sha256": {
+    "jpeg2000.rs": "a168988dc2e13dd0ce1cc65dcb5d598d47cc1b1fa3021dd816d931efa7b59780",
+    "util.rs": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+    "draw.rs": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d"
+  },
+  "metadata_repro": {
+    "input_bytes": 33619780,
+    "injected_com_bytes": 33617403,
+    "minimal_feature": {
+      "image_load": "metadata exceeds decode limit",
+      "public_decode": "metadata exceeds decode limit",
+      "drawn_dimensions": [
+        0,
+        0
+      ]
+    },
+    "default_codecs_plus_jpeg2000": {
+      "image_load": "metadata exceeds decode limit",
+      "public_decode": "metadata exceeds decode limit",
+      "drawn_dimensions": [
+        0,
+        0
+      ]
+    }
+  },
+  "exhaustive_match": {
+    "feature_off": "compiled and ran (png)",
+    "default_features_without_jpeg2000": "compiled and ran (png)",
+    "workspace_features_plus_jpeg2000_explicit_added_arm": "compiled and ran (png)"
+  },
+  "remaining_actionable_production_findings": [],
+  "large_regression_checks": "Owned by root; not duplicated",
+  "profile_documentation": "docs/jpeg2000.md still pending at final read",
+  "review_stage": "Independent production closing review before final runtime gates; documentation subsequently reviewed separately."
+}

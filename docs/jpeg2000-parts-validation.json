@@ -1,0 +1,342 @@
+{
+  "baseline_git": "0f35f184424abd20d4f6bbfa4c1c6103b4e584c1",
+  "checkpoint_git": "79cf2dbe08aa0243e933766c80662ce91523a5dc",
+  "branch": "codex/jpeg2000-rgb-reimplementation-20261011",
+  "rust": "1.91.0",
+  "crate_version": "0.0.35",
+  "implementation": "independent Rust, no production OpenJPEG dependency",
+  "source_sha256": "4b677999f4a0d50a6ff0871612b9023f03b2d3b5f426a91bc62ad6815f18c1cd",
+  "scope": {
+    "modes": [
+      "Gray8",
+      "equal unsampled RGB8/RCT0",
+      "equal unsampled RGB8/RCT1"
+    ],
+    "actual_and_tile_axis_bound": 1024,
+    "reference_end_bound": 32768,
+    "tile_count_bound": 256,
+    "parts_per_tile_bound": 18,
+    "known_part_total_required": true,
+    "strict_grouped_sequence": true,
+    "whole_packet_boundaries": true,
+    "layers": 1,
+    "levels": [
+      0,
+      5
+    ],
+    "progression": "LRCP",
+    "transform": "reversible5/3",
+    "extra_workspace": "peak joined payload bytes for any multipart tile, added to old64*w*h*c+8192"
+  },
+  "workspace": {
+    "passed": 362,
+    "failed": 0,
+    "ignored": 12,
+    "targets": 43
+  },
+  "feature_off_passed": 16,
+  "clippy_existing_warnings": 11,
+  "clippy_new_jpeg2000_warnings": 0,
+  "fixed": {
+    "jpeg2000-parts-manifest.txt": {
+      "count": 126,
+      "sha256": "77e18ee586617a8fd1e9bde635febfe17bf6bd4887eb360d38f8c68efdc3bd4e",
+      "multipart": 122
+    },
+    "jpeg2000-parts-unsupported-manifest.txt": {
+      "count": 48,
+      "sha256": "9ed79222f6b8e1bd4bb9671d4588ee5b1386f92ef6a5885a3c590b6e239ae491",
+      "multipart": 46
+    },
+    "negative_classification": {
+      "valid-unsupported": 12,
+      "malformed": 36
+    }
+  },
+  "random": {
+    "seed": 1346458196,
+    "geometries": 24,
+    "pixel_comparisons": 144,
+    "multipart_comparisons": 126,
+    "all_passed": true,
+    "attempted_geometries": 29,
+    "source_exact_geometries": 24,
+    "compatibility_only_comparisons": 30,
+    "encoder_roundtrip_mismatches": 30,
+    "oracle_limit": "Known encoder-issued coefficient mismatches are recorded separately; every attempted file still matches Rust to OpenJPEG output.",
+    "pillow": "12.3.0",
+    "openjpeg": "2.5.4",
+    "decoder_sha256": "4b677999f4a0d50a6ff0871612b9023f03b2d3b5f426a91bc62ad6815f18c1cd"
+  },
+  "review": {
+    "reviewer": "independent rgb_api_review agent",
+    "source_sha256": "4b677999f4a0d50a6ff0871612b9023f03b2d3b5f426a91bc62ad6815f18c1cd",
+    "actionable_findings": [],
+    "checks": [
+      "Gray fast and general/global RGB packet ends",
+      "strictly increasing nonempty part ends",
+      "Isot/TPsot/TNsot/SOD/Psot validation",
+      "join charge before reserve/copy",
+      "old canvas budget plus peak join per tile",
+      "single-part borrowed const specialization",
+      "EOC before callbacks",
+      "preserved origins and API/resources"
+    ]
+  },
+  "remaining_unsupported": [
+    "unknown part totals",
+    "empty parts",
+    "interleaved/nonraster tiles",
+    "tile-header overrides",
+    "split packets",
+    "multiple layers/partial passes",
+    "9/7",
+    "other progressions",
+    "explicit precinct/SOP/EPH",
+    "subsampled/signed/high-depth/alpha",
+    "ROI"
+  ],
+  "runtime_limits": [
+    "Node WASM not browser UI",
+    "other OS and optional AVIF matrices not verified"
+  ],
+  "wasm": {
+    "minimal": {
+      "runtime": "v24.19.0",
+      "fixtures": 1330,
+      "rejected_fixtures": 72,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 74776576,
+      "git_head": "79cf2dbe08aa0243e933766c80662ce91523a5dc",
+      "working_tree_dirty": true,
+      "rust_source_sha256": "4b677999f4a0d50a6ff0871612b9023f03b2d3b5f426a91bc62ad6815f18c1cd",
+      "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+      "fixture_manifest_sha256": {
+        "jpeg2000-global-origins-unsupported-manifest.txt": "4c72c0b75f304356bf4732ead07d557aa4626ca1b946c15425b971f650d78dfa",
+        "jpeg2000-global-origins-manifest.txt": "aca54751a8c1bcc80dfc49c5d532490d46d57b9d93a174a9665f48986feec7f3",
+        "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+        "jpeg2000-parts-manifest.txt": "77e18ee586617a8fd1e9bde635febfe17bf6bd4887eb360d38f8c68efdc3bd4e",
+        "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+        "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+        "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+        "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+        "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+        "jpeg2000-parts-unsupported-manifest.txt": "9ed79222f6b8e1bd4bb9671d4588ee5b1386f92ef6a5885a3c590b6e239ae491",
+        "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+        "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+        "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4"
+      },
+      "target": "wasm32-unknown-unknown",
+      "default_features": false,
+      "source_exact_fixtures": 1329,
+      "encoder_compatibility_fixtures": 1,
+      "wasm_sha256": "f0ee9369137f01a7e765afc18ed4b1ec480d76120991a9198602ec73d3ad8129",
+      "checks": [
+        "RGBA pixels",
+        "dimensions",
+        "exact limits",
+        "short limits",
+        "limit scope restoration",
+        "callbacks",
+        "init/draw abort",
+        "truncation rejected before callbacks",
+        "unsupported and malformed tile/part profiles rejected before callbacks",
+        "late tile framing, missing tile and repaired short packet rejection"
+      ]
+    },
+    "default": {
+      "runtime": "v24.19.0",
+      "fixtures": 1330,
+      "rejected_fixtures": 72,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 74842112,
+      "git_head": "79cf2dbe08aa0243e933766c80662ce91523a5dc",
+      "working_tree_dirty": true,
+      "rust_source_sha256": "4b677999f4a0d50a6ff0871612b9023f03b2d3b5f426a91bc62ad6815f18c1cd",
+      "tier1_source_sha256": "5a91e60b95e5ddaefa23667af327734b09c32211b57087ab434da086d8b87329",
+      "fixture_manifest_sha256": {
+        "jpeg2000-global-origins-unsupported-manifest.txt": "4c72c0b75f304356bf4732ead07d557aa4626ca1b946c15425b971f650d78dfa",
+        "jpeg2000-global-origins-manifest.txt": "aca54751a8c1bcc80dfc49c5d532490d46d57b9d93a174a9665f48986feec7f3",
+        "jpeg2000-multi-manifest.txt": "e17981aa5e9a005581f9ec1f4fb56eea685f4d360adde6eb2f91e6ecbe426843",
+        "jpeg2000-parts-manifest.txt": "77e18ee586617a8fd1e9bde635febfe17bf6bd4887eb360d38f8c68efdc3bd4e",
+        "jpeg2000-deep-manifest.txt": "69e76080d7d666181807bd8b00bccd65c17d9fd86f7e86c1a6aa73ff3edcf0dc",
+        "jpeg2000-blocks-manifest.txt": "c675b60d2b06127e36ea8e3cf78a351fdfaf7fa216a07bc72a73accbd4ae46ee",
+        "jpeg2000-origins-manifest.txt": "873b0535181e048333acf8232432290a29728e6597d1db3cdd9165e39ffe9ff6",
+        "jpeg2000-qcc-manifest.txt": "f2bbabcbdb3924048c869de25020edbec7da3bab6437f66074a89544d8b492da",
+        "jpeg2000-tiles-manifest.txt": "12f135033f9d8b39db2a3a28047baab13043e399398c273f4006a6b831daadd0",
+        "jpeg2000-parts-unsupported-manifest.txt": "9ed79222f6b8e1bd4bb9671d4588ee5b1386f92ef6a5885a3c590b6e239ae491",
+        "jpeg2000-rgb-manifest.txt": "cbda85cf415b90bb5360c65b1ee46ccddc7421d2ce60f2204924afa7237b1cb7",
+        "jpeg2000-tiles-unsupported-manifest.txt": "9146ca0edf7f065d2daf4b6649416d80479e50fda1e23394ffd99f346cd6995e",
+        "jpeg2000-origins-unsupported-manifest.txt": "6e2b6a6324cdc1cef3199dcc0d0f33734c2cb4c4d8b6e9e624afc79718d509a4"
+      },
+      "target": "wasm32-unknown-unknown",
+      "default_features": true,
+      "source_exact_fixtures": 1329,
+      "encoder_compatibility_fixtures": 1,
+      "wasm_sha256": "82c7487598e1c860304c6a7e3ed6969e8ace6133043a64fab0dfc163889e968f",
+      "checks": [
+        "RGBA pixels",
+        "dimensions",
+        "exact limits",
+        "short limits",
+        "limit scope restoration",
+        "callbacks",
+        "init/draw abort",
+        "truncation rejected before callbacks",
+        "unsupported and malformed tile/part profiles rejected before callbacks",
+        "late tile framing, missing tile and repaired short packet rejection"
+      ]
+    }
+  },
+  "display": [
+    {
+      "fixture": "jp2_parts_28x32_d1_gray_b4x64_t12x14_o5x7_g2x3_noise_packet_mct0.j2k",
+      "public_ppm_sha256": "20d1e78c52326ca1005436b1692f4f5538bf0c5d9285440157e3d15f6bccadfc",
+      "oracle_pixel_match": true
+    },
+    {
+      "fixture": "jp2_parts_49x53_d3_rgb_b4x64_t19x21_o5x7_g2x3_noise_packet_mct0.j2k",
+      "public_ppm_sha256": "292e8e572786f7dd1ab8529efd2775928033151be988adf398db7fe371ac7ad0",
+      "oracle_pixel_match": true
+    },
+    {
+      "fixture": "jp2_parts_193x197_d5_rgb_b4x64_t67x69_o5x7_g2x3_noise_packet_mct1.j2k",
+      "public_ppm_sha256": "7a88acb9882c759fb070cff437fb59f843cc7ffbcc9e5f3d05b115f2b641b745",
+      "oracle_pixel_match": true
+    },
+    {
+      "fixture": "jp2_parts_79x78_d1_rgb_b16x16_t5x5_o101x205_g100x203_mixed_packet_mct1.j2k",
+      "public_ppm_sha256": "5a75b2a82bff87ce1fdb91eac71841e874890d7bc499d9fa839d0dd55cd7398e",
+      "oracle_pixel_match": true
+    },
+    {
+      "fixture": "jp2_parts_1x1_d5_gray_b4x4_t32x32_o31x47_g30x46_flat_packet_mct0.j2k",
+      "public_ppm_sha256": "699c96ca6248830a7510dd24d94172041cff1a47e117d1a68f532d621dc2f451",
+      "oracle_pixel_match": true
+    },
+    {
+      "fixture": "jp2_parts_1024x1024_d5_rgb_b64x64_t256x256_o37x41_g5x9_ramp_pair_mct1.j2k",
+      "public_ppm_sha256": "0e7ee996893ab6b5a380e3d7b4d17991d42e5e91372f369b2c7aa2956c4f818e",
+      "oracle_pixel_match": true
+    }
+  ],
+  "display_image_sha256": "a7ed373824b6adb4f8248e5f51e01fb22af279331224d2c307fbb284aa122c67",
+  "independent_plt_proof_verified": true,
+  "performance": {
+    "summary": [
+      {
+        "case": "Gray16",
+        "wall_us_per_call": {
+          "baseline": 51.890323101113665,
+          "current": 51.41633830546571,
+          "change_percent": -0.9134358148519373
+        },
+        "cpu_us_per_call": {
+          "baseline": 51.874190226238326,
+          "current": 51.38326522928364,
+          "change_percent": -0.9463762129367725
+        }
+      },
+      {
+        "case": "Gray65",
+        "wall_us_per_call": {
+          "baseline": 1186.1592828610503,
+          "current": 1219.6836150850677,
+          "change_percent": 2.82629261587497
+        },
+        "cpu_us_per_call": {
+          "baseline": 1185.151968940655,
+          "current": 1218.9023849140322,
+          "change_percent": 2.847771159975787
+        }
+      },
+      {
+        "case": "RGB16",
+        "wall_us_per_call": {
+          "baseline": 305.40817107774353,
+          "current": 309.04965934787475,
+          "change_percent": 1.1923349192920707
+        },
+        "cpu_us_per_call": {
+          "baseline": 305.04874861138353,
+          "current": 308.3229432137489,
+          "change_percent": 1.0733348742684168
+        }
+      },
+      {
+        "case": "RGB65",
+        "wall_us_per_call": {
+          "baseline": 4381.913159461976,
+          "current": 4149.919615726723,
+          "change_percent": -5.294343709991212
+        },
+        "cpu_us_per_call": {
+          "baseline": 4368.003322259133,
+          "current": 4130.760797342196,
+          "change_percent": -5.431372355143593
+        }
+      },
+      {
+        "case": "Gray256tiles",
+        "wall_us_per_call": {
+          "baseline": 795.8323344446167,
+          "current": 800.6704381587466,
+          "change_percent": 0.607930025550707
+        },
+        "cpu_us_per_call": {
+          "baseline": 794.7232390460346,
+          "current": 799.9728230726548,
+          "change_percent": 0.6605549918134779
+        }
+      },
+      {
+        "case": "RGB9tiles",
+        "wall_us_per_call": {
+          "baseline": 116351.33645453728,
+          "current": 148147.65403029887,
+          "change_percent": 27.327849034364625
+        },
+        "cpu_us_per_call": {
+          "baseline": 116335.01928374659,
+          "current": 147771.72727272724,
+          "change_percent": 27.02256653459183
+        }
+      },
+      {
+        "case": "RGB2oddtiles",
+        "wall_us_per_call": {
+          "baseline": 197.12989645939928,
+          "current": 190.9193917654628,
+          "change_percent": -3.1504631237989855
+        },
+        "cpu_us_per_call": {
+          "baseline": 196.77747502271464,
+          "current": 189.96457765666239,
+          "change_percent": -3.4622343666447675
+        }
+      }
+    ],
+    "rgb9_targeted_repeat": [
+      {
+        "case": "RGB9tiles",
+        "wall_us_per_call": {
+          "baseline": 127196.44812395851,
+          "current": 131148.5646363623,
+          "change_percent": 3.1070965979744125
+        },
+        "cpu_us_per_call": {
+          "baseline": 127162.11294765836,
+          "current": 131119.8016528926,
+          "change_percent": 3.112317508331497
+        }
+      }
+    ],
+    "interpretation": "Initial RGB9 whole-process mean +27.02% includes one candidate205ms/call outlier versus other114/123ms calls. Targeted repeat mean +3.11%, with large fluctuations in both versions. No consistent major regression demonstrated by these short samples; shared-host variability limits inference. Original and repeat rows are retained.",
+    "previous_larger_rgb_cpu_change_percent": 6.11,
+    "all_paired_output_hashes_match": true
+  },
+  "checks_complete": true,
+  "remaining_blockers": []
+}

@@ -1,5 +1,94 @@
 use wml2::util::{ImageFormat, decoder_supports_format, format_check};
 #[cfg(feature = "jpeg2000")]
+mod expanded_profile {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder_with_limits, image_load};
+    use wml2::limits::DecodeLimits;
+    #[test]
+    fn independent_multilayer_progression_precinct_alpha_and_depth_oracles() {
+        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
+        let manifest =
+            std::fs::read_to_string(format!("{root}jpeg2000-general-manifest.txt")).unwrap();
+        let mut count = 0;
+        for line in manifest.lines() {
+            let fields: Vec<_> = line.split_whitespace().collect();
+            let input = std::fs::read(format!("{root}{}", fields[0])).unwrap();
+            let expected = std::fs::read(format!("{root}{}", fields[1])).unwrap();
+            let width: usize = fields[2].parse().unwrap();
+            let height: usize = fields[3].parse().unwrap();
+            let tolerance: u8 = fields[4].parse().unwrap();
+            let actual = image_load(&input).unwrap_or_else(|e| panic!("{}: {e}", fields[0]));
+            assert_eq!((actual.width, actual.height), (width, height));
+            let actual = actual.buffer.unwrap();
+            assert_eq!(actual.len(), expected.len());
+            assert!(
+                actual
+                    .iter()
+                    .zip(&expected)
+                    .all(|(&a, &b)| a.abs_diff(b) <= tolerance),
+                "{}",
+                fields[0]
+            );
+            for field in 0..3 {
+                let mut limits = DecodeLimits::default();
+                match field {
+                    0 => limits.pixels = width * height - 1,
+                    1 => limits.expanded_bytes = width * height * 4 - 1,
+                    _ => limits.frames = 0,
+                }
+                let mut output = ImageBuffer::new();
+                assert!(
+                    image_decoder_with_limits(
+                        &mut BytesReader::new(&input),
+                        &mut DecodeOptions {
+                            drawer: &mut output,
+                            debug_flag: 0
+                        },
+                        limits
+                    )
+                    .is_err(),
+                    "{} budget {field}",
+                    fields[0]
+                );
+                assert!(output.buffer.is_none());
+            }
+            count += 1;
+        }
+        assert_eq!(count, 23);
+    }
+    #[test]
+    fn normative_ht_blocks_match_independent_decoder() {
+        for (data, value) in [
+            (
+                &include_bytes!("fixtures/review/jp2_general_ht_zero.j2k")[..],
+                128,
+            ),
+            (
+                &include_bytes!("fixtures/review/jp2_general_ht_one.j2k")[..],
+                129,
+            ),
+            (
+                &include_bytes!("fixtures/review/jp2_general_ht_u32_boundary.j2k")[..],
+                129,
+            ),
+        ] {
+            let image = image_load(data).unwrap();
+            assert_eq!((image.width, image.height), (1, 1));
+            assert_eq!(image.buffer.unwrap(), [value, value, value, 255]);
+            for end in 0..data.len() {
+                assert!(image_load(&data[..end]).is_err(), "HT prefix {end}");
+            }
+            for offset in 0..data.len() {
+                for mask in [1, 128, 255] {
+                    let mut mutated = data.to_vec();
+                    mutated[offset] ^= mask;
+                    let _ = image_load(&mutated);
+                }
+            }
+        }
+    }
+}
+#[cfg(feature = "jpeg2000")]
 mod jp2_compatibility {
     use bin_rs::reader::BytesReader;
     use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder_with_limits, image_load};
@@ -155,7 +244,13 @@ mod jp2_compatibility {
     #[test]
     fn bounded_optional_boxes_do_not_hide_layout_changes() {
         for kind in [b"pclr", b"cmap", b"cdef", b"bpcc", b"jp2c", b"jp2h"] {
-            let data = replace_header(JP2, |h| h.extend(box_bytes(kind, &[0; 8])));
+            let mut invalid = [0; 8];
+            // A direct cmap is supported now; an out-of-range component must
+            // still reject before any output is initialized.
+            if kind == b"cmap" {
+                invalid[..2].fill(255);
+            }
+            let data = replace_header(JP2, |h| h.extend(box_bytes(kind, &invalid)));
             assert!(image_load(&data).is_err());
         }
         let zero_child = replace_header(JP2, |h| {
@@ -257,21 +352,21 @@ mod enabled {
         let qcd = marker(RAW, 0x5c);
         for (offset, value) in [
             (cod + 4, 1),
-            (cod + 5, 1),
             (cod + 7, 2),
             (cod + 8, 1),
             (cod + 9, 6),
             (cod + 10, 9),
             (cod + 11, 9),
             (cod + 12, 1),
-            (cod + 13, 0),
             (siz + 40, 15),
-            (siz + 41, 2),
             (qcd + 4, 0x42),
         ] {
             let mut data = RAW.to_vec();
             data[offset] = value;
-            let e = image_load(&data).err().unwrap().to_string();
+            let e = image_load(&data)
+                .err()
+                .unwrap_or_else(|| panic!("offset {offset} value {value}"))
+                .to_string();
             assert!(
                 e.contains("Unsupported") || e.contains("Illegal"),
                 "{offset}: {e}"
@@ -456,7 +551,7 @@ mod enabled {
                 assert_eq!(drawer.events.last(), Some(&fail));
             }
             let cod = marker(raw, 0x52);
-            for (offset, value) in [(cod + 8, 2), (cod + 13, 0)] {
+            for (offset, value) in [(cod + 8, 2)] {
                 let mut bad = raw.to_vec();
                 bad[offset] = value;
                 let mut drawer = Drawer::default();
@@ -560,13 +655,7 @@ fn multiple_block_bounds_and_limits() {
     for level in [6, 32, 255] {
         let mut bad = raw.to_vec();
         bad[cod + 9] = level;
-        assert!(
-            image_load(&bad)
-                .err()
-                .unwrap()
-                .to_string()
-                .contains("Unsupported")
-        );
+        assert!(image_load(&bad).is_err());
     }
     // Repair outer Psot/EOC so short packet headers and bodies reach the parser.
     for n in [0, 1, 2, 3, 4, 8, 16, 32] {
@@ -657,13 +746,7 @@ fn multilevel_boundaries_and_corruption() {
     for level in [6, 32, 255] {
         let mut data = raw.to_vec();
         data[cod + 9] = level;
-        assert!(
-            image_load(&data)
-                .err()
-                .unwrap()
-                .to_string()
-                .contains("Unsupported")
-        );
+        assert!(image_load(&data).is_err());
     }
     for level in [0, 1, 2, 3, 4] {
         let mut data = raw.to_vec();
@@ -809,7 +892,10 @@ mod rgb_bounds {
             assert!(image_load(&with_qcc(RAW, 1, &bad_quant)).is_err());
         }
         let gray = include_bytes!("fixtures/review/jp2_16x16_d1_noise.j2k");
-        assert!(image_load(&with_qcc(gray, 0, quant)).is_err());
+        assert_eq!(
+            image_load(&with_qcc(gray, 0, quant)).unwrap().buffer,
+            image_load(gray).unwrap().buffer
+        );
     }
     #[test]
     fn qcc_different_component_precision_matches_oracle() {
@@ -831,7 +917,7 @@ mod rgb_bounds {
         let siz = marker(RAW, 0x51);
         let cod = marker(RAW, 0x52);
         for component in 0..3 {
-            for (field, value) in [(0, 15), (0, 135), (1, 0), (1, 2), (2, 0), (2, 2)] {
+            for (field, value) in [(0, 15), (1, 0), (2, 0)] {
                 let mut data = RAW.to_vec();
                 data[siz + 40 + 3 * component + field] = value;
                 assert!(image_load(&data).is_err());
@@ -842,7 +928,7 @@ mod rgb_bounds {
             data[siz + 38..siz + 40].copy_from_slice(&count.to_be_bytes());
             assert!(image_load(&data).is_err());
         }
-        for (offset, value) in [(cod + 8, 2), (cod + 9, 6), (cod + 13, 0)] {
+        for (offset, value) in [(cod + 8, 2), (cod + 9, 6)] {
             let mut data = RAW.to_vec();
             data[offset] = value;
             assert!(image_load(&data).is_err());
@@ -1119,7 +1205,8 @@ fn invalid_tile_structure_is_rejected_before_callbacks() {
     use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder};
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
     let manifest = std::fs::read_to_string(format!("{root}jpeg2000-tiles-manifest.txt")).unwrap();
-    let reject = |data: &[u8]| {
+    #[track_caller]
+    fn reject(data: &[u8]) {
         let mut image = ImageBuffer::new();
         assert!(
             image_decoder(
@@ -1132,7 +1219,7 @@ fn invalid_tile_structure_is_rejected_before_callbacks() {
             .is_err()
         );
         assert!(image.buffer.is_none(), "invalid tiling initialized output");
-    };
+    }
     let mut selected = std::collections::BTreeSet::new();
     for line in manifest.lines().skip(1) {
         let f: Vec<_> = line.split_whitespace().collect();
@@ -1190,7 +1277,12 @@ fn invalid_tile_structure_is_rejected_before_callbacks() {
         swapped.extend_from_slice(&data[second..second_end]);
         swapped.extend_from_slice(&data[first..first_end]);
         swapped.extend_from_slice(&data[second_end..]);
-        reject(&swapped);
+        // Tile order is no longer restricted to raster order. Each tile still
+        // has its own sequence/count validation and must reconstruct its source.
+        assert_eq!(
+            wml2::draw::image_load(&swapped).unwrap().buffer,
+            wml2::draw::image_load(&data).unwrap().buffer
+        );
         let mut missing = data[..second].to_vec();
         missing.extend_from_slice(&data[second_end..]);
         reject(&missing);
@@ -1245,31 +1337,32 @@ fn invalid_tile_structure_is_rejected_before_callbacks() {
 #[cfg(feature = "jpeg2000")]
 #[test]
 fn previous_tile_origin_rejections_become_pixel_oracles() {
-    use bin_rs::reader::BytesReader;
-    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder, image_from_with_limits};
+    use wml2::draw::image_from_with_limits;
     use wml2::limits::DecodeLimits;
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
     let manifest =
         std::fs::read_to_string(format!("{root}jpeg2000-tiles-unsupported-manifest.txt")).unwrap();
-    let (mut accepted, mut rejected) = (0, 0);
+    let (mut accepted, mut many_tiles) = (0, 0);
     for line in manifest.lines().skip(1) {
         let f: Vec<_> = line.split_whitespace().collect();
         assert_eq!(f.len(), 15);
         let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
         if f[14] == "count" {
-            let mut image = ImageBuffer::new();
-            assert!(
-                image_decoder(
-                    &mut BytesReader::new(&data),
-                    &mut DecodeOptions {
-                        drawer: &mut image,
-                        debug_flag: 0,
+            let image = wml2::draw::image_load(&data).unwrap();
+            let c: usize = f[9].parse().unwrap();
+            let source = std::fs::read(format!("{root}{}", f[3])).unwrap();
+            let expected: Vec<_> = source
+                .chunks_exact(c)
+                .flat_map(|p| {
+                    if c == 1 {
+                        [p[0], p[0], p[0], 255]
+                    } else {
+                        [p[0], p[1], p[2], 255]
                     }
-                )
-                .is_err()
-            );
-            assert!(image.buffer.is_none());
-            rejected += 1;
+                })
+                .collect();
+            assert_eq!(image.buffer.unwrap(), expected, "{}", f[1]);
+            many_tiles += 1;
         } else {
             let n = |i: usize| f[i].parse::<usize>().unwrap();
             let (w, h, c) = (n(4), n(5), n(9));
@@ -1297,7 +1390,7 @@ fn previous_tile_origin_rejections_become_pixel_oracles() {
             accepted += 1;
         }
     }
-    assert_eq!((accepted, rejected), (18, 6));
+    assert_eq!((accepted, many_tiles), (18, 6));
 }
 
 #[cfg(feature = "jpeg2000")]
@@ -1636,7 +1729,7 @@ fn invalid_global_geometry_rejected_before_callbacks() {
 
 #[cfg(feature = "jpeg2000")]
 #[test]
-fn global_reference_extent_bound_rejects_valid_inputs_before_callbacks() {
+fn large_reference_extents_match_independent_source_pixels() {
     use bin_rs::reader::BytesReader;
     use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder};
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/review/");
@@ -1650,20 +1743,31 @@ fn global_reference_extent_bound_rejects_valid_inputs_before_callbacks() {
         assert_eq!(f.len(), 19);
         let data = std::fs::read(format!("{root}{}", f[1])).unwrap();
         let mut image = ImageBuffer::new();
-        let error = image_decoder(
+        image_decoder(
             &mut BytesReader::new(&data),
             &mut DecodeOptions {
                 drawer: &mut image,
                 debug_flag: 0,
             },
         )
-        .unwrap_err();
-        assert!(
-            error.to_string().contains("reference extents"),
-            "{}: {error}",
-            f[1]
+        .unwrap();
+        let c: usize = f[9].parse().unwrap();
+        let source = std::fs::read(format!("{root}{}", f[3])).unwrap();
+        let expected: Vec<_> = source
+            .chunks_exact(c)
+            .flat_map(|p| {
+                if c == 1 {
+                    [p[0], p[0], p[0], 255]
+                } else {
+                    [p[0], p[1], p[2], 255]
+                }
+            })
+            .collect();
+        assert_eq!(
+            (image.width, image.height),
+            (f[4].parse().unwrap(), f[5].parse().unwrap())
         );
-        assert!(image.buffer.is_none());
+        assert_eq!(image.buffer.unwrap(), expected, "{}", f[1]);
         count += 1;
     }
     assert_eq!(count, 12);
@@ -2216,6 +2320,38 @@ mod irreversible_tests {
             let f: Vec<_> = line.split_whitespace().collect();
             assert_eq!(f.len(), 4);
             let data = std::fs::read(format!("{ROOT}{}", f[1])).unwrap();
+            if matches!(
+                f[3],
+                "gray_QCC"
+                    | "multiple_quality_layers"
+                    | "ROI_maxshift0"
+                    | "SOP_may_be_used"
+                    | "identical_tile_COD"
+            ) {
+                let reference = format!(
+                    "{ROOT}jp2_general_reenabled_{}{}.rgba",
+                    f[3],
+                    if f[1].ends_with(".jp2") {
+                        ".jp2"
+                    } else {
+                        ".j2k"
+                    }
+                );
+                let expected = std::fs::read(reference).unwrap();
+                let image = image_load(&data).unwrap();
+                let actual = image.buffer.unwrap();
+                assert_eq!(actual.len(), expected.len());
+                assert!(
+                    actual
+                        .iter()
+                        .zip(expected)
+                        .all(|(&a, b)| a.abs_diff(b) <= 1),
+                    "{}",
+                    f[1]
+                );
+                count += 1;
+                continue;
+            }
             let mut image = ImageBuffer::new();
             assert!(
                 image_decoder(

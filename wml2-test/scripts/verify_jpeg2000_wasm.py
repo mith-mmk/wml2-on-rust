@@ -15,10 +15,13 @@ import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--default-features', action='store_true')
+parser.add_argument('--work-dir', type=Path)
 args = parser.parse_args()
 repo = Path(__file__).resolve().parents[2]
 fixtures = repo / 'wml2/tests/fixtures/review'
-work = repo / '.test-jpeg2000-wasm'
+work = (args.work_dir or repo / '.test-jpeg2000-wasm').resolve()
+if not work.name.startswith('.test'):
+    parser.error('--work-dir must have a .test* name')
 work.mkdir(exist_ok=True)
 cases = []
 mapped_sources = {}
@@ -92,6 +95,19 @@ if irreversible_rejected.exists():
         assert len(fields) == 4
         rejected.append(fixtures / fields[1])
 paths = sorted(fixtures.glob('jp2*.j2k')) + sorted(fixtures.glob('jp2*.jp2')) + promoted
+# This historical runner checks the established profile's exact workspace
+# accounting. Expanded valid profiles have their own independent runtime runner.
+retired_rejections = set()
+for filename, tag_column, tags in [
+    ('jpeg2000-tiles-unsupported-manifest.txt',14,{'count'}),
+    ('jpeg2000-origins-unsupported-manifest.txt',14,{'count'}),
+    ('jpeg2000-global-origins-unsupported-manifest.txt',18,{'extent_x','extent_y'}),
+    ('jpeg2000-irreversible-unsupported-manifest.txt',3,{'gray_QCC','multiple_quality_layers','ROI_maxshift0','SOP_may_be_used','identical_tile_COD'}),
+]:
+    for line in (fixtures/filename).read_text().splitlines()[1:]:
+        fields=line.split()
+        if fields[tag_column] in tags: retired_rejections.add(fields[1])
+rejected = [p for p in rejected if p.name not in retired_rejections]
 rejected_names = {path.name for path in rejected}
 for path in paths:
     if path.name in rejected_names:
@@ -276,7 +292,7 @@ pub extern "C" fn run_direct_guard() -> u32 {
 # must not change the provenance attached to an already-built module.
 build_context = {
     'git_head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip(),
-    'working_tree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo, text=True).strip()),
+    'working_tree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain', '--ignore-submodules'], cwd=repo, text=True).strip()),
     'rust_source_sha256': hashlib.sha256((repo / 'wml2/src/jpeg2000.rs').read_bytes()).hexdigest(),
     'dispatch_source_sha256': hashlib.sha256((repo / 'wml2/src/draw.rs').read_bytes()).hexdigest(),
     'format_source_sha256': hashlib.sha256((repo / 'wml2/src/util.rs').read_bytes()).hexdigest(),
@@ -286,9 +302,10 @@ build_context = {
         p.name: hashlib.sha256(p.read_bytes()).hexdigest()
         for p in fixtures.glob('jpeg2000-*-manifest.*')},
 }
+env = dict(os.environ, CARGO_TARGET_DIR=str(work / '.test-target'))
 subprocess.run(['cargo', 'build', '--offline', '--release', '--manifest-path',
-                str(work / 'Cargo.toml'), '--target', 'wasm32-unknown-unknown'], check=True)
-target = Path(os.environ.get('CARGO_TARGET_DIR', str(work / 'target')))
+                str(work / 'Cargo.toml'), '--target', 'wasm32-unknown-unknown'], check=True, env=env)
+target = Path(env['CARGO_TARGET_DIR'])
 wasm = target / 'wasm32-unknown-unknown/release/jpeg2000_wasm_verification.wasm'
 runner = r'''
 const fs = require('node:fs');

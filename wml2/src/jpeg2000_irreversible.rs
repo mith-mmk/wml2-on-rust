@@ -87,7 +87,7 @@ fn inverse_line(packed: &[f64], origin: usize) -> Vec<f64> {
     }
     out
 }
-fn synthesize(
+pub(super) fn synthesize(
     plane: &mut [f64],
     w: usize,
     h: usize,

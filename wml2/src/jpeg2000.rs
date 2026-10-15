@@ -1,19 +1,24 @@
-//! Bounded 8bit JPEG 2000 decoder enabled by the `jpeg2000` feature.
+//! Bounded 1-8bit JPEG 2000 decoder enabled by the `jpeg2000` feature.
 //!
-//! Raw J2K and enumerated Gray/sRGB JP2 produce ordinary RGBA8. Supported inputs
-//! have unsigned Gray8 or equal, unsampled RGB8 components, 5/3 or 9/7,
-//! zero to five decompositions, LRCP, and one quality layer. Reversible coding
-//! requires full passes; irreversible coding also accepts rate-truncated passes.
-//! Canvas/tile axes are <=1024, reference ends <=32768, and raster tiles <=256.
-//! Each tile has <=18 nonempty, contiguous, packet-aligned parts, with known,
-//! zero or mixed correct totals. Only the final codestream part may use Psot=0.
-//! Other coding profiles return errors before image callbacks. See the current
+//! Raw J2K and Gray/sRGB/sYCC JP2 produce ordinary RGBA8, including alpha.
+//! The established small Gray8/RGB8 path is tried first. Its unsupported profiles
+//! retry the general component/tile/packet assembler, supporting multiple layers,
+//! five progressions, precincts, subsampling, palette, ROI and HTONLY HTJ2K.
+//! High sample depth, ICC and unsupported extended profiles return errors.
+//! Geometry, coefficient precision and resource budgets remain bounded.
+//! All declared tiles and layer packets must be present; complete packets end
+//! each tile-part. Only the final codestream part may use Psot=0.
+//! Decoding completes before image callbacks. See the current supported
 //! profile and validation overview in `docs/jpeg2000.md`.
 use crate::draw::{DecodeOptions, InitOptions, ResponseCommand};
 use crate::error::{ImgError, ImgErrorKind};
 use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
 use std::io::SeekFrom;
+#[path = "jpeg2000_general.rs"]
+mod general;
+#[path = "jpeg2000_ht.rs"]
+mod ht;
 #[path = "jpeg2000_irreversible.rs"]
 mod irreversible;
 #[path = "jpeg2000_tier1.rs"]
@@ -154,7 +159,7 @@ fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
                                 return Err(bad("invalid colour box"));
                             }
                             if h[0] != 1 {
-                                if h[0] == 2 {
+                                if matches!(h[0], 2 | 3) {
                                     return Err(unsupported("ICC colour profile"));
                                 }
                                 crate::limits::charge_metadata(h.len())?;
@@ -527,7 +532,7 @@ fn subbands<const GLOBAL: bool>(
     levels: u8,
     origin: (usize, usize),
 ) -> Vec<Band> {
-    let factor = 1usize << levels;
+    let factor = 1usize.checked_shl(u32::from(levels)).unwrap_or(usize::MAX);
     let mut bands = Vec::with_capacity(1 + 3 * usize::from(levels));
     let (x0, y0) = origin;
     let (x1, y1) = (x0 + w, y0 + h);
@@ -543,7 +548,7 @@ fn subbands<const GLOBAL: bool>(
     for depth in (1..=levels).rev() {
         let (rw, rh, lw, lh) = if GLOBAL {
             let parent = 1usize << (depth - 1);
-            let child = 1usize << depth;
+            let child = 1usize.checked_shl(u32::from(depth)).unwrap_or(usize::MAX);
             (
                 x1.div_ceil(parent) - x0.div_ceil(parent),
                 y1.div_ceil(parent) - y0.div_ceil(parent),
@@ -1086,7 +1091,9 @@ fn tile_part<'a>(
     }
     let b = bytes(s, p + 4, 8)?;
     if usize::from(u16be(b, 0)?) != tile_index || b[6] != part_index {
-        return Err(bad("tile-part ID or sequence"));
+        return Err(unsupported(
+            "tile-part ID or sequence requires directory assembly",
+        ));
     }
     // T.800 A.4.2 permits each header's TNsot to be zero or the correct total.
     // Nonzero declarations agree, including when a later part supplies it.
@@ -1267,7 +1274,9 @@ fn tiles(
         }
     }
     if bytes(s, p, 2)? != [255, 217] || p + 2 != s.len() {
-        return Err(bad("tile count, EOC or trailing data"));
+        return Err(unsupported(
+            "tile directory, EOC or trailing data requires general validation",
+        ));
     }
     Ok(rgba)
 }
@@ -1500,7 +1509,16 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     let length = end.checked_sub(start).ok_or_else(|| bad("reader extent"))?;
     crate::limits::check_input_length(length, crate::limits::current().input_bytes)?;
     let data = reader.read_bytes_as_vec(usize::try_from(length)?)?;
-    let (w, h, rgba) = image(&data)?;
+    let (w, h, rgba) = crate::limits::metadata_attempt(|| image(&data)).or_else(|error| {
+        if error
+            .downcast_ref::<ImgError>()
+            .is_some_and(ImgError::is_unsupported)
+        {
+            general::image(&data)
+        } else {
+            Err(error)
+        }
+    })?;
     let response = option.drawer.init(w, h, InitOptions::new())?;
     if !response.is_some_and(|r| r.response == ResponseCommand::Abort) {
         option.drawer.draw(0, 0, w, h, &rgba, None)?;

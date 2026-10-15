@@ -62,7 +62,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | Q4 | x | O | `q4`: Q4/XLD4 raster decoding with corrected repeat-color runs |
 | WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
 | AVIF    | O   | O   | decoder: `avif`; encoder: `avifenc` (`avifenc-rust`)                                                               |
-| JPEG2000 | x | O | opt-in `jpeg2000`; bounded8bit Gray/RGB5/3+9/7 J2K/JP2 [profile and validation](docs/jpeg2000.md) |
+| JPEG2000 | x | O | opt-in `jpeg2000`; 1–8bit Gray/RGB/alpha, 5/3+9/7 and HTJ2K J2K/JP2 [profile and validation](docs/jpeg2000.md) |
 | PSD     | x   | O   | optional, non-default `psd` feature; Pure Rust PSD v1 merged-image and basic raster-layer decoding                 |
 | MAG     | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
 | MAKI    | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |
@@ -127,9 +127,11 @@ for 28 reference images. See the [Q4 validation record](docs/q4-status.md).
 ## JPEG2000 decoding
 
 Repository builds can enable the non-default `jpeg2000` feature. The pure Rust
-decoder accepts the documented bounded Gray8/RGB8 subset, with reversible5/3
-or irreversible9/7, and returns RGBA8. Multiple quality layers, subsampling and ICC/palette profiles are
-explicitly unsupported. See the [current profile and PR evidence](docs/jpeg2000.md)
+decoder returns RGBA8 from signed/unsigned 1–8bit Gray/RGB, alpha, palette and
+sYCC inputs, with reversible5/3 or irreversible9/7. It supports multiple quality
+layers, all five Part 1 progression orders, precincts, subsampling, ROI and
+HTJ2K HTONLY blocks. High sample depth and ICC remain deferred. See the
+[current profile and validation evidence](docs/jpeg2000.md)
 for dimensions, coding/framing limits, budgets and reproduction commands.
 The feature adds `ImageFormat::Jpeg2000`; feature-off format detection and the
 existing enum surface remain unchanged. This branch has not been released.

@@ -1230,6 +1230,8 @@ fn image_decoder_inner<B: BinaryReader>(
 
     use crate::util::ImageFormat::*;
     match format {
+        #[cfg(feature = "jpeg2000")]
+        Jpeg2000 => return crate::jpeg2000::decode_inner(reader, option),
         #[cfg(feature = "jpeg")]
         Jpeg => {
             return crate::jpeg::decoder::decode_inner(reader, option);

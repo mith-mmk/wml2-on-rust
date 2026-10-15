@@ -1,0 +1,122 @@
+{
+  "candidate_git": "d8c56fe5bebab9693768c6aaac4900474ce3faf3",
+  "cpu_affinity": 0,
+  "method": "current-only release/3processes,100warmups; whole-process childCPU and wall divided by calls",
+  "purpose": "new irreversible path baseline; previous source cannot decode these inputs, not a before/after comparison",
+  "source_sha256": {
+    "jpeg2000_irreversible.rs": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9",
+    "jpeg2000.rs": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+    "jpeg2000_tier1.rs": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb"
+  },
+  "binary_sha256": "54e8210a1e298930f0af49f2026a68537745fe379acb6ab37dcc6974160b54bf",
+  "rows": [
+    {
+      "case": "GrayD1rate4",
+      "file": "jp2_irreversible_d1_c1_m0_r4.j2k",
+      "run": 0,
+      "iterations": 1000,
+      "total_calls": 1101,
+      "cpu_us_per_call": 64.98092643051771,
+      "wall_us_per_call": 65.81818891966633,
+      "ppm_sha256": "e805f1e7a1752ed8a62003140fb8c185ddefb34176d4d6fb717a0775f4f75722",
+      "encoded_sha256": "09d83a6a584f5ff780dae2505a91e7d1f0e466d516cc9fe50381cd395b28299f",
+      "timed_output": "31x33, 1000 decodes, 62.531 us/decode"
+    },
+    {
+      "case": "GrayD1rate4",
+      "file": "jp2_irreversible_d1_c1_m0_r4.j2k",
+      "run": 1,
+      "iterations": 1000,
+      "total_calls": 1101,
+      "cpu_us_per_call": 63.643051771117165,
+      "wall_us_per_call": 64.03368029247109,
+      "ppm_sha256": "e805f1e7a1752ed8a62003140fb8c185ddefb34176d4d6fb717a0775f4f75722",
+      "encoded_sha256": "09d83a6a584f5ff780dae2505a91e7d1f0e466d516cc9fe50381cd395b28299f",
+      "timed_output": "31x33, 1000 decodes, 61.919 us/decode"
+    },
+    {
+      "case": "GrayD1rate4",
+      "file": "jp2_irreversible_d1_c1_m0_r4.j2k",
+      "run": 2,
+      "iterations": 1000,
+      "total_calls": 1101,
+      "cpu_us_per_call": 62.956403269754745,
+      "wall_us_per_call": 63.36039327656838,
+      "ppm_sha256": "e805f1e7a1752ed8a62003140fb8c185ddefb34176d4d6fb717a0775f4f75722",
+      "encoded_sha256": "09d83a6a584f5ff780dae2505a91e7d1f0e466d516cc9fe50381cd395b28299f",
+      "timed_output": "31x33, 1000 decodes, 60.476 us/decode"
+    },
+    {
+      "case": "ICTD5rate2",
+      "file": "jp2_irreversible_d5_c3_m1_r2.j2k",
+      "run": 0,
+      "iterations": 500,
+      "total_calls": 601,
+      "cpu_us_per_call": 931.6871880199667,
+      "wall_us_per_call": 932.7977720435753,
+      "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8",
+      "encoded_sha256": "104a15e3d5fc750a9964048f558a19e4e719ec8353ffba38eb2b94ddb2ba4a90",
+      "timed_output": "33x35, 500 decodes, 940.434 us/decode"
+    },
+    {
+      "case": "ICTD5rate2",
+      "file": "jp2_irreversible_d5_c3_m1_r2.j2k",
+      "run": 1,
+      "iterations": 500,
+      "total_calls": 601,
+      "cpu_us_per_call": 860.893510815308,
+      "wall_us_per_call": 862.4343211275832,
+      "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8",
+      "encoded_sha256": "104a15e3d5fc750a9964048f558a19e4e719ec8353ffba38eb2b94ddb2ba4a90",
+      "timed_output": "33x35, 500 decodes, 868.205 us/decode"
+    },
+    {
+      "case": "ICTD5rate2",
+      "file": "jp2_irreversible_d5_c3_m1_r2.j2k",
+      "run": 2,
+      "iterations": 500,
+      "total_calls": 601,
+      "cpu_us_per_call": 920.0316139767049,
+      "wall_us_per_call": 922.176046590898,
+      "ppm_sha256": "d3babbc2172a3ccd784f21d46eb40bddfbe209ea46eb9284913408264b933ca8",
+      "encoded_sha256": "104a15e3d5fc750a9964048f558a19e4e719ec8353ffba38eb2b94ddb2ba4a90",
+      "timed_output": "33x35, 500 decodes, 910.818 us/decode"
+    },
+    {
+      "case": "ICT1024rate4",
+      "file": "jp2_irreversible_canvas_c3_m1_r4.j2k",
+      "run": 0,
+      "iterations": 10,
+      "total_calls": 111,
+      "cpu_us_per_call": 647119.0,
+      "wall_us_per_call": 647147.7052792571,
+      "ppm_sha256": "f8ea58a36fc32bb37af281727c0698e4c5501935f38e0d975977900c791d1381",
+      "encoded_sha256": "56b76ce4bf11c0228beb64ab6e60c24d8861cc9db95a2ac5d25ead24dc978f5c",
+      "timed_output": "1024x1024, 10 decodes, 637644.111 us/decode"
+    },
+    {
+      "case": "ICT1024rate4",
+      "file": "jp2_irreversible_canvas_c3_m1_r4.j2k",
+      "run": 1,
+      "iterations": 10,
+      "total_calls": 111,
+      "cpu_us_per_call": 665541.2522522521,
+      "wall_us_per_call": 665599.1872612503,
+      "ppm_sha256": "f8ea58a36fc32bb37af281727c0698e4c5501935f38e0d975977900c791d1381",
+      "encoded_sha256": "56b76ce4bf11c0228beb64ab6e60c24d8861cc9db95a2ac5d25ead24dc978f5c",
+      "timed_output": "1024x1024, 10 decodes, 662587.043 us/decode"
+    },
+    {
+      "case": "ICT1024rate4",
+      "file": "jp2_irreversible_canvas_c3_m1_r4.j2k",
+      "run": 2,
+      "iterations": 10,
+      "total_calls": 111,
+      "cpu_us_per_call": 664132.4054054056,
+      "wall_us_per_call": 664276.1194324284,
+      "ppm_sha256": "f8ea58a36fc32bb37af281727c0698e4c5501935f38e0d975977900c791d1381",
+      "encoded_sha256": "56b76ce4bf11c0228beb64ab6e60c24d8861cc9db95a2ac5d25ead24dc978f5c",
+      "timed_output": "1024x1024, 10 decodes, 636149.438 us/decode"
+    }
+  ]
+}

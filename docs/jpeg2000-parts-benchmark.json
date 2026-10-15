@@ -1,0 +1,717 @@
+{
+  "baseline_git": "0f35f184424abd20d4f6bbfa4c1c6103b4e584c1",
+  "candidate_git": "79cf2dbe08aa0243e933766c80662ce91523a5dc",
+  "cpu_affinity": 0,
+  "order": "B/H/H/B/H/B",
+  "rust": "1.91.0 release",
+  "warmup_calls": 100,
+  "measurement": "whole-process wall and child CPU / total calls, including export/startup",
+  "source_sha256": "4b677999f4a0d50a6ff0871612b9023f03b2d3b5f426a91bc62ad6815f18c1cd",
+  "baseline_binary_sha256": "f7c065830e23976bb27b8a705638d77ab5468f531dc924f9631d3c9bccc63b70",
+  "candidate_binary_sha256": "edbbdbf57b8d38041c2b626f92badc2d6fb3482d19ec3fe1613dd7aaa458defc",
+  "previous_larger_rgb_cpu_change_percent": 6.11,
+  "limitations": "shared-host sample, not a general performance guarantee; baseline cannot decode the new multiple tile-part fixtures",
+  "summary": [
+    {
+      "case": "Gray16",
+      "wall_us_per_call": {
+        "baseline": 51.890323101113665,
+        "current": 51.41633830546571,
+        "change_percent": -0.9134358148519373
+      },
+      "cpu_us_per_call": {
+        "baseline": 51.874190226238326,
+        "current": 51.38326522928364,
+        "change_percent": -0.9463762129367725
+      }
+    },
+    {
+      "case": "Gray65",
+      "wall_us_per_call": {
+        "baseline": 1186.1592828610503,
+        "current": 1219.6836150850677,
+        "change_percent": 2.82629261587497
+      },
+      "cpu_us_per_call": {
+        "baseline": 1185.151968940655,
+        "current": 1218.9023849140322,
+        "change_percent": 2.847771159975787
+      }
+    },
+    {
+      "case": "RGB16",
+      "wall_us_per_call": {
+        "baseline": 305.40817107774353,
+        "current": 309.04965934787475,
+        "change_percent": 1.1923349192920707
+      },
+      "cpu_us_per_call": {
+        "baseline": 305.04874861138353,
+        "current": 308.3229432137489,
+        "change_percent": 1.0733348742684168
+      }
+    },
+    {
+      "case": "RGB65",
+      "wall_us_per_call": {
+        "baseline": 4381.913159461976,
+        "current": 4149.919615726723,
+        "change_percent": -5.294343709991212
+      },
+      "cpu_us_per_call": {
+        "baseline": 4368.003322259133,
+        "current": 4130.760797342196,
+        "change_percent": -5.431372355143593
+      }
+    },
+    {
+      "case": "Gray256tiles",
+      "wall_us_per_call": {
+        "baseline": 795.8323344446167,
+        "current": 800.6704381587466,
+        "change_percent": 0.607930025550707
+      },
+      "cpu_us_per_call": {
+        "baseline": 794.7232390460346,
+        "current": 799.9728230726548,
+        "change_percent": 0.6605549918134779
+      }
+    },
+    {
+      "case": "RGB9tiles",
+      "wall_us_per_call": {
+        "baseline": 116351.33645453728,
+        "current": 148147.65403029887,
+        "change_percent": 27.327849034364625
+      },
+      "cpu_us_per_call": {
+        "baseline": 116335.01928374659,
+        "current": 147771.72727272724,
+        "change_percent": 27.02256653459183
+      }
+    },
+    {
+      "case": "RGB2oddtiles",
+      "wall_us_per_call": {
+        "baseline": 197.12989645939928,
+        "current": 190.9193917654628,
+        "change_percent": -3.1504631237989855
+      },
+      "cpu_us_per_call": {
+        "baseline": 196.77747502271464,
+        "current": 189.96457765666239,
+        "change_percent": -3.4622343666447675
+      }
+    }
+  ],
+  "rows": [
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "baseline",
+      "iterations": 30000,
+      "total_calls": 30101,
+      "wall_us_per_call": 51.81501568053595,
+      "cpu_us_per_call": 51.800637852563035,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 30000 decodes, 51.710 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "current",
+      "iterations": 30000,
+      "total_calls": 30101,
+      "wall_us_per_call": 51.663280223184046,
+      "cpu_us_per_call": 51.646689478754865,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 30000 decodes, 51.478 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "current",
+      "iterations": 30000,
+      "total_calls": 30101,
+      "wall_us_per_call": 51.388669645502034,
+      "cpu_us_per_call": 51.37234643367329,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 30000 decodes, 51.325 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "baseline",
+      "iterations": 30000,
+      "total_calls": 30101,
+      "wall_us_per_call": 53.1190530214551,
+      "cpu_us_per_call": 53.1037507059566,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 30000 decodes, 53.076 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "current",
+      "iterations": 30000,
+      "total_calls": 30101,
+      "wall_us_per_call": 51.19706504771104,
+      "cpu_us_per_call": 51.130759775422746,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 30000 decodes, 51.086 us/decode"
+    },
+    {
+      "case": "Gray16",
+      "fixture": "jp2_16x16_d1_noise.j2k",
+      "version": "baseline",
+      "iterations": 30000,
+      "total_calls": 30101,
+      "wall_us_per_call": 50.73690060134994,
+      "cpu_us_per_call": 50.71818212019534,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "encoded_sha256": "2cf66f636cbb230b3b8f78065f72669563906a984c4acf0d406ec85b710a8209",
+      "timed_output": "16x16, 30000 decodes, 50.622 us/decode"
+    },
+    {
+      "case": "Gray65",
+      "fixture": "jp2_multi_65x49_d1_noise.j2k",
+      "version": "baseline",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 1179.874966720746,
+      "cpu_us_per_call": 1178.9084858569072,
+      "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+      "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+      "timed_output": "65x49, 500 decodes, 1175.024 us/decode"
+    },
+    {
+      "case": "Gray65",
+      "fixture": "jp2_multi_65x49_d1_noise.j2k",
+      "version": "current",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 1210.5392911833167,
+      "cpu_us_per_call": 1209.8535773710487,
+      "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+      "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+      "timed_output": "65x49, 500 decodes, 1208.454 us/decode"
+    },
+    {
+      "case": "Gray65",
+      "fixture": "jp2_multi_65x49_d1_noise.j2k",
+      "version": "current",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 1234.539658899075,
+      "cpu_us_per_call": 1233.762063227952,
+      "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+      "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+      "timed_output": "65x49, 500 decodes, 1218.961 us/decode"
+    },
+    {
+      "case": "Gray65",
+      "fixture": "jp2_multi_65x49_d1_noise.j2k",
+      "version": "baseline",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 1202.9822296161744,
+      "cpu_us_per_call": 1201.810316139767,
+      "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+      "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+      "timed_output": "65x49, 500 decodes, 1188.165 us/decode"
+    },
+    {
+      "case": "Gray65",
+      "fixture": "jp2_multi_65x49_d1_noise.j2k",
+      "version": "current",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 1213.9718951728116,
+      "cpu_us_per_call": 1213.0915141430955,
+      "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+      "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+      "timed_output": "65x49, 500 decodes, 1205.463 us/decode"
+    },
+    {
+      "case": "Gray65",
+      "fixture": "jp2_multi_65x49_d1_noise.j2k",
+      "version": "baseline",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 1175.6206522462307,
+      "cpu_us_per_call": 1174.7371048252905,
+      "ppm_sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681",
+      "encoded_sha256": "e192f17de8c46785940141179ad983137832cf1c41bbac54745083020d3d38e4",
+      "timed_output": "65x49, 500 decodes, 1179.872 us/decode"
+    },
+    {
+      "case": "RGB16",
+      "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+      "version": "baseline",
+      "iterations": 5000,
+      "total_calls": 5101,
+      "wall_us_per_call": 300.5813044501632,
+      "cpu_us_per_call": 300.49735346010607,
+      "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+      "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+      "timed_output": "16x16, 5000 decodes, 300.432 us/decode"
+    },
+    {
+      "case": "RGB16",
+      "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+      "version": "current",
+      "iterations": 5000,
+      "total_calls": 5101,
+      "wall_us_per_call": 296.95178827713636,
+      "cpu_us_per_call": 296.85081356596726,
+      "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+      "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+      "timed_output": "16x16, 5000 decodes, 296.299 us/decode"
+    },
+    {
+      "case": "RGB16",
+      "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+      "version": "current",
+      "iterations": 5000,
+      "total_calls": 5101,
+      "wall_us_per_call": 309.06529543189953,
+      "cpu_us_per_call": 307.7820035287199,
+      "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+      "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+      "timed_output": "16x16, 5000 decodes, 307.510 us/decode"
+    },
+    {
+      "case": "RGB16",
+      "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+      "version": "baseline",
+      "iterations": 5000,
+      "total_calls": 5101,
+      "wall_us_per_call": 301.3185179377942,
+      "cpu_us_per_call": 300.8304254067836,
+      "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+      "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+      "timed_output": "16x16, 5000 decodes, 299.944 us/decode"
+    },
+    {
+      "case": "RGB16",
+      "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+      "version": "current",
+      "iterations": 5000,
+      "total_calls": 5101,
+      "wall_us_per_call": 321.1318943345883,
+      "cpu_us_per_call": 320.3360125465595,
+      "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+      "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+      "timed_output": "16x16, 5000 decodes, 319.401 us/decode"
+    },
+    {
+      "case": "RGB16",
+      "fixture": "jp2_rgb_16x16_d1_noise_mct1.j2k",
+      "version": "baseline",
+      "iterations": 5000,
+      "total_calls": 5101,
+      "wall_us_per_call": 314.32469084527315,
+      "cpu_us_per_call": 313.81846696726086,
+      "ppm_sha256": "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051",
+      "encoded_sha256": "3071655fe36e26d82a613c881d258a7152d98d1d4c13e653e911eae43e635cb8",
+      "timed_output": "16x16, 5000 decodes, 314.354 us/decode"
+    },
+    {
+      "case": "RGB65",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+      "version": "baseline",
+      "iterations": 200,
+      "total_calls": 301,
+      "wall_us_per_call": 4223.21123587487,
+      "cpu_us_per_call": 4207.830564784049,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+      "timed_output": "65x49, 200 decodes, 4131.694 us/decode"
+    },
+    {
+      "case": "RGB65",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+      "version": "current",
+      "iterations": 200,
+      "total_calls": 301,
+      "wall_us_per_call": 4090.3446810672745,
+      "cpu_us_per_call": 4081.3421926910337,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+      "timed_output": "65x49, 200 decodes, 4075.290 us/decode"
+    },
+    {
+      "case": "RGB65",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+      "version": "current",
+      "iterations": 200,
+      "total_calls": 301,
+      "wall_us_per_call": 4129.392428576859,
+      "cpu_us_per_call": 4124.78737541528,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+      "timed_output": "65x49, 200 decodes, 4096.852 us/decode"
+    },
+    {
+      "case": "RGB65",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+      "version": "baseline",
+      "iterations": 200,
+      "total_calls": 301,
+      "wall_us_per_call": 4911.273953478657,
+      "cpu_us_per_call": 4893.285714285712,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+      "timed_output": "65x49, 200 decodes, 4683.609 us/decode"
+    },
+    {
+      "case": "RGB65",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+      "version": "current",
+      "iterations": 200,
+      "total_calls": 301,
+      "wall_us_per_call": 4230.021737536038,
+      "cpu_us_per_call": 4186.152823920277,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+      "timed_output": "65x49, 200 decodes, 4083.967 us/decode"
+    },
+    {
+      "case": "RGB65",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.j2k",
+      "version": "baseline",
+      "iterations": 200,
+      "total_calls": 301,
+      "wall_us_per_call": 4011.2542890323994,
+      "cpu_us_per_call": 4002.8936877076367,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "encoded_sha256": "a9a30fcc960c26de2badae3287aa1c2b37aa5c3318e88f594cb5af11253d15d0",
+      "timed_output": "65x49, 200 decodes, 3978.370 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "baseline",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 804.3574292872573,
+      "cpu_us_per_call": 803.4625623960021,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 500 decodes, 792.579 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "current",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 789.2284109784033,
+      "cpu_us_per_call": 788.399334442597,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 500 decodes, 781.227 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "current",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 801.2450016636851,
+      "cpu_us_per_call": 800.6056572379341,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 500 decodes, 799.898 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "baseline",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 795.420284527598,
+      "cpu_us_per_call": 793.5757071547425,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 500 decodes, 794.346 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "current",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 811.5379018341513,
+      "cpu_us_per_call": 810.9134775374334,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 500 decodes, 798.058 us/decode"
+    },
+    {
+      "case": "Gray256tiles",
+      "fixture": "jp2_tiles_64x64_d2_gray_b16x16_t4x4_mixed_mct0.j2k",
+      "version": "baseline",
+      "iterations": 500,
+      "total_calls": 601,
+      "wall_us_per_call": 787.7192895189946,
+      "cpu_us_per_call": 787.1314475873589,
+      "ppm_sha256": "8b93933ed77133a563c8beb6de7abe451be76b4f81ea26b691bb23be355ae1e9",
+      "encoded_sha256": "306f1c31800f8550efe4740bc20d176909d6eb2d77542e663a5aa00873348431",
+      "timed_output": "64x64, 500 decodes, 778.755 us/decode"
+    },
+    {
+      "case": "RGB9tiles",
+      "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+      "version": "baseline",
+      "iterations": 20,
+      "total_calls": 121,
+      "wall_us_per_call": 116506.61531403927,
+      "cpu_us_per_call": 116494.75206611573,
+      "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+      "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+      "timed_output": "355x485, 20 decodes, 118056.298 us/decode"
+    },
+    {
+      "case": "RGB9tiles",
+      "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+      "version": "current",
+      "iterations": 20,
+      "total_calls": 121,
+      "wall_us_per_call": 206600.96824793087,
+      "cpu_us_per_call": 205491.19008264458,
+      "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+      "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+      "timed_output": "355x485, 20 decodes, 120337.872 us/decode"
+    },
+    {
+      "case": "RGB9tiles",
+      "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+      "version": "current",
+      "iterations": 20,
+      "total_calls": 121,
+      "wall_us_per_call": 114443.25160329213,
+      "cpu_us_per_call": 114432.19008264458,
+      "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+      "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+      "timed_output": "355x485, 20 decodes, 113068.480 us/decode"
+    },
+    {
+      "case": "RGB9tiles",
+      "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+      "version": "baseline",
+      "iterations": 20,
+      "total_calls": 121,
+      "wall_us_per_call": 112167.47353718957,
+      "cpu_us_per_call": 112159.86776859511,
+      "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+      "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+      "timed_output": "355x485, 20 decodes, 115380.254 us/decode"
+    },
+    {
+      "case": "RGB9tiles",
+      "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+      "version": "current",
+      "iterations": 20,
+      "total_calls": 121,
+      "wall_us_per_call": 123398.74223967358,
+      "cpu_us_per_call": 123391.80165289255,
+      "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+      "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+      "timed_output": "355x485, 20 decodes, 118113.050 us/decode"
+    },
+    {
+      "case": "RGB9tiles",
+      "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+      "version": "baseline",
+      "iterations": 20,
+      "total_calls": 121,
+      "wall_us_per_call": 120379.92051238299,
+      "cpu_us_per_call": 120350.4380165289,
+      "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+      "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+      "timed_output": "355x485, 20 decodes, 115670.050 us/decode"
+    },
+    {
+      "case": "RGB2oddtiles",
+      "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+      "version": "baseline",
+      "iterations": 1000,
+      "total_calls": 1101,
+      "wall_us_per_call": 188.0365204383299,
+      "cpu_us_per_call": 187.6975476839433,
+      "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+      "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+      "timed_output": "34x35, 1000 decodes, 186.671 us/decode"
+    },
+    {
+      "case": "RGB2oddtiles",
+      "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+      "version": "current",
+      "iterations": 1000,
+      "total_calls": 1101,
+      "wall_us_per_call": 189.96141235326982,
+      "cpu_us_per_call": 189.63760217981107,
+      "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+      "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+      "timed_output": "34x35, 1000 decodes, 186.505 us/decode"
+    },
+    {
+      "case": "RGB2oddtiles",
+      "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+      "version": "current",
+      "iterations": 1000,
+      "total_calls": 1101,
+      "wall_us_per_call": 192.85385376970126,
+      "cpu_us_per_call": 190.96548592187145,
+      "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+      "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+      "timed_output": "34x35, 1000 decodes, 187.549 us/decode"
+    },
+    {
+      "case": "RGB2oddtiles",
+      "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+      "version": "baseline",
+      "iterations": 1000,
+      "total_calls": 1101,
+      "wall_us_per_call": 199.34587193501045,
+      "cpu_us_per_call": 198.94187102634461,
+      "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+      "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+      "timed_output": "34x35, 1000 decodes, 196.855 us/decode"
+    },
+    {
+      "case": "RGB2oddtiles",
+      "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+      "version": "current",
+      "iterations": 1000,
+      "total_calls": 1101,
+      "wall_us_per_call": 189.94290917341726,
+      "cpu_us_per_call": 189.29064486830464,
+      "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+      "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+      "timed_output": "34x35, 1000 decodes, 188.817 us/decode"
+    },
+    {
+      "case": "RGB2oddtiles",
+      "fixture": "jp2_origins_34x35_d5_rgb_b4x4_t33x35_noise_canonical_mct1.j2k",
+      "version": "baseline",
+      "iterations": 1000,
+      "total_calls": 1101,
+      "wall_us_per_call": 204.00729700485746,
+      "cpu_us_per_call": 203.69300635785598,
+      "ppm_sha256": "6f63d18057852379ccaa24a8bd78b064209b351a6661a37ce2a3be52471b5e46",
+      "encoded_sha256": "a0fbb3ae56687df62e5f1de459030489c496d2757e3e2a7de28dbd76d2fe609a",
+      "timed_output": "34x35, 1000 decodes, 202.625 us/decode"
+    }
+  ],
+  "targeted_rgb9_recheck": {
+    "baseline_git": "0f35f184424abd20d4f6bbfa4c1c6103b4e584c1",
+    "candidate_git": "79cf2dbe08aa0243e933766c80662ce91523a5dc",
+    "cpu_affinity": 0,
+    "order": "B/H/H/B/H/B",
+    "rust": "1.91.0 release",
+    "warmup_calls": 100,
+    "measurement": "whole-process wall and child CPU / total calls, including export/startup",
+    "source_sha256": "4b677999f4a0d50a6ff0871612b9023f03b2d3b5f426a91bc62ad6815f18c1cd",
+    "baseline_binary_sha256": "f7c065830e23976bb27b8a705638d77ab5468f531dc924f9631d3c9bccc63b70",
+    "candidate_binary_sha256": "edbbdbf57b8d38041c2b626f92badc2d6fb3482d19ec3fe1613dd7aaa458defc",
+    "previous_larger_rgb_cpu_change_percent": 6.11,
+    "limitations": "shared-host sample, not a general performance guarantee; baseline cannot decode the new multiple tile-part fixtures",
+    "summary": [
+      {
+        "case": "RGB9tiles",
+        "wall_us_per_call": {
+          "baseline": 127196.44812395851,
+          "current": 131148.5646363623,
+          "change_percent": 3.1070965979744125
+        },
+        "cpu_us_per_call": {
+          "baseline": 127162.11294765836,
+          "current": 131119.8016528926,
+          "change_percent": 3.112317508331497
+        }
+      }
+    ],
+    "rows": [
+      {
+        "case": "RGB9tiles",
+        "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+        "version": "baseline",
+        "iterations": 20,
+        "total_calls": 121,
+        "wall_us_per_call": 119962.57684297819,
+        "cpu_us_per_call": 119899.60330578513,
+        "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+        "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+        "timed_output": "355x485, 20 decodes, 115931.483 us/decode"
+      },
+      {
+        "case": "RGB9tiles",
+        "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+        "version": "current",
+        "iterations": 20,
+        "total_calls": 121,
+        "wall_us_per_call": 119751.12390909022,
+        "cpu_us_per_call": 119726.37190082645,
+        "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+        "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+        "timed_output": "355x485, 20 decodes, 115932.897 us/decode"
+      },
+      {
+        "case": "RGB9tiles",
+        "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+        "version": "current",
+        "iterations": 20,
+        "total_calls": 121,
+        "wall_us_per_call": 122779.93256198401,
+        "cpu_us_per_call": 122753.09917355377,
+        "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+        "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+        "timed_output": "355x485, 20 decodes, 120153.364 us/decode"
+      },
+      {
+        "case": "RGB9tiles",
+        "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+        "version": "baseline",
+        "iterations": 20,
+        "total_calls": 121,
+        "wall_us_per_call": 115867.87693387341,
+        "cpu_us_per_call": 115835.47933884292,
+        "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+        "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+        "timed_output": "355x485, 20 decodes, 113650.340 us/decode"
+      },
+      {
+        "case": "RGB9tiles",
+        "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+        "version": "current",
+        "iterations": 20,
+        "total_calls": 121,
+        "wall_us_per_call": 150914.6374380127,
+        "cpu_us_per_call": 150879.93388429758,
+        "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+        "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+        "timed_output": "355x485, 20 decodes, 187439.063 us/decode"
+      },
+      {
+        "case": "RGB9tiles",
+        "fixture": "jp2_tiles_355x485_d5_rgb_b64x64_t160x224_ramp_mct1.j2k",
+        "version": "baseline",
+        "iterations": 20,
+        "total_calls": 121,
+        "wall_us_per_call": 145758.89059502396,
+        "cpu_us_per_call": 145751.25619834702,
+        "ppm_sha256": "d2d27ddce75bb41505363b4e3ac3e954807e15529cfb48d75880e7beb3da11de",
+        "encoded_sha256": "7c3dc85d4b9487275116c1bdcc0a50da451000582f2d46b00d7c473035f838cd",
+        "timed_output": "355x485, 20 decodes, 113871.249 us/decode"
+      }
+    ]
+  },
+  "performance_interpretation": "Initial RGB9 whole-process mean +27.02% includes one candidate205ms/call outlier versus other114/123ms calls. Targeted repeat mean +3.11%, with large fluctuations in both versions. No consistent major regression demonstrated by these short samples; shared-host variability limits inference. Original and repeat rows are retained."
+}

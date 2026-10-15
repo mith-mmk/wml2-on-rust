@@ -1,0 +1,7316 @@
+{
+  "schema": 1,
+  "comparison_policy": {
+    "max_abs_error": 1,
+    "reason": "floating-point/rounding engineering allowance"
+  },
+  "cases": [
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c1_m0_rdefault_derived_deep.j2k",
+      "encoded_sha256": "5a74513da4868dd44f90ac878ab54d034004b3a839bfe1a8cd1784d754283a2b",
+      "source_file": "jp2_irreversible_d1_c1_ramp.source",
+      "source_sha256": "0775d3ec7a9de699a7d3555b8ae3f2d6e6b6cff0382386cc6fa5f722acedfb21",
+      "oracle_file": "jp2_irreversible_variant_d1_c1_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "162cdc58d222c77cbe08691902fda86a157370921393bf7115d80f017490a2dc",
+      "width": 31,
+      "height": 33,
+      "components": 1,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "415024",
+          "steps": [
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.25439453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 1.017578125
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 67,
+        "mean_abs_error": 3.9012707722385143,
+        "different_bytes": 608
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c1_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c1_m0_rdefault_derived_deep.jp2",
+      "encoded_sha256": "840ad54c037df865a7eddf67298771bddc47a6ef2a50b40febbb98426eb2f0b8",
+      "source_file": "jp2_irreversible_d1_c1_ramp.source",
+      "source_sha256": "0775d3ec7a9de699a7d3555b8ae3f2d6e6b6cff0382386cc6fa5f722acedfb21",
+      "oracle_file": "jp2_irreversible_variant_d1_c1_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "162cdc58d222c77cbe08691902fda86a157370921393bf7115d80f017490a2dc",
+      "width": 31,
+      "height": 33,
+      "components": 1,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "415024",
+          "steps": [
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.25439453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 1.017578125
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 67,
+        "mean_abs_error": 3.9012707722385143,
+        "different_bytes": 608
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c1_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_derived_deep.j2k",
+      "encoded_sha256": "eff4190208347d03147152bbaa51db4887d2c3138a40110fa3b0562dd7c8b56a",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "3ab2cfd5b4de8f44e6cce467385a638cc96d11e330c2870b686ace2e65a65bcb",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "415024",
+          "steps": [
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.25439453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 1.017578125
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 67,
+        "mean_abs_error": 1.4020853698273053,
+        "different_bytes": 903
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c0.j2k",
+      "encoded_sha256": "7ce41024946e49844b0bbfe5f8ed2cb7e64977b9e07c5156178ecd058f6030cf",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c0.pixels",
+      "oracle_sha256": "8940f41e75add2eab8d78d9c20e0cbaa76ec95bc37b4199ed001c30ceee147ad",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c0",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "0": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 6,
+        "mean_abs_error": 0.6640599543825351,
+        "different_bytes": 1012
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c0"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c1.j2k",
+      "encoded_sha256": "8f3457b596c3abc42f3e97209b01fd616ba020f07f86eb09a36270241783151d",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c1.pixels",
+      "oracle_sha256": "52f15a5ee0bfc97f23c3581936e2e009284be3ea0ba64e244e9861dbbdc956a4",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c1",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "1": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 4,
+        "mean_abs_error": 0.7494297816878462,
+        "different_bytes": 1147
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c1"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c2.j2k",
+      "encoded_sha256": "581d7624ee7a511bd4e4df4e86c8b47fbb995bfb3d261cfde020d38684ccee02",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c2.pixels",
+      "oracle_sha256": "f30547d4b2deb466c04cffd3cf0c0efcaf7919d7c7a3ee3642a80a6ddf20617f",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c2",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "2": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 4,
+        "mean_abs_error": 0.5324209840338873,
+        "different_bytes": 925
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c2"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_derived_deep.jp2",
+      "encoded_sha256": "a8291c27847e20d9d9a6f96a9dedb2ff091709cf41264b4bf5be0ed739c1fb10",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "3ab2cfd5b4de8f44e6cce467385a638cc96d11e330c2870b686ace2e65a65bcb",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "415024",
+          "steps": [
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.25439453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 1.017578125
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 67,
+        "mean_abs_error": 1.4020853698273053,
+        "different_bytes": 903
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c0.jp2",
+      "encoded_sha256": "bf7150c317d60a5a43fc67c274b9e683c249895bfa0307fa94e09d641e436934",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c0.pixels",
+      "oracle_sha256": "8940f41e75add2eab8d78d9c20e0cbaa76ec95bc37b4199ed001c30ceee147ad",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c0",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "0": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 6,
+        "mean_abs_error": 0.6640599543825351,
+        "different_bytes": 1012
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c0"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c1.jp2",
+      "encoded_sha256": "35c854084e3bb965e71bda7093be77bb73b9ba3a41eaf9a86e29a4ca41294b83",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c1.pixels",
+      "oracle_sha256": "52f15a5ee0bfc97f23c3581936e2e009284be3ea0ba64e244e9861dbbdc956a4",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c1",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "1": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 4,
+        "mean_abs_error": 0.7494297816878462,
+        "different_bytes": 1147
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c1"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c2.jp2",
+      "encoded_sha256": "65c88412dd135af49d11ceefc9d8a11fbc80bacc6585bf3d48588c6d4dd4fdcc",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c2.pixels",
+      "oracle_sha256": "f30547d4b2deb466c04cffd3cf0c0efcaf7919d7c7a3ee3642a80a6ddf20617f",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c2",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "2": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 4,
+        "mean_abs_error": 0.5324209840338873,
+        "different_bytes": 925
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m0_rdefault_qcc_c2"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_derived_deep.j2k",
+      "encoded_sha256": "18e79fbe15b1c179df2a8cd9528c772eb97ac6ad3acf5bf1118d299fda710822",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_derived_deep.pixels",
+      "oracle_sha256": "dfbfe5c4ab33a758ff2a6c4e634b13f4b85882302bc606d0973bdf05efee7e6e",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "415024",
+          "steps": [
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.25439453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 1.017578125
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 67,
+        "mean_abs_error": 1.4701857282502444,
+        "different_bytes": 1045
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m1_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c0.j2k",
+      "encoded_sha256": "85d99d9b54ba8d21b5612a83d0bdc9b8ae6c0e2790cc349e3b0631b54d8c7dd4",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c0.pixels",
+      "oracle_sha256": "2ce03b18d367c58ff5a2eccc3c35a8454f82dca0b0ee5a8121218ec2bddca7b3",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c0",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "0": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 5,
+        "mean_abs_error": 1.414793092212447,
+        "different_bytes": 2600
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c0"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c1.j2k",
+      "encoded_sha256": "d0c57b304e6f227940a152a8ed94ba9ced01d7712dcb74caf51947bfc01d0348",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c1.pixels",
+      "oracle_sha256": "f928de450e34d6890a538cd4e3ea4fc66a14d5b6c1900f542d1e277182f9b9de",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c1",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "1": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 5,
+        "mean_abs_error": 0.5376344086021505,
+        "different_bytes": 1264
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c1"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c2.j2k",
+      "encoded_sha256": "b07648fdef5bc9e59f11a76c1e68dbe92d2bc7640fb5e469c7a7e60af20994a5",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c2.pixels",
+      "oracle_sha256": "32c3a9d058c9e03e2629739a6c91d0bd2cd7437ddcd84642b5dda237fa841b29",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c2",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "2": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 6,
+        "mean_abs_error": 1.0087976539589443,
+        "different_bytes": 1866
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c2"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_derived_deep.jp2",
+      "encoded_sha256": "6c0251621f41edbc0acfec8a635857ce3b5b82b94eacef8a68b0a731717877a9",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_derived_deep.pixels",
+      "oracle_sha256": "dfbfe5c4ab33a758ff2a6c4e634b13f4b85882302bc606d0973bdf05efee7e6e",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "415024",
+          "steps": [
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.25439453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 36,
+              "Mb": 11,
+              "nominal_step": 1.017578125
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 67,
+        "mean_abs_error": 1.4701857282502444,
+        "different_bytes": 1045
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m1_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c0.jp2",
+      "encoded_sha256": "bef8ec37e21d7c0e4228fe1d354d0061b5a876bf817cbe16ea11e744c117b661",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c0.pixels",
+      "oracle_sha256": "2ce03b18d367c58ff5a2eccc3c35a8454f82dca0b0ee5a8121218ec2bddca7b3",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c0",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "0": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 5,
+        "mean_abs_error": 1.414793092212447,
+        "different_bytes": 2600
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c0"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c1.jp2",
+      "encoded_sha256": "8767a640b16c2ca4ebc33210c333f7cf65b01ae9785f9516554298880ca514aa",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c1.pixels",
+      "oracle_sha256": "f928de450e34d6890a538cd4e3ea4fc66a14d5b6c1900f542d1e277182f9b9de",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c1",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "1": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 5,
+        "mean_abs_error": 0.5376344086021505,
+        "different_bytes": 1264
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c1"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c2.jp2",
+      "encoded_sha256": "d619f64aafb11db8baaffb405d182aaa46488aa91a1c808d69f8e3b44e6d0664",
+      "source_file": "jp2_irreversible_d1_c3_ramp.source",
+      "source_sha256": "b55b36c529adfeabdaed35ae287020ec43c0d1dde771a11341f451ff72c53443",
+      "oracle_file": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c2.pixels",
+      "oracle_sha256": "32c3a9d058c9e03e2629739a6c91d0bd2cd7437ddcd84642b5dda237fa841b29",
+      "width": 31,
+      "height": 33,
+      "components": 3,
+      "levels": 1,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        16,
+        16
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        5,
+        7
+      ],
+      "tile_origin": [
+        2,
+        3
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c2",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42482457d357d35762",
+          "steps": [
+            {
+              "exponent": 9,
+              "mantissa": 36,
+              "Mb": 10,
+              "nominal_step": 0.5087890625
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "2": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4248645793579357a2",
+            "steps": [
+              {
+                "exponent": 9,
+                "mantissa": 100,
+                "Mb": 10,
+                "nominal_step": 0.5244140625
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          5,
+          7
+        ],
+        "tile_offset": [
+          2,
+          3
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 2,
+        "codeblock_size": [
+          16,
+          16
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 6,
+        "mean_abs_error": 1.0087976539589443,
+        "different_bytes": 1866
+      },
+      "proof_key": "jp2_irreversible_variant_d1_c3_m1_rdefault_qcc_c2"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d3_c1_m0_rdefault_derived_deep.j2k",
+      "encoded_sha256": "079ff48be6f52f8c57d275b6d267b7aca7ccd3b6fdc26516400d045db7de42c9",
+      "source_file": "jp2_irreversible_d3_c1_noise.source",
+      "source_sha256": "fa426b7d641a42ca94f8a8de553ac4cd84da8de62862e02fe378a8aa10f51216",
+      "oracle_file": "jp2_irreversible_variant_d3_c1_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "38ec2ec21ecf29eac17a5376121960a12083ca0a30f51e532f0db47a9b6cc4da",
+      "width": 65,
+      "height": 67,
+      "components": 1,
+      "levels": 3,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        4
+      ],
+      "tile": [
+        96,
+        96
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        3,
+        5
+      ],
+      "tile_origin": [
+        1,
+        2
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "416738",
+          "steps": [
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.118896484375
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 1.90234375
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          3,
+          5
+        ],
+        "tile_offset": [
+          1,
+          2
+        ],
+        "tile_size": [
+          96,
+          96
+        ],
+        "num_resolutions": 4,
+        "codeblock_size": [
+          64,
+          4
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 87,
+        "mean_abs_error": 17.46681974741676,
+        "different_bytes": 4247
+      },
+      "proof_key": "jp2_irreversible_variant_d3_c1_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d3_c1_m0_rdefault_derived_deep.jp2",
+      "encoded_sha256": "5b5ba5201db5d2cded2b34f0b928499df75f3225d96f86e28c330ebc14790692",
+      "source_file": "jp2_irreversible_d3_c1_noise.source",
+      "source_sha256": "fa426b7d641a42ca94f8a8de553ac4cd84da8de62862e02fe378a8aa10f51216",
+      "oracle_file": "jp2_irreversible_variant_d3_c1_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "38ec2ec21ecf29eac17a5376121960a12083ca0a30f51e532f0db47a9b6cc4da",
+      "width": 65,
+      "height": 67,
+      "components": 1,
+      "levels": 3,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        4
+      ],
+      "tile": [
+        96,
+        96
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        3,
+        5
+      ],
+      "tile_origin": [
+        1,
+        2
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "416738",
+          "steps": [
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.118896484375
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 1.90234375
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          3,
+          5
+        ],
+        "tile_offset": [
+          1,
+          2
+        ],
+        "tile_size": [
+          96,
+          96
+        ],
+        "num_resolutions": 4,
+        "codeblock_size": [
+          64,
+          4
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 87,
+        "mean_abs_error": 17.46681974741676,
+        "different_bytes": 4247
+      },
+      "proof_key": "jp2_irreversible_variant_d3_c1_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d3_c3_m0_rdefault_derived_deep.j2k",
+      "encoded_sha256": "9991b31979a5e2bc19ffef51109d6731176fe4bb5fca9c2d950c1fac3561de93",
+      "source_file": "jp2_irreversible_d3_c3_noise.source",
+      "source_sha256": "315017f04436a597183ad8dc26adc3cc9896f33daa33ca5217219ae92e901ae6",
+      "oracle_file": "jp2_irreversible_variant_d3_c3_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "004110fbc76e5bf139da8e3a6d16910a2aa53ed2d9ff46a9d0303cb6d1f13833",
+      "width": 65,
+      "height": 67,
+      "components": 3,
+      "levels": 3,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        4
+      ],
+      "tile": [
+        96,
+        96
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        3,
+        5
+      ],
+      "tile_origin": [
+        1,
+        2
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "416738",
+          "steps": [
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.118896484375
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 1.90234375
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          3,
+          5
+        ],
+        "tile_offset": [
+          1,
+          2
+        ],
+        "tile_size": [
+          96,
+          96
+        ],
+        "num_resolutions": 4,
+        "codeblock_size": [
+          64,
+          4
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 96,
+        "mean_abs_error": 18.110677382319174,
+        "different_bytes": 12772
+      },
+      "proof_key": "jp2_irreversible_variant_d3_c3_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d3_c3_m0_rdefault_derived_deep.jp2",
+      "encoded_sha256": "d027e58267bfef85501862b5de1412ad720775f39902ed7554d158e8b6effacc",
+      "source_file": "jp2_irreversible_d3_c3_noise.source",
+      "source_sha256": "315017f04436a597183ad8dc26adc3cc9896f33daa33ca5217219ae92e901ae6",
+      "oracle_file": "jp2_irreversible_variant_d3_c3_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "004110fbc76e5bf139da8e3a6d16910a2aa53ed2d9ff46a9d0303cb6d1f13833",
+      "width": 65,
+      "height": 67,
+      "components": 3,
+      "levels": 3,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        4
+      ],
+      "tile": [
+        96,
+        96
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        3,
+        5
+      ],
+      "tile_origin": [
+        1,
+        2
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "416738",
+          "steps": [
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.118896484375
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 1.90234375
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          3,
+          5
+        ],
+        "tile_offset": [
+          1,
+          2
+        ],
+        "tile_size": [
+          96,
+          96
+        ],
+        "num_resolutions": 4,
+        "codeblock_size": [
+          64,
+          4
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 96,
+        "mean_abs_error": 18.110677382319174,
+        "different_bytes": 12772
+      },
+      "proof_key": "jp2_irreversible_variant_d3_c3_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d3_c3_m1_rdefault_derived_deep.j2k",
+      "encoded_sha256": "8715320c62032e8e21a2b20dc6bff1cda248c26c0b1de3a84482c28b9d665b3b",
+      "source_file": "jp2_irreversible_d3_c3_noise.source",
+      "source_sha256": "315017f04436a597183ad8dc26adc3cc9896f33daa33ca5217219ae92e901ae6",
+      "oracle_file": "jp2_irreversible_variant_d3_c3_m1_rdefault_derived_deep.pixels",
+      "oracle_sha256": "61fb838536b878aea94d9fbad8cb79ffcfd4a38ca9b1948cccd4439b2943e48b",
+      "width": 65,
+      "height": 67,
+      "components": 3,
+      "levels": 3,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        4
+      ],
+      "tile": [
+        96,
+        96
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        3,
+        5
+      ],
+      "tile_origin": [
+        1,
+        2
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "416738",
+          "steps": [
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.118896484375
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 1.90234375
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          3,
+          5
+        ],
+        "tile_offset": [
+          1,
+          2
+        ],
+        "tile_size": [
+          96,
+          96
+        ],
+        "num_resolutions": 4,
+        "codeblock_size": [
+          64,
+          4
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 95,
+        "mean_abs_error": 18.11220818982013,
+        "different_bytes": 12733
+      },
+      "proof_key": "jp2_irreversible_variant_d3_c3_m1_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d3_c3_m1_rdefault_derived_deep.jp2",
+      "encoded_sha256": "e6aa6f1751d827a59571e9879998e9c5e9a90fcda534cf0466aeaab1ca671f80",
+      "source_file": "jp2_irreversible_d3_c3_noise.source",
+      "source_sha256": "315017f04436a597183ad8dc26adc3cc9896f33daa33ca5217219ae92e901ae6",
+      "oracle_file": "jp2_irreversible_variant_d3_c3_m1_rdefault_derived_deep.pixels",
+      "oracle_sha256": "61fb838536b878aea94d9fbad8cb79ffcfd4a38ca9b1948cccd4439b2943e48b",
+      "width": 65,
+      "height": 67,
+      "components": 3,
+      "levels": 3,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        4
+      ],
+      "tile": [
+        96,
+        96
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        3,
+        5
+      ],
+      "tile_origin": [
+        1,
+        2
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "416738",
+          "steps": [
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.118896484375
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.23779296875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1848,
+              "Mb": 13,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.4755859375
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1848,
+              "Mb": 12,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 0.951171875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1848,
+              "Mb": 11,
+              "nominal_step": 1.90234375
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          3,
+          5
+        ],
+        "tile_offset": [
+          1,
+          2
+        ],
+        "tile_size": [
+          96,
+          96
+        ],
+        "num_resolutions": 4,
+        "codeblock_size": [
+          64,
+          4
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 95,
+        "mean_abs_error": 18.11220818982013,
+        "different_bytes": 12733
+      },
+      "proof_key": "jp2_irreversible_variant_d3_c3_m1_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c1_m0_rdefault_derived_deep.j2k",
+      "encoded_sha256": "b67ee21cd2b3bf830c8ef1980c1d4ddffe5d3dd8e8fc317f3f6de105a70af864",
+      "source_file": "jp2_irreversible_d5_c1_noise.source",
+      "source_sha256": "5523b1110bf1a92519adb9384b063b14e6423de6369530917ea9c39934700bc0",
+      "oracle_file": "jp2_irreversible_variant_d5_c1_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "3cb6aa1f72371727687114de2355f858610f88d36a8234d90738ef29a33ce7bc",
+      "width": 33,
+      "height": 35,
+      "components": 1,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "417720",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 1.890625
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 82,
+        "mean_abs_error": 17.837229437229436,
+        "different_bytes": 1124
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c1_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c1_m0_rdefault_derived_deep.jp2",
+      "encoded_sha256": "c2085e035844a6b9241988c3de36e75fc14220d5e826464ccd76e5607a364da4",
+      "source_file": "jp2_irreversible_d5_c1_noise.source",
+      "source_sha256": "5523b1110bf1a92519adb9384b063b14e6423de6369530917ea9c39934700bc0",
+      "oracle_file": "jp2_irreversible_variant_d5_c1_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "3cb6aa1f72371727687114de2355f858610f88d36a8234d90738ef29a33ce7bc",
+      "width": 33,
+      "height": 35,
+      "components": 1,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "417720",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 1.890625
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 82,
+        "mean_abs_error": 17.837229437229436,
+        "different_bytes": 1124
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c1_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_derived_deep.j2k",
+      "encoded_sha256": "fefe73ea621a6547abc995dbbbd13f4ad352e2d3894ff5989bc11e87c23e0255",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "c93ab545e6f97c82e391473b08d57b98851d03106ea023f45dfd30ae5c8368d1",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "417720",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 1.890625
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 109,
+        "mean_abs_error": 17.77979797979798,
+        "different_bytes": 3392
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c0.j2k",
+      "encoded_sha256": "7b8737b01fc2dc8980ad48c6ebc9c8e2f636188cf15b21dc2075a213955f151a",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c0.pixels",
+      "oracle_sha256": "8f471a97069d51656b8605a86784d85762792866e0c2d0369bb7280fcd5a6e73",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c0",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "0": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 7,
+        "mean_abs_error": 0.455988455988456,
+        "different_bytes": 1050
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c0"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c1.j2k",
+      "encoded_sha256": "6eaf4133d4f9ebdc2c46b257c9a4927390aaa24ae7de66c96578f76310ea4268",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c1.pixels",
+      "oracle_sha256": "e34045b64d2833c8b3307fc056d1f3b9e41f8513748d416ecc6003d6f6c204a3",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c1",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "1": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 6,
+        "mean_abs_error": 0.4505050505050505,
+        "different_bytes": 1063
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c1"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c2.j2k",
+      "encoded_sha256": "95b1e4d5a1be3485f349def085ddda8f34653ccad491cbfa53f6b5018d7ebd0d",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c2.pixels",
+      "oracle_sha256": "31357fa1d54fd815e0223cb767757b2d9c731906d02004833038bbdec4d6ab2a",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c2",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "2": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 5,
+        "mean_abs_error": 0.46984126984126984,
+        "different_bytes": 1083
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c2"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_derived_deep.jp2",
+      "encoded_sha256": "0efc66213be223eb92b32f391bb2dbdb0d3d6eba4e81793ebd56c135971c9003",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_derived_deep.pixels",
+      "oracle_sha256": "c93ab545e6f97c82e391473b08d57b98851d03106ea023f45dfd30ae5c8368d1",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "417720",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 1.890625
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 109,
+        "mean_abs_error": 17.77979797979798,
+        "different_bytes": 3392
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m0_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c0.jp2",
+      "encoded_sha256": "3ddd7c46e18799a838871e8b7a65fe5088b06faf41ea51e263081784dc1325e9",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c0.pixels",
+      "oracle_sha256": "8f471a97069d51656b8605a86784d85762792866e0c2d0369bb7280fcd5a6e73",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c0",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "0": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 7,
+        "mean_abs_error": 0.455988455988456,
+        "different_bytes": 1050
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c0"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c1.jp2",
+      "encoded_sha256": "1a53637b402b900a80b5da31560242144293f08a7b4f655d149d51f8dc451bcd",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c1.pixels",
+      "oracle_sha256": "e34045b64d2833c8b3307fc056d1f3b9e41f8513748d416ecc6003d6f6c204a3",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c1",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "1": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 6,
+        "mean_abs_error": 0.4505050505050505,
+        "different_bytes": 1063
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c1"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c2.jp2",
+      "encoded_sha256": "0a6f04e5b55b7b63fcf4dff7a528a18543018fe8c08a31338be4eeb3e4459e2a",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c2.pixels",
+      "oracle_sha256": "31357fa1d54fd815e0223cb767757b2d9c731906d02004833038bbdec4d6ab2a",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 0,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c2",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "2": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 0,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 5,
+        "mean_abs_error": 0.46984126984126984,
+        "different_bytes": 1083
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c2"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep.j2k",
+      "encoded_sha256": "6a087951249f8c91e13a8fbdf0a3da7991e4484ba41c8dd89060df99ca2eeb9e",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep.pixels",
+      "oracle_sha256": "c44c760590b383c8de86b3f16475cbe5543dc5d8aeb640eb6ea8962740cf3f05",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "417720",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 1.890625
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 109,
+        "mean_abs_error": 17.79278499278499,
+        "different_bytes": 3383
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c0.j2k",
+      "encoded_sha256": "8f6cca0ccc05e1faa8ec83a6b5f4732b6ab86405f715dfd0896d46b481eba459",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c0.pixels",
+      "oracle_sha256": "883dd9f0159f43b859c62dd2ef253e56aaf1ae5b5a85b60fbd251cf48893c600",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c0",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "0": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 4,
+        "mean_abs_error": 0.8756132756132756,
+        "different_bytes": 2315
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c0"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c1.j2k",
+      "encoded_sha256": "bec1b635629c9d6d3df4e2da5673e2c9ee4bcf052648ebf1587c34093a81e6a3",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c1.pixels",
+      "oracle_sha256": "e34b58417f1b6c44b99b9c4cfcc25ffdc4b772b4a182385dbe142015f79ac580",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c1",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "1": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 6,
+        "mean_abs_error": 0.6707070707070707,
+        "different_bytes": 1648
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c1"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2.j2k",
+      "encoded_sha256": "d6be5cb2f11531c4e3a60fb514a2d5072a62704e7d638ea2369f6a1151b813ee",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2.pixels",
+      "oracle_sha256": "58eb4f2a8171c034f8f9378093400d40dfc61f7ebfa747fde2f6752c047b34c9",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c2",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "2": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 7,
+        "mean_abs_error": 0.7284271284271284,
+        "different_bytes": 1948
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep.jp2",
+      "encoded_sha256": "5f77292385c0c4d0f86746e7cf5625d3e531602a33e6240d05ab3f615e35d0ba",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep.pixels",
+      "oracle_sha256": "c44c760590b383c8de86b3f16475cbe5543dc5d8aeb640eb6ea8962740cf3f05",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "derived_deep",
+      "quantization": {
+        "qcd": {
+          "style": 1,
+          "guard_bits": 2,
+          "words_hex": "417720",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.05908203125
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.1181640625
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1824,
+              "Mb": 14,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.236328125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1824,
+              "Mb": 13,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.47265625
+            },
+            {
+              "exponent": 11,
+              "mantissa": 1824,
+              "Mb": 12,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 0.9453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1824,
+              "Mb": 11,
+              "nominal_step": 1.890625
+            }
+          ]
+        },
+        "qcc": {}
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 109,
+        "mean_abs_error": 17.79278499278499,
+        "different_bytes": 3383
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c0.jp2",
+      "encoded_sha256": "542575e54a4ca5f42192f0b488071a1acf9af137ff8f91718c79de012c1a39a4",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c0.pixels",
+      "oracle_sha256": "883dd9f0159f43b859c62dd2ef253e56aaf1ae5b5a85b60fbd251cf48893c600",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c0",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "0": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 4,
+        "mean_abs_error": 0.8756132756132756,
+        "different_bytes": 2315
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c0"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c1.jp2",
+      "encoded_sha256": "aa98faddba25dcfaf0716ee48cd1cef93d36cd02649d33c430e28f488547dd8b",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c1.pixels",
+      "oracle_sha256": "e34b58417f1b6c44b99b9c4cfcc25ffdc4b772b4a182385dbe142015f79ac580",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c1",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "1": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 6,
+        "mean_abs_error": 0.6707070707070707,
+        "different_bytes": 1648
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c1"
+    },
+    {
+      "encoded_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2.jp2",
+      "encoded_sha256": "d6211c82c3afecd0fc460a70c64e66db980d6bdcf234b3b65c76a78b908d49c4",
+      "source_file": "jp2_irreversible_d5_c3_noise.source",
+      "source_sha256": "98d87cd30ee663bb356979e263e94875873311818c177fde3b8978102ead726a",
+      "oracle_file": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2.pixels",
+      "oracle_sha256": "58eb4f2a8171c034f8f9378093400d40dfc61f7ebfa747fde2f6752c047b34c9",
+      "width": 33,
+      "height": 35,
+      "components": 3,
+      "levels": 5,
+      "mct": 1,
+      "transform": "irreversible9/7",
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "tile_count": 1,
+      "image_origin": [
+        7,
+        11
+      ],
+      "tile_origin": [
+        5,
+        9
+      ],
+      "max_parts_per_tile": 1,
+      "peak_join_bytes": 0,
+      "framing": "qcc_c2",
+      "quantization": {
+        "qcd": {
+          "style": 2,
+          "guard_bits": 2,
+          "words_hex": "42772076f076f076c06f006f006ee067506750676850055005504757d357d35762",
+          "steps": [
+            {
+              "exponent": 14,
+              "mantissa": 1824,
+              "Mb": 15,
+              "nominal_step": 0.029541015625
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1776,
+              "Mb": 15,
+              "nominal_step": 0.058349609375
+            },
+            {
+              "exponent": 14,
+              "mantissa": 1728,
+              "Mb": 15,
+              "nominal_step": 0.115234375
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1792,
+              "Mb": 14,
+              "nominal_step": 0.1171875
+            },
+            {
+              "exponent": 13,
+              "mantissa": 1760,
+              "Mb": 14,
+              "nominal_step": 0.232421875
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1872,
+              "Mb": 13,
+              "nominal_step": 0.2392578125
+            },
+            {
+              "exponent": 12,
+              "mantissa": 1896,
+              "Mb": 13,
+              "nominal_step": 0.4814453125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 5,
+              "Mb": 11,
+              "nominal_step": 0.501220703125
+            },
+            {
+              "exponent": 10,
+              "mantissa": 71,
+              "Mb": 11,
+              "nominal_step": 1.03466796875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 2003,
+              "Mb": 11,
+              "nominal_step": 0.989013671875
+            },
+            {
+              "exponent": 10,
+              "mantissa": 1890,
+              "Mb": 11,
+              "nominal_step": 1.9228515625
+            }
+          ]
+        },
+        "qcc": {
+          "2": {
+            "style": 2,
+            "guard_bits": 2,
+            "words_hex": "4277607730773077006f406f406f206790679067a85045504550875793579357a2",
+            "steps": [
+              {
+                "exponent": 14,
+                "mantissa": 1888,
+                "Mb": 15,
+                "nominal_step": 0.030029296875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1840,
+                "Mb": 15,
+                "nominal_step": 0.059326171875
+              },
+              {
+                "exponent": 14,
+                "mantissa": 1792,
+                "Mb": 15,
+                "nominal_step": 0.1171875
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1856,
+                "Mb": 14,
+                "nominal_step": 0.119140625
+              },
+              {
+                "exponent": 13,
+                "mantissa": 1824,
+                "Mb": 14,
+                "nominal_step": 0.236328125
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1936,
+                "Mb": 13,
+                "nominal_step": 0.2431640625
+              },
+              {
+                "exponent": 12,
+                "mantissa": 1960,
+                "Mb": 13,
+                "nominal_step": 0.4892578125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 69,
+                "Mb": 11,
+                "nominal_step": 0.516845703125
+              },
+              {
+                "exponent": 10,
+                "mantissa": 135,
+                "Mb": 11,
+                "nominal_step": 1.06591796875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1939,
+                "Mb": 11,
+                "nominal_step": 0.973388671875
+              },
+              {
+                "exponent": 10,
+                "mantissa": 1954,
+                "Mb": 11,
+                "nominal_step": 1.9541015625
+              }
+            ]
+          }
+        }
+      },
+      "encoder_params": {
+        "no_jp2": true,
+        "offset": [
+          7,
+          11
+        ],
+        "tile_offset": [
+          5,
+          9
+        ],
+        "tile_size": [
+          64,
+          64
+        ],
+        "num_resolutions": 6,
+        "codeblock_size": [
+          64,
+          64
+        ],
+        "irreversible": true,
+        "mct": 1,
+        "plt": true,
+        "quality_mode": "rates",
+        "progression": "LRCP"
+      },
+      "source_quality": {
+        "max_abs_error": 7,
+        "mean_abs_error": 0.7284271284271284,
+        "different_bytes": 1948
+      },
+      "proof_key": "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2"
+    }
+  ],
+  "summary": {
+    "encodings": 42,
+    "deep_derived": 18,
+    "differing_qcc": 24
+  }
+}

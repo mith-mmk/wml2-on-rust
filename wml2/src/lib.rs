@@ -88,6 +88,10 @@ pub fn get_decoder_extentions() -> Vec<String> {
         "jpe".to_string(),
         #[cfg(feature = "jpeg")]
         "jpeg".to_string(),
+        #[cfg(feature = "jpeg2000")]
+        "j2k".to_string(),
+        #[cfg(feature = "jpeg2000")]
+        "jp2".to_string(),
         #[cfg(feature = "png")]
         "png".to_string(),
         #[cfg(feature = "psd")]
@@ -179,6 +183,8 @@ pub mod gif;
 pub mod ico;
 #[cfg(feature = "jpeg")]
 pub mod jpeg;
+#[cfg(feature = "jpeg2000")]
+pub mod jpeg2000;
 #[cfg(all(feature = "mag", not(feature = "noretoro")))]
 pub mod mag;
 #[cfg(all(feature = "maki", not(feature = "noretoro")))]

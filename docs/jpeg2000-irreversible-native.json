@@ -1,0 +1,67 @@
+{
+  "status": "PASS no critical/major actionable findings",
+  "base": "3dcd7dd8a49c665675dcddec0c77ff04621d8e2d",
+  "closing_source_sha256": {
+    "jpeg2000.rs": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+    "jpeg2000_tier1.rs": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb",
+    "jpeg2000_irreversible.rs": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9"
+  },
+  "closing_changes": "Only removal of unnecessary i32 cast in pre-existing unit test from initial snapshot; runtime Tier1/irreversible unchanged. Exact diff archived.",
+  "primary_source": "https://www.itu.int/rec/dologin_pub.asp?id=T-REC-T.800-200208-S!!PDF-E&lang=e&type=items",
+  "primary_sections": [
+    "E-2..6 / coefficient precision, scalar quantization, reconstruction",
+    "F.3.6 / singleton parity",
+    "F-7 and TableF4 / normalization and lifting",
+    "G-12..14 / inverse ICT"
+  ],
+  "checks": {
+    "quantization": "Exact styles1/2 lengths; derived epsilon checked underflow; guard+exponent impliesMb1..24; sampleprecision8 and0/1/2bandgains. DefaultQCD validation occurs before everyQCC override, eachQCC independentlyparsed.",
+    "tier1": "MIDPOINTconst isolates originalreversible path; last_plane updates on significance and each actual refinement bit, including zero bits. No following pass executes once requested passes reached; bounds1..3P-2. Doubled24-plane sign-magnitude <=2^25-1 fitsi32.",
+    "synthesis": "Packedlow/high parity indices valid for all lengths; n<=1 handlesevenidentity/oddhalf beforeK. Whole-sample reflected neighbors preserveparity. 5level localreferenceceil geometry bounded bySIZ; finalfloatfinite check precedes RGBA allocation/callback.",
+    "resource_accounting": "Packetdescriptors/T1 andfloatingplanes counted as distinct livephases; floatpeak<=12*C*tileA+16*tileA+4*wholeA. Tree/header/descriptor growth conservativebound recorded separately. 64*C*wholeA+8192 leaves margin; joinedpayload checkedbeforeallocation and addedseparately. Inputbuffer coveredby independentinput_bytesbudget.",
+    "API_and_legacy": "No publicsignature change. Reversible bit-depth16/fullpass contracts preserved; floatpath onlyCOD transform0. Newdequant/synthesis errors remain before drawerinit. Genericgrid subbands extraction matches oldlogic; parsed lengths guard allSlices."
+  },
+  "standalone_small_repros": {
+    "legacy_exact": 192,
+    "full_midpoint": 192,
+    "plane_rescaling": 12,
+    "partial_pass_bounds": 1728,
+    "invalid_passes_rejected": 3,
+    "invalid_planes_rejected": 1,
+    "source": "tier1_invariants.rs",
+    "log": "tier1-invariants.log",
+    "scope": "SyntheticboundedMQ segment, not another pixelmatrix/benchmark or proof of full entropy conformance."
+  },
+  "critical_major_findings": [],
+  "limitations": [
+    "Static review and small invariant repro do not prove every malformed input is safe or all9/7outputs always within1sample of everyoracle.",
+    "Independent fixture production and production-source review both performed by this agent; production implementation owned byroot.",
+    "Full workspace/WASM/random/benchmark gates owned byroot and were not rerun for this independent review."
+  ],
+  "evidence_sha256": {
+    "source-snapshot.json": "5f222982dccc7ebdb2492e7ec0010923188a26071d94836afe26c1055f926aa9",
+    "production-diff.patch": "e97b9e2eb257207170431c1414c2c6e0f60642a9a09d9960c416f2be5359425b",
+    "closing-source-diff.patch": "8cfbb4945797a71d5a851d7424d6ea7692f4185de95b99069713fc5a8cf02b6d",
+    "tier1_invariants.rs": "5547eec9f454757076bf83c0976a4ff45f9a2c44ce247cf5cf868c1e06e86f3d",
+    "tier1-invariants.log": "c2be5f1e358e9c650f398b05c8d5af3b260b7c70320c18d7061faaddc6ee02b0",
+    "arithmetic-bounds.json": "2ea1915b145c18c190b310872935076ec3a69679af2ef9c279709da7b7911233"
+  },
+  "workspace_regression": {
+    "passed": 372,
+    "failed": 0,
+    "ignored": 12,
+    "targets": 43
+  },
+  "feature_off_passed": 15,
+  "fixed_base_inputs": 214,
+  "deep_derived_and_differing_qcc_variants": 42,
+  "negative_inputs": 36,
+  "pending_gates": [
+    "final fixed exports/metrics",
+    "seeded random",
+    "display",
+    "actual minimal/default wasm",
+    "paired performance",
+    "final cargo archive verification"
+  ]
+}

@@ -1,0 +1,2279 @@
+{
+  "seed": 1414089797,
+  "geometries": 18,
+  "pixel_comparisons": 108,
+  "all_passed": true,
+  "pillow": "12.3.0",
+  "openjpeg": "2.5.4",
+  "decoder_sha256": "dae14d49dc5cc9059543fa14e5e481a3e34b9917b5b04407925d190655ac6de1",
+  "cases": [
+    {
+      "case": 0,
+      "width": 2,
+      "height": 4,
+      "levels": 0,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        1,
+        3
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "8a08a5cc02209ad1504682d249e9c8908085fbf461af9feca6c6ca7a9c63e77b",
+      "encoded_sha256": "71f80d458f033240e0e720715fd141d07e6487f3120684ff2f6491f6786d069b",
+      "rgb_sha256": "dff2ab69fd4f87ac4d4d2f84c5fc679f6464a2d9112febfd466ee31399b618d9"
+    },
+    {
+      "case": 0,
+      "width": 2,
+      "height": 4,
+      "levels": 0,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        1,
+        3
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "8a08a5cc02209ad1504682d249e9c8908085fbf461af9feca6c6ca7a9c63e77b",
+      "encoded_sha256": "e65106768d4726ff78e19bf8e9156e870fb10b39725e16d76a922949f23d93f5",
+      "rgb_sha256": "dff2ab69fd4f87ac4d4d2f84c5fc679f6464a2d9112febfd466ee31399b618d9"
+    },
+    {
+      "case": 0,
+      "width": 2,
+      "height": 4,
+      "levels": 0,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        1,
+        3
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "68e7f39042968fc322d24586eec0d93b2107436f7897b8de4dcfee65b665218a",
+      "encoded_sha256": "2a2b93702bc14cd8484371c56d11510ae9dd9750fa7d28402fcec5df93736d11",
+      "rgb_sha256": "68e7f39042968fc322d24586eec0d93b2107436f7897b8de4dcfee65b665218a"
+    },
+    {
+      "case": 0,
+      "width": 2,
+      "height": 4,
+      "levels": 0,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        1,
+        3
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "68e7f39042968fc322d24586eec0d93b2107436f7897b8de4dcfee65b665218a",
+      "encoded_sha256": "284dbe3df7234cfd94894acec6ece145acf7bfe1ce4a9eb76559274a357a5c07",
+      "rgb_sha256": "68e7f39042968fc322d24586eec0d93b2107436f7897b8de4dcfee65b665218a"
+    },
+    {
+      "case": 0,
+      "width": 2,
+      "height": 4,
+      "levels": 0,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        1,
+        3
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "68e7f39042968fc322d24586eec0d93b2107436f7897b8de4dcfee65b665218a",
+      "encoded_sha256": "630f29f8e030299be99fe7cabb2c46a10cbc1a9e2b3a17f4625f36c8a5e8d938",
+      "rgb_sha256": "68e7f39042968fc322d24586eec0d93b2107436f7897b8de4dcfee65b665218a"
+    },
+    {
+      "case": 0,
+      "width": 2,
+      "height": 4,
+      "levels": 0,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        1,
+        3
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "68e7f39042968fc322d24586eec0d93b2107436f7897b8de4dcfee65b665218a",
+      "encoded_sha256": "04ea07aa6772682979668e8675799bdfa8536140675d190c11f2226ad5cc7517",
+      "rgb_sha256": "68e7f39042968fc322d24586eec0d93b2107436f7897b8de4dcfee65b665218a"
+    },
+    {
+      "case": 1,
+      "width": 7,
+      "height": 2,
+      "levels": 1,
+      "block": [
+        4,
+        4
+      ],
+      "tile": [
+        4,
+        6
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "32dd94c78201ce7c7b81daa883e6937496e5a498be6a9e686d5e5a539f6860c5",
+      "encoded_sha256": "91a87ed4e8a2dda32ac47e6455614cde3625c97e1c27e18ccabeb3b16c713cac",
+      "rgb_sha256": "ee06104f5440bfbff591d4f4aef9d47894da1cac2ce2cddd45df45e029f2375f"
+    },
+    {
+      "case": 1,
+      "width": 7,
+      "height": 2,
+      "levels": 1,
+      "block": [
+        4,
+        4
+      ],
+      "tile": [
+        4,
+        6
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "32dd94c78201ce7c7b81daa883e6937496e5a498be6a9e686d5e5a539f6860c5",
+      "encoded_sha256": "8afa8a24535bb57382c0dfb7c7317557dbca56ab943935e16b0b97e4911c4407",
+      "rgb_sha256": "ee06104f5440bfbff591d4f4aef9d47894da1cac2ce2cddd45df45e029f2375f"
+    },
+    {
+      "case": 1,
+      "width": 7,
+      "height": 2,
+      "levels": 1,
+      "block": [
+        4,
+        4
+      ],
+      "tile": [
+        4,
+        6
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "5f13e8baceca22fe3e0dd2f8b341fd50e8c5d5effa2718237e4a5b8626d5c1f0",
+      "encoded_sha256": "c737945fa100534daa0d0560f811913980e701fc04ad9d618717a28ce490c092",
+      "rgb_sha256": "5f13e8baceca22fe3e0dd2f8b341fd50e8c5d5effa2718237e4a5b8626d5c1f0"
+    },
+    {
+      "case": 1,
+      "width": 7,
+      "height": 2,
+      "levels": 1,
+      "block": [
+        4,
+        4
+      ],
+      "tile": [
+        4,
+        6
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "5f13e8baceca22fe3e0dd2f8b341fd50e8c5d5effa2718237e4a5b8626d5c1f0",
+      "encoded_sha256": "9dcc806da7c318ad4aa004d910cad62be662b481746c7bbf24815a3837e357a7",
+      "rgb_sha256": "5f13e8baceca22fe3e0dd2f8b341fd50e8c5d5effa2718237e4a5b8626d5c1f0"
+    },
+    {
+      "case": 1,
+      "width": 7,
+      "height": 2,
+      "levels": 1,
+      "block": [
+        4,
+        4
+      ],
+      "tile": [
+        4,
+        6
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "5f13e8baceca22fe3e0dd2f8b341fd50e8c5d5effa2718237e4a5b8626d5c1f0",
+      "encoded_sha256": "41915ce546a7d9efdae04d09aca5152321b8d6b1d5f79cb6fb48d42bd00c481f",
+      "rgb_sha256": "5f13e8baceca22fe3e0dd2f8b341fd50e8c5d5effa2718237e4a5b8626d5c1f0"
+    },
+    {
+      "case": 1,
+      "width": 7,
+      "height": 2,
+      "levels": 1,
+      "block": [
+        4,
+        4
+      ],
+      "tile": [
+        4,
+        6
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "5f13e8baceca22fe3e0dd2f8b341fd50e8c5d5effa2718237e4a5b8626d5c1f0",
+      "encoded_sha256": "4a00c6ebbe43c97bf232ef7e3d30d114a9065b45955e6eed10ab39e57c5afdc9",
+      "rgb_sha256": "5f13e8baceca22fe3e0dd2f8b341fd50e8c5d5effa2718237e4a5b8626d5c1f0"
+    },
+    {
+      "case": 2,
+      "width": 12,
+      "height": 23,
+      "levels": 2,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        4,
+        8
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b054c1de0db4368811d55e2f7da30776662cfc0b2172503d1a430592d8947839",
+      "encoded_sha256": "b8b923b34dbf8063a43c9b9c4692d269d502867c571b5d453e1bacbc661116c1",
+      "rgb_sha256": "2c32f3c2d75de14c8c27b433a0cc9770018c30a80dd1ad43573839a7bc7e6a78"
+    },
+    {
+      "case": 2,
+      "width": 12,
+      "height": 23,
+      "levels": 2,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        4,
+        8
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b054c1de0db4368811d55e2f7da30776662cfc0b2172503d1a430592d8947839",
+      "encoded_sha256": "3cd499dc753904d45c2af03ebbb37c0fc90d92bc09311d4a0c5c46b9d0c43008",
+      "rgb_sha256": "2c32f3c2d75de14c8c27b433a0cc9770018c30a80dd1ad43573839a7bc7e6a78"
+    },
+    {
+      "case": 2,
+      "width": 12,
+      "height": 23,
+      "levels": 2,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        4,
+        8
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "5391bd818fb29aec0609a346a0979ffac293b4b43c0baf2ceb26c8f05a384b11",
+      "encoded_sha256": "4a801f938f7a68fa021868786f3ac35a2e6880b1191ace77ef72931d3ee53cdb",
+      "rgb_sha256": "5391bd818fb29aec0609a346a0979ffac293b4b43c0baf2ceb26c8f05a384b11"
+    },
+    {
+      "case": 2,
+      "width": 12,
+      "height": 23,
+      "levels": 2,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        4,
+        8
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "5391bd818fb29aec0609a346a0979ffac293b4b43c0baf2ceb26c8f05a384b11",
+      "encoded_sha256": "2e09d87e987db876b472454ebd6589f98ad97656374b80fcaf7cb8c8fd9ab3fe",
+      "rgb_sha256": "5391bd818fb29aec0609a346a0979ffac293b4b43c0baf2ceb26c8f05a384b11"
+    },
+    {
+      "case": 2,
+      "width": 12,
+      "height": 23,
+      "levels": 2,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        4,
+        8
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "5391bd818fb29aec0609a346a0979ffac293b4b43c0baf2ceb26c8f05a384b11",
+      "encoded_sha256": "137bf2b2c69201122b55d1058bf257e879cf5477a95bd5f9930e065240f95baf",
+      "rgb_sha256": "5391bd818fb29aec0609a346a0979ffac293b4b43c0baf2ceb26c8f05a384b11"
+    },
+    {
+      "case": 2,
+      "width": 12,
+      "height": 23,
+      "levels": 2,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        4,
+        8
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "5391bd818fb29aec0609a346a0979ffac293b4b43c0baf2ceb26c8f05a384b11",
+      "encoded_sha256": "3ddf477d6751c3c41100d62222be4119af6a97cc24b258aa1c3e41174351c37b",
+      "rgb_sha256": "5391bd818fb29aec0609a346a0979ffac293b4b43c0baf2ceb26c8f05a384b11"
+    },
+    {
+      "case": 3,
+      "width": 9,
+      "height": 70,
+      "levels": 3,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 3,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d1c0855ffc7f23c01d7be428b676c97b3166462fd29d05ec8c0c4618f3619f62",
+      "encoded_sha256": "eb528231db1f9d091e532b21816062cf89f1e164496eb6d800d6d9fe49cfd0a0",
+      "rgb_sha256": "0b6e49bf0671e6c47355a3bb61fddc98c61a77ce7ae0b9b0c1211de2e1e0ee64"
+    },
+    {
+      "case": 3,
+      "width": 9,
+      "height": 70,
+      "levels": 3,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 3,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d1c0855ffc7f23c01d7be428b676c97b3166462fd29d05ec8c0c4618f3619f62",
+      "encoded_sha256": "dc05e7832cda7fef76d296130ab0e6d8cd3352dc2d639dc9d6a5c5c71eaf2a96",
+      "rgb_sha256": "0b6e49bf0671e6c47355a3bb61fddc98c61a77ce7ae0b9b0c1211de2e1e0ee64"
+    },
+    {
+      "case": 3,
+      "width": 9,
+      "height": 70,
+      "levels": 3,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 3,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "6baec9c6f9b73048144d42dbd0d105ed595adf79de447b8fbe5c76549edd48a5",
+      "encoded_sha256": "0be2ddde2ce3d9d831a21ffadf33fe93d12abb4d504060dd2b07f05aae545da6",
+      "rgb_sha256": "6baec9c6f9b73048144d42dbd0d105ed595adf79de447b8fbe5c76549edd48a5"
+    },
+    {
+      "case": 3,
+      "width": 9,
+      "height": 70,
+      "levels": 3,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 3,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "6baec9c6f9b73048144d42dbd0d105ed595adf79de447b8fbe5c76549edd48a5",
+      "encoded_sha256": "aa00e1c01ca0b5490ac8ee2cde9573cc9263292b58813c9d0fe7a9ba5808039f",
+      "rgb_sha256": "6baec9c6f9b73048144d42dbd0d105ed595adf79de447b8fbe5c76549edd48a5"
+    },
+    {
+      "case": 3,
+      "width": 9,
+      "height": 70,
+      "levels": 3,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 3,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "6baec9c6f9b73048144d42dbd0d105ed595adf79de447b8fbe5c76549edd48a5",
+      "encoded_sha256": "2d971e99ec2b5f1bbe0ce5eabfed180f0859653efde469a7b4d7fa2ca29ddf75",
+      "rgb_sha256": "6baec9c6f9b73048144d42dbd0d105ed595adf79de447b8fbe5c76549edd48a5"
+    },
+    {
+      "case": 3,
+      "width": 9,
+      "height": 70,
+      "levels": 3,
+      "block": [
+        4,
+        32
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 3,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "6baec9c6f9b73048144d42dbd0d105ed595adf79de447b8fbe5c76549edd48a5",
+      "encoded_sha256": "a6e1e78a0eb96c93db6a31c90133daaa86cf99ea847e05475cc72b9b4e6cc8eb",
+      "rgb_sha256": "6baec9c6f9b73048144d42dbd0d105ed595adf79de447b8fbe5c76549edd48a5"
+    },
+    {
+      "case": 4,
+      "width": 141,
+      "height": 85,
+      "levels": 4,
+      "block": [
+        32,
+        128
+      ],
+      "tile": [
+        48,
+        32
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "32ea8201b691aaa283533f262907032f902bb1e17b540f82d90f5d6b4dac704f",
+      "encoded_sha256": "3d32ecf0104c67273e1d24ad22f843eda3562982c5ccba3797b629687279025d",
+      "rgb_sha256": "b32141fd9750569087c9e6172903669c7f23bb38dbbab21f2b8aad5162a52938"
+    },
+    {
+      "case": 4,
+      "width": 141,
+      "height": 85,
+      "levels": 4,
+      "block": [
+        32,
+        128
+      ],
+      "tile": [
+        48,
+        32
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "32ea8201b691aaa283533f262907032f902bb1e17b540f82d90f5d6b4dac704f",
+      "encoded_sha256": "be65d9f501ea6db7fbe861f33d0dbb12858dd0bb2e44d42f7dd63799e8de5da7",
+      "rgb_sha256": "b32141fd9750569087c9e6172903669c7f23bb38dbbab21f2b8aad5162a52938"
+    },
+    {
+      "case": 4,
+      "width": 141,
+      "height": 85,
+      "levels": 4,
+      "block": [
+        32,
+        128
+      ],
+      "tile": [
+        48,
+        32
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "8fd5f85286ad120bc2c5b0ae4a6a5bcb5d37a0c74525dda2b8e5d5e046b12e6f",
+      "encoded_sha256": "70174d9db835b70cbd7a82cfd0cc12dd4f9ab088e11a7d1d3b502fdbac66731e",
+      "rgb_sha256": "8fd5f85286ad120bc2c5b0ae4a6a5bcb5d37a0c74525dda2b8e5d5e046b12e6f"
+    },
+    {
+      "case": 4,
+      "width": 141,
+      "height": 85,
+      "levels": 4,
+      "block": [
+        32,
+        128
+      ],
+      "tile": [
+        48,
+        32
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "8fd5f85286ad120bc2c5b0ae4a6a5bcb5d37a0c74525dda2b8e5d5e046b12e6f",
+      "encoded_sha256": "63b48146e2e8e936c94c709624e78c2bfbac68ba27ba8399202ac45749a73b15",
+      "rgb_sha256": "8fd5f85286ad120bc2c5b0ae4a6a5bcb5d37a0c74525dda2b8e5d5e046b12e6f"
+    },
+    {
+      "case": 4,
+      "width": 141,
+      "height": 85,
+      "levels": 4,
+      "block": [
+        32,
+        128
+      ],
+      "tile": [
+        48,
+        32
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "8fd5f85286ad120bc2c5b0ae4a6a5bcb5d37a0c74525dda2b8e5d5e046b12e6f",
+      "encoded_sha256": "8159259aa144e375fd208863788d76fe8812398d05ee6581fdf2c297fa4e31f7",
+      "rgb_sha256": "8fd5f85286ad120bc2c5b0ae4a6a5bcb5d37a0c74525dda2b8e5d5e046b12e6f"
+    },
+    {
+      "case": 4,
+      "width": 141,
+      "height": 85,
+      "levels": 4,
+      "block": [
+        32,
+        128
+      ],
+      "tile": [
+        48,
+        32
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "8fd5f85286ad120bc2c5b0ae4a6a5bcb5d37a0c74525dda2b8e5d5e046b12e6f",
+      "encoded_sha256": "153a59379afa37ead2e9c7a9336c55d518d55cf138f14eb478164ec9d01598c2",
+      "rgb_sha256": "8fd5f85286ad120bc2c5b0ae4a6a5bcb5d37a0c74525dda2b8e5d5e046b12e6f"
+    },
+    {
+      "case": 5,
+      "width": 96,
+      "height": 264,
+      "levels": 5,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        32,
+        96
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "7790e8ab872e5b1b94f0d8d08d6b279ffda13f88927e783ededb56875653dead",
+      "encoded_sha256": "1eb0d4c07f505e508fc4d45785fbae282b6057ccd88b1d32dea12a7241471b44",
+      "rgb_sha256": "aeefbb9753b45185bfe5c2f002262da469313d2d71a761c7a31b53cc5d785d6b"
+    },
+    {
+      "case": 5,
+      "width": 96,
+      "height": 264,
+      "levels": 5,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        32,
+        96
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "7790e8ab872e5b1b94f0d8d08d6b279ffda13f88927e783ededb56875653dead",
+      "encoded_sha256": "e48d2557cf7890bfb1ee02ccc8d2693200f2e57d3398ecbc0caf5d55ef376c9e",
+      "rgb_sha256": "aeefbb9753b45185bfe5c2f002262da469313d2d71a761c7a31b53cc5d785d6b"
+    },
+    {
+      "case": 5,
+      "width": 96,
+      "height": 264,
+      "levels": 5,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        32,
+        96
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "090223e02fd30edb0b6066ff2b5933e4a2635da34144a5309c2e400ba2d16bf2",
+      "encoded_sha256": "c396d4a6b66b3360b8e08516a34c5ddaa8ca7224e295dd6cd8ab80798f8ac274",
+      "rgb_sha256": "090223e02fd30edb0b6066ff2b5933e4a2635da34144a5309c2e400ba2d16bf2"
+    },
+    {
+      "case": 5,
+      "width": 96,
+      "height": 264,
+      "levels": 5,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        32,
+        96
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "090223e02fd30edb0b6066ff2b5933e4a2635da34144a5309c2e400ba2d16bf2",
+      "encoded_sha256": "c117a04b47b8854aa34328613166b1c18cb42fe5fa3ad500e8be54f832bbf613",
+      "rgb_sha256": "090223e02fd30edb0b6066ff2b5933e4a2635da34144a5309c2e400ba2d16bf2"
+    },
+    {
+      "case": 5,
+      "width": 96,
+      "height": 264,
+      "levels": 5,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        32,
+        96
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "090223e02fd30edb0b6066ff2b5933e4a2635da34144a5309c2e400ba2d16bf2",
+      "encoded_sha256": "f91cf2156c42b38c4f16c3c43facb6b8ddc3b91a6140c06d297e0ca2919b1095",
+      "rgb_sha256": "090223e02fd30edb0b6066ff2b5933e4a2635da34144a5309c2e400ba2d16bf2"
+    },
+    {
+      "case": 5,
+      "width": 96,
+      "height": 264,
+      "levels": 5,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        32,
+        96
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "090223e02fd30edb0b6066ff2b5933e4a2635da34144a5309c2e400ba2d16bf2",
+      "encoded_sha256": "3355a996c226ac868987c485ec75ed7d3e065e51a967a368d36c6ebd4be6f0d5",
+      "rgb_sha256": "090223e02fd30edb0b6066ff2b5933e4a2635da34144a5309c2e400ba2d16bf2"
+    },
+    {
+      "case": 6,
+      "width": 3,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        128,
+        8
+      ],
+      "tile": [
+        1,
+        1
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "59092e35596cf382be6d0f1ac59a994beebfd510a962809352ff2b8867561c31",
+      "encoded_sha256": "e06d8c8770529153319759b35f28382f9516f73fe4d53ddad6c330df61bea272",
+      "rgb_sha256": "92c2e3a1e670ce6ef955a292b4ece05e119136befbd63567813097b0eb54353e"
+    },
+    {
+      "case": 6,
+      "width": 3,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        128,
+        8
+      ],
+      "tile": [
+        1,
+        1
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "59092e35596cf382be6d0f1ac59a994beebfd510a962809352ff2b8867561c31",
+      "encoded_sha256": "435ffa7ab24c38df01c6f16e42acb6d29921c17b38bae4caed91c26272b2f7e5",
+      "rgb_sha256": "92c2e3a1e670ce6ef955a292b4ece05e119136befbd63567813097b0eb54353e"
+    },
+    {
+      "case": 6,
+      "width": 3,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        128,
+        8
+      ],
+      "tile": [
+        1,
+        1
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "f894c3c90aa748c181e3d93322e6cde2d34067941c37d7888dfbad96bb58f7fb",
+      "encoded_sha256": "53b20d27392c9efb9d7a428580db0540783a2f21591cbb29704a865dd09e9c1a",
+      "rgb_sha256": "f894c3c90aa748c181e3d93322e6cde2d34067941c37d7888dfbad96bb58f7fb"
+    },
+    {
+      "case": 6,
+      "width": 3,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        128,
+        8
+      ],
+      "tile": [
+        1,
+        1
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "f894c3c90aa748c181e3d93322e6cde2d34067941c37d7888dfbad96bb58f7fb",
+      "encoded_sha256": "e79549ca6e9a71340f4362accae684b47ba1e83ff8e6b742ffc137bbf6595509",
+      "rgb_sha256": "f894c3c90aa748c181e3d93322e6cde2d34067941c37d7888dfbad96bb58f7fb"
+    },
+    {
+      "case": 6,
+      "width": 3,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        128,
+        8
+      ],
+      "tile": [
+        1,
+        1
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "f894c3c90aa748c181e3d93322e6cde2d34067941c37d7888dfbad96bb58f7fb",
+      "encoded_sha256": "c4f8793590c8331d8df4c9ee1de7547d03b39d9c2a06a5260f4397b3b90b5d63",
+      "rgb_sha256": "f894c3c90aa748c181e3d93322e6cde2d34067941c37d7888dfbad96bb58f7fb"
+    },
+    {
+      "case": 6,
+      "width": 3,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        128,
+        8
+      ],
+      "tile": [
+        1,
+        1
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "f894c3c90aa748c181e3d93322e6cde2d34067941c37d7888dfbad96bb58f7fb",
+      "encoded_sha256": "924fdf64a325a2187c38e7af61fb469090b6cc996a4b502764f2d50472328546",
+      "rgb_sha256": "f894c3c90aa748c181e3d93322e6cde2d34067941c37d7888dfbad96bb58f7fb"
+    },
+    {
+      "case": 7,
+      "width": 8,
+      "height": 3,
+      "levels": 1,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        4,
+        4
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "1372cfb96f4f2fce9eac9ab142fa361ad745db789060beb6f873030a5a1cc90a",
+      "encoded_sha256": "b891c4e733b21f255f81bb9fb5c48a3be156f2de975c8ebe52868513c79f7114",
+      "rgb_sha256": "85177bdf29d4c2422fce89d256a640f185fa5b6ae94fc96e2b958e44ec1ff738"
+    },
+    {
+      "case": 7,
+      "width": 8,
+      "height": 3,
+      "levels": 1,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        4,
+        4
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "1372cfb96f4f2fce9eac9ab142fa361ad745db789060beb6f873030a5a1cc90a",
+      "encoded_sha256": "f185f25e4e0a18ffbbef8bfde4e329d29f1b6417ef7abd563b5a613d899c6b12",
+      "rgb_sha256": "85177bdf29d4c2422fce89d256a640f185fa5b6ae94fc96e2b958e44ec1ff738"
+    },
+    {
+      "case": 7,
+      "width": 8,
+      "height": 3,
+      "levels": 1,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        4,
+        4
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "e19fe52a338ee47cdbe90d6e62fb107da9e8ded6d82e63e1505d57497e95804e",
+      "encoded_sha256": "979e9106acbf218c77a5b55d8c4b763111639f968cc2d9db622d493a1c7dcd90",
+      "rgb_sha256": "e19fe52a338ee47cdbe90d6e62fb107da9e8ded6d82e63e1505d57497e95804e"
+    },
+    {
+      "case": 7,
+      "width": 8,
+      "height": 3,
+      "levels": 1,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        4,
+        4
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "e19fe52a338ee47cdbe90d6e62fb107da9e8ded6d82e63e1505d57497e95804e",
+      "encoded_sha256": "bd6a8018264bf9a3439bf8bfc96fbcf931fddf78e726014d76f72b861a4306c8",
+      "rgb_sha256": "e19fe52a338ee47cdbe90d6e62fb107da9e8ded6d82e63e1505d57497e95804e"
+    },
+    {
+      "case": 7,
+      "width": 8,
+      "height": 3,
+      "levels": 1,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        4,
+        4
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "e19fe52a338ee47cdbe90d6e62fb107da9e8ded6d82e63e1505d57497e95804e",
+      "encoded_sha256": "c319946e03d6741817fdd849c4ed1d84134d3352598eed8496b43dca527f9251",
+      "rgb_sha256": "e19fe52a338ee47cdbe90d6e62fb107da9e8ded6d82e63e1505d57497e95804e"
+    },
+    {
+      "case": 7,
+      "width": 8,
+      "height": 3,
+      "levels": 1,
+      "block": [
+        32,
+        4
+      ],
+      "tile": [
+        4,
+        4
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "e19fe52a338ee47cdbe90d6e62fb107da9e8ded6d82e63e1505d57497e95804e",
+      "encoded_sha256": "8ffd36c6e4eb8d379a72843713c5048053c88f1d5b1d1866c2d0b87ce6538363",
+      "rgb_sha256": "e19fe52a338ee47cdbe90d6e62fb107da9e8ded6d82e63e1505d57497e95804e"
+    },
+    {
+      "case": 8,
+      "width": 36,
+      "height": 24,
+      "levels": 2,
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        12,
+        8
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "fed6a2d36ad64508654238ff8dd8544e36d514f115fecaf9113fab0653deb453",
+      "encoded_sha256": "ff7ab61aacd5fd290a5123d0d3aef5a4bddb216c7580bb250cae2ed1c98d0199",
+      "rgb_sha256": "2d7fdff521ac9207f5a716114c5c9743fe4ace4d495c65e79d5f4a33fabb111b"
+    },
+    {
+      "case": 8,
+      "width": 36,
+      "height": 24,
+      "levels": 2,
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        12,
+        8
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "fed6a2d36ad64508654238ff8dd8544e36d514f115fecaf9113fab0653deb453",
+      "encoded_sha256": "45fc1471d797a29bc584ff4a162416fc3c62e6ab1927e7ab6e0873a8a1fb033c",
+      "rgb_sha256": "2d7fdff521ac9207f5a716114c5c9743fe4ace4d495c65e79d5f4a33fabb111b"
+    },
+    {
+      "case": 8,
+      "width": 36,
+      "height": 24,
+      "levels": 2,
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        12,
+        8
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "a09c634cd3fba1068913a3415621edb3413f20b27cb67fc06c304e9efb8c6bf6",
+      "encoded_sha256": "a0488ef304866ef118875805c907f5f4364bd0b9fb7760c60a5a70fef0ca2ae7",
+      "rgb_sha256": "a09c634cd3fba1068913a3415621edb3413f20b27cb67fc06c304e9efb8c6bf6"
+    },
+    {
+      "case": 8,
+      "width": 36,
+      "height": 24,
+      "levels": 2,
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        12,
+        8
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "a09c634cd3fba1068913a3415621edb3413f20b27cb67fc06c304e9efb8c6bf6",
+      "encoded_sha256": "496fdae439faba3bf973c36b177fa71a986d09c30acb26308a7d95bbca8869d3",
+      "rgb_sha256": "a09c634cd3fba1068913a3415621edb3413f20b27cb67fc06c304e9efb8c6bf6"
+    },
+    {
+      "case": 8,
+      "width": 36,
+      "height": 24,
+      "levels": 2,
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        12,
+        8
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "a09c634cd3fba1068913a3415621edb3413f20b27cb67fc06c304e9efb8c6bf6",
+      "encoded_sha256": "7016c54e853f8c390d17164a5b45a0bb17fb575500ea535c73bb7c29312343fc",
+      "rgb_sha256": "a09c634cd3fba1068913a3415621edb3413f20b27cb67fc06c304e9efb8c6bf6"
+    },
+    {
+      "case": 8,
+      "width": 36,
+      "height": 24,
+      "levels": 2,
+      "block": [
+        64,
+        64
+      ],
+      "tile": [
+        12,
+        8
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "a09c634cd3fba1068913a3415621edb3413f20b27cb67fc06c304e9efb8c6bf6",
+      "encoded_sha256": "4414be4b9f2355106dcbc90b3c8949273d20839ea5bb612749eb67af650dd429",
+      "rgb_sha256": "a09c634cd3fba1068913a3415621edb3413f20b27cb67fc06c304e9efb8c6bf6"
+    },
+    {
+      "case": 9,
+      "width": 26,
+      "height": 18,
+      "levels": 3,
+      "block": [
+        256,
+        8
+      ],
+      "tile": [
+        16,
+        24
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d075203b9998c6209097f7810d15e9098cc050e0f2d70d10d378bca085dcb894",
+      "encoded_sha256": "0db5f10646c9362d3d3d9c202e2e71e3ecfd1a966028c084ef70dfea52314e3d",
+      "rgb_sha256": "70c2e395faa7a73b4606fc4f0ad518410583cd77c56bcd80c5030ba0064f872d"
+    },
+    {
+      "case": 9,
+      "width": 26,
+      "height": 18,
+      "levels": 3,
+      "block": [
+        256,
+        8
+      ],
+      "tile": [
+        16,
+        24
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d075203b9998c6209097f7810d15e9098cc050e0f2d70d10d378bca085dcb894",
+      "encoded_sha256": "4001a76703c2b69c70d2d9d3a2f89be0c215f5b0119608ebd9e703fa137441ce",
+      "rgb_sha256": "70c2e395faa7a73b4606fc4f0ad518410583cd77c56bcd80c5030ba0064f872d"
+    },
+    {
+      "case": 9,
+      "width": 26,
+      "height": 18,
+      "levels": 3,
+      "block": [
+        256,
+        8
+      ],
+      "tile": [
+        16,
+        24
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "02bd1a94f9adee37d20d3d77310b01baa9971b7c388d129ebc56445b17fbc444",
+      "encoded_sha256": "0db4c68a2bdafe94ed753b283f237c643f97efd47941c619b09c1a884ccf87eb",
+      "rgb_sha256": "02bd1a94f9adee37d20d3d77310b01baa9971b7c388d129ebc56445b17fbc444"
+    },
+    {
+      "case": 9,
+      "width": 26,
+      "height": 18,
+      "levels": 3,
+      "block": [
+        256,
+        8
+      ],
+      "tile": [
+        16,
+        24
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "02bd1a94f9adee37d20d3d77310b01baa9971b7c388d129ebc56445b17fbc444",
+      "encoded_sha256": "842a7628074b318e9480d4343b4f34f326d0b493ebd9e24246b4f21c5508ad50",
+      "rgb_sha256": "02bd1a94f9adee37d20d3d77310b01baa9971b7c388d129ebc56445b17fbc444"
+    },
+    {
+      "case": 9,
+      "width": 26,
+      "height": 18,
+      "levels": 3,
+      "block": [
+        256,
+        8
+      ],
+      "tile": [
+        16,
+        24
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "02bd1a94f9adee37d20d3d77310b01baa9971b7c388d129ebc56445b17fbc444",
+      "encoded_sha256": "c9043562d698dc7bb945881bbc79f116ba8e1929b7e44107c0180ce4707ec33e",
+      "rgb_sha256": "02bd1a94f9adee37d20d3d77310b01baa9971b7c388d129ebc56445b17fbc444"
+    },
+    {
+      "case": 9,
+      "width": 26,
+      "height": 18,
+      "levels": 3,
+      "block": [
+        256,
+        8
+      ],
+      "tile": [
+        16,
+        24
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "02bd1a94f9adee37d20d3d77310b01baa9971b7c388d129ebc56445b17fbc444",
+      "encoded_sha256": "6c2b6e73da2fd80cd8336147f9b41093a9dfc012a83574ca5922467f2a1e7b6b",
+      "rgb_sha256": "02bd1a94f9adee37d20d3d77310b01baa9971b7c388d129ebc56445b17fbc444"
+    },
+    {
+      "case": 10,
+      "width": 32,
+      "height": 72,
+      "levels": 4,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        16,
+        48
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d63ad244f09db89e21fd30a9973f5bb0cb4ca1bd908cc8d6d77297832ece6fb0",
+      "encoded_sha256": "b3a14863d07a3661be07f15b953bc7bf9a716fe8d63dfa61730e39b4002e124c",
+      "rgb_sha256": "111d0f9a6f594121f0139a1aa32cdaed8b959dee2ab8cefb73a64fb54adabc95"
+    },
+    {
+      "case": 10,
+      "width": 32,
+      "height": 72,
+      "levels": 4,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        16,
+        48
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d63ad244f09db89e21fd30a9973f5bb0cb4ca1bd908cc8d6d77297832ece6fb0",
+      "encoded_sha256": "456c296d87afb4571b5868dfb32d80855f7819a8446bd3bfbc68c8d6d9d1b988",
+      "rgb_sha256": "111d0f9a6f594121f0139a1aa32cdaed8b959dee2ab8cefb73a64fb54adabc95"
+    },
+    {
+      "case": 10,
+      "width": 32,
+      "height": 72,
+      "levels": 4,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        16,
+        48
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "48990409099ff2be1e0e16c5cf7f2c6e3245f89f6118da4e7f0d5c1ce4673b11",
+      "encoded_sha256": "ed8319f30408c18774096ff3fd0779b93c696a337fd691adb9c0109e5115573c",
+      "rgb_sha256": "48990409099ff2be1e0e16c5cf7f2c6e3245f89f6118da4e7f0d5c1ce4673b11"
+    },
+    {
+      "case": 10,
+      "width": 32,
+      "height": 72,
+      "levels": 4,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        16,
+        48
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "48990409099ff2be1e0e16c5cf7f2c6e3245f89f6118da4e7f0d5c1ce4673b11",
+      "encoded_sha256": "482e1446034f9e17490c288d887be123b1d0e08e9f41e4e34bad53f9ac3b4768",
+      "rgb_sha256": "48990409099ff2be1e0e16c5cf7f2c6e3245f89f6118da4e7f0d5c1ce4673b11"
+    },
+    {
+      "case": 10,
+      "width": 32,
+      "height": 72,
+      "levels": 4,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        16,
+        48
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "48990409099ff2be1e0e16c5cf7f2c6e3245f89f6118da4e7f0d5c1ce4673b11",
+      "encoded_sha256": "942b488d01f9ac8b2ec94f846c659ec5bff57a693b535dbca387fdcc8b74b89d",
+      "rgb_sha256": "48990409099ff2be1e0e16c5cf7f2c6e3245f89f6118da4e7f0d5c1ce4673b11"
+    },
+    {
+      "case": 10,
+      "width": 32,
+      "height": 72,
+      "levels": 4,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        16,
+        48
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "48990409099ff2be1e0e16c5cf7f2c6e3245f89f6118da4e7f0d5c1ce4673b11",
+      "encoded_sha256": "fc83ec70cab472737661a432f5dff9da50076bc83aa9568794895c1bff9a1403",
+      "rgb_sha256": "48990409099ff2be1e0e16c5cf7f2c6e3245f89f6118da4e7f0d5c1ce4673b11"
+    },
+    {
+      "case": 11,
+      "width": 128,
+      "height": 184,
+      "levels": 5,
+      "block": [
+        16,
+        64
+      ],
+      "tile": [
+        64,
+        96
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b6eca3472a622964eb34e07e9068c4a857b4c4d717a546a7b202f5a80cab83dc",
+      "encoded_sha256": "904823f2c34096395b6af5206ddbd1b1401f5e6a1836af494ff9ab52f71fe919",
+      "rgb_sha256": "8f3ac17dd16343873dc5b3d71d144cb2d0065898cf888a0d2d5d47508a30ebf1"
+    },
+    {
+      "case": 11,
+      "width": 128,
+      "height": 184,
+      "levels": 5,
+      "block": [
+        16,
+        64
+      ],
+      "tile": [
+        64,
+        96
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b6eca3472a622964eb34e07e9068c4a857b4c4d717a546a7b202f5a80cab83dc",
+      "encoded_sha256": "9750579064a3ec52a9e0200547859dcad176e5b13ea3c67b758431cb13cfde9d",
+      "rgb_sha256": "8f3ac17dd16343873dc5b3d71d144cb2d0065898cf888a0d2d5d47508a30ebf1"
+    },
+    {
+      "case": 11,
+      "width": 128,
+      "height": 184,
+      "levels": 5,
+      "block": [
+        16,
+        64
+      ],
+      "tile": [
+        64,
+        96
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "5a64a97fa7d6ec130048bb905a422a8a0c069c6128678a12c3d0616e8afcc8ba",
+      "encoded_sha256": "7d7a26eeea86e2b8cf6061a99edf8e6450419b25404ce8c269001ae05180dfca",
+      "rgb_sha256": "5a64a97fa7d6ec130048bb905a422a8a0c069c6128678a12c3d0616e8afcc8ba"
+    },
+    {
+      "case": 11,
+      "width": 128,
+      "height": 184,
+      "levels": 5,
+      "block": [
+        16,
+        64
+      ],
+      "tile": [
+        64,
+        96
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "5a64a97fa7d6ec130048bb905a422a8a0c069c6128678a12c3d0616e8afcc8ba",
+      "encoded_sha256": "d6ee6cb27510511aea71fc1b5792363c69cf9b068be9e38d7af609dd0bbcc892",
+      "rgb_sha256": "5a64a97fa7d6ec130048bb905a422a8a0c069c6128678a12c3d0616e8afcc8ba"
+    },
+    {
+      "case": 11,
+      "width": 128,
+      "height": 184,
+      "levels": 5,
+      "block": [
+        16,
+        64
+      ],
+      "tile": [
+        64,
+        96
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "5a64a97fa7d6ec130048bb905a422a8a0c069c6128678a12c3d0616e8afcc8ba",
+      "encoded_sha256": "efdfbd523663b5605772059adaaf9997897f429a36cb0348729ed34c91f3f29b",
+      "rgb_sha256": "5a64a97fa7d6ec130048bb905a422a8a0c069c6128678a12c3d0616e8afcc8ba"
+    },
+    {
+      "case": 11,
+      "width": 128,
+      "height": 184,
+      "levels": 5,
+      "block": [
+        16,
+        64
+      ],
+      "tile": [
+        64,
+        96
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "5a64a97fa7d6ec130048bb905a422a8a0c069c6128678a12c3d0616e8afcc8ba",
+      "encoded_sha256": "d0030fe62e1196bd70efd9f3b5285f69a30f6c6d75ef9effff3ce44da2fa1826",
+      "rgb_sha256": "5a64a97fa7d6ec130048bb905a422a8a0c069c6128678a12c3d0616e8afcc8ba"
+    },
+    {
+      "case": 12,
+      "width": 8,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        8,
+        512
+      ],
+      "tile": [
+        3,
+        1
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "cfbe97a84befe0a12a5a4c62512dc4353d666ad80f9298e445268deb7c24a11e",
+      "encoded_sha256": "359e7851a9805874caa98446da22bb5b5928c43fbde2c1213cd05ea6c0889db8",
+      "rgb_sha256": "39290b8988f9889d998db809fb36a6701caf175bf787529430c1a745e4f8bb4a"
+    },
+    {
+      "case": 12,
+      "width": 8,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        8,
+        512
+      ],
+      "tile": [
+        3,
+        1
+      ],
+      "tile_count": 9,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "cfbe97a84befe0a12a5a4c62512dc4353d666ad80f9298e445268deb7c24a11e",
+      "encoded_sha256": "ae1bd85095b3b5915b64cdfd04d2b1e46422d14ea175898561cddbc415a6f367",
+      "rgb_sha256": "39290b8988f9889d998db809fb36a6701caf175bf787529430c1a745e4f8bb4a"
+    },
+    {
+      "case": 12,
+      "width": 8,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        8,
+        512
+      ],
+      "tile": [
+        3,
+        1
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "631f88f060259c93cf3ef3fd59c439e40d7bf23663cf2fc5c5e81c07973aee10",
+      "encoded_sha256": "d8b55d134746cabd4f4a7847785efaff043ddcd3cac99eb60dd43039e5c48bba",
+      "rgb_sha256": "631f88f060259c93cf3ef3fd59c439e40d7bf23663cf2fc5c5e81c07973aee10"
+    },
+    {
+      "case": 12,
+      "width": 8,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        8,
+        512
+      ],
+      "tile": [
+        3,
+        1
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "631f88f060259c93cf3ef3fd59c439e40d7bf23663cf2fc5c5e81c07973aee10",
+      "encoded_sha256": "794650fe534c800e8a9721e6dbcd060a2658ec0ad2ce28453e1998f57dd1a355",
+      "rgb_sha256": "631f88f060259c93cf3ef3fd59c439e40d7bf23663cf2fc5c5e81c07973aee10"
+    },
+    {
+      "case": 12,
+      "width": 8,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        8,
+        512
+      ],
+      "tile": [
+        3,
+        1
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "631f88f060259c93cf3ef3fd59c439e40d7bf23663cf2fc5c5e81c07973aee10",
+      "encoded_sha256": "f4bd202b5d994d99f2107e6ff1371b9191a1965bb635a31814cd8c34b0da7c69",
+      "rgb_sha256": "631f88f060259c93cf3ef3fd59c439e40d7bf23663cf2fc5c5e81c07973aee10"
+    },
+    {
+      "case": 12,
+      "width": 8,
+      "height": 3,
+      "levels": 0,
+      "block": [
+        8,
+        512
+      ],
+      "tile": [
+        3,
+        1
+      ],
+      "tile_count": 9,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "631f88f060259c93cf3ef3fd59c439e40d7bf23663cf2fc5c5e81c07973aee10",
+      "encoded_sha256": "de3236c70ce7b447f6bf7423810545b1795acc01cdf060b07ea0c94aa2060b87",
+      "rgb_sha256": "631f88f060259c93cf3ef3fd59c439e40d7bf23663cf2fc5c5e81c07973aee10"
+    },
+    {
+      "case": 13,
+      "width": 12,
+      "height": 4,
+      "levels": 1,
+      "block": [
+        8,
+        64
+      ],
+      "tile": [
+        6,
+        6
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "b655cbb685357bea530929bda1b27f21018df7022ecc48c07175438b1a674858",
+      "encoded_sha256": "de8335f59c3dea7c8e7996bb51a45fff54d5855faf030ad91ac9b9454a4d8efa",
+      "rgb_sha256": "13d51e40428c298408b444123f9e7dbbf4761ca550ceee67eef7f3d18d04b588"
+    },
+    {
+      "case": 13,
+      "width": 12,
+      "height": 4,
+      "levels": 1,
+      "block": [
+        8,
+        64
+      ],
+      "tile": [
+        6,
+        6
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "b655cbb685357bea530929bda1b27f21018df7022ecc48c07175438b1a674858",
+      "encoded_sha256": "5e0cbd3642cb75bb097b153203f6738156b950ce0a0eeb1020ab8a7f4eb1f196",
+      "rgb_sha256": "13d51e40428c298408b444123f9e7dbbf4761ca550ceee67eef7f3d18d04b588"
+    },
+    {
+      "case": 13,
+      "width": 12,
+      "height": 4,
+      "levels": 1,
+      "block": [
+        8,
+        64
+      ],
+      "tile": [
+        6,
+        6
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "da38bef4104ca7b7e8fb671d5cd9f055e4de686f5a55cbfbaf4531472796354c",
+      "encoded_sha256": "ad96d058ff3b4a82e5015606119be8c1d06fdac0e423651840d74cdef6496190",
+      "rgb_sha256": "da38bef4104ca7b7e8fb671d5cd9f055e4de686f5a55cbfbaf4531472796354c"
+    },
+    {
+      "case": 13,
+      "width": 12,
+      "height": 4,
+      "levels": 1,
+      "block": [
+        8,
+        64
+      ],
+      "tile": [
+        6,
+        6
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "da38bef4104ca7b7e8fb671d5cd9f055e4de686f5a55cbfbaf4531472796354c",
+      "encoded_sha256": "7a63ec4d66837f12510949109f5d679d0ae9c8f9a747804db7668dd5e2c7f893",
+      "rgb_sha256": "da38bef4104ca7b7e8fb671d5cd9f055e4de686f5a55cbfbaf4531472796354c"
+    },
+    {
+      "case": 13,
+      "width": 12,
+      "height": 4,
+      "levels": 1,
+      "block": [
+        8,
+        64
+      ],
+      "tile": [
+        6,
+        6
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "da38bef4104ca7b7e8fb671d5cd9f055e4de686f5a55cbfbaf4531472796354c",
+      "encoded_sha256": "6b540c04b6a80ba5651971da820b19cd2bcea65876a222f643ca0cb4228c7556",
+      "rgb_sha256": "da38bef4104ca7b7e8fb671d5cd9f055e4de686f5a55cbfbaf4531472796354c"
+    },
+    {
+      "case": 13,
+      "width": 12,
+      "height": 4,
+      "levels": 1,
+      "block": [
+        8,
+        64
+      ],
+      "tile": [
+        6,
+        6
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "da38bef4104ca7b7e8fb671d5cd9f055e4de686f5a55cbfbaf4531472796354c",
+      "encoded_sha256": "a17953a8c6375e0d1a579d7ad43aff24206b1e88aea3f033a044a1ffa572dcee",
+      "rgb_sha256": "da38bef4104ca7b7e8fb671d5cd9f055e4de686f5a55cbfbaf4531472796354c"
+    },
+    {
+      "case": 14,
+      "width": 19,
+      "height": 16,
+      "levels": 2,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        12,
+        12
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d2fe509257ca1db704446d8f131f7d35f4980e2ab7884dcc84e3d06e30a172d4",
+      "encoded_sha256": "68a7fbcbc451e75007754c5f7f59688f4b9fb847831913eebeea738315600d7d",
+      "rgb_sha256": "b75c645d022d5ff1c5f4aa476d9b51981b344e0cad0454b790145e9f56b94614"
+    },
+    {
+      "case": 14,
+      "width": 19,
+      "height": 16,
+      "levels": 2,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        12,
+        12
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d2fe509257ca1db704446d8f131f7d35f4980e2ab7884dcc84e3d06e30a172d4",
+      "encoded_sha256": "3c95c0ccdd45f82dde11286fd88d124205fa2c6d1352dac3ad6707e610668199",
+      "rgb_sha256": "b75c645d022d5ff1c5f4aa476d9b51981b344e0cad0454b790145e9f56b94614"
+    },
+    {
+      "case": 14,
+      "width": 19,
+      "height": 16,
+      "levels": 2,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        12,
+        12
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "25fe03c7f0ddd8d9384432ce5e16008caf25f8be3aabb01166781273ae630aa0",
+      "encoded_sha256": "fa5164da0293d189029ea8f8a4d4ebfb854537fd83250893698b2c21bde89df2",
+      "rgb_sha256": "25fe03c7f0ddd8d9384432ce5e16008caf25f8be3aabb01166781273ae630aa0"
+    },
+    {
+      "case": 14,
+      "width": 19,
+      "height": 16,
+      "levels": 2,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        12,
+        12
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "25fe03c7f0ddd8d9384432ce5e16008caf25f8be3aabb01166781273ae630aa0",
+      "encoded_sha256": "c5a8fec54c7f345c75b64777fe4058f990bde5ab859f0f9bcf39e4410301cf10",
+      "rgb_sha256": "25fe03c7f0ddd8d9384432ce5e16008caf25f8be3aabb01166781273ae630aa0"
+    },
+    {
+      "case": 14,
+      "width": 19,
+      "height": 16,
+      "levels": 2,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        12,
+        12
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "25fe03c7f0ddd8d9384432ce5e16008caf25f8be3aabb01166781273ae630aa0",
+      "encoded_sha256": "a0d313b88c3be008ac92f2b0ae22ae874ff04c96b1fef3b9081908115e20e3ff",
+      "rgb_sha256": "25fe03c7f0ddd8d9384432ce5e16008caf25f8be3aabb01166781273ae630aa0"
+    },
+    {
+      "case": 14,
+      "width": 19,
+      "height": 16,
+      "levels": 2,
+      "block": [
+        32,
+        64
+      ],
+      "tile": [
+        12,
+        12
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "25fe03c7f0ddd8d9384432ce5e16008caf25f8be3aabb01166781273ae630aa0",
+      "encoded_sha256": "40aa4cfd0170fa08888a1ec4270b89d740d642235c0912032d2064e95c2364f1",
+      "rgb_sha256": "25fe03c7f0ddd8d9384432ce5e16008caf25f8be3aabb01166781273ae630aa0"
+    },
+    {
+      "case": 15,
+      "width": 42,
+      "height": 39,
+      "levels": 3,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "abe05c98bf4e0ed516d37986237fa2926bdd8757f38322fd09cc34e0aadc8184",
+      "encoded_sha256": "b1e837e6d8c6b5ef655da10fcd7a7ff8bde6084d01081ad9cffd0d8bc0b44901",
+      "rgb_sha256": "12f67b811c35235847a01b0f57baecfb48d0fc0649e0f8c586a534e22e1c5626"
+    },
+    {
+      "case": 15,
+      "width": 42,
+      "height": 39,
+      "levels": 3,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 4,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "abe05c98bf4e0ed516d37986237fa2926bdd8757f38322fd09cc34e0aadc8184",
+      "encoded_sha256": "bdee24b5e64f4eb4961016308f64606124c6834f1b2d78dda2392d2ba84eb846",
+      "rgb_sha256": "12f67b811c35235847a01b0f57baecfb48d0fc0649e0f8c586a534e22e1c5626"
+    },
+    {
+      "case": 15,
+      "width": 42,
+      "height": 39,
+      "levels": 3,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "cb0d24b057eb10e19b76302fe96fd62a9c5ca1ee38c9df9466102df35c4d64bc",
+      "encoded_sha256": "29103d21062709cd8fe74e8b1138b85b3b0bd467759daeae52646865055d9fa2",
+      "rgb_sha256": "cb0d24b057eb10e19b76302fe96fd62a9c5ca1ee38c9df9466102df35c4d64bc"
+    },
+    {
+      "case": 15,
+      "width": 42,
+      "height": 39,
+      "levels": 3,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "cb0d24b057eb10e19b76302fe96fd62a9c5ca1ee38c9df9466102df35c4d64bc",
+      "encoded_sha256": "8834c63149aa8f6b3d91572d6c4d5b5eabbb8a42c6a178aabd1f3b3b87305464",
+      "rgb_sha256": "cb0d24b057eb10e19b76302fe96fd62a9c5ca1ee38c9df9466102df35c4d64bc"
+    },
+    {
+      "case": 15,
+      "width": 42,
+      "height": 39,
+      "levels": 3,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "cb0d24b057eb10e19b76302fe96fd62a9c5ca1ee38c9df9466102df35c4d64bc",
+      "encoded_sha256": "5648c934a033224838a974e16cb30f4018e5a109fb46cb08b4a8dc6b48302653",
+      "rgb_sha256": "cb0d24b057eb10e19b76302fe96fd62a9c5ca1ee38c9df9466102df35c4d64bc"
+    },
+    {
+      "case": 15,
+      "width": 42,
+      "height": 39,
+      "levels": 3,
+      "block": [
+        8,
+        256
+      ],
+      "tile": [
+        24,
+        24
+      ],
+      "tile_count": 4,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "cb0d24b057eb10e19b76302fe96fd62a9c5ca1ee38c9df9466102df35c4d64bc",
+      "encoded_sha256": "db8b07af41bd8a48a29e959db7c47c4d2827baa2588b481dac1dff145b6bd6b8",
+      "rgb_sha256": "cb0d24b057eb10e19b76302fe96fd62a9c5ca1ee38c9df9466102df35c4d64bc"
+    },
+    {
+      "case": 16,
+      "width": 54,
+      "height": 143,
+      "levels": 4,
+      "block": [
+        256,
+        4
+      ],
+      "tile": [
+        32,
+        48
+      ],
+      "tile_count": 6,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d8c35de9e65e1ce23acabf877d0910db78ac234bf622fe75b7117543047e0210",
+      "encoded_sha256": "504c79e39c31afaf6fb414911afd4859c4e209d959ed4fb5116e54452e1a5f6e",
+      "rgb_sha256": "a159b2841592397956599dadaddc6028ae5b3ab5e6205b1c5c6b4341fe3a6604"
+    },
+    {
+      "case": 16,
+      "width": 54,
+      "height": 143,
+      "levels": 4,
+      "block": [
+        256,
+        4
+      ],
+      "tile": [
+        32,
+        48
+      ],
+      "tile_count": 6,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d8c35de9e65e1ce23acabf877d0910db78ac234bf622fe75b7117543047e0210",
+      "encoded_sha256": "53ddcae715a365540e3d6871e4b358a0f6094bbb2124c4dc7445a63ab731af09",
+      "rgb_sha256": "a159b2841592397956599dadaddc6028ae5b3ab5e6205b1c5c6b4341fe3a6604"
+    },
+    {
+      "case": 16,
+      "width": 54,
+      "height": 143,
+      "levels": 4,
+      "block": [
+        256,
+        4
+      ],
+      "tile": [
+        32,
+        48
+      ],
+      "tile_count": 6,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "339e3442ef0d8b6da6627bcf73753503c2001f78785b14ee827d008708da2e0e",
+      "encoded_sha256": "2181431cb4f44374db36cc1b82921f950e277fb46229084eabf5681a2b07cf4b",
+      "rgb_sha256": "339e3442ef0d8b6da6627bcf73753503c2001f78785b14ee827d008708da2e0e"
+    },
+    {
+      "case": 16,
+      "width": 54,
+      "height": 143,
+      "levels": 4,
+      "block": [
+        256,
+        4
+      ],
+      "tile": [
+        32,
+        48
+      ],
+      "tile_count": 6,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "339e3442ef0d8b6da6627bcf73753503c2001f78785b14ee827d008708da2e0e",
+      "encoded_sha256": "c60e15b12e79c76dcae48dd586d0182097001833b231eb4608e321fd8afa4db2",
+      "rgb_sha256": "339e3442ef0d8b6da6627bcf73753503c2001f78785b14ee827d008708da2e0e"
+    },
+    {
+      "case": 16,
+      "width": 54,
+      "height": 143,
+      "levels": 4,
+      "block": [
+        256,
+        4
+      ],
+      "tile": [
+        32,
+        48
+      ],
+      "tile_count": 6,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "339e3442ef0d8b6da6627bcf73753503c2001f78785b14ee827d008708da2e0e",
+      "encoded_sha256": "040d1c5d9083556ccf5bd3c9e43e8e25da4dd1461654c1f26e3fb1b64abdfbf2",
+      "rgb_sha256": "339e3442ef0d8b6da6627bcf73753503c2001f78785b14ee827d008708da2e0e"
+    },
+    {
+      "case": 16,
+      "width": 54,
+      "height": 143,
+      "levels": 4,
+      "block": [
+        256,
+        4
+      ],
+      "tile": [
+        32,
+        48
+      ],
+      "tile_count": 6,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "339e3442ef0d8b6da6627bcf73753503c2001f78785b14ee827d008708da2e0e",
+      "encoded_sha256": "d15c722c7844527885e62ddfa19e3103348175fa677b69b6e7fee6cc10d78dd7",
+      "rgb_sha256": "339e3442ef0d8b6da6627bcf73753503c2001f78785b14ee827d008708da2e0e"
+    },
+    {
+      "case": 17,
+      "width": 62,
+      "height": 64,
+      "levels": 5,
+      "block": [
+        16,
+        128
+      ],
+      "tile": [
+        64,
+        32
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "eb7147c88404ad81c208b7530346fae8739947e7036b92f4998580821e477eee",
+      "encoded_sha256": "2d486159ed68ea7e681464979543a8a33079f33d98593c06a77486e8ebf1ddc3",
+      "rgb_sha256": "6d7408feb3c336d4340f3b5a24cc9f464295b896c6f5470621731c10a931be4e"
+    },
+    {
+      "case": 17,
+      "width": 62,
+      "height": 64,
+      "levels": 5,
+      "block": [
+        16,
+        128
+      ],
+      "tile": [
+        64,
+        32
+      ],
+      "tile_count": 2,
+      "components": 1,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "eb7147c88404ad81c208b7530346fae8739947e7036b92f4998580821e477eee",
+      "encoded_sha256": "4c2a8e53ba951935c7e428364c9a009ae56dee268fb615bdc4968b8297d3b870",
+      "rgb_sha256": "6d7408feb3c336d4340f3b5a24cc9f464295b896c6f5470621731c10a931be4e"
+    },
+    {
+      "case": 17,
+      "width": 62,
+      "height": 64,
+      "levels": 5,
+      "block": [
+        16,
+        128
+      ],
+      "tile": [
+        64,
+        32
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "j2k",
+      "source_sha256": "d2ddf3d1a38e4132a39d6c6e7d739cebc38df9455e9a8f955d1c349623f2bc9c",
+      "encoded_sha256": "92666dfccea87c0627c2fea3568df2e004b41ec0858872af5fad69b3b4bca7a3",
+      "rgb_sha256": "d2ddf3d1a38e4132a39d6c6e7d739cebc38df9455e9a8f955d1c349623f2bc9c"
+    },
+    {
+      "case": 17,
+      "width": 62,
+      "height": 64,
+      "levels": 5,
+      "block": [
+        16,
+        128
+      ],
+      "tile": [
+        64,
+        32
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 0,
+      "container": "jp2",
+      "source_sha256": "d2ddf3d1a38e4132a39d6c6e7d739cebc38df9455e9a8f955d1c349623f2bc9c",
+      "encoded_sha256": "e008b9008e957abd9d7a112b7bb696d95a05898a96e83abd46a667ae79f2b803",
+      "rgb_sha256": "d2ddf3d1a38e4132a39d6c6e7d739cebc38df9455e9a8f955d1c349623f2bc9c"
+    },
+    {
+      "case": 17,
+      "width": 62,
+      "height": 64,
+      "levels": 5,
+      "block": [
+        16,
+        128
+      ],
+      "tile": [
+        64,
+        32
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "j2k",
+      "source_sha256": "d2ddf3d1a38e4132a39d6c6e7d739cebc38df9455e9a8f955d1c349623f2bc9c",
+      "encoded_sha256": "bd875b2d1f61b0c96dc84625d28ab0e96e2603b3a3b45a9c0d37c1da3aab46a7",
+      "rgb_sha256": "d2ddf3d1a38e4132a39d6c6e7d739cebc38df9455e9a8f955d1c349623f2bc9c"
+    },
+    {
+      "case": 17,
+      "width": 62,
+      "height": 64,
+      "levels": 5,
+      "block": [
+        16,
+        128
+      ],
+      "tile": [
+        64,
+        32
+      ],
+      "tile_count": 2,
+      "components": 3,
+      "mct": 1,
+      "container": "jp2",
+      "source_sha256": "d2ddf3d1a38e4132a39d6c6e7d739cebc38df9455e9a8f955d1c349623f2bc9c",
+      "encoded_sha256": "cb05845cbc4fecb663fcdd4d062205fc23f19176f2fceaec43094ea8ba265f27",
+      "rgb_sha256": "d2ddf3d1a38e4132a39d6c6e7d739cebc38df9455e9a8f955d1c349623f2bc9c"
+    }
+  ]
+}

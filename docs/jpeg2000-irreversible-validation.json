@@ -1,0 +1,451 @@
+{
+  "status": "PASS all selected unsigned8bit PR review gates; no remaining blocker",
+  "base": "3dcd7dd8a49c665675dcddec0c77ff04621d8e2d",
+  "closing_source_sha256": {
+    "jpeg2000.rs": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+    "jpeg2000_tier1.rs": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb",
+    "jpeg2000_irreversible.rs": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9"
+  },
+  "closing_changes": "Only removal of unnecessary i32 cast in pre-existing unit test from initial snapshot; runtime Tier1/irreversible unchanged. Exact diff archived.",
+  "primary_source": "https://www.itu.int/rec/dologin_pub.asp?id=T-REC-T.800-200208-S!!PDF-E&lang=e&type=items",
+  "primary_sections": [
+    "E-2..6 / coefficient precision, scalar quantization, reconstruction",
+    "F.3.6 / singleton parity",
+    "F-7 and TableF4 / normalization and lifting",
+    "G-12..14 / inverse ICT"
+  ],
+  "checks": {
+    "quantization": "Exact styles1/2 lengths; derived epsilon checked underflow; guard+exponent impliesMb1..24; sampleprecision8 and0/1/2bandgains. DefaultQCD validation occurs before everyQCC override, eachQCC independentlyparsed.",
+    "tier1": "MIDPOINTconst isolates originalreversible path; last_plane updates on significance and each actual refinement bit, including zero bits. No following pass executes once requested passes reached; bounds1..3P-2. Doubled24-plane sign-magnitude <=2^25-1 fitsi32.",
+    "synthesis": "Packedlow/high parity indices valid for all lengths; n<=1 handlesevenidentity/oddhalf beforeK. Whole-sample reflected neighbors preserveparity. 5level localreferenceceil geometry bounded bySIZ; finalfloatfinite check precedes RGBA allocation/callback.",
+    "resource_accounting": "Packetdescriptors/T1 andfloatingplanes counted as distinct livephases; floatpeak<=12*C*tileA+16*tileA+4*wholeA. Tree/header/descriptor growth conservativebound recorded separately. 64*C*wholeA+8192 leaves margin; joinedpayload checkedbeforeallocation and addedseparately. Inputbuffer coveredby independentinput_bytesbudget.",
+    "API_and_legacy": "No publicsignature change. Reversible bit-depth16/fullpass contracts preserved; floatpath onlyCOD transform0. Newdequant/synthesis errors remain before drawerinit. Genericgrid subbands extraction matches oldlogic; parsed lengths guard allSlices."
+  },
+  "standalone_small_repros": {
+    "legacy_exact": 192,
+    "full_midpoint": 192,
+    "plane_rescaling": 12,
+    "partial_pass_bounds": 1728,
+    "invalid_passes_rejected": 3,
+    "invalid_planes_rejected": 1,
+    "source": "tier1_invariants.rs",
+    "log": "tier1-invariants.log",
+    "scope": "SyntheticboundedMQ segment, not another pixelmatrix/benchmark or proof of full entropy conformance."
+  },
+  "critical_major_findings": [],
+  "limitations": [
+    "Static review and small invariant repro do not prove every malformed input is safe or all9/7outputs always within1sample of everyoracle.",
+    "Independent fixture production and production-source review both performed by this agent; production implementation owned byroot.",
+    "Full workspace/WASM/random/benchmark gates owned byroot and were not rerun for this independent review."
+  ],
+  "evidence_sha256": {
+    "source-snapshot.json": "5f222982dccc7ebdb2492e7ec0010923188a26071d94836afe26c1055f926aa9",
+    "production-diff.patch": "e97b9e2eb257207170431c1414c2c6e0f60642a9a09d9960c416f2be5359425b",
+    "closing-source-diff.patch": "8cfbb4945797a71d5a851d7424d6ea7692f4185de95b99069713fc5a8cf02b6d",
+    "tier1_invariants.rs": "5547eec9f454757076bf83c0976a4ff45f9a2c44ce247cf5cf868c1e06e86f3d",
+    "tier1-invariants.log": "c2be5f1e358e9c650f398b05c8d5af3b260b7c70320c18d7061faaddc6ee02b0",
+    "arithmetic-bounds.json": "2ea1915b145c18c190b310872935076ec3a69679af2ef9c279709da7b7911233"
+  },
+  "workspace_regression": {
+    "passed": 372,
+    "failed": 0,
+    "ignored": 12,
+    "targets": 43
+  },
+  "feature_off_passed": 15,
+  "fixed_base_inputs": 214,
+  "deep_derived_and_differing_qcc_variants": 42,
+  "negative_inputs": 36,
+  "pending_gates": [],
+  "completed_gates": [
+    "workspace/featureoff/clippy",
+    "fixed256+negative36/API/callback/limit",
+    "seeded24geometry144comparison",
+    "corruption3000debug",
+    "minimal/defaultactualWASM1796+174reject",
+    "display9",
+    "legacy/stablepairedperformance+targetedrepeat",
+    "cargoverifiedarchive"
+  ],
+  "fixed_metrics": {
+    "cases": 256,
+    "all_passed": true,
+    "maximum_abs_error": 1,
+    "maximum_mae": 0.004329004329004329,
+    "policy": 1,
+    "comparison_target": "OpenJPEG decoded oracle",
+    "tested_head": "d8c56fe5bebab9693768c6aaac4900474ce3faf3",
+    "production_source_sha256": {
+      "jpeg2000_irreversible.rs": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9",
+      "jpeg2000.rs": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+      "jpeg2000_tier1.rs": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb"
+    }
+  },
+  "random_metrics": {
+    "seed": 314913736022,
+    "requested_geometries": 24,
+    "comparisons": 144,
+    "encoder_failures": [],
+    "all_passed": true,
+    "max_abs_error_policy": 1,
+    "comparison_target": "OpenJPEG decoded oracle",
+    "source_quality_is_decoder_error": false,
+    "versions": {
+      "pillow": "12.3.0",
+      "openjpeg": "2.5.4"
+    },
+    "production_source_sha256": {
+      "jpeg2000_irreversible.rs": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9",
+      "jpeg2000.rs": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+      "jpeg2000_tier1.rs": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb"
+    },
+    "maximum_observed_abs_error": 1,
+    "maximum_per_input_mae": 0.006493506493506494
+  },
+  "package": {
+    "bytes": 441822,
+    "sha256": "73deeb191b46642485b790fce11276ad00bfcc672931abf36c505df313a6e999",
+    "files": 196,
+    "cargo_archive_verification": true,
+    "production_source_bytes_match": true,
+    "oracle_corpus_excluded": true,
+    "vcs": {
+      "git": {
+        "sha1": "d8c56fe5bebab9693768c6aaac4900474ce3faf3"
+      },
+      "path_in_vcs": "wml2"
+    }
+  },
+  "remaining_blockers": [],
+  "tested_checkpoint": "d8c56fe5bebab9693768c6aaac4900474ce3faf3",
+  "evidence_files": {
+    "docs/jpeg2000-irreversible-arithmetic-bounds.json": "2ea1915b145c18c190b310872935076ec3a69679af2ef9c279709da7b7911233",
+    "docs/jpeg2000-irreversible-benchmark-repeat.json": "565ada10fc9c7f6468785711ef1dca619f132ada54b260c860aff247bc1e59cc",
+    "docs/jpeg2000-irreversible-benchmark.json": "28d4800125f3993287e3411142e225e101f731f7262caeeefdf78b9e9a506316",
+    "docs/jpeg2000-irreversible-corruption.json": "bf4b8fb761a0503c08d7527ae0a43215409395003307c9ced7c4fa0b8d2d721e",
+    "docs/jpeg2000-irreversible-display.json": "60236d0c7047b77e8b95414565eb34e9b8924a592ddcc5e00e2cafe11fce5860",
+    "docs/jpeg2000-irreversible-display.png": "a185eeb1b39e79dfb3d6c5cff87fa365db5f83489694c7bc6f8acb90051232ef",
+    "docs/jpeg2000-irreversible-fixed.json": "576f5a24779e0dd89dc031eda8f169d6cb20166c8f89f4f021ee81fd70f0c0ae",
+    "docs/jpeg2000-irreversible-native.json": "fff9333d28888def122077d7d345698d1b502cb21e854b747ec5f96ba88bec1c",
+    "docs/jpeg2000-irreversible-new-benchmark.json": "1c464218af97f5702fba5f11f0eb808b230fe90fa44fb15886c34502e80cd5c6",
+    "docs/jpeg2000-irreversible-random.json": "949cbe5ada9c6f732d5f2de5a19c66c0d311c236ef303de26c7891ba38b60812",
+    "docs/jpeg2000-irreversible-stable-benchmark-repeat.json": "700f736dbb03330aea7bf67aee8c62291854489216a8b8b46d4e0ee158f34bfe",
+    "docs/jpeg2000-irreversible-stable-benchmark.json": "da978b92a11b4c68c4bc404dc297e1fde10c488dc61e2ff7fe83f36dd22b8fd3",
+    "docs/jpeg2000-irreversible-wasm.json": "d7698864eb69d78074af3401625a484a1f9183c321b48bb8f5f2bfa627907678",
+    "docs/jpeg2000-wasm-runtime.json": "e3059c60388c2f1815c74fa47690743cfbc2e8a151a0c2dd512d07362f86e11b"
+  },
+  "independent_review_status": "PASS no critical/major actionable findings",
+  "scope": "bounded unsigned8bit Gray/RGB, reversible5/3 and irreversible9/7; not full Part1 conformance",
+  "preserved_contract": {
+    "version": "0.0.35",
+    "default_features_unchanged": true,
+    "public_api_unchanged": true,
+    "production_dependencies_unchanged": true,
+    "lossless_pixels_exact": true,
+    "high_depth_implemented": false
+  },
+  "actual_wasm": {
+    "minimal": {
+      "runtime": "v24.19.0",
+      "fixtures": 1796,
+      "rejected_fixtures": 174,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 296419328,
+      "git_head": "d8c56fe5bebab9693768c6aaac4900474ce3faf3",
+      "working_tree_dirty": false,
+      "rust_source_sha256": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+      "dispatch_source_sha256": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d",
+      "format_source_sha256": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+      "irreversible_source_sha256": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9",
+      "tier1_source_sha256": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb",
+      "target": "wasm32-unknown-unknown",
+      "default_features": false,
+      "source_exact_fixtures": 1539,
+      "irreversible_oracle_fixtures": 256,
+      "irreversible_max_abs_error_policy": 1,
+      "encoder_compatibility_fixtures": 1,
+      "wasm_sha256": "72ddd593d154929a52f43d0c205b2321e5ab49d6433ff4197d665a8752225143",
+      "checks": [
+        "direct API default metadata aggregation and scope restoration",
+        "RGBA pixels",
+        "dimensions",
+        "exact limits",
+        "short limits",
+        "limit scope restoration",
+        "callbacks",
+        "init/draw abort",
+        "truncation rejected before callbacks",
+        "unsupported and malformed tile/part profiles rejected before callbacks",
+        "late tile framing, missing tile and repaired short packet rejection"
+      ]
+    },
+    "default": {
+      "runtime": "v24.19.0",
+      "fixtures": 1796,
+      "rejected_fixtures": 174,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 296550400,
+      "git_head": "d8c56fe5bebab9693768c6aaac4900474ce3faf3",
+      "working_tree_dirty": false,
+      "rust_source_sha256": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+      "dispatch_source_sha256": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d",
+      "format_source_sha256": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+      "irreversible_source_sha256": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9",
+      "tier1_source_sha256": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb",
+      "target": "wasm32-unknown-unknown",
+      "default_features": true,
+      "source_exact_fixtures": 1539,
+      "irreversible_oracle_fixtures": 256,
+      "irreversible_max_abs_error_policy": 1,
+      "encoder_compatibility_fixtures": 1,
+      "wasm_sha256": "4ba74035ed672c82cc883b65f05e3b9e474ea91f96ed15f9a0965ced7abe4e97",
+      "checks": [
+        "direct API default metadata aggregation and scope restoration",
+        "RGBA pixels",
+        "dimensions",
+        "exact limits",
+        "short limits",
+        "limit scope restoration",
+        "callbacks",
+        "init/draw abort",
+        "truncation rejected before callbacks",
+        "unsupported and malformed tile/part profiles rejected before callbacks",
+        "late tile framing, missing tile and repaired short packet rejection"
+      ]
+    }
+  },
+  "corruption": {
+    "head": "d8c56fe5bebab9693768c6aaac4900474ce3faf3",
+    "source_sha256": {
+      "wml2/src/jpeg2000.rs": "30f16072ef1851829c1267a90c1039c09e20b7d52967e07d340ddd533ae54f10",
+      "wml2/src/jpeg2000_tier1.rs": "41148bc6fa3bb403e898b7f55e30495794288583a2e662a4b47f4095ad832fbb",
+      "wml2/src/jpeg2000_irreversible.rs": "1143c9373c81859e062872fdd30a087c0a7a54c51e70f0e4090071d78bcf77c9",
+      "wml2/src/draw.rs": "80426e5232396948860c8cabed6fd6cb6f24c8a9ca0710b65e3299d2fb1c437d",
+      "wml2/src/decode_guard.rs": "ab2118b0e3d494daf88e97c2dfcad232f338bffa3d789d4d0e5017d350f26035",
+      "wml2/src/util.rs": "499f27a96a7b34bd72a2fd6a83bdebd45a9fcc9564098618631eefc80e5b4373",
+      "wml2/src/lib.rs": "c5544f48ceca9bb58721e9c5d2fbc220af68b5001ca7fefc4db2eab8fefe70cf"
+    },
+    "seed": "b427c83197ae51d3",
+    "fixture_count": 12,
+    "mutation_cases": 3000,
+    "accepted": 743,
+    "rejected": 2257,
+    "panics": 0,
+    "errors_after_initialization": 0,
+    "profile": "Rust1.91 debug; finite input/pixels/expanded/metadata/frame/animation limits",
+    "harness_sha256": "4dd7b4110458c97b460df452d2178dec4b03e4dd9e76fd48a7d5aa41b3749714",
+    "log_sha256": "4117a5e1553ce7a58a7abf11207bfb225f409845d440ec696b1ca24ee3aea47d",
+    "fixture_sha256": {
+      "jp2_irreversible_d0_c1_m0_r2.j2k": "5fe111a12fbc56bf2ca4c99a8721745ebef379f0db70511cc56781decba2fc58",
+      "jp2_irreversible_d0_c3_m0_r4.jp2": "edf125ef62d7b1b0411c8e9c9c6e28e0b3ae59f0f1e1ad43cba0861c8c1b71ce",
+      "jp2_irreversible_d0_c3_m1_r10.j2k": "2572874b7a0af8b4e61f29d0498e0d412764ddbb84aed0aa914dde93376c5f68",
+      "jp2_irreversible_d5_c1_m0_r2_multipart_known.jp2": "0d24aa9bc31cd996dc68ff33efd542179d927a622b7a1a70bfce2b4be3738fc4",
+      "jp2_irreversible_d5_c3_m0_r2_multipart_unknown.j2k": "e7a2f2a6c7f6e039fc8b4aec4969f7869cb57f73a91ea71c96a1eae58b12ea32",
+      "jp2_irreversible_d5_c3_m1_r2_multipart_unknown_terminal_zero.jp2": "971676adb7175879bddfd0fe933775eb766f487a59db71f16231e19693e8852c",
+      "jp2_irreversible_d0_c1_m0_rdefault_rescaled_Mb24.j2k": "708d33cf40894207d6e63379e306e0d8c386525664e51aae279f41e9b9ad9866",
+      "jp2_irreversible_d0_c3_m1_rdefault_rescaled_Mb24.jp2": "b9cfddf94cccf29d69aae9aee1eeae1d041e5dead6b199b44fbf7361ec21753b",
+      "jp2_irreversible_variant_d5_c1_m0_rdefault_derived_deep.jp2": "c2085e035844a6b9241988c3de36e75fc14220d5e826464ccd76e5607a364da4",
+      "jp2_irreversible_variant_d5_c3_m1_rdefault_derived_deep.j2k": "6a087951249f8c91e13a8fbdf0a3da7991e4484ba41c8dd89060df99ca2eeb9e",
+      "jp2_irreversible_variant_d5_c3_m0_rdefault_qcc_c1.jp2": "1a53637b402b900a80b5da31560242144293f08a7b4f655d149d51f8dc451bcd",
+      "jp2_irreversible_variant_d5_c3_m1_rdefault_qcc_c2.j2k": "d6be5cb2f11531c4e3a60fb514a2d5072a62704e7d638ea2369f6a1151b813ee"
+    },
+    "rejection_contract": "Checked by caller-owned ImageBuffer; accepted mutations may be legal alternate images. JP2 box lengths repaired for insert/delete."
+  },
+  "performance": {
+    "conclusion": "No consistent material regression observed in shared-host samples; initial increases retained and not reproduced in targeted repeats. Not a cross-host guarantee.",
+    "initial_suites": {
+      "benchmark.json": [
+        {
+          "case": "Gray16",
+          "wall_us_per_call": {
+            "baseline": 50.18210757121778,
+            "current": 52.585161235031926,
+            "change_percent": 4.788666279916143
+          },
+          "cpu_us_per_call": {
+            "baseline": 50.16152287299425,
+            "current": 52.57065656733442,
+            "change_percent": 4.802752301679392
+          }
+        },
+        {
+          "case": "Gray65",
+          "wall_us_per_call": {
+            "baseline": 1223.1143000578927,
+            "current": 1226.0960565714454,
+            "change_percent": 0.24378396306965477
+          },
+          "cpu_us_per_call": {
+            "baseline": 1220.7293399889063,
+            "current": 1224.6306156405994,
+            "change_percent": 0.3195856381831952
+          }
+        },
+        {
+          "case": "RGB16",
+          "wall_us_per_call": {
+            "baseline": 323.31061086058105,
+            "current": 320.80383604564,
+            "change_percent": -0.77534566782963
+          },
+          "cpu_us_per_call": {
+            "baseline": 322.658106253676,
+            "current": 320.3561393190878,
+            "change_percent": -0.713438432189395
+          }
+        },
+        {
+          "case": "RGB65",
+          "wall_us_per_call": {
+            "baseline": 4038.2889944751637,
+            "current": 4113.08997121088,
+            "change_percent": 1.852293801608873
+          },
+          "cpu_us_per_call": {
+            "baseline": 4033.3499446290116,
+            "current": 4105.325581395347,
+            "change_percent": 1.7845125703060294
+          }
+        },
+        {
+          "case": "Gray256tiles",
+          "wall_us_per_call": {
+            "baseline": 1086.3098413787104,
+            "current": 1270.2632634492766,
+            "change_percent": 16.933789519673148
+          },
+          "cpu_us_per_call": {
+            "baseline": 1083.6095396561268,
+            "current": 1263.4021075984497,
+            "change_percent": 16.592006748055987
+          }
+        },
+        {
+          "case": "RGB9tiles",
+          "wall_us_per_call": {
+            "baseline": 137478.8562258973,
+            "current": 132218.5731349903,
+            "change_percent": -3.826248803134946
+          },
+          "cpu_us_per_call": {
+            "baseline": 137314.79614325074,
+            "current": 132177.20385674931,
+            "change_percent": -3.741470279096326
+          }
+        },
+        {
+          "case": "RGB2oddtiles",
+          "wall_us_per_call": {
+            "baseline": 274.11229306528986,
+            "current": 249.32532818519766,
+            "change_percent": -9.042631617469365
+          },
+          "cpu_us_per_call": {
+            "baseline": 273.34483802603773,
+            "current": 247.99576142900995,
+            "change_percent": -9.27366208196444
+          }
+        }
+      ],
+      "benchmark-stable.json": [
+        {
+          "case": "Gray16",
+          "wall_us_per_call": {
+            "baseline": 55.354254443495634,
+            "current": 66.58089430020831,
+            "change_percent": 20.281439917454904
+          },
+          "cpu_us_per_call": {
+            "baseline": 55.33306756143205,
+            "current": 66.50863204987652,
+            "change_percent": 20.196900300235665
+          }
+        },
+        {
+          "case": "Gray65",
+          "wall_us_per_call": {
+            "baseline": 1277.8808657799282,
+            "current": 1245.3639046029466,
+            "change_percent": -2.544600365162797
+          },
+          "cpu_us_per_call": {
+            "baseline": 1276.8691070438174,
+            "current": 1244.582917359954,
+            "change_percent": -2.528543411831119
+          }
+        },
+        {
+          "case": "GrayDeep65",
+          "wall_us_per_call": {
+            "baseline": 1493.0428979433846,
+            "current": 1481.654338321183,
+            "change_percent": -0.7627751110091174
+          },
+          "cpu_us_per_call": {
+            "baseline": 1492.059900166387,
+            "current": 1480.8496949528576,
+            "change_percent": -0.7513240729999704
+          }
+        },
+        {
+          "case": "GrayDeep257",
+          "wall_us_per_call": {
+            "baseline": 13798.44964376435,
+            "current": 13177.056692115715,
+            "change_percent": -4.503353403398103
+          },
+          "cpu_us_per_call": {
+            "baseline": 13787.180661577608,
+            "current": 13171.73282442748,
+            "change_percent": -4.463913632939265
+          }
+        }
+      ]
+    },
+    "targeted_repeats": {
+      "benchmark-repeat.json": [
+        {
+          "case": "Gray256tiles",
+          "wall_us_per_call": {
+            "baseline": 836.9494245258352,
+            "current": 833.224429314946,
+            "change_percent": -0.445068136942639
+          },
+          "cpu_us_per_call": {
+            "baseline": 820.4195294607537,
+            "current": 832.4936498022068,
+            "change_percent": 1.47170074673737
+          }
+        }
+      ],
+      "benchmark-stable-repeat.json": [
+        {
+          "case": "Gray16",
+          "wall_us_per_call": {
+            "baseline": 69.93992487689387,
+            "current": 54.56092674886473,
+            "change_percent": -21.988868525522133
+          },
+          "cpu_us_per_call": {
+            "baseline": 69.79054616485944,
+            "current": 54.53873245949915,
+            "change_percent": -21.853695870687705
+          }
+        }
+      ]
+    },
+    "repeat_helper_sha256": "2c97d34c8c595d11a9da15aeb33e7bd6571cb8fc0ad07cf67e02fbfa5c2dc581",
+    "new_only_reference": "jpeg2000-irreversible-new-benchmark.json"
+  },
+  "final_change": "Documentation and reports only after tested checkpoint; production bytes rechecked before saving.",
+  "not_performed": [
+    "PR creation",
+    "merge",
+    "release/publish",
+    "CI waiting",
+    "GitHub-app write or approval retry",
+    "permission/configuration changes"
+  ]
+}

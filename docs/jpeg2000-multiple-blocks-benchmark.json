@@ -1,0 +1,123 @@
+{
+  "cpu_affinity": 0,
+  "base_order": "B/H/H/B",
+  "small_iterations": 20000,
+  "warmups": 100,
+  "process_cpu_note": "whole child including warmups, output export and startup / 20101 calls",
+  "rows": [
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_noise.jp2",
+      "pattern": "noise",
+      "version": "base",
+      "result": "16x16, 20000 decodes, 84.926 us/decode",
+      "process_cpu_us_per_call": 85.10357693647082,
+      "sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_noise.jp2",
+      "pattern": "noise",
+      "version": "head",
+      "result": "16x16, 20000 decodes, 78.956 us/decode",
+      "process_cpu_us_per_call": 78.81384010745735,
+      "sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_noise.jp2",
+      "pattern": "noise",
+      "version": "head",
+      "result": "16x16, 20000 decodes, 120.194 us/decode",
+      "process_cpu_us_per_call": 120.18421969056261,
+      "sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_noise.jp2",
+      "pattern": "noise",
+      "version": "base",
+      "result": "16x16, 20000 decodes, 108.631 us/decode",
+      "process_cpu_us_per_call": 108.48709019451769,
+      "sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_ramp.jp2",
+      "pattern": "ramp",
+      "version": "base",
+      "result": "16x16, 20000 decodes, 36.623 us/decode",
+      "process_cpu_us_per_call": 36.740311427292106,
+      "sha256": "ee572cda02bd15b091c6e9c72d04416979699ffb9d30a74e531fd137fe2d1f55"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_ramp.jp2",
+      "pattern": "ramp",
+      "version": "head",
+      "result": "16x16, 20000 decodes, 33.864 us/decode",
+      "process_cpu_us_per_call": 33.28506044475404,
+      "sha256": "ee572cda02bd15b091c6e9c72d04416979699ffb9d30a74e531fd137fe2d1f55"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_ramp.jp2",
+      "pattern": "ramp",
+      "version": "head",
+      "result": "16x16, 20000 decodes, 37.808 us/decode",
+      "process_cpu_us_per_call": 37.985921098452735,
+      "sha256": "ee572cda02bd15b091c6e9c72d04416979699ffb9d30a74e531fd137fe2d1f55"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_ramp.jp2",
+      "pattern": "ramp",
+      "version": "base",
+      "result": "16x16, 20000 decodes, 41.747 us/decode",
+      "process_cpu_us_per_call": 41.509875130590544,
+      "sha256": "ee572cda02bd15b091c6e9c72d04416979699ffb9d30a74e531fd137fe2d1f55"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_checker.jp2",
+      "pattern": "checker",
+      "version": "base",
+      "result": "16x16, 20000 decodes, 22.098 us/decode",
+      "process_cpu_us_per_call": 22.23988856275804,
+      "sha256": "cc2b4676a00b1784ca4fdb39421ea212f40c009eb19d75e4da85f7734c47e15a"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_checker.jp2",
+      "pattern": "checker",
+      "version": "head",
+      "result": "16x16, 20000 decodes, 22.683 us/decode",
+      "process_cpu_us_per_call": 22.78891597432959,
+      "sha256": "cc2b4676a00b1784ca4fdb39421ea212f40c009eb19d75e4da85f7734c47e15a"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_checker.jp2",
+      "pattern": "checker",
+      "version": "head",
+      "result": "16x16, 20000 decodes, 22.958 us/decode",
+      "process_cpu_us_per_call": 23.155216158400066,
+      "sha256": "cc2b4676a00b1784ca4fdb39421ea212f40c009eb19d75e4da85f7734c47e15a"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_16x16_d1_checker.jp2",
+      "pattern": "checker",
+      "version": "base",
+      "result": "16x16, 20000 decodes, 23.206 us/decode",
+      "process_cpu_us_per_call": 23.444604746032542,
+      "sha256": "cc2b4676a00b1784ca4fdb39421ea212f40c009eb19d75e4da85f7734c47e15a"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_multi_65x49_d1_noise.jp2",
+      "version": "head",
+      "result": "65x49, 20 decodes, 1787.589 us/decode",
+      "sha256": "ae7a97361d5ceaed7a9dbe9b6ee3a51f8ae9671b7e7c8d27f40885ea9cdb6681"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_multi_257x129_d1_mixed.jp2",
+      "version": "head",
+      "result": "257x129, 20 decodes, 13325.623 us/decode",
+      "sha256": "ecbc65d3b239fb2df3f1f26771030296f997690377ab0ee461477b17dc0e85ff"
+    },
+    {
+      "input": "wml2/tests/fixtures/review/jp2_multi_1024x1024_d1_ramp.jp2",
+      "version": "head",
+      "result": "1024x1024, 20 decodes, 313728.658 us/decode",
+      "sha256": "9064f1de8895ab95ca712b41ace2b3eaf128091454e7284794f0e499cf23f548"
+    }
+  ]
+}

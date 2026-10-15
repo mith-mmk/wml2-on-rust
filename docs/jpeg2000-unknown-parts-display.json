@@ -1,0 +1,47 @@
+[
+  {
+    "fixture": "jp2_unknown_parts_28x32_d1_gray_b4x64_t12x14_o5x7_g2x3_noise_packet_mct0_all_zero.j2k",
+    "public_ppm_sha256": "20d1e78c52326ca1005436b1692f4f5538bf0c5d9285440157e3d15f6bccadfc",
+    "oracle_pixel_match": true
+  },
+  {
+    "fixture": "jp2_unknown_parts_28x32_d2_rgb_b4x4_t12x14_o5x7_g2x3_noise_packet_mct0_late_known.j2k",
+    "public_ppm_sha256": "61b5730681fc4d83443adf7418ec0bf17e58f13cf8d1230d366bba8bde666760",
+    "oracle_pixel_match": true
+  },
+  {
+    "fixture": "jp2_unknown_parts_193x197_d5_rgb_b4x64_t67x69_o5x7_g2x3_noise_packet_mct1_all_zero.j2k",
+    "public_ppm_sha256": "7a88acb9882c759fb070cff437fb59f843cc7ffbcc9e5f3d05b115f2b641b745",
+    "oracle_pixel_match": true
+  },
+  {
+    "fixture": "jp2_unknown_parts_79x78_d1_rgb_b16x16_t5x5_o101x205_g100x203_mixed_packet_mct1_all_zero.j2k",
+    "public_ppm_sha256": "5a75b2a82bff87ce1fdb91eac71841e874890d7bc499d9fa839d0dd55cd7398e",
+    "oracle_pixel_match": true
+  },
+  {
+    "fixture": "jp2_unknown_parts_1x1_d5_gray_b4x4_t32x32_o31x47_g30x46_flat_packet_mct0_all_zero.j2k",
+    "public_ppm_sha256": "699c96ca6248830a7510dd24d94172041cff1a47e117d1a68f532d621dc2f451",
+    "oracle_pixel_match": true
+  },
+  {
+    "fixture": "jp2_unknown_parts_1024x1024_d5_rgb_b64x64_t256x256_o37x41_g5x9_ramp_pair_mct1_all_zero.j2k",
+    "public_ppm_sha256": "0e7ee996893ab6b5a380e3d7b4d17991d42e5e91372f369b2c7aa2956c4f818e",
+    "oracle_pixel_match": true
+  },
+  {
+    "fixture": "jp2_unknown_parts_28x32_d2_rgb_b4x4_t12x14_o5x7_g2x3_noise_packet_mct1_known_then_unknown.j2k",
+    "public_ppm_sha256": "61b5730681fc4d83443adf7418ec0bf17e58f13cf8d1230d366bba8bde666760",
+    "oracle_pixel_match": true
+  },
+  {
+    "fixture": "jp2_unknown_parts_28x32_d2_rgb_b4x4_t12x14_o5x7_g2x3_noise_packet_mct1_alternating.j2k",
+    "public_ppm_sha256": "61b5730681fc4d83443adf7418ec0bf17e58f13cf8d1230d366bba8bde666760",
+    "oracle_pixel_match": true
+  },
+  {
+    "fixture": "jp2_unknown_parts_28x32_d2_gray_b4x4_t12x14_o5x7_g2x3_noise_packet_mct0_known_ends.j2k",
+    "public_ppm_sha256": "20d1e78c52326ca1005436b1692f4f5538bf0c5d9285440157e3d15f6bccadfc",
+    "oracle_pixel_match": true
+  }
+]

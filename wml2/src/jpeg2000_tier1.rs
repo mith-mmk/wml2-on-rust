@@ -135,7 +135,7 @@ impl<'a> Mq<'a> {
         d
     }
 }
-struct Block<const MIDPOINT: bool> {
+struct Block<const MIDPOINT: bool, const CAUSAL: bool = false> {
     w: usize,
     h: usize,
     orientation: u8,
@@ -146,8 +146,42 @@ struct Block<const MIDPOINT: bool> {
     refined: Vec<bool>,
     last_plane: Vec<u8>,
 }
-impl<const MIDPOINT: bool> Block<MIDPOINT> {
+trait Entropy {
+    fn bit(&mut self, cx: usize) -> bool;
+    fn raw(&self) -> bool {
+        false
+    }
+}
+impl Entropy for Mq<'_> {
+    fn bit(&mut self, cx: usize) -> bool {
+        Mq::bit(self, cx)
+    }
+}
+struct Raw<'a> {
+    data: &'a [u8],
+    pos: usize,
+    left: u8,
+    last: u8,
+}
+impl Entropy for Raw<'_> {
+    fn bit(&mut self, _: usize) -> bool {
+        if self.left == 0 {
+            self.left = if self.last == 255 { 7 } else { 8 };
+            self.last = self.data.get(self.pos).copied().unwrap_or(255);
+            self.pos += 1;
+        }
+        self.left -= 1;
+        self.last & (1 << self.left) != 0
+    }
+    fn raw(&self) -> bool {
+        true
+    }
+}
+impl<const MIDPOINT: bool, const CAUSAL: bool> Block<MIDPOINT, CAUSAL> {
     fn neighbor(&self, x: usize, y: usize, dx: isize, dy: isize) -> Option<usize> {
+        if CAUSAL && y % 4 == 3 && dy > 0 {
+            return None;
+        }
         let x = x.checked_add_signed(dx)?;
         let y = y.checked_add_signed(dy)?;
         if x < self.w && y < self.h {
@@ -206,7 +240,7 @@ impl<const MIDPOINT: bool> Block<MIDPOINT> {
     }
     // Called in coefficient loops with already-validated coordinates.
     #[inline(always)]
-    fn make_significant(&mut self, mq: &mut Mq<'_>, x: usize, y: usize, plane: u8) {
+    fn make_significant(&mut self, mq: &mut impl Entropy, x: usize, y: usize, plane: u8) {
         let h = (self.signed_neighbor(x, y, -1, 0) + self.signed_neighbor(x, y, 1, 0)).signum();
         let v = (self.signed_neighbor(x, y, 0, -1) + self.signed_neighbor(x, y, 0, 1)).signum();
         let prediction = h < 0 || (h == 0 && v < 0);
@@ -219,14 +253,14 @@ impl<const MIDPOINT: bool> Block<MIDPOINT> {
             _ => 13,
         };
         let i = y * self.w + x;
-        self.negative[i] = mq.bit(cx) ^ prediction;
+        self.negative[i] = mq.bit(cx) ^ (prediction && !mq.raw());
         self.sig[i] = true;
         self.value[i] = 1 << plane;
         if MIDPOINT {
             self.last_plane[i] = plane;
         }
     }
-    fn propagation(&mut self, mq: &mut Mq<'_>, plane: u8) {
+    fn propagation(&mut self, mq: &mut impl Entropy, plane: u8) {
         for stripe in (0..self.h).step_by(4) {
             for x in 0..self.w {
                 for y in stripe..(stripe + 4).min(self.h) {
@@ -242,7 +276,7 @@ impl<const MIDPOINT: bool> Block<MIDPOINT> {
             }
         }
     }
-    fn refinement(&mut self, mq: &mut Mq<'_>, plane: u8) {
+    fn refinement(&mut self, mq: &mut impl Entropy, plane: u8) {
         for stripe in (0..self.h).step_by(4) {
             for x in 0..self.w {
                 for y in stripe..(stripe + 4).min(self.h) {
@@ -267,7 +301,7 @@ impl<const MIDPOINT: bool> Block<MIDPOINT> {
             }
         }
     }
-    fn cleanup(&mut self, mq: &mut Mq<'_>, plane: u8) {
+    fn cleanup(&mut self, mq: &mut impl Entropy, plane: u8) {
         for stripe in (0..self.h).step_by(4) {
             for x in 0..self.w {
                 let end = (stripe + 4).min(self.h);
@@ -382,6 +416,159 @@ fn decode_bounded<const AXIS: usize, const MIDPOINT: bool>(
     }
     for i in 0..n {
         if MIDPOINT && block.sig[i] {
+            block.value[i] = 2 * block.value[i] + (1 << block.last_plane[i]);
+        }
+        if block.negative[i] {
+            block.value[i] = -block.value[i];
+        }
+    }
+    Ok(block.value)
+}
+
+/// A terminated MQ/RAW segment, assembled across all contributing layers.
+pub(super) struct Segment {
+    pub data: Vec<u8>,
+    pub passes: u32,
+}
+pub(super) fn segment_capacity(style: u8, pass: u32) -> u32 {
+    if style & 64 != 0 {
+        if pass % 3 == 0 { 1 } else { 2 }
+    } else if style & 4 != 0 {
+        1
+    } else if style & 1 == 0 {
+        u32::MAX
+    } else if pass < 10 {
+        10 - pass
+    } else if pass % 3 == 1 {
+        2
+    } else {
+        1
+    }
+}
+pub(super) fn decode_segments(
+    segments: &[Segment],
+    w: usize,
+    h: usize,
+    orientation: u8,
+    planes: u8,
+    style: u8,
+) -> Result<Vec<i32>, Error> {
+    if style & 8 != 0 {
+        segmented::<true>(segments, w, h, orientation, planes, style)
+    } else {
+        segmented::<false>(segments, w, h, orientation, planes, style)
+    }
+}
+fn segmented<const CAUSAL: bool>(
+    segments: &[Segment],
+    w: usize,
+    h: usize,
+    orientation: u8,
+    planes: u8,
+    style: u8,
+) -> Result<Vec<i32>, Error> {
+    if w == 0 || h == 0 || w > 1024 || h > 1024 || w * h > 4096 || planes == 0 || planes > 28 {
+        return Err(bad("code-block bounds"));
+    }
+    let n = w * h;
+    let mut block: Block<true, CAUSAL> = Block {
+        w,
+        h,
+        orientation,
+        value: vec![0; n],
+        sig: vec![false; n],
+        negative: vec![false; n],
+        visited: vec![false; n],
+        refined: vec![false; n],
+        last_plane: vec![0; n],
+    };
+    let mut states = [0; 19];
+    states[0] = 4;
+    states[17] = 3;
+    states[18] = 46;
+    let mut mps = [false; 19];
+    let mut pass = 0;
+    for segment in segments {
+        if segment.passes == 0 || pass + segment.passes > u32::from(planes) * 3 - 2 {
+            return Err(bad("code-block pass count"));
+        }
+        let raw = style & 1 != 0 && pass >= 10 && pass % 3 != 0;
+        let mut arithmetic = if raw {
+            None
+        } else {
+            let mut m = Mq::new(if segment.data.is_empty() {
+                &[255]
+            } else {
+                &segment.data
+            })
+            .map_err(|_| {
+                bad(&format!(
+                    "arithmetic segment at pass {pass}: {} bytes",
+                    segment.data.len()
+                ))
+            })?;
+            m.state = states;
+            m.mps = mps;
+            Some(m)
+        };
+        let mut bypass = Raw {
+            data: &segment.data,
+            pos: 0,
+            left: 0,
+            last: 0,
+        };
+        for _ in 0..segment.passes {
+            let plane = planes - 1 - ((pass + 2) / 3) as u8;
+            let coder: &mut dyn Entropy = if let Some(m) = &mut arithmetic {
+                m
+            } else {
+                &mut bypass
+            };
+            // The small adapter keeps the existing monomorphized legacy paths intact.
+            struct Coder<'a>(&'a mut dyn Entropy);
+            impl Entropy for Coder<'_> {
+                fn bit(&mut self, cx: usize) -> bool {
+                    self.0.bit(cx)
+                }
+                fn raw(&self) -> bool {
+                    self.0.raw()
+                }
+            }
+            let mut coder = Coder(coder);
+            match pass % 3 {
+                0 => {
+                    block.cleanup(&mut coder, plane);
+                    if style & 32 != 0 {
+                        let mut symbol = 0;
+                        for _ in 0..4 {
+                            symbol = symbol * 2 + u8::from(coder.bit(18));
+                        }
+                        if symbol != 10 {
+                            return Err(bad("segmentation symbol"));
+                        }
+                    }
+                }
+                1 => block.propagation(&mut coder, plane),
+                _ => block.refinement(&mut coder, plane),
+            }
+            pass += 1;
+            if style & 2 != 0 {
+                if let Some(m) = &mut arithmetic {
+                    m.state = [0; 19];
+                    m.state[0] = 4;
+                    m.state[17] = 3;
+                    m.state[18] = 46;
+                    m.mps = [false; 19];
+                }
+            }
+        }
+        if let Some(m) = arithmetic {
+            states = m.state;
+            mps = m.mps;
+        }
+    }
+    for i in 0..n {
+        if block.sig[i] {
             block.value[i] = 2 * block.value[i] + (1 << block.last_plane[i]);
         }
         if block.negative[i] {

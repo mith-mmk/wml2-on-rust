@@ -23,6 +23,13 @@ impl Debug for ImgError {
 }
 
 impl ImgError {
+    #[cfg(feature = "jpeg2000")]
+    pub(crate) fn is_unsupported(&self) -> bool {
+        match &self.repr {
+            Repr::SimpleMessage(kind, _) => matches!(kind, ImgErrorKind::UnsupportedFeature),
+            Repr::Custom(custom) => matches!(custom.kind, ImgErrorKind::UnsupportedFeature),
+        }
+    }
     /// Creates an error from another error value and an [`ImgErrorKind`].
     pub fn new<E>(kind: ImgErrorKind, error: E) -> ImgError
     where

@@ -94,6 +94,17 @@ pub(crate) fn charge_metadata(bytes: usize) -> Result<(), Error> {
     }
     Ok(())
 }
+// A speculative codec path must not charge the same metadata again when its
+// broader parser retries the input. Successful paths retain all charges.
+#[cfg(feature = "jpeg2000")]
+pub(crate) fn metadata_attempt<T>(body: impl FnOnce() -> Result<T, Error>) -> Result<T, Error> {
+    let before = METADATA.get();
+    let result = body();
+    if result.is_err() {
+        METADATA.set(before);
+    }
+    result
+}
 #[cfg(any(feature = "png", test))]
 pub(crate) fn inflate_metadata(data: &[u8]) -> Result<Vec<u8>, Error> {
     let limit = current().metadata_bytes.saturating_sub(metadata_used());

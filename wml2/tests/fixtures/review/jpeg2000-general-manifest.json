@@ -1,0 +1,622 @@
+{
+  "pillow": "11.1.0",
+  "openjpeg": "2.5.3",
+  "provenance": "Original deterministic pixels; Pillow/OpenJPEG encoder and independent decoder",
+  "files": [
+    {
+      "input": "jp2_general_L_LRCP_0.jp2",
+      "reference": "jp2_general_L_LRCP_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "6198f475b3d945214493dd24edb7a435d7ae9675b81e7d00b3738f59cde418d4",
+      "options": {
+        "progression": "LRCP",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_L_RLCP_0.jp2",
+      "reference": "jp2_general_L_RLCP_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "293ef2fadde9bc0d5fc1b11c24814fa23b643709c843f7cce8fd66b1160eedc5",
+      "options": {
+        "progression": "RLCP",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_L_RPCL_0.jp2",
+      "reference": "jp2_general_L_RPCL_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "b2e9c78da18524da8d80c305d80b8df5c999989ff9ac03efd31cddeb9e8de6a5",
+      "options": {
+        "progression": "RPCL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_L_PCRL_0.jp2",
+      "reference": "jp2_general_L_PCRL_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "7e17f0d4177dacd29fba0613b0a318558b21df752fbff7cd95bdd31b8088ad63",
+      "options": {
+        "progression": "PCRL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_L_CPRL_0.jp2",
+      "reference": "jp2_general_L_CPRL_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "53bda0892424e74191f988a66644fe4ee33f544a4cbfc5d8a36e4217fdfebef5",
+      "options": {
+        "progression": "CPRL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_L_LRCP_1.jp2",
+      "reference": "jp2_general_L_LRCP_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "64d753c1abb80b1bb8f5e1bcd548749682a65179e909f0123c5714faea831001",
+      "options": {
+        "progression": "LRCP",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_L_RLCP_1.jp2",
+      "reference": "jp2_general_L_RLCP_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "dcfcb46611555f4bca33e328dcb8c3f0ebc455cff7de0e158e4406c38d529a76",
+      "options": {
+        "progression": "RLCP",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_L_RPCL_1.jp2",
+      "reference": "jp2_general_L_RPCL_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "f3df90d3ead913cd68f134d0f927d9473c6717b9048e5d1f0b3cba3bf485662b",
+      "options": {
+        "progression": "RPCL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_L_PCRL_1.jp2",
+      "reference": "jp2_general_L_PCRL_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "a59331d9bb13e3465b87e357a0bb163a6c48d1910ab1c02e5965b95296bc6112",
+      "options": {
+        "progression": "PCRL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_L_CPRL_1.jp2",
+      "reference": "jp2_general_L_CPRL_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "d5f27f6cb4270ee8cf9b0bcedff131e8b44b5f863b0a163cb119a302572b9800",
+      "options": {
+        "progression": "CPRL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 0
+      }
+    },
+    {
+      "input": "jp2_general_RGB_LRCP_0.jp2",
+      "reference": "jp2_general_RGB_LRCP_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "f1db574e316966106b04b26f58bff02852203d097d98ff5fcb1fbb2627f4d921",
+      "options": {
+        "progression": "LRCP",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_RGB_RLCP_0.jp2",
+      "reference": "jp2_general_RGB_RLCP_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "de682bd283d0515d77c27dca3fa65e90207b58ca7122e1c8b101775d10e69648",
+      "options": {
+        "progression": "RLCP",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_RGB_RPCL_0.jp2",
+      "reference": "jp2_general_RGB_RPCL_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "85d7332f0472dfdc224e7ba27b3e2857a5abb3e0a32b2eec66155b15ac23e5c5",
+      "options": {
+        "progression": "RPCL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_RGB_PCRL_0.jp2",
+      "reference": "jp2_general_RGB_PCRL_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "baa8cc9acc4ad8064accbbd55a1b72cbbc5da8c922fc99f044458bcbf10aac1d",
+      "options": {
+        "progression": "PCRL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_RGB_CPRL_0.jp2",
+      "reference": "jp2_general_RGB_CPRL_0.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 0,
+      "sha256": "4f76da9786bb7752250670c061ed69cbec08534bfacc84dfdc481253fab76e5b",
+      "options": {
+        "progression": "CPRL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          8,
+          4,
+          1
+        ],
+        "irreversible": false,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_RGB_LRCP_1.jp2",
+      "reference": "jp2_general_RGB_LRCP_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "5cc9a5faca7684779dcfc575a4e92e632f87eed3bf16b685e1bb8fcede920a76",
+      "options": {
+        "progression": "LRCP",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_RGB_RLCP_1.jp2",
+      "reference": "jp2_general_RGB_RLCP_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "d59faf7bb2aa98dfd049d463fa01109598d29ec0d404029ff48a0fcfc265c312",
+      "options": {
+        "progression": "RLCP",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_RGB_RPCL_1.jp2",
+      "reference": "jp2_general_RGB_RPCL_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "614e307d397a7f36d7e4b846ab440d99c7d16884b7ad1d595fa2bbb7b6ebdb7a",
+      "options": {
+        "progression": "RPCL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_RGB_PCRL_1.jp2",
+      "reference": "jp2_general_RGB_PCRL_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "29794c895eda02e9a4e2c17fecb95bed43dbeec0ec9e52f2b5a777002a4ce65c",
+      "options": {
+        "progression": "PCRL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_RGB_CPRL_1.jp2",
+      "reference": "jp2_general_RGB_CPRL_1.rgba",
+      "width": 32,
+      "height": 32,
+      "max_error": 1,
+      "sha256": "bc7c21a7d5923de7adb76b566ff7274c3b079ef082d550e042102c41d1171075",
+      "options": {
+        "progression": "CPRL",
+        "num_resolutions": 4,
+        "codeblock_size": [
+          4,
+          4
+        ],
+        "precinct_size": [
+          16,
+          16
+        ],
+        "quality_mode": "rates",
+        "quality_layers": [
+          12,
+          6,
+          3
+        ],
+        "irreversible": true,
+        "mct": 1
+      }
+    },
+    {
+      "input": "jp2_general_levels6.jp2",
+      "reference": "jp2_general_levels6.rgba",
+      "width": 64,
+      "height": 64,
+      "max_error": 0,
+      "sha256": "85577881a4cbd7521d479cd37d15c1720970f681a070cc99d237ed3c847d7977",
+      "options": {
+        "num_resolutions": 7,
+        "quality_layers": [
+          4,
+          1
+        ],
+        "codeblock_size": [
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "input": "jp2_general_LA.jp2",
+      "reference": "jp2_general_LA.rgba",
+      "width": 16,
+      "height": 16,
+      "max_error": 0,
+      "sha256": "3a5622f3977a76cc2622a0c45fd3940e06c9e396f1a0f760d943bfc1e8316a03",
+      "options": {
+        "num_resolutions": 3,
+        "quality_layers": [
+          1
+        ],
+        "codeblock_size": [
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "input": "jp2_general_RGBA.jp2",
+      "reference": "jp2_general_RGBA.rgba",
+      "width": 16,
+      "height": 16,
+      "max_error": 0,
+      "sha256": "2bddb232abd0d61cbae5f95462a6482486b707d33126f8858ad037cdb25fbf92",
+      "options": {
+        "num_resolutions": 3,
+        "quality_layers": [
+          1
+        ],
+        "codeblock_size": [
+          4,
+          4
+        ]
+      }
+    }
+  ]
+}

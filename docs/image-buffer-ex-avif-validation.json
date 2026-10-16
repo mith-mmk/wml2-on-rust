@@ -1,0 +1,513 @@
+{
+  "date_utc": "2026-10-16",
+  "baseline_commit": "f93e33498bf4f46e1790b2be4f6a4e362f40ed79",
+  "tested_before_commit": true,
+  "toolchain": {
+    "rustc": "1.91.0 (f8297e351 2025-10-28)",
+    "cargo": "1.91.0 (ea2d97820 2025-10-10)",
+    "host": "x86_64-unknown-linux-gnu",
+    "node": "v24.19.0",
+    "Pillow": "12.3.0",
+    "FFmpeg": "7.1.5-0+deb13u1"
+  },
+  "scope": {
+    "wml2_version": "0.0.36",
+    "existing_public_APIs_retained": true,
+    "product_manifests_and_dependency_gitlinks_unchanged": true,
+    "jpeg2000_sources_unchanged": true,
+    "wmlcore_extraction_implemented": false,
+    "paintcore_integration_implemented": false,
+    "new_product_crates": false,
+    "temporary_wasm_harness_package_only": true
+  },
+  "dependencies": {
+    "avif": {
+      "gitlink": "ecc37b220daf37b24134aacac0bc12723aadc357",
+      "checked_source_and_manifest_files": 93,
+      "all_match": true
+    },
+    "avifenc": {
+      "gitlink": "39edfaa462823c215bfdc90b473789ae355acd94",
+      "checked_source_and_manifest_files": 18,
+      "all_match": true
+    }
+  },
+  "native_test_runs": [
+    {
+      "log": "workspace-final.log",
+      "command": "cargo test --workspace --locked --offline --release --features wml2/avifenc,wml2/jpeg2000,wml2/image-buffer-ex,wml2/high-bit-depth,wml2/tga,wml2/pcx,wml2/dds,wml2/q4 -- --nocapture",
+      "log_sha256": "b73b26def65c8e1a09537f45ffdf1234f37e99c22654f5dc80dbf0fd69ed4a5d",
+      "result_groups": 58,
+      "harness_passed": 510,
+      "failed": 0,
+      "ignored": 14,
+      "explicit_skip_messages": [
+        "skipping local sample test: /workspace/.test-imagebufferex-continuation/.test/c2pa+exif is missing",
+        "skipping external error samples (see /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping local G3 regression samples (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping error samples: directory does not exist: /workspace/.test-imagebufferex-continuation/.test/errors (set WML2_ERROR_SAMPLES_DIR in env or .env)",
+        "skipping missing sample: sample.mki (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample.mki (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample.pi (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample.pi (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample2.pi (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample2.pi (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample.pic (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample.pic (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample.dat (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample.dat (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample.webp (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: sample.webp (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)",
+        "skipping missing sample: bird-wings-flying-feature.gif (configure /workspace/.test-imagebufferex-continuation/test/images/README.md)"
+      ],
+      "ignored_tests": [
+        "test highres::avif_encode::review_bench::role_extraction_benchmark ... ignored, manual native-plane extraction benchmark",
+        "test export_interoperability_sample ... ignored, Writes independent-decoder/display fixture to WML2_DDS_ARTIFACT",
+        "test pcx_external_artifact ... ignored, manual independent decoder and display/benchmark artifact",
+        "test pcx_indexed_external_artifact ... ignored, manual Pillow indexed interoperability artifact",
+        "test pcx_old_palette_artifacts ... ignored, manual old-palette display and independent oracle comparison",
+        "test decodes_collected_q4_samples ... ignored, requires local Q4 samples; does not establish independent compatibility",
+        "test png::bounded_png_mutation_corpus ... ignored, bounded mutation campaign; run explicitly or in scheduled CI",
+        "test external_gray_indexed_samples ... ignored, writes grayscale/indexed interoperability samples; set WML2_TGA_OUTPUT to an existing directory",
+        "test external_samples_and_benchmark ... ignored, writes interoperability/display samples and measures encoder/decoder throughput; set WML2_TGA_OUTPUT to an existing directory",
+        "test tga2_external_artifacts ... ignored, writes TGA2 alpha fixtures and RGBA expectations; set WML2_TGA_OUTPUT to existing directory",
+        "test external_ex_rejects_models_outside_static_gray_rgb_scope ... ignored, requires the external TIFF corpus; run with --ignored and WML2_TIFF_CORPUS",
+        "test external_group4_reserved_extension_is_reported_when_configured ... ignored, requires the external TIFF corpus; run with --ignored and WML2_TIFF_CORPUS",
+        "test external_non_jpeg_ycbcr_samples_decode_when_configured ... ignored, requires the external TIFF corpus; run with --ignored and WML2_TIFF_CORPUS",
+        "test external_old_style_jpeg_samples_decode_when_configured ... ignored, requires the external TIFF corpus; run with --ignored and WML2_TIFF_CORPUS"
+      ]
+    },
+    {
+      "log": "avifenc-ex-verified.log",
+      "command": "cargo test -p wml2 --no-default-features --features avifenc,image-buffer-ex,high-bit-depth --lib --tests --release --locked --offline -- --nocapture",
+      "log_sha256": "a8773b95d7f54c44026646d214a3bc5caf24d3bfcb6daba7c0b4d7ba65482960",
+      "result_groups": 40,
+      "harness_passed": 112,
+      "failed": 0,
+      "ignored": 1,
+      "explicit_skip_messages": [
+        "skipping error samples: directory does not exist: /workspace/.test-imagebufferex-continuation/.test/errors (set WML2_ERROR_SAMPLES_DIR in env or .env)"
+      ],
+      "ignored_tests": [
+        "test highres::avif_encode::review_bench::role_extraction_benchmark ... ignored, manual native-plane extraction benchmark"
+      ]
+    },
+    {
+      "log": "targeted-verified-final.log",
+      "command": "cargo test -p wml2 --locked --offline --release --no-default-features --features avifenc,image-buffer-ex,high-bit-depth --lib --test avif_ex --test avif_encode --test highres_avif_encode --test highres_avif_native_bridge",
+      "log_sha256": "bbaeeb22f28878389ba229410b41b2701bf628cd2782a5a148a5a4cc10734b23",
+      "result_groups": 5,
+      "harness_passed": 50,
+      "failed": 0,
+      "ignored": 1,
+      "explicit_skip_messages": [],
+      "ignored_tests": [
+        "test highres::avif_encode::review_bench::role_extraction_benchmark ... ignored, manual native-plane extraction benchmark"
+      ]
+    },
+    {
+      "log": "legacy-avifenc-verified.log",
+      "command": "cargo test -p wml2 --no-default-features --features avifenc,high-bit-depth --lib --tests --release --locked --offline -- --nocapture",
+      "log_sha256": "5fe70732ef53188a6cb319eaf5f00e4a5d3a2faa987d944a511482316daf22f8",
+      "result_groups": 40,
+      "harness_passed": 61,
+      "failed": 0,
+      "ignored": 1,
+      "explicit_skip_messages": [
+        "skipping error samples: directory does not exist: /workspace/.test-imagebufferex-continuation/.test/errors (set WML2_ERROR_SAMPLES_DIR in env or .env)"
+      ],
+      "ignored_tests": [
+        "test highres::avif_encode::review_bench::role_extraction_benchmark ... ignored, manual native-plane extraction benchmark"
+      ]
+    },
+    {
+      "log": "multithread-verified.log",
+      "command": "cargo test -p wml2 --no-default-features --features avifenc,image-buffer-ex,high-bit-depth,multithread --test avif_ex --test highres_avif_encode --release --locked --offline",
+      "log_sha256": "5bc720da891dbf75afc7a4caf10a888213d578532807327aca1df2ff7df45f45",
+      "result_groups": 2,
+      "harness_passed": 17,
+      "failed": 0,
+      "ignored": 0,
+      "explicit_skip_messages": [],
+      "ignored_tests": []
+    },
+    {
+      "log": "avif-ex.log",
+      "command": "cargo test -p wml2 --no-default-features --features avif,image-buffer-ex --lib --tests --release --locked --offline",
+      "log_sha256": "1c0a68d35c0a4bc295c640bcf586b36902e4105f21134e1f54c6a0c9f8f0e9fa",
+      "result_groups": 35,
+      "harness_passed": 73,
+      "failed": 0,
+      "ignored": 0,
+      "explicit_skip_messages": [
+        "skipping error samples: directory does not exist: /workspace/.test-imagebufferex-continuation/.test/errors (set WML2_ERROR_SAMPLES_DIR in env or .env)"
+      ],
+      "ignored_tests": []
+    },
+    {
+      "log": "ex-only.log",
+      "command": "cargo test -p wml2 --no-default-features --features image-buffer-ex --release --locked --offline",
+      "log_sha256": "4b3979a0456071eb830931b6b9f9a407b61f64d6cc9dafc9a44e6b6693ae19ee",
+      "result_groups": 35,
+      "harness_passed": 78,
+      "failed": 0,
+      "ignored": 0,
+      "explicit_skip_messages": [],
+      "ignored_tests": []
+    },
+    {
+      "log": "feature-off.log",
+      "command": "cargo test -p wml2 --no-default-features --release --locked --offline",
+      "log_sha256": "ab5a520bf0dbf1ba83c3bba5e42c951fa01ee186a78f63ab16ca510e580ba194",
+      "result_groups": 35,
+      "harness_passed": 40,
+      "failed": 0,
+      "ignored": 0,
+      "explicit_skip_messages": [],
+      "ignored_tests": []
+    }
+  ],
+  "counting_note": "Harness passed counts include conditional early returns. They are not counts of independently checked external images. New EX12 tests and alpha helper2 tests executed assertions; no missing-fixture early returns there.",
+  "new_ex_tests": [
+    "encode::encoder_rejects_wrong_layout_and_finalizes_once_after_pick_errors",
+    "encode::gray8_twelve_and_odd_stride_pickers_are_explicit",
+    "abort_stops_draw_and_metadata_forwarding_and_terminates_once",
+    "decoder_only_uses_declared_rgba16_and_preserves_source_color_metadata",
+    "encode::output_icc_is_explicit_and_encoded_limits_restore_after_error",
+    "encode::opaque_icc_is_metadata_after_draw_and_is_not_applied_or_relabelled",
+    "encode::independent_native_8_10_12bit_inputs_retain_normalized_samples_and_straight_alpha",
+    "encode::rgba8_and_twelve_lossless_encode_roundtrip_without_storage_mutation",
+    "encode::transfer_requiring_display_processing_is_explicitly_unsupported",
+    "encode::sixteen_storage_requires_explicit_exact_or_round_output_policy",
+    "encode::legacy_avif_decoder_still_initializes_packed_rgba8_even_with_ex_enabled",
+    "malformed_and_short_limits_fail_before_callbacks_and_restore_scope"
+  ],
+  "external_oracle": {
+    "Pillow_RGBA8_all_channels_exact": true,
+    "FFmpeg_native_12bit": {
+      "primary": {
+        "exact": true,
+        "command": [
+          "ffmpeg",
+          "-v",
+          "error",
+          "-y",
+          "-i",
+          "/workspace/.test-avif-ex-20261016/.test-example.avif",
+          "-map",
+          "0:v:0",
+          "-frames:v",
+          "1",
+          "-pix_fmt",
+          "gbrp12le",
+          "-f",
+          "rawvideo",
+          "/workspace/.test-avif-ex-20261016/.test-primary-12bit"
+        ],
+        "sha256": "f327d1e4ea8a628f6cf7eadfbc13fba3707afcf92fb58369283e24c2559d9ba8"
+      },
+      "alpha": {
+        "exact": true,
+        "command": [
+          "ffmpeg",
+          "-v",
+          "error",
+          "-y",
+          "-i",
+          "/workspace/.test-avif-ex-20261016/.test-example.avif",
+          "-map",
+          "0:v:1",
+          "-frames:v",
+          "1",
+          "-pix_fmt",
+          "gray12le",
+          "-f",
+          "rawvideo",
+          "/workspace/.test-avif-ex-20261016/.test-alpha-12bit"
+        ],
+        "sha256": "a71b72ea458b3814a8277e6686c0a593ed4201f6cf48eb435da356508589f076"
+      }
+    },
+    "fixture_sha256": "132303af3360fc655d3c4175f29c9e3bee0844c6e629c49c89deb48fe010686e",
+    "RGBA16_source": [
+      0,
+      4369,
+      65535,
+      65535,
+      21845,
+      34952,
+      4369,
+      0,
+      43690,
+      8738,
+      56797,
+      65535,
+      65535,
+      61166,
+      52428,
+      30583
+    ],
+    "original_dependency_alpha_issue": "without reference normalization Pillow treated alpha as opaque; producer refs primary1\u2192alpha2 normalized toalpha2\u2192primary1"
+  },
+  "fixture_bootstrap": {
+    "source_recipe": "avif/scripts/generate_filter_disabled_oracle.ps1 Gray16x16 FFmpeg command",
+    "recipe_sha256": "f1a9a9288161c4b352ab5e52c562d1d35ed72a25919af6ac6da0064c3e6963f5",
+    "command": [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=gray:size=16x16:rate=1",
+      "-frames:v",
+      "1",
+      "-vf",
+      "format=gbrp",
+      "-c:v",
+      "libaom-av1",
+      "-still-picture",
+      "1",
+      "-usage",
+      "allintra",
+      "-cpu-used",
+      "8",
+      "-crf",
+      "0",
+      "-pix_fmt",
+      "gbrp",
+      "-enable-cdef",
+      "0",
+      "-enable-restoration",
+      "0",
+      "-enable-palette",
+      "0",
+      "-enable-intrabc",
+      "0",
+      "-enable-filter-intra",
+      "0",
+      "-enable-angle-delta",
+      "0",
+      "-enable-cfl-intra",
+      "0",
+      "-enable-rect-partitions",
+      "0",
+      "-enable-1to4-partitions",
+      "0",
+      "-enable-ab-partitions",
+      "0",
+      "-enable-flip-idtx",
+      "0",
+      "-use-intra-default-tx-only",
+      "1",
+      "-color_range",
+      "pc",
+      "-colorspace",
+      "rgb",
+      "-y",
+      "/workspace/.test-avif-ex-20261016/.test-images/filter-disabled-gbr.avif"
+    ],
+    "fixture_sha256": "9c58fa7d7be530a6263d89d9a1686cc520cc53170384ff74700a4a9431873da2",
+    "note": "PowerShell not installed; this generates only WML2 required fixture, not full strict standalone oracle corpus",
+    "temporary_fixture_symlink": "avif/test_data"
+  },
+  "wasm": {
+    "foundation": {
+      "runtime": "v24.19.0",
+      "cases": 82,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 1572864,
+      "target": "wasm32-unknown-unknown",
+      "features": "image-buffer-ex,high-bit-depth,png,tiff; no defaults",
+      "git_head": "f93e33498bf4f46e1790b2be4f6a4e362f40ed79",
+      "working_tree_dirty": true,
+      "scope": "six native/highres layouts, static legacy bridge, explicit encoder precision/PNG handoff, low-bit highres handoff, four independent LZW/PackBits TIFF fixtures with all pixels and short pixel limit; 54 FillOrder oracle cases,6 SampleFormat cases,8 LSB compatibility cases and candidate-budget scope restoration",
+      "wasm_sha256": "44126aab996300bc2e33c8be5b356bd89245425cdb226b106c4ba4c30855506e",
+      "harness_sha256": "6407e5762acdc45b551ad4ec44c585a85b994b43a348994aeb038d82e8bc8928",
+      "helper_sha256": "25f2e30230aa834a30e656e2161636c0849de742c0371deb90f927199afe6d95",
+      "source_sha256": {
+        "wml2/src/image_buffer_ex.rs": "5ddd59e087b6431b86f249d1ec7ac97da169406de2c47482d4669aafeca8b500",
+        "wml2/src/draw.rs": "b539d369b0c03111bd4591868488c04943146e05ee7c0af89190c84ecf37f2b3",
+        "wml2/src/decode_guard.rs": "688966093b2b5009fb693a2a2e5ca68c2411de3deccbb617f5420ca265cf45f2",
+        "wml2/src/png/decoder.rs": "182feda26c6c32c9eb25c94e2d1124d36d47b69a6b3e9e3eddfc41a91db0be0a",
+        "wml2/src/tiff/decoder/ex.rs": "646656eddc17b709c49b8bd2b9114d22d53561aaa152d6edd6306f9efcd75ca1"
+      },
+      "fixture_sha256": {
+        "ex-access-rgba16.tif": "6e5233bea5bcbbc625c96b07139a59af259d423d997e93d1c7dbe297fb5d6bb5",
+        "ex-gray16-lzw.tif": "73962aec4bfb500c4521ad72ff0b0e2ee1529d158d3670c3b834ea292b3ed576",
+        "ex-gray16-packbits.tif": "bd6292d382494d1226d466e9d20b4adc29f74306140e8b2696a6014b0a9593f1",
+        "ex-gray8-lzw.tif": "c319f03575609ae0369b57d3e6d4b064a5f1e83e6d51cf3d48bcfed543ae2555",
+        "ex-gray8-packbits.tif": "942ab09aac6408e9fcd3a483936d5867c3297c2272448831110958c0f31e2280",
+        "ex-review-fill1-gray16-be-deflate-p1.tif": "8faaa2b0f9a0d1ced665af7585b34c754c0e8128462b517d750559129f4db553",
+        "ex-review-fill1-gray16-be-deflate-p2.tif": "2c475f3c2f72fd326012aef07dca8f635f1a0d39c04e54355f1422d4b52e1f7b",
+        "ex-review-fill1-gray16-be-lzw-p1.tif": "a74e8cbc85d4ca1dcca02fd5e881e1af560e3799f556220299c1c5209e85cb38",
+        "ex-review-fill1-gray16-be-lzw-p2.tif": "96ec021d7b41532976652a6222f0112f9dfe65bd592a28192533159d5874ccee",
+        "ex-review-fill1-gray16-be-packbits-p1.tif": "11e2e19a0408b46e8b70f0a9256272f404d9a561c5478fb26eaca264d7eaf89f",
+        "ex-review-fill1-gray16-be-raw-p1.tif": "206e41714bc7cd0572f8d61a7e08f03958342bb2b6f251eb78ae4a656012309e",
+        "ex-review-fill1-gray16-le-deflate-p1.tif": "e2045e5dd0c7de3d2d43f5ed6ed0faf8a5e7d9fb9b03e6edf33105b3754a1224",
+        "ex-review-fill1-gray16-le-deflate-p2.tif": "8eb09991632884bae44addc364ef1cfcb301ad3258e658fab912f8bb2b74a68c",
+        "ex-review-fill1-gray16-le-lzw-p1.tif": "ebcac26178e426b5a7ee8b8d57c5d93bf86a269eaddf64e8c6cc5567c091c427",
+        "ex-review-fill1-gray16-le-lzw-p2.tif": "cac600e63bf2560617c4eb2219f9d9686f876eeef7b7c433d1a3ee4ce5b3d8fc",
+        "ex-review-fill1-gray16-le-packbits-p1.tif": "210750210b00d2d245d64b9d45d4d6ea60d7939ecf3f7bb9735fb33f94a1cfa7",
+        "ex-review-fill1-gray16-le-raw-p1.tif": "6131760de2e0139ecfa78f59fb7fd63b5b2030c90799a1fa9a581912be50c78a",
+        "ex-review-fill1-gray8-be-deflate-p1.tif": "ec4c764cc6a147c1d9c0c33f879efb6e2c3d320c55e44d703ca1cf6f0c6c03a2",
+        "ex-review-fill1-gray8-be-deflate-p2.tif": "1e49e19b68f18c77178aac73e61cb20fbb79681630df0af40afedc85d2199214",
+        "ex-review-fill1-gray8-be-lzw-p1.tif": "e5b75d5c5cd1e1ba94e85c9ff392b83f71260bc4c85a099df918705cb0ea4166",
+        "ex-review-fill1-gray8-be-lzw-p2.tif": "2346778f0faefe234d9471361d68c14783f464eb1456b27ceda7b9353445bbe1",
+        "ex-review-fill1-gray8-be-packbits-p1.tif": "22517ffecc293d18787c3ec30c0c7ccd5a21317501afa3ceddb47eccab9b4dbe",
+        "ex-review-fill1-gray8-be-raw-p1.tif": "c53e4f2292cc2d04ed8aa5d94b29c79cb27a2a8cc5b6e5bfb2980c31a01bf7c9",
+        "ex-review-fill1-gray8-le-deflate-p1.tif": "030c593ffb088a409ec6d9fd9597615ee2fb481217dfde14802182fb60fe4e17",
+        "ex-review-fill1-gray8-le-deflate-p2.tif": "bc1963b3428d0792bf5a21e1f7fca2dd0ee798af68ad9ef6c3ba954f78b6d8b4",
+        "ex-review-fill1-gray8-le-lzw-p1.tif": "55b4cf43fa40811bf2faf39ee146b32f86c7a82d814870d37e0d68a732a4447c",
+        "ex-review-fill1-gray8-le-lzw-p2.tif": "2c670230e907a9c014336a9c407783ff93cc2ce0caf45624c4f043b55aeff82b",
+        "ex-review-fill1-gray8-le-packbits-p1.tif": "9e160e82781a361fa59d3841f4b01c1ae9775de40e3e63c7a363dc05d2d66c72",
+        "ex-review-fill1-gray8-le-raw-p1.tif": "d513fd28c6f147f54cc4c03ddee51f4aa9a27206fb554aa44200b3d3c876a3ff",
+        "ex-review-fill2-gray16-be-deflate-p1.tif": "f6d6231ebbdc27d68f3e67d454096097b7a16c4867d79cb6bd7d2fdd69ddf9d4",
+        "ex-review-fill2-gray16-be-deflate-p2.tif": "0d46da70eaf2f6068b857d07ac8165151cd788217508e91c39768bd2d8a28ebf",
+        "ex-review-fill2-gray16-be-lzw-p1.tif": "484e0566de3d400df043fcf8efc20a825abbc5240fef2d45645067c2a10eb9c3",
+        "ex-review-fill2-gray16-be-lzw-p2.tif": "3c8d83ab785a4e0aa342b6ec69bfbd411a90a772f59bf287dfbe3070f5fe23ec",
+        "ex-review-fill2-gray16-be-packbits-p1.tif": "4a73294d57894be4b16a19f68f78f2614845a1c294795f5954013ee5da9139c1",
+        "ex-review-fill2-gray16-be-raw-p1.tif": "ed1798cf324f902b421afcfdac38606fca95863c44e106318874513edffb53c7",
+        "ex-review-fill2-gray16-le-deflate-p1.tif": "28a5dad5028dc6b12c1eedb67568947238e2d02462990e6c1650205bca7f5bba",
+        "ex-review-fill2-gray16-le-deflate-p2.tif": "c3c61ac2cb4e03a2a44468d7af861f458a6b7d1cecf368fa283de4e2212dfddf",
+        "ex-review-fill2-gray16-le-lzw-p1.tif": "004ced67c3e8949e49fc05ac80e8e1bd61e36640c7652305495c1075fc98aad6",
+        "ex-review-fill2-gray16-le-lzw-p2.tif": "15ce20497b491c93524551bd7c6f6d35dbd0c45a3d4c339a3595551b19432c52",
+        "ex-review-fill2-gray16-le-packbits-p1.tif": "a805c17412a35de7fb323aaf0bafaa167cbbc274ddd952230d2414627c5eec1d",
+        "ex-review-fill2-gray16-le-raw-p1.tif": "17ad7959ad784f3ef9970db0cd546c0569382877878eb133ee278a2d798e9ad2",
+        "ex-review-fill2-gray8-be-deflate-p1.tif": "0806085e11d25d5073e4fd787d07353da7ab7c1dbdea315e697535828d7e1ad5",
+        "ex-review-fill2-gray8-be-deflate-p2.tif": "c78f94f6bd17af7edc3011641e30212e094b51906c81637aa32da142dc11e900",
+        "ex-review-fill2-gray8-be-lzw-p1.tif": "ebb5c0cc1d9cbbf49b1546efd27e9dfa2faf2bb7d7fd531dee27ff675e0b38aa",
+        "ex-review-fill2-gray8-be-lzw-p2.tif": "80da61075b3956853d3e8b3896bb24d9d1ba0dcfc129c8fab1f5973367f62097",
+        "ex-review-fill2-gray8-be-packbits-p1.tif": "e2d60576a1d024574adccc5956fae673a35f18be65256d20f9f972f409073107",
+        "ex-review-fill2-gray8-be-raw-p1.tif": "10f4dfea19328dc1330d3ba1c80cb226c52e974c04bbc06874eb49639eca6bda",
+        "ex-review-fill2-gray8-le-deflate-p1.tif": "38edacef1dad0f291ec58e762047c703bf7c3473cac23682397e66bb26cfb2d7",
+        "ex-review-fill2-gray8-le-deflate-p2.tif": "8a1155c6ee9dccb012b93647ac5f1abd3c60a9003eae2e74a35c518d452b2809",
+        "ex-review-fill2-gray8-le-lzw-p1.tif": "96b1885832b6fba38538befddf97a57f26d57573568957d47fedd85ad8d564eb",
+        "ex-review-fill2-gray8-le-lzw-p2.tif": "b56e05f9a204f4e9c5bcd6ead197f90fb68370bcdbb6141522fff5c5dbfa5da2",
+        "ex-review-fill2-gray8-le-old-lsb-first1.tif": "6e60e48aab82277fcf0cc732472a9fe57a8d8201c4e9f90b65348f8791293981",
+        "ex-review-fill2-gray8-le-old-lsb-first127.tif": "9182a17ff3b07dbb36201c8ebcf492b3c7a203acbf40034e5411728aa98fa363",
+        "ex-review-fill2-gray8-le-old-lsb-first128.tif": "df425a1075f8193f19027ca88a1527a12aaa9c50f7a64e3742134ba14221b035",
+        "ex-review-fill2-gray8-le-old-lsb-first255.tif": "8ea1c1d9e7b6302dfa880b83ece1831ba8ac9aa79940ccb88b21664bd5e9484e",
+        "ex-review-fill2-gray8-le-old-lsb-first64.tif": "3779783770262c6e210a0ee06bc44a736ea8eb93af39491e4fd3cc79d8a025bb",
+        "ex-review-fill2-gray8-le-old-lsb-first65.tif": "f2bd85c57beb086d3daa24bf046bac1d5b32b7d6c7b88785124b8d144853d2e3",
+        "ex-review-fill2-gray8-le-packbits-p1.tif": "f063a656b46597a4fa8c53cbf53a64e0929cd7778068ddcfc824ce10227dd0a2",
+        "ex-review-fill2-gray8-le-raw-p1.tif": "25461a1b0e343600b616539573382804fe9d83b9ffa3541c2469b2d17480a083",
+        "ex-review-sampleformat-float16.tif": "33ef48160aa41a5163ccef32014f91d5b83ffd2851226f8a4ffe7d16ea2dca64",
+        "ex-review-sampleformat-float32.tif": "61fbaf4a72254cea02d41e23e37bfd17b5ec1a9e5a91c556d544d4625d3a5e2f",
+        "ex-review-sampleformat-signed16.tif": "15a4650af940aec5392f35774064e638d9871072ef8f2f01a6b2e34833d0fdfc",
+        "ex-review-sampleformat-signed8.tif": "e1010eab09896f7f85fbaaf4309f3a3ccdfc07efc85c77cf0df577021246e92d",
+        "ex-review-sampleformat-unsigned16be.tif": "2d9aa6a11509d85570943b835624b7b5dcb58a1095d575269702c2dc66cf810a",
+        "ex-review-sampleformat-unsigned16le.tif": "3e2014ee951e800eaa0d4805639f40059e41dde88d32d668f1d8d8c9bb5137f6"
+      }
+    },
+    "avif": {
+      "runtime": "v24.19.0",
+      "cases": 4,
+      "all_passed": true,
+      "host_imports": [
+        {
+          "module": "./verify_bg.js",
+          "name": "__wbindgen_init_externref_table",
+          "kind": "function"
+        }
+      ],
+      "bindings": "wasm-bindgen nodejs; no mocked imports",
+      "target": "wasm32-unknown-unknown",
+      "features": "avifenc,image-buffer-ex; no defaults",
+      "wasm_bindgen": "wasm-bindgen 0.2.126",
+      "scope": [
+        "RGBA12 fixture -> declared RGBA16 all samples",
+        "RGBA12 lossless encode/decode including transparent RGB and unchanged storage",
+        "RGBA16 Exact rejection and explicit Round -> RGBA12",
+        "legacy RGBA8 encode/decode including alpha"
+      ],
+      "git_head": "f93e33498bf4f46e1790b2be4f6a4e362f40ed79",
+      "working_tree_dirty": true,
+      "wasm_sha256": "e7082cf097b14ff569cbe30c2bfc8634beb7f58e1054a56dbe1f6b9a63ad0b62",
+      "harness_sha256": "d4ceba4dc406c1ad5bf158c468127d32b0966f6c9a084b87e56c4902f8990003",
+      "helper_sha256": "195d9cd5a3838d860984d57e6f8c3d1f8059790310d1a2c85fddd9bc64a5718c",
+      "fixture_sha256": "132303af3360fc655d3c4175f29c9e3bee0844c6e629c49c89deb48fe010686e",
+      "cargo_lock_sha256": "78f7e8dc753f5d7c387b926ccb0c8280ca728ae7bb0820e49421ea654387888e",
+      "source_sha256": {
+        "wml2/src/avif/ex.rs": "ee5b14eed8e1621a0478af20808793b6a83ddd5bdc221f5c336adaa8e457c98f",
+        "wml2/src/avif/encoder.rs": "a48379f2baf2829e57bdbb5405e99ebcfa39f679f213849fd152117249128610",
+        "wml2/src/draw.rs": "b539d369b0c03111bd4591868488c04943146e05ee7c0af89190c84ecf37f2b3",
+        "wml2/src/image_buffer_ex.rs": "5ddd59e087b6431b86f249d1ec7ac97da169406de2c47482d4669aafeca8b500"
+      }
+    },
+    "initial_import_problem": "Empty-import raw wasm instantiation failed for v_frame wasm-bindgen support. Resolved with matching official wasm-bindgen0.2.126 nodejs bindings; no mocked imports. Four actual AVIF wasm checks passed."
+  },
+  "benchmark": "image-buffer-ex-avif-benchmark.json",
+  "display": {
+    "viewer": {
+      "path": "image-buffer-ex-avif-display.png",
+      "width": 900,
+      "height": 900,
+      "sha256": "8cdf6b7519c4f184cc827b08c1f0e4aeca7319b154f40691f1aeee183c352033",
+      "visually_inspected": true
+    },
+    "alpha_preview": {
+      "path": "image-buffer-ex-avif-alpha.png",
+      "sha256": "ce08342de59cc8f7f12d222c487321b2138b38b0933116900fa98a9e9ea42b76",
+      "visually_inspected": true
+    },
+    "scope": "Readability only; no ICC/HDR colorimetric validation"
+  },
+  "other_checks": {
+    "clippy": {
+      "command": "cargo clippy -p wml2 --locked --offline --no-default-features --features avifenc,image-buffer-ex,high-bit-depth --lib --tests --examples",
+      "completed": true,
+      "existing_warnings_remain": true,
+      "log_sha256": "5c1a775a4ecf54e3935a9c19c0a847833d99c3c03ec8ad082063dc9afd450711"
+    },
+    "sample": {
+      "command": "cargo run -p wml2 --locked --offline --release --no-default-features --features avifenc,image-buffer-ex,high-bit-depth --example ex_avif",
+      "passed": true,
+      "log_sha256": "fa3f4638cc67fae67494c77d487274d5f19f9eed285f43e54679626a3cbc362c"
+    },
+    "ci_configuration": {
+      "new_matrix_rows": [
+        "avif,image-buffer-ex",
+        "avifenc,image-buffer-ex,high-bit-depth"
+      ],
+      "existing_rows_preserved": true,
+      "sample_run_condition": "avifenc,image-buffer-ex,high-bit-depth",
+      "bash_syntax": "passed",
+      "rust_matrix": [
+        "1.91.0",
+        "stable"
+      ]
+    },
+    "fmt": "cargo fmt --all -- --check; rustfmt --check --edition 2024 wml2-test/scripts/avif_ex_wasm.rs; passed",
+    "diff_check": "git diff --check; passed",
+    "legacy_feature_examples": {
+      "command": "cargo check -p wml2 --locked --offline --no-default-features --features avifenc --examples",
+      "passed": true,
+      "log_sha256": "f1f0971edce0238bb8e2f9e992fdd2a066bd9c1efcf7dca46f214ddd31fe7126"
+    },
+    "final_integrity": "111 pinned dependency source/manifest files matched; manifests and JPEG sources unchanged; all recorded runtime source hashes and compressed benchmark data verified; local documentation links and CI Bash syntax passed"
+  },
+  "not_executed_or_not_supported": [
+    "External AVIS fixture bodies: star-8bpc.avif; colors-animated-8bpc-alpha-exif-xmp.avif; colors-animated-8bpc.avif. Three animation tests return early; APNG fourth returns early when PNG enabled.",
+    "Optional workspace C2PA, error corpus, local legacy/WebP/GIF sample bodies: explicit skip messages retained per log above. Ignored manual tests were not run.",
+    "PowerShell bootstrap and full standalone avif-rust oracle/test corpus: not run. Only WML2 required filter-disabled fixture generated with identical FFmpeg recipe.",
+    "Windows, macOS, stable toolchain, browser runtime, WASM threads and new remote CI matrix: not run here; CI not monitored.",
+    "EX AVIS/grid/geometry/premultiplied alpha/display-transfer conversion: explicitly unsupported; no claim of successful decoding.",
+    "AV1 16-bit output: unsupported. EX8/12 encoding requires explicit Exact/Round output request; native10/YUV API remains separate.",
+    "ICC transform/colorimetric accuracy and a total process RSS cap: not claimed."
+  ],
+  "source_sha256": {
+    "wml2/src/avif/ex.rs": "ee5b14eed8e1621a0478af20808793b6a83ddd5bdc221f5c336adaa8e457c98f",
+    "wml2/src/avif/encoder.rs": "a48379f2baf2829e57bdbb5405e99ebcfa39f679f213849fd152117249128610",
+    "wml2/src/avif/decoder.rs": "50dcc24fef6a4d3551aed394fc58a0c1313c9fdac52156115c1d3609e815b712",
+    "wml2/src/draw.rs": "b539d369b0c03111bd4591868488c04943146e05ee7c0af89190c84ecf37f2b3",
+    "wml2/src/image_buffer_ex.rs": "5ddd59e087b6431b86f249d1ec7ac97da169406de2c47482d4669aafeca8b500",
+    "wml2/src/highres/avif_encode.rs": "a2f100a7ad0481d480b91a4f69d7a125ebd9876658be4d0d74989ec162281a88",
+    "wml2/tests/avif_ex.rs": "ef5e24276e31e8364e3c394c4d3d1382a91d35f2fdbb8ff2716f0572e19b23c9",
+    "wml2/examples/ex_avif.rs": "f7f65c2f530649937ae80e605d694638d5e91086fd315a07264c39d7cacbee3e",
+    "wml2/examples/review_bench.rs": "b110fce720bdbd03f97aac0dd79e4bf0cbb7033483b9829ba1df084fd302d655",
+    "wml2-test/scripts/avif_ex_wasm.rs": "d4ceba4dc406c1ad5bf158c468127d32b0966f6c9a084b87e56c4902f8990003",
+    "wml2-test/scripts/verify_avif_ex_wasm.py": "195d9cd5a3838d860984d57e6f8c3d1f8059790310d1a2c85fddd9bc64a5718c"
+  }
+}

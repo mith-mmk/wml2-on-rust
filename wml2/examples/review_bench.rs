@@ -49,6 +49,7 @@ static ALLOCATOR: Meter = Meter;
     feature = "webp",
     feature = "png",
     feature = "tiff",
+    feature = "avifenc",
     feature = "image-buffer-ex"
 ))]
 fn hash(data: &[u8]) -> u64 {
@@ -76,6 +77,31 @@ fn main() {
         .and_then(|v| v.parse().ok())
         .unwrap_or(7);
     println!("case,iteration,ns,allocations,allocated_bytes,peak_live_bytes,first_draw_ns,hash");
+    #[cfg(feature = "avifenc")]
+    if mode == "avif-encode" {
+        let controls = std::collections::HashMap::from([(
+            "lossless".into(),
+            wml2::metadata::DataMap::UInt(1),
+        )]);
+        for i in 0..repeat {
+            measure("avif-encode-2x2", i, || {
+                let mut image = ImageBuffer::from_buffer(
+                    2,
+                    2,
+                    vec![
+                        0, 17, 255, 255, 85, 136, 17, 0, 170, 34, 221, 255, 255, 238, 204, 119,
+                    ],
+                );
+                let encoded = image_to(
+                    &mut image,
+                    wml2::util::ImageFormat::Avif,
+                    Some(controls.clone()),
+                )
+                .unwrap();
+                (hash(&encoded), 0)
+            });
+        }
+    }
     #[cfg(feature = "image-buffer-ex")]
     if mode == "decode-ex-file" {
         let encoded = std::fs::read(

@@ -870,6 +870,52 @@ pub struct EncodeOptions<'a> {
     pub options: Option<HashMap<String, DataMap>>,
 }
 
+/// Explicit input request for an EX-aware encoder. The picker owns precision
+/// conversion; the codec must validate the returned layout. This does not
+/// change the packed RGBA8 contract of legacy [`EncodeOptions`].
+#[cfg(feature = "image-buffer-ex")]
+pub struct EncodeOptionsEx<'a> {
+    /// Format-specific diagnostic level, as in the legacy encode options.
+    pub debug_flag: usize,
+    /// Supplies explicitly requested output rectangles, independently of storage.
+    pub drawer: &'a mut dyn PickCallbackEx,
+    /// Pixel format, byte stride and Exact/Round policy accepted by the encoder.
+    pub output: PixelOutputEx,
+    /// Encoder controls and explicitly prepared output metadata.
+    pub options: Option<HashMap<String, DataMap>>,
+}
+
+/// Encode through an explicit EX pixel request. Currently enabled AVIF encoding
+/// accepts Gray/RGBA8 or12; RGBA16 storage needs an explicit8/12-bit pick policy.
+/// Other codecs retain their existing legacy encoder entry points.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_encoder_ex(
+    option: &mut EncodeOptionsEx,
+    format: ImageFormat,
+) -> Result<Vec<u8>, Error> {
+    match format {
+        #[cfg(feature = "avifenc")]
+        ImageFormat::Avif => crate::avif::encoder::encode_ex(option),
+        _ => {
+            let _ = option;
+            Err(Box::new(ImgError::new_const(
+                ImgErrorKind::NoSupportFormat,
+                "EX encoding supports enabled AVIF only".into(),
+            )))
+        }
+    }
+}
+
+/// EX encoding with the same resource vocabulary as the legacy encoder API.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_encoder_ex_with_limits(
+    option: &mut EncodeOptionsEx,
+    format: ImageFormat,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Vec<u8>, Error> {
+    crate::limits::scope(limits, || image_encoder_ex(option, format))
+}
+
 /// Decodes an image from memory into an [`ImageBuffer`].
 ///
 /// # Examples
@@ -1258,12 +1304,15 @@ pub fn image_from_with_limits(
     Ok(image)
 }
 
-/// Decode static PNG/TIFF pixels with an explicit storage format and precision
+/// Decode enabled static PNG/TIFF/AVIF with explicit storage and precision
 /// policy. Unlike the RGBA8 API, the codec declares Gray8/16 or Rgba8/16 source
 /// bytes before drawing; conversion is owned by [`ImageBufferEx`].
 /// PNG packed Gray expands to Gray8; palette/RGB/GrayAlpha expand to straight
 /// RGBA at their sample depth. TIFF supports unsigned 8/16-bit Gray/RGB with
 /// optional straight alpha, and retains orientation without rotating samples.
+/// AVIF uses its bounded native still decoder and declares normalized RGBA16LE
+/// after codec reconstruction, without ICC application. AVIS/grid, geometry
+/// transforms, premultiplied alpha and display-transfer conversion reject.
 /// Other codecs, APNG, multi-page TIFF and premultiplied TIFF are unsupported.
 /// ICC/gamma information is metadata, with no color or display transforms.
 ///
@@ -1347,9 +1396,11 @@ pub fn image_decoder_ex_with_limits<B: BinaryReader>(
             ImageFormat::Png => crate::png::decoder::decode_ex_inner(reader, _option),
             #[cfg(feature = "tiff")]
             ImageFormat::Tiff => crate::tiff::decoder::decode_ex_inner(reader, _option),
+            #[cfg(feature = "avif")]
+            ImageFormat::Avif => crate::avif::decoder::decode_ex_inner(reader, _option),
             _ => Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
-                "EX decoding supports enabled static PNG/TIFF only".into(),
+                "EX decoding supports enabled static PNG/TIFF/AVIF only".into(),
             )) as Error),
         }
     })

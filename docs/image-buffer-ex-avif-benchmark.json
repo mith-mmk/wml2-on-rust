@@ -1,0 +1,347 @@
+{
+  "baseline_library_commit": "f93e33498bf4f46e1790b2be4f6a4e362f40ed79",
+  "features": "avifenc,image-buffer-ex,png; no defaults; release; Rust 1.91.0",
+  "helper": "wml2/examples/review_bench.rs; identical helper copied to baseline; library sources unchanged",
+  "helper_sha256": "b110fce720bdbd03f97aac0dd79e4bf0cbb7033483b9829ba1df084fd302d655",
+  "cpu_affinity": [
+    0
+  ],
+  "method": "single CPU; no concurrent Cargo/rustc; B/C/C/B/C/B process order; 3 processes/version; 100 measured after10 warmup for small inputs/encoder;10 measured after3 warmup for viewer; input file read excluded; allocator instrumentation included",
+  "comparison": [
+    {
+      "case": "gray16x16",
+      "mode": "decode-file",
+      "baseline": {
+        "samples": 300,
+        "median_ns": 24915.5,
+        "p95_ns": 50662,
+        "allocations": [
+          165
+        ],
+        "allocated_bytes": [
+          101239
+        ],
+        "peak_live_bytes": [
+          91703
+        ],
+        "hashes": [
+          11098294941953781029
+        ]
+      },
+      "current": {
+        "samples": 300,
+        "median_ns": 25159.0,
+        "p95_ns": 32099,
+        "allocations": [
+          165
+        ],
+        "allocated_bytes": [
+          101239
+        ],
+        "peak_live_bytes": [
+          91703
+        ],
+        "hashes": [
+          11098294941953781029
+        ]
+      },
+      "process_median_ns": {
+        "baseline": [
+          24936.0,
+          25033.0,
+          24480.0
+        ],
+        "current": [
+          25379.5,
+          24956.5,
+          24927.0
+        ]
+      },
+      "current_over_baseline": 1.0097730328510366,
+      "hashes_equal": true
+    },
+    {
+      "case": "rgba12-2x2",
+      "mode": "decode-file",
+      "baseline": {
+        "samples": 300,
+        "median_ns": 60639.5,
+        "p95_ns": 147828,
+        "allocations": [
+          278
+        ],
+        "allocated_bytes": [
+          187890
+        ],
+        "peak_live_bytes": [
+          93786
+        ],
+        "hashes": [
+          6245215884410767912
+        ]
+      },
+      "current": {
+        "samples": 300,
+        "median_ns": 61193.5,
+        "p95_ns": 100833,
+        "allocations": [
+          278
+        ],
+        "allocated_bytes": [
+          187890
+        ],
+        "peak_live_bytes": [
+          93786
+        ],
+        "hashes": [
+          6245215884410767912
+        ]
+      },
+      "process_median_ns": {
+        "baseline": [
+          60417.5,
+          61579.5,
+          60247.0
+        ],
+        "current": [
+          60578.0,
+          61498.5,
+          61311.5
+        ]
+      },
+      "current_over_baseline": 1.0091359592344924,
+      "hashes_equal": true
+    },
+    {
+      "case": "viewer900x900",
+      "mode": "decode-file",
+      "baseline": {
+        "samples": 30,
+        "median_ns": 268226792.5,
+        "p95_ns": 284108469,
+        "allocations": [
+          27122
+        ],
+        "allocated_bytes": [
+          55499208
+        ],
+        "peak_live_bytes": [
+          17221749
+        ],
+        "hashes": [
+          12386750019693394575
+        ]
+      },
+      "current": {
+        "samples": 30,
+        "median_ns": 270250588.5,
+        "p95_ns": 318869737,
+        "allocations": [
+          27122
+        ],
+        "allocated_bytes": [
+          55499208
+        ],
+        "peak_live_bytes": [
+          17221749
+        ],
+        "hashes": [
+          12386750019693394575
+        ]
+      },
+      "process_median_ns": {
+        "baseline": [
+          270422925.5,
+          267967645.0,
+          269536274.5
+        ],
+        "current": [
+          271982216.5,
+          266654211.5,
+          274730333.5
+        ]
+      },
+      "current_over_baseline": 1.0075450926476706,
+      "hashes_equal": true
+    },
+    {
+      "case": "legacy-alpha-encode-2x2",
+      "mode": "avif-encode",
+      "baseline": {
+        "samples": 300,
+        "median_ns": 957293.0,
+        "p95_ns": 1313171,
+        "allocations": [
+          382
+        ],
+        "allocated_bytes": [
+          84042
+        ],
+        "peak_live_bytes": [
+          20251
+        ],
+        "hashes": [
+          16383243238953000492
+        ]
+      },
+      "current": {
+        "samples": 300,
+        "median_ns": 988600.0,
+        "p95_ns": 1342365,
+        "allocations": [
+          382
+        ],
+        "allocated_bytes": [
+          84042
+        ],
+        "peak_live_bytes": [
+          20251
+        ],
+        "hashes": [
+          16349954717480746188
+        ]
+      },
+      "process_median_ns": {
+        "baseline": [
+          965560.0,
+          948124.5,
+          952773.0
+        ],
+        "current": [
+          994835.0,
+          975823.0,
+          994306.5
+        ]
+      },
+      "current_over_baseline": 1.0327036758860662,
+      "hashes_equal": false
+    }
+  ],
+  "new_ex_decode_absolute_only": [
+    {
+      "case": "gray16x16",
+      "mode": "decode-ex-file",
+      "samples": 300,
+      "median_ns": 23492.0,
+      "p95_ns": 60150,
+      "allocations": [
+        121
+      ],
+      "allocated_bytes": [
+        88384
+      ],
+      "peak_live_bytes": [
+        84208
+      ],
+      "hashes": [
+        15593271742447940773
+      ]
+    },
+    {
+      "case": "rgba12-2x2",
+      "mode": "decode-ex-file",
+      "samples": 300,
+      "median_ns": 56496.5,
+      "p95_ns": 142240,
+      "allocations": [
+        234
+      ],
+      "allocated_bytes": [
+        175170
+      ],
+      "peak_live_bytes": [
+        86106
+      ],
+      "hashes": [
+        14477981172836562739
+      ]
+    },
+    {
+      "case": "viewer900x900",
+      "mode": "decode-ex-file",
+      "samples": 30,
+      "median_ns": 297861964.5,
+      "p95_ns": 399232509,
+      "allocations": [
+        12764
+      ],
+      "allocated_bytes": [
+        53649845
+      ],
+      "peak_live_bytes": [
+        14975361
+      ],
+      "hashes": [
+        6143979356001440985
+      ]
+    }
+  ],
+  "encoder_hash_difference": "Expected: two alpha auxl item IDs corrected; codec samples unchanged",
+  "limitations": "New AVIF EX path has no supported baseline, so EX timings are absolute only. Rust allocator counters are not process RSS. Timings are local smoke measurements.",
+  "raw_sha256": "9c063dce29a107af53c2fcb23253f9af2b4b0b0ddc8f3690be4bfa4dbff9ebcf",
+  "fixture_sha256": {
+    "wml2/tests/fixtures/review/av1-full-omitted.avif": "6e423bfdeb1ace1c18fc0eb4f07cc4070c57eec3db9a7a294257e9dfeb195299",
+    ".test-example.avif": "132303af3360fc655d3c4175f29c9e3bee0844c6e629c49c89deb48fe010686e",
+    "samples/WML2Viewer.avif": "8b6846a35bc335a12cde9fa656b4add2c6a654f829bd996d228238b932897644"
+  },
+  "encoder_repeat": {
+    "reason": "Check small alpha-encode timing increase from initial comparison",
+    "method": "same pinned CPU and binaries; C/B/B/C/B/C; 10 warmup +1000 measured/process",
+    "processes": [
+      {
+        "version": "current",
+        "samples": 1000,
+        "median_ns": 952143.0,
+        "allocations": [
+          382
+        ]
+      },
+      {
+        "version": "baseline",
+        "samples": 1000,
+        "median_ns": 965818.0,
+        "allocations": [
+          382
+        ]
+      },
+      {
+        "version": "baseline",
+        "samples": 1000,
+        "median_ns": 949276.5,
+        "allocations": [
+          382
+        ]
+      },
+      {
+        "version": "current",
+        "samples": 1000,
+        "median_ns": 965718.0,
+        "allocations": [
+          382
+        ]
+      },
+      {
+        "version": "baseline",
+        "samples": 1000,
+        "median_ns": 961842.0,
+        "allocations": [
+          382
+        ]
+      },
+      {
+        "version": "current",
+        "samples": 1000,
+        "median_ns": 975234.0,
+        "allocations": [
+          382
+        ]
+      }
+    ],
+    "baseline_process_median_ns": 961842.0,
+    "current_process_median_ns": 965718.0,
+    "ratio": 1.0040297678828747
+  },
+  "dependency_lock_identical": true,
+  "cargo_lock_sha256": "a769b40e9d8858665d14b540a6e3c8654196ac759691b692516aaaa21aaace6b",
+  "raw_file": "image-buffer-ex-avif-benchmark-raw.json.gz"
+}

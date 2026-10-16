@@ -200,14 +200,19 @@ instead of narrowing it through the legacy RGBA8 background or compositing
 straight-alpha pixels. ICC data is retained as `Source ICC Profile`; no
 ICC/gamma/HDR transform is performed or implied by Gray-to-RGBA expansion.
 APNG, multi-display-page TIFF, premultiplied/unspecified TIFF alpha, other
-photometric models/depths/codecs, and AVIF EX integration remain unsupported.
+photometric models/depths/codecs remain unsupported in the PNG/TIFF EX paths.
+Bounded static AVIF is now connected through the
+[EX AVIF adapter](docs/image-buffer-ex-avif.md): decoding declares RGBA16LE
+without ICC application, and `image_encoder_ex` explicitly requests8/12-bit
+Gray/RGBA output using the callback's Exact/Round policy. Native YUV/10-bit
+APIs remain separate; sixteen-bit EX storage is not silently narrowed.
 `image_from_ex_with_limits`/`image_decoder_ex_with_limits` enforce existing
 limits independently on input, source, storage, output rows and metadata;
 the TIFF native reconstruction also budgets its temporary u16 sample storage.
-EX Abort stops subsequent callback forwarding for both codecs.
+EX Abort stops subsequent callback forwarding for enabled EX codecs.
 
-Legacy encoders use the explicit `ImageBufferEx::to_rgba8` adapter; encoders
-are not connected to EX bytes and do not automatically reduce their precision. With both
+Legacy encoders use an explicit RGBA8 adapter. EX-aware AVIF encoding uses
+`EncodeOptionsEx`; existing encoders do not automatically reduce precision. With both
 `image-buffer-ex` and `high-bit-depth`, `from_highres_pixels` and
 `to_highres_pixels` copy representable full-resolution Gray or straight RGBA
 pixels through the existing `highres::ImageFrame`/`PixelBuffer` types. These

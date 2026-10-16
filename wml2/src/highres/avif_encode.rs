@@ -143,7 +143,11 @@ pub fn encode_native_with_quantization(
         })?,
         planes,
     };
-    Ok(avifenc_codec::encode_native_bytes(&buffers, options)?)
+    let has_alpha = buffers.planes.iter().any(|plane| plane.layout.plane == 3);
+    let mut encoded = avifenc_codec::encode_native_bytes(&buffers, options)?;
+    crate::avif::encoder::normalize_alpha_reference(&mut encoded, has_alpha)
+        .map_err(|error| EncoderError::Bitstream(error.to_string()))?;
+    Ok(encoded)
 }
 
 fn validate_options(frame: &ImageFrame, options: &NativeEncodeOptions) -> Result<(), HighresError> {

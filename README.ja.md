@@ -118,6 +118,11 @@ Q4/XLD4は`ifxld4.spi`の解析で確認した保持色runを使って復号し�
 保存形式・エンコーダ出力要求の分離、ICC metadata の後処理、Exact／Round と
 失敗時の契約をまとめています。
 
+[AVIF/avifenc の EX adapter](docs/image-buffer-ex-avif.md)は、静止画の RGBA16LE
+入力宣言と、callback が明示した8/12bit出力を接続します。RGBA16保存からの
+減精度は Exact／Round を選択し、ICC と表示色変換は利用者側で処理します。
+既存 RGBA8 API と native YUV／10bit API は維持します。
+
 このbranchでは非既定の`image-buffer-ex`でGray/RGBA8・12・16bitを精度を保って格納します。
 source・storage・picker outputを別々に宣言し、8bit化はExact／Roundを明示して実行します。
 単一pixelの借用参照、静止画の旧ImageBufferからの検査付き所有権移譲、

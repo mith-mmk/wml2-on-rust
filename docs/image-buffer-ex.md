@@ -19,7 +19,7 @@ unchanged. This work has not been merged or released.
 | Picking | Explicit output-format/stride/policy rectangles via PickCallbackEx; native borrowed single-pixel bytes |
 | Legacy input | Checked ownership transfer of static RGBA8 ImageBuffer pixels, retaining background/callback metadata |
 | Legacy encoding | Explicit whole-canvas to_rgba8 or borrowed legacy_picker with per-rectangle conversion |
-| Native codec source | Static PNG/TIFF emit Gray8/16 or RGBA8/16; low sample bits retained on EX path |
+| Native codec source | Static PNG/TIFF emit Gray8/16 or RGBA8/16; bounded static AVIF emits RGBA16 without ICC application |
 | Typed highres handoff | Pixel-only U8/U16 full-resolution Gray or straight RGBA at uniform 8/12/16 bits |
 | Unsupported | YUV, F32/HDR/signed/10-bit, premultiplied alpha, EX animation, general color/ICC transforms |
 
@@ -118,7 +118,10 @@ assert_eq!(image.pixel_bytes(0, 0)?, &[1, 0]);
 
 ## Codec and highres boundaries
 
-EX decoding remains limited to enabled static PNG/TIFF. PNG packed Gray expands
+EX decoding supports enabled static PNG/TIFF and the
+[bounded AVIF adapter](image-buffer-ex-avif.md). AVIF encoding consumes an
+explicit EX8/12-bit output request; RGBA16 storage stays independent.
+PNG packed Gray expands
 to Gray8; palette/RGB/GrayAlpha expand to straight RGBA at their sample depth.
 TIFF accepts supported unsigned 8/16-bit Gray/RGB with optional straight alpha,
 retains orientation metadata without rotating samples, and rejects premultiplied

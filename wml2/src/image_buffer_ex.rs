@@ -161,7 +161,7 @@ pub struct ImageProfilesEx {
     pub stride: usize,
 }
 
-/// Supplies explicitly requested Gray/RGBA bytes to future EX-aware consumers.
+/// Supplies explicitly requested Gray/RGBA bytes to EX-aware consumers.
 /// This separate, feature-gated trait does not change legacy `PickCallback`
 /// implementers or the byte format consumed by existing codecs.
 pub trait PickCallbackEx: Sync + Send {

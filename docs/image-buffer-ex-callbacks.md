@@ -105,6 +105,11 @@ cargo run -p wml2 --offline --no-default-features --features image-buffer-ex,png
 `PixelOutputEx` を指定し、返却された `PixelBytesEx` の実レイアウトを使う。
 この段階の精度変換方針は入力→保存時の方針とは独立している。
 
+AVIF には追加の [EX adapter](image-buffer-ex-avif.md) がある。
+`image_encoder_ex(EncodeOptionsEx)` は8/12bitを明示要求し、元の storage を保持する。
+AVIF の EX decode も ICC は draw 後の metadata として渡す。上記の高精度
+PNG/TIFF encoder と能力交渉 API は引き続き未実装である。
+
 ## ICC と metadata の配信順
 
 現在の EX 対応 codec を実コードで確認すると、正常終了時は次の順序になる。
@@ -115,6 +120,7 @@ cargo run -p wml2 --offline --no-default-features --features image-buffer-ex,png
 | --- | --- |
 | PNG EX | bKGD があれば `PNG Background` → `init_ex` → pixel draw → 最後に metadata map（`Source ICC Profile` を含む）→ `terminate` |
 | TIFF EX | `init_ex` → 各行 draw → Format／Orientation／Tiff headers／任意の `Source ICC Profile` → `terminate` |
+| AVIF EX | `init_ex`（RGBA16LE）→ 全矩形 draw → Format／source depth／CICP／任意の `Source ICC Profile` → `terminate` |
 
 根拠は基準 commit `9ec7f072` の
 [PNG 初期化](https://github.com/mith-mmk/wml2-on-rust/blob/9ec7f072c300edb0e318a169f466bdd6a17f5a7e/wml2/src/png/decoder.rs#L518)、
@@ -125,7 +131,10 @@ Callback へいつ配信されるかは別である。追加テストは実際�
 で両形式の `init → draw → ICC → terminate` を観測する。後からより早い
 配信を保証する実装へ移す場合は、この観測テストも意図的に更新する。
 
-ICC は `DataMap::ICCProfile(Vec<u8>)`。EX の PNG／TIFF は
+AVIF の追加経路は [EX adapter](../wml2/src/avif/ex.rs) と
+[AVIF EX テスト](../wml2/tests/avif_ex.rs) で順序を確認する。
+
+ICC は `DataMap::ICCProfile(Vec<u8>)`。EX の PNG／TIFF／AVIF は
 `"Source ICC Profile"` というキーで元の profile を渡す。一般の
 `"ICC Profile"` を変換後出力の profile として使う場合とは区別する。
 EX 精度変換は profile を解析・検証・適用しない。ICC がないときに sRGB

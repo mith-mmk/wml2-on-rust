@@ -29,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         rust: ['1.91.0', stable]
-        features: [default, minimal, image-buffer-ex, 'image-buffer-ex,high-bit-depth', 'png,image-buffer-ex,high-bit-depth', 'tiff,image-buffer-ex,high-bit-depth', high-bit-depth, color-management, jpeg2000, 'avif,high-bit-depth', 'avifenc,high-bit-depth', 'avifenc,high-bit-depth,multithread', 'jpeg,idct_llm', 'jpeg,idct_aan', 'jpeg,idct_slower', 'jpeg,idct_llm,multithread', 'png,psd,tiff']
+        features: [default, minimal, image-buffer-ex, 'image-buffer-ex,high-bit-depth', 'png,image-buffer-ex,high-bit-depth', 'tiff,image-buffer-ex,high-bit-depth', high-bit-depth, color-management, jpeg2000, 'avif,image-buffer-ex', 'avifenc,image-buffer-ex,high-bit-depth', 'avif,high-bit-depth', 'avifenc,high-bit-depth', 'avifenc,high-bit-depth,multithread', 'jpeg,idct_llm', 'jpeg,idct_aan', 'jpeg,idct_slower', 'jpeg,idct_llm,multithread', 'png,psd,tiff']
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,6 +58,9 @@ jobs:
           if [[ "$FEATURES" != default && "$FEATURES" != minimal ]]; then args+=(--features "$FEATURES"); fi
           cargo test -p wml2 --locked --lib --tests "${args[@]}"
           cargo clippy -p wml2 --locked --lib --tests "${args[@]}" --message-format=json > clippy.json
+          if [[ "$FEATURES" == avifenc,image-buffer-ex,high-bit-depth ]]; then
+            cargo run -p wml2 --locked --no-default-features --features "$FEATURES" --example ex_avif
+          fi
           if [[ "$FEATURES" == default ]]; then
             cargo test -p wml2 --locked --doc
             cargo check -p wml2 --locked --examples

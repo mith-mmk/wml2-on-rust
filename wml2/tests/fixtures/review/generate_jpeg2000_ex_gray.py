@@ -148,7 +148,7 @@ def main():
                                              sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
     negatives = []
     for name, components, bits, signed, extra in [
-        ('signed16', 1, 16, True, []), ('rgb16', 3, 16, False, []),
+        ('signed16', 1, 16, True, []),
         ('rgba16', 4, 16, False, []), ('irreversible16', 1, 16, False, ['-I']),
         ('gray10', 1, 10, False, []), ('roi16', 1, 16, False, ['-ROI', 'c=0,U=3']),
     ]:

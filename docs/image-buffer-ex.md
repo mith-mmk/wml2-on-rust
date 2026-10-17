@@ -19,7 +19,7 @@ unchanged. This work has not been merged or released.
 | Picking | Explicit output-format/stride/policy rectangles via PickCallbackEx; native borrowed single-pixel bytes |
 | Legacy input | Checked ownership transfer of static RGBA8 ImageBuffer pixels, retaining background/callback metadata |
 | Legacy encoding | Explicit whole-canvas to_rgba8 or borrowed legacy_picker with per-rectangle conversion |
-| Native codec source | Static PNG/TIFF emit Gray8/16 or RGBA8/16; bounded static AVIF emits RGBA16 without ICC application; JPEG2000 EX emits unsigned Gray12/16 for the narrow reversible profile |
+| Native codec source | Static PNG/TIFF emit Gray8/16 or RGBA8/16; bounded static AVIF emits RGBA16 without ICC application; JPEG2000 EX emits unsigned Gray12/16 or RGBA12/16 from RGB/explicit straight RGBA in the reversible profile |
 | Typed highres handoff | Pixel-only U8/U16 full-resolution Gray or straight RGBA at uniform 8/12/16 bits |
 | Unsupported | YUV, F32/HDR/signed/10-bit, premultiplied alpha, EX animation, general color/ICC transforms |
 
@@ -120,7 +120,7 @@ assert_eq!(image.pixel_bytes(0, 0)?, &[1, 0]);
 
 EX decoding supports enabled static PNG/TIFF, the
 [bounded AVIF adapter](image-buffer-ex-avif.md), and
-[unsigned Gray12/16 reversible JPEG2000](jpeg2000-ex-gray.md). AVIF encoding consumes an
+[unsigned Gray/RGB/declared straight RGBA12/16 reversible JPEG2000](jpeg2000-ex-color.md). AVIF encoding consumes an
 explicit EX8/12-bit output request; RGBA16 storage stays independent.
 PNG packed Gray expands
 to Gray8; palette/RGB/GrayAlpha expand to straight RGBA at their sample depth.
@@ -140,10 +140,12 @@ and budgets and preserve storage when conversions/picks/draws fail. Expanded
 limits are individual buffers, not a promise about allocator overhead or total
 process RSS.
 
-JPEG2000's first high-depth EX profile retains unsigned Gray12/16 with5/3.
-It does not change the legacy RGBA8 decoder's acceptance or silently narrow its
-samples. RGB/RGBA high depth,9/7 high depth, signed, other coded precisions and
-ICC remain separate codec work. EX still has no signed/float/HDR/YUV storage or
+JPEG2000 EX retains unsigned Gray/RGB12/16 and JP2 RGBA12/16 with complete
+straight-alpha CDEF, using reversible 5/3 and optional RGB RCT. RGB gains opaque
+alpha in the existing RGBA formats. The legacy RGBA8 decoder keeps its acceptance;
+high depth is not silently narrowed. Mixed/signed precision, 9/7 high depth,
+implicit or premultiplied alpha, other coded precisions and effective ICC remain
+unsupported. See the [colour profile](jpeg2000-ex-color.md). EX still has no signed/float/HDR/YUV storage or
 automatic color transform; no large-image streaming API is added.
 
 ## Validation and reproduction

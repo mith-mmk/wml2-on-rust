@@ -10,16 +10,6 @@
     "sha256": "be9c28b3e7f60aef49444b7bee4b12798b4049b88e45713b4cbe622d764064cf"
   },
   {
-    "input": "jp2_ex_unsupported_rgb16.j2k",
-    "reason": "rgb16",
-    "sha256": "1c18be94d59f8f4202cb29f446c2517aed4884b23998c0d15e0ff13632931456"
-  },
-  {
-    "input": "jp2_ex_unsupported_rgb16.jp2",
-    "reason": "rgb16",
-    "sha256": "9acdadf2928a07a68c2d287c0d3068bc6e632560ec9bb0d97c742a237e8b2912"
-  },
-  {
     "input": "jp2_ex_unsupported_rgba16.j2k",
     "reason": "rgba16",
     "sha256": "f7e08d250d0cb1f5f86d49d0a84b1fc603deab4d54075c9ec68e4062d70502c8"

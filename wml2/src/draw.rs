@@ -1402,7 +1402,7 @@ pub fn image_decoder_ex_with_limits<B: BinaryReader>(
             ImageFormat::Avif => crate::avif::decoder::decode_ex_inner(reader, _option),
             _ => Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
-                "EX decoding supports enabled static PNG/TIFF/AVIF and unsigned Gray12/16 reversible JPEG2000".into(),
+                "EX decoding supports enabled static PNG/TIFF/AVIF and unsigned Gray/RGB/declared straight RGBA12/16 reversible JPEG2000".into(),
             )) as Error),
         }
     })

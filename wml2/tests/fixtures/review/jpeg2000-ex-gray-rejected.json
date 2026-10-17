@@ -20,16 +20,6 @@
     "sha256": "cd844f4f8dccea9154c9ad171ee03561a1010286f8d3614a31d2b1e711954a77"
   },
   {
-    "input": "jp2_ex_unsupported_irreversible16.j2k",
-    "reason": "irreversible16",
-    "sha256": "2e90142bb297f9dd47be2d9e116b458eccce90978d581a40fbc76bbdc3b992e7"
-  },
-  {
-    "input": "jp2_ex_unsupported_irreversible16.jp2",
-    "reason": "irreversible16",
-    "sha256": "4366af1bf6e4b11ad3924602c3c074dcee35e2dcb8d8a942814fb305fef0d58d"
-  },
-  {
     "input": "jp2_ex_unsupported_gray10.j2k",
     "reason": "gray10",
     "sha256": "fed1f31a8e9a5b3ea601ebe172377f4d86e2039b9737f37d9ba9732a3e0f8ca2"

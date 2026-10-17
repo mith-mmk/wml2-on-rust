@@ -5,8 +5,8 @@
 //! retry the general component/tile/packet assembler, supporting multiple layers,
 //! five progressions, precincts, subsampling, palette, ROI and HTONLY HTJ2K.
 //! EX additionally retains unsigned Gray/RGB12/16 and explicitly declared
-//! straight RGBA12/16 with reversible 5/3 and optional RGB RCT. Signed, mixed
-//! precision, irreversible high depth, implicit/premultiplied alpha and ICC
+//! straight RGBA12/16 with reversible 5/3/RCT or bounded 9/7/ICT. Signed, mixed
+//! precision, implicit/premultiplied alpha and ICC
 //! remain unsupported.
 //! Geometry, coefficient precision and resource budgets remain bounded.
 //! All declared tiles and layer packets must be present; complete packets end

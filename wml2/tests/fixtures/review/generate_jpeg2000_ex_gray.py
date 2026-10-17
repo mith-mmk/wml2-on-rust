@@ -165,7 +165,9 @@ def main():
             # Verify that this is an independently readable stream, even though
             # the WML2 EX profile intentionally does not support its declaration.
             run(args.decompress, '-i', str(path), '-o', str(work / 'negative.pgx'), '-threads', '1')
-            negatives.append(dict(input=path.name, reason=name, sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+            # Retain historical filenames for the new 9/7 acceptance regression.
+            if name != 'irreversible16':
+                negatives.append(dict(input=path.name, reason=name, sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
     (root / 'jpeg2000-ex-gray-rejected.json').write_text(json.dumps(negatives, indent=2) + '\n')
     (root / 'jpeg2000-ex-gray-manifest.txt').write_text(''.join(
         f"{r['input']} {r['source']} {r['depth']} {r['width']} {r['height']}\n" for r in rows))

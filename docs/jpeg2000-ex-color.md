@@ -1,5 +1,8 @@
 # JPEG2000 EX unsigned RGB/RGBA12/16 (unreleased)
 
+> This guide records the reversible colour stage, now PR #15. The later
+> [9/7 and ICT continuation](jpeg2000-ex-97.md) expands the current EX profile.
+
 This continuation starts at PR #14 head
 `f8cdef98f4cab2060248a7ab58dffd383a572209` on a separate branch.
 WML2 remains 0.0.36. PR #13, PR #14 and main are not rewritten or merged;

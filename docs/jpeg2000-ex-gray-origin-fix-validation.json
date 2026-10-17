@@ -1,0 +1,526 @@
+{
+  "date": "2026-10-17",
+  "base_commit": "af4bdf67502ba277f05877e25fd53ef66151f272",
+  "scope": "Only EX canvas index ordering and its focused regression checks. Legacy indexing and accepted profiles are unchanged.",
+  "toolchain": "Rust/Cargo 1.91.0, Linux x86_64; actual wasm32 Node 24.19.0",
+  "source_sha256": {
+    "wml2/src/jpeg2000_general.rs": "466f3c360ebe7b8248969f24e12a37cd37a8c9b7af0fa7857576bb79248d06dd",
+    "wml2-test/scripts/jpeg2000_ex_checks.rs": "0609cd579d9125a48cadf871f0d05fd92ff4d2afd5f396f40614f4cec11f5654",
+    "wml2-test/scripts/verify_jpeg2000_ex_wasm.py": "5c38d781ec89c528b9fb268bf22079bc60538f161e2121ee46726a6bc6037c97",
+    "wml2/tests/jpeg2000_ex.rs": "5a27c8a378d4f29c030891fd5b0beb1952ea09b301066c63d5cc5f98b44d9d50"
+  },
+  "reproduction": {
+    "input": "Existing Gray12/16 33x29 noise fixture, three decomposition levels; translate SIZ image/tile X coordinates by a multiple of 8, leaving encoded samples unchanged.",
+    "origins": [
+      "0x80000000",
+      "0xffffff80"
+    ],
+    "before_production_sha256": "2805278128564b1a77e8c9e730750fbc5bbd2b1060b13266efe9a845901012c5",
+    "native_before": "New large-X-origin regression passes on x86_64 with release overflow checks enabled.",
+    "wasm_before": "Error: case 8: RuntimeError: unreachable\n    at /workspace/wml2-on-rust/.test-jp2-depth/.test-origin-wasm-before/run.cjs:5:73\n",
+    "overflow_intermediate": {
+      "y": 4,
+      "width": 33,
+      "absolute_x": 4294967168,
+      "sum": 4294967300,
+      "u32_max": 4294967295
+    },
+    "reason": "Combining the row offset with absolute X before subtracting image origin exceeds u32. Relative coordinates are now computed first."
+  },
+  "checks": {
+    "origin-native-before": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex",
+        "--test",
+        "jpeg2000_ex",
+        "large_x_origins_preserve_pixels_on_native_and_32bit"
+      ],
+      "exit": 0,
+      "seconds": 8.01,
+      "peak_cgroup_bytes": 3158360064,
+      "passed_failed_ignored": [
+        1,
+        0,
+        0
+      ]
+    },
+    "origin-wasm-before": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_ex_wasm.py",
+        "--work-dir",
+        ".test-jp2-depth/.test-origin-wasm-before"
+      ],
+      "exit": 1,
+      "seconds": 6.01,
+      "peak_cgroup_bytes": 3149438976
+    },
+    "origin-native-after": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 37.02,
+      "peak_cgroup_bytes": 3249999872,
+      "passed_failed_ignored": [
+        126,
+        0,
+        0
+      ]
+    },
+    "origin-wasm-after": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_ex_wasm.py",
+        "--overflow-checks",
+        "--work-dir",
+        ".test-jp2-depth/.test-origin-wasm-after"
+      ],
+      "exit": 0,
+      "seconds": 6.0,
+      "peak_cgroup_bytes": 3210313728
+    },
+    "origin-wasm-default": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_ex_wasm.py",
+        "--default-features",
+        "--overflow-checks",
+        "--work-dir",
+        ".test-jp2-depth/.test-origin-wasm-default"
+      ],
+      "exit": 0,
+      "seconds": 15.01,
+      "peak_cgroup_bytes": 3463401472
+    },
+    "origin-high": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--test",
+        "jpeg2000_ex"
+      ],
+      "exit": 0,
+      "seconds": 10.01,
+      "peak_cgroup_bytes": 3350482944,
+      "passed_failed_ignored": [
+        37,
+        0,
+        0
+      ]
+    },
+    "origin-cross": {
+      "command": [
+        "cargo",
+        "check",
+        "-p",
+        "wml2",
+        "--locked",
+        "--target",
+        "i686-unknown-linux-gnu",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib"
+      ],
+      "exit": 0,
+      "seconds": 1.0,
+      "peak_cgroup_bytes": 3068051456
+    },
+    "origin-clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "wml2",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--tests",
+        "--examples"
+      ],
+      "exit": 0,
+      "seconds": 3.0,
+      "peak_cgroup_bytes": 3243294720
+    },
+    "origin-example-build": {
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex",
+        "--example",
+        "jpeg2000_ex_verify"
+      ],
+      "exit": 0,
+      "seconds": 6.0,
+      "peak_cgroup_bytes": 3219951616
+    },
+    "origin-benchmark": {
+      "command": [
+        "python3",
+        ".test-jp2-depth/origin-benchmark.py"
+      ],
+      "exit": 0,
+      "seconds": 22.01,
+      "peak_cgroup_bytes": 3091537920
+    }
+  },
+  "release_overflow_checks": true,
+  "wasm": {
+    "minimal": {
+      "runtime": "v24.19.0",
+      "passed": 80,
+      "rejected": 12,
+      "host_imports": [],
+      "default_features": false,
+      "release_overflow_checks": true,
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_ex_checks.rs": "0609cd579d9125a48cadf871f0d05fd92ff4d2afd5f396f40614f4cec11f5654",
+        "wml2/src/jpeg2000.rs": "9404713653ebae108e9170bd09a6c558ea63db3206df11604d54093f448a55bd",
+        "wml2/src/jpeg2000_general.rs": "466f3c360ebe7b8248969f24e12a37cd37a8c9b7af0fa7857576bb79248d06dd",
+        "wml2/src/draw.rs": "27de1be49b9740325b5af931d7a2aa3e7f85c7eb80fa46af960cb26b052c276a"
+      },
+      "wasm_sha256": "d1f2aad4c957cb7c2ee933773d5a71611785f369ff0e1166ef303aad83611c6f"
+    },
+    "default": {
+      "runtime": "v24.19.0",
+      "passed": 80,
+      "rejected": 12,
+      "host_imports": [],
+      "default_features": true,
+      "release_overflow_checks": true,
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_ex_checks.rs": "0609cd579d9125a48cadf871f0d05fd92ff4d2afd5f396f40614f4cec11f5654",
+        "wml2/src/jpeg2000.rs": "9404713653ebae108e9170bd09a6c558ea63db3206df11604d54093f448a55bd",
+        "wml2/src/jpeg2000_general.rs": "466f3c360ebe7b8248969f24e12a37cd37a8c9b7af0fa7857576bb79248d06dd",
+        "wml2/src/draw.rs": "27de1be49b9740325b5af931d7a2aa3e7f85c7eb80fa46af960cb26b052c276a"
+      },
+      "wasm_sha256": "3543f49450a9d9df2b05460ae949a802091ce8303ffb7a8476e65bcdc019fa68"
+    }
+  },
+  "benchmark": {
+    "method": "Same Rust1.91 release no-default jpeg2000,image-buffer-ex example; 8 alternating pairs, pinned CPU, 100 iterations and 10 warmups; overflow checks disabled on both benchmark binaries. Every output equals the original U16 reference. Single-host observations only.",
+    "cpu": 0,
+    "binary_sha256": {
+      "before": "30c8ad894c8ee6727b91876fdc67c1d3d96586d39fe88955ae84cce407b84206",
+      "after": "fbf678a3f3aa5eeac6373d10efc201ee78a7e4df173a1d6f328a5a32fd94eb7e"
+    },
+    "summary": [
+      {
+        "bits": 12,
+        "median_us": {
+          "before": 5391.914,
+          "after": 5426.8345
+        },
+        "change_percent": 0.6476457154175774
+      },
+      {
+        "bits": 16,
+        "median_us": {
+          "before": 6478.1494999999995,
+          "after": 6448.71
+        },
+        "change_percent": -0.45444304735479113
+      }
+    ],
+    "rows": [
+      {
+        "pair": 0,
+        "bits": 12,
+        "variant": "before",
+        "us": 5449.837,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 0,
+        "bits": 12,
+        "variant": "after",
+        "us": 5379.01,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 0,
+        "bits": 16,
+        "variant": "before",
+        "us": 6603.888,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 0,
+        "bits": 16,
+        "variant": "after",
+        "us": 6374.347,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 1,
+        "bits": 12,
+        "variant": "after",
+        "us": 5913.144,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 1,
+        "bits": 12,
+        "variant": "before",
+        "us": 5520.487,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 1,
+        "bits": 16,
+        "variant": "after",
+        "us": 6472.017,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 1,
+        "bits": 16,
+        "variant": "before",
+        "us": 6363.87,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 2,
+        "bits": 12,
+        "variant": "before",
+        "us": 5313.82,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 2,
+        "bits": 12,
+        "variant": "after",
+        "us": 5628.055,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 2,
+        "bits": 16,
+        "variant": "before",
+        "us": 6573.618,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 2,
+        "bits": 16,
+        "variant": "after",
+        "us": 6413.069,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 3,
+        "bits": 12,
+        "variant": "after",
+        "us": 5474.659,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 3,
+        "bits": 12,
+        "variant": "before",
+        "us": 5415.732,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 3,
+        "bits": 16,
+        "variant": "after",
+        "us": 6493.516,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 3,
+        "bits": 16,
+        "variant": "before",
+        "us": 6382.681,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 4,
+        "bits": 12,
+        "variant": "before",
+        "us": 5368.096,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 4,
+        "bits": 12,
+        "variant": "after",
+        "us": 5706.981,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 4,
+        "bits": 16,
+        "variant": "before",
+        "us": 6709.968,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 4,
+        "bits": 16,
+        "variant": "after",
+        "us": 6544.783,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 5,
+        "bits": 12,
+        "variant": "after",
+        "us": 5287.988,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 5,
+        "bits": 12,
+        "variant": "before",
+        "us": 5220.245,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 5,
+        "bits": 16,
+        "variant": "after",
+        "us": 6158.069,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 5,
+        "bits": 16,
+        "variant": "before",
+        "us": 6223.216,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 6,
+        "bits": 12,
+        "variant": "before",
+        "us": 5281.971,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 6,
+        "bits": 12,
+        "variant": "after",
+        "us": 5164.141,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 6,
+        "bits": 16,
+        "variant": "before",
+        "us": 6296.998,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 6,
+        "bits": 16,
+        "variant": "after",
+        "us": 6425.403,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 7,
+        "bits": 12,
+        "variant": "after",
+        "us": 5336.732,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 7,
+        "bits": 12,
+        "variant": "before",
+        "us": 5750.66,
+        "pixel_sha256": "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+      },
+      {
+        "pair": 7,
+        "bits": 16,
+        "variant": "after",
+        "us": 6619.076,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      },
+      {
+        "pair": 7,
+        "bits": 16,
+        "variant": "before",
+        "us": 6593.36,
+        "pixel_sha256": "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+      }
+    ]
+  },
+  "display": {
+    "cases": [
+      {
+        "bits": 12,
+        "width": 33,
+        "height": 29,
+        "x_origin": 4294967168,
+        "input_sha256": "faad0eddc5911c90813194e10a54c3b6cf4a373377d7e673c1851be5c7dafbe3",
+        "source_and_decoded_sha256": "b10fdb13858756bf470eb393978c8739bd26dbfcb7b8f2d708a50d577af4429d"
+      },
+      {
+        "bits": 16,
+        "width": 33,
+        "height": 29,
+        "x_origin": 4294967168,
+        "input_sha256": "33dd2c337de1bb3ef5915aa475feb4e03c7460913d67171bad0a8770af41bd27",
+        "source_and_decoded_sha256": "52b1d2a99289e89c8aab8e02277afd45cc6e9bca51437a921b94d0c354769434"
+      }
+    ],
+    "preview_sha256": "271509c15a97c447121eb5ef7baf188e49aab8dc164d436de6a8bbc7f99518a9",
+    "visually_checked": true,
+    "note": "Fixed native output at X origin 0xffffff80 matches source U16 for both depths. Normalized and low-byte source/decoded panels match; preview retained under .test-jp2-depth/origin-display.png."
+  },
+  "memory": {
+    "build_jobs": 2,
+    "peak_cgroup_bytes": 3463401472,
+    "limit_bytes": 17179869184,
+    "events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+  },
+  "notes": [
+    "Counts overlap; do not sum focused and broader native runs.",
+    "Initial workspace 502/0/14 and other records refer to af4bdf6, before this correction.",
+    "Clippy succeeds with existing warnings.",
+    "This is a specific arithmetic-correctness fix; no independent review was rerun.",
+    "Final exact-head CI is reported in PR #14 separately; no main merge, publish, version bump, tag or release."
+  ]
+}

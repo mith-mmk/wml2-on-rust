@@ -1502,6 +1502,59 @@ pub fn decode<B: BinaryReader>(
         decode_inner,
     )
 }
+/// Decode unsigned, full-resolution Gray/RGB/declared straight RGBA8 at a
+/// codestream resolution level. `reduce` discards that many finest DWT levels
+/// (scale 2^reduce), rather than resizing a fully decoded image.
+///
+/// Zero uses the existing full-resolution decoder, including its broader
+/// accepted profile. Nonzero reduction requires the documented reduced profile:
+/// classic 5/3 or bounded 9/7, no subsampling, signed/mixed precision, HT, encoded
+/// ROI, palette/mapping or implicit/premultiplied alpha. Every packet header and
+/// payload extent is checked, but discarded entropy is not Tier-1 decoded.
+/// Original source pixels/input/metadata remain limited. Callbacks receive the
+/// reduced RGBA8 dimensions only after structural and selected-data validation.
+pub fn decode_with_reduction<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    reduce: u8,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Option<ImgWarnings>, Error> {
+    check_reduction(reduce)?;
+    crate::decode_guard::run(reader, option, limits, |reader, option| {
+        if reduce == 0 {
+            return decode_inner(reader, option);
+        }
+        let data = read_reduced_input(reader)?;
+        let (w, h, rgba) = general::image_reduced(&data, reduce)?;
+        drop(data);
+        let response = option.drawer.init(w, h, InitOptions::new())?;
+        if !response.is_some_and(|r| r.response == ResponseCommand::Abort) {
+            option.drawer.draw(0, 0, w, h, &rgba, None)?;
+        }
+        option.drawer.terminate(None)?;
+        Ok(None)
+    })
+}
+
+fn check_reduction(reduce: u8) -> Result<(), Error> {
+    if reduce > 32 {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "JPEG2000 reduction must be at most 32 DWT levels".into(),
+        )));
+    }
+    Ok(())
+}
+
+fn read_reduced_input<B: BinaryReader>(reader: &mut B) -> Result<Vec<u8>, Error> {
+    let start = reader.offset()?;
+    let end = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(start))?;
+    let length = end.checked_sub(start).ok_or_else(|| bad("reader extent"))?;
+    crate::limits::check_input_length(length, crate::limits::current().input_bytes)?;
+    Ok(reader.read_bytes_as_vec(usize::try_from(length)?)?)
+}
+
 pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -1537,6 +1590,38 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     let image = read_ex_image(reader)?;
     emit_ex_image(&image, option)
+}
+
+/// Decode the unsigned 12/16-bit EX profile at a native resolution level.
+/// Zero delegates the existing full-resolution EX path. Nonzero reduction has
+/// the same packet/entropy guarantee as [`decode_with_reduction`], retaining
+/// Gray12/16 or RGB/declared straight RGBA12/16 little-endian source bytes.
+/// Reduced bounds use both absolute reference-grid endpoints with ceil division;
+/// an excessive reduction or empty global result fails before callbacks.
+#[cfg(feature = "image-buffer-ex")]
+pub fn decode_ex_with_reduction<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    reduce: u8,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Option<ImgWarnings>, Error> {
+    check_reduction(reduce)?;
+    crate::decode_guard::run_ex(reader, option, limits, |reader, option| {
+        if reduce == 0 {
+            return decode_ex_inner(reader, option);
+        }
+        let image = read_reduced_ex_image(reader, reduce)?;
+        emit_ex_image(&image, option)
+    })
+}
+
+#[cfg(feature = "image-buffer-ex")]
+fn read_reduced_ex_image<B: BinaryReader>(
+    reader: &mut B,
+    reduce: u8,
+) -> Result<general::DecodedImage, Error> {
+    let input = read_reduced_input(reader)?;
+    general::image_ex_reduced(&input, reduce)
 }
 
 #[cfg(feature = "image-buffer-ex")]
@@ -1590,6 +1675,37 @@ pub(crate) fn image_from_ex_owned(
     precision: crate::draw::PrecisionConversion,
     limits: crate::limits::DecodeLimits,
 ) -> Result<crate::draw::ImageBufferEx, Error> {
+    image_from_ex_owned_inner::<false>(buffer, storage, precision, 0, limits)
+}
+
+/// Decode JPEG2000 into owned EX storage using native resolution reduction.
+/// Exact/Round conversion, source declaration and byte strides are retained.
+/// The same-format canvas is moved into the result; other storage formats use
+/// guarded callbacks. `reduce = 0` uses the existing owned EX path unchanged.
+/// See [`decode_ex_with_reduction`] for the reduced profile and guarantee.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_from_ex_with_reduction(
+    buffer: &[u8],
+    storage: crate::draw::PixelFormatEx,
+    precision: crate::draw::PrecisionConversion,
+    reduce: u8,
+    limits: crate::limits::DecodeLimits,
+) -> Result<crate::draw::ImageBufferEx, Error> {
+    check_reduction(reduce)?;
+    if reduce == 0 {
+        return image_from_ex_owned(buffer, storage, precision, limits);
+    }
+    image_from_ex_owned_inner::<true>(buffer, storage, precision, reduce, limits)
+}
+
+#[cfg(feature = "image-buffer-ex")]
+fn image_from_ex_owned_inner<const REDUCED: bool>(
+    buffer: &[u8],
+    storage: crate::draw::PixelFormatEx,
+    precision: crate::draw::PrecisionConversion,
+    reduce: u8,
+    limits: crate::limits::DecodeLimits,
+) -> Result<crate::draw::ImageBufferEx, Error> {
     use crate::draw::ImageBufferEx;
     let mut reader = bin_rs::reader::BytesReader::new(buffer);
     let mut converted = ImageBufferEx::with_storage(storage, precision);
@@ -1602,7 +1718,11 @@ pub(crate) fn image_from_ex_owned(
         },
         limits,
         |reader, option| {
-            let image = read_ex_image(reader)?;
+            let image = if REDUCED {
+                read_reduced_ex_image(reader, reduce)?
+            } else {
+                read_ex_image(reader)?
+            };
             let declaration = ex_declaration(&image);
             if storage == declaration.source_format {
                 crate::decode_guard::ex_source_bytes(

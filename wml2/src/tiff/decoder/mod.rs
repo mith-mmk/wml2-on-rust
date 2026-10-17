@@ -15,10 +15,14 @@ use bin_rs::io::read_u16;
 use bin_rs::io::read_u32;
 use bin_rs::reader::BinaryReader;
 mod ccitt;
+#[cfg(feature = "image-buffer-ex")]
+mod ex;
 #[cfg(feature = "tiff-jpeg")]
 mod jpeg;
 mod packbits;
 mod ycbcr;
+#[cfg(feature = "image-buffer-ex")]
+pub(crate) use ex::decode_ex_inner;
 
 use self::compression::decompress_block;
 use crate::tiff::block::{TiffBlock, blocks};
@@ -149,11 +153,24 @@ fn read_block<B: BinaryReader + ?Sized>(
     Ok(data)
 }
 
-/// Read the first TIFF page into interleaved native unsigned 16-bit samples.
-/// This is used by the optional high-resolution adapter and deliberately
-/// shares the block, compression, and Predictor implementations with RGBA8.
 #[cfg(feature = "high-bit-depth")]
 pub(crate) fn decode_samples_u16(
+    reader: &mut dyn BinaryReader,
+    page: &Tiff,
+) -> Result<Vec<u16>, Error> {
+    if page.bitspersamples.is_empty() || page.bitspersamples.iter().any(|bits| *bits != 16) {
+        return Err(std::io::Error::other("native TIFF output requires 16-bit samples").into());
+    }
+    decode_unsigned_samples(reader, page)
+}
+
+/// Read a TIFF page into interleaved unsigned 8/16-bit samples stored as u16.
+/// Shared by EX and the strictly 16-bit high-resolution adapter; block,
+/// compression and Predictor implementations are also shared with RGBA8.
+/// Pages come from Tiff::new/read_pages, which validates SampleFormat's SHORT
+/// declaration/count and rejects every non-unsigned value before callbacks.
+#[cfg(any(feature = "high-bit-depth", feature = "image-buffer-ex"))]
+pub(crate) fn decode_unsigned_samples(
     reader: &mut dyn BinaryReader,
     page: &Tiff,
 ) -> Result<Vec<u16>, Error> {
@@ -161,12 +178,15 @@ pub(crate) fn decode_samples_u16(
     if channels == 0 || page.bitspersamples.len() != channels {
         return Err(std::io::Error::other("TIFF BitsPerSample/SamplesPerPixel mismatch").into());
     }
-    if page.bitspersamples.iter().any(|bits| *bits != 16) {
-        return Err(std::io::Error::other("native TIFF output requires 16-bit samples").into());
+    let depth = page.bitspersamples[0];
+    if !matches!(depth, 8 | 16) || page.bitspersamples.iter().any(|bits| *bits != depth) {
+        return Err(
+            std::io::Error::other("native TIFF output requires uniform 8/16-bit samples").into(),
+        );
     }
     let width = usize::try_from(page.width)?;
     let height = usize::try_from(page.height)?;
-    let sample_bytes = crate::tiff::sample::sample_bytes(16)?;
+    let sample_bytes = crate::tiff::sample::sample_bytes(depth)?;
     let output_len = width
         .checked_mul(height)
         .and_then(|v| v.checked_mul(channels))
@@ -177,7 +197,7 @@ pub(crate) fn decode_samples_u16(
         crate::limits::current().expanded_bytes,
         "expanded image",
     )?;
-    let mut output = vec![0u8; output_len];
+    let mut output = crate::draw::zeroed_bytes(output_len)?;
     let block_list = blocks(page)?;
     let input_len = reader.seek(std::io::SeekFrom::End(0))?;
     for block in &block_list {
@@ -188,42 +208,47 @@ pub(crate) fn decode_samples_u16(
             crate::limits::current().expanded_bytes,
             "expanded TIFF block",
         )?;
-        let compressed = read_block(reader, block)?;
-        let mut data = decompress_block(&page.compression, &compressed, Some(expected))?;
+        let mut compressed = read_block(reader, block)?;
+        let mut data = compression::decompress_native_block(
+            &page.compression,
+            &mut compressed,
+            expected,
+            page.fill_order,
+        )?;
         if page.predictor == 2 {
             crate::tiff::predictor::apply_predictor(
                 &mut data,
                 block_row_bytes(block, page)?,
                 block.stored_height,
-                16,
+                depth,
                 if page.planar_config == 2 { 1 } else { channels },
                 page.tiff_headers.endian,
             )?;
         }
         let source_row = if page.planar_config == 2 {
-            block.stored_width * 2
+            block.stored_width * sample_bytes
         } else {
-            block.stored_width * channels * 2
+            block.stored_width * channels * sample_bytes
         };
         for row in 0..block.draw_height {
             for col in 0..block.draw_width {
                 let src = row * source_row
                     + col
                         * if page.planar_config == 2 {
-                            2
+                            sample_bytes
                         } else {
-                            channels * 2
+                            channels * sample_bytes
                         };
-                let dst = ((block.y + row) * width + block.x + col) * channels * 2
+                let dst = ((block.y + row) * width + block.x + col) * channels * sample_bytes
                     + if page.planar_config == 2 {
-                        block.plane * 2
+                        block.plane * sample_bytes
                     } else {
                         0
                     };
                 let src_end = src
-                    .checked_add(2)
+                    .checked_add(sample_bytes)
                     .ok_or_else(|| std::io::Error::other("TIFF native source offset overflows"))?;
-                let dst_end = dst.checked_add(2).ok_or_else(|| {
+                let dst_end = dst.checked_add(sample_bytes).ok_or_else(|| {
                     std::io::Error::other("TIFF native destination offset overflows")
                 })?;
                 if src_end > data.len() || dst_end > output.len() {
@@ -232,14 +257,16 @@ pub(crate) fn decode_samples_u16(
                 if page.planar_config == 2 {
                     output[dst..dst_end].copy_from_slice(&data[src..src_end]);
                 } else {
-                    let full_dst = ((block.y + row) * width + block.x + col) * channels * 2;
-                    let full_end = full_dst + channels * 2;
+                    let full_dst =
+                        ((block.y + row) * width + block.x + col) * channels * sample_bytes;
+                    let full_end = full_dst + channels * sample_bytes;
                     if full_end > output.len() {
                         return Err(
                             std::io::Error::other("TIFF native destination overflows").into()
                         );
                     }
-                    output[full_dst..full_end].copy_from_slice(&data[src..src + channels * 2]);
+                    output[full_dst..full_end]
+                        .copy_from_slice(&data[src..src + channels * sample_bytes]);
                 }
             }
         }

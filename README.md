@@ -107,6 +107,119 @@ Q4/XLD4 decoding uses the repeat-color run semantics recovered from `ifxld4.spi`
 fixing the previous horizontal bands. All RGB pixels matched RECOIL 6.4.5
 for 28 reference images. See the [Q4 validation record](docs/q4-status.md).
 
+## ImageBufferEx
+
+Repository builds can enable the non-default `image-buffer-ex` feature.
+[Current support and precision/compatibility contracts](docs/image-buffer-ex.md)
+cover checked Gray/RGBA8/12/16 storage, native borrowed pixels, explicit conversion,
+static PNG/TIFF source declarations and legacy encoder views. This branch work
+has not been released; this work branch inherits WML2 0.0.36 from main.
+
+[Callback guide and runnable sample](docs/image-buffer-ex-callbacks.md) separate
+input declarations, storage and encoder output requests, including late ICC
+metadata collection and Exact/Round failure behavior.
+
+With `image-buffer-ex`, `draw::ImageBufferEx` stores bytes in `PixelFormatEx`:
+Gray8/12/16 or Rgba8/12/16 (straight alpha), defaulting to Rgba8. Twelve- and
+sixteen-bit samples occupy two little-endian bytes; twelve-bit values must
+have zero high four bits. Typed alignment, YUV, ten-bit, animation, and native
+codec output negotiation are outside this API.
+
+`DrawCallback::init_ex` and `InitOptionsEx` declare the **source** format and
+optional byte stride for subsequent draw rectangles. `InitOptions::with_format`
+adds this declaration to existing options. `ImageBufferEx::with_storage`
+separately selects internal storage and `PrecisionConversion::Exact` or `Round`.
+Exact rejects nonintegral normalized range scaling; Round explicitly rounds to
+nearest, including alpha. Gray expands to RGB with opaque alpha; RGBA to Gray
+requires an external color conversion. Backgrounds remain declared as RGBA8,
+scaled with the same policy; Gray backgrounds must be opaque neutral colors.
+
+Source strides include final row padding; strict EX draws require exactly
+stride times height bytes and validate even pixels clipped off the canvas.
+A stride describes each tile, so it may be smaller than a full canvas row.
+Canvas source budgets use the larger of the packed canvas row and declared
+stride, multiplied by height; EX storage is budgeted independently. Existing
+`ImageBuffer` fields and legacy permissive clipping remain compatible.
+Failed EX initialization invalidates its previous drawing target; legacy
+`ImageBuffer` retains its atomic failure behavior. Any callback Abort prevents
+further init/draw/next forwarding within that decode operation. A callback
+implementing only the old methods accepts packed RGBA8 `init_ex`
+declarations and rejects other formats or explicit strides before calling init.
+If a custom type already defines `init_ex`, use `DrawCallback::init_ex` to
+explicitly select the trait method.
+
+`convert_pixels_ex` is the public source-to-output byte converter shared by EX
+drawing and picking. It validates declared source dimensions, stride, exact
+byte length, and all addressed samples before conversion, and checks source
+and output budgets before allocation. `PixelOutputEx` requires an explicit
+format and Exact/Round policy; its optional byte stride describes each output
+rectangle, including final row padding. Output padding is zeroed. The returned
+`PixelBytesEx` carries actual dimensions, format, stride, and owned bytes.
+
+`PickCallbackEx` is separate from the unchanged legacy `PickCallback`, and is
+implemented for `ImageBufferEx` and existing `ImageBuffer`. `encode_start_ex`
+returns `ImageProfilesEx`, wrapping the unchanged legacy profile plus the
+**storage** format/stride. Initialization backgrounds remain RGBA8 in that
+profile, and legacy callback metadata is retained. `encode_pick_ex` requires
+an explicit **output** `PixelOutputEx` alongside optional legacy `PickOptions`;
+it accepts only nonempty rectangles fully inside the canvas and checks
+precision without modifying storage. The picker also checks current canvas
+pixel/source-byte budgets, including existing padding. Publicly mutable
+legacy buffer fields are revalidated at each EX start/pick. EX animation
+picking is unsupported. EncoderOptions and EndOptions keep their old meaning.
+
+```rust
+use wml2::draw::{ImageBufferEx, PickCallbackEx, PixelFormatEx,
+    PixelOutputEx, PrecisionConversion};
+
+let mut image = ImageBufferEx::from_bytes(
+    1, 1, PixelFormatEx::Gray12, None, vec![0xff, 0x0f]).unwrap();
+let rgba = image.encode_pick_ex(0, 0, 1, 1,
+    PixelOutputEx::new(PixelFormatEx::Rgba16, PrecisionConversion::Exact),
+    None).unwrap().unwrap();
+assert_eq!(rgba.bytes(), &[0xff; 8]);
+```
+
+With `image-buffer-ex` plus `png` and/or `tiff`, `image_from_ex(bytes,
+storage_format, precision)` and `image_decoder_ex` explicitly select the new
+static decode path. PNG filtering/inflate/Adam7 remain shared with legacy
+decoding. Native 16-bit PNG samples arrive as LE Gray16/Rgba16 without losing
+their low byte; 8-bit PNG remains Gray8/Rgba8. Packed Gray expands to Gray8,
+and palette, RGB and GrayAlpha expand to straight RGBA. TIFF reuses native
+strip/tile, compression, endian, planar and Predictor 1/2 reconstruction for
+uniform unsigned 8/16-bit Gray/RGB and optional explicitly straight alpha.
+EX TIFF compression supports None/LZW/PackBits/Deflate; JPEG and CCITT remain
+on the legacy path.
+WhiteIsZero is inverted at source precision; orientation is metadata and does
+not rotate pixels. Source declarations describe codec output, while the
+caller chooses independent storage and Exact/Round conversion. The ordinary
+RGBA8 entry points and their legacy 16-to-8 high-byte reduction are unchanged.
+
+EX PNG preserves bKGD as raw `PNG Background` metadata (PNG wire byte order),
+instead of narrowing it through the legacy RGBA8 background or compositing
+straight-alpha pixels. ICC data is retained as `Source ICC Profile`; no
+ICC/gamma/HDR transform is performed or implied by Gray-to-RGBA expansion.
+APNG, multi-display-page TIFF, premultiplied/unspecified TIFF alpha, other
+photometric models/depths/codecs remain unsupported in the PNG/TIFF EX paths.
+Bounded static AVIF is now connected through the
+[EX AVIF adapter](docs/image-buffer-ex-avif.md): decoding declares RGBA16LE
+without ICC application, and `image_encoder_ex` explicitly requests8/12-bit
+Gray/RGBA output using the callback's Exact/Round policy. Native YUV/10-bit
+APIs remain separate; sixteen-bit EX storage is not silently narrowed.
+`image_from_ex_with_limits`/`image_decoder_ex_with_limits` enforce existing
+limits independently on input, source, storage, output rows and metadata;
+the TIFF native reconstruction also budgets its temporary u16 sample storage.
+EX Abort stops subsequent callback forwarding for enabled EX codecs.
+
+Legacy encoders use an explicit RGBA8 adapter. EX-aware AVIF encoding uses
+`EncodeOptionsEx`; existing encoders do not automatically reduce precision. With both
+`image-buffer-ex` and `high-bit-depth`, `from_highres_pixels` and
+`to_highres_pixels` copy representable full-resolution Gray or straight RGBA
+pixels through the existing `highres::ImageFrame`/`PixelBuffer` types. These
+pixel-only adapters keep highres metadata, timing, and color information
+separate; callers must retain and attach them explicitly. Premultiplied alpha,
+YUV, F32, and ten-bit frames are rejected.
+
 ## Features
 
 - `default`: enables the standard decoders/encoders, EXIF/C2PA support, embedded-format bridges, and `idct_llm`; it does not enable `psd`, `avif`, or `avifenc`
@@ -114,6 +227,7 @@ for 28 reference images. See the [Q4 validation record](docs/q4-status.md).
 - `psd`: enables Pure Rust PSD v1 decoding for 8/16-bit RGB, Grayscale, and CMYK plus 8-bit Indexed images; Raw, PackBits RLE, ZIP, and ZIP prediction are supported for both merged-image and layer-channel data
 - `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the standalone `avifenc-rust` submodule
 - `high-bit-depth`: additive typed U8/U16/F32 buffer and native metadata APIs; it has no ICC dependency
+- `image-buffer-ex`: default-off checked byte-based Gray/RGBA 8/12/16-bit callback storage, independent of `high-bit-depth`
 - `color-management`: depends on `high-bit-depth` and adds explicit Gray/RGB ICC transforms through `icc-profile`
 - metadata feature: `exif`
 - embedded-format bridge features: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`

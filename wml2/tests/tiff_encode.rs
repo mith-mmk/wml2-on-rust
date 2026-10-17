@@ -990,6 +990,7 @@ fn encode_animated_tiff_via_public_api() {
     assert_eq!(decoded.animation.as_ref().unwrap()[1].buffer, expected[2]);
 }
 
+#[cfg(feature = "png")]
 #[test]
 fn convert_animated_png_file_to_tiff_via_public_api() {
     let input_path = temp_path("convert-animation-input", "png");

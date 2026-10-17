@@ -1,0 +1,116 @@
+{
+  "baseline_commit": "a25cb29e653bb968824cd4e6671464448eba430a",
+  "baseline_source_sha256": {
+    "wml2/src/tiff/decoder/mod.rs": "f8c6af6a3542f2be33afea78026d7620211e0121f675a485fc86ad76743c8f7b",
+    "wml2/src/tiff/decoder/ex.rs": "fa6220d5afaa0851ce59c0568083f5443b4616792a01d2a33a5da041df1e8e99",
+    "wml2/src/tiff/decoder/compression.rs": "14c41baf13f6febd0681e2910393055766801b13feffae323271853f69b3d2a3",
+    "wml2/src/tiff/sample.rs": "39b3301030a7023b4698a227c52a660343bb335a1995cee20f5ca2fa29c87140"
+  },
+  "sources": {
+    "tif_read.c": {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tif_read.c",
+      "sha256": "e340112a79217b0dee96bf2aae15c4a153625fb2fa21ab2b10f142ae6f298020"
+    },
+    "tif_lzw.c": {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tif_lzw.c",
+      "sha256": "c241818a11f3883f61c6516d9e4545d639e2444d6f6fa0646663a0e7c287760b"
+    },
+    "tif_packbits.c": {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tif_packbits.c",
+      "sha256": "f6fb5aa245d624b50c72d996c035eec4655b4bcb24728d34ff479565a6189be6"
+    },
+    "tif_zip.c": {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tif_zip.c",
+      "sha256": "dd86346fc889b24744c2e0f355f16e551b585d791ada183626fcf9ff21c44fe9"
+    },
+    "tif_jpeg.c": {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tif_jpeg.c",
+      "sha256": "7435eb38b62bcd64b63921413312eadd21d6fbd6b058ebb92af72a09b5353c58"
+    },
+    "tif_fax3.c": {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tif_fax3.c",
+      "sha256": "3cfd0b246435e842db705911f7f59d34bd99abbae443d9a532f2e5815e0b2b31"
+    },
+    "tif_codec.c": {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tif_codec.c",
+      "sha256": "ba6c41b956bfccb221b8e9d088502880544f7dedb751f50fdaddefd1edd263cb"
+    },
+    "tif_dumpmode.c": {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tif_dumpmode.c",
+      "sha256": "683cdc74f4b387cd3c253e64300b905f360e08369a55ff07fb494445b4aae0c7"
+    },
+    "tiffiop.h": {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tiffiop.h",
+      "sha256": "6b160693d34f2b9f8b8b3a8a76c44a79d70b2ee837b66fd0de0a55f919bd3ec5"
+    }
+  },
+  "oracle": {
+    "oracle_library": "libtiff.so.6",
+    "oracle_version": "LIBTIFF, Version 4.7.0\nCopyright (c) 1988-1996 Sam Leffler\nCopyright (c) 1991-1996 Silicon Graphics, Inc.",
+    "oracle_api": "TIFFReadScanline",
+    "count": 54,
+    "standard_cases": 48,
+    "canonical_old_lsb_cases": 6
+  },
+  "oracle_fixture_manifest_sha256": "c1ae936444a0d5234accd4a83dd388fe0a33a3e840adbcf26b8a993602c14c53",
+  "native_before_fix": {
+    "command": "cargo test -p wml2 --offline --release --features image-buffer-ex,high-bit-depth --test tiff_ex_fill_order",
+    "tests": 5,
+    "passed": 0,
+    "failed": 5,
+    "log_sha256": "4df566335501977dc5cc614316006498610c483577a59774c04b705ff176f3b3",
+    "failures": [
+      "EX Gray8 raw [128,64,1,255] instead of [1,2,128,255]",
+      "PackBits output exceeds decode limit (literal control 0x03 stored as 0xc0)",
+      "standard LZW initial Clear not recognized",
+      "Deflate inflate fails",
+      "highres Gray16 [128,18476,384,65535] instead of [1,4660,32769,65535]"
+    ]
+  },
+  "existing_validation": {
+    "FillOrder": "page.rs already rejects nonSHORT, noncount1 and undefined values; new seven-variant test passed baseline",
+    "legacy": "existing RGBA8 sample reader/packed/LZW compatibility remains outside selected native-only correction",
+    "original_lsb_native_compat": "new eight natural sample tests (2 encoders x 2 sample depths x 2 endians) passed baseline; these are deliberately nonportable FillOrder2 compatibility, NOT canonical libtiff oracle proof"
+  },
+  "normalization": {
+    "NoneCompression": "reverse every raw strip byte before decode",
+    "PackBits": "reverse every raw strip byte, including packet control, before decode",
+    "standardLZW": "reverse every raw strip byte before extracting codes",
+    "Deflate": "reverse every raw compressed strip byte before inflate",
+    "JPEG": "unchanged; libtiff sets TIFF_NOBITREV",
+    "CCITT": "unchanged; libtiff sets TIFF_NOBITREV and fax3 bit table handles FillOrder"
+  },
+  "selected_scope": "EX/shared highres unsigned8/16 path only; old RGBA8 adapter is unchanged",
+  "implementation_review": {
+    "outcome": "PASS selected native scope",
+    "details": [
+      "EX and highres only; legacy RGBA8/packed/JPEG/CCITT untouched",
+      "FillOrder2 bytes reverse in place before generic decompression and Predictor",
+      "canonical versus original-byte LSB candidates both strictly checked for exact size/EOI; different successful samples rejected",
+      "when normalized result remains alive, checked three-times expected expanded budget before two original-LSB candidate buffers",
+      "canonical old-LSB raw-prefix collision oracle validated; prefix alone never selects original-byte data"
+    ],
+    "note": "No confirmed both-valid-different minimal stream found; rejection branch reviewed statically, not asserted as dynamically covered by this corpus"
+  },
+  "native_after_fix": {
+    "command": "cargo test -p wml2 --offline --release --features image-buffer-ex,high-bit-depth --test tiff_ex_fill_order",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0,
+    "canonical_oracle_cases": 54,
+    "natural_lsb_compat_cases": 8,
+    "invalid_fillorder_tag_cases": 7,
+    "additional_highres_cases": 8,
+    "log_sha256": "4be5a9df37a255a1a5d00ab81faf90b3a08adbcb4bf6de56285e02dbf6504485",
+    "tested_source_sha256": {
+      "wml2/src/tiff/decoder/compression.rs": "697eee42dfa9bd066f0a43c9a419a642eceec1f8147e5ea426d7b641cf860af9",
+      "wml2/src/tiff/decoder/mod.rs": "5ec16c2ab91f2a3c56a26e61e5c9100f8b4780463b6313d2c5f258bf7688973f",
+      "wml2/src/tiff/decoder/ex.rs": "646656eddc17b709c49b8bd2b9114d22d53561aaa152d6edd6306f9efcd75ca1"
+    }
+  },
+  "original_review_zip": "Unavailable to this agent; equivalent locally generated fixtures/oracle/runtime results used, original supplied six tests are not claimed executed",
+  "oracle_shared_library": {
+    "path": "/usr/lib/x86_64-linux-gnu/libtiff.so.6.1.0",
+    "sha256": "7f2309b13404f98171b54c07f75ad7c54673cec26ecaa874ac5273feda916c6f"
+  }
+}

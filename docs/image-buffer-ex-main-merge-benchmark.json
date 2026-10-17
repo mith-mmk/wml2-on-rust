@@ -1,0 +1,270 @@
+{
+  "baseline_main": "5b12608a90026a913ddafd90bfb3f8ec53d14c83",
+  "merged_parents": [
+    "c201461e93b84b6284c953fe68ac31d80dc77319",
+    "5b12608a90026a913ddafd90bfb3f8ec53d14c83"
+  ],
+  "features_both": "--no-default-features --features jpeg2000",
+  "toolchain": "Rust1.91.0 release",
+  "cpu_affinity": 0,
+  "order": [
+    "main",
+    "merged",
+    "merged",
+    "main",
+    "merged",
+    "main"
+  ],
+  "processes_per_version": 3,
+  "measurement": "example timed decode body after100 warmups; CPU jobs finished before measurement",
+  "binary_sha256": {
+    "main": "adcd17e4cca5a73c2c2336d5f952f8b76c140d9fc726fc220914a91892fe8843",
+    "merged": "f54c23c0ddce6e6f352429d0b589848c252dbc5b02029ce79038b6e5062cf0be"
+  },
+  "helper_sha256": "9aeda3ce8cd4d020403438a0ed22e3f7398bfa21e7481eb96143ba7cdb166021",
+  "scope": "selected legacy JPEG2000 minimal paths; EX disabled on both; no all-workload guarantee",
+  "summary": [
+    {
+      "case": "Gray16",
+      "mean_us": {
+        "main": 62.459666666666664,
+        "merged": 58.39566666666666
+      },
+      "change_percent": -6.506598925173046
+    },
+    {
+      "case": "RGB65",
+      "mean_us": {
+        "main": 3954.9403333333335,
+        "merged": 3972.2773333333334
+      },
+      "change_percent": 0.43836312406229094
+    },
+    {
+      "case": "RGBMultiLayer",
+      "mean_us": {
+        "main": 1721.7063333333333,
+        "merged": 1708.3246666666666
+      },
+      "change_percent": -0.7772328188372812
+    }
+  ],
+  "rows": [
+    {
+      "case": "Gray16",
+      "step": 0,
+      "version": "main",
+      "fixture": "jp2_16x16_d1_noise.jp2",
+      "iterations": 2000,
+      "warmups": 100,
+      "body_us_per_decode": 77.703,
+      "process_wall_seconds": 0.17276949099868943,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "Gray16",
+      "step": 1,
+      "version": "merged",
+      "fixture": "jp2_16x16_d1_noise.jp2",
+      "iterations": 2000,
+      "warmups": 100,
+      "body_us_per_decode": 69.348,
+      "process_wall_seconds": 0.15134562399907736,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "Gray16",
+      "step": 2,
+      "version": "merged",
+      "fixture": "jp2_16x16_d1_noise.jp2",
+      "iterations": 2000,
+      "warmups": 100,
+      "body_us_per_decode": 54.073,
+      "process_wall_seconds": 0.11726650199852884,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "Gray16",
+      "step": 3,
+      "version": "main",
+      "fixture": "jp2_16x16_d1_noise.jp2",
+      "iterations": 2000,
+      "warmups": 100,
+      "body_us_per_decode": 52.507,
+      "process_wall_seconds": 0.11770147700008238,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "Gray16",
+      "step": 4,
+      "version": "merged",
+      "fixture": "jp2_16x16_d1_noise.jp2",
+      "iterations": 2000,
+      "warmups": 100,
+      "body_us_per_decode": 51.766,
+      "process_wall_seconds": 0.11361670800033608,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "Gray16",
+      "step": 5,
+      "version": "main",
+      "fixture": "jp2_16x16_d1_noise.jp2",
+      "iterations": 2000,
+      "warmups": 100,
+      "body_us_per_decode": 57.169,
+      "process_wall_seconds": 0.12770828999964579,
+      "ppm_sha256": "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGB65",
+      "step": 0,
+      "version": "main",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "iterations": 100,
+      "warmups": 100,
+      "body_us_per_decode": 3893.129,
+      "process_wall_seconds": 0.7969227130015497,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGB65",
+      "step": 1,
+      "version": "merged",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "iterations": 100,
+      "warmups": 100,
+      "body_us_per_decode": 3992.746,
+      "process_wall_seconds": 0.8058996279996791,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGB65",
+      "step": 2,
+      "version": "merged",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "iterations": 100,
+      "warmups": 100,
+      "body_us_per_decode": 3978.193,
+      "process_wall_seconds": 0.8009946060010407,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGB65",
+      "step": 3,
+      "version": "main",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "iterations": 100,
+      "warmups": 100,
+      "body_us_per_decode": 4015.833,
+      "process_wall_seconds": 0.8063183539998136,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGB65",
+      "step": 4,
+      "version": "merged",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "iterations": 100,
+      "warmups": 100,
+      "body_us_per_decode": 3945.893,
+      "process_wall_seconds": 0.8025055149992113,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGB65",
+      "step": 5,
+      "version": "main",
+      "fixture": "jp2_rgb_65x49_d2_noise_mct1.jp2",
+      "iterations": 100,
+      "warmups": 100,
+      "body_us_per_decode": 3955.859,
+      "process_wall_seconds": 0.7988541169997916,
+      "ppm_sha256": "270b50ffd2dfbd324b8628514a1dddf58c039ae3a4ad5cf4e10ddfa6884af66e",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGBMultiLayer",
+      "step": 0,
+      "version": "main",
+      "fixture": "jp2_general_RGB_LRCP_0.jp2",
+      "iterations": 150,
+      "warmups": 100,
+      "body_us_per_decode": 1735.719,
+      "process_wall_seconds": 0.45014268699924287,
+      "ppm_sha256": "66460e2cbd41ff08282606cb0d6a9be5bdb084bce190f5fb22731f141704ef5f",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGBMultiLayer",
+      "step": 1,
+      "version": "merged",
+      "fixture": "jp2_general_RGB_LRCP_0.jp2",
+      "iterations": 150,
+      "warmups": 100,
+      "body_us_per_decode": 1709.829,
+      "process_wall_seconds": 0.4348580940004467,
+      "ppm_sha256": "66460e2cbd41ff08282606cb0d6a9be5bdb084bce190f5fb22731f141704ef5f",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGBMultiLayer",
+      "step": 2,
+      "version": "merged",
+      "fixture": "jp2_general_RGB_LRCP_0.jp2",
+      "iterations": 150,
+      "warmups": 100,
+      "body_us_per_decode": 1723.128,
+      "process_wall_seconds": 0.43399632499858853,
+      "ppm_sha256": "66460e2cbd41ff08282606cb0d6a9be5bdb084bce190f5fb22731f141704ef5f",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGBMultiLayer",
+      "step": 3,
+      "version": "main",
+      "fixture": "jp2_general_RGB_LRCP_0.jp2",
+      "iterations": 150,
+      "warmups": 100,
+      "body_us_per_decode": 1712.257,
+      "process_wall_seconds": 0.43440959500003373,
+      "ppm_sha256": "66460e2cbd41ff08282606cb0d6a9be5bdb084bce190f5fb22731f141704ef5f",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGBMultiLayer",
+      "step": 4,
+      "version": "merged",
+      "fixture": "jp2_general_RGB_LRCP_0.jp2",
+      "iterations": 150,
+      "warmups": 100,
+      "body_us_per_decode": 1692.017,
+      "process_wall_seconds": 0.4336731740004325,
+      "ppm_sha256": "66460e2cbd41ff08282606cb0d6a9be5bdb084bce190f5fb22731f141704ef5f",
+      "source_exact_rgb": true
+    },
+    {
+      "case": "RGBMultiLayer",
+      "step": 5,
+      "version": "main",
+      "fixture": "jp2_general_RGB_LRCP_0.jp2",
+      "iterations": 150,
+      "warmups": 100,
+      "body_us_per_decode": 1717.143,
+      "process_wall_seconds": 0.43270925199976773,
+      "ppm_sha256": "66460e2cbd41ff08282606cb0d6a9be5bdb084bce190f5fb22731f141704ef5f",
+      "source_exact_rgb": true
+    }
+  ]
+}

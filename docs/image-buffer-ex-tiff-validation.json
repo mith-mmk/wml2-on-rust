@@ -1,0 +1,105 @@
+{
+  "baseline": "a25cb29e653bb968824cd4e6671464448eba430a",
+  "runtime_checkpoint": "93ebfe1eb08add242fb09f5f1d3b6b82bd647a9c",
+  "clean_helper_checkpoint": "637dec1993bea8ab27122ccee0201ffe114bce58",
+  "toolchain": "Rust/Cargo1.91.0",
+  "gates": {
+    "workspace": {
+      "passed": 408,
+      "failed": 0,
+      "ignored": 13,
+      "targets": 50,
+      "log_sha256": "311b613c277c38567f1501938f89cff836a1da1eab24c2a6893fe8f876cc9824"
+    },
+    "minimal-ex": {
+      "passed": 70,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 32,
+      "log_sha256": "2b1cf111d9dfd7e875c26a70156f21005d8f86d5eaf29391976fa64796cb9f16"
+    },
+    "feature-off": {
+      "passed": 39,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 32,
+      "log_sha256": "fea61e4c632e5c40ef368ea7162879bb201656397c961a4b1a7229a655e7015e"
+    },
+    "native-no-ex": {
+      "passed": 91,
+      "failed": 0,
+      "ignored": 2,
+      "targets": 7,
+      "log_sha256": "b855d7b13ca70fc0ca2c47098c021d1a8a428df4f114ff4d70322ae252268215"
+    },
+    "targeted": {
+      "passed": 56,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 3,
+      "log_sha256": "3eb134204ad23aaf97dae03513e959d40c5489863e4704195207a2f34d5c511a"
+    }
+  },
+  "fmt_diff_check": "passed",
+  "clippy": "all-targets passed with inherited warnings; not a -Dwarnings gate",
+  "source_sha256": {
+    "wml2/src/tiff/decoder/compression.rs": "697eee42dfa9bd066f0a43c9a419a642eceec1f8147e5ea426d7b641cf860af9",
+    "wml2/src/tiff/decoder/mod.rs": "5ec16c2ab91f2a3c56a26e61e5c9100f8b4780463b6313d2c5f258bf7688973f",
+    "wml2/src/tiff/decoder/ex.rs": "646656eddc17b709c49b8bd2b9114d22d53561aaa152d6edd6306f9efcd75ca1",
+    "wml2/src/tiff/page.rs": "bd6569f18d3307116cff9e26ba6d0f9001198363f725a9a762693212cb6931bf",
+    "wml2/src/tiff/header.rs": "bb05ee88bd7b51e74a58f810b279115fd61a3b5844db67626080ea454a8a0124",
+    "wml2/src/highres/tiff.rs": "ad430aee72040542796ed911c9d26015773583109dc6eb06ad1cfcd2748da589",
+    "wml2/src/tiff/sample.rs": "39b3301030a7023b4698a227c52a660343bb335a1995cee20f5ca2fa29c87140"
+  },
+  "sample_format": "not reproduced on baseline; shared preflight already rejects signed/float/malformed before EX callbacks; 90 generated cases and6 LibTIFF fixtures",
+  "fill_order": "reproduced on baseline; in-place normalization before native decompression/predictor/endian;54 canonical oracle fixtures and8 compatibility conditions",
+  "native_exports": {
+    "cases": 54,
+    "all_source_exact": true,
+    "record": "image-buffer-ex-tiff-native-export.json"
+  },
+  "wasm": {
+    "groups": 82,
+    "all_passed": true,
+    "host_imports": [],
+    "record": "image-buffer-ex-tiff-wasm.json"
+  },
+  "library_review_zip": {
+    "name": "wml2_ex_review_a25cb29.zip",
+    "id": "libfile_fe172666dcb8819181cafeb5de12cbf7",
+    "official_helper_error": "library download request failed: hosted apps tools/list request failed: network",
+    "downloaded": false,
+    "original_six_tests_executed": false,
+    "fallback": "independently generated fixtures, LibTIFF oracle and public Rust API tests; parent authorized continuation"
+  },
+  "limits": [
+    "No confirmed both-valid-different LZW stream; ambiguity rejection reviewed statically",
+    "No new review-image viewing requested; numeric pixel exports used; previous display evidence retained",
+    "Shared-host timing variation does not establish guaranteed speedup or all-workload performance",
+    "Other OS/browser UI/full CI matrix not executed"
+  ],
+  "scope": "EX/shared native highres unsigned8/16 only; legacy RGBA8/packed, JPEG and CCITT unchanged",
+  "unchanged": [
+    "WML2 0.0.35",
+    "Cargo dependencies/features/defaults",
+    "public API signatures",
+    "main",
+    "JPEG2000 PR10",
+    "old EX branch"
+  ],
+  "actions": "separate EX branch, normal git push; no merge/release/new PR/CI wait",
+  "sampleformat_baseline_reconfirmation": {
+    "exact_sha": "a25cb29e653bb968824cd4e6671464448eba430a",
+    "git_show_source_hashes_match": {
+      "wml2/src/tiff/page.rs": true,
+      "wml2/src/tiff/header.rs": true,
+      "wml2/src/tiff/decoder/mod.rs": true,
+      "wml2/src/tiff/decoder/ex.rs": true,
+      "wml2/src/highres/tiff.rs": true
+    },
+    "reject_location": "wml2/src/tiff/page.rs:184-196; SHORT type112-117",
+    "prior_preflight": "ex.rs:15 → header.rs:454-455 → page::read_pages; before ex.rs:65 init_ex and78 samples",
+    "signed8_signed16_float16": "independent fixtures reject with non-unsigned SampleFormat error and zero callbacks; original ZIP samples unexecuted",
+    "scope": "not reproduced with equivalent independent fixtures; not full disproof of supplied original review"
+  }
+}

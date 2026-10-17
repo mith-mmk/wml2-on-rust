@@ -1,0 +1,331 @@
+{
+  "cases": 54,
+  "all_native_exact": true,
+  "rows": [
+    {
+      "input": "ex-review-fill1-gray8-le-raw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-raw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-le-packbits-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-packbits-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-le-lzw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-lzw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-le-lzw-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-lzw-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-le-deflate-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-deflate-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-le-deflate-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-deflate-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-be-raw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-be-raw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-be-packbits-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-be-packbits-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-be-lzw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-be-lzw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-be-lzw-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-be-lzw-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-be-deflate-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-be-deflate-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray8-be-deflate-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-be-deflate-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill1-gray16-le-raw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-le-raw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-le-packbits-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-le-packbits-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-le-lzw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-le-lzw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-le-lzw-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-le-lzw-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-le-deflate-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-le-deflate-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-le-deflate-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-le-deflate-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-be-raw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-be-raw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-be-packbits-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-be-packbits-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-be-lzw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-be-lzw-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-be-lzw-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-be-lzw-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-be-deflate-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-be-deflate-p1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill1-gray16-be-deflate-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray16-be-deflate-p2.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "b526d94acce232e16e61adcb5f9df73573f234ba146cb7fc99c45f1da8320e26",
+      "preview_sha256": "23488c8819289a745042ce9414ee7ea76b56f2e8a3865f455ce2afae7a63bd81"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-old-lsb-first1.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "53d35af22d06fbcd967200387244556816714771345508b9dc97225d75b1c746",
+      "preview_sha256": "d58c3664f208b8c47cd71b3a3c9f8542fa5719a862d5598715163421eba55948"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-old-lsb-first64.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "376fe24c74dc5756b83f90ed98f77316b99c702ddff7845a9a101a09c5f9f1ce",
+      "preview_sha256": "dc5adacc615b3031ee4f039240603c1943adb568d2fbdd8b57142ffa7c36174f"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-old-lsb-first65.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "461effed0ee1fb1ee0d55096bb45082c0521281c9e0b924ff2e4250c0067dc3a",
+      "preview_sha256": "349a1ab85c723fe9746728be9b3082404e96f235fff194762f165c040de1ea7c"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-old-lsb-first127.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "f0d1b3d97e3665b1bf0239b0592c55ea5292defbb752daef5f0ccb8a580853b9",
+      "preview_sha256": "709dbe41edd9b7e7d30807b1f66478f7fb96fa5d0db44783a8c692c789256765"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-old-lsb-first128.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "67cd0ad475856e9e88533da23dea27eb02e359a0cf22dc59020d9eb32fa81099",
+      "preview_sha256": "660756a73ca27d9d3f160cccae8292b4b5a269dfbc44b945b59be707e8c3f836"
+    },
+    {
+      "input": "ex-review-fill2-gray8-le-old-lsb-first255.tif",
+      "native_rgba16_source_exact": true,
+      "native_sha256": "9c05a342e592365146413ec3c63a780019c08747cd13bdd76b0141584e9f852d",
+      "preview_sha256": "f08b9e84e8e8295fc787ef432c5083821322d7e014bbbe98e36690b157237942"
+    }
+  ],
+  "visual_review": "No new image viewing requested forreviewfixtures; exactnumericpixelchecks used, priorEXstage displayrecordretained."
+}

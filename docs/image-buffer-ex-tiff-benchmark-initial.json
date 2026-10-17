@@ -1,0 +1,145 @@
+{
+  "baseline_git": "a25cb29e653bb968824cd4e6671464448eba430a",
+  "candidate_runtime_git": "93ebfe1eb08add242fb09f5f1d3b6b82bd647a9c",
+  "measurement_helper_worktree_change_only": true,
+  "identical_helper_on_both_versions": true,
+  "measurement_helper_sha256": "53dc2b29917393f0db29fb7ee6e6c056e8d9bb84003e848e7bb694906ec74fab",
+  "cpu_affinity": 0,
+  "order": [
+    "baseline",
+    "current",
+    "current",
+    "baseline",
+    "current",
+    "baseline"
+  ],
+  "processes_per_version": 3,
+  "warmups_per_process": 10,
+  "timed_per_process": 1000,
+  "measurement": "per-call body walltime; fixedCPU, no concurrent CPU jobs; default+EX/highbit/png/tiff on both",
+  "binary_sha256": {
+    "tiff-review-a25-bench": "97b11c520caf2b23f5802906d7f4711dfa6f32a0113664e54bafe3f31e1f17c8",
+    "tiff-review-bench": "74b225537248625758ee23c018e850c2a6d98b92e90c5d5fdddff4a4a918c97d"
+  },
+  "summary": [
+    {
+      "mode": "decode-ex-file",
+      "input": "ex-gray16-lzw.tif",
+      "baseline_us": 255.21509366666666,
+      "current_us": 245.07782933333334,
+      "change_percent": -3.972047337675677,
+      "output_hashes_match": true,
+      "allocated_bytes": {
+        "baseline": 247938,
+        "current": 247938
+      },
+      "median_us": {
+        "baseline": 218.7975,
+        "current": 211.9505
+      },
+      "process_mean_us": {
+        "baseline": [
+          254.120362,
+          247.965877,
+          263.55904200000003
+        ],
+        "current": [
+          243.831465,
+          242.436835,
+          248.96518799999998
+        ]
+      }
+    },
+    {
+      "mode": "decode-ex-file",
+      "input": "ex-gray8-packbits.tif",
+      "baseline_us": 45.86755599999999,
+      "current_us": 43.22551166666666,
+      "change_percent": -5.760159388769992,
+      "output_hashes_match": true,
+      "allocated_bytes": {
+        "baseline": 26954,
+        "current": 26954
+      },
+      "median_us": {
+        "baseline": 38.2635,
+        "current": 37.8315
+      },
+      "process_mean_us": {
+        "baseline": [
+          45.907108,
+          45.419252,
+          46.276308
+        ],
+        "current": [
+          41.224394000000004,
+          42.79895,
+          45.653191
+        ]
+      }
+    },
+    {
+      "mode": "decode-ex-file",
+      "input": "ex-access-rgba16.tif",
+      "baseline_us": 162.35461233333334,
+      "current_us": 155.21429366666666,
+      "change_percent": -4.397977097199279,
+      "output_hashes_match": true,
+      "allocated_bytes": {
+        "baseline": 175803,
+        "current": 175803
+      },
+      "median_us": {
+        "baseline": 131.198,
+        "current": 131.2785
+      },
+      "process_mean_us": {
+        "baseline": [
+          160.940115,
+          167.440134,
+          158.683588
+        ],
+        "current": [
+          151.276903,
+          161.314836,
+          153.051142
+        ]
+      }
+    },
+    {
+      "mode": "decode-file",
+      "input": "ex-gray16-lzw.tif",
+      "baseline_us": 228.00918299999998,
+      "current_us": 228.638691,
+      "change_percent": 0.2760888801570882,
+      "output_hashes_match": true,
+      "allocated_bytes": {
+        "baseline": 247322,
+        "current": 247322
+      },
+      "median_us": {
+        "baseline": 191.169,
+        "current": 191.025
+      },
+      "process_mean_us": {
+        "baseline": [
+          225.152793,
+          226.40924600000002,
+          232.46551000000002
+        ],
+        "current": [
+          238.92320800000002,
+          226.781827,
+          220.211038
+        ]
+      }
+    }
+  ],
+  "scope": "paired existingFillOrder1 paths; baselinecannotcorrectlydecodecanonicalFillOrder2, newpathcoverage comesfrompixel/oracle tests",
+  "limitations": "Sharedhost timings notcrosshost guarantee; everyrawrowretained",
+  "protocol_note": "Initialrunoverlappedthe54nativeexportverificationforabout0.08sec; retainedbutnotusedasfinalisolatedtiming.",
+  "raw_rows": 24240,
+  "raw_artifact": "image-buffer-ex-tiff-benchmark-initial-raw.json.gz",
+  "raw_sha256": "a1d3276b8503696662f95183f2ddfa4321b2e2aff31419c6d9a4a82fd7b02ae6",
+  "compressed_sha256": "8dcd8274d7ae73bbbf5b3cd9d1179c93ee300e82eefe84246b82a786f16dac21"
+}

@@ -1,0 +1,25 @@
+warning: variant `Jpeg` is never constructed
+  --> wml2/src/tiff/encoder.rs:55:5
+   |
+51 | enum TiffCompressionMode {
+   |      ------------------- variant in this enum
+...
+55 |     Jpeg { quality: usize },
+   |     ^^^^
+   |
+   = note: `TiffCompressionMode` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `wml2` (lib) generated 1 warning
+   Compiling wml2 v0.0.35 (/workspace/.test-imagebufferex-continuation/wml2)
+    Finished `release` profile [optimized] target(s) in 0.90s
+     Running tests/tiff_ex_sample_format.rs (/workspace/.test-rust-targets/release/deps/tiff_ex_sample_format-2f3c89b8b50a9de6)
+
+running 4 tests
+test libtiff_confirmed_signed_and_float_fixtures_are_not_unsigned ... ok
+test default_explicit_and_scalar_unsigned_preserve_native_bits ... ok
+test signed_and_float_samples_are_rejected_before_output ... ok
+test sample_format_tag_type_count_and_each_channel_are_validated ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

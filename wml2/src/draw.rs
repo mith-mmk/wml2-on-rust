@@ -48,7 +48,22 @@ pub trait DrawCallback: Sync + Send {
         height: usize,
         option: Option<InitOptions>,
     ) -> Result<Option<CallbackResponse>, Error>;
-    /// Writes RGBA pixels into a rectangle.
+    /// Declares the source bytes delivered by subsequent draws. This does not
+    /// request a decoder output format. Existing callbacks accept packed RGBA8
+    /// only; unsupported declarations fail before the legacy initializer runs.
+    #[cfg(feature = "image-buffer-ex")]
+    fn init_ex(&mut self, width: usize, height: usize, option: Option<InitOptionsEx>) -> Response {
+        let option = option.unwrap_or_default();
+        if option.source_format != PixelFormatEx::Rgba8 || option.source_stride.is_some() {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::NoSupportFormat,
+                "legacy callback requires packed RGBA8".to_string(),
+            )));
+        }
+        self.init(width, height, option.legacy)
+    }
+    /// Writes pixels into a rectangle. Legacy `init` declares packed RGBA8;
+    /// with `image-buffer-ex`, `init_ex` declares the incoming byte layout.
     fn draw(
         &mut self,
         start_x: usize,
@@ -77,6 +92,15 @@ pub trait DrawCallback: Sync + Send {
         value: DataMap,
     ) -> Result<Option<CallbackResponse>, Error>;
 }
+
+#[cfg(feature = "image-buffer-ex")]
+#[path = "image_buffer_ex.rs"]
+pub(crate) mod image_buffer_ex;
+#[cfg(feature = "image-buffer-ex")]
+pub use image_buffer_ex::{
+    ImageBufferEx, ImageProfilesEx, InitOptionsEx, LegacyPickAdapterEx, PickCallbackEx,
+    PixelBytesEx, PixelFormatEx, PixelOutputEx, PrecisionConversion, convert_pixels_ex,
+};
 
 /// Supplies image data to encoders.
 pub trait PickCallback: Sync + Send {
@@ -430,11 +454,38 @@ fn buffer_error(message: &str) -> Error {
     ))
 }
 
-fn zeroed_bytes(length: usize) -> Result<Vec<u8>, Error> {
+pub(crate) fn zeroed_bytes(length: usize) -> Result<Vec<u8>, Error> {
     let mut bytes = Vec::new();
     bytes.try_reserve_exact(length)?;
     bytes.resize(length, 0);
     Ok(bytes)
+}
+
+// Shared allocation/background and row-copy kernels for legacy and EX buffers.
+fn initialized_bytes(length: usize, pixel: Option<&[u8]>) -> Result<Vec<u8>, Error> {
+    let mut bytes = zeroed_bytes(length)?;
+    if let Some(pixel) = pixel {
+        for destination in bytes.chunks_exact_mut(pixel.len()) {
+            destination.copy_from_slice(pixel);
+        }
+    }
+    Ok(bytes)
+}
+
+fn copy_rows(
+    destination: &mut [u8],
+    source: &[u8],
+    source_stride: usize,
+    destination_stride: usize,
+    offset: usize,
+    row_bytes: usize,
+    height: usize,
+) {
+    for row in 0..height {
+        let src = row * source_stride;
+        let dst = offset + row * destination_stride;
+        destination[dst..dst + row_bytes].copy_from_slice(&source[src..src + row_bytes]);
+    }
 }
 
 fn clipped_rect(
@@ -524,17 +575,15 @@ impl DrawCallback for ImageBuffer {
             animation: false,
             loop_count: 0,
         });
-        let mut buffer = zeroed_bytes(buffersize)?;
-        if let Some(background) = &option.background {
-            for pixel in buffer.chunks_exact_mut(4) {
-                pixel.copy_from_slice(&[
-                    background.red,
-                    background.green,
-                    background.blue,
-                    background.alpha,
-                ]);
-            }
-        }
+        let pixel = option.background.as_ref().map(|background| {
+            [
+                background.red,
+                background.green,
+                background.blue,
+                background.alpha,
+            ]
+        });
+        let buffer = initialized_bytes(buffersize, pixel.as_ref().map(|p| p.as_slice()))?;
         self.width = width;
         self.height = height;
         self.buffer = Some(buffer);
@@ -596,11 +645,15 @@ impl DrawCallback for ImageBuffer {
         if data.len() < source_end || buffer.len() < destination_end {
             return Err(buffer_error("insufficient draw buffer"));
         }
-        for y in 0..h {
-            let src = y * source_stride;
-            let dst = (start_y + y) * destination_stride + start_x * 4;
-            buffer[dst..dst + row_bytes].copy_from_slice(&data[src..src + row_bytes]);
-        }
+        copy_rows(
+            buffer,
+            data,
+            source_stride,
+            destination_stride,
+            start_y * destination_stride + start_x * 4,
+            row_bytes,
+            h,
+        );
         Ok(None)
     }
 
@@ -815,6 +868,52 @@ pub struct EncodeOptions<'a> {
     /// `exif` accepts raw serialized EXIF bytes, TIFF-style EXIF headers, or
     /// `Ascii("copy")` to reuse decoded source EXIF during [`convert`].
     pub options: Option<HashMap<String, DataMap>>,
+}
+
+/// Explicit input request for an EX-aware encoder. The picker owns precision
+/// conversion; the codec must validate the returned layout. This does not
+/// change the packed RGBA8 contract of legacy [`EncodeOptions`].
+#[cfg(feature = "image-buffer-ex")]
+pub struct EncodeOptionsEx<'a> {
+    /// Format-specific diagnostic level, as in the legacy encode options.
+    pub debug_flag: usize,
+    /// Supplies explicitly requested output rectangles, independently of storage.
+    pub drawer: &'a mut dyn PickCallbackEx,
+    /// Pixel format, byte stride and Exact/Round policy accepted by the encoder.
+    pub output: PixelOutputEx,
+    /// Encoder controls and explicitly prepared output metadata.
+    pub options: Option<HashMap<String, DataMap>>,
+}
+
+/// Encode through an explicit EX pixel request. Currently enabled AVIF encoding
+/// accepts Gray/RGBA8 or12; RGBA16 storage needs an explicit8/12-bit pick policy.
+/// Other codecs retain their existing legacy encoder entry points.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_encoder_ex(
+    option: &mut EncodeOptionsEx,
+    format: ImageFormat,
+) -> Result<Vec<u8>, Error> {
+    match format {
+        #[cfg(feature = "avifenc")]
+        ImageFormat::Avif => crate::avif::encoder::encode_ex(option),
+        _ => {
+            let _ = option;
+            Err(Box::new(ImgError::new_const(
+                ImgErrorKind::NoSupportFormat,
+                "EX encoding supports enabled AVIF only".into(),
+            )))
+        }
+    }
+}
+
+/// EX encoding with the same resource vocabulary as the legacy encoder API.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_encoder_ex_with_limits(
+    option: &mut EncodeOptionsEx,
+    format: ImageFormat,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Vec<u8>, Error> {
+    crate::limits::scope(limits, || image_encoder_ex(option, format))
 }
 
 /// Decodes an image from memory into an [`ImageBuffer`].
@@ -1203,6 +1302,108 @@ pub fn image_from_with_limits(
         limits,
     )?;
     Ok(image)
+}
+
+/// Decode enabled static PNG/TIFF/AVIF with explicit storage and precision
+/// policy. Unlike the RGBA8 API, the codec declares Gray8/16 or Rgba8/16 source
+/// bytes before drawing; conversion is owned by [`ImageBufferEx`].
+/// PNG packed Gray expands to Gray8; palette/RGB/GrayAlpha expand to straight
+/// RGBA at their sample depth. TIFF supports unsigned 8/16-bit Gray/RGB with
+/// optional straight alpha, and retains orientation without rotating samples.
+/// AVIF uses its bounded native still decoder and declares normalized RGBA16LE
+/// after codec reconstruction, without ICC application. AVIS/grid, geometry
+/// transforms, premultiplied alpha and display-transfer conversion reject.
+/// Other codecs, APNG, multi-page TIFF and premultiplied TIFF are unsupported.
+/// ICC/gamma information is metadata, with no color or display transforms.
+///
+/// The example requires `png` in addition to `image-buffer-ex`.
+/// ```
+/// # #[cfg(feature = "png")]
+/// # {
+/// use wml2::draw::{image_from_ex, image_to, ImageBuffer, PixelFormatEx,
+///     PrecisionConversion};
+/// use wml2::util::ImageFormat;
+/// let mut source = ImageBuffer::from_buffer(1, 1, vec![1, 2, 3, 255]);
+/// let png = image_to(&mut source, ImageFormat::Png, None).unwrap();
+/// let image = image_from_ex(&png, PixelFormatEx::Rgba16,
+///     PrecisionConversion::Exact).unwrap();
+/// assert_eq!(image.bytes().unwrap(), &[1, 1, 2, 2, 3, 3, 255, 255]);
+/// # }
+/// ```
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_from_ex(
+    buffer: &[u8],
+    storage: PixelFormatEx,
+    precision: PrecisionConversion,
+) -> Result<ImageBufferEx, Error> {
+    image_from_ex_with_limits(
+        buffer,
+        storage,
+        precision,
+        crate::limits::DecodeLimits::default(),
+    )
+}
+
+/// Decode EX pixels with independent input, source, storage and metadata budgets.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_from_ex_with_limits(
+    buffer: &[u8],
+    storage: PixelFormatEx,
+    precision: PrecisionConversion,
+    limits: crate::limits::DecodeLimits,
+) -> Result<ImageBufferEx, Error> {
+    let mut image = ImageBufferEx::with_storage(storage, precision);
+    image_decoder_ex_with_limits(
+        &mut BytesReader::new(buffer),
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+        },
+        limits,
+    )?;
+    Ok(image)
+}
+
+/// Decode static PNG/TIFF into an EX-aware callback using the default limits.
+/// Legacy callbacks only accept the packed RGBA8 source declarations; they
+/// reject Gray/high-depth input rather than interpreting its bytes as RGBA8.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_decoder_ex<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    image_decoder_ex_with_limits(reader, option, crate::limits::DecodeLimits::default())
+}
+
+/// EX callback decode with explicit limits; the same Guard enforces source
+/// declarations and suppresses further callback forwarding after Abort.
+#[cfg(feature = "image-buffer-ex")]
+pub fn image_decoder_ex_with_limits<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Option<ImgWarnings>, Error> {
+    crate::decode_guard::run_ex(reader, option, limits, |reader, _option| {
+        let offset = reader.offset()?;
+        let end = reader.seek(SeekFrom::End(0))?;
+        reader.seek(SeekFrom::Start(offset))?;
+        let length = end
+            .checked_sub(offset)
+            .ok_or_else(|| std::io::Error::other("invalid input position"))?;
+        let sample = reader.read_bytes_no_move(usize::try_from(length.min(256))?)?;
+        match format_check(&sample) {
+            #[cfg(feature = "png")]
+            ImageFormat::Png => crate::png::decoder::decode_ex_inner(reader, _option),
+            #[cfg(feature = "tiff")]
+            ImageFormat::Tiff => crate::tiff::decoder::decode_ex_inner(reader, _option),
+            #[cfg(feature = "avif")]
+            ImageFormat::Avif => crate::avif::decoder::decode_ex_inner(reader, _option),
+            _ => Err(Box::new(ImgError::new_const(
+                ImgErrorKind::NoSupportFormat,
+                "EX decoding supports enabled static PNG/TIFF/AVIF only".into(),
+            )) as Error),
+        }
+    })
 }
 
 pub fn image_decoder<B: BinaryReader>(

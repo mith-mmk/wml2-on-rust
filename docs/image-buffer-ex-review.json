@@ -1,0 +1,24 @@
+{
+  "status": "PASS no remaining actionable API/compatibility findings",
+  "scope": "Independent read-only API/compatibility review of port againstmain and continuation against39d06fa; root owns runtimeverification",
+  "closed_finding": {
+    "issue": "Ownershipbridge initiallyrejected static legacyloop_countSome0, although ordinarylegacyinit alwayssetsSome0",
+    "fix": "Accept dormant zero in otherwise static image; keep rejection of animation/current/delay/nonzero loop",
+    "validation": "Legacyinit/drawbridge and actualPNGdecode/bridge pass"
+  },
+  "source_sha256": {
+    "wml2/src/image_buffer_ex.rs": "382debb26934affa4c0f59f015df9ca1e42725ec5dfc8945643d9f651000d0d4",
+    "wml2/src/draw.rs": "af51e10bdbe99e5b6616d632f9a97a002b2916205f79e2fde78603b970fa6ed4",
+    "wml2/examples/ex_decode.rs": "fd13ef1b8f157e647310e7611e59909006dabd0253dec9a2b19facde474bd7ce"
+  },
+  "boundary_review": {
+    "independent_test_file": "wml2/tests/image_buffer_ex_boundaries.rs",
+    "test_file_sha256": "8bce0b757e39a7d8f0b6f9a615e376c49e7d540e03fe12532b9e5e5f85833b94",
+    "tests": 5,
+    "exact_lattice_decisions": 209664,
+    "reported_gap": "Highres pixelbudget checked afterallocation/copy",
+    "fix": "Checkcheckedpixelcount beforeframe.validate andallocation/copy",
+    "validation": "Valid/mutatedframe earlypixelbudget unitcheck and scope-restoration, exhaustive/native tests pass"
+  },
+  "limitations": "Static design/bounds review and bounded tests do not prove every input is safe, full codecconformance, allencoders/platforms or viewer behavior."
+}

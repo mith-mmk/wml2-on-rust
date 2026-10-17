@@ -95,7 +95,7 @@ jobs:
       - name: Install 32-bit Windows target
         if: runner.os == 'Windows'
         run: rustup target add i686-pc-windows-msvc
-      - name: JPEG2000 EX 32-bit precision and resource boundaries
+      - name: JPEG2000 EX and native reduction 32-bit boundaries
         if: runner.os == 'Windows'
         run: cargo test -p wml2 --locked --target i686-pc-windows-msvc --test jpeg2000_ex --test jpeg2000_ex_color --test jpeg2000_ex_97 --test jpeg2000_ex_memory --test jpeg2000_reduced --no-default-features --features jpeg2000,image-buffer-ex
       - name: TIFF 32-bit offsets and strip geometry

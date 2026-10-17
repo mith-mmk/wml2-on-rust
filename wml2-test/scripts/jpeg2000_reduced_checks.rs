@@ -634,3 +634,111 @@ pub fn shifted_origins(data: &[u8], reduce: u8, bits: u8, nc: usize) {
     }
     let _ = nc;
 }
+
+pub struct PacketPositions {
+    pub eph: usize,
+    pub payload_start: usize,
+    pub payload_end: usize,
+    pub plt: usize,
+    pub tlm_length: usize,
+    pub sot_length: usize,
+}
+pub fn packet_structure(data: &[u8], positions: &PacketPositions) {
+    let expected = legacy(data, 1, DecodeLimits::default())
+        .unwrap()
+        .buffer
+        .unwrap();
+    assert!(positions.payload_start < positions.payload_end);
+    assert!(
+        data[positions.payload_start..positions.payload_end]
+            .iter()
+            .any(|&v| v != 255)
+    );
+    // This data belongs only to a discarded resolution. Its entropy is outside
+    // the new API guarantee, while its original length/header state remains.
+    let mut entropy = data.to_vec();
+    entropy[positions.payload_start..positions.payload_end].fill(255);
+    assert_eq!(
+        legacy(&entropy, 1, DecodeLimits::default())
+            .unwrap()
+            .buffer
+            .unwrap(),
+        expected
+    );
+    let mut eph = data.to_vec();
+    assert_eq!(&eph[positions.eph..positions.eph + 2], &[255, 146]);
+    eph[positions.eph + 1] = 147;
+    rejects_before_callbacks(&eph, 1, 8);
+    let mut plt = data.to_vec();
+    plt[positions.plt] ^= 1;
+    rejects_before_callbacks(&plt, 1, 8);
+    let mut tlm = data.to_vec();
+    let value = u32::from_be_bytes(
+        tlm[positions.tlm_length..positions.tlm_length + 4]
+            .try_into()
+            .unwrap(),
+    );
+    tlm[positions.tlm_length..positions.tlm_length + 4].copy_from_slice(&(value + 1).to_be_bytes());
+    rejects_before_callbacks(&tlm, 1, 8);
+    // Keep TLM/SOT consistent with the shortened physical part, but leave the
+    // discarded packet's declared contribution length unchanged.
+    let mut truncated = data.to_vec();
+    truncated.remove(positions.payload_end - 1);
+    for at in [positions.tlm_length, positions.sot_length] {
+        let value = u32::from_be_bytes(data[at..at + 4].try_into().unwrap());
+        truncated[at..at + 4].copy_from_slice(&(value - 1).to_be_bytes());
+    }
+    rejects_before_callbacks(&truncated, 1, 8);
+}
+pub fn deferred_profiles(ppt: &[u8], mct: &[u8], empty: &[u8]) {
+    let error = legacy(ppt, 1, DecodeLimits::default()).err().unwrap();
+    assert!(
+        error
+            .to_string()
+            .contains("multi-tile-part PPT reduction is deferred")
+    );
+    rejects_before_callbacks(ppt, 1, 8);
+    let error = legacy(mct, 1, DecodeLimits::default()).err().unwrap();
+    assert!(
+        error
+            .to_string()
+            .contains("equal colour component DWT levels")
+    );
+    rejects_before_callbacks(mct, 1, 8);
+    legacy_zero(empty);
+    let error = legacy(empty, 1, DecodeLimits::default()).err().unwrap();
+    assert!(error.to_string().contains("empty image"));
+    rejects_before_callbacks(empty, 1, 8);
+}
+pub fn unlimited_geometry_overflow(data: &[u8], bits: u8, nc: usize) {
+    let siz = data.windows(2).position(|v| v == [255, 81]).unwrap();
+    let mut huge = data.to_vec();
+    for at in [6, 10] {
+        huge[siz + at..siz + at + 4].copy_from_slice(&u32::MAX.to_be_bytes());
+    }
+    // Original source geometry remains checked even when reduction could make
+    // its output small; unlimited budgets never disable checked arithmetic.
+    for reduce in [1, 32] {
+        if bits == 8 {
+            assert!(legacy(&huge, reduce, DecodeLimits::unlimited()).is_err());
+        }
+        #[cfg(not(feature = "image-buffer-ex"))]
+        if bits != 8 {
+            assert!(legacy(&huge, reduce, DecodeLimits::unlimited()).is_err());
+        }
+        #[cfg(feature = "image-buffer-ex")]
+        if bits != 8 {
+            assert!(
+                jpeg2000::image_from_ex_with_reduction(
+                    &huge,
+                    format(bits, nc),
+                    PrecisionConversion::Exact,
+                    reduce,
+                    DecodeLimits::unlimited()
+                )
+                .is_err()
+            );
+        }
+    }
+    let _ = nc;
+}

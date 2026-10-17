@@ -1,11 +1,11 @@
 {
   "provenance": "OpenJPEG2.5.3 native opj_decompress-r PGX; no full-resolution resize oracle",
-  "input_profiles": 474,
-  "references": 1188,
-  "reference_bytes": 1196800,
-  "reference_blob_sha256": "01af2c09515e00bc67890c2c8a6e17066976bd1ff7e351206cb0b7efe8c0af71",
+  "input_profiles": 519,
+  "references": 1309,
+  "reference_bytes": 1262112,
+  "reference_blob_sha256": "cc949769dac9e69d768167f2754d00ce9969646c6112aa78c1720139ed2e86a1",
   "provenance_file": "jpeg2000-reduced-provenance.json.gz",
-  "provenance_sha256": "2ef7d1477863961d8f4a3bbd529cb0573388dea285730b09a88d44e3986d0084",
+  "provenance_sha256": "7215a8c26b15305f26c90c343188890ab424fa785a62121fdc2cf807a63e59bc",
   "encode_failures": [
     {
       "input": "jp2_reduced_empty_edge_tiles_8b_1c_97.jp2",

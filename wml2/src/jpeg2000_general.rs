@@ -1780,6 +1780,18 @@ fn image_inner<const EX: bool, const REDUCED: bool>(
         if REDUCED {
             validate_reduced_config(&tile.config, reduce)?;
         }
+        // Preserve the existing full-resolution parser. A tile-wide PPT stream
+        // spanning several parts needs a shared header cursor; this reduced
+        // profile explicitly defers it rather than treating it as inline data.
+        if REDUCED
+            && ppm.is_empty()
+            && (index != 0 || total > 1)
+            && (!ppt.is_empty() || tile.parts.iter().any(|part| !part.headers.is_empty()))
+        {
+            return Err(unsupported(
+                "multi-tile-part PPT reduction is deferred; use PPM or a single tile-part",
+            ));
+        }
         let mut headers = packed(&ppt)?;
         if !ppm.is_empty() {
             if !headers.is_empty() {

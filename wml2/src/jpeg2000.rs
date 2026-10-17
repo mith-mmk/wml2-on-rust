@@ -1509,7 +1509,8 @@ pub fn decode<B: BinaryReader>(
 /// Zero uses the existing full-resolution decoder, including its broader
 /// accepted profile. Nonzero reduction requires the documented reduced profile:
 /// classic 5/3 or bounded 9/7, no subsampling, signed/mixed precision, HT, encoded
-/// ROI, palette/mapping or implicit/premultiplied alpha. Every packet header and
+/// ROI, palette/mapping, implicit/premultiplied alpha or multi-tile-part PPT.
+/// PPM and single-tile-part PPT remain supported. Every packet header and
 /// payload extent is checked, but discarded entropy is not Tier-1 decoded.
 /// Original source pixels/input/metadata remain limited. Callbacks receive the
 /// reduced RGBA8 dimensions only after structural and selected-data validation.

@@ -31,7 +31,10 @@ are never premultiplied. RGB adds opaque alpha at the source bit depth.
 
 Signed/mixed precision, subsampling, HT, encoded maxshift ROI, palette/CMAP,
 sYCC/ICC and implicit/premultiplied/per-colour alpha are outside this reduced
-profile and are explicitly rejected. The existing strict EX channel declaration
+profile and are explicitly rejected. Multi-tile-part PPT is also explicitly
+unsupported: the existing full-resolution per-part parser is preserved. Single-
+tile-part PPT and multi-part PPM/inline headers are independently covered.
+The existing strict EX channel declaration
 rules also apply to nonzero 8-bit reduction. MCT requires equal colour-component
 DWT level counts. Each used tile/component must have at least `reduce` levels;
 values above 32 and an empty global result are rejected before callbacks.
@@ -65,7 +68,7 @@ smaller output does not guarantee acceptance under a tight expanded budget.
 These logical budgets are not a process RSS bound. All input and the output
 canvas remain in memory; spatial ROI and streaming are separate work.
 
-The initial independent corpus contains 1,188 OpenJPEG 2.5.3 `opj_decompress -r`
+The independent corpus contains 1,309 OpenJPEG 2.5.3 `opj_decompress -r`
 PGX outputs, including all supported reductions from the existing high-depth
 fixtures and the five-progression, multi-layer 8-bit corpus. Reversible samples
 are exact. Current reduced 9/7 differences peak at 1/1/3 source samples for

@@ -49,15 +49,15 @@ fn native_resolution_levels_match_independent_openjpeg_references() {
             _ => 2,
         }]
         .max(stats.maximum);
-        if !f[0].contains("_97") && !f[0].ends_with("_1.jp2") {
+        if f[8] == "1" {
             assert_eq!(stats.maximum, 0, "{} reduce{}", f[0], reduce);
         }
         count += 1;
     }
     #[cfg(feature = "image-buffer-ex")]
-    assert_eq!(count, 1188);
+    assert_eq!(count, 1309);
     #[cfg(not(feature = "image-buffer-ex"))]
-    assert_eq!(count, 108);
+    assert_eq!(count, 152);
     eprintln!("reduced references{count}, max8/12/16={maxima:?}");
 }
 #[test]
@@ -127,5 +127,33 @@ fn excessive_reduction_and_truncated_or_unsupported_inputs_are_atomic() {
     checks::rejects_before_callbacks(&rgba[at + 4..at - 4 + length], 1, 8);
     for file in ["jp2_general_LA.jp2", "jp2_general_ht_one.j2k"] {
         checks::rejects_before_callbacks(&read(file), 1, 8);
+    }
+}
+
+#[test]
+fn discarded_packet_headers_lengths_and_deferred_profiles_stay_atomic() {
+    let positions =
+        std::fs::read_to_string(root().join("jpeg2000-reduced-packet-positions.txt")).unwrap();
+    let f: Vec<_> = positions.split_whitespace().collect();
+    let n = |i: usize| f[i].parse::<usize>().unwrap();
+    checks::packet_structure(
+        &read(f[0]),
+        &checks::PacketPositions {
+            eph: n(1),
+            payload_start: n(2),
+            payload_end: n(3),
+            plt: n(4),
+            tlm_length: n(5),
+            sot_length: n(6),
+        },
+    );
+    checks::deferred_profiles(
+        &read("jp2_reduced_ppt_multi_part_deferred.j2k"),
+        &read("jp2_reduced_mixed_coc_mct_unsupported.j2k"),
+        &read("jp2_reduced_empty_global.j2k"),
+    );
+    for bits in [8, 12, 16] {
+        let data = read(&format!("jp2_reduced_odd_{bits}b_4c_53.jp2"));
+        checks::unlimited_geometry_overflow(&data, bits, 4);
     }
 }

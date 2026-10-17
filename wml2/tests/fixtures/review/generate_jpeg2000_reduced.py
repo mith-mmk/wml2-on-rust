@@ -179,6 +179,8 @@ def main():
     for item in json.loads((ROOT/'jpeg2000-general-manifest.json').read_text())['files']:
         if re.fullmatch(r'jp2_general_(L|RGB)_(LRCP|RLCP|RPCL|PCRL|CPRL)_[01]\.jp2', item['input']):
             inputs.append(dict(input=item['input'],provenance='Existing8-bit multi-layer/all-five-progression/precinct corpus'))
+    packet_generator = runpy.run_path(str(ROOT/'generate_jpeg2000_reduced_packets.py'))['generate']
+    inputs.extend(packet_generator(args.compress,args.decompress,work/'.test-packets'))
     blob = bytearray()
     entries = []
     failures = []
@@ -204,7 +206,7 @@ def main():
             entries.append(row)
             blob.extend(reference)
     (ROOT/'jpeg2000-reduced-refs.bin').write_bytes(blob)
-    (ROOT/'jpeg2000-reduced-manifest.txt').write_text(''.join(' '.join(str(row[k]) for k in ['input','offset','length','bits','nc','reduce','width','height'])+'\n' for row in entries))
+    (ROOT/'jpeg2000-reduced-manifest.txt').write_text(''.join(' '.join(str(row[k]) for k in ['input','offset','length','bits','nc','reduce','width','height'])+' '+str(int(row['filters']==[1]))+'\n' for row in entries))
     report = dict(provenance='OpenJPEG2.5.3 native opj_decompress-r PGX; no full-resolution resize oracle',reference_blob_sha256=sha(blob),reference_bytes=len(blob),input_profiles=len(inputs),entries=entries,encode_failures=encoding_failures,decode_failures=failures,empty_global_controls=empty)
     provenance = gzip.compress((json.dumps(report,indent=2)+'\n').encode(), mtime=0)
     (ROOT/'jpeg2000-reduced-provenance.json.gz').write_bytes(provenance)

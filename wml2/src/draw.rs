@@ -1304,9 +1304,9 @@ pub fn image_from_with_limits(
     Ok(image)
 }
 
-/// Decode enabled static PNG/TIFF/AVIF with explicit storage and precision
-/// policy. Unlike the RGBA8 API, the codec declares Gray8/16 or Rgba8/16 source
-/// bytes before drawing; conversion is owned by [`ImageBufferEx`].
+/// Decode supported static PNG/TIFF/AVIF/JPEG2000 with explicit storage and precision
+/// policy. The codec explicitly declares incoming Gray/RGBA precision and byte
+/// layout before drawing; conversion is owned by [`ImageBufferEx`].
 /// PNG packed Gray expands to Gray8; palette/RGB/GrayAlpha expand to straight
 /// RGBA at their sample depth. TIFF supports unsigned 8/16-bit Gray/RGB with
 /// optional straight alpha, and retains orientation without rotating samples.
@@ -1364,7 +1364,7 @@ pub fn image_from_ex_with_limits(
     Ok(image)
 }
 
-/// Decode static PNG/TIFF into an EX-aware callback using the default limits.
+/// Decode supported static formats into an EX-aware callback with default limits.
 /// Legacy callbacks only accept the packed RGBA8 source declarations; they
 /// reject Gray/high-depth input rather than interpreting its bytes as RGBA8.
 #[cfg(feature = "image-buffer-ex")]
@@ -1392,6 +1392,8 @@ pub fn image_decoder_ex_with_limits<B: BinaryReader>(
             .ok_or_else(|| std::io::Error::other("invalid input position"))?;
         let sample = reader.read_bytes_no_move(usize::try_from(length.min(256))?)?;
         match format_check(&sample) {
+            #[cfg(feature = "jpeg2000")]
+            ImageFormat::Jpeg2000 => crate::jpeg2000::decode_ex_inner(reader, _option),
             #[cfg(feature = "png")]
             ImageFormat::Png => crate::png::decoder::decode_ex_inner(reader, _option),
             #[cfg(feature = "tiff")]
@@ -1400,7 +1402,7 @@ pub fn image_decoder_ex_with_limits<B: BinaryReader>(
             ImageFormat::Avif => crate::avif::decoder::decode_ex_inner(reader, _option),
             _ => Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
-                "EX decoding supports enabled static PNG/TIFF/AVIF only".into(),
+                "EX decoding supports enabled static PNG/TIFF/AVIF and unsigned Gray12/16 reversible JPEG2000".into(),
             )) as Error),
         }
     })

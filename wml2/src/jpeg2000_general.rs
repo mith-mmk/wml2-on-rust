@@ -270,7 +270,7 @@ fn container(data: &[u8]) -> Result<(&[u8], Container), Error> {
     }
     Ok((stream.ok_or_else(|| bad("missing codestream"))?, meta))
 }
-fn geometry(b: &[u8]) -> Result<Geometry, Error> {
+fn geometry<const GRAY_EX: bool>(b: &[u8]) -> Result<Geometry, Error> {
     if b.len() < 36 {
         return Err(bad("SIZ length"));
     }
@@ -302,7 +302,10 @@ fn geometry(b: &[u8]) -> Result<Geometry, Error> {
     }
     let pixels = count(x1 - x0, y1 - y0)?;
     crate::limits::check(pixels, crate::limits::current().pixels, "pixels")?;
-    check(count(pixels, 4)?, "JPEG2000 RGBA")?;
+    check(
+        count(pixels, if GRAY_EX { 2 } else { 4 })?,
+        "JPEG2000 output",
+    )?;
     crate::limits::check(1, crate::limits::current().frames, "frames")?;
     let nt = count((x1 - tx).div_ceil(tw), (y1 - ty).div_ceil(th))?;
     if nt > 65535 {
@@ -311,7 +314,13 @@ fn geometry(b: &[u8]) -> Result<Geometry, Error> {
     let mut components = Vec::with_capacity(nc);
     for c in b[36..].chunks_exact(3) {
         let depth = (c[0] & 127) + 1;
-        if depth > 8 {
+        if GRAY_EX {
+            if nc != 1 || !matches!(depth, 12 | 16) || c[0] & 128 != 0 || c[1..] != [1, 1] {
+                return Err(unsupported(
+                    "EX requires one unsigned, full-resolution Gray12/16 component",
+                ));
+            }
+        } else if depth > 8 {
             return Err(unsupported("high sample depth deferred"));
         }
         if c[1] == 0 || c[2] == 0 {
@@ -674,7 +683,10 @@ fn quant(q: &[u8], s: &Style, depth: u8) -> Result<(Vec<u8>, Vec<f64>), Error> {
             return Err(bad("quantization reserved bits"));
         }
         let planes = u16::from(guard) + exp;
-        if planes == 0 || planes > if s.filter == 1 { 17 } else { 25 } {
+        // The existing 8-bit path retains its proven 16-bit coefficient cap.
+        // Gray12/16 needs sample depth + subband gain + guard precision.
+        // The segmented Tier-1 decoder is independently bounded to 28 planes.
+        if planes == 0 || planes > if s.filter == 1 && depth <= 8 { 17 } else { 25 } {
             return Err(bad("coefficient precision"));
         }
         mb.push((planes - 1) as u8);
@@ -695,18 +707,27 @@ fn quant(q: &[u8], s: &Style, depth: u8) -> Result<(Vec<u8>, Vec<f64>), Error> {
     Ok((mb, steps))
 }
 
-fn precincts(
+struct TileWorkspace {
+    planes: Vec<Plane>,
+    precincts: Vec<Precinct>,
+    steps: Vec<Vec<f64>>,
+    retained_bytes: usize,
+}
+fn precincts<const GRAY_EX: bool>(
     g: &Geometry,
     cfg: &Config,
     bounds: (usize, usize, usize, usize),
-) -> Result<(Vec<Plane>, Vec<Precinct>, Vec<Vec<f64>>), Error> {
+) -> Result<TileWorkspace, Error> {
     let (tx0, ty0, tx1, ty1) = bounds;
     let mut planes = Vec::new();
     let mut all = Vec::new();
     let mut quant_steps = Vec::new();
     let mut allocation = 0usize;
-    let mut output_storage = count(count(g.x1 - g.x0, g.y1 - g.y0)?, 4)?;
-    for c in &g.components {
+    let mut output_storage = count(
+        count(g.x1 - g.x0, g.y1 - g.y0)?,
+        if GRAY_EX { 2 } else { 4 },
+    )?;
+    for c in g.components.iter().filter(|_| !GRAY_EX) {
         output_storage = output_storage
             .checked_add(count(
                 g.x1.div_ceil(c.sx) - g.x0.div_ceil(c.sx),
@@ -793,8 +814,17 @@ fn precincts(
                             0
                         };
                         let block_count = count(nx, ny)?;
+                        // At most 82 classic passes (28 planes). EX includes
+                        // worst-case segment/contribution Vec capacities as
+                        // well as the established block/tag-tree allowance.
+                        let block_bytes = if GRAY_EX {
+                            256 + 128 * std::mem::size_of::<tier1::Segment>()
+                                + 256 * std::mem::size_of::<(usize, usize, usize, usize)>()
+                        } else {
+                            256
+                        };
                         allocation = allocation
-                            .checked_add(count(block_count, 256)?)
+                            .checked_add(count(block_count, block_bytes)?)
                             .ok_or_else(|| bad("block allocation overflow"))?;
                         check(
                             allocation
@@ -846,7 +876,14 @@ fn precincts(
             }
         }
     }
-    Ok((planes, all, quant_steps))
+    Ok(TileWorkspace {
+        planes,
+        precincts: all,
+        steps: quant_steps,
+        retained_bytes: allocation
+            .checked_add(output_storage)
+            .ok_or_else(|| bad("workspace overflow"))?,
+    })
 }
 fn packet_order(precincts: &[Precinct], cfg: &Config, poc: &[Poc]) -> Result<Vec<Packet>, Error> {
     check(
@@ -1032,7 +1069,7 @@ fn packet(
     Ok(())
 }
 
-fn reconstruct(
+fn reconstruct<const GRAY_EX: bool>(
     planes: &mut [Plane],
     precincts: Vec<Precinct>,
     cfg: &Config,
@@ -1089,6 +1126,11 @@ fn reconstruct(
                 s.levels,
                 (plane.x0, plane.y0),
             )?;
+            if GRAY_EX {
+                // Keep signed centered integer coefficients until LE packing;
+                // do not narrow to u8 or introduce a floating reconstruction.
+                continue;
+            }
             plane.samples = plane.coefficients.iter().map(|&v| f64::from(v)).collect();
         } else {
             plane.samples = array(plane.coefficients.len(), 0.0)?;
@@ -1267,14 +1309,43 @@ fn render(
     Ok(())
 }
 
+pub(super) struct DecodedImage {
+    pub width: usize,
+    pub height: usize,
+    #[cfg(feature = "image-buffer-ex")]
+    pub depth: u8,
+    pub bytes: Vec<u8>,
+}
+
 pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
+    let image = image_inner::<false>(data)?;
+    Ok((image.width, image.height, image.bytes))
+}
+
+#[cfg(feature = "image-buffer-ex")]
+pub(super) fn image_gray_ex(data: &[u8]) -> Result<DecodedImage, Error> {
+    image_inner::<true>(data)
+}
+
+// Separate instantiations preserve the established RGBA8 fast/general path.
+fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
     let (s, meta) = container(data)?;
     if u16be(s, 0)? != 0xff4f || u16be(s, 2)? != 0xff51 {
         return Err(bad("SOC/SIZ required"));
     }
     let (_, b, mut p) = segment(s, 2)?;
-    let g = geometry(b)?;
+    let g = geometry::<GRAY_EX>(b)?;
     let nc = g.components.len();
+    if GRAY_EX
+        && (meta.space.is_some_and(|s| s != 17)
+            || !meta.palette.is_empty()
+            || !meta.mapping.is_empty()
+            || !meta.channels.is_empty())
+    {
+        return Err(unsupported(
+            "EX Gray12/16 requires Gray without palette, mapping or channel definitions",
+        ));
+    }
     if let Some((w, h, n, bpc)) = meta.ihdr {
         if (w, h, n) != (g.x1 - g.x0, g.y1 - g.y0, nc) {
             return Err(bad("JP2/SIZ disagreement"));
@@ -1362,6 +1433,9 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
     }
     if g.rsiz == 0x4000 && !cfg.ht {
         return Err(bad("extended capabilities require CAP"));
+    }
+    if GRAY_EX {
+        validate_gray_config(&cfg)?;
     }
     let mut qstyle = cfg.default.clone();
     qstyle.filter = 0;
@@ -1499,6 +1573,9 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 part_poc = tile.config.poc.clone();
             }
         }
+        if GRAY_EX {
+            validate_gray_config(&tile.config)?;
+        }
         let mut headers = packed(&ppt)?;
         if !ppm.is_empty() {
             if !headers.is_empty() {
@@ -1546,10 +1623,13 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
     }
     let width = g.x1 - g.x0;
     let height = g.y1 - g.y0;
-    let mut rgba = array(count(count(width, height)?, 4)?, 0u8)?;
+    let mut rgba = array(
+        count(count(width, height)?, if GRAY_EX { 2 } else { 4 })?,
+        0u8,
+    )?;
     let mut component_samples = Vec::new();
     let mut output_bytes = rgba.len();
-    for c in &g.components {
+    for c in g.components.iter().filter(|_| !GRAY_EX) {
         let n = count(
             g.x1.div_ceil(c.sx) - g.x0.div_ceil(c.sx),
             g.y1.div_ceil(c.sy) - g.y0.div_ceil(c.sy),
@@ -1572,7 +1652,42 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
             g.tx.saturating_add((ix + 1).saturating_mul(g.tw)).min(g.x1),
             g.ty.saturating_add((iy + 1).saturating_mul(g.th)).min(g.y1),
         );
-        let (mut planes, mut precincts, steps) = precincts(&g, &tile.config, bounds)?;
+        let TileWorkspace {
+            mut planes,
+            mut precincts,
+            steps,
+            retained_bytes: workspace,
+        } = precincts::<GRAY_EX>(&g, &tile.config, bounds)?;
+        if GRAY_EX {
+            // Account for output + coefficients/lifting/block state + packet
+            // ordering, consumed keys and replacement POC directories together.
+            let packets = count(precincts.len(), tile.config.layers as usize)?;
+            let progression = std::iter::once(tile.config.poc.as_slice())
+                .chain(tile.parts.iter().map(|p| p.poc.as_slice()))
+                .try_fold(0usize, |max, poc| -> Result<usize, Error> {
+                    let work = if poc.is_empty() {
+                        tile.config.layers as usize
+                    } else {
+                        poc.iter().try_fold(0usize, |n, p| {
+                            n.checked_add(p.l1 as usize)
+                                .ok_or_else(|| bad("EX progression overflow"))
+                        })?
+                    };
+                    Ok(max.max(work))
+                })?;
+            let compressed = tile.parts.iter().try_fold(0usize, |total, part| {
+                total
+                    .checked_add(part.body.len())
+                    .ok_or_else(|| bad("EX segment storage overflow"))
+            })?;
+            let ordering_bytes = count(count(precincts.len(), progression)?, 32)?;
+            let directory = count(packets, 192)?
+                .checked_add(count(compressed, 2)?)
+                .and_then(|n| n.checked_add(ordering_bytes))
+                .and_then(|n| n.checked_add(workspace))
+                .ok_or_else(|| bad("EX workspace overflow"))?;
+            check(directory, "JPEG2000 EX combined workspace")?;
+        }
         let mut consumed = HashSet::new();
         if tile.config.styles.iter().any(|s| s.flags & 64 != 0) && !tile.config.ht {
             return Err(bad("HT coding requires CAP"));
@@ -1639,7 +1754,21 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
                 consumed.len()
             )));
         }
-        reconstruct(&mut planes, precincts, &tile.config, &steps)?;
+        reconstruct::<GRAY_EX>(&mut planes, precincts, &tile.config, &steps)?;
+        if GRAY_EX {
+            let plane = &planes[0];
+            let shift = 1i64 << (g.components[0].depth - 1);
+            let max = (1i64 << g.components[0].depth) - 1;
+            for y in 0..plane.h {
+                for x in 0..plane.w {
+                    let sample = (i64::from(plane.coefficients[y * plane.w + x]) + shift)
+                        .clamp(0, max) as u16;
+                    let at = ((plane.y0 + y - g.y0) * width + plane.x0 + x - g.x0) * 2;
+                    rgba[at..at + 2].copy_from_slice(&sample.to_le_bytes());
+                }
+            }
+            continue;
+        }
         for (c, plane) in planes.iter().enumerate() {
             let component = &g.components[c];
             let x0 = g.x0.div_ceil(component.sx);
@@ -1655,6 +1784,36 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
             }
         }
     }
-    render(&mut rgba, &g, &meta, &component_samples)?;
-    Ok((width, height, rgba))
+    if !GRAY_EX {
+        render(&mut rgba, &g, &meta, &component_samples)?;
+    }
+    Ok(DecodedImage {
+        width,
+        height,
+        #[cfg(feature = "image-buffer-ex")]
+        depth: g.components[0].depth,
+        bytes: rgba,
+    })
+}
+
+// The selected EX profile is unsigned Gray12/16 with reversible 5/3 and no
+// MCT, HT, or maxshift ROI. Existing 8-bit support is intentionally unchanged.
+fn validate_gray_config(cfg: &Config) -> Result<(), Error> {
+    if cfg.mct
+        || cfg.ht
+        || cfg.roi.iter().any(|&s| s != 0)
+        || cfg
+            .styles
+            .iter()
+            .any(|s| s.filter != 1 || s.flags & 64 != 0)
+        || cfg
+            .quant
+            .iter()
+            .any(|q| q.first().is_none_or(|v| v & 31 != 0))
+    {
+        return Err(unsupported(
+            "EX Gray12/16 supports reversible 5/3 scalar-free classic coding only; no MCT, HT or ROI",
+        ));
+    }
+    Ok(())
 }

@@ -13,6 +13,7 @@ license = "MIT"
 # They are not needed to build the library; omit their integration target too.
 exclude = [
     "tests/jpeg2000.rs",
+    "tests/jpeg2000_ex.rs",
     "tests/fixtures/review/jp2*",
     "tests/fixtures/review/unsupported_jp2*",
     "tests/fixtures/review/oracle_origins_*",
@@ -31,6 +32,10 @@ crate-type = ["rlib"]
 [[example]]
 name = "q4_dump_rgba"
 required-features = ["q4"]
+
+[[example]]
+name = "jpeg2000_ex_verify"
+required-features = ["jpeg2000", "image-buffer-ex"]
 
 [[test]]
 name = "avif_decode"

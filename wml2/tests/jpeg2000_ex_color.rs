@@ -195,7 +195,7 @@ fn incomplete_ambiguous_or_nonstraight_cdef_is_rejected_before_initialization() 
 #[test]
 fn unsupported_color_precision_transform_and_alpha_declarations_emit_no_callbacks() {
     for nc in [3, 4] {
-        for reason in ["signed16", "irreversible16", "depth10"] {
+        for reason in ["signed16", "depth10"] {
             rejected(&read(&format!(
                 "jp2_ex_color_unsupported_{nc}_{reason}.jp2"
             )));

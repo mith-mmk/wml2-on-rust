@@ -820,7 +820,10 @@ fn precincts<const EX: bool>(
         let w = x1 - x0;
         let h = y1 - y0;
         allocation = allocation
-            .checked_add(count(count(w, h)?, 20)?)
+            .checked_add(count(
+                count(w, h)?,
+                if EX && s.filter == 0 { 28 } else { 20 },
+            )?)
             .ok_or_else(|| bad("workspace overflow"))?;
         check(
             allocation
@@ -1839,6 +1842,36 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
             let y0 = plane.y0 - g.y0;
             let shift = 1i64 << (g.components[0].depth - 1);
             let max = (1i64 << g.components[0].depth) - 1;
+            if tile.config.styles[0].filter == 0 {
+                let channels = if nc == 1 { 1 } else { 4 };
+                for y in 0..plane.h {
+                    for x in 0..plane.w {
+                        let index = y * plane.w + x;
+                        let mut values = [0.0; 4];
+                        for (v, p) in values.iter_mut().zip(&planes) {
+                            *v = p.samples[index];
+                        }
+                        if tile.config.mct {
+                            let rgb = inverse_ict(values[0], values[1], values[2]);
+                            values[..3].copy_from_slice(&rgb);
+                        }
+                        let at = ((y0 + y) * width + x0 + x) * channels * 2;
+                        for c in 0..channels {
+                            let sample = if c == 3 && nc == 3 {
+                                max as u16
+                            } else {
+                                let v = values[channel_order[c]];
+                                if !v.is_finite() {
+                                    return Err(bad("nonfinite EX colour sample"));
+                                }
+                                (v.round_ties_even() + shift as f64).clamp(0.0, max as f64) as u16
+                            };
+                            rgba[at + c * 2..at + c * 2 + 2].copy_from_slice(&sample.to_le_bytes());
+                        }
+                    }
+                }
+                continue;
+            }
             if nc == 1 {
                 for y in 0..plane.h {
                     for x in 0..plane.w {
@@ -1907,25 +1940,39 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
     })
 }
 
-// EX requires reversible 5/3 with optional RGB RCT; existing 8-bit support is unchanged.
+// Keep the established reversible profile; bound the new floating profile.
 fn validate_ex_config(cfg: &Config) -> Result<(), Error> {
+    let filter = cfg.styles[0].filter;
     if cfg.mct && cfg.styles.len() < 3
         || cfg.ht
         || cfg.roi.iter().any(|&s| s != 0)
         || cfg
             .styles
             .iter()
-            .any(|s| s.filter != 1 || s.flags & 64 != 0)
-        || cfg
-            .quant
-            .iter()
-            .any(|q| q.first().is_none_or(|v| v & 31 != 0))
+            .any(|s| s.filter != filter || s.flags & 64 != 0 || filter == 0 && s.levels > 6)
+        || cfg.quant.iter().any(|q| {
+            q.first().is_none_or(|v| {
+                if filter == 1 {
+                    v & 31 != 0
+                } else {
+                    !matches!(v & 31, 1 | 2)
+                }
+            })
+        })
     {
         return Err(unsupported(
-            "EX supports reversible 5/3 scalar-free classic coding only; no Gray MCT, HT or ROI",
+            "EX requires uniform 5/3 scalar-free or 9/7 scalar-quantized (at most 6 levels); no mixed filters, Gray MCT, HT or ROI",
         ));
     }
     Ok(())
+}
+
+fn inverse_ict(y: f64, cb: f64, cr: f64) -> [f64; 3] {
+    [
+        y + 1.402 * cr,
+        y - 0.34413 * cb - 0.71414 * cr,
+        y + 1.772 * cb,
+    ]
 }
 
 #[cfg(test)]

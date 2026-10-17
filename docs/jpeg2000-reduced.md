@@ -1,5 +1,10 @@
 # Native JPEG2000 resolution reduction (unreleased)
 
+The measurements below describe the pre-Gray-fix implementation checkpoint
+`e4e7dbd52100b75b271fb143c99fe6a488091ff1`. The subsequent
+[Gray32 performance follow-up](jpeg2000-gray-regression.md) retains the reported
+slowdown and records the narrower MQ-reader correction, controls and limitations.
+
 This continuation starts at memory PR #17 head
 `bc6c1182c7478c385b10296af71c996c4f4f3ab7` on
 `codex/jpeg2000-reduced-decode-20261017`. WML2 remains 0.0.36.
@@ -224,9 +229,10 @@ is retained as a performance concern rather than dismissed as noise or hidden
 by the faster reduced cases. The binaries' text sections differ; instruction
 identity is not claimed. This single-host result does not establish a universal
 regression size, and the continuation cannot claim that every existing profile
-has unchanged speed. Resolving or accepting this measured small-image cost is a
-review point before opening a reduction PR. No unrelated optimization is mixed
-into the resolution feature to conceal it.
+has unchanged speed. The [Gray32 performance follow-up](jpeg2000-gray-regression.md) addresses this
+checkpoint result with a narrow reuse of an existing MQ reader. It retains all
+these observations, rejected candidates, A/A controls and confidence intervals;
+no universal no-regression claim is made.
 
 Using one current reduced example, eight alternating ascending/descending level
 sweeps time each case with the same iteration count at all four levels:

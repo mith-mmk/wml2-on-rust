@@ -1,0 +1,1429 @@
+{
+  "preserved_commit": "3d81b951d700af92784830e821bd7c79a8ca8cba",
+  "base_commit": "bc6c1182c7478c385b10296af71c996c4f4f3ab7",
+  "source_sha256": {
+    "wml2/src/jpeg2000_tier1.rs": "0f3ab158462bc91852778beaf023b155b0ca07096ffdf78e338787ebb9b3d0f5",
+    "wml2/src/jpeg2000.rs": "a391ce1dd2537de08b32ac4f851d31be23ded60380ee4f9b6cf81d13e651d7be",
+    "wml2/src/jpeg2000_general.rs": "afde49c482bda10dbb98adeaf1605152a8be9e5149ffb36117b0da4824ccf69b",
+    "wml2-test/scripts/verify_jpeg2000_reduced_wasm.py": "ad6b16042d73911b0508c40cc2b86cb014406581e6214b5dc5d460b87968e1c4",
+    "wml2-test/scripts/jpeg2000_reduced_checks.rs": "0a3835e3196b8ed6d5852d39129c8c483bd31fd9968d6e2a2f30c672a2d369a8",
+    "wml2/tests/jpeg2000_reduced.rs": "cae6ad6562e35a080a13dd2b777b06508775c2c61a27e54c144af0895c3bb33e",
+    ".github/workflows/ci.yml": "61a8268256e8e4baad8e9b35525b3ec9e3f29c983f97546b6fc59e82652e4e34",
+    "Cargo.lock": "b39c87654efb7b6eb85fc60492dfd8f054fc714083588e96a2fe1e881259e9d9",
+    "wml2/Cargo.toml": "0fef23328d5b8a2e5bb0cb4ca6a70efec7a244a57e0da0c26c3d5fee707fe0b7"
+  },
+  "fix": "Single style0segment with at most24 internal bitplanes reuses existing bounded midpoint MQreader; original generic fallback and both existing MQkernels remain source-identical.",
+  "compatibility": {
+    "generic_fallback_source_unchanged": true,
+    "existing_mq_kernels_source_unchanged": true,
+    "api_files_and_version_lock_unchanged": true
+  },
+  "adoption_reason": "Primary repeated/fresh same-path trials restore Gray32 to the A/A repeatability band while lowering time versus3d81; rejected candidates and all adverse observations retained.",
+  "experiment_observations": {
+    "original-measure": 48,
+    "candidate-measure": 96,
+    "static-measure": 96,
+    "axis-screen": 32,
+    "single-measure": 96,
+    "fresh-measure": 96,
+    "rgb-long": 96,
+    "cross-profiles": 504,
+    "memory-spot": 12
+  },
+  "primary": [
+    {
+      "cpu": 0,
+      "samples_per_variant": 12,
+      "medians": {
+        "base": 338.10699999999997,
+        "control": 347.101,
+        "before": 360.953,
+        "candidate": 344.581
+      },
+      "comparisons": {
+        "control_vs_base": {
+          "percent": 2.6601046414300944,
+          "paired_block_bootstrap95": [
+            0.4154354376157299,
+            9.072255515998929
+          ]
+        },
+        "control_vs_pooled_base_control": {
+          "percent": 1.2871691616329395,
+          "paired_block_bootstrap95": [
+            0.0335264261121182,
+            2.8197182031001633
+          ]
+        },
+        "before_vs_base": {
+          "percent": 6.7570325370371,
+          "paired_block_bootstrap95": [
+            3.358172044122054,
+            13.705544242469525
+          ]
+        },
+        "before_vs_pooled_base_control": {
+          "percent": 5.32930637018878,
+          "paired_block_bootstrap95": [
+            1.3190840224970968,
+            9.749672158438738
+          ]
+        },
+        "candidate_vs_base": {
+          "percent": 1.9147784577072002,
+          "paired_block_bootstrap95": [
+            -5.887379808046489,
+            8.227523961928407
+          ]
+        },
+        "candidate_vs_pooled_base_control": {
+          "percent": 0.551810674370401,
+          "paired_block_bootstrap95": [
+            -7.021543868311586,
+            4.761288329569946
+          ]
+        }
+      }
+    },
+    {
+      "cpu": 2,
+      "samples_per_variant": 12,
+      "medians": {
+        "base": 328.106,
+        "control": 339.1895,
+        "before": 359.0365,
+        "candidate": 334.33500000000004
+      },
+      "comparisons": {
+        "control_vs_base": {
+          "percent": 3.378024175114147,
+          "paired_block_bootstrap95": [
+            -4.629211604380901,
+            8.141861247367665
+          ]
+        },
+        "control_vs_pooled_base_control": {
+          "percent": 0.9010576792930713,
+          "paired_block_bootstrap95": [
+            -2.498527650645177,
+            3.347260541543573
+          ]
+        },
+        "before_vs_base": {
+          "percent": 9.426983962499925,
+          "paired_block_bootstrap95": [
+            0.05754814257448171,
+            13.602462788409643
+          ]
+        },
+        "before_vs_pooled_base_control": {
+          "percent": 6.805082691154962,
+          "paired_block_bootstrap95": [
+            1.2663593729780986,
+            10.047427790121354
+          ]
+        },
+        "candidate_vs_base": {
+          "percent": 1.8984718353215246,
+          "paired_block_bootstrap95": [
+            -4.433177900561914,
+            10.774171805914246
+          ]
+        },
+        "candidate_vs_pooled_base_control": {
+          "percent": -0.5430441708648037,
+          "paired_block_bootstrap95": [
+            -3.2968893152157563,
+            6.3389652562443555
+          ]
+        }
+      }
+    }
+  ],
+  "rgb_long": [
+    {
+      "cpu": 0,
+      "samples_per_variant": 12,
+      "medians": {
+        "base": 247.58350000000002,
+        "control": 246.8475,
+        "before": 248.6535,
+        "candidate": 252.473
+      },
+      "comparisons": {
+        "control_vs_base": {
+          "percent": -0.2972734451205383,
+          "paired_block_bootstrap95": [
+            -4.312806173278605,
+            4.239563405615865
+          ]
+        },
+        "control_vs_pooled_base_control": {
+          "percent": -0.2664571103039526,
+          "paired_block_bootstrap95": [
+            -2.4332219601543637,
+            3.1438633313488173
+          ]
+        },
+        "before_vs_base": {
+          "percent": 0.4321774270094725,
+          "paired_block_bootstrap95": [
+            -2.997755817158154,
+            5.512408590530948
+          ]
+        },
+        "before_vs_pooled_base_control": {
+          "percent": 0.46321922208261146,
+          "paired_block_bootstrap95": [
+            -2.584105507262413,
+            4.673907761092488
+          ]
+        },
+        "candidate_vs_base": {
+          "percent": 1.9748892797783357,
+          "paired_block_bootstrap95": [
+            -3.443099930949156,
+            4.251290005372899
+          ]
+        },
+        "candidate_vs_pooled_base_control": {
+          "percent": 2.0064078995745582,
+          "paired_block_bootstrap95": [
+            -3.3021883549812836,
+            3.9476766184392886
+          ]
+        }
+      }
+    },
+    {
+      "cpu": 2,
+      "samples_per_variant": 12,
+      "medians": {
+        "base": 256.337,
+        "control": 269.2525,
+        "before": 277.64200000000005,
+        "candidate": 270.353
+      },
+      "comparisons": {
+        "control_vs_base": {
+          "percent": 5.038484495020223,
+          "paired_block_bootstrap95": [
+            -2.225958859117072,
+            16.278183056122963
+          ]
+        },
+        "control_vs_pooled_base_control": {
+          "percent": 3.130859109424966,
+          "paired_block_bootstrap95": [
+            -0.832510120673291,
+            11.203557704110079
+          ]
+        },
+        "before_vs_base": {
+          "percent": 8.31132454542265,
+          "paired_block_bootstrap95": [
+            3.1472911311982266,
+            12.598579904678541
+          ]
+        },
+        "before_vs_pooled_base_control": {
+          "percent": 6.344260442740435,
+          "paired_block_bootstrap95": [
+            0.9146875821575806,
+            10.61577722793432
+          ]
+        },
+        "candidate_vs_base": {
+          "percent": 5.467802151074563,
+          "paired_block_bootstrap95": [
+            -2.456427924970972,
+            13.149741757069645
+          ]
+        },
+        "candidate_vs_pooled_base_control": {
+          "percent": 3.5523798397800066,
+          "paired_block_bootstrap95": [
+            -2.577484618796899,
+            11.19458896190826
+          ]
+        }
+      }
+    }
+  ],
+  "cross_profiles": [
+    {
+      "cpu": 0,
+      "case": "Gray32",
+      "medians": {
+        "base": 347.4945,
+        "before": 354.4125,
+        "fixed": 337.9015
+      },
+      "fixed_vs_base_percent": -2.760619232822392,
+      "fixed_vs_before_percent": -4.658695728847039
+    },
+    {
+      "cpu": 0,
+      "case": "RGB32",
+      "medians": {
+        "base": 248.222,
+        "before": 246.03300000000002,
+        "fixed": 255.1115
+      },
+      "fixed_vs_base_percent": 2.775539637904778,
+      "fixed_vs_before_percent": 3.6899521608889874
+    },
+    {
+      "cpu": 0,
+      "case": "RGBA16",
+      "medians": {
+        "base": 260.927,
+        "before": 265.534,
+        "fixed": 252.50150000000002
+      },
+      "fixed_vs_base_percent": -3.2290640677277493,
+      "fixed_vs_before_percent": -4.908034376012105
+    },
+    {
+      "cpu": 0,
+      "case": "Gray53EX12",
+      "medians": {
+        "base": 5419.1044999999995,
+        "before": 5361.079,
+        "fixed": 5200.1955
+      },
+      "fixed_vs_base_percent": -4.039578863998649,
+      "fixed_vs_before_percent": -3.0009537259197194
+    },
+    {
+      "cpu": 0,
+      "case": "RGBA97EX12",
+      "medians": {
+        "base": 16797.718,
+        "before": 17606.965,
+        "fixed": 16197.898000000001
+      },
+      "fixed_vs_base_percent": -3.570842182253564,
+      "fixed_vs_before_percent": -8.002895445069601
+    },
+    {
+      "cpu": 0,
+      "case": "Gray53EX16",
+      "medians": {
+        "base": 6581.763000000001,
+        "before": 6510.7575,
+        "fixed": 6155.3085
+      },
+      "fixed_vs_base_percent": -6.479335399952879,
+      "fixed_vs_before_percent": -5.459410828924282
+    },
+    {
+      "cpu": 0,
+      "case": "RGBA97EX16",
+      "medians": {
+        "base": 20321.029499999997,
+        "before": 20366.779499999997,
+        "fixed": 19676.014499999997
+      },
+      "fixed_vs_base_percent": -3.1741256022486453,
+      "fixed_vs_before_percent": -3.3916260545757804
+    },
+    {
+      "cpu": 2,
+      "case": "Gray32",
+      "medians": {
+        "base": 347.22900000000004,
+        "before": 354.74,
+        "fixed": 339.6535
+      },
+      "fixed_vs_base_percent": -2.1817014131884194,
+      "fixed_vs_before_percent": -4.252833060833283
+    },
+    {
+      "cpu": 2,
+      "case": "RGB32",
+      "medians": {
+        "base": 246.047,
+        "before": 253.325,
+        "fixed": 255.6085
+      },
+      "fixed_vs_base_percent": 3.886046161912149,
+      "fixed_vs_before_percent": 0.9014112306325872
+    },
+    {
+      "cpu": 2,
+      "case": "RGBA16",
+      "medians": {
+        "base": 260.7225,
+        "before": 276.0085,
+        "fixed": 253.50799999999998
+      },
+      "fixed_vs_base_percent": -2.7671182962728746,
+      "fixed_vs_before_percent": -8.152104011289518
+    },
+    {
+      "cpu": 2,
+      "case": "Gray53EX12",
+      "medians": {
+        "base": 5269.4755000000005,
+        "before": 5384.9465,
+        "fixed": 5124.1085
+      },
+      "fixed_vs_base_percent": -2.758661654276595,
+      "fixed_vs_before_percent": -4.843836424373016
+    },
+    {
+      "cpu": 2,
+      "case": "RGBA97EX12",
+      "medians": {
+        "base": 16797.1665,
+        "before": 16808.145,
+        "fixed": 16100.508000000002
+      },
+      "fixed_vs_base_percent": -4.147476302029851,
+      "fixed_vs_before_percent": -4.210083861128034
+    },
+    {
+      "cpu": 2,
+      "case": "Gray53EX16",
+      "medians": {
+        "base": 6286.565500000001,
+        "before": 6424.998,
+        "fixed": 6144.3715
+      },
+      "fixed_vs_base_percent": -2.261870969132518,
+      "fixed_vs_before_percent": -4.36772898606349
+    },
+    {
+      "cpu": 2,
+      "case": "RGBA97EX16",
+      "medians": {
+        "base": 20113.3495,
+        "before": 20728.2125,
+        "fixed": 19949.978
+      },
+      "fixed_vs_base_percent": -0.8122540703625725,
+      "fixed_vs_before_percent": -3.754469904242841
+    }
+  ],
+  "cross_confidence": {
+    "Gray32": [
+      {
+        "cpu": 0,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 347.4945,
+          "before": 354.4125,
+          "fixed": 337.9015
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 1.990822876333298,
+            "paired_block_bootstrap95": [
+              -3.5767126782120795,
+              9.71582229918555
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -2.760619232822392,
+            "paired_block_bootstrap95": [
+              -6.3632351142521415,
+              2.969627392385288
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 2,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 347.22900000000004,
+          "before": 354.74,
+          "fixed": 339.6535
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 2.1631257757848577,
+            "paired_block_bootstrap95": [
+              -3.375632378322879,
+              10.325740486465286
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -2.1817014131884194,
+            "paired_block_bootstrap95": [
+              -8.588599294969857,
+              5.42155011769323
+            ]
+          }
+        }
+      }
+    ],
+    "RGB32": [
+      {
+        "cpu": 0,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 248.222,
+          "before": 246.03300000000002,
+          "fixed": 255.1115
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": -0.8818718727590547,
+            "paired_block_bootstrap95": [
+              -2.99457024075801,
+              0.45564018681818474
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": 2.775539637904778,
+            "paired_block_bootstrap95": [
+              -1.8027735544126844,
+              9.678301989669968
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 2,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 246.047,
+          "before": 253.325,
+          "fixed": 255.6085
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 2.957971444480112,
+            "paired_block_bootstrap95": [
+              -1.6896443693576901,
+              5.693424427040372
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": 3.886046161912149,
+            "paired_block_bootstrap95": [
+              -1.171437186730162,
+              4.8249952580149635
+            ]
+          }
+        }
+      }
+    ],
+    "RGBA16": [
+      {
+        "cpu": 0,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 260.927,
+          "before": 265.534,
+          "fixed": 252.50150000000002
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 1.7656279342497916,
+            "paired_block_bootstrap95": [
+              -8.855374963374075,
+              18.47479640956269
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -3.2290640677277493,
+            "paired_block_bootstrap95": [
+              -17.509225585624133,
+              3.380843451228799
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 2,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 260.7225,
+          "before": 276.0085,
+          "fixed": 253.50799999999998
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 5.862938564949327,
+            "paired_block_bootstrap95": [
+              0.33247687097681666,
+              11.441429047109185
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -2.7671182962728746,
+            "paired_block_bootstrap95": [
+              -10.13577761125941,
+              2.71687120441535
+            ]
+          }
+        }
+      }
+    ],
+    "Gray53EX12": [
+      {
+        "cpu": 0,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 5419.1044999999995,
+          "before": 5361.079,
+          "fixed": 5200.1955
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": -1.0707580929653515,
+            "paired_block_bootstrap95": [
+              -3.1803109786659123,
+              1.1404764252226363
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -4.039578863998649,
+            "paired_block_bootstrap95": [
+              -7.026348739837962,
+              -0.6508178611429272
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 2,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 5269.4755000000005,
+          "before": 5384.9465,
+          "fixed": 5124.1085
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 2.191318661601138,
+            "paired_block_bootstrap95": [
+              -2.098156436337484,
+              4.1750218638877845
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -2.758661654276595,
+            "paired_block_bootstrap95": [
+              -5.967672071926289,
+              -1.0785969791427874
+            ]
+          }
+        }
+      }
+    ],
+    "RGBA97EX12": [
+      {
+        "cpu": 0,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 16797.718,
+          "before": 17606.965,
+          "fixed": 16197.898000000001
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 4.817600819349388,
+            "paired_block_bootstrap95": [
+              -0.042637559784486356,
+              6.194845766621282
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -3.570842182253564,
+            "paired_block_bootstrap95": [
+              -8.712806924983408,
+              -1.5343504935169672
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 2,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 16797.1665,
+          "before": 16808.145,
+          "fixed": 16100.508000000002
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 0.06535923782144959,
+            "paired_block_bootstrap95": [
+              -3.6664987453668862,
+              1.5986403589503428
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -4.147476302029851,
+            "paired_block_bootstrap95": [
+              -7.5778297509513255,
+              -2.1550193776005533
+            ]
+          }
+        }
+      }
+    ],
+    "Gray53EX16": [
+      {
+        "cpu": 0,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 6581.763000000001,
+          "before": 6510.7575,
+          "fixed": 6155.3085
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": -1.078821890122772,
+            "paired_block_bootstrap95": [
+              -4.3688907633512635,
+              4.71291884817151
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -6.479335399952879,
+            "paired_block_bootstrap95": [
+              -9.673312001925327,
+              -3.363549780080566
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 2,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 6286.565500000001,
+          "before": 6424.998,
+          "fixed": 6144.3715
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 2.202037026417658,
+            "paired_block_bootstrap95": [
+              0.6781757651179943,
+              4.911148541818355
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -2.261870969132518,
+            "paired_block_bootstrap95": [
+              -4.203124137688841,
+              -0.8539619146591293
+            ]
+          }
+        }
+      }
+    ],
+    "RGBA97EX16": [
+      {
+        "cpu": 0,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 20321.029499999997,
+          "before": 20366.779499999997,
+          "fixed": 19676.014499999997
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 0.2251362314099392,
+            "paired_block_bootstrap95": [
+              -2.294219901274863,
+              3.1832458622478743
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -3.1741256022486453,
+            "paired_block_bootstrap95": [
+              -5.985023521169874,
+              -0.3454592625999675
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 2,
+        "samples_per_variant": 12,
+        "medians": {
+          "base": 20113.3495,
+          "before": 20728.2125,
+          "fixed": 19949.978
+        },
+        "comparisons": {
+          "before_vs_base": {
+            "percent": 3.0569895879351217,
+            "paired_block_bootstrap95": [
+              0.8252564745939495,
+              3.855310126242273
+            ]
+          },
+          "fixed_vs_base": {
+            "percent": -0.8122540703625725,
+            "paired_block_bootstrap95": [
+              -4.386458685640237,
+              0.46538751205735807
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "profiles": {
+    "base-original": {
+      "Ir": 1044460683,
+      "Dr": 308476405,
+      "Dw": 106336102,
+      "I1mr": 442615,
+      "D1mr": 535041,
+      "D1mw": 336258,
+      "ILmr": 3224,
+      "DLmr": 1932,
+      "DLmw": 3306,
+      "Bc": 174568230,
+      "Bcm": 17727936,
+      "Bi": 5864006,
+      "Bim": 121049
+    },
+    "before-original": {
+      "Ir": 1044495558,
+      "Dr": 308836207,
+      "Dw": 106366758,
+      "I1mr": 442122,
+      "D1mr": 531206,
+      "D1mw": 337190,
+      "ILmr": 3227,
+      "DLmr": 1929,
+      "DLmw": 3303,
+      "Bc": 174571759,
+      "Bcm": 17501221,
+      "Bi": 5864608,
+      "Bim": 139804
+    },
+    "candidate-static": {
+      "Ir": 1084528767,
+      "Dr": 275320477,
+      "Dw": 105666376,
+      "I1mr": 463751,
+      "D1mr": 528626,
+      "D1mw": 338757,
+      "ILmr": 3359,
+      "DLmr": 1932,
+      "DLmw": 3253,
+      "Bc": 175217282,
+      "Bcm": 18116801,
+      "Bi": 3206523,
+      "Bim": 79010
+    },
+    "candidate-axis": {
+      "Ir": 1095111374,
+      "Dr": 276760285,
+      "Dw": 118410123,
+      "I1mr": 444829,
+      "D1mr": 528614,
+      "D1mw": 338313,
+      "ILmr": 3309,
+      "DLmr": 1931,
+      "DLmw": 3254,
+      "Bc": 181711330,
+      "Bcm": 18125852,
+      "Bi": 5864654,
+      "Bim": 101294
+    },
+    "candidate-single": {
+      "Ir": 1071134092,
+      "Dr": 273846938,
+      "Dw": 104125038,
+      "I1mr": 461516,
+      "D1mr": 529943,
+      "D1mw": 340995,
+      "ILmr": 3295,
+      "DLmr": 1933,
+      "DLmw": 3254,
+      "Bc": 173873140,
+      "Bcm": 17716726,
+      "Bi": 3206512,
+      "Bim": 41352
+    }
+  },
+  "normalized_assembly": [
+    {
+      "function": "wml2::jpeg2000::tier1::decode_segments",
+      "normalized_equal": true,
+      "instructions": 4367,
+      "base_sha256": "1afce1d4d63ccbebca7d124286613f8ee69d6832bfa35dc65a623ebaf81d5658",
+      "before_sha256": "1afce1d4d63ccbebca7d124286613f8ee69d6832bfa35dc65a623ebaf81d5658"
+    },
+    {
+      "function": "<wml2::jpeg2000::tier1::Mq as wml2::jpeg2000::tier1::Entropy>::bit",
+      "normalized_equal": true,
+      "instructions": 115,
+      "base_sha256": "b47f2835e621f54275bdec3c576e90021d31025e72214ae8cf1228a1882b9f18",
+      "before_sha256": "b47f2835e621f54275bdec3c576e90021d31025e72214ae8cf1228a1882b9f18"
+    }
+  ],
+  "checks": {
+    "wasm-minimal": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_wasm.py",
+        "--work-dir",
+        ".test-jp2-gray-regression-20261017/.test-wasm-minimal"
+      ],
+      "exit": 0,
+      "seconds": 10.52,
+      "peak_cgroup_bytes": 8984760320,
+      "stopped_over12GiB": false
+    },
+    "wasm-default": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_wasm.py",
+        "--default-features",
+        "--work-dir",
+        ".test-jp2-gray-regression-20261017/.test-wasm-default"
+      ],
+      "exit": 0,
+      "seconds": 17.02,
+      "peak_cgroup_bytes": 9152008192,
+      "stopped_over12GiB": false
+    },
+    "wasm-legacy": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_wasm.py",
+        "--legacy-only",
+        "--work-dir",
+        ".test-jp2-gray-regression-20261017/.test-wasm-legacy"
+      ],
+      "exit": 0,
+      "seconds": 5.02,
+      "peak_cgroup_bytes": 8956108800,
+      "stopped_over12GiB": false
+    },
+    "minimal": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 43.56,
+      "peak_cgroup_bytes": 9071525888,
+      "stopped_over12GiB": false,
+      "counts": [
+        150,
+        0,
+        0
+      ]
+    },
+    "high": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--test",
+        "jpeg2000_ex",
+        "--test",
+        "jpeg2000_ex_color",
+        "--test",
+        "jpeg2000_ex_97",
+        "--test",
+        "jpeg2000_ex_memory",
+        "--test",
+        "jpeg2000_reduced"
+      ],
+      "exit": 0,
+      "seconds": 19.53,
+      "peak_cgroup_bytes": 9102811136,
+      "stopped_over12GiB": false,
+      "counts": [
+        61,
+        0,
+        0
+      ]
+    },
+    "workspace": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--release",
+        "--features",
+        "wml2/jpeg2000,wml2/image-buffer-ex,wml2/high-bit-depth,wml2/avifenc",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 112.13,
+      "peak_cgroup_bytes": 9524953088,
+      "stopped_over12GiB": false,
+      "counts": [
+        527,
+        0,
+        14
+      ]
+    },
+    "legacy": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000",
+        "--lib",
+        "--test",
+        "jpeg2000",
+        "--test",
+        "jpeg2000_reduced"
+      ],
+      "exit": 0,
+      "seconds": 26.53,
+      "peak_cgroup_bytes": 9047068672,
+      "stopped_over12GiB": false,
+      "counts": [
+        81,
+        0,
+        0
+      ]
+    },
+    "cross-ex": {
+      "command": [
+        "cargo",
+        "check",
+        "-p",
+        "wml2",
+        "--locked",
+        "--target",
+        "i686-unknown-linux-gnu",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 1.5,
+      "peak_cgroup_bytes": 8860880896,
+      "stopped_over12GiB": false
+    },
+    "cross-legacy": {
+      "command": [
+        "cargo",
+        "check",
+        "-p",
+        "wml2",
+        "--locked",
+        "--target",
+        "i686-unknown-linux-gnu",
+        "--no-default-features",
+        "--features",
+        "jpeg2000",
+        "--lib",
+        "--test",
+        "jpeg2000_reduced"
+      ],
+      "exit": 0,
+      "seconds": 0.5,
+      "peak_cgroup_bytes": 8797388800,
+      "stopped_over12GiB": false
+    },
+    "clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--tests",
+        "--examples"
+      ],
+      "exit": 0,
+      "seconds": 3.01,
+      "peak_cgroup_bytes": 9006022656,
+      "stopped_over12GiB": false
+    },
+    "examples": {
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex",
+        "--example",
+        "jpeg2000_reduced_verify",
+        "--example",
+        "jpeg2000_ex_verify",
+        "--example",
+        "jpeg2000_ex_color_verify"
+      ],
+      "exit": 0,
+      "seconds": 0.5,
+      "peak_cgroup_bytes": 8797765632,
+      "stopped_over12GiB": false
+    },
+    "legacy-example": {
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000",
+        "--example",
+        "jpeg2000_verify"
+      ],
+      "exit": 0,
+      "seconds": 0.5,
+      "peak_cgroup_bytes": 8800464896,
+      "stopped_over12GiB": false
+    },
+    "fixed-probe-build": {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "--manifest-path",
+        ".test-jp2-reduction-20261017/.test-probe-current/Cargo.toml",
+        "--features",
+        "reduced-api"
+      ],
+      "exit": 0,
+      "seconds": 7.02,
+      "peak_cgroup_bytes": 9012568064,
+      "stopped_over12GiB": false
+    },
+    "independent-stage1": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_large.py",
+        "--probe",
+        "/workspace/wml2-on-rust/.test-jp2-gray-regression-20261017/.test-fixed-probe-target/release/jpeg2000-reduced-probe",
+        "--manifest",
+        ".test-jp2-reduction-20261017/.test-large-inputs/manifest.json",
+        "--decompress",
+        ".test-jp2-depth/.test-openjpeg/usr/bin/opj_decompress",
+        "--work-dir",
+        ".test-jp2-gray-regression-20261017/.test-independent-large",
+        "--stage",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 12.52,
+      "peak_cgroup_bytes": 8868937728,
+      "stopped_over12GiB": false
+    },
+    "independent-stage2": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_large.py",
+        "--probe",
+        "/workspace/wml2-on-rust/.test-jp2-gray-regression-20261017/.test-fixed-probe-target/release/jpeg2000-reduced-probe",
+        "--manifest",
+        ".test-jp2-reduction-20261017/.test-large-inputs/manifest.json",
+        "--decompress",
+        ".test-jp2-depth/.test-openjpeg/usr/bin/opj_decompress",
+        "--work-dir",
+        ".test-jp2-gray-regression-20261017/.test-independent-large",
+        "--stage",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 10.51,
+      "peak_cgroup_bytes": 8898445312,
+      "stopped_over12GiB": false
+    },
+    "independent-stage3": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_large.py",
+        "--probe",
+        "/workspace/wml2-on-rust/.test-jp2-gray-regression-20261017/.test-fixed-probe-target/release/jpeg2000-reduced-probe",
+        "--manifest",
+        ".test-jp2-reduction-20261017/.test-large-inputs/manifest.json",
+        "--decompress",
+        ".test-jp2-depth/.test-openjpeg/usr/bin/opj_decompress",
+        "--work-dir",
+        ".test-jp2-gray-regression-20261017/.test-independent-large",
+        "--stage",
+        "3"
+      ],
+      "exit": 0,
+      "seconds": 35.53,
+      "peak_cgroup_bytes": 9086058496,
+      "stopped_over12GiB": false
+    },
+    "independent-stage4": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_large.py",
+        "--probe",
+        "/workspace/wml2-on-rust/.test-jp2-gray-regression-20261017/.test-fixed-probe-target/release/jpeg2000-reduced-probe",
+        "--manifest",
+        ".test-jp2-reduction-20261017/.test-large-inputs/manifest.json",
+        "--decompress",
+        ".test-jp2-depth/.test-openjpeg/usr/bin/opj_decompress",
+        "--work-dir",
+        ".test-jp2-gray-regression-20261017/.test-independent-large",
+        "--stage",
+        "4"
+      ],
+      "exit": 0,
+      "seconds": 37.04,
+      "peak_cgroup_bytes": 9299181568,
+      "stopped_over12GiB": false
+    },
+    "cross-profiles": {
+      "command": [
+        "python3",
+        "-B",
+        ".test-jp2-gray-regression-20261017/cross-profiles.py"
+      ],
+      "exit": 0,
+      "seconds": 233.67,
+      "peak_cgroup_bytes": 8854380544,
+      "stopped_over12GiB": false
+    },
+    "memory-spot": {
+      "command": [
+        "python3",
+        "-B",
+        ".test-jp2-gray-regression-20261017/memory-spot.py"
+      ],
+      "exit": 0,
+      "seconds": 50.03,
+      "peak_cgroup_bytes": 9379905536,
+      "stopped_over12GiB": false
+    },
+    "rgb-long": {
+      "command": [
+        "python3",
+        "-B",
+        ".test-jp2-gray-regression-20261017/measure_rgb_long.py"
+      ],
+      "exit": 0,
+      "seconds": 255.18,
+      "peak_cgroup_bytes": 8873660416,
+      "stopped_over12GiB": false
+    },
+    "display": {
+      "command": [
+        "python3",
+        "-B",
+        ".test-jp2-gray-regression-20261017/display-check.py"
+      ],
+      "exit": 0,
+      "seconds": 2.0,
+      "peak_cgroup_bytes": 8891088896,
+      "stopped_over12GiB": false
+    }
+  },
+  "wasm": {
+    "minimal": {
+      "runtime": "v24.19.0",
+      "passed": 1309,
+      "zero_comparisons": 423,
+      "extra_contract_cases": 12,
+      "packet_contracts": 1,
+      "maxima": {
+        "8": 1,
+        "12": 1,
+        "16": 3
+      },
+      "host_imports": [],
+      "default_features": false,
+      "legacy_only": false,
+      "release_overflow_checks": true,
+      "wasm_sha256": "3b12df2632eb8222b3d1104340902b868fc62382cd0046b3c90820d3e940e0c0",
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_reduced_checks.rs": "0a3835e3196b8ed6d5852d39129c8c483bd31fd9968d6e2a2f30c672a2d369a8",
+        "wml2/src/jpeg2000.rs": "a391ce1dd2537de08b32ac4f851d31be23ded60380ee4f9b6cf81d13e651d7be",
+        "wml2/src/jpeg2000_general.rs": "afde49c482bda10dbb98adeaf1605152a8be9e5149ffb36117b0da4824ccf69b",
+        "wml2/src/jpeg2000_tier1.rs": "0f3ab158462bc91852778beaf023b155b0ca07096ffdf78e338787ebb9b3d0f5",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-manifest.txt": "66c483cf48d417079728c2540c78243bffccc23296ce7d772663738e10092d70",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-refs.bin": "cc949769dac9e69d768167f2754d00ce9969646c6112aa78c1720139ed2e86a1"
+      }
+    },
+    "default": {
+      "runtime": "v24.19.0",
+      "passed": 1309,
+      "zero_comparisons": 423,
+      "extra_contract_cases": 12,
+      "packet_contracts": 1,
+      "maxima": {
+        "8": 1,
+        "12": 1,
+        "16": 3
+      },
+      "host_imports": [],
+      "default_features": true,
+      "legacy_only": false,
+      "release_overflow_checks": true,
+      "wasm_sha256": "5999265f84d12c5d53d6843ad6f57c2170dc50ab59174c937d5042e0822a2016",
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_reduced_checks.rs": "0a3835e3196b8ed6d5852d39129c8c483bd31fd9968d6e2a2f30c672a2d369a8",
+        "wml2/src/jpeg2000.rs": "a391ce1dd2537de08b32ac4f851d31be23ded60380ee4f9b6cf81d13e651d7be",
+        "wml2/src/jpeg2000_general.rs": "afde49c482bda10dbb98adeaf1605152a8be9e5149ffb36117b0da4824ccf69b",
+        "wml2/src/jpeg2000_tier1.rs": "0f3ab158462bc91852778beaf023b155b0ca07096ffdf78e338787ebb9b3d0f5",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-manifest.txt": "66c483cf48d417079728c2540c78243bffccc23296ce7d772663738e10092d70",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-refs.bin": "cc949769dac9e69d768167f2754d00ce9969646c6112aa78c1720139ed2e86a1"
+      }
+    },
+    "legacy": {
+      "runtime": "v24.19.0",
+      "passed": 152,
+      "zero_comparisons": 23,
+      "extra_contract_cases": 4,
+      "packet_contracts": 1,
+      "maxima": {
+        "8": 1
+      },
+      "host_imports": [],
+      "default_features": false,
+      "legacy_only": true,
+      "release_overflow_checks": true,
+      "wasm_sha256": "313edb9a94d515a0d4006499829aed6e23a086d12187d6fe2efce0dc3500a9c1",
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_reduced_checks.rs": "0a3835e3196b8ed6d5852d39129c8c483bd31fd9968d6e2a2f30c672a2d369a8",
+        "wml2/src/jpeg2000.rs": "a391ce1dd2537de08b32ac4f851d31be23ded60380ee4f9b6cf81d13e651d7be",
+        "wml2/src/jpeg2000_general.rs": "afde49c482bda10dbb98adeaf1605152a8be9e5149ffb36117b0da4824ccf69b",
+        "wml2/src/jpeg2000_tier1.rs": "0f3ab158462bc91852778beaf023b155b0ca07096ffdf78e338787ebb9b3d0f5",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-manifest.txt": "66c483cf48d417079728c2540c78243bffccc23296ce7d772663738e10092d70",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-refs.bin": "cc949769dac9e69d768167f2754d00ce9969646c6112aa78c1720139ed2e86a1"
+      }
+    }
+  },
+  "numeric": {
+    "small_references": 1309,
+    "legacy_wasm_references": 152,
+    "large_references": 96,
+    "large_before_after_byte_equal": true,
+    "reversible_exact": true,
+    "large_openjpeg_max": 4,
+    "large_ffmpeg_max": 1
+  },
+  "memory_spot": [
+    {
+      "case": "Gray32",
+      "reduce": 0,
+      "output_equal": true,
+      "before_peak_extra_bytes": 53157,
+      "fixed_peak_extra_bytes": 53157,
+      "peak_change_bytes": 0
+    },
+    {
+      "case": "Gray32",
+      "reduce": 2,
+      "output_equal": true,
+      "before_peak_extra_bytes": 43223,
+      "fixed_peak_extra_bytes": 43223,
+      "peak_change_bytes": 0
+    },
+    {
+      "case": "cross1024-16b-1c-53",
+      "reduce": 0,
+      "output_equal": true,
+      "before_peak_extra_bytes": 2430420,
+      "fixed_peak_extra_bytes": 2430420,
+      "peak_change_bytes": 0
+    },
+    {
+      "case": "cross1024-16b-1c-53",
+      "reduce": 2,
+      "output_equal": true,
+      "before_peak_extra_bytes": 192510,
+      "fixed_peak_extra_bytes": 192510,
+      "peak_change_bytes": 0
+    },
+    {
+      "case": "8192x4096-4c-16b-ramp-t512-97",
+      "reduce": 0,
+      "output_equal": true,
+      "before_peak_extra_bytes": 334308630,
+      "fixed_peak_extra_bytes": 334308630,
+      "peak_change_bytes": 0
+    },
+    {
+      "case": "8192x4096-4c-16b-ramp-t512-97",
+      "reduce": 2,
+      "output_equal": true,
+      "before_peak_extra_bytes": 73802886,
+      "fixed_peak_extra_bytes": 73802886,
+      "peak_change_bytes": 0
+    }
+  ],
+  "display": {
+    "gray32_before_after_equal": true,
+    "gray32_ppm_sha256": {
+      "base-original": "f4638321816aca3e640305770a61e4d372c8b18a8bf698319fa74da734d5beff",
+      "before-original": "f4638321816aca3e640305770a61e4d372c8b18a8bf698319fa74da734d5beff",
+      "candidate-single": "f4638321816aca3e640305770a61e4d372c8b18a8bf698319fa74da734d5beff"
+    },
+    "large_case": "8192x4096-4c-16b-ramp-t512-97",
+    "reduce": 3,
+    "shape": [
+      1024,
+      512
+    ],
+    "rgba_max_difference": 3,
+    "image_sha256": "9b5da23f016c4d6f7081477b896f8ed966337727b38dc4ade6584aac06f8b1ec",
+    "matplotlib": "3.10.8",
+    "numpy": "2.3.5"
+  },
+  "raw_artifact": {
+    "path": "jpeg2000-gray-regression-raw.json.gz",
+    "bytes": 440711,
+    "sha256": "d5c58639eca19ba96666b1b883efa0c6eea90b512cf6d69df296a50882432c4a"
+  },
+  "measurement_limits": [
+    "NativePMU instructions counter open returnedENOENT; hardware cache/branch causes cannot be attributed directly",
+    "Same algorithmic work in prior hot kernels; native code generation/layout/latency sensitivity plus measured environmental variation is the supported inference",
+    "One KVMhost, Rust1.91, CPU0/2; no universal no-regression or fixed-speedup promise",
+    "Callgrind instruction/cache/branch counters are instrumented/modelled; its elapsed times are not native benchmark results"
+  ],
+  "final_ci": "Final pushed SHA and Windowsi686 execution proof recorded separately afterpush",
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+}

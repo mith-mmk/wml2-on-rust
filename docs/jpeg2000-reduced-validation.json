@@ -3961,5 +3961,8 @@
     "multi-tile-part PPT; single-part PPT per tile and multi-part PPM/inline independently verified"
   ],
   "performance_review_point": "Small legacy Gray32 slower: initial +3.47% median over8pairs; longer10000-iteration followup +8.17% over12pairs. All raw samples retained; no universal no-regression claim.",
-  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+  "historical_checkpoint": true,
+  "followup": "jpeg2000-gray-regression-validation.json",
+  "performance_review_point_status": "Historical checkpoint; see the complete Gray32 follow-up for the measured correction, controls and limitations."
 }

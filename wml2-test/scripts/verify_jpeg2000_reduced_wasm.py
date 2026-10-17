@@ -95,7 +95,7 @@ static REFS:&[u8]=include_bytes!(REFPATH);
     result=subprocess.run(['node',str(work/'run.cjs'),str(wasm)],check=True,capture_output=True,text=True)
     report=json.loads(result.stdout)
     assert report['passed']==len(entries) and report['zero_comparisons']==len(zero) and report['extra_contract_cases']==len(extra) and report['packet_contracts']==1
-    files=[checks,root/'wml2/src/jpeg2000.rs',root/'wml2/src/jpeg2000_general.rs',fixtures/'jpeg2000-reduced-manifest.txt',fixtures/'jpeg2000-reduced-refs.bin']
+    files=[checks,root/'wml2/src/jpeg2000.rs',root/'wml2/src/jpeg2000_general.rs',root/'wml2/src/jpeg2000_tier1.rs',fixtures/'jpeg2000-reduced-manifest.txt',fixtures/'jpeg2000-reduced-refs.bin']
     shutil.copyfile(wasm,work/'verified.wasm')
     report.update(default_features=args.default_features,legacy_only=args.legacy_only,release_overflow_checks=True,wasm_sha256=hashlib.sha256(wasm.read_bytes()).hexdigest(),source_sha256={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest()for p in files})
     (work/'report.json').write_text(json.dumps(report,indent=2)+'\n')

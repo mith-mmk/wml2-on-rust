@@ -1,0 +1,1601 @@
+{
+  "provenance": "Original seeded U16, OpenJPEG CLI 2.5.3 encode and independent per-component PGX decode. CDEF explicitly declares RGB channel order and straight whole-image alpha; tooling only.",
+  "files": [
+    {
+      "input": "jp2_ex_rgb12_edges_mct0.j2k",
+      "source": "jp2_ex_rgb12_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_edges_0.pgx",
+        "jp2_ex_rgb12_edges_1.pgx",
+        "jp2_ex_rgb12_edges_2.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 0,
+      "sha256": "cae8fddbf6d207420ae5e615466214ec0c7946fda7df614a94831c8a2cc6a49c"
+    },
+    {
+      "input": "jp2_ex_rgb12_edges_mct0.jp2",
+      "source": "jp2_ex_rgb12_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_edges_0.pgx",
+        "jp2_ex_rgb12_edges_1.pgx",
+        "jp2_ex_rgb12_edges_2.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 0,
+      "sha256": "1f19932030ed0e0a1f9109f421789ecdcbe00fe793ce7b6c9840f41ae0e071a9"
+    },
+    {
+      "input": "jp2_ex_rgb12_edges_mct1.j2k",
+      "source": "jp2_ex_rgb12_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_edges_0.pgx",
+        "jp2_ex_rgb12_edges_1.pgx",
+        "jp2_ex_rgb12_edges_2.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 1,
+      "sha256": "d23cbf0eae05f85edef81f1e18e999cec64de4b28559b543d2691aae837612e5"
+    },
+    {
+      "input": "jp2_ex_rgb12_edges_mct1.jp2",
+      "source": "jp2_ex_rgb12_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_edges_0.pgx",
+        "jp2_ex_rgb12_edges_1.pgx",
+        "jp2_ex_rgb12_edges_2.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 1,
+      "sha256": "61ed2d3492acc7924710635af7d3646af17e22bd0c64c2c1a496ff4d6bd43845"
+    },
+    {
+      "input": "jp2_ex_rgb12_noise_mct0.j2k",
+      "source": "jp2_ex_rgb12_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_noise_0.pgx",
+        "jp2_ex_rgb12_noise_1.pgx",
+        "jp2_ex_rgb12_noise_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "5cfa631d7a653e34d42e75b8a1562fccdff4eba4d4a297eb2ff5c3258562dbd0"
+    },
+    {
+      "input": "jp2_ex_rgb12_noise_mct0.jp2",
+      "source": "jp2_ex_rgb12_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_noise_0.pgx",
+        "jp2_ex_rgb12_noise_1.pgx",
+        "jp2_ex_rgb12_noise_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "1c01ea18761a82f03b15543fe3e26190da4c309b18a591dfa3ca866e945b2b10"
+    },
+    {
+      "input": "jp2_ex_rgb12_noise_mct1.j2k",
+      "source": "jp2_ex_rgb12_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_noise_0.pgx",
+        "jp2_ex_rgb12_noise_1.pgx",
+        "jp2_ex_rgb12_noise_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "4cef5f937d5272ca51266978132261742894b5ed6281e8592fef98b28ba3e452"
+    },
+    {
+      "input": "jp2_ex_rgb12_noise_mct1.jp2",
+      "source": "jp2_ex_rgb12_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_noise_0.pgx",
+        "jp2_ex_rgb12_noise_1.pgx",
+        "jp2_ex_rgb12_noise_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "93b865ae875d96e08fe07175c337380d4041d4ae52a421964b0d6b1ebe81173a"
+    },
+    {
+      "input": "jp2_ex_rgb12_tiles_mct0.j2k",
+      "source": "jp2_ex_rgb12_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_tiles_0.pgx",
+        "jp2_ex_rgb12_tiles_1.pgx",
+        "jp2_ex_rgb12_tiles_2.pgx"
+      ],
+      "bits": 12,
+      "width": 33,
+      "height": 29,
+      "components": 3,
+      "mct": 0,
+      "sha256": "a773152e0c4ca2b08cdb8f2563080f197ba98d84c489a07ba68bb688c5de6eb0"
+    },
+    {
+      "input": "jp2_ex_rgb12_tiles_mct0.jp2",
+      "source": "jp2_ex_rgb12_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_tiles_0.pgx",
+        "jp2_ex_rgb12_tiles_1.pgx",
+        "jp2_ex_rgb12_tiles_2.pgx"
+      ],
+      "bits": 12,
+      "width": 33,
+      "height": 29,
+      "components": 3,
+      "mct": 0,
+      "sha256": "08019fa024894e211b2a734c5597b6b826a0052402709f97730ce8e6b5aae1c8"
+    },
+    {
+      "input": "jp2_ex_rgb12_tiles_mct1.j2k",
+      "source": "jp2_ex_rgb12_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_tiles_0.pgx",
+        "jp2_ex_rgb12_tiles_1.pgx",
+        "jp2_ex_rgb12_tiles_2.pgx"
+      ],
+      "bits": 12,
+      "width": 33,
+      "height": 29,
+      "components": 3,
+      "mct": 1,
+      "sha256": "6ccdec6d7a5e7d9ec701ff40142af37679211bc4a3d5c959b909eed7077dc12e"
+    },
+    {
+      "input": "jp2_ex_rgb12_tiles_mct1.jp2",
+      "source": "jp2_ex_rgb12_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_tiles_0.pgx",
+        "jp2_ex_rgb12_tiles_1.pgx",
+        "jp2_ex_rgb12_tiles_2.pgx"
+      ],
+      "bits": 12,
+      "width": 33,
+      "height": 29,
+      "components": 3,
+      "mct": 1,
+      "sha256": "a12dfd68d288acb0d181480774ca9e62e674d0ace029ec7a1192361df3dfe4a1"
+    },
+    {
+      "input": "jp2_ex_rgb12_layers_mct0.j2k",
+      "source": "jp2_ex_rgb12_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_layers_0.pgx",
+        "jp2_ex_rgb12_layers_1.pgx",
+        "jp2_ex_rgb12_layers_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "82c680e58d450c070f38c52b692c10a835793985081b959a79ad8a5ef88455ac"
+    },
+    {
+      "input": "jp2_ex_rgb12_layers_mct0.jp2",
+      "source": "jp2_ex_rgb12_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_layers_0.pgx",
+        "jp2_ex_rgb12_layers_1.pgx",
+        "jp2_ex_rgb12_layers_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "aa1830acabdd796e5033ba9da4313220f029b4d3396a93627621b4ed6464421e"
+    },
+    {
+      "input": "jp2_ex_rgb12_layers_mct1.j2k",
+      "source": "jp2_ex_rgb12_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_layers_0.pgx",
+        "jp2_ex_rgb12_layers_1.pgx",
+        "jp2_ex_rgb12_layers_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "abb22eb33c3f4128b48ba4207c64c5b0799ddd2eee10d37377a3bae790b49522"
+    },
+    {
+      "input": "jp2_ex_rgb12_layers_mct1.jp2",
+      "source": "jp2_ex_rgb12_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_layers_0.pgx",
+        "jp2_ex_rgb12_layers_1.pgx",
+        "jp2_ex_rgb12_layers_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "c5db33ad198ea8c896ac1b1d3642a3934f2828111d6734aea3c2ba873b0538c7"
+    },
+    {
+      "input": "jp2_ex_rgb12_singleton_mct0.j2k",
+      "source": "jp2_ex_rgb12_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_singleton_0.pgx",
+        "jp2_ex_rgb12_singleton_1.pgx",
+        "jp2_ex_rgb12_singleton_2.pgx"
+      ],
+      "bits": 12,
+      "width": 7,
+      "height": 1,
+      "components": 3,
+      "mct": 0,
+      "sha256": "ba4d2d60902cb062696c4447924853eccf917b2f7262b08c891cd17fafdb8cee"
+    },
+    {
+      "input": "jp2_ex_rgb12_singleton_mct0.jp2",
+      "source": "jp2_ex_rgb12_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_singleton_0.pgx",
+        "jp2_ex_rgb12_singleton_1.pgx",
+        "jp2_ex_rgb12_singleton_2.pgx"
+      ],
+      "bits": 12,
+      "width": 7,
+      "height": 1,
+      "components": 3,
+      "mct": 0,
+      "sha256": "58b7ea881e089c3ee31f703faddbf75e672aa14ec0fd953a8db2bd235a6c6e34"
+    },
+    {
+      "input": "jp2_ex_rgb12_singleton_mct1.j2k",
+      "source": "jp2_ex_rgb12_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_singleton_0.pgx",
+        "jp2_ex_rgb12_singleton_1.pgx",
+        "jp2_ex_rgb12_singleton_2.pgx"
+      ],
+      "bits": 12,
+      "width": 7,
+      "height": 1,
+      "components": 3,
+      "mct": 1,
+      "sha256": "09ab1c7df39864bc7ad24ff7d141d2c4e98aebb2a6dfef8405c157d9d07746d0"
+    },
+    {
+      "input": "jp2_ex_rgb12_singleton_mct1.jp2",
+      "source": "jp2_ex_rgb12_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_singleton_0.pgx",
+        "jp2_ex_rgb12_singleton_1.pgx",
+        "jp2_ex_rgb12_singleton_2.pgx"
+      ],
+      "bits": 12,
+      "width": 7,
+      "height": 1,
+      "components": 3,
+      "mct": 1,
+      "sha256": "8573ab21a45c4d52f819bb94c8c23b1cb551d12ed5045b383b4585a59cf16bf0"
+    },
+    {
+      "input": "jp2_ex_rgb12_order_mct0.jp2",
+      "source": "jp2_ex_rgb12_order.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_order_0.pgx",
+        "jp2_ex_rgb12_order_1.pgx",
+        "jp2_ex_rgb12_order_2.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 0,
+      "sha256": "da76fe0f975e5a2d219faf2c3091d1b3948ffb23fc22f79b102369ca29827425"
+    },
+    {
+      "input": "jp2_ex_rgb12_order_mct1.jp2",
+      "source": "jp2_ex_rgb12_order.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_order_0.pgx",
+        "jp2_ex_rgb12_order_1.pgx",
+        "jp2_ex_rgb12_order_2.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 1,
+      "sha256": "527296432b79f7f1985bbe7a15c2843c16a109b218efe730bb72553af1085850"
+    },
+    {
+      "input": "jp2_ex_rgb12_RLCP_mct0.j2k",
+      "source": "jp2_ex_rgb12_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_RLCP_0.pgx",
+        "jp2_ex_rgb12_RLCP_1.pgx",
+        "jp2_ex_rgb12_RLCP_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "f814da8124b34b15109c7908cd129d1872954d2007db2142c182bde7fd48cd8e"
+    },
+    {
+      "input": "jp2_ex_rgb12_RLCP_mct0.jp2",
+      "source": "jp2_ex_rgb12_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_RLCP_0.pgx",
+        "jp2_ex_rgb12_RLCP_1.pgx",
+        "jp2_ex_rgb12_RLCP_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "339c2afaef0386cc1430ece32a8cfe3a4a7538bb6eb14e438225b238389c9d9b"
+    },
+    {
+      "input": "jp2_ex_rgb12_RLCP_mct1.j2k",
+      "source": "jp2_ex_rgb12_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_RLCP_0.pgx",
+        "jp2_ex_rgb12_RLCP_1.pgx",
+        "jp2_ex_rgb12_RLCP_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "2c5436ca300ee667b542d0640e1b1713d64a3d519d0bd615287428cef74f8a71"
+    },
+    {
+      "input": "jp2_ex_rgb12_RLCP_mct1.jp2",
+      "source": "jp2_ex_rgb12_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_RLCP_0.pgx",
+        "jp2_ex_rgb12_RLCP_1.pgx",
+        "jp2_ex_rgb12_RLCP_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "c6c655357874f3894c3c4547201c3ba8c2d353b114efa44ac5b92fa6f0ce7162"
+    },
+    {
+      "input": "jp2_ex_rgb12_PCRL_mct0.j2k",
+      "source": "jp2_ex_rgb12_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_PCRL_0.pgx",
+        "jp2_ex_rgb12_PCRL_1.pgx",
+        "jp2_ex_rgb12_PCRL_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "c88a370cf536041e04ae1f140f63ec5567e54ba56aae71656058f86114edc7e4"
+    },
+    {
+      "input": "jp2_ex_rgb12_PCRL_mct0.jp2",
+      "source": "jp2_ex_rgb12_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_PCRL_0.pgx",
+        "jp2_ex_rgb12_PCRL_1.pgx",
+        "jp2_ex_rgb12_PCRL_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "13e5c7db5fe59885b572e65ac2b80d87d4e8ec3b8427311b1a758c6a868e128e"
+    },
+    {
+      "input": "jp2_ex_rgb12_PCRL_mct1.j2k",
+      "source": "jp2_ex_rgb12_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_PCRL_0.pgx",
+        "jp2_ex_rgb12_PCRL_1.pgx",
+        "jp2_ex_rgb12_PCRL_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "6cf8346de6d0e6faa5080def6f2cfa71503e5760cb5c9442043ae08d2bf8d089"
+    },
+    {
+      "input": "jp2_ex_rgb12_PCRL_mct1.jp2",
+      "source": "jp2_ex_rgb12_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_PCRL_0.pgx",
+        "jp2_ex_rgb12_PCRL_1.pgx",
+        "jp2_ex_rgb12_PCRL_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "d162a5eb870d3219cd8daa6fb051c1a7b62a2ddb67bdb3f318a52d7a74855d6a"
+    },
+    {
+      "input": "jp2_ex_rgb12_CPRL_mct0.j2k",
+      "source": "jp2_ex_rgb12_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_CPRL_0.pgx",
+        "jp2_ex_rgb12_CPRL_1.pgx",
+        "jp2_ex_rgb12_CPRL_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "1e0f23ba97f582e241953f0869eb876857a2aa884a70bc432748f1f263e1eb77"
+    },
+    {
+      "input": "jp2_ex_rgb12_CPRL_mct0.jp2",
+      "source": "jp2_ex_rgb12_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_CPRL_0.pgx",
+        "jp2_ex_rgb12_CPRL_1.pgx",
+        "jp2_ex_rgb12_CPRL_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "db72878d9114599937eb510d16bc71bb1328b45e321aebd7bef26b339e7f3120"
+    },
+    {
+      "input": "jp2_ex_rgb12_CPRL_mct1.j2k",
+      "source": "jp2_ex_rgb12_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_CPRL_0.pgx",
+        "jp2_ex_rgb12_CPRL_1.pgx",
+        "jp2_ex_rgb12_CPRL_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "0b1a68f0d48c7ca269667a2de3c76743a54f89fd1e746c4d9a29f307f7d49f39"
+    },
+    {
+      "input": "jp2_ex_rgb12_CPRL_mct1.jp2",
+      "source": "jp2_ex_rgb12_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb12_CPRL_0.pgx",
+        "jp2_ex_rgb12_CPRL_1.pgx",
+        "jp2_ex_rgb12_CPRL_2.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "3533db417e0a3e33f23ce2be8bb5def8bd1685aeebb8170f1ac0de3ba60c278c"
+    },
+    {
+      "input": "jp2_ex_rgba12_edges_mct0.jp2",
+      "source": "jp2_ex_rgba12_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_edges_0.pgx",
+        "jp2_ex_rgba12_edges_1.pgx",
+        "jp2_ex_rgba12_edges_2.pgx",
+        "jp2_ex_rgba12_edges_3.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 4,
+      "mct": 0,
+      "sha256": "52f5cfb9e18cb491622a795c409d94f100df785b4727354afc4f261fa1c60b25"
+    },
+    {
+      "input": "jp2_ex_rgba12_edges_mct1.jp2",
+      "source": "jp2_ex_rgba12_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_edges_0.pgx",
+        "jp2_ex_rgba12_edges_1.pgx",
+        "jp2_ex_rgba12_edges_2.pgx",
+        "jp2_ex_rgba12_edges_3.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 4,
+      "mct": 1,
+      "sha256": "2218995dbf634d59c7420752a0b46ca8a55795a130d56db20eda5dc4cacb19b2"
+    },
+    {
+      "input": "jp2_ex_rgba12_noise_mct0.jp2",
+      "source": "jp2_ex_rgba12_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_noise_0.pgx",
+        "jp2_ex_rgba12_noise_1.pgx",
+        "jp2_ex_rgba12_noise_2.pgx",
+        "jp2_ex_rgba12_noise_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "a3fd05a7fbd9921d2b1503ac0f66e43e9632364a8a20b76bdca5369e4cd94c3b"
+    },
+    {
+      "input": "jp2_ex_rgba12_noise_mct1.jp2",
+      "source": "jp2_ex_rgba12_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_noise_0.pgx",
+        "jp2_ex_rgba12_noise_1.pgx",
+        "jp2_ex_rgba12_noise_2.pgx",
+        "jp2_ex_rgba12_noise_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "9c3a6b934b863036c0d68a2a3301bbaad25ad5440b1219938af446c8ee5e98fa"
+    },
+    {
+      "input": "jp2_ex_rgba12_tiles_mct0.jp2",
+      "source": "jp2_ex_rgba12_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_tiles_0.pgx",
+        "jp2_ex_rgba12_tiles_1.pgx",
+        "jp2_ex_rgba12_tiles_2.pgx",
+        "jp2_ex_rgba12_tiles_3.pgx"
+      ],
+      "bits": 12,
+      "width": 33,
+      "height": 29,
+      "components": 4,
+      "mct": 0,
+      "sha256": "629dfe8da1a4a067f232a553d9f2b0fdb0ef398cc91f6826a9433869fa444ffc"
+    },
+    {
+      "input": "jp2_ex_rgba12_tiles_mct1.jp2",
+      "source": "jp2_ex_rgba12_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_tiles_0.pgx",
+        "jp2_ex_rgba12_tiles_1.pgx",
+        "jp2_ex_rgba12_tiles_2.pgx",
+        "jp2_ex_rgba12_tiles_3.pgx"
+      ],
+      "bits": 12,
+      "width": 33,
+      "height": 29,
+      "components": 4,
+      "mct": 1,
+      "sha256": "fe897fd9fd46272085da83523a683b2d172b4b858f62e80eb8489afb3a74330a"
+    },
+    {
+      "input": "jp2_ex_rgba12_layers_mct0.jp2",
+      "source": "jp2_ex_rgba12_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_layers_0.pgx",
+        "jp2_ex_rgba12_layers_1.pgx",
+        "jp2_ex_rgba12_layers_2.pgx",
+        "jp2_ex_rgba12_layers_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "09241443244b6c82aeb72b0c2a4964075d4be24b6b4d1933dca939b1844fa91a"
+    },
+    {
+      "input": "jp2_ex_rgba12_layers_mct1.jp2",
+      "source": "jp2_ex_rgba12_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_layers_0.pgx",
+        "jp2_ex_rgba12_layers_1.pgx",
+        "jp2_ex_rgba12_layers_2.pgx",
+        "jp2_ex_rgba12_layers_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "51802a663e28abf7c648c0557cb0d2a9b15881e199cf4dfe2e338bc683691f4e"
+    },
+    {
+      "input": "jp2_ex_rgba12_singleton_mct0.jp2",
+      "source": "jp2_ex_rgba12_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_singleton_0.pgx",
+        "jp2_ex_rgba12_singleton_1.pgx",
+        "jp2_ex_rgba12_singleton_2.pgx",
+        "jp2_ex_rgba12_singleton_3.pgx"
+      ],
+      "bits": 12,
+      "width": 7,
+      "height": 1,
+      "components": 4,
+      "mct": 0,
+      "sha256": "dd011e51a3328740405454af4d2adee62e394a04eea63efd6806fd57adaf16bc"
+    },
+    {
+      "input": "jp2_ex_rgba12_singleton_mct1.jp2",
+      "source": "jp2_ex_rgba12_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_singleton_0.pgx",
+        "jp2_ex_rgba12_singleton_1.pgx",
+        "jp2_ex_rgba12_singleton_2.pgx",
+        "jp2_ex_rgba12_singleton_3.pgx"
+      ],
+      "bits": 12,
+      "width": 7,
+      "height": 1,
+      "components": 4,
+      "mct": 1,
+      "sha256": "dab6889d6faebc99dded9416f4f00f2a0f77335443648516e25209afabadf928"
+    },
+    {
+      "input": "jp2_ex_rgba12_order_mct0.jp2",
+      "source": "jp2_ex_rgba12_order.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_order_0.pgx",
+        "jp2_ex_rgba12_order_1.pgx",
+        "jp2_ex_rgba12_order_2.pgx",
+        "jp2_ex_rgba12_order_3.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 4,
+      "mct": 0,
+      "sha256": "729e7ef361dd83797c1052616747706b7645ba625707dc81f6edf11cc30d0c97"
+    },
+    {
+      "input": "jp2_ex_rgba12_order_mct1.jp2",
+      "source": "jp2_ex_rgba12_order.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_order_0.pgx",
+        "jp2_ex_rgba12_order_1.pgx",
+        "jp2_ex_rgba12_order_2.pgx",
+        "jp2_ex_rgba12_order_3.pgx"
+      ],
+      "bits": 12,
+      "width": 9,
+      "height": 7,
+      "components": 4,
+      "mct": 1,
+      "sha256": "ef3e2dc27b3e61808d42bd78469b3c581a8fb0336d6fc9198006af7c55986e4b"
+    },
+    {
+      "input": "jp2_ex_rgba12_RLCP_mct0.jp2",
+      "source": "jp2_ex_rgba12_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_RLCP_0.pgx",
+        "jp2_ex_rgba12_RLCP_1.pgx",
+        "jp2_ex_rgba12_RLCP_2.pgx",
+        "jp2_ex_rgba12_RLCP_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "dcf9635dba109d79d7f2e92343923635b16333f4c3db8999a3f2735de5dea199"
+    },
+    {
+      "input": "jp2_ex_rgba12_RLCP_mct1.jp2",
+      "source": "jp2_ex_rgba12_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_RLCP_0.pgx",
+        "jp2_ex_rgba12_RLCP_1.pgx",
+        "jp2_ex_rgba12_RLCP_2.pgx",
+        "jp2_ex_rgba12_RLCP_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "5090f84fdd03d68dccbbf45957422920f6538d42e572f919719916dd8c06e817"
+    },
+    {
+      "input": "jp2_ex_rgba12_PCRL_mct0.jp2",
+      "source": "jp2_ex_rgba12_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_PCRL_0.pgx",
+        "jp2_ex_rgba12_PCRL_1.pgx",
+        "jp2_ex_rgba12_PCRL_2.pgx",
+        "jp2_ex_rgba12_PCRL_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "44d21507edf1252cf17e7ae3f82642418f9e3ded7a8cb4c0e56593e5b121bb6a"
+    },
+    {
+      "input": "jp2_ex_rgba12_PCRL_mct1.jp2",
+      "source": "jp2_ex_rgba12_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_PCRL_0.pgx",
+        "jp2_ex_rgba12_PCRL_1.pgx",
+        "jp2_ex_rgba12_PCRL_2.pgx",
+        "jp2_ex_rgba12_PCRL_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "bbfbaceb86a1ad0be0c482e1809356c6ccfddc998d7688d539cc19bd13f7b69c"
+    },
+    {
+      "input": "jp2_ex_rgba12_CPRL_mct0.jp2",
+      "source": "jp2_ex_rgba12_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_CPRL_0.pgx",
+        "jp2_ex_rgba12_CPRL_1.pgx",
+        "jp2_ex_rgba12_CPRL_2.pgx",
+        "jp2_ex_rgba12_CPRL_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "9ba154523c0e298179b81f846b25c2fbd42c29745c45317575ba66c527ff0fd4"
+    },
+    {
+      "input": "jp2_ex_rgba12_CPRL_mct1.jp2",
+      "source": "jp2_ex_rgba12_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba12_CPRL_0.pgx",
+        "jp2_ex_rgba12_CPRL_1.pgx",
+        "jp2_ex_rgba12_CPRL_2.pgx",
+        "jp2_ex_rgba12_CPRL_3.pgx"
+      ],
+      "bits": 12,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "808fa88200989148c278cd393d7048c9fa1c073220a54114e489383681e6e7d1"
+    },
+    {
+      "input": "jp2_ex_rgb16_edges_mct0.j2k",
+      "source": "jp2_ex_rgb16_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_edges_0.pgx",
+        "jp2_ex_rgb16_edges_1.pgx",
+        "jp2_ex_rgb16_edges_2.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 0,
+      "sha256": "e5626630175c2a68aaeee794fa2a0d3797b3ae0e38f419a9490a1ea3dc380a29"
+    },
+    {
+      "input": "jp2_ex_rgb16_edges_mct0.jp2",
+      "source": "jp2_ex_rgb16_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_edges_0.pgx",
+        "jp2_ex_rgb16_edges_1.pgx",
+        "jp2_ex_rgb16_edges_2.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 0,
+      "sha256": "0bc8bdfefdde1b492bbb7cd3add1546d82960392d2f4067aa35b66b0ff378da4"
+    },
+    {
+      "input": "jp2_ex_rgb16_edges_mct1.j2k",
+      "source": "jp2_ex_rgb16_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_edges_0.pgx",
+        "jp2_ex_rgb16_edges_1.pgx",
+        "jp2_ex_rgb16_edges_2.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 1,
+      "sha256": "3b7022ed271b5935cbdcb507dbf182f1c9fcf5931b05d5434c57ac5679c0e9b6"
+    },
+    {
+      "input": "jp2_ex_rgb16_edges_mct1.jp2",
+      "source": "jp2_ex_rgb16_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_edges_0.pgx",
+        "jp2_ex_rgb16_edges_1.pgx",
+        "jp2_ex_rgb16_edges_2.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 1,
+      "sha256": "e3baa98000ebff1287e85a7e3470f254055b19ce7aeda01deb711cf0d9728234"
+    },
+    {
+      "input": "jp2_ex_rgb16_noise_mct0.j2k",
+      "source": "jp2_ex_rgb16_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_noise_0.pgx",
+        "jp2_ex_rgb16_noise_1.pgx",
+        "jp2_ex_rgb16_noise_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "34821868bc1c5d3cbb316ec9b1d0a609697a039cfc75b77de2a0f40f32443c06"
+    },
+    {
+      "input": "jp2_ex_rgb16_noise_mct0.jp2",
+      "source": "jp2_ex_rgb16_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_noise_0.pgx",
+        "jp2_ex_rgb16_noise_1.pgx",
+        "jp2_ex_rgb16_noise_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "72bebfcf682d3883dba82a3606c9eb25899f5cf6ea24186cb19dee9e7e77360c"
+    },
+    {
+      "input": "jp2_ex_rgb16_noise_mct1.j2k",
+      "source": "jp2_ex_rgb16_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_noise_0.pgx",
+        "jp2_ex_rgb16_noise_1.pgx",
+        "jp2_ex_rgb16_noise_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "3a7d4fba410a3bdf59bec818c4f8a0c75b528231c088f0521d36adce677df54d"
+    },
+    {
+      "input": "jp2_ex_rgb16_noise_mct1.jp2",
+      "source": "jp2_ex_rgb16_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_noise_0.pgx",
+        "jp2_ex_rgb16_noise_1.pgx",
+        "jp2_ex_rgb16_noise_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "99abe8d4ac612019fbc25315a5be94c803efdc85ed9710b24b64a62bcebf0756"
+    },
+    {
+      "input": "jp2_ex_rgb16_tiles_mct0.j2k",
+      "source": "jp2_ex_rgb16_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_tiles_0.pgx",
+        "jp2_ex_rgb16_tiles_1.pgx",
+        "jp2_ex_rgb16_tiles_2.pgx"
+      ],
+      "bits": 16,
+      "width": 33,
+      "height": 29,
+      "components": 3,
+      "mct": 0,
+      "sha256": "07176eb39f46ea3bc679dfa3d1bc0e72afb7a0001093c2e8686fc3f84e0f6536"
+    },
+    {
+      "input": "jp2_ex_rgb16_tiles_mct0.jp2",
+      "source": "jp2_ex_rgb16_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_tiles_0.pgx",
+        "jp2_ex_rgb16_tiles_1.pgx",
+        "jp2_ex_rgb16_tiles_2.pgx"
+      ],
+      "bits": 16,
+      "width": 33,
+      "height": 29,
+      "components": 3,
+      "mct": 0,
+      "sha256": "a924099fd637b766273506bd867f48c0abdbdaa7358318cff4226a4fc642364c"
+    },
+    {
+      "input": "jp2_ex_rgb16_tiles_mct1.j2k",
+      "source": "jp2_ex_rgb16_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_tiles_0.pgx",
+        "jp2_ex_rgb16_tiles_1.pgx",
+        "jp2_ex_rgb16_tiles_2.pgx"
+      ],
+      "bits": 16,
+      "width": 33,
+      "height": 29,
+      "components": 3,
+      "mct": 1,
+      "sha256": "0005ac9b5bf038530bb1952fd8373e9933216a8fbb9680c5788d345ab2290b14"
+    },
+    {
+      "input": "jp2_ex_rgb16_tiles_mct1.jp2",
+      "source": "jp2_ex_rgb16_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_tiles_0.pgx",
+        "jp2_ex_rgb16_tiles_1.pgx",
+        "jp2_ex_rgb16_tiles_2.pgx"
+      ],
+      "bits": 16,
+      "width": 33,
+      "height": 29,
+      "components": 3,
+      "mct": 1,
+      "sha256": "d38f4c4a881232121a5f69877a12bdd7b71f372c508462fad3442f2e544d674a"
+    },
+    {
+      "input": "jp2_ex_rgb16_layers_mct0.j2k",
+      "source": "jp2_ex_rgb16_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_layers_0.pgx",
+        "jp2_ex_rgb16_layers_1.pgx",
+        "jp2_ex_rgb16_layers_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "be4ccb376226a108174fd4fe02e16d49f837645c9d3deccde9708d49d7df0f71"
+    },
+    {
+      "input": "jp2_ex_rgb16_layers_mct0.jp2",
+      "source": "jp2_ex_rgb16_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_layers_0.pgx",
+        "jp2_ex_rgb16_layers_1.pgx",
+        "jp2_ex_rgb16_layers_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "b64140a63fb769524b33ae6980494b16605861f5827f7ca78d440497d54d0bb8"
+    },
+    {
+      "input": "jp2_ex_rgb16_layers_mct1.j2k",
+      "source": "jp2_ex_rgb16_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_layers_0.pgx",
+        "jp2_ex_rgb16_layers_1.pgx",
+        "jp2_ex_rgb16_layers_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "2fae1e738bca9ae986442f74073397eb65817d18c009db87c663cd4382652ff2"
+    },
+    {
+      "input": "jp2_ex_rgb16_layers_mct1.jp2",
+      "source": "jp2_ex_rgb16_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_layers_0.pgx",
+        "jp2_ex_rgb16_layers_1.pgx",
+        "jp2_ex_rgb16_layers_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "9e3e8176835dae0e26f60b9b0a2f6df7f395432e6325400ecdaf0b13486735bb"
+    },
+    {
+      "input": "jp2_ex_rgb16_singleton_mct0.j2k",
+      "source": "jp2_ex_rgb16_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_singleton_0.pgx",
+        "jp2_ex_rgb16_singleton_1.pgx",
+        "jp2_ex_rgb16_singleton_2.pgx"
+      ],
+      "bits": 16,
+      "width": 7,
+      "height": 1,
+      "components": 3,
+      "mct": 0,
+      "sha256": "73a630fb4133b27c28150754138de66bcb65dbad671d02b6b1b4ca24083f5e28"
+    },
+    {
+      "input": "jp2_ex_rgb16_singleton_mct0.jp2",
+      "source": "jp2_ex_rgb16_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_singleton_0.pgx",
+        "jp2_ex_rgb16_singleton_1.pgx",
+        "jp2_ex_rgb16_singleton_2.pgx"
+      ],
+      "bits": 16,
+      "width": 7,
+      "height": 1,
+      "components": 3,
+      "mct": 0,
+      "sha256": "30aacbf65b6b145d52a399cc54adb7f7095014ab6fda1f544288feb80ee7d3fc"
+    },
+    {
+      "input": "jp2_ex_rgb16_singleton_mct1.j2k",
+      "source": "jp2_ex_rgb16_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_singleton_0.pgx",
+        "jp2_ex_rgb16_singleton_1.pgx",
+        "jp2_ex_rgb16_singleton_2.pgx"
+      ],
+      "bits": 16,
+      "width": 7,
+      "height": 1,
+      "components": 3,
+      "mct": 1,
+      "sha256": "7eb2d06807af4d864eca8068a1a188c7e6e5bdc11d7fc99686ce5235a16a9ff7"
+    },
+    {
+      "input": "jp2_ex_rgb16_singleton_mct1.jp2",
+      "source": "jp2_ex_rgb16_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_singleton_0.pgx",
+        "jp2_ex_rgb16_singleton_1.pgx",
+        "jp2_ex_rgb16_singleton_2.pgx"
+      ],
+      "bits": 16,
+      "width": 7,
+      "height": 1,
+      "components": 3,
+      "mct": 1,
+      "sha256": "8d1a65e773ccb8c6f5d78f16fee5c69f821cfe2099f4c69433387a7ca82c71ea"
+    },
+    {
+      "input": "jp2_ex_rgb16_order_mct0.jp2",
+      "source": "jp2_ex_rgb16_order.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_order_0.pgx",
+        "jp2_ex_rgb16_order_1.pgx",
+        "jp2_ex_rgb16_order_2.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 0,
+      "sha256": "3e4a86d859b8e57421c48ac29971bc063fcad30ce647bf291b95857508c58309"
+    },
+    {
+      "input": "jp2_ex_rgb16_order_mct1.jp2",
+      "source": "jp2_ex_rgb16_order.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_order_0.pgx",
+        "jp2_ex_rgb16_order_1.pgx",
+        "jp2_ex_rgb16_order_2.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 3,
+      "mct": 1,
+      "sha256": "f7772bcbcd660fe1d4bafd64b03b83080d861be90726da24fb09f9c7161decff"
+    },
+    {
+      "input": "jp2_ex_rgb16_RLCP_mct0.j2k",
+      "source": "jp2_ex_rgb16_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_RLCP_0.pgx",
+        "jp2_ex_rgb16_RLCP_1.pgx",
+        "jp2_ex_rgb16_RLCP_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "fae73f39a5b8a1d29e0bf68a0dc716ad523c042625d29170162d7d56dc830849"
+    },
+    {
+      "input": "jp2_ex_rgb16_RLCP_mct0.jp2",
+      "source": "jp2_ex_rgb16_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_RLCP_0.pgx",
+        "jp2_ex_rgb16_RLCP_1.pgx",
+        "jp2_ex_rgb16_RLCP_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "ff0b5f740a0470b5c4ddbb3fd19d976b1ebf165198d830d9e66f85119cb63676"
+    },
+    {
+      "input": "jp2_ex_rgb16_RLCP_mct1.j2k",
+      "source": "jp2_ex_rgb16_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_RLCP_0.pgx",
+        "jp2_ex_rgb16_RLCP_1.pgx",
+        "jp2_ex_rgb16_RLCP_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "d36a7ca9936e8ffbd736ae496ce5b16add1591f3cd5d26ba7532ab8b67732498"
+    },
+    {
+      "input": "jp2_ex_rgb16_RLCP_mct1.jp2",
+      "source": "jp2_ex_rgb16_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_RLCP_0.pgx",
+        "jp2_ex_rgb16_RLCP_1.pgx",
+        "jp2_ex_rgb16_RLCP_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "e14b1e27cfe92c40b0088089b56a4fa82e52b03059699dedfcab725fbe31e7d7"
+    },
+    {
+      "input": "jp2_ex_rgb16_PCRL_mct0.j2k",
+      "source": "jp2_ex_rgb16_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_PCRL_0.pgx",
+        "jp2_ex_rgb16_PCRL_1.pgx",
+        "jp2_ex_rgb16_PCRL_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "02aaf64a89e3e04fb3ce0cc34e393b9576878dad283a72a9cb0365511fe03a5f"
+    },
+    {
+      "input": "jp2_ex_rgb16_PCRL_mct0.jp2",
+      "source": "jp2_ex_rgb16_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_PCRL_0.pgx",
+        "jp2_ex_rgb16_PCRL_1.pgx",
+        "jp2_ex_rgb16_PCRL_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "0dcd8b575d89d17911ed36fbd2899781baf632dc404ad7a0e9828e8bec45b836"
+    },
+    {
+      "input": "jp2_ex_rgb16_PCRL_mct1.j2k",
+      "source": "jp2_ex_rgb16_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_PCRL_0.pgx",
+        "jp2_ex_rgb16_PCRL_1.pgx",
+        "jp2_ex_rgb16_PCRL_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "f3c13c50edf3e750f30c069e999a9b5e4180c27c7885db903745eb78b5da14af"
+    },
+    {
+      "input": "jp2_ex_rgb16_PCRL_mct1.jp2",
+      "source": "jp2_ex_rgb16_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_PCRL_0.pgx",
+        "jp2_ex_rgb16_PCRL_1.pgx",
+        "jp2_ex_rgb16_PCRL_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "fdb6ef1f2c9a42291d3ecc6384ac30684827711768b46a1d627a11df433f10fc"
+    },
+    {
+      "input": "jp2_ex_rgb16_CPRL_mct0.j2k",
+      "source": "jp2_ex_rgb16_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_CPRL_0.pgx",
+        "jp2_ex_rgb16_CPRL_1.pgx",
+        "jp2_ex_rgb16_CPRL_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "27c93528e1ba51e29824109fdee715623f7253fa733bb9eccfe4c9c5e155f731"
+    },
+    {
+      "input": "jp2_ex_rgb16_CPRL_mct0.jp2",
+      "source": "jp2_ex_rgb16_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_CPRL_0.pgx",
+        "jp2_ex_rgb16_CPRL_1.pgx",
+        "jp2_ex_rgb16_CPRL_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 0,
+      "sha256": "ff53542a8691e01e0a53e17293727c1f45de71fda3258dd6b6cc1ad39c6dc1cc"
+    },
+    {
+      "input": "jp2_ex_rgb16_CPRL_mct1.j2k",
+      "source": "jp2_ex_rgb16_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_CPRL_0.pgx",
+        "jp2_ex_rgb16_CPRL_1.pgx",
+        "jp2_ex_rgb16_CPRL_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "148a6b3c6ac2e4d907689abcf1571ce13f15441b592c5c5c17d08337d47fda7e"
+    },
+    {
+      "input": "jp2_ex_rgb16_CPRL_mct1.jp2",
+      "source": "jp2_ex_rgb16_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgb16_CPRL_0.pgx",
+        "jp2_ex_rgb16_CPRL_1.pgx",
+        "jp2_ex_rgb16_CPRL_2.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 3,
+      "mct": 1,
+      "sha256": "58205bec7476f8fc97c4ec609408a4d84fddebea0bf8119d6ead899745316f16"
+    },
+    {
+      "input": "jp2_ex_rgba16_edges_mct0.jp2",
+      "source": "jp2_ex_rgba16_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_edges_0.pgx",
+        "jp2_ex_rgba16_edges_1.pgx",
+        "jp2_ex_rgba16_edges_2.pgx",
+        "jp2_ex_rgba16_edges_3.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 4,
+      "mct": 0,
+      "sha256": "7e21094029ab9b24e82783b4971806a9705dc3db671616a10566b07791490904"
+    },
+    {
+      "input": "jp2_ex_rgba16_edges_mct1.jp2",
+      "source": "jp2_ex_rgba16_edges.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_edges_0.pgx",
+        "jp2_ex_rgba16_edges_1.pgx",
+        "jp2_ex_rgba16_edges_2.pgx",
+        "jp2_ex_rgba16_edges_3.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 4,
+      "mct": 1,
+      "sha256": "0f3803bfb84233a3b4c7b96f1ca7f9268bee2b3249ae9812e7e5ddaa35f29c6e"
+    },
+    {
+      "input": "jp2_ex_rgba16_noise_mct0.jp2",
+      "source": "jp2_ex_rgba16_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_noise_0.pgx",
+        "jp2_ex_rgba16_noise_1.pgx",
+        "jp2_ex_rgba16_noise_2.pgx",
+        "jp2_ex_rgba16_noise_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "6420b692a05ae91caf52c4e58fd0e26630f06e29348f2f77e729a5ff25700156"
+    },
+    {
+      "input": "jp2_ex_rgba16_noise_mct1.jp2",
+      "source": "jp2_ex_rgba16_noise.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_noise_0.pgx",
+        "jp2_ex_rgba16_noise_1.pgx",
+        "jp2_ex_rgba16_noise_2.pgx",
+        "jp2_ex_rgba16_noise_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "e0f5a8ca539e3710cb59f7845a5e506ebe368057008181d5005edac1ac641554"
+    },
+    {
+      "input": "jp2_ex_rgba16_tiles_mct0.jp2",
+      "source": "jp2_ex_rgba16_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_tiles_0.pgx",
+        "jp2_ex_rgba16_tiles_1.pgx",
+        "jp2_ex_rgba16_tiles_2.pgx",
+        "jp2_ex_rgba16_tiles_3.pgx"
+      ],
+      "bits": 16,
+      "width": 33,
+      "height": 29,
+      "components": 4,
+      "mct": 0,
+      "sha256": "5166768d87862b4c7bffcc0fb8a6efc0734275fea0481e253249506ca47a23f5"
+    },
+    {
+      "input": "jp2_ex_rgba16_tiles_mct1.jp2",
+      "source": "jp2_ex_rgba16_tiles.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_tiles_0.pgx",
+        "jp2_ex_rgba16_tiles_1.pgx",
+        "jp2_ex_rgba16_tiles_2.pgx",
+        "jp2_ex_rgba16_tiles_3.pgx"
+      ],
+      "bits": 16,
+      "width": 33,
+      "height": 29,
+      "components": 4,
+      "mct": 1,
+      "sha256": "8dd3eb083afe9cc3f296c89f5a4a805c7650be2b0ba415de03b7c979dff1227c"
+    },
+    {
+      "input": "jp2_ex_rgba16_layers_mct0.jp2",
+      "source": "jp2_ex_rgba16_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_layers_0.pgx",
+        "jp2_ex_rgba16_layers_1.pgx",
+        "jp2_ex_rgba16_layers_2.pgx",
+        "jp2_ex_rgba16_layers_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "b625f4c0afedb0af84e6e1cc1de1728c153d794f39fd2b160f08aafaa2996a35"
+    },
+    {
+      "input": "jp2_ex_rgba16_layers_mct1.jp2",
+      "source": "jp2_ex_rgba16_layers.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_layers_0.pgx",
+        "jp2_ex_rgba16_layers_1.pgx",
+        "jp2_ex_rgba16_layers_2.pgx",
+        "jp2_ex_rgba16_layers_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "a988fd5957218d8c01ada0de5e51ec58f6445a0f0d826ca056ebd9ac4d8bc63a"
+    },
+    {
+      "input": "jp2_ex_rgba16_singleton_mct0.jp2",
+      "source": "jp2_ex_rgba16_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_singleton_0.pgx",
+        "jp2_ex_rgba16_singleton_1.pgx",
+        "jp2_ex_rgba16_singleton_2.pgx",
+        "jp2_ex_rgba16_singleton_3.pgx"
+      ],
+      "bits": 16,
+      "width": 7,
+      "height": 1,
+      "components": 4,
+      "mct": 0,
+      "sha256": "f3c435865b690e8d16dc7c207438ea1a567ae50e2fad740a1cda13f50a6d775b"
+    },
+    {
+      "input": "jp2_ex_rgba16_singleton_mct1.jp2",
+      "source": "jp2_ex_rgba16_singleton.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_singleton_0.pgx",
+        "jp2_ex_rgba16_singleton_1.pgx",
+        "jp2_ex_rgba16_singleton_2.pgx",
+        "jp2_ex_rgba16_singleton_3.pgx"
+      ],
+      "bits": 16,
+      "width": 7,
+      "height": 1,
+      "components": 4,
+      "mct": 1,
+      "sha256": "61c87a3d5620786e2b1b490e3c5bb8c00b489b4f7be489b5bee89d8897b3559a"
+    },
+    {
+      "input": "jp2_ex_rgba16_order_mct0.jp2",
+      "source": "jp2_ex_rgba16_order.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_order_0.pgx",
+        "jp2_ex_rgba16_order_1.pgx",
+        "jp2_ex_rgba16_order_2.pgx",
+        "jp2_ex_rgba16_order_3.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 4,
+      "mct": 0,
+      "sha256": "ac95ba6c085314892091e5787e8c3e45b6f50b6cd24723e5efa92353f6e72a2c"
+    },
+    {
+      "input": "jp2_ex_rgba16_order_mct1.jp2",
+      "source": "jp2_ex_rgba16_order.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_order_0.pgx",
+        "jp2_ex_rgba16_order_1.pgx",
+        "jp2_ex_rgba16_order_2.pgx",
+        "jp2_ex_rgba16_order_3.pgx"
+      ],
+      "bits": 16,
+      "width": 9,
+      "height": 7,
+      "components": 4,
+      "mct": 1,
+      "sha256": "c379bd6a961434fb402cd83f838e80d01c7be9e21d9b0e727d989d9c3f89256a"
+    },
+    {
+      "input": "jp2_ex_rgba16_RLCP_mct0.jp2",
+      "source": "jp2_ex_rgba16_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_RLCP_0.pgx",
+        "jp2_ex_rgba16_RLCP_1.pgx",
+        "jp2_ex_rgba16_RLCP_2.pgx",
+        "jp2_ex_rgba16_RLCP_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "1340a0d070f9720dd995c2f4b7865bb6235c4d1399c7716df8236277123e5b66"
+    },
+    {
+      "input": "jp2_ex_rgba16_RLCP_mct1.jp2",
+      "source": "jp2_ex_rgba16_RLCP.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_RLCP_0.pgx",
+        "jp2_ex_rgba16_RLCP_1.pgx",
+        "jp2_ex_rgba16_RLCP_2.pgx",
+        "jp2_ex_rgba16_RLCP_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "48ce472339e9b186576392d9dbbbe2df8e1fc1d65cade52d1ca5c7bb4299f8eb"
+    },
+    {
+      "input": "jp2_ex_rgba16_PCRL_mct0.jp2",
+      "source": "jp2_ex_rgba16_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_PCRL_0.pgx",
+        "jp2_ex_rgba16_PCRL_1.pgx",
+        "jp2_ex_rgba16_PCRL_2.pgx",
+        "jp2_ex_rgba16_PCRL_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "56f0c37c90d056391fac51cf6fe72770c090e6d0bfab125a7ca4cf65a35fd01c"
+    },
+    {
+      "input": "jp2_ex_rgba16_PCRL_mct1.jp2",
+      "source": "jp2_ex_rgba16_PCRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_PCRL_0.pgx",
+        "jp2_ex_rgba16_PCRL_1.pgx",
+        "jp2_ex_rgba16_PCRL_2.pgx",
+        "jp2_ex_rgba16_PCRL_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "e5d4469c555dd135f8475f75039fccafce8f29ab9237fd6739ad996b8ce615e2"
+    },
+    {
+      "input": "jp2_ex_rgba16_CPRL_mct0.jp2",
+      "source": "jp2_ex_rgba16_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_CPRL_0.pgx",
+        "jp2_ex_rgba16_CPRL_1.pgx",
+        "jp2_ex_rgba16_CPRL_2.pgx",
+        "jp2_ex_rgba16_CPRL_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 0,
+      "sha256": "feba668aa908b0d2d769bca8a6c92bdcb428469e2b473953e5b2dc3de1970ede"
+    },
+    {
+      "input": "jp2_ex_rgba16_CPRL_mct1.jp2",
+      "source": "jp2_ex_rgba16_CPRL.rgba16le",
+      "pgx": [
+        "jp2_ex_rgba16_CPRL_0.pgx",
+        "jp2_ex_rgba16_CPRL_1.pgx",
+        "jp2_ex_rgba16_CPRL_2.pgx",
+        "jp2_ex_rgba16_CPRL_3.pgx"
+      ],
+      "bits": 16,
+      "width": 17,
+      "height": 13,
+      "components": 4,
+      "mct": 1,
+      "sha256": "6c8060ceae0cac8722a8cd6ffff201921d86c58d8cd806ea79842eb174a697d2"
+    }
+  ]
+}

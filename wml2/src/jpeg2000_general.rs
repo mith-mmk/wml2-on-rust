@@ -62,6 +62,7 @@ struct Container {
     palette: Vec<Vec<u8>>,
     mapping: Vec<(usize, u8, usize)>,
     channels: Vec<(usize, u16, u16)>,
+    channel_definitions: usize,
 }
 fn check(n: usize, name: &str) -> Result<(), Error> {
     crate::limits::check(n, crate::limits::current().expanded_bytes, name)
@@ -217,6 +218,7 @@ fn container(data: &[u8]) -> Result<(&[u8], Container), Error> {
                             }
                         }
                         b"cdef" => {
+                            meta.channel_definitions += 1;
                             if !meta.channels.is_empty() || v.len() < 2 {
                                 return Err(bad("channel definitions"));
                             }
@@ -270,7 +272,77 @@ fn container(data: &[u8]) -> Result<(&[u8], Container), Error> {
     }
     Ok((stream.ok_or_else(|| bad("missing codestream"))?, meta))
 }
-fn geometry<const GRAY_EX: bool>(b: &[u8]) -> Result<Geometry, Error> {
+fn output_pixel_bytes<const EX: bool>(components: usize) -> usize {
+    if EX {
+        if components == 1 { 2 } else { 8 }
+    } else {
+        4
+    }
+}
+
+// Channel definitions describe the reconstructed channels, after inverse RCT.
+// Require a complete, unambiguous bijection; no implicit alpha association.
+fn ex_channel_order(nc: usize, meta: &Container) -> Result<[usize; 4], Error> {
+    if meta.channel_definitions > 1 {
+        return Err(bad("EX duplicate channel definitions"));
+    }
+    if !meta.palette.is_empty() || !meta.mapping.is_empty() {
+        return Err(unsupported("EX palette/component mapping deferred"));
+    }
+    if nc == 1 {
+        if meta.space.is_some_and(|s| s != 17) || meta.channel_definitions != 0 {
+            return Err(unsupported(
+                "EX Gray requires Gray without channel definitions",
+            ));
+        }
+        return Ok([0, 1, 2, 3]);
+    }
+    if meta.space.is_some_and(|s| s != 16) {
+        return Err(unsupported("EX RGB/RGBA requires RGB colour declaration"));
+    }
+    if nc == 3 && meta.channel_definitions == 0 {
+        return Ok([0, 1, 2, 3]);
+    }
+    if meta.channels.len() != nc || nc == 4 && meta.space != Some(16) {
+        return Err(unsupported(
+            "EX RGBA requires complete JP2 straight-alpha CDEF",
+        ));
+    }
+    let mut order = [usize::MAX; 4];
+    let mut seen = [false; 4];
+    for &(index, kind, association) in &meta.channels {
+        if index >= nc || seen[index] {
+            return Err(bad("EX channel definition index"));
+        }
+        seen[index] = true;
+        let slot = match (kind, association) {
+            (0, 1..=3) if index < 3 => usize::from(association - 1),
+            (1, 0) if nc == 4 && index == 3 => 3,
+            (2, _) => return Err(unsupported("EX premultiplied alpha deferred")),
+            _ => {
+                return Err(unsupported(
+                    "EX channel definition/alpha association deferred",
+                ));
+            }
+        };
+        if order[slot] != usize::MAX {
+            return Err(bad("EX duplicate channel association"));
+        }
+        order[slot] = index;
+    }
+    if order[..nc].contains(&usize::MAX) {
+        return Err(bad("EX incomplete channel definitions"));
+    }
+    Ok(order)
+}
+
+fn inverse_rct_wide(y: i32, cb: i32, cr: i32) -> [i64; 3] {
+    let (y, cb, cr) = (i64::from(y), i64::from(cb), i64::from(cr));
+    let green = y - (cb + cr).div_euclid(4);
+    [green + cr, green, green + cb]
+}
+
+fn geometry<const EX: bool>(b: &[u8]) -> Result<Geometry, Error> {
     if b.len() < 36 {
         return Err(bad("SIZ length"));
     }
@@ -303,7 +375,7 @@ fn geometry<const GRAY_EX: bool>(b: &[u8]) -> Result<Geometry, Error> {
     let pixels = count(x1 - x0, y1 - y0)?;
     crate::limits::check(pixels, crate::limits::current().pixels, "pixels")?;
     check(
-        count(pixels, if GRAY_EX { 2 } else { 4 })?,
+        count(pixels, output_pixel_bytes::<EX>(nc))?,
         "JPEG2000 output",
     )?;
     crate::limits::check(1, crate::limits::current().frames, "frames")?;
@@ -314,10 +386,15 @@ fn geometry<const GRAY_EX: bool>(b: &[u8]) -> Result<Geometry, Error> {
     let mut components = Vec::with_capacity(nc);
     for c in b[36..].chunks_exact(3) {
         let depth = (c[0] & 127) + 1;
-        if GRAY_EX {
-            if nc != 1 || !matches!(depth, 12 | 16) || c[0] & 128 != 0 || c[1..] != [1, 1] {
+        if EX {
+            if !matches!(nc, 1 | 3 | 4)
+                || !matches!(depth, 12 | 16)
+                || c[0] != b[36]
+                || c[0] & 128 != 0
+                || c[1..] != [1, 1]
+            {
                 return Err(unsupported(
-                    "EX requires one unsigned, full-resolution Gray12/16 component",
+                    "EX requires uniform unsigned 12/16-bit full-resolution Gray, RGB or declared RGBA",
                 ));
             }
         } else if depth > 8 {
@@ -713,7 +790,7 @@ struct TileWorkspace {
     steps: Vec<Vec<f64>>,
     retained_bytes: usize,
 }
-fn precincts<const GRAY_EX: bool>(
+fn precincts<const EX: bool>(
     g: &Geometry,
     cfg: &Config,
     bounds: (usize, usize, usize, usize),
@@ -725,9 +802,9 @@ fn precincts<const GRAY_EX: bool>(
     let mut allocation = 0usize;
     let mut output_storage = count(
         count(g.x1 - g.x0, g.y1 - g.y0)?,
-        if GRAY_EX { 2 } else { 4 },
+        output_pixel_bytes::<EX>(g.components.len()),
     )?;
-    for c in g.components.iter().filter(|_| !GRAY_EX) {
+    for c in g.components.iter().filter(|_| !EX) {
         output_storage = output_storage
             .checked_add(count(
                 g.x1.div_ceil(c.sx) - g.x0.div_ceil(c.sx),
@@ -817,7 +894,7 @@ fn precincts<const GRAY_EX: bool>(
                         // At most 82 classic passes (28 planes). EX includes
                         // worst-case segment/contribution Vec capacities as
                         // well as the established block/tag-tree allowance.
-                        let block_bytes = if GRAY_EX {
+                        let block_bytes = if EX {
                             256 + 128 * std::mem::size_of::<tier1::Segment>()
                                 + 256 * std::mem::size_of::<(usize, usize, usize, usize)>()
                         } else {
@@ -1069,7 +1146,7 @@ fn packet(
     Ok(())
 }
 
-fn reconstruct<const GRAY_EX: bool>(
+fn reconstruct<const EX: bool>(
     planes: &mut [Plane],
     precincts: Vec<Precinct>,
     cfg: &Config,
@@ -1126,7 +1203,7 @@ fn reconstruct<const GRAY_EX: bool>(
                 s.levels,
                 (plane.x0, plane.y0),
             )?;
-            if GRAY_EX {
+            if EX {
                 // Keep signed centered integer coefficients until LE packing;
                 // do not narrow to u8 or introduce a floating reconstruction.
                 continue;
@@ -1152,6 +1229,9 @@ fn reconstruct<const GRAY_EX: bool>(
             )?;
         }
         plane.coefficients.clear();
+    }
+    if EX {
+        return Ok(());
     }
     if cfg.mct {
         if planes.len() < 3
@@ -1314,6 +1394,8 @@ pub(super) struct DecodedImage {
     pub height: usize,
     #[cfg(feature = "image-buffer-ex")]
     pub depth: u8,
+    #[cfg(feature = "image-buffer-ex")]
+    pub channels: usize,
     pub bytes: Vec<u8>,
 }
 
@@ -1323,29 +1405,24 @@ pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
 }
 
 #[cfg(feature = "image-buffer-ex")]
-pub(super) fn image_gray_ex(data: &[u8]) -> Result<DecodedImage, Error> {
+pub(super) fn image_ex(data: &[u8]) -> Result<DecodedImage, Error> {
     image_inner::<true>(data)
 }
 
 // Separate instantiations preserve the established RGBA8 fast/general path.
-fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
+fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
     let (s, meta) = container(data)?;
     if u16be(s, 0)? != 0xff4f || u16be(s, 2)? != 0xff51 {
         return Err(bad("SOC/SIZ required"));
     }
     let (_, b, mut p) = segment(s, 2)?;
-    let g = geometry::<GRAY_EX>(b)?;
+    let g = geometry::<EX>(b)?;
     let nc = g.components.len();
-    if GRAY_EX
-        && (meta.space.is_some_and(|s| s != 17)
-            || !meta.palette.is_empty()
-            || !meta.mapping.is_empty()
-            || !meta.channels.is_empty())
-    {
-        return Err(unsupported(
-            "EX Gray12/16 requires Gray without palette, mapping or channel definitions",
-        ));
-    }
+    let channel_order = if EX {
+        ex_channel_order(nc, &meta)?
+    } else {
+        [0, 1, 2, 3]
+    };
     if let Some((w, h, n, bpc)) = meta.ihdr {
         if (w, h, n) != (g.x1 - g.x0, g.y1 - g.y0, nc) {
             return Err(bad("JP2/SIZ disagreement"));
@@ -1434,8 +1511,8 @@ fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> 
     if g.rsiz == 0x4000 && !cfg.ht {
         return Err(bad("extended capabilities require CAP"));
     }
-    if GRAY_EX {
-        validate_gray_config(&cfg)?;
+    if EX {
+        validate_ex_config(&cfg)?;
     }
     let mut qstyle = cfg.default.clone();
     qstyle.filter = 0;
@@ -1573,8 +1650,8 @@ fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> 
                 part_poc = tile.config.poc.clone();
             }
         }
-        if GRAY_EX {
-            validate_gray_config(&tile.config)?;
+        if EX {
+            validate_ex_config(&tile.config)?;
         }
         let mut headers = packed(&ppt)?;
         if !ppm.is_empty() {
@@ -1624,12 +1701,12 @@ fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> 
     let width = g.x1 - g.x0;
     let height = g.y1 - g.y0;
     let mut rgba = array(
-        count(count(width, height)?, if GRAY_EX { 2 } else { 4 })?,
+        count(count(width, height)?, output_pixel_bytes::<EX>(nc))?,
         0u8,
     )?;
     let mut component_samples = Vec::new();
     let mut output_bytes = rgba.len();
-    for c in g.components.iter().filter(|_| !GRAY_EX) {
+    for c in g.components.iter().filter(|_| !EX) {
         let n = count(
             g.x1.div_ceil(c.sx) - g.x0.div_ceil(c.sx),
             g.y1.div_ceil(c.sy) - g.y0.div_ceil(c.sy),
@@ -1657,8 +1734,8 @@ fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> 
             mut precincts,
             steps,
             retained_bytes: workspace,
-        } = precincts::<GRAY_EX>(&g, &tile.config, bounds)?;
-        if GRAY_EX {
+        } = precincts::<EX>(&g, &tile.config, bounds)?;
+        if EX {
             // Account for output + coefficients/lifting/block state + packet
             // ordering, consumed keys and replacement POC directories together.
             let packets = count(precincts.len(), tile.config.layers as usize)?;
@@ -1754,20 +1831,49 @@ fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> 
                 consumed.len()
             )));
         }
-        reconstruct::<GRAY_EX>(&mut planes, precincts, &tile.config, &steps)?;
-        if GRAY_EX {
+        reconstruct::<EX>(&mut planes, precincts, &tile.config, &steps)?;
+        if EX {
             let plane = &planes[0];
             // Subtract absolute origins before combining row and column offsets.
             let x0 = plane.x0 - g.x0;
             let y0 = plane.y0 - g.y0;
             let shift = 1i64 << (g.components[0].depth - 1);
             let max = (1i64 << g.components[0].depth) - 1;
+            if nc == 1 {
+                for y in 0..plane.h {
+                    for x in 0..plane.w {
+                        let sample = (i64::from(plane.coefficients[y * plane.w + x]) + shift)
+                            .clamp(0, max) as u16;
+                        let at = ((y0 + y) * width + x0 + x) * 2;
+                        rgba[at..at + 2].copy_from_slice(&sample.to_le_bytes());
+                    }
+                }
+                continue;
+            }
             for y in 0..plane.h {
                 for x in 0..plane.w {
-                    let sample = (i64::from(plane.coefficients[y * plane.w + x]) + shift)
-                        .clamp(0, max) as u16;
-                    let at = ((y0 + y) * width + x0 + x) * 2;
-                    rgba[at..at + 2].copy_from_slice(&sample.to_le_bytes());
+                    let index = y * plane.w + x;
+                    let mut values = [0i64; 4];
+                    for (value, p) in values.iter_mut().zip(&planes) {
+                        *value = i64::from(p.coefficients[index]);
+                    }
+                    if tile.config.mct {
+                        let rgb = inverse_rct_wide(
+                            planes[0].coefficients[index],
+                            planes[1].coefficients[index],
+                            planes[2].coefficients[index],
+                        );
+                        values[..3].copy_from_slice(&rgb);
+                    }
+                    let at = ((y0 + y) * width + x0 + x) * 8;
+                    for c in 0..4 {
+                        let sample = if c == 3 && nc == 3 {
+                            max as u16
+                        } else {
+                            (values[channel_order[c]] + shift).clamp(0, max) as u16
+                        };
+                        rgba[at + c * 2..at + c * 2 + 2].copy_from_slice(&sample.to_le_bytes());
+                    }
                 }
             }
             continue;
@@ -1787,7 +1893,7 @@ fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> 
             }
         }
     }
-    if !GRAY_EX {
+    if !EX {
         render(&mut rgba, &g, &meta, &component_samples)?;
     }
     Ok(DecodedImage {
@@ -1795,14 +1901,15 @@ fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> 
         height,
         #[cfg(feature = "image-buffer-ex")]
         depth: g.components[0].depth,
+        #[cfg(feature = "image-buffer-ex")]
+        channels: if nc == 1 { 1 } else { 4 },
         bytes: rgba,
     })
 }
 
-// The selected EX profile is unsigned Gray12/16 with reversible 5/3 and no
-// MCT, HT, or maxshift ROI. Existing 8-bit support is intentionally unchanged.
-fn validate_gray_config(cfg: &Config) -> Result<(), Error> {
-    if cfg.mct
+// EX requires reversible 5/3 with optional RGB RCT; existing 8-bit support is unchanged.
+fn validate_ex_config(cfg: &Config) -> Result<(), Error> {
+    if cfg.mct && cfg.styles.len() < 3
         || cfg.ht
         || cfg.roi.iter().any(|&s| s != 0)
         || cfg
@@ -1815,8 +1922,25 @@ fn validate_gray_config(cfg: &Config) -> Result<(), Error> {
             .any(|q| q.first().is_none_or(|v| v & 31 != 0))
     {
         return Err(unsupported(
-            "EX Gray12/16 supports reversible 5/3 scalar-free classic coding only; no MCT, HT or ROI",
+            "EX supports reversible 5/3 scalar-free classic coding only; no Gray MCT, HT or ROI",
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod ex_color_tests {
+    use super::inverse_rct_wide;
+    #[test]
+    fn reversible_color_floor_and_wide_intermediates() {
+        assert_eq!(inverse_rct_wide(-1, -1, -2), [-2, 0, -1]);
+        assert_eq!(
+            inverse_rct_wide(i32::MAX, i32::MIN, i32::MAX),
+            [4294967295, 2147483648, 0]
+        );
+        assert_eq!(
+            inverse_rct_wide(i32::MIN, i32::MAX, i32::MIN),
+            [-4294967295, -2147483647, 0]
+        );
+    }
 }

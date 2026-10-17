@@ -1,0 +1,38 @@
+[
+  {
+    "input": "jp2_ex_color_unsupported_3_signed16.jp2",
+    "reason": "signed16",
+    "components": 3,
+    "sha256": "08cdc5ce9f0dc1c96933af65bf59ef76f5cd807a0b260812c86914feb5afb3a8"
+  },
+  {
+    "input": "jp2_ex_color_unsupported_3_irreversible16.jp2",
+    "reason": "irreversible16",
+    "components": 3,
+    "sha256": "a42c8b4caa38351976bab7e9b60616cc865062c582715aa884f9d330580a5bff"
+  },
+  {
+    "input": "jp2_ex_color_unsupported_3_depth10.jp2",
+    "reason": "depth10",
+    "components": 3,
+    "sha256": "28145b48116398765db1dbc05c24afa858efbbacf7a396865281130f1aa64e90"
+  },
+  {
+    "input": "jp2_ex_color_unsupported_4_signed16.jp2",
+    "reason": "signed16",
+    "components": 4,
+    "sha256": "f35ed71edc67105c536ccb23c7c9b622f73d37db094ad263cbbe3e863962d9e3"
+  },
+  {
+    "input": "jp2_ex_color_unsupported_4_irreversible16.jp2",
+    "reason": "irreversible16",
+    "components": 4,
+    "sha256": "e7c1cbb46a4bf27131f920610070c0bee64d9287f7f0e7e101cdb40ce36c1bac"
+  },
+  {
+    "input": "jp2_ex_color_unsupported_4_depth10.jp2",
+    "reason": "depth10",
+    "components": 4,
+    "sha256": "1fde606e70426e63d3c8277ec10da5d8426b35a73c7f16ef209ed25c6b479221"
+  }
+]

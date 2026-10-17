@@ -1,6 +1,7 @@
 > Historical prerequisite plan. The EX receiver now exists on PR #13, and the
 > separate JPEG2000 branch implements the first [unsigned Gray12/16 reversible
-> EX profile](jpeg2000-ex-gray.md). PR #13/main integration remains a separate
+> EX profile](jpeg2000-ex-gray.md), followed by [RGB/declared straight RGBA](jpeg2000-ex-color.md).
+> PR #13/main integration remains a separate
 > approval. The old unsigned8-only/source-without-EX statements below describe
 > that earlier snapshot, not current legacy1–8bit support or the new EX scope.
 

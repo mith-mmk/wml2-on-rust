@@ -1,5 +1,9 @@
 # JPEG2000 unsigned Gray12/16 EX (unreleased)
 
+> This guide records the initial Gray-only stage and its validation checkpoints.
+> The later [RGB/explicit straight RGBA continuation](jpeg2000-ex-color.md) expands
+> the current EX scope; the original RGB/CDEF/MCT deferrals below are historical.
+
 This work starts at PR #13 head `a1bcf033d7835c79176b2073142d102c4db37fb7`
 on a separate branch. PR #13 is not rewritten or merged. WML2 remains0.0.36;
 no publish, version bump, tag or release is included.

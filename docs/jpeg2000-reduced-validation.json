@@ -1,0 +1,3968 @@
+{
+  "scope": "Native JPEG2000 resolution reduction; WML2 0.0.36; existing APIs unchanged; no ROI/streaming/new PR/merge/publish/version/tag/release",
+  "base_commit": "bc6c1182c7478c385b10296af71c996c4f4f3ab7",
+  "implementation_commit": "e4e7dbd52100b75b271fb143c99fe6a488091ff1",
+  "source_sha256": {
+    "wml2/src/jpeg2000.rs": "a391ce1dd2537de08b32ac4f851d31be23ded60380ee4f9b6cf81d13e651d7be",
+    "wml2/src/jpeg2000_general.rs": "afde49c482bda10dbb98adeaf1605152a8be9e5149ffb36117b0da4824ccf69b",
+    "wml2-test/scripts/jpeg2000_reduced_checks.rs": "0a3835e3196b8ed6d5852d39129c8c483bd31fd9968d6e2a2f30c672a2d369a8",
+    "wml2-test/scripts/verify_jpeg2000_reduced_wasm.py": "3d60367eaea34d72ff3fd7b1a6183743e7174be6dcd55e03a7aece9a7b208d6b",
+    "wml2-test/scripts/jpeg2000_reduced_probe.rs": "9ca0c16781eeda417f9df53d710a5226490522e5608a80d30f642983b1867e77",
+    "wml2-test/scripts/measure_jpeg2000_reduced.py": "e86e0f0ec02be89ead9bb51a2818dcb6d75563a604bd9e28198a34e3611c9cc7",
+    "wml2-test/scripts/generate_jpeg2000_reduced_memory.py": "3e46bbc067847b9accd81d3feeeadace969041995977ea2fc937e08d12dfbbfc",
+    "wml2-test/scripts/verify_jpeg2000_reduced_large.py": "077f85e1411d46f4d9d5db891eb4fd7e8eaea4d7cca6433bce88300ee02acc3d",
+    "wml2/tests/jpeg2000_reduced.rs": "cae6ad6562e35a080a13dd2b777b06508775c2c61a27e54c144af0895c3bb33e",
+    "wml2/tests/fixtures/review/jpeg2000-reduced-manifest.txt": "66c483cf48d417079728c2540c78243bffccc23296ce7d772663738e10092d70",
+    "wml2/tests/fixtures/review/jpeg2000-reduced-refs.bin": "cc949769dac9e69d768167f2754d00ce9969646c6112aa78c1720139ed2e86a1",
+    ".github/workflows/ci.yml": "4ab5959715319837d88a6768e8ffc2d977258678350cdaabf80fb3c76e8ae3a0",
+    "wml2/Cargo.toml": "0fef23328d5b8a2e5bb0cb4ca6a70efec7a244a57e0da0c26c3d5fee707fe0b7"
+  },
+  "api": {
+    "legacy": "jpeg2000::decode_with_reduction(reader, options, reduce:u8, limits)",
+    "ex_callback": "jpeg2000::decode_ex_with_reduction(reader, options, reduce:u8, limits)",
+    "ex_owned": "jpeg2000::image_from_ex_with_reduction(bytes, storage, precision, reduce:u8, limits)",
+    "scale": "2^reduce per axis; endpoint ceil division; explicit0 delegates old dispatch"
+  },
+  "checks": {
+    "minimal": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 37.02,
+      "peak_cgroup_bytes": 7160016896,
+      "counts": [
+        149,
+        0,
+        0
+      ]
+    },
+    "high": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--test",
+        "jpeg2000_ex",
+        "--test",
+        "jpeg2000_ex_color",
+        "--test",
+        "jpeg2000_ex_97",
+        "--test",
+        "jpeg2000_ex_memory",
+        "--test",
+        "jpeg2000_reduced"
+      ],
+      "exit": 0,
+      "seconds": 19.01,
+      "peak_cgroup_bytes": 7327657984,
+      "counts": [
+        60,
+        0,
+        0
+      ]
+    },
+    "workspace": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--release",
+        "--features",
+        "wml2/jpeg2000,wml2/image-buffer-ex,wml2/high-bit-depth,wml2/avifenc",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 165.12,
+      "peak_cgroup_bytes": 8122798080,
+      "counts": [
+        526,
+        0,
+        14
+      ]
+    },
+    "legacy": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000",
+        "--lib",
+        "--test",
+        "jpeg2000",
+        "--test",
+        "jpeg2000_reduced"
+      ],
+      "exit": 0,
+      "seconds": 30.02,
+      "peak_cgroup_bytes": 8018534400,
+      "counts": [
+        80,
+        0,
+        0
+      ]
+    },
+    "cross-ex": {
+      "command": [
+        "cargo",
+        "check",
+        "-p",
+        "wml2",
+        "--locked",
+        "--target",
+        "i686-unknown-linux-gnu",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 3.0,
+      "peak_cgroup_bytes": 7975895040
+    },
+    "cross-legacy": {
+      "command": [
+        "cargo",
+        "check",
+        "-p",
+        "wml2",
+        "--locked",
+        "--target",
+        "i686-unknown-linux-gnu",
+        "--no-default-features",
+        "--features",
+        "jpeg2000",
+        "--lib",
+        "--test",
+        "jpeg2000_reduced"
+      ],
+      "exit": 0,
+      "seconds": 1.0,
+      "peak_cgroup_bytes": 7816290304
+    },
+    "clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--tests",
+        "--examples"
+      ],
+      "exit": 0,
+      "seconds": 3.0,
+      "peak_cgroup_bytes": 8034152448
+    },
+    "examples": {
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex",
+        "--example",
+        "jpeg2000_reduced_verify",
+        "--example",
+        "jpeg2000_ex_verify",
+        "--example",
+        "jpeg2000_ex_color_verify"
+      ],
+      "exit": 0,
+      "seconds": 1.0,
+      "peak_cgroup_bytes": 7828631552
+    },
+    "legacy-example": {
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000",
+        "--example",
+        "jpeg2000_verify"
+      ],
+      "exit": 0,
+      "seconds": 1.0,
+      "peak_cgroup_bytes": 7833542656
+    },
+    "wasm-minimal": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_wasm.py",
+        "--work-dir",
+        ".test-jp2-reduction-20261017/.test-wasm-minimal"
+      ],
+      "exit": 0,
+      "seconds": 5.0,
+      "peak_cgroup_bytes": 7029460992
+    },
+    "wasm-default": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_wasm.py",
+        "--default-features",
+        "--work-dir",
+        ".test-jp2-reduction-20261017/.test-wasm-default"
+      ],
+      "exit": 0,
+      "seconds": 5.0,
+      "peak_cgroup_bytes": 7035113472
+    },
+    "wasm-legacy": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_reduced_wasm.py",
+        "--legacy-only",
+        "--work-dir",
+        ".test-jp2-reduction-20261017/.test-wasm-legacy"
+      ],
+      "exit": 0,
+      "seconds": 1.0,
+      "peak_cgroup_bytes": 6981484544
+    }
+  },
+  "wasm": {
+    "minimal": {
+      "runtime": "v24.19.0",
+      "passed": 1309,
+      "zero_comparisons": 423,
+      "extra_contract_cases": 12,
+      "packet_contracts": 1,
+      "maxima": {
+        "8": 1,
+        "12": 1,
+        "16": 3
+      },
+      "host_imports": [],
+      "default_features": false,
+      "legacy_only": false,
+      "release_overflow_checks": true,
+      "wasm_sha256": "fa94b22fbbc83928ce7d51c6c24861b2eea7aa5c6e45ecb2339a174c9cd9f0dc",
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_reduced_checks.rs": "0a3835e3196b8ed6d5852d39129c8c483bd31fd9968d6e2a2f30c672a2d369a8",
+        "wml2/src/jpeg2000.rs": "a391ce1dd2537de08b32ac4f851d31be23ded60380ee4f9b6cf81d13e651d7be",
+        "wml2/src/jpeg2000_general.rs": "afde49c482bda10dbb98adeaf1605152a8be9e5149ffb36117b0da4824ccf69b",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-manifest.txt": "66c483cf48d417079728c2540c78243bffccc23296ce7d772663738e10092d70",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-refs.bin": "cc949769dac9e69d768167f2754d00ce9969646c6112aa78c1720139ed2e86a1"
+      }
+    },
+    "default": {
+      "runtime": "v24.19.0",
+      "passed": 1309,
+      "zero_comparisons": 423,
+      "extra_contract_cases": 12,
+      "packet_contracts": 1,
+      "maxima": {
+        "8": 1,
+        "12": 1,
+        "16": 3
+      },
+      "host_imports": [],
+      "default_features": true,
+      "legacy_only": false,
+      "release_overflow_checks": true,
+      "wasm_sha256": "83a58bdf93ef53d0cbca1ec309dc8c4da4dcc67a0f7e86d5400360bab342f51b",
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_reduced_checks.rs": "0a3835e3196b8ed6d5852d39129c8c483bd31fd9968d6e2a2f30c672a2d369a8",
+        "wml2/src/jpeg2000.rs": "a391ce1dd2537de08b32ac4f851d31be23ded60380ee4f9b6cf81d13e651d7be",
+        "wml2/src/jpeg2000_general.rs": "afde49c482bda10dbb98adeaf1605152a8be9e5149ffb36117b0da4824ccf69b",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-manifest.txt": "66c483cf48d417079728c2540c78243bffccc23296ce7d772663738e10092d70",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-refs.bin": "cc949769dac9e69d768167f2754d00ce9969646c6112aa78c1720139ed2e86a1"
+      }
+    },
+    "legacy": {
+      "runtime": "v24.19.0",
+      "passed": 152,
+      "zero_comparisons": 23,
+      "extra_contract_cases": 4,
+      "packet_contracts": 1,
+      "maxima": {
+        "8": 1
+      },
+      "host_imports": [],
+      "default_features": false,
+      "legacy_only": true,
+      "release_overflow_checks": true,
+      "wasm_sha256": "d42acadaba39a4b3217e1e45080fe74fedcc523f9e583b6f57fad3ff81812661",
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_reduced_checks.rs": "0a3835e3196b8ed6d5852d39129c8c483bd31fd9968d6e2a2f30c672a2d369a8",
+        "wml2/src/jpeg2000.rs": "a391ce1dd2537de08b32ac4f851d31be23ded60380ee4f9b6cf81d13e651d7be",
+        "wml2/src/jpeg2000_general.rs": "afde49c482bda10dbb98adeaf1605152a8be9e5149ffb36117b0da4824ccf69b",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-manifest.txt": "66c483cf48d417079728c2540c78243bffccc23296ce7d772663738e10092d70",
+        "wml2/tests/fixtures/review/jpeg2000-reduced-refs.bin": "cc949769dac9e69d768167f2754d00ce9969646c6112aa78c1720139ed2e86a1"
+      }
+    }
+  },
+  "numeric": {
+    "small_references": 1309,
+    "small_observed_maxima": {
+      "8": 1,
+      "12": 1,
+      "16": 3
+    },
+    "small_reversible_exact": true,
+    "large_references": 96,
+    "large_openjpeg_maxima": {
+      "8": 1,
+      "12": 1,
+      "16": 4
+    },
+    "large_ffmpeg_passed": 96,
+    "large_ffmpeg_max": 1,
+    "large_reversible_exact": true
+  },
+  "memory": {
+    "observations": 300,
+    "source_streams": 32,
+    "configurations": 170,
+    "zero_pairs": 60,
+    "zero_peak_exact_pairs": 60,
+    "zero_output_and_acceptance_match": true,
+    "summary": [
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 19066575.0,
+        "baseline_live_bytes": 17369.0,
+        "peak_total_live_bytes": 19083944.0,
+        "self_vmhwm_kib": 20074.0,
+        "operation_us": 195675.5,
+        "output_sha256": "f1bb3d3b1845a3ee972589bc6a2eba4bafdbfb3880f6aba99d56c9456d2e1310"
+      },
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 19066575.0,
+        "baseline_live_bytes": 17372.0,
+        "peak_total_live_bytes": 19083947.0,
+        "self_vmhwm_kib": 20116.0,
+        "operation_us": 193197.5,
+        "output_sha256": "f1bb3d3b1845a3ee972589bc6a2eba4bafdbfb3880f6aba99d56c9456d2e1310"
+      },
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          768
+        ],
+        "peak_extra_bytes": 4907910.0,
+        "baseline_live_bytes": 17372.0,
+        "peak_total_live_bytes": 4925282.0,
+        "self_vmhwm_kib": 6318.0,
+        "operation_us": 65600.5,
+        "output_sha256": "23fcddf4517fc20649dd372435c297bddc20b05b1a40e8dde937dd06ca0e13a5"
+      },
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          384
+        ],
+        "peak_extra_bytes": 1365324.0,
+        "baseline_live_bytes": 17372.0,
+        "peak_total_live_bytes": 1382696.0,
+        "self_vmhwm_kib": 2876.0,
+        "operation_us": 22051.5,
+        "output_sha256": "07fa2b04029ef69a2ef5bd80948ceba7cbd4c03093ed64cf005c064ae2e3ea4b"
+      },
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          192
+        ],
+        "peak_extra_bytes": 477494.0,
+        "baseline_live_bytes": 17372.0,
+        "peak_total_live_bytes": 494866.0,
+        "self_vmhwm_kib": 2092.0,
+        "operation_us": 9040.5,
+        "output_sha256": "1981bdf44272e2b0758bc86f706d3042a58450896fd1339a7034c1b0d47c35ac"
+      },
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 44154211.0,
+        "baseline_live_bytes": 44888.0,
+        "peak_total_live_bytes": 44199099.0,
+        "self_vmhwm_kib": 44782.0,
+        "operation_us": 209818.0,
+        "output_sha256": "5e4bb0bbcd02a6454a748401698818beb25f56bf0386c4a3c84ae4dbd8969971"
+      },
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 44154211.0,
+        "baseline_live_bytes": 44891.0,
+        "peak_total_live_bytes": 44199102.0,
+        "self_vmhwm_kib": 44892.0,
+        "operation_us": 208372.0,
+        "output_sha256": "5e4bb0bbcd02a6454a748401698818beb25f56bf0386c4a3c84ae4dbd8969971"
+      },
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          768
+        ],
+        "peak_extra_bytes": 11123971.0,
+        "baseline_live_bytes": 44891.0,
+        "peak_total_live_bytes": 11168862.0,
+        "self_vmhwm_kib": 12572.0,
+        "operation_us": 74656.5,
+        "output_sha256": "37e0bc0c5dd061edad28f541756c05cf079881297bb7a232e9c2846bd076ecae"
+      },
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          384
+        ],
+        "peak_extra_bytes": 2866315.0,
+        "baseline_live_bytes": 44891.0,
+        "peak_total_live_bytes": 2911206.0,
+        "self_vmhwm_kib": 4496.0,
+        "operation_us": 30872.0,
+        "output_sha256": "54e1134faaac944fbf8511e73dc9b6545291ab80a6278dea79c1bd8bb864893c"
+      },
+      {
+        "case": "2048x1536-1c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          192
+        ],
+        "peak_extra_bytes": 801811.0,
+        "baseline_live_bytes": 44891.0,
+        "peak_total_live_bytes": 846702.0,
+        "self_vmhwm_kib": 2470.0,
+        "operation_us": 11750.0,
+        "output_sha256": "65e7afe9357faaecab3ac4401cda2d2798ee8290fe67fce03292600e66c633c2"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 26483025.0,
+        "baseline_live_bytes": 150342.0,
+        "peak_total_live_bytes": 26633367.0,
+        "self_vmhwm_kib": 27446.0,
+        "operation_us": 925585.0,
+        "output_sha256": "3d39ad1b63f20e77ca478a257e330f3b358c240fe3359ba6490d2a3246302ade"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 26483025.0,
+        "baseline_live_bytes": 150345.0,
+        "peak_total_live_bytes": 26633370.0,
+        "self_vmhwm_kib": 27550.0,
+        "operation_us": 937226.0,
+        "output_sha256": "3d39ad1b63f20e77ca478a257e330f3b358c240fe3359ba6490d2a3246302ade"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          768
+        ],
+        "peak_extra_bytes": 7017106.0,
+        "baseline_live_bytes": 150345.0,
+        "peak_total_live_bytes": 7167451.0,
+        "self_vmhwm_kib": 8500.0,
+        "operation_us": 338213.5,
+        "output_sha256": "2baf24304a7a0cd7bacebd519f8313d92363f9db5e402c5f5723bec937908feb"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          384
+        ],
+        "peak_extra_bytes": 2124116.0,
+        "baseline_live_bytes": 150345.0,
+        "peak_total_live_bytes": 2274461.0,
+        "self_vmhwm_kib": 3772.0,
+        "operation_us": 100956.5,
+        "output_sha256": "d8345a34fb2f609247198a2f1f934fea6f0b42f327381b8134edd5d434708c9f"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          192
+        ],
+        "peak_extra_bytes": 903028.0,
+        "baseline_live_bytes": 150345.0,
+        "peak_total_live_bytes": 1053373.0,
+        "self_vmhwm_kib": 2512.0,
+        "operation_us": 32675.0,
+        "output_sha256": "44a1adb89a0495fd5cacc948266aba3779f29f9eec588e9ae4c6eca753a8c6b3"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 28014546.0,
+        "baseline_live_bytes": 433472.0,
+        "peak_total_live_bytes": 28448018.0,
+        "self_vmhwm_kib": 29376.0,
+        "operation_us": 1056812.0,
+        "output_sha256": "e889ac0b4cbadc542a79411e79f37a241689be9351ce0f0924c7755b9e092d1b"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 28014546.0,
+        "baseline_live_bytes": 433475.0,
+        "peak_total_live_bytes": 28448021.0,
+        "self_vmhwm_kib": 29390.0,
+        "operation_us": 971924.5,
+        "output_sha256": "e889ac0b4cbadc542a79411e79f37a241689be9351ce0f0924c7755b9e092d1b"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          768
+        ],
+        "peak_extra_bytes": 7763874.0,
+        "baseline_live_bytes": 433475.0,
+        "peak_total_live_bytes": 8197349.0,
+        "self_vmhwm_kib": 9748.0,
+        "operation_us": 356263.5,
+        "output_sha256": "8fbe00e17b9a07f9842d8f2ae3f801e6f82cdcaf61cfd944b65b32e7f215dd5d"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          384
+        ],
+        "peak_extra_bytes": 2701098.0,
+        "baseline_live_bytes": 433475.0,
+        "peak_total_live_bytes": 3134573.0,
+        "self_vmhwm_kib": 4666.0,
+        "operation_us": 116354.0,
+        "output_sha256": "7e42921f143876d6c90d618f19f03c7d3969f9f6c8285ec96ac5724262cc1ef6"
+      },
+      {
+        "case": "2048x1536-3c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          192
+        ],
+        "peak_extra_bytes": 1453594.0,
+        "baseline_live_bytes": 433475.0,
+        "peak_total_live_bytes": 1887069.0,
+        "self_vmhwm_kib": 3398.0,
+        "operation_us": 41603.0,
+        "output_sha256": "8153d7e0f62428d02aa0361ba21e0f9766e8ac105071032e0e0e10a0386b21dd"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 78797820.0,
+        "baseline_live_bytes": 861540.0,
+        "peak_total_live_bytes": 79659360.0,
+        "self_vmhwm_kib": 79144.0,
+        "operation_us": 1804165.5,
+        "output_sha256": "4a9774c662d0569269b63fd628a3ffed12067eedc1d147eea95f0aa01c132a93"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 78797820.0,
+        "baseline_live_bytes": 861543.0,
+        "peak_total_live_bytes": 79659363.0,
+        "self_vmhwm_kib": 79320.0,
+        "operation_us": 1765955.0,
+        "output_sha256": "4a9774c662d0569269b63fd628a3ffed12067eedc1d147eea95f0aa01c132a93"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          768
+        ],
+        "peak_extra_bytes": 21921041.0,
+        "baseline_live_bytes": 861543.0,
+        "peak_total_live_bytes": 22782584.0,
+        "self_vmhwm_kib": 23692.0,
+        "operation_us": 536567.5,
+        "output_sha256": "17eefbb41d8ea9f3e1f803e715cb6d025a4c160e62d6c9fe5066911835841ac0"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          384
+        ],
+        "peak_extra_bytes": 7473125.0,
+        "baseline_live_bytes": 861543.0,
+        "peak_total_live_bytes": 8334668.0,
+        "self_vmhwm_kib": 9674.0,
+        "operation_us": 160105.5,
+        "output_sha256": "52464e44df8890a21865f2fa228c77cb9063f2ad1500b876dd048e5f0f7d0f21"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          192
+        ],
+        "peak_extra_bytes": 3731099.0,
+        "baseline_live_bytes": 861543.0,
+        "peak_total_live_bytes": 4592642.0,
+        "self_vmhwm_kib": 5926.0,
+        "operation_us": 49842.0,
+        "output_sha256": "635870712a16df5505d5bfc961dc7b8d11dfc75f2b0ef7fc739dc231aeb26fa5"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 142528414.0,
+        "baseline_live_bytes": 2013747.0,
+        "peak_total_live_bytes": 144542161.0,
+        "self_vmhwm_kib": 145232.0,
+        "operation_us": 1927710.0,
+        "output_sha256": "49f181a527c141029624207963caa6d4c6b233db5e162a1a04b0d216f1e4890a"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 142528414.0,
+        "baseline_live_bytes": 2013750.0,
+        "peak_total_live_bytes": 144542164.0,
+        "self_vmhwm_kib": 145334.0,
+        "operation_us": 1903774.0,
+        "output_sha256": "49f181a527c141029624207963caa6d4c6b233db5e162a1a04b0d216f1e4890a"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          768
+        ],
+        "peak_extra_bytes": 38719366.0,
+        "baseline_live_bytes": 2013750.0,
+        "peak_total_live_bytes": 40733116.0,
+        "self_vmhwm_kib": 43160.0,
+        "operation_us": 608825.0,
+        "output_sha256": "dcccadaa39c2e615044572970f02d2198c5d624ed6b5f9ba9b6ac3d2204b7adb"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          384
+        ],
+        "peak_extra_bytes": 12766990.0,
+        "baseline_live_bytes": 2013750.0,
+        "peak_total_live_bytes": 14780740.0,
+        "self_vmhwm_kib": 16966.0,
+        "operation_us": 188782.0,
+        "output_sha256": "33c3fb3dd548a16935d040ce0de63525c1e175d911df0b775dffe2b4a7ce722c"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          192
+        ],
+        "peak_extra_bytes": 6278806.0,
+        "baseline_live_bytes": 2013750.0,
+        "peak_total_live_bytes": 8292556.0,
+        "self_vmhwm_kib": 10296.0,
+        "operation_us": 60944.0,
+        "output_sha256": "3f0d6210eedd8c04a5285305601cbc70e05ba7cfd644a65cffc16d9a7c355ff0"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 28289096.0,
+        "baseline_live_bytes": 876898.0,
+        "peak_total_live_bytes": 29165994.0,
+        "self_vmhwm_kib": 29910.0,
+        "operation_us": 1844043.0,
+        "output_sha256": "4a9774c662d0569269b63fd628a3ffed12067eedc1d147eea95f0aa01c132a93"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 28289096.0,
+        "baseline_live_bytes": 876901.0,
+        "peak_total_live_bytes": 29165997.0,
+        "self_vmhwm_kib": 30006.0,
+        "operation_us": 1765767.0,
+        "output_sha256": "4a9774c662d0569269b63fd628a3ffed12067eedc1d147eea95f0aa01c132a93"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          768
+        ],
+        "peak_extra_bytes": 8622115.0,
+        "baseline_live_bytes": 876901.0,
+        "peak_total_live_bytes": 9499016.0,
+        "self_vmhwm_kib": 10688.0,
+        "operation_us": 570906.0,
+        "output_sha256": "05dac7f766e1e64c0d1bcdc5d95ede9ae1e8c446a2752d45aff7da25ebb8be65"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          384
+        ],
+        "peak_extra_bytes": 3675560.0,
+        "baseline_live_bytes": 876901.0,
+        "peak_total_live_bytes": 4552461.0,
+        "self_vmhwm_kib": 5956.0,
+        "operation_us": 178994.5,
+        "output_sha256": "c85755f0548b35978f3a766c08b724530f8078c85603835792a8ff67ab547658"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          192
+        ],
+        "peak_extra_bytes": 2438483.0,
+        "baseline_live_bytes": 876901.0,
+        "peak_total_live_bytes": 3315384.0,
+        "self_vmhwm_kib": 4668.0,
+        "operation_us": 56522.5,
+        "output_sha256": "368feb332b1b2277de12a36294535faea0878f534242ca603504d6e053ac9b99"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 31704396.0,
+        "baseline_live_bytes": 2020370.0,
+        "peak_total_live_bytes": 33724766.0,
+        "self_vmhwm_kib": 34844.0,
+        "operation_us": 1962153.0,
+        "output_sha256": "1d480ce718bfe5858628e6dec24ff0067d35efab4297a069b9730bbe23b6de79"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          2048,
+          1536
+        ],
+        "peak_extra_bytes": 31704396.0,
+        "baseline_live_bytes": 2020373.0,
+        "peak_total_live_bytes": 33724769.0,
+        "self_vmhwm_kib": 34864.0,
+        "operation_us": 1955877.5,
+        "output_sha256": "1d480ce718bfe5858628e6dec24ff0067d35efab4297a069b9730bbe23b6de79"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          768
+        ],
+        "peak_extra_bytes": 11060532.0,
+        "baseline_live_bytes": 2020373.0,
+        "peak_total_live_bytes": 13080905.0,
+        "self_vmhwm_kib": 14652.0,
+        "operation_us": 654256.0,
+        "output_sha256": "ac4e9cccb37061e3072fa0ff61cf84ebf944e1846aee26a0ac401a68531ea9cd"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          384
+        ],
+        "peak_extra_bytes": 5899452.0,
+        "baseline_live_bytes": 2020373.0,
+        "peak_total_live_bytes": 7919825.0,
+        "self_vmhwm_kib": 9402.0,
+        "operation_us": 205363.0,
+        "output_sha256": "2bef09d95210576c1e707dcdf76f03e19a71b3cd3290b105ea5194643407f444"
+      },
+      {
+        "case": "2048x1536-4c-16b-ramp-t256-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          192
+        ],
+        "peak_extra_bytes": 4637037.0,
+        "baseline_live_bytes": 2020373.0,
+        "peak_total_live_bytes": 6657410.0,
+        "self_vmhwm_kib": 8168.0,
+        "operation_us": 70023.5,
+        "output_sha256": "afe4ea62caf0f91509c9555069419c8dd46852aaf2881c96295d15d883e1e881"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": false,
+        "samples": 1,
+        "shape": [
+          0,
+          0
+        ],
+        "peak_extra_bytes": 214845275,
+        "baseline_live_bytes": 4736374,
+        "peak_total_live_bytes": 219581649,
+        "self_vmhwm_kib": 212312,
+        "operation_us": 60007,
+        "output_sha256": null
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": false,
+        "samples": 1,
+        "shape": [
+          0,
+          0
+        ],
+        "peak_extra_bytes": 214845275,
+        "baseline_live_bytes": 4736377,
+        "peak_total_live_bytes": 219581652,
+        "self_vmhwm_kib": 212412,
+        "operation_us": 59045,
+        "output_sha256": null
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": false,
+        "samples": 1,
+        "shape": [
+          0,
+          0
+        ],
+        "peak_extra_bytes": 115064731,
+        "baseline_live_bytes": 4736377,
+        "peak_total_live_bytes": 119801108,
+        "self_vmhwm_kib": 115008,
+        "operation_us": 34210,
+        "output_sha256": null
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 42712211,
+        "baseline_live_bytes": 4736377,
+        "peak_total_live_bytes": 47448588,
+        "self_vmhwm_kib": 44580,
+        "operation_us": 952928,
+        "output_sha256": "b01defeb2764101f401f502b7804f4984647b74884691d6bd7df2595b8d2a35e"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 22715104,
+        "baseline_live_bytes": 4736377,
+        "peak_total_live_bytes": 27451481,
+        "self_vmhwm_kib": 25060,
+        "operation_us": 276540,
+        "output_sha256": "2928da01551b7187ffd861debf9577624b280db0bc319c63b6b083fad1ea5d39"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "large",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          4096
+        ],
+        "peak_extra_bytes": 423195699,
+        "baseline_live_bytes": 4736372,
+        "peak_total_live_bytes": 427932071,
+        "self_vmhwm_kib": 416132,
+        "operation_us": 9911385,
+        "output_sha256": "f569088bd3844ee2c5e7cb0ff6a4620381b64595c9e1b7e9eeda6afc122bc3a6"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "large",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          4096
+        ],
+        "peak_extra_bytes": 423195699,
+        "baseline_live_bytes": 4736375,
+        "peak_total_live_bytes": 427932074,
+        "self_vmhwm_kib": 416120,
+        "operation_us": 10147769,
+        "output_sha256": "f569088bd3844ee2c5e7cb0ff6a4620381b64595c9e1b7e9eeda6afc122bc3a6"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "large",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          2048,
+          2048
+        ],
+        "peak_extra_bytes": 119820665,
+        "baseline_live_bytes": 4736375,
+        "peak_total_live_bytes": 124557040,
+        "self_vmhwm_kib": 119896,
+        "operation_us": 3137749,
+        "output_sha256": "ebb88a665d3b8fd5061f5d7d5d18faf9791d1bfd6e0bd964eef4aaeb493d403e"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "large",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 42712211,
+        "baseline_live_bytes": 4736375,
+        "peak_total_live_bytes": 47448586,
+        "self_vmhwm_kib": 44496,
+        "operation_us": 1002200,
+        "output_sha256": "b01defeb2764101f401f502b7804f4984647b74884691d6bd7df2595b8d2a35e"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-53",
+        "budget": "large",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 22715104,
+        "baseline_live_bytes": 4736375,
+        "peak_total_live_bytes": 27451479,
+        "self_vmhwm_kib": 25128,
+        "operation_us": 308574,
+        "output_sha256": "2928da01551b7187ffd861debf9577624b280db0bc319c63b6b083fad1ea5d39"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": false,
+        "samples": 1,
+        "shape": [
+          0,
+          0
+        ],
+        "peak_extra_bytes": 162249215,
+        "baseline_live_bytes": 11251226,
+        "peak_total_live_bytes": 173500441,
+        "self_vmhwm_kib": 165600,
+        "operation_us": 56804,
+        "output_sha256": null
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": false,
+        "samples": 1,
+        "shape": [
+          0,
+          0
+        ],
+        "peak_extra_bytes": 162249215,
+        "baseline_live_bytes": 11251229,
+        "peak_total_live_bytes": 173500444,
+        "self_vmhwm_kib": 165624,
+        "operation_us": 64861,
+        "output_sha256": null
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": false,
+        "samples": 1,
+        "shape": [
+          0,
+          0
+        ],
+        "peak_extra_bytes": 112993727,
+        "baseline_live_bytes": 11251229,
+        "peak_total_live_bytes": 124244956,
+        "self_vmhwm_kib": 117564,
+        "operation_us": 40233,
+        "output_sha256": null
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 74171125,
+        "baseline_live_bytes": 11251229,
+        "peak_total_live_bytes": 85422354,
+        "self_vmhwm_kib": 84168,
+        "operation_us": 1159344,
+        "output_sha256": "4b127d0c0f1c336f57130c6fe6d22a3f018e9bfa1a7ddf24e659b806169c9650"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 39567997,
+        "baseline_live_bytes": 11251229,
+        "peak_total_live_bytes": 50819226,
+        "self_vmhwm_kib": 48448,
+        "operation_us": 370197,
+        "output_sha256": "38b9532253700bc2c43ec83c9e4add9ebaec9cd88795bbb392ca7cb9d78754c5"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "large",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          4096
+        ],
+        "peak_extra_bytes": 766231429,
+        "baseline_live_bytes": 11251224,
+        "peak_total_live_bytes": 777482653,
+        "self_vmhwm_kib": 765300,
+        "operation_us": 11940075,
+        "output_sha256": "f934773c9c055fa7252f2ab2f2ad1bf4fcfef774d23e5f09ebfd164aa4115434"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "large",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          4096
+        ],
+        "peak_extra_bytes": 766231429,
+        "baseline_live_bytes": 11251227,
+        "peak_total_live_bytes": 777482656,
+        "self_vmhwm_kib": 765240,
+        "operation_us": 12221877,
+        "output_sha256": "f934773c9c055fa7252f2ab2f2ad1bf4fcfef774d23e5f09ebfd164aa4115434"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "large",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          2048,
+          2048
+        ],
+        "peak_extra_bytes": 212583277,
+        "baseline_live_bytes": 11251227,
+        "peak_total_live_bytes": 223834504,
+        "self_vmhwm_kib": 224080,
+        "operation_us": 3903707,
+        "output_sha256": "3658d1d4dd3a5648680ea826edebdb313448a9154af7ba2d03b11fb9f2bebef7"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "large",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 74171125,
+        "baseline_live_bytes": 11251227,
+        "peak_total_live_bytes": 85422352,
+        "self_vmhwm_kib": 84256,
+        "operation_us": 1190752,
+        "output_sha256": "4b127d0c0f1c336f57130c6fe6d22a3f018e9bfa1a7ddf24e659b806169c9650"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t0-97",
+        "budget": "large",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 39567997,
+        "baseline_live_bytes": 11251227,
+        "peak_total_live_bytes": 50819224,
+        "self_vmhwm_kib": 48480,
+        "operation_us": 374584,
+        "output_sha256": "38b9532253700bc2c43ec83c9e4add9ebaec9cd88795bbb392ca7cb9d78754c5"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          4096
+        ],
+        "peak_extra_bytes": 151796189,
+        "baseline_live_bytes": 4723737,
+        "peak_total_live_bytes": 156519926,
+        "self_vmhwm_kib": 150872,
+        "operation_us": 9904066,
+        "output_sha256": "f569088bd3844ee2c5e7cb0ff6a4620381b64595c9e1b7e9eeda6afc122bc3a6"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          4096
+        ],
+        "peak_extra_bytes": 151796189,
+        "baseline_live_bytes": 4723740,
+        "peak_total_live_bytes": 156519929,
+        "self_vmhwm_kib": 150988,
+        "operation_us": 10022990,
+        "output_sha256": "f569088bd3844ee2c5e7cb0ff6a4620381b64595c9e1b7e9eeda6afc122bc3a6"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          2048,
+          2048
+        ],
+        "peak_extra_bytes": 47960887,
+        "baseline_live_bytes": 4723740,
+        "peak_total_live_bytes": 52684627,
+        "self_vmhwm_kib": 49508,
+        "operation_us": 3223390,
+        "output_sha256": "3a3423c96971eac543ed5327bf1191f20a84f0b180cadd67d87ee1ef0cac4791"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 21976762,
+        "baseline_live_bytes": 4723740,
+        "peak_total_live_bytes": 26700502,
+        "self_vmhwm_kib": 24120,
+        "operation_us": 1028536,
+        "output_sha256": "cd8db6e72ef247657714338052833d3d426cb95af1a52ee35a4b671e1ebad996"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 15441461,
+        "baseline_live_bytes": 4723740,
+        "peak_total_live_bytes": 20165201,
+        "self_vmhwm_kib": 17692,
+        "operation_us": 294149,
+        "output_sha256": "80a648f35ba4f154fef199a68755b06961048a962bce1e9003f268369172e48b"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          4096
+        ],
+        "peak_extra_bytes": 171759648,
+        "baseline_live_bytes": 11247558,
+        "peak_total_live_bytes": 183007206,
+        "self_vmhwm_kib": 176280,
+        "operation_us": 11230036,
+        "output_sha256": "448a60d5752d9be30c8f6b96f18452f0cac1b946a2487fef75019dd3904d04db"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          4096
+        ],
+        "peak_extra_bytes": 171759648,
+        "baseline_live_bytes": 11247561,
+        "peak_total_live_bytes": 183007209,
+        "self_vmhwm_kib": 176292,
+        "operation_us": 11086562,
+        "output_sha256": "448a60d5752d9be30c8f6b96f18452f0cac1b946a2487fef75019dd3904d04db"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          2048,
+          2048
+        ],
+        "peak_extra_bytes": 64018440,
+        "baseline_live_bytes": 11247561,
+        "peak_total_live_bytes": 75266001,
+        "self_vmhwm_kib": 70292,
+        "operation_us": 3885822,
+        "output_sha256": "1087fbf459a23fdb6e23135370d4ff494275baa550a5de955e681fff79105984"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 37083024,
+        "baseline_live_bytes": 11247561,
+        "peak_total_live_bytes": 48330585,
+        "self_vmhwm_kib": 43772,
+        "operation_us": 1232554,
+        "output_sha256": "2c43eb2b53ca1e541bdd750d3fb18718f7a3f8a0059e63a8dbf1a91b20cc3f98"
+      },
+      {
+        "case": "4096x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 30367764,
+        "baseline_live_bytes": 11247561,
+        "peak_total_live_bytes": 41615325,
+        "self_vmhwm_kib": 36904,
+        "operation_us": 437246,
+        "output_sha256": "f7b013963a3d4af66795d43a70f6db085bf1e5fee45b31072f2ddc680ec50bed"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          8192,
+          4096
+        ],
+        "peak_extra_bytes": 299278614,
+        "baseline_live_bytes": 9524746,
+        "peak_total_live_bytes": 308803360,
+        "self_vmhwm_kib": 296040,
+        "operation_us": 20250360,
+        "output_sha256": "fcbe01094e89a6d3382d83bd29ce0bce01268c10ffea0a68fde7b8c38ab3e586"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          8192,
+          4096
+        ],
+        "peak_extra_bytes": 299278614,
+        "baseline_live_bytes": 9524749,
+        "peak_total_live_bytes": 308803363,
+        "self_vmhwm_kib": 296076,
+        "operation_us": 20448334,
+        "output_sha256": "fcbe01094e89a6d3382d83bd29ce0bce01268c10ffea0a68fde7b8c38ab3e586"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          2048
+        ],
+        "peak_extra_bytes": 94780016,
+        "baseline_live_bytes": 9524749,
+        "peak_total_live_bytes": 104304765,
+        "self_vmhwm_kib": 96448,
+        "operation_us": 6605174,
+        "output_sha256": "0ac3b7dfeb63196b28eb975c9ff2bd22be35d1bca545bd4a4174278d92637a98"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          2048,
+          1024
+        ],
+        "peak_extra_bytes": 43630067,
+        "baseline_live_bytes": 9524749,
+        "peak_total_live_bytes": 53154816,
+        "self_vmhwm_kib": 46496,
+        "operation_us": 2053892,
+        "output_sha256": "6db7f65a7fba4ce4396e96cfc73c4c60f36aef062aed06f7c9ce4432e2b09e73"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          1024,
+          512
+        ],
+        "peak_extra_bytes": 30803310,
+        "baseline_live_bytes": 9524749,
+        "peak_total_live_bytes": 40328059,
+        "self_vmhwm_kib": 34084,
+        "operation_us": 605785,
+        "output_sha256": "18feb6174cc5b220afc0d4fa3bc84797b42a323c90706a21158944c45a44f83e"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          8192,
+          4096
+        ],
+        "peak_extra_bytes": 334308630,
+        "baseline_live_bytes": 22721396,
+        "peak_total_live_bytes": 357030026,
+        "self_vmhwm_kib": 341048,
+        "operation_us": 22447440,
+        "output_sha256": "e2c0e3c50b026bbe434f1f2dd044fd1ee69d7782cb0df3da16d5c10c18b30753"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          8192,
+          4096
+        ],
+        "peak_extra_bytes": 334308630,
+        "baseline_live_bytes": 22721399,
+        "peak_total_live_bytes": 357030029,
+        "self_vmhwm_kib": 341144,
+        "operation_us": 22533667,
+        "output_sha256": "e2c0e3c50b026bbe434f1f2dd044fd1ee69d7782cb0df3da16d5c10c18b30753"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          4096,
+          2048
+        ],
+        "peak_extra_bytes": 125904126,
+        "baseline_live_bytes": 22721399,
+        "peak_total_live_bytes": 148625525,
+        "self_vmhwm_kib": 136764,
+        "operation_us": 7686487,
+        "output_sha256": "d653e1a894fe47808a0aace9080249b4e213f27dfc752e89ec3794b0c06c2a77"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          2048,
+          1024
+        ],
+        "peak_extra_bytes": 73802886,
+        "baseline_live_bytes": 22721399,
+        "peak_total_live_bytes": 96524285,
+        "self_vmhwm_kib": 85680,
+        "operation_us": 2397135,
+        "output_sha256": "5bfef1759ada39782850fba57abadd8b199cc9638fe12edd2ac5b8153732e9aa"
+      },
+      {
+        "case": "8192x4096-4c-16b-ramp-t512-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 1,
+        "shape": [
+          1024,
+          512
+        ],
+        "peak_extra_bytes": 60796170,
+        "baseline_live_bytes": 22721399,
+        "peak_total_live_bytes": 83517569,
+        "self_vmhwm_kib": 72760,
+        "operation_us": 757771,
+        "output_sha256": "4418576755ee2369a438073c8b94bd5602f87321753c508288a5faad11b70bac"
+      },
+      {
+        "case": "cross1024-12b-1c-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 2632325.0,
+        "baseline_live_bytes": 81433.0,
+        "peak_total_live_bytes": 2713758.0,
+        "self_vmhwm_kib": 4162.0,
+        "operation_us": 216150.0,
+        "output_sha256": "a61a4bb2a9f495068d372267fdd0d56e7d39ef5fd451c2557d6d75de1b811622"
+      },
+      {
+        "case": "cross1024-12b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 2632325.0,
+        "baseline_live_bytes": 81436.0,
+        "peak_total_live_bytes": 2713761.0,
+        "self_vmhwm_kib": 4208.0,
+        "operation_us": 212313.5,
+        "output_sha256": "a61a4bb2a9f495068d372267fdd0d56e7d39ef5fd451c2557d6d75de1b811622"
+      },
+      {
+        "case": "cross1024-12b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 861576.0,
+        "baseline_live_bytes": 81436.0,
+        "peak_total_live_bytes": 943012.0,
+        "self_vmhwm_kib": 2494.0,
+        "operation_us": 63839.5,
+        "output_sha256": "d1497f16af835d73112d00c779e9ef131d0ca3447ddbdf3559ed5a7005dadca1"
+      },
+      {
+        "case": "cross1024-12b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 392822.0,
+        "baseline_live_bytes": 81436.0,
+        "peak_total_live_bytes": 474258.0,
+        "self_vmhwm_kib": 1982.0,
+        "operation_us": 22202.5,
+        "output_sha256": "891adb6bfdcab5b2e2153deb44c56d73ff3f87269ba8204571c56ed51d27b4a1"
+      },
+      {
+        "case": "cross1024-12b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 277681.0,
+        "baseline_live_bytes": 81436.0,
+        "peak_total_live_bytes": 359117.0,
+        "self_vmhwm_kib": 1976.0,
+        "operation_us": 7060.5,
+        "output_sha256": "aa2e049a40f19f03069d2a7dffe3c7d7550063b6b7b5fbf65251e50269a67edf"
+      },
+      {
+        "case": "cross1024-12b-1c-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 3349025.0,
+        "baseline_live_bytes": 187279.0,
+        "peak_total_live_bytes": 3536304.0,
+        "self_vmhwm_kib": 4978.0,
+        "operation_us": 234325.5,
+        "output_sha256": "cdb52522852e06aed76aa4ce2a072196f99f8bddc810086acd795413b9506775"
+      },
+      {
+        "case": "cross1024-12b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 3349025.0,
+        "baseline_live_bytes": 187282.0,
+        "peak_total_live_bytes": 3536307.0,
+        "self_vmhwm_kib": 4984.0,
+        "operation_us": 232411.5,
+        "output_sha256": "cdb52522852e06aed76aa4ce2a072196f99f8bddc810086acd795413b9506775"
+      },
+      {
+        "case": "cross1024-12b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 1186241.0,
+        "baseline_live_bytes": 187282.0,
+        "peak_total_live_bytes": 1373523.0,
+        "self_vmhwm_kib": 2994.0,
+        "operation_us": 71179.0,
+        "output_sha256": "f1e5f3f9d5fb7a474c059ada377265c42fe11e1d2fd3ff8d6ba3e72fc17e95cf"
+      },
+      {
+        "case": "cross1024-12b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 645449.0,
+        "baseline_live_bytes": 187282.0,
+        "peak_total_live_bytes": 832731.0,
+        "self_vmhwm_kib": 2368.0,
+        "operation_us": 25052.0,
+        "output_sha256": "8e8376ebfc77e3d20314875b02938ecd5f557183eb3da80775c30a19adb65580"
+      },
+      {
+        "case": "cross1024-12b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 515666.0,
+        "baseline_live_bytes": 187282.0,
+        "peak_total_live_bytes": 702948.0,
+        "self_vmhwm_kib": 2212.0,
+        "operation_us": 8601.5,
+        "output_sha256": "5945bf8064b5061755e12c810bfaa44fb00307b4b4831efdd37b3957d34a0f65"
+      },
+      {
+        "case": "cross1024-12b-3c-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 10322184.0,
+        "baseline_live_bytes": 508739.0,
+        "peak_total_live_bytes": 10830923.0,
+        "self_vmhwm_kib": 12122.0,
+        "operation_us": 750833.0,
+        "output_sha256": "65e8f89b4b5035a1e3229be8361f81daaffb8cbdbdf21048fb38f30f5863dda7"
+      },
+      {
+        "case": "cross1024-12b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 10322184.0,
+        "baseline_live_bytes": 508742.0,
+        "peak_total_live_bytes": 10830926.0,
+        "self_vmhwm_kib": 12220.0,
+        "operation_us": 733817.5,
+        "output_sha256": "65e8f89b4b5035a1e3229be8361f81daaffb8cbdbdf21048fb38f30f5863dda7"
+      },
+      {
+        "case": "cross1024-12b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 3432183.0,
+        "baseline_live_bytes": 508742.0,
+        "peak_total_live_bytes": 3940925.0,
+        "self_vmhwm_kib": 5474.0,
+        "operation_us": 239207.5,
+        "output_sha256": "2278d60e25446853fa8f7f4b98a7e5e4431efdfe8362ccf44f7c09f0ab368311"
+      },
+      {
+        "case": "cross1024-12b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 1675992.0,
+        "baseline_live_bytes": 508742.0,
+        "peak_total_live_bytes": 2184734.0,
+        "self_vmhwm_kib": 3760.0,
+        "operation_us": 77559.5,
+        "output_sha256": "f5313ed8c5c42f67d946cdb1d3e92ab314df574b8a8b2898cc3ce0a6b5bc4124"
+      },
+      {
+        "case": "cross1024-12b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 1236264.0,
+        "baseline_live_bytes": 508742.0,
+        "peak_total_live_bytes": 1745006.0,
+        "self_vmhwm_kib": 3290.0,
+        "operation_us": 23592.0,
+        "output_sha256": "e4af43d16291042b9db1da60497a56e05cb42890764075be85ac518cd7d875e8"
+      },
+      {
+        "case": "cross1024-12b-3c-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 13587691.0,
+        "baseline_live_bytes": 1246193.0,
+        "peak_total_live_bytes": 14833884.0,
+        "self_vmhwm_kib": 15410.0,
+        "operation_us": 853339.5,
+        "output_sha256": "f2df509345b327b3e2b5fbd9ca760eac1517d81a9f7dac5b127ceacc27ccf1ef"
+      },
+      {
+        "case": "cross1024-12b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 13587691.0,
+        "baseline_live_bytes": 1246196.0,
+        "peak_total_live_bytes": 14833887.0,
+        "self_vmhwm_kib": 15466.0,
+        "operation_us": 831233.5,
+        "output_sha256": "f2df509345b327b3e2b5fbd9ca760eac1517d81a9f7dac5b127ceacc27ccf1ef"
+      },
+      {
+        "case": "cross1024-12b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 5919931.0,
+        "baseline_live_bytes": 1246196.0,
+        "peak_total_live_bytes": 7166127.0,
+        "self_vmhwm_kib": 8020.0,
+        "operation_us": 270366.0,
+        "output_sha256": "e6ec9167aa421e6ecffbfc4890d6f350af823e5f16a6a46f5f7dd848f59560d1"
+      },
+      {
+        "case": "cross1024-12b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 4002883.0,
+        "baseline_live_bytes": 1246196.0,
+        "peak_total_live_bytes": 5249079.0,
+        "self_vmhwm_kib": 5900.0,
+        "operation_us": 85630.5,
+        "output_sha256": "01903934aec719a8127d1a3487e2ad4de4b8c349eec8ed25a05ca24b27a54b45"
+      },
+      {
+        "case": "cross1024-12b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 3548721.0,
+        "baseline_live_bytes": 1246196.0,
+        "peak_total_live_bytes": 4794917.0,
+        "self_vmhwm_kib": 5426.0,
+        "operation_us": 26982.5,
+        "output_sha256": "2de9a15c7b62b7d52ddc9cabd866383088cc92240c502feeac340a88c8c91f71"
+      },
+      {
+        "case": "cross1024-12b-4c-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 11359763.0,
+        "baseline_live_bytes": 732689.0,
+        "peak_total_live_bytes": 12092452.0,
+        "self_vmhwm_kib": 13090.0,
+        "operation_us": 944527.5,
+        "output_sha256": "12d8f886e4db201084e07bc0e9eb8cd93a226549746dd54a88b1fef52f1eec9d"
+      },
+      {
+        "case": "cross1024-12b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 11359763.0,
+        "baseline_live_bytes": 732692.0,
+        "peak_total_live_bytes": 12092455.0,
+        "self_vmhwm_kib": 13124.0,
+        "operation_us": 958503.0,
+        "output_sha256": "12d8f886e4db201084e07bc0e9eb8cd93a226549746dd54a88b1fef52f1eec9d"
+      },
+      {
+        "case": "cross1024-12b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 4268438.0,
+        "baseline_live_bytes": 732692.0,
+        "peak_total_live_bytes": 5001130.0,
+        "self_vmhwm_kib": 6222.0,
+        "operation_us": 300502.0,
+        "output_sha256": "e22bb6acca5a7259466eeb5bc045378256a4166c1ab9b91b21c2f4ab4ad0f798"
+      },
+      {
+        "case": "cross1024-12b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 2458614.0,
+        "baseline_live_bytes": 732692.0,
+        "peak_total_live_bytes": 3191306.0,
+        "self_vmhwm_kib": 4426.0,
+        "operation_us": 99398.0,
+        "output_sha256": "64031f64a36a8ce6656898eb754d25617558d27ad24e96ada6f7b4690b63719f"
+      },
+      {
+        "case": "cross1024-12b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 2003408.0,
+        "baseline_live_bytes": 732692.0,
+        "peak_total_live_bytes": 2736100.0,
+        "self_vmhwm_kib": 4000.0,
+        "operation_us": 30495.0,
+        "output_sha256": "ab7d971f934e1ae881348cd08e4d0141ab31731edae24ede1957526b6e890ad5"
+      },
+      {
+        "case": "cross1024-12b-4c-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 14568581.0,
+        "baseline_live_bytes": 1700579.0,
+        "peak_total_live_bytes": 16269160.0,
+        "self_vmhwm_kib": 17440.0,
+        "operation_us": 1114214.0,
+        "output_sha256": "9480344da06fe99952d12810b16b77527bd5af0d9923d4ab1969db32abede21b"
+      },
+      {
+        "case": "cross1024-12b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 14568581.0,
+        "baseline_live_bytes": 1700582.0,
+        "peak_total_live_bytes": 16269163.0,
+        "self_vmhwm_kib": 17552.0,
+        "operation_us": 1021241.5,
+        "output_sha256": "9480344da06fe99952d12810b16b77527bd5af0d9923d4ab1969db32abede21b"
+      },
+      {
+        "case": "cross1024-12b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 6507629.0,
+        "baseline_live_bytes": 1700582.0,
+        "peak_total_live_bytes": 8208211.0,
+        "self_vmhwm_kib": 9582.0,
+        "operation_us": 334116.5,
+        "output_sha256": "8ee6f5db30b5e85709151deb21b9e1a0a9ce64e46911b17559584d097419cb6f"
+      },
+      {
+        "case": "cross1024-12b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 4492277.0,
+        "baseline_live_bytes": 1700582.0,
+        "peak_total_live_bytes": 6192859.0,
+        "self_vmhwm_kib": 7408.0,
+        "operation_us": 103959.5,
+        "output_sha256": "8841b6b7a0ef6fd36b71b012c783a8b4595e866c774aa1ab693d5a3040950d8d"
+      },
+      {
+        "case": "cross1024-12b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 4022700.0,
+        "baseline_live_bytes": 1700582.0,
+        "peak_total_live_bytes": 5723282.0,
+        "self_vmhwm_kib": 6842.0,
+        "operation_us": 32613.5,
+        "output_sha256": "59e3cd6d8def7e48db975b642ebd3242653dcd2001b5898c76424208f2cd666a"
+      },
+      {
+        "case": "cross1024-16b-1c-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 2430420.0,
+        "baseline_live_bytes": 6322.0,
+        "peak_total_live_bytes": 2436742.0,
+        "self_vmhwm_kib": 3916.0,
+        "operation_us": 61276.5,
+        "output_sha256": "78fd9169236126599af0919534d97338578b3ba93ddf71e14dffeffc295bb116"
+      },
+      {
+        "case": "cross1024-16b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 2430420.0,
+        "baseline_live_bytes": 6325.0,
+        "peak_total_live_bytes": 2436745.0,
+        "self_vmhwm_kib": 3952.0,
+        "operation_us": 60931.0,
+        "output_sha256": "78fd9169236126599af0919534d97338578b3ba93ddf71e14dffeffc295bb116"
+      },
+      {
+        "case": "cross1024-16b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 660926.0,
+        "baseline_live_bytes": 6325.0,
+        "peak_total_live_bytes": 667251.0,
+        "self_vmhwm_kib": 2304.0,
+        "operation_us": 23841.0,
+        "output_sha256": "877c2c96102e9e0c9c1317f5cd62d4ed99ad8fbc86e73f5976e6314608bd4c57"
+      },
+      {
+        "case": "cross1024-16b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 192510.0,
+        "baseline_live_bytes": 6325.0,
+        "peak_total_live_bytes": 198835.0,
+        "self_vmhwm_kib": 1746.0,
+        "operation_us": 7363.5,
+        "output_sha256": "cc9eb5991ef72b7366c027e62cfaf7ef4e1d1a28f48dc2cd7f1e385a17195e28"
+      },
+      {
+        "case": "cross1024-16b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 77394.0,
+        "baseline_live_bytes": 6325.0,
+        "peak_total_live_bytes": 83719.0,
+        "self_vmhwm_kib": 1730.0,
+        "operation_us": 2416.5,
+        "output_sha256": "f9ff07510bb9e201f86a1f7ad1878de01325246cad32edae37ada43d7f45c6f7"
+      },
+      {
+        "case": "cross1024-16b-1c-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 2930927.0,
+        "baseline_live_bytes": 14941.0,
+        "peak_total_live_bytes": 2945868.0,
+        "self_vmhwm_kib": 4484.0,
+        "operation_us": 67188.5,
+        "output_sha256": "99549386bbfd6c262e0d14829ab1706fce01f86346c47c2c425fa58e472c3a96"
+      },
+      {
+        "case": "cross1024-16b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 2930927.0,
+        "baseline_live_bytes": 14944.0,
+        "peak_total_live_bytes": 2945871.0,
+        "self_vmhwm_kib": 4532.0,
+        "operation_us": 69072.5,
+        "output_sha256": "99549386bbfd6c262e0d14829ab1706fce01f86346c47c2c425fa58e472c3a96"
+      },
+      {
+        "case": "cross1024-16b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 768143.0,
+        "baseline_live_bytes": 14944.0,
+        "peak_total_live_bytes": 783087.0,
+        "self_vmhwm_kib": 2346.0,
+        "operation_us": 36837.0,
+        "output_sha256": "dedffe2a917697e9adc6c086790b996823d69949815dc3feb62b9edbec2b2b16"
+      },
+      {
+        "case": "cross1024-16b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 227351.0,
+        "baseline_live_bytes": 14944.0,
+        "peak_total_live_bytes": 242295.0,
+        "self_vmhwm_kib": 1828.0,
+        "operation_us": 13532.5,
+        "output_sha256": "356870c085a317d0a672b3b90c5370aab3b7c6d2b3fe54b724fdb0fb8c81fc3e"
+      },
+      {
+        "case": "cross1024-16b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 95496.0,
+        "baseline_live_bytes": 14944.0,
+        "peak_total_live_bytes": 110440.0,
+        "self_vmhwm_kib": 1794.0,
+        "operation_us": 7985.5,
+        "output_sha256": "4a7787c2503b1ef32880a119db00a8708a062c4319c7839e00e527a8b44b5bfa"
+      },
+      {
+        "case": "cross1024-16b-3c-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 9356986.0,
+        "baseline_live_bytes": 33746.0,
+        "peak_total_live_bytes": 9390732.0,
+        "self_vmhwm_kib": 10706.0,
+        "operation_us": 257777.5,
+        "output_sha256": "4b7a140be5b1f8222beb76ecde2a505a2c9ff0460e26a178e5c243d4691c04a2"
+      },
+      {
+        "case": "cross1024-16b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 9356986.0,
+        "baseline_live_bytes": 33749.0,
+        "peak_total_live_bytes": 9390735.0,
+        "self_vmhwm_kib": 10748.0,
+        "operation_us": 252583.5,
+        "output_sha256": "4b7a140be5b1f8222beb76ecde2a505a2c9ff0460e26a178e5c243d4691c04a2"
+      },
+      {
+        "case": "cross1024-16b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 2475600.0,
+        "baseline_live_bytes": 33749.0,
+        "peak_total_live_bytes": 2509349.0,
+        "self_vmhwm_kib": 4028.0,
+        "operation_us": 93728.5,
+        "output_sha256": "4998901eb002732f4057222c7cc28e2015d6629ccba98ad8476020e060caa695"
+      },
+      {
+        "case": "cross1024-16b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 729160.0,
+        "baseline_live_bytes": 33749.0,
+        "peak_total_live_bytes": 762909.0,
+        "self_vmhwm_kib": 2340.0,
+        "operation_us": 28271.5,
+        "output_sha256": "69a9ddb1ee7db34c17cabbefe2513110e7a87cdcb0bb90e319b87b2974cd325f"
+      },
+      {
+        "case": "cross1024-16b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 294504.0,
+        "baseline_live_bytes": 33749.0,
+        "peak_total_live_bytes": 328253.0,
+        "self_vmhwm_kib": 1904.0,
+        "operation_us": 9170.5,
+        "output_sha256": "a6f71d02c0a56c2e3c4ba607a33d56f763de27513eaf7bd10b2607d695db93b6"
+      },
+      {
+        "case": "cross1024-16b-3c-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 10476070.0,
+        "baseline_live_bytes": 100652.0,
+        "peak_total_live_bytes": 10576722.0,
+        "self_vmhwm_kib": 11936.0,
+        "operation_us": 270946.0,
+        "output_sha256": "a0127a7b948d0172766f954fcd1c1e2167c686a30547d9a6275e8dcb12999eb4"
+      },
+      {
+        "case": "cross1024-16b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 10476070.0,
+        "baseline_live_bytes": 100655.0,
+        "peak_total_live_bytes": 10576725.0,
+        "self_vmhwm_kib": 12028.0,
+        "operation_us": 283726.5,
+        "output_sha256": "a0127a7b948d0172766f954fcd1c1e2167c686a30547d9a6275e8dcb12999eb4"
+      },
+      {
+        "case": "cross1024-16b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 2808310.0,
+        "baseline_live_bytes": 100655.0,
+        "peak_total_live_bytes": 2908965.0,
+        "self_vmhwm_kib": 4610.0,
+        "operation_us": 125608.5,
+        "output_sha256": "143d3b891f491753416189206c3257426ded9b818a5678b462ec4b2c49e1b29d"
+      },
+      {
+        "case": "cross1024-16b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 891262.0,
+        "baseline_live_bytes": 100655.0,
+        "peak_total_live_bytes": 991917.0,
+        "self_vmhwm_kib": 2600.0,
+        "operation_us": 39626.5,
+        "output_sha256": "cc8f71f3dfe91f37c480acb354afb3db36b3af89bf47d1ebaab4c0978d4d4ade"
+      },
+      {
+        "case": "cross1024-16b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 430190.0,
+        "baseline_live_bytes": 100655.0,
+        "peak_total_live_bytes": 530845.0,
+        "self_vmhwm_kib": 2112.0,
+        "operation_us": 18314.5,
+        "output_sha256": "378a573ad8398a7f56d92fd2de484706c7c114981910a70ec974bc434bc5fc14"
+      },
+      {
+        "case": "cross1024-16b-4c-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 10405355.0,
+        "baseline_live_bytes": 329384.0,
+        "peak_total_live_bytes": 10734739.0,
+        "self_vmhwm_kib": 11896.0,
+        "operation_us": 546757.5,
+        "output_sha256": "414ae0c05bdd96bc30dd28a2148b3d83ba53a6312e82987b32223b1443443719"
+      },
+      {
+        "case": "cross1024-16b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 10405355.0,
+        "baseline_live_bytes": 329387.0,
+        "peak_total_live_bytes": 10734742.0,
+        "self_vmhwm_kib": 11960.0,
+        "operation_us": 553929.5,
+        "output_sha256": "414ae0c05bdd96bc30dd28a2148b3d83ba53a6312e82987b32223b1443443719"
+      },
+      {
+        "case": "cross1024-16b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 3320978.0,
+        "baseline_live_bytes": 329387.0,
+        "peak_total_live_bytes": 3650365.0,
+        "self_vmhwm_kib": 5044.0,
+        "operation_us": 170393.0,
+        "output_sha256": "bd332343c556f74ad27908e3632b9db3611035388c0776f53c953e4388f4cf63"
+      },
+      {
+        "case": "cross1024-16b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 1519522.0,
+        "baseline_live_bytes": 329387.0,
+        "peak_total_live_bytes": 1848909.0,
+        "self_vmhwm_kib": 3298.0,
+        "operation_us": 54217.5,
+        "output_sha256": "ea14fbe99339bf710c2869c2f2cc60e548d728f47aec4d0709c7188d364c71c6"
+      },
+      {
+        "case": "cross1024-16b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 1068320.0,
+        "baseline_live_bytes": 329387.0,
+        "peak_total_live_bytes": 1397707.0,
+        "self_vmhwm_kib": 2720.0,
+        "operation_us": 16110.5,
+        "output_sha256": "0c4533968d5ebf650eb47784e287f82889b60a372d761f1ae84eb22ea65c8f6e"
+      },
+      {
+        "case": "cross1024-16b-4c-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 12590078.0,
+        "baseline_live_bytes": 770652.0,
+        "peak_total_live_bytes": 13360730.0,
+        "self_vmhwm_kib": 14704.0,
+        "operation_us": 586736.0,
+        "output_sha256": "70e1b7280663cfa1010501b133366c3f23c11f3eb15aa38b80d1390e8d7ef898"
+      },
+      {
+        "case": "cross1024-16b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 12590078.0,
+        "baseline_live_bytes": 770655.0,
+        "peak_total_live_bytes": 13360733.0,
+        "self_vmhwm_kib": 14784.0,
+        "operation_us": 577054.5,
+        "output_sha256": "70e1b7280663cfa1010501b133366c3f23c11f3eb15aa38b80d1390e8d7ef898"
+      },
+      {
+        "case": "cross1024-16b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 4529126.0,
+        "baseline_live_bytes": 770655.0,
+        "peak_total_live_bytes": 5299781.0,
+        "self_vmhwm_kib": 6810.0,
+        "operation_us": 192871.0,
+        "output_sha256": "65c3577349214f19d79d1f1bd45c8ad20a7af75ed2be2631abdef0917e8eb785"
+      },
+      {
+        "case": "cross1024-16b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 2513774.0,
+        "baseline_live_bytes": 770655.0,
+        "peak_total_live_bytes": 3284429.0,
+        "self_vmhwm_kib": 4626.0,
+        "operation_us": 60712.5,
+        "output_sha256": "c8cd818bc535039c709f6d4f32d7e0d3e00aeb0d2323b3975ad80d334b553e9d"
+      },
+      {
+        "case": "cross1024-16b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 2037810.0,
+        "baseline_live_bytes": 770655.0,
+        "peak_total_live_bytes": 2808465.0,
+        "self_vmhwm_kib": 4196.0,
+        "operation_us": 21613.0,
+        "output_sha256": "33836a25f8a0395b53ddb44449d67a72eed8b85fcd628e72d10f3ff16de95fd0"
+      },
+      {
+        "case": "cross1024-8b-1c-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 9300662.0,
+        "baseline_live_bytes": 388423.0,
+        "peak_total_live_bytes": 9689085.0,
+        "self_vmhwm_kib": 11464.0,
+        "operation_us": 177582.5,
+        "output_sha256": "3541b517fe75e2fc108d903fa2cb5686f52eecd16ccaa73598c72f8b82545aab"
+      },
+      {
+        "case": "cross1024-8b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 9300662.0,
+        "baseline_live_bytes": 388426.0,
+        "peak_total_live_bytes": 9689088.0,
+        "self_vmhwm_kib": 11422.0,
+        "operation_us": 174736.5,
+        "output_sha256": "3541b517fe75e2fc108d903fa2cb5686f52eecd16ccaa73598c72f8b82545aab"
+      },
+      {
+        "case": "cross1024-8b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 2484662.0,
+        "baseline_live_bytes": 388426.0,
+        "peak_total_live_bytes": 2873088.0,
+        "self_vmhwm_kib": 4760.0,
+        "operation_us": 60500.5,
+        "output_sha256": "2728a893cffacbca52b63e55dfd4e36bebdd20092d13dcb6500afa64c70ea2b2"
+      },
+      {
+        "case": "cross1024-8b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 1304499.0,
+        "baseline_live_bytes": 388426.0,
+        "peak_total_live_bytes": 1692925.0,
+        "self_vmhwm_kib": 3096.0,
+        "operation_us": 16879.5,
+        "output_sha256": "dc355443ff64891f2a635f06e2a162abae99362429664183698c391ec94abdb2"
+      },
+      {
+        "case": "cross1024-8b-1c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 1026729.0,
+        "baseline_live_bytes": 388426.0,
+        "peak_total_live_bytes": 1415155.0,
+        "self_vmhwm_kib": 2920.0,
+        "operation_us": 3554.5,
+        "output_sha256": "85b4f056bb717b05081f9fcbc73e6b99dac1b859d5a6371602a15098db5ec807"
+      },
+      {
+        "case": "cross1024-8b-1c-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 10218390.0,
+        "baseline_live_bytes": 781863.0,
+        "peak_total_live_bytes": 11000253.0,
+        "self_vmhwm_kib": 12792.0,
+        "operation_us": 231533.5,
+        "output_sha256": "440767f968efc13946f0480d492244e3e14a4195c2f5837f792485e5b452e09f"
+      },
+      {
+        "case": "cross1024-8b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 10218390.0,
+        "baseline_live_bytes": 781866.0,
+        "peak_total_live_bytes": 11000256.0,
+        "self_vmhwm_kib": 12778.0,
+        "operation_us": 229685.0,
+        "output_sha256": "440767f968efc13946f0480d492244e3e14a4195c2f5837f792485e5b452e09f"
+      },
+      {
+        "case": "cross1024-8b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 3353787.0,
+        "baseline_live_bytes": 781866.0,
+        "peak_total_live_bytes": 4135653.0,
+        "self_vmhwm_kib": 5438.0,
+        "operation_us": 79056.5,
+        "output_sha256": "e5b2a843079e4c1184b72ca87c5688a9f52126012e4889360698ead95817adb3"
+      },
+      {
+        "case": "cross1024-8b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 2223171.0,
+        "baseline_live_bytes": 781866.0,
+        "peak_total_live_bytes": 3005037.0,
+        "self_vmhwm_kib": 4308.0,
+        "operation_us": 21411.5,
+        "output_sha256": "8513042720389aa1087ef179765dd64ce4508f8e2203badf7297ed1579d2b0e2"
+      },
+      {
+        "case": "cross1024-8b-1c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 1945191.0,
+        "baseline_live_bytes": 781866.0,
+        "peak_total_live_bytes": 2727057.0,
+        "self_vmhwm_kib": 4092.0,
+        "operation_us": 7492.5,
+        "output_sha256": "3be37b3a2cdb09950db857fdf876d9d48cfc72fb5322fd9585ac9cde4dc071f4"
+      },
+      {
+        "case": "cross1024-8b-3c-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 12275548.0,
+        "baseline_live_bytes": 1790445.0,
+        "peak_total_live_bytes": 14065993.0,
+        "self_vmhwm_kib": 15986.0,
+        "operation_us": 609897.0,
+        "output_sha256": "e44a7b84b3fb309e1ffbc5b1cc071bdaea1555fc0d97d877ec9efb6a10db586e"
+      },
+      {
+        "case": "cross1024-8b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 12275548.0,
+        "baseline_live_bytes": 1790448.0,
+        "peak_total_live_bytes": 14065996.0,
+        "self_vmhwm_kib": 16038.0,
+        "operation_us": 606163.0,
+        "output_sha256": "e44a7b84b3fb309e1ffbc5b1cc071bdaea1555fc0d97d877ec9efb6a10db586e"
+      },
+      {
+        "case": "cross1024-8b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 6200529.0,
+        "baseline_live_bytes": 1790448.0,
+        "peak_total_live_bytes": 7990977.0,
+        "self_vmhwm_kib": 9384.0,
+        "operation_us": 193322.5,
+        "output_sha256": "06caa6d013d7c71e270bebffedd3c9d847306a2a00bc90761090a015791240e3"
+      },
+      {
+        "case": "cross1024-8b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 4480209.0,
+        "baseline_live_bytes": 1790448.0,
+        "peak_total_live_bytes": 6270657.0,
+        "self_vmhwm_kib": 7502.0,
+        "operation_us": 52814.5,
+        "output_sha256": "0f3e16dda09c27fcee144540c8b6564f29cc01d10eaed9bbbc3a017f0314abeb"
+      },
+      {
+        "case": "cross1024-8b-3c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 4072751.0,
+        "baseline_live_bytes": 1790448.0,
+        "peak_total_live_bytes": 5863199.0,
+        "self_vmhwm_kib": 6942.0,
+        "operation_us": 15429.5,
+        "output_sha256": "ce1a8f45e7071db8bdea86ec40f8e455e62e41974528fe271a168da93755dad4"
+      },
+      {
+        "case": "cross1024-8b-3c-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 15315388.0,
+        "baseline_live_bytes": 2733133.0,
+        "peak_total_live_bytes": 18048521.0,
+        "self_vmhwm_kib": 18576.0,
+        "operation_us": 723308.0,
+        "output_sha256": "46afe54219aa8471ff5b6386885dc4443479f4b42bcad3d2b3bab6612adab290"
+      },
+      {
+        "case": "cross1024-8b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 15315388.0,
+        "baseline_live_bytes": 2733136.0,
+        "peak_total_live_bytes": 18048524.0,
+        "self_vmhwm_kib": 18662.0,
+        "operation_us": 763561.5,
+        "output_sha256": "46afe54219aa8471ff5b6386885dc4443479f4b42bcad3d2b3bab6612adab290"
+      },
+      {
+        "case": "cross1024-8b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 9241977.0,
+        "baseline_live_bytes": 2733136.0,
+        "peak_total_live_bytes": 11975113.0,
+        "self_vmhwm_kib": 12150.0,
+        "operation_us": 201138.0,
+        "output_sha256": "5e6d4c384aa5d32cc402371b72d81403840c72bf59322df3621a75d6f6e564a2"
+      },
+      {
+        "case": "cross1024-8b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 7521537.0,
+        "baseline_live_bytes": 2733136.0,
+        "peak_total_live_bytes": 10254673.0,
+        "self_vmhwm_kib": 10300.0,
+        "operation_us": 56501.0,
+        "output_sha256": "29dd212eaa349d9d0ec42ab3453cbcc0b98dbef8891fa10c4d1854791725fa25"
+      },
+      {
+        "case": "cross1024-8b-3c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 7113608.0,
+        "baseline_live_bytes": 2733136.0,
+        "peak_total_live_bytes": 9846744.0,
+        "self_vmhwm_kib": 9838.0,
+        "operation_us": 16876.5,
+        "output_sha256": "98ae7806912817e0f62ceaf29c58b51f2dbc12a5f2729efe132fb65da6e925ed"
+      },
+      {
+        "case": "cross1024-8b-4c-53",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 15585786.0,
+        "baseline_live_bytes": 1932926.0,
+        "peak_total_live_bytes": 17518712.0,
+        "self_vmhwm_kib": 18680.0,
+        "operation_us": 926546.0,
+        "output_sha256": "292d6de67b450123ac3e476c8359dbe73878081b76001272622324a7d7fde712"
+      },
+      {
+        "case": "cross1024-8b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 15585786.0,
+        "baseline_live_bytes": 1932929.0,
+        "peak_total_live_bytes": 17518715.0,
+        "self_vmhwm_kib": 18820.0,
+        "operation_us": 977725.0,
+        "output_sha256": "292d6de67b450123ac3e476c8359dbe73878081b76001272622324a7d7fde712"
+      },
+      {
+        "case": "cross1024-8b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 6738194.0,
+        "baseline_live_bytes": 1932929.0,
+        "peak_total_live_bytes": 8671123.0,
+        "self_vmhwm_kib": 10304.0,
+        "operation_us": 262027.5,
+        "output_sha256": "4143e94afbd3359d5873622357ed7c95de41f7dea28a8a9902a9bd44f82e97df"
+      },
+      {
+        "case": "cross1024-8b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 4722962.0,
+        "baseline_live_bytes": 1932929.0,
+        "peak_total_live_bytes": 6655891.0,
+        "self_vmhwm_kib": 7998.0,
+        "operation_us": 76763.0,
+        "output_sha256": "4b823eaf8c092fb4cef7a80dfb31e00b69112d4cc01800113eab8884d45e37e3"
+      },
+      {
+        "case": "cross1024-8b-4c-53",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 4250034.0,
+        "baseline_live_bytes": 1932929.0,
+        "peak_total_live_bytes": 6182963.0,
+        "self_vmhwm_kib": 7482.0,
+        "operation_us": 21999.5,
+        "output_sha256": "2f8292bcab718b745958d46d422beb80d668de6004f31e06683e3117bbb32fc0"
+      },
+      {
+        "case": "cross1024-8b-4c-97",
+        "budget": "default",
+        "variant": "base",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 18724623.0,
+        "baseline_live_bytes": 2968515.0,
+        "peak_total_live_bytes": 21693138.0,
+        "self_vmhwm_kib": 21856.0,
+        "operation_us": 971224.5,
+        "output_sha256": "9cb12a7e6d7901f704c539d96caa50f48ec3bc616ac22820c45686c0032c2611"
+      },
+      {
+        "case": "cross1024-8b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 0,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          1024,
+          1024
+        ],
+        "peak_extra_bytes": 18724623.0,
+        "baseline_live_bytes": 2968518.0,
+        "peak_total_live_bytes": 21693141.0,
+        "self_vmhwm_kib": 21980.0,
+        "operation_us": 995777.0,
+        "output_sha256": "9cb12a7e6d7901f704c539d96caa50f48ec3bc616ac22820c45686c0032c2611"
+      },
+      {
+        "case": "cross1024-8b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 1,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          512,
+          512
+        ],
+        "peak_extra_bytes": 9872815.0,
+        "baseline_live_bytes": 2968518.0,
+        "peak_total_live_bytes": 12841333.0,
+        "self_vmhwm_kib": 13316.0,
+        "operation_us": 247426.5,
+        "output_sha256": "6f3cfe17bba3119d2286360f9e3df49f8d1579bec980124a770c72ac970fb61b"
+      },
+      {
+        "case": "cross1024-8b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 2,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          256,
+          256
+        ],
+        "peak_extra_bytes": 7857463.0,
+        "baseline_live_bytes": 2968518.0,
+        "peak_total_live_bytes": 10825981.0,
+        "self_vmhwm_kib": 11092.0,
+        "operation_us": 73740.5,
+        "output_sha256": "4517ddda63cf3e570ec3a89a23e0ac6aeaa2ceeb8edc835a8a70e02e8f672030"
+      },
+      {
+        "case": "cross1024-8b-4c-97",
+        "budget": "default",
+        "variant": "current",
+        "reduce": 3,
+        "accepted": true,
+        "samples": 2,
+        "shape": [
+          128,
+          128
+        ],
+        "peak_extra_bytes": 7384417.0,
+        "baseline_live_bytes": 2968518.0,
+        "peak_total_live_bytes": 10352935.0,
+        "self_vmhwm_kib": 10560.0,
+        "operation_us": 24558.5,
+        "output_sha256": "4e68c01663f03c3d0a1b25720a33add8fb9b4097176c8164ba3832f43b72e5cf"
+      }
+    ],
+    "method": "Requested live allocation bytes above already-loaded input baseline; separate self/sampled post-exec VmHWM and cgroup usage. Atomic allocator instrumentation included in operation_us. Fresh processes; alternating order; original APIs for both zero-mode builds. Generic/codestream dispatch may differ for nonzero API. No universal RSS/time guarantee."
+  },
+  "benchmarks": {
+    "method": "Eight alternating paired processes on one pinned worker CPU, supervisor on another; no concurrent codec build/measurement. Uninstrumented release examples report only timed public-API decode loops; raw output hashes retained. Existing API variants use identical example source/arguments; reduction variants use one example and same iteration counts within each case. Single-host observations.",
+    "existing_api": [
+      {
+        "case": "Gray32",
+        "base": {
+          "median_us": 333.57849999999996,
+          "min_us": 282.104,
+          "max_us": 354.562,
+          "hashes": [
+            "f4638321816aca3e640305770a61e4d372c8b18a8bf698319fa74da734d5beff"
+          ]
+        },
+        "new": {
+          "median_us": 345.1555,
+          "min_us": 325.473,
+          "max_us": 382.68,
+          "hashes": [
+            "f4638321816aca3e640305770a61e4d372c8b18a8bf698319fa74da734d5beff"
+          ]
+        },
+        "change_percent": 3.470547412378222
+      },
+      {
+        "case": "RGB32",
+        "base": {
+          "median_us": 245.562,
+          "min_us": 232.227,
+          "max_us": 286.605,
+          "hashes": [
+            "83b4248a76aaf4edf1e59ab7faeb1f5e3a009cd8fea60b497f16c1ca37cf44f4"
+          ]
+        },
+        "new": {
+          "median_us": 247.171,
+          "min_us": 233.943,
+          "max_us": 255.776,
+          "hashes": [
+            "83b4248a76aaf4edf1e59ab7faeb1f5e3a009cd8fea60b497f16c1ca37cf44f4"
+          ]
+        },
+        "change_percent": 0.6552316726529339
+      },
+      {
+        "case": "RGBA16",
+        "base": {
+          "median_us": 257.2595,
+          "min_us": 227.621,
+          "max_us": 369.711,
+          "hashes": [
+            "e20763576f47eeee911af025bd908f202dffa47ecba95765d17a7223f358220e"
+          ]
+        },
+        "new": {
+          "median_us": 258.374,
+          "min_us": 222.31,
+          "max_us": 303.826,
+          "hashes": [
+            "e20763576f47eeee911af025bd908f202dffa47ecba95765d17a7223f358220e"
+          ]
+        },
+        "change_percent": 0.4332201531916269
+      },
+      {
+        "case": "Gray53EX12",
+        "base": {
+          "median_us": 5169.530000000001,
+          "min_us": 5113.426,
+          "max_us": 5257.612,
+          "hashes": [
+            "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+          ]
+        },
+        "new": {
+          "median_us": 5249.4275,
+          "min_us": 5194.621,
+          "max_us": 5429.299,
+          "hashes": [
+            "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+          ]
+        },
+        "change_percent": 1.545546693800004
+      },
+      {
+        "case": "RGBA97EX12",
+        "base": {
+          "median_us": 16517.3165,
+          "min_us": 16212.274,
+          "max_us": 17569.701,
+          "hashes": [
+            "4d806c8d9e309edeb2219f5638d62a9eb02f92cdabd641fceb344715657dd183"
+          ]
+        },
+        "new": {
+          "median_us": 16688.917,
+          "min_us": 16243.579,
+          "max_us": 17822.445,
+          "hashes": [
+            "4d806c8d9e309edeb2219f5638d62a9eb02f92cdabd641fceb344715657dd183"
+          ]
+        },
+        "change_percent": 1.0389127071579685
+      },
+      {
+        "case": "Gray53EX16",
+        "base": {
+          "median_us": 6312.5395,
+          "min_us": 6186.091,
+          "max_us": 6687.326,
+          "hashes": [
+            "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+          ]
+        },
+        "new": {
+          "median_us": 6333.7384999999995,
+          "min_us": 6223.576,
+          "max_us": 6582.101,
+          "hashes": [
+            "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+          ]
+        },
+        "change_percent": 0.3358236411827642
+      },
+      {
+        "case": "RGBA97EX16",
+        "base": {
+          "median_us": 20369.583,
+          "min_us": 19389.905,
+          "max_us": 24725.66,
+          "hashes": [
+            "592cf19ff86490003189b14808feb3467f3bd54c123d2bbff546c96ec3a0ff42"
+          ]
+        },
+        "new": {
+          "median_us": 20227.6075,
+          "min_us": 19723.247,
+          "max_us": 21765.475,
+          "hashes": [
+            "592cf19ff86490003189b14808feb3467f3bd54c123d2bbff546c96ec3a0ff42"
+          ]
+        },
+        "change_percent": -0.6969975772209036
+      }
+    ],
+    "native_reduction": [
+      {
+        "case": "RGBA8-53",
+        "reductions": [
+          {
+            "reduce": 0,
+            "median_us": 1289.2895,
+            "min_us": 1218.552,
+            "max_us": 1657.391,
+            "output_sha256": "d950e19f65eadba2f99c6c39b24355be74d34ad950fea3cb48c3fbc7bec4febe",
+            "shape": [
+              33,
+              29
+            ],
+            "speedup_vs_zero": 1.0
+          },
+          {
+            "reduce": 1,
+            "median_us": 239.821,
+            "min_us": 194.023,
+            "max_us": 282.682,
+            "output_sha256": "dcb38e5604b226a79958bdfea14de15d537e2edbfbedd4b4e868992914443035",
+            "shape": [
+              16,
+              14
+            ],
+            "speedup_vs_zero": 5.376049220043282
+          },
+          {
+            "reduce": 2,
+            "median_us": 68.9995,
+            "min_us": 63.895,
+            "max_us": 79.453,
+            "output_sha256": "f4de0562807320a81cba80ec319c146ad06ef54c2a7d128779b197af558560a1",
+            "shape": [
+              8,
+              7
+            ],
+            "speedup_vs_zero": 18.68549047456866
+          },
+          {
+            "reduce": 3,
+            "median_us": 34.400999999999996,
+            "min_us": 32.14,
+            "max_us": 46.516,
+            "output_sha256": "db29d9637e27524af7d85244308de3bddef0c18a846b63ba52775bcb9c602457",
+            "shape": [
+              4,
+              4
+            ],
+            "speedup_vs_zero": 37.478256446033555
+          }
+        ]
+      },
+      {
+        "case": "RGBA8-97",
+        "reductions": [
+          {
+            "reduce": 0,
+            "median_us": 1347.8425000000002,
+            "min_us": 1260.149,
+            "max_us": 1444.522,
+            "output_sha256": "b42d068b8728f2eca994ba57fdf34c5d7e1442c35dfefc8eacadd3e6140982b3",
+            "shape": [
+              33,
+              29
+            ],
+            "speedup_vs_zero": 1.0
+          },
+          {
+            "reduce": 1,
+            "median_us": 224.5765,
+            "min_us": 178.92,
+            "max_us": 371.74,
+            "output_sha256": "30038f2becff9061662d9196dc38e83f31dc4e49ae0e47c16bfcaf48667150e3",
+            "shape": [
+              16,
+              14
+            ],
+            "speedup_vs_zero": 6.00170765863748
+          },
+          {
+            "reduce": 2,
+            "median_us": 68.18350000000001,
+            "min_us": 63.065,
+            "max_us": 80.088,
+            "output_sha256": "0f166d3f87fdc430846722dfc8e1acb53c96d85925b9db6babff0cd42e8b53c9",
+            "shape": [
+              8,
+              7
+            ],
+            "speedup_vs_zero": 19.767869059229874
+          },
+          {
+            "reduce": 3,
+            "median_us": 36.6205,
+            "min_us": 34.35,
+            "max_us": 64.228,
+            "output_sha256": "3923dba022f9f461f4b634393bb11703f52d4f7bbd5e86bbe4bb629c72832853",
+            "shape": [
+              4,
+              4
+            ],
+            "speedup_vs_zero": 36.80568260946738
+          }
+        ]
+      },
+      {
+        "case": "RGBA12-53",
+        "reductions": [
+          {
+            "reduce": 0,
+            "median_us": 938607.862,
+            "min_us": 913620.66,
+            "max_us": 1006000.989,
+            "output_sha256": "12d8f886e4db201084e07bc0e9eb8cd93a226549746dd54a88b1fef52f1eec9d",
+            "shape": [
+              1024,
+              1024
+            ],
+            "speedup_vs_zero": 1.0
+          },
+          {
+            "reduce": 1,
+            "median_us": 297584.2635,
+            "min_us": 285267.341,
+            "max_us": 314500.899,
+            "output_sha256": "e22bb6acca5a7259466eeb5bc045378256a4166c1ab9b91b21c2f4ab4ad0f798",
+            "shape": [
+              512,
+              512
+            ],
+            "speedup_vs_zero": 3.154091049575946
+          },
+          {
+            "reduce": 2,
+            "median_us": 97983.2235,
+            "min_us": 93948.626,
+            "max_us": 109293.65,
+            "output_sha256": "64031f64a36a8ce6656898eb754d25617558d27ad24e96ada6f7b4690b63719f",
+            "shape": [
+              256,
+              256
+            ],
+            "speedup_vs_zero": 9.57927110858932
+          },
+          {
+            "reduce": 3,
+            "median_us": 28863.343500000003,
+            "min_us": 28092.392,
+            "max_us": 31533.806,
+            "output_sha256": "ab7d971f934e1ae881348cd08e4d0141ab31731edae24ede1957526b6e890ad5",
+            "shape": [
+              128,
+              128
+            ],
+            "speedup_vs_zero": 32.51902753400693
+          }
+        ]
+      },
+      {
+        "case": "RGBA12-97",
+        "reductions": [
+          {
+            "reduce": 0,
+            "median_us": 16471.9775,
+            "min_us": 16065.564,
+            "max_us": 17239.715,
+            "output_sha256": "4d806c8d9e309edeb2219f5638d62a9eb02f92cdabd641fceb344715657dd183",
+            "shape": [
+              128,
+              96
+            ],
+            "speedup_vs_zero": 1.0
+          },
+          {
+            "reduce": 1,
+            "median_us": 4497.912,
+            "min_us": 4379.376,
+            "max_us": 5351.021,
+            "output_sha256": "e58718b92115324bf8f36f9c7aa1bf443c94db5b816eeb1a257ba1ebdd76e195",
+            "shape": [
+              64,
+              48
+            ],
+            "speedup_vs_zero": 3.6621386767904753
+          },
+          {
+            "reduce": 2,
+            "median_us": 1361.0705,
+            "min_us": 1306.704,
+            "max_us": 1604.376,
+            "output_sha256": "a706c969983141242b84b0675e6bc11378dff85563607ed8fa1e8b070e56d0f0",
+            "shape": [
+              32,
+              24
+            ],
+            "speedup_vs_zero": 12.102222111198502
+          },
+          {
+            "reduce": 3,
+            "median_us": 447.73400000000004,
+            "min_us": 425.989,
+            "max_us": 504.185,
+            "output_sha256": "d9b22cab0a856104e527c7233854e2a9e8a3fcebc28e323facd651496ae71f8b",
+            "shape": [
+              16,
+              12
+            ],
+            "speedup_vs_zero": 36.78965077479039
+          }
+        ]
+      },
+      {
+        "case": "RGBA16-53",
+        "reductions": [
+          {
+            "reduce": 0,
+            "median_us": 532167.057,
+            "min_us": 517501.356,
+            "max_us": 569701.882,
+            "output_sha256": "414ae0c05bdd96bc30dd28a2148b3d83ba53a6312e82987b32223b1443443719",
+            "shape": [
+              1024,
+              1024
+            ],
+            "speedup_vs_zero": 1.0
+          },
+          {
+            "reduce": 1,
+            "median_us": 172912.0685,
+            "min_us": 161691.887,
+            "max_us": 198409.457,
+            "output_sha256": "bd332343c556f74ad27908e3632b9db3611035388c0776f53c953e4388f4cf63",
+            "shape": [
+              512,
+              512
+            ],
+            "speedup_vs_zero": 3.0776744597211274
+          },
+          {
+            "reduce": 2,
+            "median_us": 51218.52250000001,
+            "min_us": 49874.263,
+            "max_us": 71497.426,
+            "output_sha256": "ea14fbe99339bf710c2869c2f2cc60e548d728f47aec4d0709c7188d364c71c6",
+            "shape": [
+              256,
+              256
+            ],
+            "speedup_vs_zero": 10.390129020219199
+          },
+          {
+            "reduce": 3,
+            "median_us": 16120.392,
+            "min_us": 15500.497,
+            "max_us": 23640.989,
+            "output_sha256": "0c4533968d5ebf650eb47784e287f82889b60a372d761f1ae84eb22ea65c8f6e",
+            "shape": [
+              128,
+              128
+            ],
+            "speedup_vs_zero": 33.01204195282596
+          }
+        ]
+      },
+      {
+        "case": "RGBA16-97",
+        "reductions": [
+          {
+            "reduce": 0,
+            "median_us": 20143.317000000003,
+            "min_us": 19428.529,
+            "max_us": 22641.14,
+            "output_sha256": "592cf19ff86490003189b14808feb3467f3bd54c123d2bbff546c96ec3a0ff42",
+            "shape": [
+              128,
+              96
+            ],
+            "speedup_vs_zero": 1.0
+          },
+          {
+            "reduce": 1,
+            "median_us": 5500.5045,
+            "min_us": 5169.277,
+            "max_us": 9110.476,
+            "output_sha256": "d3dfaa4257ab2ab9236bb7c7731b8b63f27ae141ac317ba3c8f21e45158012c6",
+            "shape": [
+              64,
+              48
+            ],
+            "speedup_vs_zero": 3.6620853596247405
+          },
+          {
+            "reduce": 2,
+            "median_us": 1587.15,
+            "min_us": 1558.35,
+            "max_us": 1855.069,
+            "output_sha256": "951a3d73dd0f71f8f5441de0e63a9383d70900183fdba432844f6a3041de2725",
+            "shape": [
+              32,
+              24
+            ],
+            "speedup_vs_zero": 12.691501748416975
+          },
+          {
+            "reduce": 3,
+            "median_us": 518.608,
+            "min_us": 504.089,
+            "max_us": 692.404,
+            "output_sha256": "ef14074aec65cf208f1b840617096dcfd761d5d495129cd0fbc36825c1874af1",
+            "shape": [
+              16,
+              12
+            ],
+            "speedup_vs_zero": 38.84112277481258
+          }
+        ]
+      }
+    ],
+    "gray_followup": {
+      "base": {
+        "median_us": 331.7545,
+        "min_us": 308.796,
+        "max_us": 374.597
+      },
+      "new": {
+        "median_us": 358.85699999999997,
+        "min_us": 343.355,
+        "max_us": 383.724
+      },
+      "change_percent": 8.169444574225814
+    }
+  },
+  "raw_artifact": {
+    "path": "jpeg2000-reduced-raw.json.gz",
+    "sha256": "1047ca5a75e09450eb430b8df671904c378e33f08fb58c9f44b79e805474afea",
+    "bytes": 194403
+  },
+  "images": {
+    "jpeg2000-reduced-memory.png": "ffdda103559d83ccaf3aa1133301dda47c2d4ba3b3fe7e900865c1f4200d48be",
+    "jpeg2000-reduced-display.png": "45d5b9275dce320aa995ffab2c3a1c01fa15fd494bf72fa51377e24587186639"
+  },
+  "implementation_ci": {
+    "head": "e4e7dbd52100b75b271fb143c99fe6a488091ff1",
+    "jobs": 49,
+    "conclusion": "success",
+    "url": "https://github.com/mith-mmk/wml2-on-rust/actions/runs/39027294066",
+    "windows_i686": {
+      "run_id": 39027294066,
+      "head": "e4e7dbd52100b75b271fb143c99fe6a488091ff1",
+      "job_id": 117380689515,
+      "tests": [
+        {
+          "name": "native_resolution_levels_match_independent_openjpeg_references",
+          "line": "2026-10-17T11:18:24.7380331Z test native_resolution_levels_match_independent_openjpeg_references ... ok\r"
+        },
+        {
+          "name": "explicit_zero_preserves_legacy_profile_and_pixels",
+          "line": "2026-10-17T11:18:14.8688053Z test explicit_zero_preserves_legacy_profile_and_pixels ... ok\r"
+        },
+        {
+          "name": "explicit_zero_preserves_all_400_ex_inputs",
+          "line": "2026-10-17T11:18:58.1503049Z test explicit_zero_preserves_all_400_ex_inputs ... ok\r"
+        },
+        {
+          "name": "callback_limits_strides_conversion_and_large_origins",
+          "line": "2026-10-17T11:18:16.7250348Z test callback_limits_strides_conversion_and_large_origins ... ok\r"
+        },
+        {
+          "name": "excessive_reduction_and_truncated_or_unsupported_inputs_are_atomic",
+          "line": "2026-10-17T11:18:14.2121276Z test excessive_reduction_and_truncated_or_unsupported_inputs_are_atomic ... ok\r"
+        },
+        {
+          "name": "discarded_packet_headers_lengths_and_deferred_profiles_stay_atomic",
+          "line": "2026-10-17T11:18:14.2407609Z test discarded_packet_headers_lengths_and_deferred_profiles_stay_atomic ... ok\r"
+        }
+      ],
+      "command": "2026-10-17T11:16:32.9632142Z ##[group]Run cargo test -p wml2 --locked --target i686-pc-windows-msvc --test jpeg2000_ex --test jpeg2000_ex_color --test jpeg2000_ex_97 --test jpeg2000_ex_memory --test jpeg2000_reduced --no-default-features --features jpeg2000,image-buffer-ex\r"
+    },
+    "note": "Implementation/test checkpoint; final documentation push is checked separately"
+  },
+  "limits": [
+    "source pixels/input/frame/metadata retained",
+    "expanded reduced canvas/workspace plus full block/header/progression state and retained payload; conservative, not RSS",
+    "all input retained; skipped entropy not Tier1 validated; structural/payload extent validation before callbacks"
+  ],
+  "unsupported": [
+    "signed/mixed sample precision; subsampling; HT; encoded ROI; palette/CMAP; sYCC/ICC; implicit/premultiplied/per-colour alpha",
+    "MCT with unequal colour-component level counts",
+    "multi-tile-part PPT; single-part PPT per tile and multi-part PPM/inline independently verified"
+  ],
+  "performance_review_point": "Small legacy Gray32 slower: initial +3.47% median over8pairs; longer10000-iteration followup +8.17% over12pairs. All raw samples retained; no universal no-regression claim.",
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+  "historical_checkpoint": true,
+  "followup": "jpeg2000-gray-regression-validation.json",
+  "performance_review_point_status": "Historical checkpoint; see the complete Gray32 follow-up for the measured correction, controls and limitations."
+}

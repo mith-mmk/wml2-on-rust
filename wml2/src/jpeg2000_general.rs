@@ -42,6 +42,7 @@ struct Poc {
     c1: usize,
     order: u8,
 }
+#[derive(Clone)]
 struct Geometry {
     rsiz: u16,
     x0: usize,
@@ -342,7 +343,7 @@ fn inverse_rct_wide(y: i32, cb: i32, cr: i32) -> [i64; 3] {
     [green + cr, green, green + cb]
 }
 
-fn geometry<const EX: bool>(b: &[u8]) -> Result<Geometry, Error> {
+fn geometry<const EX: bool, const REDUCED: bool>(b: &[u8]) -> Result<Geometry, Error> {
     if b.len() < 36 {
         return Err(bad("SIZ length"));
     }
@@ -374,10 +375,12 @@ fn geometry<const EX: bool>(b: &[u8]) -> Result<Geometry, Error> {
     }
     let pixels = count(x1 - x0, y1 - y0)?;
     crate::limits::check(pixels, crate::limits::current().pixels, "pixels")?;
-    check(
-        count(pixels, output_pixel_bytes::<EX>(nc))?,
-        "JPEG2000 output",
-    )?;
+    if !REDUCED {
+        check(
+            count(pixels, output_pixel_bytes::<EX>(nc))?,
+            "JPEG2000 output",
+        )?;
+    }
     crate::limits::check(1, crate::limits::current().frames, "frames")?;
     let nt = count((x1 - tx).div_ceil(tw), (y1 - ty).div_ceil(th))?;
     if nt > 65535 {
@@ -399,6 +402,16 @@ fn geometry<const EX: bool>(b: &[u8]) -> Result<Geometry, Error> {
             }
         } else if depth > 8 {
             return Err(unsupported("high sample depth deferred"));
+        } else if REDUCED
+            && (!matches!(nc, 1 | 3 | 4)
+                || depth != 8
+                || c[0] != b[36]
+                || c[0] & 128 != 0
+                || c[1..] != [1, 1])
+        {
+            return Err(unsupported(
+                "reduced RGBA8 requires uniform unsigned 8-bit full-resolution Gray/RGB/declared straight RGBA",
+            ));
         }
         if c[1] == 0 || c[2] == 0 {
             return Err(bad("zero subsampling"));
@@ -790,25 +803,36 @@ struct TileWorkspace {
     steps: Vec<Vec<f64>>,
     retained_bytes: usize,
 }
-fn precincts<const EX: bool>(
+fn precincts<const EX: bool, const REDUCED: bool>(
     g: &Geometry,
     cfg: &Config,
     bounds: (usize, usize, usize, usize),
+    reduce: u8,
 ) -> Result<TileWorkspace, Error> {
     let (tx0, ty0, tx1, ty1) = bounds;
     let mut planes = Vec::new();
     let mut all = Vec::new();
     let mut quant_steps = Vec::new();
     let mut allocation = 0usize;
+    let (ox0, oy0, ox1, oy1) = if REDUCED {
+        (
+            div(g.x0, reduce),
+            div(g.y0, reduce),
+            div(g.x1, reduce),
+            div(g.y1, reduce),
+        )
+    } else {
+        (g.x0, g.y0, g.x1, g.y1)
+    };
     let mut output_storage = count(
-        count(g.x1 - g.x0, g.y1 - g.y0)?,
+        count(ox1 - ox0, oy1 - oy0)?,
         output_pixel_bytes::<EX>(g.components.len()),
     )?;
     for c in g.components.iter().filter(|_| !EX) {
         output_storage = output_storage
             .checked_add(count(
-                g.x1.div_ceil(c.sx) - g.x0.div_ceil(c.sx),
-                g.y1.div_ceil(c.sy) - g.y0.div_ceil(c.sy),
+                ox1.div_ceil(c.sx) - ox0.div_ceil(c.sx),
+                oy1.div_ceil(c.sy) - oy0.div_ceil(c.sy),
             )?)
             .ok_or_else(|| bad("component storage overflow"))?;
     }
@@ -817,8 +841,18 @@ fn precincts<const EX: bool>(
         let y0 = ty0.div_ceil(component.sy);
         let x1 = tx1.div_ceil(component.sx);
         let y1 = ty1.div_ceil(component.sy);
-        let w = x1 - x0;
-        let h = y1 - y0;
+        let (px0, py0, px1, py1) = if REDUCED {
+            (
+                div(x0, reduce),
+                div(y0, reduce),
+                div(x1, reduce),
+                div(y1, reduce),
+            )
+        } else {
+            (x0, y0, x1, y1)
+        };
+        let w = px1 - px0;
+        let h = py1 - py0;
         allocation = allocation
             .checked_add(count(
                 count(w, h)?,
@@ -834,8 +868,8 @@ fn precincts<const EX: bool>(
         planes.push(Plane {
             w,
             h,
-            x0,
-            y0,
+            x0: px0,
+            y0: py0,
             coefficients: array(count(w, h)?, 0)?,
             samples: Vec::new(),
         });
@@ -897,7 +931,7 @@ fn precincts<const EX: bool>(
                         // At most 82 classic passes (28 planes). EX includes
                         // worst-case segment/contribution Vec capacities as
                         // well as the established block/tag-tree allowance.
-                        let block_bytes = if EX {
+                        let block_bytes = if EX || REDUCED {
                             256 + 128 * std::mem::size_of::<tier1::Segment>()
                                 + 256 * std::mem::size_of::<(usize, usize, usize, usize)>()
                         } else {
@@ -1023,14 +1057,40 @@ fn packet_order(precincts: &[Precinct], cfg: &Config, poc: &[Poc]) -> Result<Vec
     }
     Ok(out)
 }
-fn packet(
+// In reduced mode, charge retained payload before extending a segment. The
+// base includes the reduced canvases/workspace and every resolution's headers.
+#[derive(Default)]
+struct PayloadBudget {
+    reduce: u8,
+    base: usize,
+    bytes: usize,
+}
+impl PayloadBudget {
+    fn retain(&mut self, bytes: usize) -> Result<(), Error> {
+        let total = self
+            .bytes
+            .checked_add(bytes)
+            .ok_or_else(|| bad("retained segment overflow"))?;
+        check(
+            self.base
+                .checked_add(count(total, 2)?)
+                .ok_or_else(|| bad("retained workspace overflow"))?,
+            "JPEG2000 reduced combined workspace",
+        )?;
+        self.bytes = total;
+        Ok(())
+    }
+}
+fn packet<const REDUCED: bool>(
     part: &Part<'_>,
     offset: &mut usize,
     header_offset: &mut usize,
     p: &mut Precinct,
     layer: u16,
     cfg: &Config,
+    budget: &mut PayloadBudget,
 ) -> Result<(), Error> {
+    let retain = !REDUCED || p.resolution <= cfg.styles[p.component].levels - budget.reduce;
     let mut at = *offset;
     if cfg.scod & 2 != 0 && part.body.get(at..at + 2) == Some(&[255, 145]) {
         bytes(part.body, at, 6)?;
@@ -1141,23 +1201,35 @@ fn packet(
         }
     }
     for (g, b, s, len) in contributions {
-        let segment = &mut p.groups[g].blocks[b].segments[s];
-        segment.data.extend_from_slice(bytes(part.body, at, len)?);
+        // Extents are checked even for discarded high-resolution entropy.
+        let data = bytes(part.body, at, len)?;
+        if retain {
+            if REDUCED {
+                budget.retain(len)?;
+            }
+            p.groups[g].blocks[b].segments[s]
+                .data
+                .extend_from_slice(data);
+        }
         at += len;
     }
     *offset = at;
     Ok(())
 }
 
-fn reconstruct<const EX: bool>(
+fn reconstruct<const EX: bool, const REDUCED: bool>(
     planes: &mut [Plane],
     precincts: Vec<Precinct>,
     cfg: &Config,
     steps: &[Vec<f64>],
+    reduce: u8,
 ) -> Result<(), Error> {
     for p in precincts {
         let c = p.component;
         let s = &cfg.styles[c];
+        if REDUCED && p.resolution > s.levels - reduce {
+            continue;
+        }
         for group in p.groups {
             for block in group.blocks {
                 if block.passes == 0 {
@@ -1176,6 +1248,12 @@ fn reconstruct<const EX: bool>(
                     )?
                 };
                 let plane = &mut planes[c];
+                if REDUCED
+                    && (block.x.checked_add(block.w).is_none_or(|x| x > plane.w)
+                        || block.y.checked_add(block.h).is_none_or(|y| y > plane.h))
+                {
+                    return Err(bad("reduced code-block extent"));
+                }
                 for y in 0..block.h {
                     for x in 0..block.w {
                         let v = values[y * block.w + x];
@@ -1195,6 +1273,10 @@ fn reconstruct<const EX: bool>(
     }
     for (c, plane) in planes.iter_mut().enumerate() {
         let s = &cfg.styles[c];
+        let levels = s.levels - if REDUCED { reduce } else { 0 };
+        if REDUCED && (plane.w == 0 || plane.h == 0) {
+            continue;
+        }
         if s.filter == 1 {
             for v in &mut plane.coefficients {
                 *v /= 2;
@@ -1203,7 +1285,7 @@ fn reconstruct<const EX: bool>(
                 &mut plane.coefficients,
                 plane.w,
                 plane.h,
-                s.levels,
+                levels,
                 (plane.x0, plane.y0),
             )?;
             if EX {
@@ -1212,9 +1294,12 @@ fn reconstruct<const EX: bool>(
                 continue;
             }
             plane.samples = plane.coefficients.iter().map(|&v| f64::from(v)).collect();
+            if REDUCED {
+                plane.coefficients = Vec::new();
+            }
         } else {
             plane.samples = array(plane.coefficients.len(), 0.0)?;
-            let bands = super::subbands::<true>(plane.w, plane.h, s.levels, (plane.x0, plane.y0));
+            let bands = super::subbands::<true>(plane.w, plane.h, levels, (plane.x0, plane.y0));
             for (&(bx, by, bw, bh, _), &step) in bands.iter().zip(&steps[c]) {
                 for y in by..by + bh {
                     for x in bx..bx + bw {
@@ -1223,15 +1308,15 @@ fn reconstruct<const EX: bool>(
                     }
                 }
             }
-            if EX {
-                // Dequantization is the final EX reader; release before DWT.
+            if EX || REDUCED {
+                // Dequantization is the final native reader; release before DWT.
                 plane.coefficients = Vec::new();
             }
             super::irreversible::synthesize(
                 &mut plane.samples,
                 plane.w,
                 plane.h,
-                s.levels,
+                levels,
                 (plane.x0, plane.y0),
             )?;
         }
@@ -1408,25 +1493,56 @@ pub(super) struct DecodedImage {
 }
 
 pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
-    let image = image_inner::<false>(data)?;
+    let image = image_inner::<false, false>(data, 0)?;
     Ok((image.width, image.height, image.bytes))
 }
 
 #[cfg(feature = "image-buffer-ex")]
 pub(super) fn image_ex(data: &[u8]) -> Result<DecodedImage, Error> {
-    image_inner::<true>(data)
+    image_inner::<true, false>(data, 0)
+}
+
+pub(super) fn image_reduced(data: &[u8], reduce: u8) -> Result<(usize, usize, Vec<u8>), Error> {
+    let image = image_inner::<false, true>(data, reduce)?;
+    Ok((image.width, image.height, image.bytes))
+}
+#[cfg(feature = "image-buffer-ex")]
+pub(super) fn image_ex_reduced(data: &[u8], reduce: u8) -> Result<DecodedImage, Error> {
+    image_inner::<true, true>(data, reduce)
 }
 
 // Separate instantiations preserve the established RGBA8 fast/general path.
-fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
+fn image_inner<const EX: bool, const REDUCED: bool>(
+    data: &[u8],
+    reduce: u8,
+) -> Result<DecodedImage, Error> {
+    if REDUCED && (reduce == 0 || reduce > 32) {
+        return Err(unsupported(
+            "reduced core requires 1..=32 discarded DWT levels",
+        ));
+    }
     let (s, meta) = container(data)?;
     if u16be(s, 0)? != 0xff4f || u16be(s, 2)? != 0xff51 {
         return Err(bad("SOC/SIZ required"));
     }
     let (_, b, mut p) = segment(s, 2)?;
-    let g = geometry::<EX>(b)?;
+    let g = geometry::<EX, REDUCED>(b)?;
+    let reduced_geometry = if REDUCED {
+        let mut output = g.clone();
+        output.x0 = div(g.x0, reduce);
+        output.x1 = div(g.x1, reduce);
+        output.y0 = div(g.y0, reduce);
+        output.y1 = div(g.y1, reduce);
+        if output.x0 == output.x1 || output.y0 == output.y1 {
+            return Err(unsupported("reduction produces an empty image"));
+        }
+        Some(output)
+    } else {
+        None
+    };
+    let output_g = reduced_geometry.as_ref().unwrap_or(&g);
     let nc = g.components.len();
-    let channel_order = if EX {
+    let channel_order = if EX || REDUCED {
         ex_channel_order(nc, &meta)?
     } else {
         [0, 1, 2, 3]
@@ -1661,6 +1777,21 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
         if EX {
             validate_ex_config(&tile.config)?;
         }
+        if REDUCED {
+            validate_reduced_config(&tile.config, reduce)?;
+        }
+        // Preserve the existing full-resolution parser. A tile-wide PPT stream
+        // spanning several parts needs a shared header cursor; this reduced
+        // profile explicitly defers it rather than treating it as inline data.
+        if REDUCED
+            && ppm.is_empty()
+            && (index != 0 || total > 1)
+            && (!ppt.is_empty() || tile.parts.iter().any(|part| !part.headers.is_empty()))
+        {
+            return Err(unsupported(
+                "multi-tile-part PPT reduction is deferred; use PPM or a single tile-part",
+            ));
+        }
         let mut headers = packed(&ppt)?;
         if !ppm.is_empty() {
             if !headers.is_empty() {
@@ -1706,8 +1837,8 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
     {
         return Err(bad("incomplete tile/header directory"));
     }
-    let width = g.x1 - g.x0;
-    let height = g.y1 - g.y0;
+    let width = output_g.x1 - output_g.x0;
+    let height = output_g.y1 - output_g.y0;
     let mut rgba = array(
         count(count(width, height)?, output_pixel_bytes::<EX>(nc))?,
         0u8,
@@ -1716,8 +1847,8 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
     let mut output_bytes = rgba.len();
     for c in g.components.iter().filter(|_| !EX) {
         let n = count(
-            g.x1.div_ceil(c.sx) - g.x0.div_ceil(c.sx),
-            g.y1.div_ceil(c.sy) - g.y0.div_ceil(c.sy),
+            output_g.x1.div_ceil(c.sx) - output_g.x0.div_ceil(c.sx),
+            output_g.y1.div_ceil(c.sy) - output_g.y0.div_ceil(c.sy),
         )?;
         output_bytes = output_bytes
             .checked_add(n)
@@ -1742,8 +1873,12 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
             mut precincts,
             steps,
             retained_bytes: workspace,
-        } = precincts::<EX>(&g, &tile.config, bounds)?;
-        if EX {
+        } = precincts::<EX, REDUCED>(&g, &tile.config, bounds, reduce)?;
+        let mut payload_budget = PayloadBudget {
+            reduce,
+            ..Default::default()
+        };
+        if EX || REDUCED {
             // Account for output + coefficients/lifting/block state + packet
             // ordering, consumed keys and replacement POC directories together.
             let packets = count(precincts.len(), tile.config.layers as usize)?;
@@ -1760,11 +1895,15 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
                     };
                     Ok(max.max(work))
                 })?;
-            let compressed = tile.parts.iter().try_fold(0usize, |total, part| {
-                total
-                    .checked_add(part.body.len())
-                    .ok_or_else(|| bad("EX segment storage overflow"))
-            })?;
+            let compressed = if REDUCED {
+                0
+            } else {
+                tile.parts.iter().try_fold(0usize, |total, part| {
+                    total
+                        .checked_add(part.body.len())
+                        .ok_or_else(|| bad("EX segment storage overflow"))
+                })?
+            };
             let ordering_bytes = count(count(precincts.len(), progression)?, 32)?;
             let directory = count(packets, 192)?
                 .checked_add(count(compressed, 2)?)
@@ -1772,6 +1911,7 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
                 .and_then(|n| n.checked_add(workspace))
                 .ok_or_else(|| bad("EX workspace overflow"))?;
             check(directory, "JPEG2000 EX combined workspace")?;
+            payload_budget.base = directory;
         }
         let mut consumed = HashSet::new();
         if tile.config.styles.iter().any(|s| s.flags & 64 != 0) && !tile.config.ht {
@@ -1805,13 +1945,14 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
                     .ok_or_else(|| bad("excess packet data"))?;
                 let before = offset;
                 let hb = hpos;
-                packet(
+                packet::<REDUCED>(
                     part,
                     &mut offset,
                     &mut hpos,
                     &mut precincts[key.precinct],
                     key.layer,
                     &tile.config,
+                    &mut payload_budget,
                 )?;
                 if let Some(&length) = part.lengths.get(packet_index) {
                     if length != offset - before + hpos - hb {
@@ -1839,12 +1980,12 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
                 consumed.len()
             )));
         }
-        reconstruct::<EX>(&mut planes, precincts, &tile.config, &steps)?;
+        reconstruct::<EX, REDUCED>(&mut planes, precincts, &tile.config, &steps, reduce)?;
         if EX {
             let plane = &planes[0];
             // Subtract absolute origins before combining row and column offsets.
-            let x0 = plane.x0 - g.x0;
-            let y0 = plane.y0 - g.y0;
+            let x0 = plane.x0 - output_g.x0;
+            let y0 = plane.y0 - output_g.y0;
             let shift = 1i64 << (g.components[0].depth - 1);
             let max = (1i64 << g.components[0].depth) - 1;
             if tile.config.styles[0].filter == 0 {
@@ -1918,9 +2059,9 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
         }
         for (c, plane) in planes.iter().enumerate() {
             let component = &g.components[c];
-            let x0 = g.x0.div_ceil(component.sx);
-            let y0 = g.y0.div_ceil(component.sy);
-            let w = g.x1.div_ceil(component.sx) - x0;
+            let x0 = output_g.x0.div_ceil(component.sx);
+            let y0 = output_g.y0.div_ceil(component.sy);
+            let w = output_g.x1.div_ceil(component.sx) - x0;
             for y in 0..plane.h {
                 for x in 0..plane.w {
                     let sample = plane.samples[y * plane.w + x].round_ties_even()
@@ -1932,7 +2073,7 @@ fn image_inner<const EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> {
         }
     }
     if !EX {
-        render(&mut rgba, &g, &meta, &component_samples)?;
+        render(&mut rgba, output_g, &meta, &component_samples)?;
     }
     Ok(DecodedImage {
         width,
@@ -1967,6 +2108,29 @@ fn validate_ex_config(cfg: &Config) -> Result<(), Error> {
     {
         return Err(unsupported(
             "EX requires uniform 5/3 scalar-free or 9/7 scalar-quantized (at most 6 levels); no mixed filters, Gray MCT, HT or ROI",
+        ));
+    }
+    Ok(())
+}
+
+fn validate_reduced_config(cfg: &Config, reduce: u8) -> Result<(), Error> {
+    validate_ex_config(cfg).map_err(|_| unsupported(
+        "reduced profile requires uniform classic 5/3 or bounded 9/7; no mixed filters, HT or encoded ROI",
+    ))?;
+    if cfg.styles.iter().any(|s| s.levels < reduce) {
+        return Err(unsupported(
+            "reduction exceeds a tile/component DWT level count",
+        ));
+    }
+    if cfg.mct
+        && cfg
+            .styles
+            .iter()
+            .take(3)
+            .any(|s| s.levels != cfg.styles[0].levels)
+    {
+        return Err(unsupported(
+            "reduced MCT requires equal colour component DWT levels",
         ));
     }
     Ok(())

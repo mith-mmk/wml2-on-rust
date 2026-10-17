@@ -1212,6 +1212,8 @@ fn reconstruct<const EX: bool>(
                 continue;
             }
             plane.samples = plane.coefficients.iter().map(|&v| f64::from(v)).collect();
+            // No later legacy rendering reads these integer coefficients.
+            plane.coefficients = Vec::new();
         } else {
             plane.samples = array(plane.coefficients.len(), 0.0)?;
             let bands = super::subbands::<true>(plane.w, plane.h, s.levels, (plane.x0, plane.y0));
@@ -1223,6 +1225,8 @@ fn reconstruct<const EX: bool>(
                     }
                 }
             }
+            // Dequantization is the final reader; release capacity before DWT.
+            plane.coefficients = Vec::new();
             super::irreversible::synthesize(
                 &mut plane.samples,
                 plane.w,
@@ -1231,7 +1235,6 @@ fn reconstruct<const EX: bool>(
                 (plane.x0, plane.y0),
             )?;
         }
-        plane.coefficients.clear();
     }
     if EX {
         return Ok(());

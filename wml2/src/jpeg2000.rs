@@ -1535,33 +1535,96 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    use crate::draw::{InitOptionsEx, PixelFormatEx};
+    let image = read_ex_image(reader)?;
+    emit_ex_image(&image, option)
+}
+
+#[cfg(feature = "image-buffer-ex")]
+fn read_ex_image<B: BinaryReader>(reader: &mut B) -> Result<general::DecodedImage, Error> {
     let start = reader.offset()?;
     let end = reader.seek(SeekFrom::End(0))?;
     reader.seek(SeekFrom::Start(start))?;
     let length = end.checked_sub(start).ok_or_else(|| bad("reader extent"))?;
     crate::limits::check_input_length(length, crate::limits::current().input_bytes)?;
     let input = reader.read_bytes_as_vec(usize::try_from(length)?)?;
-    let image = general::image_ex(&input)?;
-    option.drawer.init_ex(
-        image.width,
-        image.height,
-        Some(InitOptionsEx {
-            source_format: match (image.channels, image.depth) {
-                (1, 12) => PixelFormatEx::Gray12,
-                (1, _) => PixelFormatEx::Gray16,
-                (_, 12) => PixelFormatEx::Rgba12,
-                _ => PixelFormatEx::Rgba16,
-            },
-            source_stride: None,
-            legacy: InitOptions::new(),
-        }),
-    )?;
+    general::image_ex(&input)
+}
+
+#[cfg(feature = "image-buffer-ex")]
+fn ex_declaration(image: &general::DecodedImage) -> crate::draw::InitOptionsEx {
+    use crate::draw::{InitOptionsEx, PixelFormatEx};
+    InitOptionsEx {
+        source_format: match (image.channels, image.depth) {
+            (1, 12) => PixelFormatEx::Gray12,
+            (1, _) => PixelFormatEx::Gray16,
+            (_, 12) => PixelFormatEx::Rgba12,
+            _ => PixelFormatEx::Rgba16,
+        },
+        source_stride: None,
+        legacy: InitOptions::new(),
+    }
+}
+
+#[cfg(feature = "image-buffer-ex")]
+fn emit_ex_image(
+    image: &general::DecodedImage,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    option
+        .drawer
+        .init_ex(image.width, image.height, Some(ex_declaration(image)))?;
     option
         .drawer
         .draw(0, 0, image.width, image.height, &image.bytes, None)?;
     option.drawer.terminate(None)?;
     Ok(None)
+}
+
+// The byte-slice convenience API can adopt a fully decoded native canvas.
+// Keep the ordinary guard/scope and the existing callback conversion path;
+// only the same-format result bypasses an otherwise redundant allocation/copy.
+#[cfg(feature = "image-buffer-ex")]
+pub(crate) fn image_from_ex_owned(
+    buffer: &[u8],
+    storage: crate::draw::PixelFormatEx,
+    precision: crate::draw::PrecisionConversion,
+    limits: crate::limits::DecodeLimits,
+) -> Result<crate::draw::ImageBufferEx, Error> {
+    use crate::draw::ImageBufferEx;
+    let mut reader = bin_rs::reader::BytesReader::new(buffer);
+    let mut converted = ImageBufferEx::with_storage(storage, precision);
+    let mut native = None;
+    crate::decode_guard::run_ex(
+        &mut reader,
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut converted,
+        },
+        limits,
+        |reader, option| {
+            let image = read_ex_image(reader)?;
+            let declaration = ex_declaration(&image);
+            if storage == declaration.source_format {
+                crate::decode_guard::ex_source_bytes(
+                    image.width,
+                    image.height,
+                    &declaration,
+                    limits,
+                )?;
+                native = Some(ImageBufferEx::from_decoded_bytes(
+                    image.width,
+                    image.height,
+                    storage,
+                    precision,
+                    image.bytes,
+                )?);
+            } else {
+                emit_ex_image(&image, option)?;
+            }
+            Ok(None)
+        },
+    )?;
+    Ok(native.unwrap_or(converted))
 }
 
 #[cfg(test)]

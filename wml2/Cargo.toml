@@ -16,6 +16,7 @@ exclude = [
     "tests/jpeg2000_ex.rs",
     "tests/jpeg2000_ex_color.rs",
     "tests/jpeg2000_ex_97.rs",
+    "tests/jpeg2000_ex_memory.rs",
     "tests/fixtures/review/jp2*",
     "tests/fixtures/review/unsupported_jp2*",
     "tests/fixtures/review/oracle_origins_*",

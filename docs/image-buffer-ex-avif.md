@@ -25,14 +25,29 @@ YUV plane や AVIF 型を追加しない。decode は codec が生成する正�
 そのまま宣言し、storage への変換は Callback が行う。10bit の EX enum は作らない。
 YUV→RGB の丸め・clamp と、EX の入力→保存の精度変換を区別する。
 
-固定依存 avifenc-rust0.0.7 の writer は alpha の auxl を primary1→alpha2 と書く。
-そのままの出力では Pillow/libavif が alpha を認識せず、透明度が失われることを
-外部照合で確認した。WML2 の3つの encode 入口（従来／EX／highres native）は
-共通 helper で、この生成済みコンテナの参照だけを alpha2→primary1 に正規化する。
-[libavif の writer](https://github.com/AOMediaCodec/libavif/blob/main/src/write.c)も alpha
-item から color item への参照を生成している。box 境界と既知の producer schema を
-検証し、ICC／AV1 payload や item offset は変更しない。既に正しい参照はそのまま。
-依存 crate・gitlink・旧 API の引数や画素変換方針は変更しない。
+公開済み `avif-rust = 0.1.0` / `avifenc-rust = 0.1.0` を registry から使う。
+両 codec の `buffer` re-export は同じ registry `avif-image-buffer = 0.1.0` を指す。
+追跡済み Cargo.lock の source/checksum を固定し、local path override は使わない。
+gitlink は独立 codec の oracle fixture 用に維持するが、WML2 の本番依存ではない。
+
+WML2 と共有 crate の同名 `ImageBufferEx` は型置換しない。WML2 の picker が
+明示出力要求の Exact/Round を alpha も含めて適用し、その `PixelBytesEx` を
+private adapter が `PackedImageViewEx` へ借用する。8bit は `SamplesRef::U8`、
+12/16bit は `U16LeBytes` で、byte stride と unaligned/奇数 stride を保持する。
+AVIF 出力は引き続き8/12bitのみ。共有 `preflight_ex` / `encode_ex` は変換済み
+samples を Exact で検証し、codec 側で GBR plane 化する。adapter に追加の
+U16中間コピーはないが、共有 encoder/backend の native plane コピーは残る。
+source ICC/CICP は転記せず、caller が準備した出力 samples と明示出力 ICC/nclx
+だけを共有 view に宣言する。`ColorPolicyEx::Preserve` はこの出力宣言を検証する。
+
+旧 avifenc-rust0.0.7 向け alpha auxl 補正 helper は削除した。0.1.0 の writer が
+alpha item → primary item の正しい参照を生成することを、上流 legacy/native/shared
+と WML2 legacy/EX/highres の出力で確認した。Pillow/libavif と FFmpeg の独立照合で
+透明 RGB、straight alpha、8/10/12bit の全 sample が一致した後に整理している。
+
+**AVIS は未保証。** 公開0.1.0 の inter/show-existing 既知不具合は別 task
+`01a147ca-f6b0-716f-9ef3-d16bdb9df00f` の対象。本統合は静止画に限定し、上流
+codec repository や WML2 の既存 animation API を拡張・修正しない。
 
 12bit identity RGB を EX の RGBA12 に戻す場合も、入力宣言は正規化 RGBA16。
 非整数スケーリングを許可する `Round` が必要になる場合がある。`Exact` は
@@ -115,7 +130,41 @@ AVIF 型は adapter 内に留め、ImageBufferEx の core 実装に依存を追�
 （Exif では TIFF 型）、optional highres 型との結合が整理対象になる。
 今回それらの分離・移動は実装しない。
 
-## 検証結果（2026-10-16）
+## registry 0.1.0 統合の検証（2026-10-17）
+
+[検証・性能記録](image-buffer-ex-avif-registry-validation.json)と
+[独立 reader preview](image-buffer-ex-avif-registry-display.png)を参照。
+旧記録は0.0.8/0.0.7 local path 時点の履歴であり、今回の結果と加算しない。
+Rust1.91.0/Linux の workspace は440 passed /0 failed /14 ignored。
+最終 feature matrix（各構成の値は重複する）は minimal28、EX63、AVIF decode＋EX73、
+AVIF encode＋EX91、EX無効の AVIF encode＋highres59（1 ignored）、
+EX＋highres＋multithread113（1 ignored）で、すべて失敗なし。Clippy は既存 warning
+を残して成功し、変更した encoder／検証 test／benchmark に新しい warning はない。
+wasm32/i686 compile と実 Node24.19.0 の AVIF4グループも成功した。
+
+Pillow12.3.0/libavif と FFmpeg7.1.5 で、9つの出力の色・alpha 全 sample が一致。
+表示 preview も目視確認した。単一CPU、同一 release harness の交互測定では全 hash
+が一致し、既存 decode の割当量は不変。小入力を増やした追試の中央値は旧 encode
++0.04%、EX encode（Gray/RGBA8/12）-0.18〜+2.33%、小 EX decode+1.31%。
+大きな sample の旧／EX decode は初回比較で-2.81%／-0.60%だった。初回の振れも
+記録に残す。共有 preflight/report による3つの小割当と、借用した pick bytes を
+符号化中も保持する分の peak 増加はある。局所計測であり全入力の速度保証ではない。
+
+ビルドは2並列、1秒ごとの cgroup memory 監視で観測 peak 約2.89GiB（上限16GiB）。
+raw logs／benchmark samples は[圧縮記録](image-buffer-ex-avif-registry-raw.json.gz)に保存。
+既存 ignored、AVIS fixture 不足による early return、任意の外部 corpus 不足は
+全ケースの独立照合として数えない。remote CI の結果は PR #13 に別途記録する。
+
+独立 reader 検証は次の手順で再実行できる（Pillow AVIF と FFmpeg が必要）。
+
+```sh
+mkdir -p .test-avif-registry
+WML2_AVIF_REGISTRY_ORACLES="$PWD/.test-avif-registry" cargo test -p wml2 --locked --release --no-default-features --features avifenc,image-buffer-ex,high-bit-depth --test avif_ex --test highres_avif_encode
+python3 -B wml2-test/scripts/verify_avif_registry_oracles.py --output .test-avif-registry
+cargo run -p wml2 --locked --release --no-default-features --features avifenc,image-buffer-ex --example review_bench -- avif-ex-encode 30
+```
+
+## 旧検証結果（2026-10-16、local path codec）
 
 Rust/Cargo1.91.0、Linux x86_64、WML2 0.0.36 で実行した。
 [検証記録](image-buffer-ex-avif-validation.json)にコマンド、source／log の hash、

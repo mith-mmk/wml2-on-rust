@@ -77,6 +77,46 @@ fn main() {
         .and_then(|v| v.parse().ok())
         .unwrap_or(7);
     println!("case,iteration,ns,allocations,allocated_bytes,peak_live_bytes,first_draw_ns,hash");
+    #[cfg(all(feature = "avifenc", feature = "image-buffer-ex"))]
+    if mode == "avif-ex-encode" {
+        for format in [
+            PixelFormatEx::Gray8,
+            PixelFormatEx::Gray12,
+            PixelFormatEx::Rgba8,
+            PixelFormatEx::Rgba12,
+        ] {
+            let (width, height) = (16, 16);
+            let max = (1usize << format.bits()) - 1;
+            let bytes = (0..width * height * format.channels())
+                .flat_map(|i| {
+                    let value = ((i * 37 + 17) & max) as u16;
+                    value.to_le_bytes()[..format.bytes_per_sample()].to_vec()
+                })
+                .collect();
+            let mut image = ImageBufferEx::from_bytes(width, height, format, None, bytes).unwrap();
+            let mut output = PixelOutputEx::new(format, PrecisionConversion::Exact);
+            output.stride = Some(width * format.bytes_per_pixel() + 1);
+            let name = format!("avif-ex-{format:?}-16x16-odd-stride");
+            for i in 0..repeat {
+                measure(&name, i, || {
+                    let encoded = image_encoder_ex(
+                        &mut EncodeOptionsEx {
+                            debug_flag: 0,
+                            drawer: &mut image,
+                            output,
+                            options: Some(std::collections::HashMap::from([(
+                                "lossless".into(),
+                                wml2::metadata::DataMap::UInt(1),
+                            )])),
+                        },
+                        wml2::util::ImageFormat::Avif,
+                    )
+                    .unwrap();
+                    (hash(&encoded), 0)
+                });
+            }
+        }
+    }
     #[cfg(feature = "avifenc")]
     if mode == "avif-encode" {
         let controls = std::collections::HashMap::from([(

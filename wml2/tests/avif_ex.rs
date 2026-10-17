@@ -402,6 +402,131 @@ mod encode {
         }
     }
 
+    // Optional export feeds verify_avif_registry_oracles.py. Assertions execute
+    // in ordinary CI too; external readers are required only by that script.
+    fn oracle(label: &str, bits: u8, bytes: &[u8], rgba: &[u16]) {
+        let decoded = avif_codec::decode_frame_bytes(bytes).unwrap();
+        assert_eq!(decoded.bit_depth, bits);
+        for (role, channel) in [1, 2, 0, 3].into_iter().enumerate() {
+            let plane = decoded
+                .buffers
+                .planes
+                .iter()
+                .find(|p| p.layout.plane as usize == role)
+                .unwrap();
+            assert_eq!(
+                plane.samples,
+                rgba.chunks_exact(4).map(|p| p[channel]).collect::<Vec<_>>()
+            );
+        }
+        assert!(
+            bytes
+                .windows(14)
+                .any(|b| b == b"\0\0\0\x0eauxl\0\x02\0\x01\0\x01")
+        );
+        if let Some(dir) = std::env::var_os("WML2_AVIF_REGISTRY_ORACLES") {
+            let path = std::path::Path::new(&dir);
+            assert!(path.is_dir(), "oracle output directory must already exist");
+            std::fs::write(path.join(format!("{label}-{bits}.avif")), bytes).unwrap();
+            std::fs::write(path.join(format!("{label}-{bits}.rgba16le")), words(rgba)).unwrap();
+        }
+    }
+
+    #[test]
+    fn published_writer_alpha_and_shared_padded_ex_match_exact_native_samples() {
+        for (bits, format) in [(8, PixelFormatEx::Rgba8), (12, PixelFormatEx::Rgba12)] {
+            let (upstream, source) = native(bits, None, false);
+            oracle("upstream-native", bits, &upstream, &source);
+            let raw = if bits == 8 {
+                source.iter().map(|&v| v as u8).collect()
+            } else {
+                words(&source)
+            };
+            let mut image = ImageBufferEx::from_bytes(2, 2, format, None, raw.clone()).unwrap();
+            let mut output = PixelOutputEx::new(format, PrecisionConversion::Exact);
+            output.stride = Some(2 * format.bytes_per_pixel() + 1);
+            let encoded = encode(&mut image, output).unwrap();
+            oracle("wml2-ex", bits, &encoded, &source);
+            assert_eq!(image.bytes().unwrap(), raw);
+            let opts = avifenc_codec::EncodeOptionsEx {
+                native: avifenc_codec::NativeEncodeOptions {
+                    bit_depth: bits,
+                    subsampling: avifenc_codec::NativeSubsampling::Cs444,
+                    encoder: avifenc_codec::EncoderOptions {
+                        lossless: true,
+                        color_information: None,
+                        ..Default::default()
+                    },
+                    color_information: avifenc_codec::NativeColorInformation::from_nclx(
+                        avifenc_codec::NclxColorInformation {
+                            color_primaries: 1,
+                            transfer_characteristics: 13,
+                            matrix_coefficients: 0,
+                            full_range_flag: true,
+                        },
+                    ),
+                },
+                precision: avifenc_codec::buffer::PrecisionPolicy::Exact,
+                color: avifenc_codec::ColorPolicyEx::Preserve,
+            };
+            // Construct via decoder's re-export and pass to encoder: both must
+            // resolve one registry avif-image-buffer source and type identity.
+            use avif_codec::buffer::{
+                AlphaMode, Cicp, ColorMetadataRef, ImageViewEx, PackedChannels, PackedImageViewEx,
+                PlaneLayoutEx, PlaneViewEx, SamplesRef,
+            };
+            let view = ImageViewEx::Packed(PackedImageViewEx {
+                plane: PlaneViewEx {
+                    samples: if bits == 8 {
+                        SamplesRef::U8(&raw)
+                    } else {
+                        SamplesRef::U16LeBytes(&raw)
+                    },
+                    layout: PlaneLayoutEx {
+                        width: 2,
+                        height: 2,
+                        valid_bits: bits,
+                        offset_bytes: 0,
+                        row_stride_bytes: 2 * format.bytes_per_pixel(),
+                    },
+                },
+                channels: PackedChannels::Rgba,
+                alpha: AlphaMode::Straight,
+                color: ColorMetadataRef {
+                    cicp: Some(Cicp {
+                        primaries: 1,
+                        transfer: 13,
+                        matrix: 0,
+                    }),
+                    icc: None,
+                },
+            });
+            let preview = avifenc_codec::preflight_ex(view, &opts).unwrap();
+            assert!(!preview.encoded);
+            let shared = avifenc_codec::encode_ex(view, &opts).unwrap();
+            assert!(shared.report.encoded);
+            oracle("upstream-shared", bits, &shared.bytes, &source);
+            if bits == 8 {
+                let bytes = avifenc_codec::encode_bytes(
+                    &avifenc_codec::ImageBuffer {
+                        width: 2,
+                        height: 2,
+                        rgba: raw.clone(),
+                    },
+                    &avifenc_codec::EncoderOptions {
+                        lossless: true,
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
+                oracle("upstream-legacy", bits, &bytes, &source);
+                let mut legacy = ImageBuffer::from_buffer(2, 2, raw);
+                let bytes = image_to(&mut legacy, ImageFormat::Avif, lossless()).unwrap();
+                oracle("wml2-legacy", bits, &bytes, &source);
+            }
+        }
+    }
+
     #[test]
     fn sixteen_storage_requires_explicit_exact_or_round_output_policy() {
         let mut exact = ImageBufferEx::from_bytes(
@@ -554,6 +679,31 @@ mod encode {
             assert_eq!(picker.ends, 1);
             assert_eq!(picker.image.bytes().unwrap(), before);
         }
+    }
+
+    #[test]
+    fn backend_preflight_failure_finalizes_once_without_changing_storage() {
+        let raw = words(&[1, 2, 3, 0]);
+        let mut picker = Picker {
+            image: ImageBufferEx::from_bytes(1, 1, PixelFormatEx::Rgba12, None, raw.clone())
+                .unwrap(),
+            ends: 0,
+            wrong: false,
+        };
+        let error = image_encoder_ex(
+            &mut EncodeOptionsEx {
+                debug_flag: 0,
+                drawer: &mut picker,
+                output: PixelOutputEx::new(PixelFormatEx::Rgba12, PrecisionConversion::Exact),
+                options: Some(HashMap::from([("speed".into(), DataMap::UInt(11))])),
+            },
+            ImageFormat::Avif,
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("speed"));
+        assert!(error.downcast_ref::<wml2::error::ImgError>().is_some());
+        assert_eq!(picker.ends, 1);
+        assert_eq!(picker.image.bytes().unwrap(), raw);
     }
 
     #[test]

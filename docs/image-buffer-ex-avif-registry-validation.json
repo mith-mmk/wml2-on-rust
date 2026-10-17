@@ -1,0 +1,777 @@
+{
+  "date": "2026-10-17",
+  "base_head": "96adfa8c74e798e6fcd9c9a0902dba66002afcba",
+  "checkpoint": "pre-commit working source hashes below; CI outcome is recorded separately in PR #13",
+  "wml2_version": "0.0.36",
+  "toolchain": "rustc 1.91.0 (f8297e351 2025-10-28)",
+  "host": "Linux x86_64",
+  "source_sha256": {
+    "Cargo.lock": "b39c87654efb7b6eb85fc60492dfd8f054fc714083588e96a2fe1e881259e9d9",
+    "wml2/Cargo.toml": "f409ff17612c9582141ee48fc478b4f3f7f8eb4b1d199889e5201929fc212cb6",
+    ".github/workflows/ci.yml": "d45bfe83e6115f51b8c02458da6f607bc9ae71eedb798a2d6af51ad6696a6d6f",
+    "wml2/src/avif/encoder.rs": "7aaec3f02f568a49ed31e2db9b2f9cbf9767ec6adee31e753ec32deace3fc5e4",
+    "wml2/src/avif/ex.rs": "ee5b14eed8e1621a0478af20808793b6a83ddd5bdc221f5c336adaa8e457c98f",
+    "wml2/src/highres/avif_encode.rs": "81651e295d67938aeb17c22d7e8a86dbc417269cd4efa2d38d16c4ed4a71a362",
+    "wml2/src/image_buffer_ex.rs": "5ddd59e087b6431b86f249d1ec7ac97da169406de2c47482d4669aafeca8b500",
+    "wml2/tests/avif_ex.rs": "a7efdd1ad2c63d92a62e998efa98683ff22ff07f011a11f68caa9afba363816f",
+    "wml2/tests/highres_avif_encode.rs": "df1ae3e7a8da909518c752d9f38fb095b88a10409aa5573177c6413a42f49335",
+    "wml2/examples/review_bench.rs": "33e19737ace359948458ce58f108111edfe7acbf6f2e7099be78c27f0438a52c",
+    "wml2-test/scripts/verify_avif_registry_oracles.py": "04963084386189da04c56a30da38456884f75432078791e565be2650d90e4955"
+  },
+  "registry_packages": [
+    {
+      "name": "avif-image-buffer",
+      "version": "0.1.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "7f064a888d7b2d2d78426fe473647c14281494f8994d1e4240d83cff37e5eafc"
+    },
+    {
+      "name": "avif-rust",
+      "version": "0.1.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "cd35d046e591504336b657a6b01fa3635c3fafa541e617646a1d3a8700084780",
+      "dependencies": [
+        "avif-image-buffer",
+        "bin-rs"
+      ]
+    },
+    {
+      "name": "avifenc-rust",
+      "version": "0.1.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "29f8cece37db50f6f1d6e95e0da6285fd084e4fca77188602ef049b272280815",
+      "dependencies": [
+        "avif-image-buffer",
+        "gamut-bitstream",
+        "gamut-core 0.1.0",
+        "gamut-dsp",
+        "rav1e"
+      ]
+    }
+  ],
+  "checks": {
+    "baseline-build": {
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "avifenc,image-buffer-ex,png",
+        "--example",
+        "review_bench",
+        "--example",
+        "ex_avif"
+      ],
+      "exit": 0,
+      "seconds": 53.04,
+      "peak_cgroup_bytes": 978649088,
+      "log_sha256": "345e96ffa54c285b7ea46d7ef94764d49399685ec615f7feecfde1b02f65ea53"
+    },
+    "workspace": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--release",
+        "--features",
+        "wml2/avifenc,wml2/image-buffer-ex,wml2/high-bit-depth",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 79.06,
+      "peak_cgroup_bytes": 1966575616,
+      "log_sha256": "dc87727fe4ece6c20c0020785e62bf4ad9540ef800ac97b6ceca811e9558e8b8",
+      "harness_totals": {
+        "passed": 440,
+        "failed": 0,
+        "ignored": 14
+      }
+    },
+    "broad-clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "wml2",
+        "--locked",
+        "--features",
+        "avifenc,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--tests",
+        "--examples"
+      ],
+      "exit": 0,
+      "seconds": 7.0,
+      "peak_cgroup_bytes": 2109329408,
+      "log_sha256": "4dc8ef8983a95b0710e7a21a65f7c1e00bc7557c9b336418cb668a1674d0a527"
+    },
+    "benchmark-build": {
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "avifenc,image-buffer-ex,png",
+        "--example",
+        "review_bench",
+        "--example",
+        "ex_avif"
+      ],
+      "exit": 0,
+      "seconds": 6.0,
+      "peak_cgroup_bytes": 1902473216,
+      "log_sha256": "9e5f4b5911dd29e8ef4f9ccad3389577348784c922c3233644b99b68624f5c75"
+    },
+    "cross-compile": {
+      "command": [
+        "python3",
+        "-c",
+        "import subprocess\nfor target in [\"wasm32-unknown-unknown\", \"i686-unknown-linux-gnu\"]:\n subprocess.run([\"cargo\",\"check\",\"-p\",\"wml2\",\"--locked\",\"--lib\",\"--target\",target,\"--features\",\"avifenc,image-buffer-ex,high-bit-depth,color-management\"],check=True)\n"
+      ],
+      "exit": 0,
+      "seconds": 37.03,
+      "peak_cgroup_bytes": 2800533504,
+      "log_sha256": "7bfee48d50b4b58e7b02ef9a51d5418832e3077766e3a8ca55c42a5d7e7bd1fa"
+    },
+    "wasm-node": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_avif_ex_wasm.py",
+        "--offline",
+        "--wasm-bindgen",
+        "/workspace/wml2-on-rust/.test-avif010/.test-wasmtools/wasm-bindgen",
+        "--output",
+        ".test-avif010/.test-wasm"
+      ],
+      "exit": 0,
+      "seconds": 42.03,
+      "peak_cgroup_bytes": 3098935296,
+      "log_sha256": "58fb8c3546bdd5048809ea7dd04636036c8fde7065a07c9b3635250635a1a856"
+    },
+    "feature-matrix-final": {
+      "command": [
+        "python3",
+        "-c",
+        "import json,subprocess,pathlib\ncommand=json.loads(pathlib.Path(\".test-avif010/feature-matrix.json\").read_text())[\"command\"]\nsubprocess.run(command,check=True)\n"
+      ],
+      "exit": 0,
+      "seconds": 29.02,
+      "peak_cgroup_bytes": 2654871552,
+      "log_sha256": "1399749bd26f471568daf5a59612ad95688f34bc9cc790638144b48eb659be00",
+      "harness_totals": {
+        "passed": 427,
+        "failed": 0,
+        "ignored": 2
+      }
+    },
+    "final-focus": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "avifenc,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--test",
+        "avif_ex",
+        "--test",
+        "highres_avif_encode"
+      ],
+      "exit": 0,
+      "seconds": 5.0,
+      "peak_cgroup_bytes": 2638835712,
+      "log_sha256": "0f9c1ff57c8d91a1deb104a9cf3409ebf602a5d53dc14cf167e6d816524f4f63",
+      "harness_totals": {
+        "passed": 41,
+        "failed": 0,
+        "ignored": 1
+      }
+    },
+    "performance": {
+      "command": [
+        "python3",
+        "-B",
+        ".test-avif010/bench.py"
+      ],
+      "exit": 0,
+      "seconds": 25.02,
+      "peak_cgroup_bytes": 2474119168,
+      "log_sha256": "b77bb55864a208d21264f41df06240e768720bae8026cb77fc44ac11e4085dab"
+    },
+    "performance-repeat": {
+      "command": [
+        "python3",
+        "-B",
+        ".test-avif010/bench-repeat.py"
+      ],
+      "exit": 0,
+      "seconds": 41.01,
+      "peak_cgroup_bytes": 2468765696,
+      "log_sha256": "542cc09458a58e51d673fbba76badffd7f70ec89dee54c052d4879b703f5c0d5"
+    }
+  },
+  "feature_matrix": [
+    {
+      "features": "minimal",
+      "counts": {
+        "passed": 28,
+        "failed": 0,
+        "ignored": 0
+      },
+      "clippy_completed": true
+    },
+    {
+      "features": "image-buffer-ex",
+      "counts": {
+        "passed": 63,
+        "failed": 0,
+        "ignored": 0
+      },
+      "clippy_completed": true
+    },
+    {
+      "features": "avif,image-buffer-ex",
+      "counts": {
+        "passed": 73,
+        "failed": 0,
+        "ignored": 0
+      },
+      "clippy_completed": true
+    },
+    {
+      "features": "avifenc,image-buffer-ex",
+      "counts": {
+        "passed": 91,
+        "failed": 0,
+        "ignored": 0
+      },
+      "clippy_completed": true
+    },
+    {
+      "features": "avifenc,high-bit-depth",
+      "counts": {
+        "passed": 59,
+        "failed": 0,
+        "ignored": 1
+      },
+      "clippy_completed": true
+    },
+    {
+      "features": "avifenc,image-buffer-ex,high-bit-depth,multithread",
+      "counts": {
+        "passed": 113,
+        "failed": 0,
+        "ignored": 1
+      },
+      "clippy_completed": true
+    }
+  ],
+  "independent_readers": {
+    "pillow": "12.3.0",
+    "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "cases": [
+      {
+        "case": "upstream-native-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "1b4b6c6461e3f48a551024e53c9624aa3e5fdb0879277d0389de0942dbaad7bf",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "upstream-native-12",
+        "depth": 12,
+        "rgba_samples": 16,
+        "sha256": "02fc1f345a5837f4a7397197d49404e0596523d048b85425004b067880cf6657",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "upstream-shared-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "1b4b6c6461e3f48a551024e53c9624aa3e5fdb0879277d0389de0942dbaad7bf",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "upstream-shared-12",
+        "depth": 12,
+        "rgba_samples": 16,
+        "sha256": "02fc1f345a5837f4a7397197d49404e0596523d048b85425004b067880cf6657",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "wml2-ex-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "1b4b6c6461e3f48a551024e53c9624aa3e5fdb0879277d0389de0942dbaad7bf",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "wml2-ex-12",
+        "depth": 12,
+        "rgba_samples": 16,
+        "sha256": "02fc1f345a5837f4a7397197d49404e0596523d048b85425004b067880cf6657",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "upstream-legacy-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "112d52462a026c34c05caaf22cbd8edcd67f35a6e7c31288445ebced77c0cdcc",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "wml2-legacy-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "112d52462a026c34c05caaf22cbd8edcd67f35a6e7c31288445ebced77c0cdcc",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "wml2-highres-10",
+        "depth": 10,
+        "rgba_samples": 16,
+        "sha256": "9211fab70f2790d4a0fc2c33bc31469db545882ba24259975b56bc646ecfc901",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      }
+    ],
+    "scope": "2x2 still identity RGB, straight alpha; no AVIS or ICC transform"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 4,
+    "all_passed": true,
+    "host_imports": [
+      {
+        "module": "./verify_bg.js",
+        "name": "__wbindgen_init_externref_table",
+        "kind": "function"
+      }
+    ],
+    "bindings": "wasm-bindgen nodejs; no mocked imports",
+    "target": "wasm32-unknown-unknown",
+    "features": "avifenc,image-buffer-ex; no defaults",
+    "wasm_bindgen": "wasm-bindgen 0.2.126",
+    "scope": [
+      "RGBA12 fixture -> declared RGBA16 all samples",
+      "RGBA12 lossless encode/decode including transparent RGB and unchanged storage",
+      "RGBA16 Exact rejection and explicit Round -> RGBA12",
+      "legacy RGBA8 encode/decode including alpha"
+    ],
+    "git_head": "96adfa8c74e798e6fcd9c9a0902dba66002afcba",
+    "working_tree_dirty": true,
+    "wasm_sha256": "52f33d06901b7c5b77265cddea792d0865f29368b78000b0afaad79a9da1471f",
+    "harness_sha256": "d4ceba4dc406c1ad5bf158c468127d32b0966f6c9a084b87e56c4902f8990003",
+    "helper_sha256": "195d9cd5a3838d860984d57e6f8c3d1f8059790310d1a2c85fddd9bc64a5718c",
+    "fixture_sha256": "132303af3360fc655d3c4175f29c9e3bee0844c6e629c49c89deb48fe010686e",
+    "cargo_lock_sha256": "8ae7e69a9dac5234fd1737fafe3195f50e2e66343dfa29527bdf76ffe255fa55",
+    "source_sha256": {
+      "wml2/src/avif/ex.rs": "ee5b14eed8e1621a0478af20808793b6a83ddd5bdc221f5c336adaa8e457c98f",
+      "wml2/src/avif/encoder.rs": "7aaec3f02f568a49ed31e2db9b2f9cbf9767ec6adee31e753ec32deace3fc5e4",
+      "wml2/src/draw.rs": "b539d369b0c03111bd4591868488c04943146e05ee7c0af89190c84ecf37f2b3",
+      "wml2/src/image_buffer_ex.rs": "5ddd59e087b6431b86f249d1ec7ac97da169406de2c47482d4669aafeca8b500"
+    }
+  },
+  "benchmark": {
+    "baseline": "96adfa8c74e798e6fcd9c9a0902dba66002afcba + identical new review_bench mode",
+    "registry": "working integration tree; see source hashes",
+    "profile": "Rust 1.91.0 release, no defaults, avifenc,image-buffer-ex,png; jobs=2 for builds",
+    "method": "3 alternating blocks; one pinned CPU; omit first iteration of each process",
+    "cpu": 0,
+    "results": [
+      {
+        "case": "avif-encode-2x2",
+        "input": null,
+        "baseline": {
+          "ns": 622699,
+          "allocations": 382,
+          "allocated_bytes": 84042,
+          "peak_live_bytes": 20251,
+          "hashes": [
+            16349954717480746188
+          ]
+        },
+        "registry": {
+          "ns": 635228,
+          "allocations": 382,
+          "allocated_bytes": 84042,
+          "peak_live_bytes": 20251,
+          "hashes": [
+            16349954717480746188
+          ]
+        },
+        "time_change_percent": 2.01
+      },
+      {
+        "case": "avif-ex-Gray12-16x16-odd-stride",
+        "input": null,
+        "baseline": {
+          "ns": 447755,
+          "allocations": 219,
+          "allocated_bytes": 33052,
+          "peak_live_bytes": 16012,
+          "hashes": [
+            9970869681433340788
+          ]
+        },
+        "registry": {
+          "ns": 475036,
+          "allocations": 222,
+          "allocated_bytes": 33228,
+          "peak_live_bytes": 16693,
+          "hashes": [
+            9970869681433340788
+          ]
+        },
+        "time_change_percent": 6.09
+      },
+      {
+        "case": "avif-ex-Gray8-16x16-odd-stride",
+        "input": null,
+        "baseline": {
+          "ns": 714628,
+          "allocations": 220,
+          "allocated_bytes": 34528,
+          "peak_live_bytes": 16460,
+          "hashes": [
+            10505960502298571620
+          ]
+        },
+        "registry": {
+          "ns": 688678,
+          "allocations": 223,
+          "allocated_bytes": 34704,
+          "peak_live_bytes": 16885,
+          "hashes": [
+            10505960502298571620
+          ]
+        },
+        "time_change_percent": -3.63
+      },
+      {
+        "case": "avif-ex-Rgba12-16x16-odd-stride",
+        "input": null,
+        "baseline": {
+          "ns": 15967350,
+          "allocations": 892,
+          "allocated_bytes": 1281531,
+          "peak_live_bytes": 81914,
+          "hashes": [
+            14847329255461642446
+          ]
+        },
+        "registry": {
+          "ns": 14423453,
+          "allocations": 895,
+          "allocated_bytes": 1281467,
+          "peak_live_bytes": 83891,
+          "hashes": [
+            14847329255461642446
+          ]
+        },
+        "time_change_percent": -9.67
+      },
+      {
+        "case": "avif-ex-Rgba8-16x16-odd-stride",
+        "input": null,
+        "baseline": {
+          "ns": 13520179,
+          "allocations": 882,
+          "allocated_bytes": 1037463,
+          "peak_live_bytes": 81858,
+          "hashes": [
+            16215809258589284975
+          ]
+        },
+        "registry": {
+          "ns": 13491666,
+          "allocations": 885,
+          "allocated_bytes": 1037399,
+          "peak_live_bytes": 82811,
+          "hashes": [
+            16215809258589284975
+          ]
+        },
+        "time_change_percent": -0.21
+      },
+      {
+        "case": "decode-ex-file",
+        "input": "/workspace/wml2-on-rust/.test-avif010/baseline.avif",
+        "baseline": {
+          "ns": 44777,
+          "allocations": 234,
+          "allocated_bytes": 175170,
+          "peak_live_bytes": 86106,
+          "hashes": [
+            14477981172836562739
+          ]
+        },
+        "registry": {
+          "ns": 48272,
+          "allocations": 234,
+          "allocated_bytes": 175170,
+          "peak_live_bytes": 86106,
+          "hashes": [
+            14477981172836562739
+          ]
+        },
+        "time_change_percent": 7.81
+      },
+      {
+        "case": "decode-ex-file",
+        "input": "samples/WML2Viewer.avif",
+        "baseline": {
+          "ns": 231744094.5,
+          "allocations": 12764.0,
+          "allocated_bytes": 53649845.0,
+          "peak_live_bytes": 14975361.0,
+          "hashes": [
+            6143979356001440985
+          ]
+        },
+        "registry": {
+          "ns": 230346198.5,
+          "allocations": 12764.0,
+          "allocated_bytes": 53649845.0,
+          "peak_live_bytes": 14975361.0,
+          "hashes": [
+            6143979356001440985
+          ]
+        },
+        "time_change_percent": -0.6
+      },
+      {
+        "case": "decode-ex-file",
+        "input": "wml2/tests/fixtures/review/av1-full-omitted.avif",
+        "baseline": {
+          "ns": 18518,
+          "allocations": 121,
+          "allocated_bytes": 88384,
+          "peak_live_bytes": 84208,
+          "hashes": [
+            15593271742447940773
+          ]
+        },
+        "registry": {
+          "ns": 18328,
+          "allocations": 121,
+          "allocated_bytes": 88384,
+          "peak_live_bytes": 84208,
+          "hashes": [
+            15593271742447940773
+          ]
+        },
+        "time_change_percent": -1.03
+      },
+      {
+        "case": "decode-file",
+        "input": "samples/WML2Viewer.avif",
+        "baseline": {
+          "ns": 211674169.0,
+          "allocations": 27122.0,
+          "allocated_bytes": 55499208.0,
+          "peak_live_bytes": 17221749.0,
+          "hashes": [
+            12386750019693394575
+          ]
+        },
+        "registry": {
+          "ns": 205726934.5,
+          "allocations": 27122.0,
+          "allocated_bytes": 55499208.0,
+          "peak_live_bytes": 17221749.0,
+          "hashes": [
+            12386750019693394575
+          ]
+        },
+        "time_change_percent": -2.81
+      }
+    ]
+  },
+  "benchmark_repeat": {
+    "method": "6 alternating blocks, reverse initial order, pinned CPU; discard first 5 samples per process; 80 EX encodes/1000 legacy encodes/2000 tiny EX decodes per process",
+    "cpu": 0,
+    "results": [
+      {
+        "case": "avif-encode-2x2",
+        "baseline": {
+          "ns": 658738.5,
+          "allocations": 382.0,
+          "allocated_bytes": 84042.0,
+          "peak_live_bytes": 20251.0,
+          "hashes": [
+            16349954717480746188
+          ]
+        },
+        "registry": {
+          "ns": 658979.0,
+          "allocations": 382.0,
+          "allocated_bytes": 84042.0,
+          "peak_live_bytes": 20251.0,
+          "hashes": [
+            16349954717480746188
+          ]
+        },
+        "time_change_percent": 0.04
+      },
+      {
+        "case": "avif-ex-Gray12-16x16-odd-stride",
+        "baseline": {
+          "ns": 417660.0,
+          "allocations": 219.0,
+          "allocated_bytes": 33052.0,
+          "peak_live_bytes": 16012.0,
+          "hashes": [
+            9970869681433340788
+          ]
+        },
+        "registry": {
+          "ns": 421029.5,
+          "allocations": 222.0,
+          "allocated_bytes": 33228.0,
+          "peak_live_bytes": 16693.0,
+          "hashes": [
+            9970869681433340788
+          ]
+        },
+        "time_change_percent": 0.81
+      },
+      {
+        "case": "avif-ex-Gray8-16x16-odd-stride",
+        "baseline": {
+          "ns": 652479.0,
+          "allocations": 220.0,
+          "allocated_bytes": 34528.0,
+          "peak_live_bytes": 16460.0,
+          "hashes": [
+            10505960502298571620
+          ]
+        },
+        "registry": {
+          "ns": 664096.5,
+          "allocations": 223.0,
+          "allocated_bytes": 34704.0,
+          "peak_live_bytes": 16885.0,
+          "hashes": [
+            10505960502298571620
+          ]
+        },
+        "time_change_percent": 1.78
+      },
+      {
+        "case": "avif-ex-Rgba12-16x16-odd-stride",
+        "baseline": {
+          "ns": 15110724.0,
+          "allocations": 892.0,
+          "allocated_bytes": 1281531.0,
+          "peak_live_bytes": 81914.0,
+          "hashes": [
+            14847329255461642446
+          ]
+        },
+        "registry": {
+          "ns": 15083357.0,
+          "allocations": 895.0,
+          "allocated_bytes": 1281467.0,
+          "peak_live_bytes": 83891.0,
+          "hashes": [
+            14847329255461642446
+          ]
+        },
+        "time_change_percent": -0.18
+      },
+      {
+        "case": "avif-ex-Rgba8-16x16-odd-stride",
+        "baseline": {
+          "ns": 13414360.0,
+          "allocations": 882.0,
+          "allocated_bytes": 1037463.0,
+          "peak_live_bytes": 81858.0,
+          "hashes": [
+            16215809258589284975
+          ]
+        },
+        "registry": {
+          "ns": 13727071.5,
+          "allocations": 885.0,
+          "allocated_bytes": 1037399.0,
+          "peak_live_bytes": 82811.0,
+          "hashes": [
+            16215809258589284975
+          ]
+        },
+        "time_change_percent": 2.33
+      },
+      {
+        "case": "decode-ex-file",
+        "baseline": {
+          "ns": 41293.0,
+          "allocations": 234.0,
+          "allocated_bytes": 175170.0,
+          "peak_live_bytes": 86106.0,
+          "hashes": [
+            14477981172836562739
+          ]
+        },
+        "registry": {
+          "ns": 41833.0,
+          "allocations": 234.0,
+          "allocated_bytes": 175170.0,
+          "peak_live_bytes": 86106.0,
+          "hashes": [
+            14477981172836562739
+          ]
+        },
+        "time_change_percent": 1.31
+      }
+    ]
+  },
+  "memory": {
+    "build_jobs": 2,
+    "sampling_seconds": 1,
+    "observed_peak_cgroup_bytes": 3098935296,
+    "limit_bytes": 17179869184,
+    "note": "Sampled cgroup memory includes file caches and other task processes; not an absolute RSS bound."
+  },
+  "other_checks": [
+    "cargo fmt -p wml2 --check",
+    "git diff --check",
+    "6 release-metadata Python unit tests and unchanged 0.0.36 notes validation",
+    "CI YAML parse and selected-feature Bash syntax"
+  ],
+  "limitations": [
+    "AVIS is not guaranteed: published 0.1.0 inter/show-existing known issue belongs to task 01a147ca-f6b0-716f-9ef3-d16bdb9df00f; no upstream codec repositories were changed.",
+    "Harness totals overlap. Conditional early returns for absent AVIS and optional external error/C2PA/legacy samples count as passed; existing ignored/manual corpus tests were not run.",
+    "Independent readers cover nine 2x2 identity RGB stills, transparent RGB and straight alpha at 8/10/12bit; no general ICC/HDR color-accuracy claim.",
+    "Windows/macOS and stable are remote CI scope; local native runtime used Rust 1.91.0. WASM used actual Node 24.19.0 with official matching wasm-bindgen 0.2.126; no browser or WASM threads execution.",
+    "EX output remains Gray/RGBA8/12. 16-bit storage needs explicit Exact/Round conversion; existing native YUV/10-bit/RightShift APIs remain separate.",
+    "No main merge, publish, WML2 version bump, tag/release, animation extension or unrelated JPEG2000 changes."
+  ],
+  "raw_record": {
+    "path": "image-buffer-ex-avif-registry-raw.json.gz",
+    "sha256": "e3c76592ce4279fe3028bff722b1c2dc0ea76c22b1d54cacf6dba2410d6aeef6"
+  }
+}

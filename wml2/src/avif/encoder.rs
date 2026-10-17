@@ -9,8 +9,8 @@ use crate::metadata::DataMap;
 type Error = Box<dyn std::error::Error>;
 
 /// Encode an explicitly requested EX layout. The callback converts storage
-/// with Exact/Round; this adapter only unpacks8/12-bit Gray or straight RGBA
-/// into the codec's native planes. It never interprets EX bytes as YUV.
+/// with Exact/Round; this adapter borrows those bytes as the shared codec's
+/// packed view. It never interprets EX bytes as YUV or changes stored precision.
 #[cfg(feature = "image-buffer-ex")]
 pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx) -> Result<Vec<u8>, Error> {
     use crate::draw::{PixelFormatEx, image_buffer_ex::validate_bytes};
@@ -92,53 +92,10 @@ pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx) -> Result<Vec<u8>, E
             )));
         }
         validate_bytes(picked.bytes(), width, height, format, stride, length)?;
-        let channels = format.channels();
-        let mut samples = Vec::with_capacity(channels);
-        for _ in 0..channels {
-            let mut plane = Vec::new();
-            plane.try_reserve_exact(pixels)?;
-            samples.push(plane);
-        }
-        for y in 0..height {
-            for x in 0..width {
-                for (channel, plane) in samples.iter_mut().enumerate() {
-                    let at = y * stride
-                        + x * format.bytes_per_pixel()
-                        + channel * format.bytes_per_sample();
-                    plane.push(if format.bits() == 8 {
-                        u16::from(picked.bytes()[at])
-                    } else {
-                        u16::from_le_bytes([picked.bytes()[at], picked.bytes()[at + 1]])
-                    });
-                }
-            }
-        }
-        drop(picked);
-        let mut planes = Vec::with_capacity(channels);
-        // AV1 identity matrix uses G/B/R, while EX is always R/G/B/A.
-        let order: &[usize] = if channels == 1 { &[0] } else { &[1, 2, 0, 3] };
-        for (index, &channel) in order.iter().enumerate() {
-            planes.push(avifenc_codec::PlaneBuffer {
-                layout: avifenc_codec::PlaneLayout {
-                    plane: if index == 3 { 3 } else { index as u8 },
-                    width,
-                    height,
-                    subsampling_x: 0,
-                    subsampling_y: 0,
-                    sample_count: pixels,
-                },
-                samples: std::mem::take(&mut samples[channel]),
-            });
-        }
-        let mut encoded = avifenc_codec::encode_native_bytes(
-            &avifenc_codec::FrameBuffers {
-                width,
-                height,
-                planes,
-            },
-            &avifenc_codec::NativeEncodeOptions {
+        let options = avifenc_codec::EncodeOptionsEx {
+            native: avifenc_codec::NativeEncodeOptions {
                 bit_depth: format.bits(),
-                subsampling: if channels == 1 {
+                subsampling: if format.channels() == 1 {
                     avifenc_codec::NativeSubsampling::Cs400
                 } else {
                     avifenc_codec::NativeSubsampling::Cs444
@@ -146,9 +103,30 @@ pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx) -> Result<Vec<u8>, E
                 encoder,
                 color_information: colors,
             },
-        )
-        .map_err(map_error)?;
-        normalize_alpha_reference(&mut encoded, channels == 4)?;
+            // WML2's picker already applied the requested Exact/Round policy,
+            // including alpha. Do not introduce a second precision conversion.
+            precision: avifenc_codec::buffer::PrecisionPolicy::Exact,
+            color: avifenc_codec::ColorPolicyEx::Preserve,
+        };
+        let nclx = options.native.color_information.nclx.unwrap();
+        // These are caller-prepared output samples and explicit output metadata,
+        // not the source file's ICC/CICP. No source profile is inferred/applied.
+        let view = packed_view_ex(
+            &picked,
+            avifenc_codec::buffer::ColorMetadataRef {
+                cicp: Some(avifenc_codec::buffer::Cicp {
+                    primaries: nclx.color_primaries,
+                    transfer: nclx.transfer_characteristics,
+                    matrix: nclx.matrix_coefficients,
+                }),
+                icc: options.native.color_information.icc_profile.as_deref(),
+            },
+        );
+        // Validate backend controls before compact native plane allocation.
+        avifenc_codec::preflight_ex(view, &options).map_err(map_ex_error)?;
+        let encoded = avifenc_codec::encode_ex(view, &options)
+            .map_err(map_ex_error)?
+            .bytes;
         crate::limits::check(encoded.len(), limits.expanded_bytes, "AVIF encoded output")?;
         Ok(encoded)
     })();
@@ -158,6 +136,61 @@ pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx) -> Result<Vec<u8>, E
         (Ok(_), Err(error)) => Err(error),
         (Ok(data), Ok(())) => Ok(data),
     }
+}
+
+// WML2 ImageBufferEx and the shared codec model have different contracts.
+// Keep this bridge private: no owned shared buffer or intermediate U16 copy.
+#[cfg(feature = "image-buffer-ex")]
+fn packed_view_ex<'a>(
+    picked: &'a crate::draw::PixelBytesEx,
+    color: avifenc_codec::buffer::ColorMetadataRef<'a>,
+) -> avifenc_codec::buffer::ImageViewEx<'a> {
+    use avifenc_codec::buffer::*;
+    let gray = picked.format().channels() == 1;
+    ImageViewEx::Packed(PackedImageViewEx {
+        plane: PlaneViewEx {
+            samples: if picked.format().bits() == 8 {
+                SamplesRef::U8(picked.bytes())
+            } else {
+                // Explicit LE bytes also support unaligned/odd byte strides.
+                SamplesRef::U16LeBytes(picked.bytes())
+            },
+            layout: PlaneLayoutEx {
+                width: picked.width(),
+                height: picked.height(),
+                valid_bits: picked.format().bits(),
+                offset_bytes: 0,
+                row_stride_bytes: picked.stride(),
+            },
+        },
+        channels: if gray {
+            PackedChannels::Gray
+        } else {
+            PackedChannels::Rgba
+        },
+        alpha: if gray {
+            AlphaMode::Absent
+        } else {
+            AlphaMode::Straight
+        },
+        color,
+    })
+}
+
+#[cfg(feature = "image-buffer-ex")]
+fn map_ex_error(error: avifenc_codec::EncodeErrorEx) -> Error {
+    use avifenc_codec::EncodeErrorEx;
+    let message = error.to_string();
+    let kind = match error {
+        EncodeErrorEx::Buffer(_) | EncodeErrorEx::ColorConflict(_) => {
+            ImgErrorKind::InvalidParameter
+        }
+        EncodeErrorEx::ConversionRequired(_) | EncodeErrorEx::Unsupported(_) => {
+            ImgErrorKind::UnsupportedFeature
+        }
+        EncodeErrorEx::Codec(error) => return map_error(error),
+    };
+    Box::new(ImgError::new_const(kind, message))
 }
 
 pub fn encode(option: &mut EncodeOptions) -> Result<Vec<u8>, Error> {
@@ -191,8 +224,7 @@ pub fn encode(option: &mut EncodeOptions) -> Result<Vec<u8>, Error> {
             metadata.extend(encode_options.clone());
         }
         let options = convert_options((!metadata.is_empty()).then_some(&metadata))?;
-        let has_alpha = data.chunks_exact(4).any(|pixel| pixel[3] != 255);
-        let mut encoded = avifenc_codec::encode_bytes(
+        let encoded = avifenc_codec::encode_bytes(
             &avifenc_codec::ImageBuffer {
                 width: profile.width,
                 height: profile.height,
@@ -201,7 +233,6 @@ pub fn encode(option: &mut EncodeOptions) -> Result<Vec<u8>, Error> {
             &options,
         )
         .map_err(map_error)?;
-        normalize_alpha_reference(&mut encoded, has_alpha)?;
         Ok(encoded)
     })();
     let end_result = option.drawer.encode_end(None::<crate::draw::EndOptions>);
@@ -209,68 +240,6 @@ pub fn encode(option: &mut EncodeOptions) -> Result<Vec<u8>, Error> {
         (Ok(data), Ok(())) => Ok(data),
         (Err(error), _) => Err(error),
         (Ok(_), Err(error)) => Err(error),
-    }
-}
-
-// avifenc-rust0.0.7 writes primary1 -> alpha2 auxl. Readers such as libavif
-// require auxiliary2 -> primary1. Fix only the known producer schema in place,
-// without searching ICC/AV1 payload bytes or changing offsets/codec samples.
-// Already-correct output is accepted so an upstream fix stays compatible.
-pub(crate) fn normalize_alpha_reference(data: &mut [u8], required: bool) -> Result<(), Error> {
-    fn invalid() -> Error {
-        Box::new(ImgError::new_const(
-            ImgErrorKind::EncodeError,
-            "unexpected AVIF encoder alpha-reference layout".into(),
-        ))
-    }
-    fn find(
-        data: &[u8],
-        mut at: usize,
-        end: usize,
-        kind: &[u8; 4],
-    ) -> Result<Option<std::ops::Range<usize>>, Error> {
-        let mut found = None;
-        while at < end {
-            if end - at < 8 {
-                return Err(invalid());
-            }
-            let size = u32::from_be_bytes(data[at..at + 4].try_into().unwrap()) as usize;
-            if size < 8 || size > end - at {
-                return Err(invalid());
-            }
-            if &data[at + 4..at + 8] == kind {
-                if found.is_some() {
-                    return Err(invalid());
-                }
-                found = Some(at + 8..at + size);
-            }
-            at += size;
-        }
-        Ok(found)
-    }
-    let meta = find(data, 0, data.len(), b"meta")?.ok_or_else(invalid)?;
-    if meta.len() < 4 || data[meta.start..meta.start + 4] != [0; 4] {
-        return Err(invalid());
-    }
-    let Some(iref) = find(data, meta.start + 4, meta.end, b"iref")? else {
-        return if required { Err(invalid()) } else { Ok(()) };
-    };
-    if iref.len() < 4 || data[iref.start..iref.start + 4] != [0; 4] {
-        return Err(invalid());
-    }
-    let reference = find(data, iref.start + 4, iref.end, b"auxl")?.ok_or_else(invalid)?;
-    if reference.len() != 6 {
-        return Err(invalid());
-    }
-    let payload = &mut data[reference];
-    match payload {
-        [0, 1, 0, 1, 0, 2] => {
-            payload[1] = 2;
-            payload[5] = 1;
-            Ok(())
-        }
-        [0, 2, 0, 1, 0, 1] => Ok(()),
-        _ => Err(invalid()),
     }
 }
 
@@ -373,46 +342,76 @@ fn map_error(error: avifenc_codec::EncoderError) -> Error {
     Box::new(ImgError::new_const(kind, error.to_string()))
 }
 
-#[cfg(test)]
-mod alpha_reference_tests {
-    use super::normalize_alpha_reference;
-    fn boxed(kind: &[u8; 4], payload: &[u8]) -> Vec<u8> {
-        [
-            ((payload.len() + 8) as u32).to_be_bytes().as_slice(),
-            kind,
-            payload,
-        ]
-        .concat()
-    }
+#[cfg(all(test, feature = "image-buffer-ex"))]
+mod shared_view_tests {
+    use super::packed_view_ex;
+    use crate::draw::*;
+    use avifenc_codec::buffer::*;
+
     #[test]
-    fn producer_reference_is_corrected_without_touching_other_payloads_and_is_idempotent() {
-        let reference = boxed(b"auxl", &[0, 1, 0, 1, 0, 2]);
-        let iref = boxed(b"iref", &[[0; 4].as_slice(), &reference].concat());
-        let unrelated = boxed(b"free", b"auxl\0\x01\0\x01\0\x02");
-        let mut data = boxed(b"meta", &[[0; 4].as_slice(), &unrelated, &iref].concat());
-        let original = data.clone();
-        normalize_alpha_reference(&mut data, true).unwrap();
-        assert_eq!(data.len(), original.len());
-        assert_eq!(
-            data.iter().zip(&original).filter(|(a, b)| a != b).count(),
-            2
-        );
-        assert!(
-            data.windows(unrelated.len())
-                .any(|bytes| bytes == unrelated)
-        );
-        let corrected = data.clone();
-        normalize_alpha_reference(&mut data, true).unwrap();
-        assert_eq!(data, corrected);
-        for end in 0..data.len() {
-            assert!(normalize_alpha_reference(&mut data[..end].to_vec(), true).is_err());
+    fn all_wml2_formats_borrow_bytes_with_depth_stride_and_alpha_intact() {
+        for format in [
+            PixelFormatEx::Gray8,
+            PixelFormatEx::Rgba8,
+            PixelFormatEx::Gray12,
+            PixelFormatEx::Rgba12,
+            PixelFormatEx::Gray16,
+            PixelFormatEx::Rgba16,
+        ] {
+            let (w, h) = (2, 2);
+            let stride = w * format.bytes_per_pixel() + 1;
+            let mut raw = vec![0xee; stride * h];
+            for y in 0..h {
+                for x in 0..w {
+                    for c in 0..format.channels() {
+                        let value = (1 + y * 100 + x * 10 + c) as u16;
+                        let at =
+                            y * stride + (x * format.channels() + c) * format.bytes_per_sample();
+                        raw[at..at + format.bytes_per_sample()]
+                            .copy_from_slice(&value.to_le_bytes()[..format.bytes_per_sample()]);
+                    }
+                }
+            }
+            let mut image =
+                crate::draw::ImageBufferEx::from_bytes(w, h, format, Some(stride), raw.clone())
+                    .unwrap();
+            let mut output = PixelOutputEx::new(format, PrecisionConversion::Exact);
+            output.stride = Some(stride);
+            let picked = image
+                .encode_pick_ex(0, 0, w, h, output, None)
+                .unwrap()
+                .unwrap();
+            let ImageViewEx::Packed(view) = packed_view_ex(&picked, ColorMetadataRef::default())
+            else {
+                panic!("packed input")
+            };
+            // Type-check the decoder and encoder re-exports against each other.
+            let shared: avif_codec::buffer::ImageViewEx<'_> = ImageViewEx::Packed(view);
+            shared.validate().unwrap();
+            let borrowed = match view.plane.samples {
+                SamplesRef::U8(b) => {
+                    assert_eq!(format.bits(), 8);
+                    b
+                }
+                SamplesRef::U16LeBytes(b) => {
+                    assert!(format.bits() > 8);
+                    b
+                }
+                _ => panic!("must borrow bytes, never cast to numeric U16"),
+            };
+            assert_eq!(borrowed.as_ptr(), picked.bytes().as_ptr());
+            assert_eq!(view.plane.layout.row_stride_bytes, stride);
+            assert_eq!(view.plane.layout.valid_bits, format.bits());
+            assert_eq!(
+                view.alpha,
+                if format.channels() == 1 {
+                    AlphaMode::Absent
+                } else {
+                    AlphaMode::Straight
+                }
+            );
+            assert_eq!(view.plane.sample(1, 1, 0, format.channels()).unwrap(), 111);
+            assert_eq!(image.bytes().unwrap(), raw);
         }
-    }
-    #[test]
-    fn no_alpha_and_malformed_producer_shapes_are_explicit() {
-        let mut data = boxed(b"meta", &[0; 4]);
-        normalize_alpha_reference(&mut data, false).unwrap();
-        assert!(normalize_alpha_reference(&mut data, true).is_err());
-        assert!(normalize_alpha_reference(&mut [0; 16], false).is_err());
     }
 }

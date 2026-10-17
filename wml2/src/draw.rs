@@ -1352,6 +1352,13 @@ pub fn image_from_ex_with_limits(
     precision: PrecisionConversion,
     limits: crate::limits::DecodeLimits,
 ) -> Result<ImageBufferEx, Error> {
+    #[cfg(feature = "jpeg2000")]
+    if matches!(
+        format_check(&buffer[..buffer.len().min(256)]),
+        ImageFormat::Jpeg2000
+    ) {
+        return crate::jpeg2000::image_from_ex_owned(buffer, storage, precision, limits);
+    }
     let mut image = ImageBufferEx::with_storage(storage, precision);
     image_decoder_ex_with_limits(
         &mut BytesReader::new(buffer),

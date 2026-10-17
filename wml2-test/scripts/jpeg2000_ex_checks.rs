@@ -241,3 +241,18 @@ pub fn geometry_boundaries(data: &[u8], expected: &[u8], w: usize, h: usize, bit
         pixels(&clipped, expected, w, h, bits);
     }
 }
+
+pub fn large_x_origin_pixels(data: &[u8], expected: &[u8], w: usize, h: usize, bits: u8) {
+    let siz = data.windows(2).position(|v| v == [255, 0x51]).unwrap();
+    // These shifts preserve the three-level fixture's wavelet parity. The
+    // canvas stays 33x29 even when its absolute X origin approaches u32::MAX.
+    for origin in [0x8000_0000u32, 0xffff_ff80] {
+        let mut shifted = data.to_vec();
+        for offset in [siz + 6, siz + 14, siz + 30] {
+            let value = u32::from_be_bytes(data[offset..offset + 4].try_into().unwrap());
+            shifted[offset..offset + 4]
+                .copy_from_slice(&value.checked_add(origin).unwrap().to_be_bytes());
+        }
+        pixels(&shifted, expected, w, h, bits);
+    }
+}

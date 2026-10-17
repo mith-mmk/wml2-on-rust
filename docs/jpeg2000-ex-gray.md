@@ -98,11 +98,11 @@ cargo test -p wml2 --locked --release --no-default-features \
 cargo run -p wml2 --locked --release --no-default-features \
   --features jpeg2000,image-buffer-ex --example jpeg2000_ex_verify -- \
   wml2/tests/fixtures/review/jp2_ex_gray16_bench.jp2 .test-gray16.u16le 16 100
-python3 -B wml2-test/scripts/verify_jpeg2000_ex_wasm.py --work-dir .test-jpeg2000-ex-wasm
-python3 -B wml2-test/scripts/verify_jpeg2000_ex_wasm.py --default-features --work-dir .test-jpeg2000-ex-wasm-default
+python3 -B wml2-test/scripts/verify_jpeg2000_ex_wasm.py --overflow-checks --work-dir .test-jpeg2000-ex-wasm
+python3 -B wml2-test/scripts/verify_jpeg2000_ex_wasm.py --default-features --overflow-checks --work-dir .test-jpeg2000-ex-wasm-default
 ```
 
-## Local validation checkpoint
+## Initial local validation checkpoint (af4bdf6)
 
 Rust1.91/Linux workspace:502 passed,0 failed,14 existing ignored. Final focused
 lib plus six EX groups:36 passed,0 failed. Minimal/default actual Node24.19.0
@@ -125,6 +125,17 @@ Builds used two jobs; sampled cgroup peak and the16GiB limit are recorded.
 [Actual decoded/reference and low-byte display](jpeg2000-ex-gray-display.png)
 was visually checked. Raw logs and measurement harnesses are retained in
 [jpeg2000-ex-gray-raw.json.gz](jpeg2000-ex-gray-raw.json.gz).
+
+## Large-origin indexing correction
+
+EX output now subtracts absolute image origins before combining row and column
+offsets. A valid 33x29 canvas with X origin `0xffffff80` therefore keeps its
+intermediate indices within the checked canvas bounds on 32-bit targets.
+Shared native/WASM regression tests preserve all source samples at both depths
+and at X origins `0x80000000` and `0xffffff80`. Overflow checks are explicitly
+enabled for the recorded WASM runs. The initial checkpoint above remains a
+historical record; see the [correction validation record](jpeg2000-ex-gray-origin-fix-validation.json)
+for the before/after checks, current source hashes and paired benchmarks.
 
 ## Later work
 

@@ -105,6 +105,19 @@ fn native_and_32bit_geometry_contracts_are_checked() {
     }
 }
 
+#[test]
+fn large_x_origins_preserve_pixels_on_native_and_32bit() {
+    for bits in [12, 16] {
+        large_x_origin_pixels(
+            &read(&format!("jp2_ex_gray{bits}_noise.j2k")),
+            &read(&format!("jp2_ex_gray{bits}_noise.u16le")),
+            33,
+            29,
+            bits,
+        );
+    }
+}
+
 fn rejected(data: &[u8]) {
     let mut p = Probe::new(16);
     assert!(

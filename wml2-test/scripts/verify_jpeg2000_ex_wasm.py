@@ -13,6 +13,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--work-dir', type=Path, required=True)
     p.add_argument('--default-features', action='store_true')
+    p.add_argument('--overflow-checks', action='store_true')
     args = p.parse_args()
     work = args.work_dir.resolve()
     assert work.name.startswith('.test')
@@ -45,6 +46,7 @@ static REJECTED: &[&[u8]] = &[REJECTS];
     if i == 8 || i == 48 {
         checks::callbacks_and_limits(c.input,c.expected,c.w,c.h,c.bits);
         checks::geometry_boundaries(c.input,c.expected,c.w,c.h,c.bits);
+        checks::large_x_origin_pixels(c.input,c.expected,c.w,c.h,c.bits);
     }
 }
 #[unsafe(no_mangle)] pub extern "C" fn reject() -> u32 {
@@ -58,6 +60,8 @@ static REJECTED: &[&[u8]] = &[REJECTS];
 '''.replace('ENTRIES', entries).replace('REJECTS', rejected))
     shutil.copyfile(repo / 'Cargo.lock', work / 'Cargo.lock')
     env = dict(os.environ)
+    if args.overflow_checks:
+        env['CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS'] = 'true'
     env.setdefault('CARGO_TARGET_DIR', str(work / '.test-target'))
     subprocess.run(['cargo', 'build', '--offline', '--release', '--target', 'wasm32-unknown-unknown'], cwd=work, env=env, check=True)
     wasm = Path(env['CARGO_TARGET_DIR']) / 'wasm32-unknown-unknown/release/jpeg2000_ex_wasm_check.wasm'
@@ -71,6 +75,7 @@ const rejected=e.reject();console.log(JSON.stringify({runtime:process.version,pa
     run = subprocess.run(['node', str(work / 'run.cjs'), str(wasm)], check=True, capture_output=True, text=True)
     report = json.loads(run.stdout)
     report['default_features'] = args.default_features
+    report['release_overflow_checks'] = env.get('CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS') == 'true'
     report['source_sha256'] = {str(path.relative_to(repo)): hashlib.sha256(path.read_bytes()).hexdigest() for path in
                                [source, repo / 'wml2/src/jpeg2000.rs', repo / 'wml2/src/jpeg2000_general.rs', repo / 'wml2/src/draw.rs']}
     report['wasm_sha256'] = hashlib.sha256(wasm.read_bytes()).hexdigest()

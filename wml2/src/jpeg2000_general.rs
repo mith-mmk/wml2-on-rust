@@ -1757,13 +1757,16 @@ fn image_inner<const GRAY_EX: bool>(data: &[u8]) -> Result<DecodedImage, Error> 
         reconstruct::<GRAY_EX>(&mut planes, precincts, &tile.config, &steps)?;
         if GRAY_EX {
             let plane = &planes[0];
+            // Subtract absolute origins before combining row and column offsets.
+            let x0 = plane.x0 - g.x0;
+            let y0 = plane.y0 - g.y0;
             let shift = 1i64 << (g.components[0].depth - 1);
             let max = (1i64 << g.components[0].depth) - 1;
             for y in 0..plane.h {
                 for x in 0..plane.w {
                     let sample = (i64::from(plane.coefficients[y * plane.w + x]) + shift)
                         .clamp(0, max) as u16;
-                    let at = ((plane.y0 + y - g.y0) * width + plane.x0 + x - g.x0) * 2;
+                    let at = ((y0 + y) * width + x0 + x) * 2;
                     rgba[at..at + 2].copy_from_slice(&sample.to_le_bytes());
                 }
             }

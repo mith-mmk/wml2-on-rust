@@ -43,10 +43,18 @@ pub enum ImageFormat {
     Unknown,
     #[cfg(feature = "jpeg2000")]
     Jpeg2000, // Raw SOC or JP2 signature
+    #[cfg(feature = "jpeg-xl")]
+    JpegXl,
 }
 
 /// Detects an image format from the leading bytes of `buffer`.
 pub fn format_check(buffer: &[u8]) -> ImageFormat {
+    #[cfg(feature = "jpeg-xl")]
+    if buffer.starts_with(&[0xff, 0x0a])
+        || buffer.starts_with(b"\x00\x00\x00\x0cJXL \x0d\x0a\x87\x0a")
+    {
+        return ImageFormat::JpegXl;
+    }
     #[cfg(feature = "jpeg2000")]
     if buffer.starts_with(&[0xff, 0x4f])
         || buffer.starts_with(b"\x00\x00\x00\x0cjP  \x0d\x0a\x87\x0a")
@@ -235,6 +243,8 @@ pub fn decoder_supports_format(format: &ImageFormat) -> bool {
     match format {
         #[cfg(feature = "jpeg2000")]
         ImageFormat::Jpeg2000 => true,
+        #[cfg(feature = "jpeg-xl")]
+        ImageFormat::JpegXl => true,
         #[cfg(feature = "gif")]
         ImageFormat::Gif => true,
         #[cfg(feature = "jpeg")]

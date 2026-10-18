@@ -1,0 +1,148 @@
+{
+  "encoder": "libjxl 0.11.2 C API, effort3, single encoder process",
+  "decoder": "djxl 0.11.2",
+  "source": "deterministic integer patterns in generate_jpegxl_fixtures.py; original samples are expected for lossless",
+  "cases": [
+    {
+      "file": "jxl-gray8.jxl",
+      "expected": "jxl-gray8.bin",
+      "width": 7,
+      "height": 5,
+      "channels": 1,
+      "bits": 8,
+      "mode": "lossless",
+      "oracle": "jxl-gray8-djxl.bin",
+      "oracle_channels": 1,
+      "sha256": "0134a546252c41b378caba7668f6fa1724f89c8697a6a810390c012ea2a13b2f"
+    },
+    {
+      "file": "jxl-gray12.jxl",
+      "expected": "jxl-gray12.bin",
+      "width": 7,
+      "height": 5,
+      "channels": 1,
+      "bits": 12,
+      "mode": "lossless",
+      "oracle": "jxl-gray12-djxl.bin",
+      "oracle_channels": 1,
+      "sha256": "40164bc86eb1cb9a565d0cb4aecce1c69a9364c8c3c60e13ccbf7c78a5852220"
+    },
+    {
+      "file": "jxl-gray16.jxl",
+      "expected": "jxl-gray16.bin",
+      "width": 7,
+      "height": 5,
+      "channels": 1,
+      "bits": 16,
+      "mode": "lossless",
+      "oracle": "jxl-gray16-djxl.bin",
+      "oracle_channels": 1,
+      "sha256": "728fd13ef6ad3a982f48de96328a4fb01e0313d23338da997db6ee35a368b844"
+    },
+    {
+      "file": "jxl-grayalpha8.jxl",
+      "expected": "jxl-grayalpha8.bin",
+      "width": 7,
+      "height": 5,
+      "channels": 2,
+      "bits": 8,
+      "mode": "lossless",
+      "oracle": "jxl-grayalpha8-djxl.bin",
+      "oracle_channels": 2,
+      "sha256": "5f6745d1662ca96160a59c474be882168357926a0e9533080e3a54c07f10edfc"
+    },
+    {
+      "file": "jxl-grayalpha12.jxl",
+      "expected": "jxl-grayalpha12.bin",
+      "width": 7,
+      "height": 5,
+      "channels": 2,
+      "bits": 12,
+      "mode": "lossless",
+      "oracle": "jxl-grayalpha12-djxl.bin",
+      "oracle_channels": 2,
+      "sha256": "e8709762cd96a653fd4d95c208a153e9cc2cbd6d94a44df7f9aabceb577b8743"
+    },
+    {
+      "file": "jxl-grayalpha16.jxl",
+      "expected": "jxl-grayalpha16.bin",
+      "width": 7,
+      "height": 5,
+      "channels": 2,
+      "bits": 16,
+      "mode": "lossless",
+      "oracle": "jxl-grayalpha16-djxl.bin",
+      "oracle_channels": 2,
+      "sha256": "e4fd9f6b3e6738b031d66161320126ca54a2f3b936ec9c826d50b9e19bd032ac"
+    },
+    {
+      "file": "jxl-rgba8.jxl",
+      "expected": "jxl-rgba8.bin",
+      "width": 7,
+      "height": 5,
+      "channels": 4,
+      "bits": 8,
+      "mode": "lossless",
+      "oracle": "jxl-rgba8-djxl.bin",
+      "oracle_channels": 4,
+      "sha256": "29d3716e4e36680dd8f983bab86415d742151831dd4bf4a8662a2863e9dc055e"
+    },
+    {
+      "file": "jxl-rgba12.jxl",
+      "expected": "jxl-rgba12.bin",
+      "width": 7,
+      "height": 5,
+      "channels": 4,
+      "bits": 12,
+      "mode": "lossless",
+      "oracle": "jxl-rgba12-djxl.bin",
+      "oracle_channels": 4,
+      "sha256": "59cbc13cfb2b1f92219f4ef6091d67b5f103ef83608005de1671ffd5ebf00263"
+    },
+    {
+      "file": "jxl-rgba16.jxl",
+      "expected": "jxl-rgba16.bin",
+      "width": 7,
+      "height": 5,
+      "channels": 4,
+      "bits": 16,
+      "mode": "lossless",
+      "oracle": "jxl-rgba16-djxl.bin",
+      "oracle_channels": 4,
+      "sha256": "5a4ca4bbf1e910301fa5374a1a5b085d1547273fa8bc44e8e7254138a0af7f8e"
+    },
+    {
+      "file": "jxl-icc-lossless.jxl",
+      "width": 7,
+      "height": 5,
+      "channels": 4,
+      "bits": 16,
+      "mode": "lossless",
+      "oracle": "jxl-icc-lossless-djxl.bin",
+      "oracle_channels": 4,
+      "sha256": "5ca8a8e39a4640ce49188cd9896163f5cbd88d870503efee5f9b941843ddede8"
+    },
+    {
+      "file": "jxl-icc-lossy.jxl",
+      "width": 7,
+      "height": 5,
+      "channels": 4,
+      "bits": 16,
+      "mode": "lossy",
+      "oracle": "jxl-icc-lossy-djxl.bin",
+      "oracle_channels": 4,
+      "sha256": "d7e57f3645849bf3c840bd421add3a48e2188bf7c1248625c8638d96b97679d7"
+    },
+    {
+      "file": "jxl-lossy.jxl",
+      "width": 32,
+      "height": 24,
+      "channels": 3,
+      "bits": 8,
+      "mode": "lossy",
+      "oracle": "jxl-lossy-djxl.bin",
+      "oracle_channels": 3,
+      "sha256": "d58f6765eed572b5ea7f27b51f1e70e1c6bb4c2ddea7b6195abc846f633e9007"
+    }
+  ]
+}

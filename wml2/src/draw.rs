@@ -1407,9 +1407,11 @@ pub fn image_decoder_ex_with_limits<B: BinaryReader>(
             ImageFormat::Tiff => crate::tiff::decoder::decode_ex_inner(reader, _option),
             #[cfg(feature = "avif")]
             ImageFormat::Avif => crate::avif::decoder::decode_ex_inner(reader, _option),
+            #[cfg(feature = "jpeg-xl")]
+            ImageFormat::JpegXl => crate::jpegxl::decode_ex_inner(reader, _option),
             _ => Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
-                "EX decoding supports enabled static PNG/TIFF/AVIF and unsigned Gray/RGB/declared straight RGBA12/16 reversible JPEG2000".into(),
+                "EX decoding supports enabled static JPEG XL/PNG/TIFF/AVIF and unsigned Gray/RGB/declared straight RGBA12/16 reversible JPEG2000".into(),
             )) as Error),
         }
     })
@@ -1440,6 +1442,8 @@ fn image_decoder_inner<B: BinaryReader>(
 
     use crate::util::ImageFormat::*;
     match format {
+        #[cfg(feature = "jpeg-xl")]
+        JpegXl => return crate::jpegxl::decode_inner(reader, option),
         #[cfg(feature = "jpeg2000")]
         Jpeg2000 => return crate::jpeg2000::decode_inner(reader, option),
         #[cfg(feature = "jpeg")]

@@ -1,0 +1,583 @@
+//! Bounded JPEG XL still-image adapter for the published `jxl 0.7.4` API.
+//!
+//! Enable `jpeg-xl`; add `image-buffer-ex` for native Gray/RGBA8/12/16LE.
+//! See `docs/jpeg-xl.md` for precision, colour, resource and rejection contracts.
+use crate::draw::{DecodeOptions, InitOptions};
+use crate::error::{ImgError, ImgErrorKind};
+use crate::limits::{self, DecodeLimits};
+use crate::metadata::DataMap;
+use crate::warning::ImgWarnings;
+use bin_rs::reader::BinaryReader;
+use jxl_codec::api::*;
+use jxl_codec::bit_reader::BitReader;
+use jxl_codec::headers::extra_channels::ExtraChannel;
+use jxl_codec::headers::{FileHeader, JxlHeader};
+use std::io::SeekFrom;
+
+type Error = Box<dyn std::error::Error>;
+const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
+const MAX_INPUT: usize = 64 * 1024 * 1024;
+const MAX_HEADER: usize = 64 * 1024;
+const MAX_PIXELS: usize = 4 * 1024 * 1024;
+
+fn error(kind: ImgErrorKind, message: impl Into<String>) -> Error {
+    Box::new(ImgError::new_const(kind, message.into()))
+}
+fn unsupported(message: &str) -> Error {
+    error(ImgErrorKind::UnsupportedFeature, message)
+}
+fn invalid(message: &str) -> Error {
+    error(ImgErrorKind::IllegalData, message)
+}
+fn codec_error(e: jxl_codec::error::Error) -> Error {
+    use jxl_codec::error::Error::*;
+    let kind = match e {
+        OutOfBounds(_) | SectionTooShort | UnexpectedCodestreamBoxEnd | IccEndOfStream => {
+            ImgErrorKind::UnexpectedEof
+        }
+        OutOfMemory(_)
+        | ImageOutOfMemory(..)
+        | ImageSizeTooLarge(..)
+        | ImageDimensionTooLarge(_) => ImgErrorKind::OutOfMemory,
+        _ => ImgErrorKind::IllegalData,
+    };
+    error(kind, format!("JPEG XL: {e}"))
+}
+fn complete<T, U>(result: ProcessingResult<T, U>) -> Result<T, Error> {
+    match result {
+        ProcessingResult::Complete { result } => Ok(result),
+        ProcessingResult::NeedsMoreInput { .. } => {
+            Err(error(ImgErrorKind::UnexpectedEof, "truncated JPEG XL"))
+        }
+    }
+}
+fn add(a: usize, b: usize) -> Result<usize, Error> {
+    a.checked_add(b)
+        .ok_or_else(|| invalid("JPEG XL size overflow"))
+}
+fn mul(a: usize, b: usize) -> Result<usize, Error> {
+    a.checked_mul(b)
+        .ok_or_else(|| invalid("JPEG XL size overflow"))
+}
+fn append(out: &mut Vec<u8>, data: &[u8]) -> Result<(), Error> {
+    out.try_reserve_exact(data.len())?;
+    out.extend_from_slice(data);
+    Ok(())
+}
+
+struct Input {
+    codestream: Vec<u8>,
+    metadata: Vec<(String, DataMap)>,
+    metadata_bytes: usize,
+}
+// Validate every box, including trailing boxes, before the codec sees input.
+// Never pass brob to an unbounded decompressor or discard unknown metadata.
+fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
+    let mut out = Input {
+        codestream: Vec::new(),
+        metadata: Vec::new(),
+        metadata_bytes: 0,
+    };
+    if input.starts_with(&[0xff, 0x0a]) {
+        append(&mut out.codestream, input)?;
+        return Ok(out);
+    }
+    if !input.starts_with(SIGNATURE) {
+        return Err(invalid("invalid JPEG XL signature"));
+    }
+    let mut pos = SIGNATURE.len();
+    let mut box_count = 0;
+    let mut partial_index = 0u32;
+    let mut finished = false;
+    let mut partial = false;
+    while pos < input.len() {
+        if input.len() - pos < 8 {
+            return Err(invalid("truncated JPEG XL box header"));
+        }
+        let size = u32::from_be_bytes(input[pos..pos + 4].try_into()?) as u64;
+        let kind = &input[pos + 4..pos + 8];
+        let (size, header) = if size == 1 {
+            let bytes = input
+                .get(pos + 8..pos + 16)
+                .ok_or_else(|| invalid("truncated JPEG XL extended box"))?;
+            (u64::from_be_bytes(bytes.try_into()?), 16)
+        } else if size == 0 {
+            ((input.len() - pos) as u64, 8)
+        } else {
+            (size, 8)
+        };
+        let size = usize::try_from(size)?;
+        if size < header {
+            return Err(invalid("invalid JPEG XL box length"));
+        }
+        let end = add(pos, size)?;
+        let data = input
+            .get(add(pos, header)?..end)
+            .ok_or_else(|| invalid("truncated JPEG XL box"))?;
+        if box_count == 0 && kind != b"ftyp" {
+            return Err(invalid("JPEG XL container requires ftyp first"));
+        }
+        match kind {
+            b"ftyp" => {
+                if box_count != 0
+                    || data.len() < 12
+                    || data.len() % 4 != 0
+                    || &data[..4] != b"jxl "
+                    || data[4..8] != [0; 4]
+                    || !data[8..].chunks_exact(4).any(|v| v == b"jxl ")
+                {
+                    return Err(invalid("invalid JPEG XL ftyp"));
+                }
+            }
+            b"jxlc" => {
+                if finished || partial {
+                    return Err(invalid("duplicate JPEG XL codestream"));
+                }
+                append(&mut out.codestream, data)?;
+                finished = true;
+            }
+            b"jxlp" => {
+                if finished || data.len() < 4 {
+                    return Err(invalid("invalid JPEG XL partial codestream"));
+                }
+                let index = u32::from_be_bytes(data[..4].try_into()?);
+                if index & 0x7fff_ffff != partial_index {
+                    return Err(invalid("out-of-order JPEG XL partial codestream"));
+                }
+                partial_index = partial_index
+                    .checked_add(1)
+                    .ok_or_else(|| invalid("too many JPEG XL chunks"))?;
+                partial = true;
+                finished = index & 0x8000_0000 != 0;
+                append(&mut out.codestream, &data[4..])?;
+            }
+            b"jxll" => {
+                // libjxl emits Level10 for16-bit sources. Complexity remains
+                // constrained by our independent dimensions/workspace profile.
+                if data != [10] {
+                    return Err(invalid("invalid JPEG XL level box"));
+                }
+            }
+            b"brob" | b"jbrd" => {
+                return Err(unsupported(
+                    "JPEG XL compressed metadata and JPEG reconstruction boxes are unsupported",
+                ));
+            }
+            b"JXL " => return Err(invalid("duplicate JPEG XL signature")),
+            _ => {
+                let key = format!(
+                    "JPEG XL Source Box {box_count} {}",
+                    kind.iter().map(|v| format!("{v:02x}")).collect::<String>()
+                );
+                out.metadata_bytes = add(out.metadata_bytes, add(data.len(), key.len())?)?;
+                limits::check(
+                    out.metadata_bytes,
+                    limits.metadata_bytes,
+                    "JPEG XL container metadata",
+                )?;
+                limits::check(box_count, 1024, "JPEG XL box count")?;
+                let mut raw = Vec::new();
+                append(&mut raw, data)?;
+                out.metadata.push((key, DataMap::Raw(raw)));
+            }
+        }
+        box_count += 1;
+        pos = end;
+    }
+    if !finished || !out.codestream.starts_with(&[0xff, 0x0a]) {
+        return Err(invalid("missing or incomplete JPEG XL codestream"));
+    }
+    Ok(out)
+}
+
+// ICC preamble entropy decoding is pinned to jxl 0.7.4, icc/mod.rs. The first
+// <=20 symbols all use context zero (upstream uses zero through byte 128).
+// Inspect the advertised expanded size BEFORE upstream allocates the profile.
+fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
+    use jxl_codec::entropy_coding::decode::{Histograms, SymbolReader};
+    use jxl_codec::headers::encodings::{Empty, UnconditionalCoder};
+    let coded = u64::read_unconditional(&(), br, &Empty {}).map_err(codec_error)?;
+    let coded = usize::try_from(coded)?;
+    limits::check(coded, budget.min(1 << 24), "JPEG XL coded ICC")?;
+    let hist = Histograms::decode(41, br, true).map_err(codec_error)?;
+    let mut reader = SymbolReader::new(&hist, br, None).map_err(codec_error)?;
+    let mut prefix = [0u8; 20];
+    for b in prefix.iter_mut().take(coded.min(20)) {
+        let sym = reader.read_unsigned(&hist, br, 0);
+        br.check_for_error().map_err(codec_error)?;
+        *b = u8::try_from(sym).map_err(|_| invalid("invalid JPEG XL ICC symbol"))?;
+    }
+    fn varint(data: &[u8], pos: &mut usize) -> Result<u64, Error> {
+        let mut n = 0u64;
+        for i in 0..9 {
+            let b = *data
+                .get(*pos)
+                .ok_or_else(|| invalid("truncated JPEG XL ICC preamble"))?;
+            *pos += 1;
+            n |= u64::from(b & 127) << (i * 7);
+            if b & 128 == 0 {
+                return Ok(n);
+            }
+        }
+        Err(invalid("invalid JPEG XL ICC varint"))
+    }
+    let mut pos = 0;
+    let size = varint(&prefix[..coded.min(20)], &mut pos)?;
+    let commands = varint(&prefix[..coded.min(20)], &mut pos)?;
+    if commands.saturating_add(pos as u64) > coded as u64
+        || size > 1 << 28
+        || size.saturating_add(65536) < coded as u64
+    {
+        return Err(invalid("invalid JPEG XL ICC preamble"));
+    }
+    let size = usize::try_from(size)?;
+    limits::check(size, budget, "JPEG XL expanded ICC")?;
+    // Two retained profiles may both contain this ICC, plus generated output
+    // profile/metadata overhead reserved by the caller.
+    limits::check(mul(size, 2)?, budget, "JPEG XL retained ICC profiles")?;
+    add(coded, size)
+}
+
+struct Header {
+    width: usize,
+    height: usize,
+    bits: u8,
+    gray: bool,
+    source_header_bytes: usize,
+    workspace: usize,
+}
+fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
+    // FileHeader has bounded channel tables, but does not read ICC/pixel data.
+    limits::check(
+        1024 * 1024,
+        limits.expanded_bytes,
+        "JPEG XL header workspace",
+    )?;
+    let mut br = BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
+    let header = FileHeader::read(&mut br).map_err(codec_error)?;
+    let m = &header.image_metadata;
+    if m.animation.is_some() || m.preview.is_some() || m.intrinsic_size.is_some() {
+        return Err(unsupported(
+            "JPEG XL animations, previews and intrinsic sizes are unsupported",
+        ));
+    }
+    let bits = m.bit_depth.bits_per_sample();
+    if m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 12 | 16) {
+        return Err(unsupported(
+            "JPEG XL supports integer8/12/16-bit sources only",
+        ));
+    }
+    if m.extra_channel_info.len() > 1
+        || m.extra_channel_info.iter().any(|c| {
+            c.ec_type != ExtraChannel::Alpha
+                || c.alpha_associated()
+                || c.dim_shift() != 0
+                || c.bit_depth() != m.bit_depth
+        })
+    {
+        return Err(unsupported(
+            "JPEG XL requires at most one full-resolution, same-depth straight alpha channel",
+        ));
+    }
+    use jxl_codec::headers::color_encoding::{ColorSpace, TransferFunction};
+    if !matches!(
+        m.color_encoding.color_space,
+        ColorSpace::Gray | ColorSpace::RGB
+    ) || (!m.color_encoding.want_icc
+        && matches!(
+            m.color_encoding.tf.transfer_function,
+            TransferFunction::PQ | TransferFunction::HLG
+        ))
+        || !m.tone_mapping.all_default
+    {
+        return Err(unsupported(
+            "JPEG XL HDR/tone mapping and non-Gray/RGB colour are unsupported",
+        ));
+    }
+    let (width, height) = m
+        .orientation
+        .map_size((header.size.xsize() as usize, header.size.ysize() as usize));
+    limits::check(width, 16384, "JPEG XL width")?;
+    limits::check(height, 16384, "JPEG XL height")?;
+    let pixels = mul(width, height)?;
+    limits::check(pixels, limits.pixels.min(MAX_PIXELS), "JPEG XL pixels")?;
+    limits::check(1, limits.frames, "JPEG XL still frames")?;
+    limits::check(
+        mul(pixels, if bits == 8 { 4 } else { 8 })?,
+        limits.animation_bytes,
+        "JPEG XL canvas",
+    )?;
+    let header_bytes = br.total_bits_read().div_ceil(8);
+    // Conservative allowance for two small generated matrix/TRC profiles and
+    // metadata keys; checked before profile generation or ICC parsing.
+    let meta = add(add(input.metadata_bytes, header_bytes)?, 16 * 1024)?;
+    limits::check(meta, limits.metadata_bytes, "JPEG XL source metadata")?;
+    // Upstream sample_limit also applies to cropped/internal frame dimensions.
+    // Cover its16-pixel padding and the4/3 RGB-vs-RGBA sample-count ratio.
+    let padded = mul(width.max(16), height.max(16))?;
+    let frame_pixels = add(mul(padded, 4)?, 2)? / 3;
+    limits::check(frame_pixels, MAX_PIXELS, "JPEG XL padded frame pixels")?;
+    let mut workspace = add(1024 * 1024, mul(frame_pixels, 128)?)?;
+    workspace = add(workspace, mul(input.codestream.len(), 2)?)?;
+    if m.color_encoding.want_icc {
+        // Histograms/SymbolReader can allocate a 4 MiB LZ77 ring before a
+        // profile exists. Reserve that allowance before inspecting its prefix.
+        workspace = add(workspace, 8 * 1024 * 1024)?;
+        limits::check(workspace, limits.expanded_bytes, "JPEG XL ICC workspace")?;
+        let icc = icc_budget(&mut br, limits.metadata_bytes.saturating_sub(meta))?;
+        workspace = add(workspace, mul(icc, 4)?)?;
+    }
+    limits::check(workspace, limits.expanded_bytes, "JPEG XL decode workspace")?;
+    Ok(Header {
+        width,
+        height,
+        bits: bits as u8,
+        gray: m.color_encoding.color_space == ColorSpace::Gray && m.extra_channel_info.is_empty(),
+        source_header_bytes: header_bytes,
+        workspace,
+    })
+}
+
+fn profile_metadata(key: &str, profile: &JxlColorProfile) -> Result<(String, DataMap), Error> {
+    // Avoid as_icc(), which panics for unsupported simple colour encodings.
+    let icc = match profile {
+        JxlColorProfile::Icc(bytes) => bytes.clone(),
+        JxlColorProfile::Simple(enc) => enc
+            .maybe_create_profile()
+            .map_err(codec_error)?
+            .ok_or_else(|| unsupported("JPEG XL output profile cannot be represented as ICC"))?,
+    };
+    Ok((key.into(), DataMap::ICCProfile(icc)))
+}
+
+pub(crate) fn decode_inner<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    decode(reader, option, false)
+}
+#[cfg(feature = "image-buffer-ex")]
+pub(crate) fn decode_ex_inner<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    decode(reader, option, true)
+}
+fn decode<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    native: bool,
+) -> Result<Option<ImgWarnings>, Error> {
+    let limits = limits::current();
+    let start = reader.offset()?;
+    let end = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(start))?;
+    let len = usize::try_from(
+        end.checked_sub(start)
+            .ok_or_else(|| invalid("invalid JPEG XL input position"))?,
+    )?;
+    limits::check(len, limits.input_bytes.min(MAX_INPUT), "JPEG XL input")?;
+    limits::check(
+        mul(len, 3)?,
+        limits.expanded_bytes,
+        "JPEG XL input assembly workspace",
+    )?;
+    let mut raw = crate::draw::zeroed_bytes(len)?;
+    reader.read_exact(&mut raw)?;
+    let mut input = unpack(&raw, limits)?;
+    drop(raw);
+    let h = preflight(&input, limits)?;
+    let mut options = JxlDecoderOptions::default();
+    // Upstream rounds widths up to16 for sample_limit and rejects >=limit.
+    options.sample_limit = Some(add(
+        mul(
+            h.width.max(h.height).max(16),
+            mul(h.width.min(h.height).max(16), 4)?,
+        )?,
+        1,
+    )?);
+    options.high_precision = true;
+    options.render_spot_colors = false;
+    let mut stream = input.codestream.as_slice();
+    let decoder = JxlDecoder::<states::Initialized>::new(options);
+    let mut decoder = complete(decoder.process(&mut stream, None).map_err(codec_error)?)?;
+    if decoder.basic_info().size != (h.width, h.height) {
+        return Err(invalid("JPEG XL dimensions changed after preflight"));
+    }
+    // Decode at source precision even for the legacy path: upstream U8
+    // narrowing dithers RGB, whereas WML2 promises deterministic rounding.
+    let bits = h.bits;
+    let gray = native && h.gray;
+    let channels = if gray { 1 } else { 4 };
+    let format = JxlPixelFormat {
+        color_type: if gray {
+            JxlColorType::Grayscale
+        } else {
+            JxlColorType::Rgba
+        },
+        color_data_format: Some(if bits == 8 {
+            JxlDataFormat::U8 { bit_depth: 8 }
+        } else {
+            JxlDataFormat::U16 {
+                endianness: Endianness::LittleEndian,
+                bit_depth: bits,
+            }
+        }),
+        extra_channel_format: vec![None; decoder.basic_info().extra_channels.len()],
+    };
+    decoder.set_pixel_format(format).map_err(codec_error)?;
+    input.metadata.push(profile_metadata(
+        "JPEG XL Source ICC Profile",
+        decoder.embedded_color_profile(),
+    )?);
+    let mut output_profile = decoder.output_color_profile().clone();
+    if !gray && decoder.output_color_profile().channels() == 1 {
+        output_profile = match output_profile {
+            JxlColorProfile::Simple(JxlColorEncoding::GrayscaleColorSpace {
+                white_point,
+                transfer_function,
+                rendering_intent,
+            }) => JxlColorProfile::Simple(JxlColorEncoding::RgbColorSpace {
+                white_point,
+                transfer_function,
+                rendering_intent,
+                primaries: JxlPrimaries::SRGB,
+            }),
+            _ => {
+                return Err(unsupported(
+                    "JPEG XL Gray ICC expansion to RGBA requires an explicit CMS",
+                ));
+            }
+        };
+    }
+    input
+        .metadata
+        .push(profile_metadata("ICC Profile", &output_profile)?);
+    input
+        .metadata
+        .push(("Format".into(), DataMap::Ascii("JPEG XL".into())));
+    input.metadata.push((
+        "JPEG XL Source Bit Depth".into(),
+        DataMap::UInt(h.bits.into()),
+    ));
+    input.metadata.push((
+        "JPEG XL Output Bit Depth".into(),
+        DataMap::UInt(if native { bits.into() } else { 8 }),
+    ));
+    input.metadata.push((
+        "JPEG XL Source Header".into(),
+        DataMap::Raw(input.codestream[..h.source_header_bytes].to_vec()),
+    ));
+    let metadata_bytes = input.metadata.iter().try_fold(0usize, |n, (k, v)| {
+        let bytes = match v {
+            DataMap::Raw(b) | DataMap::ICCProfile(b) => b.len(),
+            DataMap::Ascii(s) => s.len(),
+            _ => 8,
+        };
+        add(n, add(k.len(), bytes)?)
+    })?;
+    limits::check(metadata_bytes, limits.metadata_bytes, "JPEG XL metadata")?;
+    limits::check(
+        add(h.workspace, mul(metadata_bytes, 2)?)?,
+        limits.expanded_bytes,
+        "JPEG XL metadata workspace",
+    )?;
+    let decoder = complete(decoder.process(&mut stream, None).map_err(codec_error)?)?;
+    let row = mul(h.width, mul(channels, if bits == 8 { 1 } else { 2 })?)?;
+    let bytes = mul(row, h.height)?;
+    // Vec<u16> guarantees the upstream row alignment even on WASM. All rows
+    // have an even byte stride for U16; the U8 path has no alignment requirement.
+    let mut aligned: Vec<u16> = Vec::new();
+    aligned.try_reserve_exact(bytes.div_ceil(2))?;
+    aligned.resize(bytes.div_ceil(2), 0);
+    // SAFETY: u16 has no invalid bit patterns; the exclusively borrowed,
+    // initialized allocation covers bytes.len(), and out does not outlive it.
+    let out = unsafe { std::slice::from_raw_parts_mut(aligned.as_mut_ptr().cast::<u8>(), bytes) };
+    let mut buffers = [JxlOutputBuffer::new(out, h.height, row)];
+    let decoder = complete(
+        decoder
+            .process(&mut stream, &mut buffers, None)
+            .map_err(codec_error)?,
+    )?;
+    if decoder.has_more_frames() {
+        return Err(unsupported(
+            "JPEG XL multiple visible frames are unsupported",
+        ));
+    }
+    // The codestream parser may buffer ahead; file_length is its authoritative
+    // boundary and catches trailing junk/multiple raw streams without guessing.
+    if decoder.file_length() != Some(input.codestream.len() as u64) {
+        return Err(invalid("trailing or incomplete JPEG XL codestream"));
+    }
+    #[cfg(feature = "image-buffer-ex")]
+    if native {
+        use crate::draw::{InitOptionsEx, PixelFormatEx};
+        let source_format = match (gray, bits) {
+            (true, 8) => PixelFormatEx::Gray8,
+            (true, 12) => PixelFormatEx::Gray12,
+            (true, 16) => PixelFormatEx::Gray16,
+            (false, 8) => PixelFormatEx::Rgba8,
+            (false, 12) => PixelFormatEx::Rgba12,
+            (false, 16) => PixelFormatEx::Rgba16,
+            _ => return Err(unsupported("unsupported JPEG XL EX layout")),
+        };
+        option.drawer.init_ex(
+            h.width,
+            h.height,
+            Some(InitOptionsEx {
+                source_format,
+                source_stride: None,
+                legacy: Some(InitOptions {
+                    loop_count: 0,
+                    background: None,
+                    animation: false,
+                }),
+            }),
+        )?;
+    } else {
+        option.drawer.init(
+            h.width,
+            h.height,
+            Some(InitOptions {
+                loop_count: 0,
+                background: None,
+                animation: false,
+            }),
+        )?;
+    }
+    #[cfg(not(feature = "image-buffer-ex"))]
+    option.drawer.init(
+        h.width,
+        h.height,
+        Some(InitOptions {
+            loop_count: 0,
+            background: None,
+            animation: false,
+        }),
+    )?;
+    let legacy = if !native && bits != 8 {
+        let max = (1u32 << bits) - 1;
+        let mut bytes = Vec::new();
+        bytes.try_reserve_exact(out.len() / 2)?;
+        for word in out.chunks_exact(2) {
+            let v = u32::from(u16::from_le_bytes([word[0], word[1]]));
+            bytes.push(((v * 255 + max / 2) / max) as u8);
+        }
+        Some(bytes)
+    } else {
+        None
+    };
+    option.drawer.draw(
+        0,
+        0,
+        h.width,
+        h.height,
+        legacy.as_deref().unwrap_or(out),
+        None,
+    )?;
+    for (key, value) in input.metadata {
+        option.drawer.set_metadata(&key, value)?;
+    }
+    option.drawer.terminate(None)?;
+    Ok(None)
+}

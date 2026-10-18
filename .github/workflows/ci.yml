@@ -29,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         rust: ['1.91.0', stable]
-        features: [default, minimal, image-buffer-ex, 'image-buffer-ex,high-bit-depth', 'png,image-buffer-ex,high-bit-depth', 'tiff,image-buffer-ex,high-bit-depth', high-bit-depth, color-management, jpeg2000, 'jpeg2000,image-buffer-ex', 'avif,image-buffer-ex', 'avifenc,image-buffer-ex,high-bit-depth', 'avifenc,image-buffer-ex,high-bit-depth,multithread', 'avif,high-bit-depth', 'avifenc,high-bit-depth', 'avifenc,high-bit-depth,multithread', 'jpeg,idct_llm', 'jpeg,idct_aan', 'jpeg,idct_slower', 'jpeg,idct_llm,multithread', 'png,psd,tiff']
+        features: [default, minimal, jpeg-xl, 'jpeg-xl,image-buffer-ex', image-buffer-ex, 'image-buffer-ex,high-bit-depth', 'png,image-buffer-ex,high-bit-depth', 'tiff,image-buffer-ex,high-bit-depth', high-bit-depth, color-management, jpeg2000, 'jpeg2000,image-buffer-ex', 'avif,image-buffer-ex', 'avifenc,image-buffer-ex,high-bit-depth', 'avifenc,image-buffer-ex,high-bit-depth,multithread', 'avif,high-bit-depth', 'avifenc,high-bit-depth', 'avifenc,high-bit-depth,multithread', 'jpeg,idct_llm', 'jpeg,idct_aan', 'jpeg,idct_slower', 'jpeg,idct_llm,multithread', 'png,psd,tiff']
     steps:
       - uses: actions/checkout@v4
         with:
@@ -127,7 +127,7 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check -p wml2 --locked --lib --target ${{ matrix.target }} --features high-bit-depth,color-management,avifenc,image-buffer-ex,psd,tiff-jpeg,idct_llm,jpeg2000
+      - run: cargo check -p wml2 --locked --lib --target ${{ matrix.target }} --features high-bit-depth,color-management,avifenc,image-buffer-ex,psd,tiff-jpeg,idct_llm,jpeg2000,jpeg-xl
   format:
     runs-on: ubuntu-latest
     steps:

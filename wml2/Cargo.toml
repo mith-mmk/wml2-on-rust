@@ -222,6 +222,7 @@ tiff = ["exif"]
 webp = ["exif", "dep:webp_codec"]
 psd = []
 jpeg2000 = []
+jpeg-xl = ["dep:jxl_codec"]
 avif = ["dep:avif_codec"]
 avifenc = ["avif", "dep:avifenc_codec"]
 high-bit-depth = []
@@ -264,6 +265,8 @@ SJIS = []
 noretoro = []
 
 [dependencies]
+# Published API differs from upstream main; audit upgrades with the bounded adapter.
+jxl_codec = { package = "jxl", version = "=0.7.4", default-features = false, optional = true }
 bin-rs = {version = "0.0.10",features = ["util"]}
 #bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
 webp_codec = { package = "webp-rust", version = "0.3.2", features = ["legacy"], optional = true }

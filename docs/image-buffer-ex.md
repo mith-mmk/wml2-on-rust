@@ -1,11 +1,12 @@
 # ImageBufferEx: checked integer storage and explicit legacy views
 
-Repository branch work based on main `e42d2cf` and the existing EX branch
-`c1203f4`. The continuation now incorporates main's 0.0.36 update; the EX
-additions remain unreleased. See the [main merge record](image-buffer-ex-main-merge.md).
-Enable `image-buffer-ex` explicitly; default
-features, production dependencies and existing legacy fields/signatures remain
-unchanged. This work has not been merged or released.
+Available in WML2 0.0.37 through the explicit `image-buffer-ex` feature.
+The original continuation incorporated main's0.0.36 update; the historical
+[main merge record](image-buffer-ex-main-merge.md) retains those checkpoints.
+Default features and existing legacy fields/signatures remain unchanged.
+Optional AVIF dependencies now use published registry0.1.0 with one shared
+buffer source. Direct consumers of standalone AVIF re-exports must align
+versions and sources. See the [0.0.37 release notes](releases/0.0.37.md).
 
 ## Current support
 
@@ -19,7 +20,7 @@ unchanged. This work has not been merged or released.
 | Picking | Explicit output-format/stride/policy rectangles via PickCallbackEx; native borrowed single-pixel bytes |
 | Legacy input | Checked ownership transfer of static RGBA8 ImageBuffer pixels, retaining background/callback metadata |
 | Legacy encoding | Explicit whole-canvas to_rgba8 or borrowed legacy_picker with per-rectangle conversion |
-| Native codec source | Static PNG/TIFF emit Gray8/16 or RGBA8/16; bounded static AVIF emits RGBA16 without ICC application; JPEG2000 EX emits unsigned Gray12/16 or RGBA12/16 from RGB/explicit straight RGBA in the reversible or bounded 9/7 profile |
+| Native codec source | Static PNG/TIFF emit Gray8/16 or RGBA8/16; bounded AVIF emits RGBA16; bounded JPEG2000 EX emits native Gray/RGBA12/16, without ICC application; JPEG2000 EX emits unsigned Gray12/16 or RGBA12/16 from RGB/explicit straight RGBA in the reversible or bounded 9/7 profile |
 | Typed highres handoff | Pixel-only U8/U16 full-resolution Gray or straight RGBA at uniform 8/12/16 bits |
 | Unsupported | YUV, F32/HDR/signed/10-bit, premultiplied alpha, EX animation, general color/ICC transforms |
 

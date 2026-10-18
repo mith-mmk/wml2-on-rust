@@ -61,9 +61,11 @@ jobs:
             cargo run -p wml2 --locked --no-default-features --features "$FEATURES" --example ex_avif
           fi
           if [[ "$FEATURES" == default ]]; then
-            # GIF cancellation must work independently of the EX feature.
+            # GIF/BMP cancellation must work independently of the EX feature.
             cargo test -p wml2 --locked --no-default-features --features gif --test callback_abort --test gif_callback_abort
             cargo test -p wml2 --locked --no-default-features --features gif,image-buffer-ex --test callback_abort --test gif_callback_abort
+            cargo test -p wml2 --locked --no-default-features --features bmp --lib --test callback_abort
+            cargo test -p wml2 --locked --no-default-features --features bmp,image-buffer-ex --lib --test callback_abort
             cargo test -p wml2 --locked --doc
             cargo check -p wml2 --locked --examples
           fi

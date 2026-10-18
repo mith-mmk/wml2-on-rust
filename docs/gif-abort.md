@@ -80,3 +80,37 @@ source hashes, exact counts/commands, the harness source and measurement limits.
 Builds use two Cargo jobs; supervised checks stop their own process group above
 12 GiB of the 16 GiB cgroup budget. AVIS and separate iOS work remain outside this
 correction.
+
+## Shared stopped-state follow-up: BMP
+
+An additional direct probe found the same readiness classification regression
+in public BMP decoding: after Abort on the first of two scanlines, main5b12608a
+returned Ok(None), two draws and one termination; the GIF-corrected cb7a000
+returned Err(draw before successful initialization or after Abort), one draw and
+no termination. The corrected guard returns Ok(None), one draw and one termination.
+
+Only the existing invalid-readiness branches change: a remembered callback Abort
+returns the private cancellation marker. Never-initialized and failed
+initializations retain their real error. Unit checks distinguish both error
+classes with handle_abort false/true; readiness, format, bounds and accounting
+checks remain in force. The ordinary successful draw/next path gains no new
+condition. This is not a blanket conversion of decoder errors into success.
+
+The public BMP regression independently builds valid24-bit rows at heights1/2/8,
+checks normal full-image pixels, default/explicit-limit APIs, debug0/1 and real
+termination failures (including Abort on the only/last row). BMP's existing
+post-draw metadata delivery is retained. The immediate GIF cancellation promise
+above is not generalized to every legacy decoder. CI runs BMP with EX off/on.
+
+All108paired BMP64/BMP512/GIF64 observations match Pillow pixels byte-for-byte.
+Fixed-versus-before medians are+0.310%/-0.845%/-1.799%; identical-binary control
+shifts are-2.802%/-0.520%/+0.079%. These are observations on one host/CPU, not a
+universal throughput promise. [Raw evidence and exact commands](callback-stop-validation.json)
+and the [actual decoded comparison](callback-stop-display.png) are retained;
+the display was visually inspected.
+
+Follow-up checks pass: minimal28, BMP29, GIF40, BMP+GIF+EX76; release workspace462
+(including15doctests), with14existing ignored tests. BMP-only/BMP+EX/workspace
+Clippy, fmt, six release metadata tests and current-version notes pass. These
+configuration counts overlap. The stronger initialization tests require a real
+error after failed initialization and a private cancellation only after Abort.

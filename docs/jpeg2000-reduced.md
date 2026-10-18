@@ -1,4 +1,4 @@
-# Native JPEG2000 resolution reduction (unreleased)
+# Native JPEG2000 resolution reduction (WML2 0.0.37)
 
 The measurements below describe the pre-Gray-fix implementation checkpoint
 `e4e7dbd52100b75b271fb143c99fe6a488091ff1`. The subsequent
@@ -7,7 +7,8 @@ slowdown and records the narrower MQ-reader correction, controls and limitations
 
 This continuation starts at memory PR #17 head
 `bc6c1182c7478c385b10296af71c996c4f4f3ab7` on
-`codex/jpeg2000-reduced-decode-20261017`. WML2 remains 0.0.36.
+`codex/jpeg2000-reduced-decode-20261017` at WML2 0.0.36. The APIs are
+included through PR #18 in [WML2 0.0.37](releases/0.0.37.md).
 
 Existing entry points and `DecodeOptions` / `DecodeLimits` struct literals are
 unchanged. Three codec-specific opt-in functions accept a discarded DWT level
@@ -270,5 +271,5 @@ This is native resolution reduction, not spatial ROI or streaming. Full input
 and global canvas remain resident; discarded entropy is not fully validated.
 No new formats, subsampled paths, HT/ROI, animation, AVIS guarantee, EX8 acceptance,
 upstream codec edits, dependency updates or changes to established full-resolution
-entry points are included. WML2 remains 0.0.36. This continuation is pushed for
-review without a new reduction PR, merge, publish, version bump, tag or release.
+entry points are included. The measurements retain their original pre-release
+checkpoints; PR #18 includes this continuation in WML2 0.0.37.

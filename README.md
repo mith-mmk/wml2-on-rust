@@ -92,7 +92,7 @@ These optional codecs are not enabled by default.
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.36", features = ["tga", "pcx", "dds", "q4"] }
+wml2 = { version = "0.0.37", features = ["tga", "pcx", "dds", "q4"] }
 ```
 
 TGA encoder: `color_type = Ascii("truecolor"|"grayscale"|"indexed")` defaults to truecolor; `compression = Ascii("none"|"rle")` defaults to RLE. Truecolor `depth = UInt(24|32)` defaults to32; 24 explicitly discards alpha. Grayscale depth8/16 defaults to16, requires equal RGB channels, and depth8 rejects nonopaque pixels. Indexed depth8 uses at most256 exact colors, with `palette_depth = UInt(24|32)` default32; palette24 rejects nonopaque pixels. No implicit luminance conversion or quantization occurs. 16-bit index encoding is deferred because common external decoders disagree. Straight alpha and transparent RGB are retained on wire; existing zero-alpha decode normalization remains. Output is top-left with row-bounded packets. TGA 2.0 extension alpha types0/1 ignore stored alpha, type3 uses straight alpha, and type4 converts premultiplied samples to straight RGBA8 using nearest rounding and saturation. Type2 (undefined alpha that must be retained) and reserved types are explicitly unsupported because RGBA8 cannot preserve unused attribute bits independently of alpha. Explicit useful alpha must agree with the header/storage. Without an extension, legacy alpha behavior is retained. Pixel reads stop before the v2 footer and referenced ancillary areas; invalid offsets and truncated metadata are rejected. Other extension metadata and Huffman image types32/33 remain unsupported.
@@ -109,11 +109,10 @@ for 28 reference images. See the [Q4 validation record](docs/q4-status.md).
 
 ## ImageBufferEx
 
-Repository builds can enable the non-default `image-buffer-ex` feature.
+WML2 0.0.37 adds the non-default `image-buffer-ex` feature.
 [Current support and precision/compatibility contracts](docs/image-buffer-ex.md)
 cover checked Gray/RGBA8/12/16 storage, native borrowed pixels, explicit conversion,
-static PNG/TIFF source declarations and legacy encoder views. This branch work
-has not been released; this work branch inherits WML2 0.0.36 from main.
+static PNG/TIFF/AVIF and bounded JPEG2000 source declarations, and legacy encoder views.
 
 [Callback guide and runnable sample](docs/image-buffer-ex-callbacks.md) separate
 input declarations, storage and encoder output requests, including late ICC
@@ -211,6 +210,11 @@ limits independently on input, source, storage, output rows and metadata;
 the TIFF native reconstruction also budgets its temporary u16 sample storage.
 EX Abort stops subsequent callback forwarding for enabled EX codecs.
 
+Both AVIF codecs use published registry0.1.0 with one shared
+`avif-image-buffer0.1.0`. Direct consumers of re-exported standalone AVIF types
+must align versions and sources. **AVIS remains unguaranteed** with these
+published dependencies; this release covers still-image integration.
+
 Legacy encoders use an explicit RGBA8 adapter. EX-aware AVIF encoding uses
 `EncodeOptionsEx`; existing encoders do not automatically reduce precision. With both
 `image-buffer-ex` and `high-bit-depth`, `from_highres_pixels` and
@@ -225,7 +229,7 @@ YUV, F32, and ten-bit frames are rejected.
 - `default`: enables the standard decoders/encoders, EXIF/C2PA support, embedded-format bridges, and `idct_llm`; it does not enable `psd`, `avif`, or `avifenc`
 - format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `tga`, `pcx`, `dds`, `pic2`, `q4`, `webp`, `psd`, `jpeg2000`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
 - `psd`: enables Pure Rust PSD v1 decoding for 8/16-bit RGB, Grayscale, and CMYK plus 8-bit Indexed images; Raw, PackBits RLE, ZIP, and ZIP prediction are supported for both merged-image and layer-channel data
-- `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the standalone `avifenc-rust` submodule
+- `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the published `avifenc-rust 0.1.0` crate
 - `high-bit-depth`: additive typed U8/U16/F32 buffer and native metadata APIs; it has no ICC dependency
 - `image-buffer-ex`: default-off checked byte-based Gray/RGBA 8/12/16-bit callback storage, independent of `high-bit-depth`
 - `color-management`: depends on `high-bit-depth` and adds explicit Gray/RGB ICC transforms through `icc-profile`
@@ -240,20 +244,31 @@ YUV, F32, and ten-bit frames are rejected.
 
 ## JPEG2000 decoding
 
-Available in 0.0.36 through the non-default `jpeg2000` feature:
+Available since 0.0.36 through the non-default `jpeg2000` feature:
 
 ```toml
-wml2 = { version = "0.0.36", features = ["jpeg2000"] }
+wml2 = { version = "0.0.37", features = ["jpeg2000"] }
 ```
 
 The pure Rust decoder returns RGBA8 from signed/unsigned 1–8bit Gray/RGB, alpha, palette and
 sYCC inputs, with reversible5/3 or irreversible9/7. It supports multiple quality
 layers, all five Part 1 progression orders, precincts, subsampling, ROI and
-HTJ2K HTONLY blocks. High sample depth and ICC remain deferred. See the
+HTJ2K HTONLY blocks. ICC remains deferred. See the
 [current profile and validation evidence](docs/jpeg2000.md)
 for dimensions, coding/framing limits, budgets and reproduction commands.
 The feature adds `ImageFormat::Jpeg2000`; feature-off format detection and the
 existing enum surface remain unchanged when the feature is disabled.
+
+WML2 0.0.37 adds `jpeg2000,image-buffer-ex` decoding for unsigned uniform
+Gray/RGB/declared straight RGBA12/16, retaining little-endian native samples.
+[High-depth profile](docs/jpeg2000-ex-97.md),
+[owned output and memory](docs/jpeg2000-ex-memory.md), and
+[native resolution reduction](docs/jpeg2000-reduced.md) describe the bounded
+profiles. The three explicit `*_with_reduction` APIs discard DWT resolutions;
+existing entry points and explicit zero remain full resolution. Discarded
+high-resolution entropy is not fully validated; whole input/canvas and
+conservative logical budgets remain. EX animation and unsupported colour/HT/ROI
+reduction profiles are deferred.
 
 ## PSD decoding
 
@@ -262,7 +277,7 @@ explicitly:
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.36", features = ["psd"] }
+wml2 = { version = "0.0.37", features = ["psd"] }
 ```
 
 The decoder converts supported input to RGBA8. It rounds 16-bit samples down to
@@ -303,17 +318,17 @@ the decoder does not approximate it by compositing layers.
 
 ```toml
 [dependencies]
-wml2 = "0.0.36"
+wml2 = "0.0.37"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.36", features = ["noretoro"] }
+wml2 = { version = "0.0.37", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.36", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.37", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options
@@ -542,6 +557,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.30`: resource-limit hardening, callback-abort safety, high-resolution ICC/AVIF regressions, and WebP core compatibility cleanup
 - `0.0.31`: extended TIFF/BigTIFF decoding and encoding, bounded block decompression, predictor support, and high-depth native TIFF frames
 - `0.0.32`: PCX, TGA, DDS, PIC2, and Q4 decoder support, ImageMagick-compatible PCX/TGA pixel normalization, and converter/metadata regression coverage
+- [0.0.37 release notes](docs/releases/0.0.37.md)
 - [0.0.36 release notes](docs/releases/0.0.36.md)
 - [0.0.35 release notes](docs/releases/0.0.35.md)
 - [0.0.34 release notes](docs/releases/0.0.34.md)

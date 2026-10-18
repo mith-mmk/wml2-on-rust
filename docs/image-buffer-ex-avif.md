@@ -4,6 +4,11 @@ AVIF の WML2 adapter を EX の入力宣言・保存・明示出力要求へ接
 既存 `image_decoder` / `image_encoder`、native highres API、依存 crate の
 公開 API と gitlink は変更しない。新 crate、wmlcore 分離、paintcore 統合は行わない。
 
+WML2 0.0.37では、公開registryの`avif-rust 0.1.0`／`avifenc-rust 0.1.0`と
+共通`avif-image-buffer 0.1.0`を利用する。再エクスポート型を直接共有する利用側は
+依存の版とsourceを揃える必要がある。**AVISは未保証**で、静止画統合の範囲は
+[0.0.37リリースノート](releases/0.0.37.md)を参照。
+
 ## 契約と対応範囲
 
 | 経路 | 入力／出力の契約 |

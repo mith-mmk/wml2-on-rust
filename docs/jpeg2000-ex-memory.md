@@ -1,9 +1,10 @@
-# JPEG2000 EX buffer lifetime and native owned output (unreleased)
+# JPEG2000 EX buffer lifetime and native owned output (WML2 0.0.37)
 
 This continuation starts at PR #16 head
 `fd605d82347c80ba7ac7cd05ac56b5b6a917ae13` on the separate
-`codex/jpeg2000-ex-memory-20261017` branch. WML2 remains 0.0.36.
-No new PR, main merge, publish, version bump, tag or release is included.
+`codex/jpeg2000-ex-memory-20261017` branch at WML2 0.0.36.
+This records the original pre-publication checkpoint; the capability is
+included in [WML2 0.0.37](releases/0.0.37.md).
 
 The EX 9/7 reconstruction releases each integer coefficient vector after its
 last reader, before inverse DWT. Reversible EX still needs its integer samples

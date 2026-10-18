@@ -261,10 +261,11 @@ fdct_slower = []
 
 # Miscellaneous build toggles.
 multithread = ["avifenc_codec?/multithread"]
-SJIS = []
+SJIS = ["dep:encoding_rs"]
 noretoro = []
 
 [dependencies]
+encoding_rs = { version = "0.8.35", optional = true }
 # Published API differs from upstream main; audit upgrades with the bounded adapter.
 jxl_codec = { package = "jxl", version = "=0.7.4", default-features = false, optional = true }
 bin-rs = {version = "0.0.10",features = ["util"]}

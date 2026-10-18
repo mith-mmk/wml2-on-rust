@@ -139,3 +139,21 @@ Clippy is run in the same warning mode as repository CI: existing unrelated
 warnings remain; the JPEG XL implementation/tests introduce none. Windows and
 macOS execution, browser UI integration, general ICC/HDR rendering, SIMD and
 threaded decoding are not covered by this local validation.
+
+## Branch CI coverage
+
+The shared `checks` workflow also runs dedicated JPEG XL jobs on Windows and
+macOS, with ordinary, EX and disabled-feature tests. Windows additionally
+executes those contracts as32-bit MSVC binaries. These dedicated jobs do not
+wait for the slower existing JPEG2000/TIFF platform regressions.
+
+The WASM compile job executes the30-case Node harness and uploads its report.
+A feature-contract job checks the expected mutually exclusive IDCT failure for
+`--all-features`, then checks all targets and executes JPEG XL tests for both
+all-codec and `noretoro` profiles with only one IDCT enabled. This also exposed
+and repaired the existing `SJIS` feature's missing optional `encoding_rs`
+dependency; its locked version and default features are unchanged.
+
+These checks run on branch pushes; a PR is not required. For the result of an
+individual revision, use its GitHub Actions run and exact commit SHA rather
+than treating the older local validation snapshot as a cross-platform result.

@@ -872,6 +872,7 @@ dependencies = [
  "avif-rust",
  "avifenc-rust",
  "bin-rs",
+ "encoding_rs",
  "icc-profile",
  "jxl",
  "miniz_oxide",

@@ -112,6 +112,62 @@ jobs:
       - name: TIFF 32-bit interoperability fixtures
         if: runner.os == 'Windows'
         run: cargo test -p wml2 --target i686-pc-windows-msvc --test tiff_interop --test tiff_ycbcr --test tiff_jpeg_extend --no-default-features --features tiff-jpeg,idct_llm
+  jpeg-xl-platform:
+    name: JPEG XL / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: JPEG XL disabled detection contract
+        run: cargo test -p wml2 --locked --no-default-features --test jpeg_xl
+      - name: JPEG XL ordinary RGBA8 and source metadata
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl
+      - name: JPEG XL native EX precision, limits and Abort
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl
+      - name: Install 32-bit Windows JPEG XL target
+        if: runner.os == 'Windows'
+        run: rustup target add i686-pc-windows-msvc
+      - name: JPEG XL 32-bit Windows ordinary, EX and disabled contracts
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl --lib --test jpeg_xl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --test jpeg_xl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  feature-contracts:
+    name: Compatible features and IDCT conflict
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Check all compatible targets and expected all-features rejection
+        run: python -B .github/scripts/check_feature_contracts.py --output .test-feature-contracts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: feature-contracts
+          include-hidden-files: true
+          path: .test-feature-contracts
   compile:
     runs-on: ubuntu-latest
     strategy:
@@ -128,6 +184,25 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
       - run: cargo check -p wml2 --locked --lib --target ${{ matrix.target }} --features high-bit-depth,color-management,avifenc,image-buffer-ex,psd,tiff-jpeg,idct_llm,jpeg2000,jpeg-xl
+      - uses: actions/setup-node@v4
+        if: matrix.target == 'wasm32-unknown-unknown'
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        if: matrix.target == 'wasm32-unknown-unknown'
+        with:
+          python-version: '3.12'
+      - name: Execute native JPEG XL EX fixtures in actual WASM
+        if: matrix.target == 'wasm32-unknown-unknown'
+        run: python -B wml2-test/scripts/verify_jpegxl_wasm.py --output .test-jpeg-xl-wasm
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.target == 'wasm32-unknown-unknown'
+        with:
+          name: jpeg-xl-wasm-runtime
+          include-hidden-files: true
+          path: |
+            .test-jpeg-xl-wasm/report.json
+            .test-jpeg-xl-wasm/*.log
   format:
     runs-on: ubuntu-latest
     steps:

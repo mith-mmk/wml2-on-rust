@@ -17,6 +17,7 @@ exclude = [
     "tests/jpeg2000_ex_color.rs",
     "tests/jpeg2000_ex_97.rs",
     "tests/jpeg2000_ex_memory.rs",
+    "tests/jpeg2000_reduced.rs",
     "tests/fixtures/review/jp2*",
     "tests/fixtures/review/unsupported_jp2*",
     "tests/fixtures/review/oracle_origins_*",
@@ -38,6 +39,10 @@ required-features = ["q4"]
 
 [[example]]
 name = "jpeg2000_ex_verify"
+required-features = ["jpeg2000", "image-buffer-ex"]
+
+[[example]]
+name = "jpeg2000_reduced_verify"
 required-features = ["jpeg2000", "image-buffer-ex"]
 
 [[example]]

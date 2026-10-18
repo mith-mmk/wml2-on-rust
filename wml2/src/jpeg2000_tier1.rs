@@ -453,6 +453,38 @@ pub(super) fn decode_segments(
     planes: u8,
     style: u8,
 ) -> Result<Vec<i32>, Error> {
+    // The single style-zero segment uses the same midpoint reconstruction
+    // and pass order as the existing bounded MQ reader. Reuse that static
+    // reader; keep the generic path for every other style/precision/segment.
+    if style == 0
+        && planes <= 24
+        && let [segment] = segments
+    {
+        if w == 0 || h == 0 || w > 1024 || h > 1024 || w * h > 4096 || planes == 0 {
+            return Err(bad("code-block bounds"));
+        }
+        if segment.passes == 0 || segment.passes > u32::from(planes) * 3 - 2 {
+            return Err(bad("code-block pass count"));
+        }
+        return decode_irreversible(
+            if segment.data.is_empty() {
+                &[255]
+            } else {
+                &segment.data
+            },
+            w,
+            h,
+            orientation,
+            planes,
+            segment.passes,
+        )
+        .map_err(|_| {
+            bad(&format!(
+                "arithmetic segment at pass 0: {} bytes",
+                segment.data.len()
+            ))
+        });
+    }
     if style & 8 != 0 {
         segmented::<true>(segments, w, h, orientation, planes, style)
     } else {
@@ -591,6 +623,57 @@ mod tests {
         for (w, h) in [(64, 64), (1024, 4), (4, 1024), (63, 65)] {
             let error = decode(&[], w, h, 0, 1).unwrap_err().to_string();
             assert!(error.contains("arithmetic"), "{w}x{h}: {error}");
+        }
+    }
+
+    #[test]
+    fn single_style_zero_segment_matches_generic_midpoint_reader() {
+        // Compare with the unchanged generic implementation, including partial
+        // passes, sign/midpoint reconstruction and padded or malformed MQ data.
+        let inputs: &[&[u8]] = &[&[], &[0], &[0x55, 0xaa, 0x12], &[0xff], &[0xff, 0x90]];
+        for (w, h) in [(1, 1), (4, 4), (16, 16), (17, 16), (16, 17), (32, 8)] {
+            for planes in [1, 3, 8, 16, 24, 25, 28] {
+                let limit = u32::from(planes) * 3 - 2;
+                for passes in [0, 1, 2, 3, 7, limit, limit + 1] {
+                    for orientation in 0..4 {
+                        for data in inputs {
+                            let segments = [Segment {
+                                data: data.to_vec(),
+                                passes,
+                            }];
+                            let expected =
+                                segmented::<false>(&segments, w, h, orientation, planes, 0);
+                            let actual = decode_segments(&segments, w, h, orientation, planes, 0);
+                            match (expected, actual) {
+                                (Ok(a), Ok(b)) => assert_eq!(
+                                    a, b,
+                                    "{w}x{h} planes{planes} passes{passes} orientation{orientation} data{data:?}"
+                                ),
+                                (Err(a), Err(b)) => assert_eq!(a.to_string(), b.to_string()),
+                                _ => panic!(
+                                    "acceptance mismatch {w}x{h} planes{planes} passes{passes}"
+                                ),
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (w, h, planes) in [
+            (0, 4, 8),
+            (4, 0, 8),
+            (1025, 4, 8),
+            (64, 65, 8),
+            (4, 4, 0),
+            (4, 4, 29),
+        ] {
+            let segments = [Segment {
+                data: vec![0xff, 0x90],
+                passes: 1,
+            }];
+            let a = segmented::<false>(&segments, w, h, 0, planes, 0).unwrap_err();
+            let b = decode_segments(&segments, w, h, 0, planes, 0).unwrap_err();
+            assert_eq!(a.to_string(), b.to_string());
         }
     }
 }

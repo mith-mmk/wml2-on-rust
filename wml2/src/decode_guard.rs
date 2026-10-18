@@ -246,8 +246,13 @@ fn run_inner<B: BinaryReader>(
         .ok_or_else(|| std::io::Error::other("invalid input position"))?;
     limits::check_input_length(length, limits.input_bytes)?;
     let signature = reader.read_bytes_no_move(usize::try_from(length.min(8))?)?;
-    let handle_abort =
-        ex || signature.starts_with(b"\x89PNG\r\n\x1a\n") || signature.starts_with(&[0xff, 0xd8]);
+    // GIF emits Continue for its first frame before Next for later frames.
+    // Stop at that first Abort too, before another callback or input read.
+    let handle_abort = ex
+        || signature.starts_with(b"\x89PNG\r\n\x1a\n")
+        || signature.starts_with(&[0xff, 0xd8])
+        || signature.starts_with(b"GIF87a")
+        || signature.starts_with(b"GIF89a");
     limits::scope(limits, || {
         let mut guard = Guard {
             drawer: options.drawer,

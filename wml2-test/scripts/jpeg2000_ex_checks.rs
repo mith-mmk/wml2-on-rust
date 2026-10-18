@@ -69,16 +69,19 @@ pub struct Probe {
     pub events: Vec<u8>,
     pub abort: u8,
     pub fail: u8,
-    bits: u8,
+    format: PixelFormatEx,
 }
 impl Probe {
     pub fn new(bits: u8) -> Self {
+        Self::with_format(format(bits))
+    }
+    pub fn with_format(format: PixelFormatEx) -> Self {
         Self {
-            image: ImageBufferEx::with_storage(format(bits), PrecisionConversion::Exact),
+            image: ImageBufferEx::with_storage(format, PrecisionConversion::Exact),
             events: Vec::new(),
             abort: 0,
             fail: 0,
-            bits,
+            format,
         }
     }
     fn event(&mut self, id: u8) -> Response {
@@ -91,11 +94,11 @@ impl Probe {
 }
 impl DrawCallback for Probe {
     fn init(&mut self, _: usize, _: usize, _: Option<InitOptions>) -> Response {
-        panic!("must declare Gray depth")
+        panic!("must declare EX precision")
     }
     fn init_ex(&mut self, w: usize, h: usize, o: Option<InitOptionsEx>) -> Response {
         let declaration = o.as_ref().unwrap();
-        assert_eq!(declaration.source_format, format(self.bits));
+        assert_eq!(declaration.source_format, self.format);
         assert_eq!(declaration.source_stride, None);
         self.image.init_ex(w, h, o)?;
         self.event(1)

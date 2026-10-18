@@ -102,7 +102,7 @@ jobs:
         run: rustup target add i686-pc-windows-msvc
       - name: JPEG2000 EX 32-bit precision and resource boundaries
         if: runner.os == 'Windows'
-        run: cargo test -p wml2 --locked --target i686-pc-windows-msvc --test jpeg2000_ex --no-default-features --features jpeg2000,image-buffer-ex
+        run: cargo test -p wml2 --locked --target i686-pc-windows-msvc --test jpeg2000_ex --test jpeg2000_ex_color --no-default-features --features jpeg2000,image-buffer-ex
       - name: TIFF 32-bit offsets and strip geometry
         if: runner.os == 'Windows'
         run: cargo test -p wml2 --target i686-pc-windows-msvc --test tiff_extend --test tiff_review_regressions --no-default-features --features tiff,high-bit-depth

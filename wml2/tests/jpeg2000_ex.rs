@@ -140,14 +140,7 @@ fn marker(data: &[u8], m: u8) -> usize {
 }
 #[test]
 fn unsupported_profiles_and_overflow_reject_before_callbacks() {
-    for name in [
-        "signed16",
-        "rgb16",
-        "rgba16",
-        "irreversible16",
-        "gray10",
-        "roi16",
-    ] {
+    for name in ["signed16", "rgba16", "irreversible16", "gray10", "roi16"] {
         for ext in ["j2k", "jp2"] {
             let data = read(&format!("jp2_ex_unsupported_{name}.{ext}"));
             let mut p = Probe::new(16);

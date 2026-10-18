@@ -4,8 +4,10 @@
 //! The established small Gray8/RGB8 path is tried first. Its unsupported profiles
 //! retry the general component/tile/packet assembler, supporting multiple layers,
 //! five progressions, precincts, subsampling, palette, ROI and HTONLY HTJ2K.
-//! The opt-in EX entry point additionally retains unsigned Gray12/16 with
-//! reversible 5/3. Other high-depth profiles and ICC remain unsupported.
+//! EX additionally retains unsigned Gray/RGB12/16 and explicitly declared
+//! straight RGBA12/16 with reversible 5/3 and optional RGB RCT. Signed, mixed
+//! precision, irreversible high depth, implicit/premultiplied alpha and ICC
+//! remain unsupported.
 //! Geometry, coefficient precision and resource budgets remain bounded.
 //! All declared tiles and layer packets must be present; complete packets end
 //! each tile-part. Only the final codestream part may use Psot=0.
@@ -1527,7 +1529,7 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     option.drawer.terminate(None)?;
     Ok(None)
 }
-/// Static EX output retains unsigned Gray12/16 samples as little-endian bytes.
+/// Static EX output retains unsigned Gray/RGB/declared straight RGBA12/16 in LE bytes.
 #[cfg(feature = "image-buffer-ex")]
 pub(crate) fn decode_ex_inner<B: BinaryReader>(
     reader: &mut B,
@@ -1540,15 +1542,16 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
     let length = end.checked_sub(start).ok_or_else(|| bad("reader extent"))?;
     crate::limits::check_input_length(length, crate::limits::current().input_bytes)?;
     let input = reader.read_bytes_as_vec(usize::try_from(length)?)?;
-    let image = general::image_gray_ex(&input)?;
+    let image = general::image_ex(&input)?;
     option.drawer.init_ex(
         image.width,
         image.height,
         Some(InitOptionsEx {
-            source_format: if image.depth == 12 {
-                PixelFormatEx::Gray12
-            } else {
-                PixelFormatEx::Gray16
+            source_format: match (image.channels, image.depth) {
+                (1, 12) => PixelFormatEx::Gray12,
+                (1, _) => PixelFormatEx::Gray16,
+                (_, 12) => PixelFormatEx::Rgba12,
+                _ => PixelFormatEx::Rgba16,
             },
             source_stride: None,
             legacy: InitOptions::new(),

@@ -85,6 +85,12 @@ signaling と入力 sample の色意味が整合するように用意するの�
 signal する。`Source ICC Profile` を自動転記・改名・適用しない。custom CICP や
 YUV の native plane を指定する用途は既存 native API を使う。
 
+ICC 整合修正では、既知の Gray/RGB model 不一致を encoder で拒否する。
+Gray source ICC のまま RGB を要求する場合は、native Gray 出力を選ぶか、
+利用者が明示変換して encoder options に対応する RGB output ICC を渡す。
+profile 指定だけでは色変換しない。opaque profile と legacy bridge を含む
+詳細は [ICC metadata 契約](icc-consistency-metadata.md)を参照。
+
 ## API と例
 
 ```rust

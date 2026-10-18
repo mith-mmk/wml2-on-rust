@@ -23,4 +23,4 @@ path = "../wml2"
 features = ["multithread", "tga", "pcx", "dds", "pic2", "q4"]
 
 [dependencies.icc-profile]
-version = "0.0.6"
+version = "0.0.7"

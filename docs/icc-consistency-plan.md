@@ -96,10 +96,24 @@ miniz_oxide. The optional SJIS encoding_rs dependency is not removed here.
 External codec transitives, build/dev tools, the non-published wml2-test CLI and
 independent LittleCMS/Pillow tooling remain distinct categories.
 
-The Stage 1 icc-profile fix does not change its published 0.0.6 artifact. Registry
-consumers need a later corrected library release and WML2 dependency/lock update.
-Local path-patch tests prove compatibility only. No version bump, publication,
-PR, merge or release is part of this stage.
+The Stage 1 icc-profile fix is now published as `icc-profile` 0.0.7. WML2's
+ordinary registry dependency and lock use that release, including a frozen
+Lab-PCS LUT integration regression through WML2's explicit CMS adapter.
+No Cargo path/patch override is needed. This WML2 continuation does not bump
+WML2's version, publish it, create a PR, merge main or change release tags.
+
+## Current scoped continuation
+
+F04 covers ordinary JPEG/PNG source-versus-output metadata; F10 covers EX
+storage/legacy bridges, AVIF encoder model checks and the existing generic ICC
+tag after explicit highres CMS. F11 adds one guarded top-level `begin_image`
+callback, distinct from initialization and animation frame changes. See
+[the metadata contract](icc-consistency-metadata.md).
+
+F08 palette TIFF and F09 per-page metadata require separate format work and are
+deferred. PSD naming, BMP/GIF acquisition, AVIF decoder signaling/transfer,
+CMYK CMS and JXL remain later stages. No profile is implicitly applied by these
+metadata corrections, and unsupported native ICC bytes remain retainable.
 
 Each later stage should have a scoped patch, independent review, focused
 regressions, native-retention controls, image checks and relevant performance

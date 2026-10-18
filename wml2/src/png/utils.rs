@@ -105,7 +105,14 @@ pub(crate) fn make_metadata(
     if let Some(profile) = &header.iccprofile {
         if let Some((profile_name, icc_profile)) = decode_icc_profile(profile)? {
             map.insert("ICC Profile name".to_string(), DataMap::Ascii(profile_name));
-            map.insert("ICC Profile".to_string(), DataMap::ICCProfile(icc_profile));
+            // Ordinary Gray/GrayAlpha output replicates gray into RGB; this
+            // is sample expansion, not an ICC conversion of the source profile.
+            let key = if matches!(header.color_type, 0 | 4) {
+                "Source ICC Profile"
+            } else {
+                "ICC Profile"
+            };
+            map.insert(key.to_string(), DataMap::ICCProfile(icc_profile));
         }
     }
     if let Some(exif) = &header.exif {

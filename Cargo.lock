@@ -302,9 +302,9 @@ dependencies = [
 
 [[package]]
 name = "icc-profile"
-version = "0.0.6"
+version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb960e791dd103a3e696377c2b1e68da54215d68e43698960217666f8a53ff87"
+checksum = "f93c7d669607293110355b9aa32c1aafc80d16c99a43f05117efb8faa8b1fdaf"
 dependencies = [
  "bin-rs",
 ]

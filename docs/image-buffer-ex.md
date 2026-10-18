@@ -97,7 +97,10 @@ converts each requested rectangle to packed RGBA8 using the supplied policy and
 leaves native storage untouched. Requests must be nonempty and fully in-bounds.
 `encode_start` validates canvas/budgets; with Exact, an unrepresentable sample
 fails when its rectangle is picked, returning no partial rectangle. Background
-and callback metadata are exposed as before. Use existing EncodeOptions and
+and callback metadata are exposed with source/output ICC identity preserved:
+Gray ICC is retained as `Source ICC Profile` when Gray expands to RGBA.
+See the [ICC metadata and lifecycle contract](icc-consistency-metadata.md).
+Use existing EncodeOptions and
 image_encoder; image_to retains its existing ImageBuffer signature.
 
 ```rust

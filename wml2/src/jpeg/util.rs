@@ -365,10 +365,18 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String, DataMap> {
     }
 
     if let Some(icc_profile) = &header.icc_profile {
-        map.insert(
-            "ICC Profile".to_string(),
-            DataMap::ICCProfile(icc_profile.to_vec()),
-        );
+        // Gray replication and CMYK/YCCK approximation produce RGB pixels,
+        // but do not convert their source ICC profiles into RGB profiles.
+        let key = if header
+            .frame_header
+            .as_ref()
+            .is_some_and(|frame| frame.plane == 3)
+        {
+            "ICC Profile"
+        } else {
+            "Source ICC Profile"
+        };
+        map.insert(key.to_string(), DataMap::ICCProfile(icc_profile.to_vec()));
     }
     match &header.jpeg_app_headers {
         Some(app_headers) => {

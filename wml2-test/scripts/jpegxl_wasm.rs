@@ -129,15 +129,112 @@ pub extern "C" fn verify_jpegxl() -> u32 {
             boxed.extend(9u32.to_be_bytes());
             boxed.extend(b"jxll");
             boxed.push(level);
+            boxed.extend(9u32.to_be_bytes());
+            boxed.extend(b"jbrd");
+            boxed.push(255); // Deliberately uninterpreted reconstruction data.
             boxed.extend((raw.len() as u32 + if partial { 12 } else { 8 }).to_be_bytes());
             boxed.extend(if partial { b"jxlp" } else { b"jxlc" });
             if partial {
                 boxed.extend(0x8000_0000u32.to_be_bytes());
             }
             boxed.extend(raw);
+            boxed.extend(8u32.to_be_bytes());
+            boxed.extend(b"jbrd"); // Retain duplicate/empty payload distinctly.
+            let image = image_from(&boxed).unwrap();
             assert_eq!(
-                image_from(&boxed).unwrap().buffer.unwrap(),
+                image
+                    .metadata
+                    .as_ref()
+                    .unwrap()
+                    .keys()
+                    .filter(|k| k.ends_with("6a627264"))
+                    .count(),
+                2
+            );
+            assert_eq!(
+                image.buffer.unwrap(),
                 include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-rgba8.bin"))
+            );
+            count += 1;
+        }
+    }
+    for (input, icc, probes, width, height, source_channels, format) in [
+        (
+            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-jbrd-bench.jxl")).as_slice(),
+            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-jbrd-bench.icc")).as_slice(),
+            include_bytes!(concat!(
+                env!("WML2_JXL_FIXTURES"),
+                "/jxl-jbrd-bench-probes.bin"
+            ))
+            .as_slice(),
+            606,
+            500,
+            3,
+            PixelFormatEx::Rgba8,
+        ),
+        (
+            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-jbrd-gray.jxl")).as_slice(),
+            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-jbrd-gray.icc")).as_slice(),
+            include_bytes!(concat!(
+                env!("WML2_JXL_FIXTURES"),
+                "/jxl-jbrd-gray-probes.bin"
+            ))
+            .as_slice(),
+            200,
+            200,
+            1,
+            PixelFormatEx::Gray8,
+        ),
+    ] {
+        let image = image_from_ex(input, format, PrecisionConversion::Exact).unwrap();
+        assert_eq!((image.width(), image.height()), (width, height));
+        assert_eq!(image.source_format(), Some(format));
+        for record in probes.chunks_exact(4 + source_channels) {
+            let x = u16::from_le_bytes([record[0], record[1]]) as usize;
+            let y = u16::from_le_bytes([record[2], record[3]]) as usize;
+            let pixel = &image.bytes().unwrap()[(y * width + x) * format.channels()..];
+            for c in 0..source_channels {
+                assert!(pixel[c].abs_diff(record[4 + c]) <= 2);
+            }
+        }
+        for key in ["ICC Profile", "JPEG XL Source ICC Profile"] {
+            assert!(
+                matches!(&image.metadata.as_ref().unwrap()[key],wml2::metadata::DataMap::ICCProfile(v) if v == icc)
+            );
+        }
+        count += 1;
+        if source_channels == 3 {
+            assert_eq!(
+                image_from(input).unwrap().buffer.unwrap(),
+                image.bytes().unwrap()
+            );
+        } else {
+            assert!(
+                image_from(input)
+                    .err()
+                    .unwrap()
+                    .to_string()
+                    .contains("Gray ICC expansion")
+            );
+        }
+        count += 1;
+        for limits in [
+            DecodeLimits {
+                input_bytes: input.len() - 1,
+                ..Default::default()
+            },
+            DecodeLimits {
+                pixels: width * height - 1,
+                ..Default::default()
+            },
+            DecodeLimits {
+                metadata_bytes: 100,
+                ..Default::default()
+            },
+        ] {
+            assert!(
+                image_from_ex_with_limits(input, format, PrecisionConversion::Exact, limits)
+                    .is_err()
             );
             count += 1;
         }

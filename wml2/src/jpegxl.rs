@@ -72,6 +72,8 @@ struct Input {
 }
 // Validate every box, including trailing boxes, before the codec sees input.
 // Never pass brob to an unbounded decompressor or discard unknown metadata.
+// jbrd is retained as opaque source bytes; pixel decoding does not reconstruct
+// JPEG files or parse/decompress/validate the reconstruction payload.
 fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
     let mut out = Input {
         codestream: Vec::new(),
@@ -160,9 +162,9 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
                 }
                 seen_level = true;
             }
-            b"brob" | b"jbrd" => {
+            b"brob" => {
                 return Err(unsupported(
-                    "JPEG XL compressed metadata and JPEG reconstruction boxes are unsupported",
+                    "JPEG XL compressed metadata boxes are unsupported",
                 ));
             }
             b"JXL " => return Err(invalid("duplicate JPEG XL signature")),

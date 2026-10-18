@@ -42,7 +42,7 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
 animations (no silent first-frame fallback), previews, intrinsic display sizes,
 premultiplied or mixed-depth/subsampled alpha, multiple/other extra channels,
-compressed `brob` metadata, JPEG reconstruction `jbrd`, and unsupported depths.
+compressed `brob` metadata and unsupported depths.
 Explicit Level5 and Level10 `jxll` boxes are accepted; dimensions, workspace and
 the supported sample profile remain independently bounded. This does not promise
 the entire Level10 profile. Native JPEG bitstream reconstruction is not implemented.
@@ -57,15 +57,17 @@ format, not before.
 
 | Metadata key | Meaning |
 | --- | --- |
-| `ICC Profile` | Actual output colour profile, generated from simple signaling when needed |
+| `ICC Profile` | Profile for the adapter's delivered callback samples, generated from simple signaling when needed; explicit EX storage conversion does not transform this profile |
 | `JPEG XL Source ICC Profile` | Original embedded ICC bytes, or equivalent generated ICC for original simple signaling |
 | `JPEG XL Source Header` | Original bit-aligned codestream-header prefix; last byte may also contain following bits; not a standalone file |
 | `JPEG XL Source Box <index> <hex-type>` | Uncompressed auxiliary box bytes, including unknown types and duplicate types with distinct indexes |
 | `JPEG XL Source Bit Depth` / `JPEG XL Output Bit Depth` | Coded colour depth / declared delivered sample depth |
 
 Gray replicated into RGBA gets a matching neutral-axis RGB profile for simple
-Gray signaling. An arbitrary Gray ICC that needs RGBA expansion is explicitly
-rejected because this would require a CMS; EX Gray-only output can retain it.
+Gray signaling. Ordinary RGBA decoding of an arbitrary Gray ICC is explicitly
+rejected because assigning a matching RGB profile would require a CMS; native
+EX Gray callback output can retain it. Subsequent EX storage conversion copies
+samples without transforming the ICC; its source format still identifies Gray.
 Metadata is delivered after pixels, matching existing static adapters. Source
 orientation remains in the raw header; output dimensions/pixels are oriented.
 Raw EXIF/XMP boxes are preserved as source bytes, not parsed or reapplied.
@@ -74,13 +76,57 @@ PQ/HLG is rejected. Arbitrary opaque ICC transfer curves are preserved, not
 interpreted as an HDR rendering promise. There is no HDR tone mapping or
 semantic classification of arbitrary ICC LUTs.
 
+## Still images with JPEG reconstruction side data
+
+An uncompressed outer `jbrd` box no longer prevents pixel decoding. Its payload
+is retained under the existing indexed `JPEG XL Source Box <index> 6a627264`
+Raw key, with the same aggregate metadata, box-count and workspace checks as
+other auxiliary data. Before/between/after-codestream placement, duplicate boxes,
+extended sizes and final zero-size boxes follow the existing container rules.
+Duplicate payloads remain separately indexed rather than overwriting each other.
+
+**Opaque retention is not JPEG reconstruction or payload validation.** The
+payload may itself contain compressed reconstruction information; WML2 never
+parses or decompresses it, uses it for pixels/ICC, or promises it can reproduce
+a JPEG file. An empty or invalid opaque payload can accompany valid pixels.
+The outer container envelope and pixel codestream must still be valid.
+All `brob` boxes remain explicitly unsupported, including wrapped `jbrd`.
+Unknown auxiliary data is also retained as bounded Raw bytes without execution
+or semantic interpretation. Native JPEG reconstruction APIs are not added.
+
+This follows pixel-only behavior in [libjxl0.11.2](https://github.com/libjxl/libjxl/blob/v0.11.2/lib/jxl/decode.cc#L1842)
+and the auxiliary-data path of the published `jxl0.7.4` parser.
+The independent fixtures use official [conformance data pinned to b1d0f990](https://github.com/libjxl/conformance/tree/b1d0f990b03e57bf6d137c365cd5dc8b470b9191/testcases).
+
+| Official case | Ordinary RGBA8 | Native EX | ICC and orientation |
+| --- | --- | --- | --- |
+| `bench_oriented_brg` | Supported | Rgba8 | Exact official RGB ICC; coded orientation5 applied once,606x500 output |
+| `grayscale_jpeg` | Explicit Gray ICC/CMS refusal remains | Gray8 | Exact official Gray ICC;200x200 output |
+
+Request native `PixelFormatEx::Gray8` for the Gray sample. Explicit EX storage
+conversions do not perform CMS transforms; a request to copy Gray samples into
+RGBA storage does not establish a matching RGB profile. The ordinary decoder's
+existing CMS refusal is preserved rather than changing or discarding the ICC.
+
+`generate_jpegxl_jbrd_fixtures.py` pins input hashes, fetches official ICC/float
+reference objects by SHA-256, and obtains a second oracle from `djxl0.11.2`.
+Native/ordinary tests compare every supported output pixel with both oracles
+within2/255, plus exact ICC/Raw side data. Float references are quantized to the
+declared integer8 domain; the unquantized float RMS bound is not an integer8
+output requirement. The actual cloud maximum difference was1/255 for both cases.
+Fixture oracles are zlib-compressed test data, unrelated to runtime `brob` support.
+The WASM harness checks25 spatial probes per official image, full ICC/dimensions,
+limit failures and the ordinary Gray refusal. Provenance, hashes and testing
+permissions are in `wml2/tests/fixtures/review/jxl-jbrd-fixtures.json`.
+
 ## Limits and cancellation
 
 Both entry points use `DecodeLimits` and the shared callback guard. Input,
 canvas pixels/bytes, frame count, source/output metadata and callback forwarding
 are checked independently. Abort stops later draws/metadata and terminates
-once, including the ordinary RGBA8 path. Malformed/truncated input is rejected
-before initialization; there is no partial-image success.
+once, including the ordinary RGBA8 path. Malformed/truncated container envelopes
+and pixel codestreams are rejected before initialization; opaque auxiliary payloads
+are retained without semantic validation. There is no partial-image success.
 
 Additional fixed profile caps:64MiB input,64KiB header prefix,16384 per image
 dimension,4Mi effective padded frame pixels,auxiliary metadata insertion before box index1025. The conservative
@@ -131,7 +177,7 @@ In particular,0.7.4 has typestate processing and `premultiply_output`; main's
 
 See [machine-readable results](jpeg-xl-validation.json) for commands, source
 hashes, local results, measured allocations and the actual WASM artifact hash.
-The portable helper runs45 cases in Node without host imports:
+The portable helper runs55 cases in Node without host imports:
 
 ```console
 python3 wml2-test/scripts/verify_jpegxl_wasm.py --output .test-jxl-wasm
@@ -150,7 +196,7 @@ macOS, with ordinary, EX and disabled-feature tests. Windows additionally
 executes those contracts as32-bit MSVC binaries. These dedicated jobs do not
 wait for the slower existing JPEG2000/TIFF platform regressions.
 
-The WASM compile job executes the45-case Node harness and uploads its report.
+The WASM compile job executes the55-case Node harness and uploads its report.
 A feature-contract job checks the expected mutually exclusive IDCT failure for
 `--all-features`, then checks all targets and executes JPEG XL tests for both
 all-codec and `noretoro` profiles with only one IDCT enabled. This also exposed
@@ -175,15 +221,18 @@ finite probes do not establish general decoder correctness.
 
 The local Windows owner is responsible for real display testing against the
 25-file corpus at `D:\data\samples\images\jxl\wml2_static_selection_20261018`
-and its `manifest.json`. That corpus is unavailable in this cloud environment;
-its results remain pending and are separate from hosted CI and synthetic tests.
-The hosted56-job success for revision4467931 is prior evidence, not a result
-for this follow-up patch. Normal branch pushes run existing CI automatically;
+and its `manifest.json`. The earlier local report identified `jbrd` refusals for
+the two official cases above at revision1b8007c; a local rerun of this patch is
+pending. The local collection/manifest is unavailable in the cloud; official
+copies were obtained independently. Hosted CI and cloud image checks are separate.
+The [hosted56-job success for revision1b8007c](https://github.com/mith-mmk/wml2-on-rust/actions/runs/39112081722)
+is prior evidence, not a result for this patch. Normal pushes run existing CI automatically;
 no separate Windows execution or workflow dispatch is needed for this review.
 
 Remaining profile limitations include fixed resource caps, Gray ICC expansion,
-compressed auxiliary metadata and JPEG reconstruction. All eight orientation
-values have not been independently tested; the90-degree case is covered.
+compressed auxiliary metadata and native JPEG reconstruction. All eight orientation
+values have not been independently tested;90-degree rotation and orientation5
+transpose are covered.
 Browser UI integration, SIMD and threads are also outside the current evidence.
-HDR rendering, animation and encoding require a separate scope proposal before
+9/10-bit sources, premultiplied alpha, HDR rendering, animation and encoding require a separate scope proposal before
 implementation. No PR, main merge or release is part of this branch work.

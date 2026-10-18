@@ -14,10 +14,10 @@ runner=out/'run.cjs';runner.write_text('''const fs=require('fs');
 (async()=>{const module=await WebAssembly.compile(fs.readFileSync(process.argv[2]));
 const imports=WebAssembly.Module.imports(module);if(imports.length)throw Error('unexpected host imports');
 const instance=await WebAssembly.instantiate(module,{});const cases=instance.exports.verify_jpegxl();
-if(cases!==45)throw Error('case count mismatch: '+cases);
+if(cases!==55)throw Error('case count mismatch: '+cases);
 process.stdout.write(JSON.stringify({runtime:process.version,cases,all_passed:true,host_imports:imports,memory_bytes:instance.exports.memory.buffer.byteLength})+'\\n');
 })().catch(e=>{console.error(e);process.exit(1)});
 ''')
 report=json.loads(run(['node',runner,wasm],'run.log'))
-report.update(target='wasm32-unknown-unknown',features='jpeg-xl,image-buffer-ex; no defaults',wasm_sha256=hashlib.sha256(wasm.read_bytes()).hexdigest(),scope='native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels 5/10 with jxlc/jxlp')
+report.update(target='wasm32-unknown-unknown',features='jpeg-xl,image-buffer-ex; no defaults',wasm_sha256=hashlib.sha256(wasm.read_bytes()).hexdigest(),scope='native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)')
 (out/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))

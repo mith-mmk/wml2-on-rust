@@ -1,4 +1,4 @@
-#![cfg(any(feature = "png", feature = "jpeg"))]
+#![cfg(any(feature = "png", feature = "jpeg", feature = "gif"))]
 use wml2::draw::*;
 use wml2::metadata::DataMap;
 use wml2::util::ImageFormat;
@@ -138,4 +138,9 @@ fn png_abort_stops_at_every_callback() {
 #[test]
 fn jpeg_abort_stops_and_joins_workers() {
     exercise(ImageFormat::Jpeg, false);
+}
+#[cfg(feature = "gif")]
+#[test]
+fn gif_abort_stops_at_every_callback() {
+    exercise(ImageFormat::Gif, true);
 }

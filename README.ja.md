@@ -102,6 +102,7 @@ Q4/XLD4は`ifxld4.spi`の解析で確認した保持色runを使って復号し�
 - `psd`: Pure RustのPSD v1 decoder。8/16-bit RGB・Grayscale・CMYKと8-bit Indexedに対応し、統合画像とレイヤーチャンネルのRaw、PackBits RLE、ZIP、ZIP predictionをdecode
 - `avif`: `avif-rust` による AVIF decoder、`avifenc`: 独立サブモジュール `avifenc-rust` による AVIF encoder
 - `high-bit-depth`: 追加型のU8/U16/F32 bufferとnative metadata API。ICCには依存しない
+- `image-buffer-ex`: 非既定のGray/RGBA8/12/16bit byte格納・明示的変換・callback受け口。`high-bit-depth`とは独立
 - `color-management`: `high-bit-depth`に依存し、`icc-profile`によるGray/RGB明示ICC変換を追加
 - metadata feature: `exif`
 - 埋め込みフォーマット bridge feature: `bmp-jpeg`, `bmp-png`, `tiff-jpeg`, `ico-bmp`, `ico-png`
@@ -110,6 +111,25 @@ Q4/XLD4は`ifxld4.spi`の解析で確認した保持色runを使って復号し�
 - その他の toggle: `multithread`, `SJIS`, `noretoro`
 - `noretoro`: `MAG`, `MAKI`, `PCD`, `PI`, `PIC`, `VSP/DAT`, `TGA`, `PCX`, `DDS`, `PIC2`, `Q4`の旧形式codecを無効化
 - `c2pa`: PNG と JPEG のメタデータ内の C2PA manifest store の解析を有効化
+
+## ImageBufferEx
+
+[Callback 実装仕様と動くサンプル](docs/image-buffer-ex-callbacks.md)に、入力宣言・
+保存形式・エンコーダ出力要求の分離、ICC metadata の後処理、Exact／Round と
+失敗時の契約をまとめています。
+
+[AVIF/avifenc の EX adapter](docs/image-buffer-ex-avif.md)は、静止画の RGBA16LE
+入力宣言と、callback が明示した8/12bit出力を接続します。RGBA16保存からの
+減精度は Exact／Round を選択し、ICC と表示色変換は利用者側で処理します。
+既存 RGBA8 API と native YUV／10bit API は維持します。
+
+このbranchでは非既定の`image-buffer-ex`でGray/RGBA8・12・16bitを精度を保って格納します。
+source・storage・picker outputを別々に宣言し、8bit化はExact／Roundを明示して実行します。
+単一pixelの借用参照、静止画の旧ImageBufferからの検査付き所有権移譲、
+高精度格納を維持した旧encoder用の借用adapterに対応します。
+既存のPNG/TIFF EX経路とhighresのpixel-only連携を再利用し、
+YUV・HDR・animation・JPEG2000高ビット対応は今回追加しません。
+[現行仕様と検証](docs/image-buffer-ex.md)を参照してください。EX の追加機能は未リリースです。この作業ブランチは main の 0.0.36 更新を取り込んでいます。
 
 ## JPEG2000 のデコード
 

@@ -44,7 +44,14 @@ unsafe impl GlobalAlloc for Meter {
 }
 #[global_allocator]
 static ALLOCATOR: Meter = Meter;
-#[cfg(any(feature = "jpeg", feature = "webp"))]
+#[cfg(any(
+    feature = "jpeg",
+    feature = "webp",
+    feature = "png",
+    feature = "tiff",
+    feature = "avifenc",
+    feature = "image-buffer-ex"
+))]
 fn hash(data: &[u8]) -> u64 {
     data.iter().fold(0xcbf29ce484222325, |h, b| {
         (h ^ u64::from(*b)).wrapping_mul(0x100000001b3)
@@ -70,6 +77,146 @@ fn main() {
         .and_then(|v| v.parse().ok())
         .unwrap_or(7);
     println!("case,iteration,ns,allocations,allocated_bytes,peak_live_bytes,first_draw_ns,hash");
+    #[cfg(all(feature = "avifenc", feature = "image-buffer-ex"))]
+    if mode == "avif-ex-encode" {
+        for format in [
+            PixelFormatEx::Gray8,
+            PixelFormatEx::Gray12,
+            PixelFormatEx::Rgba8,
+            PixelFormatEx::Rgba12,
+        ] {
+            let (width, height) = (16, 16);
+            let max = (1usize << format.bits()) - 1;
+            let bytes = (0..width * height * format.channels())
+                .flat_map(|i| {
+                    let value = ((i * 37 + 17) & max) as u16;
+                    value.to_le_bytes()[..format.bytes_per_sample()].to_vec()
+                })
+                .collect();
+            let mut image = ImageBufferEx::from_bytes(width, height, format, None, bytes).unwrap();
+            let mut output = PixelOutputEx::new(format, PrecisionConversion::Exact);
+            output.stride = Some(width * format.bytes_per_pixel() + 1);
+            let name = format!("avif-ex-{format:?}-16x16-odd-stride");
+            for i in 0..repeat {
+                measure(&name, i, || {
+                    let encoded = image_encoder_ex(
+                        &mut EncodeOptionsEx {
+                            debug_flag: 0,
+                            drawer: &mut image,
+                            output,
+                            options: Some(std::collections::HashMap::from([(
+                                "lossless".into(),
+                                wml2::metadata::DataMap::UInt(1),
+                            )])),
+                        },
+                        wml2::util::ImageFormat::Avif,
+                    )
+                    .unwrap();
+                    (hash(&encoded), 0)
+                });
+            }
+        }
+    }
+    #[cfg(feature = "avifenc")]
+    if mode == "avif-encode" {
+        let controls = std::collections::HashMap::from([(
+            "lossless".into(),
+            wml2::metadata::DataMap::UInt(1),
+        )]);
+        for i in 0..repeat {
+            measure("avif-encode-2x2", i, || {
+                let mut image = ImageBuffer::from_buffer(
+                    2,
+                    2,
+                    vec![
+                        0, 17, 255, 255, 85, 136, 17, 0, 170, 34, 221, 255, 255, 238, 204, 119,
+                    ],
+                );
+                let encoded = image_to(
+                    &mut image,
+                    wml2::util::ImageFormat::Avif,
+                    Some(controls.clone()),
+                )
+                .unwrap();
+                (hash(&encoded), 0)
+            });
+        }
+    }
+    #[cfg(feature = "image-buffer-ex")]
+    if mode == "decode-ex-file" {
+        let encoded = std::fs::read(
+            std::env::args()
+                .nth(3)
+                .expect("decode-ex-file <repeat> <path>"),
+        )
+        .unwrap();
+        for i in 0..repeat {
+            measure("decode-ex-file", i, || {
+                let image =
+                    image_from_ex(&encoded, PixelFormatEx::Rgba16, PrecisionConversion::Exact)
+                        .unwrap();
+                (hash(image.bytes().unwrap()), 0)
+            });
+        }
+    }
+    #[cfg(feature = "image-buffer-ex")]
+    if mode == "ex-view" {
+        let (width, height) = (1024, 768);
+        let pixels: Vec<u8> = (0..width * height)
+            .flat_map(|i| {
+                [
+                    (i * 997 + 1) as u16,
+                    (i * 337 + 129) as u16,
+                    (i * 503 + 32768) as u16,
+                    65535,
+                ]
+                .into_iter()
+                .flat_map(u16::to_le_bytes)
+            })
+            .collect();
+        let image =
+            ImageBufferEx::from_bytes(width, height, PixelFormatEx::Rgba16, None, pixels).unwrap();
+        for i in 0..repeat {
+            measure("ex-copy-then-pick-row", i, || {
+                let mut legacy = image.to_rgba8(PrecisionConversion::Round).unwrap();
+                let bytes = legacy.encode_pick(0, 0, width, 1, None).unwrap().unwrap();
+                (hash(&bytes), 0)
+            });
+            measure("ex-borrowed-pick-row", i, || {
+                let bytes = image
+                    .legacy_picker(PrecisionConversion::Round)
+                    .encode_pick(0, 0, width, 1, None)
+                    .unwrap()
+                    .unwrap();
+                (hash(&bytes), 0)
+            });
+        }
+    }
+    #[cfg(any(feature = "png", feature = "tiff"))]
+    if mode == "decode-file" {
+        let path = std::env::args()
+            .nth(3)
+            .expect("decode-file <repeat> <path>");
+        let encoded = std::fs::read(path).unwrap();
+        for i in 0..repeat {
+            measure("decode-file", i, || {
+                let mut sink = Sink {
+                    image: ImageBuffer::new(),
+                    start: Instant::now(),
+                    first: 0,
+                };
+                image_loader(
+                    &encoded,
+                    &mut DecodeOptions {
+                        debug_flag: 0,
+                        drawer: &mut sink,
+                    },
+                )
+                .unwrap();
+                (hash(sink.image.buffer.as_ref().unwrap()), sink.first)
+            });
+        }
+    }
     if mode == "draw" {
         let mut image = ImageBuffer::from_buffer(3840, 2160, vec![0; 3840 * 2160 * 4]);
         let pixels: Vec<u8> = (0..3840 * 2160 * 4).map(|i| (i * 17) as u8).collect();
@@ -158,13 +305,13 @@ fn main() {
         icc_bench(repeat);
     }
 }
-#[cfg(feature = "jpeg")]
+#[cfg(any(feature = "jpeg", feature = "png", feature = "tiff"))]
 struct Sink {
     image: ImageBuffer,
     start: Instant,
     first: u128,
 }
-#[cfg(feature = "jpeg")]
+#[cfg(any(feature = "jpeg", feature = "png", feature = "tiff"))]
 impl DrawCallback for Sink {
     fn init(&mut self, w: usize, h: usize, o: Option<InitOptions>) -> Response {
         self.image.init(w, h, o)

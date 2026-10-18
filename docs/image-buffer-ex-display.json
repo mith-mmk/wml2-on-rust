@@ -1,0 +1,85 @@
+{
+  "cases": 5,
+  "all_passed": true,
+  "comparison": "native LE16 samples source-exact; explicit rounded RGBA8 preview separatelychecked",
+  "rows": [
+    {
+      "input": "wml2/tests/fixtures/ex-gray8-lzw.tif",
+      "width": 257,
+      "height": 3,
+      "source_bits": 8,
+      "compression": "lzw",
+      "native_exact": true,
+      "preview_oracle_exact": true,
+      "stdout": "257x3 Some(Gray8) source -> Rgba16 storage; preview uses explicit Round",
+      "sha256": {
+        "input": "c319f03575609ae0369b57d3e6d4b064a5f1e83e6d51cf3d48bcfed543ae2555",
+        "native": "f50d01a1cc0b7156f95b68e2d7b4bcd5993ee87c5605908e863959ac555b6c69",
+        "preview": "c75e55a20e37cc730c76200dce327e5998f0f3579e535e31656dd0fe1d5ff3f2"
+      }
+    },
+    {
+      "input": "wml2/tests/fixtures/ex-gray8-packbits.tif",
+      "width": 257,
+      "height": 3,
+      "source_bits": 8,
+      "compression": "packbits",
+      "native_exact": true,
+      "preview_oracle_exact": true,
+      "stdout": "257x3 Some(Gray8) source -> Rgba16 storage; preview uses explicit Round",
+      "sha256": {
+        "input": "942ab09aac6408e9fcd3a483936d5867c3297c2272448831110958c0f31e2280",
+        "native": "f50d01a1cc0b7156f95b68e2d7b4bcd5993ee87c5605908e863959ac555b6c69",
+        "preview": "c75e55a20e37cc730c76200dce327e5998f0f3579e535e31656dd0fe1d5ff3f2"
+      }
+    },
+    {
+      "input": "wml2/tests/fixtures/ex-gray16-lzw.tif",
+      "width": 257,
+      "height": 3,
+      "source_bits": 16,
+      "compression": "lzw",
+      "native_exact": true,
+      "preview_oracle_exact": true,
+      "stdout": "257x3 Some(Gray16) source -> Rgba16 storage; preview uses explicit Round",
+      "sha256": {
+        "input": "73962aec4bfb500c4521ad72ff0b0e2ee1529d158d3670c3b834ea292b3ed576",
+        "native": "c5fa11c2cdc1a17cac4c9e431853fcca0851d12c7f4c4773de989535b74b6475",
+        "preview": "ce6e9af3d729e9d78086707a00577735cf9c7279c02c07ab227042261be18e63"
+      }
+    },
+    {
+      "input": "wml2/tests/fixtures/ex-gray16-packbits.tif",
+      "width": 257,
+      "height": 3,
+      "source_bits": 16,
+      "compression": "packbits",
+      "native_exact": true,
+      "preview_oracle_exact": true,
+      "stdout": "257x3 Some(Gray16) source -> Rgba16 storage; preview uses explicit Round",
+      "sha256": {
+        "input": "bd6292d382494d1226d466e9d20b4adc29f74306140e8b2696a6014b0a9593f1",
+        "native": "c5fa11c2cdc1a17cac4c9e431853fcca0851d12c7f4c4773de989535b74b6475",
+        "preview": "ce6e9af3d729e9d78086707a00577735cf9c7279c02c07ab227042261be18e63"
+      }
+    },
+    {
+      "input": "wml2/tests/fixtures/ex-access-rgba16.tif",
+      "width": 65,
+      "height": 33,
+      "source_bits": 16,
+      "compression": "none",
+      "native_exact": true,
+      "preview_oracle_exact": true,
+      "stdout": "65x33 Some(Rgba16) source -> Rgba16 storage; preview uses explicit Round",
+      "sha256": {
+        "input": "6e5233bea5bcbbc625c96b07139a59af259d423d997e93d1c7dbe297fb5d6bb5",
+        "native": "f4e5c5a5f2d93fbac6fd7d408e0375ff96b88323d7d6ff0c306712fa7d665798",
+        "preview": "110664cb934d1681b6d9f955b07981a03312ca455e53de4e8be9a84b97c7a1d7"
+      }
+    }
+  ],
+  "generator": "wml2-test/scripts/generate_ex_access_sample.py",
+  "generator_sha256": "45780c6d8527a1301837d7da07121130b38a96f285cbd7fd376807c340788aa8",
+  "viewed_by_root": true
+}

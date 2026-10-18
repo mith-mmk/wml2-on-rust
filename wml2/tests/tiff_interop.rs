@@ -25,6 +25,36 @@ fn external_tiff_manifest_is_pinned_and_complete() {
     assert!(MANIFEST.contains("distribution\": \"external-only\""));
 }
 
+#[cfg(feature = "image-buffer-ex")]
+#[test]
+#[ignore = "requires the external TIFF corpus; run with --ignored and WML2_TIFF_CORPUS"]
+fn external_ex_rejects_models_outside_static_gray_rgb_scope() {
+    use wml2::draw::{PixelFormatEx, PrecisionConversion, image_from_ex};
+    // The pinned external subset contains packed CCITT, YCbCr and old JPEG;
+    // it validates explicit rejection here, not native EX color conversion.
+    for name in [
+        "fax4.tiff",
+        "dscf0013.tif",
+        "ycbcr-cat.tif",
+        "ojpeg_chewey_subsamp21_multi_strip.tiff",
+        "ojpeg_single_strip_no_rowsperstrip.tiff",
+        "ojpeg_zackthecat_subsamp22_single_strip.tiff",
+    ] {
+        let bytes = external_sample(name);
+        let error = match image_from_ex(&bytes, PixelFormatEx::Rgba16, PrecisionConversion::Exact) {
+            Ok(_) => panic!("{name} is outside the EX scope"),
+            Err(error) => error,
+        };
+        assert!(
+            error.to_string().contains("EX TIFF")
+                || error
+                    .to_string()
+                    .contains("EX multi-page TIFF is unsupported"),
+            "{name}: {error}"
+        );
+    }
+}
+
 #[test]
 #[ignore = "requires the external TIFF corpus; run with --ignored and WML2_TIFF_CORPUS"]
 fn external_group4_reserved_extension_is_reported_when_configured() {

@@ -167,7 +167,9 @@ fn interleaved_straight_alpha_is_encoded_as_an_independent_plane() {
         .unwrap(),
     )
     .unwrap();
-    let encoded = encode_native(&frame, &options(10)).expect("AVIF encode");
+    let mut settings = options(10);
+    settings.encoder.lossless = true;
+    let encoded = encode_native(&frame, &settings).expect("AVIF encode");
     let decoded = decode_native(&encoded, &limits()).expect("native AVIF decode");
     assert_eq!(decoded.descriptor().alpha(), AlphaAssociation::Straight);
     assert!(
@@ -177,6 +179,32 @@ fn interleaved_straight_alpha_is_encoded_as_an_independent_plane() {
             .iter()
             .any(|plane| plane.roles() == [ChannelRole::Alpha].as_slice())
     );
+    let raw = avif_codec::decode_frame_bytes(&encoded).unwrap();
+    let rgba = [
+        100u16, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 101, 202, 303, 404, 505, 606,
+    ];
+    for (role, channel) in [1, 2, 0, 3].into_iter().enumerate() {
+        assert_eq!(
+            raw.buffers
+                .planes
+                .iter()
+                .find(|p| p.layout.plane as usize == role)
+                .unwrap()
+                .samples,
+            rgba.chunks_exact(4).map(|p| p[channel]).collect::<Vec<_>>()
+        );
+    }
+    if let Some(dir) = std::env::var_os("WML2_AVIF_REGISTRY_ORACLES") {
+        let path = std::path::Path::new(&dir);
+        std::fs::write(path.join("wml2-highres-10.avif"), &encoded).unwrap();
+        std::fs::write(
+            path.join("wml2-highres-10.rgba16le"),
+            rgba.iter()
+                .flat_map(|v| v.to_le_bytes())
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+    }
 }
 
 #[test]

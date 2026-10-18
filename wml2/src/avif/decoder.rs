@@ -11,6 +11,12 @@ use crate::metadata::DataMap;
 use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
 
+#[cfg(feature = "image-buffer-ex")]
+#[path = "ex.rs"]
+mod ex;
+#[cfg(feature = "image-buffer-ex")]
+pub(crate) use ex::decode as decode_ex_inner;
+
 fn map_decoder_error(error: &avif_codec::DecoderError) -> ImgErrorKind {
     match error {
         avif_codec::DecoderError::InvalidParam(_) => ImgErrorKind::InvalidParameter,

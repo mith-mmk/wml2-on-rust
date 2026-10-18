@@ -1,0 +1,131 @@
+{
+  "status": "PASS selected ImageBufferEx continuation scope",
+  "base_main": "e42d2cfdbc72fcf861919e1b316018c1a63f91ce",
+  "original_ex_branch": "feat/image-buffer-ex-compat",
+  "original_ex_sha": "c1203f422f6396b4512b8588f9e59c8d4c14902d",
+  "work_branch": "codex/image-buffer-ex-continuation-20261013",
+  "implementation_checkpoint": "c59cd3bc96bd5e597c815a39ddcf20f49b4bb345",
+  "tested_clean_wasm_checkpoint": "59082ef43ce53d4d8805b5285e5bf2e31aab2907",
+  "native_runtime_sources_identical_to_tested_checkpoint": true,
+  "source_sha256": {
+    "wml2/src/decode_guard.rs": "688966093b2b5009fb693a2a2e5ca68c2411de3deccbb617f5420ca265cf45f2",
+    "wml2/src/draw.rs": "af51e10bdbe99e5b6616d632f9a97a002b2916205f79e2fde78603b970fa6ed4",
+    "wml2/src/image_buffer_ex.rs": "382debb26934affa4c0f59f015df9ca1e42725ec5dfc8945643d9f651000d0d4",
+    "wml2/src/png/decoder.rs": "182feda26c6c32c9eb25c94e2d1124d36d47b69a6b3e9e3eddfc41a91db0be0a",
+    "wml2/src/tiff/decoder/ex.rs": "fa6220d5afaa0851ce59c0568083f5443b4616792a01d2a33a5da041df1e8e99",
+    "wml2/src/tiff/decoder/mod.rs": "f8c6af6a3542f2be33afea78026d7620211e0121f675a485fc86ad76743c8f7b",
+    "wml2/src/tiff/sample.rs": "39b3301030a7023b4698a227c52a660343bb335a1995cee20f5ca2fa29c87140"
+  },
+  "native": {
+    "workspace-final": {
+      "passed": 394,
+      "failed": 0,
+      "ignored": 13,
+      "targets": 48,
+      "log_sha256": "4ddd6911edc9b8111501f527846b77968d38932b130ca4d53c05def3f980d95e"
+    },
+    "minimal-ex": {
+      "passed": 70,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 30,
+      "log_sha256": "f818ffe8241beb2eddb71a479f9d9b1614d4255c53a1810bb55f60c9b968c425"
+    },
+    "feature-off": {
+      "passed": 39,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 30,
+      "log_sha256": "b3d08edde5f906c6448e04a200a50d23aaccded8865292f8ed7a70842c294345"
+    },
+    "boundaries-final": {
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1,
+      "log_sha256": "bc5565c0aa93a2d4a5f854efbca8ab08d51be0f05a94964b67f381f655115be3"
+    }
+  },
+  "clippy": {
+    "all_targets_passed": true,
+    "all_targets_lib_warnings": 187,
+    "warnings_inherited_or_outside_new_continuation": "Existing/inherited warnings remain, including legacy source/test warnings. Not a -Dwarnings gate.",
+    "new_target_passed": true,
+    "new_target_lib_warnings": 73,
+    "new_access_boundary_test_warnings": 0,
+    "logs_sha256": {
+      "clippy-final.log": "ea51e780d394a2fa0ecc2b2af1c8389f0f9117882d9ed99a32adf44145f7eb24",
+      "clippy-new-targets.log": "c1ee6dbeea165aad55b4ac544647fcf85b10a65e954d96278da3043451ad9134",
+      "fmt-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "clippy-examples.log": "a1ca4b6e64c5027aa365c3853b94e09e00384f9238ca7d2db9e09497eb54aad4"
+    },
+    "updated_examples_passed": true,
+    "updated_examples_warnings": 0
+  },
+  "format_and_diff_check_passed": true,
+  "wasm": {
+    "build": true,
+    "actual_runtime": true,
+    "cases": 13,
+    "all_passed": true,
+    "host_imports": [],
+    "record": "image-buffer-ex-wasm.json"
+  },
+  "display": {
+    "cases": 5,
+    "native_samples_exact": true,
+    "explicit_rounded_preview_exact": true,
+    "viewed": true,
+    "record": "image-buffer-ex-display.json"
+  },
+  "performance": {
+    "legacy_main_comparisons": 8,
+    "no_material_increase_observed_in_samples": true,
+    "shared_host_variation": true,
+    "all_rows_retained": true,
+    "borrowed_same_row_allocation_bytes": 4096,
+    "whole_canvas_copy_then_same_row_allocation_bytes": 3149824,
+    "not_cross_host_guarantee": true
+  },
+  "preserved": {
+    "package_version": "0.0.35",
+    "default_features": true,
+    "production_dependencies": true,
+    "legacy_public_fields_and_signatures": true,
+    "Cargo_lock_and_unrelated_codecs_unchanged": true,
+    "all_existing_remote_heads_unchanged": true,
+    "jpeg2000_pr10_head": "5506a515dfc1a190283e17b54161103502b28867",
+    "jpeg2000_pr10_body_unchanged": true,
+    "original_jpeg2000_worktree_untouched": true
+  },
+  "not_implemented": [
+    "YUV",
+    "F32/HDR/signed/10-bit EX",
+    "EX animation",
+    "new codec high-depth acceptance",
+    "JPEG2000 high-depth decoding",
+    "general ICC/color transformations",
+    "destructive public API redesign"
+  ],
+  "unexecuted": [
+    "CI waiting/full CI matrix",
+    "browser viewer/UI",
+    "other operating systems",
+    "all optional AVIF/ICC configurations"
+  ],
+  "not_performed": [
+    "mainmerge",
+    "publish",
+    "versionchange",
+    "newPRcreation"
+  ],
+  "remaining_blockers": [],
+  "evidence_files": {
+    "docs/image-buffer-ex-benchmark.json": "2f146ebdbe2d936622b683931be7171e3685e36c7fb8ac9f9cc8853dd796e4a2",
+    "docs/image-buffer-ex-display.json": "26ba1d348ea19e9b13b3e5b09ecc6b97092931a8af6e6a7aa9056dda4bab6c3c",
+    "docs/image-buffer-ex-display.png": "9b0a35e0147951f017057d543393cd256e16f7f3d727d162a22eed5df474edac",
+    "docs/image-buffer-ex-encoder-view-benchmark.json": "e0f4a6c085ce9e2918323145239a273df60008ae74eb0dfd75e9e67ae03e2383",
+    "docs/image-buffer-ex-review.json": "c97bb2e9da14dd0e3e4b3383cc01b347376174a7e372c0300db20dfa8b40581d",
+    "docs/image-buffer-ex-wasm.json": "31c916665d5e270d93b343b41515496faa6700798ea9f65f91f45d8677a381a5"
+  }
+}

@@ -1,0 +1,184 @@
+{
+  "checkpoint": "a25cb29e653bb968824cd4e6671464448eba430a",
+  "finding": "P2 SampleFormat unsigned misinterpretation",
+  "status": "not_reproduced",
+  "runtime_changes": false,
+  "call_path": "image_decoder_ex \u2192 decode_ex_inner \u2192 Tiff::new \u2192 page::read_pages (validates tag) \u2192 init_ex \u2192 decode_unsigned_samples",
+  "source_sha256": {
+    "wml2/src/tiff/page.rs": "bd6569f18d3307116cff9e26ba6d0f9001198363f725a9a762693212cb6931bf",
+    "wml2/src/tiff/header.rs": "bb05ee88bd7b51e74a58f810b279115fd61a3b5844db67626080ea454a8a0124",
+    "wml2/src/tiff/decoder/mod.rs": "f8c6af6a3542f2be33afea78026d7620211e0121f675a485fc86ad76743c8f7b",
+    "wml2/src/tiff/decoder/ex.rs": "fa6220d5afaa0851ce59c0568083f5443b4616792a01d2a33a5da041df1e8e99",
+    "wml2/src/highres/tiff.rs": "ad430aee72040542796ed911c9d26015773583109dc6eb06ad1cfcd2748da589"
+  },
+  "validation": {
+    "test_target": "tiff_ex_sample_format",
+    "feature_set": "--no-default-features --features tiff,image-buffer-ex,high-bit-depth",
+    "profile": "release",
+    "passed": 4,
+    "failed": 0,
+    "generated_reject_cases": 66,
+    "generated_unsigned_accept_cases": 24,
+    "oracle_fixture_reject_cases": 4,
+    "oracle_fixture_accept_cases": 2,
+    "ex_callbacks_for_all_rejected_inputs": 0,
+    "highres_native_and_nativepages_rejections": "each rejected fixture checked through both public APIs",
+    "scope_restoration": "invalid SampleFormat uses expanded_bytes=7; next Gray16 decoding requires8 and succeeds under defaultscope"
+  },
+  "oracle": {
+    "oracle": "LIBTIFF, Version 4.7.0",
+    "rows": [
+      {
+        "file": "ex-review-sampleformat-signed8.tif",
+        "sha256": "e1010eab09896f7f85fbaaf4309f3a3ccdfc07efc85c77cf0df577021246e92d",
+        "depth": 8,
+        "sample_format": 2,
+        "byte_order": "little",
+        "expected": [
+          -128,
+          -1,
+          0,
+          127
+        ],
+        "libtiff_samples": [
+          -128,
+          -1,
+          0,
+          127
+        ],
+        "scanline_sha256": "695fa9d95b35a0430e8401440e3ca896bfdaedfbce2b3a16c5f68c0bd67a48b2",
+        "native_output_kind": "reject"
+      },
+      {
+        "file": "ex-review-sampleformat-signed16.tif",
+        "sha256": "15a4650af940aec5392f35774064e638d9871072ef8f2f01a6b2e34833d0fdfc",
+        "depth": 16,
+        "sample_format": 2,
+        "byte_order": "little",
+        "expected": [
+          -32768,
+          -1,
+          0,
+          32767
+        ],
+        "libtiff_samples": [
+          -32768,
+          -1,
+          0,
+          32767
+        ],
+        "scanline_sha256": "a0b3d8f5dbcdc6dac337b3de2e92fe62e1391e6a031d577ca3f7b4b804ac9c79",
+        "native_output_kind": "reject"
+      },
+      {
+        "file": "ex-review-sampleformat-float16.tif",
+        "sha256": "33ef48160aa41a5163ccef32014f91d5b83ffd2851226f8a4ffe7d16ea2dca64",
+        "depth": 16,
+        "sample_format": 3,
+        "byte_order": "little",
+        "expected": [
+          -1.0,
+          -0.0,
+          0.0,
+          65504.0
+        ],
+        "libtiff_samples": [
+          -1.0,
+          -0.0,
+          0.0,
+          65504.0
+        ],
+        "scanline_sha256": "b08170b8be93fd53f95f5d3e5907f2f4c976cad74e7dff2e7fbe5ac0a209ec5f",
+        "native_output_kind": "reject"
+      },
+      {
+        "file": "ex-review-sampleformat-float32.tif",
+        "sha256": "61fbaf4a72254cea02d41e23e37bfd17b5ec1a9e5a91c556d544d4625d3a5e2f",
+        "depth": 32,
+        "sample_format": 3,
+        "byte_order": "little",
+        "expected": [
+          -1.0,
+          -0.0,
+          0.0,
+          1.0
+        ],
+        "libtiff_samples": [
+          -1.0,
+          -0.0,
+          0.0,
+          1.0
+        ],
+        "scanline_sha256": "f5d030a3871d74672434c83a2948637be2aebfdcd0b34e9c3a6f6b2dbe48c021",
+        "native_output_kind": "reject"
+      },
+      {
+        "file": "ex-review-sampleformat-unsigned16le.tif",
+        "sha256": "3e2014ee951e800eaa0d4805639f40059e41dde88d32d668f1d8d8c9bb5137f6",
+        "depth": 16,
+        "sample_format": 1,
+        "byte_order": "little",
+        "expected": [
+          32768,
+          65535,
+          0,
+          32767
+        ],
+        "libtiff_samples": [
+          32768,
+          65535,
+          0,
+          32767
+        ],
+        "scanline_sha256": "a0b3d8f5dbcdc6dac337b3de2e92fe62e1391e6a031d577ca3f7b4b804ac9c79",
+        "native_output_kind": "accept"
+      },
+      {
+        "file": "ex-review-sampleformat-unsigned16be.tif",
+        "sha256": "2d9aa6a11509d85570943b835624b7b5dcb58a1095d575269702c2dc66cf810a",
+        "depth": 16,
+        "sample_format": 1,
+        "byte_order": "big",
+        "expected": [
+          32768,
+          65535,
+          0,
+          32767
+        ],
+        "libtiff_samples": [
+          32768,
+          65535,
+          0,
+          32767
+        ],
+        "scanline_sha256": "a0b3d8f5dbcdc6dac337b3de2e92fe62e1391e6a031d577ca3f7b4b804ac9c79",
+        "native_output_kind": "accept"
+      }
+    ],
+    "passed": 6,
+    "failed": 0,
+    "notes": "LibTIFF typed scanline interpretation only; no WML2 runtime result is inferred from the oracle."
+  },
+  "specification": [
+    {
+      "url": "https://www.itu.int/itudoc/itu-t/com16/tiff-fx/docs/tiff6.pdf",
+      "section": "19",
+      "page": 80,
+      "facts": [
+        "SampleFormat tag339 has SHORT type, countSamplesPerPixel, default1unsigned",
+        "2signed two\u2019s complement,3IEEEfloat,4undefined; current unsignedonly profile rejects all non1"
+      ]
+    },
+    {
+      "url": "https://raw.githubusercontent.com/libsdl-org/libtiff/v4.7.0/libtiff/tif_dirread.c",
+      "lines": "4400\u20134433",
+      "facts": [
+        "LibTIFF explicitly accepts scalar count1 uniform SampleFormat as vendorcompatibility; existingWML2 samepolicy preserved"
+      ]
+    }
+  ],
+  "test_sha256": "5cf5aa470bc2ca59eb47d27e41a63d63f961bec3e8106f3a6dd5a5f762e907b0",
+  "log_sha256": "16e866cf190c73f6694af546f65d9fd21558908e82769e3fcf0498c781c837c5",
+  "generator_sha256": "093b3b84e73784d3f654fe421581d0313c38b16eb90e61aad67dae52a9be6522",
+  "oracle_replay": "All6filesbyte-identical totrackedfixture; LibTIFF scanlinebytes exactlynative-packed expectedvalues includingnegativezero"
+}

@@ -1,12 +1,15 @@
 # JPEG XL still-image decoding
 
+This is unreleased work on `codex/jpeg-xl-decode-20261018`; published0.0.37
+does not contain the feature.
+
 The opt-in `jpeg-xl` feature uses **published `jxl =0.7.4`**, not upstream main.
 Defaults are unchanged; JPEG XL encoding is unavailable. Add `image-buffer-ex`
 for high-precision callback output. No C library, image-rs, CMS, SIMD or thread
 pool is pulled into the runtime by this feature.
 
 ```toml
-wml2 = { version = "0.0.37", features = ["jpeg-xl", "image-buffer-ex"] }
+wml2 = { git = "https://github.com/mith-mmk/wml2-on-rust", branch = "codex/jpeg-xl-decode-20261018", features = ["jpeg-xl", "image-buffer-ex"] }
 ```
 
 ```rust
@@ -65,6 +68,10 @@ rejected because this would require a CMS; EX Gray-only output can retain it.
 Metadata is delivered after pixels, matching existing static adapters. Source
 orientation remains in the raw header; output dimensions/pixels are oriented.
 Raw EXIF/XMP boxes are preserved as source bytes, not parsed or reapplied.
+ICC headers, tag extents and Gray/RGB channel identity are validated; ICC CICP
+PQ/HLG is rejected. Arbitrary opaque ICC transfer curves are preserved, not
+interpreted as an HDR rendering promise. There is no HDR tone mapping or
+semantic classification of arbitrary ICC LUTs.
 
 ## Limits and cancellation
 
@@ -75,7 +82,7 @@ once, including the ordinary RGBA8 path. Malformed/truncated input is rejected
 before initialization; there is no partial-image success.
 
 Additional fixed profile caps:64MiB input,64KiB header prefix,16384 per image
-dimension,4Mi effective padded frame pixels,1024 auxiliary boxes. The conservative
+dimension,4Mi effective padded frame pixels,auxiliary metadata insertion before box index1025. The conservative
 workspace estimate includes input assembly,128 bytes per possible internal
 frame pixel (including16-pixel padding and the RGB/RGBA sample ratio),1MiB
 header workspace, and ICC workspace. It is charged against `expanded_bytes`;
@@ -116,3 +123,19 @@ python3 wml2-test/scripts/generate_jpegxl_fixtures.py --tools /path/to/libjxl/us
 Upstream reference: [published source commit](https://github.com/libjxl/jxl-rs/tree/624ce908afcf8eb0dc2585a671535eaabb5d88cc/jxl).
 In particular,0.7.4 has typestate processing and `premultiply_output`; main's
 `AlphaMode` API must not be assumed to exist in the published crate.
+
+## Validation snapshot
+
+See [machine-readable results](jpeg-xl-validation.json) for commands, source
+hashes, local results, measured allocations and the actual WASM artifact hash.
+The portable helper runs30 cases in Node without host imports:
+
+```console
+python3 wml2-test/scripts/verify_jpegxl_wasm.py --output .test-jxl-wasm
+```
+
+Independent read-only review findings were fixed before the final checks.
+Clippy is run in the same warning mode as repository CI: existing unrelated
+warnings remain; the JPEG XL implementation/tests introduce none. Windows and
+macOS execution, browser UI integration, general ICC/HDR rendering, SIMD and
+threaded decoding are not covered by this local validation.

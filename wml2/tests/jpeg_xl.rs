@@ -469,6 +469,88 @@ mod enabled {
         assert!(image_from(RGBA8).is_ok());
     }
     #[test]
+    fn embedded_icc_prefixes_and_retained_profile_budget_are_checked() {
+        let data = include_bytes!("fixtures/review/jxl-icc-lossless.jxl");
+        let mut pos = 12;
+        let mut raw = &data[..0];
+        while pos < data.len() {
+            let size = u32::from_be_bytes(data[pos..pos + 4].try_into().unwrap()) as usize;
+            assert!(size >= 8);
+            if &data[pos + 4..pos + 8] == b"jxlc" {
+                raw = &data[pos + 8..pos + size];
+                break;
+            }
+            pos += size;
+        }
+        assert!(raw.starts_with(&[255, 10]));
+        for end in 2..raw.len() {
+            let mut p = Probe::default();
+            assert!(
+                probe(&raw[..end], &mut p, DecodeLimits::default(), false).is_err(),
+                "accepted ICC prefix {end}"
+            );
+            assert!(p.events.is_empty());
+        }
+        let image = image_from(raw).unwrap();
+        let meta = image.metadata.unwrap();
+        let DataMap::Raw(header) = &meta["JPEG XL Source Header"] else {
+            panic!()
+        };
+        let DataMap::ICCProfile(icc) = &meta["JPEG XL Source ICC Profile"] else {
+            panic!()
+        };
+        let budget = 16 * 1024 + header.len() + 2 * icc.len() - 1;
+        let mut p = Probe::default();
+        let error = probe(
+            raw,
+            &mut p,
+            DecodeLimits {
+                metadata_bytes: budget,
+                ..Default::default()
+            },
+            false,
+        )
+        .unwrap_err();
+        assert!(
+            error.to_string().contains("retained ICC profiles"),
+            "{error}"
+        );
+        assert!(p.events.is_empty());
+        // Deterministic corruption probes must never panic. Successful mutations
+        // are allowed; failed parses must not have initialized the callback.
+        for i in (2..raw.len()).step_by(7) {
+            let mut corrupt = raw.to_vec();
+            corrupt[i] ^= 128;
+            let mut p = Probe::default();
+            if probe(&corrupt, &mut p, DecodeLimits::default(), false).is_err() {
+                assert!(p.events.is_empty());
+            }
+        }
+    }
+    #[test]
+    fn level_boxes_must_be_unique_and_precede_codestream() {
+        for chunks in [
+            vec![
+                box_bytes(b"jxll", &[10]),
+                box_bytes(b"jxll", &[10]),
+                box_bytes(b"jxlc", RGBA8),
+            ],
+            vec![box_bytes(b"jxlc", RGBA8), box_bytes(b"jxll", &[10])],
+            vec![box_bytes(b"jxll", &[9]), box_bytes(b"jxlc", RGBA8)],
+        ] {
+            let mut p = Probe::default();
+            assert!(probe(&container(chunks), &mut p, DecodeLimits::default(), false).is_err());
+            assert!(p.events.is_empty());
+        }
+        assert!(
+            image_from(&container(vec![
+                box_bytes(b"jxll", &[10]),
+                box_bytes(b"jxlc", RGBA8)
+            ]))
+            .is_ok()
+        );
+    }
+    #[test]
     fn orientation_is_applied_once() {
         let image = image_from(include_bytes!("fixtures/review/jxl-orientation.jxl")).unwrap();
         assert_eq!((image.width, image.height), (5, 7));

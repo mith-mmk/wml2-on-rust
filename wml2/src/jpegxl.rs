@@ -90,6 +90,7 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
     let mut partial_index = 0u32;
     let mut finished = false;
     let mut partial = false;
+    let mut seen_level = false;
     while pos < input.len() {
         if input.len() - pos < 8 {
             return Err(invalid("truncated JPEG XL box header"));
@@ -154,9 +155,10 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
             b"jxll" => {
                 // libjxl emits Level10 for16-bit sources. Complexity remains
                 // constrained by our independent dimensions/workspace profile.
-                if data != [10] {
+                if seen_level || finished || partial || data != [10] {
                     return Err(invalid("invalid JPEG XL level box"));
                 }
+                seen_level = true;
             }
             b"brob" | b"jbrd" => {
                 return Err(unsupported(
@@ -243,6 +245,7 @@ struct Header {
     height: usize,
     bits: u8,
     gray: bool,
+    color_channels: usize,
     source_header_bytes: usize,
     workspace: usize,
 }
@@ -333,20 +336,74 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         height,
         bits: bits as u8,
         gray: m.color_encoding.color_space == ColorSpace::Gray && m.extra_channel_info.is_empty(),
+        color_channels: if m.color_encoding.color_space == ColorSpace::Gray {
+            1
+        } else {
+            3
+        },
         source_header_bytes: header_bytes,
         workspace,
     })
 }
 
-fn profile_metadata(key: &str, profile: &JxlColorProfile) -> Result<(String, DataMap), Error> {
+// Validate the profile envelope instead of trusting channels(), which defaults
+// unknown/truncated ICC signatures toRGB. This does not implement a CMS.
+fn validate_icc(bytes: &[u8], channels: usize) -> Result<(), Error> {
+    if bytes.len() < 132
+        || bytes[36..40] != *b"acsp"
+        || u32::from_be_bytes(bytes[..4].try_into()?) as usize != bytes.len()
+    {
+        return Err(invalid("invalid JPEG XL ICC header"));
+    }
+    if (channels == 1 && bytes[16..20] != *b"GRAY") || (channels == 3 && bytes[16..20] != *b"RGB ")
+    {
+        return Err(unsupported(
+            "JPEG XL ICC colour space must match Gray/RGB source channels",
+        ));
+    }
+    let count = u32::from_be_bytes(bytes[128..132].try_into()?) as usize;
+    let end = add(132, mul(count, 12)?)?;
+    if end > bytes.len() {
+        return Err(invalid("invalid JPEG XL ICC tag table"));
+    }
+    for tag in bytes[132..end].chunks_exact(12) {
+        let offset = u32::from_be_bytes(tag[4..8].try_into()?) as usize;
+        let len = u32::from_be_bytes(tag[8..12].try_into()?) as usize;
+        if offset < end || add(offset, len)? > bytes.len() {
+            return Err(invalid("invalid JPEG XL ICC tag extent"));
+        }
+        if &tag[..4] == b"cicp" {
+            let data = &bytes[offset..offset + len];
+            if data.len() < 12 || &data[..4] != b"cicp" {
+                return Err(invalid("invalid JPEG XL ICC CICP tag"));
+            }
+            if matches!(data[9], 16 | 18) {
+                return Err(unsupported(
+                    "JPEG XL ICC PQ/HLG requires explicit HDR processing",
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn profile_metadata(
+    key: &str,
+    profile: &JxlColorProfile,
+    channels: usize,
+) -> Result<(String, DataMap), Error> {
     // Avoid as_icc(), which panics for unsupported simple colour encodings.
     let icc = match profile {
-        JxlColorProfile::Icc(bytes) => bytes.clone(),
+        JxlColorProfile::Icc(bytes) => {
+            validate_icc(bytes, channels)?;
+            bytes.clone()
+        }
         JxlColorProfile::Simple(enc) => enc
             .maybe_create_profile()
             .map_err(codec_error)?
             .ok_or_else(|| unsupported("JPEG XL output profile cannot be represented as ICC"))?,
     };
+    validate_icc(&icc, channels)?;
     Ok((key.into(), DataMap::ICCProfile(icc)))
 }
 
@@ -429,6 +486,7 @@ fn decode<B: BinaryReader>(
     input.metadata.push(profile_metadata(
         "JPEG XL Source ICC Profile",
         decoder.embedded_color_profile(),
+        h.color_channels,
     )?);
     let mut output_profile = decoder.output_color_profile().clone();
     if !gray && decoder.output_color_profile().channels() == 1 {
@@ -450,9 +508,11 @@ fn decode<B: BinaryReader>(
             }
         };
     }
-    input
-        .metadata
-        .push(profile_metadata("ICC Profile", &output_profile)?);
+    input.metadata.push(profile_metadata(
+        "ICC Profile",
+        &output_profile,
+        if gray { 1 } else { 3 },
+    )?);
     input
         .metadata
         .push(("Format".into(), DataMap::Ascii("JPEG XL".into())));
@@ -580,4 +640,43 @@ fn decode<B: BinaryReader>(
     }
     option.drawer.terminate(None)?;
     Ok(None)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn icc_envelopes_cannot_relabel_unknown_or_hdr_profiles() {
+        let valid = include_bytes!("../tests/fixtures/review/jxl-gamma2.icc");
+        validate_icc(valid, 3).unwrap();
+        assert!(validate_icc(valid, 1).is_err());
+        for (offset, bytes) in [
+            (0, b"\0\0\0\x80".as_slice()),
+            (16, b"CMYK"),
+            (36, b"junk"),
+            (128, b"\xff\xff\xff\xff"),
+        ] {
+            let mut corrupt = valid.to_vec();
+            corrupt[offset..offset + 4].copy_from_slice(bytes);
+            assert!(validate_icc(&corrupt, 3).is_err());
+        }
+        assert!(validate_icc(&valid[..127], 3).is_err());
+        // Independently construct a minimal CICP envelope; no transfer-function
+        // interpretation beyond the explicit PQ/HLG signal is claimed.
+        let mut hdr = vec![0; 156];
+        hdr[..4].copy_from_slice(&156u32.to_be_bytes());
+        hdr[16..20].copy_from_slice(b"RGB ");
+        hdr[36..40].copy_from_slice(b"acsp");
+        hdr[128..132].copy_from_slice(&1u32.to_be_bytes());
+        hdr[132..136].copy_from_slice(b"cicp");
+        hdr[136..140].copy_from_slice(&144u32.to_be_bytes());
+        hdr[140..144].copy_from_slice(&12u32.to_be_bytes());
+        hdr[144..148].copy_from_slice(b"cicp");
+        for tf in [16, 18] {
+            hdr[153] = tf;
+            assert!(validate_icc(&hdr, 3).is_err());
+        }
+        hdr[153] = 13;
+        validate_icc(&hdr, 3).unwrap();
+    }
 }

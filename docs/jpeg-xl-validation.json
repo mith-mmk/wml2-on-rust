@@ -1,0 +1,116 @@
+{
+  "base_revision": "f76a59ba65f5de958893429c08fc65cde94ca6b7",
+  "implementation_checkpoint": "025047a33ddef8c02c85582b263fe70a13730d83",
+  "rust": "1.91.0",
+  "jxl": "0.7.4",
+  "oracle": "libjxl/djxl0.11.2",
+  "checks": [
+    {
+      "command": "cargo test -p wml2 --locked --features jpeg-xl,image-buffer-ex,high-bit-depth --lib --tests",
+      "passed": 322,
+      "failed": 0,
+      "ignored": 5,
+      "completed_targets": 55
+    },
+    {
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl",
+      "passed": 35,
+      "failed": 0,
+      "ignored": 0,
+      "completed_targets": 2
+    },
+    {
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl --test jpeg_xl",
+      "passed": 11,
+      "failed": 0,
+      "ignored": 0,
+      "completed_targets": 1
+    },
+    {
+      "command": "cargo test -p wml2 --locked --no-default-features --test jpeg_xl",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "completed_targets": 1
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "status": "PASS"
+    },
+    {
+      "command": "cargo clippy -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl",
+      "status": "PASS with11 existing unrelated warnings; no JPEG XL warnings"
+    },
+    {
+      "command": "cargo tree -p wml2 --locked --no-default-features -e normal",
+      "status": "No jxl runtime dependency when feature is disabled"
+    },
+    {
+      "command": "python3 wml2-test/scripts/verify_jpegxl_wasm.py --output .test-jxl-wasm",
+      "status": "PASS30 actual wasm32 cases, Node24.19.0, no host imports",
+      "evidence": "jpeg-xl-wasm.json"
+    }
+  ],
+  "image_display": "Decoded lossy and16-bit fixture to PNG through WML2, opened decoded PNG and djxl oracle; both readable. Lossy8 maximum difference1/255.",
+  "benchmarks": {
+    "base_png": {
+      "ns": 5721980.0,
+      "allocations": 47.0,
+      "allocated_bytes": 3990685.0,
+      "peak_live_bytes": 2260323.0,
+      "hashes": [
+        "5674088899916234533"
+      ],
+      "samples": 100
+    },
+    "candidate_png": {
+      "ns": 5851400.5,
+      "allocations": 47.0,
+      "allocated_bytes": 3990685.0,
+      "peak_live_bytes": 2260323.0,
+      "hashes": [
+        "5674088899916234533"
+      ],
+      "samples": 100
+    },
+    "jxl_rgba8": {
+      "ns": 49905.0,
+      "allocations": 351.0,
+      "allocated_bytes": 110723.0,
+      "peak_live_bytes": 69424.0,
+      "hashes": [
+        "16883515916929583210"
+      ],
+      "samples": 100
+    },
+    "jxl_rgba16_ex": {
+      "ns": 55228.0,
+      "allocations": 387.0,
+      "allocated_bytes": 130505.0,
+      "peak_live_bytes": 87148.0,
+      "hashes": [
+        "15315989916192078549"
+      ],
+      "samples": 100
+    },
+    "png_ratio": 1.022618132185013,
+    "base_revision": "f76a59ba65f5de958893429c08fc65cde94ca6b7",
+    "scope": "512x384 synthetic PNG and7x5 JPEG XL fixtures; release build,100 measured decodes each; wall time is environment-specific"
+  },
+  "benchmark_interpretation": "PNG output hash, allocation count/bytes and peak live bytes unchanged; median wall time+2.3% in this run (previous run-1.1%); no general performance guarantee from a single environment.",
+  "review": "Independent read-only review: ICC preallocation/retained budgets, profile identity, padded frame workspace, ICC envelope, duplicate/late level boxes fixed; no outstanding confirmed finding.",
+  "not_verified": [
+    "Windows/macOS execution",
+    "Browser UI integration",
+    "SIMD and threaded decoding",
+    "General CMS/HDR rendering"
+  ],
+  "source_sha256": {
+    "wml2/src/jpegxl.rs": "f0748f87d03f2c6ec228bcd14da5a612b6d582a31999c68333deaf3b01e8ba38",
+    "wml2/tests/jpeg_xl.rs": "58818d508bcd58baa1be3dceb42445f7a2b4ed6ff64abbfbd71bfbc2236b135b",
+    "wml2-test/scripts/generate_jpegxl_fixtures.py": "05249971c86790f7913280c311eec534e98f52ef0f000ce155679da88a528736",
+    "wml2-test/scripts/jpegxl_fixture_encoder.c": "79d78b75ca1601e30e142df591583792218633007da97afd2d361fd9fe40eed9",
+    "wml2-test/scripts/jpegxl_wasm.rs": "72b77834500f2aa18d196cbb2fd22ff0898347ef9eb510eb7f376374538513c9",
+    "wml2-test/scripts/verify_jpegxl_wasm.py": "81601d9a7d5294ba6d7b4e2dfe825439683ee0827d4f56b0182d8b4cb5a5a29a"
+  }
+}

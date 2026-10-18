@@ -5,6 +5,7 @@ Usage: python3 ... --tools /path/to/libjxl-tools/usr --work .test-jxl-fixtures
 """
 import argparse,hashlib,json,pathlib,struct,subprocess
 p=argparse.ArgumentParser();p.add_argument('--tools',type=pathlib.Path,required=True);p.add_argument('--work',type=pathlib.Path,required=True);a=p.parse_args()
+if not a.work.name.startswith('.test'):p.error('--work must start with .test')
 root=pathlib.Path(__file__).resolve().parents[2];dest=root/'wml2/tests/fixtures/review';work=a.work.resolve();work.mkdir(exist_ok=True,parents=True)
 def run(cmd):
  result=subprocess.run([str(v) for v in cmd],capture_output=True)
@@ -71,5 +72,7 @@ for case in cases:
  case['oracle']=oracle_path.name;case['oracle_channels']=channels
  case['sha256']=hashlib.sha256(output.read_bytes()).hexdigest()
 manifest={'encoder':'libjxl 0.11.2 C API, effort3, single encoder process','decoder':'djxl 0.11.2','source':'deterministic integer patterns in generate_jpegxl_fixtures.py; original samples are expected for lossless','cases':cases}
+manifest['files']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(dest.glob('jxl-*')) if p.suffix in ['.jxl','.bin','.icc']}
+manifest['lossy_icc_oracle_color_space']='RGB_D65_SRG_Rel_SRG (matches jxl integer XYB fallback)'
 (dest/'jxl-fixtures.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(json.dumps({'cases':len(cases),'output':str(dest)},indent=2))

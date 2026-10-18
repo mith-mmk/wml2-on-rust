@@ -60,6 +60,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | Q4 | x | O | `q4`: 保持色run修正済みのQ4/XLD4 raster decode |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
 | AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                     |
+| JPEG XL | x | O | 開発ブランチの任意 `jpeg-xl`。整数 8/12/16bit 静止画、EX 高精度出力。[対応範囲と制限](docs/jpeg-xl.md) |
 | JPEG2000 | x | O | 非既定の `jpeg2000`。1–8bit Gray/RGB/alpha、5/3・9/7・HTJ2KのJ2K/JP2。[対応範囲と検証](docs/jpeg2000.md) |
 | PSD          | x   | O   | 既定で無効の `psd` feature。Pure RustでPSD v1の統合画像と基本ラスターレイヤーをdecode                                |
 | MAG          | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |

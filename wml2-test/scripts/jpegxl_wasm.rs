@@ -1,0 +1,113 @@
+use wml2::draw::*;
+use wml2::limits::DecodeLimits;
+fn words(bytes: &[u8], bits: u8) -> Vec<u16> {
+    if bits == 8 {
+        bytes.iter().map(|&v| v.into()).collect()
+    } else {
+        bytes
+            .chunks_exact(2)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
+            .collect()
+    }
+}
+macro_rules! case {
+    ($name:literal,$channels:literal,$bits:literal) => {
+        (
+            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-", $name, ".jxl")).as_slice(),
+            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-", $name, ".bin")).as_slice(),
+            $channels,
+            $bits,
+        )
+    };
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn verify_jpegxl() -> u32 {
+    let mut count = 0;
+    for (input, expected, channels, bits) in [
+        case!("gray8", 1, 8),
+        case!("gray12", 1, 12),
+        case!("gray16", 1, 16),
+        case!("grayalpha8", 2, 8),
+        case!("grayalpha12", 2, 12),
+        case!("grayalpha16", 2, 16),
+        case!("rgba8", 4, 8),
+        case!("rgba12", 4, 12),
+        case!("rgba16", 4, 16),
+    ] {
+        let format = match (channels == 1, bits) {
+            (true, 8) => PixelFormatEx::Gray8,
+            (true, 12) => PixelFormatEx::Gray12,
+            (true, 16) => PixelFormatEx::Gray16,
+            (false, 8) => PixelFormatEx::Rgba8,
+            (false, 12) => PixelFormatEx::Rgba12,
+            _ => PixelFormatEx::Rgba16,
+        };
+        let values = words(expected, bits);
+        let max = ((1u32 << bits) - 1) as u16;
+        let rgba: Vec<u16> = values
+            .chunks_exact(channels)
+            .flat_map(|p| match channels {
+                1 => [p[0], p[0], p[0], max],
+                2 => [p[0], p[0], p[0], p[1]],
+                _ => [p[0], p[1], p[2], p[3]],
+            })
+            .collect();
+        let image = image_from_ex(input, format, PrecisionConversion::Exact).unwrap();
+        assert_eq!(image.source_format(), Some(format));
+        assert_eq!(
+            words(image.bytes().unwrap(), bits),
+            if channels == 1 { values } else { rgba.clone() }
+        );
+        count += 1;
+        let old = image_from(input).unwrap();
+        let expected: Vec<u8> = rgba
+            .iter()
+            .map(|&v| ((u32::from(v) * 255 + u32::from(max) / 2) / u32::from(max)) as u8)
+            .collect();
+        assert_eq!(old.buffer.unwrap(), expected);
+        count += 1;
+        assert!(
+            image_from_ex_with_limits(
+                input,
+                format,
+                PrecisionConversion::Exact,
+                DecodeLimits {
+                    pixels: 34,
+                    ..Default::default()
+                }
+            )
+            .is_err()
+        );
+        count += 1;
+    }
+    let input = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-icc-lossless.jxl"));
+    let image = image_from_ex(input, PixelFormatEx::Rgba16, PrecisionConversion::Exact).unwrap();
+    assert_eq!(
+        image.bytes().unwrap(),
+        include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-rgba16.bin"))
+    );
+    count += 1;
+    assert!(
+        image_from_with_limits(
+            input,
+            DecodeLimits {
+                metadata_bytes: 100,
+                ..Default::default()
+            }
+        )
+        .is_err()
+    );
+    count += 1;
+    let input = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-lossy.jxl"));
+    let image = image_from(input).unwrap();
+    let pixels = image.buffer.unwrap();
+    let expected = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-lossy-djxl.bin"));
+    for (actual, expected) in pixels.chunks_exact(4).zip(expected.chunks_exact(3)) {
+        for c in 0..3 {
+            assert!(actual[c].abs_diff(expected[c]) <= 2);
+        }
+        assert_eq!(actual[3], 255);
+    }
+    count += 1;
+    count
+}

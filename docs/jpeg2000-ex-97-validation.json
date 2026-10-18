@@ -1,0 +1,968 @@
+{
+  "branch": "codex/jpeg2000-ex-irreversible-high-depth-20261017",
+  "base": "cff3f3672bc22e1ad0f3e1aa940ab0788f22c4d4",
+  "version": "0.0.36",
+  "scope": "Unsigned uniform 12/16 Gray/RGB and completely declared straight JP2 RGBA, scalar-quantized 9/7/ICT up to six levels; existing reversible and legacy APIs retained.",
+  "generated_utc": "2026-10-17T07:22:56.604002+00:00",
+  "source_sha256": {
+    ".github/workflows/ci.yml": "19aaa4198bd439109d88e02e2bd78cf12fac939d269ce695c3b10460d6cde657",
+    "wml2/Cargo.toml": "49eee2dedf700c5708a7c939edae9fc365d83af8710e8961a99622a720e813a0",
+    "wml2/src/jpeg2000.rs": "60001711814114836808f480f52aa70279ff2e79a6374f10b67100c3d414373c",
+    "wml2/src/jpeg2000_general.rs": "e8da4c1278f39cac026bc0c08548d25e3f4bff451c72c9865f4a131af528ffa0",
+    "wml2/src/jpeg2000_irreversible.rs": "45a39d841f2e69a6e8645a788e3c5301b8edebab299e5240ac87efdb29011e0b",
+    "wml2/src/draw.rs": "bf9a4ab693d608ba78f5623c98b354a843379e96855d7a6a0297df450ce51385",
+    "wml2/tests/jpeg2000_ex.rs": "5be5fdd77cdb8d38a9348a3b8b6b680f72de73eaf668a2eed23331ddbc8cc0d0",
+    "wml2/tests/jpeg2000_ex_color.rs": "71f5344c2065c6a4fbe6532545dc7a71f04ef2f80ae78b41de877a12fbebf987",
+    "wml2/tests/jpeg2000_ex_97.rs": "df59387c840af9c47c2d99746d489bd1443952dd2954fe3bcfd06e0bd3a6fa30",
+    "wml2-test/scripts/jpeg2000_ex_97_checks.rs": "6a9a2ceb081df13e5b22c1448d1719c04db5047ed08dd51b997cf866b8f7b7ee",
+    "wml2-test/scripts/jpeg2000_ex_color_checks.rs": "3fd77e1ee4161508d7c035460522cf1bf1b8d8c217fdc3b2962e901b492dd4b3",
+    "wml2-test/scripts/jpeg2000_ex_checks.rs": "29c9114e311fafa57686ed40c34026c62b367f09640505344975cbfad535dc03",
+    "wml2-test/scripts/verify_jpeg2000_ex_97_wasm.py": "1db181ca619943df68bd24aa671696807ccf4db808fbdbdb2d6e357d914e1e99",
+    "wml2/tests/fixtures/review/generate_jpeg2000_ex_97.py": "288a3e909b136a8309a81555bb0d9dd49627a8027899477ead9da8f832fd3767",
+    "wml2/tests/fixtures/review/generate_jpeg2000_ex_gray.py": "a700706a68d8b0121e85772882647a1d427d1f450740d9a6d5a8e0138ad25cba",
+    "wml2/tests/fixtures/review/generate_jpeg2000_ex_color.py": "2c5bb680bca220db27558dd8700f2b799ef641e1102f224ca79e5155790d76cd",
+    "docs/jpeg2000-ex-97.md": "763f9de8448be4ca1171ad7cc28478b5a8c8f29a88023460c5ac4aa33c140c46",
+    "docs/jpeg2000-ex-97-display.png": "5c15d0f8f960b726dd2ac0f53d7dd36a362984355e05454aba7dd5f728a3c04b"
+  },
+  "fixture_files": 1106,
+  "fixture_hash_map_sha256": "20c75d5fa3b94517a1fa3df746ef6cb052c0c035db9c63e24dcc1c1a2161545b",
+  "commands": {
+    "native-minimal": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 27.02,
+      "peak_cgroup_bytes": 3462430720,
+      "test_counts": {
+        "passed": 137,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "high": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--test",
+        "jpeg2000_ex",
+        "--test",
+        "jpeg2000_ex_color",
+        "--test",
+        "jpeg2000_ex_97"
+      ],
+      "exit": 0,
+      "seconds": 14.02,
+      "peak_cgroup_bytes": 3637968896,
+      "test_counts": {
+        "passed": 48,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "workspace": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--release",
+        "--features",
+        "wml2/jpeg2000,wml2/image-buffer-ex,wml2/high-bit-depth,wml2/avifenc",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 167.13,
+      "peak_cgroup_bytes": 4281925632,
+      "test_counts": {
+        "passed": 514,
+        "failed": 0,
+        "ignored": 14
+      }
+    },
+    "legacy": {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000",
+        "--lib",
+        "--test",
+        "jpeg2000"
+      ],
+      "exit": 0,
+      "seconds": 27.01,
+      "peak_cgroup_bytes": 4149637120,
+      "test_counts": {
+        "passed": 75,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "cross": {
+      "command": [
+        "cargo",
+        "check",
+        "-p",
+        "wml2",
+        "--locked",
+        "--target",
+        "i686-unknown-linux-gnu",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--tests"
+      ],
+      "exit": 0,
+      "seconds": 3.0,
+      "peak_cgroup_bytes": 4090044416
+    },
+    "clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex,high-bit-depth",
+        "--lib",
+        "--tests",
+        "--examples"
+      ],
+      "exit": 0,
+      "seconds": 4.0,
+      "peak_cgroup_bytes": 4137160704
+    },
+    "new-ex-build": {
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000,image-buffer-ex",
+        "--example",
+        "jpeg2000_ex_verify",
+        "--example",
+        "jpeg2000_ex_color_verify"
+      ],
+      "exit": 0,
+      "seconds": 6.01,
+      "peak_cgroup_bytes": 4123471872
+    },
+    "new-legacy-build": {
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "wml2",
+        "--locked",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "jpeg2000",
+        "--example",
+        "jpeg2000_verify"
+      ],
+      "exit": 0,
+      "seconds": 1.0,
+      "peak_cgroup_bytes": 3965603840
+    },
+    "wasm-default": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_ex_97_wasm.py",
+        "--default-features",
+        "--overflow-checks",
+        "--work-dir",
+        ".test-jp2-97/.test-wasm-default"
+      ],
+      "exit": 0,
+      "seconds": 18.01,
+      "peak_cgroup_bytes": 3772223488
+    },
+    "wasm-minimal-final": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_ex_97_wasm.py",
+        "--overflow-checks",
+        "--work-dir",
+        ".test-jp2-97/.test-wasm-minimal"
+      ],
+      "exit": 0,
+      "seconds": 7.01,
+      "peak_cgroup_bytes": 3506360320
+    },
+    "wasm-reversible-gray": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_ex_wasm.py",
+        "--overflow-checks",
+        "--work-dir",
+        ".test-jp2-97/.test-wasm-gray"
+      ],
+      "exit": 0,
+      "seconds": 1.0,
+      "peak_cgroup_bytes": 3968040960
+    },
+    "wasm-reversible-color": {
+      "command": [
+        "python3",
+        "-B",
+        "wml2-test/scripts/verify_jpeg2000_ex_color_wasm.py",
+        "--overflow-checks",
+        "--work-dir",
+        ".test-jp2-97/.test-wasm-color"
+      ],
+      "exit": 0,
+      "seconds": 1.0,
+      "peak_cgroup_bytes": 3963944960
+    },
+    "benchmark": {
+      "command": [
+        "python3",
+        ".test-jp2-97/benchmark.py"
+      ],
+      "exit": 0,
+      "seconds": 140.04,
+      "peak_cgroup_bytes": 3987521536
+    }
+  },
+  "wasm": {
+    "minimal": {
+      "runtime": "v24.19.0",
+      "passed": 216,
+      "rejected": 4,
+      "host_imports": [],
+      "default_features": false,
+      "release_overflow_checks": true,
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_ex_97_checks.rs": "6a9a2ceb081df13e5b22c1448d1719c04db5047ed08dd51b997cf866b8f7b7ee",
+        "wml2-test/scripts/jpeg2000_ex_checks.rs": "29c9114e311fafa57686ed40c34026c62b367f09640505344975cbfad535dc03",
+        "wml2-test/scripts/jpeg2000_ex_color_checks.rs": "3fd77e1ee4161508d7c035460522cf1bf1b8d8c217fdc3b2962e901b492dd4b3",
+        "wml2/src/jpeg2000.rs": "60001711814114836808f480f52aa70279ff2e79a6374f10b67100c3d414373c",
+        "wml2/src/jpeg2000_general.rs": "e8da4c1278f39cac026bc0c08548d25e3f4bff451c72c9865f4a131af528ffa0",
+        "wml2/src/draw.rs": "bf9a4ab693d608ba78f5623c98b354a843379e96855d7a6a0297df450ce51385"
+      },
+      "wasm_sha256": "81bce173954c07785cb6a5791324498639c281311cc2e6d4fd1537c7c7c701b0"
+    },
+    "default": {
+      "runtime": "v24.19.0",
+      "passed": 216,
+      "rejected": 4,
+      "host_imports": [],
+      "default_features": true,
+      "release_overflow_checks": true,
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_ex_97_checks.rs": "6a9a2ceb081df13e5b22c1448d1719c04db5047ed08dd51b997cf866b8f7b7ee",
+        "wml2-test/scripts/jpeg2000_ex_checks.rs": "29c9114e311fafa57686ed40c34026c62b367f09640505344975cbfad535dc03",
+        "wml2-test/scripts/jpeg2000_ex_color_checks.rs": "3fd77e1ee4161508d7c035460522cf1bf1b8d8c217fdc3b2962e901b492dd4b3",
+        "wml2/src/jpeg2000.rs": "60001711814114836808f480f52aa70279ff2e79a6374f10b67100c3d414373c",
+        "wml2/src/jpeg2000_general.rs": "e8da4c1278f39cac026bc0c08548d25e3f4bff451c72c9865f4a131af528ffa0",
+        "wml2/src/draw.rs": "bf9a4ab693d608ba78f5623c98b354a843379e96855d7a6a0297df450ce51385"
+      },
+      "wasm_sha256": "1d8ffdc1317b9dc898dcac6971c8c450c4d730dd6b94d94cfb4b7bfc7229d770"
+    },
+    "reversible_gray": {
+      "runtime": "v24.19.0",
+      "passed": 80,
+      "rejected": 8,
+      "host_imports": [],
+      "default_features": false,
+      "release_overflow_checks": true,
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_ex_checks.rs": "29c9114e311fafa57686ed40c34026c62b367f09640505344975cbfad535dc03",
+        "wml2/src/jpeg2000.rs": "60001711814114836808f480f52aa70279ff2e79a6374f10b67100c3d414373c",
+        "wml2/src/jpeg2000_general.rs": "e8da4c1278f39cac026bc0c08548d25e3f4bff451c72c9865f4a131af528ffa0",
+        "wml2/src/draw.rs": "bf9a4ab693d608ba78f5623c98b354a843379e96855d7a6a0297df450ce51385"
+      },
+      "wasm_sha256": "26add76324690d88db0b7ddaafd180d77f7212dae8c771b11a7e68ddbf6613a8"
+    },
+    "reversible_color": {
+      "runtime": "v24.19.0",
+      "passed": 104,
+      "rejected": 4,
+      "host_imports": [],
+      "default_features": false,
+      "release_overflow_checks": true,
+      "source_sha256": {
+        "wml2-test/scripts/jpeg2000_ex_color_checks.rs": "3fd77e1ee4161508d7c035460522cf1bf1b8d8c217fdc3b2962e901b492dd4b3",
+        "wml2-test/scripts/jpeg2000_ex_checks.rs": "29c9114e311fafa57686ed40c34026c62b367f09640505344975cbfad535dc03",
+        "wml2/src/jpeg2000.rs": "60001711814114836808f480f52aa70279ff2e79a6374f10b67100c3d414373c",
+        "wml2/src/jpeg2000_general.rs": "e8da4c1278f39cac026bc0c08548d25e3f4bff451c72c9865f4a131af528ffa0",
+        "wml2/src/draw.rs": "bf9a4ab693d608ba78f5623c98b354a843379e96855d7a6a0297df450ce51385"
+      },
+      "wasm_sha256": "0bb9521a0b01acd8a8d79616c28df180e4c029b92de8a46a8fc825e69ee17132"
+    }
+  },
+  "reader_summary": {
+    "12": {
+      "cases": 108,
+      "openjpeg_max": 1,
+      "openjpeg_max_per_image_mean": 0.05952380952380952,
+      "ffmpeg_passed": 102,
+      "ffmpeg_failed": 6,
+      "ffmpeg_max": 1,
+      "ffmpeg_max_per_image_mean": 0.0020898641588296763
+    },
+    "16": {
+      "cases": 108,
+      "openjpeg_max": 4,
+      "openjpeg_max_per_image_mean": 1.1746031746031746,
+      "ffmpeg_passed": 102,
+      "ffmpeg_failed": 6,
+      "ffmpeg_max": 1,
+      "ffmpeg_max_per_image_mean": 0.007936507936507936
+    }
+  },
+  "reader_caveat": "OpenJPEG corpus bounds1/4 samples and mean0.1/1.25 are regression caps, not general conformance guarantees. FFmpeg native decoder reads204, rejects12 colour RPCL multi-layer component/tile-parts at SOT; native readers differ by at most1. Lossy reference-source error is separately recorded per manifest.",
+  "performance": [
+    {
+      "case": "GRAY97EX12",
+      "new-gray": {
+        "median_us": 5422.827499999999,
+        "sampled_exec_vmhwm_kib": [
+          1628,
+          1628,
+          1624,
+          1628,
+          1628,
+          1624,
+          1628,
+          1628
+        ],
+        "hashes": [
+          "0451974bb839f223cbfda2913ef1ffc8eff44fae146837fd5379940a247d0596"
+        ]
+      }
+    },
+    {
+      "case": "GRAY97EX16",
+      "new-gray": {
+        "median_us": 6066.4130000000005,
+        "sampled_exec_vmhwm_kib": [
+          1644,
+          1644,
+          1640,
+          1640,
+          1640,
+          1644,
+          1636,
+          1640
+        ],
+        "hashes": [
+          "600fca7c7ec2c180d7942c8935778cbd390fa6795b17148e3cc68026eda44460"
+        ]
+      }
+    },
+    {
+      "case": "GeneralGray32",
+      "base-legacy": {
+        "median_us": 351.42650000000003,
+        "sampled_exec_vmhwm_kib": [
+          1684,
+          1688,
+          1684,
+          1684,
+          1684,
+          1688,
+          1684,
+          1684
+        ],
+        "hashes": [
+          "f4638321816aca3e640305770a61e4d372c8b18a8bf698319fa74da734d5beff"
+        ]
+      },
+      "new-legacy": {
+        "median_us": 355.0145,
+        "sampled_exec_vmhwm_kib": [
+          1648,
+          1684,
+          1684,
+          1688,
+          1688,
+          1684,
+          1684,
+          1668
+        ],
+        "hashes": [
+          "f4638321816aca3e640305770a61e4d372c8b18a8bf698319fa74da734d5beff"
+        ]
+      },
+      "time_change_percent": 1.0209816277372274
+    },
+    {
+      "case": "GeneralLevels6",
+      "base-legacy": {
+        "median_us": 1594.9560000000001,
+        "sampled_exec_vmhwm_kib": [
+          1840,
+          1844,
+          1840,
+          1844,
+          1844,
+          1844,
+          1840,
+          1840
+        ],
+        "hashes": [
+          "12274217aadb03cdf519f1ff100caf626e56e282715e31c04c433859a512c6c8"
+        ]
+      },
+      "new-legacy": {
+        "median_us": 1590.209,
+        "sampled_exec_vmhwm_kib": [
+          1844,
+          1840,
+          1844,
+          1844,
+          1844,
+          1840,
+          1840,
+          1844
+        ],
+        "hashes": [
+          "12274217aadb03cdf519f1ff100caf626e56e282715e31c04c433859a512c6c8"
+        ]
+      },
+      "time_change_percent": -0.2976257652248737
+    },
+    {
+      "case": "GeneralRGB32",
+      "base-legacy": {
+        "median_us": 261.89549999999997,
+        "sampled_exec_vmhwm_kib": [
+          1916,
+          1916,
+          1916,
+          1916,
+          1916,
+          1916,
+          1896,
+          1912
+        ],
+        "hashes": [
+          "83b4248a76aaf4edf1e59ab7faeb1f5e3a009cd8fea60b497f16c1ca37cf44f4"
+        ]
+      },
+      "new-legacy": {
+        "median_us": 263.8565,
+        "sampled_exec_vmhwm_kib": [
+          1916,
+          1916,
+          1916,
+          1916,
+          1916,
+          1916,
+          1916,
+          1916
+        ],
+        "hashes": [
+          "83b4248a76aaf4edf1e59ab7faeb1f5e3a009cd8fea60b497f16c1ca37cf44f4"
+        ]
+      },
+      "time_change_percent": 0.7487719338438392
+    },
+    {
+      "case": "GeneralRGBA16",
+      "base-legacy": {
+        "median_us": 286.303,
+        "sampled_exec_vmhwm_kib": [
+          1688,
+          1692,
+          1692,
+          1692,
+          1692,
+          1692,
+          1676,
+          1692
+        ],
+        "hashes": [
+          "e20763576f47eeee911af025bd908f202dffa47ecba95765d17a7223f358220e"
+        ]
+      },
+      "new-legacy": {
+        "median_us": 277.0775,
+        "sampled_exec_vmhwm_kib": [
+          1692,
+          1692,
+          1688,
+          1692,
+          1688,
+          1692,
+          1692,
+          1664
+        ],
+        "hashes": [
+          "e20763576f47eeee911af025bd908f202dffa47ecba95765d17a7223f358220e"
+        ]
+      },
+      "time_change_percent": -3.2222854807668844
+    },
+    {
+      "case": "Gray16x16",
+      "base-legacy": {
+        "median_us": 36.983999999999995,
+        "sampled_exec_vmhwm_kib": [
+          1476,
+          1524,
+          1520,
+          1520,
+          1520,
+          1456,
+          1524,
+          1520
+        ],
+        "hashes": [
+          "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+        ]
+      },
+      "new-legacy": {
+        "median_us": 36.1365,
+        "sampled_exec_vmhwm_kib": [
+          1520,
+          1524,
+          1472,
+          1524,
+          1524,
+          1520,
+          1524,
+          1484
+        ],
+        "hashes": [
+          "3d334bc2e30906e60889dc9008e1e56bb1b5b005a49c0039a1cf0d72d38e48eb"
+        ]
+      },
+      "time_change_percent": -2.2915314730694303
+    },
+    {
+      "case": "GrayEX12",
+      "base-gray": {
+        "median_us": 5499.0695,
+        "sampled_exec_vmhwm_kib": [
+          1568,
+          1628,
+          1628,
+          1628,
+          1628,
+          1628,
+          1632,
+          1632
+        ],
+        "hashes": [
+          "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+        ]
+      },
+      "new-gray": {
+        "median_us": 5455.1885,
+        "sampled_exec_vmhwm_kib": [
+          1632,
+          1616,
+          1632,
+          1628,
+          1632,
+          1632,
+          1632,
+          1572
+        ],
+        "hashes": [
+          "5e6e2c15d924bfb06d5b862433c020e1ad04ea4d678edc86cc273de1ff166ec8"
+        ]
+      },
+      "time_change_percent": -0.797971365882888
+    },
+    {
+      "case": "GrayEX16",
+      "base-gray": {
+        "median_us": 6461.505999999999,
+        "sampled_exec_vmhwm_kib": [
+          1648,
+          1584,
+          1648,
+          1648,
+          1644,
+          1644,
+          1648,
+          1584
+        ],
+        "hashes": [
+          "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+        ]
+      },
+      "new-gray": {
+        "median_us": 6456.4365,
+        "sampled_exec_vmhwm_kib": [
+          1648,
+          1644,
+          1648,
+          1644,
+          1644,
+          1648,
+          1648,
+          1648
+        ],
+        "hashes": [
+          "2fd59715df33edd7d0e5041119f6d7312677d67b5d56374c5765eb73f0c06265"
+        ]
+      },
+      "time_change_percent": -0.0784569417717762
+    },
+    {
+      "case": "RGB16x16",
+      "base-legacy": {
+        "median_us": 110.5085,
+        "sampled_exec_vmhwm_kib": [
+          1552,
+          1548,
+          1552,
+          1552,
+          1552,
+          1548,
+          1552,
+          1484
+        ],
+        "hashes": [
+          "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+        ]
+      },
+      "new-legacy": {
+        "median_us": 109.0185,
+        "sampled_exec_vmhwm_kib": [
+          1548,
+          1552,
+          1504,
+          1548,
+          1552,
+          1548,
+          1548,
+          1552
+        ],
+        "hashes": [
+          "ad621b5b39fab2c3597ba2e623b07185dcfe56ed85b2eec739b31e80d7df1051"
+        ]
+      },
+      "time_change_percent": -1.3483125732409729
+    },
+    {
+      "case": "RGB97EX12",
+      "new-color": {
+        "median_us": 15537.2865,
+        "sampled_exec_vmhwm_kib": [
+          2076,
+          2016,
+          2016,
+          2016,
+          2080,
+          2072,
+          2080,
+          2020
+        ],
+        "hashes": [
+          "13e30bdfbb4842b786d0389005526862845ff7ffbebb96fca19127ef1ac1785b"
+        ]
+      }
+    },
+    {
+      "case": "RGB97EX16",
+      "new-color": {
+        "median_us": 18574.6375,
+        "sampled_exec_vmhwm_kib": [
+          2136,
+          2140,
+          2140,
+          2136,
+          2140,
+          2076,
+          2080,
+          2184
+        ],
+        "hashes": [
+          "1731865db43fef98f7caa361ce4324622c13ebb65dda62ff54d15d8165b1c41f"
+        ]
+      }
+    },
+    {
+      "case": "RGBA97EX12",
+      "new-color": {
+        "median_us": 16643.89,
+        "sampled_exec_vmhwm_kib": [
+          2072,
+          2068,
+          2072,
+          2056,
+          2108,
+          2116,
+          2096,
+          2068
+        ],
+        "hashes": [
+          "4d806c8d9e309edeb2219f5638d62a9eb02f92cdabd641fceb344715657dd183"
+        ]
+      }
+    },
+    {
+      "case": "RGBA97EX16",
+      "new-color": {
+        "median_us": 20072.894500000002,
+        "sampled_exec_vmhwm_kib": [
+          2140,
+          2212,
+          2196,
+          2200,
+          2216,
+          2160,
+          2200,
+          2160
+        ],
+        "hashes": [
+          "592cf19ff86490003189b14808feb3467f3bd54c123d2bbff546c96ec3a0ff42"
+        ]
+      }
+    },
+    {
+      "case": "RGBAEX12",
+      "base-color": {
+        "median_us": 2069.2905,
+        "sampled_exec_vmhwm_kib": [
+          1576,
+          1588,
+          1588,
+          1528,
+          1584,
+          1588,
+          1568,
+          1588
+        ],
+        "hashes": [
+          "e5e49b85da0979b4f18084dd6413b4dede02706055fcdfe987f2ae931d4b6a45"
+        ]
+      },
+      "new-color": {
+        "median_us": 2036.518,
+        "sampled_exec_vmhwm_kib": [
+          1584,
+          1584,
+          1584,
+          1588,
+          1584,
+          1588,
+          1532,
+          1584
+        ],
+        "hashes": [
+          "e5e49b85da0979b4f18084dd6413b4dede02706055fcdfe987f2ae931d4b6a45"
+        ]
+      },
+      "time_change_percent": -1.5837553982874786
+    },
+    {
+      "case": "RGBAEX16",
+      "base-color": {
+        "median_us": 2415.358,
+        "sampled_exec_vmhwm_kib": [
+          1592,
+          1592,
+          1588,
+          1592,
+          1592,
+          1592,
+          1588,
+          1584
+        ],
+        "hashes": [
+          "628b872028d3901b162d49a0a8e7a1fc93f239b6732ca91c69c997d227fb1d78"
+        ]
+      },
+      "new-color": {
+        "median_us": 2413.125,
+        "sampled_exec_vmhwm_kib": [
+          1588,
+          1588,
+          1528,
+          1588,
+          1588,
+          1592,
+          1588,
+          1592
+        ],
+        "hashes": [
+          "628b872028d3901b162d49a0a8e7a1fc93f239b6732ca91c69c997d227fb1d78"
+        ]
+      },
+      "time_change_percent": -0.092450063303251
+    },
+    {
+      "case": "RGBEX12",
+      "base-color": {
+        "median_us": 1553.181,
+        "sampled_exec_vmhwm_kib": [
+          1516,
+          1572,
+          1508,
+          1568,
+          1572,
+          1568,
+          1552,
+          1564
+        ],
+        "hashes": [
+          "3a68aa72346eee71bb3d64f3ffea0404f0c2017cc98939104ab26d253dea763d"
+        ]
+      },
+      "new-color": {
+        "median_us": 1542.27,
+        "sampled_exec_vmhwm_kib": [
+          1572,
+          1568,
+          1552,
+          1572,
+          1572,
+          1572,
+          1512,
+          1572
+        ],
+        "hashes": [
+          "3a68aa72346eee71bb3d64f3ffea0404f0c2017cc98939104ab26d253dea763d"
+        ]
+      },
+      "time_change_percent": -0.7024937853347457
+    },
+    {
+      "case": "RGBEX16",
+      "base-color": {
+        "median_us": 1831.2285,
+        "sampled_exec_vmhwm_kib": [
+          1560,
+          1556,
+          1560,
+          1496,
+          1560,
+          1552,
+          1560,
+          1524
+        ],
+        "hashes": [
+          "638798c03859afc98c3edceef593cde73c72cd7053efe4ffbd041945bb2fdd8b"
+        ]
+      },
+      "new-color": {
+        "median_us": 1838.8035,
+        "sampled_exec_vmhwm_kib": [
+          1560,
+          1560,
+          1560,
+          1556,
+          1560,
+          1500,
+          1496,
+          1560
+        ],
+        "hashes": [
+          "638798c03859afc98c3edceef593cde73c72cd7053efe4ffbd041945bb2fdd8b"
+        ]
+      },
+      "time_change_percent": 0.4136567337172936
+    }
+  ],
+  "performance_method": "Rust1.91 identical release example and flags at immutable cff3f36 binaries and current source. Eight alternating paired processes, pinned CPU, reverse pair order, all output hashes preserved. New 9/7 EX absolute only. Post-exec VmHWM sampled2ms; raw wait4 peak includes launcher and is not decode peak. Single-host observations only.",
+  "display": {
+    "cases": [
+      {
+        "input": "jp2_ex_97_gray12_origin_mct0.jp2",
+        "decoded_sha256": "4cad960c9ca1ffbb0497fd6de5243308fdbecc1e93cb1b7a8b76ccd4950a89ce",
+        "max_difference": 1
+      },
+      {
+        "input": "jp2_ex_97_gray16_deep_mct0.jp2",
+        "decoded_sha256": "5fd8425d6ec3820f9f0ca7377c6fa16dad2796745c4e626506ac80876a657dc0",
+        "max_difference": 2
+      },
+      {
+        "input": "jp2_ex_97_rgb16_tiles_mct1.jp2",
+        "decoded_sha256": "34cd61792702bcd7973ee982cf2325b6b528f25f100539b328d7c79fb32574e5",
+        "max_difference": 3
+      },
+      {
+        "input": "jp2_ex_97_rgba12_edges_mct1.jp2",
+        "decoded_sha256": "b530b7b21f801be816520b651a0e877188a523102987e7b81b57e49d4094e840",
+        "max_difference": 1
+      },
+      {
+        "input": "jp2_ex_97_rgba16_lossy_mct1.jp2",
+        "decoded_sha256": "c4d4181fff07cd420694bcf8b78375706094166082a89d980ba17d146c22ee97",
+        "max_difference": 2
+      },
+      {
+        "input": "jp2_ex_97_rgba16_order_mct0.jp2",
+        "decoded_sha256": "69f85176ccd14d09d910782921af2e8f603386d985a81ccbcb6e2def39750baa",
+        "max_difference": 2
+      }
+    ],
+    "preview_sha256": "5c15d0f8f960b726dd2ac0f53d7dd36a362984355e05454aba7dd5f728a3c04b"
+  },
+  "static": {
+    "python_syntax": [
+      "wml2-test/scripts/verify_jpeg2000_ex_97_wasm.py",
+      "wml2/tests/fixtures/review/generate_jpeg2000_ex_97.py",
+      "wml2/tests/fixtures/review/generate_jpeg2000_ex_color.py",
+      "wml2/tests/fixtures/review/generate_jpeg2000_ex_gray.py"
+    ],
+    "version": "0.0.36",
+    "lock_unchanged": true,
+    "rejection_manifests": [
+      {
+        "path": "wml2/tests/fixtures/review/jpeg2000-ex-color-rejected.json",
+        "cases": 4
+      },
+      {
+        "path": "wml2/tests/fixtures/review/jpeg2000-ex-gray-rejected.json",
+        "cases": 8
+      }
+    ],
+    "package_file_count": 283,
+    "new_test_fixtures_excluded": true,
+    "ci_yaml_parse": true,
+    "windows_i686_97_target": true
+  },
+  "peak_build_cgroup_bytes": 4281925632,
+  "cgroup_limit_bytes": 17179869184,
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+  "raw_sha256": "464eb7f129e1043c88e7e8bbf269eadf28f542aa17ffa7ffb3a17d5df566837f",
+  "ci": "Final exact-head push CI is checked after commit; not inferred from local results.",
+  "no_new_pr": true,
+  "no_independent_review_retry": true
+}

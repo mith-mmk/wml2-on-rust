@@ -140,7 +140,7 @@ fn marker(data: &[u8], m: u8) -> usize {
 }
 #[test]
 fn unsupported_profiles_and_overflow_reject_before_callbacks() {
-    for name in ["signed16", "rgba16", "irreversible16", "gray10", "roi16"] {
+    for name in ["signed16", "rgba16", "gray10", "roi16"] {
         for ext in ["j2k", "jp2"] {
             let data = read(&format!("jp2_ex_unsupported_{name}.{ext}"));
             let mut p = Probe::new(16);
@@ -167,7 +167,7 @@ fn unsupported_profiles_and_overflow_reject_before_callbacks() {
     }
     let mut changed = data.clone();
     changed[cod + 13] = 0;
-    rejected(&changed); // irreversible
+    rejected(&changed); // 9/7 paired with scalar-free QCD
     let mut changed = data.clone();
     changed[cod + 8] = 1;
     rejected(&changed); // MCT

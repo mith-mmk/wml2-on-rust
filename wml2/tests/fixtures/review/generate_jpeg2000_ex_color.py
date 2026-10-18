@@ -116,7 +116,9 @@ def main():
             run(args.compress,'-i',str(original),'-o',str(path),'-n','3','-F',f'16,16,{nc},{bits},{"s" if signed else "u"}','-mct','0','-threads','1',*extra)
             path.write_bytes(declare_rgb(path.read_bytes(), [(0,0,1),(1,0,2),(2,0,3),(3,1,0)] if nc==4 else None))
             run(args.decompress,'-i',str(path),'-o',str(work/'negative.pgx'),'-threads','1')
-            negatives.append(dict(input=path.name,reason=reason,components=nc,sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+            # Retain historical filenames for the new 9/7 acceptance regression.
+            if reason != 'irreversible16':
+                negatives.append(dict(input=path.name,reason=reason,components=nc,sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
     (root/'jpeg2000-ex-color-rejected.json').write_text(json.dumps(negatives,indent=2)+'\n')
     (root/'jpeg2000-ex-color-manifest.json').write_text(json.dumps(dict(
         provenance='Original seeded U16, OpenJPEG CLI 2.5.3 encode and independent per-component PGX decode. CDEF explicitly declares RGB channel order and straight whole-image alpha; tooling only.', files=rows), indent=2)+'\n')

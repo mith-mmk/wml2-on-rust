@@ -78,6 +78,9 @@ mod enabled {
             fixture!("grayalpha8", 2, 8),
             fixture!("grayalpha12", 2, 12),
             fixture!("grayalpha16", 2, 16),
+            fixture!("rgb8", 3, 8),
+            fixture!("rgb12", 3, 12),
+            fixture!("rgb16", 3, 16),
             fixture!("rgba8", 4, 8),
             fixture!("rgba12", 4, 12),
             fixture!("rgba16", 4, 16),
@@ -187,6 +190,30 @@ mod enabled {
         };
         assert_eq!(&source[16..20], b"GRAY");
         assert_eq!(&output[16..20], b"RGB ");
+    }
+    #[cfg(feature = "image-buffer-ex")]
+    #[test]
+    fn arbitrary_gray_icc_is_retained_only_with_native_gray_output() {
+        let input = include_bytes!("fixtures/review/jxl-icc-gray16.jxl");
+        let expected = include_bytes!("fixtures/review/jxl-gray16.bin");
+        assert_eq!(
+            expected,
+            include_bytes!("fixtures/review/jxl-icc-gray16-djxl.bin")
+        );
+        let image =
+            image_from_ex(input, PixelFormatEx::Gray16, PrecisionConversion::Exact).unwrap();
+        assert_eq!(image.source_format(), Some(PixelFormatEx::Gray16));
+        assert_eq!(image.bytes().unwrap(), expected);
+        for key in ["ICC Profile", "JPEG XL Source ICC Profile"] {
+            assert!(
+                matches!(&image.metadata.as_ref().unwrap()[key], DataMap::ICCProfile(profile)
+                if profile == include_bytes!("fixtures/review/jxl-gray-gamma2.icc"))
+            );
+        }
+        let mut p = Probe::default();
+        let error = probe(input, &mut p, DecodeLimits::default(), false).unwrap_err();
+        assert!(error.to_string().contains("Gray ICC expansion"));
+        assert!(p.events.is_empty());
     }
     #[test]
     fn lossy_matches_independent_djxl_with_two_lsb_tolerance() {
@@ -528,6 +555,44 @@ mod enabled {
         }
     }
     #[test]
+    fn both_declared_container_levels_preserve_pixels_and_limits() {
+        let expected = image_from(RGBA8).unwrap().buffer.unwrap();
+        for level in [5, 10] {
+            for codestream in [
+                box_bytes(b"jxlc", RGBA8),
+                box_bytes(
+                    b"jxlp",
+                    &[&0x8000_0000u32.to_be_bytes()[..], RGBA8].concat(),
+                ),
+            ] {
+                let input = container(vec![box_bytes(b"jxll", &[level]), codestream]);
+                assert_eq!(image_from(&input).unwrap().buffer.unwrap(), expected);
+                #[cfg(feature = "image-buffer-ex")]
+                assert_eq!(
+                    image_from_ex(&input, PixelFormatEx::Rgba8, PrecisionConversion::Exact)
+                        .unwrap()
+                        .bytes()
+                        .unwrap(),
+                    expected
+                );
+                let mut p = Probe::default();
+                assert!(
+                    probe(
+                        &input,
+                        &mut p,
+                        DecodeLimits {
+                            pixels: 34,
+                            ..Default::default()
+                        },
+                        false
+                    )
+                    .is_err()
+                );
+                assert!(p.events.is_empty());
+            }
+        }
+    }
+    #[test]
     fn level_boxes_must_be_unique_and_precede_codestream() {
         for chunks in [
             vec![
@@ -536,6 +601,21 @@ mod enabled {
                 box_bytes(b"jxlc", RGBA8),
             ],
             vec![box_bytes(b"jxlc", RGBA8), box_bytes(b"jxll", &[10])],
+            vec![
+                box_bytes(b"jxll", &[5]),
+                box_bytes(b"jxll", &[10]),
+                box_bytes(b"jxlc", RGBA8),
+            ],
+            vec![
+                box_bytes(b"jxlp", &0u32.to_be_bytes()),
+                box_bytes(b"jxll", &[5]),
+                box_bytes(
+                    b"jxlp",
+                    &[&0x8000_0001u32.to_be_bytes()[..], RGBA8].concat(),
+                ),
+            ],
+            vec![box_bytes(b"jxll", &[]), box_bytes(b"jxlc", RGBA8)],
+            vec![box_bytes(b"jxll", &[5, 10]), box_bytes(b"jxlc", RGBA8)],
             vec![box_bytes(b"jxll", &[9]), box_bytes(b"jxlc", RGBA8)],
         ] {
             let mut p = Probe::default();

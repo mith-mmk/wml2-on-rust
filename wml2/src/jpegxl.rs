@@ -153,9 +153,9 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
                 append(&mut out.codestream, &data[4..])?;
             }
             b"jxll" => {
-                // libjxl emits Level10 for16-bit sources. Complexity remains
-                // constrained by our independent dimensions/workspace profile.
-                if seen_level || finished || partial || data != [10] {
+                // Both standardized container levels are accepted. Complexity
+                // remains bounded by our independent dimensions/workspace caps.
+                if seen_level || finished || partial || !matches!(data, [5] | [10]) {
                     return Err(invalid("invalid JPEG XL level box"));
                 }
                 seen_level = true;

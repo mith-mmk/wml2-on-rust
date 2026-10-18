@@ -30,6 +30,9 @@ pub extern "C" fn verify_jpegxl() -> u32 {
         case!("grayalpha8", 2, 8),
         case!("grayalpha12", 2, 12),
         case!("grayalpha16", 2, 16),
+        case!("rgb8", 3, 8),
+        case!("rgb12", 3, 12),
+        case!("rgb16", 3, 16),
         case!("rgba8", 4, 8),
         case!("rgba12", 4, 12),
         case!("rgba16", 4, 16),
@@ -49,6 +52,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
             .flat_map(|p| match channels {
                 1 => [p[0], p[0], p[0], max],
                 2 => [p[0], p[0], p[0], p[1]],
+                3 => [p[0], p[1], p[2], max],
                 _ => [p[0], p[1], p[2], p[3]],
             })
             .collect();
@@ -109,5 +113,34 @@ pub extern "C" fn verify_jpegxl() -> u32 {
         assert_eq!(actual[3], 255);
     }
     count += 1;
+    let input = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-icc-gray16.jxl"));
+    let image = image_from_ex(input, PixelFormatEx::Gray16, PrecisionConversion::Exact).unwrap();
+    assert_eq!(
+        image.bytes().unwrap(),
+        include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-gray16.bin"))
+    );
+    count += 1;
+    assert!(image_from(input).is_err());
+    count += 1;
+    let raw = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-rgba8.jxl"));
+    for level in [5, 10] {
+        for partial in [false, true] {
+            let mut boxed = b"\0\0\0\x0cJXL \r\n\x87\n\0\0\0\x14ftypjxl \0\0\0\0jxl ".to_vec();
+            boxed.extend(9u32.to_be_bytes());
+            boxed.extend(b"jxll");
+            boxed.push(level);
+            boxed.extend((raw.len() as u32 + if partial { 12 } else { 8 }).to_be_bytes());
+            boxed.extend(if partial { b"jxlp" } else { b"jxlc" });
+            if partial {
+                boxed.extend(0x8000_0000u32.to_be_bytes());
+            }
+            boxed.extend(raw);
+            assert_eq!(
+                image_from(&boxed).unwrap().buffer.unwrap(),
+                include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-rgba8.bin"))
+            );
+            count += 1;
+        }
+    }
     count
 }

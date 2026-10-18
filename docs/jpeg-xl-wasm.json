@@ -1,16 +1,17 @@
 {
   "runtime": "v24.19.0",
-  "cases": 30,
+  "cases": 45,
   "all_passed": true,
   "host_imports": [],
-  "memory_bytes": 5570560,
+  "memory_bytes": 9830400,
   "target": "wasm32-unknown-unknown",
   "features": "jpeg-xl,image-buffer-ex; no defaults",
-  "wasm_sha256": "279c35e4f249c4325cd74c4fd3eb6d64afca5319354e0f9b8e551a2e688727ec",
-  "scope": "native Gray/GrayAlpha/RGBA8/12/16 and RGBA8 rounding, pixel limits, embedded ICC and metadata limits, lossy djxl comparison",
+  "wasm_sha256": "2bd173803f30a7e3ca154e505ae5526a2b8ba3d67b8fce2ac916c92257043772",
+  "scope": "native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels 5/10 with jxlc/jxlp",
   "source_sha256": {
-    "wml2/src/jpegxl.rs": "f0748f87d03f2c6ec228bcd14da5a612b6d582a31999c68333deaf3b01e8ba38",
-    "wml2-test/scripts/jpegxl_wasm.rs": "72b77834500f2aa18d196cbb2fd22ff0898347ef9eb510eb7f376374538513c9",
-    "wml2-test/scripts/verify_jpegxl_wasm.py": "81601d9a7d5294ba6d7b4e2dfe825439683ee0827d4f56b0182d8b4cb5a5a29a"
+    "wml2/src/jpegxl.rs": "5216946bb57b263354d9ad76e18b818aef9d3d4feaef1564006a4ebea4136901",
+    "wml2-test/scripts/jpegxl_wasm.rs": "013f36032dde85e202759d3e44719eb260026d8664c90e3fd64b75ac735e189c",
+    "wml2-test/scripts/verify_jpegxl_wasm.py": "5376e86433031dfa40f573f758b7f61474ef8fe41b0832808a6acb07de265171",
+    "wml2/tests/fixtures/review/jxl-fixtures.json": "506394ac630b34a04031583527f8842a9666d1232a6173ac4a61679571a2a788"
   }
 }

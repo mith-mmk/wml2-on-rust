@@ -43,8 +43,9 @@ Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
 animations (no silent first-frame fallback), previews, intrinsic display sizes,
 premultiplied or mixed-depth/subsampled alpha, multiple/other extra channels,
 compressed `brob` metadata, JPEG reconstruction `jbrd`, and unsupported depths.
-A Level10 box is accepted for bounded16-bit input; this does not promise the
-entire Level10 profile. Native JPEG bitstream reconstruction is not implemented.
+Explicit Level5 and Level10 `jxll` boxes are accepted; dimensions, workspace and
+the supported sample profile remain independently bounded. This does not promise
+the entire Level10 profile. Native JPEG bitstream reconstruction is not implemented.
 
 ## Colour and source metadata
 
@@ -104,8 +105,10 @@ used by this probe must be reviewed when upgrading `jxl`.
 `wml2-test/scripts/generate_jpegxl_fixtures.py` and
 `jpegxl_fixture_encoder.c` use **libjxl0.11.2**, independently of WML2/jxl-rs.
 Lossless expected values are deterministic original sample bytes, including
-alpha0/1/mid/max and nonzero RGB under alpha0. Nine Gray/GrayAlpha/RGBA depth
-combinations also have `djxl` oracle output. Fixture hashes/provenance are in
+alpha0/1/mid/max and nonzero RGB under alpha0. Twelve Gray/GrayAlpha/RGB/RGBA depth
+combinations also have `djxl` oracle output. A LittleCMS2 Gray gamma2 profile
+checks native Gray ICC retention and explicit RGBA-expansion refusal. Fixture
+regeneration requires Pillow and a system LittleCMS2 library. Hashes/provenance are in
 `wml2/tests/fixtures/review/jxl-fixtures.json`.
 
 Lossy checks use at most2 output units at8-bit and32 at16-bit against `djxl`.
@@ -128,7 +131,7 @@ In particular,0.7.4 has typestate processing and `premultiply_output`; main's
 
 See [machine-readable results](jpeg-xl-validation.json) for commands, source
 hashes, local results, measured allocations and the actual WASM artifact hash.
-The portable helper runs30 cases in Node without host imports:
+The portable helper runs45 cases in Node without host imports:
 
 ```console
 python3 wml2-test/scripts/verify_jpegxl_wasm.py --output .test-jxl-wasm
@@ -147,7 +150,7 @@ macOS, with ordinary, EX and disabled-feature tests. Windows additionally
 executes those contracts as32-bit MSVC binaries. These dedicated jobs do not
 wait for the slower existing JPEG2000/TIFF platform regressions.
 
-The WASM compile job executes the30-case Node harness and uploads its report.
+The WASM compile job executes the45-case Node harness and uploads its report.
 A feature-contract job checks the expected mutually exclusive IDCT failure for
 `--all-features`, then checks all targets and executes JPEG XL tests for both
 all-codec and `noretoro` profiles with only one IDCT enabled. This also exposed
@@ -157,3 +160,30 @@ dependency; its locked version and default features are unchanged.
 These checks run on branch pushes; a PR is not required. For the result of an
 individual revision, use its GitHub Actions run and exact commit SHA rather
 than treating the older local validation snapshot as a cross-platform result.
+
+## Remaining validation and scope decisions
+
+The October18 independent still-image review found and fixed rejection of a
+valid explicit Level5 container. Its regression fails on revision
+`4467931cceb30071d4d77891aed10e808650b7da` and passes with the fix. Both levels
+are checked with `jxlc`/`jxlp`, ordinary/native pixels, ordering and limits.
+Seven additional independently generated RGB/Gray/RGBA and thin-canvas inputs
+matched original samples;2,100 deterministic corruption/truncation probes did
+not panic. The subsequent read-only diff review checked fixture hashes, sample
+formulas, Gray gamma2 identity and the EX/ordinary regression suites. These
+finite probes do not establish general decoder correctness.
+
+The local Windows owner is responsible for real display testing against the
+25-file corpus at `D:\data\samples\images\jxl\wml2_static_selection_20261018`
+and its `manifest.json`. That corpus is unavailable in this cloud environment;
+its results remain pending and are separate from hosted CI and synthetic tests.
+The hosted56-job success for revision4467931 is prior evidence, not a result
+for this follow-up patch. Normal branch pushes run existing CI automatically;
+no separate Windows execution or workflow dispatch is needed for this review.
+
+Remaining profile limitations include fixed resource caps, Gray ICC expansion,
+compressed auxiliary metadata and JPEG reconstruction. All eight orientation
+values have not been independently tested; the90-degree case is covered.
+Browser UI integration, SIMD and threads are also outside the current evidence.
+HDR rendering, animation and encoding require a separate scope proposal before
+implementation. No PR, main merge or release is part of this branch work.

@@ -136,6 +136,10 @@ impl DrawCallback for Guard<'_> {
         option: Option<DrawOptions>,
     ) -> Response {
         if !self.ready {
+            // Legacy decoders may observe an earlier Abort at the next draw.
+            if self.stopped {
+                return Err(Box::new(Aborted));
+            }
             return Err(std::io::Error::other(
                 "draw before successful initialization or after Abort",
             )
@@ -160,6 +164,9 @@ impl DrawCallback for Guard<'_> {
     }
     fn next(&mut self, option: Option<NextOptions>) -> Response {
         if !self.ready {
+            if self.stopped {
+                return Err(Box::new(Aborted));
+            }
             return Err(std::io::Error::other(
                 "next before successful initialization or after Abort",
             )
@@ -364,8 +371,14 @@ mod tests {
                 assert!(!guard.ready);
                 assert_eq!(guard.bytes, 0);
                 assert_eq!(guard.canvas, (0, 0));
-                assert!(guard.draw(0, 0, 1, 1, &[0; 4], None).is_err());
-                assert!(guard.next(None).is_err());
+                assert_eq!(
+                    guard
+                        .draw(0, 0, 1, 1, &[0; 4], None)
+                        .unwrap_err()
+                        .is::<Aborted>(),
+                    abort
+                );
+                assert_eq!(guard.next(None).unwrap_err().is::<Aborted>(), abort);
                 #[cfg(feature = "image-buffer-ex")]
                 if !abort {
                     assert!(guard.init_ex(2, 3, None).is_err());

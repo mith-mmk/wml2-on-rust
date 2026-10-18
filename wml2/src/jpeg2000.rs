@@ -4,7 +4,8 @@
 //! The established small Gray8/RGB8 path is tried first. Its unsupported profiles
 //! retry the general component/tile/packet assembler, supporting multiple layers,
 //! five progressions, precincts, subsampling, palette, ROI and HTONLY HTJ2K.
-//! High sample depth, ICC and unsupported extended profiles return errors.
+//! The opt-in EX entry point additionally retains unsigned Gray12/16 with
+//! reversible 5/3. Other high-depth profiles and ICC remain unsupported.
 //! Geometry, coefficient precision and resource budgets remain bounded.
 //! All declared tiles and layer packets must be present; complete packets end
 //! each tile-part. Only the final codestream part may use Psot=0.
@@ -1487,7 +1488,7 @@ fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
         p += length + 2;
     }
 }
-/// Decode the supported unsigned Gray8/RGB8 profile into ordinary RGBA8.
+/// Decode the supported signed/unsigned 1–8-bit profile into ordinary RGBA8.
 pub fn decode<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -1526,6 +1527,40 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     option.drawer.terminate(None)?;
     Ok(None)
 }
+/// Static EX output retains unsigned Gray12/16 samples as little-endian bytes.
+#[cfg(feature = "image-buffer-ex")]
+pub(crate) fn decode_ex_inner<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    use crate::draw::{InitOptionsEx, PixelFormatEx};
+    let start = reader.offset()?;
+    let end = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(start))?;
+    let length = end.checked_sub(start).ok_or_else(|| bad("reader extent"))?;
+    crate::limits::check_input_length(length, crate::limits::current().input_bytes)?;
+    let input = reader.read_bytes_as_vec(usize::try_from(length)?)?;
+    let image = general::image_gray_ex(&input)?;
+    option.drawer.init_ex(
+        image.width,
+        image.height,
+        Some(InitOptionsEx {
+            source_format: if image.depth == 12 {
+                PixelFormatEx::Gray12
+            } else {
+                PixelFormatEx::Gray16
+            },
+            source_stride: None,
+            legacy: InitOptions::new(),
+        }),
+    )?;
+    option
+        .drawer
+        .draw(0, 0, image.width, image.height, &image.bytes, None)?;
+    option.drawer.terminate(None)?;
+    Ok(None)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

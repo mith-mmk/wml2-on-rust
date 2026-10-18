@@ -1,0 +1,62 @@
+[
+  {
+    "input": "jp2_ex_unsupported_signed16.j2k",
+    "reason": "signed16",
+    "sha256": "c3e62406b303c5e03edd59097874ee98a41023505b4b9dd41210a7960386cb3f"
+  },
+  {
+    "input": "jp2_ex_unsupported_signed16.jp2",
+    "reason": "signed16",
+    "sha256": "be9c28b3e7f60aef49444b7bee4b12798b4049b88e45713b4cbe622d764064cf"
+  },
+  {
+    "input": "jp2_ex_unsupported_rgb16.j2k",
+    "reason": "rgb16",
+    "sha256": "1c18be94d59f8f4202cb29f446c2517aed4884b23998c0d15e0ff13632931456"
+  },
+  {
+    "input": "jp2_ex_unsupported_rgb16.jp2",
+    "reason": "rgb16",
+    "sha256": "9acdadf2928a07a68c2d287c0d3068bc6e632560ec9bb0d97c742a237e8b2912"
+  },
+  {
+    "input": "jp2_ex_unsupported_rgba16.j2k",
+    "reason": "rgba16",
+    "sha256": "f7e08d250d0cb1f5f86d49d0a84b1fc603deab4d54075c9ec68e4062d70502c8"
+  },
+  {
+    "input": "jp2_ex_unsupported_rgba16.jp2",
+    "reason": "rgba16",
+    "sha256": "cd844f4f8dccea9154c9ad171ee03561a1010286f8d3614a31d2b1e711954a77"
+  },
+  {
+    "input": "jp2_ex_unsupported_irreversible16.j2k",
+    "reason": "irreversible16",
+    "sha256": "2e90142bb297f9dd47be2d9e116b458eccce90978d581a40fbc76bbdc3b992e7"
+  },
+  {
+    "input": "jp2_ex_unsupported_irreversible16.jp2",
+    "reason": "irreversible16",
+    "sha256": "4366af1bf6e4b11ad3924602c3c074dcee35e2dcb8d8a942814fb305fef0d58d"
+  },
+  {
+    "input": "jp2_ex_unsupported_gray10.j2k",
+    "reason": "gray10",
+    "sha256": "fed1f31a8e9a5b3ea601ebe172377f4d86e2039b9737f37d9ba9732a3e0f8ca2"
+  },
+  {
+    "input": "jp2_ex_unsupported_gray10.jp2",
+    "reason": "gray10",
+    "sha256": "15556972a6c407c375d168400563b86afef5d9c9a237f86c41c0cc3e36b8a218"
+  },
+  {
+    "input": "jp2_ex_unsupported_roi16.j2k",
+    "reason": "roi16",
+    "sha256": "8a975c85e07c24b22592778eec0edcb33d941544c886533744c01ddd3ebb4af8"
+  },
+  {
+    "input": "jp2_ex_unsupported_roi16.jp2",
+    "reason": "roi16",
+    "sha256": "764289954131cd81908aedf99d4582d8298fd1f98458a656374b271a22a374f5"
+  }
+]

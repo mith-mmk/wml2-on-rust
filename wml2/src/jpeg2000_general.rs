@@ -1223,6 +1223,10 @@ fn reconstruct<const EX: bool>(
                     }
                 }
             }
+            if EX {
+                // Dequantization is the final EX reader; release before DWT.
+                plane.coefficients = Vec::new();
+            }
             super::irreversible::synthesize(
                 &mut plane.samples,
                 plane.w,
@@ -1231,6 +1235,7 @@ fn reconstruct<const EX: bool>(
                 (plane.x0, plane.y0),
             )?;
         }
+        // Keep the established legacy allocation/drop order in its hot path.
         plane.coefficients.clear();
     }
     if EX {

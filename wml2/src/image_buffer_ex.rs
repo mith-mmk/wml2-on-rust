@@ -474,7 +474,41 @@ impl ImageBufferEx {
         }
     }
 
+    // Only the private fully decoded native path may supply owned packed bytes.
+    // It shares every initialization check and retains the requested policy.
+    #[cfg(feature = "jpeg2000")]
+    pub(crate) fn from_decoded_bytes(
+        width: usize,
+        height: usize,
+        format: PixelFormatEx,
+        conversion: PrecisionConversion,
+        bytes: Vec<u8>,
+    ) -> Result<Self, Error> {
+        let mut image = Self::with_storage(format, conversion);
+        image.initialize_with_bytes(
+            width,
+            height,
+            InitOptionsEx {
+                source_format: format,
+                source_stride: None,
+                legacy: InitOptions::new(),
+            },
+            Some(bytes),
+        )?;
+        Ok(image)
+    }
+
     fn initialize(&mut self, width: usize, height: usize, option: InitOptionsEx) -> Response {
+        self.initialize_with_bytes(width, height, option, None)
+    }
+
+    fn initialize_with_bytes(
+        &mut self,
+        width: usize,
+        height: usize,
+        option: InitOptionsEx,
+        owned: Option<Vec<u8>>,
+    ) -> Response {
         // Failed initialization invalidates the old callback target.
         self.buffer = None;
         self.background_color = None;
@@ -525,10 +559,15 @@ impl ImageBufferEx {
         } else {
             [0u8; 8]
         };
-        let buffer = initialized_bytes(
-            length,
-            background.map(|_| &pixel[..self.format.bytes_per_pixel()]),
-        )?;
+        let buffer = if let Some(bytes) = owned {
+            validate_bytes(&bytes, width, height, self.format, stride, length)?;
+            bytes
+        } else {
+            initialized_bytes(
+                length,
+                background.map(|_| &pixel[..self.format.bytes_per_pixel()]),
+            )?
+        };
         self.width = width;
         self.height = height;
         self.stride = stride;
@@ -1272,5 +1311,82 @@ mod conversion_budget_tests {
         // A scoped failure doesn't alter the stored pixels or future validity.
         image.encode_start_ex(None).unwrap();
         assert_eq!(image.bytes().unwrap(), [0; 16]);
+    }
+}
+
+#[cfg(all(test, feature = "jpeg2000"))]
+mod decoded_owned_tests {
+    use super::*;
+    #[test]
+    fn decoded_native_bytes_move_with_policy_and_validate_before_adoption() {
+        let bytes = vec![1, 0, 255, 15];
+        let pointer = bytes.as_ptr();
+        let image = ImageBufferEx::from_decoded_bytes(
+            2,
+            1,
+            PixelFormatEx::Gray12,
+            PrecisionConversion::Round,
+            bytes,
+        )
+        .unwrap();
+        assert_eq!(image.bytes().unwrap().as_ptr(), pointer);
+        assert_eq!(image.bytes().unwrap(), &[1, 0, 255, 15]);
+        assert_eq!(image.source_format(), Some(PixelFormatEx::Gray12));
+        assert_eq!(image.source_stride(), None);
+        assert_eq!(image.precision_conversion(), PrecisionConversion::Round);
+        assert!(
+            ImageBufferEx::from_decoded_bytes(
+                1,
+                1,
+                PixelFormatEx::Gray12,
+                PrecisionConversion::Exact,
+                vec![0, 16]
+            )
+            .is_err()
+        );
+        assert!(
+            ImageBufferEx::from_decoded_bytes(
+                1,
+                1,
+                PixelFormatEx::Gray16,
+                PrecisionConversion::Exact,
+                vec![0]
+            )
+            .is_err()
+        );
+    }
+    #[test]
+    fn decoded_owned_initialization_keeps_storage_and_animation_limits() {
+        for (expanded, animation) in [(1, 2), (2, 1)] {
+            crate::limits::scope(
+                crate::limits::DecodeLimits {
+                    expanded_bytes: expanded,
+                    animation_bytes: animation,
+                    ..Default::default()
+                },
+                || {
+                    assert!(
+                        ImageBufferEx::from_decoded_bytes(
+                            1,
+                            1,
+                            PixelFormatEx::Gray16,
+                            PrecisionConversion::Exact,
+                            vec![0, 0]
+                        )
+                        .is_err()
+                    );
+                },
+            );
+        }
+        assert!(
+            ImageBufferEx::from_decoded_bytes(
+                1,
+                1,
+                PixelFormatEx::Gray16,
+                PrecisionConversion::Exact,
+                vec![0, 0]
+            )
+            .is_ok()
+        );
     }
 }

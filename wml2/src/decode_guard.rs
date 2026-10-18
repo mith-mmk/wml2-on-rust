@@ -5,6 +5,38 @@ use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
 type Error = Box<dyn std::error::Error>;
 
+// Shared by guarded callbacks and the private native-owned JPEG2000 path.
+// A source canvas is budgeted independently of the selected storage layout.
+#[cfg(feature = "image-buffer-ex")]
+pub(crate) fn ex_source_bytes(
+    w: usize,
+    h: usize,
+    option: &InitOptionsEx,
+    limits: DecodeLimits,
+) -> Result<usize, Error> {
+    let pixels = w
+        .checked_mul(h)
+        .ok_or_else(|| std::io::Error::other("pixel count overflow"))?;
+    limits::check(pixels, limits.pixels, "EX pixels")?;
+    let row = option.source_format.row_bytes(w)?;
+    let stride = if let Some(stride) = option.source_stride {
+        option.source_format.validate_stride(stride)?;
+        // Rectangle declarations still budget at least a full packed canvas.
+        stride.max(row)
+    } else {
+        row
+    };
+    if w == 0 || h == 0 {
+        return Err(std::io::Error::other("EX dimensions must be nonzero").into());
+    }
+    let bytes = stride
+        .checked_mul(h)
+        .ok_or_else(|| std::io::Error::other("EX image size overflow"))?;
+    limits::check(bytes, limits.expanded_bytes, "EX source canvas")?;
+    limits::check(bytes, limits.animation_bytes, "EX canvas storage")?;
+    Ok(bytes)
+}
+
 #[derive(Debug)]
 struct Aborted;
 impl std::fmt::Display for Aborted {
@@ -93,27 +125,7 @@ impl DrawCallback for Guard<'_> {
         }
         self.source = None;
         let option = option.unwrap_or_default();
-        let pixels = w
-            .checked_mul(h)
-            .ok_or_else(|| std::io::Error::other("pixel count overflow"))?;
-        limits::check(pixels, self.limits.pixels, "EX pixels")?;
-        let row = option.source_format.row_bytes(w)?;
-        let stride = if let Some(stride) = option.source_stride {
-            option.source_format.validate_stride(stride)?;
-            // A tile declaration is legal; budget at least a full packed canvas,
-            // and include all padding if the declared stride exceeds that row.
-            stride.max(row)
-        } else {
-            row
-        };
-        if w == 0 || h == 0 {
-            return Err(std::io::Error::other("EX dimensions must be nonzero").into());
-        }
-        let bytes = stride
-            .checked_mul(h)
-            .ok_or_else(|| std::io::Error::other("EX image size overflow"))?;
-        limits::check(bytes, self.limits.expanded_bytes, "EX source canvas")?;
-        limits::check(bytes, self.limits.animation_bytes, "EX canvas storage")?;
+        let bytes = ex_source_bytes(w, h, &option, self.limits)?;
         let source = (option.source_format, option.source_stride);
         let result = self.drawer.init_ex(w, h, Some(option));
         let result = self.accept(result)?;

@@ -63,12 +63,15 @@ integrates. No main merge, version bump or registry publication is requested.
 
 ## JPEG XL continuation
 
-- Independently exercise all8orientations, actual displayed output, and the
-  shared ICC integration. The prior Windows25-file collection and manifest
-  are absent from this cloud workspace; cloud/browser evidence cannot claim
-  to execute that Windows-local collection.
-- Inspect and extend Gray ICC expansion and portable format boundaries using
-  the shared own-library CMS with explicit source/destination layouts.
+- The separate continuation now verifies all8orientations against djxl and
+  displays13independent cases in actual Chromium WASM/canvas, including the
+  official RGB/Gray still images. Explicit sRGB output shares the own-library
+  checked1/3→3-channel ICC helper with AVIF, uses the reconstruction profile,
+  and excludes alpha. Existing native/ordinary contracts are preserved.
+- Coded9/10-bit sources now promote to normalized16-bit with recoverable
+  source codes. Node WASM checks61cases without host imports.
+- The prior Windows25-file collection and manifest are absent from this cloud
+  workspace; cloud/browser evidence cannot claim to execute that collection.
 - Check the pinned codec's actual APIs before extending 9/10-bit,
   premultiplied alpha, compressed metadata or JPEG reconstruction. Opaque
   `jbrd` retention does not reconstruct the original JPEG.

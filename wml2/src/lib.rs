@@ -176,7 +176,10 @@ pub fn get_encode_extentions() -> Vec<String> {
 //pub(crate) mod io; // move bin_rs crate
 #[cfg(feature = "bmp")]
 pub mod bmp;
-#[cfg(feature = "avif")]
+#[cfg(any(
+    feature = "avif",
+    all(feature = "jpeg-xl", feature = "color-management")
+))]
 mod color_convert;
 pub mod draw;
 pub mod encoder;

@@ -23,6 +23,7 @@ int main(int argc,char **argv) {
   if(!strcmp(mode,"animation")) {info.have_animation=JXL_TRUE;info.animation.tps_numerator=100;info.animation.tps_denominator=1;}
   if(!strcmp(mode,"mixed-alpha")) info.alpha_bits=8;
   if(!strcmp(mode,"orientation")) info.orientation=JXL_ORIENT_ROTATE_90_CW;
+  else if(!strncmp(mode,"orientation",11)) {int orientation=atoi(mode+11);CHECK(orientation>=1&&orientation<=8);info.orientation=(JxlOrientation)orientation;}
   CHECK(JxlEncoderSetBasicInfo(enc,&info)==JXL_ENC_SUCCESS);
   if(channels==2||channels==4) {
     JxlExtraChannelInfo alpha;JxlEncoderInitExtraChannelInfo(JXL_CHANNEL_ALPHA,&alpha);

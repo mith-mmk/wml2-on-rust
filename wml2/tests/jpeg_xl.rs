@@ -450,7 +450,6 @@ mod enabled {
         let unsupported = [
             include_bytes!("fixtures/review/jxl-float.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-mixed-alpha.jxl").as_slice(),
-            include_bytes!("fixtures/review/jxl-depth10.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-premult.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-animation.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-hdr.jxl").as_slice(),

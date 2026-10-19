@@ -13,8 +13,8 @@ fn words(bytes: &[u8], bits: u8) -> Vec<u16> {
 macro_rules! case {
     ($name:literal,$channels:literal,$bits:literal) => {
         (
-            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-", $name, ".jxl")).as_slice(),
-            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-", $name, ".bin")).as_slice(),
+            include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-", $name, ".jxl")).as_slice(),
+            include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-", $name, ".bin")).as_slice(),
             $channels,
             $bits,
         )
@@ -84,11 +84,11 @@ pub extern "C" fn verify_jpegxl() -> u32 {
         );
         count += 1;
     }
-    let input = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-icc-lossless.jxl"));
+    let input = include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-icc-lossless.jxl"));
     let image = image_from_ex(input, PixelFormatEx::Rgba16, PrecisionConversion::Exact).unwrap();
     assert_eq!(
         image.bytes().unwrap(),
-        include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-rgba16.bin"))
+        include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-rgba16.bin"))
     );
     count += 1;
     assert!(
@@ -102,10 +102,10 @@ pub extern "C" fn verify_jpegxl() -> u32 {
         .is_err()
     );
     count += 1;
-    let input = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-lossy.jxl"));
+    let input = include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-lossy.jxl"));
     let image = image_from(input).unwrap();
     let pixels = image.buffer.unwrap();
-    let expected = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-lossy-djxl.bin"));
+    let expected = include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-lossy-djxl.bin"));
     for (actual, expected) in pixels.chunks_exact(4).zip(expected.chunks_exact(3)) {
         for c in 0..3 {
             assert!(actual[c].abs_diff(expected[c]) <= 2);
@@ -113,16 +113,16 @@ pub extern "C" fn verify_jpegxl() -> u32 {
         assert_eq!(actual[3], 255);
     }
     count += 1;
-    let input = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-icc-gray16.jxl"));
+    let input = include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-icc-gray16.jxl"));
     let image = image_from_ex(input, PixelFormatEx::Gray16, PrecisionConversion::Exact).unwrap();
     assert_eq!(
         image.bytes().unwrap(),
-        include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-gray16.bin"))
+        include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-gray16.bin"))
     );
     count += 1;
     assert!(image_from(input).is_err());
     count += 1;
-    let raw = include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-rgba8.jxl"));
+    let raw = include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-rgba8.jxl"));
     for level in [5, 10] {
         for partial in [false, true] {
             let mut boxed = b"\0\0\0\x0cJXL \r\n\x87\n\0\0\0\x14ftypjxl \0\0\0\0jxl ".to_vec();
@@ -153,17 +153,17 @@ pub extern "C" fn verify_jpegxl() -> u32 {
             );
             assert_eq!(
                 image.buffer.unwrap(),
-                include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-rgba8.bin"))
+                include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-rgba8.bin"))
             );
             count += 1;
         }
     }
     for (input, icc, probes, width, height, source_channels, format) in [
         (
-            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-jbrd-bench.jxl")).as_slice(),
-            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-jbrd-bench.icc")).as_slice(),
+            include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-jbrd-bench.jxl")).as_slice(),
+            include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-jbrd-bench.icc")).as_slice(),
             include_bytes!(concat!(
-                env!("WML2_JXL_FIXTURES"),
+                "../../wml2/tests/fixtures/review",
                 "/jxl-jbrd-bench-probes.bin"
             ))
             .as_slice(),
@@ -173,10 +173,10 @@ pub extern "C" fn verify_jpegxl() -> u32 {
             PixelFormatEx::Rgba8,
         ),
         (
-            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-jbrd-gray.jxl")).as_slice(),
-            include_bytes!(concat!(env!("WML2_JXL_FIXTURES"), "/jxl-jbrd-gray.icc")).as_slice(),
+            include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-jbrd-gray.jxl")).as_slice(),
+            include_bytes!(concat!("../../wml2/tests/fixtures/review", "/jxl-jbrd-gray.icc")).as_slice(),
             include_bytes!(concat!(
-                env!("WML2_JXL_FIXTURES"),
+                "../../wml2/tests/fixtures/review",
                 "/jxl-jbrd-gray-probes.bin"
             ))
             .as_slice(),
@@ -238,6 +238,20 @@ pub extern "C" fn verify_jpegxl() -> u32 {
             );
             count += 1;
         }
+    }
+    for (input, expected, coded, bits) in [
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-rgba9.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-rgba9.rgba16le").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-rgba9.source16le").as_slice(),9),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-rgba10.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-rgba10.rgba16le").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-rgba10.source16le").as_slice(),10),
+    ] {
+        let image=image_from_ex(input,PixelFormatEx::Rgba16,PrecisionConversion::Exact).unwrap();
+        for ((actual,oracle),source) in words(image.bytes().unwrap(),16).iter().zip(words(expected,16)).zip(words(coded,16)) {
+            assert!(actual.abs_diff(oracle)<=1);
+            assert_eq!((u32::from(*actual)*((1<<bits)-1)+32767)/65535,u32::from(source));
+        }
+        count+=1;
+        let expected8:Vec<u8>=words(expected,16).iter().map(|&v|((u32::from(v)*255+32767)/65535) as u8).collect();
+        assert_eq!(image_from(input).unwrap().buffer.unwrap(),expected8);count+=1;
+        assert!(image_from_with_limits(input,DecodeLimits {pixels:34,..Default::default()}).is_err());count+=1;
     }
     count
 }

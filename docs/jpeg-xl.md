@@ -1,7 +1,9 @@
 # JPEG XL still-image decoding
 
-This is unreleased work on `codex/jpeg-xl-decode-20261018`; published0.0.37
-does not contain the feature.
+This is unreleased work. The continuation is `codex/jpeg-xl-remaining-20261019`,
+based on the preserved `codex/jpeg-xl-decode-20261018` checkpoint83c1800 and
+ICC checkpointfbec877. Published0.0.37 does not contain the feature.
+See [continuation validation](jpeg-xl-continuation-20261019.md).
 
 The opt-in `jpeg-xl` feature uses **published `jxl =0.7.4`**, not upstream main.
 Defaults are unchanged; JPEG XL encoding is unavailable. Add `image-buffer-ex`
@@ -24,11 +26,14 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 
 - Bare `ff 0a` codestreams and containers with `jxlc` or ordered `jxlp` chunks.
   Every box, including trailing boxes, is length-checked before decoding.
-- Integer **8,12,16-bit** Gray/RGB, optionally one full-resolution straight
+- Integer **8,9,10,12,16-bit** Gray/RGB, optionally one full-resolution straight
   alpha channel with the same depth as colour. Orientation is applied once by
   the decoder. RGB becomes RGBA with opaque alpha; GrayAlpha becomes RGBA.
 - The EX source is native Gray8/12/16 or Rgba8/12/16, packed, with12/16-bit
-  samples in little-endian u16 slots. Transparent RGB and low bits survive
+  samples in little-endian u16 slots. Coded9/10-bit inputs are normalized into
+  Gray16/Rgba16, with coded depth retained separately. Promotion is within one
+  u16 unit of the independent reference and preserves recoverable source codes.
+  Transparent RGB and low bits survive
   lossless decoding. Neither EX nor ordinary decoding goes through RGBA8 first.
 - Ordinary `image_from`/`image_decoder` return RGBA8. High-depth samples,
   including alpha, are explicitly rounded over the full normalized range:
@@ -49,8 +54,12 @@ the entire Level10 profile. Native JPEG bitstream reconstruction is not implemen
 
 ## Colour and source metadata
 
-No general CMS conversion or tone mapping is added. JPEG XL's own XYB→RGB
-reconstruction stays inside `jxl`. **Output samples need not be in the source
+JPEG XL's own XYB→RGB reconstruction stays inside `jxl`. The existing ordinary
+and EX APIs retain their source-coordinate colour contract. With
+`jpeg-xl,color-management`, `jpegxl::image_from_srgb` and
+`image_from_srgb_with_limits` explicitly produce sRGB RGBA8 through the own
+ICC engine, after16-bit reconstruction and before final rounding. They support
+Gray→RGB with separate channel spans and exclude alpha. No tone mapping is added. **Output samples need not be in the source
 profile**: XYB may use an sRGB fallback when the embedded profile cannot be
 used directly. The adapter queries the output profile after setting the pixel
 format, not before.
@@ -59,6 +68,7 @@ format, not before.
 | --- | --- |
 | `ICC Profile` | Profile for the adapter's delivered callback samples, generated from simple signaling when needed; explicit EX storage conversion does not transform this profile |
 | `JPEG XL Source ICC Profile` | Original embedded ICC bytes, or equivalent generated ICC for original simple signaling |
+| `JPEG XL Reconstruction ICC Profile` | Actual pre-CMS reconstruction profile, retained by the explicit sRGB display API; may differ from the original embedded profile |
 | `JPEG XL Source Header` | Original bit-aligned codestream-header prefix; last byte may also contain following bits; not a standalone file |
 | `JPEG XL Source Box <index> <hex-type>` | Uncompressed auxiliary box bytes, including unknown types and duplicate types with distinct indexes |
 | `JPEG XL Source Bit Depth` / `JPEG XL Output Bit Depth` | Coded colour depth / declared delivered sample depth |

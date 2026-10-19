@@ -1,0 +1,177 @@
+{
+  "encoder": "libjxl0.11.2 C API,lossless,effort3,keep invisible",
+  "oracle": "djxl0.11.2 PAM normalized by MAXVAL; managed libjxl C RGBA16 and actual output ICC,then LittleCMS16 to fixed sRGB,relative intent,NOOPTIMIZE,final RGBA8 rounding",
+  "lcms_encoded_version": 2160,
+  "libjxl_version": "runtime=11002 header=11002",
+  "orientations": [
+    {
+      "file": "jxl-orientation1.jxl",
+      "expected": "jxl-orientation1.rgba",
+      "orientation": 1,
+      "size": [
+        2,
+        3
+      ],
+      "sha256": "bef17442d0b4860670f3d3fd97ea0d8f0f7889693bfb82165f4eba642d84cb98",
+      "rgba_sha256": "110bdc62dd7df693e2f7b7d81886a9f5fd4d328519beecbdfe509a565eaf2ab9"
+    },
+    {
+      "file": "jxl-orientation2.jxl",
+      "expected": "jxl-orientation2.rgba",
+      "orientation": 2,
+      "size": [
+        2,
+        3
+      ],
+      "sha256": "afa77babf19a345e36fba7e74651174e3c7301906f200fe6ab05fd4d6d589e4c",
+      "rgba_sha256": "873dd8a7cbb1bc95577cc552636f27dba73dea44179a8f029b140c01a3ee3153"
+    },
+    {
+      "file": "jxl-orientation3.jxl",
+      "expected": "jxl-orientation3.rgba",
+      "orientation": 3,
+      "size": [
+        2,
+        3
+      ],
+      "sha256": "eee1c4a01eb478b8c13b25beaa4cfc33aef8d95eafe1a0d0833a91dc693a020c",
+      "rgba_sha256": "eee1f5e94821257a44a2272fd03e42ffae24cfde097b09adaa15d31a9308edab"
+    },
+    {
+      "file": "jxl-orientation4.jxl",
+      "expected": "jxl-orientation4.rgba",
+      "orientation": 4,
+      "size": [
+        2,
+        3
+      ],
+      "sha256": "3fbe61fd279e270a33cab0547bfeaad14af8fdb9b80861e71c2c46b68903863d",
+      "rgba_sha256": "74b8ffeff4b35e97aa9031197b83fa56af9039b0437f3f86bfd6e46f99c74718"
+    },
+    {
+      "file": "jxl-orientation5.jxl",
+      "expected": "jxl-orientation5.rgba",
+      "orientation": 5,
+      "size": [
+        3,
+        2
+      ],
+      "sha256": "0dece23be407c15f4c8f5bb3e86e8d81be8cbbb2f936346541767be7f56aaad2",
+      "rgba_sha256": "86ced083f22ac06a42746a245911ff122ef9818159e512a03263e4978b804ee9"
+    },
+    {
+      "file": "jxl-orientation6.jxl",
+      "expected": "jxl-orientation6.rgba",
+      "orientation": 6,
+      "size": [
+        3,
+        2
+      ],
+      "sha256": "9a5571e755ac843cde8e1caae85c268701489c2acd71a8bb2fba3061d46f4f77",
+      "rgba_sha256": "3e9e32d9b049bab928e019aa5c8ef58ab8bc86dd0bf587031e3aad54c0f90569"
+    },
+    {
+      "file": "jxl-orientation7.jxl",
+      "expected": "jxl-orientation7.rgba",
+      "orientation": 7,
+      "size": [
+        3,
+        2
+      ],
+      "sha256": "e8ec666fbbe37a85cfc2b4166529d7a26959f63b807730f513c648c24b260ed1",
+      "rgba_sha256": "e865ec203e1b0025c508b2e24a1c881cd2ff86713640a8e15cfcffda09c84130"
+    },
+    {
+      "file": "jxl-orientation8.jxl",
+      "expected": "jxl-orientation8.rgba",
+      "orientation": 8,
+      "size": [
+        3,
+        2
+      ],
+      "sha256": "6a0e9e8584ff9c7b9d49c5ad1930e77c829279c0230de8e525480028a065f312",
+      "rgba_sha256": "9438cc57c8cdbe01892e947389e996c58f5d1de16be785604caa37cb3b2864c0"
+    }
+  ],
+  "depths": [
+    {
+      "file": "jxl-rgba9.jxl",
+      "coded_bits": 9,
+      "output_bits": 16,
+      "size": [
+        7,
+        5
+      ],
+      "sha256": "7336ab2cfd222bd29e6b77ef12f4c4f10f379ab163e5d9f2d52fb88820f18adb",
+      "rgba16_sha256": "2f161db536c686bd13dabd10605a87bbc5e6f4eacfd05b24b2c1acec41bee697"
+    },
+    {
+      "file": "jxl-rgba10.jxl",
+      "coded_bits": 10,
+      "output_bits": 16,
+      "size": [
+        7,
+        5
+      ],
+      "sha256": "14838c0e71d9e8be2714efbc5ae1dc548dff286ef7476a765a0b1afe15b681d0",
+      "rgba16_sha256": "6350147bddf362f2faa9cf0b7d6ee976c0f9856386c1237d79afa2169d26fcb6"
+    }
+  ],
+  "managed": [
+    {
+      "file": "jxl-icc-gray16.jxl",
+      "expected": "jxl-icc-gray16.srgb.rgba",
+      "compression": null,
+      "size": [
+        7,
+        5
+      ],
+      "sha256": "8059aecce6a855b4d24fca598978435904cba040c9f6247cbe6d034882c0c09a",
+      "rgba_sha256": "8718766f8e3c865ad361e2944fd1b53596019ea81915366876f5f31c3969834a"
+    },
+    {
+      "file": "jxl-icc-lossless.jxl",
+      "expected": "jxl-icc-lossless.srgb.rgba",
+      "compression": null,
+      "size": [
+        7,
+        5
+      ],
+      "sha256": "5ca8a8e39a4640ce49188cd9896163f5cbd88d870503efee5f9b941843ddede8",
+      "rgba_sha256": "c66cc73e3ebc7ab1dc427fabad0e165f3ac32f4d7d7c33f77cfd6d1600c375fd"
+    },
+    {
+      "file": "jxl-icc-lossy.jxl",
+      "expected": "jxl-icc-lossy.srgb.rgba",
+      "compression": null,
+      "size": [
+        7,
+        5
+      ],
+      "sha256": "d7e57f3645849bf3c840bd421add3a48e2188bf7c1248625c8638d96b97679d7",
+      "rgba_sha256": "32d5596464435551a31b8cc8b76c162f7cbbcd443b1141d39507fce17d7f73c2"
+    },
+    {
+      "file": "jxl-jbrd-bench.jxl",
+      "expected": "jxl-jbrd-bench.srgb.rgba.zlib",
+      "compression": "zlib",
+      "size": [
+        606,
+        500
+      ],
+      "sha256": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+      "rgba_sha256": "ee789c4a91cce00e2dce0b61dcf3c23e84bd69e4eb81a5a786a5bc26af6a42a1"
+    },
+    {
+      "file": "jxl-jbrd-gray.jxl",
+      "expected": "jxl-jbrd-gray.srgb.rgba.zlib",
+      "compression": "zlib",
+      "size": [
+        200,
+        200
+      ],
+      "sha256": "346cc92b55864b0efb9f85cdddd02b586473ff18b03718e5a02fa03cb3e86844",
+      "rgba_sha256": "c3e2740f5d29e070514a0eb614f553304330fbf5559bec6f01998a1fc7315ee4"
+    }
+  ]
+}

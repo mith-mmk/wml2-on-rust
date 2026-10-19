@@ -267,9 +267,9 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         ));
     }
     let bits = m.bit_depth.bits_per_sample();
-    if m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 12 | 16) {
+    if m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 9 | 10 | 12 | 16) {
         return Err(unsupported(
-            "JPEG XL supports integer8/12/16-bit sources only",
+            "JPEG XL supports integer8/9/10/12/16-bit sources only",
         ));
     }
     if m.extra_channel_info.len() > 1
@@ -413,20 +413,53 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode(reader, option, false)
+    decode::<B, false>(reader, option, false)
 }
 #[cfg(feature = "image-buffer-ex")]
 pub(crate) fn decode_ex_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode(reader, option, true)
+    decode::<B, false>(reader, option, true)
 }
-fn decode<B: BinaryReader>(
+/// Decode a supported JPEG XL still into sRGB RGBA8 for display.
+///
+/// Unlike the source-coordinate ordinary/EX APIs, this explicitly applies the
+/// own ICC engine to the codec's actual reconstructed output profile. Alpha is
+/// excluded; ICC conversion precedes final RGBA8 rounding. Requires
+/// `jpeg-xl,color-management`. Source and reconstruction profiles are retained.
+#[cfg(feature = "color-management")]
+pub fn image_from_srgb(input: &[u8]) -> Result<crate::draw::ImageBuffer, Error> {
+    image_from_srgb_with_limits(input, DecodeLimits::default())
+}
+
+/// The sRGB display route with explicit input, pixel and workspace limits.
+#[cfg(feature = "color-management")]
+pub fn image_from_srgb_with_limits(
+    input: &[u8],
+    limits: DecodeLimits,
+) -> Result<crate::draw::ImageBuffer, Error> {
+    let mut image = crate::draw::ImageBuffer::new();
+    crate::decode_guard::run(
+        &mut bin_rs::reader::BytesReader::new(input),
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+        },
+        limits,
+        |reader, options| decode::<_, true>(reader, options, false),
+    )?;
+    Ok(image)
+}
+
+fn decode<B: BinaryReader, const MANAGED: bool>(
     reader: &mut B,
     option: &mut DecodeOptions,
     native: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
+    // Compile the explicit display path separately so its CMS work cannot
+    // obscure optimization of existing source-coordinate entry points.
+    let managed = MANAGED;
     let limits = limits::current();
     let start = reader.offset()?;
     let end = reader.seek(SeekFrom::End(0))?;
@@ -465,7 +498,11 @@ fn decode<B: BinaryReader>(
     }
     // Decode at source precision even for the legacy path: upstream U8
     // narrowing dithers RGB, whereas WML2 promises deterministic rounding.
-    let bits = h.bits;
+    let bits = if managed || matches!(h.bits, 9 | 10) {
+        16
+    } else {
+        h.bits
+    };
     let gray = native && h.gray;
     let channels = if gray { 1 } else { 4 };
     let format = JxlPixelFormat {
@@ -491,7 +528,7 @@ fn decode<B: BinaryReader>(
         h.color_channels,
     )?);
     let mut output_profile = decoder.output_color_profile().clone();
-    if !gray && decoder.output_color_profile().channels() == 1 {
+    if !managed && !gray && decoder.output_color_profile().channels() == 1 {
         output_profile = match output_profile {
             JxlColorProfile::Simple(JxlColorEncoding::GrayscaleColorSpace {
                 white_point,
@@ -511,10 +548,28 @@ fn decode<B: BinaryReader>(
         };
     }
     input.metadata.push(profile_metadata(
-        "ICC Profile",
+        if managed {
+            "JPEG XL Reconstruction ICC Profile"
+        } else {
+            "ICC Profile"
+        },
         &output_profile,
-        if gray { 1 } else { 3 },
+        if managed {
+            output_profile.channels()
+        } else if gray {
+            1
+        } else {
+            3
+        },
     )?);
+    #[cfg(feature = "color-management")]
+    if managed {
+        let mut profile = Vec::new();
+        append(&mut profile, crate::color_convert::SRGB_ICC)?;
+        input
+            .metadata
+            .push(("ICC Profile".into(), DataMap::ICCProfile(profile)));
+    }
     input
         .metadata
         .push(("Format".into(), DataMap::Ascii("JPEG XL".into())));
@@ -539,8 +594,9 @@ fn decode<B: BinaryReader>(
         add(n, add(k.len(), bytes)?)
     })?;
     limits::check(metadata_bytes, limits.metadata_bytes, "JPEG XL metadata")?;
+    let retained_workspace = add(h.workspace, mul(metadata_bytes, 2)?)?;
     limits::check(
-        add(h.workspace, mul(metadata_bytes, 2)?)?,
+        retained_workspace,
         limits.expanded_bytes,
         "JPEG XL metadata workspace",
     )?;
@@ -571,6 +627,55 @@ fn decode<B: BinaryReader>(
     if decoder.file_length() != Some(input.codestream.len() as u64) {
         return Err(invalid("trailing or incomplete JPEG XL codestream"));
     }
+    let legacy = if !managed && !native && bits != 8 {
+        let max = (1u32 << bits) - 1;
+        let mut bytes = Vec::new();
+        bytes.try_reserve_exact(out.len() / 2)?;
+        for word in out.chunks_exact(2) {
+            let v = u32::from(u16::from_le_bytes([word[0], word[1]]));
+            bytes.push(((v * 255 + max / 2) / max) as u8);
+        }
+        Some(bytes)
+    } else {
+        None
+    };
+    #[cfg(feature = "color-management")]
+    let managed_output = if managed {
+        let profile = input
+            .metadata
+            .iter()
+            .find_map(|(key, value)| {
+                if key == "JPEG XL Reconstruction ICC Profile"
+                    && let DataMap::ICCProfile(bytes) = value
+                {
+                    return Some(bytes.as_slice());
+                }
+                None
+            })
+            .ok_or_else(|| invalid("missing JPEG XL reconstruction profile"))?;
+        let mut rgba = Vec::new();
+        rgba.try_reserve_exact(out.len() / 2)?;
+        rgba.extend(
+            out.chunks_exact(2)
+                .map(|b| u16::from_le_bytes([b[0], b[1]])),
+        );
+        crate::color_convert::rgba16_to_rgb_profile(
+            &mut rgba,
+            profile,
+            crate::color_convert::SRGB_ICC,
+            h.color_channels == 1,
+            limits.expanded_bytes.saturating_sub(retained_workspace),
+        )?;
+        let mut bytes = crate::draw::zeroed_bytes(rgba.len())?;
+        for (dst, sample) in bytes.iter_mut().zip(rgba) {
+            *dst = ((u32::from(sample) * 255 + 32767) / 65535) as u8;
+        }
+        Some(bytes)
+    } else {
+        None
+    };
+    #[cfg(not(feature = "color-management"))]
+    let managed_output: Option<Vec<u8>> = None;
     #[cfg(feature = "image-buffer-ex")]
     if native {
         use crate::draw::{InitOptionsEx, PixelFormatEx};
@@ -617,24 +722,15 @@ fn decode<B: BinaryReader>(
             animation: false,
         }),
     )?;
-    let legacy = if !native && bits != 8 {
-        let max = (1u32 << bits) - 1;
-        let mut bytes = Vec::new();
-        bytes.try_reserve_exact(out.len() / 2)?;
-        for word in out.chunks_exact(2) {
-            let v = u32::from(u16::from_le_bytes([word[0], word[1]]));
-            bytes.push(((v * 255 + max / 2) / max) as u8);
-        }
-        Some(bytes)
-    } else {
-        None
-    };
     option.drawer.draw(
         0,
         0,
         h.width,
         h.height,
-        legacy.as_deref().unwrap_or(out),
+        managed_output
+            .as_deref()
+            .or(legacy.as_deref())
+            .unwrap_or(out),
         None,
     )?;
     for (key, value) in input.metadata {

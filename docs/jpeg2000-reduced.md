@@ -36,7 +36,7 @@ RGBA12/16 packed little-endian EX bytes). Classic reversible 5/3 and bounded
 are never premultiplied. RGB adds opaque alpha at the source bit depth.
 
 Signed/mixed precision, subsampling, HT, encoded maxshift ROI, palette/CMAP,
-sYCC/ICC and implicit/premultiplied/per-colour alpha are outside this reduced
+sYCC and implicit/premultiplied/per-colour alpha are outside this reduced
 profile and are explicitly rejected. Multi-tile-part PPT is also explicitly
 unsupported: the existing full-resolution per-part parser is preserved. Single-
 tile-part PPT and multi-part PPM/inline headers are independently covered.
@@ -273,3 +273,6 @@ No new formats, subsampled paths, HT/ROI, animation, AVIS guarantee, EX8 accepta
 upstream codec edits, dependency updates or changes to established full-resolution
 entry points are included. The measurements retain their original pre-release
 checkpoints; PR #18 includes this continuation in WML2 0.0.37.
+
+JP2 method2 Gray/RGB ICC is preserved through ordinary/EX reduction without
+applying a colour transform. See [the ICC contract](jpeg2000-icc.md).

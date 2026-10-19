@@ -131,9 +131,14 @@ when every display page has the same applicable profile; unknown or different
 page profiles stay source-only. It adds no parser, CMS operation or dependency.
 F09 now records per-page source/applicability for ordinary TIFF and removes
 the RGB-first global-profile mismatch, without implicitly converting pixels.
-PSD naming, AVIF decoder signaling/transfer,
-CMYK CMS and JXL remain later stages. No profile is implicitly applied by these
-metadata corrections, and unsupported native ICC bytes remain retainable.
+PSD naming is corrected. AVIF's bounded still adapter corrects ICC/transfer
+and actual prem association, with managed AVIS/geometry still separate scope.
+JP2 now retains selected method2 Gray/RGB ICC across ordinary/native/reduced
+boundaries without CMS compilation. The separate JXL79951b7 continuation adds
+all8orientations,9/10-bit promotion and explicit shared own-library sRGB display,
+with CI56/56. General channel-layout conversion is being completed; CMYK CMS
+still needs a checked own-library4D/native-model extension. Metadata corrections
+do not implicitly apply ICC; unsupported native transform stages remain retainable.
 
 Each later stage should have a scoped patch, independent review, focused
 regressions, native-retention controls, image checks and relevant performance

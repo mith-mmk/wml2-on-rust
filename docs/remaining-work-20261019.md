@@ -56,8 +56,11 @@ integrates. No main merge, version bump or registry publication is requested.
 - PSD source/output naming is now corrected for Gray/CMYK and incompatible
   profiles, preserving compatible RGB/palette declarations and unchanged pixels.
   Shared ICC quota and repeated-resource cleanup are tested. See [PSD ICC](psd-icc.md).
-- JPEG2000 ICC acquisition remains format work. Explicit JPEG2000 ICC rejection
-  is an advertised capability gap, not silently successful decoding.
+- JPEG2000 now acquires selected JP2 method2 Gray/RGB ICC using the own structural
+  parser without compiling a transform. Ordinary, native EX, storage conversion,
+  owned adoption and reduced output retain appropriate source/output identity.
+  Other ICC device models remain explicitly unsupported; JP2 method3 is ignored
+  as an unregistered Part1 method. See [JP2 ICC](jpeg2000-icc.md).
 - Shared explicit Gray-to-RGB/RGB-to-Gray output needs checked separate layouts;
   the own ICC library already supports the transforms. General CMYK CMS needs
   a checked four-channel/4D-CLUT own-library route and native roles/layouts;
@@ -65,12 +68,12 @@ integrates. No main merge, version bump or registry publication is requested.
 
 ## JPEG XL continuation
 
-- Independently exercise all8orientations, actual displayed output, and the
-  shared ICC integration. The prior Windows25-file collection and manifest
-  are absent from this cloud workspace; cloud/browser evidence cannot claim
-  to execute that Windows-local collection.
-- Inspect and extend Gray ICC expansion and portable format boundaries using
-  the shared own-library CMS with explicit source/destination layouts.
+- Saved separately at `codex/jpeg-xl-remaining-20261019`,79951b7910e551241fb8009418160de6ae661d76,
+  based on ICC checkpointfbec877 and preserved JXL83c1800. CI56/56 passed.
+  All8orientations,9/10-bit promotion, shared own-library explicit sRGB display,
+  Node WASM61cases and actual Chromium13-case display are validated.
+- The prior Windows25-file collection/manifest is absent from this cloud
+  environment; independent cloud/browser evidence does not execute that corpus.
 - Check the pinned codec's actual APIs before extending 9/10-bit,
   premultiplied alpha, compressed metadata or JPEG reconstruction. Opaque
   `jbrd` retention does not reconstruct the original JPEG.

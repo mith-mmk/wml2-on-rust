@@ -58,6 +58,7 @@ struct Geometry {
 #[derive(Default)]
 struct Container {
     space: Option<u32>,
+    icc: Option<Vec<u8>>,
     ihdr: Option<(usize, usize, usize, u8)>,
     depths: Vec<u8>,
     palette: Vec<Vec<u8>>,
@@ -159,8 +160,10 @@ fn container(data: &[u8]) -> Result<(&[u8], Container), Error> {
                                         }
                                         meta.space = Some(c);
                                     }
-                                    2 | 3 => {
-                                        return Err(unsupported("ICC colour profile deferred"));
+                                    2 => {
+                                        let (space, profile) = super::read_icc_colour(v)?;
+                                        meta.space = Some(space);
+                                        meta.icc = Some(profile);
                                     }
                                     _ => crate::limits::charge_metadata(v.len())?,
                                 }
@@ -1490,11 +1493,11 @@ pub(super) struct DecodedImage {
     #[cfg(feature = "image-buffer-ex")]
     pub channels: usize,
     pub bytes: Vec<u8>,
+    pub icc: Option<Vec<u8>>,
 }
 
-pub(super) fn image(data: &[u8]) -> Result<(usize, usize, Vec<u8>), Error> {
-    let image = image_inner::<false, false>(data, 0)?;
-    Ok((image.width, image.height, image.bytes))
+pub(super) fn image(data: &[u8]) -> Result<DecodedImage, Error> {
+    image_inner::<false, false>(data, 0)
 }
 
 #[cfg(feature = "image-buffer-ex")]
@@ -1502,9 +1505,8 @@ pub(super) fn image_ex(data: &[u8]) -> Result<DecodedImage, Error> {
     image_inner::<true, false>(data, 0)
 }
 
-pub(super) fn image_reduced(data: &[u8], reduce: u8) -> Result<(usize, usize, Vec<u8>), Error> {
-    let image = image_inner::<false, true>(data, reduce)?;
-    Ok((image.width, image.height, image.bytes))
+pub(super) fn image_reduced(data: &[u8], reduce: u8) -> Result<DecodedImage, Error> {
+    image_inner::<false, true>(data, reduce)
 }
 #[cfg(feature = "image-buffer-ex")]
 pub(super) fn image_ex_reduced(data: &[u8], reduce: u8) -> Result<DecodedImage, Error> {
@@ -2083,6 +2085,7 @@ fn image_inner<const EX: bool, const REDUCED: bool>(
         #[cfg(feature = "image-buffer-ex")]
         channels: if nc == 1 { 1 } else { 4 },
         bytes: rgba,
+        icc: meta.icc,
     })
 }
 

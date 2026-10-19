@@ -136,7 +136,7 @@ and actual prem association, with managed AVIS/geometry still separate scope.
 JP2 now retains selected method2 Gray/RGB ICC across ordinary/native/reduced
 boundaries without CMS compilation. The separate JXL79951b7 continuation adds
 all8orientations,9/10-bit promotion and explicit shared own-library sRGB display,
-with CI56/56. General channel-layout conversion is being completed; CMYK CMS
+with CI56/56. General Gray↔RGB channel-layout conversion is implemented and validated; CMYK CMS
 still needs a checked own-library4D/native-model extension. Metadata corrections
 do not implicitly apply ICC; unsupported native transform stages remain retainable.
 

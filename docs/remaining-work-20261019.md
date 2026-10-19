@@ -61,10 +61,13 @@ integrates. No main merge, version bump or registry publication is requested.
   owned adoption and reduced output retain appropriate source/output identity.
   Other ICC device models remain explicitly unsupported; JP2 method3 is ignored
   as an unregistered Part1 method. See [JP2 ICC](jpeg2000-icc.md).
-- Shared explicit Gray-to-RGB/RGB-to-Gray output needs checked separate layouts;
-  the own ICC library already supports the transforms. General CMYK CMS needs
-  a checked four-channel/4D-CLUT own-library route and native roles/layouts;
-  unchecked legacy CMYK helpers are not a replacement.
+- Shared explicit Gray↔RGB frame conversion now uses checked separate layouts,
+  source-coordinate validation, exact alpha copying, preserved provenance and
+  an optional output sample-buffer cap. All U8/U16/F32 and mixed-precision
+  cases have independent LittleCMS references. See [native ICC layouts](icc-frame-layouts.md).
+- General CMYK CMS still needs checked four-channel/4D-CLUT own-library routes
+  and native roles/layouts. Arbitrary3CLR and CMYK do not acquire an RGB model
+  merely because a transform happens to have a matching channel count.
 
 ## JPEG XL continuation
 

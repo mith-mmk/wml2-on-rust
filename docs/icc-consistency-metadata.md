@@ -14,7 +14,7 @@ profile or compile a transform.
 | Native EX Gray storage and Gray callback ICC | Keep Gray samples and `ICC Profile`, including channel-preserving depth conversion |
 | Gray callback into RGBA EX storage | Preserve source declaration and demote callback ICC to `Source ICC Profile` |
 | Native Gray EX exported through `to_rgba8` or `LegacyPickAdapterEx` | Replicate Gray numerically, keep original buffer unchanged, expose ICC as source metadata |
-| Explicit highres `FrameTransform` | Typed active descriptor and any existing generic `ICC Profile` use destination bytes; `FrameMetadata.source_color` and `Source ICC Profile` remain source provenance |
+| Explicit highres `FrameTransform` | Gray↔RGB builds separate planar output; typed active descriptor and any existing generic `ICC Profile` use destination bytes; `FrameMetadata.source_color` and `Source ICC Profile` remain source provenance |
 
 EX PNG/TIFF/AVIF retain their existing source-only naming. Numeric precision or
 channel conversion is never a CMS. Conflicting distinct generic/source profiles

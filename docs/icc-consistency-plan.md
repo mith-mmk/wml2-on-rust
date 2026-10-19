@@ -29,8 +29,8 @@ it does not claim those stages have been implemented.
 
 ## Stage 2: acquisition and source/output profile identity
 
-- F12: retain bounded BMP V5 embedded ICC. Do not open linked BMP profiles as
-  an implicit filesystem/network operation. This remains pending.
+- F12: bounded BMP V5 embedded ICC acquisition is implemented; linked
+  profiles are never opened. See [the BMP ICC contract](bmp-icc.md).
 - F13: GIF ICCRGBG1012 acquisition is implemented as bounded opaque source
   metadata, with independent records for multiple carriers. See
   [the GIF ICC contract](gif-icc.md). Active/output profile applicability and
@@ -122,7 +122,7 @@ four compression modes. Palette-first documents expose a global active ICC only
 when every display page has the same applicable profile; unknown or different
 page profiles stay source-only. It adds no parser, CMS operation or dependency.
 F09 per-page metadata still requires separate format work and is deferred.
-PSD naming, BMP acquisition, AVIF decoder signaling/transfer,
+PSD naming, AVIF decoder signaling/transfer,
 CMYK CMS and JXL remain later stages. No profile is implicitly applied by these
 metadata corrections, and unsupported native ICC bytes remain retainable.
 

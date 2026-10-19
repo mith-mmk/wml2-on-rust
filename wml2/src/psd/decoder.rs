@@ -227,7 +227,11 @@ fn compression_name(compression: u16) -> &'static str {
     }
 }
 
-fn parse_resources(data: &[u8], metadata: &mut HashMap<String, DataMap>) -> Result<(), Error> {
+fn parse_resources(
+    data: &[u8],
+    mode: u16,
+    metadata: &mut HashMap<String, DataMap>,
+) -> Result<(), Error> {
     let mut cursor = Cursor::new(data);
     while cursor.remaining() != 0 {
         if cursor.remaining() < 12 {
@@ -254,10 +258,28 @@ fn parse_resources(data: &[u8], metadata: &mut HashMap<String, DataMap>) -> Resu
         }
         match id {
             1039 => {
-                metadata.insert(
-                    "ICC Profile".to_string(),
-                    DataMap::ICCProfile(resource.to_vec()),
-                );
+                // Only RGB or palette expansion preserves an RGB profile's
+                // device coordinates. Gray replication and PSD's CMYK helper
+                // are numerical conversions, not ICC transforms.
+                let active = matches!(mode, 2 | 3)
+                    && resource.len() >= 128
+                    && resource.get(16..20) == Some(b"RGB ");
+                let key = if active {
+                    "ICC Profile"
+                } else {
+                    "Source ICC Profile"
+                };
+                crate::limits::charge_metadata(resource.len().checked_add(key.len()).ok_or_else(
+                    || err(ImgErrorKind::IllegalData, "PSD ICC metadata size overflow"),
+                )?)?;
+                let mut profile = Vec::new();
+                profile.try_reserve_exact(resource.len())?;
+                profile.extend_from_slice(resource);
+                // Resource IDs retain the established last-record semantics;
+                // a later source-only record cannot leave stale active metadata.
+                metadata.remove("ICC Profile");
+                metadata.remove("Source ICC Profile");
+                metadata.insert(key.to_string(), DataMap::ICCProfile(profile));
             }
             1058 | 1059 => {
                 metadata.insert("EXIF Raw".to_string(), DataMap::Raw(resource.to_vec()));
@@ -574,7 +596,7 @@ fn parse_psd(data: &[u8]) -> Result<ParsedPsd, Error> {
 
     let resources = cursor.sized_u32("image resources")?;
     let mut metadata = HashMap::new();
-    parse_resources(resources, &mut metadata)?;
+    parse_resources(resources, header.mode, &mut metadata)?;
     let layer_data = cursor.sized_u32("layer and mask information")?;
     let (layer_record_count, layers) = parse_layers(layer_data, header, palette.as_deref())?;
 
@@ -729,6 +751,12 @@ fn emit(parsed: ParsedPsd, option: &mut DecodeOptions<'_>) -> Result<Option<ImgW
 
 /// Decodes a PSD v1 image into WML2 callbacks.
 pub fn decode<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions<'_>,
+) -> Result<Option<ImgWarnings>, Error> {
+    crate::limits::metadata_scope(|| decode_inner(reader, option))
+}
+fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions<'_>,
 ) -> Result<Option<ImgWarnings>, Error> {

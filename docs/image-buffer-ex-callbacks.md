@@ -126,6 +126,7 @@ PNG/TIFF encoder と能力交渉 API は引き続き未実装である。
 | --- | --- |
 | PNG EX | bKGD があれば `PNG Background` → `init_ex` → pixel draw → 最後に metadata map（`Source ICC Profile` を含む）→ `terminate` |
 | TIFF EX | `init_ex` → 各行 draw → Format／Orientation／Tiff headers／任意の `Source ICC Profile` → `terminate` |
+| JPEG2000 EX | validated selected `Source ICC Profile` and compatible `ICC Profile` → `init_ex` → draw → `terminate`; same-format owned output retains the same metadata |
 | AVIF EX | `init_ex`（RGBA16LE）→ 全矩形 draw → Format／source depth／CICP／任意の `Source ICC Profile` → `terminate` |
 
 根拠は基準 commit `9ec7f072` の

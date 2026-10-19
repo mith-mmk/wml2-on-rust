@@ -6,8 +6,9 @@
 //! five progressions, precincts, subsampling, palette, ROI and HTONLY HTJ2K.
 //! EX additionally retains unsigned Gray/RGB12/16 and explicitly declared
 //! straight RGBA12/16 with reversible 5/3/RCT or bounded 9/7/ICT. Signed, mixed
-//! precision, implicit/premultiplied alpha and ICC
-//! remain unsupported.
+//! precision and implicit/premultiplied EX alpha remain unsupported. JP2
+//! method2 Gray/RGB ICC is retained with source/output sample identity; no CMS
+//! is applied. Other ICC device models remain unsupported.
 //! Geometry, coefficient precision and resource budgets remain bounded.
 //! All declared tiles and layer packets must be present; complete packets end
 //! each tile-part. Only the final codestream part may use Psot=0.
@@ -224,6 +225,102 @@ fn container(data: &[u8]) -> Result<Codestream<'_>, Error> {
         codestream.ok_or_else(|| bad("missing codestream"))?,
         dimensions,
     ))
+}
+// Structural identification uses the own ICC parser, not transform compilation.
+fn read_icc_colour(colr: &[u8]) -> Result<(u32, Vec<u8>), Error> {
+    let profile = &colr[3..];
+    crate::limits::charge_metadata(
+        profile
+            .len()
+            .checked_add("Source ICC Profile".len())
+            .ok_or_else(|| bad("ICC metadata overflow"))?,
+    )?;
+    let limits = crate::limits::current();
+    // Bound tag storage from the carrier extent; the own parser checks every
+    // actual table entry and tag range, including opaque unsupported tags.
+    let tag_limit = (profile.len().saturating_sub(132) / 12).min(4096);
+    let table_bytes = tag_limit
+        .checked_mul(std::mem::size_of::<(u32, usize, usize)>())
+        .ok_or_else(|| bad("ICC table workspace overflow"))?;
+    crate::limits::check(
+        profile
+            .len()
+            .checked_add(table_bytes)
+            .and_then(|n| n.checked_add(1024))
+            .ok_or_else(|| bad("ICC parser workspace overflow"))?,
+        limits.expanded_bytes,
+        "JP2 ICC parser workspace",
+    )?;
+    let parsed = icc_profile::Profile::parse_with_limits(
+        profile,
+        icc_profile::ParseLimits {
+            max_profile_size: limits.metadata_bytes.min(64 << 20),
+            max_tag_count: tag_limit,
+            max_tag_size: limits.metadata_bytes.min(64 << 20),
+            ..Default::default()
+        },
+    )
+    .map_err(|e| {
+        Box::new(ImgError::new_const(
+            if matches!(e, icc_profile::TransformError::ResourceLimit(_)) {
+                ImgErrorKind::OutOfMemory
+            } else {
+                ImgErrorKind::IllegalData
+            },
+            format!("JP2 ICC container: {e}"),
+        )) as Error
+    })?;
+    let space = match parsed.color_space() {
+        icc_profile::ColorSpace::Gray => 17,
+        icc_profile::ColorSpace::Rgb => 16,
+        _ => {
+            return Err(unsupported(
+                "JP2 ICC requires Gray or RGB device coordinates",
+            ));
+        }
+    };
+    drop(parsed);
+    let mut copy = Vec::new();
+    copy.try_reserve_exact(profile.len())?;
+    copy.extend_from_slice(profile);
+    Ok((space, copy))
+}
+fn emit_icc(
+    profile: Option<Vec<u8>>,
+    native_gray: bool,
+    option: &mut DecodeOptions,
+) -> Result<bool, Error> {
+    let Some(profile) = profile else {
+        return Ok(true);
+    };
+    let applicable = profile.get(16..20) == Some(if native_gray { b"GRAY" } else { b"RGB " });
+    let active = if applicable {
+        crate::limits::charge_metadata(
+            profile
+                .len()
+                .checked_add("ICC Profile".len())
+                .ok_or_else(|| bad("ICC metadata overflow"))?,
+        )?;
+        let mut copy = Vec::new();
+        copy.try_reserve_exact(profile.len())?;
+        copy.extend_from_slice(&profile);
+        Some(copy)
+    } else {
+        None
+    };
+    for (key, value) in
+        std::iter::once(("Source ICC Profile", profile)).chain(active.map(|v| ("ICC Profile", v)))
+    {
+        if option
+            .drawer
+            .set_metadata(key, crate::metadata::DataMap::ICCProfile(value))?
+            .is_some_and(|r| r.response == ResponseCommand::Abort)
+        {
+            option.drawer.terminate(None)?;
+            return Ok(false);
+        }
+    }
+    Ok(true)
 }
 struct Bits<'a> {
     data: &'a [u8],
@@ -1526,8 +1623,12 @@ pub fn decode_with_reduction<B: BinaryReader>(
             return decode_inner(reader, option);
         }
         let data = read_reduced_input(reader)?;
-        let (w, h, rgba) = general::image_reduced(&data, reduce)?;
+        let image = general::image_reduced(&data, reduce)?;
         drop(data);
+        let (w, h, rgba) = (image.width, image.height, image.bytes);
+        if !emit_icc(image.icc, false, option)? {
+            return Ok(None);
+        }
         let response = option.drawer.init(w, h, InitOptions::new())?;
         if !response.is_some_and(|r| r.response == ResponseCommand::Abort) {
             option.drawer.draw(0, 0, w, h, &rgba, None)?;
@@ -1566,16 +1667,31 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     let length = end.checked_sub(start).ok_or_else(|| bad("reader extent"))?;
     crate::limits::check_input_length(length, crate::limits::current().input_bytes)?;
     let data = reader.read_bytes_as_vec(usize::try_from(length)?)?;
-    let (w, h, rgba) = crate::limits::metadata_attempt(|| image(&data)).or_else(|error| {
-        if error
-            .downcast_ref::<ImgError>()
-            .is_some_and(ImgError::is_unsupported)
-        {
-            general::image(&data)
-        } else {
-            Err(error)
-        }
-    })?;
+    let image = crate::limits::metadata_attempt(|| image(&data))
+        .map(|(width, height, bytes)| general::DecodedImage {
+            width,
+            height,
+            bytes,
+            icc: None,
+            #[cfg(feature = "image-buffer-ex")]
+            depth: 8,
+            #[cfg(feature = "image-buffer-ex")]
+            channels: 4,
+        })
+        .or_else(|error| {
+            if error
+                .downcast_ref::<ImgError>()
+                .is_some_and(ImgError::is_unsupported)
+            {
+                general::image(&data)
+            } else {
+                Err(error)
+            }
+        })?;
+    let (w, h, rgba) = (image.width, image.height, image.bytes);
+    if !emit_icc(image.icc, false, option)? {
+        return Ok(None);
+    }
     let response = option.drawer.init(w, h, InitOptions::new())?;
     if !response.is_some_and(|r| r.response == ResponseCommand::Abort) {
         option.drawer.draw(0, 0, w, h, &rgba, None)?;
@@ -1590,7 +1706,7 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
     let image = read_ex_image(reader)?;
-    emit_ex_image(&image, option)
+    emit_ex_image(image, option)
 }
 
 /// Decode the unsigned 12/16-bit EX profile at a native resolution level.
@@ -1612,7 +1728,7 @@ pub fn decode_ex_with_reduction<B: BinaryReader>(
             return decode_ex_inner(reader, option);
         }
         let image = read_reduced_ex_image(reader, reduce)?;
-        emit_ex_image(&image, option)
+        emit_ex_image(image, option)
     })
 }
 
@@ -1653,12 +1769,15 @@ fn ex_declaration(image: &general::DecodedImage) -> crate::draw::InitOptionsEx {
 
 #[cfg(feature = "image-buffer-ex")]
 fn emit_ex_image(
-    image: &general::DecodedImage,
+    mut image: general::DecodedImage,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
+    if !emit_icc(image.icc.take(), image.channels == 1, option)? {
+        return Ok(None);
+    }
     option
         .drawer
-        .init_ex(image.width, image.height, Some(ex_declaration(image)))?;
+        .init_ex(image.width, image.height, Some(ex_declaration(&image)))?;
     option
         .drawer
         .draw(0, 0, image.width, image.height, &image.bytes, None)?;
@@ -1719,7 +1838,7 @@ fn image_from_ex_owned_inner<const REDUCED: bool>(
         },
         limits,
         |reader, option| {
-            let image = if REDUCED {
+            let mut image = if REDUCED {
                 read_reduced_ex_image(reader, reduce)?
             } else {
                 read_ex_image(reader)?
@@ -1732,15 +1851,26 @@ fn image_from_ex_owned_inner<const REDUCED: bool>(
                     &declaration,
                     limits,
                 )?;
-                native = Some(ImageBufferEx::from_decoded_bytes(
+                let profile = image.icc.take();
+                let native_gray = image.channels == 1;
+                let mut result = ImageBufferEx::from_decoded_bytes(
                     image.width,
                     image.height,
                     storage,
                     precision,
                     image.bytes,
-                )?);
+                )?;
+                emit_icc(
+                    profile,
+                    native_gray,
+                    &mut DecodeOptions {
+                        debug_flag: option.debug_flag,
+                        drawer: &mut result,
+                    },
+                )?;
+                native = Some(result);
             } else {
-                emit_ex_image(&image, option)?;
+                emit_ex_image(image, option)?;
             }
             Ok(None)
         },

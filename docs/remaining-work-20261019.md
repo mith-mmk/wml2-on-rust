@@ -53,27 +53,36 @@ integrates. No main merge, version bump or registry publication is requested.
   samples remain exact, EX retains source coordinates, and9independent
   references check display output. Managed AVIS and broader display/geometry
   capabilities are not yet covered by this correction.
-- PSD source/output naming and JPEG2000 ICC acquisition remain distinct format
-  work. Explicit JPEG2000 ICC rejection is an advertised capability gap, not
-  silently successful decoding.
-- Shared explicit Gray-to-RGB/RGB-to-Gray output needs checked separate layouts;
-  the own ICC library already supports the transforms. General CMYK CMS needs
-  a checked four-channel/4D-CLUT own-library route and native roles/layouts;
-  unchecked legacy CMYK helpers are not a replacement.
+- PSD source/output naming is now corrected for Gray/CMYK and incompatible
+  profiles, preserving compatible RGB/palette declarations and unchanged pixels.
+  Shared ICC quota and repeated-resource cleanup are tested. See [PSD ICC](psd-icc.md).
+- JPEG2000 now acquires selected JP2 method2 Gray/RGB ICC using the own structural
+  parser without compiling a transform. Ordinary, native EX, storage conversion,
+  owned adoption and reduced output retain appropriate source/output identity.
+  Other ICC device models remain explicitly unsupported; JP2 method3 is ignored
+  as an unregistered Part1 method. See [JP2 ICC](jpeg2000-icc.md).
+- Shared explicit Gray↔RGB frame conversion now uses checked separate layouts,
+  source-coordinate validation, exact alpha copying, preserved provenance and
+  an optional output sample-buffer cap. All U8/U16/F32 and mixed-precision
+  cases have independent LittleCMS references. See [native ICC layouts](icc-frame-layouts.md).
+- General CMYK CMS still needs checked four-channel/4D-CLUT own-library routes
+  and native roles/layouts. Arbitrary3CLR and CMYK do not acquire an RGB model
+  merely because a transform happens to have a matching channel count.
 
 ## JPEG XL continuation
 
-- The separate continuation now verifies all8orientations against djxl and
-  displays13independent cases in actual Chromium WASM/canvas, including the
-  official RGB/Gray still images. Explicit sRGB output shares the own-library
-  checked1/3→3-channel ICC helper with AVIF, uses the reconstruction profile,
-  and excludes alpha. Existing native/ordinary contracts are preserved.
-- Coded9/10-bit sources now promote to normalized16-bit with recoverable
-  source codes. Node WASM checks61cases without host imports.
-- The prior Windows25-file collection and manifest are absent from this cloud
-  workspace; cloud/browser evidence cannot claim to execute that collection.
-- Check the pinned codec's actual APIs before extending 9/10-bit,
-  premultiplied alpha, compressed metadata or JPEG reconstruction. Opaque
+- Saved separately at `codex/jpeg-xl-remaining-20261019`. The79951b7 feature unit
+  preserved JXL83c1800 and initially integrated ICCfbec877; its CI56/56 passed.
+  This continuation now integrates ICC163ab8cf6a7177c7c3c30c7047e4210b7ca1b0e7,
+  including PSD,JP2 acquisition and general native Gray↔RGB output layouts.
+- All8orientations,9/10-bit promotion, shared own-library explicit sRGB display,
+  Node WASM61cases and actual Chromium13-case display are independently validated.
+  The explicit display route uses reconstruction-profile coordinates and excludes alpha.
+- The prior Windows25-file collection/manifest is absent from this cloud
+  environment; independent cloud/browser evidence does not execute that corpus.
+
+- Check the pinned codec's actual APIs before extending premultiplied alpha,
+  compressed metadata or JPEG reconstruction. Opaque
   `jbrd` retention does not reconstruct the original JPEG.
 - HDR/tone mapping, animation, encoding, SIMD and threading have separate
   contracts and must be implemented and tested before any support claim.

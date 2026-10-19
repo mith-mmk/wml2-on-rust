@@ -4,7 +4,11 @@
 83c1800d21620d4c4e2a316e51916b1a04c16c96. Its feature-branch integration
 ce92c0c includes ICC checkpointfbec877d3267228b1081157c54d1d1bf81355003
 (BMP, TIFF page identity, GIF retention and AVIF colour boundary), depending
-on PR19 and PR20. No merge to main or publication is part of this work.
+on PR19 and PR20. A later feature-branch integration now includes ICC checkpoint
+163ab8cf6a7177c7c3c30c7047e4210b7ca1b0e7: PSD source/output identity,JP2 ICC
+acquisition and native Gray↔RGB layouts. Original79951b7 CI passed56/56;
+combined-head validation is recorded separately. No merge to main or publication
+is part of this work.
 
 ## Explicit displayed output
 

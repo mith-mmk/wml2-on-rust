@@ -38,7 +38,8 @@ it does not claim those stages have been implemented.
 - F04: distinguish original Gray/CMYK ICC from a compatible current RGB output
   profile in ordinary JPEG/PNG. Apply the same source/output naming principle to
   documented non-managed PSD output without claiming a new automatic-sRGB
-  contract.
+  contract. The PSD source/output correction is implemented with bounded
+  retention and last-resource cleanup; see [the PSD ICC contract](psd-icc.md).
 - F08: keep applicable RGB ICC after TIFF palette expansion. Preserve valid RGB
   ICC after codec YCbCr reconstruction and channel-preserving depth changes.
 - Define active-profile applicability separately from opaque source retention;
@@ -130,9 +131,14 @@ when every display page has the same applicable profile; unknown or different
 page profiles stay source-only. It adds no parser, CMS operation or dependency.
 F09 now records per-page source/applicability for ordinary TIFF and removes
 the RGB-first global-profile mismatch, without implicitly converting pixels.
-PSD naming, AVIF decoder signaling/transfer,
-CMYK CMS and JXL remain later stages. No profile is implicitly applied by these
-metadata corrections, and unsupported native ICC bytes remain retainable.
+PSD naming is corrected. AVIF's bounded still adapter corrects ICC/transfer
+and actual prem association, with managed AVIS/geometry still separate scope.
+JP2 now retains selected method2 Gray/RGB ICC across ordinary/native/reduced
+boundaries without CMS compilation. The separate JXL79951b7 continuation adds
+all8orientations,9/10-bit promotion and explicit shared own-library sRGB display,
+with CI56/56. General Gray↔RGB channel-layout conversion is implemented and validated; CMYK CMS
+still needs a checked own-library4D/native-model extension. Metadata corrections
+do not implicitly apply ICC; unsupported native transform stages remain retainable.
 
 Each later stage should have a scoped patch, independent review, focused
 regressions, native-retention controls, image checks and relevant performance

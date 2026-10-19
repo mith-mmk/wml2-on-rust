@@ -291,7 +291,10 @@ fn run_inner<B: BinaryReader>(
                 || signature.starts_with(b"\x89PNG\r\n\x1a\n")
                 || signature.starts_with(&[0xff, 0xd8])
                 || signature.starts_with(b"GIF87a")
-                || signature.starts_with(b"GIF89a");
+                || signature.starts_with(b"GIF89a")
+                || cfg!(feature = "jpeg-xl")
+                    && (signature.starts_with(&[0xff, 0x0a])
+                        || signature.starts_with(b"\x00\x00\x00\x0cJXL "));
             decode(
                 reader,
                 &mut DecodeOptions {

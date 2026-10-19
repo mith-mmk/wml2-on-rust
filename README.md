@@ -62,6 +62,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | Q4 | x | O | `q4`: Q4/XLD4 raster decoding with corrected repeat-color runs |
 | WEBP    | O   | O   | pure Rust still/animated decoder and still/animated encoder; lossless/lossy output                                  |
 | AVIF    | O   | O   | decoder: `avif`; encoder: `avifenc` (`avifenc-rust`)                                                               |
+| JPEG XL | x | O | optional `jpeg-xl`; bounded integer8/12/16-bit still decode, native EX output; [profile and limits](docs/jpeg-xl.md) |
 | JPEG2000 | x | O | opt-in `jpeg2000`; 1–8bit Gray/RGB/alpha, 5/3+9/7 and HTJ2K J2K/JP2 [profile and validation](docs/jpeg2000.md) |
 | PSD     | x   | O   | optional, non-default `psd` feature; Pure Rust PSD v1 merged-image and basic raster-layer decoding                 |
 | MAG     | x   | O   | Japanese legacy image format, disabled by `noretoro`                                                                |

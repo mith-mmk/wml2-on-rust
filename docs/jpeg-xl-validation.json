@@ -1,0 +1,378 @@
+{
+  "date": "2026-10-18",
+  "branch": "codex/jpeg-xl-decode-20261018",
+  "base_revision": "1b8007c63f82b4b6736217db9b4a5a19c8122f90",
+  "validated_revision": "jbrd follow-up working tree identified by source_sha256; commit ID is available from Git history.",
+  "environment": "Linux x86_64 cloud; Rust1.91.0; published jxl0.7.4; independent libjxl/djxl0.11.2; Node24.19.0",
+  "scope": "Uncompressed outer jbrd boxes retained as bounded opaque Raw side data for still pixels. No JPEG reconstruction API or brob decompression; no9/10bit, premultiplied alpha, HDR or animation expansion.",
+  "baseline_reproduction": {
+    "command": "review_bench decode-file1 official bench_oriented_brg/input.jxl on base revision",
+    "exit_code": 101,
+    "expected_error": "JPEG XL compressed metadata and JPEG reconstruction boxes are unsupported"
+  },
+  "local_checks": [
+    {
+      "name": "default-regression",
+      "command": "cargo test -p wml2 --locked --features jpeg-xl,image-buffer-ex --lib --tests",
+      "exit_code": 0,
+      "passed": 307,
+      "failed": 0,
+      "ignored": 5,
+      "targets": 53
+    },
+    {
+      "name": "minimal",
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl",
+      "exit_code": 0,
+      "passed": 43,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 2
+    },
+    {
+      "name": "ordinary",
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl --test jpeg_xl",
+      "exit_code": 0,
+      "passed": 17,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    {
+      "name": "off",
+      "command": "cargo test -p wml2 --locked --no-default-features --test jpeg_xl",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    {
+      "name": "fmt",
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0
+    },
+    {
+      "name": "clippy",
+      "command": "cargo clippy -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --message-format=json",
+      "exit_code": 0,
+      "warnings": [
+        {
+          "message": "you should consider adding a `Default` implementation for `NextOptions`",
+          "files": [
+            "wml2/src/draw.rs"
+          ]
+        },
+        {
+          "message": "you should consider adding a `Default` implementation for `ImageBuffer`",
+          "files": [
+            "wml2/src/draw.rs"
+          ]
+        },
+        {
+          "message": "this `if` statement can be collapsed",
+          "files": [
+            "wml2/src/draw.rs"
+          ]
+        },
+        {
+          "message": "calls to `push` immediately after creation",
+          "files": [
+            "wml2/src/warning.rs"
+          ]
+        },
+        {
+          "message": "unneeded `return` statement",
+          "files": [
+            "wml2/src/decoder/ccitt/mod.rs"
+          ]
+        },
+        {
+          "message": "unneeded `return` statement",
+          "files": [
+            "wml2/src/decoder/ccitt/mod.rs"
+          ]
+        },
+        {
+          "message": "unneeded `return` statement",
+          "files": [
+            "wml2/src/decoder/lzw.rs"
+          ]
+        },
+        {
+          "message": "unneeded `return` statement",
+          "files": [
+            "wml2/src/decoder/lzw.rs"
+          ]
+        },
+        {
+          "message": "unneeded late initialization",
+          "files": [
+            "wml2/src/decoder/lzw.rs"
+          ]
+        },
+        {
+          "message": "implementation of inherent method `to_string(&self) -> String` for type `metadata::DataMap`",
+          "files": [
+            "wml2/src/metadata.rs"
+          ]
+        },
+        {
+          "message": "the following explicit lifetimes could be elided: 'a",
+          "files": [
+            "wml2/src/metadata.rs"
+          ]
+        }
+      ]
+    }
+  ],
+  "local_test_totals": {
+    "passed": 368,
+    "failed": 0,
+    "ignored": 5,
+    "note": "Counts overlapping feature-profile executions, not unique functions."
+  },
+  "clippy_interpretation": "11 existing unrelated warnings; no JPEG XL warnings.",
+  "wasm": {
+    "cases": 55,
+    "all_passed": true,
+    "report": "jpeg-xl-wasm.json",
+    "new_official_sample_coverage": "25 spatial probes/image, full ICC bytes, dimensions, ordinaryGrayCMS refusal and3limit failures/image; native-host integration tests compare all pixels."
+  },
+  "official_conformance": {
+    "revision": "b1d0f990b03e57bf6d137c365cd5dc8b470b9191",
+    "manifest": "../wml2/tests/fixtures/review/jxl-jbrd-fixtures.json",
+    "cases": [
+      {
+        "source": "bench_oriented_brg",
+        "prefix": "jxl-jbrd-bench",
+        "width": 606,
+        "height": 500,
+        "channels": 3,
+        "bits": 8,
+        "coded_orientation": 5,
+        "input_sha256": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+        "official_objects": {
+          "original.icc": {
+            "sha256": "6603ae12a4ac1ac742cacd887e9b35552a12c354ff25a00cae069ad4b932e6cc",
+            "url": "https://storage.googleapis.com/jxl-conformance/objects/6603ae12a4ac1ac742cacd887e9b35552a12c354ff25a00cae069ad4b932e6cc"
+          },
+          "reference_image.npy": {
+            "sha256": "eac8c30907e41e53a73a0c002bc39e998e0ceb021bd523f5bff4580b455579e6",
+            "url": "https://storage.googleapis.com/jxl-conformance/objects/eac8c30907e41e53a73a0c002bc39e998e0ceb021bd523f5bff4580b455579e6"
+          }
+        },
+        "oracle_sha256": "448ab9fd9a3d30387c2a0c648de6773dcb1649df15f70b24d4e65e1a39aff0fe",
+        "rounded_reference_sha256": "33251ddb11f0fc6f9ef424848d21b0000297d3f66f1fcbaedc301af8e20f0dfd",
+        "source_url": "https://github.com/libjxl/conformance/tree/b1d0f990b03e57bf6d137c365cd5dc8b470b9191/testcases/bench_oriented_brg"
+      },
+      {
+        "source": "grayscale_jpeg",
+        "prefix": "jxl-jbrd-gray",
+        "width": 200,
+        "height": 200,
+        "channels": 1,
+        "bits": 8,
+        "coded_orientation": 1,
+        "input_sha256": "346cc92b55864b0efb9f85cdddd02b586473ff18b03718e5a02fa03cb3e86844",
+        "official_objects": {
+          "original.icc": {
+            "sha256": "78001f4bf342ecf417b8dac5e3c7cf8da3ee25701951bc2a7e0868bc6dc81cac",
+            "url": "https://storage.googleapis.com/jxl-conformance/objects/78001f4bf342ecf417b8dac5e3c7cf8da3ee25701951bc2a7e0868bc6dc81cac"
+          },
+          "reference_image.npy": {
+            "sha256": "c0b86989e287649b944f1734ce182d1c1ac0caebf12cec7d487d9793f51f5b8f",
+            "url": "https://storage.googleapis.com/jxl-conformance/objects/c0b86989e287649b944f1734ce182d1c1ac0caebf12cec7d487d9793f51f5b8f"
+          }
+        },
+        "oracle_sha256": "8f8d79daa3ff2d66bb60a2c9bf3e35ed7374ff805f8ff9354b6fe612bbadd172",
+        "rounded_reference_sha256": "3a7dd715f4c7021960a6a09232d6f270e994865ce260f49472147189d1898938",
+        "source_url": "https://github.com/libjxl/conformance/tree/b1d0f990b03e57bf6d137c365cd5dc8b470b9191/testcases/grayscale_jpeg"
+      }
+    ],
+    "cloud_pixel_and_profile_results": {
+      "bench_oriented_brg": {
+        "native_dimensions": [
+          606,
+          500
+        ],
+        "native_format": "RGBA",
+        "icc_matches_official": true,
+        "max_diff_official_rounded": 1,
+        "max_diff_djxl": 1
+      },
+      "grayscale_jpeg": {
+        "native_dimensions": [
+          200,
+          200
+        ],
+        "native_format": "L",
+        "icc_matches_official": true,
+        "max_diff_official_rounded": 1,
+        "max_diff_djxl": 1
+      }
+    },
+    "ordinary_gray_result": "Explicit Gray ICC expansion requires CMS error remains; request native EX Gray8. Explicit EX storage conversion does not perform CMS transforms."
+  },
+  "image_display": "Opened side-by-side decoded native samples and quantized official references for both images. Pillow LittleCMS used only for visual comparison into sRGB with the same official ICC on each side; no CMS dependency added to runtime. Output orientation5 verified against606x500 official reference and independent libjxl BASIC_INFO (coded500x606).",
+  "benchmarks": {
+    "base_revision": "1b8007c63f82b4b6736217db9b4a5a19c8122f90",
+    "scope": "Release;10 alternating cohorts,5 warmup decodes discarded/cohort. New jbrd inputs compared with baseline after removing only jbrd boxes; opaque retention intentionally adds allocations. Single cloud environment.",
+    "png": {
+      "base": {
+        "ns": 5753917.5,
+        "allocations": 47.0,
+        "allocated_bytes": 3990685.0,
+        "peak_live_bytes": 2260323.0,
+        "hashes": [
+          "5674088899916234533"
+        ],
+        "samples": 100
+      },
+      "candidate": {
+        "ns": 5706616.0,
+        "allocations": 47.0,
+        "allocated_bytes": 3990685.0,
+        "peak_live_bytes": 2260323.0,
+        "hashes": [
+          "5674088899916234533"
+        ],
+        "samples": 100
+      },
+      "time_ratio": 0.9917792530045834
+    },
+    "jxl_rgba8": {
+      "base": {
+        "ns": 50737.0,
+        "allocations": 351.0,
+        "allocated_bytes": 110723.0,
+        "peak_live_bytes": 69424.0,
+        "hashes": [
+          "16883515916929583210"
+        ],
+        "samples": 1000
+      },
+      "candidate": {
+        "ns": 50320.5,
+        "allocations": 351.0,
+        "allocated_bytes": 110723.0,
+        "peak_live_bytes": 69424.0,
+        "hashes": [
+          "16883515916929583210"
+        ],
+        "samples": 1000
+      },
+      "time_ratio": 0.9917910006504129
+    },
+    "jxl_rgba16_ex": {
+      "base": {
+        "ns": 55839.0,
+        "allocations": 387.0,
+        "allocated_bytes": 130505.0,
+        "peak_live_bytes": 87148.0,
+        "hashes": [
+          "15315989916192078549"
+        ],
+        "samples": 1000
+      },
+      "candidate": {
+        "ns": 56134.5,
+        "allocations": 387.0,
+        "allocated_bytes": 130505.0,
+        "peak_live_bytes": 87148.0,
+        "hashes": [
+          "15315989916192078549"
+        ],
+        "samples": 1000
+      },
+      "time_ratio": 1.0052920002149035
+    },
+    "jbrd_bench": {
+      "base": {
+        "ns": 18064303.5,
+        "allocations": 958.0,
+        "allocated_bytes": 17471964.0,
+        "peak_live_bytes": 6178396.0,
+        "hashes": [
+          "11298716346096407965"
+        ],
+        "samples": 100
+      },
+      "candidate": {
+        "ns": 17864993.0,
+        "allocations": 966.0,
+        "allocated_bytes": 17474407.0,
+        "peak_live_bytes": 6178864.0,
+        "hashes": [
+          "11298716346096407965"
+        ],
+        "samples": 100
+      },
+      "time_ratio": 0.988966610309664
+    },
+    "jbrd_gray_ex": {
+      "base": {
+        "ns": 1153678.5,
+        "allocations": 466.0,
+        "allocated_bytes": 13560851.0,
+        "peak_live_bytes": 4332298.0,
+        "hashes": [
+          "897276218515339599"
+        ],
+        "samples": 100
+      },
+      "candidate": {
+        "ns": 1120213.5,
+        "allocations": 473.0,
+        "allocated_bytes": 13561736.0,
+        "peak_live_bytes": 4332858.0,
+        "hashes": [
+          "897276218515339599"
+        ],
+        "samples": 100
+      },
+      "time_ratio": 0.9709927852516971
+    }
+  },
+  "benchmark_interpretation": "Existing inputs: output hashes, allocation counts/bytes and peak live bytes identical; PNG-0.82%, ordinaryJXL-0.82%, EX16+0.53% medians in one cloud environment. New jbrd samples compared to base with jbrd removed: exact output hashes, expected additional bounded metadata allocations; timings are not general performance guarantees.",
+  "independent_review": {
+    "primary_evidence": [
+      "https://github.com/libjxl/libjxl/blob/v0.11.2/lib/jxl/decode.cc#L1842",
+      "Published jxl0.7.4 src/api/inner/box_parser.rs aux path; brob-wrappedjbrd forbidden"
+    ],
+    "pixel_only_libjxl_probes": "Arbitrary,empty,duplicated,reorderedjbrd payloads accepted for pixels; truncated outer envelope rejected.",
+    "diff_review": "EX22/22 and ordinary17/17 passed. All fixture hashes, pinned provenance, ICC bytes, both full pixel oracles and spatial probes independently checked. WASM test Debug-bound compile issue corrected.",
+    "remaining_confirmed_findings": []
+  },
+  "prior_hosted_ci": {
+    "revision": "1b8007c63f82b4b6736217db9b4a5a19c8122f90",
+    "successful_jobs": 56,
+    "url": "https://github.com/mith-mmk/wml2-on-rust/actions/runs/39112081722",
+    "scope": "Prior revision only; follow-up push CI must be checked separately."
+  },
+  "not_verified": [
+    "Local Windows25-file collection/display rerun for this patch; prior local report identified jbrd refusals in these2cases",
+    "Hosted CI completion for this follow-up commit (pending push)",
+    "All8orientation values independently (90degree and orientation5transpose covered)",
+    "BrowserUI, SIMD and threaded decoding",
+    "General CMS/HDR rendering or valid JPEG reconstruction"
+  ],
+  "remaining_profile_constraints": [
+    "Ordinary arbitraryGrayICC\u2192RGBA requires CMS and is refused; nativeEXGray8 supported",
+    "Opaquejbrd success does not validate payload or guarantee reconstructibility",
+    "Allbrob boxes rejected",
+    "Fixed resource caps unchanged",
+    "9/10bit, premultipliedalpha, HDR, animation and encoding remain future scope proposals"
+  ],
+  "source_sha256": {
+    "wml2/src/jpegxl.rs": "f239cf7498e05c64a9f21c9b854b6414d8d7ebe5ddfc08c72c1db6d80dfc183d",
+    "wml2/tests/jpeg_xl.rs": "da6a7ce7ab2b35e9b26d91d07061c66d4092b01754534fb60c39b7a1dce974c8",
+    "wml2-test/scripts/generate_jpegxl_fixtures.py": "d2abae4e441b507792add90344c5b33d5288e91e5ab826bb1dd4005c7fc25b63",
+    "wml2-test/scripts/jpegxl_fixture_encoder.c": "79d78b75ca1601e30e142df591583792218633007da97afd2d361fd9fe40eed9",
+    "wml2-test/scripts/generate_jpegxl_jbrd_fixtures.py": "c230eb1a5d1b23bb18e21ecddbefbacfffdd3f8b9fa808fc1f6756d107ee030e",
+    "wml2-test/scripts/jpegxl_wasm.rs": "7f1685006bd6638ca097c24a3ba7f225b24fe31758ed12d2d4d687dc143784a2",
+    "wml2-test/scripts/verify_jpegxl_wasm.py": "036b7b9a2eebdc51c00124ba10f14adc5127ab687cd19832df97ae58807e2b8d",
+    "wml2/tests/fixtures/review/jxl-fixtures.json": "506394ac630b34a04031583527f8842a9666d1232a6173ac4a61679571a2a788",
+    "wml2/tests/fixtures/review/jxl-jbrd-fixtures.json": "d13261a8473bb383f45d4c4897630c0f4700a9f25b6863f3a041028e710ec921"
+  }
+}

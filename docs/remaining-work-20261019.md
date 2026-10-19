@@ -71,14 +71,23 @@ integrates. No main merge, version bump or registry publication is requested.
 
 ## JPEG XL continuation
 
-- Saved separately at `codex/jpeg-xl-remaining-20261019`,79951b7910e551241fb8009418160de6ae661d76,
-  based on ICC checkpointfbec877 and preserved JXL83c1800. CI56/56 passed.
-  All8orientations,9/10-bit promotion, shared own-library explicit sRGB display,
-  Node WASM61cases and actual Chromium13-case display are validated.
-- The prior Windows25-file collection/manifest is absent from this cloud
-  environment; independent cloud/browser evidence does not execute that corpus.
-- Check the pinned codec's actual APIs before extending 9/10-bit,
-  premultiplied alpha, compressed metadata or JPEG reconstruction. Opaque
+- Saved separately at `codex/jpeg-xl-remaining-20261019`. The79951b7 feature unit
+  preserved JXL83c1800 and initially integrated ICCfbec877; its CI56/56 passed.
+  This continuation now integrates ICC3d4004153a2501366f447e33c056d2eba264d10f,
+  including PSD,JP2 acquisition, native Gray↔RGB layouts and display device-model validation.
+- All8orientations,9/10-bit promotion, shared own-library explicit sRGB display,
+  Node WASM61cases and actual Chromium13-case display are independently validated.
+  The explicit display route uses reconstruction-profile coordinates and excludes alpha.
+- Windows session01a14e00-f0d4-7060-865c-7e99da5ec0fc confirmed JXL8303737
+  (116passed,0failed,31ordinary/EX hashes unchanged) and ICCcc4e4a1
+  (132passed,17native transforms). The corpus is absent from this cloud workspace;
+  later performance/layer revisions need Windows delta verification.
+- Cropped reference layers larger than the canvas now receive separate checked
+  header/TOC and workspace admission. The pinned codec handles crop/blend and
+  orientation; official sunset_logo is validated. See [internal layers](jpeg-xl-layers.md).
+
+- Check the pinned codec's actual APIs before extending premultiplied alpha,
+  compressed metadata or JPEG reconstruction. Opaque
   `jbrd` retention does not reconstruct the original JPEG.
 - HDR/tone mapping, animation, encoding, SIMD and threading have separate
   contracts and must be implemented and tested before any support claim.

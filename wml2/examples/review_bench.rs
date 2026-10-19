@@ -46,6 +46,7 @@ unsafe impl GlobalAlloc for Meter {
 static ALLOCATOR: Meter = Meter;
 #[cfg(any(
     feature = "jpeg",
+    feature = "jpeg-xl",
     feature = "webp",
     feature = "png",
     feature = "tiff",
@@ -115,6 +116,21 @@ fn main() {
                     (hash(&encoded), 0)
                 });
             }
+        }
+    }
+    #[cfg(all(feature = "jpeg-xl", feature = "color-management"))]
+    if mode == "jpegxl-display-file" {
+        let encoded = std::fs::read(
+            std::env::args()
+                .nth(3)
+                .expect("jpegxl-display-file <repeat> <path>"),
+        )
+        .unwrap();
+        for i in 0..repeat {
+            measure("jpegxl-display-file", i, || {
+                let image = wml2::jpegxl::image_from_srgb(&encoded).unwrap();
+                (hash(image.buffer.as_ref().unwrap()), 0)
+            });
         }
     }
     #[cfg(feature = "avifenc")]

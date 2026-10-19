@@ -88,6 +88,8 @@ pub fn get_decoder_extentions() -> Vec<String> {
         "jpe".to_string(),
         #[cfg(feature = "jpeg")]
         "jpeg".to_string(),
+        #[cfg(feature = "jpeg-xl")]
+        "jxl".to_string(),
         #[cfg(feature = "jpeg2000")]
         "j2k".to_string(),
         #[cfg(feature = "jpeg2000")]
@@ -174,7 +176,10 @@ pub fn get_encode_extentions() -> Vec<String> {
 //pub(crate) mod io; // move bin_rs crate
 #[cfg(feature = "bmp")]
 pub mod bmp;
-#[cfg(feature = "avif")]
+#[cfg(any(
+    feature = "avif",
+    all(feature = "jpeg-xl", feature = "color-management")
+))]
 mod color_convert;
 pub mod draw;
 pub mod encoder;
@@ -187,6 +192,8 @@ pub mod ico;
 pub mod jpeg;
 #[cfg(feature = "jpeg2000")]
 pub mod jpeg2000;
+#[cfg(feature = "jpeg-xl")]
+pub mod jpegxl;
 #[cfg(all(feature = "mag", not(feature = "noretoro")))]
 pub mod mag;
 #[cfg(all(feature = "maki", not(feature = "noretoro")))]

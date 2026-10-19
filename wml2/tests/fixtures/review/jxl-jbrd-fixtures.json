@@ -1,0 +1,68 @@
+{
+  "repository": "https://github.com/libjxl/conformance",
+  "revision": "b1d0f990b03e57bf6d137c365cd5dc8b470b9191",
+  "decoder": "djxl 0.11.2; default output profile; oriented integer8 PAM",
+  "reference": "Official float32 reference: clamp and floor(sample*255+0.5); output stays in official ICC profile",
+  "tolerance": "At most2/255 per output channel; source ICC bytes must match exactly",
+  "licenses": "Both source images are CC0; test bitstreams and decoded references may be reproduced freely for testing; see testcases/README.md at pinned revision",
+  "cases": [
+    {
+      "source": "bench_oriented_brg",
+      "prefix": "jxl-jbrd-bench",
+      "width": 606,
+      "height": 500,
+      "channels": 3,
+      "bits": 8,
+      "coded_orientation": 5,
+      "input_sha256": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+      "official_objects": {
+        "original.icc": {
+          "sha256": "6603ae12a4ac1ac742cacd887e9b35552a12c354ff25a00cae069ad4b932e6cc",
+          "url": "https://storage.googleapis.com/jxl-conformance/objects/6603ae12a4ac1ac742cacd887e9b35552a12c354ff25a00cae069ad4b932e6cc"
+        },
+        "reference_image.npy": {
+          "sha256": "eac8c30907e41e53a73a0c002bc39e998e0ceb021bd523f5bff4580b455579e6",
+          "url": "https://storage.googleapis.com/jxl-conformance/objects/eac8c30907e41e53a73a0c002bc39e998e0ceb021bd523f5bff4580b455579e6"
+        }
+      },
+      "oracle_sha256": "448ab9fd9a3d30387c2a0c648de6773dcb1649df15f70b24d4e65e1a39aff0fe",
+      "rounded_reference_sha256": "33251ddb11f0fc6f9ef424848d21b0000297d3f66f1fcbaedc301af8e20f0dfd",
+      "source_url": "https://github.com/libjxl/conformance/tree/b1d0f990b03e57bf6d137c365cd5dc8b470b9191/testcases/bench_oriented_brg"
+    },
+    {
+      "source": "grayscale_jpeg",
+      "prefix": "jxl-jbrd-gray",
+      "width": 200,
+      "height": 200,
+      "channels": 1,
+      "bits": 8,
+      "coded_orientation": 1,
+      "input_sha256": "346cc92b55864b0efb9f85cdddd02b586473ff18b03718e5a02fa03cb3e86844",
+      "official_objects": {
+        "original.icc": {
+          "sha256": "78001f4bf342ecf417b8dac5e3c7cf8da3ee25701951bc2a7e0868bc6dc81cac",
+          "url": "https://storage.googleapis.com/jxl-conformance/objects/78001f4bf342ecf417b8dac5e3c7cf8da3ee25701951bc2a7e0868bc6dc81cac"
+        },
+        "reference_image.npy": {
+          "sha256": "c0b86989e287649b944f1734ce182d1c1ac0caebf12cec7d487d9793f51f5b8f",
+          "url": "https://storage.googleapis.com/jxl-conformance/objects/c0b86989e287649b944f1734ce182d1c1ac0caebf12cec7d487d9793f51f5b8f"
+        }
+      },
+      "oracle_sha256": "8f8d79daa3ff2d66bb60a2c9bf3e35ed7374ff805f8ff9354b6fe612bbadd172",
+      "rounded_reference_sha256": "3a7dd715f4c7021960a6a09232d6f270e994865ce260f49472147189d1898938",
+      "source_url": "https://github.com/libjxl/conformance/tree/b1d0f990b03e57bf6d137c365cd5dc8b470b9191/testcases/grayscale_jpeg"
+    }
+  ],
+  "files": {
+    "jxl-jbrd-bench.jxl": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+    "jxl-jbrd-bench.icc": "6603ae12a4ac1ac742cacd887e9b35552a12c354ff25a00cae069ad4b932e6cc",
+    "jxl-jbrd-bench-reference.bin.zlib": "3355889bf5662e315e3f5f0927ddd92e2b09ddda2aed2869c518ac4167e1b780",
+    "jxl-jbrd-bench-probes.bin": "755e2073ae23d98102650ec73262801bd4a69b7f5ced0eee46910c6c1b398b1b",
+    "jxl-jbrd-bench-djxl.bin.zlib": "24f4500c5707ee7f60a29db0822228de1f172cca6d66f48564bb6f28285f7d38",
+    "jxl-jbrd-gray.jxl": "346cc92b55864b0efb9f85cdddd02b586473ff18b03718e5a02fa03cb3e86844",
+    "jxl-jbrd-gray.icc": "78001f4bf342ecf417b8dac5e3c7cf8da3ee25701951bc2a7e0868bc6dc81cac",
+    "jxl-jbrd-gray-reference.bin.zlib": "7f729ad71f1524550d94e3c73343ed5cff4077534fbb84f85c4def5a796d563c",
+    "jxl-jbrd-gray-probes.bin": "e3b36b7b2c7e341f8395f6c212fde3c3264e5359a5d448cbaea47b69de772d91",
+    "jxl-jbrd-gray-djxl.bin.zlib": "0536922e47de3946b579b2cff5391cbd5d3237f5cee9491a74e7aeb4a3fe2e9c"
+  }
+}

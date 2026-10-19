@@ -147,6 +147,7 @@ pub(crate) struct TiffDocument {
     pub variant: TiffVariant,
     pub endian: Endian,
     pub ifds: Vec<TiffIfd>,
+    pub metadata_bytes: usize,
 }
 pub(crate) fn number(bytes: &[u8], endian: Endian) -> u64 {
     if endian == Endian::LittleEndian {
@@ -388,6 +389,7 @@ impl TiffDocument {
             variant,
             endian,
             ifds,
+            metadata_bytes: parser.metadata,
         })
     }
     pub(crate) fn headers(&self) -> Result<TiffHeaders, Error> {

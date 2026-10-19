@@ -257,24 +257,6 @@ fn run_inner<B: BinaryReader>(
     ex: bool,
     decode: impl FnOnce(&mut B, &mut DecodeOptions) -> Result<Option<ImgWarnings>, Error>,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let offset = reader.offset()?;
-    let end = reader.seek(std::io::SeekFrom::End(0))?;
-    reader.seek(std::io::SeekFrom::Start(offset))?;
-    let length = end
-        .checked_sub(offset)
-        .ok_or_else(|| std::io::Error::other("invalid input position"))?;
-    limits::check_input_length(length, limits.input_bytes)?;
-    let signature = reader.read_bytes_no_move(usize::try_from(length.min(8))?)?;
-    // GIF emits Continue for its first frame before Next for later frames.
-    // Stop at that first Abort too, before another callback or input read.
-    let handle_abort = ex
-        || signature.starts_with(b"\x89PNG\r\n\x1a\n")
-        || signature.starts_with(&[0xff, 0xd8])
-        || signature.starts_with(b"GIF87a")
-        || signature.starts_with(b"GIF89a")
-        || cfg!(feature = "jpeg-xl")
-            && (signature.starts_with(&[0xff, 0x0a])
-                || signature.starts_with(b"\x00\x00\x00\x0cJXL "));
     limits::scope(limits, || {
         let mut guard = Guard {
             drawer: options.drawer,
@@ -283,19 +265,44 @@ fn run_inner<B: BinaryReader>(
             frames: 0,
             bytes: 0,
             terminated: false,
-            handle_abort,
+            handle_abort: ex,
             ready: false,
             stopped: false,
             #[cfg(feature = "image-buffer-ex")]
             source: None,
         };
-        let result = decode(
-            reader,
-            &mut DecodeOptions {
-                debug_flag: options.debug_flag,
-                drawer: &mut guard,
-            },
-        );
+        let result = (|| {
+            // Guard intentionally inherits the default no-op begin_image. An
+            // embedded guarded codec must not restart its outer image lifecycle.
+            // A newly introduced begin_image Abort is always honored, including
+            // formats retaining their legacy init/draw Abort behavior.
+            response(guard.drawer.begin_image(), true)?;
+            let offset = reader.offset()?;
+            let end = reader.seek(std::io::SeekFrom::End(0))?;
+            reader.seek(std::io::SeekFrom::Start(offset))?;
+            let length = end
+                .checked_sub(offset)
+                .ok_or_else(|| std::io::Error::other("invalid input position"))?;
+            limits::check_input_length(length, limits.input_bytes)?;
+            let signature = reader.read_bytes_no_move(usize::try_from(length.min(8))?)?;
+            // GIF emits Continue for its first frame before Next for later frames.
+            // Stop at that first Abort too, before another callback or input read.
+            guard.handle_abort = ex
+                || signature.starts_with(b"\x89PNG\r\n\x1a\n")
+                || signature.starts_with(&[0xff, 0xd8])
+                || signature.starts_with(b"GIF87a")
+                || signature.starts_with(b"GIF89a")
+                || cfg!(feature = "jpeg-xl")
+                    && (signature.starts_with(&[0xff, 0x0a])
+                        || signature.starts_with(b"\x00\x00\x00\x0cJXL "));
+            decode(
+                reader,
+                &mut DecodeOptions {
+                    debug_flag: options.debug_flag,
+                    drawer: &mut guard,
+                },
+            )
+        })();
         match result {
             Err(error) if error.is::<Aborted>() => {
                 guard.terminate(None)?;

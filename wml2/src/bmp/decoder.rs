@@ -18,6 +18,129 @@ use bin_rs::io::*;
 use crate::bmp::header::Compressions;
 use crate::bmp::header::{BitmapHeader, ColorTable};
 
+// BITMAPV5HEADER profile offsets are relative to the DIB header, not the
+// file or pixel data. Only the embedded carrier is read; linked paths are
+// never opened. This retains opaque bytes, not a new ICC parser or CMS.
+fn embedded_profile<B: BinaryReader>(
+    reader: &mut B,
+    header: &BitmapHeader,
+) -> Result<Option<Vec<u8>>, Error> {
+    let Windows(info) = &header.bitmap_info else {
+        return Ok(None);
+    };
+    if info.bi_size != 124 || info.b_v4_header.as_ref().map(|v| v.b_v4_cstype) != Some(0x4d42_4544)
+    {
+        return Ok(None);
+    }
+    let v5 = info
+        .b_v5_header
+        .as_ref()
+        .ok_or_else(|| std::io::Error::other("truncated BMP V5 profile declaration"))?;
+    if v5.b_v5_profile_data == 0 && v5.b_v5_profile_size == 0 {
+        return Ok(None);
+    }
+    let start = 14 + u64::from(v5.b_v5_profile_data);
+    let end = start
+        .checked_add(u64::from(v5.b_v5_profile_size))
+        .ok_or_else(|| std::io::Error::other("BMP ICC extent overflow"))?;
+    let palette_end = 14 + 124 + 4 * header.color_table.as_ref().map_or(0, |v| v.len() as u64);
+    let bits = header.image_offset as u64;
+    let pixel_bytes = if matches!(
+        header.compression,
+        Some(Compressions::BiRGB | Compressions::BiBitFileds)
+    ) {
+        let row =
+            (u64::from(header.width.unsigned_abs()) * header.bit_count as u64).div_ceil(32) * 4;
+        row.checked_mul(u64::from(header.height.unsigned_abs()))
+            .ok_or_else(|| std::io::Error::other("BMP pixel extent overflow"))?
+    } else {
+        u64::from(info.bi_size_image)
+    };
+    let pixel_end = bits
+        .checked_add(pixel_bytes)
+        .ok_or_else(|| std::io::Error::other("BMP pixel extent overflow"))?;
+    let length = reader.seek(std::io::SeekFrom::End(0))?;
+    crate::limits::check_input_length(length, crate::limits::current().input_bytes)?;
+    if bits < palette_end
+        || start < palette_end
+        || end > length
+        || (header.filesize != 0 && end > header.filesize as u64)
+        || (start < pixel_end && end > bits)
+        || (pixel_bytes == 0 && end > bits)
+    {
+        return Err(std::io::Error::other(
+            "BMP ICC extent is outside the file or overlaps image data",
+        )
+        .into());
+    }
+    let size = usize::try_from(v5.b_v5_profile_size)?;
+    let key = if matches!(
+        header.compression,
+        Some(Compressions::BiJpeg | Compressions::BiPng)
+    ) {
+        "BMP Source ICC Profile"
+    } else {
+        "Source ICC Profile"
+    };
+    crate::limits::charge_metadata(
+        size.checked_add(key.len())
+            .ok_or_else(|| std::io::Error::other("BMP ICC metadata size overflow"))?,
+    )?;
+    let mut profile = Vec::new();
+    profile.try_reserve_exact(size)?;
+    profile.resize(size, 0);
+    reader.seek(std::io::SeekFrom::Start(start))?;
+    reader.read_exact(&mut profile)?;
+    Ok(Some(profile))
+}
+
+fn emit_profile(
+    header: &BitmapHeader,
+    profile: Vec<u8>,
+    option: &mut DecodeOptions,
+) -> Result<bool, Error> {
+    let embedded_codec = matches!(
+        header.compression,
+        Some(Compressions::BiJpeg | Compressions::BiPng)
+    );
+    let active = if !embedded_codec && profile.get(16..20) == Some(b"RGB ") {
+        crate::limits::charge_metadata(
+            profile
+                .len()
+                .checked_add("ICC Profile".len())
+                .ok_or_else(|| std::io::Error::other("BMP ICC metadata size overflow"))?,
+        )?;
+        let mut copy = Vec::new();
+        copy.try_reserve_exact(profile.len())?;
+        copy.extend_from_slice(&profile);
+        Some(copy)
+    } else {
+        None
+    };
+    let key = if embedded_codec {
+        "BMP Source ICC Profile"
+    } else {
+        "Source ICC Profile"
+    };
+    let response = option
+        .drawer
+        .set_metadata(key, DataMap::ICCProfile(profile))?;
+    if matches!(response, Some(r) if r.response == ResponseCommand::Abort) {
+        option.drawer.terminate(None)?;
+        return Ok(false);
+    }
+    if let Some(profile) = active {
+        let response = option
+            .drawer
+            .set_metadata("ICC Profile", DataMap::ICCProfile(profile))?;
+        if matches!(response, Some(r) if r.response == ResponseCommand::Abort) {
+            option.drawer.terminate(None)?;
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
 fn get_color(c: &Option<&Vec<ColorTable>>, idx: usize) -> ColorTable {
     if let Some(c) = c {
         if idx < c.len() {
@@ -534,7 +657,14 @@ fn decode_png<B: BinaryReader>(
     }
 }
 
-pub fn decode<'decode, B: BinaryReader>(
+pub fn decode<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    crate::limits::metadata_scope(|| decode_inner(reader, option))
+}
+
+fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
@@ -546,6 +676,12 @@ pub fn decode<'decode, B: BinaryReader>(
             ImgErrorKind::CannotDecode,
             "Too Large Bitmap".to_string(),
         )));
+    }
+
+    if let Some(profile) = embedded_profile(reader, &header)?
+        && !emit_profile(&header, profile, option)?
+    {
+        return Ok(None);
     }
 
     if option.debug_flag > 0 {

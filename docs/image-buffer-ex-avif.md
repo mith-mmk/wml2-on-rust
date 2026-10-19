@@ -61,16 +61,19 @@ EX encode の `lossless` は codec の量子化方針であり、EX で選択し
 取り消さない。RGBA12→RGBA12 pick は無精度変換で、12bit sample のまま backend へ渡る。
 
 EX decode は依存の strict native still profile（通常 av01 と対応する bounded
-Sample Transform）に限定する。AVIS、grid、geometry transform、premultiplied alpha、
-HDR 等の display-transfer 変換が必要な入力は明示拒否。従来入口の対応範囲を
+Sample Transform）に限定する。AVIS、grid、geometry transform は明示拒否。
+実際の `iref/prem` は識別し、encoded RGB で解除して straight RGBA16 とする。
+転送特性は元のコード値として保持し、表示変換や tone mapping はしない。従来入口の対応範囲を
 この制限へ縮小しない。F32、signed、YUV を EX のバイト列と誤解釈しない。
 
 ## 色 metadata と責務
 
 EX decode は通常の `DecodedFrame::to_rgba16` をそのまま呼ばない。この helper は
 ICC／一部 display transfer を適用するためである。EX adapter は codec の
-再構成 primitive を、表示変換を伴わない transfer に限定して呼ぶ。
-対応 transfer は absent または1/2/6/7/11/12/13/14/15。
+再構成 primitive の display-transfer 段を抑制して呼ぶ。元の transfer は
+metadata に保持し、対応する matrix の encoded RGB 座標だけを返す。
+video-range Gray の正規化と alpha 解除を含む現在の境界は
+[AVIF colour boundary](avif-color-boundary.md) を参照する。
 
 順序は **init_ex → draw → metadata → terminate**。元 ICC は
 `Source ICC Profile`、AV1 の signaling は `Source AV1 CICP` / `Source AV1 Full Range`、
@@ -84,6 +87,12 @@ signaling と入力 sample の色意味が整合するように用意するの�
 `ICC Profile: DataMap::ICCProfile` だけを**明示的な出力 profile**として opaque に
 signal する。`Source ICC Profile` を自動転記・改名・適用しない。custom CICP や
 YUV の native plane を指定する用途は既存 native API を使う。
+
+ICC 整合修正では、既知の Gray/RGB model 不一致を encoder で拒否する。
+Gray source ICC のまま RGB を要求する場合は、native Gray 出力を選ぶか、
+利用者が明示変換して encoder options に対応する RGB output ICC を渡す。
+profile 指定だけでは色変換しない。opaque profile と legacy bridge を含む
+詳細は [ICC metadata 契約](icc-consistency-metadata.md)を参照。
 
 ## API と例
 
@@ -241,5 +250,6 @@ encoded hash の変化は alpha 参照2byte の修正によるもの。局所的
 Clippy、fmt、CI YAML／sample 条件をローカルで検査した。既存 Clippy warning は残る。
 Windows／macOS、stable toolchain、追加した CI matrix の実行、外部 AVIS の本体比較、
 依存 standalone 全 corpus は未実行。CI の終了待ちや継続監視は行っていない。
-AVIS／grid／geometry／premultiplied alpha／表示変換が必要な transfer の EX 対応、
-AV1 の16bit出力、wmlcore 分離／paintcore 統合は本変更に含めない。
+この段階で未対応だった premultiplied alpha と source transfer の EX 境界は、
+後続の [AVIF color boundary](avif-color-boundary.md) で修正した。現在も AVIS／grid／
+geometry の EX 対応、AV1 の16bit出力、wmlcore 分離／paintcore 統合は含めない。

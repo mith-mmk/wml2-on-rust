@@ -8,6 +8,22 @@ use crate::metadata::DataMap;
 
 type Error = Box<dyn std::error::Error>;
 
+fn icc_color_model(value: Option<&DataMap>) -> Result<Option<icc_profile::ColorSpace>, Error> {
+    let Some(DataMap::ICCProfile(bytes)) = value else {
+        return Ok(None);
+    };
+    crate::limits::check(
+        bytes.len(),
+        crate::limits::current().metadata_bytes,
+        "AVIF ICC metadata",
+    )?;
+    // Container parsing identifies channels without compiling a CMS route.
+    // Opaque explicitly supplied profiles remain compatible with the old API.
+    Ok(icc_profile::Profile::parse(bytes)
+        .ok()
+        .map(|profile| profile.color_space()))
+}
+
 /// Encode an explicitly requested EX layout. The callback converts storage
 /// with Exact/Round; this adapter borrows those bytes as the shared codec's
 /// packed view. It never interprets EX bytes as YUV or changes stored precision.
@@ -53,9 +69,18 @@ pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx) -> Result<Vec<u8>, E
         if let Some(tags) = option.drawer.metadata_ex()? {
             metadata.extend(tags);
         }
+        let gray_icc_expansion = profile.format.channels() == 1
+            && format.channels() == 4
+            && matches!(metadata.get("ICC Profile"), Some(DataMap::ICCProfile(_)));
         if let Some(options) = &option.options {
             metadata.extend(options.clone());
         }
+        validate_output_icc(
+            &metadata,
+            option.options.as_ref(),
+            format,
+            gray_icc_expansion,
+        )?;
         let mut encoder = convert_options(Some(&metadata))?;
         // NativeColorInformation below is the sole colour authority. The
         // legacy RGBA8 backend's default YUV nclx must not conflict with it.
@@ -138,6 +163,60 @@ pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx) -> Result<Vec<u8>, E
     }
 }
 
+#[cfg(feature = "image-buffer-ex")]
+fn validate_output_icc(
+    metadata: &HashMap<String, DataMap>,
+    explicit: Option<&HashMap<String, DataMap>>,
+    format: crate::draw::PixelFormatEx,
+    gray_icc_expansion: bool,
+) -> Result<(), Error> {
+    use icc_profile::ColorSpace;
+    let expected = if format.channels() == 1 {
+        ColorSpace::Gray
+    } else {
+        ColorSpace::Rgb
+    };
+    if gray_icc_expansion
+        && icc_color_model(explicit.and_then(|options| options.get("ICC Profile")))?
+            != Some(ColorSpace::Rgb)
+    {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "AVIF EX Gray storage ICC cannot describe expanded RGB samples; explicitly convert and supply a compatible RGB output ICC in encoder options, or request native Gray output".into(),
+        )));
+    }
+    if icc_color_model(metadata.get("ICC Profile"))?.is_some_and(|space| space != expected) {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "AVIF EX output ICC color model differs from the requested samples; explicitly convert and supply a compatible output ICC, or request native Gray output".into(),
+        )));
+    }
+    if icc_color_model(metadata.get("Source ICC Profile"))?.is_some_and(|space| space != expected)
+        && icc_color_model(explicit.and_then(|options| options.get("ICC Profile")))?
+            != Some(expected)
+    {
+        return Err(Box::new(ImgError::new_const(
+            ImgErrorKind::InvalidParameter,
+            "AVIF EX source ICC color model differs from the requested samples; explicitly convert and supply a compatible output ICC in encoder options, or request native Gray output".into(),
+        )));
+    }
+    Ok(())
+}
+
+fn validate_ordinary_output_icc(metadata: &HashMap<String, DataMap>) -> Result<(), Error> {
+    for key in ["ICC Profile", "Source ICC Profile"] {
+        if icc_color_model(metadata.get(key))?
+            .is_some_and(|space| space != icc_profile::ColorSpace::Rgb)
+        {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::UnsupportedFeature,
+                "ordinary AVIF cannot encode a known non-RGB ICC source as RGB; use the EX encoder for native Gray output, or explicitly convert and supply a compatible EX output ICC".into(),
+            )));
+        }
+    }
+    Ok(())
+}
+
 // WML2 ImageBufferEx and the shared codec model have different contracts.
 // Keep this bridge private: no owned shared buffer or intermediate U16 copy.
 #[cfg(feature = "image-buffer-ex")]
@@ -210,6 +289,14 @@ pub fn encode(option: &mut EncodeOptions) -> Result<Vec<u8>, Error> {
                 "AVIF image dimensions must be non-zero".to_string(),
             )) as Error);
         }
+        let mut metadata = profile.metadata.unwrap_or_default();
+        validate_ordinary_output_icc(&metadata)?;
+        if let Some(encode_options) = option.options.as_ref() {
+            // This legacy encoder does not signal ICC. An option must not
+            // hide an incompatible profile already attached to its input.
+            validate_ordinary_output_icc(encode_options)?;
+            metadata.extend(encode_options.clone());
+        }
         let data = option
             .drawer
             .encode_pick(0, 0, profile.width, profile.height, None::<PickOptions>)?
@@ -219,10 +306,6 @@ pub fn encode(option: &mut EncodeOptions) -> Result<Vec<u8>, Error> {
                     "AVIF encoder did not receive RGBA pixels".to_string(),
                 )) as Error
             })?;
-        let mut metadata = profile.metadata.unwrap_or_default();
-        if let Some(encode_options) = option.options.as_ref() {
-            metadata.extend(encode_options.clone());
-        }
         let options = convert_options((!metadata.is_empty()).then_some(&metadata))?;
         let encoded = avifenc_codec::encode_bytes(
             &avifenc_codec::ImageBuffer {

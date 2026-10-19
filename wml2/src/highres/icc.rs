@@ -134,7 +134,13 @@ impl FrameTransform {
         }
         let colors = ColorInformationSet::new().with_icc_profile(self.destination_icc.clone())?;
         let descriptor = frame.descriptor().clone().with_color_information(colors);
-        let metadata: FrameMetadata = frame.metadata().clone();
+        let mut metadata: FrameMetadata = frame.metadata().clone();
+        // Native readers can expose the active profile in the generic tag as
+        // well as in the typed descriptor. After this explicit CMS operation,
+        // both describe destination samples; source_color remains provenance.
+        if let Some(profile) = metadata.tags_mut().get_mut("ICC Profile") {
+            *profile = crate::metadata::DataMap::ICCProfile(self.destination_icc.clone());
+        }
         let mut output = ImageFrame::new(descriptor, pixels)?.with_metadata(metadata);
         if let Some(timing) = frame.timing() {
             output = output.with_timing(timing);

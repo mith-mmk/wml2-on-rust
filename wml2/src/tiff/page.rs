@@ -32,22 +32,28 @@ pub(crate) fn is_display_page(page: &Tiff) -> bool {
 
 /// The legacy output is RGB. A Gray/CMYK source profile is provenance, not
 /// a profile for the converted RGB pixels. Keep it in source metadata only.
+/// Palette lookup preserves its ColorMap's RGB color space, just as RGB and
+/// reconstructed YCbCr do; it does not require an ICC transform.
 #[cfg(feature = "tiff")]
 pub(crate) fn rgba8_icc_profile(page: &Tiff) -> Option<&[u8]> {
     let profile = page.icc_profile.as_deref()?;
-    if !matches!(page.photometric_interpretation, 2 | 6) {
+    if !matches!(page.photometric_interpretation, 2 | 3 | 6) {
         return None;
     }
-    if let Some(space) = profile.get(16..20) {
-        if space != b"RGB " {
-            return None;
-        }
+    match profile.get(16..20) {
+        Some(space) if space == b"RGB " => Some(profile),
+        // Newly applicable palette profiles need a declared RGB identity;
+        // other legacy paths keep their existing opaque-profile compatibility.
+        None if page.photometric_interpretation != 3 => Some(profile),
+        _ => None,
     }
-    Some(profile)
 }
 
 pub(crate) fn read_pages(reader: &mut dyn BinaryReader) -> Result<Tiff, Error> {
     let doc = TiffDocument::read(reader)?;
+    // Join the parser's existing retained-data budget with subsequent page
+    // profile copies. The separate EXIF-header reader retains its own policy.
+    crate::limits::charge_metadata(doc.metadata_bytes)?;
     let mut pages = Vec::new();
     for ifd in &doc.ifds {
         for entry in &ifd.entries {

@@ -94,16 +94,7 @@ fn sample_avif() -> Vec<u8> {
 
 #[cfg(feature = "avif")]
 fn filter_disabled_fixture() -> Vec<u8> {
-    std::fs::read(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .join("avif")
-            .join("test_data")
-            .join("images")
-            .join("filter-disabled-gbr.avif"),
-    )
-    .expect("filter-disabled AVIF fixture should exist; run avif/scripts/bootstrap_oracles.ps1")
+    include_bytes!("fixtures/review/avif-filter-disabled-gbr.avif").to_vec()
 }
 
 #[cfg(feature = "avif")]

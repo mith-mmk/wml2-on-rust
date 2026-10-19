@@ -1518,7 +1518,31 @@ fn compression_decode<'decode, B: BinaryReader>(
     }
 }
 
-pub fn decode<'decode, B: BinaryReader>(
+fn profile_metadata(option: &mut DecodeOptions, key: &str, profile: &[u8]) -> Result<bool, Error> {
+    let cost = profile
+        .len()
+        .checked_add(key.len())
+        .ok_or_else(|| std::io::Error::other("TIFF profile metadata overflow"))?;
+    crate::limits::charge_metadata(cost)?;
+    let mut copy = Vec::new();
+    copy.try_reserve_exact(profile.len())?;
+    copy.extend_from_slice(profile);
+    let response = option.drawer.set_metadata(key, DataMap::ICCProfile(copy))?;
+    if matches!(response, Some(r) if r.response == ResponseCommand::Abort) {
+        option.drawer.terminate(None)?;
+        return Ok(false);
+    }
+    Ok(true)
+}
+
+pub fn decode<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    crate::limits::metadata_scope(|| decode_inner(reader, option))
+}
+
+fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
@@ -1540,6 +1564,12 @@ pub fn decode<'decode, B: BinaryReader>(
     let header = pages
         .first()
         .ok_or_else(|| std::io::Error::other("TIFF contains no display page"))?;
+    let common_source = header.icc_profile.as_deref().filter(|profile| {
+        pages
+            .iter()
+            .skip(1)
+            .all(|page| page.icc_profile.as_deref() == Some(*profile))
+    });
     option
         .drawer
         .set_metadata("image pages", DataMap::UInt(u64::try_from(count)?))?;
@@ -1563,16 +1593,47 @@ pub fn decode<'decode, B: BinaryReader>(
         "compression",
         DataMap::Ascii(header.compression.to_string()),
     )?;
-    if let Some(ref icc_profile) = header.icc_profile {
-        option.drawer.set_metadata(
-            "Source ICC Profile",
-            DataMap::ICCProfile(icc_profile.to_vec()),
-        )?;
+    if count > 1 && pages.iter().any(|page| page.icc_profile.is_some()) {
+        for (index, page) in pages.iter().enumerate() {
+            let key = format!("TIFF Page {} ICC Applies To Output", index + 1);
+            crate::limits::charge_metadata(key.len() + std::mem::size_of::<u64>())?;
+            let response = option.drawer.set_metadata(
+                &key,
+                DataMap::UInt(u64::from(
+                    crate::tiff::page::rgba8_icc_profile(page).is_some(),
+                )),
+            )?;
+            if matches!(response, Some(r) if r.response == ResponseCommand::Abort) {
+                option.drawer.terminate(None)?;
+                return Ok(None);
+            }
+            // Equal source bytes are inherited from the single common record.
+            if common_source.is_none()
+                && let Some(profile) = page.icc_profile.as_deref()
+                && !profile_metadata(
+                    option,
+                    &format!("TIFF Page {} Source ICC Profile", index + 1),
+                    profile,
+                )?
+            {
+                return Ok(None);
+            }
+        }
     }
-    if let Some(icc_profile) = crate::tiff::page::rgba8_icc_profile(&header) {
-        option
-            .drawer
-            .set_metadata("ICC Profile", DataMap::ICCProfile(icc_profile.to_vec()))?;
+    if let Some(profile) = common_source
+        && !profile_metadata(option, "Source ICC Profile", profile)?
+    {
+        return Ok(None);
+    }
+    // A generic profile describes all delivered RGB pages, not only the first.
+    if let Some(profile) = crate::tiff::page::rgba8_icc_profile(header)
+        && pages
+            .iter()
+            .skip(1)
+            .all(|page| crate::tiff::page::rgba8_icc_profile(page) == Some(profile))
+        && !profile_metadata(option, "ICC Profile", profile)?
+    {
+        return Ok(None);
     }
     let mut warnings = None;
 

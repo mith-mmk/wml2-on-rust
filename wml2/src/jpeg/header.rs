@@ -343,11 +343,26 @@ fn read_app(num: usize, tag: &String, buffer: &[u8]) -> Result<JpegAppHeaders, E
             _ => {}
         },
         2 => match tag.as_str() {
-            "ICC_PROFILE" => {
+            "ICC_PROFILE" if buffer.starts_with(b"ICC_PROFILE\0") => {
+                // A short ICC envelope is ancillary metadata, not a reason to
+                // lose an otherwise decodable image. Keep it opaque below;
+                // assembly will discard the entire invalid association.
+                if buffer.len() < ptr + 2 {
+                    crate::limits::charge_metadata(buffer.len())?;
+                    return Ok(JpegAppHeaders::Unknown(UnknownApp {
+                        number: num,
+                        tag: tag.to_string(),
+                        length: buffer.len(),
+                        raw: buffer.to_vec(),
+                    }));
+                }
                 let number = read_byte(buffer, ptr) as usize;
                 ptr += 1;
                 let total = read_byte(buffer, ptr) as usize;
                 ptr += 1;
+                // Charge the envelope too: even empty chunks remain as APP
+                // entries until assembly, so malformed repeats must not be free.
+                crate::limits::charge_metadata(buffer.len())?;
                 let data = buffer[ptr..].to_vec();
                 let icc_profile = ICCProfilePacker {
                     number,
@@ -399,6 +414,56 @@ fn read_app(num: usize, tag: &String, buffer: &[u8]) -> Result<JpegAppHeaders, E
         length: len,
         raw: buffer.to_vec(),
     }))
+}
+
+// ICC APP2 sequence numbers, rather than marker order, identify profile bytes.
+// Invalid ancillary associations are ignored as a whole, including a later
+// duplicate or truncated chunk after an otherwise complete profile.
+fn assemble_icc_profile(headers: &[JpegAppHeaders]) -> Result<Option<Vec<u8>>, Error> {
+    let mut chunks = Vec::new();
+    let mut length = 0usize;
+    for header in headers {
+        match header {
+            JpegAppHeaders::ICCProfile(chunk) => {
+                if chunk.total == 0 || chunk.number == 0 || chunk.number > chunk.total {
+                    return Ok(None);
+                }
+                if chunks.is_empty() {
+                    chunks.resize(chunk.total, None);
+                }
+                if chunk.total != chunks.len() || chunks[chunk.number - 1].is_some() {
+                    return Ok(None);
+                }
+                chunks[chunk.number - 1] = Some(chunk.data.as_slice());
+                length = length
+                    .checked_add(chunk.data.len())
+                    .ok_or_else(|| std::io::Error::other("JPEG ICC profile size overflow"))?;
+            }
+            JpegAppHeaders::Unknown(app)
+                if app.number == 2 && app.raw.starts_with(b"ICC_PROFILE\0") =>
+            {
+                return Ok(None);
+            }
+            _ => {}
+        }
+    }
+    if chunks.is_empty() || chunks.iter().any(Option::is_none) {
+        return Ok(None);
+    }
+    // The assembled profile is a second retained copy, in addition to the
+    // chunk data already charged while parsing each ICC APP2 envelope.
+    crate::limits::charge_metadata(length)?;
+    let mut profile = Vec::new();
+    profile.try_reserve_exact(length).map_err(|_| {
+        ImgError::new_const(
+            ImgErrorKind::OutOfMemory,
+            "JPEG ICC allocation failed".into(),
+        )
+    })?;
+    for chunk in chunks.into_iter().flatten() {
+        profile.extend_from_slice(chunk);
+    }
+    Ok(Some(profile))
 }
 
 impl JpegHaeder {
@@ -539,7 +604,6 @@ impl JpegHaeder {
         let mut _sof_flag = is_only_tables;
         let mut _sos_flag = false;
         let mut is_hierachical = false;
-        let mut icc_profile: Option<Vec<u8>> = None;
         let mut width: usize = 0;
         let mut height: usize = 0;
         let mut bpp: usize = 0;
@@ -686,23 +750,17 @@ impl JpegHaeder {
                         // Applications
                         let num = (nextbyte & 0xf) as usize;
                         let length = reader.read_u16_be()? as usize;
-                        let buffer = reader.read_bytes_as_vec(length - 2)?;
-                        let tag = read_string(&buffer, 0, length - 2);
+                        let payload_length = length.checked_sub(2).ok_or_else(|| {
+                            ImgError::new_const(
+                                ImgErrorKind::IllegalData,
+                                "JPEG APP length must be at least 2".into(),
+                            )
+                        })?;
+                        let buffer = reader.read_bytes_as_vec(payload_length)?;
+                        let tag = read_string(&buffer, 0, payload_length);
                         let result = read_app(num, &tag, &buffer)?;
-                        match &result {
-                            JpegAppHeaders::Adobe(app) => {
-                                adobe_color_transform = app.color_transform;
-                            }
-                            JpegAppHeaders::ICCProfile(icc_profile_data) => {
-                                if let Some(ref mut data) = icc_profile {
-                                    data.extend(&icc_profile_data.data);
-                                } else {
-                                    let mut data = vec![];
-                                    data.extend(&icc_profile_data.data);
-                                    icc_profile = Some(data);
-                                }
-                            }
-                            _ => {}
+                        if let JpegAppHeaders::Adobe(app) = &result {
+                            adobe_color_transform = app.color_transform;
                         }
                         _jpeg_app_headers.push(result);
                     }
@@ -735,6 +793,7 @@ impl JpegHaeder {
             )));
         }
 
+        let icc_profile = assemble_icc_profile(&_jpeg_app_headers)?;
         if !_jpeg_app_headers.is_empty() {
             jpeg_app_headers = Some(_jpeg_app_headers);
         } else {

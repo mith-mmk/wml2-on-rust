@@ -41,6 +41,14 @@ pub type Response = Result<Option<CallbackResponse>, Error>;
 
 /// Receives decoded image data from format decoders.
 pub trait DrawCallback: Sync + Send {
+    /// Starts one top-level decode, before input validation or image metadata.
+    /// Reused targets can reset per-image state here. This is separate from
+    /// `init` and animation `next`; metadata may legitimately precede either.
+    /// The default preserves compatibility with existing callback implementations.
+    /// Abort stops decoding and is followed by one `terminate` call.
+    fn begin_image(&mut self) -> Response {
+        Ok(None)
+    }
     /// Initializes the target for a new image or animation canvas.
     fn init(
         &mut self,
@@ -562,6 +570,11 @@ impl ImageBuffer {
 }
 
 impl DrawCallback for ImageBuffer {
+    fn begin_image(&mut self) -> Response {
+        self.metadata = None;
+        Ok(None)
+    }
+
     /// Initializes the in-memory canvas.
     fn init(
         &mut self,
@@ -1311,8 +1324,9 @@ pub fn image_from_with_limits(
 /// RGBA at their sample depth. TIFF supports unsigned 8/16-bit Gray/RGB with
 /// optional straight alpha, and retains orientation without rotating samples.
 /// AVIF uses its bounded native still decoder and declares normalized RGBA16LE
-/// after codec reconstruction, without ICC application. AVIS/grid, geometry
-/// transforms, premultiplied alpha and display-transfer conversion reject.
+/// after matrix/range reconstruction and alpha unassociation, without ICC or
+/// display-transfer application. Source signaling is retained; AVIS/grid and
+/// geometry transforms reject. This is source-coordinate output, not HDR rendering.
 /// Other codecs, APNG, multi-page TIFF and premultiplied TIFF are unsupported.
 /// ICC/gamma information is metadata, with no color or display transforms.
 ///

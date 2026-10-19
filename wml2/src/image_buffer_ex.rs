@@ -347,7 +347,33 @@ pub struct ImageBufferEx {
     source_format: PixelFormatEx,
     source_stride: Option<usize>,
     conversion: PrecisionConversion,
+    /// Callback metadata. Gray callback ICC is retained as `Source ICC Profile`
+    /// when storage expands its samples to RGBA; no CMS is applied.
     pub metadata: Option<HashMap<String, DataMap>>,
+}
+
+// A callback's Gray profile cannot describe replicated RGB samples. Retain
+// its bytes as source provenance without assigning them to the stored output.
+// Validate collisions before removing either original profile.
+fn demote_gray_icc(metadata: &mut Option<HashMap<String, DataMap>>) -> Result<(), Error> {
+    let Some(metadata) = metadata else {
+        return Ok(());
+    };
+    let Some(DataMap::ICCProfile(profile)) = metadata.get("ICC Profile") else {
+        return Ok(());
+    };
+    if let Some(source) = metadata.get("Source ICC Profile")
+        && !matches!(source, DataMap::ICCProfile(source) if source == profile)
+    {
+        return Err(ex_error(
+            "EX Gray-to-RGBA ICC conflicts with Source ICC Profile; resolve the competing source profiles explicitly",
+        ));
+    }
+    let profile = metadata.remove("ICC Profile").unwrap();
+    metadata
+        .entry("Source ICC Profile".into())
+        .or_insert(profile);
+    Ok(())
 }
 impl Default for ImageBufferEx {
     fn default() -> Self {
@@ -568,6 +594,9 @@ impl ImageBufferEx {
                 background.map(|_| &pixel[..self.format.bytes_per_pixel()]),
             )?
         };
+        if option.source_format.channels() == 1 && self.format.channels() == 4 {
+            demote_gray_icc(&mut self.metadata)?;
+        }
         self.width = width;
         self.height = height;
         self.stride = stride;
@@ -579,13 +608,24 @@ impl ImageBufferEx {
     }
 
     /// Converts pixels for legacy encoders, retaining EX callback metadata.
+    /// Gray ICC becomes source metadata when Gray samples expand to RGBA.
     /// No animation, timing, or highres color information is synthesized.
     pub fn to_rgba8(&self, conversion: PrecisionConversion) -> Result<ImageBuffer, Error> {
         let bytes = self.converted_bytes(PixelFormatEx::Rgba8, conversion)?;
         let mut image = ImageBuffer::from_buffer(self.width, self.height, bytes);
-        image.metadata = self.metadata.clone();
+        image.metadata = self.metadata_for_output(PixelFormatEx::Rgba8)?;
         image.background_color = self.background_color.clone();
         Ok(image)
+    }
+    fn metadata_for_output(
+        &self,
+        output: PixelFormatEx,
+    ) -> Result<Option<HashMap<String, DataMap>>, Error> {
+        let mut metadata = self.metadata.clone();
+        if self.format.channels() == 1 && output.channels() == 4 {
+            demote_gray_icc(&mut metadata)?;
+        }
+        Ok(metadata)
     }
     fn converted_bytes(
         &self,
@@ -646,6 +686,7 @@ impl TryFrom<ImageBuffer> for ImageBufferEx {
 /// Explicit RGBA8 encoder view of an EX canvas. Obtained from `legacy_picker`;
 /// it implements the unchanged legacy PickCallback and never mutates storage.
 /// Rectangles must be nonempty and fully inside the canvas, as for EX picking.
+/// Gray storage's ICC is exposed as source metadata for the RGBA8 view.
 pub struct LegacyPickAdapterEx<'a> {
     image: &'a ImageBufferEx,
     conversion: PrecisionConversion,
@@ -658,7 +699,7 @@ impl PickCallback for LegacyPickAdapterEx<'_> {
             width: self.image.width,
             height: self.image.height,
             background: self.image.background_color.clone(),
-            metadata: self.image.metadata.clone(),
+            metadata: self.image.metadata_for_output(PixelFormatEx::Rgba8)?,
         }))
     }
 
@@ -688,10 +729,21 @@ impl PickCallback for LegacyPickAdapterEx<'_> {
     }
 
     fn metadata(&mut self) -> Result<Option<HashMap<String, DataMap>>, Error> {
-        Ok(self.image.metadata.clone())
+        self.image.metadata_for_output(PixelFormatEx::Rgba8)
     }
 }
 impl DrawCallback for ImageBufferEx {
+    fn begin_image(&mut self) -> Response {
+        self.metadata = None;
+        self.buffer = None;
+        self.background_color = None;
+        self.width = 0;
+        self.height = 0;
+        self.stride = 0;
+        self.source_format = PixelFormatEx::Rgba8;
+        self.source_stride = None;
+        Ok(None)
+    }
     fn init(&mut self, width: usize, height: usize, option: Option<InitOptions>) -> Response {
         self.initialize(
             width,
@@ -783,9 +835,15 @@ impl DrawCallback for ImageBufferEx {
         Ok(None)
     }
     fn set_metadata(&mut self, key: &str, value: DataMap) -> Response {
+        let gray_expanded = self.buffer.is_some()
+            && self.source_format.channels() == 1
+            && self.format.channels() == 4;
         self.metadata
             .get_or_insert_with(HashMap::new)
             .insert(key.to_string(), value);
+        if gray_expanded {
+            demote_gray_icc(&mut self.metadata)?;
+        }
         Ok(None)
     }
 }

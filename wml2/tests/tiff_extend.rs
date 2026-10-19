@@ -32,6 +32,7 @@ struct Page {
     extra: Vec<u16>,
     orientation: u16,
     icc: Vec<u8>,
+    color_map: Option<Vec<u16>>,
 }
 
 #[derive(Clone)]
@@ -151,6 +152,9 @@ fn page_fields(page: &Page, be: bool, variant: Variant) -> Vec<Field> {
     }
     if !page.extra.is_empty() {
         fields.push(field(338, 3, bytes_u16(&page.extra, be)));
+    }
+    if let Some(colors) = &page.color_map {
+        fields.push(field(320, 3, bytes_u16(colors, be)));
     }
     if !page.icc.is_empty() {
         fields.push(field(34675, 7, page.icc.clone()));
@@ -316,6 +320,7 @@ fn page(
         extra: Vec::new(),
         orientation: 1,
         icc: Vec::new(),
+        color_map: None,
     }
 }
 fn rgba(bytes: &[u8]) -> Vec<u8> {
@@ -358,6 +363,356 @@ fn legacy_icc_keeps_source_profiles_separate_from_rgb_output() {
             };
             assert!(headers.headers.iter().any(|entry| entry.tagid == 34675
                 && matches!(&entry.data, DataPack::Undef(data) if data == &profile)));
+        }
+    }
+}
+
+// Independent lookup reference: ICC describes ColorMap RGB values, not indices.
+// No CMS is needed to turn an index into RGB values in the same color space.
+fn icc_palette(bits: u16, be: bool, mode: u16, icc: &[u8]) -> Page {
+    let count = 1usize << bits;
+    let mut colors = vec![0; 3 * count];
+    for (channel, value) in [64u16, 128, 192].into_iter().enumerate() {
+        colors[channel * count] = value * 257;
+        colors[channel * count + 1] = (255 - value) * 257;
+    }
+    let raw = match bits {
+        1 => vec![0x60],
+        2 => vec![0x14],
+        4 => vec![0x01, 0x10],
+        8 => vec![0, 1, 1, 0],
+        16 => bytes_u16(&[0, 1, 1, 0], be),
+        _ => unreachable!(),
+    };
+    let mut p = page(4, 1, &[bits], 1, 3, vec![compression(&raw, mode)]);
+    p.compression = mode;
+    p.icc = icc.to_vec();
+    p.color_map = Some(colors);
+    p
+}
+
+#[test]
+fn palette_rgb_icc_survives_expansion_across_containers_depths_and_compression() {
+    use wml2::metadata::DataMap;
+    use wml2::tiff::header::DataPack;
+    let profile = include_bytes!("fixtures/review/gamma2-rgb.icc");
+    let expected = [
+        64, 128, 192, 255, 191, 127, 63, 255, 191, 127, 63, 255, 64, 128, 192, 255,
+    ];
+    for variant in [Variant::Classic, Variant::Big] {
+        for be in [false, true] {
+            for bits in [1, 2, 4, 8, 16] {
+                for mode in [1, 5, 8, 32773] {
+                    let p = icc_palette(bits, be, mode, profile);
+                    let image = image_load(&build_pages(&[p], variant, be)).unwrap();
+                    assert_eq!(image.buffer.unwrap(), expected);
+                    let metadata = image.metadata.unwrap();
+                    for key in ["ICC Profile", "Source ICC Profile"] {
+                        assert!(
+                            matches!(metadata.get(key),
+                            Some(DataMap::ICCProfile(bytes)) if bytes == profile),
+                            "{key}, bits={bits}, compression={mode}, be={be}"
+                        );
+                    }
+                    let Some(DataMap::Exif(headers)) = metadata.get("Tiff headers") else {
+                        panic!("source TIFF metadata missing");
+                    };
+                    assert!(headers.headers.iter().any(|entry| entry.tagid == 34675
+                        && matches!(&entry.data, DataPack::Undef(bytes) if bytes == profile)));
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn palette_profile_identity_changes_metadata_without_transforming_samples() {
+    use wml2::metadata::DataMap;
+    let rgb = include_bytes!("fixtures/review/linear-rgb.icc");
+    let mut wrong_model = rgb.to_vec();
+    // A model-mismatch fixture, not a claim of a valid CMYK transform profile.
+    wrong_model[16..20].copy_from_slice(b"CMYK");
+    let plain = image_load(&build_pages(
+        &[icc_palette(8, false, 1, &[])],
+        Variant::Classic,
+        false,
+    ))
+    .unwrap();
+    for (profile, active) in [
+        (rgb.as_slice(), true),
+        (wrong_model.as_slice(), false),
+        (b"opaque source bytes".as_slice(), false),
+    ] {
+        let image = image_load(&build_pages(
+            &[icc_palette(8, false, 1, profile)],
+            Variant::Classic,
+            false,
+        ))
+        .unwrap();
+        assert_eq!(image.buffer, plain.buffer);
+        let metadata = image.metadata.unwrap();
+        assert!(matches!(metadata.get("Source ICC Profile"),
+            Some(DataMap::ICCProfile(bytes)) if bytes == profile));
+        assert_eq!(metadata.contains_key("ICC Profile"), active);
+    }
+    let metadata = plain.metadata.unwrap();
+    assert!(!metadata.contains_key("ICC Profile"));
+    assert!(!metadata.contains_key("Source ICC Profile"));
+}
+
+#[test]
+fn palette_icc_still_obeys_metadata_limits() {
+    let profile = include_bytes!("fixtures/review/gamma2-rgb.icc");
+    let bytes = build_pages(
+        &[icc_palette(1, false, 1, profile)],
+        Variant::Classic,
+        false,
+    );
+    assert!(
+        image_from_with_limits(
+            &bytes,
+            DecodeLimits {
+                metadata_bytes: profile.len() - 1,
+                ..DecodeLimits::default()
+            }
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn palette_first_global_icc_requires_identical_applicable_profiles_on_every_page() {
+    use wml2::metadata::DataMap;
+    let profile = include_bytes!("fixtures/review/gamma2-rgb.icc");
+    let other = include_bytes!("fixtures/review/linear-rgb.icc");
+    let first = icc_palette(8, false, 1, profile);
+    for (next_profile, active) in [
+        (profile.as_slice(), true),
+        (other.as_slice(), false),
+        (&[][..], false),
+    ] {
+        let second = icc_palette(8, false, 1, next_profile);
+        let image = image_load(&build_pages(
+            &[first.clone(), second],
+            Variant::Classic,
+            false,
+        ))
+        .unwrap();
+        let metadata = image.metadata.unwrap();
+        assert_eq!(metadata.contains_key("ICC Profile"), active);
+        assert_eq!(
+            metadata.contains_key("Source ICC Profile"),
+            next_profile == profile
+        );
+        assert!(
+            matches!(metadata.get("TIFF Page 1 Source ICC Profile").or_else(|| metadata.get("Source ICC Profile")),
+            Some(DataMap::ICCProfile(bytes)) if bytes == profile)
+        );
+        let frames = image.animation.unwrap();
+        assert_eq!(frames.len(), 1);
+        assert_eq!(frames[0].buffer, image.buffer.unwrap());
+    }
+    let mut rgb = page(4, 1, &[8, 8, 8], 3, 2, vec![vec![128; 12]]);
+    rgb.icc = profile.to_vec();
+    let image = image_load(&build_pages(&[first.clone(), rgb], Variant::Classic, false)).unwrap();
+    assert!(matches!(image.metadata.unwrap().get("ICC Profile"),
+        Some(DataMap::ICCProfile(bytes)) if bytes == profile));
+    assert_eq!(
+        image.animation.unwrap()[0].buffer,
+        [128, 128, 128, 255].repeat(4)
+    );
+    // Equal bytes are insufficient if the next page's model is Gray rather
+    // than RGB: that page's numeric RGB expansion has no applicable RGB ICC.
+    let mut gray = page(4, 1, &[8], 1, 1, vec![vec![64; 4]]);
+    gray.icc = profile.to_vec();
+    let image = image_load(&build_pages(&[first, gray], Variant::Classic, false)).unwrap();
+    assert!(!image.metadata.unwrap().contains_key("ICC Profile"));
+}
+
+#[test]
+fn rgb_first_page_profiles_are_scoped_to_display_page_order() {
+    use wml2::metadata::DataMap;
+    let rgb = include_bytes!("fixtures/review/linear-rgb.icc");
+    let other = include_bytes!("fixtures/review/gamma2-rgb.icc");
+    let mut gray = rgb.to_vec();
+    gray[16..20].copy_from_slice(b"GRAY");
+    for variant in [Variant::Classic, Variant::Big] {
+        for be in [false, true] {
+            for (photo, channels, profile, applicable, uniform) in [
+                (2, 3, rgb.as_slice(), true, true),
+                (2, 3, other.as_slice(), true, false),
+                (2, 3, &[][..], false, false),
+                (1, 1, rgb.as_slice(), false, true),
+                (2, 3, gray.as_slice(), false, false),
+            ] {
+                let mut first = page(1, 1, &[8, 8, 8], 3, 2, vec![vec![128; 3]]);
+                first.icc = rgb.to_vec();
+                let mut second = page(
+                    1,
+                    1,
+                    &vec![8; channels],
+                    channels as u16,
+                    photo,
+                    vec![vec![64; channels]],
+                );
+                second.icc = profile.to_vec();
+                let image = image_load(&build_pages(&[first, second], variant, be)).unwrap();
+                let metadata = image.metadata.unwrap();
+                assert_eq!(
+                    metadata
+                        .get("TIFF Page 1 Source ICC Profile")
+                        .or_else(|| metadata.get("Source ICC Profile")),
+                    Some(&DataMap::ICCProfile(rgb.to_vec()))
+                );
+                assert_eq!(
+                    metadata["TIFF Page 1 ICC Applies To Output"],
+                    DataMap::UInt(1)
+                );
+                assert_eq!(
+                    metadata["TIFF Page 2 ICC Applies To Output"],
+                    DataMap::UInt(u64::from(applicable))
+                );
+                let source = metadata
+                    .get("TIFF Page 2 Source ICC Profile")
+                    .or_else(|| metadata.get("Source ICC Profile"));
+                if profile.is_empty() {
+                    assert!(source.is_none());
+                } else {
+                    assert_eq!(source, Some(&DataMap::ICCProfile(profile.to_vec())));
+                }
+                assert_eq!(metadata.contains_key("Source ICC Profile"), uniform);
+                assert_eq!(metadata.contains_key("ICC Profile"), uniform && applicable);
+                assert_eq!(image.buffer.unwrap(), [128, 128, 128, 255]);
+                assert_eq!(image.animation.unwrap()[0].buffer, [64, 64, 64, 255]);
+            }
+        }
+    }
+}
+
+#[test]
+fn per_page_profile_copies_share_the_directory_metadata_budget() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer};
+    let mut profile = vec![0; 8192];
+    profile[16..20].copy_from_slice(b"RGB ");
+    let mut p = page(1, 1, &[8, 8, 8], 3, 2, vec![vec![128; 3]]);
+    p.icc = profile.clone();
+    let mut second = p.clone();
+    second.icc[100] ^= 1;
+    let bytes = build_pages(&[p, second], Variant::Classic, false);
+    let mut image = ImageBuffer::new();
+    let error = image_decoder_with_limits(
+        &mut BytesReader::new(&bytes),
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+        },
+        DecodeLimits {
+            metadata_bytes: 2 * profile.len() + 10_000,
+            ..Default::default()
+        },
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains("metadata"));
+    // Parsing fit, but its retained directory bytes plus the second copy did
+    // not. Reaching page1 metadata distinguishes this from parser-only limits.
+    assert!(
+        image
+            .metadata
+            .unwrap()
+            .contains_key("TIFF Page 1 Source ICC Profile")
+    );
+    assert!(image.buffer.is_none());
+    assert!(image_load(&bytes).is_ok());
+}
+
+#[test]
+fn per_page_profile_callback_abort_and_errors_stop_before_pixels() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::*;
+    use wml2::metadata::DataMap;
+    #[derive(Default)]
+    struct Probe {
+        target: &'static str,
+        fail: bool,
+        stopped: bool,
+        hits: usize,
+        inits: usize,
+        terms: usize,
+    }
+    impl DrawCallback for Probe {
+        fn init(&mut self, _: usize, _: usize, _: Option<InitOptions>) -> Response {
+            self.inits += 1;
+            Ok(None)
+        }
+        fn draw(
+            &mut self,
+            _: usize,
+            _: usize,
+            _: usize,
+            _: usize,
+            _: &[u8],
+            _: Option<DrawOptions>,
+        ) -> Response {
+            Ok(None)
+        }
+        fn next(&mut self, _: Option<NextOptions>) -> Response {
+            Ok(None)
+        }
+        fn verbose(&mut self, _: &str, _: Option<VerboseOptions>) -> Response {
+            Ok(None)
+        }
+        fn terminate(&mut self, _: Option<TerminateOptions>) -> Response {
+            self.terms += 1;
+            Ok(None)
+        }
+        fn set_metadata(&mut self, key: &str, _: DataMap) -> Response {
+            assert!(!self.stopped, "metadata after Abort");
+            if key == self.target {
+                self.hits += 1;
+                if self.fail {
+                    return Err(std::io::Error::other("page ICC callback failure").into());
+                }
+                self.stopped = true;
+                return Ok(Some(CallbackResponse::abort()));
+            }
+            Ok(None)
+        }
+    }
+    let mut p = page(1, 1, &[8, 8, 8], 3, 2, vec![vec![128; 3]]);
+    p.icc = include_bytes!("fixtures/review/linear-rgb.icc").to_vec();
+    let mut second = p.clone();
+    second.icc[100] ^= 1;
+    let bytes = build_pages(&[p, second], Variant::Classic, false);
+    for target in [
+        "TIFF Page 1 ICC Applies To Output",
+        "TIFF Page 2 Source ICC Profile",
+    ] {
+        for direct in [false, true] {
+            for fail in [false, true] {
+                let mut probe = Probe {
+                    target,
+                    fail,
+                    ..Default::default()
+                };
+                let mut options = DecodeOptions {
+                    debug_flag: 0,
+                    drawer: &mut probe,
+                };
+                let mut reader = BytesReader::new(&bytes);
+                let result = if direct {
+                    wml2::tiff::decoder::decode(&mut reader, &mut options)
+                } else {
+                    image_decoder(&mut reader, &mut options)
+                };
+                if fail {
+                    assert_eq!(result.unwrap_err().to_string(), "page ICC callback failure")
+                } else {
+                    assert!(result.is_ok());
+                    assert_eq!(probe.terms, 1)
+                }
+                assert_eq!((probe.hits, probe.inits), (1, 0));
+            }
         }
     }
 }

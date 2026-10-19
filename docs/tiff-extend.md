@@ -40,7 +40,31 @@ fn read_tiff16(bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
 
 ICC、EXIF、TIFFタグとorientationはメタデータに保持する。Orientation 2〜8による自動回転は行わない。Device CMYKの表示は `(1-C)*(1-K)` 等の基本近似で、CMYK ICC変換やnative CMYK16保持は対象外。
 
-RGBA8出力の元ICCは `Source ICC Profile` とTIFFヘッダー内に保持する。`ICC Profile` は現在のRGB画素に適用できるプロファイルだけに使用し、Gray/CMYKの元ICCをRGB出力へ自動転記しない。InkSet=2などCMYK以外の色分解は明示的に未対応とする。
+RGBA8出力の元ICCはTIFFヘッダー内に保持する。単一ページ、または全表示ページで元ICCが一致する場合は `Source ICC Profile` にも保持する。`ICC Profile` は全表示ページのRGB画素に同じプロファイルが適用できる場合だけに使用し、Gray/CMYKの元ICCをRGB出力へ自動転記しない。InkSet=2などCMYK以外の色分解は明示的に未対応とする。
+
+パレット TIFF の ColorMap 参照は、ICC の RGB 色空間を変更しない。
+RGB と宣言された元 ICC は、通常の RGBA8 展開後も `ICC Profile` に保持し、
+元 bytes は `Source ICC Profile` と TIFF ヘッダーにも残す。色変換や sRGB
+への付け替えは行わない。ColorMap の16-bit値から8-bit値への既存量子化も変更しない。
+別モデルの宣言や RGB identity を持たない短い opaque bytes は source-only のまま。
+これは既存のモデル識別を使う metadata 保持であり、ICC の完全な妥当性や
+CMS route の対応を保証しない。EX の palette 対応、palette alpha、共通色空間への
+明示変換は別の機能である。
+
+複数ページで一つでも ICC がある場合は、各表示ページについて
+`TIFF Page N Source ICC Profile` と `TIFF Page N ICC Applies To Output` を保持する。
+元ICCが全ページで一致する場合は、重複コピーを避けて汎用 `Source ICC Profile` だけに
+保持し、ページごとのsource keyは省略する。各ページの有効な元ICCは、ページsource key、
+なければ汎用source keyから取得する。汎用source keyもないページはICCなしである。
+N は縮小画像・マスクを除いた表示順の1始まり番号で、`ImageBuffer.buffer` が
+page1、`ImageBuffer.animation[0]` がpage2に対応する。ICCがないページはsource keyを
+持たず、適用可否の `DataMap::UInt` は0になる。1はそのページのRGB出力に元ICCが
+適用可能という既存のモデル識別であり、ICCの妥当性やCMS対応を保証しない。
+RGB-first と palette-first を共通に扱い、異なるICCや非適用ページがある場合は
+汎用 `ICC Profile` を付けない。全ページ共通でない元ICCは汎用source keyにも付けない。
+ページごとのコピーとkeyは、IFD解析の既存メタデータ予算と合算して検査する。
+これらのイベントは画素初期化前に届き、Abort・callback errorは後続処理を止める。
+typed native のページごとの `source_color` は従来どおり保持する。
 
 CMYKはExtraSamples=2のunassociated alphaを保持する。CMYKのassociated alpha（1）とPaletteのalpha（1/2）は色モデル固有の処理が未実装のため、ページ解析時に`NoSupportFormat`で拒否する。透明度を捨てて成功させない。用途未指定の追加サンプル（0またはタグなし）は不透明として扱う。
 

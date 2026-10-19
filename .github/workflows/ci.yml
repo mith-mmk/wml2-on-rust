@@ -97,6 +97,8 @@ jobs:
         run: cargo test -p wml2 --test tiff_extend --test tiff_review_regressions --no-default-features --features tiff,high-bit-depth
       - name: TIFF interoperability fixtures
         run: cargo test -p wml2 --test tiff_interop --test tiff_ycbcr --test tiff_jpeg_extend --no-default-features --features tiff-jpeg,idct_llm
+      - name: AVIF ICC reconstruction and selected alpha regressions
+        run: cargo test -p wml2 --locked --no-default-features --features avif,image-buffer-ex,color-management --lib --test avif_color_boundary
       - name: Install 32-bit Windows target
         if: runner.os == 'Windows'
         run: rustup target add i686-pc-windows-msvc

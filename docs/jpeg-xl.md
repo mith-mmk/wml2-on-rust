@@ -1,10 +1,10 @@
 # JPEG XL still-image decoding
 
-This is unreleased work. The continuation is `codex/jpeg-xl-remaining-20261019`,
-based on the preserved `codex/jpeg-xl-decode-20261018` checkpoint83c1800 and
-ICC checkpointfbec877. The latest continuation integrates ICC3d40041, including
-PSD,JP2 ICC and native Gray↔RGB layouts. Published0.0.37 does not contain the feature.
-See [continuation validation](jpeg-xl-continuation-20261019.md).
+WML2 0.0.38 adds opt-in JPEG XL still decoding, together with shared native
+Gray↔RGB ICC layouts and explicit sRGB display conversion. Version0.0.37 does
+not contain this feature. Historical development checkpoints and measurements
+are retained in [continuation validation](jpeg-xl-continuation-20261019.md) and
+[internal-layer validation](jpeg-xl-layers.md).
 
 The opt-in `jpeg-xl` feature uses **published `jxl =0.7.4`**, not upstream main.
 Defaults are unchanged; JPEG XL encoding is unavailable. Add `image-buffer-ex`
@@ -12,7 +12,7 @@ for high-precision callback output. No C library, image-rs, CMS, SIMD or thread
 pool is pulled into the runtime by this feature.
 
 ```toml
-wml2 = { git = "https://github.com/mith-mmk/wml2-on-rust", branch = "codex/jpeg-xl-decode-20261018", features = ["jpeg-xl", "image-buffer-ex"] }
+wml2 = { version = "0.0.38", features = ["jpeg-xl", "image-buffer-ex"] }
 ```
 
 ```rust

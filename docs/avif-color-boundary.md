@@ -16,6 +16,9 @@ own ICC dependency; no additional third-party runtime dependency is introduced.
 The transform uses separate1/3-channel source and3-channel destination spans,
 fixed256-pixel scratch arrays, and checked profile/compiled-memory limits.
 Alpha never enters the CMS. Gray ICC is applied only to a monochrome source.
+The own structural parser also checks device models before compilation: arbitrary
+3CLR cannot substitute for RGB by having three channels. Native EX still retains
+those opaque source bytes without applying the profile.
 The ordinary result retains original `Source ICC Profile` and the destination
 `ICC Profile`, plus original AV1/nclx signaling and bit depth. Source metadata
 does not become a declaration that output samples still use that source ICC.
@@ -119,3 +122,18 @@ integer API's extra validation transform, roughly halving the initial corrected
 cost. The remaining ICC slowdown is measured and retained as an explicit performance
 limitation; no claim of unchanged ICC-path speed is made. Further optimization
 belongs in the own ICC engine rather than a second conversion implementation.
+
+## Device-model admission follow-up
+
+The shared display adapter validates Gray/RGB source and RGB destination device
+models using the own structural parser before selecting transform directions.
+Arbitrary3CLR remains opaque in native EX and is explicitly rejected for display.
+The final scoped AVIF targets pass64tests with1existing ignored, including all9
+independent image references, metadata limits and callback interruption cases.
+Scoped Clippy and formatting pass. The valid Gray/RGB transform math is unchanged.
+All9 final release-probe rasters exactly match independent libavif/LittleCMS
+references and were displayed side by side; source/output profile bytes match.
+The final guard smoke benchmark preserves hashes, allocation counts and bytes
+for all5cases. ICC-case medians change by-1.07%to-0.04% in this run; the
+unprofiled control varies by-32%, so separate-process timing is not a precise
+regression estimate. The earlier corrected-ICC cost limitation still applies.

@@ -1,5 +1,5 @@
 //! Checked, separate source/destination channel layouts for codec RGB output.
-use icc_profile::{ParseLimits, Transform, TransformLimits, TransformOptions};
+use icc_profile::{ColorSpace, ParseLimits, Profile, Transform, TransformLimits, TransformOptions};
 type Error = Box<dyn std::error::Error>;
 
 // Frozen LittleCMS-generated standard sRGB profile. Its copyright tag reads
@@ -19,15 +19,25 @@ pub(crate) fn rgba16_to_rgb_profile(
     crate::limits::check(1, compiled_budget, "ICC compiled workspace")?;
     let limit = crate::limits::current().metadata_bytes.min(64 << 20);
     let budget = compiled_budget.min(64 << 20);
-    let transform = Transform::from_bytes_with_limits(
-        source,
-        destination,
+    let parse_limits = ParseLimits {
+        max_profile_size: limit,
+        max_tag_size: limit,
+        ..Default::default()
+    };
+    let source = Profile::parse_with_limits(source, parse_limits)?;
+    let destination = Profile::parse_with_limits(destination, parse_limits)?;
+    if !matches!(source.color_space(), ColorSpace::Gray | ColorSpace::Rgb)
+        || destination.color_space() != ColorSpace::Rgb
+    {
+        return Err(std::io::Error::other(
+            "ICC display requires Gray/RGB source and RGB destination device models",
+        )
+        .into());
+    }
+    let transform = Transform::new_with_limits(
+        &source,
+        &destination,
         TransformOptions::default(),
-        ParseLimits {
-            max_profile_size: limit,
-            max_tag_size: limit,
-            ..ParseLimits::default()
-        },
         TransformLimits::builder()
             .max_compiled_bytes(budget)
             .max_curve_entries((budget / 4).clamp(2, 1 << 20))
@@ -71,4 +81,27 @@ pub(crate) fn rgba16_to_rgb_profile(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn matching_channel_counts_cannot_substitute_for_device_model_identity() {
+        let mut arbitrary = include_bytes!("../tests/fixtures/review/lab-pcs-rgb.icc").to_vec();
+        arbitrary[16..20].copy_from_slice(b"3CLR");
+        assert_eq!(
+            Profile::parse(&arbitrary).unwrap().color_space(),
+            ColorSpace::NColor(3)
+        );
+        let rgb = include_bytes!("../tests/fixtures/review/avif-icc-linear.icc");
+        for (source, dest) in [(&arbitrary[..], SRGB_ICC), (&rgb[..], &arbitrary[..])] {
+            let mut pixel = [8192, 16384, 24576, 32768];
+            let original = pixel;
+            let error =
+                rgba16_to_rgb_profile(&mut pixel, source, dest, false, 4 << 20).unwrap_err();
+            assert!(error.to_string().contains("device models"));
+            assert_eq!(pixel, original);
+        }
+    }
 }

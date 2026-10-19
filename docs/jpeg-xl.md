@@ -141,9 +141,11 @@ are retained without semantic validation. There is no partial-image success.
 
 Additional fixed profile caps:64MiB input,64KiB header prefix,16384 per image
 dimension,4Mi effective padded frame pixels,auxiliary metadata insertion before box index1025. The conservative
-workspace estimate includes input assembly,128 bytes per possible internal
-frame pixel (including16-pixel padding and the RGB/RGBA sample ratio),1MiB
-header workspace, and ICC workspace. It is charged against `expanded_bytes`;
+workspace estimate includes input assembly,128bytes per maximum admitted internal
+frame pixel, cumulative retained-layer f32 planes,1MiB header workspace, bounded
+TOC permutation/ICC entropy work and ICC storage. All internal frame headers
+and TOCs are scanned before pixel decoding; the canvas quota does not cap layer
+dimensions. See [internal layers](jpeg-xl-layers.md). It is charged against `expanded_bytes`;
 limits can therefore reject an image even if its final canvas alone fits.
 This is **not a process-RSS or arbitrary decoder-internal allocation guarantee**.
 Dependency complexity limits remain enabled, and `sample_limit` bounds internal

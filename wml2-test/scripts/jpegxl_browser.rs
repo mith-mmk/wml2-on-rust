@@ -20,18 +20,19 @@ macro_rules! official {
         include_bytes!(concat!("../../wml2/tests/fixtures/review/jxl-jbrd-",$name,".srgb.rgba.zlib")).as_slice(),$width,$height,true,true,
     ) };
 }
-static mut FRAME: [u8;1212000]=[0;1212000];
+const FRAME_CAPACITY: usize = 924 * 1386 * 4;
+static mut FRAME: [u8; FRAME_CAPACITY] = [0; FRAME_CAPACITY];
 static mut WIDTH:u32=0;
 static mut HEIGHT:u32=0;
 #[unsafe(no_mangle)]
-pub extern "C" fn case_count()->u32 {13}
+pub extern "C" fn case_count()->u32 {14}
 #[unsafe(no_mangle)]
 pub extern "C" fn width()->u32 {unsafe{WIDTH}}
 #[unsafe(no_mangle)]
 pub extern "C" fn height()->u32 {unsafe{HEIGHT}}
 #[unsafe(no_mangle)]
 pub extern "C" fn render_case(index:u32)->*const u8 {
-    let cases=[orientation!(1),orientation!(2),orientation!(3),orientation!(4),orientation!(5),orientation!(6),orientation!(7),orientation!(8),managed!("gray16"),managed!("lossless"),managed!("lossy"),official!("bench",606,500),official!("gray",200,200)];
+    let cases=[orientation!(1),orientation!(2),orientation!(3),orientation!(4),orientation!(5),orientation!(6),orientation!(7),orientation!(8),managed!("gray16"),managed!("lossless"),managed!("lossy"),official!("bench",606,500),official!("gray",200,200),(include_bytes!("../../wml2/tests/fixtures/review/jxl-sunset-logo.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-sunset-logo.srgb.rgba.zlib").as_slice(),924,1386,true,true)];
     let (input,expected,width,height,managed,compressed)=cases[index as usize];
     let decoded;let expected=if compressed {decoded=miniz_oxide::inflate::decompress_to_vec_zlib(expected).unwrap();decoded.as_slice()} else {expected};
     let image=if managed {wml2::jpegxl::image_from_srgb(input)}else{image_from(input)}.expect(FIXTURES);
@@ -42,6 +43,7 @@ pub extern "C" fn render_case(index:u32)->*const u8 {
     } else {
         assert!(matches!(&image.metadata.unwrap()["ICC Profile"],wml2::metadata::DataMap::ICCProfile(v) if v==include_bytes!("../../wml2/src/srgb.icc")));
     }
+    assert!(rgba.len() <= FRAME_CAPACITY);
     // Single-threaded WASM test artifact; no references to mutable statics escape.
     unsafe {WIDTH=width as u32;HEIGHT=height as u32;let ptr=(&raw mut FRAME).cast::<u8>();std::ptr::copy_nonoverlapping(rgba.as_ptr(),ptr,rgba.len());ptr}
 }

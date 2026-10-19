@@ -143,3 +143,8 @@ The latest shared ICC revision reuses only exact adjacent source-colour runs.
 Alpha remains individual and all own-library colour math is retained. See
 [ICC performance](avif-icc-performance.md) for separate before/after and
 ICC/no-ICC measurements, including varying-colour cases without a large gain.
+
+The later [internal-layer continuation](jpeg-xl-layers.md) fixes the canvas-derived
+limit for cropped reference layers, with official sunset_logo evidence,53extended
+and41minimal scoped tests,Node61 and Chromium14cases. The earlier Windows
+baselines are confirmed; subsequent performance/layer SHAs need delta verification.

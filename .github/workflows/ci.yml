@@ -128,13 +128,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: JPEG XL disabled detection contract
-        run: cargo test -p wml2 --locked --no-default-features --test jpeg_xl --test jpeg_xl_additional
+        run: cargo test -p wml2 --locked --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
       - name: JPEG XL ordinary RGBA8 and source metadata
-        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
       - name: JPEG XL native EX precision, limits and Abort
-        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
       - name: JPEG XL explicit sRGB display with own ICC engine
-        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
       - name: Install 32-bit Windows JPEG XL target
         if: runner.os == 'Windows'
         run: rustup target add i686-pc-windows-msvc
@@ -142,11 +142,11 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --test jpeg_xl --test jpeg_xl_additional
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   feature-contracts:
     name: Compatible features and IDCT conflict

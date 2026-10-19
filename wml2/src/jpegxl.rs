@@ -194,9 +194,9 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
     Ok(out)
 }
 
-// ICC preamble entropy decoding is pinned to jxl 0.7.4, icc/mod.rs. The first
-// <=20 symbols all use context zero (upstream uses zero through byte 128).
-// Inspect the advertised expanded size BEFORE upstream allocates the profile.
+// ICC entropy contexts are pinned to jxl0.7.4 icc/mod.rs. Inspect the advertised
+// expanded size before profile allocation, then advance to the frame headers
+// using the same histogram/reader, without building an expanded ICC twice.
 fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
     use jxl_codec::entropy_coding::decode::{Histograms, SymbolReader};
     use jxl_codec::headers::encodings::{Empty, UnconditionalCoder};
@@ -239,6 +239,40 @@ fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
     // Two retained profiles may both contain this ICC, plus generated output
     // profile/metadata overhead reserved by the caller.
     limits::check(mul(size, 2)?, budget, "JPEG XL retained ICC profiles")?;
+    let decoded = coded.min(prefix.len());
+    let tail = prefix[..decoded]
+        .last_chunk::<2>()
+        .ok_or_else(|| invalid("truncated JPEG XL ICC preamble"))?;
+    let mut previous = [tail[1], tail[0]];
+    for index in decoded..coded {
+        let context = if index <= 128 {
+            0
+        } else {
+            let first = match previous[0] {
+                b'a'..=b'z' | b'A'..=b'Z' => 0,
+                b'0'..=b'9' | b'.' | b',' => 1,
+                0 => 2,
+                1 => 3,
+                2..=15 => 4,
+                241..=254 => 5,
+                255 => 6,
+                _ => 7,
+            };
+            let second = match previous[1] {
+                b'a'..=b'z' | b'A'..=b'Z' => 0,
+                b'0'..=b'9' | b'.' | b',' => 1,
+                0..=15 => 2,
+                241..=255 => 3,
+                _ => 4,
+            };
+            1 + first + 8 * second
+        };
+        let byte = u8::try_from(reader.read_unsigned(&hist, br, context))
+            .map_err(|_| invalid("invalid JPEG XL ICC symbol"))?;
+        br.check_for_error().map_err(codec_error)?;
+        previous = [byte, previous[0]];
+    }
+    reader.check_final_state(&hist, br).map_err(codec_error)?;
     add(coded, size)
 }
 
@@ -250,7 +284,116 @@ struct Header {
     color_channels: usize,
     source_header_bytes: usize,
     workspace: usize,
+    sample_limit: usize,
 }
+
+// Use the pinned codec's header/TOC parsers, not a second pixel decoder. Internal
+// reference layers may exceed or lie outside the displayed canvas. Admit their
+// actual padded storage before the codec allocates pixels, then leave cropping,
+// orientation and blending to its coalescing render pipeline.
+fn frame_workspace(
+    input: &[u8],
+    header: &FileHeader,
+    frame_bits: usize,
+    mut max_pixels: usize,
+    base: usize,
+    limits: DecodeLimits,
+) -> Result<(usize, usize), Error> {
+    use jxl_codec::headers::encodings::UnconditionalCoder;
+    use jxl_codec::headers::frame_header::FrameHeader;
+    use jxl_codec::headers::toc::IncrementalTocReader;
+    let mut br = BitReader::new(input);
+    br.skip_bits(frame_bits).map_err(codec_error)?;
+    br.jump_to_byte_boundary().map_err(codec_error)?;
+    let mut pos = br.total_bits_read() / 8;
+    let nonserialized = header.frame_header_nonserialized();
+    let channels = add(3, header.image_metadata.extra_channel_info.len())?;
+    let mut retained = 0;
+    let mut peak = add(base, mul(max_pixels, 128)?)?;
+    let mut visible = 0;
+    let mut toc_workspace = 0;
+    for _ in 0..64 {
+        let end = input.len().min(add(pos, MAX_HEADER)?);
+        let data = input
+            .get(pos..end)
+            .ok_or_else(|| invalid("invalid JPEG XL frame offset"))?;
+        let mut br = BitReader::new(data);
+        let mut frame =
+            FrameHeader::read_unconditional(&(), &mut br, &nonserialized).map_err(codec_error)?;
+        frame.postprocess(&nonserialized);
+        let (width, height) = frame.size_upsampled();
+        let (padded_width, padded_height) = frame.size_padded_upsampled();
+        let width = width.max(padded_width).max(16);
+        let height = height.max(padded_height).max(16);
+        limits::check(width, 16384, "JPEG XL internal layer width")?;
+        limits::check(height, 16384, "JPEG XL internal layer height")?;
+        // The codec clips signed layer rectangles in isize coordinates. Check
+        // both ends and their negation before handing them to that pipeline,
+        // including on 32-bit targets; negative crop origins remain valid.
+        for (origin, extent) in [(frame.x0, width), (frame.y0, height)] {
+            let origin = isize::try_from(origin)?;
+            origin
+                .checked_neg()
+                .ok_or_else(|| invalid("JPEG XL crop origin overflow"))?;
+            origin
+                .checked_add(isize::try_from(extent)?)
+                .and_then(isize::checked_neg)
+                .ok_or_else(|| invalid("JPEG XL crop extent overflow"))?;
+        }
+        let pixels = mul(width, height)?;
+        limits::check(pixels, MAX_PIXELS, "JPEG XL internal layer pixels")?;
+        max_pixels = max_pixels.max(pixels);
+        // Conservatively retain every preceding layer's f32 colour/extra planes,
+        // even if a reference slot is replaced or the codec can free it sooner.
+        retained = add(retained, mul(pixels, mul(channels, 4)?)?)?;
+        let entries = frame.num_toc_entries();
+        limits::check(entries, 4096, "JPEG XL frame TOC entries")?;
+        if br.peek(1) != 0 {
+            toc_workspace = 8 * 1024 * 1024;
+        }
+        br.check_for_error().map_err(codec_error)?;
+        peak = peak.max(add(
+            add(add(base, mul(max_pixels, 128)?)?, retained)?,
+            toc_workspace,
+        )?);
+        limits::check(
+            peak,
+            limits.expanded_bytes,
+            "JPEG XL internal layer workspace",
+        )?;
+        let mut toc =
+            IncrementalTocReader::new(u32::try_from(entries)?, &mut br).map_err(codec_error)?;
+        while !toc.is_complete() {
+            toc.read_step(&mut br).map_err(codec_error)?;
+        }
+        let toc = toc.finalize();
+        br.jump_to_byte_boundary().map_err(codec_error)?;
+        let payload = toc.entries.iter().try_fold(0, |n, &v| add(n, v as usize))?;
+        pos = add(add(pos, br.total_bits_read() / 8)?, payload)?;
+        if pos > input.len() {
+            return Err(error(
+                ImgErrorKind::UnexpectedEof,
+                "truncated JPEG XL frame payload",
+            ));
+        }
+        visible += usize::from(frame.is_visible());
+        if visible > 1 {
+            return Err(unsupported(
+                "JPEG XL multiple visible frames are unsupported",
+            ));
+        }
+        if frame.is_last {
+            if pos != input.len() || visible != 1 {
+                return Err(invalid("trailing or incomplete JPEG XL frame sequence"));
+            }
+            // Upstream rejects >=limit and counts three colour channels even
+            // for Gray. Keep its runtime check, using the scanned layer bound.
+            return Ok((peak, add(mul(max_pixels, channels)?, 1)?));
+        }
+    }
+    Err(unsupported("JPEG XL exceeds64 internal layers"))
+}
+
 fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     // FileHeader has bounded channel tables, but does not read ICC/pixel data.
     limits::check(
@@ -312,7 +455,8 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         limits.animation_bytes,
         "JPEG XL canvas",
     )?;
-    let header_bytes = br.total_bits_read().div_ceil(8);
+    let header_bits = br.total_bits_read();
+    let header_bytes = header_bits.div_ceil(8);
     // Conservative allowance for two small generated matrix/TRC profiles and
     // metadata keys; checked before profile generation or ICC parsing.
     let meta = add(add(input.metadata_bytes, header_bytes)?, 16 * 1024)?;
@@ -322,16 +466,36 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     let padded = mul(width.max(16), height.max(16))?;
     let frame_pixels = add(mul(padded, 4)?, 2)? / 3;
     limits::check(frame_pixels, MAX_PIXELS, "JPEG XL padded frame pixels")?;
-    let mut workspace = add(1024 * 1024, mul(frame_pixels, 128)?)?;
-    workspace = add(workspace, mul(input.codestream.len(), 2)?)?;
+    let mut base = add(1024 * 1024, mul(input.codestream.len(), 2)?)?;
+    let mut frame_bits = header_bits;
     if m.color_encoding.want_icc {
         // Histograms/SymbolReader can allocate a 4 MiB LZ77 ring before a
         // profile exists. Reserve that allowance before inspecting its prefix.
-        workspace = add(workspace, 8 * 1024 * 1024)?;
-        limits::check(workspace, limits.expanded_bytes, "JPEG XL ICC workspace")?;
-        let icc = icc_budget(&mut br, limits.metadata_bytes.saturating_sub(meta))?;
-        workspace = add(workspace, mul(icc, 4)?)?;
+        base = add(base, 8 * 1024 * 1024)?;
+        limits::check(
+            add(base, mul(frame_pixels, 128)?)?,
+            limits.expanded_bytes,
+            "JPEG XL ICC workspace",
+        )?;
+        let mut icc_reader = BitReader::new(&input.codestream);
+        icc_reader.skip_bits(header_bits).map_err(codec_error)?;
+        let icc = icc_budget(&mut icc_reader, limits.metadata_bytes.saturating_sub(meta))?;
+        frame_bits = icc_reader.total_bits_read();
+        base = add(base, mul(icc, 4)?)?;
     }
+    limits::check(
+        add(base, mul(frame_pixels, 128)?)?,
+        limits.expanded_bytes,
+        "JPEG XL decode workspace",
+    )?;
+    let (workspace, sample_limit) = frame_workspace(
+        &input.codestream,
+        &header,
+        frame_bits,
+        frame_pixels,
+        base,
+        limits,
+    )?;
     limits::check(workspace, limits.expanded_bytes, "JPEG XL decode workspace")?;
     Ok(Header {
         width,
@@ -345,6 +509,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         },
         source_header_bytes: header_bytes,
         workspace,
+        sample_limit,
     })
 }
 
@@ -480,14 +645,7 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     drop(raw);
     let h = preflight(&input, limits)?;
     let mut options = JxlDecoderOptions::default();
-    // Upstream rounds widths up to16 for sample_limit and rejects >=limit.
-    options.sample_limit = Some(add(
-        mul(
-            h.width.max(h.height).max(16),
-            mul(h.width.min(h.height).max(16), 4)?,
-        )?,
-        1,
-    )?);
+    options.sample_limit = Some(h.sample_limit);
     options.high_precision = true;
     options.render_spot_colors = false;
     let mut stream = input.codestream.as_slice();
@@ -743,6 +901,29 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn bounded_icc_cursor_matches_pinned_codec_before_frame_headers() {
+        for source in [
+            include_bytes!("../tests/fixtures/review/jxl-icc-lossless.jxl").as_slice(),
+            include_bytes!("../tests/fixtures/review/jxl-icc-gray16.jxl").as_slice(),
+            include_bytes!("../tests/fixtures/review/jxl-jbrd-bench.jxl").as_slice(),
+            include_bytes!("../tests/fixtures/review/jxl-jbrd-gray.jxl").as_slice(),
+        ] {
+            let input = unpack(source, DecodeLimits::default()).unwrap();
+            let mut actual = BitReader::new(&input.codestream);
+            let header = FileHeader::read(&mut actual).unwrap();
+            assert!(header.image_metadata.color_encoding.want_icc);
+            let mut reference = BitReader::new(&input.codestream);
+            reference.skip_bits(actual.total_bits_read()).unwrap();
+            icc_budget(&mut actual, 32 << 20).unwrap();
+            let mut reader = jxl_codec::icc::IncrementalIccReader::new(&mut reference).unwrap();
+            reader.read_all(&mut reference).unwrap();
+            let profile = reader.finalize(&mut reference).unwrap();
+            assert!(profile.len() >= 128);
+            assert_eq!(actual.total_bits_read(), reference.total_bits_read());
+        }
+    }
+
     #[test]
     fn icc_envelopes_cannot_relabel_unknown_or_hdr_profiles() {
         let valid = include_bytes!("../tests/fixtures/review/jxl-gamma2.icc");

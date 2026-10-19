@@ -3,7 +3,7 @@
 import argparse,hashlib,json,pathlib,struct,subprocess,zlib
 import ctypes as C
 import ctypes.util
-p=argparse.ArgumentParser();p.add_argument('--tools',type=pathlib.Path,required=True);p.add_argument('--work',type=pathlib.Path,required=True);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--layer-only',action='store_true');p.add_argument('--tools',type=pathlib.Path,required=True);p.add_argument('--work',type=pathlib.Path,required=True);a=p.parse_args()
 if not a.work.name.startswith('.test'):p.error('--work must start with .test')
 root=pathlib.Path(__file__).resolve().parents[2];dest=root/'wml2/tests/fixtures/review';work=a.work.resolve();work.mkdir(parents=True,exist_ok=True)
 def run(args):
@@ -51,11 +51,30 @@ def oracle(source,bits,managed=False):
  return w,h,bytes(rgba) if bits==8 else struct.pack('<'+'H'*len(rgba),*rgba)
 manifest={'encoder':'libjxl0.11.2 C API,lossless,effort3,keep invisible','oracle':'djxl0.11.2 PAM normalized by MAXVAL; managed libjxl C RGBA16 and actual output ICC,then LittleCMS16 to fixed sRGB,relative intent,NOOPTIMIZE,final RGBA8 rounding','lcms_encoded_version':cms.cmsGetEncodedCMMversion(),'libjxl_version':version,'orientations':[],'depths':[],'managed':[]}
 source=work/'orientation.raw';source.write_bytes(bytes([17,34,51,255,200,10,30,127,9,230,77,0,32,64,96,1,222,111,8,254,250,240,16,255]))
-for orientation in range(1,9):
+if a.layer_only:
+ manifest=json.loads((dest/'jxl-additional-fixtures.json').read_text());manifest['managed']=[v for v in manifest['managed'] if v['file']!='jxl-sunset-logo.jxl']
+for orientation in ([] if a.layer_only else range(1,9)):
  name=f'jxl-orientation{orientation}';output=dest/(name+'.jxl');run([encoder,source,output,2,3,4,8,f'orientation{orientation}','-']);w,h,rgba=oracle(output,8);(dest/(name+'.rgba')).write_bytes(rgba)
  manifest['orientations'].append({'file':output.name,'expected':name+'.rgba','orientation':orientation,'size':[w,h],'sha256':digest(output.read_bytes()),'rgba_sha256':digest(rgba)})
-for bits in [9,10]:
+for bits in ([] if a.layer_only else [9,10]):
  m=(1<<bits)-1;values=[v for i in range(35) for v in [(i*37+1)%(m+1),(i*71+17)%(m+1),(i*97+31)%(m+1),[0,1,m//2,m-1,m][i%5]]];source=work/f'rgba{bits}.raw';source.write_bytes(struct.pack('<'+'H'*len(values),*values));name=f'jxl-rgba{bits}';output=dest/(name+'.jxl');run([encoder,source,output,7,5,4,bits,'lossless','-']);w,h,rgba16=oracle(output,16);(dest/(name+'.rgba16le')).write_bytes(rgba16);(dest/(name+'.source16le')).write_bytes(source.read_bytes());manifest['depths'].append({'file':output.name,'coded_bits':bits,'output_bits':16,'size':[w,h],'sha256':digest(output.read_bytes()),'rgba16_sha256':digest(rgba16)})
-for file in ['jxl-icc-gray16.jxl','jxl-icc-lossless.jxl','jxl-icc-lossy.jxl','jxl-jbrd-bench.jxl','jxl-jbrd-gray.jxl']:
- w,h,rgba16=oracle(dest/file,16,True);values=struct.unpack('<'+'H'*(len(rgba16)//2),rgba16);rgba=bytes((v*255+32767)//65535 for v in values);name=pathlib.Path(file).stem+'.srgb.rgba';compressed=file.startswith('jxl-jbrd-');name+=('.zlib' if compressed else '');(dest/name).write_bytes(zlib.compress(rgba,9) if compressed else rgba);manifest['managed'].append({'file':file,'expected':name,'compression':'zlib' if compressed else None,'size':[w,h],'sha256':digest((dest/file).read_bytes()),'rgba_sha256':digest(rgba)})
+for file in (['jxl-sunset-logo.jxl'] if a.layer_only else ['jxl-icc-gray16.jxl','jxl-icc-lossless.jxl','jxl-icc-lossy.jxl','jxl-jbrd-bench.jxl','jxl-jbrd-gray.jxl','jxl-sunset-logo.jxl']):
+ w,h,rgba16=oracle(dest/file,16,True);values=struct.unpack('<'+'H'*(len(rgba16)//2),rgba16);rgba=bytes((v*255+32767)//65535 for v in values);name=pathlib.Path(file).stem+'.srgb.rgba';compressed=file.startswith(('jxl-jbrd-','jxl-sunset-'));name+=('.zlib' if compressed else '');(dest/name).write_bytes(zlib.compress(rgba,9) if compressed else rgba);manifest['managed'].append({'file':file,'expected':name,'compression':'zlib' if compressed else None,'size':[w,h],'sha256':digest((dest/file).read_bytes()),'rgba_sha256':digest(rgba)})
+# The layer fixture uses normalized C-API output, not the PAM coded MAXVAL,
+# for native low-bit probes and the ordinary rounding reference.
+layer='jxl-sunset-logo'
+raw=(work/(layer+'.libjxl16')).read_bytes()
+words=struct.unpack('<'+'H'*(len(raw)//2),raw)
+ordinary=bytes((v*255+32767)//65535 for v in words)
+(dest/(layer+'.rgba.zlib')).write_bytes(zlib.compress(ordinary,9))
+count=len(words)//4
+probes=[]
+for k in range(4096):
+ i=k*(count-1)//4095
+ probes.append(' '.join(str(v) for v in [i,*words[i*4:i*4+4]]))
+(dest/(layer+'.probes.txt')).write_text('\n'.join(probes)+'\n')
+provenance=json.loads((dest/(layer+'.json')).read_text())
+for file in provenance['files']:
+ data=(dest/file).read_bytes();provenance['files'][file]={'bytes':len(data),'sha256':digest(data)}
+(dest/(layer+'.json')).write_text(json.dumps(provenance,indent=2)+'\n')
 (dest/'jxl-additional-fixtures.json').write_text(json.dumps(manifest,indent=2)+'\n');print(json.dumps(manifest,indent=2))

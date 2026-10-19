@@ -172,6 +172,17 @@
       ],
       "sha256": "346cc92b55864b0efb9f85cdddd02b586473ff18b03718e5a02fa03cb3e86844",
       "rgba_sha256": "c3e2740f5d29e070514a0eb614f553304330fbf5559bec6f01998a1fc7315ee4"
+    },
+    {
+      "file": "jxl-sunset-logo.jxl",
+      "expected": "jxl-sunset-logo.srgb.rgba.zlib",
+      "compression": "zlib",
+      "size": [
+        924,
+        1386
+      ],
+      "sha256": "6617480923e1fdef555e165a1e7df9ca648068dd0bdbc41a22c0e4213392d834",
+      "rgba_sha256": "6f43b3e88ad4c98417f0cb455cd3e27d2b9949b53ea0d44c292111b75dc6ad60"
     }
   ]
 }

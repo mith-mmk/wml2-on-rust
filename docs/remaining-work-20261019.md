@@ -78,8 +78,13 @@ integrates. No main merge, version bump or registry publication is requested.
 - All8orientations,9/10-bit promotion, shared own-library explicit sRGB display,
   Node WASM61cases and actual Chromium13-case display are independently validated.
   The explicit display route uses reconstruction-profile coordinates and excludes alpha.
-- The prior Windows25-file collection/manifest is absent from this cloud
-  environment; independent cloud/browser evidence does not execute that corpus.
+- Windows session01a14e00-f0d4-7060-865c-7e99da5ec0fc confirmed JXL8303737
+  (116passed,0failed,31ordinary/EX hashes unchanged) and ICCcc4e4a1
+  (132passed,17native transforms). The corpus is absent from this cloud workspace;
+  later performance/layer revisions need Windows delta verification.
+- Cropped reference layers larger than the canvas now receive separate checked
+  header/TOC and workspace admission. The pinned codec handles crop/blend and
+  orientation; official sunset_logo is validated. See [internal layers](jpeg-xl-layers.md).
 
 - Check the pinned codec's actual APIs before extending premultiplied alpha,
   compressed metadata or JPEG reconstruction. Opaque

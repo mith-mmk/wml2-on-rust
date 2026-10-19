@@ -30,7 +30,7 @@ with sync_playwright() as playwright:
  browser=playwright.chromium.launch_persistent_context(str(out/'.test-playwright-profile'),executable_path=shutil.which(a.browser) or a.browser,headless=True,viewport={'width':1000,'height':1050},args=['--no-sandbox','--disable-background-networking','--disable-component-update','--no-first-run'])
  try:
   page_view=browser.new_page();page_view.set_content(html,wait_until='load',timeout=30000)
-  page_view.wait_for_function("['passed','failed'].includes(document.body.dataset.result)",timeout=30000)
+  page_view.wait_for_function("['passed','failed'].includes(document.body.dataset.result)",timeout=90000)
   (out/'browser-result.txt').write_text(page_view.locator('#result').inner_text())
   if page_view.locator('body').get_attribute('data-result')!='passed':raise RuntimeError('browser verification failed; see browser-result.txt')
   report=json.loads(page_view.locator('#result').inner_text());page_view.screenshot(path=str(screenshot),full_page=True)

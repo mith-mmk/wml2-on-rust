@@ -19,6 +19,27 @@ const COMMENT_LABEL: u8 = 0xfe;
 const GRAPHIC_CONTROLE: u8 = 0xf9;
 const END_MARKER: u8 = b';'; // 0x3c
 const END: u8 = 0x00;
+const ICC_APPLICATION: &[u8] = b"ICCRGBG1012";
+
+// ICC.1 Annex B.6: application data is one complete profile split into GIF
+// sub-blocks, with no JPEG-style sequence fields. Retain opaque bytes only.
+fn read_icc_application<B: BinaryReader>(reader: &mut B) -> Result<Vec<u8>, Error> {
+    crate::limits::charge_metadata(ICC_APPLICATION.len() + std::mem::size_of::<Vec<u8>>())?;
+    let mut profile = Vec::new();
+    loop {
+        let length = usize::from(reader.read_byte()?);
+        if length == 0 {
+            return Ok(profile);
+        }
+        crate::limits::charge_metadata(length)?;
+        profile.try_reserve(length)?;
+        let block = reader.read_bytes_as_vec(length)?;
+        if block.len() != length {
+            return Err(std::io::Error::other("truncated GIF ICC sub-block").into());
+        }
+        profile.extend_from_slice(&block);
+    }
+}
 
 fn gif_dispose_option(dispose_method: u8) -> NextDispose {
     match dispose_method {
@@ -66,7 +87,14 @@ fn draw_frame(
     Ok(())
 }
 
-pub fn decode<'decode, B: BinaryReader>(
+pub fn decode<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    crate::limits::metadata_scope(|| decode_inner(reader, option))
+}
+
+fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
@@ -97,6 +125,7 @@ pub fn decode<'decode, B: BinaryReader>(
         .drawer
         .set_metadata("height", DataMap::UInt(header.height as u64))?;
     let mut comment_count = 0;
+    let mut icc_profiles = Vec::new();
 
     loop {
         let c = reader.read_byte()?;
@@ -161,6 +190,12 @@ pub fn decode<'decode, B: BinaryReader>(
                             break;
                         }
                         let buf = reader.read_bytes_as_vec(len)?;
+                        if buf == ICC_APPLICATION {
+                            let profile = read_icc_application(reader)?;
+                            icc_profiles.try_reserve(1)?;
+                            icc_profiles.push(profile);
+                            continue;
+                        }
                         let s = read_ascii_string(&buf, 0, len);
                         loop {
                             let len = reader.read_byte()? as usize;
@@ -386,6 +421,26 @@ pub fn decode<'decode, B: BinaryReader>(
         };
     }
 
+    // Emit after the complete stream so multiple carriers cannot masquerade
+    // as one global profile. Indexed keys denote carrier order, not frames.
+    let single = icc_profiles.len() == 1;
+    for (index, profile) in icc_profiles.into_iter().enumerate() {
+        let key = if single {
+            "Source ICC Profile".to_owned()
+        } else {
+            format!("GIF Source ICC Profile {}", index + 1)
+        };
+        crate::limits::charge_metadata(key.len())?;
+        let response = option
+            .drawer
+            .set_metadata(&key, DataMap::ICCProfile(profile))?;
+        if matches!(response, Some(value) if value.response == ResponseCommand::Abort) {
+            // The common guard already unwinds Abort; retain the same stop
+            // behavior for a direct legacy GIF call receiving this new event.
+            option.drawer.terminate(None)?;
+            break;
+        }
+    }
     Ok(warnings)
 }
 

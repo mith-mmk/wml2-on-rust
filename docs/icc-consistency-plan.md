@@ -29,9 +29,12 @@ it does not claim those stages have been implemented.
 
 ## Stage 2: acquisition and source/output profile identity
 
-- F12/F13: retain bounded BMP V5 embedded ICC and GIF ICCRGBG1012 payloads.
-  Palette expansion does not itself require a CMS. Do not open linked BMP
-  profiles as an implicit filesystem/network operation.
+- F12: retain bounded BMP V5 embedded ICC. Do not open linked BMP profiles as
+  an implicit filesystem/network operation. This remains pending.
+- F13: GIF ICCRGBG1012 acquisition is implemented as bounded opaque source
+  metadata, with independent records for multiple carriers. See
+  [the GIF ICC contract](gif-icc.md). Active/output profile applicability and
+  explicit managed GIF output remain separate work.
 - F04: distinguish original Gray/CMYK ICC from a compatible current RGB output
   profile in ordinary JPEG/PNG. Apply the same source/output naming principle to
   documented non-managed PSD output without claiming a new automatic-sRGB
@@ -110,8 +113,9 @@ tag after explicit highres CMS. F11 adds one guarded top-level `begin_image`
 callback, distinct from initialization and animation frame changes. See
 [the metadata contract](icc-consistency-metadata.md).
 
-F08 palette TIFF and F09 per-page metadata require separate format work and are
-deferred. PSD naming, BMP/GIF acquisition, AVIF decoder signaling/transfer,
+F13 now retains GIF source ICC without changing decoded pixels or animation.
+F08 palette TIFF is a separate sibling PR; F09 per-page metadata remains
+deferred. PSD naming, BMP acquisition, AVIF decoder signaling/transfer,
 CMYK CMS and JXL remain later stages. No profile is implicitly applied by these
 metadata corrections, and unsupported native ICC bytes remain retainable.
 

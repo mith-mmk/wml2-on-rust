@@ -51,6 +51,18 @@ const CASES: &[(&str, &[u8], &[u8], bool)] = &[
         false,
     ),
     (
+        "gray-alpha-straight",
+        include_bytes!("fixtures/review/avif-icc-gray-alpha-straight.avif"),
+        include_bytes!("fixtures/review/avif-icc-gray-alpha-straight.raw.rgba"),
+        false,
+    ),
+    (
+        "gray-alpha-prem",
+        include_bytes!("fixtures/review/avif-icc-gray-alpha-prem.avif"),
+        include_bytes!("fixtures/review/avif-icc-gray-alpha-prem.raw.rgba"),
+        true,
+    ),
+    (
         "gray-linear",
         include_bytes!("fixtures/review/avif-icc-gray-linear.avif"),
         include_bytes!("fixtures/review/avif-icc-gray-linear.raw.rgba"),
@@ -130,6 +142,8 @@ const MANAGED: &[&[u8]] = &[
     include_bytes!("fixtures/review/avif-icc-ff-linear-coded-icc.srgb.rgba"),
     include_bytes!("fixtures/review/avif-icc-ff-linear-coded10-icc.srgb.rgba"),
     include_bytes!("fixtures/review/avif-icc-ff-linear-coded12-icc.srgb.rgba"),
+    include_bytes!("fixtures/review/avif-icc-gray-alpha-straight.srgb.rgba"),
+    include_bytes!("fixtures/review/avif-icc-gray-alpha-prem.srgb.rgba"),
     include_bytes!("fixtures/review/avif-icc-gray-linear.srgb.rgba"),
     include_bytes!("fixtures/review/avif-icc-gray-linear-limited.srgb.rgba"),
     include_bytes!("fixtures/review/avif-icc-gray-linear-limited10.srgb.rgba"),
@@ -379,6 +393,18 @@ fn prem_reference_must_name_the_decoded_alpha_item() {
     bytes[prem + 8..prem + 10].copy_from_slice(&3u16.to_be_bytes());
     assert!(image_from_ex(&bytes, PixelFormatEx::Rgba16, PrecisionConversion::Exact).is_err());
     assert!(image_from(&bytes).is_err());
+}
+
+#[test]
+fn prem_cannot_target_an_unselected_second_auxiliary() {
+    let bytes = include_bytes!("fixtures/review/avif-icc-prem-other-alpha.avif");
+    let decoded = avif_codec::decode_frame_bytes_strict_with_limits(bytes, &limits()).unwrap();
+    assert_eq!(decoded.information().info().alpha_auxiliary_items.len(), 2);
+    assert!(image_from(bytes).is_err());
+    #[cfg(feature = "image-buffer-ex")]
+    assert!(image_from_ex(bytes, PixelFormatEx::Rgba16, PrecisionConversion::Exact).is_err());
+    #[cfg(feature = "high-bit-depth")]
+    assert!(wml2::highres::avif::decode_native(bytes, &limits()).is_err());
 }
 
 #[cfg(feature = "high-bit-depth")]

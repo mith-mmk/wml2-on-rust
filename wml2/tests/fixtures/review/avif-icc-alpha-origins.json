@@ -1,0 +1,24 @@
+[
+  {
+    "name": "avif-icc-gray-alpha-straight",
+    "source": "Composite of unchanged independent-codec gray primary payload/properties from avif-icc-gray-linear.avif and alpha payload/item metadata from avif-icc-gradient-linear-premult1.avif; prem relation retained or removed",
+    "oracle": "libavif1.2.1 RGBA16 straight alpha, LittleCMS2.16 relative NOOPTIMIZE Gray16 to RGB16, late RGBA8 quantization",
+    "avif_sha256": "ed6e5a30259f99ae17ecacf6a6c3a7f43a32dbba7c5f18784cb7ead39ea1a9db",
+    "raw16_sha256": "db48188cc3a924b9d68598fd077ae5a37474e4c555ff553aba74b47dacf2c7db",
+    "raw8_sha256": "7310477c29f34e9a7ecc3afb8ade3de8ffda54a90844083b62ee362ed102f203",
+    "srgb8_sha256": "55eafb96f41b7471c94ea1b89fb465d18f98836118ee438999773addfee7e3d8"
+  },
+  {
+    "name": "avif-icc-gray-alpha-prem",
+    "source": "Composite of unchanged independent-codec gray primary payload/properties from avif-icc-gray-linear.avif and alpha payload/item metadata from avif-icc-gradient-linear-premult1.avif; prem relation retained or removed",
+    "oracle": "libavif1.2.1 RGBA16 straight alpha, LittleCMS2.16 relative NOOPTIMIZE Gray16 to RGB16, late RGBA8 quantization",
+    "avif_sha256": "b57bcc3a5aef7a4e0046a78f3c6ce1971e2020dd6bcab16f820cc9f8a55d90a8",
+    "raw16_sha256": "0b31a5ec2c35054e03490ebe4114c64468fb837025182cbb8d87553abd55f852",
+    "raw8_sha256": "e5d4d9ee0f296481fd8ffa14e6ad19d2826029fa5787dca99d1483aec4ca02ca",
+    "srgb8_sha256": "a7460d1aebf3607ea5a7886b63d692bb5371ed3e21d661e574ec7c0d13b4b8d0"
+  },
+  {
+    "name": "avif-icc-prem-other-alpha",
+    "source": "Composite of avif-icc-gradient-linear-premult1.avif with an added third item using avif-icc-gray-linear.avif payload. Auxiliaries [2,3], prem target3; strict codec actually decodes alpha2. Expected rejection."
+  }
+]

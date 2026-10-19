@@ -93,3 +93,28 @@ Create the named .test directories first. Save CSV output; discard the stated
 warm-up rows and group variants by iteration for ratios. The local evidence
 includes input hashes/mdat equality, per-process CSVs and benchmark JSON.
 Windows25-image corpus validation remains unexecuted in this cloud environment.
+
+## Release review: Gray alpha and selected auxiliary
+
+The release review added real Gray+alpha composites with unchanged independently
+encoded primary/alpha AV1 payloads. Restore alpha by native plane identity before
+unassociation: monochrome native buffers contain identities `[0,3]`, rather than
+four vector elements. The `prem` target must match the decoder-selected alpha
+grid, or its first auxiliary item. A second unselected auxiliary is rejected as
+a `prem` target in ordinary, EX and native entry points.
+
+Both Gray+alpha inputs match independent libavif1.2.1 RGBA16 and LittleCMS2.16
+relative NOOPTIMIZE references at the documented8-bit tolerance; alpha matches
+exactly. The source/oracle hashes and composition method are recorded in
+`wml2/tests/fixtures/review/avif-icc-alpha-origins.json`. Synthetic unit coverage
+checks straight/premultiplied8/10/12-bit alpha, zero alpha and invalid layout.
+A checkerboard composite of actual ordinary outputs was inspected.
+
+Against immutable `3d4004153a2501366f447e33c056d2eba264d10f`, same-process
+alternating release rlibs,3processes,10warmups+100retained pairs/process,CPU0,
+no concurrent builds/tests: existing RGB-prem,Gray-full andGray-limited12, each
+in ordinary/EX mode, had paired median changes between-0.29% and+0.59%. Pixels,
+allocation counts and allocated bytes matched in all6conditions. These tiny
+differences are noise; new Gray+alpha correctness has no valid old-output
+performance baseline. This does not change the varying-colour ICC/no-ICC cost
+reported above.

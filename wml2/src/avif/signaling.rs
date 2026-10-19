@@ -114,15 +114,14 @@ fn find_prem(
 }
 
 pub(crate) fn alpha_premultiplied(data: &[u8], info: &AvifInfo) -> io::Result<bool> {
-    find_prem(data, info.primary_item_id, |id| {
-        info.alpha_auxiliary_items
-            .iter()
-            .any(|item| item.item_id == id)
-            || info
-                .alpha_grid
-                .as_ref()
-                .is_some_and(|grid| grid.item_id == id)
-    })
+    // Match the pinned strict decoder's selection: an alpha grid takes
+    // precedence; otherwise only the first auxiliary item is decoded.
+    let decoded_alpha = info
+        .alpha_grid
+        .as_ref()
+        .map(|grid| grid.item_id)
+        .or_else(|| info.alpha_auxiliary_items.first().map(|item| item.item_id));
+    find_prem(data, info.primary_item_id, |id| decoded_alpha == Some(id))
 }
 
 pub(crate) fn is_sequence(data: &[u8]) -> io::Result<bool> {

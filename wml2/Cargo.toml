@@ -222,7 +222,7 @@ tiff = ["exif"]
 webp = ["exif", "dep:webp_codec"]
 psd = []
 jpeg2000 = []
-avif = ["dep:avif_codec"]
+avif = ["dep:avif_codec", "dep:icc_profile"]
 avifenc = ["avif", "dep:avifenc_codec", "dep:icc_profile"]
 high-bit-depth = []
 # Checked byte-based callback storage, independent of typed high-resolution frames.

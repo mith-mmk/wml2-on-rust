@@ -50,7 +50,9 @@ impl From<HighresError> for DecodeError {
 pub fn decode_native(data: &[u8], limits: &NativeDecodeLimits) -> Result<ImageFrame, DecodeError> {
     let decoded = avif_codec::decode_frame_bytes_strict_with_limits(data, limits)?;
     let pixel_aspect_ratio = decoded.information().pixel_aspect_ratio();
-    let (frame, rich) = decoded.into_frame_and_rich();
+    let (mut frame, mut rich) = decoded.into_frame_and_rich();
+    crate::avif::signaling::correct_alpha(data, &mut frame, &mut rich)
+        .map_err(|error| avif_codec::DecoderError::Bitstream(error.to_string()))?;
     map_frame(frame, &rich, pixel_aspect_ratio)
 }
 

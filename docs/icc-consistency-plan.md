@@ -74,6 +74,12 @@ it does not claim those stages have been implemented.
   APIs. Do not introduce another product CMS or claim tone mapping is ordinary
   SDR ICC processing.
 
+The current WML2 still adapter now uses the complete associated ICC/nclx set,
+corrects actual iref/prem for native/EX, and separates raw reconstruction from
+one own-library display ICC transform (F05/F06/F07 scoped still path). It also
+corrects monochrome video range before ICC. See [the AVIF boundary](avif-color-boundary.md).
+Managed AVIS and broader display/geometry capabilities remain separate work.
+
 ## Stage 5: explicit managed output capabilities
 
 - Extend WML2's explicit Gray/RGB adapter with separate source/destination

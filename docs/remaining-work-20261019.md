@@ -47,7 +47,12 @@ integrates. No main merge, version bump or registry publication is requested.
 - AVIF F05/F06/F07: the pinned0.1.0 codec selects nclx ahead of ICC, performs
   display transfer before its internal ICC path, and misses actual iref/prem
   alpha references. Native/EX boundaries and own-library CMS integration need
-  correction together; changing ICC priority alone is insufficient.
+  correction together; changing ICC priority alone is insufficient. The
+  WML2 scoped still correction is now implemented with own-library CMS,
+  actual item alpha association, and raw/Gray-range reconstruction. Native
+  samples remain exact, EX retains source coordinates, and9independent
+  references check display output. Managed AVIS and broader display/geometry
+  capabilities are not yet covered by this correction.
 - PSD source/output naming and JPEG2000 ICC acquisition remain distinct format
   work. Explicit JPEG2000 ICC rejection is an advertised capability gap, not
   silently successful decoding.

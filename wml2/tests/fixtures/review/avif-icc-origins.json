@@ -1,0 +1,191 @@
+[
+  {
+    "name": "avif-icc-gradient-linear-premult0",
+    "avif_sha256": "4e8832f34f3034623722eeace6392d9631d9a5d8e8d9c2c65967845e02557cab",
+    "raw_sha256": "93228efc2b3d5f5b42142ce5b1036f5a575a0d4e088d94476ac6a56de00da6c1",
+    "srgb_sha256": "346c6788778a8f42c06bc806e6a082aae71a48e8cd91730e9a0e632e9c62f8b1",
+    "icc_sha256": "e10af3e9d973076a155313b463e4b107905a3c5d5695aedbd7c9745ecb60d5a1",
+    "size": [
+      32,
+      32
+    ],
+    "avif_bytes": 3301,
+    "source": "Pillow/libavif or ffmpeg/libaom; frozen audit reproduce.py; source generated RGBA/Gray patterns owned by project; not WML2 encoded",
+    "oracle": "libavif RGBA16 straight alpha; relative LittleCMS16; final RGBA8 quantization",
+    "prem_reference": false,
+    "reference_detail": {
+      "libavif": "1.2.1",
+      "lcms_encoded_version": 2160,
+      "raw16_sha256": "d9daf785161024064281d033824d03ae219bbe32faee1105d773e73769053a87",
+      "destination_icc_sha256": "43c1bc2be9fb4cf72e27ab12f64e54fad4478cf80a02ee79dc7df37957c79c96"
+    }
+  },
+  {
+    "name": "avif-icc-gradient-linear-premult1",
+    "avif_sha256": "317812e8b78aa743a3059c70388506014a72976108791f68ee0e02153e030ba1",
+    "raw_sha256": "4816474e631306edc768a9de0cfaeaa74dd382d18ea3ef1372c4b4a16edf97f3",
+    "srgb_sha256": "05a9e0858bb2d037e83d829b713278d2ec216b77542e95b0670e42d1d386663b",
+    "icc_sha256": "e10af3e9d973076a155313b463e4b107905a3c5d5695aedbd7c9745ecb60d5a1",
+    "size": [
+      32,
+      32
+    ],
+    "avif_bytes": 2780,
+    "source": "Pillow/libavif or ffmpeg/libaom; frozen audit reproduce.py; source generated RGBA/Gray patterns owned by project; not WML2 encoded",
+    "oracle": "libavif RGBA16 straight alpha; relative LittleCMS16; final RGBA8 quantization",
+    "prem_reference": true,
+    "reference_detail": {
+      "libavif": "1.2.1",
+      "lcms_encoded_version": 2160,
+      "raw16_sha256": "17a9881a9196e0ba210cf87597a692842f00d4a2b07e05fbcba0fbabcd53e733",
+      "destination_icc_sha256": "43c1bc2be9fb4cf72e27ab12f64e54fad4478cf80a02ee79dc7df37957c79c96"
+    }
+  },
+  {
+    "name": "avif-icc-ff-linear-coded-icc",
+    "avif_sha256": "d426f4aaa90c0ab743fdf4255cd828fbcd23b7b346da2a8be1b39a68bfb6db72",
+    "raw_sha256": "e062c5baa9a341c710bf0ad58d093fa5e0c5fa602a0e0a1f709cee7d5e95c948",
+    "srgb_sha256": "d03d6f4428d2f24096a25d72146b7034539d92bf9220720bfc33bfe829aeea54",
+    "icc_sha256": "e10af3e9d973076a155313b463e4b107905a3c5d5695aedbd7c9745ecb60d5a1",
+    "size": [
+      16,
+      16
+    ],
+    "avif_bytes": 881,
+    "source": "Pillow/libavif or ffmpeg/libaom; frozen audit reproduce.py; source generated RGBA/Gray patterns owned by project; not WML2 encoded",
+    "oracle": "libavif RGBA16 straight alpha; relative LittleCMS16; final RGBA8 quantization",
+    "prem_reference": false,
+    "reference_detail": {
+      "libavif": "1.2.1",
+      "lcms_encoded_version": 2160,
+      "raw16_sha256": "60ca46b2f1434fba8de3c551389b99437441bc630a256cd27dccd8ecbc2a4bbc",
+      "destination_icc_sha256": "43c1bc2be9fb4cf72e27ab12f64e54fad4478cf80a02ee79dc7df37957c79c96"
+    }
+  },
+  {
+    "name": "avif-icc-ff-linear-coded10-icc",
+    "avif_sha256": "22b8ce11ee16d1e27ebe49fa7c2bd2ab85fc31dc41c7fe5bdc7f5717cb2d012e",
+    "raw_sha256": "053e2c91c1f6294cea1f6b06177d641a845147da94c74fd9904985a5d7c3f1d1",
+    "srgb_sha256": "fc3b3d2df99f13aa5cb8bc4dc415e1b41d7185bc4cbfa3d473651fa22319b94e",
+    "icc_sha256": "e10af3e9d973076a155313b463e4b107905a3c5d5695aedbd7c9745ecb60d5a1",
+    "size": [
+      16,
+      16
+    ],
+    "avif_bytes": 883,
+    "source": "Pillow/libavif or ffmpeg/libaom; frozen audit reproduce.py; source generated RGBA/Gray patterns owned by project; not WML2 encoded",
+    "oracle": "libavif RGBA16 straight alpha; relative LittleCMS16; final RGBA8 quantization",
+    "prem_reference": false,
+    "reference_detail": {
+      "libavif": "1.2.1",
+      "lcms_encoded_version": 2160,
+      "raw16_sha256": "6369c815a02c0bb22a8aa87107cbefc384662e0064dd5cc5b3812e90daa3d88f",
+      "destination_icc_sha256": "43c1bc2be9fb4cf72e27ab12f64e54fad4478cf80a02ee79dc7df37957c79c96"
+    }
+  },
+  {
+    "name": "avif-icc-ff-linear-coded12-icc",
+    "avif_sha256": "c3f9bd86edfb1eeb03049833bfd69a9d3b014e07e44426fde301572e4b48bc57",
+    "raw_sha256": "053e2c91c1f6294cea1f6b06177d641a845147da94c74fd9904985a5d7c3f1d1",
+    "srgb_sha256": "fc3b3d2df99f13aa5cb8bc4dc415e1b41d7185bc4cbfa3d473651fa22319b94e",
+    "icc_sha256": "e10af3e9d973076a155313b463e4b107905a3c5d5695aedbd7c9745ecb60d5a1",
+    "size": [
+      16,
+      16
+    ],
+    "avif_bytes": 881,
+    "source": "Pillow/libavif or ffmpeg/libaom; frozen audit reproduce.py; source generated RGBA/Gray patterns owned by project; not WML2 encoded",
+    "oracle": "libavif RGBA16 straight alpha; relative LittleCMS16; final RGBA8 quantization",
+    "prem_reference": false,
+    "reference_detail": {
+      "libavif": "1.2.1",
+      "lcms_encoded_version": 2160,
+      "raw16_sha256": "3ad32d6c1150ab1fd1e7bf0372ebca3ba72a8f426e2653ac978dd47a7cce0a46",
+      "destination_icc_sha256": "43c1bc2be9fb4cf72e27ab12f64e54fad4478cf80a02ee79dc7df37957c79c96"
+    }
+  },
+  {
+    "name": "avif-icc-gray-linear",
+    "avif_sha256": "0060039fbc36b75a85695434a11cce960f5ed1fb4f217e8ad2efe1fb062daee4",
+    "raw_sha256": "bfec19b461f4868813bf82fedcf71cff67b131c129f78147406f123551250632",
+    "srgb_sha256": "0697adb67745156932a409c8d403625b3e0cc971a7c1e58f10bef9dc4596f4a9",
+    "icc_sha256": "5360d21d2dce52ed652a8c1c95743603c3d0f00e8a1872b015da06210f1e41e4",
+    "size": [
+      32,
+      32
+    ],
+    "avif_bytes": 1945,
+    "source": "Pillow/libavif or ffmpeg/libaom; frozen audit reproduce.py; source generated RGBA/Gray patterns owned by project; not WML2 encoded",
+    "oracle": "libavif RGBA16 straight alpha; relative LittleCMS16; final RGBA8 quantization",
+    "prem_reference": false,
+    "reference_detail": {
+      "libavif": "1.2.1",
+      "lcms_encoded_version": 2160,
+      "raw16_sha256": "44f6ab0fa2d06e2cc3098097479d99d9d479f1dd0bd377b786f29712356b8b18",
+      "destination_icc_sha256": "43c1bc2be9fb4cf72e27ab12f64e54fad4478cf80a02ee79dc7df37957c79c96"
+    }
+  },
+  {
+    "name": "avif-icc-gray-linear-limited",
+    "avif_sha256": "ec83c00ceba73643dc93b822353c7efb2eab87128827a7c89bfb0c30817609a4",
+    "icc_sha256": "5360d21d2dce52ed652a8c1c95743603c3d0f00e8a1872b015da06210f1e41e4",
+    "size": [
+      16,
+      16
+    ],
+    "avif_bytes": 1002,
+    "source": "Independent libavif1.2.1/libaom direct YUV400 video-range8-bit Gray ramp; explicit CICP1/8/1 and frozen Gray ICC",
+    "prem_reference": false,
+    "raw_sha256": "1154666ad9fea76c496a2c60546e602b41876dee06024c26a9e5b0b9e6446e3a",
+    "srgb_sha256": "6b3233c22083e24bef42d58254eed1b49c8b4b04cefcae17311e2d325df9c04b",
+    "reference_detail": {
+      "libavif": "1.2.1",
+      "lcms_encoded_version": 2160,
+      "raw16_sha256": "fa4c8bb474fde9835ecde95af74c971e8c3cec04bd54b0e984acc4a6adfe21e2",
+      "destination_icc_sha256": "43c1bc2be9fb4cf72e27ab12f64e54fad4478cf80a02ee79dc7df37957c79c96"
+    },
+    "oracle": "libavif RGBA16 straight alpha; relative LittleCMS16; final RGBA8 quantization"
+  },
+  {
+    "name": "avif-icc-gray-linear-limited10",
+    "avif_sha256": "ea118eb678b95e6b1583d6d6e528e44a7cc57c1d09de361504bcdceb7d7cf149",
+    "icc_sha256": "5360d21d2dce52ed652a8c1c95743603c3d0f00e8a1872b015da06210f1e41e4",
+    "size": [
+      16,
+      16
+    ],
+    "avif_bytes": 1109,
+    "source": "Independent libavif1.2.1/libaom direct YUV400 video-range10-bit Gray ramp; explicit CICP1/8/1 and frozen Gray ICC",
+    "prem_reference": false,
+    "raw_sha256": "dc2a336fc4ee0a60453a3e453eb1fee35e0bc4157a257df3f2a36e6de20a1458",
+    "srgb_sha256": "b2cee43a7fbba09b34fd9cad874488cdb7c5eb7a4cd8d0210ea6998131d8148c",
+    "reference_detail": {
+      "libavif": "1.2.1",
+      "lcms_encoded_version": 2160,
+      "raw16_sha256": "fdda6282b87756416787677f916069236c5cd9ece61acb3025e08d14f0c96136",
+      "destination_icc_sha256": "43c1bc2be9fb4cf72e27ab12f64e54fad4478cf80a02ee79dc7df37957c79c96"
+    },
+    "oracle": "libavif RGBA16 straight alpha; relative LittleCMS16; final RGBA8 quantization"
+  },
+  {
+    "name": "avif-icc-gray-linear-limited12",
+    "avif_sha256": "d38bff6213b0299144cf7d7be6c8d544be62bbbc6b42417a362b35127480d15f",
+    "icc_sha256": "5360d21d2dce52ed652a8c1c95743603c3d0f00e8a1872b015da06210f1e41e4",
+    "size": [
+      16,
+      16
+    ],
+    "avif_bytes": 1232,
+    "source": "Independent libavif1.2.1/libaom direct YUV400 video-range12-bit Gray ramp; explicit CICP1/8/1 and frozen Gray ICC",
+    "prem_reference": false,
+    "raw_sha256": "dc2a336fc4ee0a60453a3e453eb1fee35e0bc4157a257df3f2a36e6de20a1458",
+    "srgb_sha256": "4497e642888b9ffb03c72531fe0fb8803eb2e8bb884a6f4e0afc832e5457f2ff",
+    "reference_detail": {
+      "libavif": "1.2.1",
+      "lcms_encoded_version": 2160,
+      "raw16_sha256": "4ff9b4298131018f9e1684fad9994d687f2658d9920397e9af98bc8531df9eb0",
+      "destination_icc_sha256": "43c1bc2be9fb4cf72e27ab12f64e54fad4478cf80a02ee79dc7df37957c79c96"
+    },
+    "oracle": "libavif RGBA16 straight alpha; relative LittleCMS16; final RGBA8 quantization"
+  }
+]

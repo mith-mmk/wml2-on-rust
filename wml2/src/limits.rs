@@ -46,9 +46,9 @@ thread_local! {
 pub(crate) fn current() -> DecodeLimits {
     LIMITS.get()
 }
-/// Direct legacy GIF/BMP calls need an aggregate ICC ledger too, while calls
+/// Direct legacy GIF/BMP/TIFF calls need an aggregate ICC ledger too, while calls
 /// inside a guarded/container decode must preserve the existing ledger.
-#[cfg(any(feature = "gif", feature = "bmp"))]
+#[cfg(any(feature = "gif", feature = "bmp", feature = "tiff"))]
 pub(crate) fn metadata_scope<T>(body: impl FnOnce() -> T) -> T {
     if ACTIVE.get() {
         body()
@@ -98,6 +98,8 @@ pub(crate) fn check_input_length(length: u64, limit: usize) -> Result<(), Error>
     feature = "jpeg",
     feature = "gif",
     feature = "bmp",
+    feature = "tiff",
+    feature = "exif",
     feature = "jpeg2000",
     test
 ))]
@@ -135,6 +137,8 @@ pub(crate) fn inflate_metadata(data: &[u8]) -> Result<Vec<u8>, Error> {
     feature = "jpeg",
     feature = "gif",
     feature = "bmp",
+    feature = "tiff",
+    feature = "exif",
     feature = "jpeg2000",
     test
 ))]
@@ -189,7 +193,7 @@ fn inflate_bounded(mut input: &[u8], limit: usize) -> Result<Vec<u8>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(any(feature = "gif", feature = "bmp"))]
+    #[cfg(any(feature = "gif", feature = "bmp", feature = "tiff"))]
     #[test]
     fn legacy_metadata_scope_accumulates_and_preserves_outer_charges() {
         assert!(!ACTIVE.get());

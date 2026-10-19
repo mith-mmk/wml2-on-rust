@@ -55,9 +55,10 @@ it does not claim those stages have been implemented.
 - F11: define one top-level decode boundary that clears stale image metadata.
   Preserve legitimate metadata delivered before init and within animations;
   clearing every callback init is insufficient.
-- F09: represent per-frame/page profiles, or explicitly transform to a selected
-  common profile. Preserve the existing typed native per-page ICC route. Do not
-  silently apply the first page's profile to later pages.
+- F09: ordinary TIFF now exposes each display page's source profile and
+  output applicability, and emits generic ICC only when valid for every page.
+  The existing typed native per-page ICC route is preserved. Explicit
+  conversion to a selected common profile remains a separate operation.
 - Keep `FrameMetadata.source_color` as source provenance after explicit CMS.
   Clarify/update any generic active ICC tag independently of that provenance.
 
@@ -121,7 +122,8 @@ regressions cover Classic/BigTIFF, both byte orders, 1/2/4/8/16-bit indices and
 four compression modes. Palette-first documents expose a global active ICC only
 when every display page has the same applicable profile; unknown or different
 page profiles stay source-only. It adds no parser, CMS operation or dependency.
-F09 per-page metadata still requires separate format work and is deferred.
+F09 now records per-page source/applicability for ordinary TIFF and removes
+the RGB-first global-profile mismatch, without implicitly converting pixels.
 PSD naming, AVIF decoder signaling/transfer,
 CMYK CMS and JXL remain later stages. No profile is implicitly applied by these
 metadata corrections, and unsupported native ICC bytes remain retainable.

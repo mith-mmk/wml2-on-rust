@@ -33,10 +33,17 @@ integrates. No main merge, version bump or registry publication is requested.
   pass. Six independent BMPs match Pillow pixels before/after. Source/output
   ICC bytes remain exact. Benchmarks preserve hashes and add4allocations/
   717bytes for the344-byte profile; the small ICC case adds0.35microseconds.
-- TIFF per-page identity (F09): ordinary decode currently publishes the first
-  page's source profile globally. Palette-first active ICC is guarded, but
-  non-palette first-page/global behavior still needs correction. Existing typed
-  native per-page provenance must remain intact.
+- TIFF per-page identity (F09): implemented as indexed display-page source
+  records and applicability flags. Generic source/active profiles now require
+  equality/applicability across every display page, including RGB-first files.
+  Native per-page provenance is retained. A common-profile CMS transform is
+  still an explicit separate operation. Three new regressions cover RGB-first
+  combinations, the aggregate budget and callback Abort/errors. Four
+  independent two-page files preserve all8page rasters exactly. Common source
+  bytes are shared once, with page-specific applicability. TIFF-only65tests,
+  final TIFF targets68tests/4existing ignored and core364tests/6existing ignored
+  passed; counts overlap. Final local paired medians range from+0.77%to+4.91%
+  with unchanged pixel hashes and bounded additional metadata storage.
 - AVIF F05/F06/F07: the pinned0.1.0 codec selects nclx ahead of ICC, performs
   display transfer before its internal ICC path, and misses actual iref/prem
   alpha references. Native/EX boundaries and own-library CMS integration need

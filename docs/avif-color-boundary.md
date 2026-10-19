@@ -137,3 +137,6 @@ The final guard smoke benchmark preserves hashes, allocation counts and bytes
 for all5cases. ICC-case medians change by-1.07%to-0.04% in this run; the
 unprofiled control varies by-32%, so separate-process timing is not a precise
 regression estimate. The earlier corrected-ICC cost limitation still applies.
+
+The exact adjacent-colour reuse follow-up and separate ICC/no-ICC versus
+before/after measurements are documented in [ICC performance](avif-icc-performance.md).

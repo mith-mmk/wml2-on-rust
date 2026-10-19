@@ -58,25 +58,33 @@ pub(crate) fn rgba16_to_rgb_profile(
     // component and writes three destination components, with separate spans.
     let mut input = [0.0f32; 256 * 3];
     let mut output = [0.0f32; 256 * 3];
+    let mut run_for_pixel = [0usize; 256];
     for chunk in rgba.chunks_mut(256 * 4) {
-        let count = chunk.len() / 4;
+        let mut runs = 0;
+        let mut previous = [0u16; 3];
         for (i, pixel) in chunk.chunks_exact(4).enumerate() {
-            if channels == 1 {
-                input[i] = f32::from(pixel[0]) / 65535.0;
-            } else {
-                for c in 0..3 {
-                    input[i * 3 + c] = f32::from(pixel[c]) / 65535.0;
+            // The immutable transform depends only on the participating colour
+            // samples. Exact adjacent repeats share one evaluation, even when
+            // their alpha differs. No quantization, interpolation or profile
+            // substitution is involved. Distinct colours keep their order.
+            if i == 0 || pixel[..channels] != previous[..channels] {
+                for c in 0..channels {
+                    previous[c] = pixel[c];
+                    input[runs * channels + c] = f32::from(pixel[c]) / 65535.0;
                 }
+                runs += 1;
             }
+            run_for_pixel[i] = runs - 1;
         }
         // This is private, unpublished scratch output: on error the entire
         // image is dropped before any callback. The f32 API avoids the integer
         // API's extra validation transform while using the same own-library
         // colour operation and final u16 rounding.
-        transform.transform_f32(&input[..count * channels], &mut output[..count * 3])?;
+        transform.transform_f32(&input[..runs * channels], &mut output[..runs * 3])?;
         for (i, pixel) in chunk.chunks_exact_mut(4).enumerate() {
             for c in 0..3 {
-                pixel[c] = (output[i * 3 + c].clamp(0.0, 1.0) * 65535.0).round() as u16;
+                pixel[c] =
+                    (output[run_for_pixel[i] * 3 + c].clamp(0.0, 1.0) * 65535.0).round() as u16;
             }
         }
     }
@@ -86,6 +94,58 @@ pub(crate) fn rgba16_to_rgb_profile(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exact_colour_runs_match_unbatched_transform_with_distinct_alpha() {
+        let rgb = include_bytes!("../tests/fixtures/review/avif-icc-linear.icc");
+        let gray = include_bytes!("../tests/fixtures/review/avif-icc-gray-linear.icc");
+        for source in [&rgb[..], &gray[..]] {
+            let transform = Transform::from_bytes_with_limits(
+                source,
+                SRGB_ICC,
+                TransformOptions::default(),
+                ParseLimits::default(),
+                TransformLimits::default(),
+            )
+            .unwrap();
+            let channels = transform.input_channels();
+            // Runs cross the scratch boundary; other spans have no repeats.
+            // Alpha varies independently, including zero and full coverage.
+            let original: Vec<u16> = (0..1027)
+                .flat_map(|i| {
+                    let colour = if i < 517 { i / 257 } else { i } as u16;
+                    [
+                        colour.wrapping_mul(61),
+                        colour.wrapping_mul(37),
+                        colour.wrapping_mul(17),
+                        [0, 65535, 12345, 54321][i % 4],
+                    ]
+                })
+                .collect();
+            let input: Vec<f32> = original
+                .chunks_exact(4)
+                .flat_map(|p| p[..channels].iter().map(|&s| f32::from(s) / 65535.0))
+                .collect();
+            let mut expected = vec![0.0; 1027 * 3];
+            transform.transform_f32(&input, &mut expected).unwrap();
+            let mut actual = original.clone();
+            rgba16_to_rgb_profile(&mut actual, source, SRGB_ICC, channels == 1, 4 << 20).unwrap();
+            for ((pixel, original), expected) in actual
+                .chunks_exact(4)
+                .zip(original.chunks_exact(4))
+                .zip(expected.chunks_exact(3))
+            {
+                assert_eq!(pixel[3], original[3]);
+                for c in 0..3 {
+                    assert_eq!(
+                        pixel[c],
+                        (expected[c].clamp(0.0, 1.0) * 65535.0).round() as u16
+                    );
+                }
+            }
+        }
+    }
+
     #[test]
     fn matching_channel_counts_cannot_substitute_for_device_model_identity() {
         let mut arbitrary = include_bytes!("../tests/fixtures/review/lab-pcs-rgb.icc").to_vec();

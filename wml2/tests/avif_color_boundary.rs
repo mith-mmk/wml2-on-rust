@@ -409,3 +409,43 @@ fn actual_prem_reference_corrects_native_association_without_changing_planes() {
         }
     }
 }
+
+#[test]
+fn arbitrary_three_colorants_are_rejected_for_display_and_retained_for_native_ex() {
+    let mut input = CASES[0].1.to_vec();
+    let profile = source_profile(CASES[0].0);
+    let at = input
+        .windows(profile.len())
+        .position(|p| p == profile)
+        .unwrap();
+    input[at + 16..at + 20].copy_from_slice(b"3CLR");
+    assert!(
+        image_from(&input)
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("device models")
+    );
+    #[cfg(feature = "image-buffer-ex")]
+    {
+        let original = image_from_ex(
+            CASES[0].1,
+            PixelFormatEx::Rgba16,
+            PrecisionConversion::Exact,
+        )
+        .unwrap();
+        let native =
+            image_from_ex(&input, PixelFormatEx::Rgba16, PrecisionConversion::Exact).unwrap();
+        assert_eq!(native.bytes(), original.bytes());
+        assert!(
+            matches!(native.metadata.as_ref().unwrap().get("Source ICC Profile"),Some(DataMap::ICCProfile(p)) if p==&input[at..at+profile.len()])
+        );
+        assert!(
+            !native
+                .metadata
+                .as_ref()
+                .unwrap()
+                .contains_key("ICC Profile")
+        );
+    }
+}

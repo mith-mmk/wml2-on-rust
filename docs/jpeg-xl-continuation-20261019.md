@@ -5,8 +5,10 @@
 ce92c0c includes ICC checkpointfbec877d3267228b1081157c54d1d1bf81355003
 (BMP, TIFF page identity, GIF retention and AVIF colour boundary), depending
 on PR19 and PR20. A later feature-branch integration now includes ICC checkpoint
-163ab8cf6a7177c7c3c30c7047e4210b7ca1b0e7: PSD source/output identity,JP2 ICC
-acquisition and native Gray↔RGB layouts. Original79951b7 CI passed56/56;
+cc4e4a1e7e23adae5f86d89c5defaa7f540dcff5: PSD source/output identity,JP2 ICC
+acquisition, native Gray↔RGB layouts and shared display device-model validation.
+Arbitrary3CLR cannot substitute for RGB by having the same channel count.
+Original79951b7 CI passed56/56;
 combined-head validation is recorded separately. No merge to main or publication
 is part of this work.
 
@@ -124,3 +126,15 @@ The display path is separately specialized at compile time. This keeps its
 additional CMS branches out of ordinary/EX optimization and resolved an initial
 small-image regression. Detailed paired CSVs and all first-pass observations
 are preserved in the local evidence directory.
+
+## Final ICC dependency validation
+
+The final shared ICC dependency iscc4e4a1e7e23adae5f86d89c5defaa7f540dcff5.
+The combined AVIF/PSD/JP2/native-ICC/JXL integration targets pass65tests with
+1existing ignored; the standalone JXL+CMS unit target passes19tests. Counts
+overlap earlier scoped checks. Rebuilt Node WASM passes61cases and actual
+Chromium154 canvas passes13cases, all8orientations exact and managed output
+within1/255 of independent references. The final screenshot was inspected.
+Scoped Clippy and formatting pass; unrelated existing Clippy warnings remain.
+This checkpoint records source integration; its automatic CI outcome is tracked
+separately from the earlier79951b7 CI success.

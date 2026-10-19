@@ -2,7 +2,7 @@
 
 This is unreleased work. The continuation is `codex/jpeg-xl-remaining-20261019`,
 based on the preserved `codex/jpeg-xl-decode-20261018` checkpoint83c1800 and
-ICC checkpointfbec877. The latest continuation integrates ICC163ab8c, including
+ICC checkpointfbec877. The latest continuation integrates ICCcc4e4a1, including
 PSD,JP2 ICC and native Gray↔RGB layouts. Published0.0.37 does not contain the feature.
 See [continuation validation](jpeg-xl-continuation-20261019.md).
 

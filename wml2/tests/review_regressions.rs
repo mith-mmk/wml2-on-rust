@@ -387,10 +387,14 @@ mod png {
             ..Default::default()
         };
         let decoded = image_from_with_limits(&with_icc, exact).unwrap();
+        let metadata = decoded.metadata.unwrap();
+        // This Gray PNG expands to RGBA without applying its source ICC.
+        // Retention still shares the exact cumulative text/ICC byte budget.
         assert!(matches!(
-            decoded.metadata.unwrap().get("ICC Profile"),
+            metadata.get("Source ICC Profile"),
             Some(wml2::metadata::DataMap::ICCProfile(bytes)) if bytes == &icc
         ));
+        assert!(!metadata.contains_key("ICC Profile"));
         assert!(
             image_from_with_limits(
                 &with_icc,

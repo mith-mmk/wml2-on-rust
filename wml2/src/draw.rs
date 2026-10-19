@@ -41,6 +41,14 @@ pub type Response = Result<Option<CallbackResponse>, Error>;
 
 /// Receives decoded image data from format decoders.
 pub trait DrawCallback: Sync + Send {
+    /// Starts one top-level decode, before input validation or image metadata.
+    /// Reused targets can reset per-image state here. This is separate from
+    /// `init` and animation `next`; metadata may legitimately precede either.
+    /// The default preserves compatibility with existing callback implementations.
+    /// Abort stops decoding and is followed by one `terminate` call.
+    fn begin_image(&mut self) -> Response {
+        Ok(None)
+    }
     /// Initializes the target for a new image or animation canvas.
     fn init(
         &mut self,
@@ -562,6 +570,11 @@ impl ImageBuffer {
 }
 
 impl DrawCallback for ImageBuffer {
+    fn begin_image(&mut self) -> Response {
+        self.metadata = None;
+        Ok(None)
+    }
+
     /// Initializes the in-memory canvas.
     fn init(
         &mut self,

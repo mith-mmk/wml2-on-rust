@@ -116,6 +116,12 @@ PNG/TIFF encoder と能力交渉 API は引き続き未実装である。
 これは現行実装の記録であり、全 codec 共通の「draw 前 metadata 完了」保証
 ではない。metadata map 内の key 間順序にも依存しない。
 
+共通 decode entrypoint は、この表の前に `begin_image` を1回呼ぶ。
+再利用する標準 buffer はそこで旧 metadata を消す。`init` や `next` では
+消さないため、init 前の metadata と animation 内の metadata は保持される。
+独自 wrapper、直接 codec API、Abort の範囲は
+[ICC metadata と lifecycle 契約](icc-consistency-metadata.md)を参照。
+
 | 現行経路 | 実際の Callback 配信 |
 | --- | --- |
 | PNG EX | bKGD があれば `PNG Background` → `init_ex` → pixel draw → 最後に metadata map（`Source ICC Profile` を含む）→ `terminate` |

@@ -42,6 +42,19 @@ ICC、EXIF、TIFFタグとorientationはメタデータに保持する。Orienta
 
 RGBA8出力の元ICCは `Source ICC Profile` とTIFFヘッダー内に保持する。`ICC Profile` は現在のRGB画素に適用できるプロファイルだけに使用し、Gray/CMYKの元ICCをRGB出力へ自動転記しない。InkSet=2などCMYK以外の色分解は明示的に未対応とする。
 
+パレット TIFF の ColorMap 参照は、ICC の RGB 色空間を変更しない。
+RGB と宣言された元 ICC は、通常の RGBA8 展開後も `ICC Profile` に保持し、
+元 bytes は `Source ICC Profile` と TIFF ヘッダーにも残す。色変換や sRGB
+への付け替えは行わない。ColorMap の16-bit値から8-bit値への既存量子化も変更しない。
+別モデルの宣言や RGB identity を持たない短い opaque bytes は source-only のまま。
+これは既存のモデル識別を使う metadata 保持であり、ICC の完全な妥当性や
+CMS route の対応を保証しない。EX の palette 対応、palette alpha、ページごとの
+異なる ICC の表現／共通色空間への明示変換は、この修正の範囲外である。
+先頭が palette の複数ページ画像では、全表示ページに同じ適用可能な ICC が
+ある場合だけ global active ICC を設定する。異なる／不明なページがある場合は
+source-only を維持し、先頭 ICC を後続の全ページへ適用可能と見せない。
+既存の RGB-first 複数ページ経路を含む F09 全体は別途修正する。
+
 CMYKはExtraSamples=2のunassociated alphaを保持する。CMYKのassociated alpha（1）とPaletteのalpha（1/2）は色モデル固有の処理が未実装のため、ページ解析時に`NoSupportFormat`で拒否する。透明度を捨てて成功させない。用途未指定の追加サンプル（0またはタグなし）は不透明として扱う。
 
 汎用block描画は復号済みバッファとColorMapを借用し、描画のためだけに全体を複製しない。公開のraw描画APIでは、Predictorやplanar復元が必要な場合に限り書き込み用バッファを確保する。`expanded_bytes`は個々の展開データや画像バッファの検査上限であり、入力・出力・一時バッファを合算したプロセスのピークメモリ上限ではない。

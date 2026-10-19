@@ -110,8 +110,15 @@ tag after explicit highres CMS. F11 adds one guarded top-level `begin_image`
 callback, distinct from initialization and animation frame changes. See
 [the metadata contract](icc-consistency-metadata.md).
 
-F08 palette TIFF and F09 per-page metadata require separate format work and are
-deferred. PSD naming, BMP/GIF acquisition, AVIF decoder signaling/transfer,
+The `codex/tiff-palette-icc-20261019` continuation addresses F08 for ordinary
+palette TIFF: ColorMap lookup keeps applicable declared RGB ICC active, preserves
+source bytes and pixels, and leaves unknown short profiles source-only. Its
+regressions cover Classic/BigTIFF, both byte orders, 1/2/4/8/16-bit indices and
+four compression modes. Palette-first documents expose a global active ICC only
+when every display page has the same applicable profile; unknown or different
+page profiles stay source-only. It adds no parser, CMS operation or dependency.
+F09 per-page metadata still requires separate format work and is deferred.
+PSD naming, BMP/GIF acquisition, AVIF decoder signaling/transfer,
 CMYK CMS and JXL remain later stages. No profile is implicitly applied by these
 metadata corrections, and unsupported native ICC bytes remain retainable.
 

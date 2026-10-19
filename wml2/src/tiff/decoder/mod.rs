@@ -1569,7 +1569,15 @@ pub fn decode<'decode, B: BinaryReader>(
             DataMap::ICCProfile(icc_profile.to_vec()),
         )?;
     }
-    if let Some(icc_profile) = crate::tiff::page::rgba8_icc_profile(&header) {
+    if let Some(icc_profile) = crate::tiff::page::rgba8_icc_profile(header)
+        // Do not extend the known first-page/global ICC limitation to newly
+        // supported palette profiles. Different/unknown page profiles need a
+        // separate per-page metadata or explicit common-profile CMS route.
+        && (header.photometric_interpretation != 3
+            || pages.iter().skip(1).all(|page| {
+                crate::tiff::page::rgba8_icc_profile(page) == Some(icc_profile)
+            }))
+    {
         option
             .drawer
             .set_metadata("ICC Profile", DataMap::ICCProfile(icc_profile.to_vec()))?;

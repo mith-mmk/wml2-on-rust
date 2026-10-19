@@ -73,7 +73,7 @@ integrates. No main merge, version bump or registry publication is requested.
 
 - Saved separately at `codex/jpeg-xl-remaining-20261019`. The79951b7 feature unit
   preserved JXL83c1800 and initially integrated ICCfbec877; its CI56/56 passed.
-  This continuation now integrates ICCcc4e4a1e7e23adae5f86d89c5defaa7f540dcff5,
+  This continuation now integrates ICC3d4004153a2501366f447e33c056d2eba264d10f,
   including PSD,JP2 acquisition, native Gray↔RGB layouts and display device-model validation.
 - All8orientations,9/10-bit promotion, shared own-library explicit sRGB display,
   Node WASM61cases and actual Chromium13-case display are independently validated.

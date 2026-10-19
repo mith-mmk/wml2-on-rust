@@ -5,7 +5,7 @@
 ce92c0c includes ICC checkpointfbec877d3267228b1081157c54d1d1bf81355003
 (BMP, TIFF page identity, GIF retention and AVIF colour boundary), depending
 on PR19 and PR20. A later feature-branch integration now includes ICC checkpoint
-cc4e4a1e7e23adae5f86d89c5defaa7f540dcff5: PSD source/output identity,JP2 ICC
+3d4004153a2501366f447e33c056d2eba264d10f: PSD source/output identity,JP2 ICC
 acquisition, native Gray↔RGB layouts and shared display device-model validation.
 Arbitrary3CLR cannot substitute for RGB by having the same channel count.
 Original79951b7 CI passed56/56;
@@ -129,12 +129,17 @@ are preserved in the local evidence directory.
 
 ## Final ICC dependency validation
 
-The final shared ICC dependency iscc4e4a1e7e23adae5f86d89c5defaa7f540dcff5.
+The final shared ICC dependency is3d4004153a2501366f447e33c056d2eba264d10f.
 The combined AVIF/PSD/JP2/native-ICC/JXL integration targets pass65tests with
-1existing ignored; the standalone JXL+CMS unit target passes19tests. Counts
+1existing ignored; the standalone JXL+CMS unit target passes20tests. Counts
 overlap earlier scoped checks. Rebuilt Node WASM passes61cases and actual
 Chromium154 canvas passes13cases, all8orientations exact and managed output
 within1/255 of independent references. The final screenshot was inspected.
 Scoped Clippy and formatting pass; unrelated existing Clippy warnings remain.
 This checkpoint records source integration; its automatic CI outcome is tracked
 separately from the earlier79951b7 CI success.
+
+The latest shared ICC revision reuses only exact adjacent source-colour runs.
+Alpha remains individual and all own-library colour math is retained. See
+[ICC performance](avif-icc-performance.md) for separate before/after and
+ICC/no-ICC measurements, including varying-colour cases without a large gain.

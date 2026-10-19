@@ -29,13 +29,17 @@ it does not claim those stages have been implemented.
 
 ## Stage 2: acquisition and source/output profile identity
 
-- F12/F13: retain bounded BMP V5 embedded ICC and GIF ICCRGBG1012 payloads.
-  Palette expansion does not itself require a CMS. Do not open linked BMP
-  profiles as an implicit filesystem/network operation.
+- F12: bounded BMP V5 embedded ICC acquisition is implemented; linked
+  profiles are never opened. See [the BMP ICC contract](bmp-icc.md).
+- F13: GIF ICCRGBG1012 acquisition is implemented as bounded opaque source
+  metadata, with independent records for multiple carriers. See
+  [the GIF ICC contract](gif-icc.md). Active/output profile applicability and
+  explicit managed GIF output remain separate work.
 - F04: distinguish original Gray/CMYK ICC from a compatible current RGB output
   profile in ordinary JPEG/PNG. Apply the same source/output naming principle to
   documented non-managed PSD output without claiming a new automatic-sRGB
-  contract.
+  contract. The PSD source/output correction is implemented with bounded
+  retention and last-resource cleanup; see [the PSD ICC contract](psd-icc.md).
 - F08: keep applicable RGB ICC after TIFF palette expansion. Preserve valid RGB
   ICC after codec YCbCr reconstruction and channel-preserving depth changes.
 - Define active-profile applicability separately from opaque source retention;
@@ -52,9 +56,10 @@ it does not claim those stages have been implemented.
 - F11: define one top-level decode boundary that clears stale image metadata.
   Preserve legitimate metadata delivered before init and within animations;
   clearing every callback init is insufficient.
-- F09: represent per-frame/page profiles, or explicitly transform to a selected
-  common profile. Preserve the existing typed native per-page ICC route. Do not
-  silently apply the first page's profile to later pages.
+- F09: ordinary TIFF now exposes each display page's source profile and
+  output applicability, and emits generic ICC only when valid for every page.
+  The existing typed native per-page ICC route is preserved. Explicit
+  conversion to a selected common profile remains a separate operation.
 - Keep `FrameMetadata.source_color` as source provenance after explicit CMS.
   Clarify/update any generic active ICC tag independently of that provenance.
 
@@ -69,6 +74,12 @@ it does not claim those stages have been implemented.
   Unpremultiply before nonlinear CMS; continue retaining raw signaling in native
   APIs. Do not introduce another product CMS or claim tone mapping is ordinary
   SDR ICC processing.
+
+The current WML2 still adapter now uses the complete associated ICC/nclx set,
+corrects actual iref/prem for native/EX, and separates raw reconstruction from
+one own-library display ICC transform (F05/F06/F07 scoped still path). It also
+corrects monochrome video range before ICC. See [the AVIF boundary](avif-color-boundary.md).
+Managed AVIS and broader display/geometry capabilities remain separate work.
 
 ## Stage 5: explicit managed output capabilities
 
@@ -110,6 +121,7 @@ tag after explicit highres CMS. F11 adds one guarded top-level `begin_image`
 callback, distinct from initialization and animation frame changes. See
 [the metadata contract](icc-consistency-metadata.md).
 
+F13 now retains GIF source ICC without changing decoded pixels or animation.
 The `codex/tiff-palette-icc-20261019` continuation addresses F08 for ordinary
 palette TIFF: ColorMap lookup keeps applicable declared RGB ICC active, preserves
 source bytes and pixels, and leaves unknown short profiles source-only. Its
@@ -117,10 +129,16 @@ regressions cover Classic/BigTIFF, both byte orders, 1/2/4/8/16-bit indices and
 four compression modes. Palette-first documents expose a global active ICC only
 when every display page has the same applicable profile; unknown or different
 page profiles stay source-only. It adds no parser, CMS operation or dependency.
-F09 per-page metadata still requires separate format work and is deferred.
-PSD naming, BMP/GIF acquisition, AVIF decoder signaling/transfer,
-CMYK CMS and JXL remain later stages. No profile is implicitly applied by these
-metadata corrections, and unsupported native ICC bytes remain retainable.
+F09 now records per-page source/applicability for ordinary TIFF and removes
+the RGB-first global-profile mismatch, without implicitly converting pixels.
+PSD naming is corrected. AVIF's bounded still adapter corrects ICC/transfer
+and actual prem association, with managed AVIS/geometry still separate scope.
+JP2 now retains selected method2 Gray/RGB ICC across ordinary/native/reduced
+boundaries without CMS compilation. The separate JXL79951b7 continuation adds
+all8orientations,9/10-bit promotion and explicit shared own-library sRGB display,
+with CI56/56. General Gray↔RGB channel-layout conversion is implemented and validated; CMYK CMS
+still needs a checked own-library4D/native-model extension. Metadata corrections
+do not implicitly apply ICC; unsupported native transform stages remain retainable.
 
 Each later stage should have a scoped patch, independent review, focused
 regressions, native-retention controls, image checks and relevant performance

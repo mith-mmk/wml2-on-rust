@@ -1324,8 +1324,9 @@ pub fn image_from_with_limits(
 /// RGBA at their sample depth. TIFF supports unsigned 8/16-bit Gray/RGB with
 /// optional straight alpha, and retains orientation without rotating samples.
 /// AVIF uses its bounded native still decoder and declares normalized RGBA16LE
-/// after codec reconstruction, without ICC application. AVIS/grid, geometry
-/// transforms, premultiplied alpha and display-transfer conversion reject.
+/// after matrix/range reconstruction and alpha unassociation, without ICC or
+/// display-transfer application. Source signaling is retained; AVIS/grid and
+/// geometry transforms reject. This is source-coordinate output, not HDR rendering.
 /// Other codecs, APNG, multi-page TIFF and premultiplied TIFF are unsupported.
 /// ICC/gamma information is metadata, with no color or display transforms.
 ///

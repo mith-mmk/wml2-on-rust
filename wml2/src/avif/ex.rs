@@ -50,13 +50,12 @@ pub(crate) fn decode<B: BinaryReader>(
     );
     let decoded = avif_codec::decode_frame_bytes_strict_with_limits(&input, &native_limits)
         .map_err(codec_error)?;
-    let (frame, mut rich) = decoded.into_frame_and_rich();
+    let (mut frame, mut rich) = decoded.into_frame_and_rich();
+    crate::avif::signaling::correct_alpha(&input, &mut frame, &mut rich)?;
     if !matches!(frame.bit_depth, 8 | 10 | 12) {
         return Err(unsupported("EX AVIF supports coded8/10/12-bit stills only"));
     }
-    if frame.alpha_premultiplied {
-        return Err(unsupported("EX AVIF requires straight alpha"));
-    }
+    let source_premultiplied = frame.alpha_premultiplied;
     if rich.info.clean_aperture.is_some()
         || rich.info.rotation.is_some()
         || rich.info.mirror.is_some()
@@ -65,19 +64,8 @@ pub(crate) fn decode<B: BinaryReader>(
             "EX AVIF geometry transforms require the native API",
         ));
     }
-    // The dependency's to_rgba16 also applies ICC and several display curves.
-    // Use its codec reconstruction primitive only for curves that preserve
-    // encoded RGB. Never silently tone-map or apply source ICC on the EX path.
-    if frame.color_config.color_description.is_some_and(|c| {
-        !matches!(
-            c.transfer_characteristics,
-            1 | 2 | 6 | 7 | 11 | 12 | 13 | 14 | 15
-        )
-    }) {
-        return Err(unsupported(
-            "EX AVIF transfer requires explicit external color processing",
-        ));
-    }
+    // Preserve encoded RGB coordinates; display transfer/ICC/tone mapping are
+    // distinct operations. Associated samples are unassociated before CMS.
     let width = frame.width;
     let height = frame.height;
     let pixels = width
@@ -106,8 +94,7 @@ pub(crate) fn decode<B: BinaryReader>(
     )?;
     let depth = frame.bit_depth;
     let color = frame.color_config;
-    let rgba =
-        avif_codec::av1::frame_buffers_to_rgba_16(&frame.buffers, &color).map_err(codec_error)?;
+    let rgba = crate::avif::reconstruction::rgba16(&frame).map_err(codec_error)?;
     if rgba.width != width || rgba.height != height || rgba.rgba.len() != pixels * 4 {
         return Err(unsupported("AVIF RGBA reconstruction layout mismatch"));
     }
@@ -137,6 +124,10 @@ pub(crate) fn decode<B: BinaryReader>(
     option
         .drawer
         .set_metadata("AVIF Source Bit Depth", DataMap::UInt(u64::from(depth)))?;
+    option.drawer.set_metadata(
+        "Source AVIF Alpha Premultiplied",
+        DataMap::UInt(u64::from(source_premultiplied)),
+    )?;
     option.drawer.set_metadata(
         "Source AV1 Full Range",
         DataMap::UInt(u64::from(matches!(

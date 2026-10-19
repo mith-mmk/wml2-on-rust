@@ -8,11 +8,13 @@ profile or compile a transform.
 | Boundary | Result |
 | --- | --- |
 | Ordinary RGB/palette PNG or three-component JPEG | Keep existing `ICC Profile`; RGB reconstruction/alpha insertion alone does not apply ICC |
+| Ordinary PSD RGB/indexed output with a declared RGB profile | Retain `ICC Profile`; source-only declarations are not promoted |
+| PSD Gray/CMYK, short or incompatible ICC | Preserve opaque `Source ICC Profile`; numerical expansion applies no CMS |
 | Ordinary Gray/GrayAlpha PNG or Gray/CMYK/YCCK JPEG expanded to RGBA | Keep original bytes as `Source ICC Profile` |
 | Native EX Gray storage and Gray callback ICC | Keep Gray samples and `ICC Profile`, including channel-preserving depth conversion |
 | Gray callback into RGBA EX storage | Preserve source declaration and demote callback ICC to `Source ICC Profile` |
 | Native Gray EX exported through `to_rgba8` or `LegacyPickAdapterEx` | Replicate Gray numerically, keep original buffer unchanged, expose ICC as source metadata |
-| Explicit highres `FrameTransform` | Typed active descriptor and any existing generic `ICC Profile` use destination bytes; `FrameMetadata.source_color` and `Source ICC Profile` remain source provenance |
+| Explicit highres `FrameTransform` | Gray↔RGB builds separate planar output; typed active descriptor and any existing generic `ICC Profile` use destination bytes; `FrameMetadata.source_color` and `Source ICC Profile` remain source provenance |
 
 EX PNG/TIFF/AVIF retain their existing source-only naming. Numeric precision or
 channel conversion is never a CMS. Conflicting distinct generic/source profiles

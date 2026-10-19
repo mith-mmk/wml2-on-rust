@@ -363,16 +363,30 @@ mod encode {
     }
 
     #[test]
-    fn transfer_requiring_display_processing_is_explicitly_unsupported() {
-        let (data, _) = native(8, None, true);
+    fn coded_transfer_is_retained_without_display_processing_or_tone_mapping() {
+        let (data, source) = native(8, None, true);
         let mut probe = Probe::new(None);
+        decode_probe(&data, &mut probe, DecodeLimits::default()).unwrap();
+        let expected: Vec<u16> = source
+            .chunks_exact(4)
+            .flat_map(|p| {
+                let gray = u16::from(p[0] as u8) * 257;
+                [gray, gray, gray, 65535]
+            })
+            .collect();
+        assert_eq!(probe.image.bytes().unwrap(), words(&expected));
         assert!(
-            decode_probe(&data, &mut probe, DecodeLimits::default())
-                .unwrap_err()
-                .to_string()
-                .contains("external color processing")
+            matches!(probe.image.metadata.as_ref().unwrap().get("Source AV1 CICP"),
+            Some(DataMap::UIntAllay(cicp)) if cicp[1] == 16)
         );
-        assert!(probe.events.is_empty());
+        assert!(
+            !probe
+                .image
+                .metadata
+                .as_ref()
+                .unwrap()
+                .contains_key("ICC Profile")
+        );
     }
 
     #[test]

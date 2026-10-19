@@ -18,6 +18,7 @@ exclude = [
     "tests/jpeg2000_ex_97.rs",
     "tests/jpeg2000_ex_memory.rs",
     "tests/jpeg2000_reduced.rs",
+    "tests/jpeg2000_icc.rs",
     "tests/fixtures/review/jp2*",
     "tests/fixtures/review/unsupported_jp2*",
     "tests/fixtures/review/oracle_origins_*",
@@ -221,8 +222,8 @@ png = ["exif"]
 tiff = ["exif"]
 webp = ["exif", "dep:webp_codec"]
 psd = []
-jpeg2000 = []
-avif = ["dep:avif_codec"]
+jpeg2000 = ["dep:icc_profile"]
+avif = ["dep:avif_codec", "dep:icc_profile"]
 avifenc = ["avif", "dep:avifenc_codec", "dep:icc_profile"]
 high-bit-depth = []
 # Checked byte-based callback storage, independent of typed high-resolution frames.

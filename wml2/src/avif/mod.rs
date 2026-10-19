@@ -4,6 +4,8 @@
 pub mod decoder;
 #[cfg(feature = "avifenc")]
 pub mod encoder;
+pub(crate) mod reconstruction;
+pub(crate) mod signaling;
 
 pub use avif_codec::{
     AvifInfo, ColorInformation, DecoderError, ImageSpatialExtents, PixelInformation,

@@ -10,6 +10,8 @@ use crate::error::{ImgError, ImgErrorKind};
 use crate::metadata::DataMap;
 use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
+#[path = "managed.rs"]
+mod managed;
 
 #[cfg(feature = "image-buffer-ex")]
 #[path = "ex.rs"]
@@ -192,11 +194,59 @@ pub fn decode<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
+    crate::limits::metadata_scope(|| decode_inner(reader, option))
+}
+
+fn native_limits(limits: crate::limits::DecodeLimits) -> avif_codec::NativeDecodeLimits {
+    avif_codec::NativeDecodeLimits::new(
+        limits.input_bytes,
+        u32::MAX as usize,
+        u32::MAX as usize,
+        limits.pixels,
+        limits.expanded_bytes,
+        limits.metadata_bytes,
+        limits.metadata_bytes,
+        128,
+        512,
+        128,
+        16,
+        limits.frames.min(1),
+    )
+}
+
+fn decode_inner<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+) -> Result<Option<ImgWarnings>, Error> {
+    let limits = crate::limits::current();
+    let at = reader.offset()?;
+    let end = reader.seek(std::io::SeekFrom::End(0))?;
+    let length = end.checked_sub(at).ok_or("invalid AVIF input position")?;
+    crate::limits::check_input_length(length, limits.input_bytes)?;
+    let mut input = crate::draw::zeroed_bytes(usize::try_from(length)?)?;
+    reader.seek(std::io::SeekFrom::Start(at))?;
+    reader.read_exact(&mut input)?;
+    if !crate::avif::signaling::is_sequence(&input)?
+        && crate::avif::signaling::has_profile_or_prem(&input)?
+    {
+        let info = avif_codec::parse_native_info(&input, &native_limits(limits))
+            .map_err(|e| map_error(Box::new(e)))?;
+        let needs_owned = info.color_information().icc_profile.is_some()
+            || crate::avif::signaling::alpha_premultiplied(&input, info.info())?;
+        drop(info);
+        if needs_owned {
+            return managed::decode(&input, option);
+        }
+    }
     let mut adapter = DrawerAdapter {
         drawer: option.drawer,
     };
     let mut compat_option = avif_codec::DecodeOptions::new(&mut adapter);
     compat_option.debug_flag = option.debug_flag;
-    avif_codec::decode(reader, &mut compat_option).map_err(map_error)?;
+    avif_codec::decode(
+        &mut bin_rs::reader::BytesReader::new(&input),
+        &mut compat_option,
+    )
+    .map_err(map_error)?;
     Ok(None)
 }

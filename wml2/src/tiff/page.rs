@@ -51,6 +51,9 @@ pub(crate) fn rgba8_icc_profile(page: &Tiff) -> Option<&[u8]> {
 
 pub(crate) fn read_pages(reader: &mut dyn BinaryReader) -> Result<Tiff, Error> {
     let doc = TiffDocument::read(reader)?;
+    // Join the parser's existing retained-data budget with subsequent page
+    // profile copies. The separate EXIF-header reader retains its own policy.
+    crate::limits::charge_metadata(doc.metadata_bytes)?;
     let mut pages = Vec::new();
     for ifd in &doc.ifds {
         for entry in &ifd.entries {

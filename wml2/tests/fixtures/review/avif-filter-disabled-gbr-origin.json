@@ -1,0 +1,6 @@
+{
+  "sha256": "9c58fa7d7be530a6263d89d9a1686cc520cc53170384ff74700a4a9431873da2",
+  "bytes": 306,
+  "source": "Existing independently generated ffmpeg/libaom Gray16x16 filter-disabled oracle; avif-rust scripts/generate_filter_disabled_oracle.ps1 at gitlink ecc37b220daf37b24134aacac0bc12723aadc357",
+  "purpose": "Keep core optional-AVIF regression independent of a generated submodule working file"
+}

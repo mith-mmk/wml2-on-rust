@@ -359,7 +359,7 @@ fn extracts_psd_resources() {
     .unwrap();
     let metadata = image.metadata.unwrap();
     assert_eq!(
-        metadata.get("ICC Profile"),
+        metadata.get("Source ICC Profile"),
         Some(&DataMap::ICCProfile(vec![1, 2, 3]))
     );
     assert_eq!(metadata.get("EXIF Raw"), Some(&DataMap::Raw(vec![4, 5])));
@@ -524,5 +524,106 @@ fn public_capability_reports_psd() {
         wml2::get_decoder_extentions()
             .iter()
             .any(|ext| ext == "psd")
+    );
+}
+
+#[test]
+fn icc_identity_follows_the_delivered_rgb_sample_model() {
+    let rgb = include_bytes!("fixtures/review/avif-icc-linear.icc").as_slice();
+    let gray = include_bytes!("fixtures/review/avif-icc-gray-linear.icc").as_slice();
+    let mut cmyk = rgb.to_vec();
+    cmyk[16..20].copy_from_slice(b"CMYK");
+    let palette: Vec<u8> = (0..768).map(|i| (i % 256) as u8).collect();
+    for (mode, planes, color) in [
+        (1, vec![vec![37]], &[][..]),
+        (2, vec![vec![37]], palette.as_slice()),
+        (3, vec![vec![37], vec![83], vec![129]], &[][..]),
+        (4, vec![vec![37], vec![83], vec![129], vec![211]], &[][..]),
+    ] {
+        let plain = wml2::draw::image_from(&psd(1, 1, 8, mode, &planes, 0, color, &[], &[]))
+            .unwrap()
+            .buffer;
+        for profile in [rgb, gray, cmyk.as_slice(), &rgb[..20], &[1, 2, 3][..]] {
+            let encoded = psd(
+                1,
+                1,
+                8,
+                mode,
+                &planes,
+                0,
+                color,
+                &resource(1039, profile),
+                &[],
+            );
+            let image = wml2::draw::image_from(&encoded).unwrap();
+            assert_eq!(image.buffer, plain);
+            let active = matches!(mode, 2 | 3) && profile == rgb;
+            let meta = image.metadata.unwrap();
+            assert!(
+                matches!(meta.get(if active {"ICC Profile"} else {"Source ICC Profile"}),Some(DataMap::ICCProfile(p)) if p==profile)
+            );
+            assert!(!meta.contains_key(if active {
+                "Source ICC Profile"
+            } else {
+                "ICC Profile"
+            }));
+            assert!(
+                wml2::draw::image_from_with_limits(
+                    &encoded,
+                    wml2::limits::DecodeLimits {
+                        metadata_bytes: profile.len() - 1,
+                        ..Default::default()
+                    }
+                )
+                .is_err()
+            );
+        }
+    }
+}
+#[test]
+fn later_psd_icc_record_cannot_leave_an_earlier_active_profile() {
+    let mut resources = resource(1039, include_bytes!("fixtures/review/avif-icc-linear.icc"));
+    resources.extend(resource(1039, &[1, 2, 3]));
+    let image = wml2::draw::image_from(&psd(
+        1,
+        1,
+        8,
+        3,
+        &[vec![1], vec![2], vec![3]],
+        0,
+        &[],
+        &resources,
+        &[],
+    ))
+    .unwrap();
+    let meta = image.metadata.unwrap();
+    assert!(!meta.contains_key("ICC Profile"));
+    assert_eq!(
+        meta.get("Source ICC Profile"),
+        Some(&DataMap::ICCProfile(vec![1, 2, 3]))
+    );
+    let rgb = include_bytes!("fixtures/review/avif-icc-linear.icc");
+    let mut repeated = resource(1039, rgb);
+    repeated.extend(resource(1039, rgb));
+    let encoded = psd(
+        1,
+        1,
+        8,
+        3,
+        &[vec![1], vec![2], vec![3]],
+        0,
+        &[],
+        &repeated,
+        &[],
+    );
+    assert!(
+        wml2::draw::image_from_with_limits(
+            &encoded,
+            wml2::limits::DecodeLimits {
+                metadata_bytes: rgb.len() + "ICC Profile".len(),
+                ..Default::default()
+            }
+        )
+        .is_err()
     );
 }

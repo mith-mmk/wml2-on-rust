@@ -8,6 +8,8 @@ profile or compile a transform.
 | Boundary | Result |
 | --- | --- |
 | Ordinary RGB/palette PNG or three-component JPEG | Keep existing `ICC Profile`; RGB reconstruction/alpha insertion alone does not apply ICC |
+| Ordinary PSD RGB/indexed output with a declared RGB profile | Retain `ICC Profile`; source-only declarations are not promoted |
+| PSD Gray/CMYK, short or incompatible ICC | Preserve opaque `Source ICC Profile`; numerical expansion applies no CMS |
 | Ordinary Gray/GrayAlpha PNG or Gray/CMYK/YCCK JPEG expanded to RGBA | Keep original bytes as `Source ICC Profile` |
 | Native EX Gray storage and Gray callback ICC | Keep Gray samples and `ICC Profile`, including channel-preserving depth conversion |
 | Gray callback into RGBA EX storage | Preserve source declaration and demote callback ICC to `Source ICC Profile` |

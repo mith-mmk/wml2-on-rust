@@ -53,9 +53,11 @@ integrates. No main merge, version bump or registry publication is requested.
   samples remain exact, EX retains source coordinates, and9independent
   references check display output. Managed AVIS and broader display/geometry
   capabilities are not yet covered by this correction.
-- PSD source/output naming and JPEG2000 ICC acquisition remain distinct format
-  work. Explicit JPEG2000 ICC rejection is an advertised capability gap, not
-  silently successful decoding.
+- PSD source/output naming is now corrected for Gray/CMYK and incompatible
+  profiles, preserving compatible RGB/palette declarations and unchanged pixels.
+  Shared ICC quota and repeated-resource cleanup are tested. See [PSD ICC](psd-icc.md).
+- JPEG2000 ICC acquisition remains format work. Explicit JPEG2000 ICC rejection
+  is an advertised capability gap, not silently successful decoding.
 - Shared explicit Gray-to-RGB/RGB-to-Gray output needs checked separate layouts;
   the own ICC library already supports the transforms. General CMYK CMS needs
   a checked four-channel/4D-CLUT own-library route and native roles/layouts;

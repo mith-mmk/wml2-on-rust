@@ -38,7 +38,8 @@ it does not claim those stages have been implemented.
 - F04: distinguish original Gray/CMYK ICC from a compatible current RGB output
   profile in ordinary JPEG/PNG. Apply the same source/output naming principle to
   documented non-managed PSD output without claiming a new automatic-sRGB
-  contract.
+  contract. The PSD source/output correction is implemented with bounded
+  retention and last-resource cleanup; see [the PSD ICC contract](psd-icc.md).
 - F08: keep applicable RGB ICC after TIFF palette expansion. Preserve valid RGB
   ICC after codec YCbCr reconstruction and channel-preserving depth changes.
 - Define active-profile applicability separately from opaque source retention;

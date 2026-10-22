@@ -118,9 +118,9 @@ checksum = "7f064a888d7b2d2d78426fe473647c14281494f8994d1e4240d83cff37e5eafc"
 
 [[package]]
 name = "avif-rust"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd35d046e591504336b657a6b01fa3635c3fafa541e617646a1d3a8700084780"
+checksum = "fe0b5ee8b4698179b3bbb8b0fd86930846c9eb932451035f02ec2e723b1a4086"
 dependencies = [
  "avif-image-buffer",
  "bin-rs",
@@ -128,9 +128,9 @@ dependencies = [
 
 [[package]]
 name = "avifenc-rust"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29f8cece37db50f6f1d6e95e0da6285fd084e4fca77188602ef049b272280815"
+checksum = "80045541ec22dbe49852c9319d9e194197eba23f84f2977ca80fdeaea908b723"
 dependencies = [
  "avif-image-buffer",
  "gamut-bitstream",

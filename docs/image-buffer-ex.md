@@ -4,7 +4,7 @@ Available in WML2 0.0.37 through the explicit `image-buffer-ex` feature.
 The original continuation incorporated main's0.0.36 update; the historical
 [main merge record](image-buffer-ex-main-merge.md) retains those checkpoints.
 Default features and existing legacy fields/signatures remain unchanged.
-Optional AVIF dependencies now use published registry0.1.0 with one shared
+Optional AVIF dependencies now use published registry0.1.2 with one shared
 buffer source. Direct consumers of standalone AVIF re-exports must align
 versions and sources. See the [0.0.37 release notes](releases/0.0.37.md).
 

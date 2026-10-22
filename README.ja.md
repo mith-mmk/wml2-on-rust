@@ -101,7 +101,7 @@ Q4/XLD4は`ifxld4.spi`の解析で確認した保持色runを使って復号し�
 - `default`: 標準の decoder/encoder、EXIF/C2PA対応、埋め込みフォーマット bridge、`idct_llm` を有効化。`psd`、`avif`、`avifenc` は含まない
 - フォーマット feature: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `tga`, `pcx`, `dds`, `pic2`, `q4`, `webp`, `psd`, `jpeg2000`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
 - `psd`: Pure RustのPSD v1 decoder。8/16-bit RGB・Grayscale・CMYKと8-bit Indexedに対応し、統合画像とレイヤーチャンネルのRaw、PackBits RLE、ZIP、ZIP predictionをdecode
-- `avif`: `avif-rust` による AVIF decoder、`avifenc`: 公開registry crate `avifenc-rust 0.1.0` による AVIF encoder
+- `avif`: `avif-rust` による AVIF decoder、`avifenc`: 公開registry crate `avifenc-rust 0.1.2` による AVIF encoder
 - `high-bit-depth`: 追加型のU8/U16/F32 bufferとnative metadata API。ICCには依存しない
 - `image-buffer-ex`: 非既定のGray/RGBA8/12/16bit byte格納・明示的変換・callback受け口。`high-bit-depth`とは独立
 - `color-management`: `high-bit-depth`に依存し、`icc-profile`によるGray/RGB明示ICC変換を追加
@@ -130,7 +130,7 @@ source・storage・picker outputを別々に宣言し、8bit化はExact／Round�
 高精度格納を維持した旧encoder用の借用adapterに対応します。
 既存のPNG/TIFF EX経路とhighresのpixel-only連携を再利用し、
 YUV・HDR・EX animationは非対応です。JPEG2000の12/16bitは下記の明示EX経路で扱います。
-[現行仕様と検証](docs/image-buffer-ex.md)を参照してください。AVIF依存は公開registryの各0.1.0で、共通bufferのsourceを統一しています。公開再エクスポート型を直接共有する利用側は、依存の版とsourceを揃えてください。**AVISは未保証**です。
+[現行仕様と検証](docs/image-buffer-ex.md)を参照してください。AVIF依存は公開registryの各0.1.2で、共通bufferのsourceを統一しています。公開再エクスポート型を直接共有する利用側は、依存の版とsourceを揃えてください。**AVISは未保証**です。
 
 ## JPEG2000 のデコード
 

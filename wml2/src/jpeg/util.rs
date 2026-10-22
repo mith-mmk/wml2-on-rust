@@ -132,6 +132,9 @@ pub fn print_header(header: &JpegHaeder, option: usize) -> Box<String> {
                             str = str + &format!("Exif has{} tags\n", exif.headers.len());
                         }
                     }
+                    InvalidExif { message, .. } => {
+                        str += &format!("Ignored invalid EXIF metadata: {message}\n");
+                    }
                     Ducky(ducky) => {
                         str = str
                             + &format!(
@@ -429,6 +432,9 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String, DataMap> {
                     }
                     Exif(exif) => {
                         map.insert("EXIF".to_string(), DataMap::Exif(exif.clone()));
+                    }
+                    InvalidExif { raw, .. } => {
+                        map.insert("EXIF Raw".to_string(), DataMap::Raw(raw.clone()));
                     }
                     Ducky(ducky) => {
                         let str = format!(

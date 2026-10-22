@@ -7,10 +7,8 @@
 type Error = Box<dyn std::error::Error>;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
-use crate::tiff::header::*;
 use bin_rs::io::*;
 use bin_rs::reader::BinaryReader;
-use bin_rs::reader::BytesReader; // for exif
 
 /* from SOS */
 #[derive(Clone)]
@@ -286,6 +284,7 @@ pub struct JpegHaeder {
 pub enum JpegAppHeaders {
     Jfif(Jfif),
     Exif(Exif),
+    InvalidExif { raw: Vec<u8>, message: String },
     Ducky(Ducky),
     Xmp((String, String)),
     //    XmpExtend((String,String,u32,String))
@@ -326,10 +325,27 @@ fn read_app(num: usize, tag: &String, buffer: &[u8]) -> Result<JpegAppHeaders, E
         }
         1 => match tag.as_str() {
             "Exif" => {
-                let buf = &buffer[6..];
-                let mut reader = BytesReader::new(buf);
-                let exif = read_tags(&mut reader)?;
-                return Ok(JpegAppHeaders::Exif(exif));
+                // The bounded APP1 payload, not the JPEG stream, owns TIFF offsets.
+                crate::limits::charge_metadata(buffer.len())?;
+                let result = buffer
+                    .strip_prefix(b"Exif\0\0")
+                    .ok_or_else(|| {
+                        Box::new(ImgError::new_const(
+                            ImgErrorKind::IllegalData,
+                            "Invalid EXIF signature".into(),
+                        )) as Error
+                    })
+                    .and_then(crate::metadata::exif::parse_exif);
+                return match result {
+                    Ok(exif) => Ok(JpegAppHeaders::Exif(exif)),
+                    Err(error) if optional_exif_error(error.as_ref()) => {
+                        Ok(JpegAppHeaders::InvalidExif {
+                            raw: buffer.to_vec(),
+                            message: error.to_string(),
+                        })
+                    }
+                    Err(error) => Err(error),
+                };
             }
             "http://ns.adobe.com/xap/1.0/" => {
                 let len = "http://ns.adobe.com/xap/1.0/".len() + 1;
@@ -414,6 +430,18 @@ fn read_app(num: usize, tag: &String, buffer: &[u8]) -> Result<JpegAppHeaders, E
         length: len,
         raw: buffer.to_vec(),
     }))
+}
+
+fn optional_exif_error(error: &(dyn std::error::Error + 'static)) -> bool {
+    error
+        .downcast_ref::<ImgError>()
+        .is_some_and(ImgError::is_optional_metadata_error)
+        || error.downcast_ref::<std::io::Error>().is_some_and(|error| {
+            matches!(
+                error.kind(),
+                std::io::ErrorKind::UnexpectedEof | std::io::ErrorKind::InvalidData
+            )
+        })
 }
 
 // ICC APP2 sequence numbers, rather than marker order, identify profile bytes.

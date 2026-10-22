@@ -1,6 +1,6 @@
 //! Convenience helpers for TIFF-style EXIF metadata.
 
-use crate::tiff::header::{DataPack, Rational, TiffHeader, TiffHeaders, exif_to_bytes, read_tags};
+use crate::tiff::header::{DataPack, Rational, TiffHeader, TiffHeaders, exif_to_bytes};
 use bin_rs::reader::BytesReader;
 
 type Error = Box<dyn std::error::Error>;
@@ -27,7 +27,7 @@ pub struct GpsCoordinate {
 /// Parses a TIFF byte stream used by EXIF APP1/eXIf payloads.
 pub fn parse_exif(data: &[u8]) -> Result<TiffHeaders, Error> {
     let mut reader = BytesReader::new(data);
-    read_tags(&mut reader)
+    crate::tiff::ifd::TiffDocument::read_exif(&mut reader)?.headers()
 }
 
 /// Serializes a parsed EXIF tree into a TIFF byte stream.

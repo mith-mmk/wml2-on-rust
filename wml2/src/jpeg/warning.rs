@@ -10,6 +10,7 @@ use std::fmt::*;
 
 #[derive(Debug)]
 pub enum JpegWarningKind {
+    InvalidExif,
     IlligalRSTMaker,
     UnfindEOIMaker,
     DataCorruption,
@@ -75,6 +76,7 @@ impl WarningKind for JpegWarningKind {
     fn as_str(&self) -> &'static str {
         use JpegWarningKind::*;
         match &self {
+            InvalidExif => "Ignored invalid EXIF metadata",
             IlligalRSTMaker => "Illigal RST Maker",
             UnfindEOIMaker => "Unfind EOI Maker",
             DataCorruption => "Data Corruption",

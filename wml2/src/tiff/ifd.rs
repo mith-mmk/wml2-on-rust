@@ -167,6 +167,8 @@ struct Parser<'a> {
     variant: TiffVariant,
     end: u64,
     metadata: usize,
+    exif: bool,
+    value_ranges: Vec<(u64, u64)>,
 }
 impl Parser<'_> {
     fn charge(&mut self, size: usize) -> Result<(), Error> {
@@ -178,15 +180,19 @@ impl Parser<'_> {
             self.metadata,
             crate::limits::current().metadata_bytes,
             "TIFF metadata",
-        )
+        )?;
+        if self.exif {
+            crate::limits::charge_metadata(size)?;
+        }
+        Ok(())
     }
     fn read_classic_ifd(&mut self, offset: u64) -> Result<TiffIfd, Error> {
-        self.directory(offset, false)
+        self.directory(offset, false, false)
     }
     fn read_bigtiff_ifd(&mut self, offset: u64) -> Result<TiffIfd, Error> {
-        self.directory(offset, true)
+        self.directory(offset, true, false)
     }
-    fn directory(&mut self, offset: u64, big: bool) -> Result<TiffIfd, Error> {
+    fn directory(&mut self, offset: u64, big: bool, metadata_ifd: bool) -> Result<TiffIfd, Error> {
         let (prefix, entry_size, slot) = if big {
             (8u64, 20u64, 8usize)
         } else {
@@ -201,7 +207,7 @@ impl Parser<'_> {
         };
         let bytes = count
             .checked_mul(entry_size)
-            .and_then(|v| v.checked_add(slot as u64))
+            .and_then(|v| v.checked_add(if metadata_ifd { 0 } else { slot as u64 }))
             .ok_or_else(|| invalid("TIFF directory size overflow"))?;
         range(
             offset
@@ -262,6 +268,11 @@ impl Parser<'_> {
             } else {
                 let address = number(&inline[..slot], self.reader.endian());
                 range(address, u64::try_from(length)?, self.end)?;
+                if self.exif {
+                    self.charge(std::mem::size_of::<(u64, u64)>())?;
+                    self.value_ranges.try_reserve(1)?;
+                    self.value_ranges.push((address, address + length as u64));
+                }
                 let saved = self.reader.offset()?;
                 self.reader.seek(SeekFrom::Start(address))?;
                 let mut data = Vec::new();
@@ -278,10 +289,25 @@ impl Parser<'_> {
                 payload,
             });
         }
-        let next = if big {
-            self.reader.read_u64()?
+        let footer = self.reader.offset()?;
+        // Some EXIF writers omit a metadata IFD's next-pointer slot and place
+        // an already referenced value there. Never interpret value bytes as an
+        // IFD link. This exception applies only to EXIF metadata directories;
+        // image IFD chains and all payload bounds retain the strict TIFF rules.
+        let overlaps_value = metadata_ifd
+            && self
+                .value_ranges
+                .iter()
+                .any(|&(start, end)| footer < end && start < footer.saturating_add(slot as u64));
+        let next = if overlaps_value {
+            0
         } else {
-            u64::from(self.reader.read_u32()?)
+            range(footer, slot as u64, self.end)?;
+            if big {
+                self.reader.read_u64()?
+            } else {
+                u64::from(self.reader.read_u32()?)
+            }
         };
         Ok(TiffIfd {
             entries,
@@ -299,10 +325,17 @@ impl Parser<'_> {
 }
 impl TiffDocument {
     pub(crate) fn read(reader: &mut dyn BinaryReader) -> Result<Self, Error> {
+        Self::read_mode(reader, false)
+    }
+    pub(crate) fn read_exif(reader: &mut dyn BinaryReader) -> Result<Self, Error> {
+        Self::read_mode(reader, true)
+    }
+    fn read_mode(reader: &mut dyn BinaryReader, exif: bool) -> Result<Self, Error> {
         let saved = reader.offset()?;
         let end = reader.seek(SeekFrom::End(0))?;
         reader.seek(SeekFrom::Start(saved))?;
         crate::limits::check_input_length(end, crate::limits::current().input_bytes)?;
+        range(saved, 8, end)?;
         let mut marker = [0; 2];
         reader.read_exact(&mut marker)?;
         let endian = match marker {
@@ -317,6 +350,7 @@ impl TiffDocument {
             _ => return Err(invalid("Invalid TIFF version")),
         };
         let mut next = if variant == TiffVariant::BigTiff {
+            range(saved, 16, end)?;
             if reader.read_u16()? != 8 || reader.read_u16()? != 0 {
                 return Err(invalid("Invalid BigTIFF offset size or reserved field"));
             }
@@ -329,6 +363,8 @@ impl TiffDocument {
             variant,
             end,
             metadata: 0,
+            exif,
+            value_ranges: Vec::new(),
         };
         let mut ifds = Vec::new();
         let mut seen = HashSet::new();
@@ -367,7 +403,11 @@ impl TiffDocument {
                             return Err(invalid("Cyclic TIFF metadata IFD reference"));
                         }
                         metadata_ifds.insert(address);
-                        let sub = parser.directory_at(address)?;
+                        let sub = if exif {
+                            parser.directory(address, variant == TiffVariant::BigTiff, true)?
+                        } else {
+                            parser.directory_at(address)?
+                        };
                         if sub.next_ifd.is_some()
                             || sub.entries.iter().any(|e| matches!(e.tag, 0x8769 | 0x8825))
                         {

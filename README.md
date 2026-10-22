@@ -211,7 +211,7 @@ limits independently on input, source, storage, output rows and metadata;
 the TIFF native reconstruction also budgets its temporary u16 sample storage.
 EX Abort stops subsequent callback forwarding for enabled EX codecs.
 
-Both AVIF codecs use published registry0.1.0 with one shared
+Both AVIF codecs use published registry0.1.2 with one shared
 `avif-image-buffer0.1.0`. Direct consumers of re-exported standalone AVIF types
 must align versions and sources. **AVIS remains unguaranteed** with these
 published dependencies; this release covers still-image integration.
@@ -230,7 +230,7 @@ YUV, F32, and ten-bit frames are rejected.
 - `default`: enables the standard decoders/encoders, EXIF/C2PA support, embedded-format bridges, and `idct_llm`; it does not enable `psd`, `avif`, or `avifenc`
 - format features: `bmp`, `gif`, `ico`, `jpeg`, `png`, `tiff`, `tga`, `pcx`, `dds`, `pic2`, `q4`, `webp`, `psd`, `jpeg2000`, `avif`, `avifenc`, `mag`, `maki`, `pcd`, `pi`, `pic`, `vsp`
 - `psd`: enables Pure Rust PSD v1 decoding for 8/16-bit RGB, Grayscale, and CMYK plus 8-bit Indexed images; Raw, PackBits RLE, ZIP, and ZIP prediction are supported for both merged-image and layer-channel data
-- `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the published `avifenc-rust 0.1.0` crate
+- `avif`: enables AVIF decoding through `avif-rust`; `avifenc`: additionally enables AVIF encoding through the published `avifenc-rust 0.1.2` crate
 - `high-bit-depth`: additive typed U8/U16/F32 buffer and native metadata APIs; it has no ICC dependency
 - `image-buffer-ex`: default-off checked byte-based Gray/RGBA 8/12/16-bit callback storage, independent of `high-bit-depth`
 - `color-management`: depends on `high-bit-depth` and adds explicit Gray/RGB ICC transforms through `icc-profile`

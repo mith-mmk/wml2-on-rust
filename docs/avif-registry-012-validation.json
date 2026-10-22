@@ -1,0 +1,200 @@
+{
+  "base": "65c5aba6885b16c112a2e84cfa5b28124fc7d01c",
+  "rust": "1.99.0",
+  "dependencies": {
+    "avif-rust": "0.1.2",
+    "avifenc-rust": "0.1.2",
+    "avif-image-buffer": "0.1.0"
+  },
+  "independent_readers": {
+    "pillow": "12.3.0",
+    "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "cases": [
+      {
+        "case": "upstream-native-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "1b4b6c6461e3f48a551024e53c9624aa3e5fdb0879277d0389de0942dbaad7bf",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "upstream-native-12",
+        "depth": 12,
+        "rgba_samples": 16,
+        "sha256": "02fc1f345a5837f4a7397197d49404e0596523d048b85425004b067880cf6657",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "upstream-shared-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "1b4b6c6461e3f48a551024e53c9624aa3e5fdb0879277d0389de0942dbaad7bf",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "upstream-shared-12",
+        "depth": 12,
+        "rgba_samples": 16,
+        "sha256": "02fc1f345a5837f4a7397197d49404e0596523d048b85425004b067880cf6657",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "wml2-ex-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "1b4b6c6461e3f48a551024e53c9624aa3e5fdb0879277d0389de0942dbaad7bf",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "wml2-ex-12",
+        "depth": 12,
+        "rgba_samples": 16,
+        "sha256": "02fc1f345a5837f4a7397197d49404e0596523d048b85425004b067880cf6657",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "upstream-legacy-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "112d52462a026c34c05caaf22cbd8edcd67f35a6e7c31288445ebced77c0cdcc",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "wml2-legacy-8",
+        "depth": 8,
+        "rgba_samples": 16,
+        "sha256": "112d52462a026c34c05caaf22cbd8edcd67f35a6e7c31288445ebced77c0cdcc",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      },
+      {
+        "case": "wml2-highres-10",
+        "depth": 10,
+        "rgba_samples": 16,
+        "sha256": "9211fab70f2790d4a0fc2c33bc31469db545882ba24259975b56bc646ecfc901",
+        "pillow_rgba8_exact": true,
+        "ffmpeg_color_alpha_exact": true
+      }
+    ],
+    "scope": "2x2 still identity RGB, straight alpha; no AVIS or ICC transform"
+  },
+  "alternating_benchmark": {
+    "avif-ex-encode": {
+      "avif-ex-Gray8-16x16-odd-stride": {
+        "base": {
+          "median_ns": 697035.5,
+          "peak_live_bytes": 16501,
+          "hashes": [
+            "10505960502298571620"
+          ]
+        },
+        "updated": {
+          "median_ns": 807328.0,
+          "peak_live_bytes": 16501,
+          "hashes": [
+            "10505960502298571620"
+          ]
+        },
+        "time_change_percent": 15.823082181610548
+      },
+      "avif-ex-Gray12-16x16-odd-stride": {
+        "base": {
+          "median_ns": 469674.5,
+          "peak_live_bytes": 16309,
+          "hashes": [
+            "9970869681433340788"
+          ]
+        },
+        "updated": {
+          "median_ns": 455849.0,
+          "peak_live_bytes": 16309,
+          "hashes": [
+            "9970869681433340788"
+          ]
+        },
+        "time_change_percent": -2.9436343680570243
+      },
+      "avif-ex-Rgba8-16x16-odd-stride": {
+        "base": {
+          "median_ns": 14030040.5,
+          "peak_live_bytes": 82427,
+          "hashes": [
+            "16215809258589284975"
+          ]
+        },
+        "updated": {
+          "median_ns": 14449310.0,
+          "peak_live_bytes": 82427,
+          "hashes": [
+            "16215809258589284975"
+          ]
+        },
+        "time_change_percent": 2.9883698482552568
+      },
+      "avif-ex-Rgba12-16x16-odd-stride": {
+        "base": {
+          "median_ns": 15531845.5,
+          "peak_live_bytes": 83507,
+          "hashes": [
+            "14847329255461642446"
+          ]
+        },
+        "updated": {
+          "median_ns": 16377375.5,
+          "peak_live_bytes": 83507,
+          "hashes": [
+            "14847329255461642446"
+          ]
+        },
+        "time_change_percent": 5.443847609738328
+      }
+    },
+    "decode-ex-file": {
+      "decode-ex-file": {
+        "base": {
+          "median_ns": 170632941.5,
+          "peak_live_bytes": 14975361,
+          "hashes": [
+            "6143979356001440985"
+          ]
+        },
+        "updated": {
+          "median_ns": 155586451.0,
+          "peak_live_bytes": 15601665,
+          "hashes": [
+            "6143979356001440985"
+          ]
+        },
+        "time_change_percent": -8.818045547201681
+      }
+    }
+  },
+  "pinned_encode_benchmark": {
+    "cpu": 0,
+    "median_ns": {
+      "avif-ex-Gray8-16x16-odd-stride": {
+        "base": 671073,
+        "updated": 714727
+      },
+      "avif-ex-Gray12-16x16-odd-stride": {
+        "base": 430227,
+        "updated": 451320
+      },
+      "avif-ex-Rgba8-16x16-odd-stride": {
+        "base": 14344330,
+        "updated": 14429630
+      },
+      "avif-ex-Rgba12-16x16-odd-stride": {
+        "base": 16372551,
+        "updated": 16087512
+      }
+    }
+  }
+}

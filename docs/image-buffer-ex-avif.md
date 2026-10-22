@@ -4,7 +4,7 @@ AVIF の WML2 adapter を EX の入力宣言・保存・明示出力要求へ接
 既存 `image_decoder` / `image_encoder`、native highres API、依存 crate の
 公開 API と gitlink は変更しない。新 crate、wmlcore 分離、paintcore 統合は行わない。
 
-WML2 0.0.37では、公開registryの`avif-rust 0.1.0`／`avifenc-rust 0.1.0`と
+現在の依存は、公開registryの`avif-rust 0.1.2`／`avifenc-rust 0.1.2`と
 共通`avif-image-buffer 0.1.0`を利用する。再エクスポート型を直接共有する利用側は
 依存の版とsourceを揃える必要がある。**AVISは未保証**で、静止画統合の範囲は
 [0.0.37リリースノート](releases/0.0.37.md)を参照。
@@ -30,7 +30,7 @@ YUV plane や AVIF 型を追加しない。decode は codec が生成する正�
 そのまま宣言し、storage への変換は Callback が行う。10bit の EX enum は作らない。
 YUV→RGB の丸め・clamp と、EX の入力→保存の精度変換を区別する。
 
-公開済み `avif-rust = 0.1.0` / `avifenc-rust = 0.1.0` を registry から使う。
+公開済み `avif-rust = 0.1.2` / `avifenc-rust = 0.1.2` を registry から使う。
 両 codec の `buffer` re-export は同じ registry `avif-image-buffer = 0.1.0` を指す。
 追跡済み Cargo.lock の source/checksum を固定し、local path override は使わない。
 gitlink は独立 codec の oracle fixture 用に維持するが、WML2 の本番依存ではない。
@@ -50,9 +50,8 @@ alpha item → primary item の正しい参照を生成することを、上流 
 と WML2 legacy/EX/highres の出力で確認した。Pillow/libavif と FFmpeg の独立照合で
 透明 RGB、straight alpha、8/10/12bit の全 sample が一致した後に整理している。
 
-**AVIS は未保証。** 公開0.1.0 の inter/show-existing 既知不具合は別 task
-`01a147ca-f6b0-716f-9ef3-d16bdb9df00f` の対象。本統合は静止画に限定し、上流
-codec repository や WML2 の既存 animation API を拡張・修正しない。
+**WML2 の AVIS は未保証。** 上流0.1.2は inter/show-existing の修正を含むが、
+本更新のWML2統合検証は静止画に限定する。既存 animation API は変更しない。
 
 12bit identity RGB を EX の RGBA12 に戻す場合も、入力宣言は正規化 RGBA16。
 非整数スケーリングを許可する `Round` が必要になる場合がある。`Exact` は
@@ -253,3 +252,16 @@ Windows／macOS、stable toolchain、追加した CI matrix の実行、外部 A
 この段階で未対応だった premultiplied alpha と source transfer の EX 境界は、
 後続の [AVIF color boundary](avif-color-boundary.md) で修正した。現在も AVIS／grid／
 geometry の EX 対応、AV1 の16bit出力、wmlcore 分離／paintcore 統合は含めない。
+
+## registry 0.1.2 更新
+
+[更新時の検証記録](avif-registry-012.md)を参照。上流の復元・フィルター境界修正により、
+旧版と復号画素が変わる場合がある。旧出力のhash固定を正しさの基準にはしない。
+EX/highresはstrict native decodeを使用し、0.1.2では完全な変換ブロックに必要な
+paddingと実際の確保容量を予算へ反映する。従来通った小さな上限で資源制限エラーに
+なる場合があるため、利用側は画像寸法・同時保持バッファを考慮して予算を再評価する。
+本更新でWML2の既定上限を一律に緩和することはない。
+
+既存ICC fixtureの回帰確認と、HDR全般の色精度保証は別である。PQ/HLGの表示・
+tone mapping、任意ICC profile、HDRとalphaの全組合せは今回の独立照合の対象外。
+ImageBufferExの高精度保持は合成identity RGBと既存native fixtureで検証する。

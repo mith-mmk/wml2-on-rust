@@ -416,6 +416,30 @@ mod encode {
         }
     }
 
+    #[test]
+    fn odd_dimensions_preserve_twelve_bit_low_bits_and_alpha() {
+        // Cross transform boundaries in both dimensions; values cannot be
+        // represented by an intermediate RGBA8 buffer without losing low bits.
+        let (width, height) = (65, 67);
+        let samples: Vec<u16> = (0..width * height * 4)
+            .map(|i| ((i * 37 + 1) & 4095) as u16)
+            .collect();
+        let raw = words(&samples);
+        let mut image =
+            ImageBufferEx::from_bytes(width, height, PixelFormatEx::Rgba12, None, raw.clone())
+                .unwrap();
+        let encoded = encode(
+            &mut image,
+            PixelOutputEx::new(PixelFormatEx::Rgba12, PrecisionConversion::Exact),
+        )
+        .unwrap();
+        let decoded =
+            image_from_ex(&encoded, PixelFormatEx::Rgba12, PrecisionConversion::Round).unwrap();
+        assert_eq!((decoded.width(), decoded.height()), (width, height));
+        assert_eq!(decoded.bytes().unwrap(), raw);
+        assert_eq!(image.bytes().unwrap(), raw);
+    }
+
     // Optional export feeds verify_avif_registry_oracles.py. Assertions execute
     // in ordinary CI too; external readers are required only by that script.
     fn oracle(label: &str, bits: u8, bytes: &[u8], rgba: &[u16]) {

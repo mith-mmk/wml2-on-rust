@@ -50,8 +50,10 @@ prepare FFmpeg and bootstrap the existing oracle fixtures.
 
 `check_ffmpeg.py` tests actual libaom AVIF encode, ffprobe and decode, not just
 binary existence. A working runner installation is reused. Otherwise apt
-installation has bounded time/retries and is followed by the same functional
-check. A failed install/check/bootstrap fails the job; it is not converted to
+installation bounds each HTTP/HTTPS request and its retry count, and is
+followed by the same functional check. It does not impose a five-minute limit
+on the whole update/install transaction: downloading many dependencies can
+legitimately take longer even while making progress. A failed install/check/bootstrap fails the job; it is not converted to
 a skipped oracle or a successful test. Existing oracle generation is retained.
 No runner image, secret or permission setting is changed.
 
@@ -84,3 +86,19 @@ missing history, malformed TOML, rename old paths, feature closure, selected
 matrix coverage, and failure/cancellation/skip propagation. No codec product
 code or tests were removed. This CI-change PR itself selects the full suite
 because it changes workflows/scripts. Its hosted run is not awaited or polled.
+
+### Follow-up: package transaction timeout
+
+Run `39770866204` on `f5d2d33` failed three AVIF preparation jobs with exit 124
+at 5m05s, 5m07s and 5m20s. Product tests did not start in those jobs. The new
+`timeout 300 apt-get ...` wrapper imposed a five-minute aggregate cutoff and
+was too short for the runner's package setup. Remove that wrapper while keeping
+20-second HTTP/HTTPS request timeouts, two acquisition retries, apt update error
+checking and mandatory post-install AVIF probing/bootstrap. Other apt failures
+still fail the job and propagate through `Required checks`.
+
+The job metadata and check annotations establish the timeout; detailed logs for
+these three jobs returned 403 at their download destination, so the exact
+package/update-versus-install subcommand was not determined. No log-access
+workaround or authentication change was attempted. The new hosted run is not
+awaited or monitored.

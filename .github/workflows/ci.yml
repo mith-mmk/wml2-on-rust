@@ -65,8 +65,10 @@ jobs:
         if: matrix.avif
         run: |
           if ! python3 -B .github/scripts/check_ffmpeg.py; then
-            sudo timeout 300 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -o APT::Update::Error-Mode=any update
-            sudo timeout 300 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install --yes --no-install-recommends ffmpeg
+            # Bound individual network requests, not the entire package transaction.
+            # Slow but progressing mirrors can exceed five minutes in aggregate.
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -o APT::Update::Error-Mode=any update
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install --yes --no-install-recommends ffmpeg
             python3 -B .github/scripts/check_ffmpeg.py
           fi
       - name: Bootstrap AVIF oracle fixtures

@@ -93,7 +93,7 @@ These optional codecs are not enabled by default.
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.38", features = ["tga", "pcx", "dds", "q4"] }
+wml2 = { version = "0.0.39", features = ["tga", "pcx", "dds", "q4"] }
 ```
 
 TGA encoder: `color_type = Ascii("truecolor"|"grayscale"|"indexed")` defaults to truecolor; `compression = Ascii("none"|"rle")` defaults to RLE. Truecolor `depth = UInt(24|32)` defaults to32; 24 explicitly discards alpha. Grayscale depth8/16 defaults to16, requires equal RGB channels, and depth8 rejects nonopaque pixels. Indexed depth8 uses at most256 exact colors, with `palette_depth = UInt(24|32)` default32; palette24 rejects nonopaque pixels. No implicit luminance conversion or quantization occurs. 16-bit index encoding is deferred because common external decoders disagree. Straight alpha and transparent RGB are retained on wire; existing zero-alpha decode normalization remains. Output is top-left with row-bounded packets. TGA 2.0 extension alpha types0/1 ignore stored alpha, type3 uses straight alpha, and type4 converts premultiplied samples to straight RGBA8 using nearest rounding and saturation. Type2 (undefined alpha that must be retained) and reserved types are explicitly unsupported because RGBA8 cannot preserve unused attribute bits independently of alpha. Explicit useful alpha must agree with the header/storage. Without an extension, legacy alpha behavior is retained. Pixel reads stop before the v2 footer and referenced ancillary areas; invalid offsets and truncated metadata are rejected. Other extension metadata and Huffman image types32/33 remain unsupported.
@@ -248,7 +248,7 @@ YUV, F32, and ten-bit frames are rejected.
 Available since 0.0.36 through the non-default `jpeg2000` feature:
 
 ```toml
-wml2 = { version = "0.0.38", features = ["jpeg2000"] }
+wml2 = { version = "0.0.39", features = ["jpeg2000"] }
 ```
 
 The pure Rust decoder returns RGBA8 from signed/unsigned 1–8bit Gray/RGB, alpha, palette and
@@ -278,7 +278,7 @@ explicitly:
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.38", features = ["psd"] }
+wml2 = { version = "0.0.39", features = ["psd"] }
 ```
 
 The decoder converts supported input to RGBA8. It rounds 16-bit samples down to
@@ -319,17 +319,17 @@ the decoder does not approximate it by compositing layers.
 
 ```toml
 [dependencies]
-wml2 = "0.0.38"
+wml2 = "0.0.39"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.38", features = ["noretoro"] }
+wml2 = { version = "0.0.39", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.38", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.39", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## Encode and convert options
@@ -558,6 +558,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.30`: resource-limit hardening, callback-abort safety, high-resolution ICC/AVIF regressions, and WebP core compatibility cleanup
 - `0.0.31`: extended TIFF/BigTIFF decoding and encoding, bounded block decompression, predictor support, and high-depth native TIFF frames
 - `0.0.32`: PCX, TGA, DDS, PIC2, and Q4 decoder support, ImageMagick-compatible PCX/TGA pixel normalization, and converter/metadata regression coverage
+- [0.0.39 release notes](docs/releases/0.0.39.md)
 - [0.0.38 release notes](docs/releases/0.0.38.md)
 - [0.0.37 release notes](docs/releases/0.0.37.md)
 - [0.0.36 release notes](docs/releases/0.0.36.md)

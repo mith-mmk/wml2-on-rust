@@ -20,6 +20,7 @@ FEATURES = [
     'jpeg,idct_llm,multithread', 'png,psd,tiff',
 ]
 CODECS = {'avif', 'jpeg2000', 'jpeg-xl'}
+LOCAL_CODECS = {'jpeg', 'png', 'tiff'}
 AVIF_PACKAGES = {'avif-rust', 'avifenc-rust'}
 BASE_FEATURES = {'default', 'minimal', 'image-buffer-ex',
                  'image-buffer-ex,high-bit-depth', 'high-bit-depth', 'color-management'}
@@ -86,6 +87,25 @@ def affected(paths, read_pair):
             codecs.add('jpeg-xl')
         elif (path.startswith('wml2/src/jpeg2000') and path.endswith('.rs')) or path.startswith('wml2/tests/jpeg2000'):
             codecs.add('jpeg2000')
+        elif path.startswith(('wml2/src/jpeg/', 'wml2/tests/jpeg_')):
+            # TIFF's embedded JPEG path depends on this decoder too.
+            codecs.update({'jpeg', 'tiff'})
+        elif path in {'wml2/src/tiff/header.rs', 'wml2/src/tiff/mod.rs'}:
+            # TiffHeaders is embedded in the shared DataMap enum. This file also
+            # owns public types/reexports, so path-only selection cannot narrow it.
+            return CODECS, True, 'shared TIFF metadata types or module wiring'
+        elif path.startswith(('wml2/src/tiff/', 'wml2/tests/tiff_')) or path == 'wml2/src/highres/tiff.rs':
+            # JPEG/PNG/WebP EXIF also call the TIFF directory reader.
+            codecs.update(LOCAL_CODECS)
+        elif path == 'wml2/src/metadata/exif.rs':
+            # These formats use the TIFF metadata reader; JP2/JXL/AVIF do not.
+            codecs.update(LOCAL_CODECS)
+        elif path.startswith(('wml2/src/png/', 'wml2/tests/png_')):
+            codecs.update({'png', 'tiff'})
+        elif path.startswith('wml2-test/examples/') and path.endswith('.rs'):
+            # Consumer tools cannot alter wml2's public types or decoder bodies.
+            # Check their build plus bounded integration cases for optional codecs.
+            codecs.update(c + '-smoke' for c in CODECS)
         elif (path.startswith('docs/') and path.endswith(('.md', '.json', '.png', '.json.gz'))) or path in {'README.md', 'README.ja.md'}:
             # Documentation only. Executable scripts, fixtures, submodules and
             # unknown extensions are deliberately NOT classified by their name.
@@ -95,7 +115,7 @@ def affected(paths, read_pair):
     return codecs, False, 'recognized codec/documentation changes'
 
 
-def uses_avif(features, manifest):
+def enabled_features(features, manifest):
     todo = ['default'] if features == 'default' else ([] if features == 'minimal' else features.split(','))
     seen = set()
     while todo:
@@ -103,10 +123,12 @@ def uses_avif(features, manifest):
         if feature in seen:
             continue
         seen.add(feature)
-        if feature in {'avif', 'avifenc', 'dep:avif_codec', 'dep:avifenc_codec'}:
-            return True
         todo.extend(manifest.get('features', {}).get(feature, []))
-    return False
+    return seen
+
+
+def uses_avif(features, manifest):
+    return bool(enabled_features(features, manifest) & {'avif', 'avifenc', 'dep:avif_codec', 'dep:avifenc_codec'})
 
 
 def plan(event, base, head, manifest):
@@ -126,11 +148,28 @@ def plan(event, base, head, manifest):
         except (subprocess.CalledProcessError, ValueError, KeyError, TypeError, UnicodeError) as exc:
             full, codecs, reason = True, CODECS, 'selection unavailable; full suite: ' + type(exc).__name__
     selected = [f for f in FEATURES if full or f in BASE_FEATURES or any(c in f.split(',') or (c == 'avif' and 'avifenc' in f.split(',')) for c in codecs)]
-    matrix = {'include': [{'rust': rust, 'features': f, 'avif': uses_avif(f, manifest)}
+    modes = {c: ('full' if full or c in codecs else 'smoke' if c + '-smoke' in codecs else 'none') for c in CODECS}
+    # Feature dependency changes are full when introduced; later PRs must also
+    # honor that graph (e.g. a default feature newly enabling an optional codec).
+    for features in selected:
+        for codec in CODECS & enabled_features(features, manifest):
+            modes[codec] = 'full'
+    matrix = {'include': [{'rust': rust, 'features': f, 'avif': uses_avif(f, manifest),
+                           'ffmpeg': bool(enabled_features(f, manifest) & {'avifenc', 'dep:avifenc_codec'}),
+                           'profile': 'ci' if 'jpeg2000' in enabled_features(f, manifest) else 'test'}
                           for rust in ['1.91.0', 'stable'] for f in selected]}
-    return {'matrix': matrix, 'full': full, 'avif': full or 'avif' in codecs,
-            'jpeg2000': full or 'jpeg2000' in codecs, 'jpegxl': full or 'jpeg-xl' in codecs,
-            'tiff': full, 'reason': reason}
+    core_matrix = {'include': [row for row in matrix['include'] if not row['avif']]}
+    avif_matrix = {'include': [row for row in matrix['include'] if row['avif']]}
+    if avif_matrix['include']:
+        modes['avif'] = 'full'
+    # Job-level `if` handles the unselected case; keep a valid matrix even then.
+    if not avif_matrix['include']:
+        avif_matrix = {'include': [{'rust': 'stable', 'features': 'minimal', 'avif': False, 'ffmpeg': False, 'profile': 'test'}]}
+    return {'matrix': matrix, 'core_matrix': core_matrix, 'avif_matrix': avif_matrix,
+            'full': full, 'avif': modes['avif'] == 'full',
+            'jpeg2000': modes['jpeg2000'] == 'full', 'jpegxl': modes['jpeg-xl'] == 'full',
+            'tiff': full or 'tiff' in codecs, 'modes': modes,
+            'smoke': any(mode == 'smoke' for mode in modes.values()), 'reason': reason}
 
 
 def main():

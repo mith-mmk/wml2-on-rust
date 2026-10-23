@@ -1271,8 +1271,10 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
         -1
     };
 
-    // Small images cannot amortize worker startup (see review benchmark report).
-    let parallel = cfg!(feature = "multithread") && mcu_x_max.saturating_mul(mcu_y_max) > 8;
+    // Small jobs cannot amortize worker startup. Count DCT blocks, since MCU
+    // cost depends on subsampling; see docs/jpeg-tuning.md.
+    let parallel = cfg!(feature = "multithread")
+        && mcu_x_max.saturating_mul(mcu_y_max).saturating_mul(mcu_size) > 256;
     #[cfg(feature = "multithread")]
     let cancelled = std::sync::atomic::AtomicBool::new(false);
     std::thread::scope(|scope| {
@@ -1312,10 +1314,16 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
         #[cfg(feature = "multithread")]
         let mut pending = 0usize;
         let mut units = Vec::with_capacity(mcu_size);
+        let mut reusable_blocks = Vec::with_capacity(if parallel { 0 } else { mcu_size });
         let result = (|| {
             for mcu_y in 0..mcu_y_max {
                 for mcu_x in 0..mcu_x_max {
-                    let mut blocks = Vec::with_capacity(mcu_size);
+                    // Keep the established allocation path for worker-owned jobs.
+                    let mut blocks = if parallel {
+                        Vec::with_capacity(mcu_size)
+                    } else {
+                        std::mem::take(&mut reusable_blocks)
+                    };
 
                     for scannumber in 0..mcu_size {
                         let slot = &scan_slots[scannumber];
@@ -1374,6 +1382,8 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                         option
                             .drawer
                             .draw(mcu_x * dx, mcu_y * dy, dx, dy, &data, None)?;
+                        blocks.clear();
+                        reusable_blocks = blocks;
                     }
 
                     if header.interval > 0 {

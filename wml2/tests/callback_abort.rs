@@ -63,11 +63,15 @@ impl DrawCallback for Probe {
 }
 #[cfg(any(feature = "png", feature = "jpeg", feature = "gif"))]
 fn exercise(format: ImageFormat, animation: bool) {
+    exercise_size(format, animation, 64);
+}
+#[cfg(any(feature = "png", feature = "jpeg", feature = "gif"))]
+fn exercise_size(format: ImageFormat, animation: bool, size: usize) {
     let mut image = ImageBuffer::new();
     image
         .init(
-            64,
-            64,
+            size,
+            size,
             Some(InitOptions {
                 background: None,
                 animation,
@@ -78,10 +82,32 @@ fn exercise(format: ImageFormat, animation: bool) {
     if animation {
         for _ in 0..3 {
             image.next(Some(NextOptions::wait(10))).unwrap();
-            image.draw(0, 0, 64, 64, &[42; 64 * 64 * 4], None).unwrap();
+            image
+                .draw(0, 0, size, size, &vec![42; size * size * 4], None)
+                .unwrap();
         }
     }
     let bytes = image_to(&mut image, format, None).unwrap();
+    assert!(
+        image_from_with_limits(
+            &bytes,
+            wml2::limits::DecodeLimits {
+                pixels: size * size - 1,
+                ..Default::default()
+            }
+        )
+        .is_err()
+    );
+    assert!(
+        image_from_with_limits(
+            &bytes,
+            wml2::limits::DecodeLimits {
+                expanded_bytes: 1,
+                ..Default::default()
+            }
+        )
+        .is_err()
+    );
     for target in ["init", "draw", "metadata", "verbose", "next"] {
         if target == "next" && !animation {
             continue;
@@ -153,6 +179,8 @@ fn png_abort_stops_at_every_callback() {
 #[test]
 fn jpeg_abort_stops_and_joins_workers() {
     exercise(ImageFormat::Jpeg, false);
+    // Keep the bounded worker queues exercised after the small-image cutoff.
+    exercise_size(ImageFormat::Jpeg, false, 512);
 }
 #[cfg(feature = "gif")]
 #[test]

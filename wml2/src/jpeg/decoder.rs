@@ -1521,6 +1521,19 @@ pub(crate) fn decode_inner_with_color_space<B: BinaryReader>(
     // Make Huffman Table
     // Scan Header
     let mut header = JpegHaeder::new(reader, 0)?;
+    if let Some(apps) = &header.jpeg_app_headers {
+        for app in apps {
+            if let crate::jpeg::header::JpegAppHeaders::InvalidExif { message, .. } = app {
+                warnings = ImgWarnings::add(
+                    warnings,
+                    Box::new(JpegWarning::new_const(
+                        JpegWarningKind::InvalidExif,
+                        message.clone(),
+                    )),
+                );
+            }
+        }
+    }
 
     if let (Some(color_space), Some(frame)) = (color_space, header.frame_header.as_mut()) {
         if frame.plane != 3 {

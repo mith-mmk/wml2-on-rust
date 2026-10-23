@@ -23,6 +23,20 @@ impl Debug for ImgError {
 }
 
 impl ImgError {
+    #[cfg(feature = "jpeg")]
+    pub(crate) fn is_optional_metadata_error(&self) -> bool {
+        let kind = match &self.repr {
+            Repr::SimpleMessage(kind, _) => kind,
+            Repr::Custom(custom) => &custom.kind,
+        };
+        matches!(
+            kind,
+            ImgErrorKind::IllegalData
+                | ImgErrorKind::NoSupportFormat
+                | ImgErrorKind::UnsupportedFeature
+                | ImgErrorKind::UnexpectedEof
+        )
+    }
     #[cfg(feature = "jpeg2000")]
     pub(crate) fn is_unsupported(&self) -> bool {
         match &self.repr {

@@ -1,0 +1,1308 @@
+{
+  "base": "1be4b9f9777fbe101e0941885d20b7d3513721ac",
+  "host": {
+    "cpu": "AMD Ryzen 7 7700",
+    "physical_cores": 8,
+    "logical_cores": 16,
+    "rust": "1.99.0",
+    "target": "x86_64-pc-windows-msvc",
+    "profile": "release opt-level=3"
+  },
+  "features_single": "jpeg,idct_llm,exif (no default features)",
+  "features_multi": "jpeg,idct_llm,exif,multithread (no default features)",
+  "order": "ABBA per image and feature configuration",
+  "warmups": 2,
+  "repeats_per_process": 5,
+  "processes_per_revision": 2,
+  "successful_inputs": 27,
+  "rgba_exact_before_after_single_multi": true,
+  "inputs": [
+    {
+      "file": "edge256-s0-baseline.jpg",
+      "sha256": "8e889d48f8995be08def13dcb914d122ec666c59c20819c68ebcb582301423a6",
+      "bytes": 93002
+    },
+    {
+      "file": "edge256-s2-baseline.jpg",
+      "sha256": "56fb1f928a0e47d1d798ca6adfc4dca2978a607b7dfae359a28a666d16a07e56",
+      "bytes": 49063
+    },
+    {
+      "file": "edge32-s0-baseline.jpg",
+      "sha256": "c73f78fe348aa702529851c5f6756e888d61be0ed29376d3322a66081fb5ead8",
+      "bytes": 2015
+    },
+    {
+      "file": "edge32-s2-baseline.jpg",
+      "sha256": "c7b0e16904281f0b1bf7b69be012ee2530b1586858894e76a24d012fe2558a65",
+      "bytes": 1356
+    },
+    {
+      "file": "edge64-s0-baseline.jpg",
+      "sha256": "6596d7584ab6148b0a02626feff58e1dde18c989a5a6916604ec71ba25d7bf63",
+      "bytes": 6347
+    },
+    {
+      "file": "edge64-s2-baseline.jpg",
+      "sha256": "1e7d4a062cc839cffb47925d8b567e346f2d65dd0f8587d35db04ef7d397bfde",
+      "bytes": 3629
+    },
+    {
+      "file": "large-s0-baseline.jpg",
+      "sha256": "71a9293d98b28376ba828b5cb0e524c06be0eb9cf5cf1f7447feb58fdba978d4",
+      "bytes": 8869329
+    },
+    {
+      "file": "large-s0-progressive.jpg",
+      "sha256": "b096962ce73456873c8c0f48db120a748694e66f6ef04787f1f1f91b8f270af3",
+      "bytes": 7857964
+    },
+    {
+      "file": "large-s2-baseline.jpg",
+      "sha256": "6f588ea12bef19bf35a64c32a5c10c48f1cb6dc4358d2e82700879dc7b3ea44f",
+      "bytes": 4651609
+    },
+    {
+      "file": "large-s2-progressive.jpg",
+      "sha256": "8b41154210618402d66ea7210e088898be6d5aef9ebdc95c35b215a23c8cbe21",
+      "bytes": 4144631
+    },
+    {
+      "file": "medium-s0-baseline.jpg",
+      "sha256": "f4318e617055cb4b05ff9d08fe32f2aafd8d7948bb329b80e1ebea1ff237c7c5",
+      "bytes": 1109187
+    },
+    {
+      "file": "medium-s0-progressive.jpg",
+      "sha256": "922f77398b099d1b08d9da8220feb7ae8be0b056b64f4b0c2a8d293d1ef7507f",
+      "bytes": 982912
+    },
+    {
+      "file": "medium-s2-baseline.jpg",
+      "sha256": "8a1e7666723d49c27bf07e2ead65008a64ae8b1ea91e85ce3adeb640ffb847d6",
+      "bytes": 581992
+    },
+    {
+      "file": "medium-s2-progressive.jpg",
+      "sha256": "e7ad859e3379f9c105d15857926f699839f08d48f9735a6341b0581f788f9305",
+      "bytes": 518720
+    },
+    {
+      "file": "small-s0-baseline.jpg",
+      "sha256": "e6cbe5819b67bcb552916f2d05b735d4cdcaeb19c0fe56f98e715c5c6ea185be",
+      "bytes": 23602
+    },
+    {
+      "file": "small-s0-progressive.jpg",
+      "sha256": "8f0191db64bc2f7fc6db410857a6dce8e6cbd90d25c749f61b9cfb90985c5318",
+      "bytes": 21057
+    },
+    {
+      "file": "small-s2-baseline.jpg",
+      "sha256": "971628e1fd3c95332f41d9973b8992e2ebbac52418d958ba90ff3fe0ff863685",
+      "bytes": 12692
+    },
+    {
+      "file": "small-s2-progressive.jpg",
+      "sha256": "3cab8b3a7289d8ff80eafb05991a5da0afa4cc6638e5c25e71dcb367dac65925",
+      "bytes": 11437
+    },
+    {
+      "file": "tiny-s0-baseline.jpg",
+      "sha256": "468239ed473d22e6fea5dfbe55bbea004df7cb8fdc8f18dcb03c7800dc996f72",
+      "bytes": 637
+    },
+    {
+      "file": "tiny-s0-progressive.jpg",
+      "sha256": "677962301700ca18b0a04315003008fd380b797c06c39b60d49baa02a880ca38",
+      "bytes": 524
+    },
+    {
+      "file": "tiny-s2-baseline.jpg",
+      "sha256": "2b6aa59f259142b42e6defbd7592910443ddcca45d5676b5b3ac5577f816405d",
+      "bytes": 634
+    },
+    {
+      "file": "tiny-s2-progressive.jpg",
+      "sha256": "d9bcf5544d3987772b5a0df73a2f817614c243a52574fd732d6538f42b050ddb",
+      "bytes": 522
+    },
+    {
+      "file": "jpeg-icc-base.jpg",
+      "sha256": "934b907dbfed6ec0716136ca0534e7bb133c100cd7fcb36033add504badc464d",
+      "bytes": 633
+    },
+    {
+      "file": "jpeg-icc-cmyk-progressive.jpg",
+      "sha256": "1f84bba1347816d0ba1abee2a59d8e0af70edfb5bd451d05e10d1db5df0570dd",
+      "bytes": 702
+    },
+    {
+      "file": "jpeg-icc-cmyk.jpg",
+      "sha256": "f279e7ced9e936d9bd6764dedd529d6a937d935c33bbb603c71d5ab4f8ce6593",
+      "bytes": 352
+    },
+    {
+      "file": "jpeg-icc-gray-progressive.jpg",
+      "sha256": "8b934046c762e64fb1915a56047b18449ec6e69db72945317e505431d51bc717",
+      "bytes": 280
+    },
+    {
+      "file": "jpeg-icc-gray.jpg",
+      "sha256": "c167e27698ca03e30d2600085b6058fda938fa524811afcda51e5a52b72366a4",
+      "bytes": 331
+    },
+    {
+      "file": "jpeg-icc-ycck.jpg",
+      "sha256": "09289dfe378a2b1b6f3abc9666d8ea35f24811b0d18222c2bfc2b1e14feea975",
+      "bytes": 291
+    }
+  ],
+  "binary_sha256": {
+    "before-single": "b6220a09c613cce2dd0f610e4652cfb4b93d767be07b0f9ab08abf5e6ff80b34",
+    "after-single": "bf24cf944ce32b3f1657570f6492e05888f7448d2dd5c7283f2f7549ada31851",
+    "before-multi": "efab7789c40310b8eea709eb82776d235f0d7d5ad0cedcbdb2eb1b0026f583b0",
+    "after-multi": "cbed826312077f0b9285754524c81b9b36230edf51e1c0cdb757b62532eaa725"
+  },
+  "medians_ms": [
+    {
+      "file": "edge256-s0-baseline.jpg",
+      "before-single": 3.4728000000000003,
+      "after-single": 3.17805,
+      "before-multi": 3.0812,
+      "after-multi": 2.7117
+    },
+    {
+      "file": "edge256-s2-baseline.jpg",
+      "before-single": 1.95595,
+      "after-single": 1.805,
+      "before-multi": 1.46985,
+      "after-multi": 1.2829000000000002
+    },
+    {
+      "file": "edge32-s0-baseline.jpg",
+      "before-single": 0.055150000000000005,
+      "after-single": 0.04915,
+      "before-multi": 0.053099999999999994,
+      "after-multi": 0.049049999999999996
+    },
+    {
+      "file": "edge32-s2-baseline.jpg",
+      "before-single": 0.0372,
+      "after-single": 0.03435,
+      "before-multi": 0.03585,
+      "after-multi": 0.03745
+    },
+    {
+      "file": "edge64-s0-baseline.jpg",
+      "before-single": 0.21000000000000002,
+      "after-single": 0.19495,
+      "before-multi": 0.2095,
+      "after-multi": 0.1792
+    },
+    {
+      "file": "edge64-s2-baseline.jpg",
+      "before-single": 0.11775,
+      "after-single": 0.10385,
+      "before-multi": 0.11510000000000001,
+      "after-multi": 0.1005
+    },
+    {
+      "file": "jpeg-icc-base.jpg",
+      "before-single": 0.01065,
+      "after-single": 0.011699999999999999,
+      "before-multi": 0.0119,
+      "after-multi": 0.01165
+    },
+    {
+      "file": "jpeg-icc-cmyk.jpg",
+      "before-single": 0.0117,
+      "after-single": 0.01225,
+      "before-multi": 0.01395,
+      "after-multi": 0.0125
+    },
+    {
+      "file": "jpeg-icc-gray-progressive.jpg",
+      "before-single": 0.01475,
+      "after-single": 0.0143,
+      "before-multi": 0.01435,
+      "after-multi": 0.015199999999999998
+    },
+    {
+      "file": "jpeg-icc-gray.jpg",
+      "before-single": 0.00775,
+      "after-single": 0.00795,
+      "before-multi": 0.009250000000000001,
+      "after-multi": 0.0081
+    },
+    {
+      "file": "jpeg-icc-ycck.jpg",
+      "before-single": 0.010499999999999999,
+      "after-single": 0.0125,
+      "before-multi": 0.010499999999999999,
+      "after-multi": 0.011099999999999999
+    },
+    {
+      "file": "large-s0-baseline.jpg",
+      "before-single": 327.48505,
+      "after-single": 288.38265,
+      "before-multi": 270.0271,
+      "after-multi": 238.80115
+    },
+    {
+      "file": "large-s0-progressive.jpg",
+      "before-single": 559.65765,
+      "after-single": 474.71955,
+      "before-multi": 523.0965,
+      "after-multi": 548.1329000000001
+    },
+    {
+      "file": "large-s2-baseline.jpg",
+      "before-single": 185.31650000000002,
+      "after-single": 165.796,
+      "before-multi": 125.76085,
+      "after-multi": 110.37265
+    },
+    {
+      "file": "large-s2-progressive.jpg",
+      "before-single": 281.25205,
+      "after-single": 258.66175,
+      "before-multi": 286.94715,
+      "after-multi": 267.3651
+    },
+    {
+      "file": "medium-s0-baseline.jpg",
+      "before-single": 42.60335,
+      "after-single": 37.55595,
+      "before-multi": 35.2406,
+      "after-multi": 30.10855
+    },
+    {
+      "file": "medium-s0-progressive.jpg",
+      "before-single": 54.5961,
+      "after-single": 53.923950000000005,
+      "before-multi": 62.655150000000006,
+      "after-multi": 49.02935
+    },
+    {
+      "file": "medium-s2-baseline.jpg",
+      "before-single": 23.3273,
+      "after-single": 20.89515,
+      "before-multi": 16.3789,
+      "after-multi": 14.219850000000001
+    },
+    {
+      "file": "medium-s2-progressive.jpg",
+      "before-single": 28.34715,
+      "after-single": 26.910600000000002,
+      "before-multi": 28.42445,
+      "after-multi": 26.502699999999997
+    },
+    {
+      "file": "small-s0-baseline.jpg",
+      "before-single": 0.86585,
+      "after-single": 0.7979,
+      "before-multi": 0.8192999999999999,
+      "after-multi": 0.7124
+    },
+    {
+      "file": "small-s0-progressive.jpg",
+      "before-single": 1.2487,
+      "after-single": 1.1356,
+      "before-multi": 1.2128,
+      "after-multi": 1.1398000000000001
+    },
+    {
+      "file": "small-s2-baseline.jpg",
+      "before-single": 0.48065,
+      "after-single": 0.4455,
+      "before-multi": 0.4113,
+      "after-multi": 0.4121
+    },
+    {
+      "file": "small-s2-progressive.jpg",
+      "before-single": 0.7374,
+      "after-single": 0.6875,
+      "before-multi": 0.70595,
+      "after-multi": 0.6683
+    },
+    {
+      "file": "tiny-s0-baseline.jpg",
+      "before-single": 0.01735,
+      "after-single": 0.01475,
+      "before-multi": 0.01465,
+      "after-multi": 0.01465
+    },
+    {
+      "file": "tiny-s0-progressive.jpg",
+      "before-single": 0.0339,
+      "after-single": 0.034350000000000006,
+      "before-multi": 0.03195,
+      "after-multi": 0.034949999999999995
+    },
+    {
+      "file": "tiny-s2-baseline.jpg",
+      "before-single": 0.0143,
+      "after-single": 0.0145,
+      "before-multi": 0.013649999999999999,
+      "after-multi": 0.0145
+    },
+    {
+      "file": "tiny-s2-progressive.jpg",
+      "before-single": 0.03095,
+      "after-single": 0.0339,
+      "before-multi": 0.03115,
+      "after-multi": 0.034449999999999995
+    }
+  ],
+  "former_3pct_case_recheck": {
+    "file": "large-s2-baseline.jpg",
+    "runs_per_revision": 3,
+    "repeats_per_process": 5,
+    "warmups": 2,
+    "medians_ms": [
+      {
+        "mode": "single",
+        "original039": 185.8543,
+        "large-before": 182.6066,
+        "after": 167.0686
+      },
+      {
+        "mode": "multi",
+        "original039": 125.3045,
+        "large-before": 126.4276,
+        "after": 109.5289
+      }
+    ],
+    "raw": [
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "199486500",
+        "first_draw_ns": "2967200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "187020200",
+        "first_draw_ns": "2812500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "185854300",
+        "first_draw_ns": "2965300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "193283400",
+        "first_draw_ns": "2954500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "182882700",
+        "first_draw_ns": "2844300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "179468700",
+        "first_draw_ns": "2867800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "184168400",
+        "first_draw_ns": "3049500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "203509600",
+        "first_draw_ns": "2852400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "181962900",
+        "first_draw_ns": "2978900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "186820300",
+        "first_draw_ns": "2816700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "168211700",
+        "first_draw_ns": "2851200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "169973000",
+        "first_draw_ns": "2874600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "167068600",
+        "first_draw_ns": "2769000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "163283200",
+        "first_draw_ns": "2755900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "173717700",
+        "first_draw_ns": "2894800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "174567000",
+        "first_draw_ns": "2954400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "168542000",
+        "first_draw_ns": "2839000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "165091500",
+        "first_draw_ns": "2845800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "183006300",
+        "first_draw_ns": "2790900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "165949700",
+        "first_draw_ns": "2872100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "184055900",
+        "first_draw_ns": "3308100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "182606600",
+        "first_draw_ns": "2902600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "193182600",
+        "first_draw_ns": "2879700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "181403800",
+        "first_draw_ns": "2820600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "182782800",
+        "first_draw_ns": "2803300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "181485800",
+        "first_draw_ns": "2842600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "189253000",
+        "first_draw_ns": "3134200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "178868600",
+        "first_draw_ns": "2819600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "179149600",
+        "first_draw_ns": "2797500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "191785700",
+        "first_draw_ns": "3093700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "192742800",
+        "first_draw_ns": "2875300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "182949200",
+        "first_draw_ns": "2819100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "183551700",
+        "first_draw_ns": "3169600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "187005700",
+        "first_draw_ns": "2834700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "181486100",
+        "first_draw_ns": "2783300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "185766800",
+        "first_draw_ns": "3014000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "181971500",
+        "first_draw_ns": "2802300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "181569500",
+        "first_draw_ns": "2901900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "177589200",
+        "first_draw_ns": "2763500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "177879700",
+        "first_draw_ns": "2879100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "160874200",
+        "first_draw_ns": "3405900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "162696900",
+        "first_draw_ns": "3297100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "166017100",
+        "first_draw_ns": "3305900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "165622900",
+        "first_draw_ns": "2913300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "170694900",
+        "first_draw_ns": "5184600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "122349500",
+        "first_draw_ns": "3106100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "124195000",
+        "first_draw_ns": "3523100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "122327900",
+        "first_draw_ns": "2953600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "129611800",
+        "first_draw_ns": "2820600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "128140200",
+        "first_draw_ns": "2957400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "123569100",
+        "first_draw_ns": "2990700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "132429300",
+        "first_draw_ns": "2996500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "127451300",
+        "first_draw_ns": "2930200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "122817300",
+        "first_draw_ns": "2891300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "123696500",
+        "first_draw_ns": "2926600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "109528900",
+        "first_draw_ns": "2955700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "107814600",
+        "first_draw_ns": "2947200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "110192500",
+        "first_draw_ns": "3178700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "117227400",
+        "first_draw_ns": "3152500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "106872100",
+        "first_draw_ns": "2925000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "112483600",
+        "first_draw_ns": "3004200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "113250900",
+        "first_draw_ns": "3078100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "108308400",
+        "first_draw_ns": "2951400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "114428100",
+        "first_draw_ns": "2886600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "109685600",
+        "first_draw_ns": "3028200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "127209200",
+        "first_draw_ns": "2951800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "126614400",
+        "first_draw_ns": "2925900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "130884500",
+        "first_draw_ns": "3033100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "125156200",
+        "first_draw_ns": "2989800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "123486800",
+        "first_draw_ns": "2889100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "125304500",
+        "first_draw_ns": "3071700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "124150900",
+        "first_draw_ns": "2905100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "127907800",
+        "first_draw_ns": "2955500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "138867800",
+        "first_draw_ns": "3066700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "125319600",
+        "first_draw_ns": "2921700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "127155900",
+        "first_draw_ns": "3107800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "125080100",
+        "first_draw_ns": "2974200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "125254700",
+        "first_draw_ns": "2979800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "123008300",
+        "first_draw_ns": "2895200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "original039",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "129995400",
+        "first_draw_ns": "3221400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "124415000",
+        "first_draw_ns": "2932400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "136776100",
+        "first_draw_ns": "2919600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "127347700",
+        "first_draw_ns": "3092300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "124114800",
+        "first_draw_ns": "2942400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "large-before",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "126427600",
+        "first_draw_ns": "2887800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "106493600",
+        "first_draw_ns": "2923500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "108432600",
+        "first_draw_ns": "2921700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "108979600",
+        "first_draw_ns": "2931700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "112343500",
+        "first_draw_ns": "3213600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "run": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "106936100",
+        "first_draw_ns": "2993900",
+        "hash": "16984684791948501925"
+      }
+    ]
+  },
+  "warm_file_reads": {
+    "large-s0-baseline.jpg": {
+      "bytes": 8869329,
+      "warm_read_ns": [
+        1738800,
+        1776100,
+        1765600,
+        2061100,
+        1477500,
+        1760600,
+        1813600
+      ],
+      "median_ms": 1.7656
+    },
+    "large-s2-baseline.jpg": {
+      "bytes": 4651609,
+      "warm_read_ns": [
+        948400,
+        918100,
+        888700,
+        1046300,
+        883600,
+        973400,
+        934600
+      ],
+      "median_ms": 0.9346
+    }
+  }
+}

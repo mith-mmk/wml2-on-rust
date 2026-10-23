@@ -188,6 +188,27 @@ pub(crate) fn huffman_read<B: BinaryReader>(
     bit_reader: &mut BitReader<B>,
     table: &HuffmanDecodeTable,
 ) -> Result<u32, Error> {
+    // Inspect only the current entropy byte. Refilling across a marker here
+    // would change restart/truncation behavior, so longer codes use the old path.
+    if bit_reader.bptr == 0 {
+        bit_reader.b = bit_reader.next_byte()?;
+        bit_reader.bptr = 8;
+    }
+    let prefix = (bit_reader.b << (8 - bit_reader.bptr)) as usize;
+    let entry = table.short_codes[prefix];
+    let length = (entry >> 8) as usize;
+    if length != 0 && length <= bit_reader.bptr {
+        bit_reader.bptr -= length;
+        return Ok((entry & 0xff) as u32);
+    }
+    huffman_read_slow(bit_reader, table)
+}
+
+#[inline]
+fn huffman_read_slow<B: BinaryReader>(
+    bit_reader: &mut BitReader<B>,
+    table: &HuffmanDecodeTable,
+) -> Result<u32, Error> {
     let mut d = 0;
     for l in 0..16 {
         d = (d << 1) | bit_reader.get_bit()?;
@@ -209,10 +230,144 @@ pub(crate) fn huffman_read<B: BinaryReader>(
 
 #[derive(std::cmp::PartialEq, Debug)]
 pub(crate) struct HuffmanDecodeTable {
+    // Packed (length << 8) | symbol; zero means that the slow path is required.
+    short_codes: [u16; 256],
     pub(crate) pos: Vec<usize>,
     pub(crate) val: Vec<usize>,
     pub(crate) min: Vec<i32>,
     pub(crate) max: Vec<i32>,
+}
+
+#[cfg(test)]
+mod short_huffman_tests {
+    use super::*;
+    use bin_rs::reader::BytesReader;
+
+    fn table() -> HuffmanDecodeTable {
+        let mut lengths = vec![0; 16];
+        for (index, count) in [(0, 1), (1, 1), (3, 2), (7, 1), (8, 1), (15, 1)] {
+            lengths[index] = count;
+        }
+        let mut position = 0;
+        let positions = lengths
+            .iter()
+            .map(|count| {
+                let start = position;
+                position += count;
+                start
+            })
+            .collect();
+        expand_huffman_table(&HuffmanTable::new(
+            false,
+            0,
+            lengths,
+            positions,
+            vec![0, 42, 240, 254, 7, 65, 255],
+        ))
+        .unwrap()
+    }
+
+    #[test]
+    fn short_lookup_matches_bitwise_codes_and_consumption_at_every_bit_offset() {
+        let table = table();
+        for length in [1, 2, 4, 8] {
+            assert!(table.short_codes.iter().any(|entry| entry >> 8 == length));
+        }
+        for available in 0..=8 {
+            for byte in 0..=255u8 {
+                let input = [0x80, 0, 0, 0];
+                let mut a_source = BytesReader::new(&input);
+                let mut b_source = BytesReader::new(&input);
+                let mut fast = BitReader::new(&mut a_source);
+                let mut slow = BitReader::new(&mut b_source);
+                fast.b = byte;
+                slow.b = byte;
+                fast.bptr = available;
+                slow.bptr = available;
+                let a = huffman_read(&mut fast, &table).map_err(|error| error.to_string());
+                let b = huffman_read_slow(&mut slow, &table).map_err(|error| error.to_string());
+                assert_eq!(a, b, "byte={byte} available={available}");
+                assert_eq!(
+                    (fast.bptr, fast.b, fast.reader.offset().unwrap()),
+                    (slow.bptr, slow.b, slow.reader.offset().unwrap())
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn short_lookup_preserves_stuffing_markers_and_truncation() {
+        let table = table();
+        for input in [
+            &[][..],
+            &[0],
+            &[0xff],
+            &[0xff, 0],
+            &[0xff, 0xd9],
+            &[0xff, 0xd0],
+            &[0xff, 0xff, 0xd9],
+            &[0x60, 0x80, 0xff, 0xd9],
+        ] {
+            let mut a_source = BytesReader::new(input);
+            let mut b_source = BytesReader::new(input);
+            let mut fast = BitReader::new(&mut a_source);
+            let mut slow = BitReader::new(&mut b_source);
+            for _ in 0..4 {
+                let a = huffman_read(&mut fast, &table).map_err(|error| error.to_string());
+                let b = huffman_read_slow(&mut slow, &table).map_err(|error| error.to_string());
+                assert_eq!(a, b);
+                assert_eq!(
+                    (fast.bptr, fast.b, fast.rst, fast.reader.offset().unwrap()),
+                    (slow.bptr, slow.b, slow.rst, slow.reader.offset().unwrap())
+                );
+                if a.is_err() {
+                    break;
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn malformed_tables_keep_the_legacy_path_instead_of_building_a_cache() {
+        for (length, count, values) in [(0, 3, vec![0, 1, 2]), (1, 2, vec![0])] {
+            let mut lengths = vec![0; 16];
+            lengths[length] = count;
+            let mut position = 0;
+            let positions = lengths
+                .iter()
+                .map(|count| {
+                    let start = position;
+                    position += count;
+                    start
+                })
+                .collect();
+            let table =
+                expand_huffman_table(&HuffmanTable::new(false, 0, lengths, positions, values))
+                    .unwrap();
+            assert!(table.short_codes.iter().all(|entry| *entry == 0));
+        }
+    }
+
+    #[test]
+    fn row_restart_markers_preserve_the_plain_image_pixels() {
+        let cases: [(&[u8], &[u8]); 2] = [
+            (
+                include_bytes!("../../tests/fixtures/review/jpeg-huffman-s0-rows0.jpg"),
+                include_bytes!("../../tests/fixtures/review/jpeg-huffman-s0-rows1.jpg"),
+            ),
+            (
+                include_bytes!("../../tests/fixtures/review/jpeg-huffman-s2-rows0.jpg"),
+                include_bytes!("../../tests/fixtures/review/jpeg-huffman-s2-rows1.jpg"),
+            ),
+        ];
+        for (plain, restart) in cases {
+            let a = crate::draw::image_from(plain).unwrap();
+            let b = crate::draw::image_from(restart).unwrap();
+            assert_eq!((a.width, a.height), (64, 32));
+            assert_eq!((b.width, b.height), (64, 32));
+            assert_eq!(a.buffer, b.buffer);
+        }
+    }
 }
 
 #[inline]
@@ -969,12 +1124,56 @@ pub(crate) fn expand_huffman_table(huffman_table: &HuffmanTable) -> Option<Huffm
     let val: Vec<usize> = huffman_table.val.to_vec();
     let pos: Vec<usize> = huffman_table.pos.to_vec();
 
-    Some(HuffmanDecodeTable {
+    let mut table = HuffmanDecodeTable {
         val,
         pos,
         max: current_max,
         min: current_min,
-    })
+        short_codes: [0; 256],
+    };
+    // Only cache consistent, non-oversubscribed canonical tables. This is not a
+    // new rejection rule: malformed tables retain the old bitwise error path.
+    if table.max.len() != 16 {
+        return Some(table);
+    }
+    for length in 0..16 {
+        let (min, max) = (table.min[length], table.max[length]);
+        if max < 0 {
+            continue;
+        }
+        if min < 0 || min > max || max >= (1 << (length + 1)) {
+            return Some(table);
+        }
+        let valid_symbols = table
+            .pos
+            .get(length)
+            .and_then(|start| {
+                start
+                    .checked_add((max - min + 1) as usize)
+                    .map(|end| (*start, end))
+            })
+            .and_then(|(start, end)| table.val.get(start..end))
+            .is_some_and(|values| values.iter().all(|value| *value <= 255));
+        if !valid_symbols {
+            return Some(table);
+        }
+    }
+    // Fill each prefix range directly, avoiding eight slow decodes per entry
+    // during setup of tiny images. Canonical ranges cannot overlap here.
+    for length in 0..8 {
+        let (min, max) = (table.min[length], table.max[length]);
+        if max < 0 {
+            continue;
+        }
+        let suffix_bits = 7 - length;
+        for code in min..=max {
+            let symbol = table.val[table.pos[length] + (code - min) as usize];
+            let start = (code as usize) << suffix_bits;
+            let entry = (((length + 1) as u16) << 8) | symbol as u16;
+            table.short_codes[start..start + (1 << suffix_bits)].fill(entry);
+        }
+    }
+    Some(table)
 }
 
 pub(crate) fn huffman_extend(

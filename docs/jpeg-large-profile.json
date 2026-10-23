@@ -1,0 +1,248 @@
+{
+  "sample_stride": 64,
+  "decodes_per_process": 4,
+  "warmups_included": 1,
+  "kind": "deterministic sampled wall time, extrapolated; not CPU time; stages overlap in parallel mode; sampling and atomic counters perturb execution",
+  "slots": [
+    "entropy block",
+    "IDCT block",
+    "color conversion + allocation per MCU",
+    "send",
+    "receive",
+    "draw callback"
+  ],
+  "profiles": [
+    {
+      "revision": "before",
+      "mode": "single",
+      "file": "large-s0-baseline.jpg",
+      "calls": [
+        1179648,
+        1179648,
+        393216,
+        0,
+        0,
+        393216
+      ],
+      "sampled_ns": [
+        12887400,
+        2182400,
+        3301800,
+        0,
+        0,
+        282600
+      ],
+      "extrapolated_ms_per_decode": [
+        206.1984,
+        34.9184,
+        52.8288,
+        0.0,
+        0.0,
+        4.5216
+      ]
+    },
+    {
+      "revision": "before",
+      "mode": "single",
+      "file": "large-s2-baseline.jpg",
+      "calls": [
+        589824,
+        589824,
+        98304,
+        0,
+        0,
+        98304
+      ],
+      "sampled_ns": [
+        6227300,
+        1073700,
+        2874400,
+        0,
+        0,
+        164000
+      ],
+      "extrapolated_ms_per_decode": [
+        99.6368,
+        17.1792,
+        45.9904,
+        0.0,
+        0.0,
+        2.624
+      ]
+    },
+    {
+      "revision": "before",
+      "mode": "multi",
+      "file": "large-s0-baseline.jpg",
+      "calls": [
+        1179648,
+        1179648,
+        393216,
+        393216,
+        393216,
+        393216
+      ],
+      "sampled_ns": [
+        13089300,
+        2774200,
+        3582700,
+        848600,
+        551400,
+        341400
+      ],
+      "extrapolated_ms_per_decode": [
+        209.4288,
+        44.3872,
+        57.3232,
+        13.5776,
+        8.8224,
+        5.4624
+      ]
+    },
+    {
+      "revision": "before",
+      "mode": "multi",
+      "file": "large-s2-baseline.jpg",
+      "calls": [
+        589824,
+        589824,
+        98304,
+        98304,
+        98304,
+        98304
+      ],
+      "sampled_ns": [
+        6385000,
+        1168800,
+        3090200,
+        242300,
+        251700,
+        193500
+      ],
+      "extrapolated_ms_per_decode": [
+        102.16,
+        18.7008,
+        49.4432,
+        3.8768,
+        4.0272,
+        3.096
+      ]
+    },
+    {
+      "revision": "after",
+      "mode": "single",
+      "file": "large-s0-baseline.jpg",
+      "calls": [
+        1179648,
+        1179648,
+        393216,
+        0,
+        0,
+        393216
+      ],
+      "sampled_ns": [
+        10766300,
+        2178900,
+        3237000,
+        0,
+        0,
+        274700
+      ],
+      "extrapolated_ms_per_decode": [
+        172.2608,
+        34.8624,
+        51.792,
+        0.0,
+        0.0,
+        4.3952
+      ]
+    },
+    {
+      "revision": "after",
+      "mode": "single",
+      "file": "large-s2-baseline.jpg",
+      "calls": [
+        589824,
+        589824,
+        98304,
+        0,
+        0,
+        98304
+      ],
+      "sampled_ns": [
+        5230700,
+        1072300,
+        2876900,
+        0,
+        0,
+        192700
+      ],
+      "extrapolated_ms_per_decode": [
+        83.6912,
+        17.1568,
+        46.0304,
+        0.0,
+        0.0,
+        3.0832
+      ]
+    },
+    {
+      "revision": "after",
+      "mode": "multi",
+      "file": "large-s0-baseline.jpg",
+      "calls": [
+        1179648,
+        1179648,
+        393216,
+        393216,
+        393216,
+        393216
+      ],
+      "sampled_ns": [
+        11193700,
+        2806400,
+        3645300,
+        770800,
+        542300,
+        348800
+      ],
+      "extrapolated_ms_per_decode": [
+        179.0992,
+        44.9024,
+        58.3248,
+        12.3328,
+        8.6768,
+        5.5808
+      ]
+    },
+    {
+      "revision": "after",
+      "mode": "multi",
+      "file": "large-s2-baseline.jpg",
+      "calls": [
+        589824,
+        589824,
+        98304,
+        98304,
+        98304,
+        98304
+      ],
+      "sampled_ns": [
+        5495500,
+        1119000,
+        3168700,
+        222000,
+        368700,
+        219600
+      ],
+      "extrapolated_ms_per_decode": [
+        87.928,
+        17.904,
+        50.6992,
+        3.552,
+        5.8992,
+        3.5136
+      ]
+    }
+  ]
+}

@@ -6,7 +6,6 @@ use crate::error::*;
 use crate::jpeg::decoder::*;
 use crate::jpeg::header::*;
 use crate::jpeg::util::print_huffman_tables;
-use crate::jpeg::warning::*;
 use crate::warning::*;
 use bin_rs::reader::BinaryReader;
 
@@ -14,7 +13,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
     reader: &mut B,
     header: &mut JpegHaeder,
     option: &mut DecodeOptions,
-    mut warnings: Option<ImgWarnings>,
+    warnings: Option<ImgWarnings>,
 ) -> Result<Option<ImgWarnings>, Error> {
     let width = header.width;
     let height = header.height;
@@ -45,9 +44,8 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
     let quantization_tables = require_quantization_tables(header)?.clone();
     let huffman_tables = &mut header.huffman_tables;
     let mut loop_count = 1;
-    let mut eobrun: usize = 0;
-
     loop {
+        let mut eobrun: usize = 0;
         let (dc_decode, ac_decode) = huffman_extend(huffman_tables);
 
         let (ss, se, ah, al) = (
@@ -148,50 +146,12 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                     }
                     if header.interval > 0 {
                         mcu_interval -= 1;
-                        if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
-                            if bitread.rst()? {
-                                mcu_interval = header.interval as isize;
-                                for i in 0..preds.len() {
-                                    preds[i] = 0;
-                                }
-                                eobrun = 0;
-                            } else {
-                                // Reset Interval
-                                let r = bitread.next_marker()?;
-                                if (0xd0..=0xd7).contains(&r) {
-                                    mcu_interval = header.interval as isize;
-                                    for i in 0..preds.len() {
-                                        preds[i] = 0;
-                                    }
-                                    eobrun = 0;
-                                } else if r == 0xd9 {
-                                    // EOI
-                                    option.drawer.terminate(None)?;
-                                    warnings = ImgWarnings::add(
-                                        warnings,
-                                        Box::new(JpegWarning::new_const(
-                                            JpegWarningKind::IlligalRSTMaker,
-                                            "Unexcept EOI,Is this image corruption?".to_string(),
-                                        )),
-                                    );
-                                    return Ok(warnings);
-                                }
-                            }
-                        } else if bitread.rst()? {
-                            warnings = ImgWarnings::add(
-                                warnings,
-                                Box::new(JpegWarning::new_const(
-                                    JpegWarningKind::IlligalRSTMaker,
-                                    "Unexcept RST marker location,Is this image corruption?"
-                                        .to_string(),
-                                )),
-                            );
+                        let more_mcus = mcu_y + 1 < mcu_y_max || mcu_x + 1 < mcu_x_max;
+                        if mcu_interval == 0 && more_mcus {
+                            bitread.read_restart()?;
                             mcu_interval = header.interval as isize;
-                            for i in 0..preds.len() {
-                                preds[i] = 0;
-                            }
+                            preds.fill(0);
                             eobrun = 0;
-                            //                 return Ok(Warning);
                         }
                     }
                 }
@@ -214,15 +174,19 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                 }
             }
 
+            // A noninterleaved scan counts component blocks, not frame MCUs.
+            let columns = (width * component[i].h + dx - 1) / dx;
+            let rows = (height * component[i].v + dy - 1) / dy;
+            let mut remaining_blocks = columns * rows;
             for mcu_y in 0..mcu_y_max {
                 for mcu_y_fix in 0..component[i].v {
-                    if mcu_y * dy + mcu_y_fix * 8 >= height {
+                    if mcu_y * component[i].v + mcu_y_fix >= rows {
                         break;
                     }
                     for mcu_x in 0..mcu_x_max {
                         let mcu_block = &mut mcu_blocks[mcu_y * mcu_x_max + mcu_x];
                         for mcu_x_fix in 0..component[i].h {
-                            if mcu_x * dx + mcu_x_fix * 8 >= width {
+                            if mcu_x * component[i].h + mcu_x_fix >= columns {
                                 break;
                             }
                             let scannumber = scanfirst + mcu_y_fix * component[i].h + mcu_x_fix;
@@ -277,6 +241,16 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                         al,
                                         eobrun,
                                     )?;
+                                }
+                            }
+                            if header.interval > 0 {
+                                remaining_blocks -= 1;
+                                mcu_interval -= 1;
+                                if mcu_interval == 0 && remaining_blocks > 0 {
+                                    bitread.read_restart()?;
+                                    mcu_interval = header.interval as isize;
+                                    preds.fill(0);
+                                    eobrun = 0;
                                 }
                             }
                         }
@@ -363,15 +337,14 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                             break;
                         }
                         0xdd => {
-                            option.drawer.terminate(None)?;
-                            warnings = ImgWarnings::add(
-                                warnings,
-                                Box::new(JpegWarning::new_const(
-                                    JpegWarningKind::UnexpectMarker,
-                                    "DNL,No Support Multi scan/frame".to_string(),
-                                )),
-                            );
-                            // return Ok(warnings)
+                            let length = bitread.reader.read_u16_be()?;
+                            if length != 4 {
+                                return Err(Box::new(ImgError::new_const(
+                                    ImgErrorKind::IllegalData,
+                                    "Invalid progressive DRI length".to_string(),
+                                )));
+                            }
+                            header.interval = bitread.reader.read_u16_be()? as usize;
                         }
                         /*
                         0xdb => {

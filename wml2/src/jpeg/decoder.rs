@@ -100,17 +100,12 @@ impl<'decode, B: BinaryReader> BitReader<'decode, B> {
                     b = 0xff;
                 }
                 0xd0..=0xd7 => {
-                    // RST
-                    let rst_no = (b & 0x7) as usize;
-                    if rst_no != (self.prev_rst + 1) % 8 {
-                        return Err(Box::new(ImgError::new_const(
-                            ImgErrorKind::DecodeError,
-                            "No Interval RST".to_string(),
-                        )));
-                    }
-                    self.prev_rst = rst_no;
-                    self.rst = true;
-                    return self.next_byte();
+                    // A valid restart is consumed at the MCU boundary, before
+                    // reading the next entropy-coded unit, never inside it.
+                    return Err(Box::new(ImgError::new_const(
+                        ImgErrorKind::DecodeError,
+                        "Unexpected restart marker inside entropy data".to_string(),
+                    )));
                 }
                 0xd9 => {
                     // EOI
@@ -180,6 +175,23 @@ impl<'decode, B: BinaryReader> BitReader<'decode, B> {
     pub fn reset(&mut self) {
         self.bptr = 0;
         self.b = 0;
+        self.prev_rst = 7;
+        self.rst = false;
+    }
+
+    pub fn read_restart(&mut self) -> Result<(), Error> {
+        let expected = (self.prev_rst + 1) % 8;
+        // next_marker discards the old byte's padding and resets bit alignment.
+        let marker = self.next_marker()?;
+        if marker != 0xd0 + expected as u8 {
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::DecodeError,
+                format!("Expected RST{expected}, found marker {marker:02x}"),
+            )));
+        }
+        self.prev_rst = expected;
+        self.rst = false;
+        Ok(())
     }
 }
 
@@ -1378,47 +1390,11 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
 
                     if header.interval > 0 {
                         mcu_interval -= 1;
-                        if mcu_interval == 0 && mcu_x < mcu_x_max && mcu_y < mcu_y_max - 1 {
-                            if bitread.rst()? {
-                                mcu_interval = header.interval as isize;
-                                for i in 0..preds.len() {
-                                    preds[i] = 0;
-                                }
-                            } else {
-                                // Reset Interval
-                                let r = bitread.next_marker()?;
-                                if (0xd0..=0xd7).contains(&r) {
-                                    mcu_interval = header.interval as isize;
-                                    for i in 0..preds.len() {
-                                        preds[i] = 0;
-                                    }
-                                } else if r == 0xd9 {
-                                    // EOI
-                                    option.drawer.terminate(None)?;
-                                    warnings = ImgWarnings::add(
-                                        warnings,
-                                        Box::new(JpegWarning::new_const(
-                                            JpegWarningKind::IlligalRSTMaker,
-                                            "Unexcept EOI,Is this image corruption?".to_string(),
-                                        )),
-                                    );
-                                    return Ok(warnings);
-                                }
-                            }
-                        } else if bitread.rst()? {
-                            warnings = ImgWarnings::add(
-                                warnings,
-                                Box::new(JpegWarning::new_const(
-                                    JpegWarningKind::IlligalRSTMaker,
-                                    "Unexcept RST marker location,Is this image corruption?"
-                                        .to_string(),
-                                )),
-                            );
+                        let more_mcus = mcu_y + 1 < mcu_y_max || mcu_x + 1 < mcu_x_max;
+                        if mcu_interval == 0 && more_mcus {
+                            bitread.read_restart()?;
                             mcu_interval = header.interval as isize;
-                            for i in 0..preds.len() {
-                                preds[i] = 0;
-                            }
-                            //                 return Ok(Warning);
+                            preds.fill(0);
                         }
                     }
                 }

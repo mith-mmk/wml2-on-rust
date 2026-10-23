@@ -1,0 +1,931 @@
+{
+  "generator": "Pillow11.1.0/libjpeg; public deterministic gradient; no private input",
+  "files": [
+    {
+      "file": "restart-b420-i0.jpg",
+      "bytes": 5141,
+      "sha256": "862bf1d4f5361be0e9d33f9273c1e29e84ad4e1321c120e8bb4fecc45bd6ba97",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-b420-i1.jpg",
+      "bytes": 5200,
+      "sha256": "c9b4d34982dd74f394800c0e945a51f6edbd24e19b026d150cf6e2fc7eee136b",
+      "restart_markers": 23,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-b420-i100.jpg",
+      "bytes": 5147,
+      "sha256": "58b903116a516a0a953295bd339a7ed537486ec9a994a8ed9f5bf06602aee6de",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-b420-i2.jpg",
+      "bytes": 5172,
+      "sha256": "59eccd72cef631ad2522a63c230c40678358adf010080b7e4be831e3752b0e4e",
+      "restart_markers": 11,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "file": "restart-b420-i3.jpg",
+      "bytes": 5161,
+      "sha256": "a5922f2386efdade2f903f04f601a6ecd0a5e3d62249c3ca0780d9c20237f589",
+      "restart_markers": 7,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "file": "restart-b420-i8.jpg",
+      "bytes": 5153,
+      "sha256": "a6d1befd779675231419fb8c9f7692f19799b95858ea1dd7cffc81ac677ed36e",
+      "restart_markers": 2,
+      "first_rst_numbers": [
+        0,
+        1
+      ]
+    },
+    {
+      "file": "restart-b420-row.jpg",
+      "bytes": 5153,
+      "sha256": "a6d1befd779675231419fb8c9f7692f19799b95858ea1dd7cffc81ac677ed36e",
+      "restart_markers": 2,
+      "first_rst_numbers": [
+        0,
+        1
+      ]
+    },
+    {
+      "file": "restart-b444-i0.jpg",
+      "bytes": 9221,
+      "sha256": "fc4ff3b226f6d2139587b9ca657a4ade0289e89eedaaf07bfedd5e113d1fbc23",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-b444-i1.jpg",
+      "bytes": 9411,
+      "sha256": "240f48f1594bc1d331bf621822f061b79701cc023cab3e5d5b1efc528f3ea22a",
+      "restart_markers": 95,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-b444-i100.jpg",
+      "bytes": 9227,
+      "sha256": "54d941b6bc2257e0db74bcc28ed7fbf57492444c8d096de1f92d8e6521296edf",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-b444-i2.jpg",
+      "bytes": 9323,
+      "sha256": "b43cc3e94708fce3d63a7568728e24348e5fce8f6a848fa5e771dd2d05c9f1fa",
+      "restart_markers": 47,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-b444-i3.jpg",
+      "bytes": 9299,
+      "sha256": "a16ef86596132cc458d4401df3e0f69cd13b20042ac97ec7caea8a32933ebe18",
+      "restart_markers": 31,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-b444-i8.jpg",
+      "bytes": 9250,
+      "sha256": "67a34f537fee0dba7bfaf6ec0c21a136513b0f524f88d47e35c7711d73cda9ca",
+      "restart_markers": 11,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "file": "restart-b444-row.jpg",
+      "bytes": 9241,
+      "sha256": "e7f916a91df64d233c5ee4e08c524eaf781aba94b25d21b07c00b3a717ac009c",
+      "restart_markers": 5,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "file": "restart-bgray-i0.jpg",
+      "bytes": 1531,
+      "sha256": "6b237ad675adfccf284087dd129bad3ca7cc40cf34ea0d3d9a8c73d84f870ba0",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-bgray-i1.jpg",
+      "bytes": 1636,
+      "sha256": "a857e8253817d30828c7aa2ae6bb6cedcd8ba7b299107049912faead4d5a2ce5",
+      "restart_markers": 44,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-bgray-i100.jpg",
+      "bytes": 1537,
+      "sha256": "56c1af0ede924f2d6567fa5f4794f526d613084ca4dd96cd8ad5f8f7f376d435",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-bgray-i2.jpg",
+      "bytes": 1576,
+      "sha256": "0298c431f467893980de4c0e0e22897c16836b8c56f76d332426019467580e25",
+      "restart_markers": 22,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-bgray-i3.jpg",
+      "bytes": 1570,
+      "sha256": "4f9b77fd47649488a9d595cd6088a9290eeb8c159d247fea3f91d94cf49c499e",
+      "restart_markers": 14,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "file": "restart-bgray-i8.jpg",
+      "bytes": 1547,
+      "sha256": "c359d7da02cb178490309f27fd04eefe56fa4c2538fbbd875f6a5589ea32b325",
+      "restart_markers": 5,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "file": "restart-bgray-row.jpg",
+      "bytes": 1544,
+      "sha256": "0f9e5eb62a4ce05272236871b89108b35edaa0a591fc297d1acb01f82a8ea431",
+      "restart_markers": 4,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "file": "restart-minimal-i0.jpg",
+      "bytes": 3438,
+      "sha256": "9c62c5e13bcc33a3779447bc60982bca8d4a367bebd9b9ca604ba00bcb9ea0ec",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-minimal-i1.jpg",
+      "bytes": 3504,
+      "sha256": "2ea93bda50b32ae9c85b99d71d71a0aa90ceb14dc75a3093d1bc1d0d84e5765f",
+      "restart_markers": 31,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-minimal-i100.jpg",
+      "bytes": 3444,
+      "sha256": "64e17dcead61a46170adf6d8756ac3429c189479c0570ee19f09bd6977d0a667",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-minimal-i2.jpg",
+      "bytes": 3471,
+      "sha256": "646892c799042ab27152933b8a70eb6a9f648fda9153a968d0b4c90526f2128b",
+      "restart_markers": 15,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "file": "restart-minimal-i3.jpg",
+      "bytes": 3464,
+      "sha256": "f482b93a546d27d78df8ea1062f86499482690be791a7bcbc9d15ba8aca58482",
+      "restart_markers": 10,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1
+      ]
+    },
+    {
+      "file": "restart-minimal-i8.jpg",
+      "bytes": 3450,
+      "sha256": "7c28d413684d62e123028a164d2072a443c8f791580de0d8324d042e924d5370",
+      "restart_markers": 3,
+      "first_rst_numbers": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "file": "restart-minimal-row.jpg",
+      "bytes": 3450,
+      "sha256": "7c28d413684d62e123028a164d2072a443c8f791580de0d8324d042e924d5370",
+      "restart_markers": 3,
+      "first_rst_numbers": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "file": "restart-odd420-i0.jpg",
+      "bytes": 5754,
+      "sha256": "fe4f1011bffc465d5aef47ea17b672ac4515c4079a7b20ac4f9dd391b0ce5091",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-odd420-i1.jpg",
+      "bytes": 5823,
+      "sha256": "776249ad44b1a694f0c617ba462adc2919e9795fb9af7e8a47b4e0741e6507b8",
+      "restart_markers": 35,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-odd420-i100.jpg",
+      "bytes": 5760,
+      "sha256": "8b0746bcac891c3158e061809dd1de45f89f29239e379f2dbf9d1cea7d254878",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-odd420-i2.jpg",
+      "bytes": 5782,
+      "sha256": "e0d542a8635fd66101759fb5a189f5c0d5b727d3fe4bae56446334f70c9ce37d",
+      "restart_markers": 17,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-odd420-i3.jpg",
+      "bytes": 5778,
+      "sha256": "1297ec191988df547f2fa1fd0be9a80a35ef1a56ce305f2f6b15d3a64d83b6e8",
+      "restart_markers": 11,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "file": "restart-odd420-i8.jpg",
+      "bytes": 5751,
+      "sha256": "57af6029472e791578240101cb96712ec62af553998c0653885eb70d73b12b56",
+      "restart_markers": 4,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "file": "restart-odd420-row.jpg",
+      "bytes": 5765,
+      "sha256": "a13dfe6f79d56b1d06f42812e5e0179128845ae57050667d8e2783006ef08765",
+      "restart_markers": 3,
+      "first_rst_numbers": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "file": "restart-p420-i0.jpg",
+      "bytes": 4689,
+      "sha256": "592f61923819ce873c6fe75a18507b547f6cb70c3aebd2ff53a3650451594685",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-p420-i1.jpg",
+      "bytes": 5962,
+      "sha256": "38c15532a93447fb4041879e1478058703b361d93d096deaf9ca5cdbbe9f534b",
+      "restart_markers": 518,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-p420-i100.jpg",
+      "bytes": 4695,
+      "sha256": "389607517c30b5b531159b4a8099daea202ab93b89609d0430fa1c1ef27948ee",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-p420-i2.jpg",
+      "bytes": 5329,
+      "sha256": "56d81f5af2c704ef43f139a63d9f90100ca023ed61676e998028d78332cebf2e",
+      "restart_markers": 254,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "file": "restart-p420-i3.jpg",
+      "bytes": 5106,
+      "sha256": "8986c0d9461470fd01e3e22f3fcfc485013ba205c945d9bffc90ddb6dadf24ff",
+      "restart_markers": 166,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0
+      ]
+    },
+    {
+      "file": "restart-p420-i8.jpg",
+      "bytes": 4832,
+      "sha256": "0ee89c131d88178d9e13c6b223de98308d9fdf95538c019f9ec14cdd37df88bd",
+      "restart_markers": 56,
+      "first_rst_numbers": [
+        0,
+        1,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "file": "restart-p420-row.jpg",
+      "bytes": 4806,
+      "sha256": "eadef3c7e447d13014220fbfb4e248c4376c41be115a127052d5be6ba9ac3d65",
+      "restart_markers": 32,
+      "first_rst_numbers": [
+        0,
+        1,
+        0,
+        1,
+        2,
+        3,
+        4,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "file": "restart-p444-i0.jpg",
+      "bytes": 8292,
+      "sha256": "5bc5187dacb7cc49beca7cc9adb9dbce739e695a0edccf827ce8ebcd690f1b6d",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-p444-i1.jpg",
+      "bytes": 10631,
+      "sha256": "b234b96338eb1fa4b6ca1ad2890ec8cc73ca6c6a3a71fdf975b10224b38e9c9b",
+      "restart_markers": 950,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-p444-i100.jpg",
+      "bytes": 8298,
+      "sha256": "0dad9a7dde3b49a91a7ed099fb89dd7e47895c67096c4d2137556218651d634c",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-p444-i2.jpg",
+      "bytes": 9444,
+      "sha256": "cc52fc86614622c5fdfed07c653aedc43a8e23cab01aa3bbdb84ce845916c3e0",
+      "restart_markers": 470,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-p444-i3.jpg",
+      "bytes": 9080,
+      "sha256": "f5b6f73ac982ce282da9b851ee3b79dfd2bbf73afa5e4dccf9b9b0165e6966d4",
+      "restart_markers": 310,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-p444-i8.jpg",
+      "bytes": 8552,
+      "sha256": "af8ccd7f78f73099c069bf778e6b4ccb078d0cdd58c1ff5da8ede91dfab9d522",
+      "restart_markers": 110,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "file": "restart-p444-row.jpg",
+      "bytes": 8422,
+      "sha256": "4326d611bd544316519d4513317b08ab64767141a49aa78d5e33102675107ad0",
+      "restart_markers": 50,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        0,
+        1,
+        2,
+        3,
+        4,
+        0,
+        1,
+        2,
+        3,
+        4,
+        0
+      ]
+    },
+    {
+      "file": "restart-pgray-i0.jpg",
+      "bytes": 1409,
+      "sha256": "a622dca5b8c239de0ebe6c04d40891f4732a59d3e26f7b647ba4b098565ba388",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-pgray-i1.jpg",
+      "bytes": 2092,
+      "sha256": "8c5be5fae5d3d1cbd6a03340864cea38ef66280ed6c048018afad85797c6f157",
+      "restart_markers": 264,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-pgray-i100.jpg",
+      "bytes": 1415,
+      "sha256": "13566dee38395a598c518ca9f4465c09a0b1b5f16fb7085cb2f8d7a4cd549585",
+      "restart_markers": 0,
+      "first_rst_numbers": []
+    },
+    {
+      "file": "restart-pgray-i2.jpg",
+      "bytes": 1755,
+      "sha256": "d4f72913708b897d8f3c8784bd3a6872243067b59b2b7737b0d265d47a914ddc",
+      "restart_markers": 132,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "restart-pgray-i3.jpg",
+      "bytes": 1621,
+      "sha256": "93f0168d42e94a536617b211b76f3edbd109d56657b3d4c0b95f5954326222f4",
+      "restart_markers": 84,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "file": "restart-pgray-i8.jpg",
+      "bytes": 1486,
+      "sha256": "b68f2d447f45f94dab24977df4ef243fd6cdd88befeeb976811f3f179ceeefa8",
+      "restart_markers": 30,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        0,
+        1,
+        2,
+        3,
+        4,
+        0,
+        1,
+        2,
+        3,
+        4,
+        0
+      ]
+    },
+    {
+      "file": "restart-pgray-row.jpg",
+      "bytes": 1479,
+      "sha256": "4321a6ffa4df1746865c0bd107b914aed9d3ce8ec1224200b84b945c96a28096",
+      "restart_markers": 24,
+      "first_rst_numbers": [
+        0,
+        1,
+        2,
+        3,
+        0,
+        1,
+        2,
+        3,
+        0,
+        1,
+        2,
+        3,
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  ]
+}

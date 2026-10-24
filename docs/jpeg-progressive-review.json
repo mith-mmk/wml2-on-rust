@@ -1,0 +1,4068 @@
+{
+  "before_revision": "1be4b9f9777fbe101e0941885d20b7d3513721ac",
+  "after_revision": "68ff410d9089f69251000ead54a66567ff2a71aa",
+  "rust": "1.99.0",
+  "target": "x86_64-pc-windows-msvc",
+  "cpu": "AMD Ryzen7 7700, 8 physical /16 logical",
+  "profile": "release opt-level3; no RUSTFLAGS; JPEG/LLM/EXIF, no defaults, optional multithread",
+  "background_apps": "not controlled or closed",
+  "standalone": {
+    "summary": [
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "before": 515.4439500000001,
+        "after": 535.4219,
+        "paired_percent_median": -2.2877350429552914,
+        "paired_percent_range": [
+          -13.228118562859859,
+          13.044790313845045
+        ]
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "before": 536.903,
+        "after": 511.79985,
+        "paired_percent_median": -2.737206475816978,
+        "paired_percent_range": [
+          -18.729554869148735,
+          -0.6035621417856629
+        ]
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "before": 277.02695,
+        "after": 284.0911,
+        "paired_percent_median": 3.2977778733974117,
+        "paired_percent_range": [
+          -8.538164434426365,
+          11.750861828410164
+        ]
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "before": 268.6741,
+        "after": 269.5845,
+        "paired_percent_median": 2.011148120056616,
+        "paired_percent_range": [
+          -14.257042717267176,
+          3.634564278331509
+        ]
+      },
+      {
+        "file": "large-s0-baseline.jpg",
+        "mode": "multi",
+        "before": 269.9774,
+        "after": 263.2992,
+        "paired_percent_median": -2.485196845175608,
+        "paired_percent_range": [
+          -2.5575369845538987,
+          -2.412856705797317
+        ]
+      },
+      {
+        "file": "large-s2-baseline.jpg",
+        "mode": "multi",
+        "before": 130.26785,
+        "after": 123.19315,
+        "paired_percent_median": -4.980968722391227,
+        "paired_percent_range": [
+          -8.687843060594735,
+          -1.2740943841877184
+        ]
+      }
+    ],
+    "processes": [
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "median_ms": 599.2568,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "median_ms": 519.9864,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "median_ms": 501.2994,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "median_ms": 520.0243,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "median_ms": 519.9818,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "median_ms": 533.5523,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "median_ms": 511.3468,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "median_ms": 500.956,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "median_ms": 496.8823,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "median_ms": 548.2954,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "median_ms": 571.2697,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "median_ms": 505.3481,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "median_ms": 497.7118,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "median_ms": 494.7078,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "median_ms": 502.6204,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "median_ms": 618.4541,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "median_ms": 494.3167,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "median_ms": 513.6662,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "median_ms": 520.5999,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "median_ms": 511.7108,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "median_ms": 637.7928,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "median_ms": 519.5459,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "median_ms": 526.5492,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "median_ms": 530.1777,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "median_ms": 270.7376,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "median_ms": 277.9163,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "median_ms": 309.9694,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "median_ms": 277.3754,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "median_ms": 287.5355,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "median_ms": 274.0518,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "median_ms": 277.7289,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "median_ms": 268.1527,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "median_ms": 273.0766,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "median_ms": 283.8468,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "median_ms": 280.7068,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "median_ms": 306.9114,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "median_ms": 266.2794,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "median_ms": 263.856,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "median_ms": 289.9643,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "median_ms": 281.104,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "median_ms": 270.6823,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "median_ms": 265.2237,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "median_ms": 264.5729,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "median_ms": 269.7696,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "median_ms": 305.2302,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "median_ms": 261.7134,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "median_ms": 271.2215,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "median_ms": 261.7095,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s0-baseline.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "median_ms": 274.2351,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-baseline.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "median_ms": 267.6182,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-baseline.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "median_ms": 262.9213,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s0-baseline.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "median_ms": 269.8221,
+        "rgba_sha256": "1c6826b64d09834f5d9a1396c279c561577688f095756f524a026434f478e5d4"
+      },
+      {
+        "file": "large-s2-baseline.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "median_ms": 123.7114,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-baseline.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "median_ms": 122.1352,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-baseline.jpg",
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "median_ms": 124.2511,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      },
+      {
+        "file": "large-s2-baseline.jpg",
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "median_ms": 136.0729,
+        "rgba_sha256": "8528a86a5ba81e4382d6e26ed638cc3c950d6ef09772cbfbe287862408d51027"
+      }
+    ],
+    "pairs": [
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "cycle": 0,
+        "before_ms": 599.2568,
+        "after_ms": 519.9864,
+        "percent": -13.228118562859859
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "cycle": 0,
+        "before_ms": 520.0243,
+        "after_ms": 501.2994,
+        "percent": -3.6007740407515643
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "cycle": 1,
+        "before_ms": 533.5523,
+        "after_ms": 519.9818,
+        "percent": -2.54342451527243
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "cycle": 1,
+        "before_ms": 511.3468,
+        "after_ms": 500.956,
+        "percent": -2.0320455706381524
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "cycle": 2,
+        "before_ms": 496.8823,
+        "after_ms": 548.2954,
+        "percent": 10.347138547700329
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "cycle": 2,
+        "before_ms": 505.3481,
+        "after_ms": 571.2697,
+        "percent": 13.044790313845045
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "cycle": 0,
+        "before_ms": 497.7118,
+        "after_ms": 494.7078,
+        "percent": -0.6035621417856629
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "cycle": 0,
+        "before_ms": 618.4541,
+        "after_ms": 502.6204,
+        "percent": -18.729554869148735
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "cycle": 1,
+        "before_ms": 513.6662,
+        "after_ms": 494.3167,
+        "percent": -3.7669404761302094
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "cycle": 1,
+        "before_ms": 520.5999,
+        "after_ms": 511.7108,
+        "percent": -1.7074724755037463
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "cycle": 2,
+        "before_ms": 637.7928,
+        "after_ms": 519.5459,
+        "percent": -18.540018012119308
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "cycle": 2,
+        "before_ms": 530.1777,
+        "after_ms": 526.5492,
+        "percent": -0.6843931760992406
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "cycle": 0,
+        "before_ms": 270.7376,
+        "after_ms": 277.9163,
+        "percent": 2.6515341792200164
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "cycle": 0,
+        "before_ms": 277.3754,
+        "after_ms": 309.9694,
+        "percent": 11.750861828410164
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "cycle": 1,
+        "before_ms": 274.0518,
+        "after_ms": 287.5355,
+        "percent": 4.920128238530097
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "cycle": 1,
+        "before_ms": 277.7289,
+        "after_ms": 268.1527,
+        "percent": -3.448038716892632
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "cycle": 2,
+        "before_ms": 273.0766,
+        "after_ms": 283.8468,
+        "percent": 3.944021567574807
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "cycle": 2,
+        "before_ms": 306.9114,
+        "after_ms": 280.7068,
+        "percent": -8.538164434426365
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "cycle": 0,
+        "before_ms": 266.2794,
+        "after_ms": 263.856,
+        "percent": -0.9100966879150296
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "cycle": 0,
+        "before_ms": 281.104,
+        "after_ms": 289.9643,
+        "percent": 3.1519651089988
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "cycle": 1,
+        "before_ms": 265.2237,
+        "after_ms": 270.6823,
+        "percent": 2.0581116996708726
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "cycle": 1,
+        "before_ms": 264.5729,
+        "after_ms": 269.7696,
+        "percent": 1.9641845404423597
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "cycle": 2,
+        "before_ms": 305.2302,
+        "after_ms": 261.7134,
+        "percent": -14.257042717267176
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "cycle": 2,
+        "before_ms": 261.7095,
+        "after_ms": 271.2215,
+        "percent": 3.634564278331509
+      },
+      {
+        "file": "large-s0-baseline.jpg",
+        "mode": "multi",
+        "cycle": 0,
+        "before_ms": 274.2351,
+        "after_ms": 267.6182,
+        "percent": -2.412856705797317
+      },
+      {
+        "file": "large-s0-baseline.jpg",
+        "mode": "multi",
+        "cycle": 0,
+        "before_ms": 269.8221,
+        "after_ms": 262.9213,
+        "percent": -2.5575369845538987
+      },
+      {
+        "file": "large-s2-baseline.jpg",
+        "mode": "multi",
+        "cycle": 0,
+        "before_ms": 123.7114,
+        "after_ms": 122.1352,
+        "percent": -1.2740943841877184
+      },
+      {
+        "file": "large-s2-baseline.jpg",
+        "mode": "multi",
+        "cycle": 0,
+        "before_ms": 136.0729,
+        "after_ms": 124.2511,
+        "percent": -8.687843060594735
+      }
+    ],
+    "raw": [
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "594896200",
+        "first_draw_ns": "403337500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "648208800",
+        "first_draw_ns": "470430400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "500222700",
+        "first_draw_ns": "344710000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "620744700",
+        "first_draw_ns": "410270800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "599256800",
+        "first_draw_ns": "392968600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "514578600",
+        "first_draw_ns": "342989300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "495276700",
+        "first_draw_ns": "335108700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "519986400",
+        "first_draw_ns": "361563100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "550660500",
+        "first_draw_ns": "347078600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "577277000",
+        "first_draw_ns": "372683200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "485450900",
+        "first_draw_ns": "322553800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "500430100",
+        "first_draw_ns": "326915800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "501299400",
+        "first_draw_ns": "343812700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "552453700",
+        "first_draw_ns": "352664900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "605853400",
+        "first_draw_ns": "401910300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "522400000",
+        "first_draw_ns": "360727300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "513898000",
+        "first_draw_ns": "350677700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "502676100",
+        "first_draw_ns": "344895600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "520024300",
+        "first_draw_ns": "336421200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "615410000",
+        "first_draw_ns": "414141800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "515970000",
+        "first_draw_ns": "351926300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "495142700",
+        "first_draw_ns": "339113600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "519981800",
+        "first_draw_ns": "359339100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "531750400",
+        "first_draw_ns": "339310500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "611025900",
+        "first_draw_ns": "396298300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "614799300",
+        "first_draw_ns": "391795200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "626419000",
+        "first_draw_ns": "427553600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "533552300",
+        "first_draw_ns": "379600600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "510318200",
+        "first_draw_ns": "358253500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "498398400",
+        "first_draw_ns": "344019500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "508398200",
+        "first_draw_ns": "350779200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "521514800",
+        "first_draw_ns": "346058100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "511346800",
+        "first_draw_ns": "345807300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "507518600",
+        "first_draw_ns": "343120500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "512828300",
+        "first_draw_ns": "346829400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "500956000",
+        "first_draw_ns": "324300500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "489431500",
+        "first_draw_ns": "328733300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "493159900",
+        "first_draw_ns": "326274000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "544504900",
+        "first_draw_ns": "342261600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "630912500",
+        "first_draw_ns": "410944100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "489883300",
+        "first_draw_ns": "335516200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "491470500",
+        "first_draw_ns": "333650800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "496882300",
+        "first_draw_ns": "343202100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "516989900",
+        "first_draw_ns": "341060800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "608205200",
+        "first_draw_ns": "410114700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "548295400",
+        "first_draw_ns": "367264500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "539093400",
+        "first_draw_ns": "380389300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "500753200",
+        "first_draw_ns": "347470200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "593037000",
+        "first_draw_ns": "372309000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "672841200",
+        "first_draw_ns": "436606000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "519920000",
+        "first_draw_ns": "355183400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "571269700",
+        "first_draw_ns": "400810700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "617719100",
+        "first_draw_ns": "414388200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "565797200",
+        "first_draw_ns": "377484900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "636962600",
+        "first_draw_ns": "419072000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "505348100",
+        "first_draw_ns": "343285400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "495395400",
+        "first_draw_ns": "337470100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "492008800",
+        "first_draw_ns": "339350100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "546423600",
+        "first_draw_ns": "339183800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "660202200",
+        "first_draw_ns": "442947400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "497711800",
+        "first_draw_ns": "346332900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "495706000",
+        "first_draw_ns": "344013700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "493094700",
+        "first_draw_ns": "341032100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "537850200",
+        "first_draw_ns": "330541500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "650697400",
+        "first_draw_ns": "439456700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "494707800",
+        "first_draw_ns": "341991800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "487872700",
+        "first_draw_ns": "335634500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "481763100",
+        "first_draw_ns": "326076900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "524914700",
+        "first_draw_ns": "325816100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "644449800",
+        "first_draw_ns": "427692500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "486774600",
+        "first_draw_ns": "331210800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "486345500",
+        "first_draw_ns": "330838000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "502620400",
+        "first_draw_ns": "334238300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "522146800",
+        "first_draw_ns": "319235200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "636209100",
+        "first_draw_ns": "420547800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "506410000",
+        "first_draw_ns": "332244100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "594945300",
+        "first_draw_ns": "403828700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "619371800",
+        "first_draw_ns": "421965300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "618454100",
+        "first_draw_ns": "411151000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "647341100",
+        "first_draw_ns": "437131900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "476800200",
+        "first_draw_ns": "323033800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "489240300",
+        "first_draw_ns": "333759600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "494316700",
+        "first_draw_ns": "338825900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "533781400",
+        "first_draw_ns": "351189300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "594247800",
+        "first_draw_ns": "394241500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "491563800",
+        "first_draw_ns": "334753000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "495679600",
+        "first_draw_ns": "335813000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "513666200",
+        "first_draw_ns": "348824200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "535955800",
+        "first_draw_ns": "322020200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "578494900",
+        "first_draw_ns": "367094200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "520599900",
+        "first_draw_ns": "337703500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "497327600",
+        "first_draw_ns": "336180900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "503923000",
+        "first_draw_ns": "344956500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "556941500",
+        "first_draw_ns": "336945500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "583776000",
+        "first_draw_ns": "375922400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "511710800",
+        "first_draw_ns": "340539200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "486603900",
+        "first_draw_ns": "328594700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "486219800",
+        "first_draw_ns": "327935000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "522651100",
+        "first_draw_ns": "337290100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "598923400",
+        "first_draw_ns": "388798100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "483535600",
+        "first_draw_ns": "321061400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "577247100",
+        "first_draw_ns": "407833400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "675400500",
+        "first_draw_ns": "466169600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "717999600",
+        "first_draw_ns": "532825400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "637792800",
+        "first_draw_ns": "432464500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "511888900",
+        "first_draw_ns": "353265000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "504482800",
+        "first_draw_ns": "339412500",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "519545900",
+        "first_draw_ns": "342203800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "566013700",
+        "first_draw_ns": "343815800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "629542700",
+        "first_draw_ns": "423286900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "526549200",
+        "first_draw_ns": "374840000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "496412900",
+        "first_draw_ns": "342367600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "490135800",
+        "first_draw_ns": "331412200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "577250600",
+        "first_draw_ns": "360545900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "620624100",
+        "first_draw_ns": "421246300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "530177700",
+        "first_draw_ns": "366716100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "521312700",
+        "first_draw_ns": "365791400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "494036100",
+        "first_draw_ns": "331342700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "571222200",
+        "first_draw_ns": "356094700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s0-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "635168800",
+        "first_draw_ns": "431969300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "291418600",
+        "first_draw_ns": "193567200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "270737600",
+        "first_draw_ns": "167848200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "275171800",
+        "first_draw_ns": "176992000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "254312700",
+        "first_draw_ns": "158762600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "259016700",
+        "first_draw_ns": "162363800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "312243600",
+        "first_draw_ns": "198662500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "269016400",
+        "first_draw_ns": "168074600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "302600500",
+        "first_draw_ns": "182216000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "264215900",
+        "first_draw_ns": "157172400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "277916300",
+        "first_draw_ns": "175184300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "250261600",
+        "first_draw_ns": "147549200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "309969400",
+        "first_draw_ns": "204297700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "296894400",
+        "first_draw_ns": "190163000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "348433700",
+        "first_draw_ns": "225642300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "337011700",
+        "first_draw_ns": "212213900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "327134600",
+        "first_draw_ns": "228943400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "266313800",
+        "first_draw_ns": "166975200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "284133000",
+        "first_draw_ns": "183502000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "277375400",
+        "first_draw_ns": "170433900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "269446000",
+        "first_draw_ns": "167094800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "287535500",
+        "first_draw_ns": "167648000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "271169100",
+        "first_draw_ns": "173960400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "300352900",
+        "first_draw_ns": "172288500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "255406900",
+        "first_draw_ns": "157819200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "291777200",
+        "first_draw_ns": "176013500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "265079700",
+        "first_draw_ns": "155873100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "274051800",
+        "first_draw_ns": "170319800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "271226100",
+        "first_draw_ns": "165160500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "327642100",
+        "first_draw_ns": "222315800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "314300000",
+        "first_draw_ns": "200093100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "270234900",
+        "first_draw_ns": "175330100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "301339300",
+        "first_draw_ns": "204974300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "276678500",
+        "first_draw_ns": "179410600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "294858500",
+        "first_draw_ns": "194111700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "277728900",
+        "first_draw_ns": "172268900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "264733700",
+        "first_draw_ns": "167647400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "301511800",
+        "first_draw_ns": "181471000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "268152700",
+        "first_draw_ns": "166401500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "284335400",
+        "first_draw_ns": "178730000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "257883300",
+        "first_draw_ns": "159761300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "266692400",
+        "first_draw_ns": "168482700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "268909500",
+        "first_draw_ns": "164878800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "285796900",
+        "first_draw_ns": "179268100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "287836700",
+        "first_draw_ns": "179712100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "273076600",
+        "first_draw_ns": "171491700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "286920500",
+        "first_draw_ns": "189440700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "273079900",
+        "first_draw_ns": "173055400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "285664500",
+        "first_draw_ns": "185341800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "276859000",
+        "first_draw_ns": "175891200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "283846800",
+        "first_draw_ns": "183873400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "292855800",
+        "first_draw_ns": "177934100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "272153200",
+        "first_draw_ns": "172303900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "290883400",
+        "first_draw_ns": "165086700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "257814400",
+        "first_draw_ns": "158851500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "280706800",
+        "first_draw_ns": "179160300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "272324000",
+        "first_draw_ns": "170514300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "306911400",
+        "first_draw_ns": "204543600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "294050500",
+        "first_draw_ns": "193018000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "351672500",
+        "first_draw_ns": "254216400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "351344700",
+        "first_draw_ns": "230940100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "272739500",
+        "first_draw_ns": "163719600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "256806000",
+        "first_draw_ns": "160613700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "271090800",
+        "first_draw_ns": "169481700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "266279400",
+        "first_draw_ns": "169264500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "265885400",
+        "first_draw_ns": "168609200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "265471700",
+        "first_draw_ns": "169812900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "261241700",
+        "first_draw_ns": "164587700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "263856000",
+        "first_draw_ns": "166572300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "269732100",
+        "first_draw_ns": "173978600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "263425400",
+        "first_draw_ns": "167005600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "259339100",
+        "first_draw_ns": "163154000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "251040100",
+        "first_draw_ns": "151551900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "290439600",
+        "first_draw_ns": "193318300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "308228200",
+        "first_draw_ns": "187332500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "289964300",
+        "first_draw_ns": "185844600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "289535000",
+        "first_draw_ns": "188254100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "291025100",
+        "first_draw_ns": "176081100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "281104000",
+        "first_draw_ns": "179173900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "266246400",
+        "first_draw_ns": "162456500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "270750000",
+        "first_draw_ns": "169262500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "279733300",
+        "first_draw_ns": "179045900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "264366500",
+        "first_draw_ns": "167216500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "302809800",
+        "first_draw_ns": "193664900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "270682300",
+        "first_draw_ns": "171980100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "269436900",
+        "first_draw_ns": "171203400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "255410400",
+        "first_draw_ns": "156082100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "269531700",
+        "first_draw_ns": "172021700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "267814500",
+        "first_draw_ns": "164146500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "251239700",
+        "first_draw_ns": "154299100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "265223700",
+        "first_draw_ns": "165743400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "263994100",
+        "first_draw_ns": "167846400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "273489700",
+        "first_draw_ns": "174869800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "262699100",
+        "first_draw_ns": "165223800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "264572900",
+        "first_draw_ns": "166046700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 1,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "270107700",
+        "first_draw_ns": "169886500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "271238600",
+        "first_draw_ns": "175508300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "263194000",
+        "first_draw_ns": "166035900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "252912900",
+        "first_draw_ns": "156906600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "269769600",
+        "first_draw_ns": "164458600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 1,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "278623000",
+        "first_draw_ns": "181087900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "305230200",
+        "first_draw_ns": "199587100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "285915000",
+        "first_draw_ns": "189595000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "290715100",
+        "first_draw_ns": "186382400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "312646200",
+        "first_draw_ns": "204825300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 0,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "337258500",
+        "first_draw_ns": "212043600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "276767300",
+        "first_draw_ns": "181544600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "251075300",
+        "first_draw_ns": "156033500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "271589400",
+        "first_draw_ns": "174784300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "258016700",
+        "first_draw_ns": "161097600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 1,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "261713400",
+        "first_draw_ns": "165550700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "252508600",
+        "first_draw_ns": "152149500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "264027300",
+        "first_draw_ns": "167577400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "273167900",
+        "first_draw_ns": "169021300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "271221500",
+        "first_draw_ns": "172193200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "after",
+        "cycle": 2,
+        "step": 2,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "276609100",
+        "first_draw_ns": "172422700",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "0",
+        "decode_ns": "267816500",
+        "first_draw_ns": "171569000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "1",
+        "decode_ns": "272095500",
+        "first_draw_ns": "170674600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "2",
+        "decode_ns": "247383000",
+        "first_draw_ns": "148255000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "3",
+        "decode_ns": "261709500",
+        "first_draw_ns": "165153200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "single",
+        "revision": "before",
+        "cycle": 2,
+        "step": 3,
+        "file": "large-s2-progressive.jpg",
+        "iteration": "4",
+        "decode_ns": "255677800",
+        "first_draw_ns": "160378400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "274802500",
+        "first_draw_ns": "3784700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "269761600",
+        "first_draw_ns": "3421400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "259928200",
+        "first_draw_ns": "3485800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "274235100",
+        "first_draw_ns": "3377700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "293481600",
+        "first_draw_ns": "3683200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "268656900",
+        "first_draw_ns": "3308000",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "254538600",
+        "first_draw_ns": "3272300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "267806000",
+        "first_draw_ns": "3256200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "254835700",
+        "first_draw_ns": "3367800",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "267618200",
+        "first_draw_ns": "3313100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "259281600",
+        "first_draw_ns": "3322600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "275947300",
+        "first_draw_ns": "3251200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "261043900",
+        "first_draw_ns": "3341300",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "263677100",
+        "first_draw_ns": "3333100",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "262921300",
+        "first_draw_ns": "3168700",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "269822100",
+        "first_draw_ns": "3376400",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "271542500",
+        "first_draw_ns": "3399600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "266690400",
+        "first_draw_ns": "3287900",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "270132700",
+        "first_draw_ns": "3361600",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s0-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "265721300",
+        "first_draw_ns": "3277200",
+        "hash": "14355383191166735269"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "121463600",
+        "first_draw_ns": "2995800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "122652400",
+        "first_draw_ns": "2896400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "128241600",
+        "first_draw_ns": "2897600",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "123711400",
+        "first_draw_ns": "2891500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 0,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "133073700",
+        "first_draw_ns": "2911100",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "121564300",
+        "first_draw_ns": "3003300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "122135200",
+        "first_draw_ns": "2872200",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "124684600",
+        "first_draw_ns": "2902900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "129065700",
+        "first_draw_ns": "2947800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 1,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "121087200",
+        "first_draw_ns": "2886400",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "124251100",
+        "first_draw_ns": "2965900",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "121581400",
+        "first_draw_ns": "2882800",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "124717300",
+        "first_draw_ns": "2847300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "120871200",
+        "first_draw_ns": "2863500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "after",
+        "cycle": 0,
+        "step": 2,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "126751300",
+        "first_draw_ns": "2972300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "0",
+        "decode_ns": "126028100",
+        "first_draw_ns": "3226300",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "1",
+        "decode_ns": "136108500",
+        "first_draw_ns": "3213000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "2",
+        "decode_ns": "136072900",
+        "first_draw_ns": "3028500",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "3",
+        "decode_ns": "140137200",
+        "first_draw_ns": "3265000",
+        "hash": "16984684791948501925"
+      },
+      {
+        "mode": "multi",
+        "revision": "before",
+        "cycle": 0,
+        "step": 3,
+        "file": "large-s2-baseline.jpg",
+        "iteration": "4",
+        "decode_ns": "132294100",
+        "first_draw_ns": "2887300",
+        "hash": "16984684791948501925"
+      }
+    ]
+  },
+  "same_process": {
+    "method": "two source-identical archived libraries with renamed packages; byte read before timing; image_from adapter timed including output allocation; each decode RGBA compared outside timing; 2 warmups per revision; 8 ABBA/BAAB blocks; two samples per revision per block",
+    "summary": [
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "single",
+        "before": 632.46385,
+        "after": 592.9103,
+        "block_change_percent": [
+          -4.421445070489483,
+          -21.240631133645948,
+          18.706833399346202,
+          -7.9604784087858205,
+          -5.583123131723244,
+          -5.780975708705194,
+          -6.050739897276214,
+          -4.7039625895199055
+        ],
+        "block_median_percent": -5.682049420214219,
+        "slower_blocks": 1
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "single",
+        "before": 348.5372,
+        "after": 333.9315,
+        "block_change_percent": [
+          -7.792570131189569,
+          -4.5345035713237785,
+          -5.6016289603504905,
+          -1.1911002771816892,
+          -3.9973657690820286,
+          -0.47632592076058966,
+          -2.715454908198589,
+          -9.039212508543603
+        ],
+        "block_median_percent": -4.2659346702029035,
+        "slower_blocks": 0
+      },
+      {
+        "file": "large-s0-baseline.jpg",
+        "mode": "single",
+        "before": 424.6589,
+        "after": 389.35465,
+        "block_change_percent": [
+          -5.845632415350554,
+          -10.775715040452605,
+          -11.192617934897998,
+          -7.611431204263308,
+          -7.590252192135827,
+          -9.755499967006243,
+          -12.042085911611444,
+          2.6762556045769603
+        ],
+        "block_median_percent": -8.683465585634774,
+        "slower_blocks": 1
+      },
+      {
+        "file": "large-s2-baseline.jpg",
+        "mode": "single",
+        "before": 253.8639,
+        "after": 222.35809999999998,
+        "block_change_percent": [
+          -1.1356886899027585,
+          -16.83800238262133,
+          -5.486948862254271,
+          -13.635147626473165,
+          -5.263927256421031,
+          -14.160960337330753,
+          -12.218104012651377,
+          -14.491965991402655
+        ],
+        "block_median_percent": -12.926625819562272,
+        "slower_blocks": 0
+      },
+      {
+        "file": "large-s0-progressive.jpg",
+        "mode": "multi",
+        "before": 633.1357,
+        "after": 602.84625,
+        "block_change_percent": [
+          -0.47052282895384545,
+          -7.732716733695211,
+          -10.21634322166487,
+          -6.581730583146683,
+          -11.645705073843837,
+          3.13920546687243,
+          -3.718674109937248,
+          -5.230870218634298
+        ],
+        "block_median_percent": -5.9063004008904905,
+        "slower_blocks": 1
+      },
+      {
+        "file": "large-s2-progressive.jpg",
+        "mode": "multi",
+        "before": 354.64459999999997,
+        "after": 336.94935,
+        "block_change_percent": [
+          -1.3579149867073315,
+          -7.820337636461572,
+          1.0065836008487983,
+          -6.41232605274118,
+          -12.030066413736051,
+          -7.0492409561775276,
+          -1.6371731360502517,
+          -6.904881691063148
+        ],
+        "block_median_percent": -6.658603871902164,
+        "slower_blocks": 1
+      },
+      {
+        "file": "large-s0-baseline.jpg",
+        "mode": "multi",
+        "before": 343.1315,
+        "after": 296.0174,
+        "block_change_percent": [
+          -13.335964800192313,
+          -12.040813858140675,
+          -16.20293907503523,
+          -10.612309061248704,
+          -14.36998579058889,
+          -16.085762372232825,
+          -13.282726733191353,
+          -10.376816900138142
+        ],
+        "block_median_percent": -13.309345766691834,
+        "slower_blocks": 0
+      },
+      {
+        "file": "large-s2-baseline.jpg",
+        "mode": "multi",
+        "before": 168.0091,
+        "after": 145.6121,
+        "block_change_percent": [
+          -9.096899397563508,
+          -19.40596566147278,
+          -12.367627750518228,
+          -21.463123514296235,
+          -15.105431231835698,
+          -13.19116388098639,
+          -12.945428424965733,
+          -11.25440655200337
+        ],
+        "block_median_percent": -13.06829615297606,
+        "slower_blocks": 0
+      }
+    ]
+  },
+  "inputs": [
+    {
+      "file": "large-s0-progressive.jpg",
+      "sha256": "b096962ce73456873c8c0f48db120a748694e66f6ef04787f1f1f91b8f270af3"
+    },
+    {
+      "file": "large-s2-progressive.jpg",
+      "sha256": "8b41154210618402d66ea7210e088898be6d5aef9ebdc95c35b215a23c8cbe21"
+    },
+    {
+      "file": "large-s0-baseline.jpg",
+      "sha256": "71a9293d98b28376ba828b5cb0e524c06be0eb9cf5cf1f7447feb58fdba978d4"
+    },
+    {
+      "file": "large-s2-baseline.jpg",
+      "sha256": "6f588ea12bef19bf35a64c32a5c10c48f1cb6dc4358d2e82700879dc7b3ea44f"
+    }
+  ],
+  "standalone_binaries": {
+    "before-single": "b6220a09c613cce2dd0f610e4652cfb4b93d767be07b0f9ab08abf5e6ff80b34",
+    "before-multi": "efab7789c40310b8eea709eb82776d235f0d7d5ad0cedcbdb2eb1b0026f583b0",
+    "after-single": "924656fec996e727f89db06b7876afa1015f38a36fae0c31cc6063ba95eb2ae0",
+    "after-multi": "40d63601204b577f950337b8b2e354f20a56a20c205c7ef21c91216253cca53f"
+  },
+  "restart_branch_preserved": "4c14f51041d72ae5697bfb6af74ac34b033746af",
+  "private_jpeg": "input SHA checked locally; full RGBA equal across before/after single/multi; no private data included"
+}

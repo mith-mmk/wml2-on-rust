@@ -13,3 +13,11 @@ exclude = [
 
 [profile.release]
 opt-level = 3
+
+# JPEG2000 oracle tests spend their time in pixel loops, not compilation.
+# Keep test safety checks enabled while allowing LLVM to optimize those loops.
+[profile.ci]
+inherits = "test"
+opt-level = 1
+debug-assertions = true
+overflow-checks = true

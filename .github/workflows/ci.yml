@@ -9,11 +9,19 @@ on:
 permissions:
   contents: read
 
+# Superseded PR commits may stop; main, manual and release checks always finish.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   select:
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.plan.outputs.matrix }}
+      matrix: ${{ steps.plan.outputs.core_matrix }}
+      avif_matrix: ${{ steps.plan.outputs.avif_matrix }}
+      modes: ${{ steps.plan.outputs.modes }}
+      smoke: ${{ steps.plan.outputs.smoke }}
       full: ${{ steps.plan.outputs.full }}
       avif: ${{ steps.plan.outputs.avif }}
       jpeg2000: ${{ steps.plan.outputs.jpeg2000 }}
@@ -48,6 +56,81 @@ jobs:
       - run: python -B -m unittest discover -s .github/scripts -p 'test_*.py'
       - name: Validate current version notes
         run: python -B .github/scripts/release_notes.py
+  avif-oracles:
+    needs: select
+    if: needs.select.outputs.avif == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+          persist-credentials: false
+      - name: Probe existing tools and pin official Ubuntu fallback
+        id: ffmpeg
+        run: python3 -B .github/scripts/prepare_ffmpeg.py plan
+      - uses: actions/cache/restore@v4
+        id: ffmpeg-cache
+        if: steps.ffmpeg.outputs.ready == 'false'
+        with:
+          path: .test-ffmpeg-debs/*.deb
+          key: ${{ steps.ffmpeg.outputs.package_key }}
+      - name: Install pinned distro packages and verify actual oracle operations
+        if: steps.ffmpeg.outputs.ready == 'false'
+        run: python3 -B .github/scripts/prepare_ffmpeg.py install
+      - uses: actions/cache/save@v4
+        if: steps.ffmpeg.outputs.ready == 'false' && steps.ffmpeg-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          path: .test-ffmpeg-debs/*.deb
+          key: ${{ steps.ffmpeg.outputs.package_key }}
+      - name: Mark package availability for same-run consumers
+        run: |
+          mkdir -p .test-ffmpeg-debs
+          touch .test-ffmpeg-debs/package-info.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-packages
+          include-hidden-files: true
+          path: |
+            .test-ffmpeg-debs/*.deb
+            .test-ffmpeg-debs/package-info.json
+          if-no-files-found: error
+      - name: Bootstrap AVIF oracles once per run
+        run: pwsh -File avif/scripts/bootstrap_oracles.ps1
+      # Data only, consumed by read-only tests in this run. Never by publication.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: avif-oracles
+          path: avif/test_data
+          if-no-files-found: error
+
+  codec-smoke:
+    needs: select
+    if: needs.select.outputs.smoke == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ['1.91.0', stable]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: features-jpeg2000,image-buffer-ex-ci
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      - name: Exact bounded integration contracts
+        env:
+          CODEC_MODES: ${{ needs.select.outputs.modes }}
+        run: python3 -B .github/scripts/run_codec_smoke.py --modes "$CODEC_MODES"
+
   test:
     name: test (${{ matrix.rust }}, ${{ matrix.features }})
     needs: select
@@ -61,50 +144,77 @@ jobs:
           ref: ${{ github.sha }}
           submodules: recursive
           persist-credentials: false
-      - name: Prepare FFmpeg only when AVIF oracles need it
-        if: matrix.avif
-        run: |
-          if ! python3 -B .github/scripts/check_ffmpeg.py; then
-            # Bound individual network requests, not the entire package transaction.
-            # Slow but progressing mirrors can exceed five minutes in aggregate.
-            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -o APT::Update::Error-Mode=any update
-            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install --yes --no-install-recommends ffmpeg
-            python3 -B .github/scripts/check_ffmpeg.py
-          fi
-      - name: Bootstrap AVIF oracle fixtures
-        if: matrix.avif
-        run: pwsh -File avif/scripts/bootstrap_oracles.ps1
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      # Use the tracked workspace lock, including the published AVIF codecs.
+        with:
+          shared-key: features-${{ matrix.features }}-${{ matrix.profile }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Test selected feature set
         env:
           FEATURES: ${{ matrix.features }}
-        run: |
-          args=()
-          if [[ "$FEATURES" != default ]]; then args+=(--no-default-features); fi
-          if [[ "$FEATURES" != default && "$FEATURES" != minimal ]]; then args+=(--features "$FEATURES"); fi
-          cargo test -p wml2 --locked --lib --tests "${args[@]}"
-          cargo clippy -p wml2 --locked --lib --tests "${args[@]}" --message-format=json > clippy.json
-          if [[ "$FEATURES" == avifenc,image-buffer-ex,high-bit-depth ]]; then
-            cargo run -p wml2 --locked --no-default-features --features "$FEATURES" --example ex_avif
-          fi
-          if [[ "$FEATURES" == default ]]; then
-            # GIF/BMP cancellation must work independently of the EX feature.
-            cargo test -p wml2 --locked --no-default-features --features gif --test callback_abort --test gif_callback_abort --test gif_icc
-            cargo test -p wml2 --locked --no-default-features --features gif,image-buffer-ex --test callback_abort --test gif_callback_abort --test gif_icc
-            cargo test -p wml2 --locked --no-default-features --features bmp --lib --test callback_abort --test bmp_icc
-            cargo test -p wml2 --locked --no-default-features --features bmp,image-buffer-ex --lib --test callback_abort --test bmp_icc
-            cargo test -p wml2 --locked --doc
-            cargo check -p wml2 --locked --examples
-          fi
+          TEST_PROFILE: ${{ matrix.profile }}
+        run: python3 -B .github/scripts/run_feature_tests.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: diagnostics-${{ matrix.rust }}-${{ strategy.job-index }}
+          path: |
+            clippy.json
+            Cargo.lock
+  avif-test:
+    name: test (${{ matrix.rust }}, ${{ matrix.features }})
+    needs: [select, avif-oracles]
+    if: needs.select.outputs.avif == 'true'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select.outputs.avif_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: avif-oracles
+          path: avif/test_data
+      # Encoder tests themselves invoke FFmpeg. Keep that independent oracle,
+      # reusing authenticated packages from this run instead of downloading them
+      # independently in every feature/toolchain row.
+      - name: Probe existing tools and resolve the official package transaction
+        if: matrix.ffmpeg
+        id: ffmpeg
+        run: python3 -B .github/scripts/prepare_ffmpeg.py plan
+      - uses: actions/download-artifact@v4
+        if: matrix.ffmpeg && steps.ffmpeg.outputs.ready == 'false'
+        with:
+          name: ffmpeg-packages
+          path: .test-ffmpeg-debs
+      - name: Install and validate FFmpeg for independent encoder tests
+        if: matrix.ffmpeg && steps.ffmpeg.outputs.ready == 'false'
+        run: python3 -B .github/scripts/prepare_ffmpeg.py install
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: features-${{ matrix.features }}-${{ matrix.profile }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      - name: Test selected feature set
+        env:
+          FEATURES: ${{ matrix.features }}
+          TEST_PROFILE: ${{ matrix.profile }}
+          WML2_REQUIRE_FFMPEG: '1'
+        run: python3 -B .github/scripts/run_feature_tests.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diagnostics-avif-${{ matrix.rust }}-${{ strategy.job-index }}
           path: |
             clippy.json
             Cargo.lock
@@ -123,10 +233,12 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - run: cargo test -p wml2 --test review_regressions --no-default-features --features png
       - name: JPEG2000 regression fixtures
         if: needs.select.outputs.jpeg2000 == 'true'
-        run: cargo test -p wml2 --test jpeg2000 --no-default-features --features jpeg2000
+        run: cargo test -p wml2 --locked --profile ci --test jpeg2000 --no-default-features --features jpeg2000
       - name: TIFF container and review regressions
         if: needs.select.outputs.tiff == 'true'
         run: cargo test -p wml2 --test tiff_extend --test tiff_review_regressions --no-default-features --features tiff,high-bit-depth
@@ -137,14 +249,14 @@ jobs:
         if: needs.select.outputs.avif == 'true'
         run: cargo test -p wml2 --locked --no-default-features --features avif,image-buffer-ex,color-management --lib --test avif_color_boundary
       - name: Install 32-bit Windows target
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && (needs.select.outputs.jpeg2000 == 'true' || needs.select.outputs.tiff == 'true')
         run: rustup target add i686-pc-windows-msvc
       - name: JPEG2000 EX and native reduction 32-bit boundaries
         if: runner.os == 'Windows' && needs.select.outputs.jpeg2000 == 'true'
-        run: cargo test -p wml2 --locked --target i686-pc-windows-msvc --test jpeg2000_ex --test jpeg2000_ex_color --test jpeg2000_ex_97 --test jpeg2000_ex_memory --test jpeg2000_reduced --no-default-features --features jpeg2000,image-buffer-ex
+        run: cargo test -p wml2 --locked --profile ci --target i686-pc-windows-msvc --test jpeg2000_ex --test jpeg2000_ex_color --test jpeg2000_ex_97 --test jpeg2000_ex_memory --test jpeg2000_reduced --no-default-features --features jpeg2000,image-buffer-ex
       - name: JPEG2000 single-segment MQ 32-bit equivalence
         if: runner.os == 'Windows' && needs.select.outputs.jpeg2000 == 'true'
-        run: cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg2000,image-buffer-ex --lib jpeg2000::tier1::tests::single_style_zero_segment_matches_generic_midpoint_reader
+        run: cargo test -p wml2 --locked --profile ci --target i686-pc-windows-msvc --no-default-features --features jpeg2000,image-buffer-ex --lib jpeg2000::tier1::tests::single_style_zero_segment_matches_generic_midpoint_reader
       - name: TIFF 32-bit offsets and strip geometry
         if: runner.os == 'Windows' && needs.select.outputs.tiff == 'true'
         run: cargo test -p wml2 --target i686-pc-windows-msvc --test tiff_extend --test tiff_review_regressions --no-default-features --features tiff,high-bit-depth
@@ -168,6 +280,8 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: JPEG XL disabled detection contract
         run: cargo test -p wml2 --locked --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
       - name: JPEG XL ordinary RGBA8 and source metadata
@@ -203,6 +317,8 @@ jobs:
           python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Check all compatible targets and expected all-features rejection
         run: python -B .github/scripts/check_feature_contracts.py --output .test-feature-contracts
       - uses: actions/upload-artifact@v4
@@ -227,6 +343,8 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - run: cargo check -p wml2 --locked --lib --target ${{ matrix.target }} --features high-bit-depth,color-management,avifenc,image-buffer-ex,psd,tiff-jpeg,idct_llm,jpeg2000,jpeg-xl
       - uses: actions/setup-node@v4
         if: matrix.target == 'wasm32-unknown-unknown'
@@ -279,9 +397,12 @@ jobs:
           /usr/bin/python3 -c 'from PIL import Image; print("Pillow", Image.__version__)'
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Checkout pinned TIFF interoperability corpus
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           repository: imazen/codec-corpus
           ref: 8e10d4d765667c1c49d74413878fc4bfb46dcf8d
           path: .ci/codec-corpus
@@ -347,7 +468,7 @@ jobs:
   required-checks:
     name: Required checks
     if: always()
-    needs: [select, release-metadata, test, platform, jpeg-xl-platform, feature-contracts, compile, format, tiff-oracle]
+    needs: [select, release-metadata, test, avif-oracles, avif-test, codec-smoke, platform, jpeg-xl-platform, feature-contracts, compile, format, tiff-oracle]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

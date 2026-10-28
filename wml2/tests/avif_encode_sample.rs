@@ -63,6 +63,10 @@ fn avif_encoder_round_trips_bundled_lossless_webp_sample() {
         .is_ok_and(|output| output.status.success())
     {
         eprintln!("ffmpeg is not available; skipping sample decode oracle");
+        assert!(
+            env::var_os("WML2_REQUIRE_FFMPEG").is_none(),
+            "CI requires the independent FFmpeg sample decode oracle"
+        );
         return;
     }
 

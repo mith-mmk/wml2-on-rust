@@ -119,6 +119,10 @@ fn ffmpeg_generated_avif_decodes_with_current_avif_rust() {
         .is_ok_and(|output| output.status.success())
     {
         eprintln!("ffmpeg is not available; skipping external AVIF input oracle");
+        assert!(
+            env::var_os("WML2_REQUIRE_FFMPEG").is_none(),
+            "CI requires the independent FFmpeg input oracle"
+        );
         return;
     }
     let output = temporary_avif_path();
@@ -149,6 +153,10 @@ fn ffmpeg_generated_avif_decodes_with_current_avif_rust() {
             String::from_utf8_lossy(&result.stderr)
         );
         let _ = fs::remove_file(&output);
+        assert!(
+            env::var_os("WML2_REQUIRE_FFMPEG").is_none(),
+            "CI requires a working libaom AVIF encoder"
+        );
         return;
     }
     let encoded = fs::read(&output).expect("ffmpeg should write an AVIF file");

@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 jobs:
+  # Includes every codec, toolchain, platform, oracle and required-check gate.
+  # workflow_call is always full, regardless of which paths changed.
+  full:
+    uses: ./.github/workflows/ci.yml
   mutation:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -13,7 +17,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: features-default-test
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - run: cargo test -p wml2 --no-default-features --features png --test review_regressions bounded_png_mutation_corpus -- --ignored
   miri:
     runs-on: ubuntu-latest
@@ -22,6 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri

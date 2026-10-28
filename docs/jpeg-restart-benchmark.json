@@ -1,0 +1,1234 @@
+{
+  "profile": "release opt-level3",
+  "target": "x86_64-pc-windows-msvc",
+  "rust": "1.99.0",
+  "features": "no defaults; jpeg,idct_llm,exif plus multithread for multi",
+  "order": "ABBA per input/config; two warmups, five samples each process",
+  "baseline": "40c43cef96253d27fd57bf97b5529611ff4c185f",
+  "scope": "ordinary JPEG without RST; not a speed comparison of previously broken files",
+  "medians_ms": [
+    {
+      "file": "large-s0-progressive.jpg",
+      "before-single": 534.9536,
+      "before-multi": 513.6677999999999,
+      "after-single": 522.4126,
+      "after-multi": 531.03815
+    },
+    {
+      "file": "large-s2-baseline.jpg",
+      "before-single": 190.74835000000002,
+      "before-multi": 130.52365,
+      "after-single": 182.10065,
+      "after-multi": 128.6514
+    },
+    {
+      "file": "medium-s0-baseline.jpg",
+      "before-single": 43.07,
+      "before-multi": 35.135999999999996,
+      "after-single": 41.18625,
+      "after-multi": 34.20185
+    }
+  ],
+  "raw": [
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "42984800",
+      "first_draw_ns": "696700",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "49390800",
+      "first_draw_ns": "727900",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "43604700",
+      "first_draw_ns": "601100",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "43155200",
+      "first_draw_ns": "589300",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "44328400",
+      "first_draw_ns": "575000",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "43314800",
+      "first_draw_ns": "563000",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "41763600",
+      "first_draw_ns": "560600",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "40795600",
+      "first_draw_ns": "562400",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "40460200",
+      "first_draw_ns": "572800",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "40760000",
+      "first_draw_ns": "555000",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "41299100",
+      "first_draw_ns": "529800",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "40929300",
+      "first_draw_ns": "571300",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "41073400",
+      "first_draw_ns": "605700",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "45349500",
+      "first_draw_ns": "637200",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "47305000",
+      "first_draw_ns": "582300",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "41758600",
+      "first_draw_ns": "553100",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "41460000",
+      "first_draw_ns": "592100",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "41949400",
+      "first_draw_ns": "542400",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "41759900",
+      "first_draw_ns": "555500",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "43641400",
+      "first_draw_ns": "738600",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "34543600",
+      "first_draw_ns": "654700",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "33933900",
+      "first_draw_ns": "660400",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "36365900",
+      "first_draw_ns": "1174700",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "36883900",
+      "first_draw_ns": "755300",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "37729100",
+      "first_draw_ns": "651700",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "33646700",
+      "first_draw_ns": "835600",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "33768800",
+      "first_draw_ns": "654800",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "33817800",
+      "first_draw_ns": "696100",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "34367100",
+      "first_draw_ns": "686000",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "33771000",
+      "first_draw_ns": "853400",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "34036600",
+      "first_draw_ns": "644300",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "34630000",
+      "first_draw_ns": "664800",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "38270200",
+      "first_draw_ns": "696400",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "36779800",
+      "first_draw_ns": "698300",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "36548700",
+      "first_draw_ns": "641100",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "35728400",
+      "first_draw_ns": "707700",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "36870100",
+      "first_draw_ns": "1352400",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "33915000",
+      "first_draw_ns": "659200",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "34333400",
+      "first_draw_ns": "707200",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "medium-s0-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "34078200",
+      "first_draw_ns": "667800",
+      "hash": "13873271336003379893"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "191054800",
+      "first_draw_ns": "2783200",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "193372800",
+      "first_draw_ns": "2956400",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "192492700",
+      "first_draw_ns": "3089700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "186908000",
+      "first_draw_ns": "2804400",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "196300100",
+      "first_draw_ns": "2862300",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "206951900",
+      "first_draw_ns": "3318200",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "180323600",
+      "first_draw_ns": "2831000",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "183935400",
+      "first_draw_ns": "2844300",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "186560400",
+      "first_draw_ns": "2864300",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "179080800",
+      "first_draw_ns": "2890700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "175689400",
+      "first_draw_ns": "2826400",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "183877700",
+      "first_draw_ns": "2889800",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "179945400",
+      "first_draw_ns": "2799800",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "177842400",
+      "first_draw_ns": "2910000",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "187219300",
+      "first_draw_ns": "2877500",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "190441900",
+      "first_draw_ns": "3132400",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "183147000",
+      "first_draw_ns": "2938700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "184432800",
+      "first_draw_ns": "2860100",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "193149000",
+      "first_draw_ns": "2862700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "180909100",
+      "first_draw_ns": "2807800",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "124683700",
+      "first_draw_ns": "3010800",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "123602900",
+      "first_draw_ns": "3059900",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "128147800",
+      "first_draw_ns": "2984700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "138354600",
+      "first_draw_ns": "3540700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "124191800",
+      "first_draw_ns": "3021100",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "128814800",
+      "first_draw_ns": "2991700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "122455300",
+      "first_draw_ns": "2998700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "128247200",
+      "first_draw_ns": "2972600",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "153635400",
+      "first_draw_ns": "3557400",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "132871800",
+      "first_draw_ns": "3018300",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "133739000",
+      "first_draw_ns": "3104100",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "139024000",
+      "first_draw_ns": "2925900",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "128488000",
+      "first_draw_ns": "3444700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "127069300",
+      "first_draw_ns": "3152400",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "125538300",
+      "first_draw_ns": "3070000",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "0",
+      "decode_ns": "131476400",
+      "first_draw_ns": "3453300",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "1",
+      "decode_ns": "129570900",
+      "first_draw_ns": "3702200",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "2",
+      "decode_ns": "132430900",
+      "first_draw_ns": "3687900",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "3",
+      "decode_ns": "131842600",
+      "first_draw_ns": "3456700",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s2-baseline.jpg",
+      "iteration": "4",
+      "decode_ns": "145074900",
+      "first_draw_ns": "2998400",
+      "hash": "16984684791948501925"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "0",
+      "decode_ns": "543487100",
+      "first_draw_ns": "371340200",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "1",
+      "decode_ns": "550211300",
+      "first_draw_ns": "391329400",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "2",
+      "decode_ns": "526420100",
+      "first_draw_ns": "364893000",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "3",
+      "decode_ns": "602676700",
+      "first_draw_ns": "403053700",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "4",
+      "decode_ns": "601438200",
+      "first_draw_ns": "397834100",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "0",
+      "decode_ns": "528400100",
+      "first_draw_ns": "354936000",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "1",
+      "decode_ns": "516425100",
+      "first_draw_ns": "351822800",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "2",
+      "decode_ns": "506733600",
+      "first_draw_ns": "347803600",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "3",
+      "decode_ns": "536338700",
+      "first_draw_ns": "363413100",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "4",
+      "decode_ns": "614031900",
+      "first_draw_ns": "416163800",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "0",
+      "decode_ns": "494182400",
+      "first_draw_ns": "338393000",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "1",
+      "decode_ns": "497507200",
+      "first_draw_ns": "342806500",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "2",
+      "decode_ns": "489061900",
+      "first_draw_ns": "332656100",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "3",
+      "decode_ns": "544106600",
+      "first_draw_ns": "331682500",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "4",
+      "decode_ns": "606382300",
+      "first_draw_ns": "399738700",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "0",
+      "decode_ns": "494156400",
+      "first_draw_ns": "337287700",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "1",
+      "decode_ns": "493065800",
+      "first_draw_ns": "334222900",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "2",
+      "decode_ns": "490348400",
+      "first_draw_ns": "331939500",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "3",
+      "decode_ns": "523208600",
+      "first_draw_ns": "338172500",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "single",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "4",
+      "decode_ns": "615465300",
+      "first_draw_ns": "416232700",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "0",
+      "decode_ns": "497405900",
+      "first_draw_ns": "343998300",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "1",
+      "decode_ns": "498529700",
+      "first_draw_ns": "343134900",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "2",
+      "decode_ns": "490720300",
+      "first_draw_ns": "336187800",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "3",
+      "decode_ns": "564971700",
+      "first_draw_ns": "347033400",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 0,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "4",
+      "decode_ns": "604276400",
+      "first_draw_ns": "444447800",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "0",
+      "decode_ns": "610471100",
+      "first_draw_ns": "439321100",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "1",
+      "decode_ns": "521555300",
+      "first_draw_ns": "345243000",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "2",
+      "decode_ns": "486571200",
+      "first_draw_ns": "331381300",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "3",
+      "decode_ns": "628957300",
+      "first_draw_ns": "427358900",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 1,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "4",
+      "decode_ns": "626390000",
+      "first_draw_ns": "419740400",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "0",
+      "decode_ns": "495967000",
+      "first_draw_ns": "341559500",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "1",
+      "decode_ns": "506390500",
+      "first_draw_ns": "350092300",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "2",
+      "decode_ns": "507736000",
+      "first_draw_ns": "343092100",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "3",
+      "decode_ns": "540521000",
+      "first_draw_ns": "362899500",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "after",
+      "step": 2,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "4",
+      "decode_ns": "551738800",
+      "first_draw_ns": "388857400",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "0",
+      "decode_ns": "512230100",
+      "first_draw_ns": "350374200",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "1",
+      "decode_ns": "568347200",
+      "first_draw_ns": "362309000",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "2",
+      "decode_ns": "515105500",
+      "first_draw_ns": "352092900",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "3",
+      "decode_ns": "549158200",
+      "first_draw_ns": "374569300",
+      "hash": "14355383191166735269"
+    },
+    {
+      "mode": "multi",
+      "revision": "before",
+      "step": 3,
+      "file": "large-s0-progressive.jpg",
+      "iteration": "4",
+      "decode_ns": "503103600",
+      "first_draw_ns": "342200500",
+      "hash": "14355383191166735269"
+    }
+  ]
+}

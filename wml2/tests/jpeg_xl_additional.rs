@@ -25,8 +25,13 @@ fn all_eight_orientations_match_independent_djxl_after_one_reorientation() {
         let size = if orientation <= 4 { (2, 3) } else { (3, 2) };
         let image = image_from(input).unwrap();
         let metadata = image.metadata.as_ref().unwrap();
-        assert!(matches!(metadata["orientation_applied"], DataMap::Bool(true)));
-        assert!(matches!(metadata["JPEG XL Source Orientation"], DataMap::UInt(v) if v == orientation));
+        assert!(matches!(
+            metadata["orientation_applied"],
+            DataMap::Bool(true)
+        ));
+        assert!(
+            matches!(metadata["JPEG XL Source Orientation"], DataMap::UInt(v) if v == orientation)
+        );
         assert_eq!(
             (image.width, image.height),
             size,
@@ -41,8 +46,13 @@ fn all_eight_orientations_match_independent_djxl_after_one_reorientation() {
         {
             let image =
                 image_from_ex(input, PixelFormatEx::Rgba8, PrecisionConversion::Exact).unwrap();
-            assert!(matches!(image.metadata.as_ref().unwrap()["orientation_applied"], DataMap::Bool(true)));
-            assert!(matches!(image.metadata.as_ref().unwrap()["JPEG XL Source Orientation"], DataMap::UInt(v) if v == orientation));
+            assert!(matches!(
+                image.metadata.as_ref().unwrap()["orientation_applied"],
+                DataMap::Bool(true)
+            ));
+            assert!(
+                matches!(image.metadata.as_ref().unwrap()["JPEG XL Source Orientation"], DataMap::UInt(v) if v == orientation)
+            );
             assert_eq!((image.width(), image.height()), size);
             assert_eq!(
                 image.bytes().unwrap(),

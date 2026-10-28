@@ -280,6 +280,7 @@ struct Header {
     width: usize,
     height: usize,
     bits: u8,
+    orientation: u8,
     gray: bool,
     color_channels: usize,
     source_header_bytes: usize,
@@ -501,6 +502,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         width,
         height,
         bits: bits as u8,
+        orientation: m.orientation as u8,
         gray: m.color_encoding.color_space == ColorSpace::Gray && m.extra_channel_info.is_empty(),
         color_channels: if m.color_encoding.color_space == ColorSpace::Gray {
             1
@@ -728,6 +730,13 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
             .metadata
             .push(("ICC Profile".into(), DataMap::ICCProfile(profile)));
     }
+    input
+        .metadata
+        .push(("orientation_applied".into(), DataMap::Bool(true)));
+    input.metadata.push((
+        "JPEG XL Source Orientation".into(),
+        DataMap::UInt(h.orientation.into()),
+    ));
     input
         .metadata
         .push(("Format".into(), DataMap::Ascii("JPEG XL".into())));

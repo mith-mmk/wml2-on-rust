@@ -18,6 +18,8 @@ pub type Metadata = HashMap<String, DataMap>;
 /// A typed metadata value.
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataMap {
+    /// Boolean metadata value.
+    Bool(bool),
     UInt(u64),
     SInt(i64),
     Float(f64),
@@ -39,6 +41,7 @@ impl DataMap {
     /// Converts the metadata value to a display-oriented string.
     pub fn to_string(&self) -> String {
         match self {
+            DataMap::Bool(d) => d.to_string(),
             DataMap::UInt(d) => d.to_string(),
             DataMap::SInt(d) => d.to_string(),
             DataMap::Float(d) => d.to_string(),

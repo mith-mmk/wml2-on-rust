@@ -193,6 +193,7 @@ fn main() -> Result<(), Error> {
     assert_eq!(animation.len(), waits.len());
     assert_eq!(image.buffer.as_ref().unwrap(), &expected[0]);
     assert_eq!(image.loop_count, Some(loops));
+    assert_eq!(image.first_wait_time, waits.first().copied());
     for ((layer, expected), &wait) in animation.iter().zip(&expected).zip(&waits) {
         assert_eq!(&layer.buffer, expected);
         assert_eq!(layer.control.await_time, wait);

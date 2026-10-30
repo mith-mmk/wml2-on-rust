@@ -1063,9 +1063,9 @@
   "source_sha256": {
     "wml2-test/scripts/jpegxl_animation_core.rs": "10a44f439dfe20b20596d85315b84ebd3cbacfb03a81e1d7f83f0d4d909baec5",
     "wml2-test/scripts/jpegxl_animation_probe.rs": "57b0fe98adbe9f86097b0e708a2576722973e4b154fde2fa9b855d7bd9ce74c4",
-    "wml2-test/scripts/jpegxl_animation_contract.rs": "44a6a93a3a7790d824f5edb3c58a1d5f0380fd6d5e9bbbf97343bf8f8b68b2e3",
+    "wml2-test/scripts/jpegxl_animation_contract.rs": "42f11b394c11925411c99bbd0ca9f0443df5e424c0618e109000ea4a014f6d93",
     "wml2-test/scripts/jpegxl_animation_cancel_check.rs": "24951d822f8f5907a45876ce87ca0ddb82e241fde28a15e96c4989734d19767e",
-    "wml2-test/scripts/evaluate_jpegxl_animation.py": "3c84f907e17e982e46a213b0dba2eac189ae1dad630c831d4d107b1f190871de",
+    "wml2-test/scripts/evaluate_jpegxl_animation.py": "7df54a4aea8563f95eed310f3e65c39966a8722d079ff3de69faf4210bd4e3ce",
     "wml2-test/scripts/jpegxl_animation_encoder.c": "7345ff176ed02ec3464a8d4deae6ef3e0583020c42932a1fa7212d45d912f471",
     "wml2-test/scripts/jpegxl_animation_reference.c": "4d3d7ffcfdcbe99071385288e193d69eca121fca6afca9873682ab67754d1421",
     "wml2-test/scripts/jpegxl_animation_evaluation_wasm.rs": "d8275fd4185fde7accd92c5ed955b88535e7bde2d567b0513a273b8d12eaf22b",
@@ -1077,5 +1077,10 @@
     "wasm": "python3 wml2-test/scripts/verify_jpegxl_animation_evaluation_wasm.py --output .test-jxl-animation-wasm",
     "runtime": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers",
     "composition": "Detached PR32 head; cherry-pick de79d21,a69a54f; use dedicated target; run full native targets, check_jpegxl_preview_cancel.rs and jpegxl_animation_cancel_check.rs against the combined artifact"
+  },
+  "review_regressions": {
+    "managed_length": "Exact image width*height*4 equality before RGB/alpha zip comparison; rejects both truncated and appended output",
+    "first_wait_time": "Precise image.first_wait_time == waits.first().copied() assertion",
+    "affected_probe_replay": "27 native +27 managed frames and five strict transport cases pass after the assertions"
   }
 }

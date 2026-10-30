@@ -64,7 +64,7 @@ for name,mode,bits_,ori,num,den,loops,profile in cases:
  for i,frame in enumerate(frames):
   assert int(visible[i][3])==frame[1] and (visible[i][4]=='true')==bool(frame[3]);expected_ms=Fraction(frame[1]*1000*den,num);assert math.isclose(float(visible[i][2]),float(expected_ms),rel_tol=0,abs_tol=1e-9)
   native=(out/f'c-{name}.{i}.rgba16le').read_bytes();actual=(out/f'rust-{name}.{i}.rgba16le').read_bytes();assert len(native)==len(actual)==image[0]*image[1]*8;oracle=struct.unpack('<'+'H'*(len(native)//2),native);values=struct.unpack('<'+'H'*(len(actual)//2),actual);difference=max(abs(v-w) for v,w in zip(values,oracle));assert difference<=1
-  srgb=managed(native,(out/f'c-{name}.icc').read_bytes());actual_srgb=(out/f'rust-{name}.{i}.srgb.rgba').read_bytes();rgb=max(abs(v-w) for j,(v,w) in enumerate(zip(srgb,actual_srgb)) if j%4!=3);alpha=all(v==w for j,(v,w) in enumerate(zip(srgb,actual_srgb)) if j%4==3);assert rgb<=2 and alpha
+  srgb=managed(native,(out/f'c-{name}.icc').read_bytes());actual_srgb=(out/f'rust-{name}.{i}.srgb.rgba').read_bytes();assert len(actual_srgb)==len(srgb)==image[0]*image[1]*4,'managed RGBA length mismatch';rgb=max(abs(v-w) for j,(v,w) in enumerate(zip(srgb,actual_srgb)) if j%4!=3);alpha=all(v==w for j,(v,w) in enumerate(zip(srgb,actual_srgb)) if j%4==3);assert rgb<=2 and alpha
   for suffix,content in [('rgba16le',native),('srgb.rgba',srgb)]:
    fixture=dest/f'jxl-animation-{name}.{i}.{suffix}'
    if a.write_fixtures:fixture.write_bytes(content)

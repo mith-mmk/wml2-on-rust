@@ -65,6 +65,6 @@ fn main() {
         cases += 1;
     }
     println!(
-        "animation_refusals={cases} deterministic_precancel_checkpoints={checkpoints} limit_precedence_cases={cases}; no animation frame decoded/published"
+        "animation_refusals={cases} deterministic_preframe_cancellation_checkpoints={checkpoints} limit_precedence_cases={cases}; no animation frame decoded/published"
     );
 }

@@ -1,4 +1,7 @@
 //! Header information without pixel decompression. This is not file validation.
+#[cfg(feature = "jpeg-xl")]
+#[path = "image_info/jpegxl.rs"]
+mod jpegxl;
 use crate::limits::DecodeLimits;
 use crate::util::{ImageFormat, format_check};
 use bin_rs::reader::{BinaryReader, StreamReader};
@@ -6,7 +9,8 @@ use std::cell::Cell;
 use std::fmt;
 use std::io::{self, BufReader, Read, Seek, SeekFrom};
 
-/// Positive canvas dimensions in pixels, independent of byte stride/storage.
+/// Positive image/display dimensions, independent of byte stride/storage.
+/// Intrinsic display values are declared display units, not decoded allocations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ImageSize {
     pub width: u32,
@@ -14,7 +18,9 @@ pub struct ImageSize {
 }
 /// Keep encoded, actual ordinary full-resolution output, and intrinsic display
 /// sizes separate. `None` means not obtained, not an implicit equality to coded.
-/// Output is the existing ordinary decoder's canvas, before any caller scaling.
+/// Output is the ordinary full-resolution canvas implied by the queried header,
+/// before caller scaling, conditional on successful decoding. For formats with
+/// native orientation (JPEG XL), output and intrinsic_display use oriented axes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ImageDimensions {
     pub coded: ImageSize,
@@ -86,7 +92,7 @@ pub struct ImageInfo {
     pub sample_kind: SampleKind,
     pub alpha: AlphaInfo,
     pub structure: ImageStructure,
-    /// TIFF orientation if obtained. JPEG/PNG EXIF orientation is not parsed.
+    /// Native TIFF/JPEG XL orientation if obtained. JPEG/PNG EXIF is not parsed.
     pub orientation: Option<u16>,
     pub scan: InfoScan,
     /// Actual reads through the unbuffered counting source; seeks do not count.
@@ -99,6 +105,8 @@ impl fmt::Debug for ImageInfo {
             ImageFormat::Png => "PNG",
             ImageFormat::Gif => "GIF",
             ImageFormat::Tiff => "TIFF",
+            #[cfg(feature = "jpeg-xl")]
+            ImageFormat::JpegXl => "JPEG XL",
             #[cfg(feature = "psd")]
             ImageFormat::Psd => "PSD",
             _ => "unsupported",
@@ -184,7 +192,8 @@ type Result<T> = std::result::Result<T, ImageInfoError>;
     feature = "png",
     feature = "gif",
     feature = "tiff",
-    feature = "psd"
+    feature = "psd",
+    feature = "jpeg-xl"
 ))]
 fn invalid<T>(s: &'static str) -> Result<T> {
     Err(ImageInfoError::InvalidHeader(s))
@@ -215,7 +224,8 @@ fn canvas(width: u32, height: u32) -> Result<ImageSize> {
     feature = "png",
     feature = "gif",
     feature = "tiff",
-    feature = "psd"
+    feature = "psd",
+    feature = "jpeg-xl"
 ))]
 fn info(
     format: ImageFormat,
@@ -330,6 +340,8 @@ pub fn image_info_from_reader_with_limits<R: Read + Seek>(
             ImageFormat::Tiff => tiff(&mut r),
             #[cfg(feature = "psd")]
             ImageFormat::Psd => psd(&mut r),
+            #[cfg(feature = "jpeg-xl")]
+            ImageFormat::JpegXl => jpegxl::read(&mut r, end),
             ImageFormat::Unknown => Err(ImageInfoError::UnknownFormat),
             _ => Err(ImageInfoError::UnsupportedFormat),
         })?;
@@ -368,7 +380,12 @@ impl<R: Seek> Seek for CountingReader<'_, R> {
         self.reader.seek(p)
     }
 }
-#[cfg(any(feature = "jpeg", feature = "png", feature = "gif"))]
+#[cfg(any(
+    feature = "jpeg",
+    feature = "png",
+    feature = "gif",
+    feature = "jpeg-xl"
+))]
 fn available(offset: u64, length: u64, end: u64) -> Result<()> {
     if offset.checked_add(length).is_none_or(|n| n > end) {
         invalid("declared header payload exceeds input")
@@ -376,7 +393,12 @@ fn available(offset: u64, length: u64, end: u64) -> Result<()> {
         Ok(())
     }
 }
-#[cfg(any(feature = "jpeg", feature = "png", feature = "gif"))]
+#[cfg(any(
+    feature = "jpeg",
+    feature = "png",
+    feature = "gif",
+    feature = "jpeg-xl"
+))]
 fn skip<B: BinaryReader>(r: &mut B, n: u64, end: u64) -> Result<()> {
     let current = r.offset()?;
     available(current, n, end)?;

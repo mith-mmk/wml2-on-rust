@@ -6,7 +6,8 @@ use std::io::Cursor;
     feature = "png",
     feature = "gif",
     feature = "tiff",
-    feature = "psd"
+    feature = "psd",
+    feature = "jpeg-xl"
 ))]
 use std::io::{self, Read, Seek, SeekFrom};
 use wml2::image_info::*;
@@ -41,7 +42,8 @@ static ALLOC: Allocations = Allocations;
     feature = "png",
     feature = "gif",
     feature = "tiff",
-    feature = "psd"
+    feature = "psd",
+    feature = "jpeg-xl"
 ))]
 fn tiny_limits() -> DecodeLimits {
     DecodeLimits {
@@ -58,7 +60,8 @@ fn tiny_limits() -> DecodeLimits {
     feature = "png",
     feature = "gif",
     feature = "tiff",
-    feature = "psd"
+    feature = "psd",
+    feature = "jpeg-xl"
 ))]
 struct DenyReads {
     source: Cursor<Vec<u8>>,
@@ -69,7 +72,8 @@ struct DenyReads {
     feature = "png",
     feature = "gif",
     feature = "tiff",
-    feature = "psd"
+    feature = "psd",
+    feature = "jpeg-xl"
 ))]
 impl Read for DenyReads {
     fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
@@ -86,7 +90,8 @@ impl Read for DenyReads {
     feature = "png",
     feature = "gif",
     feature = "tiff",
-    feature = "psd"
+    feature = "psd",
+    feature = "jpeg-xl"
 ))]
 impl Seek for DenyReads {
     fn seek(&mut self, p: SeekFrom) -> io::Result<u64> {
@@ -98,7 +103,8 @@ impl Seek for DenyReads {
     feature = "png",
     feature = "gif",
     feature = "tiff",
-    feature = "psd"
+    feature = "psd",
+    feature = "jpeg-xl"
 ))]
 fn no_expansion(source: Vec<u8>, forbidden: Vec<std::ops::Range<u64>>) -> ImageInfo {
     let mut reader = DenyReads {
@@ -834,4 +840,9 @@ fn gif_plain_text_and_application_fixed_headers_have_required_sizes() {
         bytes.extend([0, 0x3b]);
         assert!(image_info(&bytes).is_ok());
     }
+}
+
+#[cfg(feature = "jpeg-xl")]
+mod jpegxl {
+    include!("image_info/jpegxl.rs");
 }

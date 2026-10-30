@@ -14,6 +14,9 @@ use jxl_codec::headers::extra_channels::ExtraChannel;
 use jxl_codec::headers::{FileHeader, JxlHeader};
 use std::io::SeekFrom;
 
+#[path = "jpegxl_dimensions.rs"]
+pub(crate) mod dimensions;
+
 type Error = Box<dyn std::error::Error>;
 const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
 const MAX_INPUT: usize = 64 * 1024 * 1024;
@@ -277,6 +280,8 @@ fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
 }
 
 struct Header {
+    dimensions: crate::image_info::ImageDimensions,
+    source_intrinsic: Option<crate::image_info::ImageSize>,
     width: usize,
     height: usize,
     bits: u8,
@@ -405,9 +410,9 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     let mut br = BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
     let header = FileHeader::read(&mut br).map_err(codec_error)?;
     let m = &header.image_metadata;
-    if m.animation.is_some() || m.preview.is_some() || m.intrinsic_size.is_some() {
+    if m.animation.is_some() || m.preview.is_some() {
         return Err(unsupported(
-            "JPEG XL animations, previews and intrinsic sizes are unsupported",
+            "JPEG XL animations and previews are unsupported",
         ));
     }
     let bits = m.bit_depth.bits_per_sample();
@@ -443,9 +448,9 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
             "JPEG XL HDR/tone mapping and non-Gray/RGB colour are unsupported",
         ));
     }
-    let (width, height) = m
-        .orientation
-        .map_size((header.size.xsize() as usize, header.size.ysize() as usize));
+    let dimensions = dimensions::mapped(&header.size, m.orientation, m.intrinsic_size.as_ref());
+    let output = dimensions.output.unwrap();
+    let (width, height) = (output.width as usize, output.height as usize);
     limits::check(width, 16384, "JPEG XL width")?;
     limits::check(height, 16384, "JPEG XL height")?;
     let pixels = mul(width, height)?;
@@ -499,6 +504,8 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     )?;
     limits::check(workspace, limits.expanded_bytes, "JPEG XL decode workspace")?;
     Ok(Header {
+        dimensions,
+        source_intrinsic: m.intrinsic_size.as_ref().map(dimensions::size),
         width,
         height,
         bits: bits as u8,
@@ -729,6 +736,28 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         input
             .metadata
             .push(("ICC Profile".into(), DataMap::ICCProfile(profile)));
+    }
+    for (key, value) in [
+        ("coded_width", h.dimensions.coded.width),
+        ("coded_height", h.dimensions.coded.height),
+        ("output_width", h.width as u32),
+        ("output_height", h.height as u32),
+    ] {
+        input
+            .metadata
+            .push((key.into(), DataMap::UInt(value.into())));
+    }
+    if let (Some(source), Some(display)) = (h.source_intrinsic, h.dimensions.intrinsic_display) {
+        for (key, value) in [
+            ("JPEG XL Source Intrinsic Width", source.width),
+            ("JPEG XL Source Intrinsic Height", source.height),
+            ("intrinsic_display_width", display.width),
+            ("intrinsic_display_height", display.height),
+        ] {
+            input
+                .metadata
+                .push((key.into(), DataMap::UInt(value.into())));
+        }
     }
     input
         .metadata

@@ -356,5 +356,153 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
+    count + intrinsic_cases()
+}
+
+fn intrinsic_cases() -> u32 {
+    use wml2::image_info::{ImageSize, image_info, image_info_with_limits};
+    macro_rules! intrinsic {
+        ($n:literal) => {
+            (
+                include_bytes!(concat!(
+                    "../../wml2/tests/fixtures/review/jxl-intrinsic-orientation",
+                    $n,
+                    ".jxl"
+                ))
+                .as_slice(),
+                include_bytes!(concat!(
+                    "../../wml2/tests/fixtures/review/jxl-orientation",
+                    $n,
+                    ".rgba"
+                ))
+                .as_slice(),
+                $n,
+            )
+        };
+    }
+    let mut count = 0;
+    for (input, expected, orientation) in [
+        intrinsic!(1),
+        intrinsic!(2),
+        intrinsic!(3),
+        intrinsic!(4),
+        intrinsic!(5),
+        intrinsic!(6),
+        intrinsic!(7),
+        intrinsic!(8),
+    ] {
+        let info = image_info(input).unwrap();
+        let output = if orientation >= 5 {
+            ImageSize {
+                width: 3,
+                height: 2,
+            }
+        } else {
+            ImageSize {
+                width: 2,
+                height: 3,
+            }
+        };
+        let display = if orientation >= 5 {
+            ImageSize {
+                width: 11,
+                height: 19,
+            }
+        } else {
+            ImageSize {
+                width: 19,
+                height: 11,
+            }
+        };
+        assert_eq!(
+            info.dimensions.coded,
+            ImageSize {
+                width: 2,
+                height: 3
+            }
+        );
+        assert_eq!(info.dimensions.output, Some(output));
+        assert_eq!(info.dimensions.intrinsic_display, Some(display));
+        assert_eq!(info.orientation, Some(orientation));
+        count += 1;
+        let image = image_from(input).unwrap();
+        assert_eq!(
+            (image.width, image.height),
+            (output.width as usize, output.height as usize)
+        );
+        assert_eq!(image.buffer.as_deref().unwrap(), expected);
+        count += 1;
+        assert_eq!(
+            image_from_ex(input, PixelFormatEx::Rgba8, PrecisionConversion::Exact)
+                .unwrap()
+                .bytes()
+                .unwrap(),
+            expected
+        );
+        count += 1;
+    }
+    let query_limits = DecodeLimits {
+        pixels: 0,
+        animation_bytes: 0,
+        expanded_bytes: 8192,
+        metadata_bytes: 4096,
+        ..Default::default()
+    };
+    let huge =
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-intrinsic-huge-coded-header.jxl");
+    let info = image_info_with_limits(huge, query_limits).unwrap();
+    assert_eq!(
+        info.dimensions.coded,
+        ImageSize {
+            width: 1 << 20,
+            height: 1 << 20
+        }
+    );
+    assert!(image_from(huge).is_err());
+    count += 1;
+    let large = include_bytes!("../../wml2/tests/fixtures/review/jxl-intrinsic-large-display.jxl");
+    let info = image_info_with_limits(large, query_limits).unwrap();
+    assert_eq!(
+        info.dimensions.intrinsic_display,
+        Some(ImageSize {
+            width: 1 << 20,
+            height: 1 << 20
+        })
+    );
+    assert_eq!(
+        image_from_with_limits(
+            large,
+            DecodeLimits {
+                pixels: 6,
+                animation_bytes: 24,
+                ..Default::default()
+            }
+        )
+        .unwrap()
+        .buffer
+        .as_deref()
+        .unwrap(),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-orientation1.rgba")
+    );
+    count += 1;
+    for input in [
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-intrinsic-oversized-area.jxl")
+            .as_slice(),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-intrinsic-oversized-axis.jxl"),
+    ] {
+        assert!(image_info_with_limits(input, DecodeLimits::unlimited()).is_err());
+        assert!(image_from_with_limits(input, DecodeLimits::unlimited()).is_err());
+        count += 1;
+    }
+    assert_eq!(
+        image_info(include_bytes!(
+            "../../wml2/tests/fixtures/review/jxl-orientation6.jxl"
+        ))
+        .unwrap()
+        .dimensions
+        .intrinsic_display,
+        None
+    );
+    count += 1;
     count
 }

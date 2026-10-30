@@ -283,13 +283,13 @@ jobs:
         with:
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: JPEG XL disabled detection contract
-        run: cargo test -p wml2 --locked --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata
+        run: cargo test -p wml2 --locked --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
       - name: JPEG XL ordinary RGBA8 and source metadata
-        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
       - name: JPEG XL native EX precision, limits and Abort
-        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
       - name: JPEG XL explicit sRGB display with own ICC engine
-        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,exif,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,exif,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
       - name: Install 32-bit Windows JPEG XL target
         if: runner.os == 'Windows'
         run: rustup target add i686-pc-windows-msvc
@@ -297,11 +297,11 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl,exif,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl,exif,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   feature-contracts:
     name: Compatible features and IDCT conflict

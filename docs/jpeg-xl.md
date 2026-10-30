@@ -46,7 +46,7 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
   a promise that lossy input becomes lossless.
 
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
-animations (no silent first-frame fallback), intrinsic display sizes,
+animations (no silent first-frame fallback),
 premultiplied or mixed-depth/subsampled alpha, multiple/other extra channels,
 forbidden compressed control/nested boxes and unsupported depths.
 Supported embedded previews are [bounded and skipped](jpeg-xl-preview.md) while
@@ -73,6 +73,10 @@ format, not before.
 | `ICC Profile` | Profile for the adapter's delivered callback samples, generated from simple signaling when needed; explicit EX storage conversion does not transform this profile |
 | `JPEG XL Source ICC Profile` | Original embedded ICC bytes, or equivalent generated ICC for original simple signaling |
 | `JPEG XL Reconstruction ICC Profile` | Actual pre-CMS reconstruction profile, retained by the explicit sRGB display API; may differ from the original embedded profile |
+| `coded_width` / `coded_height` | Source canvas axes (`DataMap::UInt`), before native orientation |
+| `output_width` / `output_height` | Delivered canvas axes after native orientation; no intrinsic resizing |
+| `intrinsic_display_width` / `intrinsic_display_height` | Explicit intrinsic display axes after native orientation, present only if declared; display units, not allocated pixels |
+| `JPEG XL Source Intrinsic Width` / `JPEG XL Source Intrinsic Height` | Original intrinsic axes (`DataMap::UInt`), present only if declared |
 | `JPEG XL Source Header` | Original bit-aligned codestream-header prefix; last byte may also contain following bits; not a standalone file |
 | `JPEG XL Source Box <index> <hex-type>` | Exact outer auxiliary payload bytes, including unknown types and duplicate types with distinct indexes; a `brob` value includes its underlying type and compressed stream |
 | `JPEG XL Decoded Box <index> <hex-type>` | Bounded decompressed raw payload for a `brob` box, indexed by its underlying type; no recursive box parsing |
@@ -313,3 +317,13 @@ implementation. No PR, main merge or release is part of this branch work.
 `orientation_applied` is a format-independent metadata key whose value is `DataMap::Bool`. `true` means the output pixels already include the source orientation; consumers must not apply source EXIF or other source orientation again. `false` means this marker does not suppress the consumer's existing orientation handling. An absent key likewise retains the legacy behavior. A value of another type is invalid; consumers should treat it as absent rather than infer a boolean. This affects automatic orientation only, not user-requested rotation.
 
 JPEG XL sets the marker to `true` and stores the original coded 1–8 value separately as `JPEG XL Source Orientation` (`DataMap::UInt`), alongside the raw source header. That original value describes the input, not a remaining transform on the delivered pixels. The pinned jxl 0.7.4 applies the coded transform to its output; its `adjust_orientation` option is not consumed by that version. The eight fixture tests check pixels against independent references so a change to that behavior is detected. Other formats do not acquire this marker merely because it is absent; their existing metadata and consumer behavior remain unchanged.
+
+
+## Intrinsic display dimensions and information query
+
+An explicit intrinsic size is retained as metadata and does not resample pixels.
+All eight native orientations keep the existing ordinary/EX/CMS behavior.
+`wml2::image_info` can obtain coded, oriented output and optional intrinsic
+geometry without pixel/profile expansion. Its JPEG XL route intentionally leaves
+encoded sample/color/alpha fields unknown and stops before those descriptions.
+See [the dimension contract and bounded-prefix limitations](jpeg-xl-intrinsic.md).

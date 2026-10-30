@@ -7,7 +7,7 @@
 #include <string.h>
 #define CHECK(x) do { if (!(x)) { fprintf(stderr,"failed: %s\n",#x); return 1; } } while(0)
 int main(int argc,char **argv) {
-  CHECK(argc==9);
+  CHECK(argc==9||argc==11);
   const char *mode=argv[7];
   unsigned w=atoi(argv[3]),h=atoi(argv[4]),channels=atoi(argv[5]),bits=atoi(argv[6]);
   size_t n=(size_t)w*h*channels*(bits==8?1:2);
@@ -16,6 +16,7 @@ int main(int argc,char **argv) {
   JxlEncoder *enc=JxlEncoderCreate(NULL);CHECK(enc);
   JxlBasicInfo info;JxlEncoderInitBasicInfo(&info);
   info.xsize=w;info.ysize=h;info.bits_per_sample=bits;
+  if(argc==11){info.intrinsic_xsize=(uint32_t)strtoul(argv[9],NULL,10);info.intrinsic_ysize=(uint32_t)strtoul(argv[10],NULL,10);}
   if(!strcmp(mode,"float")) info.exponent_bits_per_sample=5;
   info.num_color_channels=channels<=2?1:3;
   info.uses_original_profile=strcmp(mode,"lossy")!=0;

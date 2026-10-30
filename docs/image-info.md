@@ -1,9 +1,10 @@
 # Basic image information without pixel expansion
 
 `wml2::image_info` adds a basic information API for JPEG, PNG/APNG, GIF,
-TIFF/BigTIFF and PSD v1, using their enabled codec features. It is independent
+TIFF/BigTIFF, PSD v1 and dimension-only JPEG XL, using their enabled codec features. It is independent
 of EX buffer storage and does not change existing decoding entry points.
-No JPEG XL runtime or public metadata keys are changed.
+JPEG XL intrinsic declarations are accepted by its bounded still-image decoder;
+its dimension query is described in [jpeg-xl-intrinsic.md](jpeg-xl-intrinsic.md).
 
 ```rust
 use wml2::image_info::{image_info_from_reader, ImageCount, ImageStructure};
@@ -37,8 +38,9 @@ The `image_info` example accepts file paths and prints typed results.
 - `output`: the existing ordinary full-resolution decoder canvas if obtained,
   before caller scaling. `None` is not inferred from `coded`.
 - `intrinsic_display`: a separately specified intrinsic/display size if obtained.
-  All initial routes return `None`; this does **not** assert absence, and must
-  not be filled by copying coded/output dimensions. No resampling is performed.
+  JPEG XL returns an explicitly declared intrinsic size, or `None` when absent.
+  Other routes return `None` meaning not obtained. Never fill it by copying
+  coded/output dimensions. No resampling is performed.
 
 For JPEG/PNG/GIF/PSD, the ordinary decoder canvas, if decoding succeeds, matches
 the header canvas. These routes do not automatically apply EXIF orientation.
@@ -46,8 +48,10 @@ TIFF returns `output=None`: its ordinary decoder can skip an initial thumbnail
 or mask and select a later primary IFD. The first-directory query does not make
 that selection. TIFF's obtained Orientation 1–8 is reported separately and does
 not swap coded dimensions. JPEG/PNG EXIF orientation is not parsed (`None`).
-These distinctions provide the common dimension contract for #45; JPEG XL
-intrinsic-size acceptance and oriented output remain separate work.
+JPEG XL reports source `coded` axes and native orientation 1–8; `output` and
+`intrinsic_display` use oriented axes (swapped for 5–8). Its orientation is
+already applied by ordinary/EX/CMS decoding; do not apply it again. The intrinsic
+size is display metadata, not a request to resize the returned pixel canvas.
 
 Color, channels, bits and alpha describe **encoded samples**, not expanded
 RGBA callback storage or pixel opacity. Indexed PNG/GIF depths describe indices.
@@ -66,6 +70,7 @@ means a layer-capable document, not proof of nonempty layers.
 | PNG/APNG / `png` | IHDR canvas/depth/model, tRNS/alpha, acTL declared frame count | Preamble to first IDAT header. IHDR and selected tRNS/acTL CRC checked. Indexed palette dimensions checked; opaque metadata/palette data skipped. Frames not reconstructed/counted. |
 | GIF87a/89a / `gif` | Logical canvas, indexed color, transparency declarations, actual image-block count | Entire block structure through trailer. LZW sub-block bytes skipped. Palette depth reported for one image; multiframe depth unknown. Plain-text graphics make presentation count/alpha unknown; text-only GIF unsupported. GCE consumption and fixed12/11-byte text/application headers checked. |
 | TIFF/BigTIFF / `tiff` | First main IFD canvas/depth/model/sample kind/alpha/orientation; 1–64 samples | Existing bounded IFD parser projected to basic tags. Other payload ranges checked but bytes not read. No strips/tiles, EXIF/GPS, SubIFDs or later pages visited. Main-chain count known 1 only if next pointer zero; otherwise unknown. Output selection unknown. |
+| JPEG XL / `jpeg-xl` | Coded canvas, oriented output geometry, optional intrinsic display size, native orientation; still/animation organization | At most 64 logical codestream-prefix bytes, before bit depth/channels/ICC/frames. Color/channels/depth/alpha/sample kind unknown. Animation frame count unknown; no new animation or preview decoding support. Opaque auxiliary payloads skipped without unpacking. |
 | PSD v1 / `psd` | Existing supported 8/16-bit Gray/indexed/RGB/CMYK header canvas/channels | Existing 26-byte parser only. Resources/layers/composite not read. Alpha and layer count unknown; PSB/unsupported modes/depths rejected by existing header policy. |
 
 A `Still` result describes the examined conforming image stream; it is not a
@@ -81,7 +86,10 @@ Caller-supplied readers may have their own buffering.
 **Success is not image validation.** Header information can succeed on bad or
 absent pixel streams. It does not validate later frames/pages, JPEG tables or
 entropy, PNG IDAT/zlib and later chunks, TIFF compression/sample payloads, or
-PSD sections after the fixed header. Unknown TIFF tags are not semantically
+PSD sections after the fixed header, or JPEG XL sample/channel/profile/frame
+fields and container bytes following the queried prefix. JPEG XL `output` is
+conditional geometry if decoding succeeds, not a guarantee that its later
+features fit the decoder or its canvas limits. Unknown TIFF tags are not semantically
 validated, although known field-width/count arithmetic and payload ranges are
 bounded. Malformed/truncated queried structure is an error; no partial info is
 returned. Unsupported or feature-disabled routes return an error. Format
@@ -103,9 +111,12 @@ The existing `DecodeLimits` vocabulary is reused:
   materialized. File/range framing still has to fit within input length.
 - `expanded_bytes`: conservative known header workspace (minimum 4 KiB, plus
   TIFF projected-directory/field estimates), not a dimension-derived pixel
-  allocation. It is not total RSS, allocator overhead or caller-owned input.
-- `frames`: traversed or declared image counts. An unvisited TIFF chain and PSD
-  layer count stay unknown; they are not claimed to fit this count budget.
+  allocation. JPEG XL uses a fixed 64-byte stack prefix and at most 1024
+  visited prefix boxes; it does not invoke a decoder or allocate channel/profile
+  descriptions. It is not total RSS, allocator overhead or caller-owned input.
+- `frames`: traversed or declared image counts. JPEG XL checks at least one
+  image, and leaves animation count unknown without traversing frames. An
+  unvisited TIFF chain and PSD layer count stay unknown; they are not claimed to fit this count budget.
 - `pixels`, `animation_bytes`: intentionally unused; the API allocates no
   decoded canvases or animation frame buffers. Format dimension rules still apply.
 
@@ -117,7 +128,7 @@ successful incomplete information, not swallowed parse failures.
 
 ## Verification
 
-Local Rust 1.91.0/Linux x86_64 validation: 150 passing tests across library,
+Initial non-JXL validation for PR #57 (Rust 1.91.0/Linux x86_64): 150 passing tests across library,
 information API, PNG/APNG, GIF, TIFF/JPEG-TIFF/EX/metadata regression, PSD and
 callback targets; one manual benchmark normally ignored and passed separately.
 Standalone PNG/TIFF/GIF/PSD/JPEG information feature builds and the feature-off

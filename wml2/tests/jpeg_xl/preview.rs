@@ -198,7 +198,7 @@ fn preview_headers_toc_payload_extents_and_main_presence_are_checked_before_call
     rejected(&oversized_toc, DecodeLimits::default());
     let mut nonterminal = case.input.to_vec();
     // Toggle this C-encoded Modular frame's is_last field. The parsed regular
-    // header then takes the unsafe upstream SkipOutput path, so reject it early.
+    // header would construct pixel state via SkipOutput instead of skipping.
     nonterminal[case.preview_start + 2] ^= 0x10;
     assert!(rejected(&nonterminal, DecodeLimits::default()).contains("terminal visible"));
 }

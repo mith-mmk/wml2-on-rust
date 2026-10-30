@@ -459,12 +459,11 @@ fn composition_cancellation_stays_before_borrowed_input_admission() {
     )
     .unwrap();
     let expected = include_bytes!("fixtures/review/jxl-alpha-icc-c8a16o6.srgb.rgba");
-    for (actual, reference) in image
-        .buffer
-        .unwrap()
-        .chunks_exact(4)
-        .zip(expected.chunks_exact(4))
-    {
+    assert_eq!((image.width, image.height), (5, 7));
+    let actual = image.buffer.unwrap();
+    assert_eq!(expected.len(), 5 * 7 * 4);
+    assert_eq!(actual.len(), expected.len());
+    for (actual, reference) in actual.chunks_exact(4).zip(expected.chunks_exact(4)) {
         for c in 0..3 {
             assert!(actual[c].abs_diff(reference[c]) <= 2);
         }

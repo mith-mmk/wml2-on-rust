@@ -1,0 +1,230 @@
+{
+  "issue": 42,
+  "scope": "Qualified full-resolution straight integer mixed-depth alpha only; other alpha/extra-plane policies explicitly refused",
+  "base_sha": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
+  "runtime_checkpoint": "77831f695636f50714c9a7228711ff1581a284af",
+  "environment": {
+    "rustc": "1.91.0",
+    "host": "Linux x86_64",
+    "jxl": "0.7.4 default-features=false",
+    "independent_C_libjxl_headers_runtime": "0.11.2",
+    "LittleCMS": "2.16",
+    "private_target_directories": true,
+    "cargo_incremental_override": false,
+    "root_lock_sha256": "879084552f4e5f1ddb20599355bfe5810b5284356ed2681b982010bbd0aec5be",
+    "baseline_lock_sha256": "879084552f4e5f1ddb20599355bfe5810b5284356ed2681b982010bbd0aec5be"
+  },
+  "tests": {
+    "expanded": {
+      "passed": 58,
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers"
+    },
+    "minimal": {
+      "passed": 44,
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers"
+    },
+    "cms_without_ex": {
+      "passed": 21,
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,color-management --test jpeg_xl"
+    },
+    "disabled": {
+      "passed": 1,
+      "command": "cargo test -p wml2 --locked --no-default-features --test jpeg_xl"
+    },
+    "ci_selector": 35,
+    "clippy": "11 existing library warnings; no new alpha diagnostics",
+    "format_diff": "pass",
+    "C_tools": "-Wall -Wextra -Werror pass"
+  },
+  "fixtures": {
+    "matrix_cases": 50,
+    "new_mixed": 40,
+    "same_depth_controls": 10,
+    "depths": [
+      8,
+      9,
+      10,
+      12,
+      16
+    ],
+    "color_models": [
+      "GrayAlpha",
+      "RGBA"
+    ],
+    "coded": [
+      7,
+      5
+    ],
+    "orientations": "1..8 distributed; not full orientation x depth cross-product",
+    "additional_ICC_cases": 2,
+    "independent_valid_refusal_cases": 8,
+    "manifest_sha256": "af119c7673c743930f18c3bf7a64ef6ed08163ccfcf8fc907a41d16cae725bf0",
+    "total_generated_fixture_bytes": 76085,
+    "pixel_oracle": "C libjxl RGBA16; independently recover original source color/alpha codes; LittleCMS transforms C output ICC/RGB16 and copies alpha; no WML2 expected-output generation"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 170,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14352384,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "7770a4fa913c44beba1e5e9a749e40271daf7b0760fc56a04ad0719b7832b141",
+    "scope": "109 alpha qualification cases (50 Gray/RGB depth/orientation fixtures, ordinary+EX, eight explicit unsupported-channel refusals, promoted-canvas admission) plus additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "display": {
+    "coded": [
+      64,
+      48
+    ],
+    "orientation": 6,
+    "output": [
+      48,
+      64
+    ],
+    "color_bits": 8,
+    "alpha_bits": 16,
+    "C_pixels_equal": true,
+    "rgba_sha256": "cb52f7eaac6866a720b9154b24dedecf1df0eb3670090769a0415e0200dd0d3b"
+  },
+  "benchmarks": [
+    {
+      "case": "jxl-rgba16",
+      "route": "ordinary",
+      "iterations": 150,
+      "process_pairs": 3,
+      "warmups": 3,
+      "process_medians_us": {
+        "before": [
+          54.036,
+          55.4285,
+          55.2335
+        ],
+        "after": [
+          54.923,
+          55.048,
+          55.4385
+        ]
+      },
+      "before_us": 55.2335,
+      "after_us": 55.048,
+      "change_percent": -0.3358469045054102,
+      "hash": "17076559143681454236"
+    },
+    {
+      "case": "jxl-icc-lossless",
+      "route": "managed",
+      "iterations": 150,
+      "process_pairs": 3,
+      "warmups": 3,
+      "process_medians_us": {
+        "before": [
+          135.129,
+          192.0745,
+          194.5085
+        ],
+        "after": [
+          136.09,
+          144.568,
+          199.2955
+        ]
+      },
+      "before_us": 192.0745,
+      "after_us": 144.568,
+      "change_percent": -24.733371686507056,
+      "hash": "12438429659714107065"
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "route": "ordinary",
+      "iterations": 40,
+      "process_pairs": 3,
+      "warmups": 3,
+      "process_medians_us": {
+        "before": [
+          15972.641,
+          16174.379,
+          17133.248
+        ],
+        "after": [
+          15909.16,
+          16514.4165,
+          16051.0515
+        ]
+      },
+      "before_us": 16174.379,
+      "after_us": 16051.0515,
+      "change_percent": -0.7624867699712046,
+      "hash": "8439627164837879290"
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "route": "managed",
+      "iterations": 3,
+      "process_pairs": 3,
+      "warmups": 3,
+      "process_medians_us": {
+        "before": [
+          1074160.401,
+          1146258.803,
+          1069493.018
+        ],
+        "after": [
+          1077581.764,
+          1137723.901,
+          1103659.86
+        ]
+      },
+      "before_us": 1074160.401,
+      "after_us": 1103659.86,
+      "change_percent": 2.746280627412556,
+      "hash": "1509610803079936459"
+    }
+  ],
+  "small_ICC_longer_followup": {
+    "case": "jxl-icc-lossless",
+    "route": "managed",
+    "reason": "Initial short-process measurements were bimodal/inconclusive, including an apparent25% gain; longer follow-up does not replace or hide those results",
+    "process_medians_us": {
+      "before": [
+        136.1805,
+        185.9355,
+        191.9495
+      ],
+      "after": [
+        134.513,
+        131.633,
+        192.365
+      ]
+    },
+    "before_us": 185.9355,
+    "after_us": 134.513,
+    "iterations": 2000,
+    "process_pairs": 3,
+    "warmups": 3,
+    "hash": "12438429659714107065"
+  },
+  "benchmark_method": {
+    "build": "cargo build -p wml2 --locked --release --no-default-features --features jpeg-xl,image-buffer-ex,color-management; distinct private CARGO_TARGET_DIR per tree, identical registry versions/checksums/root lock",
+    "harness": "rustc --edition 2024 -C opt-level=3 wml2-test/scripts/jpegxl_alpha_bench.rs --extern wml2=<target>/release/libwml2.rlib -L dependency=<target>/release/deps -o <.test-dir>/probe",
+    "run": "taskset -c 0 <probe> <input.jxl> ordinary|managed <iterations>; three alternating process pairs, three warmups per process; metadata creation timed, full pixel hashes outside timed interval",
+    "before_sha256": "7aabe70e743fbe09d05443b21bb1f121167e988a01c29440b235d7fd657c1e3b",
+    "after_sha256": "cfea42c1f059db0a8f440ef519da9e41b90c94d3c84bd126bfb3e32545a03950",
+    "interpretation": "All output hashes match. Ordinary and large-managed medians differ-0.76%..+2.75%; small ICC/CMS is bimodal and inconclusive even with longer follow-up, with overlapping process ranges. No general speedup/no-regression/zero-overhead/RSS guarantee; large managed only3 timed calls per process."
+  },
+  "limits": {
+    "channels": "at most one full-resolution straight alpha in accepted profile",
+    "mixed_native": "normalized Rgba16; independent source alpha depth metadata",
+    "canvas": "8 bytes per pixel for mixed native working canvas admitted before decoder; 7x5 passes280/rejects279 bytes before callbacks",
+    "other_caps": "unchanged, including fixed caps with unlimited caller limits"
+  },
+  "remaining": [
+    "associated alpha conversion requires separately qualified unassociation/zero-alpha/ICC-order contract",
+    "subsampled alpha fails the pinned direct core on independent fixture; runtime refuses before codec",
+    "float/other alpha depths, multiple/general extra planes explicitly refused",
+    "no HDR/tone mapping, animation, streaming, intrinsic/preview extension or production jxl upgrade",
+    "reconcile additive WASM cases and preflight edits when combining independent pending JXL PRs"
+  ],
+  "fixture_evidence_checkpoint": "ccdfa597311f292986affe5fbbca873fa47e8d1f"
+}

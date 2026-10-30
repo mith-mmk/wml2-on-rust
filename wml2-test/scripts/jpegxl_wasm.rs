@@ -504,5 +504,38 @@ fn intrinsic_cases() -> u32 {
         None
     );
     count += 1;
+    count + alpha_cases()
+}
+
+fn alpha_cases() -> u32 {
+    let mut count=0;
+    for (input,oracle,color_bits,alpha_bits,orientation) in include!("../../wml2/tests/jpeg_xl/alpha_cases.rs") {
+        let expected=words(oracle,16);
+        let native_bits=if color_bits!=alpha_bits || matches!(color_bits,9|10) {16} else {color_bits};
+        let format=match native_bits {8=>PixelFormatEx::Rgba8,12=>PixelFormatEx::Rgba12,_=>PixelFormatEx::Rgba16};
+        let image=image_from_ex(input,format,PrecisionConversion::Exact).unwrap();
+        assert_eq!((image.width(),image.height()),if orientation>=5 {(5,7)} else {(7,5)});
+        for (i,(actual,expected)) in words(image.bytes().unwrap(),native_bits).iter().zip(&expected).enumerate() {
+            let normalized=if native_bits==16 {u32::from(*expected)} else {(u32::from(*expected)*((1<<native_bits)-1)+32767)/65535};
+            assert!(u32::from(*actual).abs_diff(normalized)<=1);
+            let depth=if i%4==3 {alpha_bits} else {color_bits};let max=(1u32<<depth)-1;let storage=(1u32<<native_bits)-1;
+            assert_eq!((u32::from(*actual)*max+storage/2)/storage,(u32::from(*expected)*max+32767)/65535);
+        }
+        count+=1;
+        for (actual,expected) in image_from(input).unwrap().buffer.unwrap().iter().zip(&expected) {assert!(actual.abs_diff(((u32::from(*expected)*255+32767)/65535) as u8)<=1);}
+        count+=1;
+    }
+    for input in [
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-associated.jxl").as_slice(),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-subsampled.jxl"),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-depth.jxl"),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-spot.jxl"),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-multiple.jxl"),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-multiple-alpha.jxl"),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-float-alpha.jxl"),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-alpha4.jxl"),
+    ] {assert!(image_from(input).is_err());assert!(image_from_ex(input,PixelFormatEx::Rgba16,PrecisionConversion::Exact).is_err());count+=1;}
+    let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-3c8a16o5.jxl");
+    assert!(image_from_with_limits(input,DecodeLimits {animation_bytes:279,..Default::default()}).is_err());count+=1;
     count
 }

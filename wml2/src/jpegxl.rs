@@ -16,6 +16,8 @@ use std::io::SeekFrom;
 
 #[path = "jpegxl_brob.rs"]
 mod brob;
+#[path = "jpegxl_metadata.rs"]
+mod structured_metadata;
 
 type Error = Box<dyn std::error::Error>;
 const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
@@ -820,6 +822,12 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         retained_workspace,
         limits.expanded_bytes,
         "JPEG XL metadata workspace",
+    )?;
+    let retained_workspace = structured_metadata::augment(
+        &mut input.metadata,
+        limits,
+        metadata_bytes,
+        retained_workspace,
     )?;
     let decoder = complete(decoder.process(&mut stream, None).map_err(codec_error)?)?;
     let row = mul(h.width, mul(channels, if bits == 8 { 1 } else { 2 })?)?;

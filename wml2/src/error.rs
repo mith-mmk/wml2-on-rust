@@ -23,7 +23,7 @@ impl Debug for ImgError {
 }
 
 impl ImgError {
-    #[cfg(feature = "jpeg")]
+    #[cfg(any(feature = "jpeg", all(feature = "jpeg-xl", feature = "exif")))]
     pub(crate) fn is_optional_metadata_error(&self) -> bool {
         let kind = match &self.repr {
             Repr::SimpleMessage(kind, _) => kind,

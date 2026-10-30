@@ -112,6 +112,7 @@ fn independent_compressed_and_plain_containers_preserve_pixels_and_indexed_metad
         metadata["JPEG XL Source Orientation"],
         DataMap::UInt(1)
     ));
+    #[cfg(not(feature = "exif"))]
     assert!(!metadata.contains_key("EXIF")); // raw Exif says 6, codestream remains authoritative
     #[cfg(feature = "image-buffer-ex")]
     {

@@ -95,11 +95,11 @@ def affected(paths, read_pair):
             # owns public types/reexports, so path-only selection cannot narrow it.
             return CODECS, True, 'shared TIFF metadata types or module wiring'
         elif path.startswith(('wml2/src/tiff/', 'wml2/tests/tiff_')) or path == 'wml2/src/highres/tiff.rs':
-            # JPEG/PNG/WebP EXIF also call the TIFF directory reader.
-            codecs.update(LOCAL_CODECS)
+            # JPEG/PNG/WebP/JXL EXIF also call the TIFF directory reader.
+            codecs.update(LOCAL_CODECS | {'jpeg-xl'})
         elif path == 'wml2/src/metadata/exif.rs':
-            # These formats use the TIFF metadata reader; JP2/JXL/AVIF do not.
-            codecs.update(LOCAL_CODECS)
+            # JXL now uses these EXIF helpers too; JP2/AVIF do not.
+            codecs.update(LOCAL_CODECS | {'jpeg-xl'})
         elif path.startswith(('wml2/src/png/', 'wml2/tests/png_')):
             codecs.update({'png', 'tiff'})
         elif path.startswith('wml2-test/examples/') and path.endswith('.rs'):

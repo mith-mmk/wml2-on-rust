@@ -343,79 +343,36 @@ fn parse_apng_info(profile: &ImageProfiles) -> Result<Option<ApngInfo>, Error> {
     }
 }
 
-fn filtered_scanlines<F>(width: u32, height: u32, mut row: F) -> Result<Vec<u8>, Error>
+fn filtered_scanlines<F>(width: u32, height: u32, bpp: usize, mut row: F) -> Result<Vec<u8>, Error>
 where
     F: FnMut(u32) -> Result<Vec<u8>, Error>,
 {
-    let mut prev_buf = Vec::new();
+    let row_bytes = (width as usize)
+        .checked_mul(bpp)
+        .ok_or("PNG row overflow")?;
+    let mut prev_buf: Vec<u8> = Vec::new();
     let mut data = Vec::new();
-
     for y in 0..height {
         let buf = row(y)?;
-        if buf.len() < width as usize * 4 {
-            let boxstr = format!("data shotage width {} but {}", width, buf.len());
+        if buf.len() < row_bytes {
             return Err(Box::new(ImgError::new_const(
                 ImgErrorKind::EncodeError,
-                boxstr,
+                format!("data shotage width {} but {}", width, buf.len()),
             )));
         }
-        let mut inptr = 0;
-        data.push(4_u8);
-        for _ in 0..width {
-            let mut red = buf[inptr];
-            let mut green = buf[inptr + 1];
-            let mut blue = buf[inptr + 2];
-            let mut alpha = buf[inptr + 3];
-            let (red_a, green_a, blue_a, alpha_a);
-            if inptr > 0 {
-                red_a = buf[inptr - 4] as i32;
-                green_a = buf[inptr - 3] as i32;
-                blue_a = buf[inptr - 2] as i32;
-                alpha_a = buf[inptr - 1] as i32;
+        data.push(4);
+        for i in 0..row_bytes {
+            let left = if i >= bpp { buf[i - bpp] as i32 } else { 0 };
+            let above = if y > 0 { prev_buf[i] as i32 } else { 0 };
+            let upper_left = if y > 0 && i >= bpp {
+                prev_buf[i - bpp] as i32
             } else {
-                red_a = 0;
-                green_a = 0;
-                blue_a = 0;
-                alpha_a = 0;
-            }
-            let (red_b, green_b, blue_b, alpha_b);
-            if !prev_buf.is_empty() {
-                red_b = prev_buf[inptr] as i32;
-                green_b = prev_buf[inptr + 1] as i32;
-                blue_b = prev_buf[inptr + 2] as i32;
-                alpha_b = prev_buf[inptr + 3] as i32;
-            } else {
-                red_b = 0;
-                green_b = 0;
-                blue_b = 0;
-                alpha_b = 0;
-            }
-            let (red_c, green_c, blue_c, alpha_c);
-            if !prev_buf.is_empty() && inptr > 0 {
-                red_c = prev_buf[inptr - 4] as i32;
-                green_c = prev_buf[inptr - 3] as i32;
-                blue_c = prev_buf[inptr - 2] as i32;
-                alpha_c = prev_buf[inptr - 1] as i32;
-            } else {
-                red_c = 0;
-                green_c = 0;
-                blue_c = 0;
-                alpha_c = 0;
-            }
-            red = paeth_enc(red, red_a, red_b, red_c);
-            green = paeth_enc(green, green_a, green_b, green_c);
-            blue = paeth_enc(blue, blue_a, blue_b, blue_c);
-            alpha = paeth_enc(alpha, alpha_a, alpha_b, alpha_c);
-
-            data.push(red);
-            data.push(green);
-            data.push(blue);
-            data.push(alpha);
-            inptr += 4;
+                0
+            };
+            data.push(paeth_enc(buf[i], left, above, upper_left));
         }
         prev_buf = buf;
     }
-
     Ok(miniz_oxide::deflate::compress_to_vec_zlib(&data, 8))
 }
 
@@ -424,7 +381,7 @@ fn encode_main_idat(
     width: u32,
     height: u32,
 ) -> Result<Vec<u8>, Error> {
-    filtered_scanlines(width, height, |y| {
+    filtered_scanlines(width, height, 4, |y| {
         Ok(image
             .drawer
             .encode_pick(0, y as usize, width as usize, 1, None)?
@@ -433,20 +390,27 @@ fn encode_main_idat(
 }
 
 fn encode_frame_data(width: u32, height: u32, buffer: &[u8]) -> Result<Vec<u8>, Error> {
-    filtered_scanlines(width, height, |y| {
+    filtered_scanlines(width, height, 4, |y| {
         let start = y as usize * width as usize * 4;
         let end = start + width as usize * 4;
         Ok(buffer[start..end].to_vec())
     })
 }
 
-fn write_ihdr(write_buffer: &mut Vec<u8>, crc32: &CRC32, width: u32, height: u32) {
+fn write_ihdr(
+    write_buffer: &mut Vec<u8>,
+    crc32: &CRC32,
+    width: u32,
+    height: u32,
+    depth: u8,
+    color: u8,
+) {
     let mut temp_buffer: Vec<u8> = Vec::with_capacity(20);
     write_bytes(&IMAGE_HEADER, &mut temp_buffer);
     write_u32_be(width, &mut temp_buffer);
     write_u32_be(height, &mut temp_buffer);
-    write_byte(8, &mut temp_buffer);
-    write_byte(6, &mut temp_buffer);
+    write_byte(depth, &mut temp_buffer);
+    write_byte(color, &mut temp_buffer);
     write_byte(0, &mut temp_buffer);
     write_byte(0, &mut temp_buffer);
     write_byte(0, &mut temp_buffer);
@@ -528,7 +492,7 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     let mut write_buffer: Vec<u8> = Vec::new();
     write_bytes(&SIGNATURE, &mut write_buffer);
 
-    write_ihdr(&mut write_buffer, &crc32, width, height);
+    write_ihdr(&mut write_buffer, &crc32, width, height, 8, 6);
     if let Some(exif) = exif {
         write_chunk(&mut write_buffer, &crc32, &EXIF_PROFILE, &exif);
     }
@@ -602,4 +566,200 @@ pub fn encode(image: &mut EncodeOptions<'_>) -> Result<Vec<u8>, Error> {
     write_chunk(&mut write_buffer, &crc32, &IMAGE_END, &[]);
     image.drawer.encode_end(None)?;
     Ok(write_buffer)
+}
+
+/// Encodes a static PNG from an explicit Gray8/16 or straight RGBA8/16 pick.
+/// EX 16-bit bytes are little endian; PNG filtering uses big-endian bytes.
+/// `ICC Profile` describes the output; `Source ICC Profile` is provenance only.
+/// No color transformation, alpha compositing, or APNG export is performed.
+#[cfg(feature = "image-buffer-ex")]
+pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx<'_>) -> Result<Vec<u8>, Error> {
+    use crate::draw::{PixelFormatEx, image_buffer_ex::validate_bytes};
+    let format = option.output.format;
+    if !matches!(
+        format,
+        PixelFormatEx::Gray8 | PixelFormatEx::Gray16 | PixelFormatEx::Rgba8 | PixelFormatEx::Rgba16
+    ) {
+        return Err("PNG EX output requires Gray/RGBA8 or16; explicitly request conversion from12-bit storage".into());
+    }
+    let profile = option
+        .drawer
+        .encode_start_ex(None)?
+        .ok_or("PNG EX image profiles missing")?;
+    let result = (|| {
+        let width = profile.legacy.width;
+        let height = profile.legacy.height;
+        // PNG dimensions are limited to 2^31-1, even on 64-bit platforms.
+        if width > i32::MAX as usize || height > i32::MAX as usize {
+            return Err("PNG dimensions exceed 2^31-1".into());
+        }
+        let (stride, length) = format.extent(width, height, option.output.stride)?;
+        let limits = crate::limits::current();
+        crate::limits::check(
+            width.checked_mul(height).ok_or("PNG pixel overflow")?,
+            limits.pixels,
+            "PNG encode pixels",
+        )?;
+        crate::limits::check(1, limits.frames, "PNG encode frames")?;
+        let row = format.row_bytes(width)?;
+        let filtered = row
+            .checked_add(1)
+            .and_then(|n| n.checked_mul(height))
+            .ok_or("PNG scanline overflow")?;
+        // Account for picked pixels, filtered input, compressed output and chunk
+        // assembly copies, plus two endian-conversion rows. Codec internals and
+        // caller-owned storage are outside this adapter's workspace estimate.
+        let workspace = filtered
+            .checked_mul(4)
+            .and_then(|n| n.checked_add(length))
+            .and_then(|n| n.checked_add(row.checked_mul(2)?))
+            .and_then(|n| n.checked_add(1024))
+            .ok_or("PNG workspace overflow")?;
+        crate::limits::check(workspace, limits.expanded_bytes, "PNG EX encode workspace")?;
+        let mut metadata = profile.legacy.metadata.unwrap_or_default();
+        if let Some(tags) = option.drawer.metadata_ex()? {
+            metadata.extend(tags);
+        }
+        if metadata
+            .get(ENCODE_ANIMATION_FRAMES_KEY)
+            .is_some_and(|value| !matches!(value, DataMap::UInt(0)))
+        {
+            return Err(
+                "PNG EX supports static images only; use the legacy APNG encoder for animation"
+                    .into(),
+            );
+        }
+        let gray_expansion = profile.format.channels() == 1
+            && format.channels() == 4
+            && metadata.contains_key("ICC Profile");
+        let explicit = option.options.as_ref().and_then(|m| m.get("ICC Profile"));
+        let expected = if format.channels() == 1 {
+            b"GRAY"
+        } else {
+            b"RGB "
+        };
+        let model = |value: &DataMap| -> Result<[u8; 4], Error> {
+            let DataMap::ICCProfile(bytes) = value else {
+                return Err("PNG output ICC must be ICCProfile bytes".into());
+            };
+            crate::limits::check(bytes.len(), limits.metadata_bytes, "PNG ICC metadata")?;
+            if bytes.len() < 128
+                || &bytes[36..40] != b"acsp"
+                || u32::from_be_bytes(bytes[..4].try_into()?) as usize != bytes.len()
+            {
+                return Err(
+                    "PNG output ICC requires a complete ICC header and matching profile length"
+                        .into(),
+                );
+            }
+            Ok(bytes[16..20].try_into()?)
+        };
+        if gray_expansion && explicit.map(&model).transpose()? != Some(*expected) {
+            return Err("PNG Gray ICC cannot describe expanded RGB; supply a compatible output ICC or request Gray".into());
+        }
+        // Never promote source provenance to output ICC. Known mismatched source
+        // models require an explicit compatible output declaration, as in AVIF EX.
+        if let Some(DataMap::ICCProfile(source)) = metadata.get("Source ICC Profile") {
+            crate::limits::check(
+                source.len(),
+                limits.metadata_bytes,
+                "PNG source ICC metadata",
+            )?;
+            if source.len() >= 128
+                && &source[36..40] == b"acsp"
+                && &source[16..20] != expected
+                && explicit.map(&model).transpose()? != Some(*expected)
+            {
+                return Err("PNG source ICC model differs from output; supply a compatible output ICC or request native Gray".into());
+            }
+        }
+        let icc = explicit.or_else(|| metadata.get("ICC Profile"));
+        let icc_bytes = if let Some(value) = icc {
+            if model(value)? != *expected {
+                return Err("PNG output ICC model differs from output pixels".into());
+            }
+            let DataMap::ICCProfile(bytes) = value else {
+                unreachable!()
+            };
+            Some(bytes)
+        } else {
+            None
+        };
+        let exif = get_exif_option(option.options.as_ref(), Some(&metadata))?;
+        let metadata_bytes = icc_bytes
+            .map_or(0, Vec::len)
+            .checked_add(exif.as_ref().map_or(0, Vec::len))
+            .ok_or("PNG metadata overflow")?;
+        crate::limits::check(metadata_bytes, limits.metadata_bytes, "PNG encode metadata")?;
+        crate::limits::check(
+            workspace
+                .checked_add(
+                    metadata_bytes
+                        .checked_mul(4)
+                        .ok_or("PNG metadata workspace overflow")?,
+                )
+                .ok_or("PNG workspace overflow")?,
+            limits.expanded_bytes,
+            "PNG EX encode workspace",
+        )?;
+        let picked = option
+            .drawer
+            .encode_pick_ex(0, 0, width, height, option.output, None)?
+            .ok_or("PNG EX pixels missing")?;
+        if picked.width() != width
+            || picked.height() != height
+            || picked.format() != format
+            || picked.stride() != stride
+        {
+            return Err("PNG EX picker returned a different layout than requested".into());
+        }
+        validate_bytes(picked.bytes(), width, height, format, stride, length)?;
+        let crc = CRC32::new();
+        let mut output = SIGNATURE.to_vec();
+        write_ihdr(
+            &mut output,
+            &crc,
+            width as u32,
+            height as u32,
+            format.bits(),
+            if format.channels() == 1 { 0 } else { 6 },
+        );
+        if let Some(bytes) = icc_bytes {
+            let mut payload = b"Output ICC\0\0".to_vec();
+            payload.extend(miniz_oxide::deflate::compress_to_vec_zlib(bytes, 8));
+            if payload.len() > i32::MAX as usize {
+                return Err("PNG ICC exceeds chunk size limit".into());
+            }
+            write_chunk(&mut output, &crc, b"iCCP", &payload);
+        }
+        if let Some(bytes) = exif {
+            if bytes.len() > i32::MAX as usize {
+                return Err("PNG EXIF exceeds chunk size limit".into());
+            }
+            write_chunk(&mut output, &crc, &EXIF_PROFILE, &bytes);
+        }
+        let idat =
+            filtered_scanlines(width as u32, height as u32, format.bytes_per_pixel(), |y| {
+                let start = y as usize * stride;
+                let mut bytes = picked.bytes()[start..start + row].to_vec();
+                if format.bits() == 16 {
+                    for sample in bytes.chunks_exact_mut(2) {
+                        sample.swap(0, 1);
+                    }
+                }
+                Ok(bytes)
+            })?;
+        if idat.len() > i32::MAX as usize {
+            return Err("PNG IDAT exceeds chunk size limit".into());
+        }
+        write_chunk(&mut output, &crc, &IMAGE_DATA, &idat);
+        write_chunk(&mut output, &crc, &IMAGE_END, &[]);
+        crate::limits::check(output.len(), limits.expanded_bytes, "PNG encoded output")?;
+        Ok(output)
+    })();
+    let ended = option.drawer.encode_end_ex(None);
+    match (result, ended) {
+        (Err(error), _) | (Ok(_), Err(error)) => Err(error),
+        (Ok(data), Ok(())) => Ok(data),
+    }
 }

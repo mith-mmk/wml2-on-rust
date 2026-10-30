@@ -277,3 +277,7 @@ avifenc_codec = { package = "avifenc-rust", version = "0.1.2", optional = true }
 icc_profile = { package = "icc-profile", version = "0.0.7", optional = true }
 
 miniz_oxide = {version = "0.7.1"}
+
+[dev-dependencies]
+# Independent decoder for PNG EX byte-order, filter and metadata verification.
+png = "0.18"

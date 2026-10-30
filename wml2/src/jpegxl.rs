@@ -14,9 +14,14 @@ use jxl_codec::headers::extra_channels::ExtraChannel;
 use jxl_codec::headers::{FileHeader, JxlHeader};
 use std::io::SeekFrom;
 
+#[path = "jpegxl_brob.rs"]
+mod brob;
+
 type Error = Box<dyn std::error::Error>;
 const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
 const MAX_INPUT: usize = 64 * 1024 * 1024;
+// Separate from the file cap: caller unlimited() cannot admit unbounded brob expansion.
+const MAX_BROB_METADATA: usize = 64 * 1024 * 1024;
 const MAX_HEADER: usize = 64 * 1024;
 const MAX_PIXELS: usize = 4 * 1024 * 1024;
 
@@ -65,6 +70,13 @@ fn append(out: &mut Vec<u8>, data: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
+fn box_key(stage: &str, index: usize, kind: &[u8]) -> String {
+    format!(
+        "JPEG XL {stage} Box {index} {}",
+        kind.iter().map(|v| format!("{v:02x}")).collect::<String>()
+    )
+}
+
 struct Input {
     codestream: Vec<u8>,
     metadata: Vec<(String, DataMap)>,
@@ -93,6 +105,7 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
     let mut finished = false;
     let mut partial = false;
     let mut seen_level = false;
+    let mut expanded_brob = 0usize;
     while pos < input.len() {
         if input.len() - pos < 8 {
             return Err(invalid("truncated JPEG XL box header"));
@@ -163,16 +176,49 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
                 seen_level = true;
             }
             b"brob" => {
-                return Err(unsupported(
-                    "JPEG XL compressed metadata boxes are unsupported",
-                ));
+                let kind: &[u8; 4] = data
+                    .get(..4)
+                    .ok_or_else(|| invalid("truncated JPEG XL brob type"))?
+                    .try_into()?;
+                // ISO container compression excludes codec/control data and
+                // recursive wrappers. Retaining opaque jbrd is not reconstruction.
+                if kind.starts_with(b"jxl") || matches!(kind, b"jbrd" | b"brob") {
+                    return Err(invalid("forbidden JPEG XL brob box type"));
+                }
+                if kind.starts_with(b"JXL") || kind == b"ftyp" {
+                    return Err(unsupported("JPEG XL brob control box is unsupported"));
+                }
+                limits::check(box_count, 1024, "JPEG XL box count")?;
+                let source_key = box_key("Source", box_count, b"brob");
+                let decoded_key = box_key("Decoded", box_count, kind);
+                let retained = add(
+                    out.metadata_bytes,
+                    add(add(data.len(), source_key.len())?, decoded_key.len())?,
+                )?;
+                limits::check(
+                    retained,
+                    limits.metadata_bytes,
+                    "JPEG XL container metadata",
+                )?;
+                let maximum = limits
+                    .metadata_bytes
+                    .saturating_sub(retained)
+                    .min(MAX_BROB_METADATA.saturating_sub(expanded_brob));
+                // The original input/codestream assembly and metadata copies
+                // remain live while Brotli runs. Output growth and all codec
+                // allocator requests are charged by the shared bounded helper.
+                let base = add(mul(input.len(), 3)?, mul(retained, 2)?)?;
+                let decoded = brob::decompress(&data[4..], maximum, base, limits.expanded_bytes)?;
+                expanded_brob = add(expanded_brob, decoded.len())?;
+                out.metadata_bytes = add(retained, decoded.len())?;
+                let mut raw = Vec::new();
+                append(&mut raw, data)?;
+                out.metadata.push((source_key, DataMap::Raw(raw)));
+                out.metadata.push((decoded_key, DataMap::Raw(decoded)));
             }
             b"JXL " => return Err(invalid("duplicate JPEG XL signature")),
             _ => {
-                let key = format!(
-                    "JPEG XL Source Box {box_count} {}",
-                    kind.iter().map(|v| format!("{v:02x}")).collect::<String>()
-                );
+                let key = box_key("Source", box_count, kind);
                 out.metadata_bytes = add(out.metadata_bytes, add(data.len(), key.len())?)?;
                 limits::check(
                     out.metadata_bytes,
@@ -910,6 +956,46 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn brob_metadata_quota_counts_raw_decoded_and_keys_at_the_exact_boundary() {
+        let raw = include_bytes!("../tests/fixtures/review/jxl-rgba8.jxl");
+        let compressed = include_bytes!("../tests/fixtures/review/jxl-brob-xml.br");
+        let xml = b"<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><metadata>JPEG XL bounded metadata</metadata></x:xmpmeta>";
+        let mut input = SIGNATURE.to_vec();
+        let mut put = |kind: &[u8; 4], payload: &[u8]| {
+            input.extend(((payload.len() + 8) as u32).to_be_bytes());
+            input.extend(kind);
+            input.extend(payload);
+        };
+        put(b"ftyp", b"jxl \0\0\0\0jxl ");
+        put(b"jxlc", raw);
+        let mut payload = b"xml ".to_vec();
+        payload.extend(compressed);
+        put(b"brob", &payload);
+        let needed = payload.len()
+            + xml.len()
+            + box_key("Source", 2, b"brob").len()
+            + box_key("Decoded", 2, b"xml ").len();
+        let limits = DecodeLimits {
+            metadata_bytes: needed,
+            ..Default::default()
+        };
+        assert_eq!(unpack(&input, limits).unwrap().metadata_bytes, needed);
+        assert!(
+            unpack(
+                &input,
+                DecodeLimits {
+                    metadata_bytes: needed - 1,
+                    ..limits
+                }
+            )
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("brob expanded metadata")
+        );
+    }
+
     #[test]
     fn bounded_icc_cursor_matches_pinned_codec_before_frame_headers() {
         for source in [

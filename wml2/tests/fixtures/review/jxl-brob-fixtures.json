@@ -1,0 +1,58 @@
+{
+  "encoder": "C libbrotli 0x1001000, quality5, lgwin22, generic",
+  "oracle": "C libjxl 11002, decompress-boxes + RGBA8; both container variants verified against existing independent djxl pixels",
+  "license": "Generated deterministic test data; existing RGBA8 fixture provenance in jxl-fixtures.json",
+  "source_jxl_sha256": "29d3716e4e36680dd8f983bab86415d742151831dd4bf4a8662a2863e9dc055e",
+  "streams": [
+    {
+      "name": "empty",
+      "file": "jxl-brob-empty.br",
+      "compressed_bytes": 1,
+      "expanded_bytes": 0,
+      "compressed_sha256": "67586e98fad27da0b9968bc039a1ef34c939b9b8e523a8bef89d478608c5ecf6",
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "xml",
+      "file": "jxl-brob-xml.br",
+      "compressed_bytes": 77,
+      "expanded_bytes": 93,
+      "compressed_sha256": "f1f18e1f88d01a82507a3aab34ac0f2cb7445ed674972dfad57fafe001e44d20",
+      "expanded_sha256": "3661c866cf8d0c9a99ca8a6f56927ed6633b42e1fdd075c120cd8d2a9359dc5d"
+    },
+    {
+      "name": "exif",
+      "file": "jxl-brob-exif.br",
+      "compressed_bytes": 29,
+      "expanded_bytes": 30,
+      "compressed_sha256": "7e74da2c3ee748eedfa4de8fb5d4cd5c86140140b138fbd53c495e505d8743d6",
+      "expanded_sha256": "69dab338edc717d42eeba277338b9fe6b52551b7980e226b5420416e68e1ac4b"
+    },
+    {
+      "name": "repeat",
+      "file": "jxl-brob-repeat.br",
+      "compressed_bytes": 13,
+      "expanded_bytes": 65659,
+      "compressed_sha256": "d6696d6be25c7f5df4c98e7319e286400cd1e8523cffe82b9577cdb84c5646e3",
+      "expanded_sha256": "ba1dd8ea7c5b822accec7995726b5f169a4f8746bee1d7b83a1b4c22062af8b2"
+    },
+    {
+      "name": "random",
+      "file": "jxl-brob-random.br",
+      "compressed_bytes": 16419,
+      "expanded_bytes": 16415,
+      "compressed_sha256": "c8a3ab2c17175b3e3ef9ca61b2af838ebbda63383c3f4cd59e5bf8dc4b38b8ad",
+      "expanded_sha256": "ce56f600794a109f6525eaa8210e31e02d358e55a550f6f11ac50d18291f98f0"
+    }
+  ],
+  "invalid_streams": {
+    "jxl-brob-large-window-invalid.br": {
+      "sha256": "9ccf1b5fa24e5141ef0b54f26aac17e8a40faa4f36d825da5ae7bc0c3a4b9eef",
+      "reason": "C encoder large-window extension lgwin25; C strict decoder rejects"
+    }
+  },
+  "containers": {
+    "jxl-brob-metadata.jxl": "ce883e0e10e785fd432b90121f73a537d3ea932b3214dfef5b2bd7871f7824c9",
+    "jxl-brob-metadata-plain.jxl": "9edda8f4cffa71257b700c4fe9c427ed7f96fa123386007945ce93ef6feffa0e"
+  }
+}

@@ -48,7 +48,7 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
 animations (no silent first-frame fallback), previews, intrinsic display sizes,
 premultiplied or mixed-depth/subsampled alpha, multiple/other extra channels,
-compressed `brob` metadata and unsupported depths.
+forbidden compressed control/nested boxes and unsupported depths.
 Explicit Level5 and Level10 `jxll` boxes are accepted; dimensions, workspace and
 the supported sample profile remain independently bounded. This does not promise
 the entire Level10 profile. Native JPEG bitstream reconstruction is not implemented.
@@ -71,7 +71,8 @@ format, not before.
 | `JPEG XL Source ICC Profile` | Original embedded ICC bytes, or equivalent generated ICC for original simple signaling |
 | `JPEG XL Reconstruction ICC Profile` | Actual pre-CMS reconstruction profile, retained by the explicit sRGB display API; may differ from the original embedded profile |
 | `JPEG XL Source Header` | Original bit-aligned codestream-header prefix; last byte may also contain following bits; not a standalone file |
-| `JPEG XL Source Box <index> <hex-type>` | Uncompressed auxiliary box bytes, including unknown types and duplicate types with distinct indexes |
+| `JPEG XL Source Box <index> <hex-type>` | Exact outer auxiliary payload bytes, including unknown types and duplicate types with distinct indexes; a `brob` value includes its underlying type and compressed stream |
+| `JPEG XL Decoded Box <index> <hex-type>` | Bounded decompressed opaque payload for a `brob` box, indexed by its underlying type; no structured EXIF/XMP or recursive parsing |
 | `JPEG XL Source Bit Depth` / `JPEG XL Output Bit Depth` | Coded colour depth / declared delivered sample depth |
 
 Gray replicated into RGBA gets a matching neutral-axis RGB profile for simple
@@ -101,7 +102,9 @@ payload may itself contain compressed reconstruction information; WML2 never
 parses or decompresses it, uses it for pixels/ICC, or promises it can reproduce
 a JPEG file. An empty or invalid opaque payload can accompany valid pixels.
 The outer container envelope and pixel codestream must still be valid.
-All `brob` boxes remain explicitly unsupported, including wrapped `jbrd`.
+Metadata `brob` boxes now have a bounded strict-Brotli path; see
+[compressed metadata](jpeg-xl-brob.md). A `brob`-wrapped `jbrd` is forbidden and
+remains rejected: this does not add JPEG reconstruction.
 Unknown auxiliary data is also retained as bounded Raw bytes without execution
 or semantic interpretation. Native JPEG reconstruction APIs are not added.
 

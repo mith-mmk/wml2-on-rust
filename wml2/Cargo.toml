@@ -223,7 +223,7 @@ tiff = ["exif"]
 webp = ["exif", "dep:webp_codec"]
 psd = []
 jpeg2000 = ["dep:icc_profile"]
-jpeg-xl = ["dep:jxl_codec"]
+jpeg-xl = ["dep:jxl_codec", "dep:brotli_decompressor"]
 avif = ["dep:avif_codec", "dep:icc_profile"]
 avifenc = ["avif", "dep:avifenc_codec", "dep:icc_profile"]
 high-bit-depth = []
@@ -269,6 +269,8 @@ noretoro = []
 encoding_rs = { version = "0.8.35", optional = true }
 # Published API differs from upstream main; audit upgrades with the bounded adapter.
 jxl_codec = { package = "jxl", version = "=0.7.4", default-features = false, optional = true }
+# Brob uses strict streaming decode and caller-budgeted allocators, no C/FFI.
+brotli_decompressor = { package = "brotli-decompressor", version = "=6.2.0", default-features = false, optional = true }
 bin-rs = {version = "0.0.10",features = ["util"]}
 #bin-rs = { git = "https://github.com/mith-mmk/bin-rs", features = ["util"], ref="3fb43f7" }
 webp_codec = { package = "webp-rust", version = "0.3.2", features = ["legacy"], optional = true }

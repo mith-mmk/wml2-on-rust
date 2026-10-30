@@ -356,7 +356,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
-    count + intrinsic_cases()
+    count + intrinsic_cases() + composition_cases()
 }
 
 fn intrinsic_cases() -> u32 {
@@ -538,4 +538,68 @@ fn alpha_cases() -> u32 {
     let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-3c8a16o5.jxl");
     assert!(image_from_with_limits(input,DecodeLimits {animation_bytes:279,..Default::default()}).is_err());count+=1;
     count
+}
+
+fn composition_cases() -> u32 {
+    let input =
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-composition-preview-intrinsic.jxl");
+    let info = wml2::image_info::image_info(input).unwrap();
+    assert_eq!(
+        (info.dimensions.coded.width, info.dimensions.coded.height),
+        (7, 5)
+    );
+    let display = info.dimensions.intrinsic_display.unwrap();
+    assert_eq!((display.width, display.height), (11, 19));
+    let expected = miniz_oxide::inflate::decompress_to_vec_zlib(include_bytes!(
+        "../../wml2/tests/fixtures/review/jxl-preview-oriented-icc16.rgba16le.zlib"
+    ))
+    .unwrap();
+    assert_eq!(
+        image_from_ex(input, PixelFormatEx::Rgba16, PrecisionConversion::Exact)
+            .unwrap()
+            .bytes()
+            .unwrap(),
+        expected
+    );
+    let meta = include_bytes!("../../wml2/tests/fixtures/review/jxl-meta-brob.jxl");
+    let mut out = b"\0\0\0\x0cJXL \r\n\x87\n".to_vec();
+    out.extend_from_slice(b"\0\0\0\x14ftypjxl \0\0\0\0jxl ");
+    out.extend_from_slice(&((input.len() + 8) as u32).to_be_bytes());
+    out.extend_from_slice(b"jxlc");
+    out.extend_from_slice(input);
+    let mut at = 12;
+    while at < meta.len() {
+        let n = u32::from_be_bytes(meta[at..at + 4].try_into().unwrap()) as usize;
+        if &meta[at + 4..at + 8] == b"brob" {
+            out.extend_from_slice(&meta[at..at + n]);
+        }
+        at += n;
+    }
+    let image = image_from(&out).unwrap();
+    assert_eq!((image.width, image.height), (5, 7));
+    let metadata = image.metadata.unwrap();
+    assert!(metadata.contains_key("XMP"));
+    #[cfg(feature = "exif")]
+    assert!(metadata.contains_key("EXIF"));
+    assert!(
+        image_from_with_limits(
+            &out,
+            DecodeLimits {
+                metadata_bytes: 18328,
+                ..Default::default()
+            }
+        )
+        .is_err()
+    );
+    assert!(
+        image_from_with_limits(
+            &out,
+            DecodeLimits {
+                animation_bytes: 279,
+                ..Default::default()
+            }
+        )
+        .is_err()
+    );
+    3
 }

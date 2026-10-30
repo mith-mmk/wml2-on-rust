@@ -19,7 +19,7 @@ runner=out/'run.cjs';runner.write_text('''const fs=require('fs');
 (async()=>{const module=await WebAssembly.compile(fs.readFileSync(process.argv[2]));
 const imports=WebAssembly.Module.imports(module);if(imports.length)throw Error('unexpected host imports');
 const instance=await WebAssembly.instantiate(module,{});const cases=instance.exports.verify_jpegxl();
-if(cases!==226)throw Error('case count mismatch: '+cases);
+if(cases!==229)throw Error('case count mismatch: '+cases);
 process.stdout.write(JSON.stringify({runtime:process.version,cases,all_passed:true,host_imports:imports,memory_bytes:instance.exports.memory.buffer.byteLength})+'\\n');
 })().catch(e=>{console.error(e);process.exit(1)});
 ''')

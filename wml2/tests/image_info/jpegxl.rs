@@ -92,7 +92,10 @@ fn header_projection_has_no_pixel_icc_or_channel_description_reads_or_canvas_all
         ),
     ] {
         let data = codestream(input);
-        let info = no_expansion(data.clone(), Vec::from([cut..data.len() as u64]));
+        let info = no_expansion(
+            data.clone(),
+            std::iter::once(cut..data.len() as u64).collect(),
+        );
         assert!(info.bytes_read <= 64);
         // The unqueried sample/profile/frame bytes may be absent or malformed.
         let prefix = &data[..cut as usize];
@@ -156,7 +159,7 @@ fn bounded_container_prefix_skips_opaque_boxes_and_restores_position_across_part
             box_bytes(b"jxlp", &last),
         ]);
         // Source opaque brob data is skipped without decompression or validation.
-        let info = no_expansion(data, Vec::from([40..40 + 16384]));
+        let info = no_expansion(data, std::iter::once(40..40 + 16384).collect());
         assert_eq!(
             info.dimensions.intrinsic_display,
             Some(ImageSize {

@@ -3,7 +3,7 @@
 The display-axis normalization is an explicit WML2 contract: C BasicInfo keeps
 stored intrinsic axes even when it orients the decoded pixel canvas.
 """
-import argparse,ctypes as C,ctypes.util,hashlib,json,pathlib,struct,subprocess,zlib
+import argparse,hashlib,json,pathlib,struct,subprocess
 p=argparse.ArgumentParser();p.add_argument('--include',type=pathlib.Path,required=True);p.add_argument('--work',type=pathlib.Path,required=True);a=p.parse_args()
 if not a.work.name.startswith('.test'):p.error('--work must start with .test')
 root=pathlib.Path(__file__).resolve().parents[2];dest=root/'wml2/tests/fixtures/review';work=a.work.resolve();work.mkdir(parents=True,exist_ok=True)
@@ -83,7 +83,7 @@ def size(w,h,ratio=0):
  return [0]+axis(h)+little(ratio,3)+(axis(w) if ratio==0 else [])
 base=raw((dest/'jxl-orientation1.jxl').read_bytes());b=bits(base);assert b[42:44]==[0,0] and b[53:55]==[0,0] # fingerprinted C header fields
 # Reuse the C-encoded frame unchanged; only insert a valid SizeHeader. C then
-# independently decodes all six pixels, including format-maximum display size.
+# independently decodes all six pixels, including pinned-maximum display area.
 def synthetic(intrinsic,coded=None):
  start=b[:42] if coded is None else b[:16]+size(*coded)
  return pack(start+[0,1]+[0,0,0]+[1]+intrinsic+[0,0]+b[44:53]+[1]+b[53:56])+base[7:]
@@ -95,5 +95,5 @@ record('jxl-intrinsic-huge-coded-header',synthetic(size(19,11),coded=(1<<20,1<<2
 for name,description,encoded in [('area','Both dimensions2^30 exceed the pinned Size reader2^40 area bound',size(1<<30,1<<30)),('axis','Derived2:1 width2^31 exceeds the pinned Size reader2^30 axis bound',size(1,1<<30,7))]:
  data=synthetic(encoded);path=dest/('jxl-intrinsic-oversized-'+name+'.jxl');path.write_bytes(data)
  result=subprocess.run([str(reference),str(path),'1'],capture_output=True,text=True)
- manifest.setdefault('invalid',[]).append(dict(file=path.name,sha256=digest(data),description=description,c_basic_info_rejected=result.returncode!=0,c_basic_fields=result.stdout.strip(),scope='Expected rejection by the pinned Size reader, not a claim that C rejects every oversized display declaration.'))
+ manifest.setdefault('oversized',[]).append(dict(file=path.name,sha256=digest(data),description=description,c_basic_info_rejected=result.returncode!=0,c_basic_fields=result.stdout.strip(),scope='Expected rejection by the pinned Size reader, not a claim that C rejects every oversized display declaration.'))
 (dest/'jxl-intrinsic-fixtures.json').write_text(json.dumps(manifest,indent=2)+'\n');print(json.dumps(manifest,indent=2))

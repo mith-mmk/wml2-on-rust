@@ -431,7 +431,7 @@
       "dimension_prefix_bytes": 7
     }
   ],
-  "invalid": [
+  "oversized": [
     {
       "file": "jxl-intrinsic-oversized-area.jxl",
       "sha256": "1f2f19eac3c69684c1b44f6b2bb14acfcc57980fd5e9afe162323f5fc54aab1a",

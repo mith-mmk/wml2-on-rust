@@ -1,0 +1,231 @@
+{
+  "issue": 45,
+  "base_pr": 57,
+  "base_sha": "81178d7c7359e211eaea4ebaeca8c6b5b0ad1129",
+  "runtime_checkpoint": "19242fb7c3eb52b62b71931db7d596f35a9f1f01",
+  "environment": {
+    "rustc": "1.91.0",
+    "os": "Linux x86_64",
+    "codec": "jxl=0.7.4, default-features=false",
+    "C_libjxl_runtime_and_headers": "0.11.2",
+    "independent_managed_oracle": "existing LittleCMS2.16 gamma2 fixture, rotated using explicit coordinates",
+    "private_target_directories": true,
+    "Cargo_incremental_override": false,
+    "root_lock_sha256": "879084552f4e5f1ddb20599355bfe5810b5284356ed2681b982010bbd0aec5be",
+    "base_root_lock_sha256": "879084552f4e5f1ddb20599355bfe5810b5284356ed2681b982010bbd0aec5be"
+  },
+  "reproduced_gap": [
+    "info=Err(UnsupportedFormat)",
+    "decode=Err(SimpleMessage { kind: UnsupportedFeature, message: \"JPEG XL animations, previews and intrinsic sizes are unsupported\" })",
+    "info=Ok(ImageInfo { format: \"JPEG XL\", dimensions: ImageDimensions { coded: ImageSize { width: 2, height: 3 }, output: Some(ImageSize { width: 3, height: 2 }), intrinsic_display: Some(ImageSize { width: 11, height: 19 }) }, color: Unknown, channels: None, bits_per_sample: None, sample_kind: Unknown, alpha: Unknown, structure: Still, orientation: Some(6), scan: HeaderPrefix, bytes_read: 13 })",
+    "decode=Ok((3, 2))"
+  ],
+  "tests": {
+    "expanded_native": {
+      "passed": 111,
+      "normally_ignored_manual_benchmark": 1,
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management,png,tiff-jpeg,idct_llm,gif,psd,high-bit-depth --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test image_info"
+    },
+    "minimal_native": {
+      "passed": 50,
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test image_info --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers"
+    },
+    "disabled": {
+      "passed": 2,
+      "command": "cargo test -p wml2 --locked --no-default-features --test image_info --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers"
+    },
+    "repository_ci_tests": 35,
+    "clippy": "existing library warnings; no new API/dimension/test diagnostics",
+    "format_and_diff": "pass"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 90,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14286848,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "8901264fba28fbc1d989a6cafb42541d36ae4b9c5dd4f2e6ad8b7173bf5a96d1",
+    "scope": "29 intrinsic dimension cases (8 orientations, native/ordinary pixels, dimension-only queries, 2^40-area display/coded metadata on wasm32, oversized rejection, absent intrinsic) plus additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "visual_display": {
+    "coded": [
+      64,
+      48
+    ],
+    "source_intrinsic": [
+      190,
+      110
+    ],
+    "orientation": 6,
+    "output": [
+      48,
+      64
+    ],
+    "intrinsic_display": [
+      110,
+      190
+    ],
+    "pixels_equal_independent_C": true,
+    "rgba_sha256": "d6bdcf10a85e7b35f69da66092ea759b5df2093e4f596981f7880c3739754002"
+  },
+  "benchmarks": {
+    "legacy": [
+      {
+        "case": "jxl-rgba16",
+        "route": "ordinary",
+        "iterations": 150,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            59.4395,
+            54.6675,
+            54.978
+          ],
+          "after": [
+            60.361,
+            53.9965,
+            56.6405
+          ]
+        },
+        "before_us": 54.978,
+        "after_us": 56.6405,
+        "change_percent": 3.0239368474662687,
+        "hash": "17076559143681454236"
+      },
+      {
+        "case": "jxl-icc-lossless",
+        "route": "managed",
+        "iterations": 150,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            160.8725,
+            134.9235,
+            142.8405
+          ],
+          "after": [
+            191.945,
+            136.05,
+            139.1245
+          ]
+        },
+        "before_us": 142.8405,
+        "after_us": 139.1245,
+        "change_percent": -2.6015030751082358,
+        "hash": "12438429659714107065"
+      },
+      {
+        "case": "jxl-jbrd-bench",
+        "route": "ordinary",
+        "iterations": 40,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            16031.105,
+            15382.121,
+            16573.2265
+          ],
+          "after": [
+            15994.0535,
+            15374.494,
+            16062.612
+          ]
+        },
+        "before_us": 16031.105,
+        "after_us": 15994.0535,
+        "change_percent": -0.23112255830149975,
+        "hash": "8439627164837879290"
+      },
+      {
+        "case": "jxl-jbrd-bench",
+        "route": "managed",
+        "iterations": 3,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            1061536.281,
+            1111248.549,
+            1034005.279
+          ],
+          "after": [
+            1032419.759,
+            1078231.983,
+            1065585.728
+          ]
+        },
+        "before_us": 1061536.281,
+        "after_us": 1065585.728,
+        "change_percent": 0.38147042851754964,
+        "hash": "1509610803079936459"
+      }
+    ],
+    "queries": [
+      {
+        "case": "jxl-intrinsic-orientation6",
+        "median_us": 0.611,
+        "bytes_read": 13,
+        "iterations": 1000,
+        "warmups": 3,
+        "scope": "resident slice; not disk I/O"
+      },
+      {
+        "case": "jxl-intrinsic-icc16",
+        "median_us": 0.601,
+        "bytes_read": 70,
+        "iterations": 1000,
+        "warmups": 3,
+        "scope": "resident slice; not disk I/O"
+      },
+      {
+        "case": "jxl-intrinsic-large-display",
+        "median_us": 1.171,
+        "bytes_read": 19,
+        "iterations": 1000,
+        "warmups": 3,
+        "scope": "resident slice; not disk I/O"
+      },
+      {
+        "case": "jxl-intrinsic-huge-coded-header",
+        "median_us": 0.962,
+        "bytes_read": 19,
+        "iterations": 1000,
+        "warmups": 3,
+        "scope": "resident slice; not disk I/O"
+      }
+    ]
+  },
+  "benchmark_method": {
+    "scope": "resident input, full WML2 ordinary/CMS decode, hashes outside timed interval; output metadata creation included",
+    "versions": "both cargo build --locked against identical root lock, no scratch dependency resolution",
+    "build": "cargo build -p wml2 --locked --release --no-default-features --features jpeg-xl,image-buffer-ex,color-management; distinct private CARGO_TARGET_DIR per tree",
+    "harness": "rustc --edition 2024 -C opt-level=3 wml2-test/scripts/jpegxl_intrinsic_bench.rs --extern wml2=<target>/release/libwml2.rlib -L dependency=<target>/release/deps -o <.test-dir>/probe",
+    "run": "taskset -c 0 <probe> <input.jxl> ordinary|managed|info <iterations>; 3 alternating before/after process pairs, 3 warmups per process; info 1 process/1000 calls",
+    "before_binary_sha256": "406131024daeb0997f8624557d79381ce9a17392e5052707f126e1651dfdd178",
+    "after_binary_sha256": "5e958b67ac9172a62429b4ffac2bf6c52f6ae8881ade598463a5d38538adae8e",
+    "limits": "finite host variation; three timed calls per process for large managed image; no general throughput or zero-overhead guarantee; no process RSS measurement"
+  },
+  "bounds": {
+    "logical_codestream_prefix_bytes": 64,
+    "visited_container_prefix_boxes": 1024,
+    "minimum_common_workspace_bytes": 4096,
+    "pinned_Size_axis_max": 1073741824,
+    "pinned_Size_area_max": 1099511627776,
+    "canvas_limits": "unchanged; intrinsic display values do not allocate or spend decoded canvas pixels"
+  },
+  "limitations": [
+    "dimension-only JPEG XL info; sample/color/alpha/profile fields remain unknown",
+    "prefix success is not later header/container/pixel validation or decode-support guarantee",
+    "C libjxl leaves explicit intrinsic fields in source axes; WML2 deliberately normalizes display axes once",
+    "larger display declarations accepted by C can still exceed pinned Size restrictions",
+    "huge coded fixture is a header-only oracle, not a full huge-pixel encoding",
+    "no resampling, new animation/preview runtime behavior, dependency migration or interrupt guarantee",
+    "additive metadata keys consume existing metadata/workspace budgets",
+    "stacked on unmerged PR57; reconcile independent JXL branches when integrating"
+  ]
+}

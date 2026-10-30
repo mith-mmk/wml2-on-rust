@@ -81,6 +81,8 @@ auxiliary payloads, and check largest individual allocations ≤8 KiB using the
 existing test allocator. Huge coded/display metadata works with `pixels=0` and
 `animation_bytes=0`; malformed/truncated/oversized queried sizes, box ranges,
 partial ordering, fixed box cap and caller budgets fail without partial results.
-Runtime limit failures occur before publication callbacks. See the accompanying
-validation report for exact commands, counts, WASM hash, display and benchmark
+Runtime limit failures occur before publication callbacks. New scalar keys/values
+are charged to the existing retained metadata and workspace estimates; budgets
+can reject an image that previously fit with fewer metadata keys. See the accompanying
+[validation report](jpeg-xl-intrinsic-validation.json) for exact commands, counts, WASM hash, display and benchmark
 measurements. No cancellation/codec interrupt guarantees are introduced here.

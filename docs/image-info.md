@@ -128,7 +128,7 @@ successful incomplete information, not swallowed parse failures.
 
 ## Verification
 
-Local Rust 1.91.0/Linux x86_64 validation: 150 passing tests across library,
+Initial non-JXL validation for PR #57 (Rust 1.91.0/Linux x86_64): 150 passing tests across library,
 information API, PNG/APNG, GIF, TIFF/JPEG-TIFF/EX/metadata regression, PSD and
 callback targets; one manual benchmark normally ignored and passed separately.
 Standalone PNG/TIFF/GIF/PSD/JPEG information feature builds and the feature-off

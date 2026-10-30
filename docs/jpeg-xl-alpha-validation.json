@@ -70,7 +70,7 @@
     "memory_bytes": 14352384,
     "target": "wasm32-unknown-unknown",
     "features": "jpeg-xl,image-buffer-ex; no defaults",
-    "wasm_sha256": "db20bdecd5cc1a2794bc97db1cc50f4be44471e4c8d41f58c6726f46fb71191c",
+    "wasm_sha256": "7770a4fa913c44beba1e5e9a749e40271daf7b0760fc56a04ad0719b7832b141",
     "scope": "109 alpha qualification cases (50 Gray/RGB depth/orientation fixtures, ordinary+EX, eight explicit unsupported-channel refusals, promoted-canvas admission) plus additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
   },
   "display": {
@@ -225,5 +225,6 @@
     "float/other alpha depths, multiple/general extra planes explicitly refused",
     "no HDR/tone mapping, animation, streaming, intrinsic/preview extension or production jxl upgrade",
     "reconcile additive WASM cases and preflight edits when combining independent pending JXL PRs"
-  ]
+  ],
+  "fixture_evidence_checkpoint": "ccdfa597311f292986affe5fbbca873fa47e8d1f"
 }

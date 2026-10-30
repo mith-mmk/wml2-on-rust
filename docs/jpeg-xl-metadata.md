@@ -108,3 +108,48 @@ independent djxl pixel references. No decoder-self comparison is a colour oracle
 Tests verify resource failures leave ImageBuffer uninitialized and unpublished.
 See [machine-readable evidence](jpeg-xl-metadata-validation.json) for exact
 commands, counts, source hashes, WASM and performance/display checks.
+
+## Local results and performance limits (2026-10-30)
+
+Rust 1.91.0 / Linux x86_64: expanded native matrix 78 passed, minimal JXL
+without EXIF/EX/CMS 59 passed, disabled-feature detection 1 passed. The two
+pre-admission unit tests check parser-call counters stay zero on denial. Actual
+Node 24.19.0 WASM passes 73 cases with `exif` and 73 without it, with no host
+imports. The five generated containers include a brob-wrapped malformed-then-
+valid sequence; the four well-formed variants also run in WASM. CI now runs
+brob/structured metadata on Linux compatible-feature profiles, macOS, Windows,
+32-bit Windows, and both actual WASM feature configurations.
+
+Scoped Clippy output equals the parent branch's 35 existing warnings after
+normalizing paths/build lines; no new helper/test diagnostic. The 35 repository
+CI selection/release tests also pass. No C oracle library is a runtime dependency.
+A 606x500 bench with independently compressed metadata matches every saved
+reference RGBA byte within 1/255; the PNG export was visually inspected without
+corruption. That source's coded orientation is preserved.
+
+Release measurements compare parent #56 `b3c52a5` against the candidate with the
+same `jpeg-xl,exif,image-buffer-ex,color-management` features, resident input,
+three alternating process pairs pinned to CPU 0, three warmups per process.
+Small cases use 150 timed iterations; large ordinary/managed use 40/5. Values
+below are medians of process medians, not disk I/O or general throughput.
+
+| Case/route | Parent µs | Candidate µs |
+| --- | ---: | ---: |
+| RGBA16 / ordinary | 53.872 | 55.048 |
+| Small ICC / sRGB | 141.604 | 150.803 |
+| 606x500 / ordinary | 15917.163 | 15588.156 |
+| 606x500 / sRGB | 1074989.414 | 1048978.536 |
+| New plain EXIF/XMP / ordinary | 81.013 | 92.520 |
+| New brob EXIF/XMP / ordinary | 99.876 | 113.607 |
+
+Every full-buffer hash matches. The new packet interpretation adds about
+11.5/13.7 µs in these tiny fixtures. Legacy small-case measurements are unstable:
+a five-pair, 1000-iteration CPU-0 recheck produced RGBA16 53.641→53.651 µs and
+ICC 138.574→192.976 µs, while the equivalent CPU-2 recheck produced
+86.536→81.533 µs and 195.014→150.668 µs. Individual before/after process medians
+span both timing clusters. Both rechecks, including unfavourable results, are
+retained in the evidence. These runs cannot isolate a reliable small-path speed
+change; they are not evidence for a general speedup or guaranteed zero overhead.
+The first recheck's baseline Clippy run overlapped its beginning, an additional
+reason not to infer a throughput regression from that sample. Large managed
+results also have only five timed iterations per process. No RSS claim is made.

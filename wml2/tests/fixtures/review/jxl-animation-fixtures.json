@@ -1,0 +1,838 @@
+{
+  "oracle": "C libjxl0.11.2 coalesced RGBA16 plus noncoalesced coded-layer metadata; LittleCMS2.16 RGB16 relative/NOOPTIMIZE with alpha copied and final8-bit rounding",
+  "construction": "C-generated animations; preview compound bit-splices a C-generated animation-syntax preview frame into a fingerprinted C global header. C validates both preview and all main frames. WML2/Rust never generates expected pixels.",
+  "cases": [
+    {
+      "name": "variable",
+      "file": "jxl-animation-variable.jxl",
+      "sha256": "05a740005dc3d94b4d666f26edc44622463d5631365d886b8d964378358d8d2b",
+      "source_orientation": 1,
+      "coded_canvas": [
+        7,
+        5
+      ],
+      "output_canvas": [
+        7,
+        5
+      ],
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "tps_numerator": 100,
+      "tps_denominator": 1,
+      "loop_count": 7,
+      "have_timecodes": false,
+      "have_preview": false,
+      "C_noncoalesced_layers": [
+        [
+          0,
+          5,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          17,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "ticks": 5,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "50",
+          "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+          "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+        },
+        {
+          "index": 1,
+          "ticks": 17,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "170",
+          "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+          "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+        },
+        {
+          "index": 2,
+          "ticks": 3,
+          "timecode": 0,
+          "last": true,
+          "milliseconds_exact": "30",
+          "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+          "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+        }
+      ]
+    },
+    {
+      "name": "fractional",
+      "file": "jxl-animation-fractional.jxl",
+      "sha256": "e2d0dec771f0dc1305ef350abbc77f6f9fe367a535cd1fee95794f9269741662",
+      "source_orientation": 1,
+      "coded_canvas": [
+        7,
+        5
+      ],
+      "output_canvas": [
+        7,
+        5
+      ],
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "tps_numerator": 30000,
+      "tps_denominator": 1001,
+      "loop_count": 0,
+      "have_timecodes": false,
+      "have_preview": false,
+      "C_noncoalesced_layers": [
+        [
+          0,
+          5,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          17,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "ticks": 5,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "1001/6",
+          "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+          "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+        },
+        {
+          "index": 1,
+          "ticks": 17,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "17017/30",
+          "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+          "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+        },
+        {
+          "index": 2,
+          "ticks": 3,
+          "timecode": 0,
+          "last": true,
+          "milliseconds_exact": "1001/10",
+          "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+          "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+        }
+      ]
+    },
+    {
+      "name": "reference",
+      "file": "jxl-animation-reference.jxl",
+      "sha256": "88d3d6edbf02c6e7abf72769c88ef65e08930691bb22308cf7cda10cb2144b06",
+      "source_orientation": 6,
+      "coded_canvas": [
+        7,
+        5
+      ],
+      "output_canvas": [
+        5,
+        7
+      ],
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "tps_numerator": 100,
+      "tps_denominator": 1,
+      "loop_count": 1,
+      "have_timecodes": false,
+      "have_preview": false,
+      "C_noncoalesced_layers": [
+        [
+          0,
+          5,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          17,
+          0,
+          0,
+          3,
+          2,
+          1,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          2,
+          3,
+          0,
+          1,
+          3,
+          2,
+          -1,
+          2,
+          2,
+          2,
+          0
+        ]
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "ticks": 5,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "50",
+          "rgba16_sha256": "bbf1c6b98aeedb319707c41ba6b647e2ce13db4f98096523a41058fc3c384995",
+          "srgb_sha256": "9cfd7df0a31bfdb3ff45c6da36aebbc9d9df2640f3923a9a45af75b5573363cd"
+        },
+        {
+          "index": 1,
+          "ticks": 17,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "170",
+          "rgba16_sha256": "c0473c32dda4cafab0659da7ff9decd62abaa22ce00c9717cea6f9d58e5f243e",
+          "srgb_sha256": "e1be9068838e09a700b4045073304ae0cd811fd6b1f3b04ff0484102db2726de"
+        },
+        {
+          "index": 2,
+          "ticks": 3,
+          "timecode": 0,
+          "last": true,
+          "milliseconds_exact": "30",
+          "rgba16_sha256": "011474e620c996baf957adba2283957855b274234b70d3b54cf2324bbcf41f4c",
+          "srgb_sha256": "6e72ebcc7361aecb0309fb700bbf67efb10a692a48da1b425b042853d0e83d09"
+        }
+      ]
+    },
+    {
+      "name": "internal",
+      "file": "jxl-animation-internal.jxl",
+      "sha256": "925b0ac2673c29390e5f7d22aeb8e2cac706dcc8964c8804760bee08e87c73ab",
+      "source_orientation": 8,
+      "coded_canvas": [
+        7,
+        5
+      ],
+      "output_canvas": [
+        5,
+        7
+      ],
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "tps_numerator": 1000,
+      "tps_denominator": 1,
+      "loop_count": 0,
+      "have_timecodes": false,
+      "have_preview": false,
+      "C_noncoalesced_layers": [
+        [
+          0,
+          0,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          5,
+          0,
+          0,
+          3,
+          2,
+          1,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          2,
+          17,
+          0,
+          0,
+          3,
+          2,
+          -1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          3,
+          0,
+          0,
+          1,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "ticks": 5,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "5",
+          "rgba16_sha256": "f803ed7a0c97519db6745d70b05d6aaa805ba7008d97c1b49304a8674f3d94d4",
+          "srgb_sha256": "2395589dbfe32b7dfb50026d79094a7b7e55cfb0cf8c1b877651777ae31f5614"
+        },
+        {
+          "index": 1,
+          "ticks": 17,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "17",
+          "rgba16_sha256": "56d73fe6a4a3e560b6c759c0f3578c38dcfc7bd42d6d6ed959ec39bced8a3f30",
+          "srgb_sha256": "85b2f5668ffaf6d51f9fc60400dece7ac25255ffc607e9c42a0eaff66ba4f170"
+        },
+        {
+          "index": 2,
+          "ticks": 0,
+          "timecode": 0,
+          "last": true,
+          "milliseconds_exact": "0",
+          "rgba16_sha256": "ca8aea9e528ba8184fdbf9e424212f2aea4105115f01aeeeb6b4f05c62c08e8a",
+          "srgb_sha256": "358a7295adb7fe5152138ee6fb6b474f4d80980d1e0d09f04206717e8f8092a7"
+        }
+      ]
+    },
+    {
+      "name": "timecodes",
+      "file": "jxl-animation-timecodes.jxl",
+      "sha256": "26d14bd848bc83b1f786c0010f7f1e32edacd01449a8faec88ec0d02c27f3d4f",
+      "source_orientation": 1,
+      "coded_canvas": [
+        7,
+        5
+      ],
+      "output_canvas": [
+        7,
+        5
+      ],
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "tps_numerator": 100,
+      "tps_denominator": 1,
+      "loop_count": 1,
+      "have_timecodes": true,
+      "have_preview": false,
+      "C_noncoalesced_layers": [
+        [
+          0,
+          5,
+          1,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          17,
+          2,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          3,
+          1,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "ticks": 5,
+          "timecode": 1,
+          "last": false,
+          "milliseconds_exact": "50",
+          "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+          "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+        },
+        {
+          "index": 1,
+          "ticks": 17,
+          "timecode": 2,
+          "last": false,
+          "milliseconds_exact": "170",
+          "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+          "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+        },
+        {
+          "index": 2,
+          "ticks": 3,
+          "timecode": 3,
+          "last": true,
+          "milliseconds_exact": "30",
+          "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+          "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+        }
+      ]
+    },
+    {
+      "name": "long",
+      "file": "jxl-animation-long.jxl",
+      "sha256": "9b446fe09692d9fdd4d0b70cfbe808f952fb4b8e257d856d081f18ac3cdfae4f",
+      "source_orientation": 1,
+      "coded_canvas": [
+        7,
+        5
+      ],
+      "output_canvas": [
+        7,
+        5
+      ],
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "tps_numerator": 1,
+      "tps_denominator": 1024,
+      "loop_count": 4294967295,
+      "have_timecodes": false,
+      "have_preview": false,
+      "C_noncoalesced_layers": [
+        [
+          0,
+          4294967295,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          4294967294,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          4294967293,
+          0,
+          1,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "ticks": 4294967295,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "4398046510080000",
+          "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+          "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+        },
+        {
+          "index": 1,
+          "ticks": 4294967294,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "4398046509056000",
+          "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+          "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+        },
+        {
+          "index": 2,
+          "ticks": 4294967293,
+          "timecode": 0,
+          "last": true,
+          "milliseconds_exact": "4398046508032000",
+          "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+          "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+        }
+      ]
+    },
+    {
+      "name": "icc16",
+      "file": "jxl-animation-icc16.jxl",
+      "sha256": "73864bc6f6c6e663d5b65ce9ec742ef8fa7f4a1fbd35698e8620ee7434bf2aef",
+      "source_orientation": 6,
+      "coded_canvas": [
+        7,
+        5
+      ],
+      "output_canvas": [
+        5,
+        7
+      ],
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "tps_numerator": 1000,
+      "tps_denominator": 1,
+      "loop_count": 3,
+      "have_timecodes": false,
+      "have_preview": false,
+      "C_noncoalesced_layers": [
+        [
+          0,
+          5,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          17,
+          0,
+          0,
+          3,
+          2,
+          1,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          2,
+          3,
+          0,
+          1,
+          3,
+          2,
+          -1,
+          2,
+          2,
+          2,
+          0
+        ]
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "ticks": 5,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "5",
+          "rgba16_sha256": "3f7f5e7cb00de9381ce3853cc7ca5208f65a7ed83a72d4596d9d25124ac6f052",
+          "srgb_sha256": "d685e08cc07517d669560716c7c3a3ffbf939d47203dfe6f0ff9ad318c80a8f9"
+        },
+        {
+          "index": 1,
+          "ticks": 17,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "17",
+          "rgba16_sha256": "05d175b1939e05521191d4b10624dd4ff59aedb7166ccd0ee68fa8eee36f622c",
+          "srgb_sha256": "8ed37d4f0fe1578d97377c2ba11547b8063456f47218b28e4db0d63e74aba465"
+        },
+        {
+          "index": 2,
+          "ticks": 3,
+          "timecode": 0,
+          "last": true,
+          "milliseconds_exact": "3",
+          "rgba16_sha256": "e35c9c2a92b551254da198ea64170c4af8dc634b13fcc5cf5b0483ff28232f42",
+          "srgb_sha256": "5cbdf89b8024965fc7524ce7a197d3bd102f5258e9f5dcc4a7a88a9450f87480"
+        }
+      ]
+    },
+    {
+      "name": "icc16-variable",
+      "file": "jxl-animation-icc16-variable.jxl",
+      "sha256": "26d5b23a50c11628d95c975d6660f93fd63f572b33848962bc0744f2e0056fa7",
+      "source_orientation": 8,
+      "coded_canvas": [
+        7,
+        5
+      ],
+      "output_canvas": [
+        5,
+        7
+      ],
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "tps_numerator": 1000,
+      "tps_denominator": 1,
+      "loop_count": 3,
+      "have_timecodes": false,
+      "have_preview": false,
+      "C_noncoalesced_layers": [
+        [
+          0,
+          5,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          17,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "ticks": 5,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "5",
+          "rgba16_sha256": "35fcebc160ddfe6be1dc7e05cbc58588c797bb75abee81b742b403bcbf384cb9",
+          "srgb_sha256": "ec8bcd4ba470f109bea041f33e9885373ad538b44d557d41f2de725c80c3fce0"
+        },
+        {
+          "index": 1,
+          "ticks": 17,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "17",
+          "rgba16_sha256": "d30e42df2b44136667f72c9a68a5701cdb27d9aa07ab83bb3bf095f80add6ae6",
+          "srgb_sha256": "65297ac3b16a1eccbecaa1c8af3968ce7703473578e06bc24a11e78137d98afa"
+        },
+        {
+          "index": 2,
+          "ticks": 3,
+          "timecode": 0,
+          "last": true,
+          "milliseconds_exact": "3",
+          "rgba16_sha256": "51af504a2f6581243014337c3743fb30eacdabbd647d2d418f5cb3c08123557e",
+          "srgb_sha256": "b2bd8e83eee4b1c2617f6d8b3608669617a14dd9f7585655ee0891bf349c5563"
+        }
+      ]
+    },
+    {
+      "name": "preview",
+      "file": "jxl-animation-preview.jxl",
+      "sha256": "b6b62b04a984830bdf01bf0f9a24b4896b9a117b9a4bc3e5e71b936c0dd32650",
+      "source_orientation": 1,
+      "coded_canvas": [
+        7,
+        5
+      ],
+      "output_canvas": [
+        7,
+        5
+      ],
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "tps_numerator": 100,
+      "tps_denominator": 1,
+      "loop_count": 7,
+      "have_timecodes": false,
+      "have_preview": true,
+      "C_noncoalesced_layers": [
+        [
+          0,
+          5,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          17,
+          0,
+          0,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1,
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "ticks": 5,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "50",
+          "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+          "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+        },
+        {
+          "index": 1,
+          "ticks": 17,
+          "timecode": 0,
+          "last": false,
+          "milliseconds_exact": "170",
+          "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+          "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+        },
+        {
+          "index": 2,
+          "ticks": 3,
+          "timecode": 0,
+          "last": true,
+          "milliseconds_exact": "30",
+          "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+          "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+        }
+      ]
+    }
+  ]
+}

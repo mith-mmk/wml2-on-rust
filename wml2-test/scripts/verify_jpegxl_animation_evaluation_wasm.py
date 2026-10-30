@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Run trusted JXL animation core experiments in wasm32; no shipping support."""
+import argparse,hashlib,json,pathlib,subprocess
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=pathlib.Path,required=True);a=p.parse_args()
+if not a.output.name.startswith('.test'):p.error('--output must start with .test')
+root=pathlib.Path(__file__).resolve().parents[2];out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);target=out/'.test-target'
+def run(cmd,label):
+ r=subprocess.run([str(v) for v in cmd],cwd=root,capture_output=True,text=True);(out/(label+'.log')).write_text(r.stdout+r.stderr);r.check_returncode();return r.stdout
+run(['cargo','build','-p','wml2','--locked','--release','--target','wasm32-unknown-unknown','--target-dir',target,'--no-default-features','--features','jpeg-xl'],'build')
+deps=target/'wasm32-unknown-unknown/release/deps';jxl=list(deps.glob('libjxl-*.rlib'));assert len(jxl)==1
+wasm=out/'verify.wasm';run(['rustc','--edition','2024','--target','wasm32-unknown-unknown','--crate-type','cdylib','-C','opt-level=3','-C','panic=abort',root/'wml2-test/scripts/jpegxl_animation_evaluation_wasm.rs','--extern',f'jxl_codec={jxl[0]}','-L',f'dependency={deps}','-L',f'dependency={target/"release/deps"}','-o',wasm],'harness')
+expected_images=len(json.loads((root/'wml2/tests/fixtures/review/jxl-animation-fixtures.json').read_text())['cases'])
+runner=out/'run.cjs';runner.write_text('''const fs=require('fs');(async()=>{const m=await WebAssembly.compile(fs.readFileSync(process.argv[2]));const imports=WebAssembly.Module.imports(m);if(imports.length)throw Error('unexpected host imports');const instance=await WebAssembly.instantiate(m,{});const checks=instance.exports.verify_jxl_animation_evaluation();if(checks!==__CHECKS__)throw Error('check count '+checks);process.stdout.write(JSON.stringify({runtime:process.version,checks,images:__IMAGES__,native_frame_comparisons:__FRAMES__,host_imports:imports,all_passed:true,memory_bytes:instance.exports.memory.buffer.byteLength})+'\\n');})().catch(e=>{console.error(e);process.exit(1)});'''.replace('__CHECKS__',str(expected_images*4)).replace('__IMAGES__',str(expected_images)).replace('__FRAMES__',str(expected_images*3)))
+report=json.loads(run(['node',runner,wasm],'run'));report.update(target='wasm32-unknown-unknown',codec='jxl0.7.4 defaults=false',scope='Trusted fixture core only, not WML2 animation support or a production memory/cancellation contract; native pixels, coalesced geometry, raw ticks, actual milliseconds, native loop count, hidden layers, final zero duration, preview exclusion, ICC profile presence; no WASM CMS comparison',wasm_sha256=hashlib.sha256(wasm.read_bytes()).hexdigest());(out/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))

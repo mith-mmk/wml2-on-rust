@@ -452,6 +452,15 @@ mod enabled {
             include_bytes!("fixtures/review/jxl-mixed-alpha.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-premult.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-animation.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-animation-variable.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-animation-fractional.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-animation-reference.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-animation-internal.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-animation-timecodes.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-animation-long.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-animation-icc16.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-animation-icc16-variable.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-animation-preview.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-hdr.jxl").as_slice(),
         ];
         for (i, data) in unsupported.into_iter().enumerate() {

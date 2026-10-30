@@ -126,7 +126,7 @@ The push did not trigger CI because the unchanged workflow limits push events
 to main. Its existing `workflow_dispatch` was invoked for the evidence branch.
 [Run 41027549581](https://github.com/mith-mmk/wml2-on-rust/actions/runs/41027549581)
 completed successfully at exact prior evidence head
-`fa6e759429ee279c9bd050e09a536b4f98890c95`: all 60 jobs succeeded. No workflow
+`fa6e759429ee279c9bd050e09a536b4f98890c95`: 59 jobs succeeded and the existing codec-smoke job was skipped. No workflow
 or security settings were changed. This run precedes the test-only output-length
 hardening; its runtime is identical to the updated evidence head.
 

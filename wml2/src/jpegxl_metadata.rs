@@ -348,6 +348,8 @@ mod tests {
         XML_PARSES.with(|n| n.set(0));
         assert!(xml(data, 0, usize::MAX).is_err());
         assert!(xml(data, usize::MAX, 0).is_err());
+        // Input-proportional admission alone omits inherited namespace indexes.
+        assert!(xml(data, usize::MAX, data.len() * XML_FACTOR + TEMP_FIXED).is_err());
         XML_PARSES.with(|n| assert_eq!(n.get(), 0));
         assert!(xml(data, usize::MAX, usize::MAX).unwrap().is_some());
         XML_PARSES.with(|n| assert_eq!(n.get(), 1));

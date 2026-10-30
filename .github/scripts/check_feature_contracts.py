@@ -45,7 +45,7 @@ def main():
     for profile, features in profiles.items():
         checks = [
             ['check', *common, '--all-targets', '--no-default-features', '--features', ','.join(features)],
-            ['test', *common, '--test', 'jpeg_xl', '--no-default-features', '--features', ','.join(features)],
+            ['test', *common, '--test', 'jpeg_xl', '--test', 'jpeg_xl_brob', '--test', 'jpeg_xl_metadata', '--no-default-features', '--features', ','.join(features)],
         ]
         for index, command in enumerate(checks):
             result = subprocess.run(cargo + command, cwd=root, capture_output=True, text=True)

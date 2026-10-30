@@ -206,3 +206,110 @@ fn explicit_srgb_display_uses_the_actual_reconstruction_profile_once() {
         );
     }
 }
+
+// Standalone trusted-core evaluation, kept separate from the shipping adapter.
+#[cfg(feature = "jpeg-xl")]
+#[path = "common/jpegxl_progressive.rs"]
+mod progressive_core_evaluation;
+
+#[cfg(all(feature = "jpeg-xl", feature = "color-management"))]
+#[test]
+fn progressive_whole_input_cms_matches_independent_c_reference() {
+    for (data, reference) in [
+        (
+            include_bytes!("fixtures/review/jxl-progressive-ac.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-progressive-ac.rgba16le").as_slice(),
+        ),
+        (
+            include_bytes!("fixtures/review/jxl-progressive-dc.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-progressive-dc.rgba16le").as_slice(),
+        ),
+    ] {
+        let image = wml2::jpegxl::image_from_srgb(data).unwrap();
+        assert_eq!((image.width, image.height), (32, 24));
+        let actual = image.buffer.unwrap();
+        assert_eq!(actual.len() * 2, reference.len());
+        for (i, (a, b)) in actual.iter().zip(reference.chunks_exact(2)).enumerate() {
+            let expected =
+                ((u32::from(u16::from_le_bytes([b[0], b[1]])) * 255 + 32767) / 65535) as u8;
+            if i % 4 == 3 {
+                assert_eq!(*a, expected);
+            } else {
+                assert!(a.abs_diff(expected) <= 2);
+            }
+        }
+    }
+}
+
+#[cfg(feature = "jpeg-xl")]
+#[test]
+fn progressive_invalid_envelopes_and_limits_publish_no_canvas() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::{DecodeOptions, ImageBuffer, image_decoder_with_limits};
+    use wml2::limits::DecodeLimits;
+    let raw = include_bytes!("fixtures/review/jxl-progressive-dc.jxl");
+    let container = include_bytes!("fixtures/review/jxl-progressive-dc-jxlc.jxl");
+    let mut bad_tail = container.to_vec();
+    bad_tail.extend_from_slice(b"\0\0\0\x10xml");
+    let mut junk = raw.to_vec();
+    junk.push(255);
+    let defaults = DecodeLimits::default();
+    for (data, limits) in [
+        (&raw[..raw.len() - 1], defaults),
+        (junk.as_slice(), defaults),
+        (&container[..container.len() - 1], defaults),
+        (bad_tail.as_slice(), defaults),
+        (
+            raw.as_slice(),
+            DecodeLimits {
+                input_bytes: raw.len() - 1,
+                ..defaults
+            },
+        ),
+        (
+            raw.as_slice(),
+            DecodeLimits {
+                pixels: 32 * 24 - 1,
+                ..defaults
+            },
+        ),
+        (
+            raw.as_slice(),
+            DecodeLimits {
+                expanded_bytes: 0,
+                ..defaults
+            },
+        ),
+        (
+            raw.as_slice(),
+            DecodeLimits {
+                metadata_bytes: 0,
+                ..defaults
+            },
+        ),
+        (
+            raw.as_slice(),
+            DecodeLimits {
+                frames: 0,
+                ..defaults
+            },
+        ),
+    ] {
+        let mut output = ImageBuffer::new();
+        let mut reader = BytesReader::new(data);
+        assert!(
+            image_decoder_with_limits(
+                &mut reader,
+                &mut DecodeOptions {
+                    debug_flag: 0,
+                    drawer: &mut output
+                },
+                limits
+            )
+            .is_err()
+        );
+        assert_eq!((output.width, output.height), (0, 0));
+        assert!(output.buffer.is_none());
+        assert!(output.metadata.is_none());
+    }
+}

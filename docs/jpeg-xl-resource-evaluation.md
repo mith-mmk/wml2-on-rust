@@ -62,7 +62,16 @@ fixtures use three separate processes per route, each with three warmups and
 three timed decodes, pinned to CPU0, without concurrent local builds. Generated
 and limit cases use one process/one timed decode after three warmups; their
 individual timings are diagnostic snapshots, not stable performance estimates.
-This is the unchanged WML2 runtime, not a before/after speedup claim.
+This is the unchanged WML2 source and primary codec/ICC versions, not a
+before/after speedup claim. The native standalone probe uses a committed
+[development lock](../wml2-test/scripts/jxl_resource_probe.lock), distinct from
+the repository runtime lock. Relative to main's graph, its shared proc-macro/
+error-generator entries resolve `syn` 3.0.9 (main3.0.3), `unicode-ident` 1.0.27
+(main1.0.24), and `thiserror`/`thiserror-impl` 2.0.21 (main2.0.19); JSON serialization
+is probe-only and outside timing. Do not describe the native probe as an
+identical main-release binary. Its exact lock, binary and source hashes are
+recorded/frozen. The53runtime tests and WASM build use the repository's unchanged
+lock with `--locked`.
 
 Peak requested heap is additional live requested bytes relative to immediately
 before decode, with the returned image held through sampling. Source loading,

@@ -84,7 +84,10 @@ for count in [64,65]:
 identities={str(path.relative_to(root)) if path.is_relative_to(root) else str(path):{'bytes':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest()} for path in generated}
 (out/'inputs.json').write_text(json.dumps(identities,indent=2)+'\n')
 env=os.environ.copy();env['JXL_RESOURCE_OUT']=str(out)
-run(['cargo','build','--release','--manifest-path',out/'Cargo.toml','--target-dir',out/'.test-target'],'build.log',env=env)
+# Freeze the exact development graph used for the recorded native probe;
+# the repository runtime lockfile remains untouched.
+(out/'Cargo.lock').write_bytes((root/'wml2-test/scripts/jxl_resource_probe.lock').read_bytes())
+run(['cargo','build','--locked','--release','--manifest-path',out/'Cargo.toml','--target-dir',out/'.test-target'],'build.log',env=env)
 exe=out/'.test-target/release/resource-probe'
 if a.prepare_only:print(exe);raise SystemExit
 report={'runtime_sha':run(['git','rev-parse','HEAD']).strip(),'runtime_source_sha256':hashlib.sha256(source.encode()).hexdigest(),'admission_prefix_sha256':hashlib.sha256(prefix.encode()).hexdigest(),'probe_sha256':hashlib.sha256((root/'wml2-test/scripts/jxl_resource_probe.rs').read_bytes()).hexdigest(),'manifest_sha256':hashlib.sha256((out/'Cargo.toml').read_bytes()).hexdigest(),'lock_sha256':hashlib.sha256((out/'Cargo.lock').read_bytes()).hexdigest(),'scope':'trusted fixtures; preflight source extraction unchanged; no shipping runtime/cap changes; requested heap and process RSS are different quantities','rustc':run(['rustc','-vV']),'inputs':identities,'records':[]}

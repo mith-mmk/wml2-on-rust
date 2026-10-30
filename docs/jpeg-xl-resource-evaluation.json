@@ -127,6 +127,9 @@
   "generated_admission_sha256": "d00e2a40551f1249985dc1021c7333522cfbc99d57c66ecc6412cf79b7a27df0",
   "runtime_features": "jpeg-xl,image-buffer-ex,color-management; default features off",
   "codec_vcs_sha": "624ce908afcf8eb0dc2585a671535eaabb5d88cc",
+  "development_lock": "wml2-test/scripts/jxl_resource_probe.lock",
+  "development_lock_sha256": "277f43fc8eff44ac96f5c4c1963c368f003c72bcf3de496e845afe2b50def53c",
+  "development_graph_diff_note": "Native standalone dev graph, same primary jxl0.7.4/icc-profile0.0.7; main runtime lock unchanged. Shared macro/error-generator versions differ: syn3.0.3->3.0.9,unicode-ident1.0.24->1.0.27,thiserror/impl2.0.19->2.0.21. See committed development lock. Main runtime regression and WASM use main --locked.",
   "records": [
     {"case": "jxl-rgb8.jxl", "trial": 0, "route": "inspect", "budget": "default", "ok": true, "allocated_requested_bytes": 2414, "fnv64": "cbf29ce484222325", "height": 5, "input_bytes": 158, "iterations": 3, "median_us": 1.222, "metadata_bytes": 0, "output_bytes": 0, "peak_additional_requested_heap": 1294, "preflight": [7, 5, 8, 0, 0, 1095740, 1027, 158, 6, 3], "process_peak_rss": "VmHWM:\t    2412 kB", "width": 7},
     {"case": "jxl-rgb8.jxl", "trial": 1, "route": "inspect", "budget": "default", "ok": true, "allocated_requested_bytes": 2414, "fnv64": "cbf29ce484222325", "height": 5, "input_bytes": 158, "iterations": 3, "median_us": 1.192, "metadata_bytes": 0, "output_bytes": 0, "peak_additional_requested_heap": 1294, "preflight": [7, 5, 8, 0, 0, 1095740, 1027, 158, 6, 3], "process_peak_rss": "VmHWM:\t    2412 kB", "width": 7},

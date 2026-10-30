@@ -109,9 +109,15 @@ for path in generated:
  # after the unchanged public WML2 route has recorded its refusal.
  if path.name in ['boundary.jxl','beyond.jxl','qhd.jxl','thin.jxl','wide.jxl']:
   item=json.loads(run([exe,path,'core-only','default',3]));item.update(case=path.name,trial=0,budget_scope='trusted core-only finite sample guard; WML2 DecodeLimits not applied');report['records'].append(item)
-for name,budget in [('jxl-sunset-logo.jxl','expanded=268435456'),('jxl-rgb8.jxl','metadata=1'),('jxl-rgb8.jxl','frames=0'),('jxl-rgb8.jxl','pixels=34')]:
+def require_budget_refusal(item,stage):
+ # Do not silently turn an admission regression or an unrelated codec error
+ # into a successful measurement report.
+ assert item.get('ok') is False,item
+ assert item.get('error')==f'Out of memory: JPEG XL {stage} exceeds decode limit',item
+for name,budget,stage in [('jxl-sunset-logo.jxl','expanded=268435456','internal layer workspace'),('jxl-rgb8.jxl','metadata=1','source metadata'),('jxl-rgb8.jxl','frames=0','still frames'),('jxl-rgb8.jxl','pixels=34','pixels')]:
  for route in ['inspect','ordinary']:
-  item=json.loads(run([exe,fixtures/name,route,budget,1]));item.update(case=name,trial=0);report['records'].append(item)
+  item=json.loads(run([exe,fixtures/name,route,budget,1]));item.update(case=name,trial=0)
+  require_budget_refusal(item,stage);report['records'].append(item)
 # Exact metadata admission allowance around the current 16KiB generated-profile
 # reservation; this remains a policy screen, not actual metadata allocation.
 for limit in [1064994,1064995]:

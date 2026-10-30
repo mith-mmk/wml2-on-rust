@@ -35,15 +35,36 @@ for(let i=0;i<(single?1:typed?2:14);i++){
 process.stdout.write(JSON.stringify({node:process.version,host_imports:imports,records,process_max_rss_kib:process.resourceUsage().maxRSS})+'\\n');
 })().catch(e=>{console.error(e);process.exit(1)});
 ''')
+def require_wasm_outcomes(name,pages,item):
+ records=item['records']
+ if name=='source-ex':
+  # The source/EX reference harness must pass at both 64MiB and 32MiB.
+  assert len(records)==1 and records[0].get('ok') is True,item
+ elif name=='managed' and pages==1024:
+  assert len(records)==14 and all(r.get('ok') is True for r in records),item
+ elif name=='typed-layer':
+  assert len(records)==2,item
+  low,high=records
+  assert low.get('expanded_mib')==256 and high.get('expanded_mib')==512,item
+  assert low.get('ok') is False and low.get('returned_error') is True,item
+  assert low.get('width')==0 and low.get('height')==0,item
+  assert low.get('error')=='Out of memory: JPEG XL internal layer workspace exceeds decode limit',item
+  if pages==1024:
+   assert high.get('ok') is True and high.get('returned_error') is False,item
+   assert (high.get('width'),high.get('height'))==(924,1386) and high.get('error')=='',item
+  else:
+   # This records one fixed fixture/engine allocation failure, not a hard
+   # allocation guarantee for other streams, allocators or memory ceilings.
+   assert pages==512,item
+   assert high.get('ok') is False and high.get('returned_error') is True,item
+   assert high.get('width')==0 and high.get('height')==0,item
+   assert high.get('error')=='memory allocation failed because the memory allocator returned an error',item
 report={'features':features,'target':'wasm32-unknown-unknown','scope':'fresh instance per managed case; existing Rust independent-oracle assertions; linear capacities are not live heap/RSS; Node memory ceiling applies to WASM pages only','artifacts':{},'runs':[]}
 for name in ['source-ex','managed','typed-layer']:
  wasm=out/(name+'.wasm');report['artifacts'][name]={'bytes':wasm.stat().st_size,'sha256':hashlib.sha256(wasm.read_bytes()).hexdigest()}
  for pages in [1024,512]:
   item=json.loads(run(['node',f'--wasm-max-mem-pages={pages}',runner,wasm,name],name+f'-{pages}.log'));item.update(harness=name,linear_page_ceiling=pages,linear_byte_ceiling=pages*65536)
-  if pages==1024 and name!='typed-layer':assert all(r['ok'] for r in item['records']),item
-  if name=='typed-layer':
-   low=item['records'][0];assert not low['ok'] and low.get('returned_error') and low['width']==0 and 'workspace' in low['error'],item
-   if pages==1024:assert item['records'][1]['ok'],item
+  require_wasm_outcomes(name,pages,item)
   report['runs'].append(item)
 report['runtime_sha']=run(['git','rev-parse','HEAD'],'runtime-sha.log').strip()
 report['runtime_source_sha256']=hashlib.sha256((root/'wml2/src/jpegxl.rs').read_bytes()).hexdigest()

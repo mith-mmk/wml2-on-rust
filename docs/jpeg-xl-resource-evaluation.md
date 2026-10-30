@@ -323,3 +323,20 @@ Local existing-runtime matrix:53tests pass (25unit,22original,3additional,
 new resource harnesses and generated/limit probes are development evidence.
 Runtime diff against main is empty. No merge, release, dependency upgrade or
 issue closure is implied by this evaluation.
+
+## Reproducibility assertion revalidation
+
+Review identified missing automatic outcome gates in the original recording
+scripts. The eight tightened-budget native probes now require refusal with the
+specific expected limit-stage error. Source/EX validation must succeed at both
+WASM ceilings. The typed layer must return the documented allocation error with
+zero width **and height** at32MiB; the256-MiB policy refusal and64-MiB success
+remain explicitly checked.
+
+The eight affected native probes and all six WASM runs were repeated. All
+expected outcomes passed, with the same native probe and WASM artifact hashes.
+Sixteen native and seven WASM deliberately mutated outcomes were rejected by the
+new gates (unexpected success, wrong error/stage, trap instead of returned error,
+or nonzero error dimensions). Original165-case snapshot measurements remain
+separate from the native JSON's review revalidation block; WASM JSON records the
+rerun. These are fixed-fixture outcome assertions, not hard allocation bounds.

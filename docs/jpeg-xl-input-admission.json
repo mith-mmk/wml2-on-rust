@@ -1,0 +1,195 @@
+{
+  "base": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
+  "candidate_runtime": "ca3df4ee6d1a471b438146e3e4fd33231e5e691d",
+  "scope": "three alternating release process pairs CPU0;3warmups+150timed small/7timed large; requested heap,not RSS/global guarantee; root --locked dependency graph",
+  "helper_sha256": "29cacaec7bf569038833d620567fdc56a4c1216c81f3508a8a435a54de0ce027",
+  "source_wasm": {
+    "runtime": "v24.19.0",
+    "cases": 61,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14286848,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "eee337fe7e698aea4a1967b9085c1c1eeceaa739dab1681d3b903f41055c1673",
+    "scope": "additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "managed_wasm": {
+    "cases": 14,
+    "all_passed": true,
+    "max_linear_capacity": 54394880,
+    "host_imports": []
+  },
+  "admission_wasm": {
+    "node": "v24.19.0",
+    "page_ceiling": 2048,
+    "host_imports": [],
+    "records": [
+      {
+        "mode": 0,
+        "count": 4,
+        "total": 322,
+        "largest": 256,
+        "linear_before": 68354048,
+        "linear_after": 68354048
+      },
+      {
+        "mode": 1,
+        "count": 4,
+        "total": 322,
+        "largest": 256,
+        "linear_before": 68354048,
+        "linear_after": 68354048
+      },
+      {
+        "mode": 2,
+        "count": 3,
+        "total": 66,
+        "largest": 42,
+        "linear_before": 68354048,
+        "linear_after": 68354048
+      },
+      {
+        "mode": 3,
+        "count": 3,
+        "total": 66,
+        "largest": 42,
+        "linear_before": 68354048,
+        "linear_after": 68354048
+      }
+    ]
+  },
+  "composition": {
+    "base_candidate": "ca3df4ee6d1a471b438146e3e4fd33231e5e691d",
+    "cancellation_pr32": "da4f45764995110502a1a0a3cd9e933d86a5872f",
+    "local_no_commit_merge": "automatic, no conflicts; only test supplement appended; no PR/main merge",
+    "passed": 84,
+    "ignored": 1,
+    "pre_cancel_allocations": 0,
+    "source_sha256": {
+      "wml2/src/jpegxl.rs": "b75ac4a5210d39114a411f841582f89638921d48c469798c8042d902b1bc7305",
+      "wml2/src/draw.rs": "b22eb3a4c3d32384f23117f9035d0444ac99f5aff50f61c7d1f2f6ceeec9269c",
+      "wml2/src/color_convert.rs": "a1aef74f40b74046003852153f412b39aec37c518b586aad1e29ae5c34dea565",
+      "wml2/tests/jpeg_xl_slice_admission.rs": "b59fadd512080f7d9a5c81a957291eae57fa2f7e626bb43e58b6c9a2bda6157f"
+    }
+  },
+  "runtime_source_sha256": {
+    "wml2/src/draw.rs": "b22eb3a4c3d32384f23117f9035d0444ac99f5aff50f61c7d1f2f6ceeec9269c",
+    "wml2/src/jpegxl.rs": "cb5673557ec01f3ef5dd97cc9fae140710e423c5e26ac98ef95e62fe338de27d"
+  },
+  "repository_lock_sha256": "879084552f4e5f1ddb20599355bfe5810b5284356ed2681b982010bbd0aec5be",
+  "native_binaries_sha256": {
+    "old": "425c9997d2cc468bb2928bdfdf782d61016534d4ff37c7fd6b9c7ccb1e004e7a",
+    "new": "d0f7052eb8eb5a27cffea916cb5d912e26ca52b1511aa11c9cf18f8406d23011"
+  },
+  "wasm_artifacts": {
+    "source-ex": {
+      "bytes": 3354958,
+      "sha256": "eee337fe7e698aea4a1967b9085c1c1eeceaa739dab1681d3b903f41055c1673"
+    },
+    "managed": {
+      "bytes": 5788849,
+      "sha256": "53ff04d2d47e155cf9c11fb6d9a28d943132e4fdd8fb1f13b2814278e3c7c2e8"
+    },
+    "input-admission": {
+      "bytes": 3267833,
+      "sha256": "30bd368244ece09b5db4ec9b14181458ddeb9e3bf0dc4664d6f53e73c48f4c51"
+    }
+  },
+  "wasm_admission_source_sha256": "967113fb31727d0cec6b2798f47dc1abfe67f23b4b6241e5cd49300623131e26",
+  "native_allocation_rejection": {
+    "input_bytes": 67108865,
+    "source_construction_excluded": true,
+    "before_raw_explicit_limits": {
+      "ordinary": {
+        "count": 10,
+        "total": 67109451,
+        "largest": 67108865
+      },
+      "ex": {
+        "count": 10,
+        "total": 67109451,
+        "largest": 67108865
+      },
+      "managed": {
+        "count": 4,
+        "total": 67108947,
+        "largest": 67108865
+      }
+    },
+    "after_raw_and_container": {
+      "ordinary": {
+        "count": 4,
+        "total": 338,
+        "largest": 256
+      },
+      "ex": {
+        "count": 4,
+        "total": 338,
+        "largest": 256
+      },
+      "managed": {
+        "count": 3,
+        "total": 82,
+        "largest": 42
+      }
+    },
+    "scope": "finite entrypoint rejection requests, not total memory bound"
+  },
+  "records": [
+    {"case": "jxl-rgb8.jxl", "mode": "ordinary", "trial": 0, "variant": "old", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "43.636", "allocations": "325", "requested_bytes": "101877", "peak_additional_requested_heap": "63214", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "ordinary", "trial": 0, "variant": "new", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "44.016", "allocations": "319", "requested_bytes": "101373", "peak_additional_requested_heap": "62958", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "ordinary", "trial": 1, "variant": "new", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "43.886", "allocations": "319", "requested_bytes": "101373", "peak_additional_requested_heap": "62958", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "ordinary", "trial": 1, "variant": "old", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "45.469", "allocations": "325", "requested_bytes": "101877", "peak_additional_requested_heap": "63214", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "ordinary", "trial": 2, "variant": "old", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "43.516", "allocations": "325", "requested_bytes": "101877", "peak_additional_requested_heap": "63214", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "ordinary", "trial": 2, "variant": "new", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "43.535", "allocations": "319", "requested_bytes": "101373", "peak_additional_requested_heap": "62958", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "ex16", "trial": 0, "variant": "old", "input": "158", "width": "7", "height": "5", "bytes": "280", "median_us": "45.318", "allocations": "326", "requested_bytes": "102297", "peak_additional_requested_heap": "63214", "fnv": "f6730afcf0bd6433"},
+    {"case": "jxl-rgb8.jxl", "mode": "ex16", "trial": 0, "variant": "new", "input": "158", "width": "7", "height": "5", "bytes": "280", "median_us": "44.988", "allocations": "320", "requested_bytes": "101793", "peak_additional_requested_heap": "62958", "fnv": "f6730afcf0bd6433"},
+    {"case": "jxl-rgb8.jxl", "mode": "ex16", "trial": 1, "variant": "new", "input": "158", "width": "7", "height": "5", "bytes": "280", "median_us": "45.248", "allocations": "320", "requested_bytes": "101793", "peak_additional_requested_heap": "62958", "fnv": "f6730afcf0bd6433"},
+    {"case": "jxl-rgb8.jxl", "mode": "ex16", "trial": 1, "variant": "old", "input": "158", "width": "7", "height": "5", "bytes": "280", "median_us": "45.349", "allocations": "326", "requested_bytes": "102297", "peak_additional_requested_heap": "63214", "fnv": "f6730afcf0bd6433"},
+    {"case": "jxl-rgb8.jxl", "mode": "ex16", "trial": 2, "variant": "old", "input": "158", "width": "7", "height": "5", "bytes": "280", "median_us": "45.369", "allocations": "326", "requested_bytes": "102297", "peak_additional_requested_heap": "63214", "fnv": "f6730afcf0bd6433"},
+    {"case": "jxl-rgb8.jxl", "mode": "ex16", "trial": 2, "variant": "new", "input": "158", "width": "7", "height": "5", "bytes": "280", "median_us": "44.817", "allocations": "320", "requested_bytes": "101793", "peak_additional_requested_heap": "62958", "fnv": "f6730afcf0bd6433"},
+    {"case": "jxl-rgb8.jxl", "mode": "cms", "trial": 0, "variant": "old", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "140.342", "allocations": "369", "requested_bytes": "116597", "peak_additional_requested_heap": "74200", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "cms", "trial": 0, "variant": "new", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "149.835", "allocations": "368", "requested_bytes": "116439", "peak_additional_requested_heap": "74042", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "cms", "trial": 1, "variant": "new", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "152.650", "allocations": "368", "requested_bytes": "116439", "peak_additional_requested_heap": "74042", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "cms", "trial": 1, "variant": "old", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "160.342", "allocations": "369", "requested_bytes": "116597", "peak_additional_requested_heap": "74200", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "cms", "trial": 2, "variant": "old", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "153.541", "allocations": "369", "requested_bytes": "116597", "peak_additional_requested_heap": "74200", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-rgb8.jxl", "mode": "cms", "trial": 2, "variant": "new", "input": "158", "width": "7", "height": "5", "bytes": "140", "median_us": "151.369", "allocations": "368", "requested_bytes": "116439", "peak_additional_requested_heap": "74042", "fnv": "4f1ff04deef5a7a2"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ordinary", "trial": 0, "variant": "old", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "66.671", "allocations": "380", "requested_bytes": "8521768", "peak_additional_requested_heap": "4205854", "fnv": "a5a0a9eb7e027b71"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ordinary", "trial": 0, "variant": "new", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "65.619", "allocations": "374", "requested_bytes": "8520930", "peak_additional_requested_heap": "4205264", "fnv": "a5a0a9eb7e027b71"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ordinary", "trial": 1, "variant": "new", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "65.799", "allocations": "374", "requested_bytes": "8520930", "peak_additional_requested_heap": "4205264", "fnv": "a5a0a9eb7e027b71"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ordinary", "trial": 1, "variant": "old", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "67.882", "allocations": "380", "requested_bytes": "8521768", "peak_additional_requested_heap": "4205854", "fnv": "a5a0a9eb7e027b71"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ordinary", "trial": 2, "variant": "old", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "65.148", "allocations": "380", "requested_bytes": "8521768", "peak_additional_requested_heap": "4205854", "fnv": "a5a0a9eb7e027b71"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ordinary", "trial": 2, "variant": "new", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "65.329", "allocations": "374", "requested_bytes": "8520930", "peak_additional_requested_heap": "4205264", "fnv": "a5a0a9eb7e027b71"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ex16", "trial": 0, "variant": "old", "input": "590", "width": "7", "height": "5", "bytes": "280", "median_us": "65.719", "allocations": "379", "requested_bytes": "8521768", "peak_additional_requested_heap": "4205854", "fnv": "d48d53ae6217fad5"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ex16", "trial": 0, "variant": "new", "input": "590", "width": "7", "height": "5", "bytes": "280", "median_us": "66.861", "allocations": "373", "requested_bytes": "8520930", "peak_additional_requested_heap": "4205264", "fnv": "d48d53ae6217fad5"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ex16", "trial": 1, "variant": "new", "input": "590", "width": "7", "height": "5", "bytes": "280", "median_us": "65.339", "allocations": "373", "requested_bytes": "8520930", "peak_additional_requested_heap": "4205264", "fnv": "d48d53ae6217fad5"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ex16", "trial": 1, "variant": "old", "input": "590", "width": "7", "height": "5", "bytes": "280", "median_us": "65.689", "allocations": "379", "requested_bytes": "8521768", "peak_additional_requested_heap": "4205854", "fnv": "d48d53ae6217fad5"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ex16", "trial": 2, "variant": "old", "input": "590", "width": "7", "height": "5", "bytes": "280", "median_us": "65.459", "allocations": "379", "requested_bytes": "8521768", "peak_additional_requested_heap": "4205854", "fnv": "d48d53ae6217fad5"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "ex16", "trial": 2, "variant": "new", "input": "590", "width": "7", "height": "5", "bytes": "280", "median_us": "65.198", "allocations": "373", "requested_bytes": "8520930", "peak_additional_requested_heap": "4205264", "fnv": "d48d53ae6217fad5"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "cms", "trial": 0, "variant": "old", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "134.613", "allocations": "392", "requested_bytes": "8525740", "peak_additional_requested_heap": "4205598", "fnv": "a47b59a5706aad2a"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "cms", "trial": 0, "variant": "new", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "144.528", "allocations": "391", "requested_bytes": "8525150", "peak_additional_requested_heap": "4205008", "fnv": "a47b59a5706aad2a"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "cms", "trial": 1, "variant": "new", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "154.874", "allocations": "391", "requested_bytes": "8525150", "peak_additional_requested_heap": "4205008", "fnv": "a47b59a5706aad2a"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "cms", "trial": 1, "variant": "old", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "151.058", "allocations": "392", "requested_bytes": "8525740", "peak_additional_requested_heap": "4205598", "fnv": "a47b59a5706aad2a"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "cms", "trial": 2, "variant": "old", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "156.105", "allocations": "392", "requested_bytes": "8525740", "peak_additional_requested_heap": "4205598", "fnv": "a47b59a5706aad2a"},
+    {"case": "jxl-icc-lossless.jxl", "mode": "cms", "trial": 2, "variant": "new", "input": "590", "width": "7", "height": "5", "bytes": "140", "median_us": "138.819", "allocations": "391", "requested_bytes": "8525150", "peak_additional_requested_heap": "4205008", "fnv": "a47b59a5706aad2a"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ordinary", "trial": 0, "variant": "old", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "17324.241", "allocations": "972", "requested_bytes": "17473509", "peak_additional_requested_heap": "6178973", "fnv": "9ccd1aa752f9d59d"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ordinary", "trial": 0, "variant": "new", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "17022.776", "allocations": "966", "requested_bytes": "17288920", "peak_additional_requested_heap": "5994632", "fnv": "9ccd1aa752f9d59d"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ordinary", "trial": 1, "variant": "new", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "17300.966", "allocations": "966", "requested_bytes": "17288920", "peak_additional_requested_heap": "5994632", "fnv": "9ccd1aa752f9d59d"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ordinary", "trial": 1, "variant": "old", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "16507.720", "allocations": "972", "requested_bytes": "17473509", "peak_additional_requested_heap": "6178973", "fnv": "9ccd1aa752f9d59d"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ordinary", "trial": 2, "variant": "old", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "16547.210", "allocations": "972", "requested_bytes": "17473509", "peak_additional_requested_heap": "6178973", "fnv": "9ccd1aa752f9d59d"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ordinary", "trial": 2, "variant": "new", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "17021.836", "allocations": "966", "requested_bytes": "17288920", "peak_additional_requested_heap": "5994632", "fnv": "9ccd1aa752f9d59d"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ex16", "trial": 0, "variant": "old", "input": "184341", "width": "606", "height": "500", "bytes": "2424000", "median_us": "20747.121", "allocations": "973", "requested_bytes": "21109509", "peak_additional_requested_heap": "6453719", "fnv": "150b7adefdd2cb85"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ex16", "trial": 0, "variant": "new", "input": "184341", "width": "606", "height": "500", "bytes": "2424000", "median_us": "21302.658", "allocations": "967", "requested_bytes": "20924920", "peak_additional_requested_heap": "6269378", "fnv": "150b7adefdd2cb85"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ex16", "trial": 1, "variant": "new", "input": "184341", "width": "606", "height": "500", "bytes": "2424000", "median_us": "21465.482", "allocations": "967", "requested_bytes": "20924920", "peak_additional_requested_heap": "6269378", "fnv": "150b7adefdd2cb85"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ex16", "trial": 1, "variant": "old", "input": "184341", "width": "606", "height": "500", "bytes": "2424000", "median_us": "21447.997", "allocations": "973", "requested_bytes": "21109509", "peak_additional_requested_heap": "6453719", "fnv": "150b7adefdd2cb85"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ex16", "trial": 2, "variant": "old", "input": "184341", "width": "606", "height": "500", "bytes": "2424000", "median_us": "21363.790", "allocations": "973", "requested_bytes": "21109509", "peak_additional_requested_heap": "6453719", "fnv": "150b7adefdd2cb85"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "ex16", "trial": 2, "variant": "new", "input": "184341", "width": "606", "height": "500", "bytes": "2424000", "median_us": "21985.576", "allocations": "967", "requested_bytes": "20924920", "peak_additional_requested_heap": "6269378", "fnv": "150b7adefdd2cb85"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "cms", "trial": 0, "variant": "old", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "1122845.419", "allocations": "987", "requested_bytes": "22339790", "peak_additional_requested_heap": "7391595", "fnv": "08b7a652623fa1a2"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "cms", "trial": 0, "variant": "new", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "1202895.454", "allocations": "986", "requested_bytes": "22155449", "peak_additional_requested_heap": "7207254", "fnv": "08b7a652623fa1a2"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "cms", "trial": 1, "variant": "new", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "1102718.492", "allocations": "986", "requested_bytes": "22155449", "peak_additional_requested_heap": "7207254", "fnv": "08b7a652623fa1a2"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "cms", "trial": 1, "variant": "old", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "1081963.843", "allocations": "987", "requested_bytes": "22339790", "peak_additional_requested_heap": "7391595", "fnv": "08b7a652623fa1a2"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "cms", "trial": 2, "variant": "old", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "1096205.732", "allocations": "987", "requested_bytes": "22339790", "peak_additional_requested_heap": "7391595", "fnv": "08b7a652623fa1a2"},
+    {"case": "jxl-jbrd-bench.jxl", "mode": "cms", "trial": 2, "variant": "new", "input": "184341", "width": "606", "height": "500", "bytes": "1212000", "median_us": "1086563.688", "allocations": "986", "requested_bytes": "22155449", "peak_additional_requested_heap": "7207254", "fnv": "08b7a652623fa1a2"}
+  ]
+}

@@ -46,9 +46,12 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
   a promise that lossy input becomes lossless.
 
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
-animations (no silent first-frame fallback), previews, intrinsic display sizes,
+animations (no silent first-frame fallback), intrinsic display sizes,
 premultiplied or mixed-depth/subsampled alpha, multiple/other extra channels,
 forbidden compressed control/nested boxes and unsupported depths.
+Supported embedded previews are [bounded and skipped](jpeg-xl-preview.md) while
+returning the main image. No preview extraction API or progressive-output mode is
+added; preview entropy is not validated by main-only decoding.
 Explicit Level5 and Level10 `jxll` boxes are accepted; dimensions, workspace and
 the supported sample profile remain independently bounded. This does not promise
 the entire Level10 profile. Native JPEG bitstream reconstruction is not implemented.

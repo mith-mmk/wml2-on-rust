@@ -321,6 +321,8 @@ jobs:
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Check all compatible targets and expected all-features rejection
         run: python -B .github/scripts/check_feature_contracts.py --output .test-feature-contracts
+      - name: Exhaustive trusted JPEG XL progressive byte boundaries
+        run: cargo test -p wml2 --locked --release --no-default-features --features jpeg-xl --test jpeg_xl_additional progressive_core_evaluation::frozen_incremental_boundaries_match_independent_c_pixels
       - uses: actions/upload-artifact@v4
         if: always()
         with:

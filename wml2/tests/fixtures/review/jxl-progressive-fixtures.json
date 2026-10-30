@@ -1,0 +1,62 @@
+{
+  "oracle": "Independent C libjxl0.11.2 RGBA16 little endian, relative sRGB reconstruction; RGB<=3u16 against trusted pure Rust core, final managed RGB<=2u8 and alpha exact",
+  "construction": "32x24 deterministic RGB8 VarDCT, distance1, effort3, progressive AC and quantized AC enabled; DC0 or DC1. Count actual coded frame passes with the pinned header parser. Containers are structural wrappers around the same C codestream.",
+  "cases": [
+    {
+      "name": "ac-raw",
+      "file": "jxl-progressive-ac.jxl",
+      "sha256": "db4a249b4467f2683de3a611bcbc2f4c5485885d908c17caa06e17eb96d1cd42",
+      "oracle": "jxl-progressive-ac.rgba16le",
+      "oracle_sha256": "feee9760dddd877a2ee13e7a47b0fd563666871d0fa8afb2c488ef82f1bc737a"
+    },
+    {
+      "name": "ac-jxlc",
+      "file": "jxl-progressive-ac-jxlc.jxl",
+      "sha256": "462196adf131a14c3a5b18a1d329bb90e516c301600a454e89afea111f14b15e",
+      "oracle": "jxl-progressive-ac.rgba16le",
+      "oracle_sha256": "feee9760dddd877a2ee13e7a47b0fd563666871d0fa8afb2c488ef82f1bc737a"
+    },
+    {
+      "name": "ac-jxlp",
+      "file": "jxl-progressive-ac-jxlp.jxl",
+      "sha256": "a65f4d11d9d053168bfcbf72821ab526f509e3e34526202e8d6bc4d8584cdd7c",
+      "oracle": "jxl-progressive-ac.rgba16le",
+      "oracle_sha256": "feee9760dddd877a2ee13e7a47b0fd563666871d0fa8afb2c488ef82f1bc737a"
+    },
+    {
+      "name": "ac-trailer",
+      "file": "jxl-progressive-ac-trailer.jxl",
+      "sha256": "f23fc27efe80310536958d355b236b9e873955b8126c0f2f84cc3dc360ef410b",
+      "oracle": "jxl-progressive-ac.rgba16le",
+      "oracle_sha256": "feee9760dddd877a2ee13e7a47b0fd563666871d0fa8afb2c488ef82f1bc737a"
+    },
+    {
+      "name": "dc-raw",
+      "file": "jxl-progressive-dc.jxl",
+      "sha256": "80e93bd15b367b03533652c5dc985175b9ab71543ad3f670b3fcbc8e78436c61",
+      "oracle": "jxl-progressive-dc.rgba16le",
+      "oracle_sha256": "df9c5abf22ef25e8195be041c270cf851ab76ab57d1f5e8c3fc3c435253f503c"
+    },
+    {
+      "name": "dc-jxlc",
+      "file": "jxl-progressive-dc-jxlc.jxl",
+      "sha256": "486ebbe83c50d2031c2c03d7f86d13a7a3aa046df10aed9b6537716c869aaa71",
+      "oracle": "jxl-progressive-dc.rgba16le",
+      "oracle_sha256": "df9c5abf22ef25e8195be041c270cf851ab76ab57d1f5e8c3fc3c435253f503c"
+    },
+    {
+      "name": "dc-jxlp",
+      "file": "jxl-progressive-dc-jxlp.jxl",
+      "sha256": "ccf750fcd79dc84f21e824b2e5e3a32db7d74d73e270d4e32cc13d3ea291f305",
+      "oracle": "jxl-progressive-dc.rgba16le",
+      "oracle_sha256": "df9c5abf22ef25e8195be041c270cf851ab76ab57d1f5e8c3fc3c435253f503c"
+    },
+    {
+      "name": "dc-trailer",
+      "file": "jxl-progressive-dc-trailer.jxl",
+      "sha256": "a90612d3ae45abbdb76d408afb8bd801dcabf0f3b4f855542c8ae66901ce0686",
+      "oracle": "jxl-progressive-dc.rgba16le",
+      "oracle_sha256": "df9c5abf22ef25e8195be041c270cf851ab76ab57d1f5e8c3fc3c435253f503c"
+    }
+  ]
+}

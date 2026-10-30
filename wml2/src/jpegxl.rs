@@ -608,7 +608,7 @@ pub fn image_from_srgb_with_limits(
 ) -> Result<crate::draw::ImageBuffer, Error> {
     let mut image = crate::draw::ImageBuffer::new();
     crate::decode_guard::run(
-        &mut bin_rs::reader::BytesReader::new(input),
+        &mut bin_rs::reader::StreamReader::new(std::io::Cursor::new(input)),
         &mut DecodeOptions {
             debug_flag: 0,
             drawer: &mut image,

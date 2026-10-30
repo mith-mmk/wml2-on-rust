@@ -639,14 +639,14 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode::<B, false>(reader, option, false, None)
+    decode::<B, false, false>(reader, option, false, None)
 }
 #[cfg(feature = "image-buffer-ex")]
 pub(crate) fn decode_ex_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode::<B, false>(reader, option, true, None)
+    decode::<B, false, false>(reader, option, true, None)
 }
 /// Decode a supported JPEG XL still into sRGB RGBA8 for display.
 ///
@@ -707,19 +707,31 @@ fn cancelled_image(
             drawer: &mut image,
         },
         limits,
-        |reader, options| decode::<_, true>(reader, options, false, Some(&cancellation)),
+        |reader, options| {
+            if probe.is_some() {
+                decode::<_, true, true>(reader, options, false, Some(&cancellation))
+            } else {
+                decode::<_, true, false>(reader, options, false, None)
+            }
+        },
     )?;
     cancellation.check()?;
     Ok(image)
 }
 
-fn decode<B: BinaryReader, const MANAGED: bool>(
+fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     reader: &mut B,
     option: &mut DecodeOptions,
     native: bool,
     cancellation: Option<&Cancellation<'_>>,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let check = || cancellation.map_or(Ok(()), Cancellation::check);
+    let check = || {
+        if CANCELLABLE {
+            cancellation.map_or(Ok(()), Cancellation::check)
+        } else {
+            Ok(())
+        }
+    };
     check()?;
     let inactive = Cancellation {
         probe: None,
@@ -729,7 +741,8 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     let mut runner = CancellableRunner(cancellation);
 
     // Compile the explicit display path separately so its CMS work cannot
-    // obscure optimization of existing source-coordinate entry points.
+    // obscure optimization of existing source-coordinate entry points. The
+    // cancellation specialization also removes probes from existing routes.
     let managed = MANAGED;
     let limits = limits::current();
     let start = reader.offset()?;
@@ -761,13 +774,19 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         decoder
             .process(
                 &mut stream,
-                if cancellation.probe.is_some() {
+                if CANCELLABLE && cancellation.probe.is_some() {
                     Some(&mut runner)
                 } else {
                     None
                 },
             )
-            .map_err(|e| cancellation.codec_error(e))?,
+            .map_err(|e| {
+                if CANCELLABLE {
+                    cancellation.codec_error(e)
+                } else {
+                    codec_error(e)
+                }
+            })?,
     )?;
     check()?;
     if decoder.basic_info().size != (h.width, h.height) {
@@ -888,13 +907,19 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         decoder
             .process(
                 &mut stream,
-                if cancellation.probe.is_some() {
+                if CANCELLABLE && cancellation.probe.is_some() {
                     Some(&mut runner)
                 } else {
                     None
                 },
             )
-            .map_err(|e| cancellation.codec_error(e))?,
+            .map_err(|e| {
+                if CANCELLABLE {
+                    cancellation.codec_error(e)
+                } else {
+                    codec_error(e)
+                }
+            })?,
     )?;
     check()?;
     let row = mul(h.width, mul(channels, if bits == 8 { 1 } else { 2 })?)?;
@@ -913,13 +938,19 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
             .process(
                 &mut stream,
                 &mut buffers,
-                if cancellation.probe.is_some() {
+                if CANCELLABLE && cancellation.probe.is_some() {
                     Some(&mut runner)
                 } else {
                     None
                 },
             )
-            .map_err(|e| cancellation.codec_error(e))?,
+            .map_err(|e| {
+                if CANCELLABLE {
+                    cancellation.codec_error(e)
+                } else {
+                    codec_error(e)
+                }
+            })?,
     )?;
     check()?;
     if decoder.has_more_frames() {
@@ -1058,6 +1089,32 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pinned_codec_observes_runner_cancellation_inside_frame_processing() {
+        let mut stream = include_bytes!("../tests/fixtures/review/jxl-rgb8.jxl").as_slice();
+        let decoder = JxlDecoder::<states::Initialized>::new(JxlDecoderOptions::default());
+        let mut decoder = complete(decoder.process(&mut stream, None).unwrap()).unwrap();
+        let (width, height) = decoder.basic_info().size;
+        decoder.set_pixel_format(JxlPixelFormat::rgba8(0)).unwrap();
+        let decoder = complete(decoder.process(&mut stream, None).unwrap()).unwrap();
+        let mut output = vec![0; width * height * 4];
+        let mut buffers = [JxlOutputBuffer::new(&mut output, height, width * 4)];
+        let probe = || true;
+        let cancellation = Cancellation {
+            probe: Some(&probe),
+            cancelled: std::cell::Cell::new(false),
+        };
+        // This is inside the codec frame call, not an adapter before/after check.
+        let result = decoder.process(
+            &mut stream,
+            &mut buffers,
+            Some(&mut CancellableRunner(&cancellation)),
+        );
+        let err = result.err().expect("codec must propagate runner failure");
+        assert!(cancellation.cancelled.get());
+        assert!(cancellation.codec_error(err).is::<DecodeCancelled>());
+    }
+
     #[test]
     fn codec_runner_cancels_between_tasks_and_preserves_task_errors() {
         use std::cell::Cell;

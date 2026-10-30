@@ -30,7 +30,7 @@ pub(crate) fn rgba16_to_rgb_profile_with_cancel(
     destination: &[u8],
     source_is_gray: bool,
     compiled_budget: usize,
-    check: &dyn Fn() -> Result<(), Error>,
+    check: &impl Fn() -> Result<(), Error>,
 ) -> Result<(), Error> {
     check()?;
     if !rgba.len().is_multiple_of(4) {

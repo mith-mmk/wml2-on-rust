@@ -42,6 +42,35 @@ fn all_eight_orientations_match_independent_djxl_after_one_reorientation() {
             expected,
             "orientation {orientation}"
         );
+        #[cfg(feature = "color-management")]
+        {
+            let image = wml2::jpegxl::image_from_srgb_with_limits_and_cancel(
+                input,
+                Default::default(),
+                &|| false,
+            )
+            .unwrap();
+            assert_eq!((image.width, image.height), size);
+            let metadata = image.metadata.as_ref().unwrap();
+            assert!(matches!(
+                metadata["orientation_applied"],
+                DataMap::Bool(true)
+            ));
+            assert!(
+                matches!(metadata["JPEG XL Source Orientation"], DataMap::UInt(v) if v == orientation)
+            );
+            for (actual, reference) in image
+                .buffer
+                .unwrap()
+                .chunks_exact(4)
+                .zip(expected.chunks_exact(4))
+            {
+                for c in 0..3 {
+                    assert!(actual[c].abs_diff(reference[c]) <= 2);
+                }
+                assert_eq!(actual[3], reference[3]);
+            }
+        }
         #[cfg(feature = "image-buffer-ex")]
         {
             let image =
@@ -222,6 +251,71 @@ mod cancellation {
     use wml2::jpegxl::{DecodeCancelled, image_from_srgb_with_limits_and_cancel as decode};
     use wml2::limits::DecodeLimits;
     const INPUT: &[u8] = include_bytes!("fixtures/review/jxl-icc-lossless.jxl");
+
+    #[test]
+    fn managed_cancellable_alpha_matches_independent_djxl_at_all_depths() {
+        for (input, oracle, channels, bits) in [
+            (
+                include_bytes!("fixtures/review/jxl-rgba8.jxl").as_slice(),
+                include_bytes!("fixtures/review/jxl-rgba8-djxl.bin").as_slice(),
+                4,
+                8,
+            ),
+            (
+                include_bytes!("fixtures/review/jxl-rgba12.jxl").as_slice(),
+                include_bytes!("fixtures/review/jxl-rgba12-djxl.bin").as_slice(),
+                4,
+                12,
+            ),
+            (
+                include_bytes!("fixtures/review/jxl-rgba16.jxl").as_slice(),
+                include_bytes!("fixtures/review/jxl-rgba16-djxl.bin").as_slice(),
+                4,
+                16,
+            ),
+            (
+                include_bytes!("fixtures/review/jxl-grayalpha8.jxl").as_slice(),
+                include_bytes!("fixtures/review/jxl-grayalpha8-djxl.bin").as_slice(),
+                2,
+                8,
+            ),
+            (
+                include_bytes!("fixtures/review/jxl-grayalpha12.jxl").as_slice(),
+                include_bytes!("fixtures/review/jxl-grayalpha12-djxl.bin").as_slice(),
+                2,
+                12,
+            ),
+            (
+                include_bytes!("fixtures/review/jxl-grayalpha16.jxl").as_slice(),
+                include_bytes!("fixtures/review/jxl-grayalpha16-djxl.bin").as_slice(),
+                2,
+                16,
+            ),
+        ] {
+            let image = decode(input, DecodeLimits::default(), &|| false).unwrap();
+            let source: Vec<u32> = if bits == 8 {
+                oracle.iter().map(|&v| v as u32).collect()
+            } else {
+                oracle
+                    .chunks_exact(2)
+                    .map(|v| u16::from_le_bytes([v[0], v[1]]) as u32)
+                    .collect()
+            };
+            let max = (1u32 << bits) - 1;
+            let expected: Vec<u8> = source
+                .chunks_exact(channels)
+                .map(|p| ((p[channels - 1] * 255 + max / 2) / max) as u8)
+                .collect();
+            let actual: Vec<u8> = image
+                .buffer
+                .unwrap()
+                .chunks_exact(4)
+                .map(|p| p[3])
+                .collect();
+            assert_eq!(actual, expected, "{bits}-bit, {channels} channels");
+            assert!(actual.iter().any(|&a| a != 255));
+        }
+    }
 
     #[test]
     fn cancellation_at_every_checkpoint_never_publishes_an_image() {

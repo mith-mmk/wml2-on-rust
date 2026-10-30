@@ -13,9 +13,10 @@
       "stderr": "",
       "max_rgba16_difference": 0,
       "max_alpha_difference": 0,
-      "actual_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05",
-      "c_oracle_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05",
-      "max_difference_from_C_unpremultiplied": 65522
+      "actual_sha256": "4f24198f5f63a727d38591ada7860e860fc2e774da08c7600b84996e103f437a",
+      "c_oracle_sha256": "4f24198f5f63a727d38591ada7860e860fc2e774da08c7600b84996e103f437a",
+      "max_difference_from_C_unpremultiplied": 5080,
+      "associated_input": "Integer RGB multiplied by normalized alpha, RGB<=alpha and RGB=0 at alpha=0"
     },
     {
       "case": "associated",
@@ -24,9 +25,10 @@
       "stderr": "",
       "max_rgba16_difference": 0,
       "max_alpha_difference": 0,
-      "actual_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05",
-      "c_oracle_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05",
-      "max_difference_from_C_unpremultiplied": 65522
+      "actual_sha256": "4f24198f5f63a727d38591ada7860e860fc2e774da08c7600b84996e103f437a",
+      "c_oracle_sha256": "4f24198f5f63a727d38591ada7860e860fc2e774da08c7600b84996e103f437a",
+      "max_difference_from_C_unpremultiplied": 5080,
+      "associated_input": "Integer RGB multiplied by normalized alpha, RGB<=alpha and RGB=0 at alpha=0"
     },
     {
       "case": "subsampled",

@@ -1872,8 +1872,8 @@
       "kind": "associated",
       "alpha_bits": 8,
       "c_decodes": true,
-      "sha256": "63bdd41e2bf211b9ee553547a27181ddeeaa905178ed88676cc5c9c10279e31e",
-      "rgba16_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05"
+      "sha256": "2e19270e0a1cba7a39a1b43b3a3b637d79665af8710ef1dc501f3d0c5d039d6e",
+      "rgba16_sha256": "4f24198f5f63a727d38591ada7860e860fc2e774da08c7600b84996e103f437a"
     },
     {
       "file": "jxl-alpha-refused-subsampled.jxl",

@@ -58,8 +58,8 @@
     "orientations": "1..8 distributed; not full orientation x depth cross-product",
     "additional_ICC_cases": 2,
     "independent_valid_refusal_cases": 8,
-    "manifest_sha256": "11cf2eb961a3633dda247430f1f726674919976e3850132f393e74928457527b",
-    "total_generated_fixture_bytes": 76164,
+    "manifest_sha256": "af119c7673c743930f18c3bf7a64ef6ed08163ccfcf8fc907a41d16cae725bf0",
+    "total_generated_fixture_bytes": 76085,
     "pixel_oracle": "C libjxl RGBA16; independently recover original source color/alpha codes; LittleCMS transforms C output ICC/RGB16 and copies alpha; no WML2 expected-output generation"
   },
   "wasm": {

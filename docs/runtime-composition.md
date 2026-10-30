@@ -5,10 +5,14 @@ GitHub PR. Original public branches and `main` are unchanged. No production
 regression requiring a separate fix was found in the exercised combinations.
 The individual issues retain their documented partial scopes.
 
-The tested code/test commit is `d7a6121b64596a3e8ce83391d7b9cb71b65cdadf`, tree
-`3759a5efa8e62066639b2d5c3e8e24679eb7290c`. The subsequent evidence commit only
-adds this report, its data, and a default `.test*` Cargo target for the reproduction
-script. See [machine-readable results](runtime-composition.json) for full input
+The tested code/test commit is `e726bdfb02b49f0175eb0846a78d178f96a55bd1`, tree
+`f2608c3af7d87d79a4ff19edd41fc0c0a5dc2662`. The subsequent evidence commit
+only synchronizes this report and its data. The original full local matrix used
+`d7a6121b64596a3e8ce83391d7b9cb71b65cdadf`; the runtime is identical. Independent
+review then added full 5x7 geometry and 140-byte expected/actual length assertions
+before the mixed-alpha CMS zipped pixel comparison. That affected Linux test was
+rerun successfully, retaining zero pre-cancel allocations and the same bounded
+oversized-input refusal. See [machine-readable results](runtime-composition.json) for full input
 heads, commands, measurements and WASM hashes. Toolchain: Rust 1.91.0 on x86_64
 Linux; actual wasm32-unknown-unknown execution with Node 24.19.0.
 
@@ -116,6 +120,26 @@ sample round trips. Their 512x384 RGBA16 medians were PNG 18.890 ms; TIFF none
 artifact and composed JXL output were opened for visual checking. Three external
 TIFF corpus cases and the manual header-query benchmark were not executed.
 
+## Existing CI on the prior evidence head
+
+The push did not trigger CI because the unchanged workflow limits push events
+to main. Its existing `workflow_dispatch` was invoked for the evidence branch.
+[Run 41027549581](https://github.com/mith-mmk/wml2-on-rust/actions/runs/41027549581)
+completed successfully at exact prior evidence head
+`fa6e759429ee279c9bd050e09a536b4f98890c95`: all 60 jobs succeeded. No workflow
+or security settings were changed. This run precedes the test-only output-length
+hardening; its runtime is identical to the updated evidence head.
+
+Actual native JXL platform coverage includes macOS aarch64 and Windows x86_64
+with Rust 1.99.1: disabled, ordinary, EX, EXIF and own-CMS paths. Logs explicitly
+show the new preview/intrinsic/brob budget and managed-cancellation composition
+tests passing. Windows also executes i686 ordinary, EX/EXIF and disabled paths;
+its i686 steps do not select CMS. Both platform jobs omit
+`jpeg_xl_slice_admission`, so **neither proves allocation assertions there**.
+Those assertions, including the newly hardened full-buffer mixed-alpha CMS
+comparison, were verified locally on Linux. The updated evidence head's separate
+CI run should be identified by its exact SHA rather than attributed to this run.
+
 ## Performance observations
 
 The existing requested-allocation benchmark was built against verified main and
@@ -170,7 +194,14 @@ with the frozen `jxl-rgba8.jxl` and `jxl-jbrd-bench.jxl` inputs. Raw stdout is i
 are `cargo test --release` with `png,tiff,image-buffer-ex`, selecting
 `display_and_benchmark -- --ignored --nocapture` in both EX encoder targets.
 
-This experiment does not qualify Windows/macOS, another Rust toolchain, every
+The local matrix above is Linux-only. Existing Windows/macOS JPEG XL workflow
+jobs select `jpeg_xl` (including the composition module), but **do not select
+`jpeg_xl_slice_admission`**. Even green platform jobs therefore do not establish
+its allocation assertions on Windows/macOS. Linux local execution is the evidence
+for the pre-cancel and borrowed-reader allocation assertions. Workflow selection
+has not been changed for this experiment.
+
+The local experiment does not qualify another Rust toolchain, every
 possible cross-product of JXL features, hard heap bounds or cancellation latency.
 Evaluation-only PRs #54/#60/#61/#63/#67/#68/#69 are not included as runtime changes.
 No animation, float/HDR, resumable API, encoder, reconstruction API or dependency

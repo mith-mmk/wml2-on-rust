@@ -1,7 +1,7 @@
 {
   "baseline": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
-  "tested_runtime_and_tests_commit": "d7a6121b64596a3e8ce83391d7b9cb71b65cdadf",
-  "tested_runtime_and_tests_tree": "3759a5efa8e62066639b2d5c3e8e24679eb7290c",
+  "tested_runtime_and_tests_commit": "e726bdfb02b49f0175eb0846a78d178f96a55bd1",
+  "tested_runtime_and_tests_tree": "f2608c3af7d87d79a4ff19edd41fc0c0a5dc2662",
   "exact_heads_in_composition_order": {
     "57": "81178d7c7359e211eaea4ebaeca8c6b5b0ad1129",
     "32": "da4f45764995110502a1a0a3cd9e933d86a5872f",
@@ -561,9 +561,41 @@
   ],
   "limitations": [
     "Local integration evidence only; no GitHub PR merge or approval",
-    "No Windows/macOS execution or additional Rust toolchain tested here",
+    "Local measurements are Linux Rust1.91; remote prior-evidence-head CI platform coverage is recorded separately. Slice-admission allocation assertions are not selected on Windows/macOS.",
     "Three external TIFF corpus tests were not executed; two ignored manual EX benchmarks executed separately; metadata-query manual benchmark not run",
     "No hard heap bound, cancellation latency guarantee or broad performance claim",
     "Only mechanical composition resolutions; no independently identified production regression fix"
-  ]
+  ],
+  "prior_full_matrix_runtime_and_tests_commit": "d7a6121b64596a3e8ce83391d7b9cb71b65cdadf",
+  "prior_full_matrix_runtime_and_tests_tree": "3759a5efa8e62066639b2d5c3e8e24679eb7290c",
+  "review_hardening": {
+    "change": "Assert full 5x7 pixel geometry and 140-byte expected/actual buffers before chunks_exact().zip() mixed-alpha CMS comparison",
+    "affected_test": "jpeg_xl_slice_admission::composition_cancellation_stays_before_borrowed_input_admission",
+    "passed": 1,
+    "failed": 0,
+    "pre_cancel_allocations": 0,
+    "non_cancel_oversize": {
+      "allocations": 3,
+      "total_requested_bytes": 82,
+      "largest_requested_bytes": 42
+    },
+    "runtime_changed": false
+  },
+  "platform_coverage_boundary": "Existing Windows/macOS JPEG XL jobs select jpeg_xl but not jpeg_xl_slice_admission. Green platform jobs do not prove the borrowed-reader allocation assertions; those were executed locally on Linux.",
+  "ci_prior_evidence_head": {
+    "head": "fa6e759429ee279c9bd050e09a536b4f98890c95",
+    "run_id": 41027549581,
+    "url": "https://github.com/mith-mmk/wml2-on-rust/actions/runs/41027549581",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "job_conclusions": {
+      "success": 59,
+      "skipped": 1
+    },
+    "macos_jxl_job": 123969247458,
+    "windows_jxl_job": 123969247470,
+    "native_platform_rustc": "1.99.1",
+    "native_platform_scope": "ordinary/EX/EXIF/own-CMS JXL with composition tests; Windows additionally i686 ordinary/EX/disabled; slice-admission allocation target is not selected"
+  }
 }

@@ -146,3 +146,15 @@ No material existing-path change is observed in this local sample. For the new
 extra raw retention and decompression, not just codec time. The old decoder did
 not support brob, so no old brob success or speedup is claimed. Workspace
 admission and allocator-denial tests do not measure whole-process RSS.
+
+## Aggregate admission ordering follow-up
+
+A deterministic retained-metadata/ICC case showed that the older preflight
+workspace value omitted the retained container allowance until the later
+post-profile check. This is an admission-order regression test, not a measured
+process-memory overrun or a demonstrated limit bypass. The existing 2x retained
+metadata allowance is now included before header/ICC/TOC work; the later boundary
+charges only generated profiles/header/output metadata, so the eventual total
+is unchanged. A public exact-workspace/one-byte-less test verifies no double
+charge. The new 64-test native run and 69-case WASM run pass. The recorded JSON
+keeps the initial measurements and identifies this follow-up separately.

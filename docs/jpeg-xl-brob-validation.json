@@ -71,5 +71,50 @@
     "max_rgba_difference_from_independent_srgb_oracle": 1,
     "rgba_sha256": "6257f1d90d459543e8f775f95b63507d3598f0c529d876b2efe9eb067113aac7",
     "visually_inspected": true
+  },
+  "review_follow_up": {
+    "scope": "Retained container metadata admission moved before header/ICC/TOC; eventual total unchanged. Deterministic ordering case, not a measured memory overrun or demonstrated limit bypass.",
+    "source_sha256": {
+      "wml2/src/jpegxl.rs": "9b3c91537deaed69c3dd674ae68729fab8e0b8b5366cfaa6dcd74009c24b1fb9",
+      "wml2/src/jpegxl_brob.rs": "697a38f19f41e9533efb430e367bf544053991bdf370b29896d576d77065cc91",
+      "wml2/Cargo.toml": "4cb870ad5818ac9cf701c6d051f159d53d407b043dbda281c9db92d3aa313abc",
+      "Cargo.lock": "92013e0723b61be0e48b04ee5165cb4f9b393242813286e7edd66788f7c3153e",
+      "wml2-test/scripts/jpegxl_wasm.rs": "3868c38dc27c6a791907a5811e38c86398984b0746dd5217fc8002038580cb5f"
+    },
+    "native_passed": 64,
+    "wasm": {
+      "runtime": "v24.19.0",
+      "cases": 69,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 14417920,
+      "target": "wasm32-unknown-unknown",
+      "features": "jpeg-xl,image-buffer-ex; no defaults",
+      "wasm_sha256": "80416b225083937ff708399153e858be46de6e63905b3c4c2ae38ec0d75fdd9d",
+      "scope": "bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+    },
+    "benchmark_subset": [
+      {
+        "case": "jxl-rgba16",
+        "route": "ordinary",
+        "before_us": 55.023,
+        "after_us": 54.9325,
+        "output_hashes_match": true
+      },
+      {
+        "case": "jxl-jbrd-bench",
+        "route": "ordinary",
+        "before_us": 16974.476,
+        "after_us": 16196.032,
+        "output_hashes_match": true
+      },
+      {
+        "case": "jxl-icc-lossless",
+        "route": "managed",
+        "before_us": 185.1945,
+        "after_us": 193.8925,
+        "output_hashes_match": true
+      }
+    ]
   }
 }

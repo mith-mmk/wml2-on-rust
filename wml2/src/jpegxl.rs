@@ -443,8 +443,11 @@ fn frame_workspace(
 
 fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     // FileHeader has bounded channel tables, but does not read ICC/pixel data.
+    // Retained container metadata is already live, including expanded brob.
+    // Reserve its existing 2x allowance before header/ICC/TOC allocation.
+    let header_workspace = add(1024 * 1024, mul(input.metadata_bytes, 2)?)?;
     limits::check(
-        1024 * 1024,
+        header_workspace,
         limits.expanded_bytes,
         "JPEG XL header workspace",
     )?;
@@ -513,7 +516,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     let padded = mul(width.max(16), height.max(16))?;
     let frame_pixels = add(mul(padded, 4)?, 2)? / 3;
     limits::check(frame_pixels, MAX_PIXELS, "JPEG XL padded frame pixels")?;
-    let mut base = add(1024 * 1024, mul(input.codestream.len(), 2)?)?;
+    let mut base = add(header_workspace, mul(input.codestream.len(), 2)?)?;
     let mut frame_bits = header_bits;
     if m.color_encoding.want_icc {
         // Histograms/SymbolReader can allocate a 4 MiB LZ77 ring before a
@@ -807,7 +810,12 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         add(n, add(k.len(), bytes)?)
     })?;
     limits::check(metadata_bytes, limits.metadata_bytes, "JPEG XL metadata")?;
-    let retained_workspace = add(h.workspace, mul(metadata_bytes, 2)?)?;
+    // Preflight already holds the 2x container allowance. Only generated
+    // profiles/header/output metadata are additional at this boundary.
+    let added_metadata = metadata_bytes
+        .checked_sub(input.metadata_bytes)
+        .ok_or_else(|| invalid("JPEG XL metadata accounting mismatch"))?;
+    let retained_workspace = add(h.workspace, mul(added_metadata, 2)?)?;
     limits::check(
         retained_workspace,
         limits.expanded_bytes,
@@ -956,6 +964,80 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn retained_metadata_is_admitted_before_header_and_icc_work_without_double_counting() {
+        let data = include_bytes!("../tests/fixtures/review/jxl-icc-lossless.jxl");
+        let limits = DecodeLimits::default();
+        let bare = unpack(data, limits).unwrap();
+        let baseline = preflight(&bare, limits).unwrap();
+        let mut boxed = SIGNATURE.to_vec();
+        let mut put = |kind: &[u8; 4], payload: &[u8]| {
+            boxed.extend(((payload.len() + 8) as u32).to_be_bytes());
+            boxed.extend(kind);
+            boxed.extend(payload);
+        };
+        put(b"ftyp", b"jxl \0\0\0\0jxl ");
+        put(b"test", &vec![0; 1 << 20]);
+        put(b"jxlc", &bare.codestream);
+        let retained = unpack(&boxed, limits).unwrap();
+        let admitted = preflight(&retained, limits).unwrap();
+        assert_eq!(
+            admitted.workspace,
+            baseline.workspace + retained.metadata_bytes * 2
+        );
+        let frame_pixels = (baseline.width.max(16) * baseline.height.max(16) * 4).div_ceil(3);
+        let before_icc = (1 << 20) + bare.codestream.len() * 2 + (8 << 20) + frame_pixels * 128;
+        let tight = DecodeLimits {
+            expanded_bytes: before_icc + retained.metadata_bytes * 2 - 1,
+            ..limits
+        };
+        assert!(preflight(&bare, tight).is_ok());
+        assert!(
+            preflight(&retained, tight)
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("ICC workspace")
+        );
+        // Public full-decode admission still charges the old total exactly once.
+        let image = crate::draw::image_from_with_limits(&boxed, limits).unwrap();
+        let final_bytes: usize = image
+            .metadata
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|(key, value)| {
+                key.len()
+                    + match value {
+                        DataMap::Raw(v) | DataMap::ICCProfile(v) => v.len(),
+                        DataMap::Ascii(v) => v.len(),
+                        _ => 8,
+                    }
+            })
+            .sum();
+        let exact = baseline.workspace + final_bytes * 2;
+        assert!(
+            crate::draw::image_from_with_limits(
+                &boxed,
+                DecodeLimits {
+                    expanded_bytes: exact,
+                    ..limits
+                }
+            )
+            .is_ok()
+        );
+        assert!(
+            crate::draw::image_from_with_limits(
+                &boxed,
+                DecodeLimits {
+                    expanded_bytes: exact - 1,
+                    ..limits
+                }
+            )
+            .is_err()
+        );
+    }
+
     #[test]
     fn brob_metadata_quota_counts_raw_decoded_and_keys_at_the_exact_boundary() {
         let raw = include_bytes!("../tests/fixtures/review/jxl-rgba8.jxl");

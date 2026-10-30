@@ -310,6 +310,8 @@ pub fn encoder_supports_format(format: &ImageFormat) -> bool {
         ImageFormat::Tiff => true,
         #[cfg(feature = "webp")]
         ImageFormat::Webp => true,
+        #[cfg(feature = "avifenc")]
+        ImageFormat::Avif => true,
         _ => false,
     }
 }

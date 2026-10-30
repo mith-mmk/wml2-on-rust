@@ -57,6 +57,12 @@ fn rgb_error(source: &[u8], decoded: &[u8]) -> (f64, u8) {
 
 #[test]
 fn avif_encoder_round_trips_through_wml2_decoder() {
+    assert!(wml2::util::encoder_supports_format(&ImageFormat::Avif));
+    assert!(
+        wml2::get_encode_extentions()
+            .iter()
+            .any(|extension| extension == "avif")
+    );
     let width = 17;
     let height = 13;
     let source = gradient(width, height);

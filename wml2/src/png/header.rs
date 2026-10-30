@@ -215,84 +215,7 @@ impl PngHeader {
                 header.bitpersample = reader.read_byte()?;
                 header.color_type = reader.read_byte()?;
 
-                match header.color_type {
-                    0 => {
-                        if header.bitpersample != 1
-                            && header.bitpersample != 2
-                            && header.bitpersample != 4
-                            && header.bitpersample != 8
-                            && header.bitpersample != 16
-                        {
-                            let string = format!(
-                                "Glayscale must be bitpersample 1,2,4,8,16 but {}",
-                                header.bitpersample
-                            );
-                            return Err(Box::new(ImgError::new_const(
-                                ImgErrorKind::IllegalData,
-                                string,
-                            )));
-                        }
-                    }
-                    2 => {
-                        if header.bitpersample != 8 && header.bitpersample != 16 {
-                            let string = format!(
-                                "True colors must be bitpersample 8,16 but {}",
-                                header.bitpersample
-                            );
-                            return Err(Box::new(ImgError::new_const(
-                                ImgErrorKind::IllegalData,
-                                string,
-                            )));
-                        }
-                    }
-                    3 => {
-                        if header.bitpersample != 1
-                            && header.bitpersample != 2
-                            && header.bitpersample != 4
-                            && header.bitpersample != 8
-                        {
-                            let string = format!(
-                                "Index colors must be bitpersample 8,16 but {}",
-                                header.bitpersample
-                            );
-                            return Err(Box::new(ImgError::new_const(
-                                ImgErrorKind::IllegalData,
-                                string,
-                            )));
-                        }
-                    }
-                    4 => {
-                        if header.bitpersample != 8 && header.bitpersample != 16 {
-                            let string = format!(
-                                "Glayscale with alpha must be bitpersample 8,16 but {}",
-                                header.bitpersample
-                            );
-                            return Err(Box::new(ImgError::new_const(
-                                ImgErrorKind::IllegalData,
-                                string,
-                            )));
-                        }
-                    }
-                    6 => {
-                        if header.bitpersample != 8 && header.bitpersample != 16 {
-                            let string = format!(
-                                "True colors with alpha must be bitpersample 8,16 but {}",
-                                header.bitpersample
-                            );
-                            return Err(Box::new(ImgError::new_const(
-                                ImgErrorKind::IllegalData,
-                                string,
-                            )));
-                        }
-                    }
-                    _ => {
-                        let string = format!("Color type {} is unknown", header.color_type);
-                        return Err(Box::new(ImgError::new_const(
-                            ImgErrorKind::IllegalData,
-                            string,
-                        )));
-                    }
-                }
+                validate_color_depth(header.color_type, header.bitpersample)?;
 
                 header.compression = reader.read_byte()?;
                 header.filter_method = reader.read_byte()?;
@@ -519,4 +442,70 @@ impl PngHeader {
         }
         Ok(header)
     }
+}
+
+// Shared by the full header reader and the allocation-free information route.
+#[inline]
+pub(crate) fn validate_color_depth(color_type: u8, depth: u8) -> Result<(), Error> {
+    match color_type {
+        0 => {
+            if depth != 1 && depth != 2 && depth != 4 && depth != 8 && depth != 16 {
+                let string = format!("Glayscale must be bitpersample 1,2,4,8,16 but {}", depth);
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::IllegalData,
+                    string,
+                )));
+            }
+        }
+        2 => {
+            if depth != 8 && depth != 16 {
+                let string = format!("True colors must be bitpersample 8,16 but {}", depth);
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::IllegalData,
+                    string,
+                )));
+            }
+        }
+        3 => {
+            if depth != 1 && depth != 2 && depth != 4 && depth != 8 {
+                let string = format!("Index colors must be bitpersample 8,16 but {}", depth);
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::IllegalData,
+                    string,
+                )));
+            }
+        }
+        4 => {
+            if depth != 8 && depth != 16 {
+                let string = format!(
+                    "Glayscale with alpha must be bitpersample 8,16 but {}",
+                    depth
+                );
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::IllegalData,
+                    string,
+                )));
+            }
+        }
+        6 => {
+            if depth != 8 && depth != 16 {
+                let string = format!(
+                    "True colors with alpha must be bitpersample 8,16 but {}",
+                    depth
+                );
+                return Err(Box::new(ImgError::new_const(
+                    ImgErrorKind::IllegalData,
+                    string,
+                )));
+            }
+        }
+        _ => {
+            let string = format!("Color type {} is unknown", color_type);
+            return Err(Box::new(ImgError::new_const(
+                ImgErrorKind::IllegalData,
+                string,
+            )));
+        }
+    }
+    Ok(())
 }

@@ -683,23 +683,34 @@ pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx<'_>) -> Result<Vec<u8
         } else {
             None
         };
-        let exif = get_exif_option(option.options.as_ref(), Some(&metadata))?;
+        let exif_plan = crate::metadata::exif_output_ex(option.options.as_ref(), Some(&metadata))?;
+        let exif_bound = exif_plan
+            .as_ref()
+            .map(|plan| plan.size_bound())
+            .transpose()?
+            .unwrap_or(0);
+        let exif_workspace = exif_plan
+            .as_ref()
+            .map(|plan| plan.workspace_bound(exif_bound))
+            .transpose()?
+            .unwrap_or(0);
         let metadata_bytes = icc_bytes
             .map_or(0, Vec::len)
-            .checked_add(exif.as_ref().map_or(0, Vec::len))
+            .checked_add(exif_bound)
             .ok_or("PNG metadata overflow")?;
         crate::limits::check(metadata_bytes, limits.metadata_bytes, "PNG encode metadata")?;
         crate::limits::check(
             workspace
-                .checked_add(
-                    metadata_bytes
-                        .checked_mul(4)
-                        .ok_or("PNG metadata workspace overflow")?,
-                )
+                .checked_add(exif_workspace)
+                .and_then(|n| n.checked_add(metadata_bytes.checked_mul(4)?))
                 .ok_or("PNG workspace overflow")?,
             limits.expanded_bytes,
             "PNG EX encode workspace",
         )?;
+        let exif = exif_plan
+            .as_ref()
+            .map(|plan| plan.materialize())
+            .transpose()?;
         let picked = option
             .drawer
             .encode_pick_ex(0, 0, width, height, option.output, None)?

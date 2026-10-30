@@ -44,7 +44,9 @@ compatible output ICC in encoder options or native Gray output. Supplying an
 RGB ICC alone does not transform pixels; callers remain responsible for any
 required color conversion. Opaque or malformed output ICC bytes are rejected.
 
-The existing `exif` option is supported. Other source metadata and source ICC
+The existing `exif` option is supported. EX encoders borrow raw/copied EXIF
+without an adapter clone; structured EXIF is sized without allocation and its
+conservative serialization workspace is checked before materialization. Other source metadata and source ICC
 are not automatically copied. Resource limits check pixel count, one frame,
 requested pixel extent, metadata and an estimate of known adapter buffers before
 picking pixels, followed by final output size. The estimate covers picked
@@ -72,7 +74,7 @@ WML2_PNG_EX_DISPLAY=/tmp/.test-png-ex.png cargo test --release -p wml2 \
   --test png_encode_ex display_and_benchmark -- --ignored --nocapture
 ```
 
-Local validation (Rust 1.91.0, Linux x86_64, main `6a48db9`): 108 passed,
+Local validation (Rust 1.91.0, Linux x86_64, main `6a48db9`): 110 passed,
 one manual benchmark ignored in the normal run; the manual test passed
 separately. Feature-off and EX-without-PNG builds passed. Clippy completed with
 existing library warnings. The generated 512×384 RGBA16 PNG was independently

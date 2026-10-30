@@ -1,0 +1,82 @@
+2026-10-30; Linux 6.18.55 x86_64; AMD EPYC 9V74; Rust 1.91.0 release; jpeg,idct_llm; CPU0; three warmups +20 resident-buffer calls per mode/process. Input load/hash/export excluded. Requested heap and process RSS have different scopes (see docs/jpeg-scaled.md).
+
+jpeg-scaled-bench 0 mode=full 1152x896 input=170943 output=4128768 median_us=22172.469 peak_additional_requested_heap=4319757 fnv=149918f302f29133
+process_peak_rss VmHWM:	   10100 kB
+jpeg-scaled-bench 0 mode=2 576x448 input=170943 output=1032192 median_us=20740.109 peak_additional_requested_heap=1033519 fnv=81478f250d052bfb
+process_peak_rss VmHWM:	    3732 kB
+jpeg-scaled-bench 0 mode=4 288x224 input=170943 output=258048 median_us=11623.700 peak_additional_requested_heap=259375 fnv=fdd946e0da4bf290
+process_peak_rss VmHWM:	    2308 kB
+jpeg-scaled-bench 0 mode=8 144x112 input=170943 output=64512 median_us=7966.270 peak_additional_requested_heap=65839 fnv=c1047daefa462e71
+process_peak_rss VmHWM:	    1900 kB
+jpeg-scaled-bench 1 mode=8 144x112 input=170943 output=64512 median_us=7854.472 peak_additional_requested_heap=65839 fnv=c1047daefa462e71
+process_peak_rss VmHWM:	    1980 kB
+jpeg-scaled-bench 1 mode=4 288x224 input=170943 output=258048 median_us=11448.550 peak_additional_requested_heap=259375 fnv=fdd946e0da4bf290
+process_peak_rss VmHWM:	    2020 kB
+jpeg-scaled-bench 1 mode=2 576x448 input=170943 output=1032192 median_us=21566.234 peak_additional_requested_heap=1033519 fnv=81478f250d052bfb
+process_peak_rss VmHWM:	    2868 kB
+jpeg-scaled-bench 1 mode=full 1152x896 input=170943 output=4128768 median_us=23813.042 peak_additional_requested_heap=4319757 fnv=149918f302f29133
+process_peak_rss VmHWM:	   10080 kB
+jpeg-scaled-bench 2 mode=full 1152x896 input=170943 output=4128768 median_us=23121.450 peak_additional_requested_heap=4319757 fnv=149918f302f29133
+process_peak_rss VmHWM:	   10104 kB
+jpeg-scaled-bench 2 mode=2 576x448 input=170943 output=1032192 median_us=21645.714 peak_additional_requested_heap=1033519 fnv=81478f250d052bfb
+process_peak_rss VmHWM:	    2828 kB
+jpeg-scaled-bench 2 mode=4 288x224 input=170943 output=258048 median_us=11449.913 peak_additional_requested_heap=259375 fnv=fdd946e0da4bf290
+process_peak_rss VmHWM:	    2232 kB
+jpeg-scaled-bench 2 mode=8 144x112 input=170943 output=64512 median_us=8001.054 peak_additional_requested_heap=65839 fnv=c1047daefa462e71
+process_peak_rss VmHWM:	    1984 kB
+jpeg-scaled-bench-gray 0 mode=full 1152x896 input=147189 output=4128768 median_us=11480.398 peak_additional_requested_heap=4288035 fnv=7cca71d7362681c1
+process_peak_rss VmHWM:	   10024 kB
+jpeg-scaled-bench-gray 0 mode=2 576x448 input=147189 output=1032192 median_us=10095.421 peak_additional_requested_heap=1033519 fnv=5c659708291afe5f
+process_peak_rss VmHWM:	    3716 kB
+jpeg-scaled-bench-gray 0 mode=4 288x224 input=147189 output=258048 median_us=7517.514 peak_additional_requested_heap=259375 fnv=e8495d7322aa0735
+process_peak_rss VmHWM:	    2028 kB
+jpeg-scaled-bench-gray 0 mode=8 144x112 input=147189 output=64512 median_us=5790.620 peak_additional_requested_heap=65839 fnv=27c1449f864f25ec
+process_peak_rss VmHWM:	    1920 kB
+jpeg-scaled-bench-gray 1 mode=8 144x112 input=147189 output=64512 median_us=5592.031 peak_additional_requested_heap=65839 fnv=27c1449f864f25ec
+process_peak_rss VmHWM:	    1828 kB
+jpeg-scaled-bench-gray 1 mode=4 288x224 input=147189 output=258048 median_us=7430.162 peak_additional_requested_heap=259375 fnv=e8495d7322aa0735
+process_peak_rss VmHWM:	    1996 kB
+jpeg-scaled-bench-gray 1 mode=2 576x448 input=147189 output=1032192 median_us=10063.502 peak_additional_requested_heap=1033519 fnv=5c659708291afe5f
+process_peak_rss VmHWM:	    2752 kB
+jpeg-scaled-bench-gray 1 mode=full 1152x896 input=147189 output=4128768 median_us=11554.160 peak_additional_requested_heap=4288035 fnv=7cca71d7362681c1
+process_peak_rss VmHWM:	   10016 kB
+jpeg-scaled-bench-gray 2 mode=full 1152x896 input=147189 output=4128768 median_us=11358.956 peak_additional_requested_heap=4288035 fnv=7cca71d7362681c1
+process_peak_rss VmHWM:	   10036 kB
+jpeg-scaled-bench-gray 2 mode=2 576x448 input=147189 output=1032192 median_us=10055.039 peak_additional_requested_heap=1033519 fnv=5c659708291afe5f
+process_peak_rss VmHWM:	    2704 kB
+jpeg-scaled-bench-gray 2 mode=4 288x224 input=147189 output=258048 median_us=7442.080 peak_additional_requested_heap=259375 fnv=e8495d7322aa0735
+process_peak_rss VmHWM:	    2248 kB
+jpeg-scaled-bench-gray 2 mode=8 144x112 input=147189 output=64512 median_us=5462.556 peak_additional_requested_heap=65839 fnv=27c1449f864f25ec
+process_peak_rss VmHWM:	    1912 kB
+jpeg-scaled-RGB-129x75-s2 0 mode=full 129x75 input=9645 output=38700 median_us=494.195 peak_additional_requested_heap=68391 fnv=2cd75078b93e3c63
+process_peak_rss VmHWM:	    1768 kB
+jpeg-scaled-RGB-129x75-s2 0 mode=2 65x38 input=9645 output=9880 median_us=425.191 peak_additional_requested_heap=11207 fnv=bb6922ab56411795
+process_peak_rss VmHWM:	    1628 kB
+jpeg-scaled-RGB-129x75-s2 0 mode=4 33x19 input=9645 output=2508 median_us=314.384 peak_additional_requested_heap=3835 fnv=83c40361f0fb0c8f
+process_peak_rss VmHWM:	    1608 kB
+jpeg-scaled-RGB-129x75-s2 0 mode=8 17x10 input=9645 output=680 median_us=279.491 peak_additional_requested_heap=2007 fnv=6f4384d729306732
+process_peak_rss VmHWM:	    1640 kB
+jpeg-scaled-RGB-129x75-s2 1 mode=8 17x10 input=9645 output=680 median_us=262.666 peak_additional_requested_heap=2007 fnv=6f4384d729306732
+process_peak_rss VmHWM:	    1608 kB
+jpeg-scaled-RGB-129x75-s2 1 mode=4 33x19 input=9645 output=2508 median_us=350.028 peak_additional_requested_heap=3835 fnv=83c40361f0fb0c8f
+process_peak_rss VmHWM:	    1564 kB
+jpeg-scaled-RGB-129x75-s2 1 mode=2 65x38 input=9645 output=9880 median_us=450.689 peak_additional_requested_heap=11207 fnv=bb6922ab56411795
+process_peak_rss VmHWM:	    1680 kB
+jpeg-scaled-RGB-129x75-s2 1 mode=full 129x75 input=9645 output=38700 median_us=488.136 peak_additional_requested_heap=68391 fnv=2cd75078b93e3c63
+process_peak_rss VmHWM:	    1780 kB
+jpeg-scaled-RGB-129x75-s2 2 mode=full 129x75 input=9645 output=38700 median_us=475.296 peak_additional_requested_heap=68391 fnv=2cd75078b93e3c63
+process_peak_rss VmHWM:	    1780 kB
+jpeg-scaled-RGB-129x75-s2 2 mode=2 65x38 input=9645 output=9880 median_us=421.525 peak_additional_requested_heap=11207 fnv=bb6922ab56411795
+process_peak_rss VmHWM:	    1632 kB
+jpeg-scaled-RGB-129x75-s2 2 mode=4 33x19 input=9645 output=2508 median_us=347.564 peak_additional_requested_heap=3835 fnv=83c40361f0fb0c8f
+process_peak_rss VmHWM:	    1664 kB
+jpeg-scaled-RGB-129x75-s2 2 mode=8 17x10 input=9645 output=680 median_us=281.765 peak_additional_requested_heap=2007 fnv=6f4384d729306732
+process_peak_rss VmHWM:	    1564 kB
+
+Ordinary decode regression, immutable base81178d7 versus candidate, 3warmups+30calls:
+0 base mode=full 1152x896 input=170943 output=4128768 median_us=22104.558 peak_additional_requested_heap=4319757 fnv=149918f302f29133
+0 new mode=full 1152x896 input=170943 output=4128768 median_us=22279.712 peak_additional_requested_heap=4319757 fnv=149918f302f29133
+1 new mode=full 1152x896 input=170943 output=4128768 median_us=22399.132 peak_additional_requested_heap=4319757 fnv=149918f302f29133
+1 base mode=full 1152x896 input=170943 output=4128768 median_us=22128.314 peak_additional_requested_heap=4319757 fnv=149918f302f29133
+2 base mode=full 1152x896 input=170943 output=4128768 median_us=22797.452 peak_additional_requested_heap=4319757 fnv=149918f302f29133
+2 new mode=full 1152x896 input=170943 output=4128768 median_us=22700.316 peak_additional_requested_heap=4319757 fnv=149918f302f29133

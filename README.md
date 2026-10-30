@@ -50,7 +50,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | format  | enc | dec | notes                                                                                                               |
 | ------- | --- | --- | ------------------------------------------------------------------------------------------------------------------- |
 | BMP     | O   | O   | encoder writes uncompressed BMP                                                                                     |
-| JPEG    | O   | O   | baseline encoder; baseline and Huffman progressive decoder                                                          |
+| JPEG    | O   | O   | baseline encoder; baseline and Huffman progressive decoder; [baseline reduced IDCT](docs/jpeg-scaled.md) |
 | GIF     | O   | O   | palette/LZW encoder, animation supported                                                                            |
 | ICO     | x   | O   | decoder for BMP/PNG embedded icon images                                                                            |
 | PNG     | O   | O   | PNG/APNG; encoder writes RGBA truecolor                                                                             |

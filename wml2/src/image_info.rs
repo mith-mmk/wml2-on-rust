@@ -16,10 +16,12 @@ pub struct ImageSize {
     pub width: u32,
     pub height: u32,
 }
-/// Keep encoded, actual ordinary full-resolution output, and intrinsic display
+/// Keep encoded, decoder output, and intrinsic display
 /// sizes separate. `None` means not obtained, not an implicit equality to coded.
-/// Output is the ordinary full-resolution canvas implied by the queried header,
-/// before caller scaling, conditional on successful decoding. For formats with
+/// Output is the queried/selected decoder route's canvas, before caller scaling.
+/// Header-only queries describe ordinary decode; a reduced decode reports its
+/// actual reduced canvas.
+/// Output dimensions are conditional on successful decoding. For formats with
 /// native orientation (JPEG XL), output and intrinsic_display use oriented axes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ImageDimensions {

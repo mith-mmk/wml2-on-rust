@@ -20,6 +20,65 @@ const MAX_INPUT: usize = 64 * 1024 * 1024;
 const MAX_HEADER: usize = 64 * 1024;
 const MAX_PIXELS: usize = 4 * 1024 * 1024;
 
+/// Cancellation returned by the cancellable sRGB API; downcast the boxed error
+/// to this type to distinguish it from malformed input and resource limits.
+#[derive(Debug)]
+pub struct DecodeCancelled;
+impl std::fmt::Display for DecodeCancelled {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("JPEG XL decode cancelled")
+    }
+}
+impl std::error::Error for DecodeCancelled {}
+
+struct Cancellation<'a> {
+    probe: Option<&'a dyn Fn() -> bool>,
+    cancelled: std::cell::Cell<bool>,
+}
+impl Cancellation<'_> {
+    fn check(&self) -> Result<(), Error> {
+        if self.cancelled.get() || self.probe.is_some_and(|probe| probe()) {
+            self.cancelled.set(true);
+            return Err(Box::new(DecodeCancelled));
+        }
+        Ok(())
+    }
+    fn codec_error(&self, e: jxl_codec::error::Error) -> Error {
+        if self.cancelled.get() {
+            Box::new(DecodeCancelled)
+        } else {
+            codec_error(e)
+        }
+    }
+}
+struct CancellableRunner<'a>(&'a Cancellation<'a>);
+impl JxlParallelRunner for CancellableRunner<'_> {
+    fn num_threads(&self) -> usize {
+        1
+    }
+    fn run(&mut self, num: usize, fun: &JxlParallelRunnerFun<'_>) -> jxl_codec::error::Result<()> {
+        for i in 0..num {
+            self.0
+                .check()
+                .map_err(|_| std::io::Error::other(DecodeCancelled))?;
+            fun(i)?;
+        }
+        self.0
+            .check()
+            .map_err(|_| std::io::Error::other(DecodeCancelled))?;
+        Ok(())
+    }
+    // The default run_ordered bypasses run when num_threads is one.
+    fn run_ordered(
+        &mut self,
+        num: usize,
+        _: Option<usize>,
+        fun: &JxlParallelRunnerFun<'_>,
+    ) -> jxl_codec::error::Result<()> {
+        self.run(num, fun)
+    }
+}
+
 fn error(kind: ImgErrorKind, message: impl Into<String>) -> Error {
     Box::new(ImgError::new_const(kind, message.into()))
 }
@@ -580,14 +639,14 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode::<B, false>(reader, option, false)
+    decode::<B, false>(reader, option, false, None)
 }
 #[cfg(feature = "image-buffer-ex")]
 pub(crate) fn decode_ex_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode::<B, false>(reader, option, true)
+    decode::<B, false>(reader, option, true, None)
 }
 /// Decode a supported JPEG XL still into sRGB RGBA8 for display.
 ///
@@ -606,6 +665,40 @@ pub fn image_from_srgb_with_limits(
     input: &[u8],
     limits: DecodeLimits,
 ) -> Result<crate::draw::ImageBuffer, Error> {
+    cancelled_image(input, limits, None)
+}
+
+/// Bounded sRGB display decoding with cooperative cancellation.
+///
+/// `cancelled` returns true to stop; it runs synchronously on the calling thread
+/// and should be inexpensive. Cancellation returns [`DecodeCancelled`] in the
+/// boxed error. Pre-cancellation wins over input/limit errors; otherwise errors
+/// already encountered retain precedence. No image is returned on cancellation.
+///
+/// Checks surround codec stages, run between jxl 0.7.4 runner tasks, between
+/// 256-pixel ICC batches, and before/after private output population. Individual
+/// codec tasks, serial codec work, allocation/copies, preflight, and ICC profile
+/// parsing/transform compilation are non-interruptible. There is no latency bound.
+#[cfg(feature = "color-management")]
+pub fn image_from_srgb_with_limits_and_cancel(
+    input: &[u8],
+    limits: DecodeLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<crate::draw::ImageBuffer, Error> {
+    cancelled_image(input, limits, Some(cancelled))
+}
+
+#[cfg(feature = "color-management")]
+fn cancelled_image(
+    input: &[u8],
+    limits: DecodeLimits,
+    probe: Option<&dyn Fn() -> bool>,
+) -> Result<crate::draw::ImageBuffer, Error> {
+    let cancellation = Cancellation {
+        probe,
+        cancelled: std::cell::Cell::new(false),
+    };
+    cancellation.check()?;
     let mut image = crate::draw::ImageBuffer::new();
     crate::decode_guard::run(
         &mut bin_rs::reader::BytesReader::new(input),
@@ -614,8 +707,9 @@ pub fn image_from_srgb_with_limits(
             drawer: &mut image,
         },
         limits,
-        |reader, options| decode::<_, true>(reader, options, false),
+        |reader, options| decode::<_, true>(reader, options, false, Some(&cancellation)),
     )?;
+    cancellation.check()?;
     Ok(image)
 }
 
@@ -623,7 +717,17 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     reader: &mut B,
     option: &mut DecodeOptions,
     native: bool,
+    cancellation: Option<&Cancellation<'_>>,
 ) -> Result<Option<ImgWarnings>, Error> {
+    let check = || cancellation.map_or(Ok(()), Cancellation::check);
+    check()?;
+    let inactive = Cancellation {
+        probe: None,
+        cancelled: std::cell::Cell::new(false),
+    };
+    let cancellation = cancellation.unwrap_or(&inactive);
+    let mut runner = CancellableRunner(cancellation);
+
     // Compile the explicit display path separately so its CMS work cannot
     // obscure optimization of existing source-coordinate entry points.
     let managed = MANAGED;
@@ -646,13 +750,26 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     let mut input = unpack(&raw, limits)?;
     drop(raw);
     let h = preflight(&input, limits)?;
+    check()?;
     let mut options = JxlDecoderOptions::default();
     options.sample_limit = Some(h.sample_limit);
     options.high_precision = true;
     options.render_spot_colors = false;
     let mut stream = input.codestream.as_slice();
     let decoder = JxlDecoder::<states::Initialized>::new(options);
-    let mut decoder = complete(decoder.process(&mut stream, None).map_err(codec_error)?)?;
+    let mut decoder = complete(
+        decoder
+            .process(
+                &mut stream,
+                if cancellation.probe.is_some() {
+                    Some(&mut runner)
+                } else {
+                    None
+                },
+            )
+            .map_err(|e| cancellation.codec_error(e))?,
+    )?;
+    check()?;
     if decoder.basic_info().size != (h.width, h.height) {
         return Err(invalid("JPEG XL dimensions changed after preflight"));
     }
@@ -767,7 +884,19 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         limits.expanded_bytes,
         "JPEG XL metadata workspace",
     )?;
-    let decoder = complete(decoder.process(&mut stream, None).map_err(codec_error)?)?;
+    let decoder = complete(
+        decoder
+            .process(
+                &mut stream,
+                if cancellation.probe.is_some() {
+                    Some(&mut runner)
+                } else {
+                    None
+                },
+            )
+            .map_err(|e| cancellation.codec_error(e))?,
+    )?;
+    check()?;
     let row = mul(h.width, mul(channels, if bits == 8 { 1 } else { 2 })?)?;
     let bytes = mul(row, h.height)?;
     // Vec<u16> guarantees the upstream row alignment even on WASM. All rows
@@ -781,9 +910,18 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     let mut buffers = [JxlOutputBuffer::new(out, h.height, row)];
     let decoder = complete(
         decoder
-            .process(&mut stream, &mut buffers, None)
-            .map_err(codec_error)?,
+            .process(
+                &mut stream,
+                &mut buffers,
+                if cancellation.probe.is_some() {
+                    Some(&mut runner)
+                } else {
+                    None
+                },
+            )
+            .map_err(|e| cancellation.codec_error(e))?,
     )?;
+    check()?;
     if decoder.has_more_frames() {
         return Err(unsupported(
             "JPEG XL multiple visible frames are unsupported",
@@ -822,20 +960,28 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
             .ok_or_else(|| invalid("missing JPEG XL reconstruction profile"))?;
         let mut rgba = Vec::new();
         rgba.try_reserve_exact(out.len() / 2)?;
-        rgba.extend(
-            out.chunks_exact(2)
-                .map(|b| u16::from_le_bytes([b[0], b[1]])),
-        );
-        crate::color_convert::rgba16_to_rgb_profile(
+        for chunk in out.chunks(256 * 8) {
+            check()?;
+            rgba.extend(
+                chunk
+                    .chunks_exact(2)
+                    .map(|b| u16::from_le_bytes([b[0], b[1]])),
+            );
+        }
+        crate::color_convert::rgba16_to_rgb_profile_with_cancel(
             &mut rgba,
             profile,
             crate::color_convert::SRGB_ICC,
             h.color_channels == 1,
             limits.expanded_bytes.saturating_sub(retained_workspace),
+            &check,
         )?;
         let mut bytes = crate::draw::zeroed_bytes(rgba.len())?;
-        for (dst, sample) in bytes.iter_mut().zip(rgba) {
-            *dst = ((u32::from(sample) * 255 + 32767) / 65535) as u8;
+        for (dst, src) in bytes.chunks_mut(256 * 4).zip(rgba.chunks(256 * 4)) {
+            check()?;
+            for (dst, &sample) in dst.iter_mut().zip(src) {
+                *dst = ((u32::from(sample) * 255 + 32767) / 65535) as u8;
+            }
         }
         Some(bytes)
     } else {
@@ -843,6 +989,7 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     };
     #[cfg(not(feature = "color-management"))]
     let managed_output: Option<Vec<u8>> = None;
+    check()?;
     #[cfg(feature = "image-buffer-ex")]
     if native {
         use crate::draw::{InitOptionsEx, PixelFormatEx};
@@ -904,12 +1051,43 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         option.drawer.set_metadata(&key, value)?;
     }
     option.drawer.terminate(None)?;
+    check()?;
     Ok(None)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn codec_runner_cancels_between_tasks_and_preserves_task_errors() {
+        use std::cell::Cell;
+        let completed = std::sync::atomic::AtomicUsize::new(0);
+        use std::sync::atomic::Ordering::Relaxed;
+        let probe = || completed.load(Relaxed) == 1;
+        let cancellation = Cancellation {
+            probe: Some(&probe),
+            cancelled: Cell::new(false),
+        };
+        let mut runner = CancellableRunner(&cancellation);
+        let err = runner
+            .run_ordered(10, None, &|_| {
+                completed.fetch_add(1, Relaxed);
+                Ok(())
+            })
+            .unwrap_err();
+        assert_eq!(completed.load(Relaxed), 1);
+        assert!(cancellation.codec_error(err).is::<DecodeCancelled>());
+        let probe = || false;
+        let cancellation = Cancellation {
+            probe: Some(&probe),
+            cancelled: Cell::new(false),
+        };
+        let err = CancellableRunner(&cancellation)
+            .run_ordered(10, None, &|_| Err(jxl_codec::error::Error::SectionTooShort))
+            .unwrap_err();
+        assert!(!cancellation.codec_error(err).is::<DecodeCancelled>());
+    }
+
     #[test]
     fn bounded_icc_cursor_matches_pinned_codec_before_frame_headers() {
         for source in [

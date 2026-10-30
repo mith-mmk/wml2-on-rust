@@ -161,29 +161,38 @@ fn explicit_srgb_display_uses_the_actual_reconstruction_profile_once() {
             (200, 200),
         ),
     ] {
-        let image = wml2::jpegxl::image_from_srgb(input).unwrap();
-        assert_eq!((image.width, image.height), size);
-        let pixels = image.buffer.unwrap();
-        assert_eq!(pixels.len(), expected.len());
-        for (actual, reference) in pixels.chunks_exact(4).zip(expected.chunks_exact(4)) {
-            for c in 0..3 {
-                assert!(
-                    actual[c].abs_diff(reference[c]) <= 2,
-                    "actual={actual:?}, reference={reference:?}"
-                );
+        for image in [
+            wml2::jpegxl::image_from_srgb(input).unwrap(),
+            wml2::jpegxl::image_from_srgb_with_limits_and_cancel(
+                input,
+                Default::default(),
+                &|| false,
+            )
+            .unwrap(),
+        ] {
+            assert_eq!((image.width, image.height), size);
+            let pixels = image.buffer.unwrap();
+            assert_eq!(pixels.len(), expected.len());
+            for (actual, reference) in pixels.chunks_exact(4).zip(expected.chunks_exact(4)) {
+                for c in 0..3 {
+                    assert!(
+                        actual[c].abs_diff(reference[c]) <= 2,
+                        "actual={actual:?}, reference={reference:?}"
+                    );
+                }
+                assert_eq!(actual[3], reference[3]);
             }
-            assert_eq!(actual[3], reference[3]);
+            let meta = image.metadata.unwrap();
+            assert!(
+                matches!(&meta["ICC Profile"],DataMap::ICCProfile(p) if p==include_bytes!("../src/srgb.icc"))
+            );
+            assert!(
+                matches!(&meta["JPEG XL Source ICC Profile"],DataMap::ICCProfile(p) if p==original)
+            );
+            assert!(
+                matches!(&meta["JPEG XL Reconstruction ICC Profile"],DataMap::ICCProfile(p) if p.len()>=128)
+            );
         }
-        let meta = image.metadata.unwrap();
-        assert!(
-            matches!(&meta["ICC Profile"],DataMap::ICCProfile(p) if p==include_bytes!("../src/srgb.icc"))
-        );
-        assert!(
-            matches!(&meta["JPEG XL Source ICC Profile"],DataMap::ICCProfile(p) if p==original)
-        );
-        assert!(
-            matches!(&meta["JPEG XL Reconstruction ICC Profile"],DataMap::ICCProfile(p) if p.len()>=128)
-        );
         assert!(
             wml2::jpegxl::image_from_srgb_with_limits(
                 input,
@@ -204,5 +213,112 @@ fn explicit_srgb_display_uses_the_actual_reconstruction_profile_once() {
             )
             .is_err()
         );
+    }
+}
+
+#[cfg(feature = "color-management")]
+mod cancellation {
+    use std::cell::Cell;
+    use wml2::jpegxl::{DecodeCancelled, image_from_srgb_with_limits_and_cancel as decode};
+    use wml2::limits::DecodeLimits;
+    const INPUT: &[u8] = include_bytes!("fixtures/review/jxl-icc-lossless.jxl");
+
+    #[test]
+    fn cancellation_at_every_checkpoint_never_publishes_an_image() {
+        let calls = Cell::new(0);
+        decode(INPUT, DecodeLimits::default(), &|| {
+            calls.set(calls.get() + 1);
+            false
+        })
+        .unwrap();
+        let checkpoints = calls.get();
+        assert!(checkpoints > 10, "must include intermediate work");
+        for stop in 1..=checkpoints {
+            calls.set(0);
+            let mut published = None;
+            let result = decode(INPUT, DecodeLimits::default(), &|| {
+                calls.set(calls.get() + 1);
+                calls.get() == stop
+            })
+            .map(|image| published = Some(image));
+            assert!(
+                result.err().unwrap().is::<DecodeCancelled>(),
+                "checkpoint {stop}"
+            );
+            assert!(published.is_none());
+            assert_eq!(calls.get(), stop, "cancellation is latched");
+        }
+    }
+
+    #[test]
+    fn precancellation_wins_but_encountered_limit_and_decode_errors_are_preserved() {
+        assert!(
+            decode(
+                b"invalid",
+                DecodeLimits {
+                    input_bytes: 0,
+                    ..Default::default()
+                },
+                &|| true
+            )
+            .err()
+            .unwrap()
+            .is::<DecodeCancelled>()
+        );
+        let calls = Cell::new(0);
+        for limits in [
+            DecodeLimits {
+                input_bytes: 1,
+                ..Default::default()
+            },
+            DecodeLimits {
+                pixels: 1,
+                ..Default::default()
+            },
+            DecodeLimits {
+                expanded_bytes: 1,
+                ..Default::default()
+            },
+            DecodeLimits {
+                metadata_bytes: 1,
+                ..Default::default()
+            },
+            DecodeLimits {
+                frames: 0,
+                ..Default::default()
+            },
+            DecodeLimits {
+                animation_bytes: 1,
+                ..Default::default()
+            },
+        ] {
+            calls.set(0);
+            let err = decode(INPUT, limits, &|| {
+                calls.set(calls.get() + 1);
+                false
+            })
+            .err()
+            .unwrap();
+            assert!(!err.is::<DecodeCancelled>());
+            assert!(err.to_string().contains("decode limit"), "{err}");
+            let count = calls.get();
+            calls.set(0);
+            // A cancellation observable only after the failing limit must not
+            // mask that failure, or run another probe after returning it.
+            let err = decode(INPUT, limits, &|| {
+                calls.set(calls.get() + 1);
+                calls.get() > count
+            })
+            .err()
+            .unwrap();
+            assert!(!err.is::<DecodeCancelled>());
+            assert_eq!(calls.get(), count);
+        }
+        let err = decode(b"invalid", DecodeLimits::default(), &|| false)
+            .err()
+            .unwrap();
+        assert!(!err.is::<DecodeCancelled>());
+        assert!(!err.to_string().contains("decode limit"));
+        assert!(decode(INPUT, DecodeLimits::default(), &|| false).is_ok());
     }
 }

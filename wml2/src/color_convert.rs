@@ -6,6 +6,7 @@ type Error = Box<dyn std::error::Error>;
 // "No copyright, use freely". This is profile data, not another runtime CMS.
 pub(crate) const SRGB_ICC: &[u8] = include_bytes!("srgb.icc");
 
+#[cfg(any(feature = "avif", test))]
 pub(crate) fn rgba16_to_rgb_profile(
     rgba: &mut [u16],
     source: &[u8],
@@ -13,6 +14,25 @@ pub(crate) fn rgba16_to_rgb_profile(
     source_is_gray: bool,
     compiled_budget: usize,
 ) -> Result<(), Error> {
+    rgba16_to_rgb_profile_with_cancel(
+        rgba,
+        source,
+        destination,
+        source_is_gray,
+        compiled_budget,
+        &|| Ok(()),
+    )
+}
+
+pub(crate) fn rgba16_to_rgb_profile_with_cancel(
+    rgba: &mut [u16],
+    source: &[u8],
+    destination: &[u8],
+    source_is_gray: bool,
+    compiled_budget: usize,
+    check: &dyn Fn() -> Result<(), Error>,
+) -> Result<(), Error> {
+    check()?;
     if !rgba.len().is_multiple_of(4) {
         return Err(std::io::Error::other("ICC RGBA layout mismatch").into());
     }
@@ -60,6 +80,7 @@ pub(crate) fn rgba16_to_rgb_profile(
     let mut output = [0.0f32; 256 * 3];
     let mut run_for_pixel = [0usize; 256];
     for chunk in rgba.chunks_mut(256 * 4) {
+        check()?;
         let mut runs = 0;
         let mut previous = [0u16; 3];
         for (i, pixel) in chunk.chunks_exact(4).enumerate() {
@@ -88,12 +109,40 @@ pub(crate) fn rgba16_to_rgb_profile(
             }
         }
     }
+    check()?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cancellation_between_icc_batches_leaves_later_scratch_untouched() {
+        let calls = std::cell::Cell::new(0);
+        let original = [8192, 16384, 24576, 32768];
+        let mut rgba = original.repeat(768);
+        let error = rgba16_to_rgb_profile_with_cancel(
+            &mut rgba,
+            include_bytes!("../tests/fixtures/review/avif-icc-linear.icc"),
+            SRGB_ICC,
+            false,
+            4 << 20,
+            &|| {
+                calls.set(calls.get() + 1);
+                if calls.get() == 3 {
+                    Err(std::io::Error::other("stop ICC").into())
+                } else {
+                    Ok(())
+                }
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("stop ICC"));
+        assert_ne!(&rgba[..4], &original);
+        assert_eq!(&rgba[256 * 4..], original.repeat(512));
+        assert!(rgba.chunks_exact(4).all(|p| p[3] == original[3]));
+    }
 
     #[test]
     fn exact_colour_runs_match_unbatched_transform_with_distinct_alpha() {

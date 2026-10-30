@@ -429,7 +429,11 @@ pub(crate) fn exif_output_ex<'a>(
     payload(value).map(Some)
 }
 
-#[cfg(all(test, feature = "image-buffer-ex", feature = "png"))]
+#[cfg(all(
+    test,
+    feature = "image-buffer-ex",
+    any(feature = "png", feature = "tiff")
+))]
 mod ex_encode_tests {
     use super::*;
     use crate::draw::*;
@@ -481,7 +485,7 @@ mod ex_encode_tests {
     }
 
     #[test]
-    fn png_ex_rejects_metadata_and_workspace_budgets_before_materialization() {
+    fn ex_encoders_reject_metadata_and_workspace_budgets_before_materialization() {
         let mut image =
             ImageBufferEx::from_bytes(1, 1, PixelFormatEx::Rgba16, None, vec![0; 8]).unwrap();
         let mut headers = TiffHeaders::empty(Endian::LittleEndian);
@@ -512,15 +516,22 @@ mod ex_encode_tests {
                     ..DecodeLimits::unlimited()
                 },
                 DecodeLimits {
-                    expanded_bytes: 2048,
+                    expanded_bytes: 16 * 1024,
                     ..DecodeLimits::unlimited()
                 },
             ] {
-                EXIF_EX_MATERIALIZATIONS.with(|n| n.set(0));
-                let error = image_encoder_ex_with_limits(&mut encode, ImageFormat::Png, limits)
-                    .unwrap_err();
-                assert!(error.to_string().contains("limit"), "{error}");
-                assert_eq!(EXIF_EX_MATERIALIZATIONS.with(|n| n.get()), 0);
+                for format in [
+                    #[cfg(feature = "png")]
+                    ImageFormat::Png,
+                    #[cfg(feature = "tiff")]
+                    ImageFormat::Tiff,
+                ] {
+                    EXIF_EX_MATERIALIZATIONS.with(|n| n.set(0));
+                    let error =
+                        image_encoder_ex_with_limits(&mut encode, format, limits).unwrap_err();
+                    assert!(error.to_string().contains("limit"), "{error}");
+                    assert_eq!(EXIF_EX_MATERIALIZATIONS.with(|n| n.get()), 0);
+                }
             }
         }
     }

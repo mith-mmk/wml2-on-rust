@@ -281,3 +281,5 @@ miniz_oxide = {version = "0.7.1"}
 [dev-dependencies]
 # Independent decoder for PNG EX byte-order, filter and metadata verification.
 png = "0.18"
+# Independent TIFF sample/tag oracle for the EX encoder.
+tiff = "0.10"

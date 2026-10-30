@@ -1448,3 +1448,74 @@ mod decoded_owned_tests {
         );
     }
 }
+
+/// Validate an EX encoder's explicitly prepared output ICC without a CMS.
+/// Source ICC is provenance only; a known model mismatch needs an explicit
+/// compatible output declaration. No raw profile bytes are cloned here.
+#[cfg(any(feature = "png", feature = "tiff"))]
+pub(crate) fn output_icc_ex<'a>(
+    metadata: &'a HashMap<String, DataMap>,
+    options: Option<&'a HashMap<String, DataMap>>,
+    storage: PixelFormatEx,
+    format: PixelFormatEx,
+) -> Result<Option<&'a [u8]>, Error> {
+    let gray_expansion =
+        storage.channels() == 1 && format.channels() == 4 && metadata.contains_key("ICC Profile");
+    let explicit = options.and_then(|m| m.get("ICC Profile"));
+    let expected = if format.channels() == 1 {
+        b"GRAY"
+    } else {
+        b"RGB "
+    };
+    let model = |value: &DataMap| -> Result<[u8; 4], Error> {
+        let DataMap::ICCProfile(bytes) = value else {
+            return Err("EX output ICC must be ICCProfile bytes".into());
+        };
+        crate::limits::check(
+            bytes.len(),
+            crate::limits::current().metadata_bytes,
+            "EX ICC metadata",
+        )?;
+        if bytes.len() < 128
+            || &bytes[36..40] != b"acsp"
+            || u32::from_be_bytes(bytes[..4].try_into()?) as usize != bytes.len()
+        {
+            return Err(
+                "EX output ICC requires a complete ICC header and matching profile length".into(),
+            );
+        }
+        Ok(bytes[16..20].try_into()?)
+    };
+    if gray_expansion && explicit.map(&model).transpose()? != Some(*expected) {
+        return Err("EX Gray ICC cannot describe expanded RGB; supply a compatible output ICC or request Gray".into());
+    }
+    // Never promote source provenance to output ICC. Known mismatched source
+    // models require an explicit compatible output declaration, as in AVIF EX.
+    if let Some(DataMap::ICCProfile(source)) = metadata.get("Source ICC Profile") {
+        crate::limits::check(
+            source.len(),
+            crate::limits::current().metadata_bytes,
+            "EX source ICC metadata",
+        )?;
+        if source.len() >= 128
+            && &source[36..40] == b"acsp"
+            && &source[16..20] != expected
+            && explicit.map(&model).transpose()? != Some(*expected)
+        {
+            return Err("EX source ICC model differs from output; supply a compatible output ICC or request native Gray".into());
+        }
+    }
+    let icc = explicit.or_else(|| metadata.get("ICC Profile"));
+    let icc_bytes = if let Some(value) = icc {
+        if model(value)? != *expected {
+            return Err("EX output ICC model differs from output pixels".into());
+        }
+        let DataMap::ICCProfile(bytes) = value else {
+            unreachable!()
+        };
+        Some(bytes)
+    } else {
+        None
+    };
+    Ok(icc_bytes.map(Vec::as_slice))
+}

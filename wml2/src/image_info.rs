@@ -428,8 +428,14 @@ fn jpeg<B: BinaryReader>(r: &mut B, end: u64) -> Result<ImageInfo> {
             r.read_exact(&mut data[6..])?;
             let mut ids = [false; 256];
             for c in data[6..].chunks_exact(3) {
-                if ids[usize::from(c[0])] || c[1] >> 4 == 0 || c[1] & 15 == 0 {
-                    return invalid("JPEG SOF component identifiers/sampling invalid");
+                if ids[usize::from(c[0])]
+                    || !(1..=4).contains(&(c[1] >> 4))
+                    || !(1..=4).contains(&(c[1] & 15))
+                    || c[2] > 3
+                {
+                    return invalid(
+                        "JPEG SOF component identifiers/sampling/quantization selector invalid",
+                    );
                 }
                 ids[usize::from(c[0])] = true;
             }
@@ -634,6 +640,13 @@ fn gif<B: BinaryReader>(r: &mut B, end: u64, max_frames: usize) -> Result<ImageI
                     }
                     pending_transparency = if gce[0] & 1 != 0 { Some(gce[3]) } else { None };
                 } else {
+                    if matches!(kind, 1 | 0xff) {
+                        let fixed = r.read_byte()?;
+                        if fixed != if kind == 1 { 12 } else { 11 } {
+                            return invalid("GIF text/application fixed header size");
+                        }
+                        skip(r, u64::from(fixed), end)?;
+                    }
                     subblocks(r, end)?;
                     if kind == 1 {
                         plain_text = true;

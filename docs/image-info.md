@@ -64,7 +64,7 @@ means a layer-capable document, not proof of nonempty layers.
 | --- | --- | --- |
 | JPEG / `jpeg` | SOF0/1/2 canvas, 8/12-bit precision, 1–4 components; no standard alpha | Marker lengths to first supported SOF. APP/COM/table payloads skipped. Other JPEG processes/deferred dimensions unsupported. Color transform/EXIF unknown. |
 | PNG/APNG / `png` | IHDR canvas/depth/model, tRNS/alpha, acTL declared frame count | Preamble to first IDAT header. IHDR and selected tRNS/acTL CRC checked. Indexed palette dimensions checked; opaque metadata/palette data skipped. Frames not reconstructed/counted. |
-| GIF87a/89a / `gif` | Logical canvas, indexed color, transparency declarations, actual image-block count | Entire block structure through trailer. LZW sub-block bytes skipped. Palette depth reported for one image; multiframe depth unknown. Plain-text graphics make presentation count/alpha unknown; text-only GIF unsupported. GCE consumption respected. |
+| GIF87a/89a / `gif` | Logical canvas, indexed color, transparency declarations, actual image-block count | Entire block structure through trailer. LZW sub-block bytes skipped. Palette depth reported for one image; multiframe depth unknown. Plain-text graphics make presentation count/alpha unknown; text-only GIF unsupported. GCE consumption and fixed12/11-byte text/application headers checked. |
 | TIFF/BigTIFF / `tiff` | First main IFD canvas/depth/model/sample kind/alpha/orientation; 1–64 samples | Existing bounded IFD parser projected to basic tags. Other payload ranges checked but bytes not read. No strips/tiles, EXIF/GPS, SubIFDs or later pages visited. Main-chain count known 1 only if next pointer zero; otherwise unknown. Output selection unknown. |
 | PSD v1 / `psd` | Existing supported 8/16-bit Gray/indexed/RGB/CMYK header canvas/channels | Existing 26-byte parser only. Resources/layers/composite not read. Alpha and layer count unknown; PSB/unsupported modes/depths rejected by existing header policy. |
 
@@ -117,7 +117,7 @@ successful incomplete information, not swallowed parse failures.
 
 ## Verification
 
-Local Rust 1.91.0/Linux x86_64 validation: 148 passing tests across library,
+Local Rust 1.91.0/Linux x86_64 validation: 150 passing tests across library,
 information API, PNG/APNG, GIF, TIFF/JPEG-TIFF/EX/metadata regression, PSD and
 callback targets; one manual benchmark normally ignored and passed separately.
 Standalone PNG/TIFF/GIF/PSD/JPEG information feature builds and the feature-off

@@ -794,3 +794,44 @@ fn valid_animated_and_multipage_streams_distinguish_declared_known_and_unknown_c
         assert_eq!((decoded.width, decoded.height), (2, 1));
     }
 }
+
+#[cfg(feature = "jpeg")]
+#[test]
+fn jpeg_sof_sampling_and_quantization_selectors_are_bounded_before_frame_parsing() {
+    for (sampling, quant) in [(0x18, 0), (0x81, 0), (0x51, 0), (0x11, 255), (0x11, 4)] {
+        let bytes = [
+            0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 0, 1, 0, 1, 1, 1, sampling, quant,
+        ];
+        assert!(
+            image_info(&bytes).is_err(),
+            "invalid SOF H/V={sampling:02x},Tq={quant}"
+        );
+    }
+    let valid = [0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 0, 1, 0, 1, 1, 1, 0x41, 3];
+    assert!(image_info(&valid).is_ok());
+}
+#[cfg(feature = "gif")]
+#[test]
+fn gif_plain_text_and_application_fixed_headers_have_required_sizes() {
+    let (good, _) = gif(1);
+    for (kind, size) in [(1, 0), (1, 11), (1, 13), (255, 0), (255, 10), (255, 12)] {
+        let mut bytes = good[..good.len() - 1].to_vec();
+        bytes.extend([0x21, kind, size]);
+        if size > 0 {
+            bytes.extend(vec![0; size as usize]);
+            bytes.push(0);
+        }
+        bytes.push(0x3b);
+        assert!(
+            image_info(&bytes).is_err(),
+            "invalid GIF extension{kind:02x} fixed size{size}"
+        );
+    }
+    for (kind, size) in [(1, 12), (255, 11)] {
+        let mut bytes = good[..good.len() - 1].to_vec();
+        bytes.extend([0x21, kind, size]);
+        bytes.extend(vec![0; size as usize]);
+        bytes.extend([0, 0x3b]);
+        assert!(image_info(&bytes).is_ok());
+    }
+}

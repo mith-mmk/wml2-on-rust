@@ -19,7 +19,7 @@ versions and sources. See the [0.0.37 release notes](releases/0.0.37.md).
 | Channel conversion | Gray replicated to RGB plus opaque alpha; RGBA→Gray requires an external explicit color conversion |
 | Picking | Explicit output-format/stride/policy rectangles via PickCallbackEx; native borrowed single-pixel bytes |
 | Legacy input | Checked ownership transfer of static RGBA8 ImageBuffer pixels, retaining background/callback metadata |
-| EX encoding | Static Gray/RGBA8/16 PNG through image_encoder_ex; explicit output ICC and picker precision policy ([guide](image-buffer-ex-png.md)) |
+| EX encoding | Static Gray/RGBA8/16 PNG and Gray/RGBA16 TIFF through image_encoder_ex; explicit output ICC and picker precision policy ([PNG](image-buffer-ex-png.md), [TIFF](image-buffer-ex-tiff-encode.md)) |
 | Legacy encoding | Explicit whole-canvas to_rgba8 or borrowed legacy_picker with per-rectangle conversion |
 | Native codec source | Static PNG/TIFF emit Gray8/16 or RGBA8/16; bounded AVIF emits RGBA16; bounded JPEG2000 EX emits native Gray/RGBA12/16, without ICC application; JPEG2000 EX emits unsigned Gray12/16 or RGBA12/16 from RGB/explicit straight RGBA in the reversible or bounded 9/7 profile |
 | Typed highres handoff | Pixel-only U8/U16 full-resolution Gray or straight RGBA at uniform 8/12/16 bits |

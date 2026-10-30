@@ -40,7 +40,7 @@ fn rejected(data: &[u8], limits: DecodeLimits) -> String {
         },
         limits,
     );
-    let error = result.err().expect("input must be rejected").to_string();
+    let error = result.expect_err("input must be rejected").to_string();
     assert_eq!((image.width, image.height), (0, 0), "{error}");
     assert!(image.buffer.is_none(), "{error}");
     assert!(

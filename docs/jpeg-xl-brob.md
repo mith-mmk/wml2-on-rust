@@ -108,3 +108,41 @@ The Node harness adds eight actual WASM brob checks (69 total) for pixels,
 raw/decoded metadata, EX precision, input/metadata/workspace rejection, truncation,
 forbidden reconstruction type and trailing bytes. Prior 61-case results remain
 historical; the new run must be identified by its tested source and artifact hash.
+
+## Local validation checkpoint (2026-10-30)
+
+On Linux x86_64 cloud / Rust 1.91.0, code checkpoint
+`773007296fbb878d6ad468ed3a501cd366523bb6` passes 63 scoped native tests:
+29 unit, 22 original JPEG XL, 3 additional, 6 brob and 3 layer tests. Feature-off
+passes its detection test without compiling the optional Brotli dependency.
+Scoped Clippy completes with 11 existing library warnings and no new brob-test
+warning. Formatting, local documentation links and Python syntax are checked.
+The [recorded evidence](jpeg-xl-brob-validation.json) includes exact source and
+fixture hashes and the actual 69-case Node WASM artifact hash (no host imports).
+These are new local runs, separate from earlier JPEG XL historical records.
+
+The 606x500 JPEG-derived bench input was also wrapped with the independently
+encoded XML metadata. Managed output is within 1/255 of the saved independent
+libjxl/LittleCMS reference for every RGBA byte. Its exported PNG was visually
+inspected without corruption. No external viewer/plugin was exercised.
+
+Release comparison uses unchanged main runtime `6a48db9` and the checkpoint
+above, three alternating process pairs on CPU 0 with no concurrent local
+builds/tests. Small cases use 150 timed iterations, the ordinary bench 33,
+and the managed bench 5, plus 3 warmups each. Values are medians of process
+medians; all output hashes match. The managed large case's small sample count
+and these finite inputs do not establish general throughput.
+
+| Existing path | Before µs | After µs | Change |
+| --- | ---: | ---: | ---: |
+| RGBA16 ordinary | 55.879 | 53.701 | -3.90% |
+| 606x500 ordinary | 16168.812 | 15800.076 | -2.28% |
+| ICC lossless sRGB | 139.556 | 135.390 | -2.99% |
+| 606x500 sRGB | 1096988.440 | 1097700.257 | +0.06% |
+
+No material existing-path change is observed in this local sample. For the new
+7x5 metadata fixture, one candidate process measured 106.791 µs with brob and
+79.751 µs with uncompressed metadata (150 timed + 3 warmups). This includes both
+extra raw retention and decompression, not just codec time. The old decoder did
+not support brob, so no old brob success or speedup is claimed. Workspace
+admission and allocator-denial tests do not measure whole-process RSS.

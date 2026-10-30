@@ -46,16 +46,16 @@ class SelectionTests(unittest.TestCase):
     def test_local_codecs_exif_and_embedded_jpeg_dependencies(self):
         for path, expected in [
             ('wml2/src/jpeg/decoder.rs', {'jpeg', 'tiff'}),
-            ('wml2/src/tiff/ifd.rs', selection.LOCAL_CODECS),
-            ('wml2/src/highres/tiff.rs', selection.LOCAL_CODECS),
-            ('wml2/src/metadata/exif.rs', selection.LOCAL_CODECS),
+            ('wml2/src/tiff/ifd.rs', selection.LOCAL_CODECS | {'jpeg-xl'}),
+            ('wml2/src/highres/tiff.rs', selection.LOCAL_CODECS | {'jpeg-xl'}),
+            ('wml2/src/metadata/exif.rs', selection.LOCAL_CODECS | {'jpeg-xl'}),
             ('wml2/src/png/decoder.rs', {'png', 'tiff'}),
         ]:
             with self.subTest(path=path):
                 codecs, full, _ = self.classify([path])
                 self.assertFalse(full)
                 self.assertEqual(codecs, expected)
-                self.assertFalse(codecs & selection.CODECS)
+                self.assertEqual(codecs & selection.CODECS, expected & selection.CODECS)
 
     def test_shared_types_cfg_and_unknown_changes_never_reduce_to_smoke(self):
         # Classification never tries to infer Rust semantics from text hunks.
@@ -69,7 +69,7 @@ class SelectionTests(unittest.TestCase):
         for paths, expected in [
             (['wml2-test/examples/converter.rs'], dict.fromkeys(selection.CODECS, 'smoke')),
             (['README.md'], dict.fromkeys(selection.CODECS, 'none')),
-            (['wml2/src/tiff/ifd.rs'], dict.fromkeys(selection.CODECS, 'none')),
+            (['wml2/src/tiff/ifd.rs'], {c: 'full' if c == 'jpeg-xl' else 'none' for c in selection.CODECS}),
             (['wml2/src/draw.rs'], dict.fromkeys(selection.CODECS, 'full')),
             (['wml2/src/jpeg2000.rs', 'wml2-test/examples/converter.rs'],
              {'jpeg2000': 'full', 'avif': 'smoke', 'jpeg-xl': 'smoke'}),

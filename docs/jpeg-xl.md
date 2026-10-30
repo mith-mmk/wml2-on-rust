@@ -72,7 +72,7 @@ format, not before.
 | `JPEG XL Reconstruction ICC Profile` | Actual pre-CMS reconstruction profile, retained by the explicit sRGB display API; may differ from the original embedded profile |
 | `JPEG XL Source Header` | Original bit-aligned codestream-header prefix; last byte may also contain following bits; not a standalone file |
 | `JPEG XL Source Box <index> <hex-type>` | Exact outer auxiliary payload bytes, including unknown types and duplicate types with distinct indexes; a `brob` value includes its underlying type and compressed stream |
-| `JPEG XL Decoded Box <index> <hex-type>` | Bounded decompressed opaque payload for a `brob` box, indexed by its underlying type; no structured EXIF/XMP or recursive parsing |
+| `JPEG XL Decoded Box <index> <hex-type>` | Bounded decompressed raw payload for a `brob` box, indexed by its underlying type; no recursive box parsing |
 | `JPEG XL Source Bit Depth` / `JPEG XL Output Bit Depth` | Coded colour depth / declared delivered sample depth |
 
 Gray replicated into RGBA gets a matching neutral-axis RGB profile for simple
@@ -82,7 +82,10 @@ EX Gray callback output can retain it. Subsequent EX storage conversion copies
 samples without transforming the ICC; its source format still identifies Gray.
 Metadata is delivered after pixels, matching existing static adapters. Source
 orientation remains in the raw header; output dimensions/pixels are oriented.
-Raw EXIF/XMP boxes are preserved as source bytes, not parsed or reapplied.
+Raw EXIF/XMP boxes are preserved as source bytes. The first valid supported
+payload also supplies common `EXIF` (`exif` feature) / `XMP` metadata through
+[bounded interpretation](jpeg-xl-metadata.md). Common EXIF Orientation is 1;
+codestream orientation is authoritative and is never applied a second time.
 ICC headers, tag extents and Gray/RGB channel identity are validated; ICC CICP
 PQ/HLG is rejected. Arbitrary opaque ICC transfer curves are preserved, not
 interpreted as an HDR rendering promise. There is no HDR tone mapping or

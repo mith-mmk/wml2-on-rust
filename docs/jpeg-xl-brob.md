@@ -15,10 +15,11 @@ container rules. Metadata may appear before/between/after codestream chunks.
 
 ## Type and metadata contract
 
-`Exif`, `xml `, `jumb` and unknown auxiliary types remain **opaque bytes**.
-They do not replace the codestream ICC or orientation and are not structured
-EXIF/XMP/JUMBF parsing. In particular, raw EXIF orientation must not be applied
-to an already-oriented raster. Each outer box retains its original index:
+The brob layer retains `Exif`, `xml `, `jumb` and unknown auxiliary types as
+Raw bytes. A later [bounded interpretation step](jpeg-xl-metadata.md) can add
+common EXIF/XMP; JUMBF and unknown types remain opaque. They do not replace the
+codestream ICC or orientation. Raw EXIF orientation must not be applied to an
+already-oriented raster. Each outer box retains its original index:
 
 | Metadata key | Raw value |
 | --- | --- |

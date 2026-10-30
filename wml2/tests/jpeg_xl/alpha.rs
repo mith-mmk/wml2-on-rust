@@ -36,14 +36,14 @@ fn integer_full_resolution_alpha_depth_matrix_matches_independent_libjxl() {
                 } else {
                     (u32::from(*oracle) * ((1 << native_bits) - 1) + 32767) / 65535
                 };
-                if i % 4 == 3 {
-                    let max = (1u32 << alpha_bits) - 1;
-                    let storage = (1u32 << native_bits) - 1;
-                    assert_eq!(
-                        (u32::from(*actual) * max + storage / 2) / storage,
-                        (u32::from(*oracle) * max + 32767) / 65535
-                    );
-                }
+                let source_bits = if i % 4 == 3 { alpha_bits } else { color_bits };
+                let max = (1u32 << source_bits) - 1;
+                let storage = (1u32 << native_bits) - 1;
+                assert_eq!(
+                    (u32::from(*actual) * max + storage / 2) / storage,
+                    (u32::from(*oracle) * max + 32767) / 65535,
+                    "source code {color_bits}/{alpha_bits}/{i}"
+                );
                 assert!(
                     u32::from(*actual).abs_diff(expected) <= 1,
                     "{color_bits}/{alpha_bits}/{orientation}: {actual}/{expected}"

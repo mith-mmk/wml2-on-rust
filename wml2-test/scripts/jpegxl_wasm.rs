@@ -264,9 +264,11 @@ fn alpha_cases() -> u32 {
         let format=match native_bits {8=>PixelFormatEx::Rgba8,12=>PixelFormatEx::Rgba12,_=>PixelFormatEx::Rgba16};
         let image=image_from_ex(input,format,PrecisionConversion::Exact).unwrap();
         assert_eq!((image.width(),image.height()),if orientation>=5 {(5,7)} else {(7,5)});
-        for (actual,expected) in words(image.bytes().unwrap(),native_bits).iter().zip(&expected) {
+        for (i,(actual,expected)) in words(image.bytes().unwrap(),native_bits).iter().zip(&expected).enumerate() {
             let normalized=if native_bits==16 {u32::from(*expected)} else {(u32::from(*expected)*((1<<native_bits)-1)+32767)/65535};
             assert!(u32::from(*actual).abs_diff(normalized)<=1);
+            let depth=if i%4==3 {alpha_bits} else {color_bits};let max=(1u32<<depth)-1;let storage=(1u32<<native_bits)-1;
+            assert_eq!((u32::from(*actual)*max+storage/2)/storage,(u32::from(*expected)*max+32767)/65535);
         }
         count+=1;
         for (actual,expected) in image_from(input).unwrap().buffer.unwrap().iter().zip(&expected) {assert!(actual.abs_diff(((u32::from(*expected)*255+32767)/65535) as u8)<=1);}

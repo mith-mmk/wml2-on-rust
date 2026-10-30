@@ -28,12 +28,16 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 - Bare `ff 0a` codestreams and containers with `jxlc` or ordered `jxlp` chunks.
   Every box, including trailing boxes, is length-checked before decoding.
 - Integer **8,9,10,12,16-bit** Gray/RGB, optionally one full-resolution straight
-  alpha channel with the same depth as colour. Orientation is applied once by
+  alpha channel, with independently supported8/9/10/12/16-bit integer depth.
+  Orientation is applied once by
   the decoder. RGB becomes RGBA with opaque alpha; GrayAlpha becomes RGBA.
 - The EX source is native Gray8/12/16 or Rgba8/12/16, packed, with12/16-bit
   samples in little-endian u16 slots. Coded9/10-bit inputs are normalized into
   Gray16/Rgba16, with coded depth retained separately. Promotion is within one
   u16 unit of the independent reference and preserves recoverable source codes.
+  Mixed colour/alpha depths use normalized Rgba16 for every channel, retaining
+  the original colour and alpha depths separately; same-depth layouts stay as
+  before. The common16-bit format prevents silently narrowing a deeper alpha.
   Transparent RGB and low bits survive
   lossless decoding. Neither EX nor ordinary decoding goes through RGBA8 first.
 - Ordinary `image_from`/`image_decoder` return RGBA8. High-depth samples,
@@ -47,7 +51,8 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
 animations (no silent first-frame fallback), previews, intrinsic display sizes,
-premultiplied or mixed-depth/subsampled alpha, multiple/other extra channels,
+premultiplied or subsampled alpha, float or other alpha depths,
+multiple/other extra channels,
 compressed `brob` metadata and unsupported depths.
 Explicit Level5 and Level10 `jxll` boxes are accepted; dimensions, workspace and
 the supported sample profile remain independently bounded. This does not promise
@@ -72,6 +77,7 @@ format, not before.
 | `JPEG XL Reconstruction ICC Profile` | Actual pre-CMS reconstruction profile, retained by the explicit sRGB display API; may differ from the original embedded profile |
 | `JPEG XL Source Header` | Original bit-aligned codestream-header prefix; last byte may also contain following bits; not a standalone file |
 | `JPEG XL Source Box <index> <hex-type>` | Uncompressed auxiliary box bytes, including unknown types and duplicate types with distinct indexes |
+| `JPEG XL Source Alpha Bit Depth` | Original integer alpha depth, present for mixed-depth input (`DataMap::UInt`); source colour depth remains separate |
 | `JPEG XL Source Bit Depth` / `JPEG XL Output Bit Depth` | Coded colour depth / declared delivered sample depth |
 
 Gray replicated into RGBA gets a matching neutral-axis RGB profile for simple
@@ -255,3 +261,16 @@ implementation. No PR, main merge or release is part of this branch work.
 `orientation_applied` is a format-independent metadata key whose value is `DataMap::Bool`. `true` means the output pixels already include the source orientation; consumers must not apply source EXIF or other source orientation again. `false` means this marker does not suppress the consumer's existing orientation handling. An absent key likewise retains the legacy behavior. A value of another type is invalid; consumers should treat it as absent rather than infer a boolean. This affects automatic orientation only, not user-requested rotation.
 
 JPEG XL sets the marker to `true` and stores the original coded 1–8 value separately as `JPEG XL Source Orientation` (`DataMap::UInt`), alongside the raw source header. That original value describes the input, not a remaining transform on the delivered pixels. The pinned jxl 0.7.4 applies the coded transform to its output; its `adjust_orientation` option is not consumed by that version. The eight fixture tests check pixels against independent references so a change to that behavior is detected. Other formats do not acquire this marker merely because it is absent; their existing metadata and consumer behavior remain unchanged.
+
+
+## Mixed-depth straight alpha
+
+One full-resolution straight alpha channel can independently use integer
+8/9/10/12/16-bit depth with the existing supported Gray/RGB colour depths.
+Mixed-depth native EX output is normalized Rgba16; Exact requests for narrower
+formats reject, while Round applies the existing conversion to every channel.
+Ordinary/CMS output remains deterministic RGBA8, with alpha excluded from ICC
+conversion. `animation_bytes` admits the common8-byte-per-pixel native working
+canvas before codec work, even for ordinary output. Existing same-depth/native
+Gray layouts and refusal of associated/subsampled/general extra planes remain.
+See [the bounded subset, independent oracles and upstream evaluation](jpeg-xl-alpha.md).

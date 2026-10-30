@@ -1,0 +1,341 @@
+{
+  "base_sha": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
+  "scope": "Trusted small fixture evaluation; no production API, input/metadata/codec workspace qualification or inside-call cancellation claim",
+  "C_libjxl": "0.11.2",
+  "jxl_rs": "0.7.4 defaults=false",
+  "cases": [
+    {
+      "name": "ac-raw",
+      "file": "jxl-progressive-ac.jxl",
+      "sha256": "db4a249b4467f2683de3a611bcbc2f4c5485885d908c17caa06e17eb96d1cd42",
+      "oracle": "jxl-progressive-ac.rgba16le",
+      "oracle_sha256": "feee9760dddd877a2ee13e7a47b0fd563666871d0fa8afb2c488ef82f1bc737a",
+      "bytes": 1246,
+      "all_two_chunk_boundaries": 1247,
+      "bytewise_updates": 2,
+      "provisional_different_from_final": 2,
+      "successive_different_updates": 1,
+      "sentinel_present_updates": 0,
+      "frame_complete_before_input_end_boundaries": 0,
+      "file_length": 1246,
+      "poison_consumed_input": true,
+      "native_max_difference": 1,
+      "managed_RGB_max_difference": 1,
+      "managed_alpha_exact": true,
+      "policy": "policy sealed_prefix_rejections=1246 sealed_prefix_acceptances=0 backpressure_pauses=1247 abort_drops=1247",
+      "core_trailing_observation": "trailing complete remaining=0 unbounded_box=false",
+      "headers": [
+        "coded 0 offset=4 visible=true passes=2 last=true"
+      ]
+    },
+    {
+      "name": "ac-jxlc",
+      "file": "jxl-progressive-ac-jxlc.jxl",
+      "sha256": "462196adf131a14c3a5b18a1d329bb90e516c301600a454e89afea111f14b15e",
+      "oracle": "jxl-progressive-ac.rgba16le",
+      "oracle_sha256": "feee9760dddd877a2ee13e7a47b0fd563666871d0fa8afb2c488ef82f1bc737a",
+      "bytes": 1286,
+      "all_two_chunk_boundaries": 1287,
+      "bytewise_updates": 2,
+      "provisional_different_from_final": 2,
+      "successive_different_updates": 1,
+      "sentinel_present_updates": 0,
+      "frame_complete_before_input_end_boundaries": 0,
+      "file_length": 1286,
+      "poison_consumed_input": true,
+      "native_max_difference": 1,
+      "managed_RGB_max_difference": 1,
+      "managed_alpha_exact": true,
+      "policy": "policy sealed_prefix_rejections=1286 sealed_prefix_acceptances=0 backpressure_pauses=1287 abort_drops=1287",
+      "core_trailing_observation": "trailing complete remaining=0 unbounded_box=false",
+      "headers": []
+    },
+    {
+      "name": "ac-jxlp",
+      "file": "jxl-progressive-ac-jxlp.jxl",
+      "sha256": "a65f4d11d9d053168bfcbf72821ab526f509e3e34526202e8d6bc4d8584cdd7c",
+      "oracle": "jxl-progressive-ac.rgba16le",
+      "oracle_sha256": "feee9760dddd877a2ee13e7a47b0fd563666871d0fa8afb2c488ef82f1bc737a",
+      "bytes": 1314,
+      "all_two_chunk_boundaries": 1315,
+      "bytewise_updates": 2,
+      "provisional_different_from_final": 2,
+      "successive_different_updates": 1,
+      "sentinel_present_updates": 0,
+      "frame_complete_before_input_end_boundaries": 0,
+      "file_length": 1314,
+      "poison_consumed_input": true,
+      "native_max_difference": 1,
+      "managed_RGB_max_difference": 1,
+      "managed_alpha_exact": true,
+      "policy": "policy sealed_prefix_rejections=1314 sealed_prefix_acceptances=0 backpressure_pauses=1315 abort_drops=1315",
+      "core_trailing_observation": "trailing complete remaining=0 unbounded_box=false",
+      "headers": []
+    },
+    {
+      "name": "ac-trailer",
+      "file": "jxl-progressive-ac-trailer.jxl",
+      "sha256": "f23fc27efe80310536958d355b236b9e873955b8126c0f2f84cc3dc360ef410b",
+      "oracle": "jxl-progressive-ac.rgba16le",
+      "oracle_sha256": "feee9760dddd877a2ee13e7a47b0fd563666871d0fa8afb2c488ef82f1bc737a",
+      "bytes": 1349,
+      "all_two_chunk_boundaries": 1350,
+      "bytewise_updates": 2,
+      "provisional_different_from_final": 2,
+      "successive_different_updates": 1,
+      "sentinel_present_updates": 0,
+      "frame_complete_before_input_end_boundaries": 63,
+      "file_length": 1286,
+      "poison_consumed_input": true,
+      "native_max_difference": 1,
+      "managed_RGB_max_difference": 1,
+      "managed_alpha_exact": true,
+      "policy": "policy sealed_prefix_rejections=1348 sealed_prefix_acceptances=1 backpressure_pauses=1350 abort_drops=1350",
+      "core_trailing_observation": "trailing complete remaining=0 unbounded_box=false",
+      "headers": []
+    },
+    {
+      "name": "dc-raw",
+      "file": "jxl-progressive-dc.jxl",
+      "sha256": "80e93bd15b367b03533652c5dc985175b9ab71543ad3f670b3fcbc8e78436c61",
+      "oracle": "jxl-progressive-dc.rgba16le",
+      "oracle_sha256": "df9c5abf22ef25e8195be041c270cf851ab76ab57d1f5e8c3fc3c435253f503c",
+      "bytes": 1279,
+      "all_two_chunk_boundaries": 1280,
+      "bytewise_updates": 4,
+      "provisional_different_from_final": 4,
+      "successive_different_updates": 3,
+      "sentinel_present_updates": 0,
+      "frame_complete_before_input_end_boundaries": 0,
+      "file_length": 1279,
+      "poison_consumed_input": true,
+      "native_max_difference": 2,
+      "managed_RGB_max_difference": 1,
+      "managed_alpha_exact": true,
+      "policy": "policy sealed_prefix_rejections=1279 sealed_prefix_acceptances=0 backpressure_pauses=1280 abort_drops=1280",
+      "core_trailing_observation": "trailing complete remaining=0 unbounded_box=false",
+      "headers": [
+        "coded 0 offset=4 visible=false passes=2 last=false",
+        "coded 1 offset=81 visible=true passes=2 last=true"
+      ]
+    },
+    {
+      "name": "dc-jxlc",
+      "file": "jxl-progressive-dc-jxlc.jxl",
+      "sha256": "486ebbe83c50d2031c2c03d7f86d13a7a3aa046df10aed9b6537716c869aaa71",
+      "oracle": "jxl-progressive-dc.rgba16le",
+      "oracle_sha256": "df9c5abf22ef25e8195be041c270cf851ab76ab57d1f5e8c3fc3c435253f503c",
+      "bytes": 1319,
+      "all_two_chunk_boundaries": 1320,
+      "bytewise_updates": 4,
+      "provisional_different_from_final": 4,
+      "successive_different_updates": 3,
+      "sentinel_present_updates": 0,
+      "frame_complete_before_input_end_boundaries": 0,
+      "file_length": 1319,
+      "poison_consumed_input": true,
+      "native_max_difference": 2,
+      "managed_RGB_max_difference": 1,
+      "managed_alpha_exact": true,
+      "policy": "policy sealed_prefix_rejections=1319 sealed_prefix_acceptances=0 backpressure_pauses=1320 abort_drops=1320",
+      "core_trailing_observation": "trailing complete remaining=0 unbounded_box=false",
+      "headers": []
+    },
+    {
+      "name": "dc-jxlp",
+      "file": "jxl-progressive-dc-jxlp.jxl",
+      "sha256": "ccf750fcd79dc84f21e824b2e5e3a32db7d74d73e270d4e32cc13d3ea291f305",
+      "oracle": "jxl-progressive-dc.rgba16le",
+      "oracle_sha256": "df9c5abf22ef25e8195be041c270cf851ab76ab57d1f5e8c3fc3c435253f503c",
+      "bytes": 1347,
+      "all_two_chunk_boundaries": 1348,
+      "bytewise_updates": 4,
+      "provisional_different_from_final": 4,
+      "successive_different_updates": 3,
+      "sentinel_present_updates": 0,
+      "frame_complete_before_input_end_boundaries": 0,
+      "file_length": 1347,
+      "poison_consumed_input": true,
+      "native_max_difference": 2,
+      "managed_RGB_max_difference": 1,
+      "managed_alpha_exact": true,
+      "policy": "policy sealed_prefix_rejections=1347 sealed_prefix_acceptances=0 backpressure_pauses=1348 abort_drops=1348",
+      "core_trailing_observation": "trailing complete remaining=0 unbounded_box=false",
+      "headers": []
+    },
+    {
+      "name": "dc-trailer",
+      "file": "jxl-progressive-dc-trailer.jxl",
+      "sha256": "a90612d3ae45abbdb76d408afb8bd801dcabf0f3b4f855542c8ae66901ce0686",
+      "oracle": "jxl-progressive-dc.rgba16le",
+      "oracle_sha256": "df9c5abf22ef25e8195be041c270cf851ab76ab57d1f5e8c3fc3c435253f503c",
+      "bytes": 1382,
+      "all_two_chunk_boundaries": 1383,
+      "bytewise_updates": 4,
+      "provisional_different_from_final": 4,
+      "successive_different_updates": 3,
+      "sentinel_present_updates": 0,
+      "frame_complete_before_input_end_boundaries": 63,
+      "file_length": 1319,
+      "poison_consumed_input": true,
+      "native_max_difference": 2,
+      "managed_RGB_max_difference": 1,
+      "managed_alpha_exact": true,
+      "policy": "policy sealed_prefix_rejections=1381 sealed_prefix_acceptances=1 backpressure_pauses=1383 abort_drops=1383",
+      "core_trailing_observation": "trailing complete remaining=0 unbounded_box=false",
+      "headers": []
+    }
+  ],
+  "negatives": [
+    {
+      "name": "ac-raw-truncated",
+      "WML2_rejected": true,
+      "C_rejected": true,
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1245 WML2_rejected=true output_files=0\ntrailing frame incomplete",
+      "output_files": 0
+    },
+    {
+      "name": "ac-raw-junk",
+      "WML2_rejected": true,
+      "C_rejected": false,
+      "core_observation": "negative core_frame_complete=true file_length=Some(1246) consumed=1247 WML2_rejected=true output_files=0\ntrailing complete remaining=0 unbounded_box=false",
+      "output_files": 0
+    },
+    {
+      "name": "ac-jxlc-truncated",
+      "WML2_rejected": true,
+      "C_rejected": true,
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1285 WML2_rejected=true output_files=0\ntrailing frame incomplete",
+      "output_files": 0
+    },
+    {
+      "name": "ac-jxlp-truncated",
+      "WML2_rejected": true,
+      "C_rejected": true,
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1313 WML2_rejected=true output_files=0\ntrailing frame incomplete",
+      "output_files": 0
+    },
+    {
+      "name": "ac-jxlp-order",
+      "WML2_rejected": true,
+      "C_rejected": false,
+      "core_observation": "negative core_error=Invalid ISOBMMF container WML2_rejected=true output_files=0",
+      "output_files": 0
+    },
+    {
+      "name": "ac-trailer-short",
+      "WML2_rejected": true,
+      "C_rejected": false,
+      "core_observation": "negative core_frame_complete=true file_length=Some(1286) consumed=1286 WML2_rejected=true output_files=0\ntrailing need_more hint=1 remaining=0",
+      "output_files": 0
+    },
+    {
+      "name": "ac-trailer-oversize",
+      "WML2_rejected": true,
+      "C_rejected": false,
+      "core_observation": "negative core_frame_complete=true file_length=Some(1286) consumed=1286 WML2_rejected=true output_files=0\ntrailing need_more hint=1 remaining=0",
+      "output_files": 0
+    },
+    {
+      "name": "dc-raw-truncated",
+      "WML2_rejected": true,
+      "C_rejected": true,
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1278 WML2_rejected=true output_files=0\ntrailing frame incomplete",
+      "output_files": 0
+    },
+    {
+      "name": "dc-raw-junk",
+      "WML2_rejected": true,
+      "C_rejected": false,
+      "core_observation": "negative core_frame_complete=true file_length=Some(1279) consumed=1280 WML2_rejected=true output_files=0\ntrailing complete remaining=0 unbounded_box=false",
+      "output_files": 0
+    },
+    {
+      "name": "dc-jxlc-truncated",
+      "WML2_rejected": true,
+      "C_rejected": true,
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1318 WML2_rejected=true output_files=0\ntrailing frame incomplete",
+      "output_files": 0
+    },
+    {
+      "name": "dc-jxlp-truncated",
+      "WML2_rejected": true,
+      "C_rejected": true,
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1346 WML2_rejected=true output_files=0\ntrailing frame incomplete",
+      "output_files": 0
+    },
+    {
+      "name": "dc-jxlp-order",
+      "WML2_rejected": true,
+      "C_rejected": false,
+      "core_observation": "negative core_error=Invalid ISOBMMF container WML2_rejected=true output_files=0",
+      "output_files": 0
+    },
+    {
+      "name": "dc-trailer-short",
+      "WML2_rejected": true,
+      "C_rejected": false,
+      "core_observation": "negative core_frame_complete=true file_length=Some(1319) consumed=1319 WML2_rejected=true output_files=0\ntrailing need_more hint=1 remaining=0",
+      "output_files": 0
+    },
+    {
+      "name": "dc-trailer-oversize",
+      "WML2_rejected": true,
+      "C_rejected": false,
+      "core_observation": "negative core_frame_complete=true file_length=Some(1319) consumed=1319 WML2_rejected=true output_files=0\ntrailing need_more hint=1 remaining=0",
+      "output_files": 0
+    }
+  ],
+  "root_lock_sha256": "879084552f4e5f1ddb20599355bfe5810b5284356ed2681b982010bbd0aec5be",
+  "rustc": "rustc 1.91.0 (f8297e351 2025-10-28)\nbinary: rustc\ncommit-hash: f8297e351a40c1439a467bbbb6879088047f50b3\ncommit-date: 2025-10-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.91.0\nLLVM version: 21.1.2\n",
+  "total_two_chunk_boundaries": 10530,
+  "decision": "HOLD production resumable API until bounded incremental preflight, container+EOF final validation, owned provisional publication/backpressure and cumulative live codec+metadata+snapshot accounting are qualified",
+  "source_sha256": {
+    "jpegxl_progressive_fixture.c": "1cb0a1d0c630204984d4c5e6e33490e81f233b62a88a990fd973d66496147cbd",
+    "jpegxl_progressive_probe.rs": "0123c725b689dd0a17dd741c36604009817fb4724d4b8b81238903a1a319c4dc",
+    "evaluate_jpegxl_progressive.py": "7edcb670a31646b85e8a3348c39bc3a38158639249fb540602b92f2a0895e140",
+    "jpegxl_progressive.rs": "5178198a823140ac9ba9350d18e59f8922dbd6e5265d9004689b1bdc6ba64bcd"
+  },
+  "qualification_checkpoint": "c20a4798093a2fa945583586499cc6460b2a15ac",
+  "validation": {
+    "native_JXL_EX_CMS": {
+      "passed": 56,
+      "log_sha256": "9238b3f968f10665b955d4a0d18cc96aa57e4b9ea233ccb522ba04ac95e8fd03"
+    },
+    "minimal_JXL": {
+      "passed": 43
+    },
+    "feature_disabled": {
+      "passed": 1
+    },
+    "optimized_frozen_boundary_test": {
+      "passed": 1,
+      "all_two_chunk_boundaries": 10530
+    },
+    "repository_CI_unit_tests": {
+      "passed": 35
+    },
+    "format": "cargo fmt --all --check passed",
+    "C": "-Wall -Wextra -Werror and runtime/header0.11.2 checks",
+    "visual": "Actual DC bytewise provisional updates and final contact sheet visually inspected; LF blurred to final reconstructed pattern",
+    "production_diff": "wml2/src, Cargo.lock and manifests unchanged",
+    "CI": "Dedicated optimized exhaustive step added; full remote CI recorded in PR after terminal status"
+  },
+  "composition": {
+    "sha": "e02f5c7c9df5e43ef2a434267ccc5a90bd9b0538",
+    "branches": "isolated PR32+62; public heads unchanged",
+    "whole_input_cases": 8,
+    "deterministic_cancel_points": 220,
+    "limit_precedence_cases": 8,
+    "claim": "Buffered progressive decoding only; no resumable cancellation, no inside-call latency or streaming resource qualification",
+    "checker_sha256": "e7a093d3edcb7376e0a1805e1b43c6f993b151eb4455899eb3c8b71a287e7f54"
+  },
+  "nonclaims": [
+    "No production resumable API or provisional publication support",
+    "No bounded untrusted codec/header/ICC or consumer-held-snapshot ledger",
+    "No new progressive WASM runtime or big-endian qualification",
+    "No interruption of serial parser/ICC compilation or running codec tasks",
+    "C image-only decode accepts8 of14 deliberate invalid envelopes; used for independent pixels, not strict-tail admission",
+    "No production speedup/benchmark/RSS claim"
+  ]
+}

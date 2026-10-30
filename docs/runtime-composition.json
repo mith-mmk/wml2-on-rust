@@ -1,0 +1,569 @@
+{
+  "baseline": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
+  "tested_runtime_and_tests_commit": "d7a6121b64596a3e8ce83391d7b9cb71b65cdadf",
+  "tested_runtime_and_tests_tree": "3759a5efa8e62066639b2d5c3e8e24679eb7290c",
+  "exact_heads_in_composition_order": {
+    "57": "81178d7c7359e211eaea4ebaeca8c6b5b0ad1129",
+    "32": "da4f45764995110502a1a0a3cd9e933d86a5872f",
+    "66": "5f08606d441376bbde185bb9cb15a6fdb4d2c481",
+    "56": "b3c52a50962c0171bbbdb46b61f247c34c94c98a",
+    "58": "7b693f09786f19c0b7db94c42056611bb5a0630e",
+    "62": "a69a54f2bfad412a60e6feee2e8e1b7030606e34",
+    "64": "d45a4f8feefa07d881bb8d3237de231fe837f606",
+    "65": "4eb32d9856e8476bc8d1fe19e1dc8d4bf87418c8",
+    "53": "b9c9644dbb0dfb741d2de4e0bbbb22a2d06f7c42",
+    "55": "dd45d8cd252f6d160e7ed6854e23d38d32791631",
+    "59": "695d0de97a98b254877426acfc4e51a6261e36ff",
+    "52": "b2196d9e7ec21a68d48f746940dfdc6c808778a8"
+  },
+  "environment": {
+    "rustc": "rustc 1.91.0 (f8297e351 2025-10-28)",
+    "host": "x86_64 Linux",
+    "node": "v24.19.0",
+    "oracle": "Debian libjxl runtime/header 0.11.2; existing frozen C/libjxl and LittleCMS references",
+    "cargo": "locked registry dependencies, fresh composition-specific target directories"
+  },
+  "matrix": [
+    {
+      "name": "disabled",
+      "cmd": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--no-default-features",
+        "--test",
+        "jpeg_xl",
+        "--test",
+        "jpeg_xl_additional",
+        "--test",
+        "jpeg_xl_layers",
+        "--test",
+        "jpeg_xl_brob",
+        "--test",
+        "jpeg_xl_metadata",
+        "--test",
+        "jpeg_xl_slice_admission",
+        "--test",
+        "image_info"
+      ],
+      "status": 0,
+      "seconds": 8.588,
+      "tests": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "ordinary",
+      "cmd": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "jpeg-xl",
+        "--lib",
+        "--test",
+        "jpeg_xl",
+        "--test",
+        "jpeg_xl_additional",
+        "--test",
+        "jpeg_xl_layers",
+        "--test",
+        "jpeg_xl_brob",
+        "--test",
+        "jpeg_xl_metadata",
+        "--test",
+        "jpeg_xl_slice_admission",
+        "--test",
+        "image_info"
+      ],
+      "status": 0,
+      "seconds": 37.297,
+      "tests": {
+        "passed": 84,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "ex",
+      "cmd": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "jpeg-xl,image-buffer-ex",
+        "--lib",
+        "--test",
+        "jpeg_xl",
+        "--test",
+        "jpeg_xl_additional",
+        "--test",
+        "jpeg_xl_layers",
+        "--test",
+        "jpeg_xl_brob",
+        "--test",
+        "jpeg_xl_metadata",
+        "--test",
+        "jpeg_xl_slice_admission",
+        "--test",
+        "image_info"
+      ],
+      "status": 0,
+      "seconds": 43.877,
+      "tests": {
+        "passed": 96,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "managed",
+      "cmd": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "jpeg-xl,exif,image-buffer-ex,color-management",
+        "--lib",
+        "--test",
+        "jpeg_xl",
+        "--test",
+        "jpeg_xl_additional",
+        "--test",
+        "jpeg_xl_layers",
+        "--test",
+        "jpeg_xl_brob",
+        "--test",
+        "jpeg_xl_metadata",
+        "--test",
+        "jpeg_xl_slice_admission",
+        "--test",
+        "image_info"
+      ],
+      "status": 0,
+      "seconds": 78.863,
+      "tests": {
+        "passed": 118,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "codecs",
+      "cmd": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "jpeg-xl,exif,image-buffer-ex,color-management,jpeg,png,tiff,gif,psd,idct_llm",
+        "--lib",
+        "--test",
+        "image_info",
+        "--test",
+        "jpeg_scaled",
+        "--test",
+        "png_encode_ex",
+        "--test",
+        "png_encode",
+        "--test",
+        "tiff_encode_ex",
+        "--test",
+        "tiff_encode",
+        "--test",
+        "tiff_interop",
+        "--test",
+        "image_buffer_ex_icc",
+        "--test",
+        "jpeg_png_icc_metadata"
+      ],
+      "status": 0,
+      "seconds": 9.701,
+      "tests": {
+        "passed": 144,
+        "failed": 0,
+        "ignored": 6
+      }
+    },
+    {
+      "name": "idct_aan",
+      "cmd": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "jpeg,idct_aan",
+        "--test",
+        "jpeg_scaled"
+      ],
+      "status": 0,
+      "seconds": 2.393,
+      "tests": {
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "idct_slower",
+      "cmd": [
+        "cargo",
+        "test",
+        "-p",
+        "wml2",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "jpeg,idct_slower",
+        "--test",
+        "jpeg_scaled"
+      ],
+      "status": 0,
+      "seconds": 2.437,
+      "tests": {
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "compatible",
+      "cmd": [
+        "python3",
+        ".github/scripts/check_feature_contracts.py",
+        "--output",
+        ".test-composition-compatible"
+      ],
+      "status": 0,
+      "seconds": 68.68,
+      "tests": null
+    },
+    {
+      "name": "ci-selection",
+      "cmd": [
+        "python3",
+        ".github/scripts/test_ci_selection.py"
+      ],
+      "status": 0,
+      "seconds": 0.14,
+      "tests": null
+    },
+    {
+      "name": "avif-capability",
+      "status": 0,
+      "tests": {
+        "passed": 8,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "encode-disabled",
+      "status": 0,
+      "tests": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "legacy-noex-check",
+      "status": 0,
+      "tests": null
+    },
+    {
+      "name": "final-focused",
+      "status": 0,
+      "tests": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "encode-bench",
+      "status": 0,
+      "tests": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ],
+  "compatible": {
+    "expected_all_features_conflict": "Choose only one JPEG IDCT feature",
+    "compatible_profiles": {
+      "all-codecs": [
+        "SJIS",
+        "avif",
+        "avifenc",
+        "bmp",
+        "bmp-jpeg",
+        "bmp-png",
+        "c2pa",
+        "color-management",
+        "dds",
+        "default",
+        "exif",
+        "fdct_slower",
+        "gif",
+        "high-bit-depth",
+        "ico",
+        "ico-bmp",
+        "ico-png",
+        "idct_llm",
+        "image-buffer-ex",
+        "jpeg",
+        "jpeg-xl",
+        "jpeg2000",
+        "mag",
+        "maki",
+        "multithread",
+        "pcd",
+        "pcx",
+        "pi",
+        "pic",
+        "pic2",
+        "png",
+        "psd",
+        "q4",
+        "tga",
+        "tiff",
+        "tiff-jpeg",
+        "vsp",
+        "webp"
+      ],
+      "noretoro": [
+        "SJIS",
+        "avif",
+        "avifenc",
+        "bmp",
+        "bmp-jpeg",
+        "bmp-png",
+        "c2pa",
+        "color-management",
+        "dds",
+        "default",
+        "exif",
+        "fdct_slower",
+        "gif",
+        "high-bit-depth",
+        "ico",
+        "ico-bmp",
+        "ico-png",
+        "idct_llm",
+        "image-buffer-ex",
+        "jpeg",
+        "jpeg-xl",
+        "jpeg2000",
+        "mag",
+        "maki",
+        "multithread",
+        "noretoro",
+        "pcd",
+        "pcx",
+        "pi",
+        "pic",
+        "pic2",
+        "png",
+        "psd",
+        "q4",
+        "tga",
+        "tiff",
+        "tiff-jpeg",
+        "vsp",
+        "webp"
+      ]
+    },
+    "all_targets_check": "PASS",
+    "jpeg_xl_integration_tests": "PASS",
+    "target": "host"
+  },
+  "compatible_test_runs": [
+    {
+      "profile": "all-codecs",
+      "tests": {
+        "passed": 54,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "profile": "noretoro",
+      "tests": {
+        "passed": 54,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ],
+  "focused": {
+    "preview_intrinsic_orientation_fixture": {
+      "input_sha256": "449ce9ff7bc50378ce5bf5bfdbfe49bb53713624dbb736e37b29e11a5accb1b5",
+      "preview_reference": "5 7 1 2 3 16 16",
+      "dimensions": "5 7 1 19 11",
+      "main_native_matches_frozen_independent_oracle": true
+    },
+    "metadata_workspace_refusal_thresholds_native": {
+      "preview_intrinsic_brob_structured": {
+        "metadata_bytes": 18329,
+        "expanded_bytes": 9600260
+      },
+      "mixed_alpha_brob_structured": {
+        "metadata_bytes": 17146,
+        "expanded_bytes": 1206396
+      }
+    },
+    "managed_checkpoints_per_input": [
+      17,
+      17
+    ],
+    "pre_cancel_allocations": 0,
+    "non_cancel_oversize": {
+      "allocations": 3,
+      "total_requested_bytes": 82,
+      "largest_requested_bytes": 42
+    }
+  },
+  "wasm": [
+    {
+      "runtime": "v24.19.0",
+      "cases": 229,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 14548992,
+      "target": "wasm32-unknown-unknown",
+      "features": "jpeg-xl,image-buffer-ex,exif; no defaults",
+      "wasm_sha256": "e0c24d39844b2c3aa46ebd752f32f1b8de2b24af4cb76266c8ece592e6aaa762",
+      "scope": "COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+    },
+    {
+      "runtime": "v24.19.0",
+      "cases": 229,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 14548992,
+      "target": "wasm32-unknown-unknown",
+      "features": "jpeg-xl,image-buffer-ex; no defaults",
+      "wasm_sha256": "4b7183dd2f362570d51e87570ceb40e5f15619359acc25d98a8618cc260dcb15",
+      "scope": "COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+    }
+  ],
+  "benchmark": [
+    {
+      "tree": "baseline",
+      "round": 0,
+      "input": "jxl-rgba8.jxl",
+      "mode": "ordinary",
+      "stdout": "mode=ordinary input=212 width=7 height=5 bytes=140 median_us=51.798 allocations=360 requested_bytes=110693 peak_additional_requested_heap=69085 fnv=ea4e4c46143dc86a"
+    },
+    {
+      "tree": "candidate",
+      "round": 0,
+      "input": "jxl-rgba8.jxl",
+      "mode": "ordinary",
+      "stdout": "mode=ordinary input=212 width=7 height=5 bytes=140 median_us=53.261 allocations=363 requested_bytes=111181 peak_additional_requested_heap=69325 fnv=ea4e4c46143dc86a"
+    },
+    {
+      "tree": "candidate",
+      "round": 1,
+      "input": "jxl-rgba8.jxl",
+      "mode": "ordinary",
+      "stdout": "mode=ordinary input=212 width=7 height=5 bytes=140 median_us=53.671 allocations=363 requested_bytes=111181 peak_additional_requested_heap=69325 fnv=ea4e4c46143dc86a"
+    },
+    {
+      "tree": "baseline",
+      "round": 1,
+      "input": "jxl-rgba8.jxl",
+      "mode": "ordinary",
+      "stdout": "mode=ordinary input=212 width=7 height=5 bytes=140 median_us=56.715 allocations=360 requested_bytes=110693 peak_additional_requested_heap=69085 fnv=ea4e4c46143dc86a"
+    },
+    {
+      "tree": "baseline",
+      "round": 0,
+      "input": "jxl-jbrd-bench.jxl",
+      "mode": "ordinary",
+      "stdout": "mode=ordinary input=184341 width=606 height=500 bytes=1212000 median_us=18144.675 allocations=972 requested_bytes=17473509 peak_additional_requested_heap=6178973 fnv=9ccd1aa752f9d59d"
+    },
+    {
+      "tree": "candidate",
+      "round": 0,
+      "input": "jxl-jbrd-bench.jxl",
+      "mode": "ordinary",
+      "stdout": "mode=ordinary input=184341 width=606 height=500 bytes=1212000 median_us=16204.347 allocations=976 requested_bytes=17289104 peak_additional_requested_heap=5994712 fnv=9ccd1aa752f9d59d"
+    },
+    {
+      "tree": "candidate",
+      "round": 1,
+      "input": "jxl-jbrd-bench.jxl",
+      "mode": "ordinary",
+      "stdout": "mode=ordinary input=184341 width=606 height=500 bytes=1212000 median_us=18941.647 allocations=976 requested_bytes=17289104 peak_additional_requested_heap=5994712 fnv=9ccd1aa752f9d59d"
+    },
+    {
+      "tree": "baseline",
+      "round": 1,
+      "input": "jxl-jbrd-bench.jxl",
+      "mode": "ordinary",
+      "stdout": "mode=ordinary input=184341 width=606 height=500 bytes=1212000 median_us=18710.428 allocations=972 requested_bytes=17473509 peak_additional_requested_heap=6178973 fnv=9ccd1aa752f9d59d"
+    },
+    {
+      "tree": "baseline",
+      "round": 0,
+      "input": "jxl-jbrd-bench.jxl",
+      "mode": "cms",
+      "stdout": "mode=cms input=184341 width=606 height=500 bytes=1212000 median_us=1076243.481 allocations=987 requested_bytes=22339790 peak_additional_requested_heap=7391595 fnv=08b7a652623fa1a2"
+    },
+    {
+      "tree": "candidate",
+      "round": 0,
+      "input": "jxl-jbrd-bench.jxl",
+      "mode": "cms",
+      "stdout": "mode=cms input=184341 width=606 height=500 bytes=1212000 median_us=1072971.355 allocations=997 requested_bytes=22157473 peak_additional_requested_heap=7207334 fnv=08b7a652623fa1a2"
+    },
+    {
+      "tree": "candidate",
+      "round": 1,
+      "input": "jxl-jbrd-bench.jxl",
+      "mode": "cms",
+      "stdout": "mode=cms input=184341 width=606 height=500 bytes=1212000 median_us=1077288.346 allocations=997 requested_bytes=22157473 peak_additional_requested_heap=7207334 fnv=08b7a652623fa1a2"
+    },
+    {
+      "tree": "baseline",
+      "round": 1,
+      "input": "jxl-jbrd-bench.jxl",
+      "mode": "cms",
+      "stdout": "mode=cms input=184341 width=606 height=500 bytes=1212000 median_us=1108013.674 allocations=987 requested_bytes=22339790 peak_additional_requested_heap=7391595 fnv=08b7a652623fa1a2"
+    }
+  ],
+  "encode_benchmark_lines": [
+    "PNG EX RGBA16 512x384: median 18.890 ms, 19407 bytes (20 runs, 3 warmup)",
+    "TIFF EX RGBA16 512x384 none: median 0.149 ms, 1573126 bytes (20 timed, 3 warmup)",
+    "TIFF EX RGBA16 512x384 lzw: median 116.347 ms, 86658 bytes (20 timed, 3 warmup)",
+    "TIFF EX RGBA16 512x384 deflate: median 12.093 ms, 19279 bytes (20 timed, 3 warmup)"
+  ],
+  "limitations": [
+    "Local integration evidence only; no GitHub PR merge or approval",
+    "No Windows/macOS execution or additional Rust toolchain tested here",
+    "Three external TIFF corpus tests were not executed; two ignored manual EX benchmarks executed separately; metadata-query manual benchmark not run",
+    "No hard heap bound, cancellation latency guarantee or broad performance claim",
+    "Only mechanical composition resolutions; no independently identified production regression fix"
+  ]
+}

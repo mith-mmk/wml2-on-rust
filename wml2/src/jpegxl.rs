@@ -307,21 +307,49 @@ fn frame_workspace(
     br.skip_bits(frame_bits).map_err(codec_error)?;
     br.jump_to_byte_boundary().map_err(codec_error)?;
     let mut pos = br.total_bits_read() / 8;
-    let nonserialized = header.frame_header_nonserialized();
+    let main_nonserialized = header.frame_header_nonserialized();
+    let preview_nonserialized = header.preview_frame_header_nonserialized();
+    let mut preview = preview_nonserialized.is_some();
     let channels = add(3, header.image_metadata.extra_channel_info.len())?;
+    // The codec checks preview samples even while skipping. Admit their
+    // dimensions independently, without reserving nonexistent preview planes.
+    let mut sample_pixels = max_pixels;
+    if let Some(size) = &header.image_metadata.preview {
+        let pixels = mul(
+            (size.xsize() as usize).max(16),
+            (size.ysize() as usize).max(16),
+        )?;
+        limits::check(pixels, MAX_PIXELS, "JPEG XL preview pixels")?;
+        sample_pixels = sample_pixels.max(pixels);
+    }
     let mut retained = 0;
     let mut peak = add(base, mul(max_pixels, 128)?)?;
     let mut visible = 0;
     let mut toc_workspace = 0;
-    for _ in 0..64 {
+    // One independently skipped preview does not consume a main-image layer
+    // or caller frame. Main sequence complexity remains capped at64 layers.
+    for _ in 0..(64 + usize::from(preview)) {
+        let nonserialized = if preview {
+            preview_nonserialized.as_ref().unwrap()
+        } else {
+            &main_nonserialized
+        };
         let end = input.len().min(add(pos, MAX_HEADER)?);
         let data = input
             .get(pos..end)
             .ok_or_else(|| invalid("invalid JPEG XL frame offset"))?;
         let mut br = BitReader::new(data);
         let mut frame =
-            FrameHeader::read_unconditional(&(), &mut br, &nonserialized).map_err(codec_error)?;
-        frame.postprocess(&nonserialized);
+            FrameHeader::read_unconditional(&(), &mut br, nonserialized).map_err(codec_error)?;
+        frame.postprocess(nonserialized);
+        // In 0.7.4 a non-visible preview overrides Skip with SkipOutput and
+        // would allocate pixel/reference state. Only a terminal visible preview
+        // reaches its section-skip path without constructing pixel state.
+        if preview && (!frame.is_last || !frame.is_visible()) {
+            return Err(unsupported(
+                "JPEG XL preview must be one terminal visible frame for bounded skipping",
+            ));
+        }
         let (width, height) = frame.size_upsampled();
         let (padded_width, padded_height) = frame.size_padded_upsampled();
         let width = width.max(padded_width).max(16);
@@ -343,10 +371,15 @@ fn frame_workspace(
         }
         let pixels = mul(width, height)?;
         limits::check(pixels, MAX_PIXELS, "JPEG XL internal layer pixels")?;
-        max_pixels = max_pixels.max(pixels);
+        sample_pixels = sample_pixels.max(pixels);
+        if !preview {
+            max_pixels = max_pixels.max(pixels);
+        }
         // Conservatively retain every preceding layer's f32 colour/extra planes,
         // even if a reference slot is replaced or the codec can free it sooner.
-        retained = add(retained, mul(pixels, mul(channels, 4)?)?)?;
+        if !preview {
+            retained = add(retained, mul(pixels, mul(channels, 4)?)?)?;
+        }
         let entries = frame.num_toc_entries();
         limits::check(entries, 4096, "JPEG XL frame TOC entries")?;
         if br.peek(1) != 0 {
@@ -377,6 +410,12 @@ fn frame_workspace(
                 "truncated JPEG XL frame payload",
             ));
         }
+        if preview {
+            // No preview entropy decode, output allocation, callback or frame
+            // publication. The codec also drops this TOC before the main frame.
+            preview = false;
+            continue;
+        }
         visible += usize::from(frame.is_visible());
         if visible > 1 {
             return Err(unsupported(
@@ -389,7 +428,7 @@ fn frame_workspace(
             }
             // Upstream rejects >=limit and counts three colour channels even
             // for Gray. Keep its runtime check, using the scanned layer bound.
-            return Ok((peak, add(mul(max_pixels, channels)?, 1)?));
+            return Ok((peak, add(mul(sample_pixels, channels)?, 1)?));
         }
     }
     Err(unsupported("JPEG XL exceeds64 internal layers"))
@@ -405,9 +444,9 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     let mut br = BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
     let header = FileHeader::read(&mut br).map_err(codec_error)?;
     let m = &header.image_metadata;
-    if m.animation.is_some() || m.preview.is_some() || m.intrinsic_size.is_some() {
+    if m.animation.is_some() || m.intrinsic_size.is_some() {
         return Err(unsupported(
-            "JPEG XL animations, previews and intrinsic sizes are unsupported",
+            "JPEG XL animations and intrinsic sizes are unsupported",
         ));
     }
     let bits = m.bit_depth.bits_per_sample();
@@ -648,6 +687,7 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     let h = preflight(&input, limits)?;
     let mut options = JxlDecoderOptions::default();
     options.sample_limit = Some(h.sample_limit);
+    options.skip_preview = true; // Explicit: return the main image, never preview pixels.
     options.high_precision = true;
     options.render_spot_colors = false;
     let mut stream = input.codestream.as_slice();

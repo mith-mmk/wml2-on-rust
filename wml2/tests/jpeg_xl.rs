@@ -29,6 +29,9 @@ fn feature_controls_detection_and_extension_reporting() {
 
 #[cfg(feature = "jpeg-xl")]
 mod enabled {
+    mod preview {
+        include!("jpeg_xl/preview.rs");
+    }
     use bin_rs::reader::BytesReader;
     use wml2::draw::*;
     use wml2::limits::DecodeLimits;

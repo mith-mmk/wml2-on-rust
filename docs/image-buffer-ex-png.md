@@ -50,7 +50,8 @@ requested pixel extent, metadata and an estimate of known adapter buffers before
 picking pixels, followed by final output size. The estimate covers picked
 pixels, scanlines, rows and chunk assembly; it is not a bound on total process
 RSS, caller-owned storage/custom callback allocations or miniz internals.
-`encode_end_ex` is called after every successful start, including encode errors;
+`encode_end_ex` is called after every successful start call (including `Ok(None)`),
+including encode errors;
 the original encode error takes precedence over an end error.
 
 ## Verification
@@ -71,7 +72,7 @@ WML2_PNG_EX_DISPLAY=/tmp/.test-png-ex.png cargo test --release -p wml2 \
   --test png_encode_ex display_and_benchmark -- --ignored --nocapture
 ```
 
-Local validation (Rust 1.91.0, Linux x86_64, main `6a48db9`): 107 passed,
+Local validation (Rust 1.91.0, Linux x86_64, main `6a48db9`): 108 passed,
 one manual benchmark ignored in the normal run; the manual test passed
 separately. Feature-off and EX-without-PNG builds passed. Clippy completed with
 existing library warnings. The generated 512×384 RGBA16 PNG was independently

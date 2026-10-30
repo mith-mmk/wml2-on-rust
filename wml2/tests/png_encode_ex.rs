@@ -246,6 +246,7 @@ struct Picker {
     picks: usize,
     ends: usize,
     dimensions: Option<(usize, usize)>,
+    start: u8,
 }
 impl Picker {
     fn new() -> Self {
@@ -257,6 +258,7 @@ impl Picker {
             picks: 0,
             ends: 0,
             dimensions: None,
+            start: 0,
         }
     }
 }
@@ -265,6 +267,11 @@ impl PickCallbackEx for Picker {
         &mut self,
         o: Option<EncoderOptions>,
     ) -> Result<Option<ImageProfilesEx>, Error> {
+        match self.start {
+            1 => return Ok(None),
+            2 => return Err("start failed".into()),
+            _ => {}
+        }
         let mut p = self.image.encode_start_ex(o)?.unwrap();
         if let Some((w, h)) = self.dimensions {
             p.legacy.width = w;
@@ -496,4 +503,27 @@ fn static_only_rejects_animation_and_twelve_bit_output_and_preserves_exif() {
         reader.info().exif_metadata.as_deref(),
         Some(exif.as_slice())
     );
+}
+
+#[test]
+fn successful_start_without_profiles_still_ends_but_failed_start_does_not() {
+    let output = PixelOutputEx::new(PixelFormatEx::Rgba16, PrecisionConversion::Exact);
+    let mut picker = Picker::new();
+    picker.start = 1;
+    picker.fail_end = true;
+    assert_eq!(
+        encode(&mut picker, output).unwrap_err().to_string(),
+        "PNG EX image profiles missing"
+    );
+    assert_eq!((picker.picks, picker.ends), (0, 1));
+    picker.start = 2;
+    assert_eq!(
+        encode(&mut picker, output).unwrap_err().to_string(),
+        "start failed"
+    );
+    assert_eq!((picker.picks, picker.ends), (0, 1));
+    picker.start = 0;
+    picker.fail_end = false;
+    assert!(encode(&mut picker, output).is_ok());
+    assert_eq!((picker.picks, picker.ends), (1, 2));
 }

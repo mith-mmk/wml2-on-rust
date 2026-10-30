@@ -582,11 +582,9 @@ pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx<'_>) -> Result<Vec<u8
     ) {
         return Err("PNG EX output requires Gray/RGBA8 or16; explicitly request conversion from12-bit storage".into());
     }
-    let profile = option
-        .drawer
-        .encode_start_ex(None)?
-        .ok_or("PNG EX image profiles missing")?;
+    let profile = option.drawer.encode_start_ex(None)?;
     let result = (|| {
+        let profile = profile.ok_or("PNG EX image profiles missing")?;
         let width = profile.legacy.width;
         let height = profile.legacy.height;
         // PNG dimensions are limited to 2^31-1, even on 64-bit platforms.

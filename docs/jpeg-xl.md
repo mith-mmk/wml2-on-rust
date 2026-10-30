@@ -87,6 +87,55 @@ PQ/HLG is rejected. Arbitrary opaque ICC transfer curves are preserved, not
 interpreted as an HDR rendering promise. There is no HDR tone mapping or
 semantic classification of arbitrary ICC LUTs.
 
+## Cooperative display cancellation
+
+`image_from_srgb_with_limits_and_cancel(input, limits, &probe)` adds cancellation
+without changing the existing sRGB, ordinary or EX entry points. The synchronous
+`Fn() -> bool` probe runs on the decoding thread; return true to cancel. A UI can
+capture a shared atomic flag. Keep the probe cheap and nonblocking. It need not
+be `Send` or `Sync`; WML2 does not move it to another thread. Panics from the probe
+are not caught.
+
+```rust,ignore
+let probe = || cancelled.load(std::sync::atomic::Ordering::Relaxed);
+match wml2::jpegxl::image_from_srgb_with_limits_and_cancel(bytes, limits, &probe) {
+    Ok(image) => publish(image),
+    Err(error) if error.is::<wml2::jpegxl::DecodeCancelled>() => {},
+    Err(error) => return Err(error),
+}
+```
+
+The boxed public `DecodeCancelled` error distinguishes cancellation from decode
+and resource-limit errors. Cancellation is latched once observed. A cancelled
+call returns no `ImageBuffer`; all partial buffers and metadata remain private
+and are dropped. There is a final check after private image population and before
+return. As with any cooperative API, a caller publishing later must also check
+its request generation/flag to handle cancellation after this final check.
+
+The adapter checks before work, after bounded preflight, around codec stages,
+between sample-copy/rounding chunks, before private image initialization, and
+after population. The pinned **published `jxl 0.7.4`** provides a fallible
+`JxlParallelRunner`, rather than libjxl's cancellation API. The cancellable path
+uses a sequential runner, overriding both `run` and `run_ordered` (the latter's
+default implementation bypasses `run` for one thread). Checks occur before each
+LF-group/smoothing/render task and after each task batch. Its own cancellation
+error is translated back to `DecodeCancelled`; genuine codec errors are retained.
+The legacy routes still select the original codec runner.
+
+ICC processing checks before parsing, before each **256-pixel** conversion batch,
+and after the last batch. Alpha is excluded exactly as in the existing route;
+conversion still uses the actual reconstruction ICC profile, followed by the
+same RGBA8 rounding, and retains source profiles and orientation metadata.
+
+**Non-interruptible sections:** container assembly/preflight, allocations and
+individual memory copies, serial codec parsing/global/entropy work, an individual
+codec runner task, and ICC profile parsing/transform compilation. No bounded
+cancellation latency or ability to interrupt every codec operation is promised.
+The existing input/pixel/expanded-workspace/metadata/frame/animation limits and
+JPEG XL hard caps still apply. An already-true probe wins before validating input;
+otherwise an error encountered before the next checkpoint wins. Cancellation
+does not relax or reclassify a previously encountered limit/decode error.
+
 ## Still images with JPEG reconstruction side data
 
 An uncompressed outer `jbrd` box no longer prevents pixel decoding. Its payload

@@ -255,12 +255,12 @@ pub fn cli() -> Result<(), Error> {
         match run(&data, &[data.len()]) {
             Ok(s) => {
                 println!(
-                    "negative core_frame_complete={} file_length={:?} consumed={} WML2_rejected=true output_files=0",
+                    "negative core_frame_complete={} file_length={:?} consumed={} WML2_rejected=true Rust_output_files=0",
                     s.done, s.length, s.input.pos
                 );
                 println!("trailing {}", trailing(s));
             }
-            Err(e) => println!("negative core_error={e} WML2_rejected=true output_files=0"),
+            Err(e) => println!("negative core_error={e} WML2_rejected=true Rust_output_files=0"),
         };
         return Ok(());
     }

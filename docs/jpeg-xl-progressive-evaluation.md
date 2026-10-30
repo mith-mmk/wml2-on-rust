@@ -144,14 +144,15 @@ or qualify a queue of arbitrary consumer-held snapshots.
 Fourteen deliberate envelope negatives cover raw/boxed truncation, appended raw
 junk, an initial jxlp index1 instead of0, incomplete trailing box header and
 trailing payload length exceeding available bytes. The current WML2 whole API
-rejects all14; the negative experiment creates **zero output files**. Actual
+rejects all14; the negative Rust probe creates **zero pixel output files**. Actual
 callback regression tests also verify absent canvas/pixels/metadata on malformed
 envelopes and input/pixel/workspace/metadata/frame-limit errors.
 
 The C oracle rejects the six truncations, but accepts appended raw junk,
 misindexed parts and the four incomplete trailing-box cases at its image-only
 subscription level. This is recorded, not used to certify strict container
-admission. The known negative constructions and WML2's stricter envelope
+admission. C may write reference pixels for those accepted cases; those files
+are separate from the negative Rust output prefix. The known negative constructions and WML2's stricter envelope
 contract are explicit; C final pixels are the independent pixel oracle.
 
 In the malformed-trailer cases the Rust core has **already completed a frame**

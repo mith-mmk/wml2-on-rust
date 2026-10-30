@@ -55,9 +55,9 @@ for name,dc in [('ac',0),('dc',1)]:
  # Late invalid envelopes, not arbitrary entropy corruption claimed detected.
  bad={'raw-truncated':raw[:-1],'raw-junk':raw+b'\xff','jxlc-truncated':wrappers['jxlc'][:-1],'jxlp-truncated':wrappers['jxlp'][:-1],'jxlp-order':signature+ftyp+box(b'jxlp',struct.pack('>I',0x80000001)+raw),'trailer-short':wrappers['jxlc']+b'\0\0\0\x10xml','trailer-oversize':wrappers['jxlc']+box(b'xml ',b'a')[:-1]}
  for kind,data in bad.items():
-  label=name+'-'+kind;path=out/(label+'.bad.jxl');path.write_bytes(data);prefix=out/(label+'.negative');r=run([out/'probe',path,prefix,'--negative'],'negative-Rust-'+label);assert not list(out.glob(prefix.name+'*')),'negative published files'
+  label=name+'-'+kind;path=out/(label+'.bad.jxl');path.write_bytes(data);prefix=out/(label+'.negative-rust');r=run([out/'probe',path,prefix,'--negative'],'negative-Rust-'+label);assert not list(out.glob(prefix.name+'*')),'negative published files'
   c=run([out/'fixture','decode',path,out/(label+'.negative-C.rgba16le')],'negative-C-'+label,False)
-  report['negatives'].append({'name':label,'WML2_rejected':True,'C_rejected':c.returncode!=0,'core_observation':r.stdout.strip(),'output_files':0})
+  report['negatives'].append({'name':label,'WML2_rejected':True,'C_rejected':c.returncode!=0,'core_observation':r.stdout.strip(),'Rust_output_files':0})
 if a.write_fixtures:manifest_path.write_text(json.dumps(manifest,indent=2)+'\n')
 else:assert old==manifest,'manifest changed'
 report['total_two_chunk_boundaries']=sum(c['all_two_chunk_boundaries'] for c in report['cases']);report['decision']='HOLD production resumable API until bounded incremental preflight, container+EOF final validation, owned provisional publication/backpressure and cumulative live codec+metadata+snapshot accounting are qualified'

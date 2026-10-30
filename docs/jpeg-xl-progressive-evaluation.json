@@ -191,99 +191,99 @@
       "name": "ac-raw-truncated",
       "WML2_rejected": true,
       "C_rejected": true,
-      "core_observation": "negative core_frame_complete=false file_length=None consumed=1245 WML2_rejected=true output_files=0\ntrailing frame incomplete",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1245 WML2_rejected=true Rust_output_files=0\ntrailing frame incomplete",
+      "Rust_output_files": 0
     },
     {
       "name": "ac-raw-junk",
       "WML2_rejected": true,
       "C_rejected": false,
-      "core_observation": "negative core_frame_complete=true file_length=Some(1246) consumed=1247 WML2_rejected=true output_files=0\ntrailing complete remaining=0 unbounded_box=false",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=true file_length=Some(1246) consumed=1247 WML2_rejected=true Rust_output_files=0\ntrailing complete remaining=0 unbounded_box=false",
+      "Rust_output_files": 0
     },
     {
       "name": "ac-jxlc-truncated",
       "WML2_rejected": true,
       "C_rejected": true,
-      "core_observation": "negative core_frame_complete=false file_length=None consumed=1285 WML2_rejected=true output_files=0\ntrailing frame incomplete",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1285 WML2_rejected=true Rust_output_files=0\ntrailing frame incomplete",
+      "Rust_output_files": 0
     },
     {
       "name": "ac-jxlp-truncated",
       "WML2_rejected": true,
       "C_rejected": true,
-      "core_observation": "negative core_frame_complete=false file_length=None consumed=1313 WML2_rejected=true output_files=0\ntrailing frame incomplete",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1313 WML2_rejected=true Rust_output_files=0\ntrailing frame incomplete",
+      "Rust_output_files": 0
     },
     {
       "name": "ac-jxlp-order",
       "WML2_rejected": true,
       "C_rejected": false,
-      "core_observation": "negative core_error=Invalid ISOBMMF container WML2_rejected=true output_files=0",
-      "output_files": 0
+      "core_observation": "negative core_error=Invalid ISOBMMF container WML2_rejected=true Rust_output_files=0",
+      "Rust_output_files": 0
     },
     {
       "name": "ac-trailer-short",
       "WML2_rejected": true,
       "C_rejected": false,
-      "core_observation": "negative core_frame_complete=true file_length=Some(1286) consumed=1286 WML2_rejected=true output_files=0\ntrailing need_more hint=1 remaining=0",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=true file_length=Some(1286) consumed=1286 WML2_rejected=true Rust_output_files=0\ntrailing need_more hint=1 remaining=0",
+      "Rust_output_files": 0
     },
     {
       "name": "ac-trailer-oversize",
       "WML2_rejected": true,
       "C_rejected": false,
-      "core_observation": "negative core_frame_complete=true file_length=Some(1286) consumed=1286 WML2_rejected=true output_files=0\ntrailing need_more hint=1 remaining=0",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=true file_length=Some(1286) consumed=1286 WML2_rejected=true Rust_output_files=0\ntrailing need_more hint=1 remaining=0",
+      "Rust_output_files": 0
     },
     {
       "name": "dc-raw-truncated",
       "WML2_rejected": true,
       "C_rejected": true,
-      "core_observation": "negative core_frame_complete=false file_length=None consumed=1278 WML2_rejected=true output_files=0\ntrailing frame incomplete",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1278 WML2_rejected=true Rust_output_files=0\ntrailing frame incomplete",
+      "Rust_output_files": 0
     },
     {
       "name": "dc-raw-junk",
       "WML2_rejected": true,
       "C_rejected": false,
-      "core_observation": "negative core_frame_complete=true file_length=Some(1279) consumed=1280 WML2_rejected=true output_files=0\ntrailing complete remaining=0 unbounded_box=false",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=true file_length=Some(1279) consumed=1280 WML2_rejected=true Rust_output_files=0\ntrailing complete remaining=0 unbounded_box=false",
+      "Rust_output_files": 0
     },
     {
       "name": "dc-jxlc-truncated",
       "WML2_rejected": true,
       "C_rejected": true,
-      "core_observation": "negative core_frame_complete=false file_length=None consumed=1318 WML2_rejected=true output_files=0\ntrailing frame incomplete",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1318 WML2_rejected=true Rust_output_files=0\ntrailing frame incomplete",
+      "Rust_output_files": 0
     },
     {
       "name": "dc-jxlp-truncated",
       "WML2_rejected": true,
       "C_rejected": true,
-      "core_observation": "negative core_frame_complete=false file_length=None consumed=1346 WML2_rejected=true output_files=0\ntrailing frame incomplete",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=false file_length=None consumed=1346 WML2_rejected=true Rust_output_files=0\ntrailing frame incomplete",
+      "Rust_output_files": 0
     },
     {
       "name": "dc-jxlp-order",
       "WML2_rejected": true,
       "C_rejected": false,
-      "core_observation": "negative core_error=Invalid ISOBMMF container WML2_rejected=true output_files=0",
-      "output_files": 0
+      "core_observation": "negative core_error=Invalid ISOBMMF container WML2_rejected=true Rust_output_files=0",
+      "Rust_output_files": 0
     },
     {
       "name": "dc-trailer-short",
       "WML2_rejected": true,
       "C_rejected": false,
-      "core_observation": "negative core_frame_complete=true file_length=Some(1319) consumed=1319 WML2_rejected=true output_files=0\ntrailing need_more hint=1 remaining=0",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=true file_length=Some(1319) consumed=1319 WML2_rejected=true Rust_output_files=0\ntrailing need_more hint=1 remaining=0",
+      "Rust_output_files": 0
     },
     {
       "name": "dc-trailer-oversize",
       "WML2_rejected": true,
       "C_rejected": false,
-      "core_observation": "negative core_frame_complete=true file_length=Some(1319) consumed=1319 WML2_rejected=true output_files=0\ntrailing need_more hint=1 remaining=0",
-      "output_files": 0
+      "core_observation": "negative core_frame_complete=true file_length=Some(1319) consumed=1319 WML2_rejected=true Rust_output_files=0\ntrailing need_more hint=1 remaining=0",
+      "Rust_output_files": 0
     }
   ],
   "root_lock_sha256": "879084552f4e5f1ddb20599355bfe5810b5284356ed2681b982010bbd0aec5be",
@@ -293,8 +293,8 @@
   "source_sha256": {
     "jpegxl_progressive_fixture.c": "1cb0a1d0c630204984d4c5e6e33490e81f233b62a88a990fd973d66496147cbd",
     "jpegxl_progressive_probe.rs": "0123c725b689dd0a17dd741c36604009817fb4724d4b8b81238903a1a319c4dc",
-    "evaluate_jpegxl_progressive.py": "7edcb670a31646b85e8a3348c39bc3a38158639249fb540602b92f2a0895e140",
-    "jpegxl_progressive.rs": "5178198a823140ac9ba9350d18e59f8922dbd6e5265d9004689b1bdc6ba64bcd"
+    "evaluate_jpegxl_progressive.py": "f7530001f2df4b8fd7cb3429830494200173644fc8ed57fe4fab01c4f9831d8f",
+    "jpegxl_progressive.rs": "83e46efd6c7561ff06c97e22cb53721b27bd1711b4774b51df26b3cccb660aab"
   },
   "qualification_checkpoint": "c20a4798093a2fa945583586499cc6460b2a15ac",
   "validation": {
@@ -319,7 +319,8 @@
     "C": "-Wall -Wextra -Werror and runtime/header0.11.2 checks",
     "visual": "Actual DC bytewise provisional updates and final contact sheet visually inspected; LF blurred to final reconstructed pattern",
     "production_diff": "wml2/src, Cargo.lock and manifests unchanged",
-    "CI": "Dedicated optimized exhaustive step added; full remote CI recorded in PR after terminal status"
+    "CI": "Dedicated optimized exhaustive step added; full remote CI recorded in PR after terminal status",
+    "same_directory_replay": "Two consecutive complete evaluator runs in the identical output directory pass; C reference outputs and negative Rust output prefixes remain separate."
   },
   "composition": {
     "sha": "e02f5c7c9df5e43ef2a434267ccc5a90bd9b0538",
@@ -335,7 +336,7 @@
     "No bounded untrusted codec/header/ICC or consumer-held-snapshot ledger",
     "No new progressive WASM runtime or big-endian qualification",
     "No interruption of serial parser/ICC compilation or running codec tasks",
-    "C image-only decode accepts8 of14 deliberate invalid envelopes; used for independent pixels, not strict-tail admission",
+    "C image-only decode accepts8 of14 deliberate invalid envelopes and may emit C reference files; negative Rust probe emits no pixel files. C used for independent pixels, not strict-tail admission",
     "No production speedup/benchmark/RSS claim"
   ]
 }

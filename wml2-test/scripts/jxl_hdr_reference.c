@@ -76,7 +76,12 @@ int main(int argc,char **argv) {
     else if(s==JXL_DEC_SUCCESS)break;
     else {fprintf(stderr,"decoder status %d\n",s);return 2;}}
   CHECK(full==1&&out&&save(argv[3],out,out_n));
-  printf("{\"version\":%u,\"width\":%u,\"height\":%u,\"bits\":%u,\"exponent_bits\":%u,\"alpha_bits\":%u,\"alpha_exponent_bits\":%u,\"uses_original_profile\":%d,\"intensity_target\":%g,\"structured_profile\":%d,\"primaries\":%d,\"transfer\":%d,\"bytes\":%zu}\n",
-    JxlDecoderVersion(),info.xsize,info.ysize,info.bits_per_sample,info.exponent_bits_per_sample,info.alpha_bits,info.alpha_exponent_bits,info.uses_original_profile,info.intensity_target,structured,color.primaries,color.transfer_function,out_n);
+  /* Query DATA separately after actual output has completed. ORIGINAL is not
+   * a substitute: the decoder may choose another reconstruction profile. */
+  {size_t icc_n=0;CHECK(JxlDecoderGetICCProfileSize(dec,JXL_COLOR_PROFILE_TARGET_DATA,&icc_n)==JXL_DEC_SUCCESS&&icc_n<=1024*1024);
+    unsigned char *icc=malloc(icc_n);CHECK(icc);CHECK(JxlDecoderGetColorAsICCProfile(dec,JXL_COLOR_PROFILE_TARGET_DATA,icc,icc_n)==JXL_DEC_SUCCESS);
+    char name[4096];CHECK(snprintf(name,sizeof(name),"%s.data.icc",argv[3])<(int)sizeof(name));CHECK(save(name,icc,icc_n));free(icc);}
+  printf("{\"version\":%u,\"width\":%u,\"height\":%u,\"channels\":%u,\"bits\":%u,\"exponent_bits\":%u,\"alpha_bits\":%u,\"alpha_exponent_bits\":%u,\"uses_original_profile\":%d,\"intensity_target\":%g,\"structured_profile\":%d,\"primaries\":%d,\"transfer\":%d,\"bytes\":%zu}\n",
+    JxlDecoderVersion(),info.xsize,info.ysize,format.num_channels,info.bits_per_sample,info.exponent_bits_per_sample,info.alpha_bits,info.alpha_exponent_bits,info.uses_original_profile,info.intensity_target,structured,color.primaries,color.transfer_function,out_n);
   JxlDecoderDestroy(dec);free(data);free(out);return 0;
 }

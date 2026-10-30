@@ -55,7 +55,8 @@ files untouched. It calls the core directly only on trusted generated fixtures;
 this intentionally bypasses production preflight for research, not general input.
 
 [Execution record](jpeg-xl-hdr-float-evaluation.json) contains lockfile, header
-hashes, fixture/output hashes, errors, profile checks, ranges and every comparison.
+hashes, fixture/output hashes, errors, separately queried ORIGINAL/DATA ICC
+profiles, ranges and every comparison.
 Generated source/oracle/core buffers remain in `.test-hdr`. Each native child has
 512 MiB address-space/20-second CPU containment and a 120-second wall timeout;
 these are research containment, not proven backend resource limits.
@@ -71,8 +72,31 @@ successful HDR support:
 | Integer16 Rec.2020 PQ/HLG RGB/RGBA, four files | All 12 default-target format results match libjxl; normalized code values and profiles preserved | Encoded sample preservation is not linear-light or display rendering |
 | Structured PQ, requested target 80 | Six core/reference differences; F32 maximum absolute RGB difference ~0.717609, U16 up to 47028 | Core ignores requested target; libjxl changes its encoded RGB. Alpha remains identical. This reference setting alone is not an sRGB tone-map oracle |
 | Structured HLG, requested target 80 | Both cores leave these source-coordinate outputs unchanged | Does not establish HLG-to-SDR correctness or define an OOTF/viewing condition |
-| Float32 gamma-2 ICC; integer PQ/HLG ICC, three files | Source and output ICC bytes match original exactly in both decoders, all 18 format/target results match | Embedded ICC identity is not color conversion; arbitrary-ICC target requests here do not change samples |
+| Float32 gamma-2 ICC; integer PQ/HLG ICC, three files | Separately queried libjxl ORIGINAL and DATA profiles and candidate source/output ICC each match the input bytes in all 18 format/target comparisons | Measured only for these original-profile files; ORIGINAL is never used as a substitute for DATA |
 | SDR sRGB with non-default intensity metadata; ordinary SDR control | Core/libjxl comparisons exact | WML2 refuses non-default tone metadata; accepts ordinary SDR control |
+
+The oracle reads ORIGINAL at the color event and DATA **after completed pixel
+output**, so the latter identifies the actual output profile. JSON records both
+oracle hashes and independent source/output equality checks against candidate
+profiles and input ICC bytes. No general ORIGINAL=DATA identity is assumed.
+
+The pinned evaluation gates now assert dimensions (5x3), channels, declared
+source depth/exponent and exact output byte lengths for both decoders, plus
+finiteness of both oracle and candidate samples. Native source-preservation
+comparisons are asserted: original versus oracle is exact except for the
+explicit structured-PQ target request; original versus candidate is exact
+except the recorded Float16-to-F16 subnormal losses.
+
+F16 loss gates require reference `2^-24` and candidate zero at exactly these
+zero-based interleaved sample indices, with no other differing samples:
+`f16-c1: [4]`, `f16-c3: [8,10,12,44]`, `f16-c4: [10,13,16,58]`,
+`f32-c1: [4]`, `f32-c3: [8,10,12]`, `f32-c4: [10,13,16]`.
+Each maximum error must equal `2^-24` exactly. The structured-PQ target80 gates
+require F32/F16/U16 maxima of `0.7176087200641632`, `0.717529296875` and `47028`,
+respectively, exact affected positions/counts (45 color samples, or 43 for F16),
+and unchanged alpha. All 90 oracle/candidate output hash pairs must also match
+the checked-in snapshot. These strict checks reproduce this pinned platform/
+fixture experiment; they are not universal precision or tone-map guarantees.
 
 All 14 non-control files are rejected by each current WML2 entry point: ordinary,
 EX RGBA16 and explicit sRGB display. The two ICC CICP PQ/HLG inputs specifically

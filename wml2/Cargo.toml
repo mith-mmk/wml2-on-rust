@@ -35,6 +35,10 @@ categories = ["multimedia::images","encoding"]
 crate-type = ["rlib"] 
 
 [[example]]
+name = "jpeg_scaled"
+required-features = ["jpeg"]
+
+[[example]]
 name = "q4_dump_rgba"
 required-features = ["q4"]
 

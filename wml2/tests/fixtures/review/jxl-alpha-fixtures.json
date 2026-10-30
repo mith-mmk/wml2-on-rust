@@ -1,0 +1,1935 @@
+{
+  "oracle": "independent C libjxl0.11.2 normalized RGBA16 / source samples; original alpha association preserved",
+  "cases": [
+    {
+      "file": "jxl-alpha-1c8a8o1.jxl",
+      "color_channels": 1,
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "4109bd094a5ad394f7a6ec318ec86742992c34b9aef77cd979683e7549da49ff",
+      "rgba16_sha256": "970f19b79436489b5ccebb0ba772e95cb6664fb9679e7bd2ebfee55b8d2c94e3"
+    },
+    {
+      "file": "jxl-alpha-1c8a9o2.jxl",
+      "color_channels": 1,
+      "color_bits": 8,
+      "alpha_bits": 9,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "be88ae40fe9a0a26c16c180be4485065795f9291b77482b29fabefb2fe7ee340",
+      "rgba16_sha256": "462378e011e71139feca3fe427a98ae58c580a5cedb28ef8a4e60de1f94c0ce6"
+    },
+    {
+      "file": "jxl-alpha-1c8a10o3.jxl",
+      "color_channels": 1,
+      "color_bits": 8,
+      "alpha_bits": 10,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "83ca85bb5e6f30356994ab6a31e2e0f2125d691753c2dc90142cb90ccfa1c58e",
+      "rgba16_sha256": "43b94420ab1da121e63355fe8553c6f2cf6ad23996082db0b905927b2b9acd58"
+    },
+    {
+      "file": "jxl-alpha-1c8a12o4.jxl",
+      "color_channels": 1,
+      "color_bits": 8,
+      "alpha_bits": 12,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "98e293835daf2d2583b19563646b34892643e4260a26b3d50e257a089d5c35c5",
+      "rgba16_sha256": "e97effb22237664260000be8cb1d71a52cf7c1b604947579c40c853d32541303"
+    },
+    {
+      "file": "jxl-alpha-1c8a16o5.jxl",
+      "color_channels": 1,
+      "color_bits": 8,
+      "alpha_bits": 16,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "a2ccfea34433baa548bf2358383f097354db456ff3e266093bf61d31ace13559",
+      "rgba16_sha256": "06ab7795d7bc5c9c112605d2d86a2e00781c68d2d5456ab0950f46a12eda3362"
+    },
+    {
+      "file": "jxl-alpha-1c9a8o6.jxl",
+      "color_channels": 1,
+      "color_bits": 9,
+      "alpha_bits": 8,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "f9e638b66a2bd7969406ad37fc81fb773d4e48a17da67e94717ec7a2da5211db",
+      "rgba16_sha256": "2967c19e72dba21eea4494f2ba36401314a7746b66d5e340b0e545d0642051c1"
+    },
+    {
+      "file": "jxl-alpha-1c9a9o7.jxl",
+      "color_channels": 1,
+      "color_bits": 9,
+      "alpha_bits": 9,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "6935737ab8e3b01e8db9e93e1c39a52ee014f1a1388d8cbbda313121a3a37322",
+      "rgba16_sha256": "3d01317173a18a3d5f1f57fcd8f808c0cc0d93104fe9e528d687c6c74fa6f73d"
+    },
+    {
+      "file": "jxl-alpha-1c9a10o8.jxl",
+      "color_channels": 1,
+      "color_bits": 9,
+      "alpha_bits": 10,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "c924789dedc04316d927586ca24532f9448111da83abf09bd4667a9625d8c58c",
+      "rgba16_sha256": "b03925a82b5140a6bcedb8caa04a39a88b847e5d08ffc375c1d7114a8ed82199"
+    },
+    {
+      "file": "jxl-alpha-1c9a12o1.jxl",
+      "color_channels": 1,
+      "color_bits": 9,
+      "alpha_bits": 12,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "a41edb24dd3f13f0da4bc831ee46a28bbeb98dcc706460623accf53ac45c5d1f",
+      "rgba16_sha256": "1cc05fdcdaee477eb5f76f184c4a18aa6423825f6da9db83f71e470fab79a3b4"
+    },
+    {
+      "file": "jxl-alpha-1c9a16o2.jxl",
+      "color_channels": 1,
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "9fa432781cf398cafaf174fab5e1ac575791d2d8b9de0583d6862aeff63fbd90",
+      "rgba16_sha256": "f93237173918362fe54b74e3d46711a34779d904418f8efbcfba2fc595b484a9"
+    },
+    {
+      "file": "jxl-alpha-1c10a8o3.jxl",
+      "color_channels": 1,
+      "color_bits": 10,
+      "alpha_bits": 8,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "13ec56894e4359291db968de64579e122d4f0d0206f325b7548c466c574af60c",
+      "rgba16_sha256": "ba1086a0ffa8a2f72a6a3ec06e4c88f4f083f4ad9500fddbb784732e486ea25d"
+    },
+    {
+      "file": "jxl-alpha-1c10a9o4.jxl",
+      "color_channels": 1,
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "427e8c1b5c26fb8f3ae025cdd755fc8917f645daa91d115a2366113644f4ccb3",
+      "rgba16_sha256": "28a7059a56d0aecd111c2938b3b8a7932e16398a1dde89f773e4e7d37bd7cbbe"
+    },
+    {
+      "file": "jxl-alpha-1c10a10o5.jxl",
+      "color_channels": 1,
+      "color_bits": 10,
+      "alpha_bits": 10,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "dd580097703391f5bead4bc5c3297c7cc4b4e3f93e9c6197a634da11883ba8bd",
+      "rgba16_sha256": "e4313253329fdb04995ba9c7161d7ecc253bb54cbd85db96ce0a291687cdc520"
+    },
+    {
+      "file": "jxl-alpha-1c10a12o6.jxl",
+      "color_channels": 1,
+      "color_bits": 10,
+      "alpha_bits": 12,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "d2a5f6415f0c5061f6d0796b22471696a33f8a6a3ba2230e50469bd95a9f9550",
+      "rgba16_sha256": "b406867af05e4859dd718a51391a995bf3422e5ae1df865f51cb1c1702847f28"
+    },
+    {
+      "file": "jxl-alpha-1c10a16o7.jxl",
+      "color_channels": 1,
+      "color_bits": 10,
+      "alpha_bits": 16,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "fcba113ea27fc194f87823dd7747892d3a5a57374710ef2539802573003aba05",
+      "rgba16_sha256": "ddc14dca7a3d009871cf47d790c013147e401e966f03c450db79f334c9f0771f"
+    },
+    {
+      "file": "jxl-alpha-1c12a8o8.jxl",
+      "color_channels": 1,
+      "color_bits": 12,
+      "alpha_bits": 8,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "156d9009a03b9eb0aa0d18870b4707c773592d9e84eebf14a04f8cd59ae10163",
+      "rgba16_sha256": "1803fa6ed73d5fc542a57b4a21c98995828375e0c6bb322780ff1adb7c8e78ee"
+    },
+    {
+      "file": "jxl-alpha-1c12a9o1.jxl",
+      "color_channels": 1,
+      "color_bits": 12,
+      "alpha_bits": 9,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "23fc09e0c1441bd53ba196748eb733ef06493775427c5baad5fa9924b6fc1568",
+      "rgba16_sha256": "c272afb80804650095297e93dd1f131f7e6eb6308735049b379c22f3f898f1a8"
+    },
+    {
+      "file": "jxl-alpha-1c12a10o2.jxl",
+      "color_channels": 1,
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "9c22d73be8989effdfe1c5356945bd69a62665e244415f933eff6ce5f298cbe7",
+      "rgba16_sha256": "c24dfe7ee3774aa51fa44430b2b2c47b00d6c065232aefe203a8f5d4ee054cb6"
+    },
+    {
+      "file": "jxl-alpha-1c12a12o3.jxl",
+      "color_channels": 1,
+      "color_bits": 12,
+      "alpha_bits": 12,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "90fafd8d03acc28c5ddc204e7f606a93ced2f08f0cfd5e9d077556d1c2990f8c",
+      "rgba16_sha256": "d98c6221d4caf05a3e4c63adcf3bf0d656409e84c80ed8de0ddcb9d7f4d06956"
+    },
+    {
+      "file": "jxl-alpha-1c12a16o4.jxl",
+      "color_channels": 1,
+      "color_bits": 12,
+      "alpha_bits": 16,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "0c70720f77c59a0b8f9437e5f978c3d679d567ede4b9ed1ea62acd1289399edd",
+      "rgba16_sha256": "d9a2ea25d61e656c997883e26324b21af93168f833721fadce4cb88046840920"
+    },
+    {
+      "file": "jxl-alpha-1c16a8o5.jxl",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "9b7dbe0ed52fe670a3413aa435cdf8b580b5fddcd9c9fbcf66e032528f45a224",
+      "rgba16_sha256": "ea9fd0d940623352e23aeec236f63bda1600194b4c5b7124328d76a0cb926b07"
+    },
+    {
+      "file": "jxl-alpha-1c16a9o6.jxl",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 9,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "40a2e5c11ecbb10178afe94c7a3066dcb6c59c55cc01e7eadf48766305e062d2",
+      "rgba16_sha256": "4e7f4c1dbacc19d7b0b5745b5a772255bafe602d0e178db4dd6a1bfaf7aae8ca"
+    },
+    {
+      "file": "jxl-alpha-1c16a10o7.jxl",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 10,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "d06c3332eb70e542294daefd5e53216f3ac6803c91df620379197cbc8379a6a7",
+      "rgba16_sha256": "8cbc60767729849e52f0e2b44e22b509c55e5f143c17de04cf47cf6ad8551658"
+    },
+    {
+      "file": "jxl-alpha-1c16a12o8.jxl",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "2af3f87db495b197283e8a65d02dda6b2f08d06f6d4383c8c3cbf8bb0c421535",
+      "rgba16_sha256": "83490073a8471109330891632fd4edbd26e072d0526cdc16c2b47edcc6b5cd73"
+    },
+    {
+      "file": "jxl-alpha-1c16a16o1.jxl",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "d255030641801155da629a22f909d1e7303779aec4bf9ad6662218495c68ccbd",
+      "rgba16_sha256": "5e4fe968d4bc7469c9067e5df9faa74a2b9f7d663269b7493d2cf67d9a48f09a"
+    },
+    {
+      "file": "jxl-alpha-3c8a8o1.jxl",
+      "color_channels": 3,
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "50c3cf613e1fd605d5600b5683a362152587bcedc5602399bad1fe2fa080bb12",
+      "rgba16_sha256": "6c78ec98926b8cd9b715f1317c24bcea06faeb110f027ec7a94f1c52ba80ae31"
+    },
+    {
+      "file": "jxl-alpha-3c8a9o2.jxl",
+      "color_channels": 3,
+      "color_bits": 8,
+      "alpha_bits": 9,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "f872d21364a5db4ee8da1d4b3b8b9be0eec85718ee98dd0ec5f736ee427e0206",
+      "rgba16_sha256": "6279990f634509f7d21b674fdaa5e7b2ac2cd85a423626d3f48bb16ca45a49be"
+    },
+    {
+      "file": "jxl-alpha-3c8a10o3.jxl",
+      "color_channels": 3,
+      "color_bits": 8,
+      "alpha_bits": 10,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "f2453133d0318fb6c0932dbe9b64de92054ab6f2188f4b52ce05aa2a90a7977e",
+      "rgba16_sha256": "987898f13fb64849824f9239ebe5f8582d4a8fff7d269f9a88e93e209372b33c"
+    },
+    {
+      "file": "jxl-alpha-3c8a12o4.jxl",
+      "color_channels": 3,
+      "color_bits": 8,
+      "alpha_bits": 12,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "2ec91e4fe9cff2ced6039a8d1f513e6c6932c5aaf76ff14a7dcb744fe7b1ee23",
+      "rgba16_sha256": "1bbe2280d760586e2c412795fe2b43b819f44b6a438cb8688ccf32c916f09fc3"
+    },
+    {
+      "file": "jxl-alpha-3c8a16o5.jxl",
+      "color_channels": 3,
+      "color_bits": 8,
+      "alpha_bits": 16,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "1a7a64564858d25cfe7aa03f9e863e5feb4f9965bad1095a4db0ac8a086ea9e3",
+      "rgba16_sha256": "72a19aba25df3b21e110086062f07d8cfa3f74b3c635a54b4ddb6d48ac951ab9"
+    },
+    {
+      "file": "jxl-alpha-3c9a8o6.jxl",
+      "color_channels": 3,
+      "color_bits": 9,
+      "alpha_bits": 8,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "256d54bb84407b6574d762e5ad8870075c50b662e60a694cc4494891d6fb6a41",
+      "rgba16_sha256": "74d43402203ceca7989a0864c91a3245ef88f844abb5f233a4602dbfb3ae0a51"
+    },
+    {
+      "file": "jxl-alpha-3c9a9o7.jxl",
+      "color_channels": 3,
+      "color_bits": 9,
+      "alpha_bits": 9,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "388ef9261fa03e05f6ce395a63c566d592d763c3bddf411d6819d76caca9a4fd",
+      "rgba16_sha256": "8f61ed8a7a022586adb30a081aad6d6fe22647c01d06c3915644920a9574c501"
+    },
+    {
+      "file": "jxl-alpha-3c9a10o8.jxl",
+      "color_channels": 3,
+      "color_bits": 9,
+      "alpha_bits": 10,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "7f7e5d56e0a417c218627bf386bbb9131df31d3f22b561dad2f8a0f90db8f434",
+      "rgba16_sha256": "3e3edef1c8d3d340db8d89894c967248f16fe6226bff6128d2de8f6cbde6cd17"
+    },
+    {
+      "file": "jxl-alpha-3c9a12o1.jxl",
+      "color_channels": 3,
+      "color_bits": 9,
+      "alpha_bits": 12,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "89ca0d8c3b3d3ef512a27f510c0efba7f23412e8cc1d0fee15e195472ab7d1bb",
+      "rgba16_sha256": "33e76451037e0dfe1e66432e3e72fa96776feba945a2aebb30bae34addcaebbc"
+    },
+    {
+      "file": "jxl-alpha-3c9a16o2.jxl",
+      "color_channels": 3,
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "49b21cf0c764ad195ec238100c947fecf86125d638b50ccc86d1b72f5b2f7b03",
+      "rgba16_sha256": "91a4001ed3fad4740b31371005f42a07e006fbdfb48fda1eae81e5b654a6fc48"
+    },
+    {
+      "file": "jxl-alpha-3c10a8o3.jxl",
+      "color_channels": 3,
+      "color_bits": 10,
+      "alpha_bits": 8,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "8379d4e60c61976431cf02985b110504d881717f77bdc1da392784e39e3f6a9e",
+      "rgba16_sha256": "0cdc235d2c6e00bd36dbdcbccbc6d8e03eeb3fe48c91aaae8cb0f6fa7bd6f08b"
+    },
+    {
+      "file": "jxl-alpha-3c10a9o4.jxl",
+      "color_channels": 3,
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "703c2446b1a2373645535560c793bf3584e9d2915b7d75c836ced2a421c0dee9",
+      "rgba16_sha256": "4b5a8d726ce2c2e435def9365518f56a96f46789fd937d29473b3706199753e2"
+    },
+    {
+      "file": "jxl-alpha-3c10a10o5.jxl",
+      "color_channels": 3,
+      "color_bits": 10,
+      "alpha_bits": 10,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "524c9a904c0c82812984d1a40c7e124b240c8ead4b42d96eeb156a644973a9c7",
+      "rgba16_sha256": "b752a88877ce3e7ee48a0a1890a6f6b7a746f9870b9861c46103cd5d996c174d"
+    },
+    {
+      "file": "jxl-alpha-3c10a12o6.jxl",
+      "color_channels": 3,
+      "color_bits": 10,
+      "alpha_bits": 12,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "943b5763c32637786b897f23c6c1192294a174d48acb138274908cc652f3bb37",
+      "rgba16_sha256": "25584cbd3807f3177d807d11389a2dcbb2d99d1eb8ac10d0a20f029aa192dfc1"
+    },
+    {
+      "file": "jxl-alpha-3c10a16o7.jxl",
+      "color_channels": 3,
+      "color_bits": 10,
+      "alpha_bits": 16,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "617cd3633998bcc81977f6b76b040f8d154a0f02475f5b7322b1ac7b6a947b85",
+      "rgba16_sha256": "1e44f7070bc7bb796337fb2b793882ceaf9ac57dce126c9eadb1e1ecab990d5b"
+    },
+    {
+      "file": "jxl-alpha-3c12a8o8.jxl",
+      "color_channels": 3,
+      "color_bits": 12,
+      "alpha_bits": 8,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "043b95701c6721fcde99c54cd1ae42d565c0af4f4ac4378cf3a0de1524988d0b",
+      "rgba16_sha256": "fd2afeabe35396d7eca7c00636dab7e1320783c40b2ee778678fcf3322f77be6"
+    },
+    {
+      "file": "jxl-alpha-3c12a9o1.jxl",
+      "color_channels": 3,
+      "color_bits": 12,
+      "alpha_bits": 9,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "8c1b0cd25434ddb5beafbee74215accd0be7f15bc99759a527c92484445a2c46",
+      "rgba16_sha256": "d7fc22b257b8e9fc783509b43af4fc2e0a18514b2ab2ac2b59871265906c4d99"
+    },
+    {
+      "file": "jxl-alpha-3c12a10o2.jxl",
+      "color_channels": 3,
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "2acb28ecc5165146bdfe4ea23f5aa97c70cc72d9a2c883fb99c8ee54e6633f72",
+      "rgba16_sha256": "856284187c9ae9121a4615879987b0aba7abd213891261cefacd88ef3d0ba20e"
+    },
+    {
+      "file": "jxl-alpha-3c12a12o3.jxl",
+      "color_channels": 3,
+      "color_bits": 12,
+      "alpha_bits": 12,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "91804bdb1fa5e542d192beb6244ede5199dca0bb849bf02457dbf0fdfb8b0c09",
+      "rgba16_sha256": "6ebd69d6694dc3487c37e463ad1e3e6a823f0585b09be2c4a2619d42b8f2190d"
+    },
+    {
+      "file": "jxl-alpha-3c12a16o4.jxl",
+      "color_channels": 3,
+      "color_bits": 12,
+      "alpha_bits": 16,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "2045a49293413c262e169b7077ab209b202c6f1592aa33484f84d5c123839546",
+      "rgba16_sha256": "49d075940fd58cb916d206be7f3ba837780034ccbd2ffc9db8aaf61520da822d"
+    },
+    {
+      "file": "jxl-alpha-3c16a8o5.jxl",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "58d215e1af6c5a9176db30fb28ad472ce21e2a81c8469ab5bc3862284c316183",
+      "rgba16_sha256": "401264561802d436dd719a99953581b6248b000bc90b53d53422cfc83ed74ebe"
+    },
+    {
+      "file": "jxl-alpha-3c16a9o6.jxl",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 9,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "0d1eca22a54ffcb9e0999b17361759e1101c3ce2f0c158e0b6d782c16d6f7e08",
+      "rgba16_sha256": "c773a620bc1bdcc43cd399f14365b78818f057afdce2870860e8b57c1b846670"
+    },
+    {
+      "file": "jxl-alpha-3c16a10o7.jxl",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 10,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "8440caa13936279ecdfff902bc069fcf5e72fbb2d29616fddeb6bd102c658201",
+      "rgba16_sha256": "455016b6d003e2d56f76e1429a937d4b4fb90efe0814faed24ae8508b0d0614d"
+    },
+    {
+      "file": "jxl-alpha-3c16a12o8.jxl",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "sha256": "15addfb698e3c6dff8ea91296ffacde33757ad7e29d8d4d7cd607951456424c2",
+      "rgba16_sha256": "aa2c0971e9b9b88c14d8feff3ede6ba28dd420d9dbbb4dbe581655da71bb3160"
+    },
+    {
+      "file": "jxl-alpha-3c16a16o1.jxl",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "sha256": "8c33374ccac0f4fd4d614b0662c8eb58fca2e7e1368046fc1ff675029577587c",
+      "rgba16_sha256": "4f13d19b43f4800a6aa1cbe21a116530054cf1ff4e077ea316aafed24030ccc1"
+    }
+  ],
+  "c_headers": {
+    "jxl-alpha-1c8a8o1.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c8a9o2.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 9,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c8a10o3.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 10,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c8a12o4.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 12,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c8a16o5.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 16,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c9a8o6.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 8,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c9a9o7.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 9,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c9a10o8.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 10,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c9a12o1.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 12,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c9a16o2.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c10a8o3.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 8,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c10a9o4.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c10a10o5.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 10,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c10a12o6.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 12,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c10a16o7.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 16,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c12a8o8.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 8,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c12a9o1.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 9,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c12a10o2.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c12a12o3.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 12,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c12a16o4.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 16,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c16a8o5.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c16a9o6.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 9,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c16a10o7.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 10,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c16a12o8.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-1c16a16o1.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "color_channels": 1,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c8a8o1.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c8a9o2.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 9,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c8a10o3.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 10,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c8a12o4.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 12,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c8a16o5.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 16,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c9a8o6.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c9a9o7.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 9,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c9a10o8.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 10,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c9a12o1.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 12,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c9a16o2.jxl": {
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c10a8o3.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c10a9o4.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c10a10o5.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 10,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c10a12o6.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 12,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c10a16o7.jxl": {
+      "color_bits": 10,
+      "alpha_bits": 16,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c12a8o8.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c12a9o1.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 9,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c12a10o2.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c12a12o3.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 12,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c12a16o4.jxl": {
+      "color_bits": 12,
+      "alpha_bits": 16,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c16a8o5.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c16a9o6.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 9,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 9,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c16a10o7.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 10,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 10,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c16a12o8.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 12,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-3c16a16o1.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-icc-c8a16o6.jxl": {
+      "color_bits": 8,
+      "alpha_bits": 16,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-icc-c16a8o8.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-refused-associated.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 1
+        }
+      ]
+    },
+    "jxl-alpha-refused-subsampled.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 1,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-refused-depth.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 0,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 1,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-refused-spot.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 0,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 2,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-refused-multiple.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        },
+        {
+          "index": 1,
+          "type": 1,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-refused-multiple-alpha.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-refused-float-alpha.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 16,
+          "exponent_bits": 5,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-alpha-refused-alpha4.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 4,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 4,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    },
+    "jxl-mixed-alpha.jxl": {
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "color_channels": 3,
+      "output_orientation": 1,
+      "extras": [
+        {
+          "index": 0,
+          "type": 0,
+          "bits": 8,
+          "exponent_bits": 0,
+          "dim_shift": 0,
+          "associated": 0
+        }
+      ]
+    }
+  },
+  "icc": [
+    {
+      "file": "jxl-alpha-icc-c8a16o6.jxl",
+      "color_bits": 8,
+      "alpha_bits": 16,
+      "orientation": 6,
+      "rgba16_sha256": "94dff6027a128eeec857a9a8cc5e6c8919119d811287f6de3fc08bb8d10f07ef",
+      "srgb_sha256": "a842be11f232a9e92c349b9ca8520dbf309e53482a543573f60289dfca32dc07",
+      "oracle": "C libjxl0.11.2 output ICC -> LittleCMS2.16 RGB16 relative/NOOPTIMIZE; alpha copied; final8-bit rounding"
+    },
+    {
+      "file": "jxl-alpha-icc-c16a8o8.jxl",
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "orientation": 8,
+      "rgba16_sha256": "6d6330fc4c9146a7a6bf6ffff983f7893c438e559398f2de7452bdf8be5f69da",
+      "srgb_sha256": "577044d50d6b289b2ebd439fa247c14ba49bec90603d1be8bd7e027b17623516",
+      "oracle": "C libjxl0.11.2 output ICC -> LittleCMS2.16 RGB16 relative/NOOPTIMIZE; alpha copied; final8-bit rounding"
+    }
+  ],
+  "refused": [
+    {
+      "file": "jxl-alpha-refused-associated.jxl",
+      "kind": "associated",
+      "alpha_bits": 8,
+      "c_decodes": true,
+      "sha256": "63bdd41e2bf211b9ee553547a27181ddeeaa905178ed88676cc5c9c10279e31e",
+      "rgba16_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05"
+    },
+    {
+      "file": "jxl-alpha-refused-subsampled.jxl",
+      "kind": "subsampled",
+      "alpha_bits": 8,
+      "c_decodes": true,
+      "sha256": "ae72f698c17a9fcc7e38bc914c0d5a2164c19246934dbcea17b48911f84052e5",
+      "rgba16_sha256": "26d6cf78629de1db5f627e4b1b787e8caa565b950e6753298f731f71f0661b20"
+    },
+    {
+      "file": "jxl-alpha-refused-depth.jxl",
+      "kind": "depth",
+      "alpha_bits": 8,
+      "c_decodes": true,
+      "sha256": "868d597b800f07d03bb10cacbc5f8e922b19ed7c2863b833ea942275f016c5b8",
+      "rgba16_sha256": "92b6b255e6dc74af132a05fe3ea8b56adfad2d4167105c4ce47613e5c07eadfe"
+    },
+    {
+      "file": "jxl-alpha-refused-spot.jxl",
+      "kind": "spot",
+      "alpha_bits": 8,
+      "c_decodes": true,
+      "sha256": "312b259df01d98c56c36d6760d243d1690826ea5abd6f4c686d3ca4c8f866501",
+      "rgba16_sha256": "92b6b255e6dc74af132a05fe3ea8b56adfad2d4167105c4ce47613e5c07eadfe"
+    },
+    {
+      "file": "jxl-alpha-refused-multiple.jxl",
+      "kind": "multiple",
+      "alpha_bits": 8,
+      "c_decodes": true,
+      "sha256": "ce87970f5d00f7715f6bd9e395c1d77f367b5139619ce5165bcfb1a54cac2166",
+      "rgba16_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05"
+    },
+    {
+      "file": "jxl-alpha-refused-multiple-alpha.jxl",
+      "kind": "multiple-alpha",
+      "alpha_bits": 8,
+      "c_decodes": true,
+      "sha256": "b77190acef711983dfc1ea160dcedf80eb77dbb7cfc53b35a359cc1858a1a69c",
+      "rgba16_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05"
+    },
+    {
+      "file": "jxl-alpha-refused-float-alpha.jxl",
+      "kind": "float-alpha",
+      "alpha_bits": 16,
+      "c_decodes": true,
+      "sha256": "174d4fa10084b07b416653115f754fd165087e87a6c33492233743a6f488f679",
+      "rgba16_sha256": "cc2cb24dd9aaa95a58422351cb86ddd55bf72892c7708d3eef1e4897fbe04146"
+    },
+    {
+      "file": "jxl-alpha-refused-alpha4.jxl",
+      "kind": "straight",
+      "alpha_bits": 4,
+      "c_decodes": true,
+      "sha256": "524b571985de1cdc0891e26601ff362816a0c3e03b1ece6f2858167da3d20d57",
+      "rgba16_sha256": "92bbd4801a852d9221b14b55163ce0152b0122a5de6b3de48b6986bce6735f01"
+    }
+  ]
+}

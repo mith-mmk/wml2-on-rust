@@ -1,0 +1,56 @@
+{
+  "scope": "Trusted-fixture core evaluation only; no WML2 admission bypass is exposed by production APIs; no core performance claim",
+  "core07": "jxl=0.7.4 defaults=false, high_precision=true, premultiply_output=false",
+  "core08": "jxl=0.8.0 defaults=false, high_precision=true, AlphaMode::AsIs; Unpremultiplied mode was not executed",
+  "probe_source": "PR54 / commit7c81dea; wml2-test/scripts/jxl08_probe.rs",
+  "probe_source_sha256": "c9d7c28e0f50e22f9b36049a9423c7ea1ce16bab56ecbff062ac8b0b08a72b00",
+  "probe_lock_sha256": "d872f23e0af12151f56ed7bb51fba9514fa2cb429683ede19f3872a5ec63c946",
+  "results": [
+    {
+      "case": "associated",
+      "core": "07",
+      "ok": true,
+      "stderr": "",
+      "max_rgba16_difference": 0,
+      "max_alpha_difference": 0,
+      "actual_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05",
+      "c_oracle_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05",
+      "max_difference_from_C_unpremultiplied": 65522
+    },
+    {
+      "case": "associated",
+      "core": "08",
+      "ok": true,
+      "stderr": "",
+      "max_rgba16_difference": 0,
+      "max_alpha_difference": 0,
+      "actual_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05",
+      "c_oracle_sha256": "23436869f9da956f490b61bea7a781763e93ae2b9b9d3118e3224b35ef030a05",
+      "max_difference_from_C_unpremultiplied": 65522
+    },
+    {
+      "case": "subsampled",
+      "core": "07",
+      "ok": false,
+      "stderr": "Error: SectionTooShort\n"
+    },
+    {
+      "case": "subsampled",
+      "core": "08",
+      "ok": true,
+      "stderr": "",
+      "max_rgba16_difference": 0,
+      "max_alpha_difference": 0,
+      "actual_sha256": "26d6cf78629de1db5f627e4b1b787e8caa565b950e6753298f731f71f0661b20",
+      "c_oracle_sha256": "26d6cf78629de1db5f627e4b1b787e8caa565b950e6753298f731f71f0661b20"
+    }
+  ],
+  "sources": {
+    "release": "https://github.com/libjxl/jxl-rs/releases/tag/v0.8.0",
+    "alpha_mode": "jxl0.8.0/src/api/options.rs:60-71",
+    "dim_shift_fix": "jxl0.7.4/src/headers/frame_header.rs:691-697 vs jxl0.8.0:668-672",
+    "per_channel_normalization": "jxl0.7.4/src/frame/render.rs:602-611",
+    "premultiply_only": "jxl0.7.4/src/frame/render.rs:875-892"
+  },
+  "recommendation": "Support only independently qualified full-resolution straight integer mixed-depth alpha. Associated conversion requires a separately qualified unassociation and zero-alpha contract; subsampled alpha remains blocked by pinned upstream. No version-only migration, silent spot mixing, discarded extras or unsafe cap relaxation."
+}

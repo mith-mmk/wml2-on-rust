@@ -280,6 +280,8 @@ struct Header {
     width: usize,
     height: usize,
     bits: u8,
+    alpha_bits: Option<u8>,
+    native_bits: u8,
     orientation: u8,
     gray: bool,
     color_channels: usize,
@@ -421,13 +423,26 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
             c.ec_type != ExtraChannel::Alpha
                 || c.alpha_associated()
                 || c.dim_shift() != 0
-                || c.bit_depth() != m.bit_depth
+                || c.bit_depth().floating_point_sample()
+                || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
         })
     {
         return Err(unsupported(
-            "JPEG XL requires at most one full-resolution, same-depth straight alpha channel",
+            "JPEG XL requires at most one full-resolution straight integer alpha channel with 8/9/10/12/16-bit depth",
         ));
     }
+    let alpha_bits = m
+        .extra_channel_info
+        .first()
+        .map(|c| c.bit_depth().bits_per_sample() as u8);
+    // One output format cannot express independent channel depths. Normalize
+    // mixed integer channels to 16 bits before EX storage/CMS/legacy rounding.
+    let native_bits = if matches!(bits, 9 | 10) || alpha_bits.is_some_and(|b| u32::from(b) != bits)
+    {
+        16
+    } else {
+        bits as u8
+    };
     use jxl_codec::headers::color_encoding::{ColorSpace, TransferFunction};
     if !matches!(
         m.color_encoding.color_space,
@@ -452,7 +467,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     limits::check(pixels, limits.pixels.min(MAX_PIXELS), "JPEG XL pixels")?;
     limits::check(1, limits.frames, "JPEG XL still frames")?;
     limits::check(
-        mul(pixels, if bits == 8 { 4 } else { 8 })?,
+        mul(pixels, if native_bits == 8 { 4 } else { 8 })?,
         limits.animation_bytes,
         "JPEG XL canvas",
     )?;
@@ -502,6 +517,8 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         width,
         height,
         bits: bits as u8,
+        alpha_bits,
+        native_bits,
         orientation: m.orientation as u8,
         gray: m.color_encoding.color_space == ColorSpace::Gray && m.extra_channel_info.is_empty(),
         color_channels: if m.color_encoding.color_space == ColorSpace::Gray {
@@ -658,11 +675,7 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     }
     // Decode at source precision even for the legacy path: upstream U8
     // narrowing dithers RGB, whereas WML2 promises deterministic rounding.
-    let bits = if managed || matches!(h.bits, 9 | 10) {
-        16
-    } else {
-        h.bits
-    };
+    let bits = if managed { 16 } else { h.native_bits };
     let gray = native && h.gray;
     let channels = if gray { 1 } else { 4 };
     let format = JxlPixelFormat {
@@ -744,6 +757,14 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         "JPEG XL Source Bit Depth".into(),
         DataMap::UInt(h.bits.into()),
     ));
+    // A mixed-depth image has one normalized 16-bit native layout; retain the
+    // independent source alpha depth instead of relabeling it as color depth.
+    if let Some(alpha_bits) = h.alpha_bits.filter(|&b| b != h.bits) {
+        input.metadata.push((
+            "JPEG XL Source Alpha Bit Depth".into(),
+            DataMap::UInt(alpha_bits.into()),
+        ));
+    }
     input.metadata.push((
         "JPEG XL Output Bit Depth".into(),
         DataMap::UInt(if native { bits.into() } else { 8 }),

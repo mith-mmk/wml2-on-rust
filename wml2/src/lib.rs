@@ -10,6 +10,7 @@
 //! buffer-backed helpers via [`draw::ImageBuffer`]. The crate can decode still
 //! images, PSD composite/layer previews, and animations into RGBA buffers,
 //! preserve metadata, and encode BMP, GIF, JPEG, PNG/APNG, TIFF, and WebP output.
+//! For basic header information without pixel expansion, see [`image_info`].
 //!
 //! # Example
 //! The EXIF match arm is available with the `exif` feature. Decoding a file
@@ -249,4 +250,6 @@ pub mod tga;
 pub mod webp;
 
 mod decode_guard;
+/// Bounded image information without pixel decoding.
+pub mod image_info;
 pub mod limits;

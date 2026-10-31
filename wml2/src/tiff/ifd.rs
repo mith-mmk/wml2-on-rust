@@ -162,7 +162,7 @@ fn range(offset: u64, length: u64, end: u64) -> Result<(), Error> {
     }
     Ok(())
 }
-struct Parser<'a> {
+struct Parser<'a, const BASIC: bool> {
     reader: &'a mut dyn BinaryReader,
     variant: TiffVariant,
     end: u64,
@@ -170,7 +170,7 @@ struct Parser<'a> {
     exif: bool,
     value_ranges: Vec<(u64, u64)>,
 }
-impl Parser<'_> {
+impl<const BASIC: bool> Parser<'_, BASIC> {
     fn charge(&mut self, size: usize) -> Result<(), Error> {
         self.metadata = self
             .metadata
@@ -219,11 +219,15 @@ impl Parser<'_> {
         let count = usize::try_from(count).map_err(|_| invalid("TIFF directory count overflow"))?;
         self.charge(
             count
-                .checked_mul(std::mem::size_of::<TiffEntry>())
+                .checked_mul(if BASIC {
+                    entry_size as usize
+                } else {
+                    std::mem::size_of::<TiffEntry>()
+                })
                 .ok_or_else(|| invalid("TIFF directory allocation overflow"))?,
         )?;
         let mut entries = Vec::new();
-        entries.try_reserve_exact(count)?;
+        entries.try_reserve_exact(if BASIC { count.min(10) } else { count })?;
         let mut tags = HashSet::new();
         for _ in 0..count {
             let tag = self.reader.read_u16()?;
@@ -240,8 +244,22 @@ impl Parser<'_> {
                 self.reader.read_exact(&mut ignored[..slot])?;
                 continue;
             }
-            if !tags.insert(tag) {
+            let selected = !BASIC
+                || matches!(
+                    tag,
+                    256 | 257 | 258 | 262 | 274 | 277 | 332 | 334 | 338 | 339
+                );
+            if selected && !tags.insert(tag) {
                 return Err(invalid("Duplicate TIFF tag within IFD"));
+            }
+            if BASIC && selected {
+                let scalar = matches!(tag, 256 | 257 | 262 | 274 | 277 | 332 | 334);
+                if (scalar && count != 1) || (!scalar && (count > 64 || (count == 0 && tag != 338)))
+                {
+                    return Err(invalid(
+                        "TIFF basic field count is outside information scope",
+                    ));
+                }
             }
             let width: u64 = match type_id {
                 1 | 2 | 6 | 7 => 1,
@@ -260,9 +278,32 @@ impl Parser<'_> {
                 .ok_or_else(|| invalid("TIFF field count overflow"))?;
             let length =
                 usize::try_from(length).map_err(|_| invalid("TIFF field size overflow"))?;
-            self.charge(length)?;
+            if !BASIC {
+                self.charge(length)?;
+            }
             let mut inline = [0u8; 8];
             self.reader.read_exact(&mut inline[..slot])?;
+            if !selected {
+                if length > slot {
+                    range(
+                        number(&inline[..slot], self.reader.endian()),
+                        length as u64,
+                        self.end,
+                    )?;
+                }
+                continue;
+            }
+            if BASIC {
+                self.charge(length)?;
+                crate::limits::check(
+                    self.metadata
+                        .checked_mul(3)
+                        .and_then(|n| n.checked_add(4096))
+                        .ok_or_else(|| invalid("TIFF basic workspace overflow"))?,
+                    crate::limits::current().expanded_bytes,
+                    "TIFF basic header workspace",
+                )?;
+            }
             let payload = if length <= slot {
                 inline[..length].to_vec()
             } else {
@@ -325,12 +366,20 @@ impl Parser<'_> {
 }
 impl TiffDocument {
     pub(crate) fn read(reader: &mut dyn BinaryReader) -> Result<Self, Error> {
-        Self::read_mode(reader, false)
+        Self::read_mode::<false>(reader, false)
     }
     pub(crate) fn read_exif(reader: &mut dyn BinaryReader) -> Result<Self, Error> {
-        Self::read_mode(reader, true)
+        Self::read_mode::<false>(reader, true)
     }
-    fn read_mode(reader: &mut dyn BinaryReader, exif: bool) -> Result<Self, Error> {
+    /// First image IFD only. Skip opaque payloads and EXIF/GPS/next-page traversal.
+    #[cfg(feature = "tiff")]
+    pub(crate) fn read_basic(reader: &mut dyn BinaryReader) -> Result<Self, Error> {
+        Self::read_mode::<true>(reader, false)
+    }
+    fn read_mode<const BASIC: bool>(
+        reader: &mut dyn BinaryReader,
+        exif: bool,
+    ) -> Result<Self, Error> {
         let saved = reader.offset()?;
         let end = reader.seek(SeekFrom::End(0))?;
         reader.seek(SeekFrom::Start(saved))?;
@@ -358,7 +407,7 @@ impl TiffDocument {
         } else {
             u64::from(reader.read_u32()?)
         };
-        let mut parser = Parser {
+        let mut parser = Parser::<BASIC> {
             reader,
             variant,
             end,
@@ -386,6 +435,24 @@ impl TiffDocument {
                 "TIFF pages",
             )?;
             let mut ifd = parser.directory_at(next)?;
+            if BASIC {
+                if let Some(address) = ifd.next_ifd {
+                    if address == next {
+                        return Err(invalid("Cyclic TIFF IFD chain"));
+                    }
+                    range(
+                        address,
+                        if variant == TiffVariant::BigTiff {
+                            8
+                        } else {
+                            2
+                        },
+                        end,
+                    )?;
+                }
+                ifds.push(ifd);
+                break;
+            }
             for tag in [0x8769, 0x8825] {
                 if let Some(entry) = ifd.entries.iter().find(|e| e.tag == tag) {
                     if !matches!(entry.type_id, 4 | 13)

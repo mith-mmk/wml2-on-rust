@@ -108,6 +108,51 @@ impl Workspace {
     }
 }
 
+/// Pre-admit retained profile/header payloads before their owned copy. The final
+/// retained-metadata estimate replaces this provisional subtotal; it is never
+/// added a second time to the later output/CMS ledger.
+pub(super) struct MetadataCopies {
+    base_workspace: usize,
+    container_metadata: usize,
+    added: usize,
+    limits: DecodeLimits,
+}
+impl MetadataCopies {
+    pub(super) fn new(
+        base_workspace: usize,
+        container_metadata: usize,
+        limits: DecodeLimits,
+    ) -> Self {
+        Self {
+            base_workspace,
+            container_metadata,
+            added: 0,
+            limits,
+        }
+    }
+    pub(super) fn claim(&mut self, key: &str, bytes: usize) -> Result<(), Error> {
+        let added = add(self.added, add(key.len(), bytes)?)?;
+        limits::check(
+            add(self.container_metadata, added)?,
+            self.limits.metadata_bytes,
+            "JPEG XL metadata copies",
+        )?;
+        limits::check(
+            add(self.base_workspace, super::mul(added, 2)?)?,
+            self.limits.expanded_bytes,
+            "JPEG XL metadata copy workspace",
+        )?;
+        self.added = added;
+        Ok(())
+    }
+    pub(super) fn finish(self, retained_added: usize) -> Result<(), Error> {
+        if retained_added < self.added {
+            return Err(invalid("JPEG XL metadata copy accounting mismatch"));
+        }
+        Ok(())
+    }
+}
+
 // icc-profile0.0.7 Profile::parse_with_limits owns one declared payload and a
 // (u32,usize,usize) tag-range Vec, not copies of aliased tag data. Reserve a fixed
 // allowance for its two small Arc/ProfileInner objects as well. TransformLimits
@@ -132,17 +177,43 @@ pub(super) fn cms_profiles(source: &[u8], destination: &[u8]) -> Result<usize, E
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::alloc::{GlobalAlloc, Layout, System};
     use std::cell::Cell;
     struct FailOutput;
-    thread_local! { static FAIL_256: Cell<bool> = const { Cell::new(false) }; }
+    thread_local! {
+        static FAIL_BYTES: Cell<usize> = const { Cell::new(0) };
+        static FAILED_BYTES: Cell<usize> = const { Cell::new(0) };
+        static COPY_KEY: Cell<Option<&'static str>> = const { Cell::new(None) };
+    }
+    struct ResetFault;
+    impl Drop for ResetFault {
+        fn drop(&mut self) {
+            COPY_KEY.with(|f| f.set(None));
+            FAIL_BYTES.with(|f| f.set(0));
+        }
+    }
+    pub(crate) fn before_metadata_copy(key: &str, bytes: usize) {
+        COPY_KEY.with(|site| {
+            if site.get() == Some(key) {
+                site.set(None);
+                FAIL_BYTES.with(|f| f.set(bytes));
+            }
+        });
+    }
     fn refused(bytes: usize) -> bool {
-        bytes == 256
-            && FAIL_256
-                .try_with(|flag| flag.replace(false))
-                .unwrap_or(false)
+        FAIL_BYTES
+            .try_with(|flag| {
+                if bytes != 0 && flag.get() == bytes {
+                    flag.set(0);
+                    FAILED_BYTES.with(|f| f.set(bytes));
+                    true
+                } else {
+                    false
+                }
+            })
+            .unwrap_or(false)
     }
     // SAFETY: all non-injected allocations are forwarded unchanged; the injected
     // null is the documented GlobalAlloc failure result, scoped to one test thread.
@@ -176,12 +247,139 @@ mod tests {
     static ALLOCATOR: FailOutput = FailOutput;
     #[test]
     fn runtime_output_reservation_propagates_allocator_refusal_and_checked_size() {
-        FAIL_256.with(|f| f.set(true));
+        let _reset = ResetFault;
+        FAIL_BYTES.with(|f| f.set(256));
         let result = super::super::aligned_output(256);
         assert!(result.is_err());
-        assert!(!FAIL_256.with(Cell::get)); // the actual allocation was attempted
+        assert_eq!(FAIL_BYTES.with(Cell::get), 0); // actual allocation attempted
         assert_eq!(super::super::aligned_output(256).unwrap().len(), 128);
         assert!(super::super::aligned_output(usize::MAX).is_err());
+    }
+
+    #[test]
+    fn metadata_claims_are_cumulative_and_transferred_without_double_charging() {
+        let limits = DecodeLimits {
+            expanded_bytes: 140,
+            metadata_bytes: 40,
+            ..DecodeLimits::unlimited()
+        };
+        let mut copies = MetadataCopies::new(100, 20, limits);
+        copies.claim("key", 10).unwrap(); // +13 retained bytes
+        assert!(copies.claim("ab", 6).is_err()); // 21 added bytes exceeds both quotas
+        copies.claim("ab", 5).unwrap(); // exactly20, failed claims did not mutate
+        copies.finish(20).unwrap();
+        let mut output = Workspace::new(140, 150).unwrap();
+        output.claim(10, "collector").unwrap(); // no second +40 metadata charge
+        assert!(output.claim(1, "over").is_err());
+        let mut copies = MetadataCopies::new(0, 0, DecodeLimits::unlimited());
+        assert!(copies.claim("x", usize::MAX).is_err());
+        let mut copies = MetadataCopies::new(100, 0, limits);
+        copies.claim("key", 10).unwrap();
+        assert!(copies.finish(12).is_err());
+    }
+
+    #[test]
+    fn profile_selection_borrows_icc_payload_instead_of_cloning_it() {
+        use jxl_codec::api::JxlColorProfile;
+        let original = JxlColorProfile::Icc(
+            include_bytes!("../tests/fixtures/review/jxl-gamma2.icc").to_vec(),
+        );
+        let output = super::super::metadata_output_profile(&original, false).unwrap();
+        assert!(matches!(output, std::borrow::Cow::Borrowed(_)));
+        assert!(std::ptr::eq(output.as_ref(), &original));
+        assert!(super::super::metadata_output_profile(&original, true).is_err());
+    }
+
+    #[test]
+    fn each_runtime_metadata_copy_failure_returns_without_publishing_legacy_output() {
+        let _reset = ResetFault;
+        use crate::draw::{DecodeOptions, ImageBuffer, image_decoder_with_limits};
+        let input = include_bytes!("../tests/fixtures/review/jxl-icc-lossless.jxl");
+        for key in [
+            "JPEG XL Source ICC Profile",
+            "ICC Profile",
+            "JPEG XL Source Header",
+        ] {
+            let mut reader = bin_rs::reader::BytesReader::new(input);
+            let mut image = ImageBuffer::new();
+            FAILED_BYTES.with(|f| f.set(0));
+            COPY_KEY.with(|f| f.set(Some(key)));
+            let result = image_decoder_with_limits(
+                &mut reader,
+                &mut DecodeOptions {
+                    debug_flag: 0,
+                    drawer: &mut image,
+                },
+                DecodeLimits::default(),
+            );
+            assert!(
+                result
+                    .err()
+                    .unwrap()
+                    .is::<std::collections::TryReserveError>(),
+                "{key}"
+            );
+            assert_eq!(COPY_KEY.with(Cell::get), None);
+            assert!(FAILED_BYTES.with(Cell::get) > 0);
+            assert_eq!((image.width, image.height), (0, 0));
+            assert!(image.buffer.is_none() && image.metadata.is_none());
+        }
+        assert!(crate::draw::image_from_with_limits(input, DecodeLimits::default()).is_ok());
+    }
+
+    #[test]
+    fn resource_quota_denial_precedes_the_source_icc_copy_request() {
+        let _reset = ResetFault;
+        let bytes = include_bytes!("../tests/fixtures/review/jxl-icc-lossless.jxl");
+        let unpacked = super::super::unpack(bytes, DecodeLimits::unlimited()).unwrap();
+        let header = super::super::preflight(&unpacked, DecodeLimits::unlimited()).unwrap();
+        let policy = JxlResourceLimits {
+            workspace_bytes: header.workspace,
+            ..Default::default()
+        };
+        COPY_KEY.with(|f| f.set(Some("JPEG XL Source ICC Profile")));
+        FAILED_BYTES.with(|f| f.set(0));
+        let error =
+            super::super::image_from_with_resource_limits(bytes, DecodeLimits::unlimited(), policy)
+                .err()
+                .unwrap();
+        assert!(
+            error.to_string().contains("metadata copy workspace"),
+            "{error}"
+        );
+        assert_eq!(COPY_KEY.with(Cell::get), Some("JPEG XL Source ICC Profile"));
+        assert_eq!(FAILED_BYTES.with(Cell::get), 0);
+        COPY_KEY.with(|f| f.set(None));
+    }
+
+    #[cfg(feature = "color-management")]
+    #[test]
+    fn managed_metadata_copy_failures_never_return_an_image() {
+        let _reset = ResetFault;
+        let input = include_bytes!("../tests/fixtures/review/jxl-icc-lossless.jxl");
+        for key in [
+            "JPEG XL Source ICC Profile",
+            "JPEG XL Reconstruction ICC Profile",
+            "ICC Profile",
+            "JPEG XL Source Header",
+        ] {
+            COPY_KEY.with(|f| f.set(Some(key)));
+            FAILED_BYTES.with(|f| f.set(0));
+            let result = super::super::image_from_srgb_with_resource_limits(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+            );
+            assert!(
+                result
+                    .err()
+                    .unwrap()
+                    .is::<std::collections::TryReserveError>(),
+                "{key}"
+            );
+            assert_eq!(COPY_KEY.with(Cell::get), None);
+            assert!(FAILED_BYTES.with(Cell::get) > 0);
+        }
     }
     #[test]
     fn live_claims_are_cumulative_checked_and_release_only_dead_storage() {

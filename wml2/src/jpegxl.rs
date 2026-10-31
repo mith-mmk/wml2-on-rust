@@ -791,20 +791,73 @@ fn profile_metadata(
     key: &str,
     profile: &JxlColorProfile,
     channels: usize,
+    copies: &mut Option<resources::MetadataCopies>,
 ) -> Result<(String, DataMap), Error> {
     // Avoid as_icc(), which panics for unsupported simple colour encodings.
     let icc = match profile {
         JxlColorProfile::Icc(bytes) => {
             validate_icc(bytes, channels)?;
-            bytes.clone()
+            metadata_copy(key, bytes, copies)?
         }
-        JxlColorProfile::Simple(enc) => enc
-            .maybe_create_profile()
-            .map_err(codec_error)?
-            .ok_or_else(|| unsupported("JPEG XL output profile cannot be represented as ICC"))?,
+        JxlColorProfile::Simple(enc) => {
+            let icc = enc
+                .maybe_create_profile()
+                .map_err(codec_error)?
+                .ok_or_else(|| {
+                    unsupported("JPEG XL output profile cannot be represented as ICC")
+                })?;
+            // Generation belongs to the pinned codec, under its existing
+            // preflight allowance. Record its retained result before subsequent
+            // payload copies; this does not claim a fallible codec factory.
+            if let Some(copies) = copies {
+                copies.claim(key, icc.len())?;
+            }
+            icc
+        }
     };
     validate_icc(&icc, channels)?;
     Ok((key.into(), DataMap::ICCProfile(icc)))
+}
+
+fn metadata_copy(
+    key: &str,
+    payload: &[u8],
+    copies: &mut Option<resources::MetadataCopies>,
+) -> Result<Vec<u8>, Error> {
+    if let Some(copies) = copies {
+        copies.claim(key, payload.len())?;
+    }
+    #[cfg(test)]
+    resources::tests::before_metadata_copy(key, payload.len());
+    let mut result = Vec::new();
+    append(&mut result, payload)?;
+    Ok(result)
+}
+
+fn metadata_output_profile(
+    profile: &JxlColorProfile,
+    expand_gray: bool,
+) -> Result<std::borrow::Cow<'_, JxlColorProfile>, Error> {
+    if !expand_gray {
+        return Ok(std::borrow::Cow::Borrowed(profile));
+    }
+    match profile {
+        JxlColorProfile::Simple(JxlColorEncoding::GrayscaleColorSpace {
+            white_point,
+            transfer_function,
+            rendering_intent,
+        }) => Ok(std::borrow::Cow::Owned(JxlColorProfile::Simple(
+            JxlColorEncoding::RgbColorSpace {
+                white_point: white_point.clone(),
+                transfer_function: transfer_function.clone(),
+                rendering_intent: *rendering_intent,
+                primaries: JxlPrimaries::SRGB,
+            },
+        ))),
+        _ => Err(unsupported(
+            "JPEG XL Gray ICC expansion to RGBA requires an explicit CMS",
+        )),
+    }
 }
 
 pub(crate) fn decode_inner<B: BinaryReader>(
@@ -1050,31 +1103,18 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
         extra_channel_format: vec![None; decoder.basic_info().extra_channels.len()],
     };
     decoder.set_pixel_format(format).map_err(codec_error)?;
+    let mut copies = resources
+        .map(|_| resources::MetadataCopies::new(h.workspace, input.metadata_bytes, limits));
     input.metadata.push(profile_metadata(
         "JPEG XL Source ICC Profile",
         decoder.embedded_color_profile(),
         h.color_channels,
+        &mut copies,
     )?);
-    let mut output_profile = decoder.output_color_profile().clone();
-    if !managed && !gray && decoder.output_color_profile().channels() == 1 {
-        output_profile = match output_profile {
-            JxlColorProfile::Simple(JxlColorEncoding::GrayscaleColorSpace {
-                white_point,
-                transfer_function,
-                rendering_intent,
-            }) => JxlColorProfile::Simple(JxlColorEncoding::RgbColorSpace {
-                white_point,
-                transfer_function,
-                rendering_intent,
-                primaries: JxlPrimaries::SRGB,
-            }),
-            _ => {
-                return Err(unsupported(
-                    "JPEG XL Gray ICC expansion to RGBA requires an explicit CMS",
-                ));
-            }
-        };
-    }
+    let output_profile = metadata_output_profile(
+        decoder.output_color_profile(),
+        !managed && !gray && decoder.output_color_profile().channels() == 1,
+    )?;
     input.metadata.push(profile_metadata(
         if managed {
             "JPEG XL Reconstruction ICC Profile"
@@ -1089,11 +1129,14 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
         } else {
             3
         },
+        &mut copies,
     )?);
+    // The decoder is moved by subsequent process() calls. Keep this metadata
+    // borrow local; only owned, fallibly copied payloads escape into metadata.
+    drop(output_profile);
     #[cfg(feature = "color-management")]
     if managed {
-        let mut profile = Vec::new();
-        append(&mut profile, crate::color_convert::SRGB_ICC)?;
+        let profile = metadata_copy("ICC Profile", crate::color_convert::SRGB_ICC, &mut copies)?;
         input
             .metadata
             .push(("ICC Profile".into(), DataMap::ICCProfile(profile)));
@@ -1146,10 +1189,14 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
         "JPEG XL Output Bit Depth".into(),
         DataMap::UInt(if native { bits.into() } else { 8 }),
     ));
-    input.metadata.push((
-        "JPEG XL Source Header".into(),
-        DataMap::Raw(input.codestream[..h.source_header_bytes].to_vec()),
-    ));
+    let source_header = metadata_copy(
+        "JPEG XL Source Header",
+        &input.codestream[..h.source_header_bytes],
+        &mut copies,
+    )?;
+    input
+        .metadata
+        .push(("JPEG XL Source Header".into(), DataMap::Raw(source_header)));
     let metadata_bytes = input.metadata.iter().try_fold(0usize, |n, (k, v)| {
         let bytes = match v {
             DataMap::Raw(b) | DataMap::ICCProfile(b) => b.len(),
@@ -1164,6 +1211,9 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     let added_metadata = metadata_bytes
         .checked_sub(input.metadata_bytes)
         .ok_or_else(|| invalid("JPEG XL metadata accounting mismatch"))?;
+    if let Some(copies) = copies {
+        copies.finish(added_metadata)?;
+    }
     let retained_workspace = add(h.workspace, mul(added_metadata, 2)?)?;
     limits::check(
         retained_workspace,

@@ -1,0 +1,221 @@
+{
+  "base": "9ce284030367f5812b26d256b9efbedbd89d01b6",
+  "scope": "adapter raw metadata copies and borrowed output profile only; no large-image enablement or codec-wide heap guarantee",
+  "source_sha256": {
+    "wml2/src/jpegxl.rs": "db21c5c940fe6417c86f1c90accdd8283a4a26b3a229e3ed746b222dd22b4ba2",
+    "wml2/src/jpegxl_resources.rs": "32fdb5c4c5939b8c8a6d66173d317709e9c7a17c99b04389df9ef1ac96e77ae6"
+  },
+  "tests": {
+    "native": 131,
+    "minimal": 43,
+    "disabled": 1,
+    "actual_metadata_allocation_failures": 7,
+    "i686_musl": "compile only; host cannot execute ELF32"
+  },
+  "wasm": {
+    "scope": "finite ordinary/CMS resource APIs on small independent fixtures, every cancellation checkpoint, fixed-cap large-input refusal; no accepted-large-image WASM or global allocator bound claim",
+    "rustc": "rustc 1.91.0 (f8297e351 2025-10-28)",
+    "results": [
+      {
+        "cases": 12,
+        "passed": true,
+        "runtime": "v24.19.0",
+        "memory_bytes": 5701632,
+        "linear_ceiling_enforced": true,
+        "imports": [],
+        "linear_ceiling_bytes": 33554432,
+        "sha256": "862961af783cef5256a1ef3be0959e07387817dbc7d7cd56384ab21a7c3ef433"
+      },
+      {
+        "cases": 12,
+        "passed": true,
+        "runtime": "v24.19.0",
+        "memory_bytes": 5701632,
+        "linear_ceiling_enforced": true,
+        "imports": [],
+        "linear_ceiling_bytes": 67108864,
+        "sha256": "60ae99b64936407c59e742147c037cbb6a2b85d554dcdf5612d122f5af76e605"
+      }
+    ]
+  },
+  "display": {
+    "size": [
+      606,
+      500
+    ],
+    "bytes": 1212000,
+    "max_rgb_error": 1,
+    "alpha_exact": true
+  },
+  "benchmark": {
+    "base": "9ce284030367f5812b26d256b9efbedbd89d01b6",
+    "features": "jpeg-xl,color-management,image-buffer-ex,png; no defaults",
+    "method": "three alternating process pairs; each 2 warmups+8 timed ordinary decodes including pixel hash; requested heap excludes allocator internals/RSS",
+    "binary_sha256": {
+      "base": "aa3db019832f60bc46d6393927dfca4a8f791c24f8c179664805d0a6e28c06c4",
+      "head": "5dbce3c600778c6f77cc58f2747ef6693b4a29911bbcc85962a912e13a71ad17"
+    },
+    "results": [
+      {
+        "name": "simple",
+        "median_ns": {
+          "base": 53374.0,
+          "head": 53699.5
+        },
+        "ratio": 1.006098474912879,
+        "trials_ns": {
+          "base": [
+            54410.5,
+            53374.0,
+            53138.5
+          ],
+          "head": [
+            52467.5,
+            53699.5,
+            55077.0
+          ]
+        },
+        "allocations_total_peak": {
+          "base": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ],
+          "head": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ]
+        },
+        "hash": "5701539870786561954"
+      },
+      {
+        "name": "icc",
+        "median_ns": {
+          "base": 76493.5,
+          "head": 74455.5
+        },
+        "ratio": 0.9733572133579977,
+        "trials_ns": {
+          "base": [
+            73484.0,
+            76493.5,
+            84335.0
+          ],
+          "head": [
+            78626.0,
+            74455.5,
+            74425.0
+          ]
+        },
+        "allocations_total_peak": {
+          "base": [
+            [
+              383,
+              8524610,
+              4205264
+            ]
+          ],
+          "head": [
+            [
+              382,
+              8524022,
+              4205264
+            ]
+          ]
+        },
+        "hash": "11934725841428314993"
+      },
+      {
+        "name": "large-icc",
+        "median_ns": {
+          "base": 20816845.5,
+          "head": 21576675.0
+        },
+        "ratio": 1.0365007032405558,
+        "trials_ns": {
+          "base": [
+            22888301.5,
+            20345087.0,
+            20816845.5
+          ],
+          "head": [
+            21576675.0,
+            22014077.5,
+            21461059.0
+          ]
+        },
+        "allocations_total_peak": {
+          "base": [
+            [
+              311,
+              18916574,
+              6301668
+            ]
+          ],
+          "head": [
+            [
+              310,
+              17867398,
+              6301668
+            ]
+          ]
+        },
+        "hash": "1526134866273743752"
+      },
+      {
+        "name": "photo",
+        "median_ns": {
+          "base": 16851214.5,
+          "head": 17019143.5
+        },
+        "ratio": 1.0099653944823976,
+        "trials_ns": {
+          "base": [
+            17002373.5,
+            16765898.5,
+            16851214.5
+          ],
+          "head": [
+            16807250.0,
+            17033910.5,
+            17019143.5
+          ]
+        },
+        "allocations_total_peak": {
+          "base": [
+            [
+              999,
+              17296836,
+              5995746
+            ]
+          ],
+          "head": [
+            [
+              998,
+              17294124,
+              5993034
+            ]
+          ]
+        },
+        "hash": "11298716346096407965"
+      }
+    ]
+  },
+  "large_profile_input": {
+    "encoder": "C libjxl0.11.2, same tool/recipe as resource evaluation; no WML2 encoder",
+    "icc_bytes": 1049176,
+    "icc_sha256": "856d95ec90399c886139173c4e8f0855a98f20d0e9044e4c8a0b9c7d76638024",
+    "jxl_sha256": "c5bceb18932f18ac3ad0da61db2c38672da665b4208d5c1ec16eb0b1ca5e0d53",
+    "expected_rgba": [
+      64,
+      128,
+      192,
+      255
+    ]
+  }
+}

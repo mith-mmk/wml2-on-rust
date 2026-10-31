@@ -1,3 +1,6 @@
 # Generated JPEG2000 oracle/provenance data; review generators and summaries.
 wml2/tests/fixtures/review/jpeg2000-*-proof.json linguist-generated=true
 docs/jpeg2000-*-random.json linguist-generated=true
+# Compressed reduced-JPEG oracle bytes must not undergo line-ending conversion.
+wml2/tests/fixtures/review/jpeg-scaled-*.rgba.zlib binary
+wml2/tests/fixtures/review/restart-*-d*.rgba.zlib binary

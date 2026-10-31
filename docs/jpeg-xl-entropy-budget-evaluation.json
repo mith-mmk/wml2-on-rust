@@ -1,0 +1,263 @@
+{
+  "scope": "EVALUATION ONLY: explicit low-level context-map and derived LZ77 reader requested payload capacity; no production dependency change or decoder-wide bound",
+  "base": "8fa0b978c4f68e998439e1bffe0b567f46024074",
+  "source": {
+    "package": "jxl",
+    "version": "0.7.4",
+    "sha256": "43b041e4bd5bb931cf73b271bc3304eb135bb473914877d64bf77fdf5b4d4687",
+    "git": "624ce908afcf8eb0dc2585a671535eaabb5d88cc"
+  },
+  "files": {
+    "src/util/mod.rs": {
+      "before": "2bc7b02154dfefea3d1a43289eb58dc73fc0b2b267b85216e29ebc5390078812",
+      "after": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163"
+    },
+    "src/util/entropy_budget.rs": {
+      "before": null,
+      "after": "2a0c3199be25635b7df7b50fb4aa52d6ee14138a967b965017a7df5ba6fec214"
+    },
+    "src/error.rs": {
+      "before": "231045f543dda51dd45959a3122175ba4340a032b36ab1bf30a16719db90b8f9",
+      "after": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503"
+    },
+    "src/entropy_coding/context_map.rs": {
+      "before": "c1dc244078775565823dbe239adbf7ffc2303a228b4b1503ce2c17f5483851dd",
+      "after": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be"
+    },
+    "src/entropy_coding/decode.rs": {
+      "before": "ff3696293c449ba15074ed0c815ef140d4cc6e85ee7bc0b3c2b1034b943d0b6b",
+      "after": "630eb5ef8107a68ed0a7e9603941fca3b7946729393a89bf052424e78b90ac88"
+    },
+    "src/frame/decode.rs": {
+      "before": "4b7ffba9833d7242fa52a635b3be98771cbc4e47ccd9e154e4d8fa987c784443",
+      "after": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+    }
+  },
+  "patch_sha256": "da0136ed6d74529fdc9de5e78ab708315940da53c9d34aa2373c73a5bd66bc3e",
+  "validation": {
+    "scope": "EVALUATION ONLY: explicit low-level context-map and derived LZ77 reader requested payload capacity; no production dependency change or decoder-wide bound",
+    "source_sha256": "43b041e4bd5bb931cf73b271bc3304eb135bb473914877d64bf77fdf5b4d4687",
+    "patch_sha256": "da0136ed6d74529fdc9de5e78ab708315940da53c9d34aa2373c73a5bd66bc3e",
+    "native_tests": 13,
+    "native_passed": true,
+    "wasm": {
+      "passed": true,
+      "case_groups": 6,
+      "imports": [],
+      "linear_ceiling_bytes": 67108864,
+      "linear_ceiling_enforced": true,
+      "memory_bytes": 9699328,
+      "node": "v24.19.0",
+      "sha256": "bb16f7736137152bdc15ff55bcd7a37f51bc286b29db4e0a629cfec46a1aba71"
+    },
+    "wml_regression": {
+      "integration_tests": 84,
+      "passed": true,
+      "registry_versions_match_product_lock": true,
+      "note": "temporary consuming root patch only; production manifests and lock untouched; high-level decoder remains unbudgeted"
+    },
+    "actual_null_return_sites": [
+      "initial 64-byte map",
+      "32-byte replacement resize",
+      "4 MiB LZ77 window"
+    ],
+    "display": {
+      "size": [
+        606,
+        500
+      ],
+      "max_rgb_error": 1,
+      "alpha_exact": true
+    },
+    "benchmark": {
+      "base": "8fa0b978c4f68e998439e1bffe0b567f46024074",
+      "method": "five balanced alternating process pairs, one pinned available CPU, 5 warmups +20 measured decodes including hashing; legacy unbudgeted high-level route; no concurrent cargo work",
+      "binaries_sha256": {
+        "base": "5dbce3c600778c6f77cc58f2747ef6693b4a29911bbcc85962a912e13a71ad17",
+        "patch": "e09e798172454573ab3b41f11b757c5fcadb74e9b4867473c7072316815e75ad"
+      },
+      "results": [
+        {
+          "case": "simple",
+          "input_sha256": "148461672331dd85dd6adf9153d9d7e0070631daab615c2381362396ba650234",
+          "median_ns": {
+            "base": 47565.5,
+            "patch": 49163.0
+          },
+          "ratio": 1.033585266632328,
+          "trial_medians_ns": {
+            "base": [
+              47565.5,
+              46769.5,
+              49333.0,
+              47720.5,
+              47190.0
+            ],
+            "patch": [
+              47670.5,
+              48992.0,
+              49679.0,
+              49163.0,
+              49298.5
+            ]
+          },
+          "hash": "5701539870786561954",
+          "allocation_count_traffic_peak": {
+            "base": [
+              [
+                328,
+                105053,
+                64222
+              ]
+            ],
+            "patch": [
+              [
+                327,
+                105029,
+                64286
+              ]
+            ]
+          }
+        },
+        {
+          "case": "icc",
+          "input_sha256": "5ca8a8e39a4640ce49188cd9896163f5cbd88d870503efee5f9b941843ddede8",
+          "median_ns": {
+            "base": 69983.5,
+            "patch": 67775.5
+          },
+          "ratio": 0.9684497060021291,
+          "trial_medians_ns": {
+            "base": [
+              70499.5,
+              69382.5,
+              71175.0,
+              68532.0,
+              69983.5
+            ],
+            "patch": [
+              69428.0,
+              67580.0,
+              67775.5,
+              67334.0,
+              70028.5
+            ]
+          },
+          "hash": "11934725841428314993",
+          "allocation_count_traffic_peak": {
+            "base": [
+              [
+                382,
+                8524022,
+                4205264
+              ]
+            ],
+            "patch": [
+              [
+                379,
+                8522814,
+                4205304
+              ]
+            ]
+          }
+        },
+        {
+          "case": "photo",
+          "input_sha256": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+          "median_ns": {
+            "base": 16856560.0,
+            "patch": 17680706.0
+          },
+          "ratio": 1.0488917074420878,
+          "trial_medians_ns": {
+            "base": [
+              16755239.5,
+              17001935.5,
+              16856560.0,
+              16951991.0,
+              16796085.0
+            ],
+            "patch": [
+              17822070.5,
+              17677906.5,
+              17680706.0,
+              17779607.5,
+              17605524.5
+            ]
+          },
+          "hash": "11298716346096407965",
+          "allocation_count_traffic_peak": {
+            "base": [
+              [
+                998,
+                17294124,
+                5993034
+              ]
+            ],
+            "patch": [
+              [
+                973,
+                17247689,
+                5991745
+              ]
+            ]
+          }
+        },
+        {
+          "case": "large-icc",
+          "input_sha256": "c5bceb18932f18ac3ad0da61db2c38672da665b4208d5c1ec16eb0b1ca5e0d53",
+          "median_ns": {
+            "base": 21584015.0,
+            "patch": 20755553.0
+          },
+          "ratio": 0.9616168724864211,
+          "trial_medians_ns": {
+            "base": [
+              21584015.0,
+              21472369.0,
+              21586073.0,
+              21758909.0,
+              21504442.0
+            ],
+            "patch": [
+              20711452.0,
+              21041967.0,
+              20755553.0,
+              20468792.0,
+              20910958.5
+            ]
+          },
+          "hash": "1526134866273743752",
+          "allocation_count_traffic_peak": {
+            "base": [
+              [
+                310,
+                17867398,
+                6301668
+              ]
+            ],
+            "patch": [
+              [
+                307,
+                17866190,
+                6301708
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "performance_gate": "NOT PASSED for product adoption: photo median 1.049x and simple median 1.034x; ICC cases improve. Evaluation only; no shipping change."
+  },
+  "artifact_sha256": {
+    "jxl_entropy_budget_eval.rs": "fe37c74e7a9d4d19ea077b1a33305d1d7b533300eaf9407cfb471efc824fa61f",
+    "jxl_entropy_budget_eval.lock": "8c3dfb8cd5165aca3fc39217f130b01ba18232a5cb62875dcab4ce8d78bda097"
+  },
+  "product_files_unchanged": {
+    "Cargo.toml": "57baf6d05d6c2e8132a100cf718e808a63bd8fb52fef14c93fac40ebf04caf26",
+    "wml2/Cargo.toml": "4ad0276420f7b538e70f982db53033af8ab05a5b359330a2be75444751b240b9",
+    "Cargo.lock": "1dea6f53aecb9ce01302cc202f116e7673c1707ab29b6cf6acdc1c77c78d5d0f",
+    "wml2/src/jpegxl.rs": "db21c5c940fe6417c86f1c90accdd8283a4a26b3a229e3ed746b222dd22b4ba2",
+    "wml2/src/jpegxl_resources.rs": "32fdb5c4c5939b8c8a6d66173d317709e9c7a17c99b04389df9ef1ac96e77ae6"
+  }
+}

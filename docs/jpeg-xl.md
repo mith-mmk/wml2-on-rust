@@ -1,18 +1,22 @@
 # JPEG XL still-image decoding
 
-WML2 0.0.38 adds opt-in JPEG XL still decoding, together with shared native
-Gray↔RGB ICC layouts and explicit sRGB display conversion. Version0.0.37 does
-not contain this feature. Historical development checkpoints and measurements
-are retained in [continuation validation](jpeg-xl-continuation-20261019.md) and
-[internal-layer validation](jpeg-xl-layers.md).
+This page describes the supported JPEG XL contract in WML2 **0.0.41**, checked
+against main `f2151b2408e9d04f1bc7b4e9e29679e078a57209`. JPEG XL was introduced
+in 0.0.38; 0.0.37 does not contain it. Current support and the evidence map below
+are separate from the historical [continuation validation](jpeg-xl-continuation-20261019.md)
+and [internal-layer validation](jpeg-xl-layers.md) checkpoints. Those records
+retain their original environments, revisions, measurements and limitations;
+their results are not new executions of the current revision.
 
 The opt-in `jpeg-xl` feature uses **published `jxl =0.7.4`**, not upstream main.
 Defaults are unchanged; JPEG XL encoding is unavailable. Add `image-buffer-ex`
-for high-precision callback output. No C library, image-rs, CMS, SIMD or thread
+for high-precision callback output. No C library, image-rs, external CMS, SIMD or thread
 pool is pulled into the runtime by this feature.
+Bounded `brob` metadata uses pure Rust `brotli-decompressor =6.2.0`, and common
+XMP interpretation uses `roxmltree =0.21.2`, with default features disabled.
 
 ```toml
-wml2 = { version = "0.0.38", features = ["jpeg-xl", "image-buffer-ex"] }
+wml2 = { version = "0.0.41", features = ["jpeg-xl", "image-buffer-ex"] }
 ```
 
 ```rust
@@ -253,21 +257,23 @@ Upstream reference: [published source commit](https://github.com/libjxl/jxl-rs/t
 In particular,0.7.4 has typestate processing and `premultiply_output`; main's
 `AlphaMode` API must not be assumed to exist in the published crate.
 
-## Validation snapshot
+## Historical validation snapshot (2026-10-18)
 
-See [machine-readable results](jpeg-xl-validation.json) for commands, source
-hashes, local results, measured allocations and the actual WASM artifact hash.
-The portable helper runs55 cases in Node without host imports:
+The [machine-readable results](jpeg-xl-validation.json) identify a Linux x86_64
+cloud checkpoint using Rust 1.91.0, Node 24.19.0 and published jxl 0.7.4, with
+base revision `1b8007c63f82b4b6736217db9b4a5a19c8122f90` and validated working
+tree files identified by `source_sha256`. The **55-case** Node result belongs to
+that checkpoint. Later continuation records contain 61 Node cases and 13, then
+14 Chromium cases. Run the helper for fresh evidence of a selected revision:
 
 ```console
 python3 wml2-test/scripts/verify_jpegxl_wasm.py --output .test-jxl-wasm
 ```
 
-Independent read-only review findings were fixed before the final checks.
-Clippy is run in the same warning mode as repository CI: existing unrelated
-warnings remain; the JPEG XL implementation/tests introduce none. Windows and
-macOS execution, browser UI integration, general ICC/HDR rendering, SIMD and
-threaded decoding are not covered by this local validation.
+The review, Clippy results and platform exclusions in that JSON are historical.
+In particular, its absence of browser evidence does not supersede the later
+Chromium fixture-harness results. General HDR rendering, SIMD and threaded
+runtime decoding are outside the current supported scope.
 
 ## Branch CI coverage
 
@@ -276,18 +282,20 @@ macOS, with ordinary, EX and disabled-feature tests. Windows additionally
 executes those contracts as32-bit MSVC binaries. These dedicated jobs do not
 wait for the slower existing JPEG2000/TIFF platform regressions.
 
-The WASM compile job executes the55-case Node harness and uploads its report.
+The WASM compile job executes the checked-in Node harness and uploads its report.
+Case counts must be read from the report for the tested revision.
 A feature-contract job checks the expected mutually exclusive IDCT failure for
 `--all-features`, then checks all targets and executes JPEG XL tests for both
 all-codec and `noretoro` profiles with only one IDCT enabled. This also exposed
 and repaired the existing `SJIS` feature's missing optional `encoding_rs`
 dependency; its locked version and default features are unchanged.
 
-These checks run on branch pushes; a PR is not required. For the result of an
+The current workflow runs on pull requests, pushes to main and explicit dispatch;
+an ordinary push to another branch without a PR does not trigger it. For an
 individual revision, use its GitHub Actions run and exact commit SHA rather
 than treating the older local validation snapshot as a cross-platform result.
 
-## Remaining validation and scope decisions
+## Historical review and external validation
 
 The October18 independent still-image review found and fixed rejection of a
 valid explicit Level5 container. Its regression fails on revision
@@ -302,20 +310,77 @@ finite probes do not establish general decoder correctness.
 The local Windows owner is responsible for real display testing against the
 25-file corpus at `D:\data\samples\images\jxl\wml2_static_selection_20261018`
 and its `manifest.json`. The earlier local report identified `jbrd` refusals for
-the two official cases above at revision1b8007c; a local rerun of this patch is
-pending. The local collection/manifest is unavailable in the cloud; official
+the two official cases above at revision1b8007c; a local rerun
+was pending at that historical checkpoint. The local collection/manifest is
+unavailable in the cloud; official
 copies were obtained independently. Hosted CI and cloud image checks are separate.
 The [hosted56-job success for revision1b8007c](https://github.com/mith-mmk/wml2-on-rust/actions/runs/39112081722)
-is prior evidence, not a result for this patch. Normal pushes run existing CI automatically;
-no separate Windows execution or workflow dispatch is needed for this review.
+is prior evidence, not a result for this documentation update. Current PR CI
+executes its configured hosted platform jobs; private display validation remains
+separate.
 
-Remaining profile limitations include fixed resource caps, Gray ICC expansion,
-compressed auxiliary metadata and native JPEG reconstruction. All eight orientation
-values have not been independently tested;90-degree rotation and orientation5
-transpose are covered.
-Browser UI integration, SIMD and threads are also outside the current evidence.
-9/10-bit sources, premultiplied alpha, HDR rendering, animation and encoding require a separate scope proposal before
-implementation. No PR, main merge or release is part of this branch work.
+## Current support and evidence map
+
+Historical record revisions: the continuation record was updated at
+[`8110aa6f40f837c267f58ea87925f1a0b3436f20`](https://github.com/mith-mmk/wml2-on-rust/commit/8110aa6f40f837c267f58ea87925f1a0b3436f20),
+and the internal-layer record at
+[`21819d91a5980a61cc32c313460c075268b0c690`](https://github.com/mith-mmk/wml2-on-rust/commit/21819d91a5980a61cc32c313460c075268b0c690).
+These identify the records; where those records cite a different tested SHA or
+source hash, that identifier remains the test provenance.
+
+The 2026-10-31 reconciliation uses released main
+`f2151b2408e9d04f1bc7b4e9e29679e078a57209`. Existing native tests were replayed
+on Linux x86_64 cloud with Rust 1.91.0, including the ordinary/EX/CMS, metadata,
+orientation, cancellation, preview, intrinsic and mixed-depth-alpha contracts.
+See the [issue acceptance map](wml2-0041-issue-status.md) for exact target groups,
+commands and the separate feature-off checks. Independent oracle fixtures are
+replayed; no new oracle generation, browser, WASM or private Windows execution
+is claimed. Historical execution claims keep their original provenance.
+
+| Current contract | Implementation / executable regression | Historical evidence |
+| --- | --- | --- |
+| Integer 8/9/10/12/16-bit still input; 9/10 normalized into Gray16/Rgba16 | `jpegxl::preflight` and `decode`; [jpeg_xl.rs](../wml2/tests/jpeg_xl.rs), `nine_and_ten_bit_sources_promote_to_normalized_sixteen_without_losing_codes` in [jpeg_xl_additional.rs](../wml2/tests/jpeg_xl_additional.rs) | [2026-10-19 precision checkpoint](jpeg-xl-continuation-20261019.md#orientation-and-precision) |
+| All eight orientations applied exactly once, with explicit applied/source metadata | `decode` metadata; `all_eight_orientations_match_independent_djxl_after_one_reorientation` in [jpeg_xl_additional.rs](../wml2/tests/jpeg_xl_additional.rs) | [Orientation and precision](jpeg-xl-continuation-20261019.md#orientation-and-precision); applied marker added by [PR #29](https://github.com/mith-mmk/wml2-on-rust/pull/29) |
+| Explicit reconstruction-ICC-to-sRGB display, including Gray ICC expansion; alpha excluded | `image_from_srgb[_with_limits]`; `explicit_srgb_display_uses_the_actual_reconstruction_profile_once` in [jpeg_xl_additional.rs](../wml2/tests/jpeg_xl_additional.rs) | [Display checkpoint](jpeg-xl-continuation-20261019.md#explicit-displayed-output), independent libjxl/LittleCMS references |
+| Single visible still image composed from bounded cropped/reference layers | `frame_workspace`; [jpeg_xl_layers.rs](../wml2/tests/jpeg_xl_layers.rs) | [Internal-layer record](jpeg-xl-layers.md), official `sunset_logo`; this is not animation support |
+| Input/canvas/internal-layer/metadata/workspace admission and callback Abort | `unpack`, `preflight`, shared guard; [jpeg_xl.rs](../wml2/tests/jpeg_xl.rs), [jpeg_xl_layers.rs](../wml2/tests/jpeg_xl_layers.rs) | [Resource admission](jpeg-xl-layers.md#admission-before-pixel-decoding) |
+| Cooperative sRGB cancellation; cancelled images stay private | `image_from_srgb_with_limits_and_cancel`; cancellation tests in [jpeg_xl_additional.rs](../wml2/tests/jpeg_xl_additional.rs) and [composition.rs](../wml2/tests/jpeg_xl/composition.rs) | Released in [0.0.41](releases/0.0.41.md); individual tasks, preflight and ICC setup remain non-interruptible |
+| Bounded brob expansion and common EXIF/XMP, preserving indexed source bytes | `jpegxl_brob` / `jpegxl_metadata`; [brob regressions](../wml2/tests/jpeg_xl_brob.rs), [metadata regressions](../wml2/tests/jpeg_xl_metadata.rs) | [brob](jpeg-xl-brob.md), [metadata](jpeg-xl-metadata.md); EXIF orientation normalized, no external XML resolution |
+| Main-image decoding while structurally checking and skipping a bounded preview | `frame_workspace` and `skip_preview`; [preview regressions](../wml2/tests/jpeg_xl/preview.rs) | [Preview record](jpeg-xl-preview.md); extraction API and skipped-entropy validation are not implemented |
+| Intrinsic display metadata without resampling; bounded geometry queries | `jpegxl_dimensions` / `image_info::jpegxl`; [intrinsic regressions](../wml2/tests/jpeg_xl/intrinsic.rs), [query regressions](../wml2/tests/image_info/jpegxl.rs) | [Intrinsic record](jpeg-xl-intrinsic.md); coded/output/display axes remain distinct |
+| Independent integer colour/straight-alpha depths, both full resolution | `preflight` / normalized RGBA16; [alpha regressions](../wml2/tests/jpeg_xl/alpha.rs) | [Alpha record](jpeg-xl-alpha.md); associated/subsampled/general extra planes still reject |
+| Portable Node and actual browser fixture rendering evidence | [Node harness](../wml2-test/scripts/verify_jpegxl_wasm.py), [Chromium harness](../wml2-test/scripts/verify_jpegxl_browser.py) | [Continuation](jpeg-xl-continuation-20261019.md#reproducible-image-evidence): 61 Node / 13 Chromium cases; [later layers record](jpeg-xl-layers.md#independent-evidence): 61 / 14. These are harness checks, not external viewer/plugin validation |
+
+[PR #22](https://github.com/mith-mmk/wml2-on-rust/pull/22) delivered the precision,
+colour and internal-layer continuation. Its branch checkpoints and later
+orientation metadata changes must not be collapsed into one claimed test SHA.
+For fresh results, record the checkout SHA, tool versions, command and environment
+alongside the report; use that revision's Actions run for hosted CI status.
+
+## Remaining scope and validation
+
+The ordinary source-coordinate RGBA route still refuses arbitrary Gray ICC
+expansion; the explicit sRGB route already supports it. Fixed resource caps
+remain even with caller `unlimited()` ([#37](https://github.com/mith-mmk/wml2-on-rust/issues/37)).
+Cooperative display cancellation, bounded brob/common EXIF/XMP, preview skipping,
+intrinsic display dimensions and mixed-depth straight alpha are released in
+0.0.41. They must not be listed as pending solely because their original issues
+or historical branch reports predate the release.
+
+Remaining product features are associated/subsampled alpha and general extra
+channels (#42), preview extraction (#44), animation (#43), float/HDR/tone mapping
+(#46), incremental input/progressive output APIs (#47), original-JPEG bit-exact
+reconstruction (#48), JPEG XL encoding (#49), allocation-aware larger-image
+admission (#37) and the qualified dependency migration (#40). The open evaluation
+PRs are evidence and design proposals; their successful tests do not implement
+these public runtime features. See the [status and acceptance map](wml2-0041-issue-status.md).
+
+External viewer/plugin integration and real display testing of the private
+Windows 25-file corpus remain separate from the recorded cloud/browser harness
+and hosted CI evidence. The later [internal-layer record](jpeg-xl-layers.md)
+attributes Windows reports to ICC `cc4e4a1` and JXL `8303737`; later changes still
+need their own Windows delta verification. No unavailable private corpus or
+external plugin was exercised by this documentation audit.
 
 ## Output orientation contract
 

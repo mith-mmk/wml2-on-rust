@@ -1,0 +1,452 @@
+{
+  "oracle": "C libjxl0.11.2 independent BasicInfo with/without keep_orientation plus full normalized RGBA16; existing saved djxl orientation references",
+  "contract": "coded axes from input; output and intrinsic_display swap axes for orientations5..8; stored C intrinsic fields stay raw and are recorded separately; absent declaration stays None, not C fallback",
+  "cases": [
+    {
+      "file": "jxl-intrinsic-orientation1.jxl",
+      "bytes": 65,
+      "sha256": "98fd22288a9f507ce573f142b4d6ca23e265c1a339e423bf8ac7d9cbb7663670",
+      "c_basic_kept": [
+        2,
+        3,
+        1,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        2,
+        3,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 1,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 9,
+      "rgba_sha256": "110bdc62dd7df693e2f7b7d81886a9f5fd4d328519beecbdfe509a565eaf2ab9",
+      "rgba16_sha256": "ee5aac777c06b8fdf6dc2b89a01ccdb48d9f9e6af816c87524bb66c8d5ef0538"
+    },
+    {
+      "file": "jxl-intrinsic-orientation2.jxl",
+      "bytes": 65,
+      "sha256": "5b946c2a872615d702a32ab51813b377d9098e58882b3217bbf80d3459e3949e",
+      "c_basic_kept": [
+        2,
+        3,
+        2,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        2,
+        3,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 2,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 9,
+      "rgba_sha256": "873dd8a7cbb1bc95577cc552636f27dba73dea44179a8f029b140c01a3ee3153",
+      "rgba16_sha256": "7c1320260bee69aaf3dbd024fedbeacf637743b5ebc91881c894764dfa896cc4"
+    },
+    {
+      "file": "jxl-intrinsic-orientation3.jxl",
+      "bytes": 65,
+      "sha256": "852327492eb3fd1a544a5ac7d569df4f6d904c600280d3603e68d0ff7ba1d147",
+      "c_basic_kept": [
+        2,
+        3,
+        3,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        2,
+        3,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 3,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 9,
+      "rgba_sha256": "eee1f5e94821257a44a2272fd03e42ffae24cfde097b09adaa15d31a9308edab",
+      "rgba16_sha256": "07d2b7daa50a85a6d3a5410cdb5e5365c82f768c56c84ba29aada5a662dc16a9"
+    },
+    {
+      "file": "jxl-intrinsic-orientation4.jxl",
+      "bytes": 65,
+      "sha256": "3111121fac828560f7e508e428d956252092e156fe47f5ee37b8976f1a0d208d",
+      "c_basic_kept": [
+        2,
+        3,
+        4,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        2,
+        3,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 4,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 9,
+      "rgba_sha256": "74b8ffeff4b35e97aa9031197b83fa56af9039b0437f3f86bfd6e46f99c74718",
+      "rgba16_sha256": "1acb607fb73d238e4d8b447fcde9a17f1c47175777420a3f6a3148d06fe10239"
+    },
+    {
+      "file": "jxl-intrinsic-orientation5.jxl",
+      "bytes": 65,
+      "sha256": "a653a3bb3d7370309c148dced45b95ea86def5f8cb596de59a136e0d8fcf890c",
+      "c_basic_kept": [
+        2,
+        3,
+        5,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        3,
+        2,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 5,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 9,
+      "rgba_sha256": "86ced083f22ac06a42746a245911ff122ef9818159e512a03263e4978b804ee9",
+      "rgba16_sha256": "c841adca931762e6d0966242be4152fdce79eca546e98322486b2f241e27ab58"
+    },
+    {
+      "file": "jxl-intrinsic-orientation6.jxl",
+      "bytes": 65,
+      "sha256": "b6a6036330a50b0009757d950999d47d27f9296074935629e2123660b437d030",
+      "c_basic_kept": [
+        2,
+        3,
+        6,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        3,
+        2,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 6,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 9,
+      "rgba_sha256": "3e9e32d9b049bab928e019aa5c8ef58ab8bc86dd0bf587031e3aad54c0f90569",
+      "rgba16_sha256": "ecb099ecbb1a9bd045105ebae0d024c0b93a8691fba0436a1daf56493ec78f51"
+    },
+    {
+      "file": "jxl-intrinsic-orientation7.jxl",
+      "bytes": 65,
+      "sha256": "c4da94b63fbbda9ec5485ff54a350abbfa1875af1225c3bedfabc2e554c2f4eb",
+      "c_basic_kept": [
+        2,
+        3,
+        7,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        3,
+        2,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 7,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 9,
+      "rgba_sha256": "e865ec203e1b0025c508b2e24a1c881cd2ff86713640a8e15cfcffda09c84130",
+      "rgba16_sha256": "f073b2de3624e72e9c2f39747e69b296001cd19ead8ebc545ec1172659711cab"
+    },
+    {
+      "file": "jxl-intrinsic-orientation8.jxl",
+      "bytes": 65,
+      "sha256": "b65e482d73f8533d651590078b44c78e2f92e2dedca2c777d3f90ccf6b4cf184",
+      "c_basic_kept": [
+        2,
+        3,
+        8,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        3,
+        2,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 8,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 9,
+      "rgba_sha256": "9438cc57c8cdbe01892e947389e996c58f5d1de16be785604caa37cb3b2864c0",
+      "rgba16_sha256": "1a5dabb12d7caac35114ba0a1667a659f101a3e7bca634f4f5ac7ab8266587dd"
+    },
+    {
+      "file": "jxl-intrinsic-icc16.jxl",
+      "bytes": 593,
+      "sha256": "42cde429bea243a425a08fd0a92d09bc7afd94cc7fe04dfe1d9e15c66132aeb6",
+      "c_basic_kept": [
+        7,
+        5,
+        6,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        5,
+        7,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        7,
+        5
+      ],
+      "orientation": 6,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 7,
+      "rgba_sha256": "12dda11753ae6007bca164f86527c83e19d2087c32d81cb4c7ea690e4401258a",
+      "rgba16_sha256": "8efe2c47b3165269e74ead58944aaf3aa638ffeb942fd2c07a931e55634dea59"
+    },
+    {
+      "file": "jxl-intrinsic-large-display.jxl",
+      "bytes": 72,
+      "sha256": "b000a7649f62c098ea30f32708be9e524dd9dc6520bbbc602138246f2060380a",
+      "c_basic_kept": [
+        2,
+        3,
+        1,
+        1048576,
+        1048576
+      ],
+      "c_basic_oriented": [
+        2,
+        3,
+        1,
+        1048576,
+        1048576
+      ],
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 1,
+      "source_intrinsic": [
+        1048576,
+        1048576
+      ],
+      "dimension_prefix_bytes": 15,
+      "rgba_sha256": "110bdc62dd7df693e2f7b7d81886a9f5fd4d328519beecbdfe509a565eaf2ab9",
+      "rgba16_sha256": "ee5aac777c06b8fdf6dc2b89a01ccdb48d9f9e6af816c87524bb66c8d5ef0538"
+    },
+    {
+      "file": "jxl-intrinsic-huge-coded-header.jxl",
+      "bytes": 72,
+      "sha256": "fdce2eda5f474732cbe803ce1a01516bf4b54371098ecfd4f7d8ab4f8d7f3300",
+      "c_basic_kept": [
+        1048576,
+        1048576,
+        1,
+        19,
+        11
+      ],
+      "c_basic_oriented": [
+        1048576,
+        1048576,
+        1,
+        19,
+        11
+      ],
+      "coded": [
+        1048576,
+        1048576
+      ],
+      "orientation": 1,
+      "source_intrinsic": [
+        19,
+        11
+      ],
+      "dimension_prefix_bytes": 15,
+      "scope": "Header-only valid dimension declaration; main frame body is not claimed valid for the huge coded canvas."
+    }
+  ],
+  "managed_reference": {
+    "source": "jxl-icc-lossless.srgb.rgba (existing independent LittleCMS reference)",
+    "orientation": 6,
+    "mapping": "output(x,y)=(4-source_y,source_x)",
+    "sha256": "4bb65776811d175c9329d32fa33709b23cfcf54476dc856b4d74d162111a9b3d"
+  },
+  "absent": [
+    {
+      "file": "jxl-orientation1.jxl",
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 1,
+      "source_intrinsic": null,
+      "dimension_prefix_bytes": 6
+    },
+    {
+      "file": "jxl-orientation2.jxl",
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 2,
+      "source_intrinsic": null,
+      "dimension_prefix_bytes": 7
+    },
+    {
+      "file": "jxl-orientation3.jxl",
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 3,
+      "source_intrinsic": null,
+      "dimension_prefix_bytes": 7
+    },
+    {
+      "file": "jxl-orientation4.jxl",
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 4,
+      "source_intrinsic": null,
+      "dimension_prefix_bytes": 7
+    },
+    {
+      "file": "jxl-orientation5.jxl",
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 5,
+      "source_intrinsic": null,
+      "dimension_prefix_bytes": 7
+    },
+    {
+      "file": "jxl-orientation6.jxl",
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 6,
+      "source_intrinsic": null,
+      "dimension_prefix_bytes": 7
+    },
+    {
+      "file": "jxl-orientation7.jxl",
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 7,
+      "source_intrinsic": null,
+      "dimension_prefix_bytes": 7
+    },
+    {
+      "file": "jxl-orientation8.jxl",
+      "coded": [
+        2,
+        3
+      ],
+      "orientation": 8,
+      "source_intrinsic": null,
+      "dimension_prefix_bytes": 7
+    }
+  ],
+  "oversized": [
+    {
+      "file": "jxl-intrinsic-oversized-area.jxl",
+      "sha256": "1f2f19eac3c69684c1b44f6b2bb14acfcc57980fd5e9afe162323f5fc54aab1a",
+      "description": "Both dimensions2^30 exceed the pinned Size reader2^40 area bound",
+      "c_basic_info_rejected": false,
+      "c_basic_fields": "2 3 1 1073741824 1073741824",
+      "scope": "Expected rejection by the pinned Size reader, not a claim that C rejects every oversized display declaration."
+    },
+    {
+      "file": "jxl-intrinsic-oversized-axis.jxl",
+      "sha256": "807b718a000ba287ed5b154680ae128a5c9b7da14ca94a78679f52d451a7b2a6",
+      "description": "Derived2:1 width2^31 exceeds the pinned Size reader2^30 axis bound",
+      "c_basic_info_rejected": false,
+      "c_basic_fields": "2 3 1 2147483648 1073741824",
+      "scope": "Expected rejection by the pinned Size reader, not a claim that C rejects every oversized display declaration."
+    }
+  ]
+}

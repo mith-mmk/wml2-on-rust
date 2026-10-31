@@ -1,0 +1,41 @@
+{
+  "source": "independent system C libjxl 0.11.2, original-profile lossless, effort3; prescribed constant RGB bytes, not WML2 output",
+  "encoder_version": 11002,
+  "encoder_source_sha256": "dfbc094ef330865d36cde6eb4bb173410bbcc7cd95a10f42b75629e74d9b2104",
+  "license": "Generated deterministic test data",
+  "base": "f2151b2408e9d04f1bc7b4e9e29679e078a57209",
+  "fixtures": [
+    {
+      "name": "boundary",
+      "width": 2048,
+      "height": 1536,
+      "bytes": 1483,
+      "sha256": "3029420741a7dc3e6d65a72bf6a35a17a0d996ee4a8963f238642d61ccc2692b",
+      "file": "jxl-resource-boundary.jxl",
+      "channels": 3,
+      "bits": 8,
+      "expected_rgba": [
+        64,
+        128,
+        192,
+        255
+      ]
+    },
+    {
+      "name": "qhd",
+      "width": 2560,
+      "height": 1440,
+      "bytes": 8092,
+      "sha256": "03cd22748a6f9c43c014b9c13d885e99d71fcb0ed4910276f15255248c301af9",
+      "file": "jxl-resource-qhd.jxl",
+      "channels": 3,
+      "bits": 8,
+      "expected_rgba": [
+        64,
+        128,
+        192,
+        255
+      ]
+    }
+  ]
+}

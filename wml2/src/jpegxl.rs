@@ -18,8 +18,11 @@ use std::io::SeekFrom;
 mod brob;
 #[path = "jpegxl_dimensions.rs"]
 pub(crate) mod dimensions;
+#[path = "jpegxl_resources.rs"]
+mod resources;
 #[path = "jpegxl_metadata.rs"]
 mod structured_metadata;
+pub use resources::JxlResourceLimits;
 
 type Error = Box<dyn std::error::Error>;
 const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
@@ -150,6 +153,14 @@ struct Input {
 // jbrd is retained as opaque source bytes; pixel decoding does not reconstruct
 // JPEG files or parse/decompress/validate the reconstruction payload.
 fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
+    unpack_with_resources(input, limits, None)
+}
+fn unpack_with_resources(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: Option<JxlResourceLimits>,
+) -> Result<Input, Error> {
+    let policy = resources.unwrap_or_else(JxlResourceLimits::legacy);
     let mut out = Input {
         codestream: Vec::new(),
         metadata: Vec::new(),
@@ -266,7 +277,7 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
                 let maximum = limits
                     .metadata_bytes
                     .saturating_sub(retained)
-                    .min(MAX_BROB_METADATA.saturating_sub(expanded_brob));
+                    .min(policy.brob_bytes.saturating_sub(expanded_brob));
                 // The original input/codestream assembly and metadata copies
                 // remain live while Brotli runs. Output growth and all codec
                 // allocator requests are charged by the shared bounded helper.
@@ -288,6 +299,13 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
                     limits.metadata_bytes,
                     "JPEG XL container metadata",
                 )?;
+                if resources.is_some() {
+                    limits::check(
+                        add(mul(input.len(), 3)?, mul(out.metadata_bytes, 2)?)?,
+                        limits.expanded_bytes,
+                        "JPEG XL container workspace",
+                    )?;
+                }
                 limits::check(box_count, 1024, "JPEG XL box count")?;
                 let mut raw = Vec::new();
                 append(&mut raw, data)?;
@@ -306,12 +324,20 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
 // ICC entropy contexts are pinned to jxl0.7.4 icc/mod.rs. Inspect the advertised
 // expanded size before profile allocation, then advance to the frame headers
 // using the same histogram/reader, without building an expanded ICC twice.
-fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
+fn icc_budget(
+    br: &mut BitReader<'_>,
+    budget: usize,
+    policy: JxlResourceLimits,
+) -> Result<usize, Error> {
     use jxl_codec::entropy_coding::decode::{Histograms, SymbolReader};
     use jxl_codec::headers::encodings::{Empty, UnconditionalCoder};
     let coded = u64::read_unconditional(&(), br, &Empty {}).map_err(codec_error)?;
     let coded = usize::try_from(coded)?;
-    limits::check(coded, budget.min(1 << 24), "JPEG XL coded ICC")?;
+    limits::check(
+        coded,
+        budget.min(policy.icc_coded_bytes),
+        "JPEG XL coded ICC",
+    )?;
     let hist = Histograms::decode(41, br, true).map_err(codec_error)?;
     let mut reader = SymbolReader::new(&hist, br, None).map_err(codec_error)?;
     let mut prefix = [0u8; 20];
@@ -344,6 +370,11 @@ fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
         return Err(invalid("invalid JPEG XL ICC preamble"));
     }
     let size = usize::try_from(size)?;
+    limits::check(
+        size,
+        policy.icc_expanded_bytes,
+        "JPEG XL expanded ICC policy",
+    )?;
     limits::check(size, budget, "JPEG XL expanded ICC")?;
     // Two retained profiles may both contain this ICC, plus generated output
     // profile/metadata overhead reserved by the caller.
@@ -412,6 +443,7 @@ fn frame_workspace(
     mut max_pixels: usize,
     base: usize,
     limits: DecodeLimits,
+    policy: JxlResourceLimits,
 ) -> Result<(usize, usize), Error> {
     use jxl_codec::headers::encodings::UnconditionalCoder;
     use jxl_codec::headers::frame_header::FrameHeader;
@@ -432,16 +464,25 @@ fn frame_workspace(
             (size.xsize() as usize).max(16),
             (size.ysize() as usize).max(16),
         )?;
-        limits::check(pixels, MAX_PIXELS, "JPEG XL preview pixels")?;
+        limits::check(pixels, policy.internal_pixels, "JPEG XL preview pixels")?;
         sample_pixels = sample_pixels.max(pixels);
     }
     let mut retained = 0;
     let mut peak = add(base, mul(max_pixels, 128)?)?;
     let mut visible = 0;
     let mut toc_workspace = 0;
+    let mut main_layers = 0;
     // One independently skipped preview does not consume a main-image layer
     // or caller frame. Main sequence complexity remains capped at64 layers.
     for _ in 0..(64 + usize::from(preview)) {
+        if !preview {
+            main_layers += 1;
+            limits::check(
+                main_layers,
+                policy.internal_layers,
+                "JPEG XL internal layers",
+            )?;
+        }
         let nonserialized = if preview {
             preview_nonserialized.as_ref().unwrap()
         } else {
@@ -483,7 +524,11 @@ fn frame_workspace(
                 .ok_or_else(|| invalid("JPEG XL crop extent overflow"))?;
         }
         let pixels = mul(width, height)?;
-        limits::check(pixels, MAX_PIXELS, "JPEG XL internal layer pixels")?;
+        limits::check(
+            pixels,
+            policy.internal_pixels,
+            "JPEG XL internal layer pixels",
+        )?;
         sample_pixels = sample_pixels.max(pixels);
         if !preview {
             max_pixels = max_pixels.max(pixels);
@@ -494,7 +539,7 @@ fn frame_workspace(
             retained = add(retained, mul(pixels, mul(channels, 4)?)?)?;
         }
         let entries = frame.num_toc_entries();
-        limits::check(entries, 4096, "JPEG XL frame TOC entries")?;
+        limits::check(entries, policy.toc_entries, "JPEG XL frame TOC entries")?;
         if br.peek(1) != 0 {
             toc_workspace = 8 * 1024 * 1024;
         }
@@ -548,6 +593,13 @@ fn frame_workspace(
 }
 
 fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
+    preflight_with_resources(input, limits, JxlResourceLimits::legacy())
+}
+fn preflight_with_resources(
+    input: &Input,
+    limits: DecodeLimits,
+    policy: JxlResourceLimits,
+) -> Result<Header, Error> {
     // FileHeader has bounded channel tables, but does not read ICC/pixel data.
     // Retained container metadata is already live, including expanded brob.
     // Reserve its existing 2x allowance before header/ICC/TOC allocation.
@@ -632,7 +684,11 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     // Cover its16-pixel padding and the4/3 RGB-vs-RGBA sample-count ratio.
     let padded = mul(width.max(16), height.max(16))?;
     let frame_pixels = add(mul(padded, 4)?, 2)? / 3;
-    limits::check(frame_pixels, MAX_PIXELS, "JPEG XL padded frame pixels")?;
+    limits::check(
+        frame_pixels,
+        policy.effective_pixels,
+        "JPEG XL padded frame pixels",
+    )?;
     let mut base = add(header_workspace, mul(input.codestream.len(), 2)?)?;
     let mut frame_bits = header_bits;
     if m.color_encoding.want_icc {
@@ -646,7 +702,11 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         )?;
         let mut icc_reader = BitReader::new(&input.codestream);
         icc_reader.skip_bits(header_bits).map_err(codec_error)?;
-        let icc = icc_budget(&mut icc_reader, limits.metadata_bytes.saturating_sub(meta))?;
+        let icc = icc_budget(
+            &mut icc_reader,
+            limits.metadata_bytes.saturating_sub(meta),
+            policy,
+        )?;
         frame_bits = icc_reader.total_bits_read();
         base = add(base, mul(icc, 4)?)?;
     }
@@ -662,6 +722,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         frame_pixels,
         base,
         limits,
+        policy,
     )?;
     limits::check(workspace, limits.expanded_bytes, "JPEG XL decode workspace")?;
     Ok(Header {
@@ -750,14 +811,61 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode::<B, false, false>(reader, option, false, None)
+    decode::<B, false, false>(reader, option, false, None, None)
 }
 #[cfg(feature = "image-buffer-ex")]
 pub(crate) fn decode_ex_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode::<B, false, false>(reader, option, true, None)
+    decode::<B, false, false>(reader, option, true, None, None)
+}
+
+/// Decode a source-coordinate RGBA8 still with caller-tightened JPEG XL limits.
+///
+/// Resource fields cannot raise fixed shipping caps. The finite workspace
+/// budget includes conservative codec admission and cumulative adapter buffers.
+/// Errors return no image. This does not establish a global allocator/RSS bound.
+pub fn image_from_with_resource_limits(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+) -> Result<crate::draw::ImageBuffer, Error> {
+    resources.validate()?;
+    let limits = resources.tighten(limits);
+    let mut image = crate::draw::ImageBuffer::new();
+    crate::decode_guard::run(
+        &mut bin_rs::reader::StreamReader::new(std::io::Cursor::new(input)),
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut image,
+        },
+        limits,
+        |reader, options| decode::<_, false, false>(reader, options, false, None, Some(resources)),
+    )?;
+    Ok(image)
+}
+
+/// Explicit sRGB output with additional finite JPEG XL resource limits.
+#[cfg(feature = "color-management")]
+pub fn image_from_srgb_with_resource_limits(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+) -> Result<crate::draw::ImageBuffer, Error> {
+    cancelled_image(input, limits, None, Some(resources))
+}
+
+/// Resource-limited sRGB output with the existing cooperative cancellation
+/// contract. Pre-cancellation wins over invalid policies and malformed input.
+#[cfg(feature = "color-management")]
+pub fn image_from_srgb_with_resource_limits_and_cancel(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<crate::draw::ImageBuffer, Error> {
+    cancelled_image(input, limits, Some(cancelled), Some(resources))
 }
 /// Decode a supported JPEG XL still into sRGB RGBA8 for display.
 ///
@@ -776,7 +884,7 @@ pub fn image_from_srgb_with_limits(
     input: &[u8],
     limits: DecodeLimits,
 ) -> Result<crate::draw::ImageBuffer, Error> {
-    cancelled_image(input, limits, None)
+    cancelled_image(input, limits, None, None)
 }
 
 /// Bounded sRGB display decoding with cooperative cancellation.
@@ -796,7 +904,7 @@ pub fn image_from_srgb_with_limits_and_cancel(
     limits: DecodeLimits,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<crate::draw::ImageBuffer, Error> {
-    cancelled_image(input, limits, Some(cancelled))
+    cancelled_image(input, limits, Some(cancelled), None)
 }
 
 #[cfg(feature = "color-management")]
@@ -804,12 +912,19 @@ fn cancelled_image(
     input: &[u8],
     limits: DecodeLimits,
     probe: Option<&dyn Fn() -> bool>,
+    resources: Option<JxlResourceLimits>,
 ) -> Result<crate::draw::ImageBuffer, Error> {
     let cancellation = Cancellation {
         probe,
         cancelled: std::cell::Cell::new(false),
     };
     cancellation.check()?;
+    let limits = if let Some(resources) = resources {
+        resources.validate()?;
+        resources.tighten(limits)
+    } else {
+        limits
+    };
     let mut image = crate::draw::ImageBuffer::new();
     crate::decode_guard::run(
         &mut bin_rs::reader::StreamReader::new(std::io::Cursor::new(input)),
@@ -820,9 +935,9 @@ fn cancelled_image(
         limits,
         |reader, options| {
             if probe.is_some() {
-                decode::<_, true, true>(reader, options, false, Some(&cancellation))
+                decode::<_, true, true>(reader, options, false, Some(&cancellation), resources)
             } else {
-                decode::<_, true, false>(reader, options, false, None)
+                decode::<_, true, false>(reader, options, false, None, resources)
             }
         },
     )?;
@@ -835,6 +950,7 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     option: &mut DecodeOptions,
     native: bool,
     cancellation: Option<&Cancellation<'_>>,
+    resources: Option<JxlResourceLimits>,
 ) -> Result<Option<ImgWarnings>, Error> {
     let check = || {
         if CANCELLABLE {
@@ -871,9 +987,17 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     )?;
     let mut raw = crate::draw::zeroed_bytes(len)?;
     reader.read_exact(&mut raw)?;
-    let mut input = unpack(&raw, limits)?;
+    let mut input = if resources.is_some() {
+        unpack_with_resources(&raw, limits, resources)?
+    } else {
+        unpack(&raw, limits)?
+    };
     drop(raw);
-    let h = preflight(&input, limits)?;
+    let h = if let Some(policy) = resources {
+        preflight_with_resources(&input, limits, policy)?
+    } else {
+        preflight(&input, limits)?
+    };
     check()?;
     let mut options = JxlDecoderOptions::default();
     options.sample_limit = Some(h.sample_limit);
@@ -1052,6 +1176,9 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
         metadata_bytes,
         retained_workspace,
     )?;
+    let mut workspace = resources
+        .map(|_| resources::Workspace::new(retained_workspace, limits.expanded_bytes))
+        .transpose()?;
     let decoder = complete(
         decoder
             .process(
@@ -1075,9 +1202,13 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     let bytes = mul(row, h.height)?;
     // Vec<u16> guarantees the upstream row alignment even on WASM. All rows
     // have an even byte stride for U16; the U8 path has no alignment requirement.
-    let mut aligned: Vec<u16> = Vec::new();
-    aligned.try_reserve_exact(bytes.div_ceil(2))?;
-    aligned.resize(bytes.div_ceil(2), 0);
+    if let Some(w) = workspace.as_mut() {
+        w.claim(
+            mul(bytes.div_ceil(2), 2)?,
+            "JPEG XL aligned output workspace",
+        )?;
+    }
+    let mut aligned = aligned_output(bytes)?;
     // SAFETY: u16 has no invalid bit patterns; the exclusively borrowed,
     // initialized allocation covers bytes.len(), and out does not outlive it.
     let out = unsafe { std::slice::from_raw_parts_mut(aligned.as_mut_ptr().cast::<u8>(), bytes) };
@@ -1115,6 +1246,9 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     let legacy = if !managed && !native && bits != 8 {
         let max = (1u32 << bits) - 1;
         let mut bytes = Vec::new();
+        if let Some(w) = workspace.as_mut() {
+            w.claim(out.len() / 2, "JPEG XL rounded output workspace")?;
+        }
         bytes.try_reserve_exact(out.len() / 2)?;
         for word in out.chunks_exact(2) {
             let v = u32::from(u16::from_le_bytes([word[0], word[1]]));
@@ -1139,6 +1273,9 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
             })
             .ok_or_else(|| invalid("missing JPEG XL reconstruction profile"))?;
         let mut rgba = Vec::new();
+        if let Some(w) = workspace.as_mut() {
+            w.claim(out.len(), "JPEG XL CMS sample workspace")?;
+        }
         rgba.try_reserve_exact(out.len() / 2)?;
         for chunk in out.chunks(256 * 8) {
             check()?;
@@ -1148,20 +1285,42 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
                     .map(|b| u16::from_le_bytes([b[0], b[1]])),
             );
         }
+        let parse_bytes = if workspace.is_some() {
+            resources::cms_profiles(profile, crate::color_convert::SRGB_ICC)?
+        } else {
+            0
+        };
+        if let Some(w) = workspace.as_mut() {
+            w.claim(parse_bytes, "JPEG XL CMS profile workspace")?;
+        }
+        let compiled_budget = workspace.as_ref().map_or_else(
+            || limits.expanded_bytes.saturating_sub(retained_workspace),
+            resources::Workspace::remaining,
+        );
         crate::color_convert::rgba16_to_rgb_profile_with_cancel(
             &mut rgba,
             profile,
             crate::color_convert::SRGB_ICC,
             h.color_channels == 1,
-            limits.expanded_bytes.saturating_sub(retained_workspace),
+            compiled_budget,
             &check,
         )?;
+        if let Some(w) = workspace.as_mut() {
+            w.release(parse_bytes)?;
+        }
+        if let Some(w) = workspace.as_mut() {
+            w.claim(rgba.len(), "JPEG XL CMS rounded output workspace")?;
+        }
         let mut bytes = crate::draw::zeroed_bytes(rgba.len())?;
         for (dst, src) in bytes.chunks_mut(256 * 4).zip(rgba.chunks(256 * 4)) {
             check()?;
             for (dst, &sample) in dst.iter_mut().zip(src) {
                 *dst = ((u32::from(sample) * 255 + 32767) / 65535) as u8;
             }
+        }
+        drop(rgba);
+        if let Some(w) = workspace.as_mut() {
+            w.release(out.len())?;
         }
         Some(bytes)
     } else {
@@ -1170,6 +1329,12 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     #[cfg(not(feature = "color-management"))]
     let managed_output: Option<Vec<u8>> = None;
     check()?;
+    if let Some(w) = workspace.as_mut() {
+        w.claim(
+            mul(mul(h.width, h.height)?, 4)?,
+            "JPEG XL collector workspace",
+        )?;
+    }
     #[cfg(feature = "image-buffer-ex")]
     if native {
         use crate::draw::{InitOptionsEx, PixelFormatEx};
@@ -1233,6 +1398,17 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     option.drawer.terminate(None)?;
     check()?;
     Ok(None)
+}
+
+// Keep output reservation fallible, including under a real allocator refusal.
+// Checked byte conversion is shared by the runtime and allocation-failure test.
+fn aligned_output(bytes: usize) -> Result<Vec<u16>, Error> {
+    let words = bytes.div_ceil(2);
+    mul(words, 2)?;
+    let mut output = Vec::new();
+    output.try_reserve_exact(words)?;
+    output.resize(words, 0);
+    Ok(output)
 }
 
 #[cfg(test)]
@@ -1422,7 +1598,7 @@ mod tests {
             assert!(header.image_metadata.color_encoding.want_icc);
             let mut reference = BitReader::new(&input.codestream);
             reference.skip_bits(actual.total_bits_read()).unwrap();
-            icc_budget(&mut actual, 32 << 20).unwrap();
+            icc_budget(&mut actual, 32 << 20, JxlResourceLimits::legacy()).unwrap();
             let mut reader = jxl_codec::icc::IncrementalIccReader::new(&mut reference).unwrap();
             reader.read_all(&mut reference).unwrap();
             let profile = reader.finalize(&mut reference).unwrap();

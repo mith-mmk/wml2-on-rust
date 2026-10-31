@@ -304,3 +304,11 @@ implementation. No PR, main merge or release is part of this branch work.
 `orientation_applied` is a format-independent metadata key whose value is `DataMap::Bool`. `true` means the output pixels already include the source orientation; consumers must not apply source EXIF or other source orientation again. `false` means this marker does not suppress the consumer's existing orientation handling. An absent key likewise retains the legacy behavior. A value of another type is invalid; consumers should treat it as absent rather than infer a boolean. This affects automatic orientation only, not user-requested rotation.
 
 JPEG XL sets the marker to `true` and stores the original coded 1–8 value separately as `JPEG XL Source Orientation` (`DataMap::UInt`), alongside the raw source header. That original value describes the input, not a remaining transform on the delivered pixels. The pinned jxl 0.7.4 applies the coded transform to its output; its `adjust_orientation` option is not consumed by that version. The eight fixture tests check pixels against independent references so a change to that behavior is detected. Other formats do not acquire this marker merely because it is absent; their existing metadata and consumer behavior remain unchanged.
+
+
+## Animation feasibility
+
+Animation remains explicitly unsupported by the shipping APIs. The pinned core
+can reconstruct the tested coalesced frames, but integer-ms callback timing, EX
+storage, cumulative admission and atomic publication need a separate contract.
+See [the executable #43 evaluation and proposed bounded subset](jpeg-xl-animation-evaluation.md).

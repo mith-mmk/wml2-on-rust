@@ -1,6 +1,6 @@
 //! Common strip/tile descriptors used by the TIFF decoder.
 
-use super::header::Tiff;
+use super::header::{Compression, Tiff};
 use std::io;
 
 type Error = Box<dyn std::error::Error>;
@@ -134,7 +134,29 @@ pub(crate) fn blocks(header: &Tiff) -> Result<Vec<TiffBlock>, Error> {
         return Ok(result);
     }
 
-    if header.strip_offsets.len() != header.strip_byte_counts.len() {
+    // Some legacy RGB writers omit StripByteCounts for a single raw strip.
+    // Its size is determined by the pixel layout, never by the next IFD or EOF.
+    // Do not guess lengths for compressed, planar, subsampled or partial data.
+    let inferred_count = if header.strip_byte_counts.is_empty()
+        && header.strip_offsets.len() == 1
+        && header.compression == Compression::NoneCompression
+        && header.photometric_interpretation == 2
+        && header.samples_per_pixel == 3
+        && header.bitspersamples.as_slice() == [8, 8, 8]
+        && header.planar_config == 1
+        && header.predictor == 1
+        && (header.rows_per_strip == 0 || header.rows_per_strip >= header.height)
+    {
+        Some(
+            u64::from(header.width)
+                .checked_mul(3)
+                .and_then(|row| row.checked_mul(u64::from(header.height)))
+                .ok_or_else(|| io::Error::other("TIFF inferred strip size overflows"))?,
+        )
+    } else {
+        None
+    };
+    if inferred_count.is_none() && header.strip_offsets.len() != header.strip_byte_counts.len() {
         return Err(io::Error::other("TIFF strip offset/count lengths differ").into());
     }
     if header.strip_offsets.is_empty() {
@@ -179,7 +201,7 @@ pub(crate) fn blocks(header: &Tiff) -> Result<Vec<TiffBlock>, Error> {
         result.push(TiffBlock {
             kind: TiffBlockKind::Strip,
             offset: checked_u64(header.strip_offsets[index]),
-            compressed_len: checked_u64(header.strip_byte_counts[index]),
+            compressed_len: inferred_count.unwrap_or_else(|| header.strip_byte_counts[index]),
             x: 0,
             y,
             stored_width: width,
@@ -208,5 +230,19 @@ mod tests {
         tiff.strip_byte_counts = vec![1];
         tiff.tile_width = 1;
         assert!(blocks(&tiff).is_err());
+    }
+
+    #[test]
+    fn inferred_rgb_strip_size_cannot_overflow() {
+        let mut tiff = Tiff::empty();
+        tiff.width = u32::MAX;
+        tiff.height = u32::MAX;
+        tiff.photometric_interpretation = 2;
+        tiff.samples_per_pixel = 3;
+        tiff.bitspersamples = vec![8, 8, 8];
+        tiff.planar_config = 1;
+        tiff.strip_offsets = vec![8];
+        let error = blocks(&tiff).unwrap_err();
+        assert!(error.to_string().contains("overflows"), "{error}");
     }
 }

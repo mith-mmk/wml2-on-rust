@@ -1,0 +1,200 @@
+{
+  "base": "f2151b2408e9d04f1bc7b4e9e29679e078a57209",
+  "environment": "managed cloud Linux x86_64; Rust 1.91.0; Pillow 12.3.0",
+  "oracle": {
+    "oracle": "Pillow 12.3.0",
+    "results": [
+      {
+        "name": "rgb-le-explicit.tif",
+        "size": [
+          240,
+          164
+        ],
+        "rgba_bytes": 157440,
+        "sha256": "4ada54b180339a935786992f162c6ab8905bde99b0a4f39e67f4df117721a10c",
+        "max_abs_error": 0,
+        "mean_abs_error": 0.0
+      },
+      {
+        "name": "rgb-le-missing.tif",
+        "size": [
+          240,
+          164
+        ],
+        "rgba_bytes": 157440,
+        "sha256": "d5b6b027f64f3ef33039abe4a83727fb717a405157e50f747c4e8f9c6abbeaf1",
+        "max_abs_error": 0,
+        "mean_abs_error": 0.0
+      },
+      {
+        "name": "rgb-be-explicit.tif",
+        "size": [
+          240,
+          164
+        ],
+        "rgba_bytes": 157440,
+        "sha256": "1005b6efb8a8c684e539104ff40bc802919a5f55251acb1210c2a7e32ff7c1d0",
+        "max_abs_error": 0,
+        "mean_abs_error": 0.0
+      },
+      {
+        "name": "rgb-be-missing.tif",
+        "size": [
+          240,
+          164
+        ],
+        "rgba_bytes": 157440,
+        "sha256": "c212a9b2abd18169847ce53dd1b06a2db06ae5f8b9f1354beb6757fa0d0c11ce",
+        "max_abs_error": 0,
+        "mean_abs_error": 0.0
+      },
+      {
+        "name": "smallliz.tif",
+        "size": [
+          160,
+          160
+        ],
+        "rgba_bytes": 102400,
+        "sha256": "e8f722bc322b9a7621d1d858bec36ea78d31b85221f314a2b9872d3af91d600a",
+        "max_abs_error": 3,
+        "mean_abs_error": 0.34548828125
+      }
+    ],
+    "private_XING_T24_tested": false
+  },
+  "benchmarks": {
+    "base": "f2151b2408e9d04f1bc7b4e9e29679e078a57209",
+    "method": "6 alternating process pairs, each 5 warmups + 100 timed release decodes; per-process then per-revision medians",
+    "results": [
+      {
+        "name": "rgb-le-explicit.tif",
+        "median_ns": {
+          "base": 501200.5,
+          "head": 510156.25
+        },
+        "head_over_base": 1.0178685974974087,
+        "trial_medians_ns": {
+          "base": [
+            508879.0,
+            501528.5,
+            499229.5,
+            502680.5,
+            500872.5,
+            499325.5
+          ],
+          "head": [
+            509380.0,
+            516035.0,
+            508564.0,
+            509385.0,
+            510927.5,
+            511919.0
+          ]
+        },
+        "allocation_counts_total_peak": {
+          "base": [
+            [
+              "1564",
+              "998971",
+              "529160"
+            ]
+          ],
+          "head": [
+            [
+              "1564",
+              "998971",
+              "529160"
+            ]
+          ]
+        },
+        "pixel_hash": "2785542086034748237"
+      },
+      {
+        "name": "ojpeg_chewey_subsamp21_multi_strip.tiff",
+        "median_ns": {
+          "base": 1985327.5,
+          "head": 1962846.75
+        },
+        "head_over_base": 0.9886765533646212,
+        "trial_medians_ns": {
+          "base": [
+            1997806.0,
+            1958668.0,
+            2019373.0,
+            2000455.0,
+            1968412.5,
+            1972849.0
+          ],
+          "head": [
+            1935934.5,
+            2005748.0,
+            2027244.5,
+            1963390.0,
+            1942249.0,
+            1962303.5
+          ]
+        },
+        "allocation_counts_total_peak": {
+          "base": [
+            [
+              "2591",
+              "2650479",
+              "1934155"
+            ]
+          ],
+          "head": [
+            [
+              "2591",
+              "2650479",
+              "1934155"
+            ]
+          ]
+        },
+        "pixel_hash": "10735903025046300427"
+      },
+      {
+        "name": "ojpeg_single_strip_no_rowsperstrip.tiff",
+        "median_ns": {
+          "base": 1316681.5,
+          "head": 1366906.25
+        },
+        "head_over_base": 1.0381449500125886,
+        "trial_medians_ns": {
+          "base": [
+            1326215.5,
+            1321719.0,
+            1306171.5,
+            1309095.5,
+            1365189.0,
+            1311644.0
+          ],
+          "head": [
+            1321378.5,
+            1366039.5,
+            1364683.0,
+            1367773.0,
+            1380156.0,
+            1416774.5
+          ]
+        },
+        "allocation_counts_total_peak": {
+          "base": [
+            [
+              "2227",
+              "1114083",
+              "452163"
+            ]
+          ],
+          "head": [
+            [
+              "2227",
+              "1114083",
+              "452163"
+            ]
+          ]
+        },
+        "pixel_hash": "18429855766363263873"
+      }
+    ]
+  }
+}

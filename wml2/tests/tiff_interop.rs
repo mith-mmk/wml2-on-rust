@@ -14,6 +14,7 @@ fn external_tiff_manifest_is_pinned_and_complete() {
     assert!(MANIFEST.contains("8e10d4d765667c1c49d74413878fc4bfb46dcf8d"));
     for sample in [
         "fax4.tiff",
+        "smallliz.tif",
         "dscf0013.tif",
         "ycbcr-cat.tif",
         "ojpeg_chewey_subsamp21_multi_strip.tiff",
@@ -90,6 +91,7 @@ fn external_non_jpeg_ycbcr_samples_decode_when_configured() {
 #[ignore = "requires the external TIFF corpus; run with --ignored and WML2_TIFF_CORPUS"]
 fn external_old_style_jpeg_samples_decode_when_configured() {
     for (name, dimensions) in [
+        ("smallliz.tif", (160, 160)),
         ("ojpeg_chewey_subsamp21_multi_strip.tiff", (392, 575)),
         ("ojpeg_single_strip_no_rowsperstrip.tiff", (234, 213)),
         ("ojpeg_zackthecat_subsamp22_single_strip.tiff", (234, 213)),

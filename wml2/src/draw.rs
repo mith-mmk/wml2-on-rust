@@ -1151,15 +1151,7 @@ pub fn convert(
 /// # }
 /// ```
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
-    let mut ib = ImageBuffer::new();
-    let mut option = DecodeOptions {
-        debug_flag: 0,
-        drawer: &mut ib,
-    };
-    let mut reader = BytesReader::new(buffer);
-
-    image_decoder(&mut reader, &mut option)?;
-    Ok(ib)
+    image_from_with_limits(buffer, crate::limits::DecodeLimits::default())
 }
 
 /// Decodes an in-memory image into a custom [`DrawCallback`].
@@ -1190,10 +1182,7 @@ pub fn image_loader(
     buffer: &[u8],
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let mut reader = BytesReader::new(buffer);
-
-    let r = image_decoder(&mut reader, option)?;
-    Ok(r)
+    image_decoder_from_slice(buffer, option, crate::limits::DecodeLimits::default())
 }
 
 /// Decodes an image stream into a custom [`DrawCallback`].
@@ -1306,8 +1295,8 @@ pub fn image_from_with_limits(
     limits: crate::limits::DecodeLimits,
 ) -> Result<ImageBuffer, Error> {
     let mut image = ImageBuffer::new();
-    image_decoder_with_limits(
-        &mut BytesReader::new(buffer),
+    image_decoder_from_slice(
+        buffer,
         &mut DecodeOptions {
             debug_flag: 0,
             drawer: &mut image,
@@ -1315,6 +1304,27 @@ pub fn image_from_with_limits(
         limits,
     )?;
     Ok(image)
+}
+
+// Borrow JXL input through existing BinaryReader/guard APIs so admission runs
+// before any input-sized reader copy. Other formats retain BytesReader behavior.
+fn image_decoder_from_slice(
+    buffer: &[u8],
+    option: &mut DecodeOptions,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Option<ImgWarnings>, Error> {
+    #[cfg(feature = "jpeg-xl")]
+    if matches!(
+        format_check(&buffer[..buffer.len().min(256)]),
+        ImageFormat::JpegXl
+    ) {
+        return image_decoder_with_limits(
+            &mut StreamReader::new(std::io::Cursor::new(buffer)),
+            option,
+            limits,
+        );
+    }
+    image_decoder_with_limits(&mut BytesReader::new(buffer), option, limits)
 }
 
 /// Decode supported static PNG/TIFF/AVIF/JPEG2000 with explicit storage and precision
@@ -1374,6 +1384,21 @@ pub fn image_from_ex_with_limits(
         return crate::jpeg2000::image_from_ex_owned(buffer, storage, precision, limits);
     }
     let mut image = ImageBufferEx::with_storage(storage, precision);
+    #[cfg(feature = "jpeg-xl")]
+    if matches!(
+        format_check(&buffer[..buffer.len().min(256)]),
+        ImageFormat::JpegXl
+    ) {
+        image_decoder_ex_with_limits(
+            &mut StreamReader::new(std::io::Cursor::new(buffer)),
+            &mut DecodeOptions {
+                debug_flag: 0,
+                drawer: &mut image,
+            },
+            limits,
+        )?;
+        return Ok(image);
+    }
     image_decoder_ex_with_limits(
         &mut BytesReader::new(buffer),
         &mut DecodeOptions {

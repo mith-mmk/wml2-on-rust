@@ -1,0 +1,3855 @@
+{
+  "scope": "Evaluation performance diagnosis only; product dependency and all fixed caps unchanged",
+  "baseline_product": "8fa0b978c4f68e998439e1bffe0b567f46024074",
+  "previous_evaluation": "af18090a8766ca46cc79b702f2e56c2ee420c498",
+  "method": "Linux Rust 1.91.0; same staged source/manifest path, identical registry lock and release settings; original rebuilt twice byte-identically; two pinned logical CPUs sequentially; balanced rotating process order; hash outside decode timer; no concurrent builds; bootstrap resamples process-paired medians, seed7401. This is controlled source ablation, not hardware-counter sampling.",
+  "builds": {
+    "rustc": "rustc 1.91.0 (f8297e351 2025-10-28)\nbinary: rustc\ncommit-hash: f8297e351a40c1439a467bbbb6879088047f50b3\ncommit-date: 2025-10-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.91.0\nLLVM version: 21.1.2\n",
+    "manifest_sha256": "f3974f626d0e00cb699d6e2250753c67004c172fac344b0e099a248d8b06b25b",
+    "lock_sha256": "3463db7f9b628a002697324ae852f5ae7b8dfd0e2c1d65cc7519d0b5960895a8",
+    "rustflags": "",
+    "profile": "release opt3 codegen16 lto=false incremental=false debug=false panic=unwind",
+    "variants": {
+      "base": {
+        "binaries": {
+          "entropy_decode_bench": "8d1d895aa4ff4e0bbec3a1279b58fb826c7f0139a31da68ad2505cc2a2824c0b",
+          "review_bench": "59345624ff5385de64bc93412c8bcde584416e5a1a61e3d536c9cd70bb711ce3"
+        },
+        "sources": {
+          "src/util/mod.rs": "2bc7b02154dfefea3d1a43289eb58dc73fc0b2b267b85216e29ebc5390078812",
+          "src/util/entropy_budget.rs": null,
+          "src/error.rs": "231045f543dda51dd45959a3122175ba4340a032b36ab1bf30a16719db90b8f9",
+          "src/entropy_coding/context_map.rs": "c1dc244078775565823dbe239adbf7ffc2303a228b4b1503ce2c17f5483851dd",
+          "src/entropy_coding/decode.rs": "ff3696293c449ba15074ed0c815ef140d4cc6e85ee7bc0b3c2b1034b943d0b6b",
+          "src/frame/decode.rs": "4b7ffba9833d7242fa52a635b3be98771cbc4e47ccd9e154e4d8fa987c784443"
+        }
+      },
+      "current": {
+        "binaries": {
+          "entropy_decode_bench": "62e7aa7166c2432e639c6e5f0a72b61705af3ca6aa3189c02035d6abfc3ad90d",
+          "review_bench": "af5339258507fd4f663c7c220f2e22216b7f984ebc897b154d75926fb1c5aa16"
+        },
+        "sources": {
+          "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+          "src/util/entropy_budget.rs": "2a0c3199be25635b7df7b50fb4aa52d6ee14138a967b965017a7df5ba6fec214",
+          "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+          "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+          "src/entropy_coding/decode.rs": "630eb5ef8107a68ed0a7e9603941fca3b7946729393a89bf052424e78b90ac88",
+          "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+        }
+      },
+      "pushproof": {
+        "binaries": {
+          "entropy_decode_bench": "3aab77987ce39ce1b624dd65ffc98826c6c4ff5a77338eeaaca32c3af31e32b9",
+          "review_bench": "91865790f1fae5e5fca9d59c3207c5b1861b7d5124499841ba115de45f03dccf"
+        },
+        "sources": {
+          "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+          "src/util/entropy_budget.rs": "41f9da6b55da93787f455e3f325dda10dba40fc7291b7036a2058be7a75ce5f5",
+          "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+          "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+          "src/entropy_coding/decode.rs": "630eb5ef8107a68ed0a7e9603941fca3b7946729393a89bf052424e78b90ac88",
+          "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+        }
+      },
+      "compact": {
+        "binaries": {
+          "entropy_decode_bench": "4d4bc5fa84ebfdfab98a4263435f24af9d3d6d6a446da0dc196d852ab8e0c9a3",
+          "review_bench": "8d79b76f1c4bd55ed7613042e45c4e5a78f875f783cbfcdff83db00534018112"
+        },
+        "sources": {
+          "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+          "src/util/entropy_budget.rs": "c801e65561530f4a04774bd400db43c967f44521c0fe82578cd60f4351bc50e9",
+          "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+          "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+          "src/entropy_coding/decode.rs": "630eb5ef8107a68ed0a7e9603941fca3b7946729393a89bf052424e78b90ac88",
+          "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+        }
+      },
+      "base-repeat": {
+        "binaries": {
+          "entropy_decode_bench": "8d1d895aa4ff4e0bbec3a1279b58fb826c7f0139a31da68ad2505cc2a2824c0b",
+          "review_bench": "59345624ff5385de64bc93412c8bcde584416e5a1a61e3d536c9cd70bb711ce3"
+        },
+        "sources": {
+          "src/util/mod.rs": "2bc7b02154dfefea3d1a43289eb58dc73fc0b2b267b85216e29ebc5390078812",
+          "src/util/entropy_budget.rs": null,
+          "src/error.rs": "231045f543dda51dd45959a3122175ba4340a032b36ab1bf30a16719db90b8f9",
+          "src/entropy_coding/context_map.rs": "c1dc244078775565823dbe239adbf7ffc2303a228b4b1503ce2c17f5483851dd",
+          "src/entropy_coding/decode.rs": "ff3696293c449ba15074ed0c815ef140d4cc6e85ee7bc0b3c2b1034b943d0b6b",
+          "src/frame/decode.rs": "4b7ffba9833d7242fa52a635b3be98771cbc4e47ccd9e154e4d8fa987c784443"
+        }
+      },
+      "rawvec": {
+        "binaries": {
+          "entropy_decode_bench": "c3d4894ecc616294679c5d6894a27cbf24c1a2f441d0c68e58ace6d6975a884d",
+          "review_bench": "0cb363a696be94044a751d21344b8e4c114bb5f43118ec6703ec5cccf75d1985"
+        },
+        "sources": {
+          "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+          "src/util/entropy_budget.rs": "ad81618120967c1386b721062068430a6b55e0351674b6a05e90b47495893adb",
+          "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+          "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+          "src/entropy_coding/decode.rs": "833bee4156eb56aea3c2e3a5fe4f1effca2efb6156aa8a3b10e7a4d0810975e2",
+          "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+        }
+      },
+      "windowfixed": {
+        "binaries": {
+          "entropy_decode_bench": "ba700cd583016d41e4a696d0179d70e0a35b20063050bbdaa4026d37e59d035b",
+          "review_bench": "da2ff0429ead506e77755d662da891231d460d09aab70b350cb5bbc1d0b71f5b"
+        },
+        "sources": {
+          "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+          "src/util/entropy_budget.rs": "bdb49a71ac7931863fc49537b1256fb2736df3643501f0ff1f5f7cb5f04c26ba",
+          "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+          "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+          "src/entropy_coding/decode.rs": "fd1625bd5ea70b4ded09275748aadfe34874d2ce25b1a3b1b76916bbfef36a8e",
+          "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+        }
+      },
+      "rawfixed": {
+        "binaries": {
+          "entropy_decode_bench": "489445db83e1cd77cd306f5d81d58b23e4abe68f926bff23de51ae21646483c3",
+          "review_bench": "7c2cc56f4ba65913119346f7e852a4bbfc172996fb20efe4283de300c73c374a"
+        },
+        "sources": {
+          "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+          "src/util/entropy_budget.rs": "bb74dbc9f814fb9da54e05ebceee5c1eeb1b1064cc6cf94736127b192964daf6",
+          "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+          "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+          "src/entropy_coding/decode.rs": "56313eb614ddd87e06831f5d5a4e69fc333713bc97baa12dc5d7d77befca9c92",
+          "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+        }
+      },
+      "after": {
+        "binaries": {
+          "entropy_decode_bench": "ecec155cd127759d8801e94a60554f93562d28e57022f6eed588dbd6c323527b",
+          "review_bench": "07d98c463c3e6db7cc83e1ac9477f428bc308d89110b672493713a75ae9e1b5e"
+        },
+        "sources": {
+          "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+          "src/util/entropy_budget.rs": "0eb05d64ce9874342c6eaf66cb33060c3434d7853aa84430f2c9c27c5e5af1f4",
+          "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+          "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+          "src/entropy_coding/decode.rs": "cc91b39801cf37addf64992ebd5eedf363bd18f5ebcb69514d8aa35f816902a4",
+          "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+        }
+      }
+    }
+  },
+  "screening": {
+    "method": "same staged source paths, exact manifest/lock/release flags; original rebuilt twice byte-identically; two pinned CPUs sequentially; ten rotated-order process blocks per input/core; 5 warmups; pixel hash outside decode timer; no concurrent build; bootstrap over paired PROCESS medians (not individual iterations), seed7401",
+    "records": [
+      {
+        "cpu": 0,
+        "case": "simple",
+        "measured_per_process": 200,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            43910.0,
+            45001.5,
+            44676.0,
+            44360.5,
+            43819.5,
+            44886.5,
+            45161.5,
+            45272.0,
+            44687.0,
+            44726.0
+          ],
+          "base-repeat": [
+            44035.5,
+            44045.0,
+            43409.5,
+            44100.0,
+            44065.5,
+            43679.5,
+            43539.0,
+            43980.0,
+            43760.0,
+            44165.5
+          ],
+          "current": [
+            44180.0,
+            44556.0,
+            44511.0,
+            44581.0,
+            44526.0,
+            44015.0,
+            44065.5,
+            44746.0,
+            44230.5,
+            44956.0
+          ],
+          "pushproof": [
+            44116.0,
+            45151.5,
+            44346.0,
+            44441.0,
+            46193.0,
+            44701.0,
+            44491.0,
+            43935.0,
+            43715.0,
+            43710.0
+          ],
+          "compact": [
+            44241.0,
+            44271.0,
+            43685.0,
+            44621.0,
+            44430.5,
+            44841.0,
+            43630.0,
+            43449.5,
+            45242.0,
+            43815.0
+          ]
+        },
+        "hash": "5701539870786561954",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9790004324456842,
+            "bootstrap_95": [
+              0.9716514459665144,
+              0.9951631291084122
+            ],
+            "paired_min_max": [
+              0.9640733810878735,
+              1.0056139389997605
+            ]
+          },
+          "current": {
+            "paired_median": 0.9932035359319162,
+            "bootstrap_95": [
+              0.9851844319335048,
+              1.005559789654395
+            ],
+            "paired_min_max": [
+              0.9757315412464156,
+              1.016122958956629
+            ]
+          },
+          "pushproof": {
+            "paired_median": 0.9942404190383445,
+            "bootstrap_95": [
+              0.9782487076778481,
+              1.0033332222259257
+            ],
+            "paired_min_max": [
+              0.9704673970666196,
+              1.0541653829915905
+            ]
+          },
+          "compact": {
+            "paired_median": 0.9913767699765812,
+            "bootstrap_95": [
+              0.9728599529816043,
+              1.0091460303831332
+            ],
+            "paired_min_max": [
+              0.9597433292101077,
+              1.0139435639384293
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 44706.5,
+            "iqr_ns": 793.625,
+            "min_max_ns": [
+              43819.5,
+              45272.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 44007.75,
+            "iqr_ns": 429.75,
+            "min_max_ns": [
+              43409.5,
+              44165.5
+            ]
+          },
+          "current": {
+            "median_ns": 44518.5,
+            "iqr_ns": 470.875,
+            "min_max_ns": [
+              44015.0,
+              44956.0
+            ]
+          },
+          "pushproof": {
+            "median_ns": 44393.5,
+            "iqr_ns": 933.625,
+            "min_max_ns": [
+              43710.0,
+              46193.0
+            ]
+          },
+          "compact": {
+            "median_ns": 44256.0,
+            "iqr_ns": 1004.75,
+            "min_max_ns": [
+              43449.5,
+              45242.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "icc",
+        "measured_per_process": 100,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            65913.0,
+            65692.0,
+            65612.0,
+            66263.0,
+            66083.0,
+            65602.0,
+            66809.0,
+            67110.0,
+            66333.0,
+            67344.5
+          ],
+          "base-repeat": [
+            64891.0,
+            64861.0,
+            65723.0,
+            65722.5,
+            66453.5,
+            65643.0,
+            66153.0,
+            65923.0,
+            65592.0,
+            66984.5
+          ],
+          "current": [
+            64796.0,
+            65257.0,
+            65512.0,
+            64786.0,
+            64736.0,
+            64586.0,
+            67535.0,
+            65482.0,
+            64921.5,
+            64516.0
+          ],
+          "pushproof": [
+            64335.5,
+            63509.0,
+            64390.5,
+            65382.0,
+            64050.0,
+            64926.0,
+            65487.0,
+            63418.5,
+            63168.0,
+            64660.5
+          ],
+          "compact": [
+            63819.5,
+            64581.0,
+            64385.0,
+            65592.0,
+            65021.0,
+            63654.5,
+            65191.0,
+            64495.0,
+            64540.5,
+            65261.5
+          ]
+        },
+        "hash": "11934725841428314993",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9910120368369311,
+            "bootstrap_95": [
+              0.9866619011603991,
+              1.0006249809457028
+            ],
+            "paired_min_max": [
+              0.9823126210698853,
+              1.0056065856574308
+            ]
+          },
+          "current": {
+            "paired_median": 0.9813349808665853,
+            "bootstrap_95": [
+              0.9772311594092582,
+              0.9933781891250076
+            ],
+            "paired_min_max": [
+              0.9579995396803005,
+              1.0108667993833167
+            ]
+          },
+          "pushproof": {
+            "paired_median": 0.9726512974535231,
+            "bootstrap_95": [
+              0.9595276787940399,
+              0.9834583712872815
+            ],
+            "paired_min_max": [
+              0.94499329459097,
+              0.9896954361147526
+            ]
+          },
+          "compact": {
+            "paired_median": 0.9743794785997664,
+            "bootstrap_95": [
+              0.969069486001084,
+              0.9830877427997321
+            ],
+            "paired_min_max": [
+              0.9610341230815079,
+              0.989873685163666
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 66173.0,
+            "iqr_ns": 1212.25,
+            "min_max_ns": [
+              65602.0,
+              67344.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 65722.75,
+            "iqr_ns": 811.375,
+            "min_max_ns": [
+              64861.0,
+              66984.5
+            ]
+          },
+          "current": {
+            "median_ns": 64858.75,
+            "iqr_ns": 791.0,
+            "min_max_ns": [
+              64516.0,
+              67535.0
+            ]
+          },
+          "pushproof": {
+            "median_ns": 64363.0,
+            "iqr_ns": 1553.625,
+            "min_max_ns": [
+              63168.0,
+              65487.0
+            ]
+          },
+          "compact": {
+            "median_ns": 64560.75,
+            "iqr_ns": 965.0,
+            "min_max_ns": [
+              63654.5,
+              65592.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "photo",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            15657678.0,
+            15561045.0,
+            15436150.5,
+            17591376.5,
+            15607614.5,
+            15464279.5,
+            15341301.5,
+            15391330.5,
+            15316267.0,
+            15273662.5
+          ],
+          "base-repeat": [
+            15596056.0,
+            15430871.5,
+            15294470.5,
+            15377224.0,
+            15982426.5,
+            15255179.5,
+            15610967.5,
+            15581698.0,
+            15298661.0,
+            15328439.0
+          ],
+          "current": [
+            16525299.5,
+            16381696.0,
+            16560856.5,
+            16357526.5,
+            16706470.0,
+            16551184.5,
+            16426282.5,
+            16290515.5,
+            16370554.5,
+            16368116.5
+          ],
+          "pushproof": [
+            16529655.0,
+            16249244.5,
+            16521944.5,
+            16555876.0,
+            16410491.0,
+            16423115.5,
+            16793175.0,
+            16191990.5,
+            16260842.0,
+            16398706.5
+          ],
+          "compact": [
+            16693638.0,
+            16596669.5,
+            16391172.5,
+            16503629.0,
+            16648784.5,
+            16552186.0,
+            16453947.0,
+            16258736.0,
+            16321912.5,
+            16034350.0
+          ]
+        },
+        "hash": "11298716346096407965",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9974574630141801,
+            "bootstrap_95": [
+              0.9890565860740392,
+              1.0123684888710562
+            ],
+            "paired_min_max": [
+              0.8741342100204609,
+              1.024014688471451
+            ]
+          },
+          "current": {
+            "paired_median": 1.0695596864260732,
+            "bootstrap_95": [
+              1.0554118880206886,
+              1.0710306902309923
+            ],
+            "paired_min_max": [
+              0.9298605200110407,
+              1.0728618187546175
+            ]
+          },
+          "pushproof": {
+            "paired_median": 1.0586807086060914,
+            "bootstrap_95": [
+              1.0481229917794994,
+              1.0703409830060935
+            ],
+            "paired_min_max": [
+              0.9411359025827228,
+              1.0946382221873419
+            ]
+          },
+          "compact": {
+            "paired_median": 1.065910861344395,
+            "bootstrap_95": [
+              1.0558365257974072,
+              1.0684510075678215
+            ],
+            "paired_min_max": [
+              0.938165867804603,
+              1.0725261477978254
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 15450215.0,
+            "iqr_ns": 285087.5,
+            "min_max_ns": [
+              15273662.5,
+              17591376.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 15404047.75,
+            "iqr_ns": 302170.5,
+            "min_max_ns": [
+              15255179.5,
+              15982426.5
+            ]
+          },
+          "current": {
+            "median_ns": 16403989.25,
+            "iqr_ns": 188133.5,
+            "min_max_ns": [
+              16290515.5,
+              16706470.0
+            ]
+          },
+          "pushproof": {
+            "median_ns": 16416803.25,
+            "iqr_ns": 278267.625,
+            "min_max_ns": [
+              16191990.5,
+              16793175.0
+            ]
+          },
+          "compact": {
+            "median_ns": 16478788.0,
+            "iqr_ns": 303579.875,
+            "min_max_ns": [
+              16034350.0,
+              16693638.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "simple",
+        "measured_per_process": 200,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            44095.5,
+            45392.0,
+            44150.5,
+            43910.5,
+            44370.5,
+            43860.0,
+            44461.0,
+            44516.0,
+            45417.0,
+            44932.0
+          ],
+          "base-repeat": [
+            44185.0,
+            43454.0,
+            44010.0,
+            43514.5,
+            44020.0,
+            43620.0,
+            44896.5,
+            44977.0,
+            43659.5,
+            44235.5
+          ],
+          "current": [
+            44581.0,
+            44066.0,
+            45302.5,
+            44401.0,
+            44891.5,
+            44616.0,
+            44185.0,
+            43896.0,
+            44886.5,
+            44296.0
+          ],
+          "pushproof": [
+            44246.0,
+            44561.0,
+            45322.0,
+            44095.0,
+            44130.0,
+            43705.0,
+            44086.0,
+            44205.5,
+            44181.0,
+            45497.0
+          ],
+          "compact": [
+            44441.0,
+            44125.5,
+            45222.0,
+            44160.5,
+            43379.0,
+            44205.5,
+            44446.0,
+            44696.0,
+            44450.5,
+            44797.0
+          ]
+        },
+        "hash": "5701539870786561954",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9933143255805937,
+            "bootstrap_95": [
+              0.9761423460880885,
+              1.0033064022042635
+            ],
+            "paired_min_max": [
+              0.9573052520267888,
+              1.0103558271183395
+            ]
+          },
+          "current": {
+            "paired_median": 1.0024012530737954,
+            "bootstrap_95": [
+              0.9860724233983287,
+              1.014203555544077
+            ],
+            "paired_min_max": [
+              0.9707878040183292,
+              1.026092569733072
+            ]
+          },
+          "pushproof": {
+            "paired_median": 0.9955228801504686,
+            "bootstrap_95": [
+              0.9873588945440773,
+              1.0079938018956438
+            ],
+            "paired_min_max": [
+              0.972785520840214,
+              1.0265342408353246
+            ]
+          },
+          "compact": {
+            "paired_median": 1.0018530578265339,
+            "bootstrap_95": [
+              0.9787194222427725,
+              1.0078352666371853
+            ],
+            "paired_min_max": [
+              0.9720986076841734,
+              1.0242692608237731
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 44415.75,
+            "iqr_ns": 997.75,
+            "min_max_ns": [
+              43860.0,
+              45417.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 44015.0,
+            "iqr_ns": 807.125,
+            "min_max_ns": [
+              43454.0,
+              44977.0
+            ]
+          },
+          "current": {
+            "median_ns": 44491.0,
+            "iqr_ns": 732.5,
+            "min_max_ns": [
+              43896.0,
+              45302.5
+            ]
+          },
+          "pushproof": {
+            "median_ns": 44193.25,
+            "iqr_ns": 658.5,
+            "min_max_ns": [
+              43705.0,
+              45497.0
+            ]
+          },
+          "compact": {
+            "median_ns": 44443.5,
+            "iqr_ns": 569.5,
+            "min_max_ns": [
+              43379.0,
+              45222.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "icc",
+        "measured_per_process": 100,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            66263.0,
+            65191.5,
+            66468.5,
+            67505.0,
+            65187.0,
+            67169.5,
+            64390.0,
+            66443.5,
+            65887.5,
+            65391.5
+          ],
+          "base-repeat": [
+            67510.0,
+            66068.0,
+            65998.0,
+            67290.0,
+            64946.0,
+            65787.5,
+            65251.5,
+            66479.0,
+            65627.5,
+            66133.0
+          ],
+          "current": [
+            64230.5,
+            64601.0,
+            64956.5,
+            64125.5,
+            64260.5,
+            64465.5,
+            64405.5,
+            66213.0,
+            63890.0,
+            66013.0
+          ],
+          "pushproof": [
+            64971.0,
+            64406.0,
+            65006.5,
+            63454.0,
+            64465.5,
+            65617.0,
+            64350.5,
+            63955.0,
+            64706.0,
+            64215.0
+          ],
+          "compact": [
+            64160.5,
+            64560.5,
+            65297.0,
+            64525.5,
+            66003.0,
+            64160.5,
+            64410.0,
+            64120.0,
+            64270.0,
+            64115.0
+          ]
+        },
+        "hash": "11934725841428314993",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9986746696339197,
+            "bootstrap_95": [
+              0.9946122014377414,
+              1.0133794067401771
+            ],
+            "paired_min_max": [
+              0.979425185538079,
+              1.018818948734588
+            ]
+          },
+          "current": {
+            "paired_median": 0.9815197130682514,
+            "bootstrap_95": [
+              0.9647134028584281,
+              0.9965308871447169
+            ],
+            "paired_min_max": [
+              0.9499370417006148,
+              1.0095042933714626
+            ]
+          },
+          "pushproof": {
+            "paired_median": 0.9812551521218392,
+            "bootstrap_95": [
+              0.9702758726175755,
+              0.9879508831672841
+            ],
+            "paired_min_max": [
+              0.9399896303977483,
+              0.9993865507066315
+            ]
+          },
+          "compact": {
+            "paired_median": 0.9779648464478994,
+            "bootstrap_95": [
+              0.9620664529175607,
+              0.9913428586258334
+            ],
+            "paired_min_max": [
+              0.9552028822605498,
+              1.0125178333103226
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 66075.25,
+            "iqr_ns": 1453.375,
+            "min_max_ns": [
+              64390.0,
+              67505.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 66033.0,
+            "iqr_ns": 1148.25,
+            "min_max_ns": [
+              64946.0,
+              67510.0
+            ]
+          },
+          "current": {
+            "median_ns": 64435.5,
+            "iqr_ns": 1016.375,
+            "min_max_ns": [
+              63890.0,
+              66213.0
+            ]
+          },
+          "pushproof": {
+            "median_ns": 64435.75,
+            "iqr_ns": 829.875,
+            "min_max_ns": [
+              63454.0,
+              65617.0
+            ]
+          },
+          "compact": {
+            "median_ns": 64340.0,
+            "iqr_ns": 594.25,
+            "min_max_ns": [
+              64115.0,
+              66003.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "photo",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            15747044.5,
+            15468392.0,
+            15356079.5,
+            15438727.0,
+            15365393.0,
+            15197309.5,
+            15277070.0,
+            15213190.5,
+            15389066.5,
+            15472211.5
+          ],
+          "base-repeat": [
+            15552556.5,
+            15450212.5,
+            15564693.5,
+            15496311.5,
+            15293567.0,
+            15228705.5,
+            15204740.5,
+            15329027.0,
+            15448263.5,
+            15352346.5
+          ],
+          "current": [
+            16790071.0,
+            16700419.5,
+            16530433.5,
+            16497817.0,
+            16453641.5,
+            17200012.0,
+            16406749.0,
+            16714219.5,
+            16575118.5,
+            16538093.0
+          ],
+          "pushproof": [
+            16812484.5,
+            16564596.5,
+            16460504.5,
+            16305260.5,
+            16523524.5,
+            16274676.0,
+            16212026.0,
+            16607702.5,
+            16603290.0,
+            16367851.5
+          ],
+          "compact": [
+            16685285.5,
+            16192960.5,
+            16278371.5,
+            16315676.0,
+            16319983.0,
+            16041585.0,
+            16531369.0,
+            16213673.0,
+            16484018.0,
+            16405409.5
+          ]
+        },
+        "hash": "11298716346096407965",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 1.0004453121942474,
+            "bootstrap_95": [
+              0.9952654861174296,
+              1.004840053387576
+            ],
+            "paired_min_max": [
+              0.9876492379252501,
+              1.01358510810002
+            ]
+          },
+          "current": {
+            "paired_median": 1.0752104546127867,
+            "bootstrap_95": [
+              1.0688900549220128,
+              1.087868683641744
+            ],
+            "paired_min_max": [
+              1.06623633406256,
+              1.1317800693603035
+            ]
+          },
+          "pushproof": {
+            "paired_median": 1.0708796544530277,
+            "bootstrap_95": [
+              1.0611999552270166,
+              1.0754113629601818
+            ],
+            "paired_min_max": [
+              1.0561272636014614,
+              1.091664664292477
+            ]
+          },
+          "compact": {
+            "paired_median": 1.0601874183363003,
+            "bootstrap_95": [
+              1.0568018982394078,
+              1.0657641472378854
+            ],
+            "paired_min_max": [
+              1.0468418760010736,
+              1.0821033745345148
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 15377229.75,
+            "iqr_ns": 208246.75,
+            "min_max_ns": [
+              15197309.5,
+              15747044.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 15400305.0,
+            "iqr_ns": 233021.125,
+            "min_max_ns": [
+              15204740.5,
+              15564693.5
+            ]
+          },
+          "current": {
+            "median_ns": 16556605.75,
+            "iqr_ns": 246409.25,
+            "min_max_ns": [
+              16406749.0,
+              17200012.0
+            ]
+          },
+          "pushproof": {
+            "median_ns": 16492014.5,
+            "iqr_ns": 306778.75,
+            "min_max_ns": [
+              16212026.0,
+              16812484.5
+            ]
+          },
+          "compact": {
+            "median_ns": 16317829.5,
+            "iqr_ns": 287360.875,
+            "min_max_ns": [
+              16041585.0,
+              16685285.5
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "photo-meter-and-timed-hash",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            17068177.0,
+            16659992.5,
+            16672670.0,
+            16849132.5,
+            16834708.5,
+            16978675.5,
+            16920603.0,
+            16989037.0,
+            17036367.5,
+            17000930.5
+          ],
+          "current": [
+            17860715.5,
+            17788714.5,
+            17549439.5,
+            17577250.0,
+            17882918.0,
+            17850600.5,
+            17823791.5,
+            17745125.0,
+            17725043.0,
+            18001968.5
+          ],
+          "compact": [
+            17912768.0,
+            17983072.0,
+            17443918.5,
+            17900373.0,
+            17841461.5,
+            17688199.0,
+            17840732.0,
+            17936914.0,
+            17759679.0,
+            18017061.0
+          ]
+        },
+        "hash": "11298716346096407965",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "current": {
+            "paired_median": 1.0519706758345895,
+            "bootstrap_95": [
+              1.0445044648498911,
+              1.0588813653464437
+            ],
+            "paired_min_max": [
+              1.0404238462219133,
+              1.06775045066797
+            ]
+          },
+          "compact": {
+            "paired_median": 1.055086329694868,
+            "bootstrap_95": [
+              1.0459701417743141,
+              1.061080241623944
+            ],
+            "paired_min_max": [
+              1.0417890959751248,
+              1.0794165723664042
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 16949639.25,
+            "iqr_ns": 215590.875,
+            "min_max_ns": [
+              16659992.5,
+              17068177.0
+            ]
+          },
+          "current": {
+            "median_ns": 17806253.0,
+            "iqr_ns": 178171.375,
+            "min_max_ns": [
+              17549439.5,
+              18001968.5
+            ]
+          },
+          "compact": {
+            "median_ns": 17870917.25,
+            "iqr_ns": 206644.5,
+            "min_max_ns": [
+              17443918.5,
+              18017061.0
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "layout_ablation": {
+    "method": "same staged source paths, exact manifest/lock/release flags; original rebuilt twice byte-identically; two pinned CPUs sequentially; ten rotated-order process blocks per input/core; 5 warmups; pixel hash outside decode timer; no concurrent build; bootstrap over paired PROCESS medians (not individual iterations), seed7401",
+    "records": [
+      {
+        "cpu": 0,
+        "case": "simple",
+        "measured_per_process": 200,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            43825.0,
+            45087.0,
+            45532.5,
+            43809.5,
+            44361.0,
+            43319.0,
+            43835.0,
+            44686.5,
+            45152.0,
+            44351.0
+          ],
+          "current": [
+            44541.0,
+            44752.0,
+            44431.0,
+            44181.0,
+            44626.0,
+            45027.0,
+            43755.0,
+            45497.5,
+            44861.0,
+            44856.5
+          ],
+          "rawvec": [
+            45277.0,
+            44762.0,
+            45022.0,
+            44671.0,
+            44741.0,
+            44696.5,
+            44591.0,
+            44586.0,
+            44831.5,
+            44455.5
+          ],
+          "windowfixed": [
+            43374.5,
+            44215.5,
+            44782.0,
+            43249.5,
+            43885.0,
+            43439.5,
+            43639.5,
+            43684.5,
+            44225.5,
+            43440.0
+          ],
+          "rawfixed": [
+            43545.0,
+            44145.0,
+            44461.0,
+            44325.5,
+            43785.0,
+            44080.0,
+            43534.5,
+            42978.5,
+            43705.0,
+            44170.0
+          ]
+        },
+        "hash": "5701539870786561954",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "current": {
+            "paired_median": 1.0072268057820608,
+            "bootstrap_95": [
+              0.9935551027639972,
+              1.0163377067883628
+            ],
+            "paired_min_max": [
+              0.9758084884423214,
+              1.0394284263256308
+            ]
+          },
+          "rawvec": {
+            "paired_median": 1.0054611433696174,
+            "bootstrap_95": [
+              0.992901754075124,
+              1.0245227360956526
+            ],
+            "paired_min_max": [
+              0.9887882281886564,
+              1.0331317741015402
+            ]
+          },
+          "windowfixed": {
+            "paired_median": 0.9853673261214252,
+            "bootstrap_95": [
+              0.979480421686747,
+              0.9913787389449198
+            ],
+            "paired_min_max": [
+              0.9775771206068947,
+              1.0027816893280086
+            ]
+          },
+          "rawfixed": {
+            "paired_median": 0.9900801845889977,
+            "bootstrap_95": [
+              0.9764673584802065,
+              1.0026946099616965
+            ],
+            "paired_min_max": [
+              0.9617781656652457,
+              1.01756734920012
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 44356.0,
+            "iqr_ns": 1282.125,
+            "min_max_ns": [
+              43319.0,
+              45532.5
+            ]
+          },
+          "current": {
+            "median_ns": 44689.0,
+            "iqr_ns": 534.0,
+            "min_max_ns": [
+              43755.0,
+              45497.5
+            ]
+          },
+          "rawvec": {
+            "median_ns": 44718.75,
+            "iqr_ns": 289.375,
+            "min_max_ns": [
+              44455.5,
+              45277.0
+            ]
+          },
+          "windowfixed": {
+            "median_ns": 43662.0,
+            "iqr_ns": 794.75,
+            "min_max_ns": [
+              43249.5,
+              44782.0
+            ]
+          },
+          "rawfixed": {
+            "median_ns": 43932.5,
+            "iqr_ns": 666.5,
+            "min_max_ns": [
+              42978.5,
+              44461.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "icc",
+        "measured_per_process": 100,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            66924.5,
+            65081.5,
+            66349.0,
+            66548.5,
+            65562.0,
+            65917.0,
+            65076.5,
+            65807.0,
+            65296.5,
+            65482.0
+          ],
+          "current": [
+            65312.0,
+            66954.0,
+            64430.5,
+            65542.0,
+            65016.0,
+            65847.5,
+            64731.0,
+            64525.5,
+            63814.5,
+            64961.5
+          ],
+          "rawvec": [
+            65452.0,
+            63674.0,
+            68721.5,
+            64986.0,
+            65492.0,
+            64391.0,
+            65557.5,
+            64280.0,
+            64661.0,
+            65016.0
+          ],
+          "windowfixed": [
+            64671.0,
+            63875.0,
+            63534.0,
+            63464.0,
+            64555.5,
+            64335.5,
+            63114.0,
+            63248.0,
+            63109.0,
+            65537.0
+          ],
+          "rawfixed": [
+            63709.0,
+            63615.0,
+            63449.0,
+            63869.5,
+            64150.0,
+            64155.0,
+            63034.0,
+            62918.5,
+            63785.0,
+            63324.0
+          ]
+        },
+        "hash": "11934725841428314993",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "current": {
+            "paired_median": 0.9882738486446406,
+            "bootstrap_95": [
+              0.9773035308171188,
+              0.9954984472447589
+            ],
+            "paired_min_max": [
+              0.9710847186845318,
+              1.0287716171262187
+            ]
+          },
+          "rawvec": {
+            "paired_median": 0.984320371330348,
+            "bootstrap_95": [
+              0.9768496745907732,
+              1.0001374207611133
+            ],
+            "paired_min_max": [
+              0.9765208832655883,
+              1.0357578863283545
+            ]
+          },
+          "windowfixed": {
+            "paired_median": 0.9681710773211668,
+            "bootstrap_95": [
+              0.9611135593477897,
+              0.9814617057074592
+            ],
+            "paired_min_max": [
+              0.9536503452369325,
+              1.0008399254757032
+            ]
+          },
+          "rawfixed": {
+            "paired_median": 0.9678291203773599,
+            "bootstrap_95": [
+              0.9562917300938975,
+              0.9768517454993759
+            ],
+            "paired_min_max": [
+              0.9519533205328392,
+              0.9784631341325768
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 65684.5,
+            "iqr_ns": 1156.125,
+            "min_max_ns": [
+              65076.5,
+              66924.5
+            ]
+          },
+          "current": {
+            "median_ns": 64988.75,
+            "iqr_ns": 1116.625,
+            "min_max_ns": [
+              63814.5,
+              66954.0
+            ]
+          },
+          "rawvec": {
+            "median_ns": 65001.0,
+            "iqr_ns": 1145.125,
+            "min_max_ns": [
+              63674.0,
+              68721.5
+            ]
+          },
+          "windowfixed": {
+            "median_ns": 63704.5,
+            "iqr_ns": 1369.875,
+            "min_max_ns": [
+              63109.0,
+              65537.0
+            ]
+          },
+          "rawfixed": {
+            "median_ns": 63662.0,
+            "iqr_ns": 688.125,
+            "min_max_ns": [
+              62918.5,
+              64155.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "photo",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            15279636.0,
+            15238875.0,
+            15547249.0,
+            15966465.0,
+            15625300.5,
+            15342939.5,
+            15251810.0,
+            15363640.5,
+            15258806.0,
+            15453239.0
+          ],
+          "current": [
+            16555737.5,
+            16272319.5,
+            16951750.0,
+            16853445.0,
+            16534166.5,
+            16501186.0,
+            16573983.5,
+            16569672.0,
+            16515795.5,
+            16406585.5
+          ],
+          "rawvec": [
+            15307963.0,
+            15460776.0,
+            15396691.5,
+            15877954.5,
+            15251751.5,
+            15344662.0,
+            15292660.5,
+            15184035.0,
+            15239510.0,
+            15284715.0
+          ],
+          "windowfixed": [
+            16357378.5,
+            16211173.5,
+            16260065.5,
+            16641521.0,
+            16232409.0,
+            16355160.5,
+            16564569.5,
+            16101695.5,
+            16349762.5,
+            16256882.5
+          ],
+          "rawfixed": [
+            15981526.5,
+            16031159.5,
+            16096388.0,
+            16092427.5,
+            16038277.0,
+            16185279.5,
+            16073699.5,
+            15925876.0,
+            16122426.5,
+            16885311.5
+          ]
+        },
+        "hash": "11298716346096407965",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "current": {
+            "paired_median": 1.0769947959040016,
+            "bootstrap_95": [
+              1.0616923416508346,
+              1.0845337925041314
+            ],
+            "paired_min_max": [
+              1.0555526849556243,
+              1.0903375896275926
+            ]
+          },
+          "rawvec": {
+            "paired_median": 0.9965959468077493,
+            "bootstrap_95": [
+              0.989094583989803,
+              1.00185390542026
+            ],
+            "paired_min_max": [
+              0.9760933237731972,
+              1.0145615079853336
+            ]
+          },
+          "windowfixed": {
+            "paired_median": 1.057904341055931,
+            "bootstrap_95": [
+              1.0451593426690546,
+              1.0705345663993566
+            ],
+            "paired_min_max": [
+              1.038854196756088,
+              1.0860723743608136
+            ]
+          },
+          "rawfixed": {
+            "paired_median": 1.048963673138283,
+            "bootstrap_95": [
+              1.0315125939525471,
+              1.0552430839094127
+            ],
+            "paired_min_max": [
+              1.0078891915023145,
+              1.0926713487056015
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 15353290.0,
+            "iqr_ns": 309704.875,
+            "min_max_ns": [
+              15238875.0,
+              15966465.0
+            ]
+          },
+          "current": {
+            "median_ns": 16544952.0,
+            "iqr_ns": 166313.0,
+            "min_max_ns": [
+              16272319.5,
+              16951750.0
+            ]
+          },
+          "rawvec": {
+            "median_ns": 15300311.75,
+            "iqr_ns": 164021.5,
+            "min_max_ns": [
+              15184035.0,
+              15877954.5
+            ]
+          },
+          "windowfixed": {
+            "median_ns": 16304914.0,
+            "iqr_ns": 182076.125,
+            "min_max_ns": [
+              16101695.5,
+              16641521.0
+            ]
+          },
+          "rawfixed": {
+            "median_ns": 16083063.5,
+            "iqr_ns": 119388.5,
+            "min_max_ns": [
+              15925876.0,
+              16885311.5
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "simple",
+        "measured_per_process": 200,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            44391.0,
+            43935.0,
+            45267.0,
+            44570.5,
+            44166.0,
+            45107.0,
+            44756.0,
+            44365.5,
+            44176.0,
+            43794.0
+          ],
+          "current": [
+            43980.0,
+            44861.5,
+            44250.0,
+            44246.0,
+            45167.0,
+            45602.0,
+            44476.0,
+            44370.5,
+            43559.0,
+            43785.0
+          ],
+          "rawvec": [
+            44641.0,
+            44746.0,
+            44846.0,
+            43995.0,
+            44145.0,
+            44140.5,
+            44300.5,
+            44396.0,
+            44075.5,
+            44771.0
+          ],
+          "windowfixed": [
+            44756.0,
+            44676.0,
+            43655.0,
+            43339.0,
+            43039.0,
+            43564.5,
+            44080.0,
+            44200.0,
+            44135.0,
+            43089.0
+          ],
+          "rawfixed": [
+            43425.0,
+            44085.0,
+            44686.0,
+            43715.0,
+            43244.0,
+            44226.0,
+            44225.0,
+            43990.5,
+            43479.0,
+            44200.0
+          ]
+        },
+        "hash": "5701539870786561954",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "current": {
+            "paired_median": 0.9967691739843278,
+            "bootstrap_95": [
+              0.9893762698847413,
+              1.010973906489015
+            ],
+            "paired_min_max": [
+              0.977533302405726,
+              1.0226644930489517
+            ]
+          },
+          "rawvec": {
+            "paired_median": 0.9986247650897687,
+            "bootstrap_95": [
+              0.9888937493412862,
+              1.0095732792043086
+            ],
+            "paired_min_max": [
+              0.9785731704613475,
+              1.0223089920993744
+            ]
+          },
+          "windowfixed": {
+            "paired_median": 0.9843988921262443,
+            "bootstrap_95": [
+              0.9701430837598579,
+              0.9990718942412169
+            ],
+            "paired_min_max": [
+              0.9643890692999315,
+              1.0168658245134858
+            ]
+          },
+          "rawfixed": {
+            "paired_median": 0.9856936225339856,
+            "bootstrap_95": [
+              0.9799649515288997,
+              0.9957749017387431
+            ],
+            "paired_min_max": [
+              0.9782388321957154,
+              1.0092706763483583
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 44378.25,
+            "iqr_ns": 735.5,
+            "min_max_ns": [
+              43794.0,
+              45267.0
+            ]
+          },
+          "current": {
+            "median_ns": 44310.25,
+            "iqr_ns": 1006.625,
+            "min_max_ns": [
+              43559.0,
+              45602.0
+            ]
+          },
+          "rawvec": {
+            "median_ns": 44348.25,
+            "iqr_ns": 628.0,
+            "min_max_ns": [
+              43995.0,
+              44846.0
+            ]
+          },
+          "windowfixed": {
+            "median_ns": 43867.5,
+            "iqr_ns": 1042.5,
+            "min_max_ns": [
+              43039.0,
+              44756.0
+            ]
+          },
+          "rawfixed": {
+            "median_ns": 44037.75,
+            "iqr_ns": 759.75,
+            "min_max_ns": [
+              43244.0,
+              44686.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "icc",
+        "measured_per_process": 100,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            66343.0,
+            65131.5,
+            66649.0,
+            65477.0,
+            67444.5,
+            66428.5,
+            66618.5,
+            65857.5,
+            65396.5,
+            66298.0
+          ],
+          "current": [
+            65126.5,
+            64600.0,
+            65657.0,
+            64936.0,
+            65902.0,
+            65051.5,
+            65627.5,
+            65151.0,
+            65197.0,
+            64911.5
+          ],
+          "rawvec": [
+            65307.0,
+            65547.0,
+            65622.0,
+            65061.0,
+            64355.0,
+            64991.0,
+            64961.0,
+            64690.5,
+            65242.0,
+            64946.0
+          ],
+          "windowfixed": [
+            64265.0,
+            63779.0,
+            64330.0,
+            64470.0,
+            64335.0,
+            64856.0,
+            64516.0,
+            64019.5,
+            65146.5,
+            64675.5
+          ],
+          "rawfixed": [
+            64180.0,
+            63769.5,
+            63569.5,
+            64090.0,
+            64445.5,
+            64425.0,
+            64080.0,
+            64260.0,
+            63779.0,
+            64305.0
+          ]
+        },
+        "hash": "11934725841428314993",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "current": {
+            "paired_median": 0.9851201540135208,
+            "bootstrap_95": [
+              0.9792709454526295,
+              0.991737556699299
+            ],
+            "paired_min_max": [
+              0.9771293433860433,
+              0.9969493780248179
+            ]
+          },
+          "rawvec": {
+            "paired_median": 0.9833320538896562,
+            "bootstrap_95": [
+              0.9783601917851524,
+              0.993646624005376
+            ],
+            "paired_min_max": [
+              0.9541919652454981,
+              1.006379401672002
+            ]
+          },
+          "windowfixed": {
+            "paired_median": 0.9738092114316439,
+            "bootstrap_95": [
+              0.9669418554441565,
+              0.9804742426588271
+            ],
+            "paired_min_max": [
+              0.953895425127327,
+              0.9961771654446339
+            ]
+          },
+          "rawfixed": {
+            "paired_median": 0.969889256933065,
+            "bootstrap_95": [
+              0.9614652601561419,
+              0.9757430816535702
+            ],
+            "paired_min_max": [
+              0.9537952557427718,
+              0.9790884595011631
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 66320.5,
+            "iqr_ns": 1169.25,
+            "min_max_ns": [
+              65131.5,
+              67444.5
+            ]
+          },
+          "current": {
+            "median_ns": 65138.75,
+            "iqr_ns": 705.0,
+            "min_max_ns": [
+              64600.0,
+              65902.0
+            ]
+          },
+          "rawvec": {
+            "median_ns": 65026.0,
+            "iqr_ns": 484.875,
+            "min_max_ns": [
+              64355.0,
+              65622.0
+            ]
+          },
+          "windowfixed": {
+            "median_ns": 64402.5,
+            "iqr_ns": 517.0,
+            "min_max_ns": [
+              63779.0,
+              65146.5
+            ]
+          },
+          "rawfixed": {
+            "median_ns": 64135.0,
+            "iqr_ns": 558.375,
+            "min_max_ns": [
+              63569.5,
+              64445.5
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "photo",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            15338282.5,
+            15291482.5,
+            15176912.0,
+            15195614.5,
+            15405430.5,
+            15465668.5,
+            15918363.0,
+            16048661.0,
+            15758246.5,
+            15448389.5
+          ],
+          "current": [
+            16386654.0,
+            16345308.5,
+            16247557.5,
+            16251403.0,
+            16416507.0,
+            16477253.0,
+            16271643.0,
+            16628560.0,
+            16880308.0,
+            16765071.5
+          ],
+          "rawvec": [
+            15239325.5,
+            15145032.0,
+            15194757.5,
+            15144513.5,
+            15280801.0,
+            15327984.0,
+            15186184.0,
+            15765291.5,
+            15462292.0,
+            15557071.0
+          ],
+          "windowfixed": [
+            16185160.0,
+            16204549.0,
+            16143308.5,
+            16168771.0,
+            16254503.0,
+            16395658.5,
+            16229030.0,
+            16919535.0,
+            16660176.5,
+            16383235.5
+          ],
+          "rawfixed": [
+            15923027.5,
+            16285894.5,
+            16019850.0,
+            15939290.5,
+            15886292.0,
+            16199661.5,
+            16565564.0,
+            16467396.0,
+            16308315.5,
+            15968746.5
+          ]
+        },
+        "hash": "11298716346096407965",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "current": {
+            "paired_median": 1.0686329373339767,
+            "bootstrap_95": [
+              1.0522418931221913,
+              1.070544357112962
+            ],
+            "paired_min_max": [
+              1.0221932368296915,
+              1.08523102035976
+            ]
+          },
+          "rawvec": {
+            "paired_median": 0.9915037192305043,
+            "bootstrap_95": [
+              0.9823431063812738,
+              0.9973620985469074
+            ],
+            "paired_min_max": [
+              0.9540041271831783,
+              1.0070351346332898
+            ]
+          },
+          "windowfixed": {
+            "paired_median": 1.0584731095294453,
+            "bootstrap_95": [
+              1.0547389547154493,
+              1.0619039906438474
+            ],
+            "paired_min_max": [
+              1.019516265585852,
+              1.0640419313085365
+            ]
+          },
+          "rawfixed": {
+            "paired_median": 1.0393903740974428,
+            "bootstrap_95": [
+              1.0330602524843715,
+              1.0515001588897803
+            ],
+            "paired_min_max": [
+              1.0260915848368908,
+              1.0650304507754562
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 15426910.0,
+            "iqr_ns": 530760.125,
+            "min_max_ns": [
+              15176912.0,
+              16048661.0
+            ]
+          },
+          "current": {
+            "median_ns": 16401580.5,
+            "iqr_ns": 396104.875,
+            "min_max_ns": [
+              16247557.5,
+              16880308.0
+            ]
+          },
+          "rawvec": {
+            "median_ns": 15260063.25,
+            "iqr_ns": 310090.75,
+            "min_max_ns": [
+              15144513.5,
+              15765291.5
+            ]
+          },
+          "windowfixed": {
+            "median_ns": 16241766.5,
+            "iqr_ns": 280725.25,
+            "min_max_ns": [
+              16143308.5,
+              16919535.0
+            ]
+          },
+          "rawfixed": {
+            "median_ns": 16109755.75,
+            "iqr_ns": 412860.875,
+            "min_max_ns": [
+              15886292.0,
+              16565564.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "photo-meter-and-timed-hash",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 10,
+        "trial_medians_ns": {
+          "base": [
+            17172425.5,
+            16869854.0,
+            16691481.5,
+            16644226.5,
+            16509281.5,
+            16581343.5,
+            16584350.5,
+            16720650.5,
+            16729992.0,
+            17094011.0
+          ],
+          "current": [
+            18199679.0,
+            17385683.5,
+            17456205.0,
+            17397537.5,
+            17561134.5,
+            17381878.5,
+            17504336.0,
+            17587253.5,
+            17531439.5,
+            17845619.5
+          ],
+          "rawvec": [
+            16743237.0,
+            16499706.5,
+            16464689.5,
+            16510644.0,
+            16428016.5,
+            16495075.0,
+            16721376.5,
+            16513333.5,
+            16803157.5,
+            16618667.0
+          ],
+          "windowfixed": [
+            18152138.5,
+            17524894.5,
+            17459753.0,
+            17534941.0,
+            17430511.0,
+            17518781.5,
+            17904964.0,
+            17826357.5,
+            17644668.5,
+            17877417.5
+          ],
+          "rawfixed": [
+            17644794.5,
+            17283597.0,
+            17402944.5,
+            17376771.0,
+            17264996.0,
+            17329772.0,
+            17663812.0,
+            17655895.5,
+            17544450.0,
+            17608294.5
+          ]
+        },
+        "hash": "11298716346096407965",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "current": {
+            "paired_median": 1.048092047492731,
+            "bootstrap_95": [
+              1.04489215456875,
+              1.0554731100262262
+            ],
+            "paired_min_max": [
+              1.0305769984731343,
+              1.0637128272360006
+            ]
+          },
+          "rawvec": {
+            "paired_median": 0.989787692160262,
+            "bootstrap_95": [
+              0.9780586423569523,
+              0.9995852843138744
+            ],
+            "paired_min_max": [
+              0.9721923660865786,
+              1.0082623675856344
+            ]
+          },
+          "windowfixed": {
+            "paired_median": 1.0552367807729972,
+            "bootstrap_95": [
+              1.0460277597288175,
+              1.0613319685116829
+            ],
+            "paired_min_max": [
+              1.0388290556634336,
+              1.0796301006783473
+            ]
+          },
+          "rawfixed": {
+            "paired_median": 1.0445743554472917,
+            "bootstrap_95": [
+              1.0300855954755148,
+              1.0508543296017407
+            ],
+            "paired_min_max": [
+              1.0245255827347408,
+              1.0650891634254835
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 16706066.0,
+            "iqr_ns": 342294.5,
+            "min_max_ns": [
+              16509281.5,
+              17172425.5
+            ]
+          },
+          "current": {
+            "median_ns": 17517887.75,
+            "iqr_ns": 257271.0,
+            "min_max_ns": [
+              17381878.5,
+              18199679.0
+            ]
+          },
+          "rawvec": {
+            "median_ns": 16511988.75,
+            "iqr_ns": 239363.0,
+            "min_max_ns": [
+              16428016.5,
+              16803157.5
+            ]
+          },
+          "windowfixed": {
+            "median_ns": 17589804.75,
+            "iqr_ns": 380279.75,
+            "min_max_ns": [
+              17430511.0,
+              18152138.5
+            ]
+          },
+          "rawfixed": {
+            "median_ns": 17473697.25,
+            "iqr_ns": 329341.5,
+            "min_max_ns": [
+              17264996.0,
+              17663812.0
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "final": {
+    "method": "same staged source paths, exact manifest/lock/release flags; original rebuilt twice byte-identically; two pinned CPUs sequentially; twelve rotated-order process blocks per input/core; 5 warmups; pixel hash outside decode timer; no concurrent build; bootstrap over paired PROCESS medians (not individual iterations), seed7401",
+    "records": [
+      {
+        "cpu": 0,
+        "case": "simple",
+        "measured_per_process": 200,
+        "warmups": 5,
+        "blocks": 12,
+        "trial_medians_ns": {
+          "base": [
+            44345.0,
+            44856.0,
+            45141.5,
+            44496.0,
+            43989.5,
+            44090.0,
+            45297.0,
+            44666.0,
+            44801.0,
+            44561.0,
+            44841.0,
+            44070.0
+          ],
+          "base-repeat": [
+            44531.0,
+            44485.5,
+            44665.5,
+            44350.0,
+            44741.0,
+            44786.0,
+            44846.0,
+            43494.0,
+            43949.5,
+            43794.5,
+            44165.0,
+            44766.0
+          ],
+          "current": [
+            43914.5,
+            44510.0,
+            44275.0,
+            44130.0,
+            43809.5,
+            44706.0,
+            43368.5,
+            44145.0,
+            44440.5,
+            43909.5,
+            43975.0,
+            44205.5
+          ],
+          "after": [
+            43890.0,
+            44385.5,
+            43735.0,
+            44180.0,
+            44591.0,
+            44891.5,
+            43945.0,
+            44335.5,
+            45172.0,
+            45106.5,
+            45081.0,
+            44400.5
+          ]
+        },
+        "hash": "5701539870786561954",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9908918630794559,
+            "bootstrap_95": [
+              0.983861685519916,
+              1.0099901387144619
+            ],
+            "paired_min_max": [
+              0.9737608024000358,
+              1.0170836222280317
+            ]
+          },
+          "current": {
+            "paired_median": 0.9910332849726993,
+            "bootstrap_95": [
+              0.9830921973479787,
+              0.9940972710580429
+            ],
+            "paired_min_max": [
+              0.9574254365631278,
+              1.013971422091177
+            ]
+          },
+          "after": {
+            "paired_median": 0.9991252413207237,
+            "bootstrap_95": [
+              0.9896252107419001,
+              1.0102613557187097
+            ],
+            "paired_min_max": [
+              0.9688424177309128,
+              1.018178725334543
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 44613.5,
+            "iqr_ns": 698.5,
+            "min_max_ns": [
+              43989.5,
+              45297.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 44508.25,
+            "iqr_ns": 756.375,
+            "min_max_ns": [
+              43494.0,
+              44846.0
+            ]
+          },
+          "current": {
+            "median_ns": 44137.5,
+            "iqr_ns": 488.375,
+            "min_max_ns": [
+              43368.5,
+              44706.0
+            ]
+          },
+          "after": {
+            "median_ns": 44393.0,
+            "iqr_ns": 1029.875,
+            "min_max_ns": [
+              43735.0,
+              45172.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "icc",
+        "measured_per_process": 100,
+        "warmups": 5,
+        "blocks": 12,
+        "trial_medians_ns": {
+          "base": [
+            66228.0,
+            66263.0,
+            67084.0,
+            66177.0,
+            65907.0,
+            67204.5,
+            68035.5,
+            66939.0,
+            66588.5,
+            65516.0,
+            65912.0,
+            66438.0
+          ],
+          "base-repeat": [
+            66714.0,
+            65742.0,
+            66718.0,
+            66242.0,
+            65496.5,
+            65717.0,
+            66483.0,
+            66248.0,
+            66428.0,
+            66312.0,
+            65752.0,
+            65402.0
+          ],
+          "current": [
+            64405.0,
+            63924.0,
+            64685.5,
+            64670.0,
+            64986.0,
+            64129.0,
+            64174.5,
+            63959.0,
+            65452.0,
+            64740.5,
+            65286.0,
+            64175.0
+          ],
+          "after": [
+            65016.0,
+            64099.5,
+            65947.0,
+            64600.0,
+            64841.0,
+            64735.0,
+            63919.5,
+            64900.5,
+            64775.5,
+            64966.0,
+            65176.0,
+            63644.0
+          ]
+        },
+        "hash": "11934725841428314993",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9941578400717268,
+            "bootstrap_95": [
+              0.9870418415548965,
+              0.9992859441285732
+            ],
+            "paired_min_max": [
+              0.9771810304914346,
+              1.0121497038891263
+            ]
+          },
+          "current": {
+            "paired_median": 0.9692060230169841,
+            "bootstrap_95": [
+              0.9598640873323689,
+              0.9844791259592648
+            ],
+            "paired_min_max": [
+              0.943250214961307,
+              0.9905024881660396
+            ]
+          },
+          "after": {
+            "paired_median": 0.9744715224250735,
+            "bootstrap_95": [
+              0.9653018759129124,
+              0.9834383969469604
+            ],
+            "paired_min_max": [
+              0.9395021716603832,
+              0.9916051040967092
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 66350.5,
+            "iqr_ns": 1069.5,
+            "min_max_ns": [
+              65516.0,
+              68035.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 66245.0,
+            "iqr_ns": 746.0,
+            "min_max_ns": [
+              65402.0,
+              66718.0
+            ]
+          },
+          "current": {
+            "median_ns": 64537.5,
+            "iqr_ns": 784.25,
+            "min_max_ns": [
+              63924.0,
+              65452.0
+            ]
+          },
+          "after": {
+            "median_ns": 64808.25,
+            "iqr_ns": 778.875,
+            "min_max_ns": [
+              63644.0,
+              65947.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "photo",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 12,
+        "trial_medians_ns": {
+          "base": [
+            15393975.5,
+            15428280.0,
+            15381590.5,
+            15349037.5,
+            15163775.0,
+            15234359.0,
+            15457852.0,
+            15504219.0,
+            15578714.5,
+            15322606.5,
+            15350435.5,
+            15402808.0
+          ],
+          "base-repeat": [
+            15393259.0,
+            15319559.5,
+            15360119.0,
+            15314036.5,
+            15243757.5,
+            15208392.5,
+            15694146.5,
+            15543567.5,
+            15327478.5,
+            15283058.0,
+            15308458.5,
+            15430719.0
+          ],
+          "current": [
+            16382047.5,
+            16362190.5,
+            16959508.5,
+            16300331.0,
+            16274458.0,
+            16348640.0,
+            16301084.0,
+            16561083.5,
+            16731826.0,
+            16368409.5,
+            16379081.5,
+            16408384.0
+          ],
+          "after": [
+            15498622.0,
+            15357444.5,
+            15474638.5,
+            15290837.0,
+            15130790.5,
+            15146639.5,
+            15582311.0,
+            15407636.5,
+            15301440.5,
+            15304374.5,
+            15313941.0,
+            15241754.5
+          ]
+        },
+        "hash": "11298716346096407965",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9984498042774379,
+            "bootstrap_95": [
+              0.9973421819792168,
+              1.0021749971428002
+            ],
+            "paired_min_max": [
+              0.9838731238062036,
+              1.0152863735530655
+            ]
+          },
+          "current": {
+            "paired_median": 1.0675885597897135,
+            "bootstrap_95": [
+              1.063081516551276,
+              1.0731942178313623
+            ],
+            "paired_min_max": [
+              1.0545503993698477,
+              1.1025848399747737
+            ]
+          },
+          "after": {
+            "paired_median": 0.9969153871582932,
+            "bootstrap_95": [
+              0.9940062812916153,
+              1.0024297167565566
+            ],
+            "paired_min_max": [
+              0.9822017407148709,
+              1.0080515067682108
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 15387783.0,
+            "iqr_ns": 121244.75,
+            "min_max_ns": [
+              15163775.0,
+              15578714.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 15323519.0,
+            "iqr_ns": 131945.875,
+            "min_max_ns": [
+              15208392.5,
+              15694146.5
+            ]
+          },
+          "current": {
+            "median_ns": 16373745.5,
+            "iqr_ns": 209935.625,
+            "min_max_ns": [
+              16274458.0,
+              16959508.5
+            ]
+          },
+          "after": {
+            "median_ns": 15309157.75,
+            "iqr_ns": 203862.875,
+            "min_max_ns": [
+              15130790.5,
+              15582311.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "large-icc",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 12,
+        "trial_medians_ns": {
+          "base": [
+            20927309.0,
+            20704499.0,
+            20824099.5,
+            20758252.0,
+            21037942.5,
+            20681456.5,
+            20678618.0,
+            20768441.0,
+            20653005.5,
+            20699505.0,
+            20778943.0,
+            21301544.0
+          ],
+          "base-repeat": [
+            20670689.5,
+            20715070.5,
+            20939695.5,
+            20760290.5,
+            20990718.0,
+            20188393.0,
+            20707716.5,
+            20622220.5,
+            20676309.5,
+            20649614.5,
+            20621094.5,
+            20869181.0
+          ],
+          "current": [
+            21179360.5,
+            22564795.0,
+            20597927.5,
+            21096889.5,
+            20939312.0,
+            21091571.0,
+            21092625.5,
+            21224484.5,
+            20029053.0,
+            20019970.0,
+            20791380.5,
+            20886251.5
+          ],
+          "after": [
+            20537453.0,
+            22347999.5,
+            20564946.5,
+            20707126.5,
+            20812579.5,
+            20804683.0,
+            20718502.0,
+            20582245.5,
+            20570087.0,
+            20548520.0,
+            20628170.0,
+            20422396.5
+          ]
+        },
+        "hash": "1526134866273743752",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9976725216568858,
+            "bootstrap_95": [
+              0.9900705085562578,
+              1.0008194741428569
+            ],
+            "paired_min_max": [
+              0.97615915010628,
+              1.0055510683667257
+            ]
+          },
+          "current": {
+            "paired_median": 1.0063213527919892,
+            "bootstrap_95": [
+              0.9848215214333387,
+              1.019925550933285
+            ],
+            "paired_min_max": [
+              0.9671714371913724,
+              1.089849843746521
+            ]
+          },
+          "after": {
+            "paired_median": 0.9927249082988027,
+            "bootstrap_95": [
+              0.9884214616955256,
+              0.9997329277658451
+            ],
+            "paired_min_max": [
+              0.9587284611857244,
+              1.0793789069708954
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 20763346.5,
+            "iqr_ns": 215538.0,
+            "min_max_ns": [
+              20653005.5,
+              21301544.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 20692013.0,
+            "iqr_ns": 212889.375,
+            "min_max_ns": [
+              20188393.0,
+              20990718.0
+            ]
+          },
+          "current": {
+            "median_ns": 21015441.5,
+            "iqr_ns": 512452.0,
+            "min_max_ns": [
+              20019970.0,
+              22564795.0
+            ]
+          },
+          "after": {
+            "median_ns": 20605207.75,
+            "iqr_ns": 230511.125,
+            "min_max_ns": [
+              20422396.5,
+              22347999.5
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "simple",
+        "measured_per_process": 200,
+        "warmups": 5,
+        "blocks": 12,
+        "trial_medians_ns": {
+          "base": [
+            44776.0,
+            44395.0,
+            44115.0,
+            45052.0,
+            44821.0,
+            44526.0,
+            44741.0,
+            43499.5,
+            45046.5,
+            44250.0,
+            45122.0,
+            43875.0
+          ],
+          "base-repeat": [
+            44335.0,
+            43279.0,
+            43759.5,
+            44205.0,
+            44861.0,
+            43775.0,
+            43509.5,
+            44451.0,
+            44295.0,
+            44386.0,
+            44861.5,
+            44671.0
+          ],
+          "current": [
+            44826.0,
+            44340.5,
+            43684.5,
+            44055.0,
+            44335.5,
+            44636.0,
+            43163.0,
+            44155.5,
+            43910.0,
+            43309.0,
+            44887.0,
+            44120.0
+          ],
+          "after": [
+            43859.5,
+            44971.0,
+            43735.0,
+            43984.5,
+            44816.0,
+            44090.0,
+            44230.5,
+            44526.0,
+            44831.0,
+            44445.5,
+            45021.5,
+            44581.0
+          ]
+        },
+        "hash": "5701539870786561954",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9910462451134597,
+            "bootstrap_95": [
+              0.9821664764578999,
+              1.0019829425699238
+            ],
+            "paired_min_max": [
+              0.9724749111553161,
+              1.0218738146415476
+            ]
+          },
+          "current": {
+            "paired_median": 0.992516656003571,
+            "bootstrap_95": [
+              0.9783022400731157,
+              1.0017935681690349
+            ],
+            "paired_min_max": [
+              0.9647303368275184,
+              1.0150806331107254
+            ]
+          },
+          "after": {
+            "paired_median": 0.996494379816014,
+            "bootstrap_95": [
+              0.9893989261885214,
+              1.0086962565769673
+            ],
+            "paired_min_max": [
+              0.9763051584835302,
+              1.0235979723904873
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 44633.5,
+            "iqr_ns": 841.375,
+            "min_max_ns": [
+              43499.5,
+              45122.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 44315.0,
+            "iqr_ns": 852.625,
+            "min_max_ns": [
+              43279.0,
+              44861.5
+            ]
+          },
+          "current": {
+            "median_ns": 44137.75,
+            "iqr_ns": 821.25,
+            "min_max_ns": [
+              43163.0,
+              44887.0
+            ]
+          },
+          "after": {
+            "median_ns": 44485.75,
+            "iqr_ns": 816.375,
+            "min_max_ns": [
+              43735.0,
+              45021.5
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "icc",
+        "measured_per_process": 100,
+        "warmups": 5,
+        "blocks": 12,
+        "trial_medians_ns": {
+          "base": [
+            65166.0,
+            66684.0,
+            64946.0,
+            66163.0,
+            65346.5,
+            66793.5,
+            67159.5,
+            65962.0,
+            66032.5,
+            65332.0,
+            65772.0,
+            66493.0
+          ],
+          "base-repeat": [
+            66203.0,
+            66393.5,
+            65191.0,
+            66918.5,
+            65702.0,
+            66503.0,
+            65547.0,
+            65507.0,
+            66483.0,
+            66728.0,
+            65902.0,
+            66217.5
+          ],
+          "current": [
+            64119.5,
+            63709.5,
+            63724.0,
+            63934.0,
+            63093.0,
+            64710.0,
+            64279.5,
+            65146.5,
+            64039.0,
+            64100.0,
+            64309.5,
+            63814.0
+          ],
+          "after": [
+            65206.0,
+            63904.5,
+            63489.0,
+            64025.0,
+            64185.0,
+            64370.0,
+            64500.0,
+            63874.0,
+            65611.5,
+            64500.0,
+            62983.0,
+            65717.0
+          ]
+        },
+        "hash": "11934725841428314993",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 1.0028744448494047,
+            "bootstrap_95": [
+              0.9956472035286053,
+              1.0091205834299157
+            ],
+            "paired_min_max": [
+              0.9759899939695799,
+              1.02136778301598
+            ]
+          },
+          "current": {
+            "paired_median": 0.9693085828264276,
+            "bootstrap_95": [
+              0.9626123237953832,
+              0.9811634204238444
+            ],
+            "paired_min_max": [
+              0.955394097534641,
+              0.9876368212000849
+            ]
+          },
+          "after": {
+            "paired_median": 0.9729556944417661,
+            "bootstrap_95": [
+              0.962058385259903,
+              0.9877973224148988
+            ],
+            "paired_min_max": [
+              0.9575959374809949,
+              1.000613817021146
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 65997.25,
+            "iqr_ns": 1300.625,
+            "min_max_ns": [
+              64946.0,
+              67159.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 66210.25,
+            "iqr_ns": 912.25,
+            "min_max_ns": [
+              65191.0,
+              66918.5
+            ]
+          },
+          "current": {
+            "median_ns": 64069.5,
+            "iqr_ns": 555.5,
+            "min_max_ns": [
+              63093.0,
+              65146.5
+            ]
+          },
+          "after": {
+            "median_ns": 64277.5,
+            "iqr_ns": 1147.875,
+            "min_max_ns": [
+              62983.0,
+              65717.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "photo",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 12,
+        "trial_medians_ns": {
+          "base": [
+            15248277.5,
+            15193934.5,
+            15201546.5,
+            15248125.5,
+            15311015.5,
+            15230977.0,
+            15279791.5,
+            15199153.0,
+            15272732.5,
+            15436759.5,
+            15273512.5,
+            15199771.5
+          ],
+          "base-repeat": [
+            15219024.5,
+            15195899.5,
+            15183835.0,
+            15231959.5,
+            15304802.0,
+            15220687.5,
+            15196744.0,
+            15292922.0,
+            15273629.0,
+            15230349.5,
+            15202405.0,
+            15172886.0
+          ],
+          "current": [
+            16296210.0,
+            16273395.5,
+            16341567.0,
+            16404034.0,
+            16338563.0,
+            16393218.5,
+            16338082.0,
+            16382787.5,
+            16333338.0,
+            16284321.5,
+            16584429.5,
+            16314234.5
+          ],
+          "after": [
+            15170647.5,
+            15202498.0,
+            15159579.5,
+            15154542.0,
+            15181329.0,
+            15157539.0,
+            15132028.0,
+            15523001.5,
+            15169049.5,
+            15567147.0,
+            15421822.0,
+            15110003.0
+          ]
+        },
+        "hash": "11298716346096407965",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9988873461941654,
+            "bootstrap_95": [
+              0.9967129724747397,
+              0.9998264402249657
+            ],
+            "paired_min_max": [
+              0.986628670350147,
+              1.0061693569371926
+            ]
+          },
+          "current": {
+            "paired_median": 1.0721832789627437,
+            "bootstrap_95": [
+              1.0689927211555612,
+              1.0760571705471267
+            ],
+            "paired_min_max": [
+              1.054905435302014,
+              1.0858294383822975
+            ]
+          },
+          "after": {
+            "paired_median": 0.9950436560307958,
+            "bootstrap_95": [
+              0.9935369285606117,
+              1.0045050860364386
+            ],
+            "paired_min_max": [
+              0.9903294819173416,
+              1.0213070096734995
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 15248201.5,
+            "iqr_ns": 78006.5,
+            "min_max_ns": [
+              15193934.5,
+              15436759.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 15219856.0,
+            "iqr_ns": 67101.0,
+            "min_max_ns": [
+              15172886.0,
+              15304802.0
+            ]
+          },
+          "current": {
+            "median_ns": 16338322.5,
+            "iqr_ns": 89894.625,
+            "min_max_ns": [
+              16273395.5,
+              16584429.5
+            ]
+          },
+          "after": {
+            "median_ns": 15169848.5,
+            "iqr_ns": 211699.75,
+            "min_max_ns": [
+              15110003.0,
+              15567147.0
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 1,
+        "case": "large-icc",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 12,
+        "trial_medians_ns": {
+          "base": [
+            20769031.5,
+            20730749.5,
+            20822610.0,
+            20767479.5,
+            20760584.0,
+            20847161.0,
+            21075628.0,
+            21094795.0,
+            20826648.5,
+            20771266.0,
+            21307998.5,
+            20423176.0
+          ],
+          "base-repeat": [
+            20778440.5,
+            21329132.5,
+            20876665.5,
+            20796682.5,
+            20861473.0,
+            20854211.5,
+            21180213.0,
+            20820219.5,
+            20689735.5,
+            20755458.5,
+            20786527.5,
+            20739203.0
+          ],
+          "current": [
+            21194138.5,
+            21146427.5,
+            21091467.0,
+            20942602.5,
+            20382560.0,
+            20651672.0,
+            21097218.5,
+            20875355.0,
+            21097409.0,
+            21034045.0,
+            21132435.5,
+            21128368.0
+          ],
+          "after": [
+            20583581.0,
+            21200427.5,
+            20686468.0,
+            20902418.5,
+            20442834.0,
+            20693895.5,
+            20957346.5,
+            20918955.0,
+            20575673.0,
+            21332991.5,
+            20671097.0,
+            20846246.0
+          ]
+        },
+        "hash": "1526134866273743752",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 1.0009296096066211,
+            "bootstrap_95": [
+              0.9963325196660144,
+              1.0049110043355278
+            ],
+            "paired_min_max": [
+              0.9755269834470844,
+              1.0288645135575054
+            ]
+          },
+          "current": {
+            "paired_median": 1.010541820847255,
+            "bootstrap_95": [
+              0.9911917257842897,
+              1.0165259762608962
+            ],
+            "paired_min_max": [
+              0.9817912636754342,
+              1.0345290076332887
+            ]
+          },
+          "after": {
+            "paired_median": 0.9930549771527668,
+            "bootstrap_95": [
+              0.989510062726029,
+              1.0136064011259758
+            ],
+            "paired_min_max": [
+              0.9701097454085141,
+              1.027043392540445
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 20796938.0,
+            "iqr_ns": 256203.375,
+            "min_max_ns": [
+              20423176.0,
+              21307998.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 20808451.0,
+            "iqr_ns": 111663.375,
+            "min_max_ns": [
+              20689735.5,
+              21329132.5
+            ]
+          },
+          "current": {
+            "median_ns": 21094342.75,
+            "iqr_ns": 239251.75,
+            "min_max_ns": [
+              20382560.0,
+              21194138.5
+            ]
+          },
+          "after": {
+            "median_ns": 20770070.75,
+            "iqr_ns": 342288.625,
+            "min_max_ns": [
+              20442834.0,
+              21332991.5
+            ]
+          }
+        }
+      },
+      {
+        "cpu": 0,
+        "case": "photo-meter-and-timed-hash",
+        "measured_per_process": 20,
+        "warmups": 5,
+        "blocks": 12,
+        "trial_medians_ns": {
+          "base": [
+            16707742.5,
+            16705203.5,
+            16662165.0,
+            16774196.0,
+            16781416.0,
+            16698307.5,
+            16667818.0,
+            16689941.0,
+            16647177.5,
+            16833032.5,
+            16724319.0,
+            16579369.0
+          ],
+          "current": [
+            17928721.0,
+            17766971.5,
+            17647365.0,
+            17711229.0,
+            17652222.5,
+            17616339.5,
+            17531965.0,
+            17805303.0,
+            17907990.0,
+            17691228.5,
+            17510095.5,
+            17750586.5
+          ],
+          "after": [
+            16817544.0,
+            16708183.0,
+            16620924.0,
+            16594755.5,
+            16702064.0,
+            16558867.5,
+            16560770.5,
+            16523310.0,
+            16786729.0,
+            16674334.0,
+            16518424.0,
+            16730858.5
+          ]
+        },
+        "hash": "11298716346096407965",
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap_95": [
+              1.0,
+              1.0
+            ],
+            "paired_min_max": [
+              1.0,
+              1.0
+            ]
+          },
+          "current": {
+            "paired_median": 1.0574947724963732,
+            "bootstrap_95": [
+              1.051868180116822,
+              1.0687357326598845
+            ],
+            "paired_min_max": [
+              1.0469840655395295,
+              1.0757373134274564
+            ]
+          },
+          "after": {
+            "paired_median": 0.9944245148170026,
+            "bootstrap_95": [
+              0.9902941399958032,
+              1.0033751254201442
+            ],
+            "paired_min_max": [
+              0.9876888858673408,
+              1.009137229529061
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 16701755.5,
+            "iqr_ns": 98148.5,
+            "min_max_ns": [
+              16579369.0,
+              16833032.5
+            ]
+          },
+          "current": {
+            "median_ns": 17701228.75,
+            "iqr_ns": 171624.25,
+            "min_max_ns": [
+              17510095.5,
+              17928721.0
+            ]
+          },
+          "after": {
+            "median_ns": 16647629.0,
+            "iqr_ns": 165846.375,
+            "min_max_ns": [
+              16518424.0,
+              16817544.0
+            ]
+          }
+        }
+      }
+    ],
+    "ordering": "Full rotated cycles; alternate complete cycles are reversed. Each condition appears in each position equally. Meter uses full three-condition rotations."
+  },
+  "untimed_diagnostics": {
+    "before": {
+      "file": {
+        "reserve_calls": 0,
+        "reserved_bytes": 0,
+        "drops": 0,
+        "histogram_size": 176,
+        "reader_size": 72,
+        "map_wrapper_size": 48
+      },
+      "map": {
+        "reserve_calls": 100,
+        "reserved_bytes": 6553600,
+        "drops": 100,
+        "histogram_size": 176,
+        "reader_size": 72,
+        "map_wrapper_size": 48
+      },
+      "window": {
+        "reserve_calls": 101,
+        "reserved_bytes": 419430402,
+        "drops": 101,
+        "histogram_size": 176,
+        "reader_size": 72,
+        "map_wrapper_size": 48
+      }
+    },
+    "after": {
+      "file": {
+        "reserve_calls": 0,
+        "reserved_bytes": 0,
+        "drops": 0,
+        "histogram_size": 168,
+        "reader_size": 72,
+        "map_wrapper_size": 48
+      },
+      "map": {
+        "reserve_calls": 100,
+        "reserved_bytes": 6553600,
+        "drops": 100,
+        "histogram_size": 168,
+        "reader_size": 72,
+        "map_wrapper_size": 48
+      },
+      "window": {
+        "reserve_calls": 101,
+        "reserved_bytes": 419430402,
+        "drops": 101,
+        "histogram_size": 168,
+        "reader_size": 72,
+        "map_wrapper_size": 48
+      }
+    }
+  },
+  "ablation_deltas": {
+    "pushproof": {
+      "purpose": "Capacity-check proof only, same original metadata size",
+      "patch": "--- a/src/util/entropy_budget.rs\n+++ b/src/util/entropy_budget.rs\n@@ -83 +83 @@\n-        assert!(self.data.len() < self.requested); // never grow outside admission\n+        assert!(self.data.len() < if self.lease.is_none() { self.data.capacity() } else { self.requested }); // never grow outside admission\n",
+      "source_sha256": {
+        "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+        "src/util/entropy_budget.rs": "41f9da6b55da93787f455e3f325dda10dba40fc7291b7036a2058be7a75ce5f5",
+        "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+        "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+        "src/entropy_coding/decode.rs": "630eb5ef8107a68ed0a7e9603941fca3b7946729393a89bf052424e78b90ac88",
+        "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+      }
+    },
+    "compact": {
+      "purpose": "Remove redundant requested-capacity word and derive it from admitted bytes",
+      "patch": "--- a/src/util/entropy_budget.rs\n+++ b/src/util/entropy_budget.rs\n@@ -68 +67,0 @@\n-    requested: usize,\n@@ -79 +78,5 @@\n-            requested: capacity,\n+        })\n+    }\n+    fn admitted_capacity(&self) -> usize {\n+        self.lease.as_ref().map_or(self.data.capacity(), |lease| {\n+            lease.bytes.checked_div(std::mem::size_of::<T>()).unwrap_or(usize::MAX)\n@@ -83 +86 @@\n-        assert!(self.data.len() < self.requested); // never grow outside admission\n+        assert!(self.data.len() < self.admitted_capacity()); // never grow outside admission\n@@ -91 +93,0 @@\n-            self.requested = self.requested.max(len);\n@@ -94 +96 @@\n-        if len <= self.requested {\n+        if len <= self.admitted_capacity() {\n@@ -118 +119,0 @@\n-        let requested = data.capacity();\n@@ -122 +122,0 @@\n-            requested,\n",
+      "source_sha256": {
+        "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+        "src/util/entropy_budget.rs": "c801e65561530f4a04774bd400db43c967f44521c0fe82578cd60f4351bc50e9",
+        "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+        "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+        "src/entropy_coding/decode.rs": "630eb5ef8107a68ed0a7e9603941fca3b7946729393a89bf052424e78b90ac88",
+        "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+      }
+    },
+    "windowfixed": {
+      "purpose": "Fixed 4 MiB window lease metadata only, no per-symbol change",
+      "patch": "--- a/src/util/entropy_budget.rs\n+++ b/src/util/entropy_budget.rs\n@@ -35,0 +36,7 @@\n+        self.claim(bytes)?;\n+        Ok(Lease {\n+            budget: self.clone(),\n+            bytes,\n+        })\n+    }\n+    fn claim(&self, bytes: usize) -> Result<()> {\n@@ -44,4 +51 @@\n-        Ok(Lease {\n-            budget: self.clone(),\n-            bytes,\n-        })\n+        Ok(())\n@@ -48,0 +53,5 @@\n+    pub(crate) fn reserve_window(&self) -> Result<WindowLease> {\n+        self.claim(4 * 1024 * 1024)?;\n+        Ok(WindowLease(self.clone()))\n+    }\n+\n@@ -136,0 +146,6 @@\n+\n+#[derive(Debug)]\n+pub(crate) struct WindowLease(EntropyBudget);\n+impl Drop for WindowLease {\n+    fn drop(&mut self) { self.0.0.live.fetch_sub(4 * 1024 * 1024, Ordering::Relaxed); }\n+}\n--- a/src/entropy_coding/decode.rs\n+++ b/src/entropy_coding/decode.rs\n@@ -15 +15 @@\n-use crate::util::entropy_budget::{EntropyBudget, EntropyVec, Lease};\n+use crate::util::entropy_budget::{EntropyBudget, EntropyVec, Lease, WindowLease};\n@@ -92 +92 @@\n-    _window_lease: Option<Lease>,\n+    _window_lease: Option<WindowLease>,\n@@ -218,5 +218,4 @@\n-            let (window, window_lease) = EntropyVec::with_capacity(\n-                1 << Lz77State::LOG_WINDOW_SIZE,\n-                histograms.context_map.budget().as_ref(),\n-            )?\n-            .into_parts();\n+            let budget = histograms.context_map.budget();\n+            let window_lease = budget.as_ref().map(EntropyBudget::reserve_window).transpose()?;\n+            let mut window = Vec::new();\n+            window.try_reserve_exact(1 << Lz77State::LOG_WINDOW_SIZE)?;\n",
+      "source_sha256": {
+        "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+        "src/util/entropy_budget.rs": "bdb49a71ac7931863fc49537b1256fb2736df3643501f0ff1f5f7cb5f04c26ba",
+        "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+        "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+        "src/entropy_coding/decode.rs": "fd1625bd5ea70b4ded09275748aadfe34874d2ce25b1a3b1b76916bbfef36a8e",
+        "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+      }
+    },
+    "rawfixed": {
+      "purpose": "Raw histogram Vec combined with fixed-size window lease; not selected",
+      "patch": "--- a/src/util/entropy_budget.rs\n+++ b/src/util/entropy_budget.rs\n@@ -35,0 +36,7 @@\n+        self.claim(bytes)?;\n+        Ok(Lease {\n+            budget: self.clone(),\n+            bytes,\n+        })\n+    }\n+    fn claim(&self, bytes: usize) -> Result<()> {\n@@ -44,4 +51 @@\n-        Ok(Lease {\n-            budget: self.clone(),\n-            bytes,\n-        })\n+        Ok(())\n@@ -48,0 +53,5 @@\n+    pub(crate) fn reserve_window(&self) -> Result<WindowLease> {\n+        self.claim(4 * 1024 * 1024)?;\n+        Ok(WindowLease(self.clone()))\n+    }\n+\n@@ -53,0 +63,3 @@\n+}\n+impl Lease {\n+    pub(crate) fn budget(&self) -> EntropyBudget { self.budget.clone() }\n@@ -136,0 +149,24 @@\n+\n+// Preserve raw Vec access in histogram hot loops; keep its lease separately.\n+pub(crate) fn resize_parts<T: Copy>(data: &mut Vec<T>, lease: &mut Option<Lease>, len: usize, value: T) -> Result<()> {\n+    if let Some(current) = lease {\n+        let admitted = current.bytes.checked_div(std::mem::size_of::<T>()).unwrap_or(usize::MAX);\n+        if len <= admitted { data.resize(len, value); return Ok(()); }\n+        let mut replacement = EntropyVec::with_capacity(len, Some(&current.budget))?;\n+        replacement.data.extend_from_slice(data);\n+        replacement.data.resize(len, value);\n+        let (new_data, new_lease) = replacement.into_parts();\n+        *data = new_data; // free old allocation before releasing its lease\n+        *lease = new_lease;\n+    } else {\n+        data.try_reserve_exact(len.saturating_sub(data.len()))?;\n+        data.resize(len, value);\n+    }\n+    Ok(())\n+}\n+\n+#[derive(Debug)]\n+pub(crate) struct WindowLease(EntropyBudget);\n+impl Drop for WindowLease {\n+    fn drop(&mut self) { self.0.0.live.fetch_sub(4 * 1024 * 1024, Ordering::Relaxed); }\n+}\n--- a/src/entropy_coding/decode.rs\n+++ b/src/entropy_coding/decode.rs\n@@ -15 +15 @@\n-use crate::util::entropy_budget::{EntropyBudget, EntropyVec, Lease};\n+use crate::util::entropy_budget::{EntropyBudget, EntropyVec, Lease, WindowLease};\n@@ -72 +72 @@\n-    context_map: EntropyVec<u8>,\n+    context_map: Vec<u8>,\n@@ -79,0 +80 @@\n+    _context_map_lease: Option<Lease>,\n@@ -92 +93 @@\n-    _window_lease: Option<Lease>,\n+    _window_lease: Option<WindowLease>,\n@@ -218,5 +219,4 @@\n-            let (window, window_lease) = EntropyVec::with_capacity(\n-                1 << Lz77State::LOG_WINDOW_SIZE,\n-                histograms.context_map.budget().as_ref(),\n-            )?\n-            .into_parts();\n+            let budget = histograms._context_map_lease.as_ref().map(Lease::budget);\n+            let window_lease = budget.as_ref().map(EntropyBudget::reserve_window).transpose()?;\n+            let mut window = Vec::new();\n+            window.try_reserve_exact(1 << Lz77State::LOG_WINDOW_SIZE)?;\n@@ -566,0 +567 @@\n+        let (context_map, context_map_lease) = context_map.into_parts();\n@@ -574,0 +576 @@\n+            _context_map_lease: context_map_lease,\n@@ -587 +589 @@\n-        self.context_map.try_resize(num_contexts, 0)\n+        crate::util::entropy_budget::resize_parts(&mut self.context_map, &mut self._context_map_lease, num_contexts, 0)\n@@ -683 +685,2 @@\n-            context_map: EntropyVec::unbudgeted(vec![0]),\n+            context_map: vec![0],\n+            _context_map_lease: None,\n@@ -700 +703,2 @@\n-            context_map: EntropyVec::unbudgeted(vec![0]),\n+            context_map: vec![0],\n+            _context_map_lease: None,\n",
+      "source_sha256": {
+        "src/util/mod.rs": "492cc2654a750ae1e0ae0deb468ffd801caccdfc32180b38ece80ea81daf9163",
+        "src/util/entropy_budget.rs": "bb74dbc9f814fb9da54e05ebceee5c1eeb1b1064cc6cf94736127b192964daf6",
+        "src/error.rs": "a6a21345102b2c33f6742eb8f6f34fc817adb8c73086e54f44ceca04bba33503",
+        "src/entropy_coding/context_map.rs": "1516ac6193491dadeb41b67bf446bd0560d8c97c67b9f7ff81b63eb81da025be",
+        "src/entropy_coding/decode.rs": "56313eb614ddd87e06831f5d5a4e69fc333713bc97baa12dc5d7d77befca9c92",
+        "src/frame/decode.rs": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
+      }
+    }
+  },
+  "interpretation": {
+    "synchronization": "No reserve calls or lease drops occur on the legacy photo route; synchronization and per-element reservation cannot explain the measured legacy slowdown. 100 explicit maps make 100 reservations; 100 windows plus their histogram map make 101, with matched drops.",
+    "negative_controls": "Capacity-check-only, compact wrapper metadata alone and fixed-window metadata alone do not remove the photo regression. The combined fixed-window variant is also inferior to raw histogram Vec alone.",
+    "selected_change": "Keep histogram hot storage as raw Vec and store its non-cloneable lease separately, freeing Vec before lease. Histogram size is 176 ->168 bytes on this host; reader72 and standalone wrapper48 stay unchanged. Size reduction alone is not an established cause: compact-size control does not recover performance. Evidence supports representation/code-generation interaction; no specific instruction-level bottleneck is claimed.",
+    "simple": "Earlier roughly3% simple-case slowdown does not consistently reproduce under controlled builds and A/A controls.",
+    "qualification": "The original photo regression is absent in the final measured ordinary cases after the storage change. This is not decoder-wide or platform-wide performance qualification."
+  },
+  "ordering_correction": "The earlier four-condition pilot reversed every other block, which did not balance positions for even condition counts. That pilot is retained locally and excluded from final qualification. Full-cycle balancing and --check-order cover 4, 5, 8 and 3 conditions.",
+  "selected_after_patch_sha256": "2804875bf81cc8bea3f8668c0b878b093d8f1cb853226523458b767afdd9a8bf"
+}

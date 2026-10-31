@@ -5,6 +5,7 @@ on:
       - '.github/workflows/jxl-entropy-evaluation.yml'
       - 'wml2-test/scripts/*entropy_budget*'
       - 'docs/jpeg-xl-entropy-budget-evaluation.*'
+      - 'docs/jpeg-xl-entropy-budget-performance.*'
 permissions:
   contents: read
 jobs:
@@ -24,6 +25,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Check controlled performance process ordering
+        run: python -B wml2-test/scripts/diagnose_jpegxl_entropy_budget.py --check-order
       - name: Apply verified evaluation patch and execute scoped denial tests
         run: python -B wml2-test/scripts/evaluate_jpegxl_entropy_budget.py --output .test-entropy-ci --wasm --wml-regression
       - uses: actions/upload-artifact@v4

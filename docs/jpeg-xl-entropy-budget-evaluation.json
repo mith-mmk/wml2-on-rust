@@ -14,7 +14,7 @@
     },
     "src/util/entropy_budget.rs": {
       "before": null,
-      "after": "2a0c3199be25635b7df7b50fb4aa52d6ee14138a967b965017a7df5ba6fec214"
+      "after": "0eb05d64ce9874342c6eaf66cb33060c3434d7853aa84430f2c9c27c5e5af1f4"
     },
     "src/error.rs": {
       "before": "231045f543dda51dd45959a3122175ba4340a032b36ab1bf30a16719db90b8f9",
@@ -26,19 +26,19 @@
     },
     "src/entropy_coding/decode.rs": {
       "before": "ff3696293c449ba15074ed0c815ef140d4cc6e85ee7bc0b3c2b1034b943d0b6b",
-      "after": "630eb5ef8107a68ed0a7e9603941fca3b7946729393a89bf052424e78b90ac88"
+      "after": "cc91b39801cf37addf64992ebd5eedf363bd18f5ebcb69514d8aa35f816902a4"
     },
     "src/frame/decode.rs": {
       "before": "4b7ffba9833d7242fa52a635b3be98771cbc4e47ccd9e154e4d8fa987c784443",
       "after": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
     }
   },
-  "patch_sha256": "79b80db1bce8babe9c3889c52f2a287384db9da9ae9bed72cef40740a300a654",
+  "patch_sha256": "2804875bf81cc8bea3f8668c0b878b093d8f1cb853226523458b767afdd9a8bf",
   "validation": {
     "scope": "EVALUATION ONLY: explicit low-level context-map and derived LZ77 reader requested payload capacity; no production dependency change or decoder-wide bound",
     "source_sha256": "43b041e4bd5bb931cf73b271bc3304eb135bb473914877d64bf77fdf5b4d4687",
-    "patch_sha256": "79b80db1bce8babe9c3889c52f2a287384db9da9ae9bed72cef40740a300a654",
-    "native_tests": 13,
+    "patch_sha256": "2804875bf81cc8bea3f8668c0b878b093d8f1cb853226523458b767afdd9a8bf",
+    "native_tests": 14,
     "native_passed": true,
     "wasm": {
       "passed": true,
@@ -48,7 +48,7 @@
       "linear_ceiling_enforced": true,
       "memory_bytes": 9699328,
       "node": "v24.19.0",
-      "sha256": "56c367ac054dd48025b196f370249e29cf1b55b4dafab4fb388904e2f18e5f6a"
+      "sha256": "73423eb9c1783cd0ecbebad3aebba2255b98c7a8f72f201026e0555af7f40e00"
     },
     "wml_regression": {
       "integration_tests": 84,
@@ -58,7 +58,8 @@
     },
     "actual_null_return_sites": [
       "initial 64-byte map",
-      "32-byte replacement resize",
+      "32-byte standalone replacement resize",
+      "32-byte histogram replacement resize",
       "4 MiB LZ77 window"
     ],
     "display": {
@@ -69,7 +70,7 @@
       "max_rgb_error": 1,
       "alpha_exact": true
     },
-    "benchmark": {
+    "historical_benchmark_af18090": {
       "base": "8fa0b978c4f68e998439e1bffe0b567f46024074",
       "method": "five balanced alternating process pairs, one pinned available CPU, 5 warmups +20 measured decodes including hashing; legacy unbudgeted high-level route; no concurrent cargo work",
       "binaries_sha256": {
@@ -247,11 +248,11 @@
         }
       ]
     },
-    "performance_gate": "NOT PASSED for product adoption: photo median 1.049x and simple median 1.034x; ICC cases improve. Evaluation only; no shipping change.",
-    "note": "Final artifact uses zero-context hunks; all applied source hashes are identical to the qualified native/WASM/WML regression sources."
+    "performance_report": "jpeg-xl-entropy-budget-performance.json",
+    "performance_gate": "The measured ordinary photo regression is not observed after raw histogram Vec/separate-lease storage. Controlled cases only; no platform-wide/decoder-wide qualification or product dependency integration."
   },
   "artifact_sha256": {
-    "jxl_entropy_budget_eval.rs": "fe37c74e7a9d4d19ea077b1a33305d1d7b533300eaf9407cfb471efc824fa61f",
+    "jxl_entropy_budget_eval.rs": "67bbd64d6a4c19791cec84125b60c0a637cc1cc2c3bbcd3cd0ad6815159d1f20",
     "jxl_entropy_budget_eval.lock": "8c3dfb8cd5165aca3fc39217f130b01ba18232a5cb62875dcab4ce8d78bda097"
   },
   "product_files_unchanged": {

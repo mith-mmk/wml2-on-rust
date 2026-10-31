@@ -123,9 +123,9 @@ jxl={{path={quote(str(tree))},default-features=false}}
     if args.offline:
         common += ['--offline']
     run(['cargo','test',*common], out / 'native.log', env)
-    assert 'test result: ok. 13 passed' in (out/'native.log').read_text()
+    assert 'test result: ok. 14 passed' in (out/'native.log').read_text()
     report = {'scope':spec['scope'],'source_sha256':spec['source']['sha256'],
-              'patch_sha256':sha(patch),'native_tests':13,'native_passed':True}
+              'patch_sha256':sha(patch),'native_tests':14,'native_passed':True}
     if args.wasm:
         run(['cargo','rustc',*common,'--release','--target','wasm32-unknown-unknown','--lib',
              '--','-C','link-arg=--max-memory=67108864'], out / 'wasm-build.log', env)

@@ -5,7 +5,7 @@
 +pub mod entropy_budget;
 --- a/src/util/entropy_budget.rs
 +++ b/src/util/entropy_budget.rs
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,170 @@
 +// Copyright (c) the JPEG XL Project Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license in LICENSE.
 +
@@ -59,6 +59,11 @@
 +pub(crate) struct Lease {
 +    budget: EntropyBudget,
 +    bytes: usize,
++}
++impl Lease {
++    pub(crate) fn budget(&self) -> EntropyBudget {
++        self.budget.clone()
++    }
 +}
 +impl Drop for Lease {
 +    fn drop(&mut self) {
@@ -142,6 +147,35 @@
 +        &mut self.data
 +    }
 +}
++
++// Preserve raw Vec access in histogram hot loops; keep its lease separately.
++pub(crate) fn resize_parts<T: Copy>(
++    data: &mut Vec<T>,
++    lease: &mut Option<Lease>,
++    len: usize,
++    value: T,
++) -> Result<()> {
++    if let Some(current) = lease {
++        let admitted = current
++            .bytes
++            .checked_div(std::mem::size_of::<T>())
++            .unwrap_or(usize::MAX);
++        if len <= admitted {
++            data.resize(len, value);
++            return Ok(());
++        }
++        let mut replacement = EntropyVec::with_capacity(len, Some(&current.budget))?;
++        replacement.data.extend_from_slice(data);
++        replacement.data.resize(len, value);
++        let (new_data, new_lease) = replacement.into_parts();
++        *data = new_data; // free old allocation before releasing its lease
++        *lease = new_lease;
++    } else {
++        data.try_reserve_exact(len.saturating_sub(data.len()))?;
++        data.resize(len, value);
++    }
++    Ok(())
++}
 --- a/src/error.rs
 +++ b/src/error.rs
 @@ -17,0 +18,2 @@
@@ -216,23 +250,26 @@
 @@ -15 +15 @@
 -use crate::util::NewWithCapacity;
 +use crate::util::entropy_budget::{EntropyBudget, EntropyVec, Lease};
-@@ -72 +72 @@
--    context_map: Vec<u8>,
-+    context_map: EntropyVec<u8>,
-@@ -90,0 +91,2 @@
+@@ -79,0 +80 @@
++    _context_map_lease: Option<Lease>,
+@@ -90,0 +92,2 @@
 +    // Field drop order: release the Vec before this live-capacity lease.
 +    _window_lease: Option<Lease>,
-@@ -215,0 +218,5 @@
+@@ -215,0 +219,9 @@
 +            let (window, window_lease) = EntropyVec::with_capacity(
 +                1 << Lz77State::LOG_WINDOW_SIZE,
-+                histograms.context_map.budget().as_ref(),
++                histograms
++                    ._context_map_lease
++                    .as_ref()
++                    .map(Lease::budget)
++                    .as_ref(),
 +            )?
 +            .into_parts();
-@@ -220 +227,2 @@
+@@ -220 +232,2 @@
 -                window: Vec::new_with_capacity(1 << Lz77State::LOG_WINDOW_SIZE)?,
 +                window,
 +                _window_lease: window_lease,
-@@ -497,0 +506,13 @@
+@@ -497,0 +511,13 @@
 +        Self::decode_with_budget(num_contexts, br, allow_lz77, None)
 +    }
 +    /// Evaluation: context-map storage and readers derived from these histograms.
@@ -246,10 +283,10 @@
 +        if num_contexts == 0 {
 +            return Err(Error::SizeOverflow);
 +        }
-@@ -504 +525 @@
+@@ -504 +530 @@
 -                num_contexts + 1,
 +                num_contexts.checked_add(1).ok_or(Error::SizeOverflow)?,
-@@ -512,3 +533,5 @@
+@@ -512,3 +538,5 @@
 -            decode_context_map(num_contexts, br)?
 -        } else {
 -            vec![0]
@@ -258,17 +295,24 @@
 +            let mut map = EntropyVec::with_capacity(1, budget)?;
 +            map.push_reserved(0);
 +            map
-@@ -563,2 +586,2 @@
+@@ -543,0 +572 @@
++        let (context_map, context_map_lease) = context_map.into_parts();
+@@ -551,0 +581 @@
++            _context_map_lease: context_map_lease,
+@@ -563,2 +593,7 @@
 -    pub fn resize(&mut self, num_contexts: usize) {
 -        self.context_map.resize(num_contexts, 0);
 +    pub fn resize(&mut self, num_contexts: usize) -> Result<()> {
-+        self.context_map.try_resize(num_contexts, 0)
-@@ -660 +683 @@
--            context_map: vec![0],
-+            context_map: EntropyVec::unbudgeted(vec![0]),
-@@ -677 +700 @@
--            context_map: vec![0],
-+            context_map: EntropyVec::unbudgeted(vec![0]),
++        crate::util::entropy_budget::resize_parts(
++            &mut self.context_map,
++            &mut self._context_map_lease,
++            num_contexts,
++            0,
++        )
+@@ -660,0 +696 @@
++            _context_map_lease: None,
+@@ -677,0 +714 @@
++            _context_map_lease: None,
 --- a/src/frame/decode.rs
 +++ b/src/frame/decode.rs
 @@ -601 +601 @@

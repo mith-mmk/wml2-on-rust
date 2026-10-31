@@ -270,6 +270,29 @@ mod tests {
         assert_eq!(b.live_bytes(), 0);
     }
     #[test]
+    fn histogram_raw_storage_growth_failure_and_release_order() {
+        let _reset = Reset;
+        let raw = bits(&histogram_bits(false));
+        let b = EntropyBudget::new(48);
+        let mut br = BitReader::new(&raw);
+        let mut hist = Histograms::decode_with_budget(1, &mut br, true, Some(&b)).unwrap();
+        hist.resize(16).unwrap();
+        WATCH.with(|w| *w.borrow_mut() = Some(b.clone()));
+        WATCH_BYTES.with(|n| n.set(16));
+        arm(32);
+        assert!(matches!(hist.resize(32), Err(Error::OutOfMemory(_))));
+        assert_eq!(HIT.with(Cell::get), 32);
+        assert_eq!(b.live_bytes(), 16);
+        assert_eq!(hist.map_context_to_cluster(15), 0);
+        hist.resize(32).unwrap();
+        assert_eq!(LIVE_AT_FREE.with(Cell::get), 48);
+        assert_eq!(b.live_bytes(), 32);
+        WATCH_BYTES.with(|n| n.set(32));
+        drop(hist);
+        assert_eq!(LIVE_AT_FREE.with(Cell::get), 32);
+        assert_eq!(b.live_bytes(), 0);
+    }
+    #[test]
     fn map_clone_and_move() {
         simple()
     }

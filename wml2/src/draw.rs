@@ -898,22 +898,24 @@ pub struct EncodeOptionsEx<'a> {
     pub options: Option<HashMap<String, DataMap>>,
 }
 
-/// Encode through an explicit EX pixel request. Currently enabled AVIF encoding
-/// accepts Gray/RGBA8 or12; RGBA16 storage needs an explicit8/12-bit pick policy.
-/// Other codecs retain their existing legacy encoder entry points.
+/// Encode through an explicit EX pixel request. PNG accepts static Gray/RGBA8
+/// or16. AVIF accepts Gray/RGBA8 or12. Storage precision is converted only by
+/// the explicitly requested picker policy, independently of codec precision.
 #[cfg(feature = "image-buffer-ex")]
 pub fn image_encoder_ex(
     option: &mut EncodeOptionsEx,
     format: ImageFormat,
 ) -> Result<Vec<u8>, Error> {
     match format {
+        #[cfg(feature = "png")]
+        ImageFormat::Png => crate::png::encoder::encode_ex(option),
         #[cfg(feature = "avifenc")]
         ImageFormat::Avif => crate::avif::encoder::encode_ex(option),
         _ => {
             let _ = option;
             Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
-                "EX encoding supports enabled AVIF only".into(),
+                "EX encoding supports enabled PNG and AVIF only".into(),
             )))
         }
     }

@@ -899,7 +899,8 @@ pub struct EncodeOptionsEx<'a> {
 }
 
 /// Encode through an explicit EX pixel request. PNG accepts static Gray/RGBA8
-/// or16. AVIF accepts Gray/RGBA8 or12. Storage precision is converted only by
+/// or16. TIFF accepts static Gray/RGBA16. AVIF accepts Gray/RGBA8 or12.
+/// Storage precision is converted only by
 /// the explicitly requested picker policy, independently of codec precision.
 #[cfg(feature = "image-buffer-ex")]
 pub fn image_encoder_ex(
@@ -909,13 +910,15 @@ pub fn image_encoder_ex(
     match format {
         #[cfg(feature = "png")]
         ImageFormat::Png => crate::png::encoder::encode_ex(option),
+        #[cfg(feature = "tiff")]
+        ImageFormat::Tiff => crate::tiff::encoder::encode_ex(option),
         #[cfg(feature = "avifenc")]
         ImageFormat::Avif => crate::avif::encoder::encode_ex(option),
         _ => {
             let _ = option;
             Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
-                "EX encoding supports enabled PNG and AVIF only".into(),
+                "EX encoding supports enabled PNG, TIFF and AVIF only".into(),
             )))
         }
     }

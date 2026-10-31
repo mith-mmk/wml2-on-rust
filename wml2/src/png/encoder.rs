@@ -627,62 +627,12 @@ pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx<'_>) -> Result<Vec<u8
                     .into(),
             );
         }
-        let gray_expansion = profile.format.channels() == 1
-            && format.channels() == 4
-            && metadata.contains_key("ICC Profile");
-        let explicit = option.options.as_ref().and_then(|m| m.get("ICC Profile"));
-        let expected = if format.channels() == 1 {
-            b"GRAY"
-        } else {
-            b"RGB "
-        };
-        let model = |value: &DataMap| -> Result<[u8; 4], Error> {
-            let DataMap::ICCProfile(bytes) = value else {
-                return Err("PNG output ICC must be ICCProfile bytes".into());
-            };
-            crate::limits::check(bytes.len(), limits.metadata_bytes, "PNG ICC metadata")?;
-            if bytes.len() < 128
-                || &bytes[36..40] != b"acsp"
-                || u32::from_be_bytes(bytes[..4].try_into()?) as usize != bytes.len()
-            {
-                return Err(
-                    "PNG output ICC requires a complete ICC header and matching profile length"
-                        .into(),
-                );
-            }
-            Ok(bytes[16..20].try_into()?)
-        };
-        if gray_expansion && explicit.map(&model).transpose()? != Some(*expected) {
-            return Err("PNG Gray ICC cannot describe expanded RGB; supply a compatible output ICC or request Gray".into());
-        }
-        // Never promote source provenance to output ICC. Known mismatched source
-        // models require an explicit compatible output declaration, as in AVIF EX.
-        if let Some(DataMap::ICCProfile(source)) = metadata.get("Source ICC Profile") {
-            crate::limits::check(
-                source.len(),
-                limits.metadata_bytes,
-                "PNG source ICC metadata",
-            )?;
-            if source.len() >= 128
-                && &source[36..40] == b"acsp"
-                && &source[16..20] != expected
-                && explicit.map(&model).transpose()? != Some(*expected)
-            {
-                return Err("PNG source ICC model differs from output; supply a compatible output ICC or request native Gray".into());
-            }
-        }
-        let icc = explicit.or_else(|| metadata.get("ICC Profile"));
-        let icc_bytes = if let Some(value) = icc {
-            if model(value)? != *expected {
-                return Err("PNG output ICC model differs from output pixels".into());
-            }
-            let DataMap::ICCProfile(bytes) = value else {
-                unreachable!()
-            };
-            Some(bytes)
-        } else {
-            None
-        };
+        let icc_bytes = crate::draw::image_buffer_ex::output_icc_ex(
+            &metadata,
+            option.options.as_ref(),
+            profile.format,
+            format,
+        )?;
         let exif_plan = crate::metadata::exif_output_ex(option.options.as_ref(), Some(&metadata))?;
         let exif_bound = exif_plan
             .as_ref()
@@ -695,7 +645,7 @@ pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx<'_>) -> Result<Vec<u8
             .transpose()?
             .unwrap_or(0);
         let metadata_bytes = icc_bytes
-            .map_or(0, Vec::len)
+            .map_or(0, <[u8]>::len)
             .checked_add(exif_bound)
             .ok_or("PNG metadata overflow")?;
         crate::limits::check(metadata_bytes, limits.metadata_bytes, "PNG encode metadata")?;

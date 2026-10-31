@@ -98,7 +98,8 @@ cargo run -p wml2 --offline --no-default-features --features image-buffer-ex,png
 
 現行 `image_encoder` の codec は legacy `PickCallback` の packed RGBA8 を
 読む。`PickCallbackEx` を直接受け取る静止 PNG encoder は `image_encoder_ex` から
-利用できる（[PNG EX 保存](image-buffer-ex-png.md)）。高精度 TIFF encoder と
+利用できる（[PNG EX 保存](image-buffer-ex-png.md)）。単一ページの Gray16/RGBA16
+TIFF も同じ入口から保存できる（[TIFF EX 保存](image-buffer-ex-tiff-encode.md)）。
 能力を自動照会する API は未実装。サンプルは `png` feature がある場合だけ
 `legacy_picker(Round)` を渡し、現行 RGBA8 PNG エンコードを実行する。
 これをネイティブ RGBA12／16 PNG エンコードと解釈しない。
@@ -108,8 +109,7 @@ cargo run -p wml2 --offline --no-default-features --features image-buffer-ex,png
 
 AVIF には追加の [EX adapter](image-buffer-ex-avif.md) がある。
 `image_encoder_ex(EncodeOptionsEx)` は8/12bitを明示要求し、元の storage を保持する。
-AVIF の EX decode も ICC は draw 後の metadata として渡す。上記の高精度
-TIFF encoder と能力交渉 API は引き続き未実装である。
+AVIF の EX decode も ICC は draw 後の metadata として渡す。PNG/TIFF EX 保存は上記の範囲で利用できる。能力交渉 API は未実装である。
 
 ## ICC と metadata の配信順
 

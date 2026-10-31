@@ -129,12 +129,11 @@ fn as_raw(value: Option<&DataMap>, key: &str) -> Result<Vec<u8>, Error> {
     }
 }
 
-fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMode, Error> {
-    let Some(value) = option
-        .options
-        .as_ref()
-        .and_then(|map| map.get("compression"))
-    else {
+fn tiff_compression(
+    options: Option<&crate::metadata::Metadata>,
+    _jpeg_quality: usize,
+) -> Result<TiffCompressionMode, Error> {
+    let Some(value) = options.and_then(|map| map.get("compression")) else {
         return Ok(TiffCompressionMode::None);
     };
 
@@ -148,7 +147,7 @@ fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMod
             "deflate_legacy" => Ok(TiffCompressionMode::Deflate { adobe: false }),
             #[cfg(feature = "tiff-jpeg")]
             "jpeg" | "jpg" => Ok(TiffCompressionMode::Jpeg {
-                quality: quality_from_draw_options(option),
+                quality: _jpeg_quality,
             }),
             #[cfg(not(feature = "tiff-jpeg"))]
             "jpeg" | "jpg" => Err(Box::new(ImgError::new_const(
@@ -166,7 +165,7 @@ fn tiff_compression(option: &DrawEncodeOptions<'_>) -> Result<TiffCompressionMod
         DataMap::UInt(32946) | DataMap::SInt(32946) => Ok(TiffCompressionMode::Deflate { adobe: false }),
         #[cfg(feature = "tiff-jpeg")]
         DataMap::UInt(7) | DataMap::SInt(7) => Ok(TiffCompressionMode::Jpeg {
-            quality: quality_from_draw_options(option),
+            quality: _jpeg_quality,
         }),
         #[cfg(not(feature = "tiff-jpeg"))]
         DataMap::UInt(7) | DataMap::SInt(7) => Err(Box::new(ImgError::new_const(
@@ -187,8 +186,8 @@ enum TiffPredictorMode {
     Horizontal,
 }
 
-fn tiff_predictor(option: &DrawEncodeOptions<'_>) -> Result<TiffPredictorMode, Error> {
-    let Some(value) = option.options.as_ref().and_then(|map| map.get("predictor")) else {
+fn tiff_predictor(options: Option<&crate::metadata::Metadata>) -> Result<TiffPredictorMode, Error> {
+    let Some(value) = options.and_then(|map| map.get("predictor")) else {
         return Ok(TiffPredictorMode::None);
     };
     match value {
@@ -209,8 +208,10 @@ fn tiff_predictor(option: &DrawEncodeOptions<'_>) -> Result<TiffPredictorMode, E
     }
 }
 
-fn tiff_output_variant(option: &DrawEncodeOptions<'_>) -> Result<TiffOutputVariant, Error> {
-    let Some(value) = option.options.as_ref().and_then(|map| map.get("bigtiff")) else {
+fn tiff_output_variant(
+    options: Option<&crate::metadata::Metadata>,
+) -> Result<TiffOutputVariant, Error> {
+    let Some(value) = options.and_then(|map| map.get("bigtiff")) else {
         return Ok(TiffOutputVariant::Classic);
     };
     let enabled = match value {
@@ -1060,8 +1061,12 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
             "Image profiles nothing".to_string(),
         )) as Error
     })?;
-    let compression = tiff_compression(image)?;
-    let predictor = tiff_predictor(image)?;
+    #[cfg(feature = "tiff-jpeg")]
+    let jpeg_quality = quality_from_draw_options(image);
+    #[cfg(not(feature = "tiff-jpeg"))]
+    let jpeg_quality = 80;
+    let compression = tiff_compression(image.options.as_ref(), jpeg_quality)?;
+    let predictor = tiff_predictor(image.options.as_ref())?;
     if predictor == TiffPredictorMode::Horizontal
         && !matches!(
             compression,
@@ -1073,7 +1078,7 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
             "TIFF horizontal predictor requires LZW or Deflate compression".to_string(),
         )));
     }
-    let output_variant = tiff_output_variant(image)?;
+    let output_variant = tiff_output_variant(image.options.as_ref())?;
 
     let source =
         if let Some(exif) = get_exif_option(image.options.as_ref(), profile.metadata.as_ref())? {
@@ -1160,4 +1165,204 @@ pub fn encode(image: &mut DrawEncodeOptions<'_>) -> Result<Vec<u8>, Error> {
 
     image.drawer.encode_end(None)?;
     Ok(data)
+}
+
+/// Encode one strip on one page of unsigned Gray16 or straight RGBA16.
+/// Pixel precision is chosen by the EX picker; no CMS or compositing is applied.
+/// Supports the legacy none/LZW/Deflate, predictor and BigTIFF controls, plus
+/// EX-only `endian=big|little`. Nonstandard LSB LZW and JPEG are rejected.
+#[cfg(feature = "image-buffer-ex")]
+pub fn encode_ex(option: &mut crate::draw::EncodeOptionsEx<'_>) -> Result<Vec<u8>, Error> {
+    use crate::draw::{
+        PixelFormatEx,
+        image_buffer_ex::{output_icc_ex, validate_bytes},
+    };
+    let format = option.output.format;
+    if !matches!(format, PixelFormatEx::Gray16 | PixelFormatEx::Rgba16) {
+        return Err("TIFF EX output requires Gray16 or RGBA16; explicitly request conversion from8/12-bit storage".into());
+    }
+    let profile = option.drawer.encode_start_ex(None)?;
+    let result = (|| {
+        let profile = profile.ok_or("TIFF EX image profiles missing")?;
+        let width = profile.legacy.width;
+        let height = profile.legacy.height;
+        u32::try_from(width)?;
+        u32::try_from(height)?;
+        let (stride, length) = format.extent(width, height, option.output.stride)?;
+        let limits = crate::limits::current();
+        let pixels = width
+            .checked_mul(height)
+            .ok_or("TIFF pixel count overflow")?;
+        crate::limits::check(pixels, limits.pixels, "TIFF EX encode pixels")?;
+        crate::limits::check(1, limits.frames, "TIFF EX encode frames")?;
+        let row = format.row_bytes(width)?;
+        let raw_size = row.checked_mul(height).ok_or("TIFF sample size overflow")?;
+        let workspace = length
+            .checked_add(raw_size.checked_mul(4).ok_or("TIFF workspace overflow")?)
+            .and_then(|n| n.checked_add(row))
+            .and_then(|n| n.checked_add(4096))
+            .ok_or("TIFF workspace overflow")?;
+        crate::limits::check(workspace, limits.expanded_bytes, "TIFF EX encode workspace")?;
+        let compression = tiff_compression(option.options.as_ref(), 80)?;
+        if !matches!(
+            compression,
+            TiffCompressionMode::None
+                | TiffCompressionMode::Lzw { is_lsb: false }
+                | TiffCompressionMode::Deflate { .. }
+        ) {
+            return Err("TIFF EX supports only none, standard LZW and Deflate compression".into());
+        }
+        let predictor = tiff_predictor(option.options.as_ref())?;
+        if predictor == TiffPredictorMode::Horizontal
+            && matches!(compression, TiffCompressionMode::None)
+        {
+            return Err("TIFF horizontal predictor requires LZW or Deflate compression".into());
+        }
+        let variant = tiff_output_variant(option.options.as_ref())?;
+        let endian = match option.options.as_ref().and_then(|m| m.get("endian")) {
+            None => Endian::LittleEndian,
+            Some(DataMap::Ascii(v)) if v.eq_ignore_ascii_case("little") => Endian::LittleEndian,
+            Some(DataMap::Ascii(v)) if v.eq_ignore_ascii_case("big") => Endian::BigEndian,
+            _ => return Err("TIFF EX endian must be little or big".into()),
+        };
+        let mut metadata = profile.legacy.metadata.unwrap_or_default();
+        if let Some(tags) = option.drawer.metadata_ex()? {
+            metadata.extend(tags);
+        }
+        if metadata
+            .get(ENCODE_ANIMATION_FRAMES_KEY)
+            .is_some_and(|v| !matches!(v, DataMap::UInt(0)))
+        {
+            return Err("TIFF EX supports a single static page only".into());
+        }
+        let icc = output_icc_ex(&metadata, option.options.as_ref(), profile.format, format)?;
+        let exif_plan = crate::metadata::exif_output_ex(option.options.as_ref(), Some(&metadata))?;
+        let exif_size = exif_plan
+            .as_ref()
+            .map(|p| p.size_bound())
+            .transpose()?
+            .unwrap_or(0);
+        let exif_workspace = exif_plan
+            .as_ref()
+            .map(|p| p.workspace_bound(exif_size))
+            .transpose()?
+            .unwrap_or(0);
+        let metadata_size = icc
+            .map_or(0, <[u8]>::len)
+            .checked_add(exif_size)
+            .ok_or("TIFF metadata size overflow")?;
+        crate::limits::check(
+            metadata_size,
+            limits.metadata_bytes,
+            "TIFF EX encode metadata",
+        )?;
+        crate::limits::check(
+            workspace
+                .checked_add(exif_workspace)
+                .and_then(|n| n.checked_add(metadata_size.checked_mul(32)?))
+                .ok_or("TIFF metadata workspace overflow")?,
+            limits.expanded_bytes,
+            "TIFF EX encode workspace",
+        )?;
+        let exif = exif_plan.as_ref().map(|p| p.materialize()).transpose()?;
+        let source = exif
+            .as_ref()
+            .map(|bytes| exif_headers_from_bytes(bytes))
+            .transpose()?;
+        let picked = option
+            .drawer
+            .encode_pick_ex(0, 0, width, height, option.output, None)?
+            .ok_or("TIFF EX pixels missing")?;
+        if picked.width() != width
+            || picked.height() != height
+            || picked.format() != format
+            || picked.stride() != stride
+        {
+            return Err("TIFF EX picker returned a different layout than requested".into());
+        }
+        validate_bytes(picked.bytes(), width, height, format, stride, length)?;
+        let mut raw = crate::draw::zeroed_bytes(raw_size)?;
+        for (destination, source) in raw
+            .chunks_exact_mut(row)
+            .zip(picked.bytes().chunks_exact(stride))
+        {
+            destination.copy_from_slice(&source[..row]);
+        }
+        // The existing predictor works on LE samples and resets at every row.
+        // Swap only after differencing, so carries/borrows are sample-wise.
+        if predictor == TiffPredictorMode::Horizontal {
+            encode_horizontal_predictor(&mut raw, width, height, format.channels(), 16)?;
+        }
+        if endian == Endian::BigEndian {
+            for sample in raw.chunks_exact_mut(2) {
+                sample.swap(0, 1);
+            }
+        }
+        let pixel_data = match compression {
+            TiffCompressionMode::None => raw,
+            TiffCompressionMode::Lzw { is_lsb: false } => {
+                crate::encoder::lzw::encode_tiff_standard(&raw)?
+            }
+            TiffCompressionMode::Deflate { .. } => {
+                miniz_oxide::deflate::compress_to_vec_zlib(&raw, 8)
+            }
+            _ => unreachable!(),
+        };
+        let mut headers = build_page_headers(
+            width,
+            height,
+            pixel_data.len() as u64,
+            format.channels() == 4,
+            compression,
+            predictor,
+            variant,
+            source.as_ref(),
+            icc,
+        )?;
+        headers.endian = endian;
+        upsert_tag(
+            &mut headers.headers,
+            short_array_tag(0x0102, vec![16; format.channels()]),
+        );
+        upsert_tag(
+            &mut headers.headers,
+            short_tag(0x0106, if format.channels() == 1 { 1 } else { 2 }),
+        );
+        upsert_tag(
+            &mut headers.headers,
+            short_tag(0x0115, format.channels() as u16),
+        );
+        upsert_tag(
+            &mut headers.headers,
+            short_array_tag(0x0153, vec![1; format.channels()]),
+        );
+        let provisional = encode_pages(std::slice::from_ref(&headers), variant)?;
+        let offset = provisional.len() as u64;
+        drop(provisional);
+        if variant == TiffOutputVariant::Classic {
+            u32::try_from(
+                offset
+                    .checked_add(pixel_data.len() as u64)
+                    .ok_or("TIFF output size overflow")?,
+            )?;
+            set_strip_offset(&mut headers, u32::try_from(offset)?)?;
+        }
+        let layout = StripLayout {
+            offset,
+            byte_count: pixel_data.len() as u64,
+        };
+        let mut output =
+            encode_pages_with_layouts(std::slice::from_ref(&headers), variant, Some(&[layout]))?;
+        if output.len() as u64 != offset {
+            return Err("TIFF header layout changed during strip offset assignment".into());
+        }
+        output.extend_from_slice(&pixel_data);
+        crate::limits::check(output.len(), limits.expanded_bytes, "TIFF encoded output")?;
+        Ok(output)
+    })();
+    let ended = option.drawer.encode_end_ex(None);
+    match (result, ended) {
+        (Err(error), _) | (Ok(_), Err(error)) => Err(error),
+        (Ok(bytes), Ok(())) => Ok(bytes),
+    }
 }

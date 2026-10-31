@@ -306,5 +306,28 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     trailing.push(0);
     assert!(image_from(&trailing).is_err());
     count += 1;
+    for (data, make) in [
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-meta-little.jxl").as_slice(), "LittleMaker"),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-meta-big-offset.jxl").as_slice(), "BigMaker"),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-meta-brob.jxl").as_slice(), "LittleMaker"),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-meta-multiple.jxl").as_slice(), "LittleMaker"),
+    ] {
+        use wml2::metadata::DataMap;
+        let image = image_from(data).unwrap();
+        assert_eq!(image.buffer.as_deref().unwrap(), expected);
+        let metadata = image.metadata.as_ref().unwrap();
+        assert!(matches!(metadata.get("XMP"), Some(DataMap::Ascii(_))));
+        assert!(metadata.iter().any(|(k,v)| k.starts_with("JPEG XL Source Box ") && matches!(v,DataMap::Raw(_))));
+        #[cfg(feature = "exif")]
+        {
+            use wml2::{metadata::exif::{ExifIfd,get_tag}, tiff::header::DataPack};
+            let Some(DataMap::Exif(headers)) = metadata.get("EXIF") else { panic!("no EXIF") };
+            assert!(matches!(&get_tag(headers,ExifIfd::Primary,0x10f).unwrap().data, DataPack::Ascii(value) if value == make));
+            assert!(matches!(&get_tag(headers,ExifIfd::Primary,0x112).unwrap().data, DataPack::Short(value) if value == &[1]));
+        }
+        #[cfg(not(feature = "exif"))]
+        { let _ = make; assert!(!metadata.contains_key("EXIF")); }
+        count += 1;
+    }
     count
 }

@@ -1,0 +1,101 @@
+{
+  "oracle": "Pillow 12.3.0 TIFF EXIF + Python ElementTree UTF-8/XML namespaces + C libjxl 11002 decompressed metadata and pixels",
+  "compression": "C libbrotli 0x1001000, quality5 lgwin22",
+  "license": "Deterministic generated test metadata; existing codestream/djxl pixel provenance in jxl-fixtures.json",
+  "expected": {
+    "little_orientation": 6,
+    "big_orientation": 3,
+    "little_make": "LittleMaker",
+    "big_make": "BigMaker",
+    "big_payload_offset": 5,
+    "selection": "first valid EXIF/XMP in file order"
+  },
+  "cases": [
+    {
+      "file": "jxl-meta-little.jxl",
+      "sha256": "7e60a258ac5c5478565df09aabb46865b26ac0353ac858a08fcd4b37dcf5a596",
+      "metadata": [
+        {
+          "type": "Exif",
+          "sha256": "a143f0f2f6b010112867f61483e9c1272fca2e6d40c640899e4ec06f87e1d48b"
+        },
+        {
+          "type": "xml ",
+          "sha256": "815f6e5c31bcb6675bf63a783b57fe8562025a13e615626d14b370db392e5617"
+        }
+      ]
+    },
+    {
+      "file": "jxl-meta-big-offset.jxl",
+      "sha256": "69db40727e5b1d375bc06a841e1ea812d932d1f68d9d06ba9b5891b9e8268e28",
+      "metadata": [
+        {
+          "type": "Exif",
+          "sha256": "cc0a2871dbfac95ac1ac46e07cb5804450c9647473d2b815b971b4d892fd7100"
+        },
+        {
+          "type": "xml ",
+          "sha256": "ed28b1d3def910feaca2066bd9830f0c03f2a26ad4c7d0d60d072cba19c52525"
+        }
+      ]
+    },
+    {
+      "file": "jxl-meta-brob.jxl",
+      "sha256": "01518dd73f0f951f6a9f82983d353800322edc874b8f24d8806b6afe4e1e8aca",
+      "metadata": [
+        {
+          "type": "Exif",
+          "sha256": "a143f0f2f6b010112867f61483e9c1272fca2e6d40c640899e4ec06f87e1d48b"
+        },
+        {
+          "type": "xml ",
+          "sha256": "815f6e5c31bcb6675bf63a783b57fe8562025a13e615626d14b370db392e5617"
+        }
+      ]
+    },
+    {
+      "file": "jxl-meta-multiple.jxl",
+      "sha256": "7ed01621f38dde90921ed5662d7e70f9aa91a398422a3d1e467d3543529343f4",
+      "metadata": [
+        {
+          "type": "Exif",
+          "sha256": "a143f0f2f6b010112867f61483e9c1272fca2e6d40c640899e4ec06f87e1d48b"
+        },
+        {
+          "type": "xml ",
+          "sha256": "815f6e5c31bcb6675bf63a783b57fe8562025a13e615626d14b370db392e5617"
+        },
+        {
+          "type": "Exif",
+          "sha256": "cc0a2871dbfac95ac1ac46e07cb5804450c9647473d2b815b971b4d892fd7100"
+        },
+        {
+          "type": "xml ",
+          "sha256": "ed28b1d3def910feaca2066bd9830f0c03f2a26ad4c7d0d60d072cba19c52525"
+        }
+      ]
+    },
+    {
+      "file": "jxl-meta-brob-invalid.jxl",
+      "sha256": "e48a8e6ac41975d661c4a148bf038eada5d046eb54f1317d7aff3b4ab36893b7",
+      "metadata": [
+        {
+          "type": "Exif",
+          "sha256": "ad95131bc0b799c0b1af477fb14fcf26a6a9f76079e48bf090acb7e8367bfd0e"
+        },
+        {
+          "type": "xml ",
+          "sha256": "0212be4121fb811bb24313c30090ffce59d081847b74c758f911c71750dc248e"
+        },
+        {
+          "type": "Exif",
+          "sha256": "a143f0f2f6b010112867f61483e9c1272fca2e6d40c640899e4ec06f87e1d48b"
+        },
+        {
+          "type": "xml ",
+          "sha256": "815f6e5c31bcb6675bf63a783b57fe8562025a13e615626d14b370db392e5617"
+        }
+      ]
+    }
+  ]
+}

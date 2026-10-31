@@ -8,6 +8,19 @@
   },
   "samples": [
     {
+      "name": "smallliz.tif",
+      "category": "old-style-jpeg-complete-interchange",
+      "license_source": "libtiffpic (CC0)",
+      "sha256": "e8f722bc322b9a7621d1d858bec36ea78d31b85221f314a2b9872d3af91d600a",
+      "bytes": 5052,
+      "width": 160,
+      "height": 160,
+      "compression": 6,
+      "photometric": 6,
+      "expected": "decode",
+      "oracle_policy": "compare"
+    },
+    {
       "name": "fax4.tiff",
       "category": "ccitt-reserved-extension",
       "license_source": "image-tiff (MIT)",

@@ -421,6 +421,7 @@ jobs:
           test -n "$corpus"
           for sample in \
             fax4.tiff \
+            smallliz.tif \
             ojpeg_single_strip_no_rowsperstrip.tiff \
             ojpeg_zackthecat_subsamp22_single_strip.tiff; do
             test -f "$corpus/$sample"
@@ -432,7 +433,13 @@ jobs:
       - name: Run pinned external TIFF interoperability tests
         run: cargo test -p wml2 --locked --test tiff_interop --no-default-features --features tiff-jpeg,idct_llm,image-buffer-ex -- --ignored
       - name: Build sample converter and metadata tools
-        run: cargo build -p wml2-test --locked --release --example converter --example metadata
+        run: cargo build -p wml2-test --locked --release --example converter --example metadata --example to_png
+      - name: Verify bounded legacy TIFF layouts against Pillow
+        run: |
+          /usr/bin/python3 wml2-test/scripts/verify_tiff_legacy_layouts.py \
+            --converter target/release/examples/to_png \
+            --output .test-tiff-legacy \
+            --smallliz "$WML2_TIFF_CORPUS/smallliz.tif"
       - name: Generate TIFF review and alpha/LZW samples
         env:
           SAMPLE_ROOT: ${{ runner.temp }}/wml2-tiff-oracle/samples

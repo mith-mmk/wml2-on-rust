@@ -274,3 +274,265 @@ pub fn get_exif_option(
         ))),
     }
 }
+
+/// Selected EXIF data for EX encoders. Selection and sizing never clone payloads
+/// or invoke the serializer; callers must check their budgets before materialize.
+#[cfg(all(feature = "image-buffer-ex", any(feature = "png", feature = "tiff")))]
+pub(crate) enum ExifOutputEx<'a> {
+    Bytes(&'a [u8]),
+    #[cfg(feature = "exif")]
+    Tags(&'a TiffHeaders),
+}
+
+#[cfg(all(feature = "image-buffer-ex", any(feature = "png", feature = "tiff")))]
+impl<'a> ExifOutputEx<'a> {
+    pub(crate) fn size_bound(&self) -> Result<usize, Box<dyn std::error::Error>> {
+        match self {
+            Self::Bytes(bytes) => Ok(bytes.len()),
+            #[cfg(feature = "exif")]
+            Self::Tags(tags) => {
+                use crate::tiff::header::{DataPack, TiffHeader};
+                type Error = Box<dyn std::error::Error>;
+                fn ifd_bound(tags: &[TiffHeader], pointers: usize) -> Result<usize, Error> {
+                    let count = tags
+                        .len()
+                        .checked_add(pointers)
+                        .ok_or("EXIF tag count overflow")?;
+                    if count > u16::MAX as usize {
+                        return Err("EXIF IFD has too many tags".into());
+                    }
+                    let mut size = count
+                        .checked_mul(12)
+                        .and_then(|n| n.checked_add(6))
+                        .ok_or("EXIF IFD size overflow")?;
+                    for tag in tags {
+                        let (count, item) = match &tag.data {
+                            DataPack::Bytes(v) | DataPack::Undef(v) | DataPack::Unkown(v) => {
+                                (v.len(), 1)
+                            }
+                            DataPack::SByte(v) => (v.len(), 1),
+                            DataPack::Ascii(v) => (
+                                v.len()
+                                    .checked_add(usize::from(!v.ends_with('\0')))
+                                    .ok_or("EXIF ASCII size overflow")?,
+                                1,
+                            ),
+                            DataPack::Short(v) => (v.len(), 2),
+                            DataPack::SShort(v) => (v.len(), 2),
+                            DataPack::Long(v) => (v.len(), 4),
+                            DataPack::SLong(v) => (v.len(), 4),
+                            DataPack::Float(v) => (v.len(), 4),
+                            DataPack::Rational(v) => (v.len(), 8),
+                            DataPack::SRational(v) => (v.len(), 8),
+                            DataPack::Double(v) => (v.len(), 8),
+                        };
+                        u32::try_from(count)?;
+                        let payload = count
+                            .checked_mul(item)
+                            .ok_or("EXIF payload size overflow")?;
+                        if payload > 4 {
+                            size = size
+                                .checked_add(payload)
+                                .and_then(|n| n.checked_add(payload % 2))
+                                .ok_or("EXIF payload sum overflow")?;
+                        }
+                    }
+                    Ok(size)
+                }
+                // Count every source tag, even structural pointers that the
+                // serializer may replace. This is an allocation-free upper bound.
+                let exif = tags.exif.as_deref().filter(|v| !v.is_empty());
+                let gps = tags.gps.as_deref().filter(|v| !v.is_empty());
+                let mut size = 8usize
+                    .checked_add(ifd_bound(
+                        &tags.headers,
+                        usize::from(exif.is_some()) + usize::from(gps.is_some()),
+                    )?)
+                    .ok_or("EXIF size overflow")?;
+                for child in [exif, gps].into_iter().flatten() {
+                    size = size
+                        .checked_add(ifd_bound(child, 0)?)
+                        .ok_or("EXIF child IFD size overflow")?;
+                }
+                u32::try_from(size)?;
+                Ok(size)
+            }
+        }
+    }
+    pub(crate) fn workspace_bound(&self, size: usize) -> Result<usize, Box<dyn std::error::Error>> {
+        match self {
+            Self::Bytes(_) => Ok(0), // borrowed; no adapter-owned clone
+            // Include cloned tag structs, encoded tags, payloads and directory
+            // assembly buffers in the existing serializer. Caller storage and
+            // allocator overhead are separate from this conservative estimate.
+            #[cfg(feature = "exif")]
+            Self::Tags(_) => size
+                .checked_mul(16)
+                .ok_or_else(|| "EXIF serialization workspace overflow".into()),
+        }
+    }
+    pub(crate) fn materialize(
+        &self,
+    ) -> Result<std::borrow::Cow<'a, [u8]>, Box<dyn std::error::Error>> {
+        #[cfg(test)]
+        EXIF_EX_MATERIALIZATIONS.with(|n| n.set(n.get() + 1));
+        match self {
+            Self::Bytes(bytes) => Ok(std::borrow::Cow::Borrowed(bytes)),
+            #[cfg(feature = "exif")]
+            Self::Tags(tags) => exif_to_bytes(tags).map(std::borrow::Cow::Owned),
+        }
+    }
+}
+
+#[cfg(all(
+    test,
+    feature = "image-buffer-ex",
+    any(feature = "png", feature = "tiff")
+))]
+thread_local! { static EXIF_EX_MATERIALIZATIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+
+#[cfg(all(feature = "image-buffer-ex", any(feature = "png", feature = "tiff")))]
+pub(crate) fn exif_output_ex<'a>(
+    options: Option<&'a Metadata>,
+    metadata: Option<&'a Metadata>,
+) -> Result<Option<ExifOutputEx<'a>>, Box<dyn std::error::Error>> {
+    fn payload(value: &DataMap) -> Result<ExifOutputEx<'_>, Box<dyn std::error::Error>> {
+        match value {
+            DataMap::Raw(bytes) => Ok(ExifOutputEx::Bytes(bytes)),
+            #[cfg(feature = "exif")]
+            DataMap::Exif(tags) => Ok(ExifOutputEx::Tags(tags)),
+            _ => Err("EXIF metadata is not serializable".into()),
+        }
+    }
+    let Some(value) = find_exif_option(options) else {
+        return Ok(None);
+    };
+    if matches!(value, DataMap::Ascii(v) if v.trim().eq_ignore_ascii_case("copy")) {
+        let Some(metadata) = metadata else {
+            return Ok(None);
+        };
+        #[cfg(feature = "exif")]
+        for key in ["EXIF", "Tiff headers"] {
+            if let Some(value) = metadata.get(key) {
+                if key == "Tiff headers" && !matches!(value, DataMap::Exif(_)) {
+                    return Err("Tiff headers metadata is not serializable".into());
+                }
+                return payload(value).map(Some);
+            }
+        }
+        return match metadata.get("EXIF Raw") {
+            Some(DataMap::Raw(bytes)) => Ok(Some(ExifOutputEx::Bytes(bytes))),
+            Some(_) => Err("EXIF Raw metadata is not raw bytes".into()),
+            None => Ok(None),
+        };
+    }
+    payload(value).map(Some)
+}
+
+#[cfg(all(
+    test,
+    feature = "image-buffer-ex",
+    any(feature = "png", feature = "tiff")
+))]
+mod ex_encode_tests {
+    use super::*;
+    use crate::draw::*;
+    use crate::limits::DecodeLimits;
+    use crate::tiff::header::{DataPack, TiffHeader};
+    use crate::util::ImageFormat;
+    use bin_rs::Endian;
+
+    #[test]
+    fn exif_raw_is_borrowed_and_structured_bound_covers_payloads_and_child_ifds() {
+        let bytes = vec![123; 4096];
+        let raw = ExifOutputEx::Bytes(&bytes);
+        assert_eq!(raw.size_bound().unwrap(), bytes.len());
+        assert_eq!(raw.workspace_bound(bytes.len()).unwrap(), 0);
+        let materialized = raw.materialize().unwrap();
+        assert!(matches!(materialized, std::borrow::Cow::Borrowed(_)));
+        assert_eq!(materialized.as_ptr(), bytes.as_ptr());
+        let data = [
+            DataPack::Bytes(vec![1; 7]),
+            DataPack::Undef(vec![2; 8]),
+            DataPack::Unkown(vec![3; 9]),
+            DataPack::SByte(vec![-1; 5]),
+            DataPack::Ascii("odd".into()),
+            DataPack::Ascii("nul\0".into()),
+            DataPack::Short(vec![2; 3]),
+            DataPack::SShort(vec![-2; 3]),
+            DataPack::Long(vec![3; 3]),
+            DataPack::SLong(vec![-3; 3]),
+            DataPack::Float(vec![1.5; 3]),
+            DataPack::Double(vec![2.5; 3]),
+            DataPack::Rational(vec![crate::tiff::header::Rational { n: 1, d: 2 }; 3]),
+            DataPack::SRational(vec![crate::tiff::header::SRational { n: -1, d: 2 }; 3]),
+        ];
+        let mut headers = TiffHeaders::empty(Endian::BigEndian);
+        headers.headers = data
+            .into_iter()
+            .enumerate()
+            .map(|(i, data)| TiffHeader {
+                tagid: 0x100 + i,
+                length: usize::MAX,
+                data,
+            })
+            .collect();
+        headers.exif = Some(headers.headers.clone());
+        headers.gps = Some(headers.headers.clone());
+        let plan = ExifOutputEx::Tags(&headers);
+        let bound = plan.size_bound().unwrap();
+        assert!(plan.materialize().unwrap().len() <= bound);
+    }
+
+    #[test]
+    fn ex_encoders_reject_metadata_and_workspace_budgets_before_materialization() {
+        let mut image =
+            ImageBufferEx::from_bytes(1, 1, PixelFormatEx::Rgba16, None, vec![0; 8]).unwrap();
+        let mut headers = TiffHeaders::empty(Endian::LittleEndian);
+        headers.headers.push(TiffHeader {
+            tagid: 0x010e,
+            length: 1 << 20,
+            data: DataPack::Undef(vec![7; 1 << 20]),
+        });
+        for option in [
+            DataMap::Raw(vec![7; 1 << 20]),
+            DataMap::Ascii("copy".into()),
+            DataMap::Exif(headers),
+        ] {
+            image.metadata = Some(HashMap::from([(
+                "EXIF Raw".into(),
+                DataMap::Raw(vec![7; 1 << 20]),
+            )]));
+            let options = Some(HashMap::from([("exif".into(), option)]));
+            let mut encode = EncodeOptionsEx {
+                debug_flag: 0,
+                drawer: &mut image,
+                output: PixelOutputEx::new(PixelFormatEx::Rgba16, PrecisionConversion::Exact),
+                options,
+            };
+            for limits in [
+                DecodeLimits {
+                    metadata_bytes: 1,
+                    ..DecodeLimits::unlimited()
+                },
+                DecodeLimits {
+                    expanded_bytes: 16 * 1024,
+                    ..DecodeLimits::unlimited()
+                },
+            ] {
+                for format in [
+                    #[cfg(feature = "png")]
+                    ImageFormat::Png,
+                    #[cfg(feature = "tiff")]
+                    ImageFormat::Tiff,
+                ] {
+                    EXIF_EX_MATERIALIZATIONS.with(|n| n.set(0));
+                    let error =
+                        image_encoder_ex_with_limits(&mut encode, format, limits).unwrap_err();
+                    assert!(error.to_string().contains("limit"), "{error}");
+                    assert_eq!(EXIF_EX_MATERIALIZATIONS.with(|n| n.get()), 0);
+                }
+            }
+        }
+    }
+}

@@ -283,13 +283,13 @@ jobs:
         with:
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: JPEG XL disabled detection contract
-        run: cargo test -p wml2 --locked --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
+        run: cargo test -p wml2 --locked --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
       - name: JPEG XL ordinary RGBA8 and source metadata
-        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
       - name: JPEG XL native EX precision, limits and Abort
-        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
       - name: JPEG XL explicit sRGB display with own ICC engine
-        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
+        run: cargo test -p wml2 --locked --no-default-features --features jpeg-xl,exif,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
       - name: Install 32-bit Windows JPEG XL target
         if: runner.os == 'Windows'
         run: rustup target add i686-pc-windows-msvc
@@ -297,11 +297,11 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --features jpeg-xl,exif,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers
+          cargo test -p wml2 --locked --target i686-pc-windows-msvc --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers --test jpeg_xl_brob --test jpeg_xl_metadata --test image_info
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   feature-contracts:
     name: Compatible features and IDCT conflict
@@ -357,6 +357,9 @@ jobs:
       - name: Execute native JPEG XL EX fixtures in actual WASM
         if: matrix.target == 'wasm32-unknown-unknown' && needs.select.outputs.jpegxl == 'true'
         run: python -B wml2-test/scripts/verify_jpegxl_wasm.py --output .test-jpeg-xl-wasm
+      - name: JPEG XL structured EXIF in actual WASM
+        if: matrix.target == 'wasm32-unknown-unknown' && needs.select.outputs.jpegxl == 'true'
+        run: python -B wml2-test/scripts/verify_jpegxl_wasm.py --exif --output .test-jpeg-xl-wasm-exif
       - uses: actions/upload-artifact@v4
         if: always() && matrix.target == 'wasm32-unknown-unknown' && needs.select.outputs.jpegxl == 'true'
         with:
@@ -365,6 +368,8 @@ jobs:
           path: |
             .test-jpeg-xl-wasm/report.json
             .test-jpeg-xl-wasm/*.log
+            .test-jpeg-xl-wasm-exif/report.json
+            .test-jpeg-xl-wasm-exif/*.log
   format:
     runs-on: ubuntu-latest
     steps:

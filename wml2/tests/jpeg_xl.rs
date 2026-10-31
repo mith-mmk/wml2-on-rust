@@ -29,10 +29,22 @@ fn feature_controls_detection_and_extension_reporting() {
 
 #[cfg(feature = "jpeg-xl")]
 mod enabled {
+    mod composition {
+        include!("jpeg_xl/composition.rs");
+    }
+    mod preview {
+        include!("jpeg_xl/preview.rs");
+    }
+    mod intrinsic {
+        include!("jpeg_xl/intrinsic.rs");
+    }
     use bin_rs::reader::BytesReader;
     use wml2::draw::*;
     use wml2::limits::DecodeLimits;
     use wml2::metadata::DataMap;
+    mod alpha {
+        include!("jpeg_xl/alpha.rs");
+    }
     const RGBA8: &[u8] = include_bytes!("fixtures/review/jxl-rgba8.jxl");
     const RGBA16: &[u8] = include_bytes!("fixtures/review/jxl-rgba16.jxl");
     type Error = Box<dyn std::error::Error>;
@@ -449,7 +461,6 @@ mod enabled {
     fn rejects_unsupported_and_malformed_inputs_before_callbacks() {
         let unsupported = [
             include_bytes!("fixtures/review/jxl-float.jxl").as_slice(),
-            include_bytes!("fixtures/review/jxl-mixed-alpha.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-premult.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-animation.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-hdr.jxl").as_slice(),

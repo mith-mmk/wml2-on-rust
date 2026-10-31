@@ -898,22 +898,27 @@ pub struct EncodeOptionsEx<'a> {
     pub options: Option<HashMap<String, DataMap>>,
 }
 
-/// Encode through an explicit EX pixel request. Currently enabled AVIF encoding
-/// accepts Gray/RGBA8 or12; RGBA16 storage needs an explicit8/12-bit pick policy.
-/// Other codecs retain their existing legacy encoder entry points.
+/// Encode through an explicit EX pixel request. PNG accepts static Gray/RGBA8
+/// or16. TIFF accepts static Gray/RGBA16. AVIF accepts Gray/RGBA8 or12.
+/// Storage precision is converted only by
+/// the explicitly requested picker policy, independently of codec precision.
 #[cfg(feature = "image-buffer-ex")]
 pub fn image_encoder_ex(
     option: &mut EncodeOptionsEx,
     format: ImageFormat,
 ) -> Result<Vec<u8>, Error> {
     match format {
+        #[cfg(feature = "png")]
+        ImageFormat::Png => crate::png::encoder::encode_ex(option),
+        #[cfg(feature = "tiff")]
+        ImageFormat::Tiff => crate::tiff::encoder::encode_ex(option),
         #[cfg(feature = "avifenc")]
         ImageFormat::Avif => crate::avif::encoder::encode_ex(option),
         _ => {
             let _ = option;
             Err(Box::new(ImgError::new_const(
                 ImgErrorKind::NoSupportFormat,
-                "EX encoding supports enabled AVIF only".into(),
+                "EX encoding supports enabled PNG, TIFF and AVIF only".into(),
             )))
         }
     }
@@ -1151,15 +1156,7 @@ pub fn convert(
 /// # }
 /// ```
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
-    let mut ib = ImageBuffer::new();
-    let mut option = DecodeOptions {
-        debug_flag: 0,
-        drawer: &mut ib,
-    };
-    let mut reader = BytesReader::new(buffer);
-
-    image_decoder(&mut reader, &mut option)?;
-    Ok(ib)
+    image_from_with_limits(buffer, crate::limits::DecodeLimits::default())
 }
 
 /// Decodes an in-memory image into a custom [`DrawCallback`].
@@ -1190,10 +1187,7 @@ pub fn image_loader(
     buffer: &[u8],
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    let mut reader = BytesReader::new(buffer);
-
-    let r = image_decoder(&mut reader, option)?;
-    Ok(r)
+    image_decoder_from_slice(buffer, option, crate::limits::DecodeLimits::default())
 }
 
 /// Decodes an image stream into a custom [`DrawCallback`].
@@ -1306,8 +1300,8 @@ pub fn image_from_with_limits(
     limits: crate::limits::DecodeLimits,
 ) -> Result<ImageBuffer, Error> {
     let mut image = ImageBuffer::new();
-    image_decoder_with_limits(
-        &mut BytesReader::new(buffer),
+    image_decoder_from_slice(
+        buffer,
         &mut DecodeOptions {
             debug_flag: 0,
             drawer: &mut image,
@@ -1315,6 +1309,27 @@ pub fn image_from_with_limits(
         limits,
     )?;
     Ok(image)
+}
+
+// Borrow JXL input through existing BinaryReader/guard APIs so admission runs
+// before any input-sized reader copy. Other formats retain BytesReader behavior.
+fn image_decoder_from_slice(
+    buffer: &[u8],
+    option: &mut DecodeOptions,
+    limits: crate::limits::DecodeLimits,
+) -> Result<Option<ImgWarnings>, Error> {
+    #[cfg(feature = "jpeg-xl")]
+    if matches!(
+        format_check(&buffer[..buffer.len().min(256)]),
+        ImageFormat::JpegXl
+    ) {
+        return image_decoder_with_limits(
+            &mut StreamReader::new(std::io::Cursor::new(buffer)),
+            option,
+            limits,
+        );
+    }
+    image_decoder_with_limits(&mut BytesReader::new(buffer), option, limits)
 }
 
 /// Decode supported static PNG/TIFF/AVIF/JPEG2000 with explicit storage and precision
@@ -1374,6 +1389,21 @@ pub fn image_from_ex_with_limits(
         return crate::jpeg2000::image_from_ex_owned(buffer, storage, precision, limits);
     }
     let mut image = ImageBufferEx::with_storage(storage, precision);
+    #[cfg(feature = "jpeg-xl")]
+    if matches!(
+        format_check(&buffer[..buffer.len().min(256)]),
+        ImageFormat::JpegXl
+    ) {
+        image_decoder_ex_with_limits(
+            &mut StreamReader::new(std::io::Cursor::new(buffer)),
+            &mut DecodeOptions {
+                debug_flag: 0,
+                drawer: &mut image,
+            },
+            limits,
+        )?;
+        return Ok(image);
+    }
     image_decoder_ex_with_limits(
         &mut BytesReader::new(buffer),
         &mut DecodeOptions {

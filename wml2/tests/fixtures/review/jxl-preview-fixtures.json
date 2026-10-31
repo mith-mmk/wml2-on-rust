@@ -1,0 +1,203 @@
+{
+  "oracle": "runtime=11002 header=11002 preview + main normalized RGBA16 and output ICC; main-only decode agreement; independent LittleCMS sRGB before one final8bit rounding",
+  "lcms_encoded_version": 2160,
+  "construction": "Bit splice of C-encoded standalone frame payloads; checked header fields. Both preview/main decoded by C libjxl; no WML2/Rust expected pixels. Shared global depth/profile/alpha/orientation, different preview samples and dimensions.",
+  "source_fingerprints": {
+    "jxl-rgba8.jxl": "29d3716e4e36680dd8f983bab86415d742151831dd4bf4a8662a2863e9dc055e",
+    "jxl-orientation1.jxl": "bef17442d0b4860670f3d3fd97ea0d8f0f7889693bfb82165f4eba642d84cb98",
+    "jxl-icc-lossless.jxl": "5ca8a8e39a4640ce49188cd9896163f5cbd88d870503efee5f9b941843ddede8",
+    "jxl-grayalpha8.jxl": "5f6745d1662ca96160a59c474be882168357926a0e9533080e3a54c07f10edfc"
+  },
+  "cases": [
+    {
+      "file": "jxl-preview-rgba8.jxl",
+      "bytes": 270,
+      "sha256": "59b0a1428cf6c54359a2e46eee955b00d8254c386b463e57ca368f6f558b49b9",
+      "output_dimensions": [
+        7,
+        5
+      ],
+      "coded_preview_dimensions": [
+        2,
+        3
+      ],
+      "reported_preview_dimensions": [
+        2,
+        3
+      ],
+      "coded_bits": 8,
+      "alpha_bits": 8,
+      "orientation": 1,
+      "rgba_sha256": "d593bb23605ff05a6272508f5b71efb51abe245945e2c0a20d48409136951d11",
+      "rgba16_sha256": "b390362f6b4820afd425c6961d5d5cc51885470102c0ee3ed5cc8329a169c128",
+      "srgb_sha256": "d593bb23605ff05a6272508f5b71efb51abe245945e2c0a20d48409136951d11",
+      "preview_rgba16_sha256": "ee5aac777c06b8fdf6dc2b89a01ccdb48d9f9e6af816c87524bb66c8d5ef0538",
+      "preview_start": 9,
+      "main_start": 64,
+      "preview_dimensions_bit": 38,
+      "preview_dimensions_bits": 20,
+      "orientation_bit": 33
+    },
+    {
+      "file": "jxl-preview-icc16.jxl",
+      "bytes": 622,
+      "sha256": "2d4467d662d36f45ff33e1eec5e379f16bf1a105c329763b620b1dfde8fda53b",
+      "output_dimensions": [
+        7,
+        5
+      ],
+      "coded_preview_dimensions": [
+        2,
+        3
+      ],
+      "reported_preview_dimensions": [
+        2,
+        3
+      ],
+      "coded_bits": 16,
+      "alpha_bits": 16,
+      "orientation": 1,
+      "rgba_sha256": "710992eb1f4d0f9ff8277442fa95f4ebeba9844cce384356a4cb0e72ce877b44",
+      "rgba16_sha256": "43ec2ef729cb121c028f93c38428bdbe0fdc537d9f29a1ddeaabaa7c6403a2cf",
+      "srgb_sha256": "c66cc73e3ebc7ab1dc427fabad0e165f3ac32f4d7d7c33f77cfd6d1600c375fd",
+      "preview_rgba16_sha256": "7ffd9ab05ce993b0bbc265044aac45aea15fb8ed2cd1913274a53b93830acb35",
+      "preview_start": 246,
+      "main_start": 324,
+      "preview_dimensions_bit": 38,
+      "preview_dimensions_bits": 20,
+      "orientation_bit": 33
+    },
+    {
+      "file": "jxl-preview-oriented-icc16.jxl",
+      "bytes": 622,
+      "sha256": "77fb6b4d3cb83acec8ce3b9fef60a91a68b988344ba8e4fdaa1e48fa34a52d75",
+      "output_dimensions": [
+        5,
+        7
+      ],
+      "coded_preview_dimensions": [
+        2,
+        3
+      ],
+      "reported_preview_dimensions": [
+        2,
+        3
+      ],
+      "coded_bits": 16,
+      "alpha_bits": 16,
+      "orientation": 6,
+      "rgba_sha256": "12dda11753ae6007bca164f86527c83e19d2087c32d81cb4c7ea690e4401258a",
+      "rgba16_sha256": "8efe2c47b3165269e74ead58944aaf3aa638ffeb942fd2c07a931e55634dea59",
+      "srgb_sha256": "4bb65776811d175c9329d32fa33709b23cfcf54476dc856b4d74d162111a9b3d",
+      "preview_rgba16_sha256": "28cf36532c861a8eb7c728ec268325f23c0df79f3d92295d8368b4a444141e17",
+      "preview_start": 246,
+      "main_start": 324,
+      "preview_dimensions_bit": 38,
+      "preview_dimensions_bits": 20,
+      "orientation_bit": 33
+    },
+    {
+      "file": "jxl-preview-grayalpha8.jxl",
+      "bytes": 177,
+      "sha256": "5b14ff403a2754e74e26c4e9a072e7558169aae7544c10876dd8312283295548",
+      "output_dimensions": [
+        7,
+        5
+      ],
+      "coded_preview_dimensions": [
+        2,
+        3
+      ],
+      "reported_preview_dimensions": [
+        2,
+        3
+      ],
+      "coded_bits": 8,
+      "alpha_bits": 8,
+      "orientation": 1,
+      "rgba_sha256": "b447d9e6273a0117e2b3d6b949be495b2d621395c374b5d5d9224f49a3871ecf",
+      "rgba16_sha256": "8f3ba918bfe035b77de09de0ec61477c04cd4720a878018424bbf069a58c6285",
+      "srgb_sha256": "b447d9e6273a0117e2b3d6b949be495b2d621395c374b5d5d9224f49a3871ecf",
+      "preview_rgba16_sha256": "95487599fdcddf035d6903c5ce4a239f070e3b90ca5a2d98ea05c14256c98ec9",
+      "preview_start": 11,
+      "main_start": 47,
+      "preview_dimensions_bit": 38,
+      "preview_dimensions_bits": 20,
+      "orientation_bit": 33
+    },
+    {
+      "file": "jxl-preview-larger.jxl",
+      "bytes": 839,
+      "sha256": "b3429f114eac40cce468797b8e0ac68d0edbc5e4db8e2e5f763c6768b1fe71ed",
+      "output_dimensions": [
+        2,
+        3
+      ],
+      "coded_preview_dimensions": [
+        32,
+        32
+      ],
+      "reported_preview_dimensions": [
+        32,
+        32
+      ],
+      "coded_bits": 8,
+      "alpha_bits": 8,
+      "orientation": 1,
+      "rgba_sha256": "110bdc62dd7df693e2f7b7d81886a9f5fd4d328519beecbdfe509a565eaf2ab9",
+      "rgba16_sha256": "ee5aac777c06b8fdf6dc2b89a01ccdb48d9f9e6af816c87524bb66c8d5ef0538",
+      "srgb_sha256": "110bdc62dd7df693e2f7b7d81886a9f5fd4d328519beecbdfe509a565eaf2ab9",
+      "preview_rgba16_sha256": "2d750acabdbb287279453c9210e03dfdef8df6a3a084f5eedc1ae9698f8b39fb",
+      "preview_start": 11,
+      "main_start": 784,
+      "preview_dimensions_bit": 49,
+      "preview_dimensions_bits": 20,
+      "orientation_bit": 44
+    },
+    {
+      "file": "jxl-preview-lossy.jxl",
+      "bytes": 1537,
+      "sha256": "9e7204c45cc2d118211accbec91817c0fd692f554952453c0101e62287f3e805",
+      "output_dimensions": [
+        64,
+        48
+      ],
+      "coded_preview_dimensions": [
+        8,
+        8
+      ],
+      "reported_preview_dimensions": [
+        8,
+        8
+      ],
+      "coded_bits": 8,
+      "alpha_bits": 8,
+      "orientation": 1,
+      "rgba_sha256": "ccca2300875654cbc15406a6812a8bee5495454a163de8651affad47262549e4",
+      "rgba16_sha256": "6cfbf73437d329654668b5c84ae92d9c4b3b2304faebeb94df9d9514a549b2ec",
+      "srgb_sha256": "7c6fded02cc45bd6667f1339eb159835d160f9ce40170b3a28cd62bbfd5a27b4",
+      "preview_rgba16_sha256": "b58e477cd948d712fa21bd38a7a3a0efc729748eca391ddea57cb3c1c86e49a3",
+      "preview_start": 9,
+      "main_start": 169,
+      "preview_dimensions_bit": 32,
+      "preview_dimensions_bits": 20,
+      "orientation_bit": 27
+    }
+  ],
+  "skipped_entropy": {
+    "mutation": "Fill RGBA8 preview section bytes with ff, retaining header/TOC/extents",
+    "main_only_c_decode": "exact unchanged main RGBA16",
+    "c_preview_request_rejected": true,
+    "c_preview_error": ": JXL_FAILURE: Incomplete context map.\n./lib/jxl/dec_ans.cc:351: JXL_RETURN_IF_ERROR code=1: DecodeContextMap(memory_manager, context_map, &num_histograms, br)\n./lib/jxl/modular/encoding/dec_ma.cc:123: JXL_RETURN_IF_ERROR code=1: DecodeHistograms(memory_manager, br, kNumTreeContexts, &tree_code, &tree_context_map)\n./lib/jxl/dec_modular.cc:200: JXL_RETURN_IF_ERROR code=1: DecodeTree(memory_manager, reader, &tree, tree_size_limit)\n./lib/jxl/decode.cc:1127: frame processing failed\ndecoder status 1\n"
+  },
+  "oversized_header": {
+    "file": "jxl-preview-oversized-header.jxl",
+    "sha256": "34c8f5cb5f7c1ef8163dd4c2c9fb5f09ade8c4241d18a99ec9ce95873aa0cf92",
+    "declared_preview_dimensions": [
+      4096,
+      4096
+    ],
+    "preview_start": 11,
+    "scope": "Header-admission negative fixture; body retains small frame geometry and is not claimed as a valid oversized preview encoding."
+  }
+}

@@ -1,7 +1,7 @@
 # JPEG XL still-image decoding
 
-This page describes the supported JPEG XL contract in WML2 **0.0.40**, checked
-against main `6a48db924b338c5ae7095bea6105fb4dbd436e95`. JPEG XL was introduced
+This page describes the supported JPEG XL contract in WML2 **0.0.41**, checked
+against main `f2151b2408e9d04f1bc7b4e9e29679e078a57209`. JPEG XL was introduced
 in 0.0.38; 0.0.37 does not contain it. Current support and the evidence map below
 are separate from the historical [continuation validation](jpeg-xl-continuation-20261019.md)
 and [internal-layer validation](jpeg-xl-layers.md) checkpoints. Those records
@@ -12,9 +12,11 @@ The opt-in `jpeg-xl` feature uses **published `jxl =0.7.4`**, not upstream main.
 Defaults are unchanged; JPEG XL encoding is unavailable. Add `image-buffer-ex`
 for high-precision callback output. No C library, image-rs, external CMS, SIMD or thread
 pool is pulled into the runtime by this feature.
+Bounded `brob` metadata uses pure Rust `brotli-decompressor =6.2.0`, and common
+XMP interpretation uses `roxmltree =0.21.2`, with default features disabled.
 
 ```toml
-wml2 = { version = "0.0.40", features = ["jpeg-xl", "image-buffer-ex"] }
+wml2 = { version = "0.0.41", features = ["jpeg-xl", "image-buffer-ex"] }
 ```
 
 ```rust
@@ -30,12 +32,16 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 - Bare `ff 0a` codestreams and containers with `jxlc` or ordered `jxlp` chunks.
   Every box, including trailing boxes, is length-checked before decoding.
 - Integer **8,9,10,12,16-bit** Gray/RGB, optionally one full-resolution straight
-  alpha channel with the same depth as colour. Orientation is applied once by
+  alpha channel, with independently supported8/9/10/12/16-bit integer depth.
+  Orientation is applied once by
   the decoder. RGB becomes RGBA with opaque alpha; GrayAlpha becomes RGBA.
 - The EX source is native Gray8/12/16 or Rgba8/12/16, packed, with12/16-bit
   samples in little-endian u16 slots. Coded9/10-bit inputs are normalized into
   Gray16/Rgba16, with coded depth retained separately. Promotion is within one
   u16 unit of the independent reference and preserves recoverable source codes.
+  Mixed colour/alpha depths use normalized Rgba16 for every channel, retaining
+  the original colour and alpha depths separately; same-depth layouts stay as
+  before. The common16-bit format prevents silently narrowing a deeper alpha.
   Transparent RGB and low bits survive
   lossless decoding. Neither EX nor ordinary decoding goes through RGBA8 first.
 - Ordinary `image_from`/`image_decoder` return RGBA8. High-depth samples,
@@ -48,9 +54,12 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
   a promise that lossy input becomes lossless.
 
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
-animations (no silent first-frame fallback), previews, intrinsic display sizes,
-premultiplied or mixed-depth/subsampled alpha, multiple/other extra channels,
-compressed `brob` metadata and unsupported depths.
+animations (no silent first-frame fallback),
+premultiplied or subsampled alpha, float or other alpha depths, multiple/other extra channels,
+forbidden compressed control/nested boxes and unsupported depths.
+Supported embedded previews are [bounded and skipped](jpeg-xl-preview.md) while
+returning the main image. No preview extraction API or progressive-output mode is
+added; preview entropy is not validated by main-only decoding.
 Explicit Level5 and Level10 `jxll` boxes are accepted; dimensions, workspace and
 the supported sample profile remain independently bounded. This does not promise
 the entire Level10 profile. Native JPEG bitstream reconstruction is not implemented.
@@ -72,8 +81,14 @@ format, not before.
 | `ICC Profile` | Profile for the adapter's delivered callback samples, generated from simple signaling when needed; explicit EX storage conversion does not transform this profile |
 | `JPEG XL Source ICC Profile` | Original embedded ICC bytes, or equivalent generated ICC for original simple signaling |
 | `JPEG XL Reconstruction ICC Profile` | Actual pre-CMS reconstruction profile, retained by the explicit sRGB display API; may differ from the original embedded profile |
+| `coded_width` / `coded_height` | Source canvas axes (`DataMap::UInt`), before native orientation |
+| `output_width` / `output_height` | Delivered canvas axes after native orientation; no intrinsic resizing |
+| `intrinsic_display_width` / `intrinsic_display_height` | Explicit intrinsic display axes after native orientation, present only if declared; display units, not allocated pixels |
+| `JPEG XL Source Intrinsic Width` / `JPEG XL Source Intrinsic Height` | Original intrinsic axes (`DataMap::UInt`), present only if declared |
 | `JPEG XL Source Header` | Original bit-aligned codestream-header prefix; last byte may also contain following bits; not a standalone file |
-| `JPEG XL Source Box <index> <hex-type>` | Uncompressed auxiliary box bytes, including unknown types and duplicate types with distinct indexes |
+| `JPEG XL Source Box <index> <hex-type>` | Exact outer auxiliary payload bytes, including unknown types and duplicate types with distinct indexes; a `brob` value includes its underlying type and compressed stream |
+| `JPEG XL Decoded Box <index> <hex-type>` | Bounded decompressed raw payload for a `brob` box, indexed by its underlying type; no recursive box parsing |
+| `JPEG XL Source Alpha Bit Depth` | Original integer alpha depth, present for mixed-depth input (`DataMap::UInt`); source colour depth remains separate |
 | `JPEG XL Source Bit Depth` / `JPEG XL Output Bit Depth` | Coded colour depth / declared delivered sample depth |
 
 Gray replicated into RGBA gets a matching neutral-axis RGB profile for simple
@@ -83,11 +98,63 @@ EX Gray callback output can retain it. Subsequent EX storage conversion copies
 samples without transforming the ICC; its source format still identifies Gray.
 Metadata is delivered after pixels, matching existing static adapters. Source
 orientation remains in the raw header; output dimensions/pixels are oriented.
-Raw EXIF/XMP boxes are preserved as source bytes, not parsed or reapplied.
+Raw EXIF/XMP boxes are preserved as source bytes. The first valid supported
+payload also supplies common `EXIF` (`exif` feature) / `XMP` metadata through
+[bounded interpretation](jpeg-xl-metadata.md). Common EXIF Orientation is 1;
+codestream orientation is authoritative and is never applied a second time.
 ICC headers, tag extents and Gray/RGB channel identity are validated; ICC CICP
 PQ/HLG is rejected. Arbitrary opaque ICC transfer curves are preserved, not
 interpreted as an HDR rendering promise. There is no HDR tone mapping or
 semantic classification of arbitrary ICC LUTs.
+
+## Cooperative display cancellation
+
+`image_from_srgb_with_limits_and_cancel(input, limits, &probe)` adds cancellation
+without changing the existing sRGB, ordinary or EX entry points. The synchronous
+`Fn() -> bool` probe runs on the decoding thread; return true to cancel. A UI can
+capture a shared atomic flag. Keep the probe cheap and nonblocking. It need not
+be `Send` or `Sync`; WML2 does not move it to another thread. Panics from the probe
+are not caught.
+
+```rust,ignore
+let probe = || cancelled.load(std::sync::atomic::Ordering::Relaxed);
+match wml2::jpegxl::image_from_srgb_with_limits_and_cancel(bytes, limits, &probe) {
+    Ok(image) => publish(image),
+    Err(error) if error.is::<wml2::jpegxl::DecodeCancelled>() => {},
+    Err(error) => return Err(error),
+}
+```
+
+The boxed public `DecodeCancelled` error distinguishes cancellation from decode
+and resource-limit errors. Cancellation is latched once observed. A cancelled
+call returns no `ImageBuffer`; all partial buffers and metadata remain private
+and are dropped. There is a final check after private image population and before
+return. As with any cooperative API, a caller publishing later must also check
+its request generation/flag to handle cancellation after this final check.
+
+The adapter checks before work, after bounded preflight, around codec stages,
+between sample-copy/rounding chunks, before private image initialization, and
+after population. The pinned **published `jxl 0.7.4`** provides a fallible
+`JxlParallelRunner`, rather than libjxl's cancellation API. The cancellable path
+uses a sequential runner, overriding both `run` and `run_ordered` (the latter's
+default implementation bypasses `run` for one thread). Checks occur before each
+LF-group/smoothing/render task and after each task batch. Its own cancellation
+error is translated back to `DecodeCancelled`; genuine codec errors are retained.
+The legacy routes still select the original codec runner.
+
+ICC processing checks before parsing, before each **256-pixel** conversion batch,
+and after the last batch. Alpha is excluded exactly as in the existing route;
+conversion still uses the actual reconstruction ICC profile, followed by the
+same RGBA8 rounding, and retains source profiles and orientation metadata.
+
+**Non-interruptible sections:** container assembly/preflight, allocations and
+individual memory copies, serial codec parsing/global/entropy work, an individual
+codec runner task, and ICC profile parsing/transform compilation. No bounded
+cancellation latency or ability to interrupt every codec operation is promised.
+The existing input/pixel/expanded-workspace/metadata/frame/animation limits and
+JPEG XL hard caps still apply. An already-true probe wins before validating input;
+otherwise an error encountered before the next checkpoint wins. Cancellation
+does not relax or reclassify a previously encountered limit/decode error.
 
 ## Still images with JPEG reconstruction side data
 
@@ -103,7 +170,9 @@ payload may itself contain compressed reconstruction information; WML2 never
 parses or decompresses it, uses it for pixels/ICC, or promises it can reproduce
 a JPEG file. An empty or invalid opaque payload can accompany valid pixels.
 The outer container envelope and pixel codestream must still be valid.
-All `brob` boxes remain explicitly unsupported, including wrapped `jbrd`.
+Metadata `brob` boxes now have a bounded strict-Brotli path; see
+[compressed metadata](jpeg-xl-brob.md). A `brob`-wrapped `jbrd` is forbidden and
+remains rejected: this does not add JPEG reconstruction.
 Unknown auxiliary data is also retained as bounded Raw bytes without execution
 or semantic interpretation. Native JPEG reconstruction APIs are not added.
 
@@ -221,7 +290,8 @@ all-codec and `noretoro` profiles with only one IDCT enabled. This also exposed
 and repaired the existing `SJIS` feature's missing optional `encoding_rs`
 dependency; its locked version and default features are unchanged.
 
-These checks run on branch pushes; a PR is not required. For the result of an
+The current workflow runs on pull requests, pushes to main and explicit dispatch;
+an ordinary push to another branch without a PR does not trigger it. For an
 individual revision, use its GitHub Actions run and exact commit SHA rather
 than treating the older local validation snapshot as a cross-platform result.
 
@@ -240,12 +310,14 @@ finite probes do not establish general decoder correctness.
 The local Windows owner is responsible for real display testing against the
 25-file corpus at `D:\data\samples\images\jxl\wml2_static_selection_20261018`
 and its `manifest.json`. The earlier local report identified `jbrd` refusals for
-the two official cases above at revision1b8007c; a local rerun of this patch is
-pending. The local collection/manifest is unavailable in the cloud; official
+the two official cases above at revision1b8007c; a local rerun
+was pending at that historical checkpoint. The local collection/manifest is
+unavailable in the cloud; official
 copies were obtained independently. Hosted CI and cloud image checks are separate.
 The [hosted56-job success for revision1b8007c](https://github.com/mith-mmk/wml2-on-rust/actions/runs/39112081722)
-is prior evidence, not a result for this patch. Normal pushes run existing CI automatically;
-no separate Windows execution or workflow dispatch is needed for this review.
+is prior evidence, not a result for this documentation update. Current PR CI
+executes its configured hosted platform jobs; private display validation remains
+separate.
 
 ## Current support and evidence map
 
@@ -256,11 +328,14 @@ and the internal-layer record at
 These identify the records; where those records cite a different tested SHA or
 source hash, that identifier remains the test provenance.
 
-This is a source/documentation audit on Linux x86_64 cloud, 2026-10-30, against
-main `6a48db924b338c5ae7095bea6105fb4dbd436e95`; it does **not** record a new
-native, WASM, browser or Windows execution. Each test name below is an existing
-regression target at that revision. Historical execution claims remain attached
-to their original checkpoint, rather than being presented as current CI results.
+The 2026-10-31 reconciliation uses released main
+`f2151b2408e9d04f1bc7b4e9e29679e078a57209`. Existing native tests were replayed
+on Linux x86_64 cloud with Rust 1.91.0, including the ordinary/EX/CMS, metadata,
+orientation, cancellation, preview, intrinsic and mixed-depth-alpha contracts.
+See the [issue acceptance map](wml2-0041-issue-status.md) for exact target groups,
+commands and the separate feature-off checks. Independent oracle fixtures are
+replayed; no new oracle generation, browser, WASM or private Windows execution
+is claimed. Historical execution claims keep their original provenance.
 
 | Current contract | Implementation / executable regression | Historical evidence |
 | --- | --- | --- |
@@ -269,6 +344,11 @@ to their original checkpoint, rather than being presented as current CI results.
 | Explicit reconstruction-ICC-to-sRGB display, including Gray ICC expansion; alpha excluded | `image_from_srgb[_with_limits]`; `explicit_srgb_display_uses_the_actual_reconstruction_profile_once` in [jpeg_xl_additional.rs](../wml2/tests/jpeg_xl_additional.rs) | [Display checkpoint](jpeg-xl-continuation-20261019.md#explicit-displayed-output), independent libjxl/LittleCMS references |
 | Single visible still image composed from bounded cropped/reference layers | `frame_workspace`; [jpeg_xl_layers.rs](../wml2/tests/jpeg_xl_layers.rs) | [Internal-layer record](jpeg-xl-layers.md), official `sunset_logo`; this is not animation support |
 | Input/canvas/internal-layer/metadata/workspace admission and callback Abort | `unpack`, `preflight`, shared guard; [jpeg_xl.rs](../wml2/tests/jpeg_xl.rs), [jpeg_xl_layers.rs](../wml2/tests/jpeg_xl_layers.rs) | [Resource admission](jpeg-xl-layers.md#admission-before-pixel-decoding) |
+| Cooperative sRGB cancellation; cancelled images stay private | `image_from_srgb_with_limits_and_cancel`; cancellation tests in [jpeg_xl_additional.rs](../wml2/tests/jpeg_xl_additional.rs) and [composition.rs](../wml2/tests/jpeg_xl/composition.rs) | Released in [0.0.41](releases/0.0.41.md); individual tasks, preflight and ICC setup remain non-interruptible |
+| Bounded brob expansion and common EXIF/XMP, preserving indexed source bytes | `jpegxl_brob` / `jpegxl_metadata`; [brob regressions](../wml2/tests/jpeg_xl_brob.rs), [metadata regressions](../wml2/tests/jpeg_xl_metadata.rs) | [brob](jpeg-xl-brob.md), [metadata](jpeg-xl-metadata.md); EXIF orientation normalized, no external XML resolution |
+| Main-image decoding while structurally checking and skipping a bounded preview | `frame_workspace` and `skip_preview`; [preview regressions](../wml2/tests/jpeg_xl/preview.rs) | [Preview record](jpeg-xl-preview.md); extraction API and skipped-entropy validation are not implemented |
+| Intrinsic display metadata without resampling; bounded geometry queries | `jpegxl_dimensions` / `image_info::jpegxl`; [intrinsic regressions](../wml2/tests/jpeg_xl/intrinsic.rs), [query regressions](../wml2/tests/image_info/jpegxl.rs) | [Intrinsic record](jpeg-xl-intrinsic.md); coded/output/display axes remain distinct |
+| Independent integer colour/straight-alpha depths, both full resolution | `preflight` / normalized RGBA16; [alpha regressions](../wml2/tests/jpeg_xl/alpha.rs) | [Alpha record](jpeg-xl-alpha.md); associated/subsampled/general extra planes still reject |
 | Portable Node and actual browser fixture rendering evidence | [Node harness](../wml2-test/scripts/verify_jpegxl_wasm.py), [Chromium harness](../wml2-test/scripts/verify_jpegxl_browser.py) | [Continuation](jpeg-xl-continuation-20261019.md#reproducible-image-evidence): 61 Node / 13 Chromium cases; [later layers record](jpeg-xl-layers.md#independent-evidence): 61 / 14. These are harness checks, not external viewer/plugin validation |
 
 [PR #22](https://github.com/mith-mmk/wml2-on-rust/pull/22) delivered the precision,
@@ -282,17 +362,18 @@ alongside the report; use that revision's Actions run for hosted CI status.
 The ordinary source-coordinate RGBA route still refuses arbitrary Gray ICC
 expansion; the explicit sRGB route already supports it. Fixed resource caps
 remain even with caller `unlimited()` ([#37](https://github.com/mith-mmk/wml2-on-rust/issues/37)).
-Cancellation during managed decoding is tracked separately by
-[#31 / draft PR #32](https://github.com/mith-mmk/wml2-on-rust/pull/32), and is not
-part of the released 0.0.40 API described here.
+Cooperative display cancellation, bounded brob/common EXIF/XMP, preview skipping,
+intrinsic display dimensions and mixed-depth straight alpha are released in
+0.0.41. They must not be listed as pending solely because their original issues
+or historical branch reports predate the release.
 
-Unsupported features remain: compressed `brob` metadata, associated/mixed-depth/
-subsampled alpha and general extra channels, animation, embedded previews,
-intrinsic display sizes, float/HDR/tone mapping, incremental input/progressive
-output APIs, native bit-exact JPEG reconstruction, encoding, and structured
-EXIF/XMP parsing. The supported integer depths, ICC-to-sRGB conversion and
-bounded still-image layers above are already implemented. A dependency update
-alone does not extend that contract.
+Remaining product features are associated/subsampled alpha and general extra
+channels (#42), preview extraction (#44), animation (#43), float/HDR/tone mapping
+(#46), incremental input/progressive output APIs (#47), original-JPEG bit-exact
+reconstruction (#48), JPEG XL encoding (#49), allocation-aware larger-image
+admission (#37) and the qualified dependency migration (#40). The open evaluation
+PRs are evidence and design proposals; their successful tests do not implement
+these public runtime features. See the [status and acceptance map](wml2-0041-issue-status.md).
 
 External viewer/plugin integration and real display testing of the private
 Windows 25-file corpus remain separate from the recorded cloud/browser harness
@@ -306,3 +387,25 @@ external plugin was exercised by this documentation audit.
 `orientation_applied` is a format-independent metadata key whose value is `DataMap::Bool`. `true` means the output pixels already include the source orientation; consumers must not apply source EXIF or other source orientation again. `false` means this marker does not suppress the consumer's existing orientation handling. An absent key likewise retains the legacy behavior. A value of another type is invalid; consumers should treat it as absent rather than infer a boolean. This affects automatic orientation only, not user-requested rotation.
 
 JPEG XL sets the marker to `true` and stores the original coded 1–8 value separately as `JPEG XL Source Orientation` (`DataMap::UInt`), alongside the raw source header. That original value describes the input, not a remaining transform on the delivered pixels. The pinned jxl 0.7.4 applies the coded transform to its output; its `adjust_orientation` option is not consumed by that version. The eight fixture tests check pixels against independent references so a change to that behavior is detected. Other formats do not acquire this marker merely because it is absent; their existing metadata and consumer behavior remain unchanged.
+
+
+## Intrinsic display dimensions and information query
+
+An explicit intrinsic size is retained as metadata and does not resample pixels.
+All eight native orientations keep the existing ordinary/EX/CMS behavior.
+`wml2::image_info` can obtain coded, oriented output and optional intrinsic
+geometry without pixel/profile expansion. Its JPEG XL route intentionally leaves
+encoded sample/color/alpha fields unknown and stops before those descriptions.
+See [the dimension contract and bounded-prefix limitations](jpeg-xl-intrinsic.md).
+
+## Mixed-depth straight alpha
+
+One full-resolution straight alpha channel can independently use integer
+8/9/10/12/16-bit depth with the existing supported Gray/RGB colour depths.
+Mixed-depth native EX output is normalized Rgba16; Exact requests for narrower
+formats reject, while Round applies the existing conversion to every channel.
+Ordinary/CMS output remains deterministic RGBA8, with alpha excluded from ICC
+conversion. `animation_bytes` admits the common8-byte-per-pixel native working
+canvas before codec work, even for ordinary output. Existing same-depth/native
+Gray layouts and refusal of associated/subsampled/general extra planes remain.
+See [the bounded subset, independent oracles and upstream evaluation](jpeg-xl-alpha.md).

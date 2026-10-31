@@ -92,12 +92,12 @@ impl<'a> Cursor<'a> {
 }
 
 #[derive(Clone, Copy)]
-struct Header {
-    channels: usize,
-    width: usize,
-    height: usize,
-    depth: u16,
-    mode: u16,
+pub(crate) struct Header {
+    pub(crate) channels: usize,
+    pub(crate) width: usize,
+    pub(crate) height: usize,
+    pub(crate) depth: u16,
+    pub(crate) mode: u16,
 }
 
 struct ChannelInfo {
@@ -772,4 +772,9 @@ fn decode_inner<B: BinaryReader>(
     .map_err(|_| err(ImgErrorKind::InvalidParameter, "PSD file is too large"))?;
     let data = reader.read_bytes_as_vec(length)?;
     emit(parse_psd(&data)?, option)
+}
+
+/// Reads only the existing 26-byte PSD header, without resources/layers/raster.
+pub(crate) fn basic_header(data: &[u8]) -> Result<Header, Error> {
+    parse_header(&mut Cursor::new(data))
 }

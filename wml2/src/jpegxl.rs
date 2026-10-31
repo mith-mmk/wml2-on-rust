@@ -14,11 +14,79 @@ use jxl_codec::headers::extra_channels::ExtraChannel;
 use jxl_codec::headers::{FileHeader, JxlHeader};
 use std::io::SeekFrom;
 
+#[path = "jpegxl_brob.rs"]
+mod brob;
+#[path = "jpegxl_dimensions.rs"]
+pub(crate) mod dimensions;
+#[path = "jpegxl_metadata.rs"]
+mod structured_metadata;
+
 type Error = Box<dyn std::error::Error>;
 const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
 const MAX_INPUT: usize = 64 * 1024 * 1024;
+// Separate from the file cap: caller unlimited() cannot admit unbounded brob expansion.
+const MAX_BROB_METADATA: usize = 64 * 1024 * 1024;
 const MAX_HEADER: usize = 64 * 1024;
 const MAX_PIXELS: usize = 4 * 1024 * 1024;
+
+/// Cancellation returned by the cancellable sRGB API; downcast the boxed error
+/// to this type to distinguish it from malformed input and resource limits.
+#[derive(Debug)]
+pub struct DecodeCancelled;
+impl std::fmt::Display for DecodeCancelled {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("JPEG XL decode cancelled")
+    }
+}
+impl std::error::Error for DecodeCancelled {}
+
+struct Cancellation<'a> {
+    probe: Option<&'a dyn Fn() -> bool>,
+    cancelled: std::cell::Cell<bool>,
+}
+impl Cancellation<'_> {
+    fn check(&self) -> Result<(), Error> {
+        if self.cancelled.get() || self.probe.is_some_and(|probe| probe()) {
+            self.cancelled.set(true);
+            return Err(Box::new(DecodeCancelled));
+        }
+        Ok(())
+    }
+    fn codec_error(&self, e: jxl_codec::error::Error) -> Error {
+        if self.cancelled.get() {
+            Box::new(DecodeCancelled)
+        } else {
+            codec_error(e)
+        }
+    }
+}
+struct CancellableRunner<'a>(&'a Cancellation<'a>);
+impl JxlParallelRunner for CancellableRunner<'_> {
+    fn num_threads(&self) -> usize {
+        1
+    }
+    fn run(&mut self, num: usize, fun: &JxlParallelRunnerFun<'_>) -> jxl_codec::error::Result<()> {
+        for i in 0..num {
+            self.0
+                .check()
+                .map_err(|_| std::io::Error::other(DecodeCancelled))?;
+            fun(i)?;
+        }
+        self.0
+            .check()
+            .map_err(|_| std::io::Error::other(DecodeCancelled))?;
+        Ok(())
+    }
+    // The default run_ordered bypasses run when num_threads is one.
+    fn run_ordered(
+        &mut self,
+        num: usize,
+        _: Option<usize>,
+        fun: &JxlParallelRunnerFun<'_>,
+    ) -> jxl_codec::error::Result<()> {
+        self.run(num, fun)
+    }
+}
 
 fn error(kind: ImgErrorKind, message: impl Into<String>) -> Error {
     Box::new(ImgError::new_const(kind, message.into()))
@@ -65,6 +133,13 @@ fn append(out: &mut Vec<u8>, data: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
+fn box_key(stage: &str, index: usize, kind: &[u8]) -> String {
+    format!(
+        "JPEG XL {stage} Box {index} {}",
+        kind.iter().map(|v| format!("{v:02x}")).collect::<String>()
+    )
+}
+
 struct Input {
     codestream: Vec<u8>,
     metadata: Vec<(String, DataMap)>,
@@ -93,6 +168,7 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
     let mut finished = false;
     let mut partial = false;
     let mut seen_level = false;
+    let mut expanded_brob = 0usize;
     while pos < input.len() {
         if input.len() - pos < 8 {
             return Err(invalid("truncated JPEG XL box header"));
@@ -163,16 +239,49 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
                 seen_level = true;
             }
             b"brob" => {
-                return Err(unsupported(
-                    "JPEG XL compressed metadata boxes are unsupported",
-                ));
+                let kind: &[u8; 4] = data
+                    .get(..4)
+                    .ok_or_else(|| invalid("truncated JPEG XL brob type"))?
+                    .try_into()?;
+                // ISO container compression excludes codec/control data and
+                // recursive wrappers. Retaining opaque jbrd is not reconstruction.
+                if kind.starts_with(b"jxl") || matches!(kind, b"jbrd" | b"brob") {
+                    return Err(invalid("forbidden JPEG XL brob box type"));
+                }
+                if kind.starts_with(b"JXL") || kind == b"ftyp" {
+                    return Err(unsupported("JPEG XL brob control box is unsupported"));
+                }
+                limits::check(box_count, 1024, "JPEG XL box count")?;
+                let source_key = box_key("Source", box_count, b"brob");
+                let decoded_key = box_key("Decoded", box_count, kind);
+                let retained = add(
+                    out.metadata_bytes,
+                    add(add(data.len(), source_key.len())?, decoded_key.len())?,
+                )?;
+                limits::check(
+                    retained,
+                    limits.metadata_bytes,
+                    "JPEG XL container metadata",
+                )?;
+                let maximum = limits
+                    .metadata_bytes
+                    .saturating_sub(retained)
+                    .min(MAX_BROB_METADATA.saturating_sub(expanded_brob));
+                // The original input/codestream assembly and metadata copies
+                // remain live while Brotli runs. Output growth and all codec
+                // allocator requests are charged by the shared bounded helper.
+                let base = add(mul(input.len(), 3)?, mul(retained, 2)?)?;
+                let decoded = brob::decompress(&data[4..], maximum, base, limits.expanded_bytes)?;
+                expanded_brob = add(expanded_brob, decoded.len())?;
+                out.metadata_bytes = add(retained, decoded.len())?;
+                let mut raw = Vec::new();
+                append(&mut raw, data)?;
+                out.metadata.push((source_key, DataMap::Raw(raw)));
+                out.metadata.push((decoded_key, DataMap::Raw(decoded)));
             }
             b"JXL " => return Err(invalid("duplicate JPEG XL signature")),
             _ => {
-                let key = format!(
-                    "JPEG XL Source Box {box_count} {}",
-                    kind.iter().map(|v| format!("{v:02x}")).collect::<String>()
-                );
+                let key = box_key("Source", box_count, kind);
                 out.metadata_bytes = add(out.metadata_bytes, add(data.len(), key.len())?)?;
                 limits::check(
                     out.metadata_bytes,
@@ -277,9 +386,13 @@ fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
 }
 
 struct Header {
+    dimensions: crate::image_info::ImageDimensions,
+    source_intrinsic: Option<crate::image_info::ImageSize>,
     width: usize,
     height: usize,
     bits: u8,
+    alpha_bits: Option<u8>,
+    native_bits: u8,
     orientation: u8,
     gray: bool,
     color_channels: usize,
@@ -307,21 +420,49 @@ fn frame_workspace(
     br.skip_bits(frame_bits).map_err(codec_error)?;
     br.jump_to_byte_boundary().map_err(codec_error)?;
     let mut pos = br.total_bits_read() / 8;
-    let nonserialized = header.frame_header_nonserialized();
+    let main_nonserialized = header.frame_header_nonserialized();
+    let preview_nonserialized = header.preview_frame_header_nonserialized();
+    let mut preview = preview_nonserialized.is_some();
     let channels = add(3, header.image_metadata.extra_channel_info.len())?;
+    // The codec checks preview samples even while skipping. Admit their
+    // dimensions independently, without reserving nonexistent preview planes.
+    let mut sample_pixels = max_pixels;
+    if let Some(size) = &header.image_metadata.preview {
+        let pixels = mul(
+            (size.xsize() as usize).max(16),
+            (size.ysize() as usize).max(16),
+        )?;
+        limits::check(pixels, MAX_PIXELS, "JPEG XL preview pixels")?;
+        sample_pixels = sample_pixels.max(pixels);
+    }
     let mut retained = 0;
     let mut peak = add(base, mul(max_pixels, 128)?)?;
     let mut visible = 0;
     let mut toc_workspace = 0;
-    for _ in 0..64 {
+    // One independently skipped preview does not consume a main-image layer
+    // or caller frame. Main sequence complexity remains capped at64 layers.
+    for _ in 0..(64 + usize::from(preview)) {
+        let nonserialized = if preview {
+            preview_nonserialized.as_ref().unwrap()
+        } else {
+            &main_nonserialized
+        };
         let end = input.len().min(add(pos, MAX_HEADER)?);
         let data = input
             .get(pos..end)
             .ok_or_else(|| invalid("invalid JPEG XL frame offset"))?;
         let mut br = BitReader::new(data);
         let mut frame =
-            FrameHeader::read_unconditional(&(), &mut br, &nonserialized).map_err(codec_error)?;
-        frame.postprocess(&nonserialized);
+            FrameHeader::read_unconditional(&(), &mut br, nonserialized).map_err(codec_error)?;
+        frame.postprocess(nonserialized);
+        // In 0.7.4 a non-visible preview overrides Skip with SkipOutput and
+        // would allocate pixel/reference state. Only a terminal visible preview
+        // reaches its section-skip path without constructing pixel state.
+        if preview && (!frame.is_last || !frame.is_visible()) {
+            return Err(unsupported(
+                "JPEG XL preview must be one terminal visible frame for bounded skipping",
+            ));
+        }
         let (width, height) = frame.size_upsampled();
         let (padded_width, padded_height) = frame.size_padded_upsampled();
         let width = width.max(padded_width).max(16);
@@ -343,10 +484,15 @@ fn frame_workspace(
         }
         let pixels = mul(width, height)?;
         limits::check(pixels, MAX_PIXELS, "JPEG XL internal layer pixels")?;
-        max_pixels = max_pixels.max(pixels);
+        sample_pixels = sample_pixels.max(pixels);
+        if !preview {
+            max_pixels = max_pixels.max(pixels);
+        }
         // Conservatively retain every preceding layer's f32 colour/extra planes,
         // even if a reference slot is replaced or the codec can free it sooner.
-        retained = add(retained, mul(pixels, mul(channels, 4)?)?)?;
+        if !preview {
+            retained = add(retained, mul(pixels, mul(channels, 4)?)?)?;
+        }
         let entries = frame.num_toc_entries();
         limits::check(entries, 4096, "JPEG XL frame TOC entries")?;
         if br.peek(1) != 0 {
@@ -377,6 +523,12 @@ fn frame_workspace(
                 "truncated JPEG XL frame payload",
             ));
         }
+        if preview {
+            // No preview entropy decode, output allocation, callback or frame
+            // publication. The codec also drops this TOC before the main frame.
+            preview = false;
+            continue;
+        }
         visible += usize::from(frame.is_visible());
         if visible > 1 {
             return Err(unsupported(
@@ -389,7 +541,7 @@ fn frame_workspace(
             }
             // Upstream rejects >=limit and counts three colour channels even
             // for Gray. Keep its runtime check, using the scanned layer bound.
-            return Ok((peak, add(mul(max_pixels, channels)?, 1)?));
+            return Ok((peak, add(mul(sample_pixels, channels)?, 1)?));
         }
     }
     Err(unsupported("JPEG XL exceeds64 internal layers"))
@@ -397,18 +549,19 @@ fn frame_workspace(
 
 fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     // FileHeader has bounded channel tables, but does not read ICC/pixel data.
+    // Retained container metadata is already live, including expanded brob.
+    // Reserve its existing 2x allowance before header/ICC/TOC allocation.
+    let header_workspace = add(1024 * 1024, mul(input.metadata_bytes, 2)?)?;
     limits::check(
-        1024 * 1024,
+        header_workspace,
         limits.expanded_bytes,
         "JPEG XL header workspace",
     )?;
     let mut br = BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
     let header = FileHeader::read(&mut br).map_err(codec_error)?;
     let m = &header.image_metadata;
-    if m.animation.is_some() || m.preview.is_some() || m.intrinsic_size.is_some() {
-        return Err(unsupported(
-            "JPEG XL animations, previews and intrinsic sizes are unsupported",
-        ));
+    if m.animation.is_some() {
+        return Err(unsupported("JPEG XL animations are unsupported"));
     }
     let bits = m.bit_depth.bits_per_sample();
     if m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 9 | 10 | 12 | 16) {
@@ -421,13 +574,26 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
             c.ec_type != ExtraChannel::Alpha
                 || c.alpha_associated()
                 || c.dim_shift() != 0
-                || c.bit_depth() != m.bit_depth
+                || c.bit_depth().floating_point_sample()
+                || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
         })
     {
         return Err(unsupported(
-            "JPEG XL requires at most one full-resolution, same-depth straight alpha channel",
+            "JPEG XL requires at most one full-resolution straight integer alpha channel with 8/9/10/12/16-bit depth",
         ));
     }
+    let alpha_bits = m
+        .extra_channel_info
+        .first()
+        .map(|c| c.bit_depth().bits_per_sample() as u8);
+    // One output format cannot express independent channel depths. Normalize
+    // mixed integer channels to 16 bits before EX storage/CMS/legacy rounding.
+    let native_bits = if matches!(bits, 9 | 10) || alpha_bits.is_some_and(|b| u32::from(b) != bits)
+    {
+        16
+    } else {
+        bits as u8
+    };
     use jxl_codec::headers::color_encoding::{ColorSpace, TransferFunction};
     if !matches!(
         m.color_encoding.color_space,
@@ -443,16 +609,16 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
             "JPEG XL HDR/tone mapping and non-Gray/RGB colour are unsupported",
         ));
     }
-    let (width, height) = m
-        .orientation
-        .map_size((header.size.xsize() as usize, header.size.ysize() as usize));
+    let dimensions = dimensions::mapped(&header.size, m.orientation, m.intrinsic_size.as_ref());
+    let output = dimensions.output.unwrap();
+    let (width, height) = (output.width as usize, output.height as usize);
     limits::check(width, 16384, "JPEG XL width")?;
     limits::check(height, 16384, "JPEG XL height")?;
     let pixels = mul(width, height)?;
     limits::check(pixels, limits.pixels.min(MAX_PIXELS), "JPEG XL pixels")?;
     limits::check(1, limits.frames, "JPEG XL still frames")?;
     limits::check(
-        mul(pixels, if bits == 8 { 4 } else { 8 })?,
+        mul(pixels, if native_bits == 8 { 4 } else { 8 })?,
         limits.animation_bytes,
         "JPEG XL canvas",
     )?;
@@ -467,7 +633,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     let padded = mul(width.max(16), height.max(16))?;
     let frame_pixels = add(mul(padded, 4)?, 2)? / 3;
     limits::check(frame_pixels, MAX_PIXELS, "JPEG XL padded frame pixels")?;
-    let mut base = add(1024 * 1024, mul(input.codestream.len(), 2)?)?;
+    let mut base = add(header_workspace, mul(input.codestream.len(), 2)?)?;
     let mut frame_bits = header_bits;
     if m.color_encoding.want_icc {
         // Histograms/SymbolReader can allocate a 4 MiB LZ77 ring before a
@@ -499,9 +665,13 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     )?;
     limits::check(workspace, limits.expanded_bytes, "JPEG XL decode workspace")?;
     Ok(Header {
+        dimensions,
+        source_intrinsic: m.intrinsic_size.as_ref().map(dimensions::size),
         width,
         height,
         bits: bits as u8,
+        alpha_bits,
+        native_bits,
         orientation: m.orientation as u8,
         gray: m.color_encoding.color_space == ColorSpace::Gray && m.extra_channel_info.is_empty(),
         color_channels: if m.color_encoding.color_space == ColorSpace::Gray {
@@ -580,14 +750,14 @@ pub(crate) fn decode_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode::<B, false>(reader, option, false)
+    decode::<B, false, false>(reader, option, false, None)
 }
 #[cfg(feature = "image-buffer-ex")]
 pub(crate) fn decode_ex_inner<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
-    decode::<B, false>(reader, option, true)
+    decode::<B, false, false>(reader, option, true, None)
 }
 /// Decode a supported JPEG XL still into sRGB RGBA8 for display.
 ///
@@ -606,26 +776,84 @@ pub fn image_from_srgb_with_limits(
     input: &[u8],
     limits: DecodeLimits,
 ) -> Result<crate::draw::ImageBuffer, Error> {
+    cancelled_image(input, limits, None)
+}
+
+/// Bounded sRGB display decoding with cooperative cancellation.
+///
+/// `cancelled` returns true to stop; it runs synchronously on the calling thread
+/// and should be inexpensive. Cancellation returns [`DecodeCancelled`] in the
+/// boxed error. Pre-cancellation wins over input/limit errors; otherwise errors
+/// already encountered retain precedence. No image is returned on cancellation.
+///
+/// Checks surround codec stages, run between jxl 0.7.4 runner tasks, between
+/// 256-pixel ICC batches, and before/after private output population. Individual
+/// codec tasks, serial codec work, allocation/copies, preflight, and ICC profile
+/// parsing/transform compilation are non-interruptible. There is no latency bound.
+#[cfg(feature = "color-management")]
+pub fn image_from_srgb_with_limits_and_cancel(
+    input: &[u8],
+    limits: DecodeLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<crate::draw::ImageBuffer, Error> {
+    cancelled_image(input, limits, Some(cancelled))
+}
+
+#[cfg(feature = "color-management")]
+fn cancelled_image(
+    input: &[u8],
+    limits: DecodeLimits,
+    probe: Option<&dyn Fn() -> bool>,
+) -> Result<crate::draw::ImageBuffer, Error> {
+    let cancellation = Cancellation {
+        probe,
+        cancelled: std::cell::Cell::new(false),
+    };
+    cancellation.check()?;
     let mut image = crate::draw::ImageBuffer::new();
     crate::decode_guard::run(
-        &mut bin_rs::reader::BytesReader::new(input),
+        &mut bin_rs::reader::StreamReader::new(std::io::Cursor::new(input)),
         &mut DecodeOptions {
             debug_flag: 0,
             drawer: &mut image,
         },
         limits,
-        |reader, options| decode::<_, true>(reader, options, false),
+        |reader, options| {
+            if probe.is_some() {
+                decode::<_, true, true>(reader, options, false, Some(&cancellation))
+            } else {
+                decode::<_, true, false>(reader, options, false, None)
+            }
+        },
     )?;
+    cancellation.check()?;
     Ok(image)
 }
 
-fn decode<B: BinaryReader, const MANAGED: bool>(
+fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     reader: &mut B,
     option: &mut DecodeOptions,
     native: bool,
+    cancellation: Option<&Cancellation<'_>>,
 ) -> Result<Option<ImgWarnings>, Error> {
+    let check = || {
+        if CANCELLABLE {
+            cancellation.map_or(Ok(()), Cancellation::check)
+        } else {
+            Ok(())
+        }
+    };
+    check()?;
+    let inactive = Cancellation {
+        probe: None,
+        cancelled: std::cell::Cell::new(false),
+    };
+    let cancellation = cancellation.unwrap_or(&inactive);
+    let mut runner = CancellableRunner(cancellation);
+
     // Compile the explicit display path separately so its CMS work cannot
-    // obscure optimization of existing source-coordinate entry points.
+    // obscure optimization of existing source-coordinate entry points. The
+    // cancellation specialization also removes probes from existing routes.
     let managed = MANAGED;
     let limits = limits::current();
     let start = reader.offset()?;
@@ -646,23 +874,39 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     let mut input = unpack(&raw, limits)?;
     drop(raw);
     let h = preflight(&input, limits)?;
+    check()?;
     let mut options = JxlDecoderOptions::default();
     options.sample_limit = Some(h.sample_limit);
+    options.skip_preview = true; // Explicit: return the main image, never preview pixels.
     options.high_precision = true;
     options.render_spot_colors = false;
     let mut stream = input.codestream.as_slice();
     let decoder = JxlDecoder::<states::Initialized>::new(options);
-    let mut decoder = complete(decoder.process(&mut stream, None).map_err(codec_error)?)?;
+    let mut decoder = complete(
+        decoder
+            .process(
+                &mut stream,
+                if CANCELLABLE && cancellation.probe.is_some() {
+                    Some(&mut runner)
+                } else {
+                    None
+                },
+            )
+            .map_err(|e| {
+                if CANCELLABLE {
+                    cancellation.codec_error(e)
+                } else {
+                    codec_error(e)
+                }
+            })?,
+    )?;
+    check()?;
     if decoder.basic_info().size != (h.width, h.height) {
         return Err(invalid("JPEG XL dimensions changed after preflight"));
     }
     // Decode at source precision even for the legacy path: upstream U8
     // narrowing dithers RGB, whereas WML2 promises deterministic rounding.
-    let bits = if managed || matches!(h.bits, 9 | 10) {
-        16
-    } else {
-        h.bits
-    };
+    let bits = if managed { 16 } else { h.native_bits };
     let gray = native && h.gray;
     let channels = if gray { 1 } else { 4 };
     let format = JxlPixelFormat {
@@ -730,6 +974,28 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
             .metadata
             .push(("ICC Profile".into(), DataMap::ICCProfile(profile)));
     }
+    for (key, value) in [
+        ("coded_width", h.dimensions.coded.width),
+        ("coded_height", h.dimensions.coded.height),
+        ("output_width", h.width as u32),
+        ("output_height", h.height as u32),
+    ] {
+        input
+            .metadata
+            .push((key.into(), DataMap::UInt(value.into())));
+    }
+    if let (Some(source), Some(display)) = (h.source_intrinsic, h.dimensions.intrinsic_display) {
+        for (key, value) in [
+            ("JPEG XL Source Intrinsic Width", source.width),
+            ("JPEG XL Source Intrinsic Height", source.height),
+            ("intrinsic_display_width", display.width),
+            ("intrinsic_display_height", display.height),
+        ] {
+            input
+                .metadata
+                .push((key.into(), DataMap::UInt(value.into())));
+        }
+    }
     input
         .metadata
         .push(("orientation_applied".into(), DataMap::Bool(true)));
@@ -744,6 +1010,14 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         "JPEG XL Source Bit Depth".into(),
         DataMap::UInt(h.bits.into()),
     ));
+    // A mixed-depth image has one normalized 16-bit native layout; retain the
+    // independent source alpha depth instead of relabeling it as color depth.
+    if let Some(alpha_bits) = h.alpha_bits.filter(|&b| b != h.bits) {
+        input.metadata.push((
+            "JPEG XL Source Alpha Bit Depth".into(),
+            DataMap::UInt(alpha_bits.into()),
+        ));
+    }
     input.metadata.push((
         "JPEG XL Output Bit Depth".into(),
         DataMap::UInt(if native { bits.into() } else { 8 }),
@@ -761,13 +1035,42 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         add(n, add(k.len(), bytes)?)
     })?;
     limits::check(metadata_bytes, limits.metadata_bytes, "JPEG XL metadata")?;
-    let retained_workspace = add(h.workspace, mul(metadata_bytes, 2)?)?;
+    // Preflight already holds the 2x container allowance. Only generated
+    // profiles/header/output metadata are additional at this boundary.
+    let added_metadata = metadata_bytes
+        .checked_sub(input.metadata_bytes)
+        .ok_or_else(|| invalid("JPEG XL metadata accounting mismatch"))?;
+    let retained_workspace = add(h.workspace, mul(added_metadata, 2)?)?;
     limits::check(
         retained_workspace,
         limits.expanded_bytes,
         "JPEG XL metadata workspace",
     )?;
-    let decoder = complete(decoder.process(&mut stream, None).map_err(codec_error)?)?;
+    let retained_workspace = structured_metadata::augment(
+        &mut input.metadata,
+        limits,
+        metadata_bytes,
+        retained_workspace,
+    )?;
+    let decoder = complete(
+        decoder
+            .process(
+                &mut stream,
+                if CANCELLABLE && cancellation.probe.is_some() {
+                    Some(&mut runner)
+                } else {
+                    None
+                },
+            )
+            .map_err(|e| {
+                if CANCELLABLE {
+                    cancellation.codec_error(e)
+                } else {
+                    codec_error(e)
+                }
+            })?,
+    )?;
+    check()?;
     let row = mul(h.width, mul(channels, if bits == 8 { 1 } else { 2 })?)?;
     let bytes = mul(row, h.height)?;
     // Vec<u16> guarantees the upstream row alignment even on WASM. All rows
@@ -781,9 +1084,24 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     let mut buffers = [JxlOutputBuffer::new(out, h.height, row)];
     let decoder = complete(
         decoder
-            .process(&mut stream, &mut buffers, None)
-            .map_err(codec_error)?,
+            .process(
+                &mut stream,
+                &mut buffers,
+                if CANCELLABLE && cancellation.probe.is_some() {
+                    Some(&mut runner)
+                } else {
+                    None
+                },
+            )
+            .map_err(|e| {
+                if CANCELLABLE {
+                    cancellation.codec_error(e)
+                } else {
+                    codec_error(e)
+                }
+            })?,
     )?;
+    check()?;
     if decoder.has_more_frames() {
         return Err(unsupported(
             "JPEG XL multiple visible frames are unsupported",
@@ -822,20 +1140,28 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
             .ok_or_else(|| invalid("missing JPEG XL reconstruction profile"))?;
         let mut rgba = Vec::new();
         rgba.try_reserve_exact(out.len() / 2)?;
-        rgba.extend(
-            out.chunks_exact(2)
-                .map(|b| u16::from_le_bytes([b[0], b[1]])),
-        );
-        crate::color_convert::rgba16_to_rgb_profile(
+        for chunk in out.chunks(256 * 8) {
+            check()?;
+            rgba.extend(
+                chunk
+                    .chunks_exact(2)
+                    .map(|b| u16::from_le_bytes([b[0], b[1]])),
+            );
+        }
+        crate::color_convert::rgba16_to_rgb_profile_with_cancel(
             &mut rgba,
             profile,
             crate::color_convert::SRGB_ICC,
             h.color_channels == 1,
             limits.expanded_bytes.saturating_sub(retained_workspace),
+            &check,
         )?;
         let mut bytes = crate::draw::zeroed_bytes(rgba.len())?;
-        for (dst, sample) in bytes.iter_mut().zip(rgba) {
-            *dst = ((u32::from(sample) * 255 + 32767) / 65535) as u8;
+        for (dst, src) in bytes.chunks_mut(256 * 4).zip(rgba.chunks(256 * 4)) {
+            check()?;
+            for (dst, &sample) in dst.iter_mut().zip(src) {
+                *dst = ((u32::from(sample) * 255 + 32767) / 65535) as u8;
+            }
         }
         Some(bytes)
     } else {
@@ -843,6 +1169,7 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
     };
     #[cfg(not(feature = "color-management"))]
     let managed_output: Option<Vec<u8>> = None;
+    check()?;
     #[cfg(feature = "image-buffer-ex")]
     if native {
         use crate::draw::{InitOptionsEx, PixelFormatEx};
@@ -904,12 +1231,183 @@ fn decode<B: BinaryReader, const MANAGED: bool>(
         option.drawer.set_metadata(&key, value)?;
     }
     option.drawer.terminate(None)?;
+    check()?;
     Ok(None)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pinned_codec_observes_runner_cancellation_inside_frame_processing() {
+        let mut stream = include_bytes!("../tests/fixtures/review/jxl-rgb8.jxl").as_slice();
+        let decoder = JxlDecoder::<states::Initialized>::new(JxlDecoderOptions::default());
+        let mut decoder = complete(decoder.process(&mut stream, None).unwrap()).unwrap();
+        let (width, height) = decoder.basic_info().size;
+        decoder.set_pixel_format(JxlPixelFormat::rgba8(0)).unwrap();
+        let decoder = complete(decoder.process(&mut stream, None).unwrap()).unwrap();
+        let mut output = vec![0; width * height * 4];
+        let mut buffers = [JxlOutputBuffer::new(&mut output, height, width * 4)];
+        let probe = || true;
+        let cancellation = Cancellation {
+            probe: Some(&probe),
+            cancelled: std::cell::Cell::new(false),
+        };
+        // This is inside the codec frame call, not an adapter before/after check.
+        let result = decoder.process(
+            &mut stream,
+            &mut buffers,
+            Some(&mut CancellableRunner(&cancellation)),
+        );
+        let err = result.err().expect("codec must propagate runner failure");
+        assert!(cancellation.cancelled.get());
+        assert!(cancellation.codec_error(err).is::<DecodeCancelled>());
+    }
+
+    #[test]
+    fn codec_runner_cancels_between_tasks_and_preserves_task_errors() {
+        use std::cell::Cell;
+        let completed = std::sync::atomic::AtomicUsize::new(0);
+        use std::sync::atomic::Ordering::Relaxed;
+        let probe = || completed.load(Relaxed) == 1;
+        let cancellation = Cancellation {
+            probe: Some(&probe),
+            cancelled: Cell::new(false),
+        };
+        let mut runner = CancellableRunner(&cancellation);
+        let err = runner
+            .run_ordered(10, None, &|_| {
+                completed.fetch_add(1, Relaxed);
+                Ok(())
+            })
+            .unwrap_err();
+        assert_eq!(completed.load(Relaxed), 1);
+        assert!(cancellation.codec_error(err).is::<DecodeCancelled>());
+        let probe = || false;
+        let cancellation = Cancellation {
+            probe: Some(&probe),
+            cancelled: Cell::new(false),
+        };
+        let err = CancellableRunner(&cancellation)
+            .run_ordered(10, None, &|_| Err(jxl_codec::error::Error::SectionTooShort))
+            .unwrap_err();
+        assert!(!cancellation.codec_error(err).is::<DecodeCancelled>());
+    }
+
+    #[test]
+    fn retained_metadata_is_admitted_before_header_and_icc_work_without_double_counting() {
+        let data = include_bytes!("../tests/fixtures/review/jxl-icc-lossless.jxl");
+        let limits = DecodeLimits::default();
+        let bare = unpack(data, limits).unwrap();
+        let baseline = preflight(&bare, limits).unwrap();
+        let mut boxed = SIGNATURE.to_vec();
+        let mut put = |kind: &[u8; 4], payload: &[u8]| {
+            boxed.extend(((payload.len() + 8) as u32).to_be_bytes());
+            boxed.extend(kind);
+            boxed.extend(payload);
+        };
+        put(b"ftyp", b"jxl \0\0\0\0jxl ");
+        put(b"test", &vec![0; 1 << 20]);
+        put(b"jxlc", &bare.codestream);
+        let retained = unpack(&boxed, limits).unwrap();
+        let admitted = preflight(&retained, limits).unwrap();
+        assert_eq!(
+            admitted.workspace,
+            baseline.workspace + retained.metadata_bytes * 2
+        );
+        let frame_pixels = (baseline.width.max(16) * baseline.height.max(16) * 4).div_ceil(3);
+        let before_icc = (1 << 20) + bare.codestream.len() * 2 + (8 << 20) + frame_pixels * 128;
+        let tight = DecodeLimits {
+            expanded_bytes: before_icc + retained.metadata_bytes * 2 - 1,
+            ..limits
+        };
+        assert!(preflight(&bare, tight).is_ok());
+        assert!(
+            preflight(&retained, tight)
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("ICC workspace")
+        );
+        // Public full-decode admission still charges the old total exactly once.
+        let image = crate::draw::image_from_with_limits(&boxed, limits).unwrap();
+        let final_bytes: usize = image
+            .metadata
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|(key, value)| {
+                key.len()
+                    + match value {
+                        DataMap::Raw(v) | DataMap::ICCProfile(v) => v.len(),
+                        DataMap::Ascii(v) => v.len(),
+                        _ => 8,
+                    }
+            })
+            .sum();
+        let exact = baseline.workspace + final_bytes * 2;
+        assert!(
+            crate::draw::image_from_with_limits(
+                &boxed,
+                DecodeLimits {
+                    expanded_bytes: exact,
+                    ..limits
+                }
+            )
+            .is_ok()
+        );
+        assert!(
+            crate::draw::image_from_with_limits(
+                &boxed,
+                DecodeLimits {
+                    expanded_bytes: exact - 1,
+                    ..limits
+                }
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn brob_metadata_quota_counts_raw_decoded_and_keys_at_the_exact_boundary() {
+        let raw = include_bytes!("../tests/fixtures/review/jxl-rgba8.jxl");
+        let compressed = include_bytes!("../tests/fixtures/review/jxl-brob-xml.br");
+        let xml = b"<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><metadata>JPEG XL bounded metadata</metadata></x:xmpmeta>";
+        let mut input = SIGNATURE.to_vec();
+        let mut put = |kind: &[u8; 4], payload: &[u8]| {
+            input.extend(((payload.len() + 8) as u32).to_be_bytes());
+            input.extend(kind);
+            input.extend(payload);
+        };
+        put(b"ftyp", b"jxl \0\0\0\0jxl ");
+        put(b"jxlc", raw);
+        let mut payload = b"xml ".to_vec();
+        payload.extend(compressed);
+        put(b"brob", &payload);
+        let needed = payload.len()
+            + xml.len()
+            + box_key("Source", 2, b"brob").len()
+            + box_key("Decoded", 2, b"xml ").len();
+        let limits = DecodeLimits {
+            metadata_bytes: needed,
+            ..Default::default()
+        };
+        assert_eq!(unpack(&input, limits).unwrap().metadata_bytes, needed);
+        assert!(
+            unpack(
+                &input,
+                DecodeLimits {
+                    metadata_bytes: needed - 1,
+                    ..limits
+                }
+            )
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("brob expanded metadata")
+        );
+    }
+
     #[test]
     fn bounded_icc_cursor_matches_pinned_codec_before_frame_headers() {
         for source in [

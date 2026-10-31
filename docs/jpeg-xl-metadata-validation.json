@@ -1,0 +1,310 @@
+{
+  "date": "2026-10-30",
+  "base_pr": 56,
+  "base_revision": "b3c52a50962c0171bbbdb46b61f247c34c94c98a",
+  "code_checkpoint": "e13e7f28c6bd8d304497cb48ce8068b355f38fa8",
+  "environment": "Linux x86_64 cloud, Rust 1.91.0, Node 24.19.0, no default features; jxl0.7.4 unchanged, roxmltree0.21.2 pure Rust default features off",
+  "source_sha256": {
+    "wml2/src/jpegxl.rs": "6c22b7b8df7d8b838078a25fab1986a6e8834fa6a2010034d6966d937dd0d012",
+    "wml2/src/jpegxl_metadata.rs": "c4b8c4e749f6adf6a43938bbcbb147c9dae0d5985c875b529263445695ed34fd",
+    "wml2/src/error.rs": "e54bb2d14f0e156726acae62d1fcc42beb1def43b767e1b183f204fe1320bb8e",
+    "wml2/Cargo.toml": "09e6a5440150af69cdcc2d01442d5cb900f5b08f6695b88376c722eaddda481e",
+    "Cargo.lock": "5630c1d46d8424d6fa7861b2c8f82356c25989236bc9c901c5f24e139ebd0824",
+    "wml2/tests/jpeg_xl_metadata.rs": "e93e50b288d0751c2e5ed1c81e725d8c079abce76182c25af626ac4ea0bd1afd",
+    "wml2-test/scripts/jpegxl_wasm.rs": "e3f984e00a4a741372c7a4baeb8f3b2da97c684cc030091e17b02c7ea089b5b5",
+    "wml2-test/scripts/verify_jpegxl_wasm.py": "62819aaea99e21368c4419d5ca140acbfd29b99240964421c0f2d6d0f50bcbaf",
+    "wml2-test/scripts/generate_jpegxl_metadata_fixtures.py": "8780a49d939fe22be4242e144ef945189aee1a09a71968af037c41c0ec12591c",
+    ".github/scripts/select_ci.py": "40f01fd2ead6b139275df99c9683abb0d5bbdd527da6596e9121ea2633a7eca1",
+    ".github/scripts/check_feature_contracts.py": "c0e35f73364208a73bf31cd5168ccabe4ab57b2e9b4b35da2eeed97c85903173",
+    ".github/workflows/ci.yml": "d9dc0564b15b5550014eec26d3ff8dbf51e93e1fabdcda039db5617d2d2ae5cb"
+  },
+  "fixture_manifest_sha256": "38175455be0663ff654b63a8087dc1986d858d0c6c834b220add753266f0c8a5",
+  "native_extended": {
+    "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,exif,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_brob --test jpeg_xl_metadata --test jpeg_xl_layers",
+    "passed": 78,
+    "target_pass_counts": [
+      37,
+      22,
+      3,
+      6,
+      3,
+      7
+    ],
+    "failed": 0,
+    "ignored": 0
+  },
+  "native_minimal": {
+    "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_brob --test jpeg_xl_metadata --test jpeg_xl_layers",
+    "passed": 59,
+    "target_pass_counts": [
+      25,
+      17,
+      2,
+      6,
+      3,
+      6
+    ],
+    "failed": 0,
+    "ignored": 0
+  },
+  "feature_disabled": {
+    "command": "cargo test -p wml2 --locked --no-default-features --test jpeg_xl --test jpeg_xl_brob --test jpeg_xl_metadata",
+    "passed": 1,
+    "target_pass_counts": [
+      1,
+      0,
+      0
+    ],
+    "failed": 0,
+    "ignored": 0
+  },
+  "wasm_without_exif": {
+    "runtime": "v24.19.0",
+    "cases": 73,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14483456,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "6e747755464ec662a590c08f11f859884863484ed133460dfcc24c49b75aa3be",
+    "scope": "structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "wasm_with_exif": {
+    "runtime": "v24.19.0",
+    "cases": 73,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14483456,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex,exif; no defaults",
+    "wasm_sha256": "a8b1e126db2e617259f853ab3fb981994ff122b4abffc6d7fa31a00939a6b49e",
+    "scope": "structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "clippy": {
+    "command": "cargo clippy -p wml2 --locked --no-default-features --features jpeg-xl,exif,image-buffer-ex,color-management --lib --test jpeg_xl_metadata",
+    "warnings": 35,
+    "parent_warnings": 35,
+    "normalized_diagnostics_equal_parent": true,
+    "new_helper_or_test_warnings": 0
+  },
+  "repository_checks": {
+    "command": "python -B -m unittest discover -s .github/scripts -p 'test_*.py'",
+    "passed": 35,
+    "fmt_and_diff": "PASS"
+  },
+  "display": {
+    "width": 606,
+    "height": 500,
+    "reference": "independent djxl jxl-jbrd-bench.srgb.rgba.zlib",
+    "max_absolute_error": 1,
+    "rgba_sha256": "6257f1d90d459543e8f775f95b63507d3598f0c529d876b2efe9eb067113aac7",
+    "visually_inspected": true,
+    "source_sha256": "4dd22437cd195987f0101978054b602502251026873e6523b1a01a767fec13c1",
+    "source_recipe": "Append box(length=12+len(br), type=brob, payload=xml +br) to jxl-jbrd-bench.jxl; br=jxl-brob-xml.br from the fixture directory"
+  },
+  "benchmark": {
+    "baseline": "parent b3c52a5 with same exif/EX/CMS features",
+    "candidate_production_code": "cbe41db0db2876c522ea004cb50eb2efc5281d68; only cfg(test) admission assertion and CI/docs changed afterward",
+    "before_binary_sha256": "7df0a60016758106846a8509847477bac604ca81c316cc89614d8392fab8d886",
+    "after_binary_sha256": "b44667d52143ff3eb9d8e2d0d1559d26c94e681632db17e94a237a7e7ef47201",
+    "method": "Resident input; release opt; separate alternating taskset processes, three warmups. Process output computes a full-buffer rolling hash after timed decode. Medians of process medians. Rechecks retained without filtering.",
+    "cpu0_initial": [
+      {
+        "case": "jxl-rgba16",
+        "route": "ordinary",
+        "iterations_per_process": 150,
+        "process_pairs": 3,
+        "warmups": 3,
+        "before_us": 53.8715,
+        "after_us": 55.048,
+        "change_percent": 2.1839005782278376,
+        "hash": "17076559143681454236"
+      },
+      {
+        "case": "jxl-icc-lossless",
+        "route": "managed",
+        "iterations_per_process": 150,
+        "process_pairs": 3,
+        "warmups": 3,
+        "before_us": 141.6035,
+        "after_us": 150.8025,
+        "change_percent": 6.4963083539601785,
+        "hash": "12438429659714107065"
+      },
+      {
+        "case": "jxl-jbrd-bench",
+        "route": "ordinary",
+        "iterations_per_process": 40,
+        "process_pairs": 3,
+        "warmups": 3,
+        "before_us": 15917.1625,
+        "after_us": 15588.1555,
+        "change_percent": -2.0669952951727355,
+        "hash": "8439627164837879290"
+      },
+      {
+        "case": "jxl-jbrd-bench",
+        "route": "managed",
+        "iterations_per_process": 5,
+        "process_pairs": 3,
+        "warmups": 3,
+        "before_us": 1074989.414,
+        "after_us": 1048978.536,
+        "change_percent": -2.419640385407551,
+        "hash": "1509610803079936459"
+      },
+      {
+        "case": "jxl-meta-little",
+        "route": "ordinary",
+        "iterations_per_process": 150,
+        "process_pairs": 3,
+        "warmups": 3,
+        "before_us": 81.0125,
+        "after_us": 92.52,
+        "change_percent": 14.204598055855566,
+        "hash": "14208654780104629357"
+      },
+      {
+        "case": "jxl-meta-brob",
+        "route": "ordinary",
+        "iterations_per_process": 150,
+        "process_pairs": 3,
+        "warmups": 3,
+        "before_us": 99.8755,
+        "after_us": 113.6065,
+        "change_percent": 13.748116404924126,
+        "hash": "14208654780104629357"
+      }
+    ],
+    "cpu0_recheck": [
+      {
+        "case": "jxl-rgba16",
+        "route": "ordinary",
+        "iterations_per_process": 1000,
+        "process_pairs": 5,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            85.419,
+            53.641,
+            53.54,
+            52.89,
+            85.6995
+          ],
+          "after": [
+            52.7,
+            53.2705,
+            54.392,
+            53.651,
+            54.372
+          ]
+        },
+        "before_us": 53.641,
+        "after_us": 53.651,
+        "change_percent": 0.01864245633005357,
+        "hash": "17076559143681454236"
+      },
+      {
+        "case": "jxl-icc-lossless",
+        "route": "managed",
+        "iterations_per_process": 1000,
+        "process_pairs": 5,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            193.382,
+            189.465,
+            137.382,
+            134.122,
+            138.5735
+          ],
+          "after": [
+            193.8475,
+            190.672,
+            192.976,
+            131.5685,
+            194.3785
+          ]
+        },
+        "before_us": 138.5735,
+        "after_us": 192.976,
+        "change_percent": 39.25894922189308,
+        "hash": "12438429659714107065"
+      }
+    ],
+    "cpu2_recheck": [
+      {
+        "case": "jxl-rgba16",
+        "route": "ordinary",
+        "cpu": 2,
+        "iterations_per_process": 1000,
+        "process_pairs": 5,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            88.569,
+            85.674,
+            88.849,
+            86.5355,
+            81.883
+          ],
+          "after": [
+            86.881,
+            53.165,
+            81.533,
+            85.93,
+            53.601
+          ]
+        },
+        "before_us": 86.5355,
+        "after_us": 81.533,
+        "change_percent": -5.780864500696248,
+        "hash": "17076559143681454236"
+      },
+      {
+        "case": "jxl-icc-lossless",
+        "route": "managed",
+        "cpu": 2,
+        "iterations_per_process": 1000,
+        "process_pairs": 5,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            153.196,
+            195.014,
+            195.61,
+            199.1555,
+            193.612
+          ],
+          "after": [
+            143.256,
+            135.945,
+            150.668,
+            199.055,
+            187.4875
+          ]
+        },
+        "before_us": 195.014,
+        "after_us": 150.668,
+        "change_percent": -22.73990585291312,
+        "hash": "12438429659714107065"
+      }
+    ],
+    "limits": "CPU-0 recheck began while baseline Clippy was running. Both CPU-0 and CPU-2 runs show substantial/bimodal timing variability. Existing small-path speed change is inconclusive; no general speedup, zero-overhead or RSS claim. Large managed initial has only five timed iterations/process."
+  },
+  "coverage": [
+    "Independent Pillow LE/BE TIFF tags and nonzero JPEG XL Exif offset; ElementTree UTF-8/RDF namespaces; C libbrotli compression; C libjxl all effective payloads and every RGBA8 byte vs saved independent djxl reference",
+    "Raw and decoded bytes retained; first valid selection after malformed plain/brob candidates; multiple boxes; every TIFF prefix truncation; offset failures",
+    "Common EXIF Orientation=1; conflicting EXIF against all eight coded orientations compared to saved independent djxl references",
+    "DTD/external entities/XInclude/stylesheets refused, literal CDATA and predefined/numeric entities accepted; UTF-8/XML/encoding policy explicit",
+    "Parser-construction counters remain zero on metadata/workspace pre-admission failure, including namespace allowance; retained EXIF counts owned capacity",
+    "Aliased TIFF fields charged repeatedly; XML input/node/combined metadata/workspace failures; no initialized image/pixels/metadata on resource rejection"
+  ],
+  "limits": [
+    "Known-buffer/request workspace contract, not process RSS or every allocator/callback implementation detail",
+    "XMP is validated UTF-8 packet text, not RDF property extraction; unsupported/malformed optional content remains raw",
+    "EXIF uses existing TIFF type/schema support; fixed 8 MiB charged parse metadata and 64 primary IFD cap; XML fixed4 MiB/65536 nodes; no caps relaxed",
+    "Raw original tags retained; only common EXIF Orientation normalized; other source dimensions/tags not rewritten",
+    "No header-only dimension API, Viewer changes, cancellation changes, merge, release or issue closure"
+  ]
+}

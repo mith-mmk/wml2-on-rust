@@ -427,3 +427,46 @@ fn borrowed_input_is_not_retained_by_returned_image() {
     assert_eq!(image.buffer, expected.buffer);
     assert_eq!(metadata(&image), metadata(&expected));
 }
+
+#[cfg(feature = "color-management")]
+#[test]
+fn composition_cancellation_stays_before_borrowed_input_admission() {
+    let input = oversized(true);
+    let limits = DecodeLimits {
+        input_bytes: 0,
+        pixels: 0,
+        expanded_bytes: 0,
+        metadata_bytes: 0,
+        frames: 0,
+        animation_bytes: 0,
+    };
+    let (result, stats) =
+        measure(|| wml2::jpegxl::image_from_srgb_with_limits_and_cancel(&input, limits, &|| true));
+    assert!(result.err().unwrap().is::<wml2::jpegxl::DecodeCancelled>());
+    assert_eq!(stats.count, 0, "pre-cancel allocations: {stats:?}");
+    bounded_refusal("composed managed non-cancel", || {
+        wml2::jpegxl::image_from_srgb_with_limits_and_cancel(
+            &input,
+            DecodeLimits::default(),
+            &|| false,
+        )
+    });
+    let mixed = include_bytes!("fixtures/review/jxl-alpha-icc-c8a16o6.jxl");
+    let image = wml2::jpegxl::image_from_srgb_with_limits_and_cancel(
+        mixed,
+        DecodeLimits::default(),
+        &|| false,
+    )
+    .unwrap();
+    let expected = include_bytes!("fixtures/review/jxl-alpha-icc-c8a16o6.srgb.rgba");
+    assert_eq!((image.width, image.height), (5, 7));
+    let actual = image.buffer.unwrap();
+    assert_eq!(expected.len(), 5 * 7 * 4);
+    assert_eq!(actual.len(), expected.len());
+    for (actual, reference) in actual.chunks_exact(4).zip(expected.chunks_exact(4)) {
+        for c in 0..3 {
+            assert!(actual[c].abs_diff(reference[c]) <= 2);
+        }
+        assert_eq!(actual[3], reference[3]);
+    }
+}

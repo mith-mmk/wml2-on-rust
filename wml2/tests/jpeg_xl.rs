@@ -29,6 +29,9 @@ fn feature_controls_detection_and_extension_reporting() {
 
 #[cfg(feature = "jpeg-xl")]
 mod enabled {
+    mod composition {
+        include!("jpeg_xl/composition.rs");
+    }
     mod preview {
         include!("jpeg_xl/preview.rs");
     }

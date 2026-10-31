@@ -329,5 +329,32 @@ pub extern "C" fn verify_jpegxl() -> u32 {
         { let _ = make; assert!(!metadata.contains_key("EXIF")); }
         count += 1;
     }
+    // C libjxl independently decoded both distinct preview and main images.
+    for (input, compressed, native_compressed, size, bits, tolerance) in [
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-rgba8.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-rgba8.rgba.zlib").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-rgba8.rgba16le.zlib").as_slice(),(7,5),8,0),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-icc16.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-icc16.rgba.zlib").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-icc16.rgba16le.zlib").as_slice(),(7,5),16,0),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oriented-icc16.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oriented-icc16.rgba.zlib").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oriented-icc16.rgba16le.zlib").as_slice(),(5,7),16,0),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-grayalpha8.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-grayalpha8.rgba.zlib").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-grayalpha8.rgba16le.zlib").as_slice(),(7,5),8,0),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-larger.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-larger.rgba.zlib").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-larger.rgba16le.zlib").as_slice(),(2,3),8,0),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-lossy.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-lossy.rgba.zlib").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-lossy.rgba16le.zlib").as_slice(),(64,48),8,2),
+    ] {
+        let expected=miniz_oxide::inflate::decompress_to_vec_zlib(compressed).unwrap();
+        let image=image_from(input).unwrap();assert_eq!((image.width,image.height),size);
+        for(a,b)in image.buffer.unwrap().chunks_exact(4).zip(expected.chunks_exact(4)){
+            for c in 0..3 {assert!(a[c].abs_diff(b[c])<=tolerance);}assert_eq!(a[3],b[3]);
+        }
+        count+=1;
+        let format=if bits==16{PixelFormatEx::Rgba16}else{PixelFormatEx::Rgba8};
+        let image=image_from_ex(input,format,PrecisionConversion::Exact).unwrap();
+        assert_eq!((image.width(),image.height()),size);assert_eq!(image.source_format(),Some(format));
+        if bits==16 {assert_eq!(image.bytes().unwrap(),miniz_oxide::inflate::decompress_to_vec_zlib(native_compressed).unwrap());}
+        else {for(a,b)in image.bytes().unwrap().chunks_exact(4).zip(expected.chunks_exact(4)){for c in 0..3{assert!(a[c].abs_diff(b[c])<=tolerance);}assert_eq!(a[3],b[3]);}}
+        count+=1;
+    }
+    let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-larger.jxl");
+    let image=image_from_with_limits(input,DecodeLimits{pixels:6,frames:1,animation_bytes:24,expanded_bytes:1_120_000,..Default::default()}).unwrap();
+    assert_eq!((image.width,image.height),(2,3));count+=1;
+    assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
+    assert!(image_from(&input[..784]).is_err());count+=1;
     count
 }

@@ -1,0 +1,294 @@
+{
+  "date": "2026-10-30",
+  "base_revision": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
+  "runtime_code_checkpoint": "de79d21ee68b46b5edc08df0eda2a2184a29759e",
+  "environment": "Linux x86_64 cloud; Rust1.91.0; Node24.19.0; no default features; jxl0.7.4 unchanged. C libjxl0.11.2 and LittleCMS2.16 are fixture tools only.",
+  "verified_source_sha256": {
+    "wml2/src/jpegxl.rs": "21d2ed134a010ded7b4385f629073004a29d07ff02c9e2ba4e214597be9be113",
+    "wml2/tests/jpeg_xl.rs": "b1494b5a0f75c899162c688b590c3a51db641be98a855df01e4f5d179ad2a217",
+    "wml2/tests/jpeg_xl/preview.rs": "59027434b0b02b8d6a9dd7fcc2a5e42f53a0e14fb8a25633f6d8830caf1373c9",
+    "Cargo.lock": "879084552f4e5f1ddb20599355bfe5810b5284356ed2681b982010bbd0aec5be",
+    "wml2-test/scripts/generate_jpegxl_preview_fixtures.py": "98e7f0dc3cea3fde6e2c061007e71b3666602c704715eb3288a000dc508efe7e",
+    "wml2-test/scripts/jpegxl_preview_reference.c": "1bbaadac87057da35d334202e51879272e6552f4600a21c867ff506dfd52ebe9",
+    "wml2-test/scripts/check_jpegxl_preview_cancel.rs": "fbc095a625f09d24fd4f53630d2cb85069cbc7b78e6f12aeaaaa7fe6ed3dcf9d",
+    "wml2-test/scripts/jpegxl_wasm.rs": "d4fc434db3409b464e5019a5c20ceb88372369a044a30ecb2cbc6cd4448bd91b",
+    "wml2-test/scripts/verify_jpegxl_wasm.py": "54fb7cfd6bb302811223da04801204f99337fe19dbfb28e261596a103cdde8b3"
+  },
+  "fixture_manifest_sha256": "fcc54044381cf7fa83e9242e9422a90ea62fdfab468f0626545a5e8172e0cd75",
+  "baseline_gap": {
+    "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl --test jpeg_xl preview::main_pixels",
+    "base_source": "unchanged main6a48db9",
+    "result": "Independent C-validated preview input rejected solely by UnsupportedFeature: JPEG XL animations, previews and intrinsic sizes are unsupported. Reproduced before implementation."
+  },
+  "native_extended": {
+    "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers",
+    "passed": 59,
+    "target_pass_counts": [
+      25,
+      28,
+      3,
+      3
+    ],
+    "failed": 0,
+    "ignored": 0
+  },
+  "native_minimal": {
+    "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers",
+    "passed": 45,
+    "target_pass_counts": [
+      19,
+      21,
+      2,
+      3
+    ],
+    "failed": 0,
+    "ignored": 0
+  },
+  "feature_disabled": {
+    "command": "cargo test -p wml2 --locked --no-default-features --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers",
+    "passed": 1,
+    "target_pass_counts": [
+      1,
+      0,
+      0
+    ],
+    "failed": 0,
+    "ignored": 0
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 76,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14352384,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "850254a458bfb8104fa63d1689d74ba6602efb6e0fe11c00a4ea1ed2bbedb69e",
+    "scope": "embedded-preview main-only ordinary/EX/ICC/orientation pixels, independent preview/canvas/skip workspace and truncation limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "clippy": {
+    "command": "cargo clippy -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management --lib --test jpeg_xl",
+    "existing_library_warnings": 11,
+    "new_preview_warnings": 0
+  },
+  "repository_checks": {
+    "passed": 35,
+    "command": "python -B -m unittest discover -s .github/scripts -p 'test_*.py'",
+    "format_diff_local_links": "PASS"
+  },
+  "cancellation_integration": {
+    "parent_pr": 32,
+    "parent_revision": "da4f45764995110502a1a0a3cd9e933d86a5872f",
+    "isolated_combination_revision": "3c0faaf1a8d2bb068c0a457b6f6bdd170b2cbba4",
+    "method": "Clean cherry-pick of preview source checkpoint into detached parent worktree; no parent or published branch modification; no cancellation code copied into this main-based PR.",
+    "native": {
+      "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers",
+      "passed": 65,
+      "target_pass_counts": [
+        28,
+        28,
+        6,
+        3
+      ],
+      "failed": 0,
+      "ignored": 0
+    },
+    "checker": "wml2-test/scripts/check_jpegxl_preview_cancel.rs",
+    "checker_sha256": "fbc095a625f09d24fd4f53630d2cb85069cbc7b78e6f12aeaaaa7fe6ed3dcf9d",
+    "fixture_cases": [
+      "rgba8",
+      "oriented-icc16",
+      "lossy"
+    ],
+    "deterministic_probe_points": [
+      17,
+      17,
+      52
+    ],
+    "all_86_cancellations_return_typed_error_without_image": true,
+    "independent_cms_oracle_and_exact_alpha": "PASS",
+    "pre_cancel_vs_limit_precedence": "PASS",
+    "limitation": "Preflight and serial preview skip remain non-interruptible; only existing surrounding/runner/CMS checkpoints, no latency guarantee."
+  },
+  "display": {
+    "width": 64,
+    "height": 48,
+    "max_absolute_error": 1,
+    "alpha_exact": true,
+    "reference": "C libjxl normalized RGBA16 + LittleCMS2.16 actual-output-profile to sRGB",
+    "rgba_sha256": "7d3102579a4d7c8d7d21941fa650f5cf038b3d42b66307c6ff567de3fb8b9e11",
+    "visually_inspected": true,
+    "repository_lock_rebuild_pixels_identical": true
+  },
+  "benchmark": {
+    "method": "Release resident input, three alternating process pairs, CPU0, three warmups. Median of process medians; timed region covers decode only, full-buffer rolling hash after timing. No other local build/test initiated during the final measurement.",
+    "baseline_revision": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
+    "candidate_runtime_revision": "de79d21ee68b46b5edc08df0eda2a2184a29759e",
+    "features": "jpeg-xl,image-buffer-ex,color-management; no defaults",
+    "all_harness_registry_versions_and_checksums_match_repository_lock": true,
+    "isolated_lock_sha256": {
+      "before": "cb9e8d1f8ab78ea1bcb36126c75eed8a2af01dfa24e39d7526d8153b35ed654d",
+      "after": "cb9e8d1f8ab78ea1bcb36126c75eed8a2af01dfa24e39d7526d8153b35ed654d",
+      "cancel-check": "d3107de3892ed9f40e741282f0475f5c66c884c2a2f38f6a69f9f9c6672f24f8"
+    },
+    "before_binary_sha256": "b954df34937a5af5ffe51e3762de6d199e0f40c37d17543364de3927db898d05",
+    "after_binary_sha256": "c0edfd4ff548e7d35c162718e8fb946e5e10bcc1ff1ed1231ac572fd8a61c5f3",
+    "legacy": [
+      {
+        "case": "jxl-rgba16",
+        "route": "ordinary",
+        "iterations": 150,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            55.329,
+            54.182,
+            88.9995
+          ],
+          "after": [
+            53.751,
+            54.117,
+            87.612
+          ]
+        },
+        "before_us": 55.329,
+        "after_us": 54.117,
+        "change_percent": -2.190532993547689,
+        "hash": "17076559143681454236"
+      },
+      {
+        "case": "jxl-icc-lossless",
+        "route": "managed",
+        "iterations": 150,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            131.378,
+            130.682,
+            189.531
+          ],
+          "after": [
+            132.149,
+            134.077,
+            198.254
+          ]
+        },
+        "before_us": 131.378,
+        "after_us": 134.077,
+        "change_percent": 2.054377445234379,
+        "hash": "12438429659714107065"
+      },
+      {
+        "case": "jxl-jbrd-bench",
+        "route": "ordinary",
+        "iterations": 40,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            16293.6005,
+            15914.155,
+            17095.1295
+          ],
+          "after": [
+            16226.0345,
+            15417.1805,
+            17140.933
+          ]
+        },
+        "before_us": 16293.6005,
+        "after_us": 16226.0345,
+        "change_percent": -0.4146781431151547,
+        "hash": "8439627164837879290"
+      },
+      {
+        "case": "jxl-jbrd-bench",
+        "route": "managed",
+        "iterations": 5,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "before": [
+            1051410.494,
+            1058690.873,
+            1068538.141
+          ],
+          "after": [
+            1061808.937,
+            1054440.662,
+            1090323.64
+          ]
+        },
+        "before_us": 1058690.873,
+        "after_us": 1061808.937,
+        "change_percent": 0.29452072172535537,
+        "hash": "1509610803079936459"
+      }
+    ],
+    "new_preview_vs_equivalent_plain_main": [
+      {
+        "case": "C-encoded 64x48 equivalent main",
+        "route": "ordinary",
+        "iterations": 300,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "plain": [
+            612.108,
+            635.1375,
+            642.9195
+          ],
+          "preview": [
+            636.5845,
+            603.3845,
+            639.5295
+          ]
+        },
+        "plain_us": 635.1375,
+        "preview_us": 636.5845,
+        "change_percent": 0.22782468363149455,
+        "hash": "7672015815480261167"
+      },
+      {
+        "case": "C-encoded 64x48 equivalent main",
+        "route": "managed",
+        "iterations": 50,
+        "process_pairs": 3,
+        "warmups": 3,
+        "process_medians_us": {
+          "plain": [
+            10974.429,
+            11017.4245,
+            10606.8805
+          ],
+          "preview": [
+            10836.1805,
+            10873.857,
+            10475.6915
+          ]
+        },
+        "plain_us": 10974.429,
+        "preview_us": 10836.1805,
+        "change_percent": -1.2597329665169799,
+        "hash": "3242497517623577654"
+      }
+    ],
+    "limits": "Local finite samples only, large managed only5 timed calls/process; not general throughput, zero-overhead or process RSS evidence. Earlier preliminary standalone-lock measurements retained locally; reported values use verified root-lock registry resolutions."
+  },
+  "supported_scope": [
+    "One terminal visible embedded preview structurally scanned and skipped; main-only output in ordinary/EX/CMS APIs. No preview notifications, pixel state or retained preview plane.",
+    "Same header/TOC parser, bounds and checked payload extents as main. Fixed preview padded4Mi, global4096-axis and internal4Mi/16384-axis/4096TOC/64main-layer caps unchanged.",
+    "Caller pixels/frames/animation_bytes describe main canvas; codec sample guard also covers independently bounded preview dimensions.",
+    "No new public key, extraction/information API, channel model, jxl version, merge, release or issue closure."
+  ],
+  "deferred_or_limits": [
+    "Non-visible/non-terminal preview sequences refused because pinned codec would use SkipOutput and construct pixel state.",
+    "Skipped entropy is opaque; independent C main-only skips identical damaged data while requesting preview fails.",
+    "No preview extraction API; pinned codec has preview decoding but WML2 needs a separate dimensions/layout/colour/limit contract.",
+    "Oversized declaration fixture is header-admission negative with a small body, not a claimed valid oversized-pixel encoding.",
+    "Known-buffer/request admission, not all allocator/callback details or process RSS.",
+    "Existing documentation/cancellation/brob/structured metadata branches remain separate; reconcile current support/harness counts when integrating."
+  ]
+}

@@ -1,5 +1,10 @@
 # Fallible JPEG XL adapter metadata copies
 
+Current development decode uses the [0.8 migration](jpeg-xl-080-migration.md),
+with the unchanged published 0.7.4 parser retained for preflight. The evidence
+below describes its original implementation stage; no global codec heap bound
+or automatic port of the 0.7.4 entropy evaluation follows from the migration.
+
 This small implementation stage depends on draft [#72](https://github.com/mith-mmk/wml2-on-rust/pull/72), base `9ce284030367f5812b26d256b9efbedbd89d01b6`. It preserves the 0.0.41 API and all existing fixed resource ceilings. It does not admit 2560×1440 images or establish a codec-wide heap/RSS bound.
 
 ## Implementation and boundary

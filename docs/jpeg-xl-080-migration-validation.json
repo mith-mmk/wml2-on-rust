@@ -1,0 +1,2051 @@
+{
+  "base": "8fa0b978c4f68e998439e1bffe0b567f46024074",
+  "strategy": "pixel decoding: published jxl0.8.0; temporary parser-only published jxl0.7.4 bridge, both optional/exact/default-features=false; not an all-0.8 dependency graph",
+  "packages": [
+    {
+      "name": "jxl",
+      "version": "0.7.4",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "43b041e4bd5bb931cf73b271bc3304eb135bb473914877d64bf77fdf5b4d4687",
+      "dependencies": [
+        "array-init",
+        "byteorder",
+        "jxl_macros 0.7.4",
+        "jxl_simd 0.7.4",
+        "jxl_transforms 0.7.4",
+        "num-derive",
+        "num-traits",
+        "thiserror"
+      ]
+    },
+    {
+      "name": "jxl",
+      "version": "0.8.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "b8379fc83d79477900c9aed78cb8370a556d834081bebcb771c6010381c4e230",
+      "dependencies": [
+        "array-init",
+        "byteorder",
+        "jxl_macros 0.8.0",
+        "jxl_simd 0.8.0",
+        "jxl_transforms 0.8.0",
+        "num-derive",
+        "num-traits",
+        "thiserror"
+      ]
+    },
+    {
+      "name": "jxl_macros",
+      "version": "0.7.4",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "7401c9c53e44e2efa17d7562c613f0972b93cf134aa91f08c14e00c8278ce663",
+      "dependencies": [
+        "proc-macro2",
+        "quote",
+        "syn 2.0.119"
+      ]
+    },
+    {
+      "name": "jxl_macros",
+      "version": "0.8.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "eeb27c06a9957bd9c8e65d0aeea0db6a555a9e1c85597e284f8304015c410c87",
+      "dependencies": [
+        "proc-macro2",
+        "quote",
+        "syn 2.0.119"
+      ]
+    },
+    {
+      "name": "jxl_simd",
+      "version": "0.7.4",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "ba1f65c01a3f807385be7a1200f78b9d958bff1321b753b859ecfcba63a0642d"
+    },
+    {
+      "name": "jxl_simd",
+      "version": "0.8.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "a645451b4d34b4017caf24110a14eb737e275b5d3d121bc754e67727ee65af0e"
+    },
+    {
+      "name": "jxl_transforms",
+      "version": "0.7.4",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "8f72e196c6c1e938a4c7e2175d7c83464fa9e7f587224d310cac15d83fc80a37",
+      "dependencies": [
+        "jxl_simd 0.7.4"
+      ]
+    },
+    {
+      "name": "jxl_transforms",
+      "version": "0.8.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "21c4b7f8957f5ba578b2e28cd5ebbc97dad58a3ad5ff26765da61e8dab8f1cad",
+      "dependencies": [
+        "jxl_simd 0.8.0"
+      ]
+    }
+  ],
+  "source_revisions": {
+    "0.7.4": {
+      "git": {
+        "sha1": "624ce908afcf8eb0dc2585a671535eaabb5d88cc"
+      },
+      "path_in_vcs": "jxl"
+    },
+    "0.8.0": {
+      "git": {
+        "sha1": "9a08ca643fd2d01f803dd0be6a5bebc9cc11e597"
+      },
+      "path_in_vcs": "jxl"
+    }
+  },
+  "parser_source_sha256": {
+    "headers/mod.rs": {
+      "0.7.4": "5112797e90a50a9012a26e82ed6c1ad6314612cca800bf590294ef1fadf4295d",
+      "0.8.0": "5112797e90a50a9012a26e82ed6c1ad6314612cca800bf590294ef1fadf4295d"
+    },
+    "headers/size.rs": {
+      "0.7.4": "5659d484af34d8562a31ae6e46706cbeaf9bf75b10462a75e6020d541b742807",
+      "0.8.0": "5659d484af34d8562a31ae6e46706cbeaf9bf75b10462a75e6020d541b742807"
+    },
+    "headers/bit_depth.rs": {
+      "0.7.4": "b0371bcc51ab6521498b99820cbbd41d8be7bf9c968d038db4c19c743639695c",
+      "0.8.0": "b0371bcc51ab6521498b99820cbbd41d8be7bf9c968d038db4c19c743639695c"
+    },
+    "headers/image_metadata.rs": {
+      "0.7.4": "7ed32ab8dcdbf3efd4ba08e41b2620906532be6a45ea827eee95fa7200a40442",
+      "0.8.0": "a9f1eb0def362d4fbd2a91d3d291cf7cf420a47883037dd8be213319fc8e4833"
+    },
+    "headers/frame_header.rs": {
+      "0.7.4": "26f2f3e38350a9ec57177c14d5a6050495019defc7f5064e81ad736cf1c3f918",
+      "0.8.0": "a0acc6e9d17756c88c5e09e637a12e391348ab68b477bceda69b9199a4477768"
+    },
+    "headers/encodings.rs": {
+      "0.7.4": "2cde90bee058e1e0d6be892b78cae2466d3a610775e711d48cd829c0c8c760ee",
+      "0.8.0": "144a7613cc1ab6ffc63c8adf0ed765bf81383e4fa546ca033c3ceaa22c3119c9"
+    },
+    "headers/toc.rs": {
+      "0.7.4": "64c3ec4a9a5f300b5fb084a532984e8220ba38d4ee063412fad7922ed2c54a9c",
+      "0.8.0": "15f9c3bfefec201c0a944afdea4a1fc8d15c18b97fe8ce7477252688b96b617e"
+    },
+    "headers/extra_channels.rs": {
+      "0.7.4": "78baa0e732a40d8e1d3f0ad6a97ef3319351c620bd367f4b4c70ff96ea257ba9",
+      "0.8.0": "deb69a6a77e4d01ed7815306dd14338d97ec646eece33876e003b62a384118f4"
+    },
+    "headers/color_encoding.rs": {
+      "0.7.4": "9d72f3b6616b1f3a8207e317dfc91ed4b88f5f0bfdb41e34ac663f2763556e20",
+      "0.8.0": "3883fa8eaeb5dbe1b5e93d0441202e2412fb447d1db07a27337555aebb95d8cf"
+    },
+    "bit_reader.rs": {
+      "0.7.4": "48e18022b95731a410e26b92ad8bb17a4d756549cbfa93b1608f3336260d0e02",
+      "0.8.0": "44d3cf36ebec039308f4fdc6cd7b201d94e8408932921ccc4e8db8d77e28730d"
+    },
+    "entropy_coding/decode.rs": {
+      "0.7.4": "ff3696293c449ba15074ed0c815ef140d4cc6e85ee7bc0b3c2b1034b943d0b6b",
+      "0.8.0": "21665951c526b0cc3e09d54a85befacc5e9b3710f9593edef4b2c6a8962a7034"
+    },
+    "entropy_coding/context_map.rs": {
+      "0.7.4": "c1dc244078775565823dbe239adbf7ffc2303a228b4b1503ce2c17f5483851dd",
+      "0.8.0": "b4f34558282d1c1f4f76e79ec39de6b149d39e00602dc3f3d45abdf954119a84"
+    },
+    "icc/mod.rs": {
+      "0.7.4": "9d159c11be4117469a352030bb0c4de17e842dd3f8f859388314809d7dc9013f",
+      "0.8.0": "be4d30efc3614b846a080d02acc75fd87412364f1346f056b84ec325d580819e"
+    }
+  },
+  "scope_audit": {
+    "identical_wire_definitions": [
+      "FileHeader container-independent grammar (headers/mod.rs)",
+      "Size and Preview geometry grammar (headers/size.rs)",
+      "integer/float depth wire grammar (headers/bit_depth.rs)"
+    ],
+    "non_wire_changes": [
+      "TOC macro argument shorthand and removal of num_read_entries accessor",
+      "ICC/LZ77 scratch reuse and new row fast paths; coded ICC contexts remain41",
+      "BitReader buffering/overread bookkeeping changes, no wire-field changes",
+      "color matrix validation strengthened in0.8; invalid profiles may reject earlier"
+    ],
+    "excluded_differences": [
+      "0.8 extra-channel dim_shift fixes are outside admitted dim_shift=0 profile",
+      "0.8 drops metadata >256-extra check; preflight still rejects more than one channel",
+      "associated/subsampled/general extras, HDR/float and animation remain explicitly refused"
+    ],
+    "level_policy": "0.8 Main5 explicitly preserves old force_level5_splines/patches/modular=true defaults. Validated container labels5/10 are still metadata; extracted raw codestream is decoded at Main5, not used to silently enable Main10-only complexity.",
+    "prepublication_defense": "Compare0.8 BasicInfo size, orientation, source integer depth, no animation, extra count/type and straight alpha to bounded preflight before metadata/output allocation."
+  },
+  "tests": {
+    "native": 139,
+    "minimal": 80,
+    "disabled": 2,
+    "full_compatible_targets": "passed",
+    "i686_musl": "compile only; host cannot execute ELF32"
+  },
+  "wasm_resources": {
+    "scope": "finite ordinary/CMS resource APIs on small independent fixtures, every cancellation checkpoint, fixed-cap large-input refusal; no accepted-large-image WASM or global allocator bound claim",
+    "rustc": "rustc 1.91.0 (f8297e351 2025-10-28)",
+    "results": [
+      {
+        "cases": 12,
+        "passed": true,
+        "runtime": "v24.19.0",
+        "memory_bytes": 5767168,
+        "linear_ceiling_enforced": true,
+        "imports": [],
+        "linear_ceiling_bytes": 33554432,
+        "sha256": "9f729670f3343c4fca5249974730cf417cc401d94a11185979f7d2165ed62b24"
+      },
+      {
+        "cases": 12,
+        "passed": true,
+        "runtime": "v24.19.0",
+        "memory_bytes": 5767168,
+        "linear_ceiling_enforced": true,
+        "imports": [],
+        "linear_ceiling_bytes": 67108864,
+        "sha256": "02da66b6883960db854377d6e340524370dd7b188862dccb17e193bcb2ffdfdc"
+      }
+    ]
+  },
+  "wasm_composed": {
+    "runtime": "v24.19.0",
+    "cases": 229,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14548992,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex,exif; no defaults",
+    "wasm_sha256": "2b9c8afc6b4a4be044b6e21c7ff4c717e71de2b44c89f841002a18dc7349eb3c",
+    "scope": "COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "dependencies": {
+    "requires_prs": [
+      72,
+      73
+    ],
+    "evaluation_54": "source7c81dea remains historical trusted-core evaluation; new migration is a separate implementation",
+    "evaluation_74": "not included or applied. Its0.7.4 patch is incompatible with0.8 private modules and changed LZ77 scratch ownership; invariant tests/lease ideas can inform a separately qualified port, not a product heap guarantee."
+  },
+  "benchmark_before_profile_reuse": {
+    "method": "Matched source path in detached worktree, Rust1.91.0 release opt3, default features off jpeg-xl/color-management/image-buffer-ex/png, empty RUSTFLAGS, original rebuilt byte-identically; two pinned logical CPUs sequentially, six balanced rotated/reversed process blocks; old allocation-meter and pixel hash included in timing; process-paired bootstrap seed800; no concurrent builds",
+    "builds": {
+      "base": {
+        "binary_sha256": "38d9e1038a53e0e72288987669758fca02ac553efe681cf8981e89140be8708d",
+        "bytes": 3744496,
+        "source_sha256": {
+          "Cargo.lock": "1dea6f53aecb9ce01302cc202f116e7673c1707ab29b6cf6acdc1c77c78d5d0f",
+          "wml2/Cargo.toml": "4ad0276420f7b538e70f982db53033af8ab05a5b359330a2be75444751b240b9",
+          "wml2/src/jpegxl.rs": "db21c5c940fe6417c86f1c90accdd8283a4a26b3a229e3ed746b222dd22b4ba2",
+          "wml2/src/jpegxl_dimensions.rs": "6239b11837d67e295e14a262b23a41138541301d609928dd4c1c77e02d9be4f9",
+          "wml2/src/image_info/jpegxl.rs": "03af332fa09d962218f3831205cb7c786328e3581eb5dcead405538ea4263565"
+        }
+      },
+      "after": {
+        "binary_sha256": "847da843edb492a679a3f0360dc09c90d5fb5d9554dff6b73e24d3dbfcb476d9",
+        "bytes": 4028312,
+        "source_sha256": {
+          "Cargo.lock": "e68105c223e62b3f9f1d9d5fa7df98ed4928e47064c03629e242ee2de411955a",
+          "wml2/Cargo.toml": "1b5391f60f0c0bba34b4560e3b024227c322398d9fa3fe916d44e24a290f44c5",
+          "wml2/src/jpegxl.rs": "1d7c1fc32cbe505a20d9a31ff51139f6329cc55864962578dfb3c3614dab7a53",
+          "wml2/src/jpegxl_dimensions.rs": "ec443e3d5a94f080e067776241f5966db3820d6cf943529e0855e72111336789",
+          "wml2/src/image_info/jpegxl.rs": "74d10290e39dd071b3b5e07b26f3d3e082da5547d2f48c3c6d44ba7027a47387"
+        }
+      },
+      "base-repeat": {
+        "binary_sha256": "38d9e1038a53e0e72288987669758fca02ac553efe681cf8981e89140be8708d",
+        "bytes": 3744496,
+        "source_sha256": {
+          "Cargo.lock": "1dea6f53aecb9ce01302cc202f116e7673c1707ab29b6cf6acdc1c77c78d5d0f",
+          "wml2/Cargo.toml": "4ad0276420f7b538e70f982db53033af8ab05a5b359330a2be75444751b240b9",
+          "wml2/src/jpegxl.rs": "db21c5c940fe6417c86f1c90accdd8283a4a26b3a229e3ed746b222dd22b4ba2",
+          "wml2/src/jpegxl_dimensions.rs": "6239b11837d67e295e14a262b23a41138541301d609928dd4c1c77e02d9be4f9",
+          "wml2/src/image_info/jpegxl.rs": "03af332fa09d962218f3831205cb7c786328e3581eb5dcead405538ea4263565"
+        }
+      }
+    },
+    "results": [
+      {
+        "input": "jxl-rgb8.jxl",
+        "input_sha256": "148461672331dd85dd6adf9153d9d7e0070631daab615c2381362396ba650234",
+        "cpu": 0,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 20,
+        "trial_medians_ns": {
+          "base": [
+            57755.5,
+            50364.0,
+            48972.5,
+            49738.5,
+            48922.0,
+            48557.0
+          ],
+          "after": [
+            63303.5,
+            53869.5,
+            53183.5,
+            59553.5,
+            53314.0,
+            52503.0
+          ],
+          "base-repeat": [
+            50795.0,
+            50985.5,
+            48262.0,
+            47911.0,
+            49418.0,
+            52387.5
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after": {
+            "paired_median": 1.0878812973182441,
+            "bootstrap95": [
+              1.0754343025564834,
+              1.1466960810452873
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9978152228157823,
+            "bootstrap95": [
+              0.9213705888722032,
+              1.045613416442106
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 49355.5,
+            "iqr_ns": 3381.125,
+            "minmax_ns": [
+              48557.0,
+              57755.5
+            ]
+          },
+          "after": {
+            "median_ns": 53591.75,
+            "iqr_ns": 7477.625,
+            "minmax_ns": [
+              52503.0,
+              63303.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 50106.5,
+            "iqr_ns": 3161.75,
+            "minmax_ns": [
+              47911.0,
+              52387.5
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ],
+          "after": [
+            [
+              272,
+              105761,
+              71912
+            ]
+          ],
+          "base-repeat": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ]
+        },
+        "hash": "5701539870786561954"
+      },
+      {
+        "input": "jxl-icc-lossless.jxl",
+        "input_sha256": "5ca8a8e39a4640ce49188cd9896163f5cbd88d870503efee5f9b941843ddede8",
+        "cpu": 0,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 20,
+        "trial_medians_ns": {
+          "base": [
+            70449.5,
+            69909.0,
+            71811.5,
+            69833.5,
+            69883.5,
+            70244.0
+          ],
+          "after": [
+            78741.5,
+            76784.0,
+            78606.0,
+            75757.5,
+            77019.5,
+            76724.0
+          ],
+          "base-repeat": [
+            70258.5,
+            69247.0,
+            69277.5,
+            69573.0,
+            69593.5,
+            71005.5
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after": {
+            "paired_median": 1.0964789476841845,
+            "bootstrap95": [
+              1.0885401091710656,
+              1.109907067090211
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9960599675526556,
+            "bootstrap95": [
+              0.9776218597675115,
+              1.0040648108291785
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 70076.5,
+            "iqr_ns": 919.0,
+            "minmax_ns": [
+              69833.5,
+              71811.5
+            ]
+          },
+          "after": {
+            "median_ns": 76901.75,
+            "iqr_ns": 2157.5,
+            "minmax_ns": [
+              75757.5,
+              78741.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 69583.25,
+            "iqr_ns": 1175.375,
+            "minmax_ns": [
+              69247.0,
+              71005.5
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              382,
+              8524022,
+              4205264
+            ]
+          ],
+          "after": [
+            [
+              331,
+              4329698,
+              4197559
+            ]
+          ],
+          "base-repeat": [
+            [
+              382,
+              8524022,
+              4205264
+            ]
+          ]
+        },
+        "hash": "11934725841428314993"
+      },
+      {
+        "input": "jxl-jbrd-bench.jxl",
+        "input_sha256": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+        "cpu": 0,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 10,
+        "trial_medians_ns": {
+          "base": [
+            17210382.0,
+            17235624.0,
+            17165545.0,
+            16880197.0,
+            16713945.5,
+            17224788.5
+          ],
+          "after": [
+            13380125.0,
+            13310066.5,
+            13409979.5,
+            13421416.0,
+            13463593.5,
+            13368327.5
+          ],
+          "base-repeat": [
+            17006079.0,
+            16839617.5,
+            16936481.0,
+            17316789.0,
+            16895590.5,
+            17235158.5
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after": {
+            "paired_median": 0.7793299367909858,
+            "bootstrap95": [
+              0.7741757286522721,
+              0.8003144205050361
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9943655616336842,
+            "bootstrap95": [
+              0.9818397737551837,
+              1.0183660119553046
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 17187963.5,
+            "iqr_ns": 388863.25,
+            "minmax_ns": [
+              16713945.5,
+              17235624.0
+            ]
+          },
+          "after": {
+            "median_ns": 13395052.25,
+            "iqr_ns": 78198.125,
+            "minmax_ns": [
+              13310066.5,
+              13463593.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 16971280.0,
+            "iqr_ns": 373968.875,
+            "minmax_ns": [
+              16839617.5,
+              17316789.0
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              998,
+              17294124,
+              5993034
+            ]
+          ],
+          "after": [
+            [
+              468,
+              8584011,
+              4382783
+            ]
+          ],
+          "base-repeat": [
+            [
+              998,
+              17294124,
+              5993034
+            ]
+          ]
+        },
+        "hash": "11298716346096407965"
+      },
+      {
+        "input": "jxl-sunset-logo.jxl",
+        "input_sha256": "6617480923e1fdef555e165a1e7df9ca648068dd0bdbc41a22c0e4213392d834",
+        "cpu": 0,
+        "blocks": 6,
+        "warmups": 1,
+        "timed_per_process": 4,
+        "trial_medians_ns": {
+          "base": [
+            168488062.0,
+            168307196.0,
+            167440246.5,
+            167927678.5,
+            171778110.5,
+            172266417.5
+          ],
+          "after": [
+            150506292.0,
+            150051113.0,
+            149746683.5,
+            150087358.0,
+            155913960.5,
+            149139997.0
+          ],
+          "base-repeat": [
+            172209662.5,
+            170133240.5,
+            168347741.5,
+            168105366.5,
+            167115880.5,
+            168971869.5
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after": {
+            "paired_median": 0.8935187924818129,
+            "bootstrap95": [
+              0.8786415942461461,
+              0.9009882605773532
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 1.0032389681097167,
+            "bootstrap95": [
+              0.9768671362160646,
+              1.0164688442464072
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 168397629.0,
+            "iqr_ns": 4094366.75,
+            "minmax_ns": [
+              167440246.5,
+              172266417.5
+            ]
+          },
+          "after": {
+            "median_ns": 150069235.5,
+            "iqr_ns": 2263197.25,
+            "minmax_ns": [
+              149139997.0,
+              155913960.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 168659805.5,
+            "iqr_ns": 2794351.0,
+            "minmax_ns": [
+              167115880.5,
+              172209662.5
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              804,
+              58248379,
+              39339187
+            ]
+          ],
+          "after": [
+            [
+              683,
+              49689211,
+              39300475
+            ]
+          ],
+          "base-repeat": [
+            [
+              804,
+              58248379,
+              39339187
+            ]
+          ]
+        },
+        "hash": "8933294292655360903"
+      },
+      {
+        "input": "jxl-rgb8.jxl",
+        "input_sha256": "148461672331dd85dd6adf9153d9d7e0070631daab615c2381362396ba650234",
+        "cpu": 1,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 20,
+        "trial_medians_ns": {
+          "base": [
+            51136.5,
+            48532.0,
+            49078.0,
+            49053.0,
+            48932.5,
+            48737.0
+          ],
+          "after": [
+            51992.0,
+            54471.0,
+            52888.5,
+            53604.0,
+            52512.5,
+            52428.0
+          ],
+          "base-repeat": [
+            49428.5,
+            48041.0,
+            50119.0,
+            49608.0,
+            47665.5,
+            50590.0
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after": {
+            "paired_median": 1.0766873645874981,
+            "bootstrap95": [
+              1.0449458710274766,
+              1.107575033778855
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 1.0005986282607486,
+            "bootstrap95": [
+              0.9703531943269144,
+              1.0296157642401602
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 48992.75,
+            "iqr_ns": 906.875,
+            "minmax_ns": [
+              48532.0,
+              51136.5
+            ]
+          },
+          "after": {
+            "median_ns": 52700.5,
+            "iqr_ns": 1501.75,
+            "minmax_ns": [
+              51992.0,
+              54471.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 49518.25,
+            "iqr_ns": 2289.625,
+            "minmax_ns": [
+              47665.5,
+              50590.0
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ],
+          "after": [
+            [
+              272,
+              105761,
+              71912
+            ]
+          ],
+          "base-repeat": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ]
+        },
+        "hash": "5701539870786561954"
+      },
+      {
+        "input": "jxl-icc-lossless.jxl",
+        "input_sha256": "5ca8a8e39a4640ce49188cd9896163f5cbd88d870503efee5f9b941843ddede8",
+        "cpu": 1,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 20,
+        "trial_medians_ns": {
+          "base": [
+            71180.5,
+            67600.5,
+            71376.0,
+            68687.0,
+            70635.0,
+            76168.0
+          ],
+          "after": [
+            76638.0,
+            77415.0,
+            77419.5,
+            77109.5,
+            76503.5,
+            78245.5
+          ],
+          "base-repeat": [
+            69258.0,
+            69092.0,
+            69327.5,
+            70574.5,
+            71530.5,
+            71736.0
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after": {
+            "paired_median": 1.0838766797854833,
+            "bootstrap95": [
+              1.0519732565235667,
+              1.133902647075375
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.992834524677959,
+            "bootstrap95": [
+              0.95655635574776,
+              1.0247715865766387
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 70907.75,
+            "iqr_ns": 4158.625,
+            "minmax_ns": [
+              67600.5,
+              76168.0
+            ]
+          },
+          "after": {
+            "median_ns": 77262.25,
+            "iqr_ns": 1021.625,
+            "minmax_ns": [
+              76503.5,
+              78245.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 69951.0,
+            "iqr_ns": 2365.375,
+            "minmax_ns": [
+              69092.0,
+              71736.0
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              382,
+              8524022,
+              4205264
+            ]
+          ],
+          "after": [
+            [
+              331,
+              4329698,
+              4197559
+            ]
+          ],
+          "base-repeat": [
+            [
+              382,
+              8524022,
+              4205264
+            ]
+          ]
+        },
+        "hash": "11934725841428314993"
+      },
+      {
+        "input": "jxl-jbrd-bench.jxl",
+        "input_sha256": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+        "cpu": 1,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 10,
+        "trial_medians_ns": {
+          "base": [
+            16856984.0,
+            17058357.5,
+            16852797.5,
+            16855071.0,
+            16937678.0,
+            16871375.0
+          ],
+          "after": [
+            13328043.0,
+            13181897.0,
+            13252351.0,
+            13269266.5,
+            13167595.5,
+            13076040.5
+          ],
+          "base-repeat": [
+            16771351.5,
+            16878426.0,
+            16573572.5,
+            16993826.0,
+            16776925.0,
+            16930142.5
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after": {
+            "paired_median": 0.7818867809160897,
+            "bootstrap95": [
+              0.7738979843505718,
+              0.7889553529250913
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9927146028860954,
+            "bootstrap95": [
+              0.9864417686801943,
+              1.005857753693784
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 16864179.5,
+            "iqr_ns": 113345.25,
+            "minmax_ns": [
+              16852797.5,
+              17058357.5
+            ]
+          },
+          "after": {
+            "median_ns": 13217124.0,
+            "iqr_ns": 139253.875,
+            "minmax_ns": [
+              13076040.5,
+              13328043.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 16827675.5,
+            "iqr_ns": 224156.625,
+            "minmax_ns": [
+              16573572.5,
+              16993826.0
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              998,
+              17294124,
+              5993034
+            ]
+          ],
+          "after": [
+            [
+              468,
+              8584011,
+              4382783
+            ]
+          ],
+          "base-repeat": [
+            [
+              998,
+              17294124,
+              5993034
+            ]
+          ]
+        },
+        "hash": "11298716346096407965"
+      },
+      {
+        "input": "jxl-sunset-logo.jxl",
+        "input_sha256": "6617480923e1fdef555e165a1e7df9ca648068dd0bdbc41a22c0e4213392d834",
+        "cpu": 1,
+        "blocks": 6,
+        "warmups": 1,
+        "timed_per_process": 4,
+        "trial_medians_ns": {
+          "base": [
+            169301287.5,
+            165789624.5,
+            173551072.5,
+            170095544.0,
+            171556970.5,
+            166469080.0
+          ],
+          "after": [
+            150059595.0,
+            150844910.0,
+            149306154.5,
+            153160366.5,
+            149450707.0,
+            150768330.0
+          ],
+          "base-repeat": [
+            166965487.0,
+            165997618.0,
+            167271996.5,
+            165107829.5,
+            168415639.5,
+            167108998.0
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after": {
+            "paired_median": 0.8933918572506294,
+            "bootstrap95": [
+              0.8657221352382859,
+              0.9077705228719034
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9839462876833227,
+            "bootstrap95": [
+              0.9672484967778755,
+              1.0025493140215975
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 169698415.75,
+            "iqr_ns": 5756279.875,
+            "minmax_ns": [
+              165789624.5,
+              173551072.5
+            ]
+          },
+          "after": {
+            "median_ns": 150413962.5,
+            "iqr_ns": 2009205.25,
+            "minmax_ns": [
+              149306154.5,
+              153160366.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 167037242.5,
+            "iqr_ns": 1782736.375,
+            "minmax_ns": [
+              165107829.5,
+              168415639.5
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              804,
+              58248379,
+              39339187
+            ]
+          ],
+          "after": [
+            [
+              683,
+              49689211,
+              39300475
+            ]
+          ],
+          "base-repeat": [
+            [
+              804,
+              58248379,
+              39339187
+            ]
+          ]
+        },
+        "hash": "8933294292655360903"
+      }
+    ]
+  },
+  "benchmark": {
+    "method": "Matched source path in detached worktree, Rust1.91.0 release opt3, default features off jpeg-xl/color-management/image-buffer-ex/png, empty RUSTFLAGS, original rebuilt byte-identically; two pinned logical CPUs sequentially, six balanced rotated/reversed process blocks; old allocation-meter and pixel hash included in timing; process-paired bootstrap seed800; no concurrent builds",
+    "builds": {
+      "base": {
+        "binary_sha256": "38d9e1038a53e0e72288987669758fca02ac553efe681cf8981e89140be8708d",
+        "bytes": 3744496,
+        "source_sha256": {
+          "Cargo.lock": "1dea6f53aecb9ce01302cc202f116e7673c1707ab29b6cf6acdc1c77c78d5d0f",
+          "wml2/Cargo.toml": "4ad0276420f7b538e70f982db53033af8ab05a5b359330a2be75444751b240b9",
+          "wml2/src/jpegxl.rs": "db21c5c940fe6417c86f1c90accdd8283a4a26b3a229e3ed746b222dd22b4ba2",
+          "wml2/src/jpegxl_dimensions.rs": "6239b11837d67e295e14a262b23a41138541301d609928dd4c1c77e02d9be4f9",
+          "wml2/src/image_info/jpegxl.rs": "03af332fa09d962218f3831205cb7c786328e3581eb5dcead405538ea4263565"
+        }
+      },
+      "after": {
+        "binary_sha256": "847da843edb492a679a3f0360dc09c90d5fb5d9554dff6b73e24d3dbfcb476d9",
+        "bytes": 4028312,
+        "source_sha256": {
+          "Cargo.lock": "e68105c223e62b3f9f1d9d5fa7df98ed4928e47064c03629e242ee2de411955a",
+          "wml2/Cargo.toml": "1b5391f60f0c0bba34b4560e3b024227c322398d9fa3fe916d44e24a290f44c5",
+          "wml2/src/jpegxl.rs": "1d7c1fc32cbe505a20d9a31ff51139f6329cc55864962578dfb3c3614dab7a53",
+          "wml2/src/jpegxl_dimensions.rs": "ec443e3d5a94f080e067776241f5966db3820d6cf943529e0855e72111336789",
+          "wml2/src/image_info/jpegxl.rs": "74d10290e39dd071b3b5e07b26f3d3e082da5547d2f48c3c6d44ba7027a47387"
+        }
+      },
+      "base-repeat": {
+        "binary_sha256": "38d9e1038a53e0e72288987669758fca02ac553efe681cf8981e89140be8708d",
+        "bytes": 3744496,
+        "source_sha256": {
+          "Cargo.lock": "1dea6f53aecb9ce01302cc202f116e7673c1707ab29b6cf6acdc1c77c78d5d0f",
+          "wml2/Cargo.toml": "4ad0276420f7b538e70f982db53033af8ab05a5b359330a2be75444751b240b9",
+          "wml2/src/jpegxl.rs": "db21c5c940fe6417c86f1c90accdd8283a4a26b3a229e3ed746b222dd22b4ba2",
+          "wml2/src/jpegxl_dimensions.rs": "6239b11837d67e295e14a262b23a41138541301d609928dd4c1c77e02d9be4f9",
+          "wml2/src/image_info/jpegxl.rs": "03af332fa09d962218f3831205cb7c786328e3581eb5dcead405538ea4263565"
+        }
+      },
+      "after-reuse": {
+        "binary_sha256": "f5ec8b2e5c600f7bdc0ba410eaf15b8036102ad44d3c09dab635ae406808eec0",
+        "bytes": 4031440,
+        "source_sha256": {
+          "Cargo.lock": "e68105c223e62b3f9f1d9d5fa7df98ed4928e47064c03629e242ee2de411955a",
+          "wml2/Cargo.toml": "1b5391f60f0c0bba34b4560e3b024227c322398d9fa3fe916d44e24a290f44c5",
+          "wml2/src/jpegxl.rs": "84d68dd999f05fcca2fe99eb92aaa355cd0ad3c230baee27b21aa22227c025d8",
+          "wml2/src/jpegxl_dimensions.rs": "ec443e3d5a94f080e067776241f5966db3820d6cf943529e0855e72111336789",
+          "wml2/src/image_info/jpegxl.rs": "74d10290e39dd071b3b5e07b26f3d3e082da5547d2f48c3c6d44ba7027a47387",
+          "wml2/src/jpegxl_resources.rs": "abb2ca90d8efc09f589969ad3fcc996ee4a45941ced601754271a2c5e18ef042"
+        }
+      }
+    },
+    "results": [
+      {
+        "input": "jxl-rgb8.jxl",
+        "input_sha256": "148461672331dd85dd6adf9153d9d7e0070631daab615c2381362396ba650234",
+        "cpu": 0,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 20,
+        "trial_medians_ns": {
+          "base": [
+            48501.5,
+            47730.0,
+            48862.0,
+            46303.5,
+            48080.5,
+            49077.5
+          ],
+          "after-reuse": [
+            50029.0,
+            50380.0,
+            49212.5,
+            51816.5,
+            50895.0,
+            50550.0
+          ],
+          "base-repeat": [
+            47190.0,
+            48537.0,
+            48692.0,
+            48331.0,
+            48176.5,
+            48637.0
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after-reuse": {
+            "paired_median": 1.0435072541197765,
+            "bootstrap95": [
+              1.0185884146327668,
+              1.0887997593695822
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9992587325847028,
+            "bootstrap95": [
+              0.9819919996855186,
+              1.0303473959967229
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 48291.0,
+            "iqr_ns": 1542.5,
+            "minmax_ns": [
+              46303.5,
+              49077.5
+            ]
+          },
+          "after-reuse": {
+            "median_ns": 50465.0,
+            "iqr_ns": 1300.5,
+            "minmax_ns": [
+              49212.5,
+              51816.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 48434.0,
+            "iqr_ns": 720.875,
+            "minmax_ns": [
+              47190.0,
+              48692.0
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ],
+          "after-reuse": [
+            [
+              247,
+              101537,
+              71912
+            ]
+          ],
+          "base-repeat": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ]
+        },
+        "hash": "5701539870786561954"
+      },
+      {
+        "input": "jxl-icc-lossless.jxl",
+        "input_sha256": "5ca8a8e39a4640ce49188cd9896163f5cbd88d870503efee5f9b941843ddede8",
+        "cpu": 0,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 20,
+        "trial_medians_ns": {
+          "base": [
+            68336.0,
+            69182.5,
+            69577.5,
+            70764.5,
+            69898.0,
+            71511.0
+          ],
+          "after-reuse": [
+            76127.5,
+            75546.5,
+            77704.5,
+            77239.0,
+            77459.5,
+            76218.0
+          ],
+          "base-repeat": [
+            70524.5,
+            70179.0,
+            71165.5,
+            69868.0,
+            71605.5,
+            69247.0
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after-reuse": {
+            "paired_median": 1.1000838209222972,
+            "bootstrap95": [
+              1.078657828756803,
+              1.1154112516864654
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 1.018613700930573,
+            "bootstrap95": [
+              0.977835876679731,
+              1.028227016189038
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 69737.75,
+            "iqr_ns": 1980.25,
+            "minmax_ns": [
+              68336.0,
+              71511.0
+            ]
+          },
+          "after-reuse": {
+            "median_ns": 76728.5,
+            "iqr_ns": 1538.5,
+            "minmax_ns": [
+              75546.5,
+              77704.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 70351.75,
+            "iqr_ns": 1562.75,
+            "minmax_ns": [
+              69247.0,
+              71605.5
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              382,
+              8524022,
+              4205264
+            ]
+          ],
+          "after-reuse": [
+            [
+              331,
+              4329698,
+              4197559
+            ]
+          ],
+          "base-repeat": [
+            [
+              382,
+              8524022,
+              4205264
+            ]
+          ]
+        },
+        "hash": "11934725841428314993"
+      },
+      {
+        "input": "jxl-jbrd-bench.jxl",
+        "input_sha256": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+        "cpu": 0,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 10,
+        "trial_medians_ns": {
+          "base": [
+            16714631.5,
+            16885204.0,
+            16678318.0,
+            16726654.0,
+            16835825.5,
+            16682874.0
+          ],
+          "after-reuse": [
+            13141490.5,
+            13061357.5,
+            13161395.5,
+            13096294.5,
+            13118472.5,
+            13110610.0
+          ],
+          "base-repeat": [
+            16691787.5,
+            16683726.5,
+            16621969.5,
+            16694512.0,
+            16906835.5,
+            16909584.0
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after-reuse": {
+            "paired_median": 0.7844159983541932,
+            "bootstrap95": [
+              0.7763692318788166,
+              0.7876794097192623
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9983558447722981,
+            "bootstrap95": [
+              0.9923446298218458,
+              1.0089035882689859
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 16720642.75,
+            "iqr_ns": 166435.125,
+            "minmax_ns": [
+              16678318.0,
+              16885204.0
+            ]
+          },
+          "after-reuse": {
+            "median_ns": 13114541.25,
+            "iqr_ns": 58906.5,
+            "minmax_ns": [
+              13061357.5,
+              13161395.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 16693149.75,
+            "iqr_ns": 239235.375,
+            "minmax_ns": [
+              16621969.5,
+              16909584.0
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              998,
+              17294124,
+              5993034
+            ]
+          ],
+          "after-reuse": [
+            [
+              468,
+              8584011,
+              4382783
+            ]
+          ],
+          "base-repeat": [
+            [
+              998,
+              17294124,
+              5993034
+            ]
+          ]
+        },
+        "hash": "11298716346096407965"
+      },
+      {
+        "input": "jxl-sunset-logo.jxl",
+        "input_sha256": "6617480923e1fdef555e165a1e7df9ca648068dd0bdbc41a22c0e4213392d834",
+        "cpu": 0,
+        "blocks": 6,
+        "warmups": 1,
+        "timed_per_process": 4,
+        "trial_medians_ns": {
+          "base": [
+            168767393.0,
+            166819854.5,
+            174761501.0,
+            167864581.5,
+            166579142.5,
+            165995569.5
+          ],
+          "after-reuse": [
+            150248844.0,
+            151551302.5,
+            154023511.5,
+            148489163.0,
+            149916403.5,
+            149785204.0
+          ],
+          "base-repeat": [
+            166492743.5,
+            165985358.0,
+            168165377.0,
+            166652621.0,
+            176258962.5,
+            168056680.0
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after-reuse": {
+            "paired_median": 0.8951213981546388,
+            "bootstrap95": [
+              0.8829562853221371,
+              0.9054087012462302
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9938888742808463,
+            "bootstrap95": [
+              0.9743892043501148,
+              1.0352630477953069
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 167342218.0,
+            "iqr_ns": 3832670.75,
+            "minmax_ns": [
+              165995569.5,
+              174761501.0
+            ]
+          },
+          "after-reuse": {
+            "median_ns": 150082623.75,
+            "iqr_ns": 2708161.0,
+            "minmax_ns": [
+              148489163.0,
+              154023511.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 167354650.5,
+            "iqr_ns": 3822876.25,
+            "minmax_ns": [
+              165985358.0,
+              176258962.5
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              804,
+              58248379,
+              39339187
+            ]
+          ],
+          "after-reuse": [
+            [
+              658,
+              49684987,
+              39300475
+            ]
+          ],
+          "base-repeat": [
+            [
+              804,
+              58248379,
+              39339187
+            ]
+          ]
+        },
+        "hash": "8933294292655360903"
+      },
+      {
+        "input": "jxl-rgb8.jxl",
+        "input_sha256": "148461672331dd85dd6adf9153d9d7e0070631daab615c2381362396ba650234",
+        "cpu": 1,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 20,
+        "trial_medians_ns": {
+          "base": [
+            48061.0,
+            48727.5,
+            48482.0,
+            48963.0,
+            49343.0,
+            50019.0
+          ],
+          "after-reuse": [
+            49728.5,
+            49348.0,
+            49553.0,
+            49568.5,
+            51537.0,
+            51211.0
+          ],
+          "base-repeat": [
+            47636.0,
+            48682.0,
+            48957.0,
+            47465.5,
+            48641.5,
+            49883.5
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after-reuse": {
+            "paired_median": 1.0229608085341084,
+            "bootstrap95": [
+              1.0125502816045229,
+              1.0395798757640398
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9942240503154067,
+            "bootstrap95": [
+              0.9775994361800753,
+              1.004431843149375
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 48845.25,
+            "iqr_ns": 1135.25,
+            "minmax_ns": [
+              48061.0,
+              50019.0
+            ]
+          },
+          "after-reuse": {
+            "median_ns": 49648.5,
+            "iqr_ns": 1790.75,
+            "minmax_ns": [
+              49348.0,
+              51537.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 48661.75,
+            "iqr_ns": 1595.25,
+            "minmax_ns": [
+              47465.5,
+              49883.5
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ],
+          "after-reuse": [
+            [
+              247,
+              101537,
+              71912
+            ]
+          ],
+          "base-repeat": [
+            [
+              328,
+              105053,
+              64222
+            ]
+          ]
+        },
+        "hash": "5701539870786561954"
+      },
+      {
+        "input": "jxl-icc-lossless.jxl",
+        "input_sha256": "5ca8a8e39a4640ce49188cd9896163f5cbd88d870503efee5f9b941843ddede8",
+        "cpu": 1,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 20,
+        "trial_medians_ns": {
+          "base": [
+            71330.5,
+            71175.0,
+            69493.0,
+            70458.5,
+            70514.0,
+            68867.0
+          ],
+          "after-reuse": [
+            79092.0,
+            78962.0,
+            79187.0,
+            77309.5,
+            76899.0,
+            76338.5
+          ],
+          "base-repeat": [
+            70664.0,
+            71035.0,
+            71245.0,
+            70149.0,
+            70144.0,
+            71340.5
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after-reuse": {
+            "paired_median": 1.1086510635557816,
+            "bootstrap95": [
+              1.0938919683828652,
+              1.1244512285229344
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9968201802704304,
+            "bootstrap95": [
+              0.9927044929832489,
+              1.0305641149324782
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 70486.25,
+            "iqr_ns": 1877.375,
+            "minmax_ns": [
+              68867.0,
+              71330.5
+            ]
+          },
+          "after-reuse": {
+            "median_ns": 78135.75,
+            "iqr_ns": 2356.875,
+            "minmax_ns": [
+              76338.5,
+              79187.0
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 70849.5,
+            "iqr_ns": 1121.125,
+            "minmax_ns": [
+              70144.0,
+              71340.5
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              382,
+              8524022,
+              4205264
+            ]
+          ],
+          "after-reuse": [
+            [
+              331,
+              4329698,
+              4197559
+            ]
+          ],
+          "base-repeat": [
+            [
+              382,
+              8524022,
+              4205264
+            ]
+          ]
+        },
+        "hash": "11934725841428314993"
+      },
+      {
+        "input": "jxl-jbrd-bench.jxl",
+        "input_sha256": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+        "cpu": 1,
+        "blocks": 6,
+        "warmups": 3,
+        "timed_per_process": 10,
+        "trial_medians_ns": {
+          "base": [
+            17088216.5,
+            16801838.0,
+            16905757.0,
+            16775784.5,
+            16667018.5,
+            16618933.0
+          ],
+          "after-reuse": [
+            13411092.5,
+            13159956.0,
+            13079958.0,
+            13021446.5,
+            13128841.0,
+            13073248.0
+          ],
+          "base-repeat": [
+            16615773.0,
+            16705345.5,
+            16822693.5,
+            16567075.5,
+            16614140.5,
+            16480398.0
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after-reuse": {
+            "paired_median": 0.7840301249395111,
+            "bootstrap95": [
+              0.7749516864057013,
+              0.7871808432756209
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9929605263603555,
+            "bootstrap95": [
+              0.9799557931105097,
+              0.995957030351408
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 16788811.25,
+            "iqr_ns": 296374.75,
+            "minmax_ns": [
+              16618933.0,
+              17088216.5
+            ]
+          },
+          "after-reuse": {
+            "median_ns": 13104399.5,
+            "iqr_ns": 162442.5,
+            "minmax_ns": [
+              13021446.5,
+              13411092.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 16614956.75,
+            "iqr_ns": 189276.375,
+            "minmax_ns": [
+              16480398.0,
+              16822693.5
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              998,
+              17294124,
+              5993034
+            ]
+          ],
+          "after-reuse": [
+            [
+              468,
+              8584011,
+              4382783
+            ]
+          ],
+          "base-repeat": [
+            [
+              998,
+              17294124,
+              5993034
+            ]
+          ]
+        },
+        "hash": "11298716346096407965"
+      },
+      {
+        "input": "jxl-sunset-logo.jxl",
+        "input_sha256": "6617480923e1fdef555e165a1e7df9ca648068dd0bdbc41a22c0e4213392d834",
+        "cpu": 1,
+        "blocks": 6,
+        "warmups": 1,
+        "timed_per_process": 4,
+        "trial_medians_ns": {
+          "base": [
+            166301478.0,
+            167787068.0,
+            167408168.0,
+            168705878.0,
+            178661554.0,
+            164918041.0
+          ],
+          "after-reuse": [
+            149589709.0,
+            152909388.0,
+            154649620.5,
+            150879127.0,
+            152408286.0,
+            150596800.5
+          ],
+          "base-repeat": [
+            165467146.5,
+            167189117.5,
+            165653585.0,
+            170437626.0,
+            167032372.5,
+            165657284.0
+          ]
+        },
+        "ratios": {
+          "base": {
+            "paired_median": 1.0,
+            "bootstrap95": [
+              1.0,
+              1.0
+            ]
+          },
+          "after-reuse": {
+            "paired_median": 0.9054195966656551,
+            "bootstrap95": [
+              0.8736941140410321,
+              0.9184746261247114
+            ]
+          },
+          "base-repeat": {
+            "paired_median": 0.9957096360427029,
+            "bootstrap95": [
+              0.9622142832161684,
+              1.007373690710078
+            ]
+          }
+        },
+        "variability": {
+          "base": {
+            "median_ns": 167597618.0,
+            "iqr_ns": 5239178.25,
+            "minmax_ns": [
+              164918041.0,
+              178661554.0
+            ]
+          },
+          "after-reuse": {
+            "median_ns": 151643706.5,
+            "iqr_ns": 2999418.5,
+            "minmax_ns": [
+              149589709.0,
+              154649620.5
+            ]
+          },
+          "base-repeat": {
+            "median_ns": 166344828.25,
+            "iqr_ns": 2394269.25,
+            "minmax_ns": [
+              165467146.5,
+              170437626.0
+            ]
+          }
+        },
+        "allocation_count_traffic_peak": {
+          "base": [
+            [
+              804,
+              58248379,
+              39339187
+            ]
+          ],
+          "after-reuse": [
+            [
+              658,
+              49684987,
+              39300475
+            ]
+          ],
+          "base-repeat": [
+            [
+              804,
+              58248379,
+              39339187
+            ]
+          ]
+        },
+        "hash": "8933294292655360903"
+      }
+    ]
+  },
+  "performance_gate": "Not all-case qualified: photo/layer gains coexist with small-input regressions. Reused equal simple ICC serialization safely reduces tiny RGB overhead; raw ICC behavior/limits remain unchanged.",
+  "current_source_sha256": {
+    "Cargo.lock": "e68105c223e62b3f9f1d9d5fa7df98ed4928e47064c03629e242ee2de411955a",
+    "wml2/Cargo.toml": "1b5391f60f0c0bba34b4560e3b024227c322398d9fa3fe916d44e24a290f44c5",
+    "wml2/src/jpegxl.rs": "84d68dd999f05fcca2fe99eb92aaa355cd0ad3c230baee27b21aa22227c025d8",
+    "wml2/src/jpegxl_resources.rs": "abb2ca90d8efc09f589969ad3fcc996ee4a45941ced601754271a2c5e18ef042",
+    "wml2/src/jpegxl_dimensions.rs": "ec443e3d5a94f080e067776241f5966db3820d6cf943529e0855e72111336789",
+    "wml2/src/image_info/jpegxl.rs": "74d10290e39dd071b3b5e07b26f3d3e082da5547d2f48c3c6d44ba7027a47387"
+  },
+  "display": {
+    "size": [
+      606,
+      500
+    ],
+    "max_rgb_error": 1,
+    "alpha_exact": true
+  }
+}

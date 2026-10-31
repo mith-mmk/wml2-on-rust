@@ -328,6 +328,42 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn equal_simple_profile_copy_refusal_never_publishes_output() {
+        let _reset = ResetFault;
+        use crate::draw::{DecodeOptions, ImageBuffer, image_decoder_with_limits};
+        let input = include_bytes!("../tests/fixtures/review/jxl-rgb8.jxl");
+        let mut reader = bin_rs::reader::BytesReader::new(input);
+        let mut image = ImageBuffer::new();
+        COPY_KEY.with(|f| f.set(Some("ICC Profile")));
+        FAILED_BYTES.with(|f| f.set(0));
+        let result = image_decoder_with_limits(
+            &mut reader,
+            &mut DecodeOptions {
+                debug_flag: 0,
+                drawer: &mut image,
+            },
+            DecodeLimits::default(),
+        );
+        assert!(
+            result
+                .err()
+                .unwrap()
+                .is::<std::collections::TryReserveError>()
+        );
+        assert!(FAILED_BYTES.with(Cell::get) > 0);
+        assert_eq!(COPY_KEY.with(Cell::get), None);
+        assert_eq!((image.width, image.height), (0, 0));
+        assert!(image.buffer.is_none() && image.metadata.is_none());
+        let recovered =
+            crate::draw::image_from_with_limits(input, DecodeLimits::default()).unwrap();
+        let metadata = recovered.metadata.unwrap();
+        assert_eq!(
+            metadata.get("JPEG XL Source ICC Profile").unwrap(),
+            metadata.get("ICC Profile").unwrap()
+        );
+    }
+
+    #[test]
     fn resource_quota_denial_precedes_the_source_icc_copy_request() {
         let _reset = ResetFault;
         let bytes = include_bytes!("../tests/fixtures/review/jxl-icc-lossless.jxl");

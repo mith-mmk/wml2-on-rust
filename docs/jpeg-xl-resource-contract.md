@@ -1,5 +1,10 @@
 # Finite JPEG XL resource configuration: first runtime phase
 
+Current development decode uses the [0.8 migration](jpeg-xl-080-migration.md),
+with the unchanged published 0.7.4 parser retained for preflight. The evidence
+below describes its original implementation stage; no global codec heap bound
+or automatic port of the 0.7.4 entropy evaluation follows from the migration.
+
 This follows #37 and the read-only [PR #63 evaluation](https://github.com/mith-mmk/wml2-on-rust/pull/63).
 It is based on released main `f2151b2408e9d04f1bc7b4e9e29679e078a57209`.
 PR #63 belongs to the same author and remains unchanged at

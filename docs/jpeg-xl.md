@@ -6,7 +6,10 @@ not contain this feature. Historical development checkpoints and measurements
 are retained in [continuation validation](jpeg-xl-continuation-20261019.md) and
 [internal-layer validation](jpeg-xl-layers.md).
 
-The opt-in `jpeg-xl` feature uses **published `jxl =0.7.4`**, not upstream main.
+The development adapter decodes with **published `jxl =0.8.0`** and retains
+**published `jxl =0.7.4` as a parser-only preflight dependency**. This is the
+[unreleased 0.8 migration](jpeg-xl-080-migration.md), not an all-0.8 dependency
+graph or a claim that published WML2 0.0.41 already contains this change.
 Defaults are unchanged; JPEG XL encoding is unavailable. Add `image-buffer-ex`
 for high-precision callback output. No C library, image-rs, CMS, SIMD or thread
 pool is pulled into the runtime by this feature.
@@ -130,7 +133,7 @@ its request generation/flag to handle cancellation after this final check.
 
 The adapter checks before work, after bounded preflight, around codec stages,
 between sample-copy/rounding chunks, before private image initialization, and
-after population. The pinned **published `jxl 0.7.4`** provides a fallible
+after population. The pinned **published `jxl 0.8.0`** provides a fallible
 `JxlParallelRunner`, rather than libjxl's cancellation API. The cancellable path
 uses a sequential runner, overriding both `run` and `run_ordered` (the latter's
 default implementation bypasses `run` for one thread). Checks occur before each
@@ -249,9 +252,12 @@ cargo test -p wml2 --locked --no-default-features --test jpeg_xl
 python3 wml2-test/scripts/generate_jpegxl_fixtures.py --tools /path/to/libjxl/usr --work .test-jxl-fixtures
 ```
 
-Upstream reference: [published source commit](https://github.com/libjxl/jxl-rs/tree/624ce908afcf8eb0dc2585a671535eaabb5d88cc/jxl).
-In particular,0.7.4 has typestate processing and `premultiply_output`; main's
-`AlphaMode` API must not be assumed to exist in the published crate.
+Published sources are pinned separately: [0.8 event decoder](https://github.com/libjxl/jxl-rs/tree/9a08ca643fd2d01f803dd0be6a5bebc9cc11e597/jxl)
+and [0.7.4 compatibility preflight](https://github.com/libjxl/jxl-rs/tree/624ce908afcf8eb0dc2585a671535eaabb5d88cc/jxl).
+The adapter uses 0.8's Event API, explicit orientation, straight AlphaMode and
+Main5 policy. The latter preserves the former force_level5 defaults; container
+Level10 labels do not activate Main10-only complexity. Removing the old parser
+requires equivalent pre-allocation admission, not deletion of its checks.
 
 ## Validation snapshot
 
@@ -321,7 +327,7 @@ implementation. No PR, main merge or release is part of this branch work.
 
 `orientation_applied` is a format-independent metadata key whose value is `DataMap::Bool`. `true` means the output pixels already include the source orientation; consumers must not apply source EXIF or other source orientation again. `false` means this marker does not suppress the consumer's existing orientation handling. An absent key likewise retains the legacy behavior. A value of another type is invalid; consumers should treat it as absent rather than infer a boolean. This affects automatic orientation only, not user-requested rotation.
 
-JPEG XL sets the marker to `true` and stores the original coded 1–8 value separately as `JPEG XL Source Orientation` (`DataMap::UInt`), alongside the raw source header. That original value describes the input, not a remaining transform on the delivered pixels. The pinned jxl 0.7.4 applies the coded transform to its output; its `adjust_orientation` option is not consumed by that version. The eight fixture tests check pixels against independent references so a change to that behavior is detected. Other formats do not acquire this marker merely because it is absent; their existing metadata and consumer behavior remain unchanged.
+JPEG XL sets the marker to `true` and stores the original coded 1–8 value separately as `JPEG XL Source Orientation` (`DataMap::UInt`), alongside the raw source header. That original value describes the input, not a remaining transform on the delivered pixels. The 0.8 decoder explicitly sets `adjust_orientation = true`; its oriented BasicInfo size and source orientation are checked against preflight. Historical 0.7.4 applied the transform while ignoring that option. The eight fixture tests check pixels against independent references so a change to that behavior is detected. Other formats do not acquire this marker merely because it is absent; their existing metadata and consumer behavior remain unchanged.
 
 
 ## Intrinsic display dimensions and information query

@@ -170,7 +170,7 @@ pub(super) fn read<B: BinaryReader>(reader: &mut B, end: u64) -> Result<ImageInf
         buffer[count - 1] = source.byte()?;
         let parsed = match crate::jpegxl::dimensions::prefix(&buffer[..count]) {
             Ok(v) => v,
-            Err(jxl_codec::error::Error::OutOfBounds(_)) => continue,
+            Err(jxl_preflight::error::Error::OutOfBounds(_)) => continue,
             Err(e) => return Err(ImageInfoError::Header(Box::new(e))),
         };
         let mut output = info(

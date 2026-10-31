@@ -16,10 +16,10 @@ use std::io::SeekFrom;
 
 #[path = "jpegxl_brob.rs"]
 mod brob;
-#[path = "jpegxl_metadata.rs"]
-mod structured_metadata;
 #[path = "jpegxl_dimensions.rs"]
 pub(crate) mod dimensions;
+#[path = "jpegxl_metadata.rs"]
+mod structured_metadata;
 
 type Error = Box<dyn std::error::Error>;
 const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
@@ -559,9 +559,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     let header = FileHeader::read(&mut br).map_err(codec_error)?;
     let m = &header.image_metadata;
     if m.animation.is_some() {
-        return Err(unsupported(
-            "JPEG XL animations are unsupported",
-        ));
+        return Err(unsupported("JPEG XL animations are unsupported"));
     }
     let bits = m.bit_depth.bits_per_sample();
     if m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 9 | 10 | 12 | 16) {

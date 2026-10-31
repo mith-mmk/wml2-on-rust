@@ -33,11 +33,11 @@
       "after": "904824173756f3b1d83e5996ea618351c0d9731794c89b7d53c103021d0ade17"
     }
   },
-  "patch_sha256": "da0136ed6d74529fdc9de5e78ab708315940da53c9d34aa2373c73a5bd66bc3e",
+  "patch_sha256": "79b80db1bce8babe9c3889c52f2a287384db9da9ae9bed72cef40740a300a654",
   "validation": {
     "scope": "EVALUATION ONLY: explicit low-level context-map and derived LZ77 reader requested payload capacity; no production dependency change or decoder-wide bound",
     "source_sha256": "43b041e4bd5bb931cf73b271bc3304eb135bb473914877d64bf77fdf5b4d4687",
-    "patch_sha256": "da0136ed6d74529fdc9de5e78ab708315940da53c9d34aa2373c73a5bd66bc3e",
+    "patch_sha256": "79b80db1bce8babe9c3889c52f2a287384db9da9ae9bed72cef40740a300a654",
     "native_tests": 13,
     "native_passed": true,
     "wasm": {
@@ -48,7 +48,7 @@
       "linear_ceiling_enforced": true,
       "memory_bytes": 9699328,
       "node": "v24.19.0",
-      "sha256": "bb16f7736137152bdc15ff55bcd7a37f51bc286b29db4e0a629cfec46a1aba71"
+      "sha256": "56c367ac054dd48025b196f370249e29cf1b55b4dafab4fb388904e2f18e5f6a"
     },
     "wml_regression": {
       "integration_tests": 84,
@@ -247,7 +247,8 @@
         }
       ]
     },
-    "performance_gate": "NOT PASSED for product adoption: photo median 1.049x and simple median 1.034x; ICC cases improve. Evaluation only; no shipping change."
+    "performance_gate": "NOT PASSED for product adoption: photo median 1.049x and simple median 1.034x; ICC cases improve. Evaluation only; no shipping change.",
+    "note": "Final artifact uses zero-context hunks; all applied source hashes are identical to the qualified native/WASM/WML regression sources."
   },
   "artifact_sha256": {
     "jxl_entropy_budget_eval.rs": "fe37c74e7a9d4d19ea077b1a33305d1d7b533300eaf9407cfb471efc824fa61f",

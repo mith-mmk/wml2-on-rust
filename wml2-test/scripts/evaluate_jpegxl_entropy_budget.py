@@ -40,7 +40,7 @@ def apply_patch(tree, data):
         while i < len(lines) and not lines[i].startswith('--- a/'):
             match = re.match(r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@', lines[i])
             assert match, lines[i]
-            start = int(match[1]) - (int(match[1]) != 0)
+            start = int(match[1]) - (int(match[2] or 1) != 0)
             assert start >= pos
             dest.extend(source[pos:start]); pos = start
             i += 1

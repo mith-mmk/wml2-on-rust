@@ -1,9 +1,6 @@
 --- a/src/util/mod.rs
 +++ b/src/util/mod.rs
-@@ -38,3 +38,5 @@
- pub use smallvec::*;
- pub use vec_helpers::*;
- pub use xorshift128plus::*;
+@@ -40,0 +41,2 @@
 +
 +pub mod entropy_budget;
 --- a/src/util/entropy_budget.rs
@@ -147,30 +144,15 @@
 +}
 --- a/src/error.rs
 +++ b/src/error.rs
-@@ -15,6 +15,8 @@
- #[derive(Error, Debug)]
- #[non_exhaustive]
- pub enum Error {
+@@ -17,0 +18,2 @@
 +    #[error("Entropy map/window live payload budget exceeded")]
 +    EntropyBudgetExceeded,
-     #[error("Invalid raw quantization table")]
-     InvalidRawQuantTable,
-     #[error("Invalid distance band {0}: {1}")]
 --- a/src/entropy_coding/context_map.rs
 +++ b/src/entropy_coding/context_map.rs
-@@ -3,7 +3,7 @@
- // Use of this source code is governed by a BSD-style
- // license that can be found in the LICENSE file.
- 
+@@ -6 +6 @@
 -use std::collections::HashSet;
 +use crate::util::entropy_budget::{EntropyBudget, EntropyVec};
- 
- use crate::bit_reader::BitReader;
- use crate::entropy_coding::decode::*;
-@@ -29,8 +29,12 @@
- }
- 
- fn verify_context_map(ctx_map: &[u8]) -> Result<(), Error> {
+@@ -32,2 +32,6 @@
 -    let num_histograms = *ctx_map.iter().max().unwrap() as u32 + 1;
 -    let distinct_histograms = ctx_map.iter().collect::<HashSet<_>>().len() as u32;
 +    let num_histograms = u32::from(*ctx_map.iter().max().ok_or(Error::SizeOverflow)?) + 1;
@@ -179,13 +161,7 @@
 +        present[v as usize] = true;
 +    }
 +    let distinct_histograms = present.iter().filter(|&&v| v).count() as u32;
-     if distinct_histograms != num_histograms {
-         return Err(Error::InvalidContextMapHole(
-             num_histograms,
-@@ -41,35 +45,49 @@
- }
- 
- pub fn decode_context_map(num_contexts: usize, br: &mut BitReader) -> Result<Vec<u8>, Error> {
+@@ -43,0 +48,12 @@
 +    Ok(decode_context_map_with_budget(num_contexts, br, None)?.into_unbudgeted())
 +}
 +
@@ -198,34 +174,25 @@
 +    if num_contexts == 0 {
 +        return Err(Error::SizeOverflow);
 +    }
-     let is_simple = br.read(1)? != 0;
-     if is_simple {
-         let bits_per_entry = br.read(2)? as usize;
+@@ -47,2 +63,2 @@
 -        let ctx_map: Vec<u8> = if bits_per_entry != 0 {
 -            let mut map = Vec::with_capacity(num_contexts);
 +        let mut map = EntropyVec::with_capacity(num_contexts, budget)?;
 +        let ctx_map = if bits_per_entry != 0 {
-             for _ in 0..num_contexts {
+@@ -50 +66 @@
 -                map.push(br.read(bits_per_entry)? as u8);
 +                map.push_reserved(br.read(bits_per_entry)? as u8);
-             }
-             map
-         } else {
+@@ -54 +70,4 @@
 -            vec![0u8; num_contexts]
 +            {
 +                map.try_resize(num_contexts, 0)?;
 +                map
 +            }
-         };
-         verify_context_map(&ctx_map[..])?;
-         Ok(ctx_map)
-     } else {
-         let use_mtf = br.read(1)? != 0;
+@@ -60 +79,2 @@
 -        let histograms = Histograms::decode(1, br, /*allow_lz77=*/ num_contexts > 2)?;
 +        let histograms =
 +            Histograms::decode_with_budget(1, br, /*allow_lz77=*/ num_contexts > 2, budget)?;
-         let mut reader = SymbolReader::new(&histograms, br, None)?;
- 
+@@ -63,10 +83,8 @@
 -        let mut ctx_map: Vec<u8> = (0..num_contexts)
 -            .map(|_| {
 -                let mv = reader.read_unsigned(&histograms, br, 0usize);
@@ -244,61 +211,28 @@
 +            }
 +            ctx_map.push_reserved(mv as u8);
 +        }
-         reader.check_final_state(&histograms, br)?;
-         if use_mtf {
-             inverse_move_to_front(&mut ctx_map[..]);
 --- a/src/entropy_coding/decode.rs
 +++ b/src/entropy_coding/decode.rs
-@@ -12,7 +12,7 @@
- use crate::entropy_coding::hybrid_uint::*;
- use crate::error::{Error, Result};
- use crate::headers::encodings::*;
+@@ -15 +15 @@
 -use crate::util::NewWithCapacity;
 +use crate::util::entropy_budget::{EntropyBudget, EntropyVec, Lease};
- use crate::util::tracing_wrappers::*;
- 
- pub fn decode_varint16(br: &mut BitReader) -> Result<u16> {
-@@ -69,7 +69,7 @@
- pub struct Histograms {
-     lz77_params: Lz77Params,
-     lz77_length_uint: Option<HybridUint>,
+@@ -72 +72 @@
 -    context_map: Vec<u8>,
 +    context_map: EntropyVec<u8>,
-     /// Explicitly stored: context_map can get padded so we cannot use .last()
-     lz_dist_cluster: u8,
-     // TODO(veluca): figure out why this is unused.
-@@ -88,6 +88,8 @@
-     num_to_copy: u32,
-     copy_pos: u32,
-     num_decoded: u32,
+@@ -90,0 +91,2 @@
 +    // Field drop order: release the Vec before this live-capacity lease.
 +    _window_lease: Option<Lease>,
- }
- 
- impl Lz77State {
-@@ -213,11 +215,17 @@
-             let min_length = min_length.unwrap();
-             let dist_multiplier = image_width.unwrap_or(0) as u32;
- 
+@@ -215,0 +218,5 @@
 +            let (window, window_lease) = EntropyVec::with_capacity(
 +                1 << Lz77State::LOG_WINDOW_SIZE,
 +                histograms.context_map.budget().as_ref(),
 +            )?
 +            .into_parts();
-             SymbolReaderState::Lz77(Lz77State {
-                 min_symbol,
-                 min_length,
-                 dist_multiplier,
+@@ -220 +227,2 @@
 -                window: Vec::new_with_capacity(1 << Lz77State::LOG_WINDOW_SIZE)?,
 +                window,
 +                _window_lease: window_lease,
-                 num_to_copy: 0,
-                 copy_pos: 0,
-                 num_decoded: 0,
-@@ -495,13 +503,26 @@
- 
- impl Histograms {
-     pub fn decode(num_contexts: usize, br: &mut BitReader, allow_lz77: bool) -> Result<Histograms> {
+@@ -497,0 +506,13 @@
 +        Self::decode_with_budget(num_contexts, br, allow_lz77, None)
 +    }
 +    /// Evaluation: context-map storage and readers derived from these histograms.
@@ -312,21 +246,10 @@
 +        if num_contexts == 0 {
 +            return Err(Error::SizeOverflow);
 +        }
-         let lz77_params = Lz77Params::read_unconditional(&(), br, &Empty {})?;
-         if !allow_lz77 && lz77_params.enabled {
-             return Err(Error::Lz77Disallowed);
-         }
-         let (num_contexts, lz77_length_uint) = if lz77_params.enabled {
-             (
+@@ -504 +525 @@
 -                num_contexts + 1,
 +                num_contexts.checked_add(1).ok_or(Error::SizeOverflow)?,
-                 Some(HybridUint::decode(/*log_alpha_size=*/ 8, br)?),
-             )
-         } else {
-@@ -509,9 +530,11 @@
-         };
- 
-         let context_map = if num_contexts > 1 {
+@@ -512,3 +533,5 @@
 -            decode_context_map(num_contexts, br)?
 -        } else {
 -            vec![0]
@@ -335,46 +258,19 @@
 +            let mut map = EntropyVec::with_capacity(1, budget)?;
 +            map.push_reserved(0);
 +            map
-         };
-         assert_eq!(context_map.len(), num_contexts);
- 
-@@ -560,8 +583,8 @@
-         *self.context_map.iter().max().unwrap() as usize + 1
-     }
- 
+@@ -563,2 +586,2 @@
 -    pub fn resize(&mut self, num_contexts: usize) {
 -        self.context_map.resize(num_contexts, 0);
 +    pub fn resize(&mut self, num_contexts: usize) -> Result<()> {
 +        self.context_map.try_resize(num_contexts, 0)
-     }
- 
-     /// Returns true if the config 420 fast path can be safely used.
-@@ -657,7 +680,7 @@
-                 min_length: None,
-             },
-             lz77_length_uint: None,
+@@ -660 +683 @@
 -            context_map: vec![0],
 +            context_map: EntropyVec::unbudgeted(vec![0]),
-             lz_dist_cluster: 0,
-             log_alpha_size: 15,
-             uint_configs: vec![uint_config],
-@@ -674,7 +697,7 @@
-                 min_length: Some(3),
-             },
-             lz77_length_uint: None,
+@@ -677 +700 @@
 -            context_map: vec![0],
 +            context_map: EntropyVec::unbudgeted(vec![0]),
-             lz_dist_cluster: 1, // cluster 1 is dist cluster, cluster 0 is data
-             log_alpha_size: 15,
-             uint_configs: vec![uint_config, uint_config],
 --- a/src/frame/decode.rs
 +++ b/src/frame/decode.rs
-@@ -598,7 +598,7 @@
-                 let mut histograms = Histograms::decode(num_contexts, br, true)?;
-                 // Pad the context map to avoid index out of bounds in decode_vardct_group (group.rs#L514@752e6a4).
-                 let padding = ZERO_DENSITY_CONTEXT_LIMIT - ZERO_DENSITY_CONTEXT_COUNT;
+@@ -601 +601 @@
 -                histograms.resize(num_contexts + padding);
 +                histograms.resize(num_contexts.checked_add(padding).ok_or(Error::SizeOverflow)?)?;
-                 debug!("Found {} histograms", histograms.num_histograms());
-                 passes.push(PassState {
-                     coeff_orders,

@@ -11,3 +11,5 @@
 
 No version bump, merge or release is included. Detailed scope and remaining
 decisions: [resource contract](../jpeg-xl-resource-contract.md).
+
+Draft pull request: [#72](https://github.com/mith-mmk/wml2-on-rust/pull/72).

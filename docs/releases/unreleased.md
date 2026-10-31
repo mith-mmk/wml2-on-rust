@@ -9,3 +9,5 @@
 No version bump or release is included. The private `XING_T24.tiff` sample has
 not been tested; generated fixtures cover its reported missing-tag pattern.
 See [validation and compatibility scope](../tiff-legacy-layouts.md).
+
+Pull request: [#71](https://github.com/mith-mmk/wml2-on-rust/pull/71).

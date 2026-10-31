@@ -253,5 +253,58 @@ pub extern "C" fn verify_jpegxl() -> u32 {
         assert_eq!(image_from(input).unwrap().buffer.unwrap(),expected8);count+=1;
         assert!(image_from_with_limits(input,DecodeLimits {pixels:34,..Default::default()}).is_err());count+=1;
     }
+    // Independent C libbrotli streams, with C libjxl box/pixel verification.
+    let brob = include_bytes!("../../wml2/tests/fixtures/review/jxl-brob-metadata.jxl");
+    let expected = include_bytes!("../../wml2/tests/fixtures/review/jxl-rgba8-djxl.bin");
+    let image = image_from(brob).unwrap();
+    assert_eq!(image.buffer.as_deref().unwrap(), expected);
+    assert!(
+        matches!(&image.metadata.as_ref().unwrap()["JPEG XL Decoded Box 3 786d6c20"], wml2::metadata::DataMap::Raw(v) if v.starts_with(b"<x:xmpmeta"))
+    );
+    assert!(
+        matches!(&image.metadata.as_ref().unwrap()["JPEG XL Source Box 3 62726f62"], wml2::metadata::DataMap::Raw(v) if v.starts_with(b"xml "))
+    );
+    count += 1;
+    let native = image_from_ex(brob, PixelFormatEx::Rgba8, PrecisionConversion::Exact).unwrap();
+    assert_eq!(native.bytes().unwrap(), expected);
+    count += 1;
+    for limits in [
+        DecodeLimits {
+            input_bytes: brob.len() - 1,
+            ..Default::default()
+        },
+        DecodeLimits {
+            metadata_bytes: 1,
+            ..Default::default()
+        },
+        DecodeLimits {
+            expanded_bytes: 1024,
+            ..Default::default()
+        },
+    ] {
+        assert!(image_from_with_limits(brob, limits).is_err());
+        count += 1;
+    }
+    assert!(image_from(&brob[..brob.len() - 1]).is_err());
+    count += 1;
+    let mut forbidden = brob.to_vec();
+    assert_eq!(&forbidden[40..44], b"Exif");
+    forbidden[40..44].copy_from_slice(b"jbrd");
+    assert!(image_from(&forbidden).is_err());
+    count += 1;
+    let mut trailing = brob.to_vec(); // Add a byte to the last bounded brob stream.
+    let mut position = 12;
+    while position < trailing.len() {
+        let length =
+            u32::from_be_bytes(trailing[position..position + 4].try_into().unwrap()) as usize;
+        if position + length == trailing.len() {
+            trailing[position..position + 4].copy_from_slice(&((length + 1) as u32).to_be_bytes());
+            break;
+        }
+        position += length;
+    }
+    trailing.push(0);
+    assert!(image_from(&trailing).is_err());
+    count += 1;
     count
 }

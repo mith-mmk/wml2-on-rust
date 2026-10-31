@@ -1,0 +1,120 @@
+{
+  "date": "2026-10-30",
+  "base_revision": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
+  "code_checkpoint": "773007296fbb878d6ad468ed3a501cd366523bb6",
+  "environment": "Linux x86_64 cloud; Rust 1.91.0; Node 24.19.0; published jxl0.7.4 and pure-Rust brotli-decompressor6.2.0; no default features",
+  "source_sha256": {
+    "wml2/src/jpegxl.rs": "729c7befc33127956b2125bbc07ebd6975baddd98e04599a38ad52589da38271",
+    "wml2/src/jpegxl_brob.rs": "697a38f19f41e9533efb430e367bf544053991bdf370b29896d576d77065cc91",
+    "wml2/Cargo.toml": "4cb870ad5818ac9cf701c6d051f159d53d407b043dbda281c9db92d3aa313abc",
+    "Cargo.lock": "92013e0723b61be0e48b04ee5165cb4f9b393242813286e7edd66788f7c3153e",
+    "wml2-test/scripts/jpegxl_wasm.rs": "3868c38dc27c6a791907a5811e38c86398984b0746dd5217fc8002038580cb5f"
+  },
+  "fixture_manifest_sha256": "69f29c7912146d8e41164068d6435e9beb4a98860a366274c76e3899dd3dd8e2",
+  "native": {
+    "command": "cargo test -p wml2 --locked --no-default-features --features jpeg-xl,image-buffer-ex,color-management --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_brob --test jpeg_xl_layers",
+    "passed": 63,
+    "failed": 0,
+    "ignored": 0
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 69,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14417920,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "9d90744e9575ecc1f3a8c7630edddc49ea93ff64a954e33e2ed1b17799cc0a9b",
+    "scope": "bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "benchmarks": [
+    {
+      "case": "jxl-rgba16",
+      "route": "ordinary",
+      "before_us": 55.879,
+      "after_us": 53.701,
+      "change_percent": -3.8977075466633204,
+      "hash": "17076559143681454236"
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "route": "ordinary",
+      "before_us": 16168.812,
+      "after_us": 15800.076,
+      "change_percent": -2.280538607289151,
+      "hash": "8439627164837879290"
+    },
+    {
+      "case": "jxl-icc-lossless",
+      "route": "managed",
+      "before_us": 139.5555,
+      "after_us": 135.3895,
+      "change_percent": -2.985192271175263,
+      "hash": "12438429659714107065"
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "route": "managed",
+      "before_us": 1096988.44,
+      "after_us": 1097700.257,
+      "change_percent": 0.06488828633417487,
+      "hash": "1509610803079936459"
+    }
+  ],
+  "display": {
+    "fixture": "existing jxl-jbrd-bench.jxl with C-encoded XML brob appended after normalizing any final to-EOF box size",
+    "dimensions": [
+      606,
+      500
+    ],
+    "max_rgba_difference_from_independent_srgb_oracle": 1,
+    "rgba_sha256": "6257f1d90d459543e8f775f95b63507d3598f0c529d876b2efe9eb067113aac7",
+    "visually_inspected": true
+  },
+  "review_follow_up": {
+    "scope": "Retained container metadata admission moved before header/ICC/TOC; eventual total unchanged. Deterministic ordering case, not a measured memory overrun or demonstrated limit bypass.",
+    "source_sha256": {
+      "wml2/src/jpegxl.rs": "9b3c91537deaed69c3dd674ae68729fab8e0b8b5366cfaa6dcd74009c24b1fb9",
+      "wml2/src/jpegxl_brob.rs": "697a38f19f41e9533efb430e367bf544053991bdf370b29896d576d77065cc91",
+      "wml2/Cargo.toml": "4cb870ad5818ac9cf701c6d051f159d53d407b043dbda281c9db92d3aa313abc",
+      "Cargo.lock": "92013e0723b61be0e48b04ee5165cb4f9b393242813286e7edd66788f7c3153e",
+      "wml2-test/scripts/jpegxl_wasm.rs": "3868c38dc27c6a791907a5811e38c86398984b0746dd5217fc8002038580cb5f"
+    },
+    "native_passed": 64,
+    "wasm": {
+      "runtime": "v24.19.0",
+      "cases": 69,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 14417920,
+      "target": "wasm32-unknown-unknown",
+      "features": "jpeg-xl,image-buffer-ex; no defaults",
+      "wasm_sha256": "80416b225083937ff708399153e858be46de6e63905b3c4c2ae38ec0d75fdd9d",
+      "scope": "bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+    },
+    "benchmark_subset": [
+      {
+        "case": "jxl-rgba16",
+        "route": "ordinary",
+        "before_us": 55.023,
+        "after_us": 54.9325,
+        "output_hashes_match": true
+      },
+      {
+        "case": "jxl-jbrd-bench",
+        "route": "ordinary",
+        "before_us": 16974.476,
+        "after_us": 16196.032,
+        "output_hashes_match": true
+      },
+      {
+        "case": "jxl-icc-lossless",
+        "route": "managed",
+        "before_us": 185.1945,
+        "after_us": 193.8925,
+        "output_hashes_match": true
+      }
+    ]
+  }
+}

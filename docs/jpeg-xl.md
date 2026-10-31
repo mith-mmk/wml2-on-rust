@@ -344,3 +344,13 @@ conversion. `animation_bytes` admits the common8-byte-per-pixel native working
 canvas before codec work, even for ordinary output. Existing same-depth/native
 Gray layouts and refusal of associated/subsampled/general extra planes remain.
 See [the bounded subset, independent oracles and upstream evaluation](jpeg-xl-alpha.md).
+
+## Unreleased explicit resource configuration
+
+The additive `image_from_with_resource_limits` and sRGB companion APIs accept
+`JxlResourceLimits` for finite, caller-tightened JPEG XL admission. Existing APIs
+retain their current caps and behavior. The new paths additionally charge live
+adapter output, rounding, collector and CMS/profile storage cumulatively.
+This is the first runtime phase of #37, not larger-canvas support or a global
+allocation ledger: 2560x1440 still fails the fixed padded-frame screen.
+See [configuration, exact scope and validation](jpeg-xl-resource-contract.md).

@@ -1,0 +1,245 @@
+{
+  "base": "f2151b2408e9d04f1bc7b4e9e29679e078a57209",
+  "environment": "managed cloud Linux x86_64; Rust 1.91.0",
+  "runtime_sources": {
+    "wml2/src/jpegxl.rs": "574904f60dce62619c6ff39f4e3a2c09d7d330a55435effd35e3f54d99ec3b16",
+    "wml2/src/jpegxl_resources.rs": "84d0d2fbc94d5ec0895854100106c23dc7afe44bc941c6ab3db1a54d1cf4ef00"
+  },
+  "lock_sha256": "1dea6f53aecb9ce01302cc202f116e7673c1707ab29b6cf6acdc1c77c78d5d0f",
+  "native_full": [
+    {
+      "passed": 43,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "passed": 41,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "passed": 11,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    }
+  ],
+  "native_minimal_jxl": [
+    {
+      "passed": 29,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    }
+  ],
+  "feature_disabled": [
+    {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    }
+  ],
+  "baseline_reproduction": [
+    ".test-resource-tools/boundary.jxl default ERROR Out of memory: JPEG XL decode workspace exceeds decode limit",
+    ".test-resource-tools/boundary.jxl unlimited OK 2048x1536",
+    ".test-resource-tools/qhd.jxl default ERROR Out of memory: JPEG XL padded frame pixels exceeds decode limit",
+    ".test-resource-tools/qhd.jxl unlimited ERROR Out of memory: JPEG XL padded frame pixels exceeds decode limit"
+  ],
+  "wasm": {
+    "scope": "finite ordinary/CMS resource APIs on small independent fixtures, every cancellation checkpoint, fixed-cap large-input refusal; no accepted-large-image WASM or global allocator bound claim",
+    "rustc": "rustc 1.91.0 (f8297e351 2025-10-28)",
+    "results": [
+      {
+        "cases": 12,
+        "passed": true,
+        "runtime": "v24.19.0",
+        "memory_bytes": 5701632,
+        "linear_ceiling_enforced": true,
+        "imports": [],
+        "linear_ceiling_bytes": 33554432,
+        "sha256": "037cb0d2a997c37c6bf0890457b5ec2a9b8edbd065c5d93478880ca591024e49"
+      },
+      {
+        "cases": 12,
+        "passed": true,
+        "runtime": "v24.19.0",
+        "memory_bytes": 5701632,
+        "linear_ceiling_enforced": true,
+        "imports": [],
+        "linear_ceiling_bytes": 67108864,
+        "sha256": "9233bfc3ab08aab28c493cc47afce6bb7606332814d3eca83f8bd43ae5fcac5d"
+      }
+    ]
+  },
+  "i686_linux": {
+    "compiled": true,
+    "executed": false,
+    "reason": "kernel Exec format error (os error 8); first attempt never executed; final source test artifacts compiled with --no-run"
+  },
+  "legacy_benchmark": {
+    "base": "f2151b2408e9d04f1bc7b4e9e29679e078a57209",
+    "features": "jpeg-xl,color-management,image-buffer-ex,png; no defaults",
+    "scope": "legacy ordinary APIs; three alternating process pairs, 3 warmups + 11 timed decodes each; includes benchmark pixel hashing; requested allocations exclude allocator internals/RSS",
+    "binary_sha256": {
+      "base": "551a9610e1df914ac61d1d4f1408cadaff076a3f8f33e159b846bbb865b44dd1",
+      "head": "aa3db019832f60bc46d6393927dfca4a8f791c24f8c179664805d0a6e28c06c4"
+    },
+    "results": [
+      {
+        "name": "jxl-rgb8.jxl",
+        "median_ns": {
+          "base": 76984,
+          "head": 51195
+        },
+        "ratio": 0.6650083134157747,
+        "trials_ns": {
+          "base": [
+            77124,
+            50996,
+            76984
+          ],
+          "head": [
+            51195,
+            52007,
+            51136
+          ]
+        },
+        "allocations_total_peak": {
+          "base": [
+            [
+              "328",
+              "105053",
+              "64222"
+            ]
+          ],
+          "head": [
+            [
+              "328",
+              "105053",
+              "64222"
+            ]
+          ]
+        },
+        "hash": "5701539870786561954"
+      },
+      {
+        "name": "jxl-jbrd-bench.jxl",
+        "median_ns": {
+          "base": 17012543,
+          "head": 17071520
+        },
+        "ratio": 1.0034666774978909,
+        "trials_ns": {
+          "base": [
+            16658460,
+            17145129,
+            17012543
+          ],
+          "head": [
+            17071520,
+            16660793,
+            17364251
+          ]
+        },
+        "allocations_total_peak": {
+          "base": [
+            [
+              "999",
+              "17296836",
+              "5995746"
+            ]
+          ],
+          "head": [
+            [
+              "999",
+              "17296836",
+              "5995746"
+            ]
+          ]
+        },
+        "hash": "11298716346096407965"
+      },
+      {
+        "name": "jxl-sunset-logo.jxl",
+        "median_ns": {
+          "base": 166100672,
+          "head": 164818510
+        },
+        "ratio": 0.9922808138909878,
+        "trials_ns": {
+          "base": [
+            166456881,
+            165570287,
+            166100672
+          ],
+          "head": [
+            164628370,
+            164818510,
+            169086620
+          ]
+        },
+        "allocations_total_peak": {
+          "base": [
+            [
+              "804",
+              "58248379",
+              "39339187"
+            ]
+          ],
+          "head": [
+            [
+              "804",
+              "58248379",
+              "39339187"
+            ]
+          ]
+        },
+        "hash": "8933294292655360903"
+      }
+    ]
+  },
+  "new_srgb_display": {
+    "size": [
+      606,
+      500
+    ],
+    "bytes": 1212000,
+    "max_rgb_error": 1,
+    "mean_rgb_error": 0.001625962596259626,
+    "alpha_exact": true
+  },
+  "scope": "First runtime phase only: caller-tightened finite settings and cumulative adapter/CMS estimate; no global heap bound and no larger-canvas admission; qhd still rejects."
+}

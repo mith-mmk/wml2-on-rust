@@ -27,6 +27,12 @@ pub use resources::JxlResourceLimits;
 #[path = "jpegxl_hdr_linear.rs"]
 mod hdr_linear;
 pub use hdr_linear::{JxlHdrLinearization, JxlLinearHdrImage};
+#[path = "jpegxl_extra.rs"]
+mod extra;
+pub use extra::{
+    JxlExtraChannelKind, JxlExtraImage, JxlExtraPlane,
+    image_with_extra_channels_from_with_resource_limits_and_cancel,
+};
 
 type Error = Box<dyn std::error::Error>;
 const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
@@ -445,6 +451,7 @@ struct Header {
     height: usize,
     bits: u8,
     alpha_bits: Option<u8>,
+    depth_bits: Option<u8>,
     alpha_associated: bool,
     alpha_dim_shift: u8,
     native_bits: u8,
@@ -482,7 +489,7 @@ fn validate_basic_info(info: &JxlBasicInfo, h: &Header) -> Result<(), Error> {
 // reference layers may exceed or lie outside the displayed canvas. Admit their
 // actual padded storage before the codec allocates pixels, then leave cropping,
 // orientation and blending to its coalescing render pipeline.
-fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool>(
+fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
     input: &[u8],
     header: &FileHeader,
     frame_bits: usize,
@@ -550,6 +557,20 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool>(
             ));
         }
         frame.postprocess(nonserialized);
+        if DEPTH
+            && (frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular
+                || frame.upsampling != 1
+                || frame.ec_upsampling.iter().any(|&u| u != 1)
+                || frame.x0 != 0
+                || frame.y0 != 0
+                || frame.size_upsampled()
+                    != (header.size.xsize() as usize, header.size.ysize() as usize))
+        {
+            return Err(unsupported(
+                "extra-plane output requires one full-canvas Modular frame without resampling",
+            ));
+        }
+
         let alpha_shift = header
             .image_metadata
             .extra_channel_info
@@ -706,11 +727,11 @@ fn preflight_with_resources(
     limits: DecodeLimits,
     policy: JxlResourceLimits,
 ) -> Result<Header, Error> {
-    preflight_samples::<0, false>(input, limits, policy)
+    preflight_samples::<0, false, false>(input, limits, policy)
 }
 
 // 0 retains the integer contract; 16/32 select exact floating source layouts.
-fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
+fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
     input: &Input,
     limits: DecodeLimits,
     policy: JxlResourceLimits,
@@ -760,47 +781,72 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
             "JPEG XL supports integer8/9/10/12/16-bit sources only",
         ));
     }
-    if m.extra_channel_info.len() > 1
-        || m.extra_channel_info.iter().any(|c| {
-            c.ec_type != ExtraChannel::Alpha
-                || (c.alpha_associated()
-                    && (HDR || FLOAT_BITS != 0 || m.xyb_encoded || m.preview.is_some()))
-                || (c.dim_shift() != 0
-                    && (c.dim_shift() > 3
-                        || HDR
-                        || FLOAT_BITS != 0
-                        || m.xyb_encoded
-                        || m.preview.is_some()))
-                || (HDR
-                    && (c.bit_depth().floating_point_sample()
-                        || c.bit_depth().bits_per_sample() != 16))
-                || if FLOAT_BITS != 0 {
-                    !c.bit_depth().floating_point_sample()
-                        || c.bit_depth().bits_per_sample() != FLOAT_BITS
-                        || c.bit_depth().exponent_bits_per_sample()
-                            != if FLOAT_BITS == 16 { 5 } else { 8 }
+    if DEPTH {
+        if m.xyb_encoded
+            || m.preview.is_some()
+            || m.extra_channel_info.len() > 1
+            || m.extra_channel_info.iter().any(|c| {
+                c.ec_type != ExtraChannel::Depth
+                    || c.dim_shift() != 0
+                    || c.bit_depth().floating_point_sample()
+                    || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
+            })
+        {
+            return Err(unsupported(
+                "extra-plane output supports zero or one full-resolution integer Depth channel on original-profile SDR without preview",
+            ));
+        }
+    } else {
+        if m.extra_channel_info.len() > 1
+            || m.extra_channel_info.iter().any(|c| {
+                c.ec_type != ExtraChannel::Alpha
+                    || (c.alpha_associated()
+                        && (HDR || FLOAT_BITS != 0 || m.xyb_encoded || m.preview.is_some()))
+                    || (c.dim_shift() != 0
+                        && (c.dim_shift() > 3
+                            || HDR
+                            || FLOAT_BITS != 0
+                            || m.xyb_encoded
+                            || m.preview.is_some()))
+                    || (HDR
+                        && (c.bit_depth().floating_point_sample()
+                            || c.bit_depth().bits_per_sample() != 16))
+                    || if FLOAT_BITS != 0 {
+                        !c.bit_depth().floating_point_sample()
+                            || c.bit_depth().bits_per_sample() != FLOAT_BITS
+                            || c.bit_depth().exponent_bits_per_sample()
+                                != if FLOAT_BITS == 16 { 5 } else { 8 }
+                    } else {
+                        c.bit_depth().floating_point_sample()
+                            || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
+                    }
+            })
+        {
+            return Err(unsupported(if HDR {
+                "encoded HDR requires at most one full-resolution straight integer16 alpha"
+            } else if FLOAT_BITS != 0 {
+                if FLOAT_BITS == 16 {
+                    "JPEG XL F16 requires matching full-resolution straight float alpha (16 bits, 5 exponent bits)"
                 } else {
-                    c.bit_depth().floating_point_sample()
-                        || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
+                    "JPEG XL F32 requires at most one full-resolution straight float alpha (32 bits, 8 exponent bits)"
                 }
-        })
-    {
-        return Err(unsupported(if HDR {
-            "encoded HDR requires at most one full-resolution straight integer16 alpha"
-        } else if FLOAT_BITS != 0 {
-            if FLOAT_BITS == 16 {
-                "JPEG XL F16 requires matching full-resolution straight float alpha (16 bits, 5 exponent bits)"
             } else {
-                "JPEG XL F32 requires at most one full-resolution straight float alpha (32 bits, 8 exponent bits)"
-            }
-        } else {
-            "JPEG XL requires one supported integer alpha; associated/subsampled alpha requires bounded original-profile SDR without preview"
-        }));
+                "JPEG XL requires one supported integer alpha; associated/subsampled alpha requires bounded original-profile SDR without preview"
+            }));
+        }
     }
     let alpha_bits = m
         .extra_channel_info
         .first()
+        .filter(|c| c.ec_type == ExtraChannel::Alpha)
         .map(|c| c.bit_depth().bits_per_sample() as u8);
+    let depth_bits = if DEPTH {
+        m.extra_channel_info
+            .first()
+            .map(|c| c.bit_depth().bits_per_sample() as u8)
+    } else {
+        None
+    };
     let alpha_associated = m
         .extra_channel_info
         .first()
@@ -932,7 +978,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
     )?;
     // Qualify associated/declared-subsampled alpha for one coded layer. Reuse the
     // complete pre-allocation frame scan; do not bypass reference/padding checks.
-    let frame_policy = if alpha_associated || alpha_dim_shift != 0 {
+    let frame_policy = if DEPTH || alpha_associated || alpha_dim_shift != 0 {
         JxlResourceLimits {
             internal_layers: policy.internal_layers.min(1),
             ..policy
@@ -940,7 +986,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
     } else {
         policy
     };
-    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT_BITS, HDR>(
+    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT_BITS, HDR, DEPTH>(
         &input.codestream,
         &header,
         frame_bits,
@@ -957,6 +1003,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
         height,
         bits: bits as u8,
         alpha_bits,
+        depth_bits,
         alpha_associated,
         alpha_dim_shift,
         native_bits,
@@ -1273,7 +1320,7 @@ fn image_signal_f32<const SOURCE_BITS: u32, const HDR: bool>(
     )?;
     let input = unpack_with_resources(bytes, limits, Some(policy))?;
     check()?;
-    let h = preflight_samples::<SOURCE_BITS, HDR>(&input, limits, policy)?;
+    let h = preflight_samples::<SOURCE_BITS, HDR, false>(&input, limits, policy)?;
     check()?;
     let pixels = mul(h.width, h.height)?;
     let output_bytes = mul(pixels, 16)?;

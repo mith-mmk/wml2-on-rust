@@ -1,0 +1,1120 @@
+{
+  "reference": "Independent C libjxl0.11.2 color RGBA16 and normalized extra U16; source-code recovery verified against authored integer codes and independent orientation map",
+  "generator_sha256": "3ddfeb1993e17c7548be6994f645bcc75ca1933a951630f43c946e4de77f05f2",
+  "encoder_sha256": "14a906c973b90ad5a879ceea5ed94f1f2a68842029255e6ee6e6a548097181d2",
+  "reference_sha256": "ac745e363e51bc3f016c0213311dbea09f955b874bcafabdcded36b6b1f06f22",
+  "cases": [
+    {
+      "name": "jxl-depth-1c8d8o1",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "5a4f672a7a78e3361d5c8a56a23ce2740d20dd70a2e4b98de688d9906c5c6530",
+      "rgba16_sha256": "b9dab0d6f9e16e5647034070845aa19bebe23bb9f4bdcf92e34d5d6b106317e1",
+      "source_code_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+    },
+    {
+      "name": "jxl-depth-1c8d9o2",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "03ec5d56078467c92638d01a74ba6371e51ff77f55615f48c877e36b281f9782",
+      "rgba16_sha256": "3a12a2bfacb99ad329828853bf6bf70a1a5a2c17e47effd1bf2ce0e9a87c997c",
+      "source_code_sha256": "892f321b7ed3c3ffc6335c009ed7fd01df6986722eb6a48252428ea4340fc3a0"
+    },
+    {
+      "name": "jxl-depth-1c8d10o3",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "5c132581ca8a7714077ecbcd7771804c6077c61e4df9506e20f10a2277d3ec78",
+      "rgba16_sha256": "60c0d500ca917efbb2d82509086259c05f09e3cdc6d628d7b43cdfad5d2da789",
+      "source_code_sha256": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450"
+    },
+    {
+      "name": "jxl-depth-1c8d12o4",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "618ec497606a3ece03b78ef9b804c86e7cbeca1ad473d1094ac94759ecb5418e",
+      "rgba16_sha256": "8215f7d9127f5ef26af21021d47d868ae66173f9d848aacbaf5d45f5353f5af8",
+      "source_code_sha256": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1"
+    },
+    {
+      "name": "jxl-depth-1c8d16o5",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "bb1686a3bb69fa822bdea2cb3aef6ae5e4b2c1407ce633be502516275ba0d360",
+      "rgba16_sha256": "1d841313293bf5e3448cdbfadab31c0b74ca7d222fd293fa85a07e423469e9b4",
+      "source_code_sha256": "74927e9de11a23e11e16bdf637ced7a95b186c98c752937330b6ebbff1697894"
+    },
+    {
+      "name": "jxl-depth-1c9d8o6",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "090f4b0045b22882daeaad68d1ee1e3bc44276612b02d3d3e141f05c1e6c3e46",
+      "rgba16_sha256": "3fd03771186910d1a18850e1571943a25179759ac9441f8d658a0222174916d2",
+      "source_code_sha256": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb"
+    },
+    {
+      "name": "jxl-depth-1c9d9o7",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "6e25d57dab6ee4d2b2cc3e773b2b29150676df768826396982eac619c2fde1b9",
+      "rgba16_sha256": "ec97af58a28a437ac18de5aaac84be3b7b4aed5805381c9bc4cae5da65e326f9",
+      "source_code_sha256": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db"
+    },
+    {
+      "name": "jxl-depth-1c9d10o8",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "aaa86059e52e7aba1a0ab645ca3ebfd85a4ef3fdb01136cd846161f8dae4fadb",
+      "rgba16_sha256": "1f7f6c08955ed5386623bf3bfa037608f1acea9547db494e9ddd17fa236acb0a",
+      "source_code_sha256": "f13019ba0f22bf2e2faf7349c5f7ab7c44dc1ec71ad27818fdd786297593e00d"
+    },
+    {
+      "name": "jxl-depth-1c9d12o1",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "camera-Z",
+      "embedded_icc": false,
+      "jxl_sha256": "c84d26c9bb77d3793fc8b0a8885b45fa9a378eff6c7893328f4115afaeabca37",
+      "rgba16_sha256": "9533629cf818b4be7dbf7fa0fad55eb5682335b7f4b02e371cbc18a38d5629c2",
+      "source_code_sha256": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+    },
+    {
+      "name": "jxl-depth-1c9d16o2",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "1a316787ddc874ca10745db446e1795b5a2201c8869e1ab30dd6dfdd284192c2",
+      "rgba16_sha256": "a28abeb6e867a7ec326aed1e9fabc9bb1a37fbd680d46beea06f550224997920",
+      "source_code_sha256": "9f6f2f404ae96d6b472b1dceb45156a1824f7843f0053fa77a997609d541d0e4"
+    },
+    {
+      "name": "jxl-depth-1c10d8o3",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "fccd80f0371cb989c1ab711365df464849bed60174cb3007cc9d1579c8afb65f",
+      "rgba16_sha256": "c9e5c7029fc52571737664bfb56e4bad7c568cba83378e169b15e75b77c3d501",
+      "source_code_sha256": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb"
+    },
+    {
+      "name": "jxl-depth-1c10d9o4",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "f1f70d318438dabfaa3a78987aaa973dda79349d1a849371407a1cd6b6307ab2",
+      "rgba16_sha256": "f9f2b9a17e998a07f73e8a952cd6dfa17e28ec2ec023d764ea17f250dd0175c0",
+      "source_code_sha256": "93e862d108ec1f4b1e9460eb32c246f4fb1f74242a8d4cc6c7d57f7d0f242f48"
+    },
+    {
+      "name": "jxl-depth-1c10d10o5",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "a6c0f833a3bfff7ba7de2a8693428dffb9cdefa7b4aeba2497064c37e1e968ec",
+      "rgba16_sha256": "320905a9390ca41268e43fe92847ca14dfe37453ac928f0ce3e7612fb589913d",
+      "source_code_sha256": "0bdab7f34ca861d6f8f8f3bf067ace28cb28ef4944f72b4c97019c401622af8a"
+    },
+    {
+      "name": "jxl-depth-1c10d12o6",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "b1314aee7bea9696dd8f34a5fc6766ffcea7ac88ae35d5f62c529c3f64bf6f34",
+      "rgba16_sha256": "f6cbcfb132ec09678e6f2d107cfa7bd1d76fbfb3788cc08be44567e3289407c7",
+      "source_code_sha256": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf"
+    },
+    {
+      "name": "jxl-depth-1c10d16o7",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "74f39c6941eb59ef9bdcd7a1e63e4a20fc6bc30b9ec0ab6cffd4e4b5315c52c2",
+      "rgba16_sha256": "cf198489bb32d02b591c4e3710230aa5d595bdf52b62a6f91efdd272956da466",
+      "source_code_sha256": "f9ba2731baf3750ca9b9424b9ef59b78d4bfa6da16075e19767ea24f0eaccebc"
+    },
+    {
+      "name": "jxl-depth-1c12d8o8",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "9532e26327cdc1462cf6747ec8c0f9340930705f7f232546b95019a61335b36c",
+      "rgba16_sha256": "df28f30147ece8dbcaf5f2bc6492a0ee4d42c1f98144b343f553233088e49e40",
+      "source_code_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+    },
+    {
+      "name": "jxl-depth-1c12d9o1",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "e6392835ce9d4a07d146948a0788d69eaa854fe357626904fcb96c0691f9fc0e",
+      "rgba16_sha256": "fe8cf95e9647cc6ec40eb5b6ce0326260171e8720336fc9a8428f9560ea67edb",
+      "source_code_sha256": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710"
+    },
+    {
+      "name": "jxl-depth-1c12d10o2",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "661eacc8beae42e12a2349833eeab7d64d575093e98c458630bc753b37c73a98",
+      "rgba16_sha256": "921d0e4c594f075157a7889a4adaea272cbb77144b346164a82d00718dcb5c3c",
+      "source_code_sha256": "590308db75b985d0ac15f6a6dcfc41902282b6b0b2788552b90c62beb10bbdfd"
+    },
+    {
+      "name": "jxl-depth-1c12d12o3",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "2969b6fb0da3d46ada9266fcf52584e263d0ebce83314e8c055a5d35bced9ca4",
+      "rgba16_sha256": "ef2ab52bb82d6287c2140c07a501fb7e73f022df82dc7b0a852cd1538214bb7d",
+      "source_code_sha256": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf"
+    },
+    {
+      "name": "jxl-depth-1c12d16o4",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "fbaec72b07063d7b7a2f425ed70abc2417ae4b18c30ca89b75c634bf314bddc5",
+      "rgba16_sha256": "af9260465f226e9c412d0e1e41e0d2fda7372938658ae5231447d4f5b9bee650",
+      "source_code_sha256": "ab5a5f77174db44be12b97d0f5abe47fe6259b277081b11cb6e78fe467598de1"
+    },
+    {
+      "name": "jxl-depth-1c16d8o5",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "c75746ddf8b86e0c0b56f391ce2f06469a09cbef8d1341425c15296d82940768",
+      "rgba16_sha256": "0b5e372962f271771b71ae7e62876435af43bf64e2f64b9c0c2f0851b65b5903",
+      "source_code_sha256": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be"
+    },
+    {
+      "name": "jxl-depth-1c16d9o6",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "7847373b30557793102157932f90b32f0ee60edae1e4b27b8b58cb6464733bd1",
+      "rgba16_sha256": "1f156fc71db4ab04e7109c7528132c8346e1fbaa78c71d02ccd6c50007755e61",
+      "source_code_sha256": "160af7b3d81a50040c2454e6778899039367af176168325ac9ab61981bdea33e"
+    },
+    {
+      "name": "jxl-depth-1c16d10o7",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "beb3e1ca25374d2bd810284b69ef20723e7a6f80a7544efca3cbc6f98d0ac9de",
+      "rgba16_sha256": "329456eaa9a05489cc8e4fc925c417d2e307b9d95030981d5f5bd912aee8dc8f",
+      "source_code_sha256": "fbd2bf382615c4902f96923a2ed291080e039b3ea7ba44bcc13862e1490cac8e"
+    },
+    {
+      "name": "jxl-depth-1c16d12o8",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "86c7ad5fd922dcc741f0b7c1f7fd221588a9e685b23da60b078fc76323131505",
+      "rgba16_sha256": "544e90d8525fc40d71f2862c8ab93695284f54f67efa65fd1d05b9c5f0139bfa",
+      "source_code_sha256": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+    },
+    {
+      "name": "jxl-depth-1c16d16o1",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "4d91aff9237dd75e477e52e5ad2d60bc7ff44ea6a366ffe339bac53a1b56bad8",
+      "rgba16_sha256": "6aebfe7c5c1d1f93c51956a07b8ba64701b0fe279a00b461fc92455df01e93c2",
+      "source_code_sha256": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8"
+    },
+    {
+      "name": "jxl-depth-3c8d8o1",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "808f43e3374e6df3c9ecdd8a9c52a8ac02ba747e8b6618871e7a00ea01c1ccf6",
+      "rgba16_sha256": "90e8177cb2fd3cf77507179e26f4c34f2b70809c82c684cd1f423ca0a24fb5af",
+      "source_code_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+    },
+    {
+      "name": "jxl-depth-3c8d9o2",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "0c3a99d5fc535d478d1a5041919fe6e11b141474b7e599f47a4fefd9dc8ccd70",
+      "rgba16_sha256": "5863877bffc861a6eb6c6c2098ebfbafd14570765554d5758c1318d26af0c895",
+      "source_code_sha256": "892f321b7ed3c3ffc6335c009ed7fd01df6986722eb6a48252428ea4340fc3a0"
+    },
+    {
+      "name": "jxl-depth-3c8d10o3",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "b02599e06bbad03c73128ed33d78d03c4ffffbae99919040681ea83d18308330",
+      "rgba16_sha256": "43624c1c9a70b081e3d51b4e2c294b653130cbdd8e2bb7d91c7cc8e8c1fd8a00",
+      "source_code_sha256": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450"
+    },
+    {
+      "name": "jxl-depth-3c8d12o4",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "ec30390db72e6df74407571c877f7d93f1cf05b762608db7bf5a17d727385337",
+      "rgba16_sha256": "3eda83f98d12412fd2fb56f1a051ed80f741bfce30cd7b93317f11ed0e381aca",
+      "source_code_sha256": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1"
+    },
+    {
+      "name": "jxl-depth-3c8d16o5",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": true,
+      "jxl_sha256": "b03acbee42432ac4db0c5f6b4db36b25471ddd0dba125b2ec13e2babd82794b3",
+      "rgba16_sha256": "a4ba683f0ae357e2ae216183066a36a3068c788b64f30b2366afe40d33bc8b3c",
+      "source_code_sha256": "74927e9de11a23e11e16bdf637ced7a95b186c98c752937330b6ebbff1697894"
+    },
+    {
+      "name": "jxl-depth-3c9d8o6",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "4b7f82b2570ccdd67fab57eb57885546631e7f21288da5130482a0ee70b4c24f",
+      "rgba16_sha256": "56392354e213e4e9a8aa328383b638708fd21a09cb0a50b76464f6755b062140",
+      "source_code_sha256": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb"
+    },
+    {
+      "name": "jxl-depth-3c9d9o7",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "5f632ee00578658076d8291ec7eeae010948feb405b64851c2f8c908850b1488",
+      "rgba16_sha256": "d72515f1f12bc0ad533b3e98f24e63f3e92dfc7418297f81a0dc5a62a670b822",
+      "source_code_sha256": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db"
+    },
+    {
+      "name": "jxl-depth-3c9d10o8",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "4c07e73010b5d11d583adbebfaacefd606253fee673077f6da29beadf1071c02",
+      "rgba16_sha256": "af50aaf291c8e0681d6ba3ddd70ed011ad1763a12a60080e1944fb8490fadb7a",
+      "source_code_sha256": "f13019ba0f22bf2e2faf7349c5f7ab7c44dc1ec71ad27818fdd786297593e00d"
+    },
+    {
+      "name": "jxl-depth-3c9d12o1",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "camera-Z",
+      "embedded_icc": false,
+      "jxl_sha256": "b7ff7ab3304c0e1cd3de7bfd8eed3a1d67363b8f6597e97e5fb397d3934f8a2d",
+      "rgba16_sha256": "0e7e6e04876f34279f1a466d4d196e051042b64e5e483e4a62864782594d4294",
+      "source_code_sha256": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+    },
+    {
+      "name": "jxl-depth-3c9d16o2",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "52f124db63f4820cff90cbc065973868a671053bf935c299da97d9f843b121f8",
+      "rgba16_sha256": "9cb614d4cd0f470c19b5a5e65be27bb82dfab24e83e756cdc3b9fc835d64a7a0",
+      "source_code_sha256": "9f6f2f404ae96d6b472b1dceb45156a1824f7843f0053fa77a997609d541d0e4"
+    },
+    {
+      "name": "jxl-depth-3c10d8o3",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "a218bebbcf1ea579770d02cf850ce84946e13e8d9b405d36034cf030d189b15d",
+      "rgba16_sha256": "eada2f19423ca2b931ca5b1ae6f76c94560ca9e7016d81a8eabc9bb71236d760",
+      "source_code_sha256": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb"
+    },
+    {
+      "name": "jxl-depth-3c10d9o4",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "ed999b6eb0f43c0bbf9a39ab86d24a1efd50b0fe2897bc493eca5ef71f0430e0",
+      "rgba16_sha256": "de07474f8079e89f24420ac8ec2d49500199f3db1b9315056ab84a1a2ccbfd6a",
+      "source_code_sha256": "93e862d108ec1f4b1e9460eb32c246f4fb1f74242a8d4cc6c7d57f7d0f242f48"
+    },
+    {
+      "name": "jxl-depth-3c10d10o5",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "fc33b7e1cbd87dd91fb233c8a48700f9ab2cb673187c16d1de15b6acd1808fb3",
+      "rgba16_sha256": "91f05831991dad3063d011b654601ff57808eb14bc59b4cd82ecc03c21409760",
+      "source_code_sha256": "0bdab7f34ca861d6f8f8f3bf067ace28cb28ef4944f72b4c97019c401622af8a"
+    },
+    {
+      "name": "jxl-depth-3c10d12o6",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "d42ded2b7e98587c50f7e36c7c493cc4313ba01145679385e186876ef9002603",
+      "rgba16_sha256": "a91be83443887c498d4e2c7d9b089b744d2ee4246b20fe9c70919123da0fc179",
+      "source_code_sha256": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf"
+    },
+    {
+      "name": "jxl-depth-3c10d16o7",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "f5da1948e35d27158a7f61b2f7d3fd9e4d024b7dfd2e341ff7be9543aab2e8ca",
+      "rgba16_sha256": "c7636978ad148943fd9d0b2665fa692d6fe0c27f10c46fbb46909ea8d95259fd",
+      "source_code_sha256": "f9ba2731baf3750ca9b9424b9ef59b78d4bfa6da16075e19767ea24f0eaccebc"
+    },
+    {
+      "name": "jxl-depth-3c12d8o8",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "5db186e9b046949420105d1129b10d1ba8add8700f047a21ca2bfff05900e940",
+      "rgba16_sha256": "693303ea7a84e14943be86e73131f6728f679802d979afad6ee38428aadccb60",
+      "source_code_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+    },
+    {
+      "name": "jxl-depth-3c12d9o1",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "2a68af8ccacf1ffb6b565cd7a260a01e0b00c38d43cb287d620067789d8303c4",
+      "rgba16_sha256": "0989914f297f16c9e0c51e09db6d1888f0fc2ba9f775107571fa22d495ca0b96",
+      "source_code_sha256": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710"
+    },
+    {
+      "name": "jxl-depth-3c12d10o2",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "9db227440622629b8e0ce5775325612e01f2310606c10ab2ef3663a3ad39607a",
+      "rgba16_sha256": "4c70f1b924661ddd8ce957ab156d51b099bac8bce54a1c2812f240939e4646ee",
+      "source_code_sha256": "590308db75b985d0ac15f6a6dcfc41902282b6b0b2788552b90c62beb10bbdfd"
+    },
+    {
+      "name": "jxl-depth-3c12d12o3",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "fe0546a189041e0552e5fb0a66884a5d9a86bc5002b9f02fb02b0137e1557cba",
+      "rgba16_sha256": "fcafc1a2932035b798da34bc6fc961f07c68986ad087b63eab049b0c277fee11",
+      "source_code_sha256": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf"
+    },
+    {
+      "name": "jxl-depth-3c12d16o4",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "ce68644bb1b3e7fb90a96b9b782ab2367afdfe8f3cc618fe0b5432fd0c5b8cb7",
+      "rgba16_sha256": "f4a3def5ce52ae0b068cc3ca740c7b0a98297acc90eec3bae36c1b7883848bb7",
+      "source_code_sha256": "ab5a5f77174db44be12b97d0f5abe47fe6259b277081b11cb6e78fe467598de1"
+    },
+    {
+      "name": "jxl-depth-3c16d8o5",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": true,
+      "jxl_sha256": "97bbd3d07972d4f651d6669f0c7b166b07bbb73098c768500379c3032868872d",
+      "rgba16_sha256": "286dc9bcc6203e7b13ec9e29aaa4b77037685da9c4499bedceb9bb5dd87feff2",
+      "source_code_sha256": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be"
+    },
+    {
+      "name": "jxl-depth-3c16d9o6",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "5be90206a762ccb16abcc0b0f0d3336da8909e19cf7da5af1fb06e9ce824d930",
+      "rgba16_sha256": "92b6b255e6dc74af132a05fe3ea8b56adfad2d4167105c4ce47613e5c07eadfe",
+      "source_code_sha256": "160af7b3d81a50040c2454e6778899039367af176168325ac9ab61981bdea33e"
+    },
+    {
+      "name": "jxl-depth-3c16d10o7",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "cb8e414d707efadfab27383e52f12b01093a60f32bfe5572f766bfe4c23d8c0f",
+      "rgba16_sha256": "eb086e137d3c408482382151d07fe115f0bb4db37d097c79c5a987ed27006729",
+      "source_code_sha256": "fbd2bf382615c4902f96923a2ed291080e039b3ea7ba44bcc13862e1490cac8e"
+    },
+    {
+      "name": "jxl-depth-3c16d12o8",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "da94b156dadb252733092908c8d2197f9a9f7c2963a9f34a7eb3408735939148",
+      "rgba16_sha256": "037723d6a98c1b8452acbcb5ca7ae97563090ea20fdcb12847efd73369724d20",
+      "source_code_sha256": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+    },
+    {
+      "name": "jxl-depth-3c16d16o1",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "Depth",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "26ca888cd25352e84c32580fb576663d436ad100aec166efbf088e451d6752ff",
+      "rgba16_sha256": "7a9bf9955784c2fbd847506c47dc3aac58af3e57aaf2a86be56d6fff175c5388",
+      "source_code_sha256": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8"
+    },
+    {
+      "name": "jxl-depth-refused-depth-float",
+      "refused": true,
+      "kind": "independently C-decoded unsupported Depth storage",
+      "jxl_sha256": "04d5124da1781111e08f638f5a01a2ac9506d0dd9fff11fdb7d7633386cf73b8"
+    },
+    {
+      "name": "jxl-depth-refused-depth-subsampled",
+      "refused": true,
+      "kind": "independently C-decoded unsupported Depth storage",
+      "jxl_sha256": "4178a2d059e133be0dcfe59c6217d2344e9daa57ec80fc18c5f5cb2e538e2668"
+    }
+  ]
+}

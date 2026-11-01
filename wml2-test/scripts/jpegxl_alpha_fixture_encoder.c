@@ -10,7 +10,8 @@
 int main(int argc,char**argv) {
   CHECK(argc==11);
   unsigned subsample=0;
-  if(!strcmp(argv[9],"subsampled"))subsample=1;
+  if(!strcmp(argv[9],"depth-subsampled"))subsample=1;
+  else if(!strcmp(argv[9],"subsampled"))subsample=1;
   else if(!strcmp(argv[9],"subsampled-layers"))subsample=1;
   else if(!strcmp(argv[9],"associated-subsampled-layers"))subsample=1;
   else if(!strncmp(argv[9],"associated-subsampled-",22))subsample=(unsigned)atoi(argv[9]+22);
@@ -21,11 +22,13 @@ int main(int argc,char**argv) {
   size_t size=(size_t)w*h*(color+1)*2;unsigned char*input=malloc(size);CHECK(input);FILE*f=fopen(argv[1],"rb");CHECK(f);CHECK(fread(input,1,size,f)==size);fclose(f);
   JxlEncoder*enc=JxlEncoderCreate(NULL);CHECK(enc);JxlBasicInfo info;JxlEncoderInitBasicInfo(&info);
   info.xsize=w;info.ysize=h;info.bits_per_sample=bits;info.num_color_channels=color;info.num_extra_channels=(!strcmp(argv[9],"multiple")||!strcmp(argv[9],"multiple-alpha"))?2:1;info.alpha_bits=alpha;info.alpha_premultiplied=!strcmp(argv[9],"associated")||!strcmp(argv[9],"associated-colored-zero")||!strcmp(argv[9],"associated-layers")||!strncmp(argv[9],"associated-subsampled-",22);info.uses_original_profile=JXL_TRUE;info.orientation=(JxlOrientation)orientation;
-  const int nonalpha=!strcmp(argv[9],"depth")||!strcmp(argv[9],"spot");
+  const int isdepth=!strcmp(argv[9],"depth")||!strcmp(argv[9],"depth-named")||!strcmp(argv[9],"depth-float")||!strcmp(argv[9],"depth-subsampled");
+  const int nonalpha=isdepth||!strcmp(argv[9],"spot");
   if(nonalpha) info.alpha_bits=0;
   if(!strcmp(argv[9],"float-alpha")) info.alpha_exponent_bits=5;
   CHECK(JxlEncoderSetBasicInfo(enc,&info)==JXL_ENC_SUCCESS);
-  JxlExtraChannelInfo ec;JxlEncoderInitExtraChannelInfo(nonalpha?(!strcmp(argv[9],"depth")?JXL_CHANNEL_DEPTH:JXL_CHANNEL_SPOT_COLOR):JXL_CHANNEL_ALPHA,&ec);ec.bits_per_sample=alpha;if(subsample)ec.dim_shift=subsample;if(!strcmp(argv[9],"float-alpha"))ec.exponent_bits_per_sample=5;if(!strcmp(argv[9],"spot")){ec.spot_color[0]=1;ec.spot_color[3]=1;}ec.alpha_premultiplied=info.alpha_premultiplied;CHECK(JxlEncoderSetExtraChannelInfo(enc,0,&ec)==JXL_ENC_SUCCESS);
+  JxlExtraChannelInfo ec;JxlEncoderInitExtraChannelInfo(nonalpha?(isdepth?JXL_CHANNEL_DEPTH:JXL_CHANNEL_SPOT_COLOR):JXL_CHANNEL_ALPHA,&ec);ec.bits_per_sample=alpha;if(!strcmp(argv[9],"depth-float")){ec.bits_per_sample=16;ec.exponent_bits_per_sample=5;}if(subsample)ec.dim_shift=subsample;if(!strcmp(argv[9],"float-alpha"))ec.exponent_bits_per_sample=5;if(!strcmp(argv[9],"spot")){ec.spot_color[0]=1;ec.spot_color[3]=1;}ec.alpha_premultiplied=info.alpha_premultiplied;CHECK(JxlEncoderSetExtraChannelInfo(enc,0,&ec)==JXL_ENC_SUCCESS);
+  if(!strcmp(argv[9],"depth-named"))CHECK(JxlEncoderSetExtraChannelName(enc,0,"camera-Z",8)==JXL_ENC_SUCCESS);
   if(info.num_extra_channels==2){JxlExtraChannelInfo extra;JxlEncoderInitExtraChannelInfo(!strcmp(argv[9],"multiple-alpha")?JXL_CHANNEL_ALPHA:JXL_CHANNEL_DEPTH,&extra);extra.bits_per_sample=alpha;CHECK(JxlEncoderSetExtraChannelInfo(enc,1,&extra)==JXL_ENC_SUCCESS);}
   if(!strcmp(argv[10],"-")){JxlColorEncoding color_encoding;JxlColorEncodingSetToSRGB(&color_encoding,color==1);CHECK(JxlEncoderSetColorEncoding(enc,&color_encoding)==JXL_ENC_SUCCESS);}
   else {f=fopen(argv[10],"rb");CHECK(f);CHECK(!fseek(f,0,SEEK_END));long n=ftell(f);CHECK(n>0&&n<=65536);rewind(f);unsigned char*icc=malloc(n);CHECK(icc);CHECK(fread(icc,1,n,f)==(size_t)n);fclose(f);CHECK(JxlEncoderSetICCProfile(enc,icc,n)==JXL_ENC_SUCCESS);free(icc);}
@@ -34,7 +37,7 @@ int main(int argc,char**argv) {
    * including RGB=0 at alpha=0. The colored-zero stress mode deliberately
    * retains nonzero hidden RGB at alpha=0. Input is normalized little-endian U16. */
   if(info.alpha_premultiplied){for(size_t i=0;i<(size_t)w*h;i++){unsigned char*p=input+i*(color+1)*2;uint32_t a=p[color*2]|((uint32_t)p[color*2+1]<<8);for(unsigned c=0;c<color;c++){uint32_t v=p[c*2]|((uint32_t)p[c*2+1]<<8);if(a||strcmp(argv[9],"associated-colored-zero"))v=(v*a+32767)/65535;p[c*2]=v&255;p[c*2+1]=v>>8;}}}
-  if(!strcmp(argv[9],"float-alpha")){for(size_t i=0;i<(size_t)w*h;i++){unsigned char*v=input+(i*(color+1)+color)*2;v[0]=v[1]=(i%2)?255:0;}}
+  if(!strcmp(argv[9],"float-alpha")||!strcmp(argv[9],"depth-float")){for(size_t i=0;i<(size_t)w*h;i++){unsigned char*v=input+(i*(color+1)+color)*2;v[0]=v[1]=(i%2)?255:0;}}
   JxlPixelFormat format={nonalpha?color:color+1,JXL_TYPE_UINT16,JXL_LITTLE_ENDIAN,0};JxlBitDepth depth={JXL_BIT_DEPTH_FROM_PIXEL_FORMAT,0,0};CHECK(JxlEncoderSetFrameBitDepth(settings,&depth)==JXL_ENC_SUCCESS);unsigned char*plane=malloc((size_t)w*h*2);CHECK(plane);
   for(size_t i=0;i<(size_t)w*h;i++)memcpy(plane+i*2,input+(i*(color+1)+color)*2,2);
   if(nonalpha){for(size_t i=0;i<(size_t)w*h;i++)memmove(input+i*color*2,input+i*(color+1)*2,color*2);size=(size_t)w*h*color*2;}

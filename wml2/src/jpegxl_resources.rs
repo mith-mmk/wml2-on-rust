@@ -448,4 +448,46 @@ pub(crate) mod tests {
         bad[128..132].copy_from_slice(&u32::MAX.to_be_bytes());
         assert!(cms_profiles(&bad, profile).is_err());
     }
+    #[test]
+    fn each_extra_output_reservation_refuses_without_publishing_either_plane() {
+        let _reset = ResetFault;
+        let input = include_bytes!("../tests/fixtures/review/jxl-depth-3c8d16o5.jxl");
+        for key in [
+            "extra formats",
+            "extra source header",
+            "extra source ICC",
+            "extra output ICC",
+            "extra color buffer",
+            "extra Depth buffer",
+            "extra output buffers",
+            "extra plane descriptors",
+        ] {
+            COPY_KEY.with(|f| f.set(Some(key)));
+            FAILED_BYTES.with(|f| f.set(0));
+            let result =
+                super::super::image_with_extra_channels_from_with_resource_limits_and_cancel(
+                    input,
+                    DecodeLimits::default(),
+                    JxlResourceLimits::default(),
+                    &|| false,
+                );
+            assert!(
+                result
+                    .unwrap_err()
+                    .is::<std::collections::TryReserveError>(),
+                "{key}"
+            );
+            assert_eq!(COPY_KEY.with(Cell::get), None);
+            assert!(FAILED_BYTES.with(Cell::get) > 0, "{key}");
+        }
+        assert!(
+            super::super::image_with_extra_channels_from_with_resource_limits_and_cancel(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| false
+            )
+            .is_ok()
+        );
+    }
 }

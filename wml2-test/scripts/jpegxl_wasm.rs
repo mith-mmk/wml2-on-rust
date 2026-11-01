@@ -356,7 +356,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
-    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases() + subsampled_cases() + associated_subsampling_cases()
+    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases() + subsampled_cases() + associated_subsampling_cases() + extra_plane_cases()
 }
 
 fn intrinsic_cases() -> u32 {
@@ -801,4 +801,56 @@ fn associated_subsampling_cases()->u32 {
  let(mut lo,mut hi)=(0,64<<20);while lo<hi{let mid=lo+(hi-lo)/2;if wml2::jpegxl::image_from_with_resource_limits(input,DecodeLimits::default(),wml2::jpegxl::JxlResourceLimits{workspace_bytes:mid,..Default::default()}).is_ok(){hi=mid}else{lo=mid+1}}
  assert!(wml2::jpegxl::image_from_with_resource_limits(input,DecodeLimits::default(),wml2::jpegxl::JxlResourceLimits{workspace_bytes:lo,..Default::default()}).is_ok());assert!(wml2::jpegxl::image_from_with_resource_limits(input,DecodeLimits::default(),wml2::jpegxl::JxlResourceLimits{workspace_bytes:lo-1,..Default::default()}).is_err());
  count+1
+}
+
+fn extra_plane_cases() -> u32 {
+    use wml2::jpegxl::{image_with_extra_channels_from_with_resource_limits_and_cancel as extra, JxlResourceLimits, DecodeCancelled};
+    let mut count = 0;
+    for (input, color, depth, cb, db, o) in include!("../../wml2/tests/jpeg_xl/depth_cases.rs") {
+        let im = extra(input, DecodeLimits::default(), JxlResourceLimits::default(), &|| false).unwrap();
+        assert_eq!(im.color_bits_per_sample, cb);
+        assert_eq!(im.source_orientation, o);
+        assert_eq!(im.extra_planes.len(), 1);
+        let p = &im.extra_planes[0];
+        assert_eq!(p.bits_per_sample, db);
+        assert_eq!(p.source_index, 0);
+        assert_eq!(p.samples, words(depth, 16));
+        let expected = words(color, 16);
+        for (i, (a,b)) in im.rgba16.iter().zip(&expected).enumerate() {
+            assert!(a.abs_diff(*b) <= 1);
+            if i % 4 == 3 {assert_eq!(*a, 65535);}
+        }
+        assert!(input.windows(im.source_header.len()).any(|b| b == im.source_header));
+        assert!(image_from(input).is_err());
+        count += 1;
+    }
+    for input in [include_bytes!("../../wml2/tests/fixtures/review/jxl-gray16.jxl").as_slice(), include_bytes!("../../wml2/tests/fixtures/review/jxl-rgb16.jxl").as_slice()] {
+        assert!(extra(input, DecodeLimits::default(), JxlResourceLimits::default(), &|| false).unwrap().extra_planes.is_empty()); count += 1;
+    }
+    let input = include_bytes!("../../wml2/tests/fixtures/review/jxl-depth-3c8d16o5.jxl");
+    for (cap, accepted) in [(349, false), (350, true)] {
+        assert_eq!(extra(input, DecodeLimits {animation_bytes:cap, ..Default::default()}, JxlResourceLimits::default(), &||false).is_ok(),accepted);
+    }
+    let (mut lo, mut hi) = (0, 64 << 20);
+    while lo < hi {
+        let mid = lo + (hi-lo)/2;
+        if extra(input,DecodeLimits::default(),JxlResourceLimits{workspace_bytes:mid,..Default::default()},&||false).is_ok(){hi=mid}else{lo=mid+1}
+    }
+    for (cap, accepted) in [(lo-1, false), (lo, true)] {
+        assert_eq!(extra(input, DecodeLimits::default(), JxlResourceLimits{workspace_bytes:cap,..Default::default()}, &||false).is_ok(),accepted);
+    }
+    count += 1;
+    let probes = std::cell::Cell::new(0);
+    drop(extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||{probes.set(probes.get()+1);false}).unwrap());
+    assert!(probes.get()>10);
+    for stop in 1..=probes.get() {
+        let n=std::cell::Cell::new(0);
+        let e=extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||{n.set(n.get()+1);n.get()==stop}).unwrap_err();
+        assert!(e.is::<DecodeCancelled>());
+    }
+    count += 1;
+    for input in [include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-spot.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-multiple.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-depth-refused-depth-float.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-depth-refused-depth-subsampled.jxl").as_slice()] {
+        assert!(extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||false).is_err());
+    }
+    count + 1
 }

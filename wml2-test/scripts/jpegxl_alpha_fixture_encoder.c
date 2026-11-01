@@ -10,7 +10,7 @@
 int main(int argc,char**argv) {
   CHECK(argc==11);
   unsigned subsample=0;
-  if(!strcmp(argv[9],"depth-subsampled"))subsample=1;
+  if(!strcmp(argv[9],"depth-subsampled")||!strcmp(argv[9],"selection-subsampled"))subsample=1;
   else if(!strcmp(argv[9],"subsampled"))subsample=1;
   else if(!strcmp(argv[9],"subsampled-layers"))subsample=1;
   else if(!strcmp(argv[9],"associated-subsampled-layers"))subsample=1;
@@ -21,15 +21,16 @@ int main(int argc,char**argv) {
   CHECK(w&&h&&w<=1024&&h<=1024&&(color==1||color==3)&&bits>=8&&bits<=16&&alpha>=1&&alpha<=16&&orientation>=1&&orientation<=8);
   size_t size=(size_t)w*h*(color+1)*2;unsigned char*input=malloc(size);CHECK(input);FILE*f=fopen(argv[1],"rb");CHECK(f);CHECK(fread(input,1,size,f)==size);fclose(f);
   JxlEncoder*enc=JxlEncoderCreate(NULL);CHECK(enc);JxlBasicInfo info;JxlEncoderInitBasicInfo(&info);
-  info.xsize=w;info.ysize=h;info.bits_per_sample=bits;info.num_color_channels=color;info.num_extra_channels=(!strcmp(argv[9],"multiple")||!strcmp(argv[9],"multiple-alpha"))?2:1;info.alpha_bits=alpha;info.alpha_premultiplied=!strcmp(argv[9],"associated")||!strcmp(argv[9],"associated-colored-zero")||!strcmp(argv[9],"associated-layers")||!strncmp(argv[9],"associated-subsampled-",22);info.uses_original_profile=JXL_TRUE;info.orientation=(JxlOrientation)orientation;
+  info.xsize=w;info.ysize=h;info.bits_per_sample=bits;info.num_color_channels=color;info.num_extra_channels=(!strcmp(argv[9],"multiple")||!strcmp(argv[9],"multiple-alpha")||!strcmp(argv[9],"selection-multiple"))?2:1;info.alpha_bits=alpha;info.alpha_premultiplied=!strcmp(argv[9],"associated")||!strcmp(argv[9],"associated-colored-zero")||!strcmp(argv[9],"associated-layers")||!strncmp(argv[9],"associated-subsampled-",22);info.uses_original_profile=JXL_TRUE;info.orientation=(JxlOrientation)orientation;
   const int isdepth=!strcmp(argv[9],"depth")||!strcmp(argv[9],"depth-named")||!strcmp(argv[9],"depth-float")||!strcmp(argv[9],"depth-subsampled");
-  const int nonalpha=isdepth||!strcmp(argv[9],"spot");
+  const int isselection=!strcmp(argv[9],"selection")||!strcmp(argv[9],"selection-named")||!strcmp(argv[9],"selection-float")||!strcmp(argv[9],"selection-subsampled")||!strcmp(argv[9],"selection-multiple");
+  const int nonalpha=isdepth||isselection||!strcmp(argv[9],"spot");
   if(nonalpha) info.alpha_bits=0;
   if(!strcmp(argv[9],"float-alpha")) info.alpha_exponent_bits=5;
   CHECK(JxlEncoderSetBasicInfo(enc,&info)==JXL_ENC_SUCCESS);
-  JxlExtraChannelInfo ec;JxlEncoderInitExtraChannelInfo(nonalpha?(isdepth?JXL_CHANNEL_DEPTH:JXL_CHANNEL_SPOT_COLOR):JXL_CHANNEL_ALPHA,&ec);ec.bits_per_sample=alpha;if(!strcmp(argv[9],"depth-float")){ec.bits_per_sample=16;ec.exponent_bits_per_sample=5;}if(subsample)ec.dim_shift=subsample;if(!strcmp(argv[9],"float-alpha"))ec.exponent_bits_per_sample=5;if(!strcmp(argv[9],"spot")){ec.spot_color[0]=1;ec.spot_color[3]=1;}ec.alpha_premultiplied=info.alpha_premultiplied;CHECK(JxlEncoderSetExtraChannelInfo(enc,0,&ec)==JXL_ENC_SUCCESS);
-  if(!strcmp(argv[9],"depth-named"))CHECK(JxlEncoderSetExtraChannelName(enc,0,"camera-Z",8)==JXL_ENC_SUCCESS);
-  if(info.num_extra_channels==2){JxlExtraChannelInfo extra;JxlEncoderInitExtraChannelInfo(!strcmp(argv[9],"multiple-alpha")?JXL_CHANNEL_ALPHA:JXL_CHANNEL_DEPTH,&extra);extra.bits_per_sample=alpha;CHECK(JxlEncoderSetExtraChannelInfo(enc,1,&extra)==JXL_ENC_SUCCESS);}
+  JxlExtraChannelInfo ec;JxlEncoderInitExtraChannelInfo(nonalpha?(isdepth?JXL_CHANNEL_DEPTH:(isselection?JXL_CHANNEL_SELECTION_MASK:JXL_CHANNEL_SPOT_COLOR)):JXL_CHANNEL_ALPHA,&ec);ec.bits_per_sample=alpha;if(!strcmp(argv[9],"depth-float")||!strcmp(argv[9],"selection-float")){ec.bits_per_sample=16;ec.exponent_bits_per_sample=5;}if(subsample)ec.dim_shift=subsample;if(!strcmp(argv[9],"float-alpha"))ec.exponent_bits_per_sample=5;if(!strcmp(argv[9],"spot")){ec.spot_color[0]=1;ec.spot_color[3]=1;}ec.alpha_premultiplied=info.alpha_premultiplied;CHECK(JxlEncoderSetExtraChannelInfo(enc,0,&ec)==JXL_ENC_SUCCESS);
+  if(!strcmp(argv[9],"depth-named")||!strcmp(argv[9],"selection-named"))CHECK(JxlEncoderSetExtraChannelName(enc,0,"camera-Z",8)==JXL_ENC_SUCCESS);
+  if(info.num_extra_channels==2){JxlExtraChannelInfo extra;JxlEncoderInitExtraChannelInfo(isselection?JXL_CHANNEL_SELECTION_MASK:(!strcmp(argv[9],"multiple-alpha")?JXL_CHANNEL_ALPHA:JXL_CHANNEL_DEPTH),&extra);extra.bits_per_sample=alpha;CHECK(JxlEncoderSetExtraChannelInfo(enc,1,&extra)==JXL_ENC_SUCCESS);}
   if(!strcmp(argv[10],"-")){JxlColorEncoding color_encoding;JxlColorEncodingSetToSRGB(&color_encoding,color==1);CHECK(JxlEncoderSetColorEncoding(enc,&color_encoding)==JXL_ENC_SUCCESS);}
   else {f=fopen(argv[10],"rb");CHECK(f);CHECK(!fseek(f,0,SEEK_END));long n=ftell(f);CHECK(n>0&&n<=65536);rewind(f);unsigned char*icc=malloc(n);CHECK(icc);CHECK(fread(icc,1,n,f)==(size_t)n);fclose(f);CHECK(JxlEncoderSetICCProfile(enc,icc,n)==JXL_ENC_SUCCESS);free(icc);}
   JxlEncoderFrameSettings*settings=JxlEncoderFrameSettingsCreate(enc,NULL);CHECK(settings);CHECK(JxlEncoderSetFrameLossless(settings,subsample==0)==JXL_ENC_SUCCESS);if(subsample){CHECK(JxlEncoderSetFrameDistance(settings,0)==JXL_ENC_SUCCESS);CHECK(JxlEncoderFrameSettingsSetOption(settings,JXL_ENC_FRAME_SETTING_MODULAR,1)==JXL_ENC_SUCCESS);CHECK(JxlEncoderFrameSettingsSetOption(settings,JXL_ENC_FRAME_SETTING_EXTRA_CHANNEL_RESAMPLING,1<<subsample)==JXL_ENC_SUCCESS);}CHECK(JxlEncoderFrameSettingsSetOption(settings,JXL_ENC_FRAME_SETTING_EFFORT,3)==JXL_ENC_SUCCESS);CHECK(JxlEncoderFrameSettingsSetOption(settings,JXL_ENC_FRAME_SETTING_KEEP_INVISIBLE,1)==JXL_ENC_SUCCESS);
@@ -37,7 +38,7 @@ int main(int argc,char**argv) {
    * including RGB=0 at alpha=0. The colored-zero stress mode deliberately
    * retains nonzero hidden RGB at alpha=0. Input is normalized little-endian U16. */
   if(info.alpha_premultiplied){for(size_t i=0;i<(size_t)w*h;i++){unsigned char*p=input+i*(color+1)*2;uint32_t a=p[color*2]|((uint32_t)p[color*2+1]<<8);for(unsigned c=0;c<color;c++){uint32_t v=p[c*2]|((uint32_t)p[c*2+1]<<8);if(a||strcmp(argv[9],"associated-colored-zero"))v=(v*a+32767)/65535;p[c*2]=v&255;p[c*2+1]=v>>8;}}}
-  if(!strcmp(argv[9],"float-alpha")||!strcmp(argv[9],"depth-float")){for(size_t i=0;i<(size_t)w*h;i++){unsigned char*v=input+(i*(color+1)+color)*2;v[0]=v[1]=(i%2)?255:0;}}
+  if(!strcmp(argv[9],"float-alpha")||!strcmp(argv[9],"depth-float")||!strcmp(argv[9],"selection-float")){for(size_t i=0;i<(size_t)w*h;i++){unsigned char*v=input+(i*(color+1)+color)*2;v[0]=v[1]=(i%2)?255:0;}}
   JxlPixelFormat format={nonalpha?color:color+1,JXL_TYPE_UINT16,JXL_LITTLE_ENDIAN,0};JxlBitDepth depth={JXL_BIT_DEPTH_FROM_PIXEL_FORMAT,0,0};CHECK(JxlEncoderSetFrameBitDepth(settings,&depth)==JXL_ENC_SUCCESS);unsigned char*plane=malloc((size_t)w*h*2);CHECK(plane);
   for(size_t i=0;i<(size_t)w*h;i++)memcpy(plane+i*2,input+(i*(color+1)+color)*2,2);
   if(nonalpha){for(size_t i=0;i<(size_t)w*h;i++)memmove(input+i*color*2,input+i*(color+1)*2,color*2);size=(size_t)w*h*color*2;}
@@ -45,6 +46,7 @@ int main(int argc,char**argv) {
   if(!strcmp(argv[9],"associated-layers")||!strcmp(argv[9],"subsampled-layers")||!strcmp(argv[9],"associated-subsampled-layers"))CHECK(JxlEncoderAddImageFrame(settings,&format,input,size)==JXL_ENC_SUCCESS);
   JxlPixelFormat extra_format={1,JXL_TYPE_UINT16,JXL_LITTLE_ENDIAN,0};
   if(nonalpha||info.num_extra_channels==2)CHECK(JxlEncoderSetExtraChannelBuffer(settings,&extra_format,plane,(size_t)w*h*2,nonalpha?0:1)==JXL_ENC_SUCCESS);
+  if(isselection&&info.num_extra_channels==2)CHECK(JxlEncoderSetExtraChannelBuffer(settings,&extra_format,plane,(size_t)w*h*2,1)==JXL_ENC_SUCCESS);
   free(plane);JxlEncoderCloseInput(enc);
   size_t cap=1024*1024,available=cap;unsigned char*out=malloc(cap),*next=out;CHECK(out);CHECK(JxlEncoderProcessOutput(enc,&next,&available)==JXL_ENC_SUCCESS);f=fopen(argv[2],"wb");CHECK(f);CHECK(fwrite(out,1,cap-available,f)==cap-available);fclose(f);JxlEncoderDestroy(enc);free(input);free(out);return 0;
 }

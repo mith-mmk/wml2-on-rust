@@ -2,7 +2,8 @@
 
 This is a production implementation on an **unmerged draft stack**, based on
 PR #87 (`133be97de10c4cd0e9defb29dd26dd77db793ee4`), including #72/#73/#75.
-Main0.0.41 has not acquired this functionality. It partially implements #42's
+Main0.0.41 has not acquired this functionality. A subsequent additive
+[SelectionMask subset](jpeg-xl-selection-plane.md) reuses this API and envelope. It partially implements #42's
 non-alpha extra-plane contract; #42 stays open. No dependency versions changed.
 
 `jpegxl::image_with_extra_channels_from_with_resource_limits_and_cancel` returns

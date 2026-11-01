@@ -1,0 +1,1126 @@
+{
+  "reference": "Independent C libjxl0.11.2 color RGBA16 and normalized extra U16; source-code recovery verified against authored integer codes and independent orientation map",
+  "generator_sha256": "32789c0b78fc15643fd99b0e43cb7d06fd058049068cbdefb0fb183235512fb5",
+  "encoder_sha256": "245e2394be7da3bbc4a484c8629e8da15d8722717b18fc9581d2d830e8fc0ce8",
+  "reference_sha256": "7c37d8360a46f553cd5b424960e6053f9d5e7585576d71561708bd1b1620ecb8",
+  "cases": [
+    {
+      "name": "jxl-selection-1c8d8o1",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "406bafd8f3790b473335504b7db962b05505848ac85a44a06f999fa931ad047d",
+      "rgba16_sha256": "b9dab0d6f9e16e5647034070845aa19bebe23bb9f4bdcf92e34d5d6b106317e1",
+      "source_code_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+    },
+    {
+      "name": "jxl-selection-1c8d9o2",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "6cd3dd9f33b2db63c0d90daeda4912183a4b46d895def0d66ad3245c0d4e2b16",
+      "rgba16_sha256": "3a12a2bfacb99ad329828853bf6bf70a1a5a2c17e47effd1bf2ce0e9a87c997c",
+      "source_code_sha256": "892f321b7ed3c3ffc6335c009ed7fd01df6986722eb6a48252428ea4340fc3a0"
+    },
+    {
+      "name": "jxl-selection-1c8d10o3",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "354a8ec9846ea4c18342b1b7cc393d79d32c9c9860ffec38627c000a46f02e9a",
+      "rgba16_sha256": "60c0d500ca917efbb2d82509086259c05f09e3cdc6d628d7b43cdfad5d2da789",
+      "source_code_sha256": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450"
+    },
+    {
+      "name": "jxl-selection-1c8d12o4",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "c062a98a1406775edd116ce95f87f4aed2b81f57691a5dcb689f22e6f894391a",
+      "rgba16_sha256": "8215f7d9127f5ef26af21021d47d868ae66173f9d848aacbaf5d45f5353f5af8",
+      "source_code_sha256": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1"
+    },
+    {
+      "name": "jxl-selection-1c8d16o5",
+      "color_channels": 1,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "ec01a2e3dfd2fcf94d5b8773a4989e6750ad11be18ea348a72a2f9d24e7608d2",
+      "rgba16_sha256": "1d841313293bf5e3448cdbfadab31c0b74ca7d222fd293fa85a07e423469e9b4",
+      "source_code_sha256": "74927e9de11a23e11e16bdf637ced7a95b186c98c752937330b6ebbff1697894"
+    },
+    {
+      "name": "jxl-selection-1c9d8o6",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "f212bdaf5a69b53bc309e908f7bfaec722d958048411299fe9c72d4e1b06128a",
+      "rgba16_sha256": "3fd03771186910d1a18850e1571943a25179759ac9441f8d658a0222174916d2",
+      "source_code_sha256": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb"
+    },
+    {
+      "name": "jxl-selection-1c9d9o7",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "2c35e6e62503bdfdab197030c49f27d44c5477a3361e51870270646d88e33f77",
+      "rgba16_sha256": "ec97af58a28a437ac18de5aaac84be3b7b4aed5805381c9bc4cae5da65e326f9",
+      "source_code_sha256": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db"
+    },
+    {
+      "name": "jxl-selection-1c9d10o8",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "e587d493e856bbcb38e0cbdbfe63408168a1ae98bcebe9c8c3d630c6de403a70",
+      "rgba16_sha256": "1f7f6c08955ed5386623bf3bfa037608f1acea9547db494e9ddd17fa236acb0a",
+      "source_code_sha256": "f13019ba0f22bf2e2faf7349c5f7ab7c44dc1ec71ad27818fdd786297593e00d"
+    },
+    {
+      "name": "jxl-selection-1c9d12o1",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "camera-Z",
+      "embedded_icc": false,
+      "jxl_sha256": "699a4a63055e1ff25442db8bf75ff4542199d7275e618e4c88bfa8d8c1124639",
+      "rgba16_sha256": "9533629cf818b4be7dbf7fa0fad55eb5682335b7f4b02e371cbc18a38d5629c2",
+      "source_code_sha256": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+    },
+    {
+      "name": "jxl-selection-1c9d16o2",
+      "color_channels": 1,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "05055d842ad0ffb8a4d5610ce0b88852c025dfe045517a975af36002cfe43bae",
+      "rgba16_sha256": "a28abeb6e867a7ec326aed1e9fabc9bb1a37fbd680d46beea06f550224997920",
+      "source_code_sha256": "9f6f2f404ae96d6b472b1dceb45156a1824f7843f0053fa77a997609d541d0e4"
+    },
+    {
+      "name": "jxl-selection-1c10d8o3",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "00a798cfb6ead90cd60d560c98b13063b6d48aa4051553725c3ec974c13ef958",
+      "rgba16_sha256": "c9e5c7029fc52571737664bfb56e4bad7c568cba83378e169b15e75b77c3d501",
+      "source_code_sha256": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb"
+    },
+    {
+      "name": "jxl-selection-1c10d9o4",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "0ac911bf9739af5673f308ffcd1c505e694676e1d44748b20856660096c6bf67",
+      "rgba16_sha256": "f9f2b9a17e998a07f73e8a952cd6dfa17e28ec2ec023d764ea17f250dd0175c0",
+      "source_code_sha256": "93e862d108ec1f4b1e9460eb32c246f4fb1f74242a8d4cc6c7d57f7d0f242f48"
+    },
+    {
+      "name": "jxl-selection-1c10d10o5",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "143fcfa147f6db1187fc3730ba19677071b32fccf31805aca321701c59a970f0",
+      "rgba16_sha256": "320905a9390ca41268e43fe92847ca14dfe37453ac928f0ce3e7612fb589913d",
+      "source_code_sha256": "0bdab7f34ca861d6f8f8f3bf067ace28cb28ef4944f72b4c97019c401622af8a"
+    },
+    {
+      "name": "jxl-selection-1c10d12o6",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "a49449669c33cfdc0880783b7276e86ca7d0310b948a31cbebbd25b9771e9e3d",
+      "rgba16_sha256": "f6cbcfb132ec09678e6f2d107cfa7bd1d76fbfb3788cc08be44567e3289407c7",
+      "source_code_sha256": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf"
+    },
+    {
+      "name": "jxl-selection-1c10d16o7",
+      "color_channels": 1,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "5191c7cb09574b421347c234a702367651d606de12b411c54fc022aa718cecfd",
+      "rgba16_sha256": "cf198489bb32d02b591c4e3710230aa5d595bdf52b62a6f91efdd272956da466",
+      "source_code_sha256": "f9ba2731baf3750ca9b9424b9ef59b78d4bfa6da16075e19767ea24f0eaccebc"
+    },
+    {
+      "name": "jxl-selection-1c12d8o8",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "07c41c4eeb0fda62d34796aad7d3fa3738daae4e8ff5e273cb4b6bd6ce792085",
+      "rgba16_sha256": "df28f30147ece8dbcaf5f2bc6492a0ee4d42c1f98144b343f553233088e49e40",
+      "source_code_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+    },
+    {
+      "name": "jxl-selection-1c12d9o1",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "1472d06c8356172b286f2094dec1ca197b3eb94fbfc68bc17b0b913108f92769",
+      "rgba16_sha256": "fe8cf95e9647cc6ec40eb5b6ce0326260171e8720336fc9a8428f9560ea67edb",
+      "source_code_sha256": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710"
+    },
+    {
+      "name": "jxl-selection-1c12d10o2",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "6f7c62f2c851730bb178c0913e5f4de3a5f14706c9450078b3849ff1fc09cbc6",
+      "rgba16_sha256": "921d0e4c594f075157a7889a4adaea272cbb77144b346164a82d00718dcb5c3c",
+      "source_code_sha256": "590308db75b985d0ac15f6a6dcfc41902282b6b0b2788552b90c62beb10bbdfd"
+    },
+    {
+      "name": "jxl-selection-1c12d12o3",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "b870341b81fd3b471e8bfac3bd469a33f2673443ae17da079e8c5e63a257858d",
+      "rgba16_sha256": "ef2ab52bb82d6287c2140c07a501fb7e73f022df82dc7b0a852cd1538214bb7d",
+      "source_code_sha256": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf"
+    },
+    {
+      "name": "jxl-selection-1c12d16o4",
+      "color_channels": 1,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "18868bd15f1b598af5e9246f7fa6151ddb87fa19f9f49524da44eb613c7020a9",
+      "rgba16_sha256": "af9260465f226e9c412d0e1e41e0d2fda7372938658ae5231447d4f5b9bee650",
+      "source_code_sha256": "ab5a5f77174db44be12b97d0f5abe47fe6259b277081b11cb6e78fe467598de1"
+    },
+    {
+      "name": "jxl-selection-1c16d8o5",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "f34045e38b18322f1cfe7ee0978211080e19f2f0696b1c30e5d47278de035e77",
+      "rgba16_sha256": "0b5e372962f271771b71ae7e62876435af43bf64e2f64b9c0c2f0851b65b5903",
+      "source_code_sha256": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be"
+    },
+    {
+      "name": "jxl-selection-1c16d9o6",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "1d3f73aa9e5f9763afd3c08f7c5c2015804a8907a886c7d1532c629900a27356",
+      "rgba16_sha256": "1f156fc71db4ab04e7109c7528132c8346e1fbaa78c71d02ccd6c50007755e61",
+      "source_code_sha256": "160af7b3d81a50040c2454e6778899039367af176168325ac9ab61981bdea33e"
+    },
+    {
+      "name": "jxl-selection-1c16d10o7",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "0a6af3565ac033e5f54e57c0a3000c3bd27a560e74f0b2eb1de4dd16cf350b50",
+      "rgba16_sha256": "329456eaa9a05489cc8e4fc925c417d2e307b9d95030981d5f5bd912aee8dc8f",
+      "source_code_sha256": "fbd2bf382615c4902f96923a2ed291080e039b3ea7ba44bcc13862e1490cac8e"
+    },
+    {
+      "name": "jxl-selection-1c16d12o8",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "fa36ac46cb6962ee142809aa71e04c56eefe3f3fc6ba120ff04ef2d15ae7ceac",
+      "rgba16_sha256": "544e90d8525fc40d71f2862c8ab93695284f54f67efa65fd1d05b9c5f0139bfa",
+      "source_code_sha256": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+    },
+    {
+      "name": "jxl-selection-1c16d16o1",
+      "color_channels": 1,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "786db3dd9e3f89f26422a4c86194d0febae9d26128dd3fff01fddc5f67849851",
+      "rgba16_sha256": "6aebfe7c5c1d1f93c51956a07b8ba64701b0fe279a00b461fc92455df01e93c2",
+      "source_code_sha256": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8"
+    },
+    {
+      "name": "jxl-selection-3c8d8o1",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "7a28b7ab1830d3aa6c59ffa0fb15103f711d72cbca6cb83fa8e0ff50427cc1ad",
+      "rgba16_sha256": "90e8177cb2fd3cf77507179e26f4c34f2b70809c82c684cd1f423ca0a24fb5af",
+      "source_code_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+    },
+    {
+      "name": "jxl-selection-3c8d9o2",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "06b475229ca841ea8b6855e669d702f2f6651cddf719c01dc980d190e91ff266",
+      "rgba16_sha256": "5863877bffc861a6eb6c6c2098ebfbafd14570765554d5758c1318d26af0c895",
+      "source_code_sha256": "892f321b7ed3c3ffc6335c009ed7fd01df6986722eb6a48252428ea4340fc3a0"
+    },
+    {
+      "name": "jxl-selection-3c8d10o3",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "8012257273e1446ab7937db1ddc1770e604a9583fbd8a9817ae57ab96b98dd46",
+      "rgba16_sha256": "43624c1c9a70b081e3d51b4e2c294b653130cbdd8e2bb7d91c7cc8e8c1fd8a00",
+      "source_code_sha256": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450"
+    },
+    {
+      "name": "jxl-selection-3c8d12o4",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "53e3b22b2aaac4750f818876605de224415f1cf177a31fcfed757b422fe6e9e9",
+      "rgba16_sha256": "3eda83f98d12412fd2fb56f1a051ed80f741bfce30cd7b93317f11ed0e381aca",
+      "source_code_sha256": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1"
+    },
+    {
+      "name": "jxl-selection-3c8d16o5",
+      "color_channels": 3,
+      "color_bits": 8,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": true,
+      "jxl_sha256": "8307db41dd4807335608bbe103813f8def87a60b4c141a7674d47c79ac3867d4",
+      "rgba16_sha256": "a4ba683f0ae357e2ae216183066a36a3068c788b64f30b2366afe40d33bc8b3c",
+      "source_code_sha256": "74927e9de11a23e11e16bdf637ced7a95b186c98c752937330b6ebbff1697894"
+    },
+    {
+      "name": "jxl-selection-3c9d8o6",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "ef0171350e0ac6846a9a40e85ef6983ce288648442f66a48c796413d69ad27b6",
+      "rgba16_sha256": "56392354e213e4e9a8aa328383b638708fd21a09cb0a50b76464f6755b062140",
+      "source_code_sha256": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb"
+    },
+    {
+      "name": "jxl-selection-3c9d9o7",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "7ce65dfaf1191bfcd1431019735585643e3dc3f2b376fd9d219fa2f5c6a4aa69",
+      "rgba16_sha256": "d72515f1f12bc0ad533b3e98f24e63f3e92dfc7418297f81a0dc5a62a670b822",
+      "source_code_sha256": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db"
+    },
+    {
+      "name": "jxl-selection-3c9d10o8",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "667fdca9fefe194064761ce8232b690a75ebb2b00ddd622904f5f37af5689a15",
+      "rgba16_sha256": "af50aaf291c8e0681d6ba3ddd70ed011ad1763a12a60080e1944fb8490fadb7a",
+      "source_code_sha256": "f13019ba0f22bf2e2faf7349c5f7ab7c44dc1ec71ad27818fdd786297593e00d"
+    },
+    {
+      "name": "jxl-selection-3c9d12o1",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "camera-Z",
+      "embedded_icc": false,
+      "jxl_sha256": "c2ead145a362cbc9bf7595550907d0c5731f6ff04775261d1e4865968b873d49",
+      "rgba16_sha256": "0e7e6e04876f34279f1a466d4d196e051042b64e5e483e4a62864782594d4294",
+      "source_code_sha256": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+    },
+    {
+      "name": "jxl-selection-3c9d16o2",
+      "color_channels": 3,
+      "color_bits": 9,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "efafd77587833bdbf36dde6ee870ce99f69a083ad5fa2c7b1c9b1b08222daf2c",
+      "rgba16_sha256": "9cb614d4cd0f470c19b5a5e65be27bb82dfab24e83e756cdc3b9fc835d64a7a0",
+      "source_code_sha256": "9f6f2f404ae96d6b472b1dceb45156a1824f7843f0053fa77a997609d541d0e4"
+    },
+    {
+      "name": "jxl-selection-3c10d8o3",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "7a311d454b7d988355c863064e3622df9c7772700b041d645083df150b889d19",
+      "rgba16_sha256": "eada2f19423ca2b931ca5b1ae6f76c94560ca9e7016d81a8eabc9bb71236d760",
+      "source_code_sha256": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb"
+    },
+    {
+      "name": "jxl-selection-3c10d9o4",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "af8a8187f98912469a446cd19f66a10e51fa563de0aa5d565f676456d1258975",
+      "rgba16_sha256": "de07474f8079e89f24420ac8ec2d49500199f3db1b9315056ab84a1a2ccbfd6a",
+      "source_code_sha256": "93e862d108ec1f4b1e9460eb32c246f4fb1f74242a8d4cc6c7d57f7d0f242f48"
+    },
+    {
+      "name": "jxl-selection-3c10d10o5",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "f9be88edba984099cac9a38ff634ba521edd6d2226ab115b197f9fd451895107",
+      "rgba16_sha256": "91f05831991dad3063d011b654601ff57808eb14bc59b4cd82ecc03c21409760",
+      "source_code_sha256": "0bdab7f34ca861d6f8f8f3bf067ace28cb28ef4944f72b4c97019c401622af8a"
+    },
+    {
+      "name": "jxl-selection-3c10d12o6",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "9a8eb301db1fe1b52dbe5b41284f76bfe7d4ab510d05896f632bdc3472573a7f",
+      "rgba16_sha256": "a91be83443887c498d4e2c7d9b089b744d2ee4246b20fe9c70919123da0fc179",
+      "source_code_sha256": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf"
+    },
+    {
+      "name": "jxl-selection-3c10d16o7",
+      "color_channels": 3,
+      "color_bits": 10,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "dd153ac4e1d6a5374e1185e022f13e05d0603fa8f298ba783a2d5da741bcb0bc",
+      "rgba16_sha256": "c7636978ad148943fd9d0b2665fa692d6fe0c27f10c46fbb46909ea8d95259fd",
+      "source_code_sha256": "f9ba2731baf3750ca9b9424b9ef59b78d4bfa6da16075e19767ea24f0eaccebc"
+    },
+    {
+      "name": "jxl-selection-3c12d8o8",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "105b052c850455332a0848b1443014ae815276f34399da541900a00d7b36cde3",
+      "rgba16_sha256": "693303ea7a84e14943be86e73131f6728f679802d979afad6ee38428aadccb60",
+      "source_code_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+    },
+    {
+      "name": "jxl-selection-3c12d9o1",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "3ae66a3de6f82ad353bbb3b5f2e75b5cc1c877074cb06009176791aff00fccfb",
+      "rgba16_sha256": "0989914f297f16c9e0c51e09db6d1888f0fc2ba9f775107571fa22d495ca0b96",
+      "source_code_sha256": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710"
+    },
+    {
+      "name": "jxl-selection-3c12d10o2",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "177980a425fec581cacf33222a9eff694dffa6f873053e57a873db9ef62c049e",
+      "rgba16_sha256": "4c70f1b924661ddd8ce957ab156d51b099bac8bce54a1c2812f240939e4646ee",
+      "source_code_sha256": "590308db75b985d0ac15f6a6dcfc41902282b6b0b2788552b90c62beb10bbdfd"
+    },
+    {
+      "name": "jxl-selection-3c12d12o3",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "d189fa8351accaf64ffb7ad7f67713d76d65e0055a29285b0a21bb3b8cdf691a",
+      "rgba16_sha256": "fcafc1a2932035b798da34bc6fc961f07c68986ad087b63eab049b0c277fee11",
+      "source_code_sha256": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf"
+    },
+    {
+      "name": "jxl-selection-3c12d16o4",
+      "color_channels": 3,
+      "color_bits": 12,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "fd584d8972ee451d70ce2e6daf60eb1a2f7ca73c369d862181816c94c479c46e",
+      "rgba16_sha256": "f4a3def5ce52ae0b068cc3ca740c7b0a98297acc90eec3bae36c1b7883848bb7",
+      "source_code_sha256": "ab5a5f77174db44be12b97d0f5abe47fe6259b277081b11cb6e78fe467598de1"
+    },
+    {
+      "name": "jxl-selection-3c16d8o5",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 8,
+      "dim_shift": 0,
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": true,
+      "jxl_sha256": "c2f685e972d65526697c6fba56bf35c6f873f1f061024aa97f4b22547ae3c0f2",
+      "rgba16_sha256": "286dc9bcc6203e7b13ec9e29aaa4b77037685da9c4499bedceb9bb5dd87feff2",
+      "source_code_sha256": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be"
+    },
+    {
+      "name": "jxl-selection-3c16d9o6",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 9,
+      "dim_shift": 0,
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "56466316af1c1c24fd45ea9be516f060d30b4629c4b69571e347357ba08c0aa1",
+      "rgba16_sha256": "92b6b255e6dc74af132a05fe3ea8b56adfad2d4167105c4ce47613e5c07eadfe",
+      "source_code_sha256": "160af7b3d81a50040c2454e6778899039367af176168325ac9ab61981bdea33e"
+    },
+    {
+      "name": "jxl-selection-3c16d10o7",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 10,
+      "dim_shift": 0,
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "afbedf0684e87b2c8211bce6ae6672aab114767f673fa51083f071dfc59894a3",
+      "rgba16_sha256": "eb086e137d3c408482382151d07fe115f0bb4db37d097c79c5a987ed27006729",
+      "source_code_sha256": "fbd2bf382615c4902f96923a2ed291080e039b3ea7ba44bcc13862e1490cac8e"
+    },
+    {
+      "name": "jxl-selection-3c16d12o8",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 12,
+      "dim_shift": 0,
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "6aa90babd78b02809be9bfc208708e075ca43630a47fff9a7b676ceae71b4131",
+      "rgba16_sha256": "037723d6a98c1b8452acbcb5ca7ae97563090ea20fdcb12847efd73369724d20",
+      "source_code_sha256": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+    },
+    {
+      "name": "jxl-selection-3c16d16o1",
+      "color_channels": 3,
+      "color_bits": 16,
+      "extra_kind": "SelectionMask",
+      "extra_bits": 16,
+      "dim_shift": 0,
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "name_from_c": "",
+      "embedded_icc": false,
+      "jxl_sha256": "61e048fcf6f87acec6f4649705d08cce115463a97a42a8c20507d0a0d224c20e",
+      "rgba16_sha256": "7a9bf9955784c2fbd847506c47dc3aac58af3e57aaf2a86be56d6fff175c5388",
+      "source_code_sha256": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8"
+    },
+    {
+      "name": "jxl-selection-refused-selection-float",
+      "refused": true,
+      "kind": "independently C-decoded unsupported SelectionMask storage",
+      "jxl_sha256": "41e5d9e6412ea76a09a10bf171b18e09894eebcf08769792bca005ef069d0010"
+    },
+    {
+      "name": "jxl-selection-refused-selection-subsampled",
+      "refused": true,
+      "kind": "independently C-decoded unsupported SelectionMask storage",
+      "jxl_sha256": "c4575e0fc94a06b4755e9b749cb0c285fd3d95952063f6bd8c9f378234061f9d"
+    },
+    {
+      "name": "jxl-selection-refused-selection-multiple",
+      "refused": true,
+      "kind": "independently C-decoded unsupported SelectionMask storage",
+      "jxl_sha256": "859f810bebf79bc7634acca46c8f6984809ff251f9189b4d97050c54b4442980"
+    }
+  ]
+}

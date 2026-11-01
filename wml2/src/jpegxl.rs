@@ -451,7 +451,8 @@ struct Header {
     height: usize,
     bits: u8,
     alpha_bits: Option<u8>,
-    depth_bits: Option<u8>,
+    extra_bits: Option<u8>,
+    extra_kind: Option<JxlExtraChannelKind>,
     alpha_associated: bool,
     alpha_dim_shift: u8,
     native_bits: u8,
@@ -489,7 +490,7 @@ fn validate_basic_info(info: &JxlBasicInfo, h: &Header) -> Result<(), Error> {
 // reference layers may exceed or lie outside the displayed canvas. Admit their
 // actual padded storage before the codec allocates pixels, then leave cropping,
 // orientation and blending to its coalescing render pipeline.
-fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
+fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
     input: &[u8],
     header: &FileHeader,
     frame_bits: usize,
@@ -557,7 +558,7 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
             ));
         }
         frame.postprocess(nonserialized);
-        if DEPTH
+        if EXTRA
             && (frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular
                 || frame.upsampling != 1
                 || frame.ec_upsampling.iter().any(|&u| u != 1)
@@ -731,7 +732,7 @@ fn preflight_with_resources(
 }
 
 // 0 retains the integer contract; 16/32 select exact floating source layouts.
-fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
+fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
     input: &Input,
     limits: DecodeLimits,
     policy: JxlResourceLimits,
@@ -781,19 +782,19 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
             "JPEG XL supports integer8/9/10/12/16-bit sources only",
         ));
     }
-    if DEPTH {
+    if EXTRA {
         if m.xyb_encoded
             || m.preview.is_some()
             || m.extra_channel_info.len() > 1
             || m.extra_channel_info.iter().any(|c| {
-                c.ec_type != ExtraChannel::Depth
+                !matches!(c.ec_type, ExtraChannel::Depth | ExtraChannel::SelectionMask)
                     || c.dim_shift() != 0
                     || c.bit_depth().floating_point_sample()
                     || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
             })
         {
             return Err(unsupported(
-                "extra-plane output supports zero or one full-resolution integer Depth channel on original-profile SDR without preview",
+                "extra-plane output supports zero or one full-resolution integer Depth or SelectionMask channel on original-profile SDR without preview",
             ));
         }
     } else {
@@ -840,10 +841,20 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
         .first()
         .filter(|c| c.ec_type == ExtraChannel::Alpha)
         .map(|c| c.bit_depth().bits_per_sample() as u8);
-    let depth_bits = if DEPTH {
+    let extra_bits = if EXTRA {
         m.extra_channel_info
             .first()
             .map(|c| c.bit_depth().bits_per_sample() as u8)
+    } else {
+        None
+    };
+    let extra_kind = if EXTRA {
+        match m.extra_channel_info.first().map(|c| c.ec_type) {
+            Some(ExtraChannel::Depth) => Some(JxlExtraChannelKind::Depth),
+            Some(ExtraChannel::SelectionMask) => Some(JxlExtraChannelKind::SelectionMask),
+            None => None,
+            _ => return Err(unsupported("unrepresented extra-channel kind")),
+        }
     } else {
         None
     };
@@ -978,7 +989,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
     )?;
     // Qualify associated/declared-subsampled alpha for one coded layer. Reuse the
     // complete pre-allocation frame scan; do not bypass reference/padding checks.
-    let frame_policy = if DEPTH || alpha_associated || alpha_dim_shift != 0 {
+    let frame_policy = if EXTRA || alpha_associated || alpha_dim_shift != 0 {
         JxlResourceLimits {
             internal_layers: policy.internal_layers.min(1),
             ..policy
@@ -986,7 +997,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
     } else {
         policy
     };
-    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT_BITS, HDR, DEPTH>(
+    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT_BITS, HDR, EXTRA>(
         &input.codestream,
         &header,
         frame_bits,
@@ -1003,7 +1014,8 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const DEPTH: bool>(
         height,
         bits: bits as u8,
         alpha_bits,
-        depth_bits,
+        extra_bits,
+        extra_kind,
         alpha_associated,
         alpha_dim_shift,
         native_bits,

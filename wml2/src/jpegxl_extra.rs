@@ -4,8 +4,11 @@ use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum JxlExtraChannelKind {
     Depth,
+    /// Raw integer selection codes; no threshold, coverage or compositing rule.
+    SelectionMask,
 }
-/// Decoded integer sample codes at source depth; no distance-unit interpretation.
+/// Decoded integer sample codes at source depth; no physical-unit, threshold,
+/// coverage, or compositing interpretation is inferred.
 /// Source and output geometry are separate; output samples are already oriented.
 #[non_exhaustive]
 #[derive(Debug)]
@@ -38,7 +41,7 @@ pub struct JxlExtraImage {
     /// mean the source name is empty. Container boxes are not stored here.
     pub source_header: Vec<u8>,
 }
-/// Zero or one full-resolution integer Depth plane, original-profile Gray/RGB
+/// Zero or one full-resolution integer Depth or SelectionMask plane, original-profile Gray/RGB
 /// SDR, one unresampled full-canvas Modular frame, no preview. Other/multiple
 /// extras (including Alpha) reject rather than being discarded. Output is
 /// published only after complete input and final profile/boundary checks.
@@ -70,7 +73,7 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
     check()?;
     let h = preflight_samples::<0, false, true>(&input, limits, policy)?;
     check()?;
-    let count = usize::from(h.depth_bits.is_some());
+    let count = usize::from(h.extra_bits.is_some());
     let pixels = mul(h.width, h.height)?;
     let color_bytes = mul(pixels, 8)?;
     let depth_bytes = mul(mul(pixels, 2)?, count)?;
@@ -133,10 +136,14 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         || info.animation.is_some()
         || !matches!(info.bit_depth,JxlBitDepth::Int{bits_per_sample}if bits_per_sample==u32::from(h.bits))
         || info.extra_channels.len() != count
-        || info
-            .extra_channels
-            .iter()
-            .any(|c| c.ec_type != jxl_codec::api::ExtraChannel::Depth || c.alpha_associated)
+        || info.extra_channels.iter().any(|c| {
+            Some(match c.ec_type {
+                jxl_codec::api::ExtraChannel::Depth => JxlExtraChannelKind::Depth,
+                jxl_codec::api::ExtraChannel::SelectionMask => JxlExtraChannelKind::SelectionMask,
+                _ => return true,
+            }) != h.extra_kind
+                || c.alpha_associated
+        })
     {
         return Err(invalid("extra-plane basic info disagrees with preflight"));
     }
@@ -147,7 +154,7 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         count * std::mem::size_of::<Option<JxlDataFormat>>(),
     );
     formats.try_reserve_exact(count)?;
-    if let Some(bits) = h.depth_bits {
+    if let Some(bits) = h.extra_bits {
         formats.push(Some(JxlDataFormat::U16 {
             endianness: Endianness::native(),
             bit_depth: bits.into(),
@@ -269,7 +276,7 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
             return Err(invalid("nonopaque color without source alpha"));
         }
     }
-    if let Some(bits) = h.depth_bits {
+    if let Some(bits) = h.extra_bits {
         let max = (1u32 << bits) - 1;
         for chunk in depth.chunks(256) {
             check()?;
@@ -285,10 +292,12 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         count * std::mem::size_of::<JxlExtraPlane>(),
     );
     extra_planes.try_reserve_exact(count)?;
-    if let Some(bits) = h.depth_bits {
+    if let Some(bits) = h.extra_bits {
         extra_planes.push(JxlExtraPlane {
             source_index: 0,
-            kind: JxlExtraChannelKind::Depth,
+            kind: h
+                .extra_kind
+                .ok_or_else(|| invalid("missing preflight extra kind"))?,
             bits_per_sample: bits,
             dim_shift: 0,
             source_dimensions: h.dimensions.coded,

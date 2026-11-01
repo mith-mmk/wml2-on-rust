@@ -792,5 +792,6 @@ Associated8/9/10/12/16-bit and mixed-depth original-profile SDR alpha now has an
 stack. This partially addresses #42; [declared straight/associated subsampled alpha](jpeg-xl-associated-subsampling.md)
 also has a bounded subset. An explicit [separate integer Depth-plane API](jpeg-xl-depth-plane.md)
 now preserves one qualified non-alpha extra alongside original-profile color on this draft stack.
+The same API also preserves a qualified integer [SelectionMask plane](jpeg-xl-selection-plane.md).
 Other kinds, multiple/combined extras and name-based selection remain unsupported.
 It does not change the deferred HDR display policy in #46.

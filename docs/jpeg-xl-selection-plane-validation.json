@@ -1,0 +1,203 @@
+{
+  "base_sha": "64c7a7c65cfab08d35d6be9fa6c2452e7e0f4d3c",
+  "scope": "Unmerged production API for zero/one full-resolution integer Depth or SelectionMask plus original-profile Gray/RGB color, not completion of general extra-channel support",
+  "source_inspection": [
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/data_types.rs",
+      "sha256": "0485f8425c1ab08452d94cb6637a17fa1de970e44251b0a71b26c13da8870221",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/decoder.rs",
+      "sha256": "74b1f886d7c494837ddeaa376ac54b4bbcbbb91ba8b655c19c2691e4c9bc0519",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.7.4",
+      "file": "src/headers/extra_channels.rs",
+      "sha256": "78baa0e732a40d8e1d3f0ad6a97ef3319351c620bd367f4b4c70ff96ea257ba9",
+      "matches_locked_archive": true
+    }
+  ],
+  "oracle_manifest": "jpeg-xl-selection-plane-oracle.json",
+  "native": {
+    "expanded_tests": 203,
+    "library_tests": 96,
+    "selection_tests": 6,
+    "depth_tests": 6,
+    "selection_cancellation_checkpoints": 16,
+    "actual_allocator_refusal_sites": 8,
+    "allocator_scope": "Test-thread net requested bytes balance, no global RSS/heap bound",
+    "minimal": "12 passed (Depth6/Selection6); jpeg-xl only/no defaults",
+    "disabled": "0 tests; feature-off target compiles",
+    "win32": "Not executed locally; actual Windows32 matrix in CI"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 670,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 15138816,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "a00b97c69aecb3040a0dac3568712be4aa67a576f8beae8f05dd8a209e306e29",
+    "scope": "SelectionMask separate-plane:50 independent C depth-pair/orientation vectors,combined output/exact workspace,all cancellation checkpoints and unsupported modes; Depth separate-plane output:50 independent C vectors with all integer depth pairs and orientations,52 success groups, combined output/exact workspace boundaries, all cancellation checkpoints, unsupported extras refusal; COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; declared2/4/8x straight+associated subsampled alpha (98 native/legacy cases, coded-plane metadata, exact workspace boundary, unsupported layers; association, Exact/Round policy), plus associated8/9/10/12/16 integer/mixed alpha explicit straight normalization (66 independent vectors including colored zero-alpha, all depth pairs, source depths, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "performance": {
+    "cpu": 0,
+    "build": "Rust1.91 release; jpeg-xl,color-management,image-buffer-ex;3 warmups then1000 samples/process;6 alternating paired blocks",
+    "before_sha": "64c7a7c65cfab08d35d6be9fa6c2452e7e0f4d3c",
+    "before_binary": "rebuilt exact PR88 source; same release features and harness",
+    "controls": {
+      "ordinary": {
+        "block_medians_ns": [
+          {
+            "before": 75622.5,
+            "after": 75261.5
+          },
+          {
+            "after": 74725.5,
+            "before": 75357.0
+          },
+          {
+            "before": 76368.5,
+            "after": 73915.0
+          },
+          {
+            "after": 74936.5,
+            "before": 74491.0
+          },
+          {
+            "before": 78862.0,
+            "after": 75957.5
+          },
+          {
+            "after": 74100.0,
+            "before": 74601.0
+          }
+        ],
+        "before_median_ns": 75489.75,
+        "after_median_ns": 74831.0,
+        "ratio": 0.9912736497339043,
+        "common_hash_and_size": [
+          "7613101786784002531",
+          "5",
+          "7"
+        ]
+      },
+      "managed": {
+        "block_medians_ns": [
+          {
+            "before": 153302.5,
+            "after": 152842.0
+          },
+          {
+            "after": 152781.5,
+            "before": 155631.0
+          },
+          {
+            "before": 156533.0,
+            "after": 202160.0
+          },
+          {
+            "after": 202515.5,
+            "before": 195936.0
+          },
+          {
+            "before": 190828.0,
+            "after": 152952.0
+          },
+          {
+            "after": 150538.0,
+            "before": 153007.0
+          }
+        ],
+        "before_median_ns": 156082.0,
+        "after_median_ns": 152897.0,
+        "ratio": 0.9795940595328096,
+        "common_hash_and_size": [
+          "10980251124246367044",
+          "5",
+          "7"
+        ]
+      },
+      "explicit_Depth": {
+        "block_medians_ns": [
+          {
+            "before": 62032.0,
+            "after": 61982.0
+          },
+          {
+            "after": 60961.0,
+            "before": 61766.5
+          },
+          {
+            "before": 96087.5,
+            "after": 97514.0
+          },
+          {
+            "after": 60650.0,
+            "before": 60910.0
+          },
+          {
+            "before": 96694.0,
+            "after": 61211.0
+          },
+          {
+            "after": 61656.5,
+            "before": 60775.5
+          }
+        ],
+        "before_median_ns": 61899.25,
+        "after_median_ns": 61433.75,
+        "ratio": 0.9924797150207797,
+        "common_hash_and_size": [
+          "1307659025400899647",
+          "7",
+          "5"
+        ]
+      }
+    },
+    "selection_api": [
+      61010.0,
+      61691.0,
+      60349.0
+    ]
+  },
+  "display": {
+    "inspected": true,
+    "scope": "C oracle and product original sRGB color + raw SelectionMask scaled for diagnostic display only; both16-bit arrays identical",
+    "hashes": [
+      {
+        "label": "C oracle",
+        "color_sha256": "7a9bf9955784c2fbd847506c47dc3aac58af3e57aaf2a86be56d6fff175c5388",
+        "selection_sha256": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8"
+      },
+      {
+        "label": "WML2",
+        "color_sha256": "7a9bf9955784c2fbd847506c47dc3aac58af3e57aaf2a86be56d6fff175c5388",
+        "selection_sha256": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8"
+      }
+    ]
+  },
+  "boundaries": [
+    "350 combined output bytes accepts;349 refuses",
+    "input/pixel/frame/metadata caps",
+    "minimum workspace accepts,one byte below refuses",
+    "all truncated prefixes refuse",
+    "unsupported channels/counts/float/subsampled/multiple SelectionMask storage,preview,animation,HDR refuse",
+    "ordinary/EX/sRGB/F32/F16/HDR refuse SelectionMask",
+    "no product dependency/caps changes"
+  ],
+  "limitations": [
+    "zero/one Depth or SelectionMask, no alpha/multiple/other kinds, no preview/XYB/resampling/layers",
+    "channel name unavailable from pinned public APIs; exact source header retained opaquely, not name-based selection",
+    "finite conservative codec preflight and adapter ledger; no all-codec allocator guarantee or large-image enablement",
+    "main unchanged; all dependent PRs remain draft"
+  ]
+}

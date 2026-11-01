@@ -1,7 +1,9 @@
 # Bounded JPEG XL SelectionMask planes
 
 This **unmerged production draft** extends #88 on its existing stack (#87 through
-#75/#73/#72). Main0.0.41 is unchanged; #42 stays open. SelectionMask is the next
+#75/#73/#72). Main0.0.41 is unchanged; #42 stays open. A subsequent
+[two-plane extension](jpeg-xl-two-planes.md) admits Depth/SelectionMask pairs; the
+one-plane envelope and refusal reports below describe the historical #89 snapshot. SelectionMask is the next
 small subset because its kind, integer depth and geometry can be retained without
 inventing Spot/CFA interpretation, Alpha normalization, multi-plane selection or
 unavailable channel names. No dependency or resource-cap changes are made.

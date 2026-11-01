@@ -41,8 +41,8 @@ pub struct JxlExtraImage {
     /// mean the source name is empty. Container boxes are not stored here.
     pub source_header: Vec<u8>,
 }
-/// Zero or one full-resolution integer Depth or SelectionMask plane, original-profile Gray/RGB
-/// SDR, one unresampled full-canvas Modular frame, no preview. Other/multiple
+/// Up to two full-resolution integer Depth/SelectionMask planes, original-profile Gray/RGB
+/// SDR, one unresampled full-canvas Modular frame, no preview. Other
 /// extras (including Alpha) reject rather than being discarded. Output is
 /// published only after complete input and final profile/boundary checks.
 pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
@@ -73,10 +73,11 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
     check()?;
     let h = preflight_samples::<0, false, true>(&input, limits, policy)?;
     check()?;
-    let count = usize::from(h.extra_bits.is_some());
+    let count = h.extras.iter().flatten().count();
     let pixels = mul(h.width, h.height)?;
     let color_bytes = mul(pixels, 8)?;
-    let depth_bytes = mul(mul(pixels, 2)?, count)?;
+    let plane_bytes = mul(pixels, 2)?;
+    let depth_bytes = mul(plane_bytes, count)?;
     limits::check(
         add(color_bytes, depth_bytes)?,
         limits.animation_bytes,
@@ -106,6 +107,7 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
             )?,
         )?,
     )?;
+    let descriptors = add(descriptors, std::mem::size_of::<[Vec<u16>; 2]>())?;
     workspace.claim(descriptors, "JPEG XL extra descriptors")?;
     workspace.claim(64 * 1024, "JPEG XL generated profile temporary")?;
     let mut options = JxlDecoderOptions::default();
@@ -136,12 +138,12 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         || info.animation.is_some()
         || !matches!(info.bit_depth,JxlBitDepth::Int{bits_per_sample}if bits_per_sample==u32::from(h.bits))
         || info.extra_channels.len() != count
-        || info.extra_channels.iter().any(|c| {
+        || info.extra_channels.iter().enumerate().any(|(i, c)| {
             Some(match c.ec_type {
                 jxl_codec::api::ExtraChannel::Depth => JxlExtraChannelKind::Depth,
                 jxl_codec::api::ExtraChannel::SelectionMask => JxlExtraChannelKind::SelectionMask,
                 _ => return true,
-            }) != h.extra_kind
+            }) != h.extras[i].map(|(kind, _)| kind)
                 || c.alpha_associated
         })
     {
@@ -154,7 +156,7 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         count * std::mem::size_of::<Option<JxlDataFormat>>(),
     );
     formats.try_reserve_exact(count)?;
-    if let Some(bits) = h.extra_bits {
+    for &(_, bits) in h.extras.iter().flatten() {
         formats.push(Some(JxlDataFormat::U16 {
             endianness: Endianness::native(),
             bit_depth: bits.into(),
@@ -216,11 +218,22 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
     resources::tests::before_metadata_copy("extra color buffer", color_bytes);
     rgba16.try_reserve_exact(mul(pixels, 4)?)?;
     rgba16.resize(mul(pixels, 4)?, 0u16);
-    let mut depth = Vec::new();
-    #[cfg(test)]
-    resources::tests::before_metadata_copy("extra Depth buffer", depth_bytes);
-    depth.try_reserve_exact(mul(pixels, count)?)?;
-    depth.resize(mul(pixels, count)?, 0u16);
+    let mut planes: [Vec<u16>; 2] = std::array::from_fn(|_| Vec::new());
+    for (i, plane) in planes.iter_mut().take(count).enumerate() {
+        #[cfg(not(test))]
+        let _ = i;
+        #[cfg(test)]
+        resources::tests::before_metadata_copy(
+            if i == 0 {
+                "extra Depth buffer"
+            } else {
+                "extra second plane buffer"
+            },
+            plane_bytes,
+        );
+        plane.try_reserve_exact(pixels)?;
+        plane.resize(pixels, 0u16);
+    }
     {
         // SAFETY: initialized, exclusive, disjoint native-endian u16 vectors;
         // byte views cover exactly the pre-admitted logical row storage.
@@ -235,9 +248,9 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         );
         buffers.try_reserve_exact(1 + count)?;
         buffers.push(JxlOutputBuffer::new(rgb, h.height, mul(h.width, 8)?));
-        if count != 0 {
+        for plane in planes.iter_mut().take(count) {
             let extra = unsafe {
-                std::slice::from_raw_parts_mut(depth.as_mut_ptr().cast::<u8>(), depth_bytes)
+                std::slice::from_raw_parts_mut(plane.as_mut_ptr().cast::<u8>(), plane_bytes)
             };
             buffers.push(JxlOutputBuffer::new(extra, h.height, mul(h.width, 2)?));
         }
@@ -276,9 +289,9 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
             return Err(invalid("nonopaque color without source alpha"));
         }
     }
-    if let Some(bits) = h.extra_bits {
+    for (plane, &(_, bits)) in planes.iter().zip(h.extras.iter().flatten()) {
         let max = (1u32 << bits) - 1;
-        for chunk in depth.chunks(256) {
+        for chunk in plane.chunks(256) {
             check()?;
             if chunk.iter().any(|&v| u32::from(v) > max) {
                 return Err(invalid("extra source code out of range"));
@@ -292,17 +305,19 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         count * std::mem::size_of::<JxlExtraPlane>(),
     );
     extra_planes.try_reserve_exact(count)?;
-    if let Some(bits) = h.extra_bits {
+    for (i, (samples, &(kind, bits))) in planes
+        .into_iter()
+        .zip(h.extras.iter().flatten())
+        .enumerate()
+    {
         extra_planes.push(JxlExtraPlane {
-            source_index: 0,
-            kind: h
-                .extra_kind
-                .ok_or_else(|| invalid("missing preflight extra kind"))?,
+            source_index: i,
+            kind,
             bits_per_sample: bits,
             dim_shift: 0,
             source_dimensions: h.dimensions.coded,
             dimensions: h.dimensions.output.unwrap(),
-            samples: depth,
+            samples,
         });
     }
     check()?;

@@ -356,7 +356,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
-    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases() + subsampled_cases() + associated_subsampling_cases() + extra_plane_cases() + selection_plane_cases()
+    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases() + subsampled_cases() + associated_subsampling_cases() + extra_plane_cases() + selection_plane_cases() + two_plane_cases()
 }
 
 fn intrinsic_cases() -> u32 {
@@ -902,8 +902,28 @@ fn selection_plane_cases() -> u32 {
         assert!(e.is::<DecodeCancelled>());
     }
     count += 1;
-    for input in [include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-spot.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-multiple.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-selection-refused-selection-multiple.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-selection-refused-selection-float.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-selection-refused-selection-subsampled.jxl").as_slice()] {
+    for input in [include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-spot.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-multiple.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-selection-refused-selection-float.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-selection-refused-selection-subsampled.jxl").as_slice()] {
         assert!(extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||false).is_err());
     }
     count + 1
+}
+
+fn two_plane_cases() -> u32 {
+ use wml2::jpegxl::{image_with_extra_channels_from_with_resource_limits_and_cancel as extra,JxlResourceLimits,DecodeCancelled,JxlExtraChannelKind::{Depth,SelectionMask}};
+ let mut count=0;
+ for(input,color,p0,p1,bits,kinds,o,_)in include!("../../wml2/tests/jpeg_xl/two_plane_cases.rs") {
+  let im=extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||false).unwrap();assert_eq!(im.source_orientation,o);assert_eq!(im.extra_planes.len(),2);
+  let size=im.dimensions.output.unwrap();assert_eq!((size.width,size.height),if o>=5{(5,7)}else{(7,5)});
+  for(i,gold)in [p0,p1].into_iter().enumerate(){let p=&im.extra_planes[i];assert_eq!(p.source_index,i);assert_eq!(p.kind,kinds[i]);assert_eq!(p.bits_per_sample,bits[i]);assert_eq!(p.samples,words(gold,16));assert_eq!(p.dimensions,size);}
+  let expected=words(color,16);assert_eq!(im.rgba16.len(),expected.len());for(i,(a,b))in im.rgba16.iter().zip(&expected).enumerate(){assert!(a.abs_diff(*b)<=1);if i%4==3{assert_eq!(*a,65535)}}
+  assert!(image_from(input).is_err());count+=1;
+ }
+ let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-two-3c12-MD-8-16-o5.jxl");
+ for(cap,ok)in [(419,false),(420,true)]{assert_eq!(extra(input,DecodeLimits{animation_bytes:cap,..Default::default()},JxlResourceLimits::default(),&||false).is_ok(),ok);}
+ let(mut lo,mut hi)=(0,64<<20);while lo<hi{let mid=lo+(hi-lo)/2;if extra(input,DecodeLimits::default(),JxlResourceLimits{workspace_bytes:mid,..Default::default()},&||false).is_ok(){hi=mid}else{lo=mid+1}}
+ for(cap,ok)in [(lo-1,false),(lo,true)]{assert_eq!(extra(input,DecodeLimits::default(),JxlResourceLimits{workspace_bytes:cap,..Default::default()},&||false).is_ok(),ok);}count+=1;
+ let n=std::cell::Cell::new(0);drop(extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||{n.set(n.get()+1);false}).unwrap());assert!(n.get()>10);
+ for stop in 1..=n.get(){let c=std::cell::Cell::new(0);let e=extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||{c.set(c.get()+1);c.get()==stop}).unwrap_err();assert!(e.is::<DecodeCancelled>());}count+=1;
+ for input in [include_bytes!("../../wml2/tests/fixtures/review/jxl-two-refused-three.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-two-refused-spot.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-two-refused-float.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-two-refused-subsampled.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-two-refused-layers.jxl").as_slice()]{assert!(extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||false).is_err());}
+ count+1
 }

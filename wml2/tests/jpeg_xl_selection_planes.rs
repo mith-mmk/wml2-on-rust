@@ -260,7 +260,6 @@ fn all_unrepresented_channels_and_unqualified_modes_reject() {
         include_bytes!("fixtures/review/jxl-preview-icc16.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-animation.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-hdr.jxl").as_slice(),
-        include_bytes!("fixtures/review/jxl-selection-refused-selection-multiple.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-selection-refused-selection-float.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-selection-refused-selection-subsampled.jxl").as_slice(),
     ] {

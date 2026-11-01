@@ -1,0 +1,206 @@
+{
+  "base_sha": "cb41c10084c22d738735edfac4a5d0263e6f9aa3",
+  "scope": "Unmerged production API for up to two full-resolution integer Depth/SelectionMask planes plus original-profile Gray/RGB color, not completion of general extra-channel support",
+  "source_inspection": [
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/data_types.rs",
+      "sha256": "0485f8425c1ab08452d94cb6637a17fa1de970e44251b0a71b26c13da8870221",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/decoder.rs",
+      "sha256": "74b1f886d7c494837ddeaa376ac54b4bbcbbb91ba8b655c19c2691e4c9bc0519",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.7.4",
+      "file": "src/headers/extra_channels.rs",
+      "sha256": "78baa0e732a40d8e1d3f0ad6a97ef3319351c620bd367f4b4c70ff96ea257ba9",
+      "matches_locked_archive": true
+    }
+  ],
+  "oracle_manifest": "jpeg-xl-two-plane-oracle.json",
+  "native": {
+    "expanded_tests": 209,
+    "library_tests": 97,
+    "two_plane_tests": 5,
+    "selection_tests": 6,
+    "depth_tests": 6,
+    "two_plane_cancellation_checkpoints": 17,
+    "actual_allocator_refusal_sites": 9,
+    "allocator_scope": "Test-thread net requested bytes balance, no global RSS/heap bound",
+    "minimal": "17 passed (Depth6/Selection6/Two5); jpeg-xl only/no defaults",
+    "disabled": "0 tests; feature-off target compiles",
+    "win32": "Not executed locally; actual Windows32 matrix in CI"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 727,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 15138816,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "613804f63cb59d68207a0290e6ffddadc05d956d2df809093511f6ef6847fd0a",
+    "scope": "Two independently retained Depth/SelectionMask planes:54 independent C vectors with distinct code patterns, both kind orders and duplicate kinds, exact combined420-byte/output-workspace boundary, all cancellation checkpoints, explicit count3/type/storage/layer refusal; SelectionMask separate-plane:50 independent C depth-pair/orientation vectors,combined output/exact workspace,all cancellation checkpoints and unsupported modes; Depth separate-plane output:50 independent C vectors with all integer depth pairs and orientations,52 success groups, combined output/exact workspace boundaries, all cancellation checkpoints, unsupported extras refusal; COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; declared2/4/8x straight+associated subsampled alpha (98 native/legacy cases, coded-plane metadata, exact workspace boundary, unsupported layers; association, Exact/Round policy), plus associated8/9/10/12/16 integer/mixed alpha explicit straight normalization (66 independent vectors including colored zero-alpha, all depth pairs, source depths, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "performance": {
+    "cpu": 0,
+    "build": "Rust1.91 release; jpeg-xl,color-management,image-buffer-ex;3 warmups then1000 samples/process;6 alternating paired blocks",
+    "before_sha": "cb41c10084c22d738735edfac4a5d0263e6f9aa3",
+    "before_binary": "rebuilt exact PR89 source; same release features and harness",
+    "controls": {
+      "ordinary": {
+        "block_medians_ns": [
+          {
+            "before": 73959.5,
+            "after": 75281.5
+          },
+          {
+            "after": 73885.0,
+            "before": 74030.0
+          },
+          {
+            "before": 75391.5,
+            "after": 74886.0
+          },
+          {
+            "after": 76123.0,
+            "before": 74050.0
+          },
+          {
+            "before": 75767.5,
+            "after": 75702.0
+          },
+          {
+            "after": 72973.0,
+            "before": 74671.0
+          }
+        ],
+        "before_median_ns": 74360.5,
+        "after_median_ns": 75083.75,
+        "ratio": 1.0097262659610948,
+        "common_hash_and_size": [
+          "7613101786784002531",
+          "5",
+          "7"
+        ]
+      },
+      "managed": {
+        "block_medians_ns": [
+          {
+            "before": 153693.0,
+            "after": 158004.5
+          },
+          {
+            "after": 156928.0,
+            "before": 152255.5
+          },
+          {
+            "before": 152922.0,
+            "after": 152021.0
+          },
+          {
+            "after": 152891.5,
+            "before": 152691.5
+          },
+          {
+            "before": 152907.0,
+            "after": 154213.5
+          },
+          {
+            "after": 152907.0,
+            "before": 150804.0
+          }
+        ],
+        "before_median_ns": 152799.25,
+        "after_median_ns": 153560.25,
+        "ratio": 1.0049803909377828,
+        "common_hash_and_size": [
+          "10980251124246367044",
+          "5",
+          "7"
+        ]
+      },
+      "explicit_Depth": {
+        "block_medians_ns": [
+          {
+            "before": 61742.0,
+            "after": 62427.0
+          },
+          {
+            "after": 60690.0,
+            "before": 61351.0
+          },
+          {
+            "before": 62052.0,
+            "after": 61361.0
+          },
+          {
+            "after": 61611.0,
+            "before": 62763.0
+          },
+          {
+            "before": 59809.0,
+            "after": 61531.0
+          },
+          {
+            "after": 61912.0,
+            "before": 60750.0
+          }
+        ],
+        "before_median_ns": 61546.5,
+        "after_median_ns": 61571.0,
+        "ratio": 1.0003980730017141,
+        "common_hash_and_size": [
+          "1307659025400899647",
+          "7",
+          "5"
+        ]
+      }
+    },
+    "two_plane_api": [
+      67645.5,
+      68136.0,
+      66458.0
+    ]
+  },
+  "display": {
+    "inspected": true,
+    "scope": "C oracle and product original sRGB color + both raw planes scaled for diagnostic display only; both16-bit arrays identical",
+    "hashes": [
+      {
+        "label": "C oracle",
+        "sRGB color_sha256": "631195689bcbf228e246ebc573a5418b641c7b269021222ba21e12952fa75cc1",
+        "SelectionMask raw codes_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212",
+        "Depth raw codes_sha256": "e57d62d139ec7c9f10ac1afcf7cda51a095819b4f06e1fe06651cbd564e481bd"
+      },
+      {
+        "label": "WML2",
+        "sRGB color_sha256": "631195689bcbf228e246ebc573a5418b641c7b269021222ba21e12952fa75cc1",
+        "SelectionMask raw codes_sha256": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212",
+        "Depth raw codes_sha256": "e57d62d139ec7c9f10ac1afcf7cda51a095819b4f06e1fe06651cbd564e481bd"
+      }
+    ]
+  },
+  "boundaries": [
+    "420 combined output bytes accepts;419 refuses",
+    "input/pixel/frame/metadata caps",
+    "minimum workspace accepts,one byte below refuses",
+    "all truncated prefixes refuse",
+    "unsupported channels/counts/count3/Spot/float/subsampled/multiple layers,preview,animation,HDR refuse",
+    "ordinary/EX/sRGB/F32/F16/HDR refuse SelectionMask",
+    "no product dependency/caps changes"
+  ],
+  "limitations": [
+    "up to two Depth/SelectionMask, no alpha/other kinds or larger counts, no preview/XYB/resampling/layers",
+    "channel name unavailable from pinned public APIs; exact source header retained opaquely, not name-based selection",
+    "finite conservative codec preflight and adapter ledger; no all-codec allocator guarantee or large-image enablement",
+    "main unchanged; all dependent PRs remain draft"
+  ]
+}

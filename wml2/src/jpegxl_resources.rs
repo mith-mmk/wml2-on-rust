@@ -532,4 +532,47 @@ pub(crate) mod tests {
             .is_ok()
         );
     }
+    #[test]
+    fn each_two_plane_reservation_refuses_without_publishing_either_plane() {
+        let _reset = ResetFault;
+        let input = include_bytes!("../tests/fixtures/review/jxl-two-3c12-MD-8-16-o5.jxl");
+        for key in [
+            "extra formats",
+            "extra source header",
+            "extra source ICC",
+            "extra output ICC",
+            "extra color buffer",
+            "extra Depth buffer",
+            "extra second plane buffer",
+            "extra output buffers",
+            "extra plane descriptors",
+        ] {
+            COPY_KEY.with(|f| f.set(Some(key)));
+            FAILED_BYTES.with(|f| f.set(0));
+            let result =
+                super::super::image_with_extra_channels_from_with_resource_limits_and_cancel(
+                    input,
+                    DecodeLimits::default(),
+                    JxlResourceLimits::default(),
+                    &|| false,
+                );
+            assert!(
+                result
+                    .unwrap_err()
+                    .is::<std::collections::TryReserveError>(),
+                "{key}"
+            );
+            assert_eq!(COPY_KEY.with(Cell::get), None);
+            assert!(FAILED_BYTES.with(Cell::get) > 0, "{key}");
+        }
+        assert!(
+            super::super::image_with_extra_channels_from_with_resource_limits_and_cancel(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| false
+            )
+            .is_ok()
+        );
+    }
 }

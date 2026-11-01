@@ -793,5 +793,7 @@ stack. This partially addresses #42; [declared straight/associated subsampled al
 also has a bounded subset. An explicit [separate integer Depth-plane API](jpeg-xl-depth-plane.md)
 now preserves one qualified non-alpha extra alongside original-profile color on this draft stack.
 The same API also preserves a qualified integer [SelectionMask plane](jpeg-xl-selection-plane.md).
-Other kinds, multiple/combined extras and name-based selection remain unsupported.
+A bounded [two-plane extension](jpeg-xl-two-planes.md) preserves either kind in source order,
+including duplicate kinds. More than two planes, Alpha combinations, other kinds/storage
+and name-based selection remain unsupported.
 It does not change the deferred HDR display policy in #46.

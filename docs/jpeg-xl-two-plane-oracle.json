@@ -1,0 +1,1444 @@
+{
+  "reference": "Independent C libjxl0.11.2; per-plane normalized decode recovered to source codes; exact authored source code and independent orientation map agreement",
+  "source_sha256": {
+    "wml2-test/scripts/generate_jpegxl_two_planes.py": "7055aefd540ac446c595ed6d16b7e592523e875a4d4610a43e7747f77f8ea02a",
+    "wml2-test/scripts/jpegxl_multi_fixture_encoder.c": "26d63b420e6421d36f144f008d329cc74a415f3ff0ad4680bd0b845921d454dd",
+    "wml2-test/scripts/jpegxl_extra_reference.c": "bbe0447b1d27bf0e802f43b51a04c404c5ea4540e3797b31d0758340f1ca124c"
+  },
+  "cases": [
+    {
+      "name": "jxl-two-1c8-DM-8-8-o1",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "DM",
+      "extra_bits": [
+        8,
+        8
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c8-DM-8-8-o1.jxl": "c643b22e7d3259f2fd55abe3ca8b65794ae4314647fb689d613fd4db56dec2f7",
+        "jxl-two-1c8-DM-8-8-o1.rgba16le": "c454fd414c0f29cdf7799f4098d001171b70cbd9a79c28ab4de9b36b1f25a4bb",
+        "jxl-two-1c8-DM-8-8-o1.p0.codes16le": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212",
+        "jxl-two-1c8-DM-8-8-o1.p1.codes16le": "e57d62d139ec7c9f10ac1afcf7cda51a095819b4f06e1fe06651cbd564e481bd"
+      }
+    },
+    {
+      "name": "jxl-two-1c10-MD-8-9-o2",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "MD",
+      "extra_bits": [
+        8,
+        9
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c10-MD-8-9-o2.jxl": "2f26c12eecca83e7716d72b4bd7703a42474b69c73c9da2abc60a2bbbe89a145",
+        "jxl-two-1c10-MD-8-9-o2.rgba16le": "ab9e63210104f307e4ecf106c4db6f61c707718c567a9f5789f7dabbd65d57e9",
+        "jxl-two-1c10-MD-8-9-o2.p0.codes16le": "91ba25387479add0c3debfb663c051642cd43240053bfe4a645f3f4f1ff0a6dc",
+        "jxl-two-1c10-MD-8-9-o2.p1.codes16le": "676c062ab5d1e971f4a83a24fcb8f0372f6cd22bb5c51f7f6cd4c70829425b98"
+      }
+    },
+    {
+      "name": "jxl-two-1c16-DM-8-10-o3",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "DM",
+      "extra_bits": [
+        8,
+        10
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c16-DM-8-10-o3.jxl": "801f32482354eaecea0c6653739cb730be11bd8bf6ef455d98c9a3ac84f0ac38",
+        "jxl-two-1c16-DM-8-10-o3.rgba16le": "dc17032757d900e1b5f984b6b87fb2495c69014e91378b3a8735dc28849a523c",
+        "jxl-two-1c16-DM-8-10-o3.p0.codes16le": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb",
+        "jxl-two-1c16-DM-8-10-o3.p1.codes16le": "d39319b9a482c71749630fb41fd73beb06836440d46b6c756a7a5e5bd497c95d"
+      }
+    },
+    {
+      "name": "jxl-two-1c9-MD-8-12-o4",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "MD",
+      "extra_bits": [
+        8,
+        12
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c9-MD-8-12-o4.jxl": "2888c291a48c2dade7c6b11b301d87d7b5ff5d6214b1ee1d707f260a5cfd3032",
+        "jxl-two-1c9-MD-8-12-o4.rgba16le": "52e365df45189b644dfdfe60aed5de85fdf3623d5f33d13b93dcf2f79a60e654",
+        "jxl-two-1c9-MD-8-12-o4.p0.codes16le": "5d32d3292e758456bb8502eaaee38731a46de8dc930f61182bfceeecf4ae60c4",
+        "jxl-two-1c9-MD-8-12-o4.p1.codes16le": "9cdf246026c86f597f5d115b87a7f576804465c821545142f3292e97640ba0a6"
+      }
+    },
+    {
+      "name": "jxl-two-1c12-DM-8-16-o5",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "DM",
+      "extra_bits": [
+        8,
+        16
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c12-DM-8-16-o5.jxl": "03be651df79c3ef8638e4e57f23b5cc31e61c080ea03e8279ac884b2891acf9e",
+        "jxl-two-1c12-DM-8-16-o5.rgba16le": "7f10d698235f6ca9ecf49b411e1aaee8ae4180181207879de5ee9c0f124e7a53",
+        "jxl-two-1c12-DM-8-16-o5.p0.codes16le": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be",
+        "jxl-two-1c12-DM-8-16-o5.p1.codes16le": "a462eec1fb9fe492befa9b2978db0f13e7b7aa9817d179138dd141ea2dde3822"
+      }
+    },
+    {
+      "name": "jxl-two-1c9-MD-9-8-o6",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "MD",
+      "extra_bits": [
+        9,
+        8
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c9-MD-9-8-o6.jxl": "d76eb39f3d2a1c0da60aae0d9536166a3520fded36c9b9d624756d37f4967b1b",
+        "jxl-two-1c9-MD-9-8-o6.rgba16le": "c2dae1a8c4d41f9ab08182f42e9a4c16305c8a4857cbce429d371589c7605075",
+        "jxl-two-1c9-MD-9-8-o6.p0.codes16le": "160af7b3d81a50040c2454e6778899039367af176168325ac9ab61981bdea33e",
+        "jxl-two-1c9-MD-9-8-o6.p1.codes16le": "31445717925d4fec2024dabb0c85aba4f6c94b57b44a7cce1cbabb42bd0e54e9"
+      }
+    },
+    {
+      "name": "jxl-two-1c12-DM-9-9-o7",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "DM",
+      "extra_bits": [
+        9,
+        9
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c12-DM-9-9-o7.jxl": "f93509d630937b48d0935a822ebecfe26d5c0cc2708c700963c7065c4d240fe4",
+        "jxl-two-1c12-DM-9-9-o7.rgba16le": "fd9f6789d14db1d50f960bcd3446cc939f0108fdec630bc535903a45b9c74f22",
+        "jxl-two-1c12-DM-9-9-o7.p0.codes16le": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db",
+        "jxl-two-1c12-DM-9-9-o7.p1.codes16le": "14b9609fb95e01da1d9eb542c2ab63fc3768b670f821090589cb6510e9029b01"
+      }
+    },
+    {
+      "name": "jxl-two-1c8-MD-9-10-o8",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "MD",
+      "extra_bits": [
+        9,
+        10
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c8-MD-9-10-o8.jxl": "c622da364886b9fcd93112782d55c2b1e026afae85bdffd75768d8d858d79224",
+        "jxl-two-1c8-MD-9-10-o8.rgba16le": "bb61578e857af4f4e343b12e6ed02f9ac661a320403b15a0ad4f28c2afa51263",
+        "jxl-two-1c8-MD-9-10-o8.p0.codes16le": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710",
+        "jxl-two-1c8-MD-9-10-o8.p1.codes16le": "999c686a2e25a27c581b44145ce2dd98b2084cbd37fc6be6b110317368b45282"
+      }
+    },
+    {
+      "name": "jxl-two-1c10-DM-9-12-o1",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "DM",
+      "extra_bits": [
+        9,
+        12
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c10-DM-9-12-o1.jxl": "a8b17cc3834ea9ca4f79280226ecc603a663bcc2be7577c149c6825c7b2da74b",
+        "jxl-two-1c10-DM-9-12-o1.rgba16le": "14bee01cdf14f516b627d46b61066e53632db4b383f45ef5b8c0c082e4130506",
+        "jxl-two-1c10-DM-9-12-o1.p0.codes16le": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710",
+        "jxl-two-1c10-DM-9-12-o1.p1.codes16le": "0654d599ec5cf52af853f428f2e560c29b3b3f9d35f0a18e914fbf20ca57831f"
+      }
+    },
+    {
+      "name": "jxl-two-1c16-MD-9-16-o2",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "MD",
+      "extra_bits": [
+        9,
+        16
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c16-MD-9-16-o2.jxl": "ca6757f3978f8f524fe995734e42d9d073746b04f99c492d33d8b4d585673508",
+        "jxl-two-1c16-MD-9-16-o2.rgba16le": "29362098349c907b7a398a87d21e995600e19e7769c4e919a5b9b8f69d82a32f",
+        "jxl-two-1c16-MD-9-16-o2.p0.codes16le": "892f321b7ed3c3ffc6335c009ed7fd01df6986722eb6a48252428ea4340fc3a0",
+        "jxl-two-1c16-MD-9-16-o2.p1.codes16le": "48c2ed3b91328d805d2ef405e6f7c8bf689aa5ffa8b596bf13a0c90f79735eb5"
+      }
+    },
+    {
+      "name": "jxl-two-1c10-DM-10-8-o3",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "DM",
+      "extra_bits": [
+        10,
+        8
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c10-DM-10-8-o3.jxl": "0771be122d4ace9e517b529414a512bdd8c902112876edb72f95580cc83ed9ae",
+        "jxl-two-1c10-DM-10-8-o3.rgba16le": "907ea98e2ca945c192b5ccbb25a5743d23eb5b73dd6d5ac5b4108d6baab197f6",
+        "jxl-two-1c10-DM-10-8-o3.p0.codes16le": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450",
+        "jxl-two-1c10-DM-10-8-o3.p1.codes16le": "637af4c0dc2f748d3ab611748c8428a884ed4b02b6602bf2305a15316a99373a"
+      }
+    },
+    {
+      "name": "jxl-two-1c16-MD-10-9-o4",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "MD",
+      "extra_bits": [
+        10,
+        9
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c16-MD-10-9-o4.jxl": "12790bff682e1f293b5d9131053be162d7bffd645528582056570379a2724f4b",
+        "jxl-two-1c16-MD-10-9-o4.rgba16le": "d3e8efa2a4e9b792e351d20033026737cd1b3731efa85832eb24160a196a5eee",
+        "jxl-two-1c16-MD-10-9-o4.p0.codes16le": "83162444ff4907dc497da6f31733a39edccf699028904bffd0f3fb1d9eb10bcb",
+        "jxl-two-1c16-MD-10-9-o4.p1.codes16le": "c1b5433a14782f71c076c378bc1c7e0a5ff49af3d57b460e1975d5913c1cc46b"
+      }
+    },
+    {
+      "name": "jxl-two-1c9-DM-10-10-o5",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "DM",
+      "extra_bits": [
+        10,
+        10
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c9-DM-10-10-o5.jxl": "c4b4f2551ff11302a0e140f086f5d046c851c3cd9d51bfb7050cc87c832ca7fd",
+        "jxl-two-1c9-DM-10-10-o5.rgba16le": "719f0e8158583543e8217acc33fa3d713c65918e42a3599060b6bec503fdf517",
+        "jxl-two-1c9-DM-10-10-o5.p0.codes16le": "0bdab7f34ca861d6f8f8f3bf067ace28cb28ef4944f72b4c97019c401622af8a",
+        "jxl-two-1c9-DM-10-10-o5.p1.codes16le": "049cb946519555b335d8e7e0ee6048991bb526e4d5e807aaa471d1de6c9c54e4"
+      }
+    },
+    {
+      "name": "jxl-two-1c12-MD-10-12-o6",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "MD",
+      "extra_bits": [
+        10,
+        12
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c12-MD-10-12-o6.jxl": "9d19af1a4feca816a23345a9c7f6358a81a33d168d9c629e62d545a11ff57d14",
+        "jxl-two-1c12-MD-10-12-o6.rgba16le": "9f3f61aac6639bcef69011a339e516c7794254749224e45f98fd3048560f3763",
+        "jxl-two-1c12-MD-10-12-o6.p0.codes16le": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450",
+        "jxl-two-1c12-MD-10-12-o6.p1.codes16le": "71b8b9c7125b65141c675c9b5b83ad244c9baa381f072df7e936420ddc56d2d0"
+      }
+    },
+    {
+      "name": "jxl-two-1c8-DM-10-16-o7",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "DM",
+      "extra_bits": [
+        10,
+        16
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c8-DM-10-16-o7.jxl": "b18f3fb1220d6785bcb02b5acce10f20258779f1107414debbf5621a6b211460",
+        "jxl-two-1c8-DM-10-16-o7.rgba16le": "02a8826ea85d60ade4ab4a1bb83dcbcfec403645c765fcff066cfe7d72cf1787",
+        "jxl-two-1c8-DM-10-16-o7.p0.codes16le": "fbd2bf382615c4902f96923a2ed291080e039b3ea7ba44bcc13862e1490cac8e",
+        "jxl-two-1c8-DM-10-16-o7.p1.codes16le": "55701d28ae068373c6b0f9d5a24123dc839ad4cf4e2d5437f5e664167d6d531c"
+      }
+    },
+    {
+      "name": "jxl-two-1c12-MD-12-8-o8",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "MD",
+      "extra_bits": [
+        12,
+        8
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c12-MD-12-8-o8.jxl": "9d9b20d88d1e3442703497e6543187cc6ff55aa20754d0d0978b487489135c92",
+        "jxl-two-1c12-MD-12-8-o8.rgba16le": "d2732bceba5fa5914eb92844fcf45085c975a0434ba273f36ba541389b878327",
+        "jxl-two-1c12-MD-12-8-o8.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a",
+        "jxl-two-1c12-MD-12-8-o8.p1.codes16le": "1c0eebe4fca5436e2dd0f6bb504eebe95990d7c65019860626989c2a8a9dfdcd"
+      }
+    },
+    {
+      "name": "jxl-two-1c8-DM-12-9-o1",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "DM",
+      "extra_bits": [
+        12,
+        9
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c8-DM-12-9-o1.jxl": "fed8477896ead654d5bafe755643f4bdd0f7a2ca33c1df672c7be10c5564576c",
+        "jxl-two-1c8-DM-12-9-o1.rgba16le": "c454fd414c0f29cdf7799f4098d001171b70cbd9a79c28ab4de9b36b1f25a4bb",
+        "jxl-two-1c8-DM-12-9-o1.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a",
+        "jxl-two-1c8-DM-12-9-o1.p1.codes16le": "d1f9119b2089118d4b0e2b67886032d5cd5427f181860c15626022a3eededb63"
+      }
+    },
+    {
+      "name": "jxl-two-1c10-MD-12-10-o2",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "MD",
+      "extra_bits": [
+        12,
+        10
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c10-MD-12-10-o2.jxl": "d3f4c8009044f9954cf2194587aaefc9119015ec0d22f8c3cd43a1c285a992cc",
+        "jxl-two-1c10-MD-12-10-o2.rgba16le": "ab9e63210104f307e4ecf106c4db6f61c707718c567a9f5789f7dabbd65d57e9",
+        "jxl-two-1c10-MD-12-10-o2.p0.codes16le": "eaac0bae6c3a90cbc2ac9b6c22021054e4f9bb3aec397831bffa83544078b5d2",
+        "jxl-two-1c10-MD-12-10-o2.p1.codes16le": "dc5671d0e66361500a33b7bd1b8c0feb5dc43f1058a732bfd0e386915e800711"
+      }
+    },
+    {
+      "name": "jxl-two-1c16-DM-12-12-o3",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "DM",
+      "extra_bits": [
+        12,
+        12
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c16-DM-12-12-o3.jxl": "3486cabf7ebca40f10edc052552d4dceaf0f58cc1a322bfc32ebeec2484a4757",
+        "jxl-two-1c16-DM-12-12-o3.rgba16le": "dc17032757d900e1b5f984b6b87fb2495c69014e91378b3a8735dc28849a523c",
+        "jxl-two-1c16-DM-12-12-o3.p0.codes16le": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf",
+        "jxl-two-1c16-DM-12-12-o3.p1.codes16le": "dd80ae32b523e68eb8b5426c1bf98a603e66e4f43c2bc569fb19daaad5e7c0c6"
+      }
+    },
+    {
+      "name": "jxl-two-1c9-MD-12-16-o4",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "MD",
+      "extra_bits": [
+        12,
+        16
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c9-MD-12-16-o4.jxl": "b32c4a3a893350d9f266d432469c4e498e5c43214dc19e4def90cda102b96655",
+        "jxl-two-1c9-MD-12-16-o4.rgba16le": "52e365df45189b644dfdfe60aed5de85fdf3623d5f33d13b93dcf2f79a60e654",
+        "jxl-two-1c9-MD-12-16-o4.p0.codes16le": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1",
+        "jxl-two-1c9-MD-12-16-o4.p1.codes16le": "9a80b170c6e13f5721ca23380e4c50e0a187b78fe83a299143bc6907aa5b8b57"
+      }
+    },
+    {
+      "name": "jxl-two-1c16-DM-16-8-o5",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "DM",
+      "extra_bits": [
+        16,
+        8
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c16-DM-16-8-o5.jxl": "8212afde10e43a35efd553e2cf49f28515a4cbda588dac3bcbef0509b7c66e5c",
+        "jxl-two-1c16-DM-16-8-o5.rgba16le": "7e4ae921c2e198598ff2e2c9b96d9c453416f13a1c561a4049864c57c70bf432",
+        "jxl-two-1c16-DM-16-8-o5.p0.codes16le": "74927e9de11a23e11e16bdf637ced7a95b186c98c752937330b6ebbff1697894",
+        "jxl-two-1c16-DM-16-8-o5.p1.codes16le": "10bf083fdc91698719f2f88b760fc4e1de09142492711a2f78999e9efcae47a0"
+      }
+    },
+    {
+      "name": "jxl-two-1c9-MD-16-9-o6",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "MD",
+      "extra_bits": [
+        16,
+        9
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c9-MD-16-9-o6.jxl": "7dc49e887d00842c5ae835efd79ae762fe9bc189adc65489cbd2554d1e003a18",
+        "jxl-two-1c9-MD-16-9-o6.rgba16le": "c2dae1a8c4d41f9ab08182f42e9a4c16305c8a4857cbce429d371589c7605075",
+        "jxl-two-1c9-MD-16-9-o6.p0.codes16le": "a2f2db8ea918411035b694dd752bd111837fd089bea43d823697ce224111af2b",
+        "jxl-two-1c9-MD-16-9-o6.p1.codes16le": "c9902f856fcd3aef6c0108f730750681ec56c2aa9cafe18f45287432a5b9e562"
+      }
+    },
+    {
+      "name": "jxl-two-1c12-DM-16-10-o7",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "DM",
+      "extra_bits": [
+        16,
+        10
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c12-DM-16-10-o7.jxl": "4b3e5bd5ab00e9a40491afdbcb315c91d95b28c935ba6674f3a564cd3e17cdc7",
+        "jxl-two-1c12-DM-16-10-o7.rgba16le": "fd9f6789d14db1d50f960bcd3446cc939f0108fdec630bc535903a45b9c74f22",
+        "jxl-two-1c12-DM-16-10-o7.p0.codes16le": "f9ba2731baf3750ca9b9424b9ef59b78d4bfa6da16075e19767ea24f0eaccebc",
+        "jxl-two-1c12-DM-16-10-o7.p1.codes16le": "344daf73b7220b7d5e76934ef4b317f33b1505c021b3c98689c5f338d1e59b8b"
+      }
+    },
+    {
+      "name": "jxl-two-1c8-MD-16-12-o8",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "MD",
+      "extra_bits": [
+        16,
+        12
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c8-MD-16-12-o8.jxl": "405a5dec6bb2f4f637bae925aa148b71ba87b86b08c6aef920290e158ea0a254",
+        "jxl-two-1c8-MD-16-12-o8.rgba16le": "bb61578e857af4f4e343b12e6ed02f9ac661a320403b15a0ad4f28c2afa51263",
+        "jxl-two-1c8-MD-16-12-o8.p0.codes16le": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8",
+        "jxl-two-1c8-MD-16-12-o8.p1.codes16le": "ce22143b6d215e4ff0ec00ebb19a6cdb934514c9afe8db0547ae9fbbc28b1caa"
+      }
+    },
+    {
+      "name": "jxl-two-1c10-DM-16-16-o1",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "DM",
+      "extra_bits": [
+        16,
+        16
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c10-DM-16-16-o1.jxl": "0501a1a8add842a3ea70b99edea4798cc3527e63c9a23c65cab9857588714bbf",
+        "jxl-two-1c10-DM-16-16-o1.rgba16le": "14bee01cdf14f516b627d46b61066e53632db4b383f45ef5b8c0c082e4130506",
+        "jxl-two-1c10-DM-16-16-o1.p0.codes16le": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8",
+        "jxl-two-1c10-DM-16-16-o1.p1.codes16le": "d235e8126fe5f4fff8bb4ef21bee449cf1c0f0ec10b716a38414eccd1648284e"
+      }
+    },
+    {
+      "name": "jxl-two-3c8-MD-8-8-o1",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "MD",
+      "extra_bits": [
+        8,
+        8
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c8-MD-8-8-o1.jxl": "f0f47f41d9183472585559bdb8062ae2d65e725599f46657bc89c8402c8727ab",
+        "jxl-two-3c8-MD-8-8-o1.rgba16le": "631195689bcbf228e246ebc573a5418b641c7b269021222ba21e12952fa75cc1",
+        "jxl-two-3c8-MD-8-8-o1.p0.codes16le": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212",
+        "jxl-two-3c8-MD-8-8-o1.p1.codes16le": "e57d62d139ec7c9f10ac1afcf7cda51a095819b4f06e1fe06651cbd564e481bd"
+      }
+    },
+    {
+      "name": "jxl-two-3c10-DM-8-9-o2",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "DM",
+      "extra_bits": [
+        8,
+        9
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c10-DM-8-9-o2.jxl": "a970e03f56fdda9947667bb44f35feecf28ba00226a89dcb9deea4f61c0440a7",
+        "jxl-two-3c10-DM-8-9-o2.rgba16le": "3532c1ce7a2e2ea8807ac4e90909b2b6e45b4d360b15e87d0a02ae130d14b050",
+        "jxl-two-3c10-DM-8-9-o2.p0.codes16le": "91ba25387479add0c3debfb663c051642cd43240053bfe4a645f3f4f1ff0a6dc",
+        "jxl-two-3c10-DM-8-9-o2.p1.codes16le": "676c062ab5d1e971f4a83a24fcb8f0372f6cd22bb5c51f7f6cd4c70829425b98"
+      }
+    },
+    {
+      "name": "jxl-two-3c16-MD-8-10-o3",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "MD",
+      "extra_bits": [
+        8,
+        10
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c16-MD-8-10-o3.jxl": "194cd2447f5282667f66b96900f5a15dd61e7a9d7d797ee06db6ee1d5777e332",
+        "jxl-two-3c16-MD-8-10-o3.rgba16le": "830ac6428d7105f82dc199af74c8120460bee5ceb6b573a6a8233002a9eeeac9",
+        "jxl-two-3c16-MD-8-10-o3.p0.codes16le": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb",
+        "jxl-two-3c16-MD-8-10-o3.p1.codes16le": "d39319b9a482c71749630fb41fd73beb06836440d46b6c756a7a5e5bd497c95d"
+      }
+    },
+    {
+      "name": "jxl-two-3c9-DM-8-12-o4",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "DM",
+      "extra_bits": [
+        8,
+        12
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c9-DM-8-12-o4.jxl": "29e16a9d0c62d57845581224f4b0a792ca82b1b27771c1523c1206daa822c52e",
+        "jxl-two-3c9-DM-8-12-o4.rgba16le": "2b5badf6c442dfd12eb05665754bca0e03480148cb368141deb7480770d8713c",
+        "jxl-two-3c9-DM-8-12-o4.p0.codes16le": "5d32d3292e758456bb8502eaaee38731a46de8dc930f61182bfceeecf4ae60c4",
+        "jxl-two-3c9-DM-8-12-o4.p1.codes16le": "9cdf246026c86f597f5d115b87a7f576804465c821545142f3292e97640ba0a6"
+      }
+    },
+    {
+      "name": "jxl-two-3c12-MD-8-16-o5",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "MD",
+      "extra_bits": [
+        8,
+        16
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-two-3c12-MD-8-16-o5.jxl": "b900c298a48efcc4102b57cee04633cb47dd57c13014ccf232c6abebe195fe0d",
+        "jxl-two-3c12-MD-8-16-o5.rgba16le": "46d10e68f2b493e402d344c11eb0260138b82b6efab6b19b7eb48eac42be9bb1",
+        "jxl-two-3c12-MD-8-16-o5.p0.codes16le": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be",
+        "jxl-two-3c12-MD-8-16-o5.p1.codes16le": "a462eec1fb9fe492befa9b2978db0f13e7b7aa9817d179138dd141ea2dde3822"
+      }
+    },
+    {
+      "name": "jxl-two-3c9-DM-9-8-o6",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "DM",
+      "extra_bits": [
+        9,
+        8
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c9-DM-9-8-o6.jxl": "e75c7203a4d2f90609c26a9b51952d45ca40d86fed808ac8f4e737e0bd00e0aa",
+        "jxl-two-3c9-DM-9-8-o6.rgba16le": "e8fbc564050a066ad9eae589cfee8e45c737853fec1e5ee01444601d14b476e5",
+        "jxl-two-3c9-DM-9-8-o6.p0.codes16le": "160af7b3d81a50040c2454e6778899039367af176168325ac9ab61981bdea33e",
+        "jxl-two-3c9-DM-9-8-o6.p1.codes16le": "31445717925d4fec2024dabb0c85aba4f6c94b57b44a7cce1cbabb42bd0e54e9"
+      }
+    },
+    {
+      "name": "jxl-two-3c12-MD-9-9-o7",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "MD",
+      "extra_bits": [
+        9,
+        9
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c12-MD-9-9-o7.jxl": "7da8d6f332320b92d0e16272961664b52b0f456d01370d82dd52fe24f4ca8fb2",
+        "jxl-two-3c12-MD-9-9-o7.rgba16le": "65b83b955633b85175fac26760579d203e745bfb75f98b9828bcf2c9cc5f3ba2",
+        "jxl-two-3c12-MD-9-9-o7.p0.codes16le": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db",
+        "jxl-two-3c12-MD-9-9-o7.p1.codes16le": "14b9609fb95e01da1d9eb542c2ab63fc3768b670f821090589cb6510e9029b01"
+      }
+    },
+    {
+      "name": "jxl-two-3c8-DM-9-10-o8",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "DM",
+      "extra_bits": [
+        9,
+        10
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c8-DM-9-10-o8.jxl": "19c6a3227951cf298f1a47c5b00b157a9c3da561d761ce812ca0b50d886d4749",
+        "jxl-two-3c8-DM-9-10-o8.rgba16le": "e9ea8864cf764bd9073d6e8c76ab63a93a07115ad576142140e2234ff77b19f4",
+        "jxl-two-3c8-DM-9-10-o8.p0.codes16le": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710",
+        "jxl-two-3c8-DM-9-10-o8.p1.codes16le": "999c686a2e25a27c581b44145ce2dd98b2084cbd37fc6be6b110317368b45282"
+      }
+    },
+    {
+      "name": "jxl-two-3c10-MD-9-12-o1",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "MD",
+      "extra_bits": [
+        9,
+        12
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c10-MD-9-12-o1.jxl": "96069ed109189cb8a36d48b60ca3f2b9ef5b5deddd32f252e55d63ae7c8c3a72",
+        "jxl-two-3c10-MD-9-12-o1.rgba16le": "e684fd5075b26149f39e86142f0bd2e5a176b471f969ca4cfafb79d4fe721e29",
+        "jxl-two-3c10-MD-9-12-o1.p0.codes16le": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710",
+        "jxl-two-3c10-MD-9-12-o1.p1.codes16le": "0654d599ec5cf52af853f428f2e560c29b3b3f9d35f0a18e914fbf20ca57831f"
+      }
+    },
+    {
+      "name": "jxl-two-3c16-DM-9-16-o2",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "DM",
+      "extra_bits": [
+        9,
+        16
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c16-DM-9-16-o2.jxl": "5f42e15a4f9b77462c05c0898b4ba5fac434ab2dd06600ea5ba407d59a388a10",
+        "jxl-two-3c16-DM-9-16-o2.rgba16le": "0e8d56c64d343422602f5641946180a56fca7827d5991dd6c2e4e8299024a551",
+        "jxl-two-3c16-DM-9-16-o2.p0.codes16le": "892f321b7ed3c3ffc6335c009ed7fd01df6986722eb6a48252428ea4340fc3a0",
+        "jxl-two-3c16-DM-9-16-o2.p1.codes16le": "48c2ed3b91328d805d2ef405e6f7c8bf689aa5ffa8b596bf13a0c90f79735eb5"
+      }
+    },
+    {
+      "name": "jxl-two-3c10-MD-10-8-o3",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "MD",
+      "extra_bits": [
+        10,
+        8
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c10-MD-10-8-o3.jxl": "e3d4749272a5a5b2c682f7f1498c6ea2ec0c537bb6660d28a112c78928e3060a",
+        "jxl-two-3c10-MD-10-8-o3.rgba16le": "3fc9fe4c27c49b44d350b268ee508167734121c3f955e7f8f8cb3b190e0e3813",
+        "jxl-two-3c10-MD-10-8-o3.p0.codes16le": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450",
+        "jxl-two-3c10-MD-10-8-o3.p1.codes16le": "637af4c0dc2f748d3ab611748c8428a884ed4b02b6602bf2305a15316a99373a"
+      }
+    },
+    {
+      "name": "jxl-two-3c16-DM-10-9-o4",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "DM",
+      "extra_bits": [
+        10,
+        9
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c16-DM-10-9-o4.jxl": "5259113311ba2b91b63bacd45d7ede9159b3d2a3c0ea11670f4ce72056bab6e8",
+        "jxl-two-3c16-DM-10-9-o4.rgba16le": "2ed508b5f48f696223b923541b043d9d2d79be6f5c4550690fa8c1bd66a6040e",
+        "jxl-two-3c16-DM-10-9-o4.p0.codes16le": "83162444ff4907dc497da6f31733a39edccf699028904bffd0f3fb1d9eb10bcb",
+        "jxl-two-3c16-DM-10-9-o4.p1.codes16le": "c1b5433a14782f71c076c378bc1c7e0a5ff49af3d57b460e1975d5913c1cc46b"
+      }
+    },
+    {
+      "name": "jxl-two-3c9-MD-10-10-o5",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "MD",
+      "extra_bits": [
+        10,
+        10
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c9-MD-10-10-o5.jxl": "adca402221d847fdb008b691f3f016817a92f32211947d631608045e65c3694f",
+        "jxl-two-3c9-MD-10-10-o5.rgba16le": "679aaa22141f89ac0f01e70b4cb67392b85d068a5d94dfd27d3be9592ad1bbe3",
+        "jxl-two-3c9-MD-10-10-o5.p0.codes16le": "0bdab7f34ca861d6f8f8f3bf067ace28cb28ef4944f72b4c97019c401622af8a",
+        "jxl-two-3c9-MD-10-10-o5.p1.codes16le": "049cb946519555b335d8e7e0ee6048991bb526e4d5e807aaa471d1de6c9c54e4"
+      }
+    },
+    {
+      "name": "jxl-two-3c12-DM-10-12-o6",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "DM",
+      "extra_bits": [
+        10,
+        12
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c12-DM-10-12-o6.jxl": "f6298ae15a6fc6a3167c3b03e74093ebaf8f7e9c2dac1620c712cf9228d75f2a",
+        "jxl-two-3c12-DM-10-12-o6.rgba16le": "4567a20e0128e0d80070a74535e42c4ab6da6c9261dd98d50185138e47ae66c2",
+        "jxl-two-3c12-DM-10-12-o6.p0.codes16le": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450",
+        "jxl-two-3c12-DM-10-12-o6.p1.codes16le": "71b8b9c7125b65141c675c9b5b83ad244c9baa381f072df7e936420ddc56d2d0"
+      }
+    },
+    {
+      "name": "jxl-two-3c8-MD-10-16-o7",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "MD",
+      "extra_bits": [
+        10,
+        16
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c8-MD-10-16-o7.jxl": "d35b5744adfa10bb0040502791348c29602c9d0e93e7a261e670c3fb17be9648",
+        "jxl-two-3c8-MD-10-16-o7.rgba16le": "f5ba3fcb864369ea1fbd88e147ae7b49263daa1e836116f51e7e8fd0ec46e7e7",
+        "jxl-two-3c8-MD-10-16-o7.p0.codes16le": "fbd2bf382615c4902f96923a2ed291080e039b3ea7ba44bcc13862e1490cac8e",
+        "jxl-two-3c8-MD-10-16-o7.p1.codes16le": "55701d28ae068373c6b0f9d5a24123dc839ad4cf4e2d5437f5e664167d6d531c"
+      }
+    },
+    {
+      "name": "jxl-two-3c12-DM-12-8-o8",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "DM",
+      "extra_bits": [
+        12,
+        8
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c12-DM-12-8-o8.jxl": "d358e7896fda2449d447239b585b53554b3fd08996f68eb377157a0c054fd93c",
+        "jxl-two-3c12-DM-12-8-o8.rgba16le": "77c6396c55737d98899cf7cc630aa5595d600b5ca861dcba4b6d3a9625e5983b",
+        "jxl-two-3c12-DM-12-8-o8.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a",
+        "jxl-two-3c12-DM-12-8-o8.p1.codes16le": "1c0eebe4fca5436e2dd0f6bb504eebe95990d7c65019860626989c2a8a9dfdcd"
+      }
+    },
+    {
+      "name": "jxl-two-3c8-MD-12-9-o1",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "MD",
+      "extra_bits": [
+        12,
+        9
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c8-MD-12-9-o1.jxl": "0539bb8e301a201bd7c008002e61d36f67ea9b2512efd7742e5ba41be2fc1647",
+        "jxl-two-3c8-MD-12-9-o1.rgba16le": "631195689bcbf228e246ebc573a5418b641c7b269021222ba21e12952fa75cc1",
+        "jxl-two-3c8-MD-12-9-o1.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a",
+        "jxl-two-3c8-MD-12-9-o1.p1.codes16le": "d1f9119b2089118d4b0e2b67886032d5cd5427f181860c15626022a3eededb63"
+      }
+    },
+    {
+      "name": "jxl-two-3c10-DM-12-10-o2",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "DM",
+      "extra_bits": [
+        12,
+        10
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c10-DM-12-10-o2.jxl": "b8ceb3c3924b495f860c400859b9c30a4c261bcc7e2a1597f1bc25690da0219e",
+        "jxl-two-3c10-DM-12-10-o2.rgba16le": "3532c1ce7a2e2ea8807ac4e90909b2b6e45b4d360b15e87d0a02ae130d14b050",
+        "jxl-two-3c10-DM-12-10-o2.p0.codes16le": "eaac0bae6c3a90cbc2ac9b6c22021054e4f9bb3aec397831bffa83544078b5d2",
+        "jxl-two-3c10-DM-12-10-o2.p1.codes16le": "dc5671d0e66361500a33b7bd1b8c0feb5dc43f1058a732bfd0e386915e800711"
+      }
+    },
+    {
+      "name": "jxl-two-3c16-MD-12-12-o3",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "MD",
+      "extra_bits": [
+        12,
+        12
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c16-MD-12-12-o3.jxl": "138dbf86da3ab3ba65868a42e0227bb9eb44e68eb4f6c4c64a20c2ce1c5e2cf8",
+        "jxl-two-3c16-MD-12-12-o3.rgba16le": "830ac6428d7105f82dc199af74c8120460bee5ceb6b573a6a8233002a9eeeac9",
+        "jxl-two-3c16-MD-12-12-o3.p0.codes16le": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf",
+        "jxl-two-3c16-MD-12-12-o3.p1.codes16le": "dd80ae32b523e68eb8b5426c1bf98a603e66e4f43c2bc569fb19daaad5e7c0c6"
+      }
+    },
+    {
+      "name": "jxl-two-3c9-DM-12-16-o4",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "DM",
+      "extra_bits": [
+        12,
+        16
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c9-DM-12-16-o4.jxl": "f0e561fdd9d2423999767be69e4e5065d220249e0a660bbefeea841ceaf2d93f",
+        "jxl-two-3c9-DM-12-16-o4.rgba16le": "2b5badf6c442dfd12eb05665754bca0e03480148cb368141deb7480770d8713c",
+        "jxl-two-3c9-DM-12-16-o4.p0.codes16le": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1",
+        "jxl-two-3c9-DM-12-16-o4.p1.codes16le": "9a80b170c6e13f5721ca23380e4c50e0a187b78fe83a299143bc6907aa5b8b57"
+      }
+    },
+    {
+      "name": "jxl-two-3c16-MD-16-8-o5",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "MD",
+      "extra_bits": [
+        16,
+        8
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c16-MD-16-8-o5.jxl": "8f5aac0bed7b8708897b729b848d561c6224137985062c64112f91336cc8b69a",
+        "jxl-two-3c16-MD-16-8-o5.rgba16le": "3917d634b38913acec172d3b1668aaa61de255e4993cb279ce0412f8a0b101cc",
+        "jxl-two-3c16-MD-16-8-o5.p0.codes16le": "74927e9de11a23e11e16bdf637ced7a95b186c98c752937330b6ebbff1697894",
+        "jxl-two-3c16-MD-16-8-o5.p1.codes16le": "10bf083fdc91698719f2f88b760fc4e1de09142492711a2f78999e9efcae47a0"
+      }
+    },
+    {
+      "name": "jxl-two-3c9-DM-16-9-o6",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "DM",
+      "extra_bits": [
+        16,
+        9
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c9-DM-16-9-o6.jxl": "1923fbd2ea416eede1eeea5257f56d479aac8d7cc1e3fa3fa485835f611370ea",
+        "jxl-two-3c9-DM-16-9-o6.rgba16le": "e8fbc564050a066ad9eae589cfee8e45c737853fec1e5ee01444601d14b476e5",
+        "jxl-two-3c9-DM-16-9-o6.p0.codes16le": "a2f2db8ea918411035b694dd752bd111837fd089bea43d823697ce224111af2b",
+        "jxl-two-3c9-DM-16-9-o6.p1.codes16le": "c9902f856fcd3aef6c0108f730750681ec56c2aa9cafe18f45287432a5b9e562"
+      }
+    },
+    {
+      "name": "jxl-two-3c12-MD-16-10-o7",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "MD",
+      "extra_bits": [
+        16,
+        10
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c12-MD-16-10-o7.jxl": "aa523c2ad5bf2a13339d27dd6639bd46174c86d0bc381b97970c528280a15cbc",
+        "jxl-two-3c12-MD-16-10-o7.rgba16le": "65b83b955633b85175fac26760579d203e745bfb75f98b9828bcf2c9cc5f3ba2",
+        "jxl-two-3c12-MD-16-10-o7.p0.codes16le": "f9ba2731baf3750ca9b9424b9ef59b78d4bfa6da16075e19767ea24f0eaccebc",
+        "jxl-two-3c12-MD-16-10-o7.p1.codes16le": "344daf73b7220b7d5e76934ef4b317f33b1505c021b3c98689c5f338d1e59b8b"
+      }
+    },
+    {
+      "name": "jxl-two-3c8-DM-16-12-o8",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "DM",
+      "extra_bits": [
+        16,
+        12
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c8-DM-16-12-o8.jxl": "7929164356052482c8f2daa9d8356e1d0ceb54af018e6b218b6425d5e5ed8f1d",
+        "jxl-two-3c8-DM-16-12-o8.rgba16le": "e9ea8864cf764bd9073d6e8c76ab63a93a07115ad576142140e2234ff77b19f4",
+        "jxl-two-3c8-DM-16-12-o8.p0.codes16le": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8",
+        "jxl-two-3c8-DM-16-12-o8.p1.codes16le": "ce22143b6d215e4ff0ec00ebb19a6cdb934514c9afe8db0547ae9fbbc28b1caa"
+      }
+    },
+    {
+      "name": "jxl-two-3c10-MD-16-16-o1",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "MD",
+      "extra_bits": [
+        16,
+        16
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c10-MD-16-16-o1.jxl": "82bd48bdf698814341212f4f0f92b34b2de5c0577fd69af63159294d08957216",
+        "jxl-two-3c10-MD-16-16-o1.rgba16le": "e684fd5075b26149f39e86142f0bd2e5a176b471f969ca4cfafb79d4fe721e29",
+        "jxl-two-3c10-MD-16-16-o1.p0.codes16le": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8",
+        "jxl-two-3c10-MD-16-16-o1.p1.codes16le": "d235e8126fe5f4fff8bb4ef21bee449cf1c0f0ec10b716a38414eccd1648284e"
+      }
+    },
+    {
+      "name": "jxl-two-3c16-DD-8-16-o5",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "DD",
+      "extra_bits": [
+        8,
+        16
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-two-3c16-DD-8-16-o5.jxl": "389d7af982f6a18e3c67f3bcddd478782d831e792d07fdfe60ffdf020dce80a5",
+        "jxl-two-3c16-DD-8-16-o5.rgba16le": "3917d634b38913acec172d3b1668aaa61de255e4993cb279ce0412f8a0b101cc",
+        "jxl-two-3c16-DD-8-16-o5.p0.codes16le": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be",
+        "jxl-two-3c16-DD-8-16-o5.p1.codes16le": "a462eec1fb9fe492befa9b2978db0f13e7b7aa9817d179138dd141ea2dde3822"
+      }
+    },
+    {
+      "name": "jxl-two-1c8-MM-16-8-o6",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "MM",
+      "extra_bits": [
+        16,
+        8
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c8-MM-16-8-o6.jxl": "e35314031ac09b0151d2288e688afb21682267d60b8ae10ec5c8e81351b949b0",
+        "jxl-two-1c8-MM-16-8-o6.rgba16le": "49edc80a80dcb33d52448a91f10d87c90ad0610c57a28cd65da757fa136897f1",
+        "jxl-two-1c8-MM-16-8-o6.p0.codes16le": "a2f2db8ea918411035b694dd752bd111837fd089bea43d823697ce224111af2b",
+        "jxl-two-1c8-MM-16-8-o6.p1.codes16le": "31445717925d4fec2024dabb0c85aba4f6c94b57b44a7cce1cbabb42bd0e54e9"
+      }
+    },
+    {
+      "name": "jxl-two-3c12-DD-8-8-o7",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "DD",
+      "extra_bits": [
+        8,
+        8
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-3c12-DD-8-8-o7.jxl": "fc7d13e13dd30009cd291847ac0744981bfe1630cff1e1d9cd03a6322eb171cb",
+        "jxl-two-3c12-DD-8-8-o7.rgba16le": "65b83b955633b85175fac26760579d203e745bfb75f98b9828bcf2c9cc5f3ba2",
+        "jxl-two-3c12-DD-8-8-o7.p0.codes16le": "daa2035b211ae50568b999bab672935f223316383d38afb57660de184495832a",
+        "jxl-two-3c12-DD-8-8-o7.p1.codes16le": "08b6b7a7e28cb6c918f1d0994d48adae853418dc56607a9f0006f8bbe89554c7"
+      }
+    },
+    {
+      "name": "jxl-two-1c10-MM-16-16-o8",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "MM",
+      "extra_bits": [
+        16,
+        16
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-two-1c10-MM-16-16-o8.jxl": "670629aaad1a10f445ca633823b73adac9af6c1cf83b993d020f69209eb2904e",
+        "jxl-two-1c10-MM-16-16-o8.rgba16le": "bb6eb9e844856c88da7d9bea3db51ab28d1eae10ce6a8b5cf48460bee75b3b93",
+        "jxl-two-1c10-MM-16-16-o8.p0.codes16le": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8",
+        "jxl-two-1c10-MM-16-16-o8.p1.codes16le": "a85749203438ff34436b04b2c5549e7e1725ae9285f6dbf4983c537712d9a49f"
+      }
+    },
+    {
+      "name": "jxl-two-refused-three",
+      "refused": true,
+      "kind": "three",
+      "sha256": "2d76b335ed805c9ec1c25837ea8cf0a54285d3693ff675507d7b0618fb4780ec"
+    },
+    {
+      "name": "jxl-two-refused-spot",
+      "refused": true,
+      "kind": "spot",
+      "sha256": "ecbceb38aca898fb42563e7bc30b2c9416c0ee886127d0fe4f35dc13c9f3b0e5"
+    },
+    {
+      "name": "jxl-two-refused-float",
+      "refused": true,
+      "kind": "float",
+      "sha256": "64e0cda0ae605c12dabf5b93f57561a79d5e00aae5b1def37fa0cc341de89c3a"
+    },
+    {
+      "name": "jxl-two-refused-subsampled",
+      "refused": true,
+      "kind": "subsampled",
+      "sha256": "e79b4d603ee62fd1185c6fd5b622b32f7595eb7604a4a493accd013d1a840628"
+    },
+    {
+      "name": "jxl-two-refused-layers",
+      "refused": true,
+      "kind": "layers",
+      "sha256": "c5bacbe80c822f6327af5c4e9ae075c97c5c46d73272adfb2bc7edfaed191da7"
+    }
+  ]
+}

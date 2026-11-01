@@ -451,8 +451,7 @@ struct Header {
     height: usize,
     bits: u8,
     alpha_bits: Option<u8>,
-    extra_bits: Option<u8>,
-    extra_kind: Option<JxlExtraChannelKind>,
+    extras: [Option<(JxlExtraChannelKind, u8)>; 2],
     alpha_associated: bool,
     alpha_dim_shift: u8,
     native_bits: u8,
@@ -785,7 +784,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
     if EXTRA {
         if m.xyb_encoded
             || m.preview.is_some()
-            || m.extra_channel_info.len() > 1
+            || m.extra_channel_info.len() > 2
             || m.extra_channel_info.iter().any(|c| {
                 !matches!(c.ec_type, ExtraChannel::Depth | ExtraChannel::SelectionMask)
                     || c.dim_shift() != 0
@@ -794,7 +793,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
             })
         {
             return Err(unsupported(
-                "extra-plane output supports zero or one full-resolution integer Depth or SelectionMask channel on original-profile SDR without preview",
+                "extra-plane output supports up to two full-resolution integer Depth/SelectionMask channels on original-profile SDR without preview",
             ));
         }
     } else {
@@ -841,23 +840,17 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
         .first()
         .filter(|c| c.ec_type == ExtraChannel::Alpha)
         .map(|c| c.bit_depth().bits_per_sample() as u8);
-    let extra_bits = if EXTRA {
-        m.extra_channel_info
-            .first()
-            .map(|c| c.bit_depth().bits_per_sample() as u8)
-    } else {
-        None
-    };
-    let extra_kind = if EXTRA {
-        match m.extra_channel_info.first().map(|c| c.ec_type) {
-            Some(ExtraChannel::Depth) => Some(JxlExtraChannelKind::Depth),
-            Some(ExtraChannel::SelectionMask) => Some(JxlExtraChannelKind::SelectionMask),
-            None => None,
-            _ => return Err(unsupported("unrepresented extra-channel kind")),
+    let mut extras = [None; 2];
+    if EXTRA {
+        for (slot, c) in extras.iter_mut().zip(&m.extra_channel_info) {
+            let kind = match c.ec_type {
+                ExtraChannel::Depth => JxlExtraChannelKind::Depth,
+                ExtraChannel::SelectionMask => JxlExtraChannelKind::SelectionMask,
+                _ => return Err(unsupported("unrepresented extra-channel kind")),
+            };
+            *slot = Some((kind, c.bit_depth().bits_per_sample() as u8));
         }
-    } else {
-        None
-    };
+    }
     let alpha_associated = m
         .extra_channel_info
         .first()
@@ -1014,8 +1007,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
         height,
         bits: bits as u8,
         alpha_bits,
-        extra_bits,
-        extra_kind,
+        extras,
         alpha_associated,
         alpha_dim_shift,
         native_bits,

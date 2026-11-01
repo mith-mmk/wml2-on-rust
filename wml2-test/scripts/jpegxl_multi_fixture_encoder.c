@@ -1,0 +1,23 @@
+/* Bounded independent libjxl fixture encoder; normalized interleaved U16 input.
+ * Fixed odd7x5 geometry; D=Depth,M=SelectionMask,S=unsupported SpotColor. */
+#include <jxl/encode.h>
+#include <jxl/color_encoding.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#define CHECK(x) do {if(!(x)){fprintf(stderr,"failed: %s\n",#x);return 1;}}while(0)
+int main(int argc,char**argv){
+ CHECK(argc==10);const unsigned colors=atoi(argv[3]),bits=atoi(argv[4]),orientation=atoi(argv[5]);const size_t count=strlen(argv[6]);CHECK((colors==1||colors==3)&&bits>=8&&bits<=16&&orientation>=1&&orientation<=8&&count>=1&&count<=3);
+ unsigned ebits[3]={0};char*csv=malloc(strlen(argv[7])+1);CHECK(csv);strcpy(csv,argv[7]);char*token=strtok(csv,",");for(size_t i=0;i<count;i++){CHECK(token);ebits[i]=atoi(token);CHECK(ebits[i]>=8&&ebits[i]<=16);token=strtok(NULL,",");}CHECK(!token);free(csv);
+ size_t bytes=35*(colors+count)*2;unsigned char*src=malloc(bytes),*rgb=malloc(35*colors*2),*planes[3]={0};CHECK(src&&rgb);FILE*f=fopen(argv[1],"rb");CHECK(f);CHECK(fread(src,1,bytes,f)==bytes);fclose(f);
+ for(size_t i=0;i<count;i++){planes[i]=malloc(70);CHECK(planes[i]);}
+ for(size_t p=0;p<35;p++){memcpy(rgb+p*colors*2,src+p*(colors+count)*2,colors*2);for(size_t i=0;i<count;i++)memcpy(planes[i]+p*2,src+(p*(colors+count)+colors+i)*2,2);}
+ JxlEncoder*enc=JxlEncoderCreate(NULL);CHECK(enc);JxlBasicInfo info;JxlEncoderInitBasicInfo(&info);info.xsize=7;info.ysize=5;info.num_color_channels=colors;info.bits_per_sample=bits;info.num_extra_channels=count;info.uses_original_profile=JXL_TRUE;info.orientation=(JxlOrientation)orientation;CHECK(JxlEncoderSetBasicInfo(enc,&info)==JXL_ENC_SUCCESS);
+ for(size_t i=0;i<count;i++){JxlExtraChannelType type=argv[6][i]=='D'?JXL_CHANNEL_DEPTH:argv[6][i]=='M'?JXL_CHANNEL_SELECTION_MASK:JXL_CHANNEL_SPOT_COLOR;JxlExtraChannelInfo ec;JxlEncoderInitExtraChannelInfo(type,&ec);ec.bits_per_sample=ebits[i];if(i==count-1&&!strcmp(argv[9],"float")){CHECK(ebits[i]==16);ec.exponent_bits_per_sample=5;}if(!strcmp(argv[9],"subsampled"))ec.dim_shift=1;if(type==JXL_CHANNEL_SPOT_COLOR){ec.spot_color[0]=1;ec.spot_color[3]=1;}CHECK(JxlEncoderSetExtraChannelInfo(enc,i,&ec)==JXL_ENC_SUCCESS);char name[16];int n=snprintf(name,sizeof(name),"plane-%zu",i);CHECK(n>0&&(size_t)n<sizeof(name));CHECK(JxlEncoderSetExtraChannelName(enc,i,name,n)==JXL_ENC_SUCCESS);}
+ if(!strcmp(argv[8],"-")){JxlColorEncoding c;JxlColorEncodingSetToSRGB(&c,colors==1);CHECK(JxlEncoderSetColorEncoding(enc,&c)==JXL_ENC_SUCCESS);}else{f=fopen(argv[8],"rb");CHECK(f);CHECK(!fseek(f,0,SEEK_END));long n=ftell(f);CHECK(n>0&&n<=65536);rewind(f);unsigned char*icc=malloc(n);CHECK(icc);CHECK(fread(icc,1,n,f)==(size_t)n);fclose(f);CHECK(JxlEncoderSetICCProfile(enc,icc,n)==JXL_ENC_SUCCESS);free(icc);}
+ const int sub=!strcmp(argv[9],"subsampled");JxlEncoderFrameSettings*settings=JxlEncoderFrameSettingsCreate(enc,NULL);CHECK(settings);CHECK(JxlEncoderSetFrameLossless(settings,!sub)==JXL_ENC_SUCCESS);CHECK(JxlEncoderFrameSettingsSetOption(settings,JXL_ENC_FRAME_SETTING_EFFORT,3)==JXL_ENC_SUCCESS);if(sub){CHECK(JxlEncoderSetFrameDistance(settings,0)==JXL_ENC_SUCCESS);CHECK(JxlEncoderFrameSettingsSetOption(settings,JXL_ENC_FRAME_SETTING_MODULAR,1)==JXL_ENC_SUCCESS);CHECK(JxlEncoderFrameSettingsSetOption(settings,JXL_ENC_FRAME_SETTING_EXTRA_CHANNEL_RESAMPLING,2)==JXL_ENC_SUCCESS);}
+ JxlPixelFormat color={colors,JXL_TYPE_UINT16,JXL_LITTLE_ENDIAN,0},extra={1,JXL_TYPE_UINT16,JXL_LITTLE_ENDIAN,0};JxlBitDepth depth={JXL_BIT_DEPTH_FROM_PIXEL_FORMAT,0,0};CHECK(JxlEncoderSetFrameBitDepth(settings,&depth)==JXL_ENC_SUCCESS);
+ for(unsigned frame=0;frame<(!strcmp(argv[9],"layers")?2u:1u);frame++){CHECK(JxlEncoderAddImageFrame(settings,&color,rgb,35*colors*2)==JXL_ENC_SUCCESS);for(size_t i=0;i<count;i++)CHECK(JxlEncoderSetExtraChannelBuffer(settings,&extra,planes[i],70,i)==JXL_ENC_SUCCESS);}
+ JxlEncoderCloseInput(enc);size_t capacity=1024*1024,available=capacity;unsigned char*out=malloc(capacity),*next=out;CHECK(out);CHECK(JxlEncoderProcessOutput(enc,&next,&available)==JXL_ENC_SUCCESS);f=fopen(argv[2],"wb");CHECK(f);CHECK(fwrite(out,1,capacity-available,f)==capacity-available);fclose(f);free(out);free(src);free(rgb);for(size_t i=0;i<count;i++)free(planes[i]);JxlEncoderDestroy(enc);return 0;
+}

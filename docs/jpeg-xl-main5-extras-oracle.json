@@ -1,0 +1,1574 @@
+{
+  "reference": "Independent C libjxl0.11.2; per-plane normalized decode recovered to source codes; exact authored source code and independent orientation map agreement",
+  "source_sha256": {
+    "wml2-test/scripts/generate_jpegxl_main5_extras.py": "2c9f5a9c0854c425cc961af434d3cbe6a72ce2febcc754fea6071b82fc9f7d46",
+    "wml2-test/scripts/jpegxl_multi_fixture_encoder.c": "2ef3d183b12fadf01ea57f9db925e7a6f75f48642a74983593fb5709853fa152",
+    "wml2-test/scripts/jpegxl_extra_reference.c": "a545095a3d01187ed95deea4662721006a02eeed36beba53c56119c3eded3e36"
+  },
+  "cases": [
+    {
+      "name": "jxl-main5-1c8-A-8-o1",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "A",
+      "extra_bits": [
+        8
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c8-A-8-o1.jxl": "4c9db20c524bd0150a8fd4494c5b77bec67a2a2a7dc906cd2826e8aaf3b61eda",
+        "jxl-main5-1c8-A-8-o1.rgba16le": "f2925a62fb209a5b00840e4cee1bcbcd7544754c700c69cb47b1a4e8b52f87d8",
+        "jxl-main5-1c8-A-8-o1.p0.codes16le": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+      }
+    },
+    {
+      "name": "jxl-main5-1c8-DA-9-9-o2",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "DA",
+      "extra_bits": [
+        9,
+        9
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c8-DA-9-9-o2.jxl": "6a29de35f5710fb163f63daa19635c31ed75a607acf0d1b09e9af5e8412590b2",
+        "jxl-main5-1c8-DA-9-9-o2.rgba16le": "85f16dbaebb7b972b78af3c8be3a0543ff18ea71b58fc430655e723fed6c598c",
+        "jxl-main5-1c8-DA-9-9-o2.p0.codes16le": "892f321b7ed3c3ffc6335c009ed7fd01df6986722eb6a48252428ea4340fc3a0",
+        "jxl-main5-1c8-DA-9-9-o2.p1.codes16le": "676c062ab5d1e971f4a83a24fcb8f0372f6cd22bb5c51f7f6cd4c70829425b98"
+      }
+    },
+    {
+      "name": "jxl-main5-1c8-DMA-10-12-10-o3",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "DMA",
+      "extra_bits": [
+        10,
+        12,
+        10
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c8-DMA-10-12-10-o3.jxl": "ab33474e82d4a9478b790678f24aa24110c70c0fdf95a6d765eda93ec0ccba5a",
+        "jxl-main5-1c8-DMA-10-12-10-o3.rgba16le": "757247156af9af205a060708b9a48127abd17f7419ff443d29a0fc117426e67a",
+        "jxl-main5-1c8-DMA-10-12-10-o3.p0.codes16le": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450",
+        "jxl-main5-1c8-DMA-10-12-10-o3.p1.codes16le": "dd80ae32b523e68eb8b5426c1bf98a603e66e4f43c2bc569fb19daaad5e7c0c6",
+        "jxl-main5-1c8-DMA-10-12-10-o3.p2.codes16le": "145248ff976aeede26647eefbbb4500dd07d98dbd5074d9eed8e9972a4a1150e"
+      }
+    },
+    {
+      "name": "jxl-main5-1c8-DMDA-12-16-8-12-o4",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "DMDA",
+      "extra_bits": [
+        12,
+        16,
+        8,
+        12
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c8-DMDA-12-16-8-12-o4.jxl": "76cef57913e877ea90bf908bd18ef56e57314d6a61530e26fac6e54bbff2a1fe",
+        "jxl-main5-1c8-DMDA-12-16-8-12-o4.rgba16le": "0531258837be40ccdb520daf3f10504dc5b86a223c5f9d56f5488972111179fc",
+        "jxl-main5-1c8-DMDA-12-16-8-12-o4.p0.codes16le": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1",
+        "jxl-main5-1c8-DMDA-12-16-8-12-o4.p1.codes16le": "9a80b170c6e13f5721ca23380e4c50e0a187b78fe83a299143bc6907aa5b8b57",
+        "jxl-main5-1c8-DMDA-12-16-8-12-o4.p2.codes16le": "edd2139df33766c47e4e3fb3f5fad5a001fdcb30b6b2476fdaa12cdeebeee18d",
+        "jxl-main5-1c8-DMDA-12-16-8-12-o4.p3.codes16le": "32f214468b39982cc97972315d41b4288e4c5337550a6a09065d13be750469a1"
+      }
+    },
+    {
+      "name": "jxl-main5-1c8-A-16-o5",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "A",
+      "extra_bits": [
+        16
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c8-A-16-o5.jxl": "0d8194a51219d23e7ba4abdc2fd5b20e300be18f126e1c0479862950d1628e53",
+        "jxl-main5-1c8-A-16-o5.rgba16le": "d4bb936f7c2379754eca74d569b140088906196163263e174764256c2ffe1557",
+        "jxl-main5-1c8-A-16-o5.p0.codes16le": "74927e9de11a23e11e16bdf637ced7a95b186c98c752937330b6ebbff1697894"
+      }
+    },
+    {
+      "name": "jxl-main5-1c9-AM-8-10-o6",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "AM",
+      "extra_bits": [
+        8,
+        10
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c9-AM-8-10-o6.jxl": "0312aa4454fe98dbec22186a7a1f8a88e7a08cc1d56b56d17a1d9178ba1bd84a",
+        "jxl-main5-1c9-AM-8-10-o6.rgba16le": "2b20ce7febdcaefa2ab826364cd2b704ca0d60fea2aef7b207dbf3b215070361",
+        "jxl-main5-1c9-AM-8-10-o6.p0.codes16le": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb",
+        "jxl-main5-1c9-AM-8-10-o6.p1.codes16le": "bab8bc3ab6527306ebb83f32ba61a49a78d963928b9e43249d8183ea413b21a0"
+      }
+    },
+    {
+      "name": "jxl-main5-1c9-AMD-9-12-16-o7",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "AMD",
+      "extra_bits": [
+        9,
+        12,
+        16
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c9-AMD-9-12-16-o7.jxl": "f0d7196a8d7d1707610bf4ddc8ddca7b3044462045a13ff89565c31e4124eb85",
+        "jxl-main5-1c9-AMD-9-12-16-o7.rgba16le": "19cd9a1fe6da0cf3ccf3094b72521fd0e29d5f54718f278efc73efa7b29e63ae",
+        "jxl-main5-1c9-AMD-9-12-16-o7.p0.codes16le": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db",
+        "jxl-main5-1c9-AMD-9-12-16-o7.p1.codes16le": "4d3ca889cf2c3d71b8e8e10160be7838c7dd2bb8d007ad945a34681b98489487",
+        "jxl-main5-1c9-AMD-9-12-16-o7.p2.codes16le": "d1ab0bee3d50c60fccedc250333b842123c882bdb822bfb2959f2b2d63e81d94"
+      }
+    },
+    {
+      "name": "jxl-main5-1c9-AMDM-10-16-8-9-o8",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "AMDM",
+      "extra_bits": [
+        10,
+        16,
+        8,
+        9
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c9-AMDM-10-16-8-9-o8.jxl": "65085a9ca4a2a0fe3af9153471db7cacabaa41d2f78f5d03be692724c848acdd",
+        "jxl-main5-1c9-AMDM-10-16-8-9-o8.rgba16le": "25b9d84e38d21c3ed8536af67f68b399a6e43f964608cab440b44de971f4574f",
+        "jxl-main5-1c9-AMDM-10-16-8-9-o8.p0.codes16le": "f13019ba0f22bf2e2faf7349c5f7ab7c44dc1ec71ad27818fdd786297593e00d",
+        "jxl-main5-1c9-AMDM-10-16-8-9-o8.p1.codes16le": "a85749203438ff34436b04b2c5549e7e1725ae9285f6dbf4983c537712d9a49f",
+        "jxl-main5-1c9-AMDM-10-16-8-9-o8.p2.codes16le": "3d9b52dee50d0485aa9c2f2fc85c65acb1d527fffad981e2b7907ace4af69d02",
+        "jxl-main5-1c9-AMDM-10-16-8-9-o8.p3.codes16le": "09839bb0c8b8374a57c04953eda444c8f5afcc0cb0862083a6d373c3c924a582"
+      }
+    },
+    {
+      "name": "jxl-main5-1c9-A-12-o1",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "A",
+      "extra_bits": [
+        12
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c9-A-12-o1.jxl": "a18057bffcf57061418a376c7662bdee1150d1402fde583db7b3fca45c58dc41",
+        "jxl-main5-1c9-A-12-o1.rgba16le": "09f7dccc104753d3817cc117b419d44e941dbba526f1a277c09679bd7103b191",
+        "jxl-main5-1c9-A-12-o1.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+      }
+    },
+    {
+      "name": "jxl-main5-1c9-AM-16-9-o2",
+      "channels": 1,
+      "color_bits": 9,
+      "kinds": "AM",
+      "extra_bits": [
+        16,
+        9
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c9-AM-16-9-o2.jxl": "15d1241419bd7cef14bf6515d8eeba9ac564ec7b30148bfbde849ece7211251d",
+        "jxl-main5-1c9-AM-16-9-o2.rgba16le": "72150bd94b32938ad0a56b59c8bddf25ae99085b6d244e4ce23e68a6621fcf68",
+        "jxl-main5-1c9-AM-16-9-o2.p0.codes16le": "9f6f2f404ae96d6b472b1dceb45156a1824f7843f0053fa77a997609d541d0e4",
+        "jxl-main5-1c9-AM-16-9-o2.p1.codes16le": "676c062ab5d1e971f4a83a24fcb8f0372f6cd22bb5c51f7f6cd4c70829425b98"
+      }
+    },
+    {
+      "name": "jxl-main5-1c10-DAD-10-8-16-o3",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "DAD",
+      "extra_bits": [
+        10,
+        8,
+        16
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c10-DAD-10-8-16-o3.jxl": "3d57686d2c2ef53bcaffdd06a941a18259b89bb91eeeea9f3f0b21b414eff842",
+        "jxl-main5-1c10-DAD-10-8-16-o3.rgba16le": "7fc6f63aad2c4eec0ee2b70cb8afc9edb3d7852fefaf89ef0d073c3ba04ffbb6",
+        "jxl-main5-1c10-DAD-10-8-16-o3.p0.codes16le": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450",
+        "jxl-main5-1c10-DAD-10-8-16-o3.p1.codes16le": "637af4c0dc2f748d3ab611748c8428a884ed4b02b6602bf2305a15316a99373a",
+        "jxl-main5-1c10-DAD-10-8-16-o3.p2.codes16le": "f71764995c8629b289e41990e8493684f1cc3fe3b85f140c2cf477657d95242a"
+      }
+    },
+    {
+      "name": "jxl-main5-1c10-DADM-12-9-8-9-o4",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "DADM",
+      "extra_bits": [
+        12,
+        9,
+        8,
+        9
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c10-DADM-12-9-8-9-o4.jxl": "8f34472ab0d8d21e20c6b07e1fc001091a219c73c9e409f3a304adb11f9f402a",
+        "jxl-main5-1c10-DADM-12-9-8-9-o4.rgba16le": "3b6935111365dac0a34124a9b2224befb9ce1c4ef2596083fe0ae67f5493d8ab",
+        "jxl-main5-1c10-DADM-12-9-8-9-o4.p0.codes16le": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1",
+        "jxl-main5-1c10-DADM-12-9-8-9-o4.p1.codes16le": "c1b5433a14782f71c076c378bc1c7e0a5ff49af3d57b460e1975d5913c1cc46b",
+        "jxl-main5-1c10-DADM-12-9-8-9-o4.p2.codes16le": "edd2139df33766c47e4e3fb3f5fad5a001fdcb30b6b2476fdaa12cdeebeee18d",
+        "jxl-main5-1c10-DADM-12-9-8-9-o4.p3.codes16le": "f59d6907d92e280529583f19ccc1dda3ce353110a7072ae782054f7aa5bfd9cd"
+      }
+    },
+    {
+      "name": "jxl-main5-1c10-A-10-o5",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "A",
+      "extra_bits": [
+        10
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c10-A-10-o5.jxl": "c70dcf8b1a0e043f7a075a2cdc3ebb05c6a500daab812e5b5ff6e060e4335599",
+        "jxl-main5-1c10-A-10-o5.rgba16le": "36d91c28e06917149d9d0cdabf470d29109680136e65926f2a7f0832921426c7",
+        "jxl-main5-1c10-A-10-o5.p0.codes16le": "0bdab7f34ca861d6f8f8f3bf067ace28cb28ef4944f72b4c97019c401622af8a"
+      }
+    },
+    {
+      "name": "jxl-main5-1c10-DA-8-12-o6",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "DA",
+      "extra_bits": [
+        8,
+        12
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c10-DA-8-12-o6.jxl": "70ea4f85b163b8aa9fdc863017467153bce90a0d9d5c98da6b912e413717a5f7",
+        "jxl-main5-1c10-DA-8-12-o6.rgba16le": "91c91fba825662bd46cf3fc5e2970a73b54ac13f2b68c65cc6ed81789e78be46",
+        "jxl-main5-1c10-DA-8-12-o6.p0.codes16le": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb",
+        "jxl-main5-1c10-DA-8-12-o6.p1.codes16le": "71b8b9c7125b65141c675c9b5b83ad244c9baa381f072df7e936420ddc56d2d0"
+      }
+    },
+    {
+      "name": "jxl-main5-1c10-DMA-9-10-16-o7",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "DMA",
+      "extra_bits": [
+        9,
+        10,
+        16
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c10-DMA-9-10-16-o7.jxl": "a917f89f64a6baba74ca8a2e225f3a64f4ebf56fba46482d8868dd24b618c2a4",
+        "jxl-main5-1c10-DMA-9-10-16-o7.rgba16le": "ca3fc2c0a1e0db3ae01be2f9ae4a97cb97d84a3adb0274f7a21f5963920eee62",
+        "jxl-main5-1c10-DMA-9-10-16-o7.p0.codes16le": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db",
+        "jxl-main5-1c10-DMA-9-10-16-o7.p1.codes16le": "344daf73b7220b7d5e76934ef4b317f33b1505c021b3c98689c5f338d1e59b8b",
+        "jxl-main5-1c10-DMA-9-10-16-o7.p2.codes16le": "d1ab0bee3d50c60fccedc250333b842123c882bdb822bfb2959f2b2d63e81d94"
+      }
+    },
+    {
+      "name": "jxl-main5-1c12-DMAM-12-16-8-9-o8",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "DMAM",
+      "extra_bits": [
+        12,
+        16,
+        8,
+        9
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c12-DMAM-12-16-8-9-o8.jxl": "ed874a6eac7a0795f945a236a8ece0744df1a111ee435743384861bde4ad3eed",
+        "jxl-main5-1c12-DMAM-12-16-8-9-o8.rgba16le": "8ce5f8081aaecb55b5507c91207cd83cfb2295b6444e7c935328306e1f9f278a",
+        "jxl-main5-1c12-DMAM-12-16-8-9-o8.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a",
+        "jxl-main5-1c12-DMAM-12-16-8-9-o8.p1.codes16le": "a85749203438ff34436b04b2c5549e7e1725ae9285f6dbf4983c537712d9a49f",
+        "jxl-main5-1c12-DMAM-12-16-8-9-o8.p2.codes16le": "3d9b52dee50d0485aa9c2f2fc85c65acb1d527fffad981e2b7907ace4af69d02",
+        "jxl-main5-1c12-DMAM-12-16-8-9-o8.p3.codes16le": "09839bb0c8b8374a57c04953eda444c8f5afcc0cb0862083a6d373c3c924a582"
+      }
+    },
+    {
+      "name": "jxl-main5-1c12-A-9-o1",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "A",
+      "extra_bits": [
+        9
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c12-A-9-o1.jxl": "1bb5ad211e1ada7e988e77f4e6804cca86af086af83b8c68a6427af840d145cb",
+        "jxl-main5-1c12-A-9-o1.rgba16le": "a20bb74b7802e1183da3f6e37402c829409d1f4e64470f831b9fa401d87b851a",
+        "jxl-main5-1c12-A-9-o1.p0.codes16le": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710"
+      }
+    },
+    {
+      "name": "jxl-main5-1c12-AM-10-9-o2",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "AM",
+      "extra_bits": [
+        10,
+        9
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c12-AM-10-9-o2.jxl": "e03728e261c80fd7219132cb1a7be097fcded7efd098b1809afe63a97a9c71bc",
+        "jxl-main5-1c12-AM-10-9-o2.rgba16le": "4921383d9d10355df76049181708b36620308b3a32b6479510a1ad1e2a07d05c",
+        "jxl-main5-1c12-AM-10-9-o2.p0.codes16le": "590308db75b985d0ac15f6a6dcfc41902282b6b0b2788552b90c62beb10bbdfd",
+        "jxl-main5-1c12-AM-10-9-o2.p1.codes16le": "676c062ab5d1e971f4a83a24fcb8f0372f6cd22bb5c51f7f6cd4c70829425b98"
+      }
+    },
+    {
+      "name": "jxl-main5-1c12-AMD-12-10-12-o3",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "AMD",
+      "extra_bits": [
+        12,
+        10,
+        12
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c12-AMD-12-10-12-o3.jxl": "5f006c62b1116c5e4e7c349bdbcda9515f203058c44fe22a04972c164db5d829",
+        "jxl-main5-1c12-AMD-12-10-12-o3.rgba16le": "480e3e4fdd5695fe08a31ccc943bab7cc41d1a565f68047ddb680b6adc8280a2",
+        "jxl-main5-1c12-AMD-12-10-12-o3.p0.codes16le": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf",
+        "jxl-main5-1c12-AMD-12-10-12-o3.p1.codes16le": "d39319b9a482c71749630fb41fd73beb06836440d46b6c756a7a5e5bd497c95d",
+        "jxl-main5-1c12-AMD-12-10-12-o3.p2.codes16le": "4316916fdd87d0c28a4d959d2e04afce3313f4ccd8552ccf90ea0f232a56f5b6"
+      }
+    },
+    {
+      "name": "jxl-main5-1c12-DMAM-10-12-16-8-o4",
+      "channels": 1,
+      "color_bits": 12,
+      "kinds": "DMAM",
+      "extra_bits": [
+        10,
+        12,
+        16,
+        8
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c12-DMAM-10-12-16-8-o4.jxl": "7a7d99f1518dd45845057ec9f23bc3c910dd16a76e80b87868ab4b3fd1a0a231",
+        "jxl-main5-1c12-DMAM-10-12-16-8-o4.rgba16le": "9d25940fb202facd5da29f545350a056b7004b73717f02eb7061d73b4ea5db86",
+        "jxl-main5-1c12-DMAM-10-12-16-8-o4.p0.codes16le": "83162444ff4907dc497da6f31733a39edccf699028904bffd0f3fb1d9eb10bcb",
+        "jxl-main5-1c12-DMAM-10-12-16-8-o4.p1.codes16le": "9cdf246026c86f597f5d115b87a7f576804465c821545142f3292e97640ba0a6",
+        "jxl-main5-1c12-DMAM-10-12-16-8-o4.p2.codes16le": "20ac217a66723bb661e85251d3666072dafb30e7bc7e5ddcedbfecba7ca11bc2",
+        "jxl-main5-1c12-DMAM-10-12-16-8-o4.p3.codes16le": "e32cd580926717251d2515490fdfcd0c6f82a250514c760b06dd1897fba2aca7"
+      }
+    },
+    {
+      "name": "jxl-main5-1c16-A-8-o5",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "A",
+      "extra_bits": [
+        8
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c16-A-8-o5.jxl": "47e841ded7439b9bd446c73b08cb87073ec4bb26442aafc73df3cdf26efb6c58",
+        "jxl-main5-1c16-A-8-o5.rgba16le": "5af348ed7fc0c9e5d13c4a793e5438a9fbd4a1a561f33a60af230e9b6ceba888",
+        "jxl-main5-1c16-A-8-o5.p0.codes16le": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be"
+      }
+    },
+    {
+      "name": "jxl-main5-1c16-DA-8-9-o6",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "DA",
+      "extra_bits": [
+        8,
+        9
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c16-DA-8-9-o6.jxl": "43a5e1dc562f28700370e7d6df04a04c9db548a0d1478675770f073a76cd7c78",
+        "jxl-main5-1c16-DA-8-9-o6.rgba16le": "440d17eda01f4eb1afec6bd2990ac2284053363a4425879869493ad556ac35e7",
+        "jxl-main5-1c16-DA-8-9-o6.p0.codes16le": "0f81d28f9ec2ba4d29611d3895c92b55ffa58bebe7e990bc48c293dac0ea2dbb",
+        "jxl-main5-1c16-DA-8-9-o6.p1.codes16le": "c9902f856fcd3aef6c0108f730750681ec56c2aa9cafe18f45287432a5b9e562"
+      }
+    },
+    {
+      "name": "jxl-main5-1c16-DAD-9-10-12-o7",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "DAD",
+      "extra_bits": [
+        9,
+        10,
+        12
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c16-DAD-9-10-12-o7.jxl": "04206e8aaa882c58405353df4cc73fba381f70a4998abaac196b46f0f98cc6e3",
+        "jxl-main5-1c16-DAD-9-10-12-o7.rgba16le": "8bf96db0e1c3e248ef427363e502a62d09972a2e223af072d9316d264dd897af",
+        "jxl-main5-1c16-DAD-9-10-12-o7.p0.codes16le": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db",
+        "jxl-main5-1c16-DAD-9-10-12-o7.p1.codes16le": "344daf73b7220b7d5e76934ef4b317f33b1505c021b3c98689c5f338d1e59b8b",
+        "jxl-main5-1c16-DAD-9-10-12-o7.p2.codes16le": "bdf28941ceb9352ac898adce152d1397fa6f59a2aa8df3a522968fbcecaeff95"
+      }
+    },
+    {
+      "name": "jxl-main5-1c16-DMDA-10-12-16-12-o8",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "DMDA",
+      "extra_bits": [
+        10,
+        12,
+        16,
+        12
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c16-DMDA-10-12-16-12-o8.jxl": "63f0a580afb8cf450f1ebc6e3ad3d6128a0e595fa49535b60dfd0c855b772236",
+        "jxl-main5-1c16-DMDA-10-12-16-12-o8.rgba16le": "441ebec8d5e250692e36ead4d32c89426706470ad5e7a353fc7758b27846d43f",
+        "jxl-main5-1c16-DMDA-10-12-16-12-o8.p0.codes16le": "f13019ba0f22bf2e2faf7349c5f7ab7c44dc1ec71ad27818fdd786297593e00d",
+        "jxl-main5-1c16-DMDA-10-12-16-12-o8.p1.codes16le": "ce22143b6d215e4ff0ec00ebb19a6cdb934514c9afe8db0547ae9fbbc28b1caa",
+        "jxl-main5-1c16-DMDA-10-12-16-12-o8.p2.codes16le": "3647dbe9fe709fa1c6a826a032459b9bf416f946f0e1076a861d9a164306ce67",
+        "jxl-main5-1c16-DMDA-10-12-16-12-o8.p3.codes16le": "a6d6375dd6dffa178b5a7d435accdaaba61ee43ecafb6f7ba22e405896d6162b"
+      }
+    },
+    {
+      "name": "jxl-main5-1c16-A-16-o1",
+      "channels": 1,
+      "color_bits": 16,
+      "kinds": "A",
+      "extra_bits": [
+        16
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c16-A-16-o1.jxl": "c172972c5f3195262713d5cb0f85c9e1b24b7bab1b838b0664bd62c17afdd4f2",
+        "jxl-main5-1c16-A-16-o1.rgba16le": "1f6a39b41e38a3d5cf783ac3e9bf7b5ac0c063f6c8352bf416133f45e987e95a",
+        "jxl-main5-1c16-A-16-o1.p0.codes16le": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8"
+      }
+    },
+    {
+      "name": "jxl-main5-3c8-A-8-o1",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "A",
+      "extra_bits": [
+        8
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c8-A-8-o1.jxl": "cb7a1b367680ca0c87c7ec4c5a49ea5feb5f88031c0a6b93ad018e9cfb2bb7af",
+        "jxl-main5-3c8-A-8-o1.rgba16le": "23ace4cbfdcc6d84d7e9c50367d5cbdcbe3781485313bb10b73cc3ecaee5c668",
+        "jxl-main5-3c8-A-8-o1.p0.codes16le": "ca65ac27d8791d73e69892b1133dac8ebca48fe64e5c35987f954fd416718212"
+      }
+    },
+    {
+      "name": "jxl-main5-3c8-AM-9-10-o2",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "AM",
+      "extra_bits": [
+        9,
+        10
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c8-AM-9-10-o2.jxl": "12eae26059bd630516240befbb7b72d4c26b2c2c588e45be9a88414e97699c4c",
+        "jxl-main5-3c8-AM-9-10-o2.rgba16le": "12ff67eca1a95ad82f65e5faa53c08c2f8e2b54555cbb9f190a0deab86ac3ba2",
+        "jxl-main5-3c8-AM-9-10-o2.p0.codes16le": "892f321b7ed3c3ffc6335c009ed7fd01df6986722eb6a48252428ea4340fc3a0",
+        "jxl-main5-3c8-AM-9-10-o2.p1.codes16le": "dc5671d0e66361500a33b7bd1b8c0feb5dc43f1058a732bfd0e386915e800711"
+      }
+    },
+    {
+      "name": "jxl-main5-3c8-AMD-10-12-16-o3",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "AMD",
+      "extra_bits": [
+        10,
+        12,
+        16
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c8-AMD-10-12-16-o3.jxl": "501ff96d32c5544237c27ac05a6106b6fcb70e598637e413ec2f48273f3052a9",
+        "jxl-main5-3c8-AMD-10-12-16-o3.rgba16le": "09820c7734d90eef8eebb1433e9165ef792087eff58fb6546e408fc71aeae820",
+        "jxl-main5-3c8-AMD-10-12-16-o3.p0.codes16le": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450",
+        "jxl-main5-3c8-AMD-10-12-16-o3.p1.codes16le": "dd80ae32b523e68eb8b5426c1bf98a603e66e4f43c2bc569fb19daaad5e7c0c6",
+        "jxl-main5-3c8-AMD-10-12-16-o3.p2.codes16le": "f71764995c8629b289e41990e8493684f1cc3fe3b85f140c2cf477657d95242a"
+      }
+    },
+    {
+      "name": "jxl-main5-3c8-AMDM-12-16-8-9-o4",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "AMDM",
+      "extra_bits": [
+        12,
+        16,
+        8,
+        9
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4.jxl": "0041c8cba6738ab032b89ec459e402ec7403b97e69843ce46b8e730e716b7c2e",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4.rgba16le": "06b6c6444a55d5476d056ff3c5cb5d7fafa7781a81fc5c3e0fb81b43402c506a",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4.p0.codes16le": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4.p1.codes16le": "9a80b170c6e13f5721ca23380e4c50e0a187b78fe83a299143bc6907aa5b8b57",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4.p2.codes16le": "edd2139df33766c47e4e3fb3f5fad5a001fdcb30b6b2476fdaa12cdeebeee18d",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4.p3.codes16le": "f59d6907d92e280529583f19ccc1dda3ce353110a7072ae782054f7aa5bfd9cd"
+      }
+    },
+    {
+      "name": "jxl-main5-3c8-A-16-o5",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "A",
+      "extra_bits": [
+        16
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c8-A-16-o5.jxl": "0c0bff714b8a1a8f45573f4e736137e4f6ee7ce4454b63f22d05e71110679c1f",
+        "jxl-main5-3c8-A-16-o5.rgba16le": "2a87ae720a74a565232c4d422a5e1aa1663800a0d82e8b831ff387f08bfc50d0",
+        "jxl-main5-3c8-A-16-o5.p0.codes16le": "74927e9de11a23e11e16bdf637ced7a95b186c98c752937330b6ebbff1697894"
+      }
+    },
+    {
+      "name": "jxl-main5-3c9-DA-9-8-o6",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "DA",
+      "extra_bits": [
+        9,
+        8
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c9-DA-9-8-o6.jxl": "8919f0aba661ec887dd9e3e7b949c71930f597081d1e6bb0a28379a86bdcbb0b",
+        "jxl-main5-3c9-DA-9-8-o6.rgba16le": "d8feb9b1c2ed656e4d0e342a9ff159e168133d8e3132b5e3ed7b6fd4a0aecef3",
+        "jxl-main5-3c9-DA-9-8-o6.p0.codes16le": "160af7b3d81a50040c2454e6778899039367af176168325ac9ab61981bdea33e",
+        "jxl-main5-3c9-DA-9-8-o6.p1.codes16le": "31445717925d4fec2024dabb0c85aba4f6c94b57b44a7cce1cbabb42bd0e54e9"
+      }
+    },
+    {
+      "name": "jxl-main5-3c9-DAD-10-9-16-o7",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "DAD",
+      "extra_bits": [
+        10,
+        9,
+        16
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c9-DAD-10-9-16-o7.jxl": "06d0be9d8c4fc9d60f88f5eda8aedbb636650abc5aba974aac2beb16152e5233",
+        "jxl-main5-3c9-DAD-10-9-16-o7.rgba16le": "1bdde43b1973600e8055bc868a7f4bcef5a67c731cc9f776988ef1bb1b319495",
+        "jxl-main5-3c9-DAD-10-9-16-o7.p0.codes16le": "fbd2bf382615c4902f96923a2ed291080e039b3ea7ba44bcc13862e1490cac8e",
+        "jxl-main5-3c9-DAD-10-9-16-o7.p1.codes16le": "14b9609fb95e01da1d9eb542c2ab63fc3768b670f821090589cb6510e9029b01",
+        "jxl-main5-3c9-DAD-10-9-16-o7.p2.codes16le": "d1ab0bee3d50c60fccedc250333b842123c882bdb822bfb2959f2b2d63e81d94"
+      }
+    },
+    {
+      "name": "jxl-main5-3c9-DADM-12-10-8-9-o8",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "DADM",
+      "extra_bits": [
+        12,
+        10,
+        8,
+        9
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c9-DADM-12-10-8-9-o8.jxl": "cac376de12e5aca4eebf70b0120e8532471e295976ce4233bdb5633e35ef19ed",
+        "jxl-main5-3c9-DADM-12-10-8-9-o8.rgba16le": "e3b6a84dcf8cd854bacc3932435ca3e64caf3062d143cef51cc6c3de8e47e1b9",
+        "jxl-main5-3c9-DADM-12-10-8-9-o8.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a",
+        "jxl-main5-3c9-DADM-12-10-8-9-o8.p1.codes16le": "999c686a2e25a27c581b44145ce2dd98b2084cbd37fc6be6b110317368b45282",
+        "jxl-main5-3c9-DADM-12-10-8-9-o8.p2.codes16le": "3d9b52dee50d0485aa9c2f2fc85c65acb1d527fffad981e2b7907ace4af69d02",
+        "jxl-main5-3c9-DADM-12-10-8-9-o8.p3.codes16le": "09839bb0c8b8374a57c04953eda444c8f5afcc0cb0862083a6d373c3c924a582"
+      }
+    },
+    {
+      "name": "jxl-main5-3c9-A-12-o1",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "A",
+      "extra_bits": [
+        12
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c9-A-12-o1.jxl": "e369cc8de0000da3891821b83a3ff6e3f7350b5ae37ecdb040e4b939d4d45cf2",
+        "jxl-main5-3c9-A-12-o1.rgba16le": "ecd1595b4a0a8e99a69d1a53b2da3b48d3b54641559b176a3fb4443b1368e673",
+        "jxl-main5-3c9-A-12-o1.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a"
+      }
+    },
+    {
+      "name": "jxl-main5-3c9-DA-8-16-o2",
+      "channels": 3,
+      "color_bits": 9,
+      "kinds": "DA",
+      "extra_bits": [
+        8,
+        16
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c9-DA-8-16-o2.jxl": "5711fd9dc5ef25bf4688c6ef942594218089dfae47bc140ea564fbfee0c65a20",
+        "jxl-main5-3c9-DA-8-16-o2.rgba16le": "60cfb89fdf7ea56f1684374a21969e522e42062bfe8d51213c279122e417eb66",
+        "jxl-main5-3c9-DA-8-16-o2.p0.codes16le": "91ba25387479add0c3debfb663c051642cd43240053bfe4a645f3f4f1ff0a6dc",
+        "jxl-main5-3c9-DA-8-16-o2.p1.codes16le": "48c2ed3b91328d805d2ef405e6f7c8bf689aa5ffa8b596bf13a0c90f79735eb5"
+      }
+    },
+    {
+      "name": "jxl-main5-3c10-DMA-10-12-8-o3",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "DMA",
+      "extra_bits": [
+        10,
+        12,
+        8
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c10-DMA-10-12-8-o3.jxl": "38a6a817d7966d90e5397e395398ad1441462903c941ca0da1b1853859494adb",
+        "jxl-main5-3c10-DMA-10-12-8-o3.rgba16le": "5c68d7afae5b30090d758cb5ddfd44aa0dcf34c9b8850898dcc2f121c65a2215",
+        "jxl-main5-3c10-DMA-10-12-8-o3.p0.codes16le": "676af50464ae0200aefa0ad21fec2d481670bf9f1d7d3410dc66411cd52fb450",
+        "jxl-main5-3c10-DMA-10-12-8-o3.p1.codes16le": "dd80ae32b523e68eb8b5426c1bf98a603e66e4f43c2bc569fb19daaad5e7c0c6",
+        "jxl-main5-3c10-DMA-10-12-8-o3.p2.codes16le": "61e80d851f3cc652446c36d09b510987a2f289d0142aabc03b1a60f300701bbd"
+      }
+    },
+    {
+      "name": "jxl-main5-3c10-DMAM-12-16-9-9-o4",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "DMAM",
+      "extra_bits": [
+        12,
+        16,
+        9,
+        9
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c10-DMAM-12-16-9-9-o4.jxl": "b15529162c269cb781302b5dbfa90b32c7a5aa0c5db02300f24f4e22db757814",
+        "jxl-main5-3c10-DMAM-12-16-9-9-o4.rgba16le": "540d9c788676eb922651183c8686fecfc0b2e7010280f6d3a5bd4b0e0dd70d9f",
+        "jxl-main5-3c10-DMAM-12-16-9-9-o4.p0.codes16le": "d69177d60ddb33c13bb38e20dc248953cd231ce08c752fe1a01390ce9d8886e1",
+        "jxl-main5-3c10-DMAM-12-16-9-9-o4.p1.codes16le": "9a80b170c6e13f5721ca23380e4c50e0a187b78fe83a299143bc6907aa5b8b57",
+        "jxl-main5-3c10-DMAM-12-16-9-9-o4.p2.codes16le": "d583ab7e24b913998c0bb9c7fb142355aa670da960ca03fad9e8ccf529dc170a",
+        "jxl-main5-3c10-DMAM-12-16-9-9-o4.p3.codes16le": "f59d6907d92e280529583f19ccc1dda3ce353110a7072ae782054f7aa5bfd9cd"
+      }
+    },
+    {
+      "name": "jxl-main5-3c10-A-10-o5",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "A",
+      "extra_bits": [
+        10
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c10-A-10-o5.jxl": "c6bc0075756ae924c1619bd1519d506726b7d09c3bd504dc01fb9e5b48492220",
+        "jxl-main5-3c10-A-10-o5.rgba16le": "696086ca278630e47e88ba03f9cb29ef1f422ed87c4a76030f2c0404e7c537ae",
+        "jxl-main5-3c10-A-10-o5.p0.codes16le": "0bdab7f34ca861d6f8f8f3bf067ace28cb28ef4944f72b4c97019c401622af8a"
+      }
+    },
+    {
+      "name": "jxl-main5-3c10-AM-12-9-o6",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "AM",
+      "extra_bits": [
+        12,
+        9
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c10-AM-12-9-o6.jxl": "33b74810cf71ca2a7bb06795cf0223a392b0132fd35af011590e705b181ea857",
+        "jxl-main5-3c10-AM-12-9-o6.rgba16le": "139d27bcc00774d26e634311930a8b80fc20bc395672249fb8d79b08adcd1389",
+        "jxl-main5-3c10-AM-12-9-o6.p0.codes16le": "f5908cba71914a9dfb4d60076b74e5abdda30ad86f211f3770b372366b7a75cf",
+        "jxl-main5-3c10-AM-12-9-o6.p1.codes16le": "c9902f856fcd3aef6c0108f730750681ec56c2aa9cafe18f45287432a5b9e562"
+      }
+    },
+    {
+      "name": "jxl-main5-3c10-AMD-16-10-12-o7",
+      "channels": 3,
+      "color_bits": 10,
+      "kinds": "AMD",
+      "extra_bits": [
+        16,
+        10,
+        12
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c10-AMD-16-10-12-o7.jxl": "a9f23e89ebbba1d6b8687c21c1ccce320192f5e9e95bd351158b93110039e39b",
+        "jxl-main5-3c10-AMD-16-10-12-o7.rgba16le": "89cd5dd601c6eae2daab90513314ea916c8bc65a45f4cca0d9e02c4f43a4f73b",
+        "jxl-main5-3c10-AMD-16-10-12-o7.p0.codes16le": "f9ba2731baf3750ca9b9424b9ef59b78d4bfa6da16075e19767ea24f0eaccebc",
+        "jxl-main5-3c10-AMD-16-10-12-o7.p1.codes16le": "344daf73b7220b7d5e76934ef4b317f33b1505c021b3c98689c5f338d1e59b8b",
+        "jxl-main5-3c10-AMD-16-10-12-o7.p2.codes16le": "bdf28941ceb9352ac898adce152d1397fa6f59a2aa8df3a522968fbcecaeff95"
+      }
+    },
+    {
+      "name": "jxl-main5-3c12-DMDA-12-16-8-8-o8",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "DMDA",
+      "extra_bits": [
+        12,
+        16,
+        8,
+        8
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c12-DMDA-12-16-8-8-o8.jxl": "efde713db055855a6296a9bff715601fa3f071e96cb83fd5ff7168cb7d4982d6",
+        "jxl-main5-3c12-DMDA-12-16-8-8-o8.rgba16le": "cc3af75dfc07417dcaddf7f650796c90f9426e096cedde7782a838bdc9e48391",
+        "jxl-main5-3c12-DMDA-12-16-8-8-o8.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a",
+        "jxl-main5-3c12-DMDA-12-16-8-8-o8.p1.codes16le": "a85749203438ff34436b04b2c5549e7e1725ae9285f6dbf4983c537712d9a49f",
+        "jxl-main5-3c12-DMDA-12-16-8-8-o8.p2.codes16le": "3d9b52dee50d0485aa9c2f2fc85c65acb1d527fffad981e2b7907ace4af69d02",
+        "jxl-main5-3c12-DMDA-12-16-8-8-o8.p3.codes16le": "842b7ba64da5aafa9d3cbec59abd1e25f882e96b126ec67757e97080a02fc1d4"
+      }
+    },
+    {
+      "name": "jxl-main5-3c12-A-9-o1",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "A",
+      "extra_bits": [
+        9
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c12-A-9-o1.jxl": "606358c18475866f7a7155639b1e20d41e1c61863ce9754aeb13b5f631bce3a0",
+        "jxl-main5-3c12-A-9-o1.rgba16le": "3ecfcf70e2bb5a99aadfe108ef8f906ec266c2fc3b811824bdbf81fd15371d01",
+        "jxl-main5-3c12-A-9-o1.p0.codes16le": "e6a0fad0b4c3da1a8e3cf58646bfc635ea208d2fa8415018d62b763109467710"
+      }
+    },
+    {
+      "name": "jxl-main5-3c12-DA-8-10-o2",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "DA",
+      "extra_bits": [
+        8,
+        10
+      ],
+      "orientation": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c12-DA-8-10-o2.jxl": "aaea2c5bdd2ad296907168e6c907b41bb261cbc5b4b9a28e43cabbf222839e93",
+        "jxl-main5-3c12-DA-8-10-o2.rgba16le": "c429bab91a4279a8ed8c362ffe2011b3bf41b807a8e5864c010543243de06330",
+        "jxl-main5-3c12-DA-8-10-o2.p0.codes16le": "91ba25387479add0c3debfb663c051642cd43240053bfe4a645f3f4f1ff0a6dc",
+        "jxl-main5-3c12-DA-8-10-o2.p1.codes16le": "dc5671d0e66361500a33b7bd1b8c0feb5dc43f1058a732bfd0e386915e800711"
+      }
+    },
+    {
+      "name": "jxl-main5-3c12-DAD-9-12-12-o3",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "DAD",
+      "extra_bits": [
+        9,
+        12,
+        12
+      ],
+      "orientation": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-3c12-DAD-9-12-12-o3.jxl": "384e2bcea54d5d077d7ed54b13ae9ffe473c39fba8ad99070acaa3dfc65bc0d0",
+        "jxl-main5-3c12-DAD-9-12-12-o3.rgba16le": "34200ffb966337911493a77294e121b3c65c2897acd83a1bf5f01813bb8addaa",
+        "jxl-main5-3c12-DAD-9-12-12-o3.p0.codes16le": "160af7b3d81a50040c2454e6778899039367af176168325ac9ab61981bdea33e",
+        "jxl-main5-3c12-DAD-9-12-12-o3.p1.codes16le": "dd80ae32b523e68eb8b5426c1bf98a603e66e4f43c2bc569fb19daaad5e7c0c6",
+        "jxl-main5-3c12-DAD-9-12-12-o3.p2.codes16le": "4316916fdd87d0c28a4d959d2e04afce3313f4ccd8552ccf90ea0f232a56f5b6"
+      }
+    },
+    {
+      "name": "jxl-main5-3c12-DMDA-10-12-16-16-o4",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "DMDA",
+      "extra_bits": [
+        10,
+        12,
+        16,
+        16
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c12-DMDA-10-12-16-16-o4.jxl": "7288ea7a4b74a34b19c09f1e729596fdd2cba6860fac773013bdcd4250dbd225",
+        "jxl-main5-3c12-DMDA-10-12-16-16-o4.rgba16le": "e0d684bbec97edd3f6882918d5cf5e4807816435f6447c5090aab55f70591b3e",
+        "jxl-main5-3c12-DMDA-10-12-16-16-o4.p0.codes16le": "83162444ff4907dc497da6f31733a39edccf699028904bffd0f3fb1d9eb10bcb",
+        "jxl-main5-3c12-DMDA-10-12-16-16-o4.p1.codes16le": "9cdf246026c86f597f5d115b87a7f576804465c821545142f3292e97640ba0a6",
+        "jxl-main5-3c12-DMDA-10-12-16-16-o4.p2.codes16le": "20ac217a66723bb661e85251d3666072dafb30e7bc7e5ddcedbfecba7ca11bc2",
+        "jxl-main5-3c12-DMDA-10-12-16-16-o4.p3.codes16le": "0cfcb532189abb75def83e724ac3b3b3c90c04d63dc40ae8649d69970e2a79ee"
+      }
+    },
+    {
+      "name": "jxl-main5-3c16-A-8-o5",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "A",
+      "extra_bits": [
+        8
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c16-A-8-o5.jxl": "9e96b79be683cb8c84593f4b2defc11ab6580421cda5bc03dbc8a19f92d43904",
+        "jxl-main5-3c16-A-8-o5.rgba16le": "75ab3cfb1aec2ab90227e0b811f4ab557135b527b256af9d4abac229a9c6cc46",
+        "jxl-main5-3c16-A-8-o5.p0.codes16le": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be"
+      }
+    },
+    {
+      "name": "jxl-main5-3c16-AM-9-9-o6",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "AM",
+      "extra_bits": [
+        9,
+        9
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c16-AM-9-9-o6.jxl": "11c06dc1956f1fbb3daa2225c8e928eb2795add06b93f267b74dbd7a6e4ffa35",
+        "jxl-main5-3c16-AM-9-9-o6.rgba16le": "ccdfc3e26f43f882a893cb2c08585698e5661115c28e9f4bb7dda2b582962d10",
+        "jxl-main5-3c16-AM-9-9-o6.p0.codes16le": "160af7b3d81a50040c2454e6778899039367af176168325ac9ab61981bdea33e",
+        "jxl-main5-3c16-AM-9-9-o6.p1.codes16le": "c9902f856fcd3aef6c0108f730750681ec56c2aa9cafe18f45287432a5b9e562"
+      }
+    },
+    {
+      "name": "jxl-main5-3c16-DMA-9-10-10-o7",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "DMA",
+      "extra_bits": [
+        9,
+        10,
+        10
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c16-DMA-9-10-10-o7.jxl": "f5a6e09e47bd9e98fdc8bd3009c3c9eb26fb9fa245e90caf2ce761a721e49405",
+        "jxl-main5-3c16-DMA-9-10-10-o7.rgba16le": "fb5cb7734162906e7054f4c2344c813e9451ff3bbb1430729f71cea9f0a5310a",
+        "jxl-main5-3c16-DMA-9-10-10-o7.p0.codes16le": "b16e008a87901d683fab04cb9ccaf14f2cbdb58e90239a43520e0c425f8805db",
+        "jxl-main5-3c16-DMA-9-10-10-o7.p1.codes16le": "344daf73b7220b7d5e76934ef4b317f33b1505c021b3c98689c5f338d1e59b8b",
+        "jxl-main5-3c16-DMA-9-10-10-o7.p2.codes16le": "21100f14aa2c9de2d4e81223d1f0d9183ef6bc2d455f0f33f05c659124324c6d"
+      }
+    },
+    {
+      "name": "jxl-main5-3c16-AMDM-12-12-16-8-o8",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "AMDM",
+      "extra_bits": [
+        12,
+        12,
+        16,
+        8
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c16-AMDM-12-12-16-8-o8.jxl": "a23118b6c53cbf9cac5ad57e37d50c42fd8b6c1e01608a0ebfc37750edd98813",
+        "jxl-main5-3c16-AMDM-12-12-16-8-o8.rgba16le": "35ef3155c8a73c29339019d9162178f7d890a0a620c546ff919917b0a9158af0",
+        "jxl-main5-3c16-AMDM-12-12-16-8-o8.p0.codes16le": "3e6d19445932b685ef54c0cda7d7a05746aa06240b5bb0289154b10682ae672a",
+        "jxl-main5-3c16-AMDM-12-12-16-8-o8.p1.codes16le": "ce22143b6d215e4ff0ec00ebb19a6cdb934514c9afe8db0547ae9fbbc28b1caa",
+        "jxl-main5-3c16-AMDM-12-12-16-8-o8.p2.codes16le": "3647dbe9fe709fa1c6a826a032459b9bf416f946f0e1076a861d9a164306ce67",
+        "jxl-main5-3c16-AMDM-12-12-16-8-o8.p3.codes16le": "842b7ba64da5aafa9d3cbec59abd1e25f882e96b126ec67757e97080a02fc1d4"
+      }
+    },
+    {
+      "name": "jxl-main5-3c16-A-16-o1",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "A",
+      "extra_bits": [
+        16
+      ],
+      "orientation": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c16-A-16-o1.jxl": "04e8d95ee7a042404d385f4a572c9fe33ecbe4b5a03422f3313aef059ce281cf",
+        "jxl-main5-3c16-A-16-o1.rgba16le": "189187ef9f81305d03856a7292a3899b237866dcf1b46524e89b530fbfd10b1e",
+        "jxl-main5-3c16-A-16-o1.p0.codes16le": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8"
+      }
+    },
+    {
+      "name": "jxl-main5-3c16-DMDM-8-9-12-16-o5",
+      "channels": 3,
+      "color_bits": 16,
+      "kinds": "DMDM",
+      "extra_bits": [
+        8,
+        9,
+        12,
+        16
+      ],
+      "orientation": 5,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c16-DMDM-8-9-12-16-o5.jxl": "014edae43ea58523559b47b8e0400911a2ce438321bdf3a20f24d9ea83143b64",
+        "jxl-main5-3c16-DMDM-8-9-12-16-o5.rgba16le": "3917d634b38913acec172d3b1668aaa61de255e4993cb279ce0412f8a0b101cc",
+        "jxl-main5-3c16-DMDM-8-9-12-16-o5.p0.codes16le": "0954ade4f1bf307abb17c16ce6742af6dcb3f24d73e15ce63ec1d4349ca904be",
+        "jxl-main5-3c16-DMDM-8-9-12-16-o5.p1.codes16le": "a46c56a43704542ca69bd00201f14c52f1fed97c316aeb89f5dd86720148b44f",
+        "jxl-main5-3c16-DMDM-8-9-12-16-o5.p2.codes16le": "fe50d59981194f238901a1d8e678c0ced5aa799576547dbfb72645389fbb8c04",
+        "jxl-main5-3c16-DMDM-8-9-12-16-o5.p3.codes16le": "4d0ac391b2aee7bd55219002e0f8276b6951db3566556610593cbb491e314039"
+      }
+    },
+    {
+      "name": "jxl-main5-1c8-MMMM-16-16-16-16-o6",
+      "channels": 1,
+      "color_bits": 8,
+      "kinds": "MMMM",
+      "extra_bits": [
+        16,
+        16,
+        16,
+        16
+      ],
+      "orientation": 6,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c8-MMMM-16-16-16-16-o6.jxl": "f4c930bbeaab5c128954113cbef0e9e705d1e495cbc65c2b727f7d5c578f20d1",
+        "jxl-main5-1c8-MMMM-16-16-16-16-o6.rgba16le": "49edc80a80dcb33d52448a91f10d87c90ad0610c57a28cd65da757fa136897f1",
+        "jxl-main5-1c8-MMMM-16-16-16-16-o6.p0.codes16le": "a2f2db8ea918411035b694dd752bd111837fd089bea43d823697ce224111af2b",
+        "jxl-main5-1c8-MMMM-16-16-16-16-o6.p1.codes16le": "13a3a3dbf9a13e291f37cb11bd37813b55668220fbaf1023a72d905a72702896",
+        "jxl-main5-1c8-MMMM-16-16-16-16-o6.p2.codes16le": "f71764995c8629b289e41990e8493684f1cc3fe3b85f140c2cf477657d95242a",
+        "jxl-main5-1c8-MMMM-16-16-16-16-o6.p3.codes16le": "99dfbe8437a2da14a4a2bc95ddead2e09990c3c28525fc1fd7d3cef61bf6ebe2"
+      }
+    },
+    {
+      "name": "jxl-main5-3c12-DDDD-8-10-12-16-o7",
+      "channels": 3,
+      "color_bits": 12,
+      "kinds": "DDDD",
+      "extra_bits": [
+        8,
+        10,
+        12,
+        16
+      ],
+      "orientation": 7,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c12-DDDD-8-10-12-16-o7.jxl": "4306ada2fc7016f016ce8c8aa611171744d2b62eec64cb9b710fc952e15c5982",
+        "jxl-main5-3c12-DDDD-8-10-12-16-o7.rgba16le": "65b83b955633b85175fac26760579d203e745bfb75f98b9828bcf2c9cc5f3ba2",
+        "jxl-main5-3c12-DDDD-8-10-12-16-o7.p0.codes16le": "daa2035b211ae50568b999bab672935f223316383d38afb57660de184495832a",
+        "jxl-main5-3c12-DDDD-8-10-12-16-o7.p1.codes16le": "344daf73b7220b7d5e76934ef4b317f33b1505c021b3c98689c5f338d1e59b8b",
+        "jxl-main5-3c12-DDDD-8-10-12-16-o7.p2.codes16le": "bdf28941ceb9352ac898adce152d1397fa6f59a2aa8df3a522968fbcecaeff95",
+        "jxl-main5-3c12-DDDD-8-10-12-16-o7.p3.codes16le": "ff1981570b85226c98231d4ff4077ab7b8ae2154839a17e9d8532000bdca739e"
+      }
+    },
+    {
+      "name": "jxl-main5-1c10-MDM-16-9-8-o8",
+      "channels": 1,
+      "color_bits": 10,
+      "kinds": "MDM",
+      "extra_bits": [
+        16,
+        9,
+        8
+      ],
+      "orientation": 8,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "embedded_icc": false,
+      "sha256": {
+        "jxl-main5-1c10-MDM-16-9-8-o8.jxl": "2d4c3ac5d3ae283d1e50a12c77287e23756d1a98b7d8b8a98794f938213ece64",
+        "jxl-main5-1c10-MDM-16-9-8-o8.rgba16le": "bb6eb9e844856c88da7d9bea3db51ab28d1eae10ce6a8b5cf48460bee75b3b93",
+        "jxl-main5-1c10-MDM-16-9-8-o8.p0.codes16le": "aa276c422b42c964b1f4d0f000dc68f8023f416e8b08c10dd6dbcf75aeedead8",
+        "jxl-main5-1c10-MDM-16-9-8-o8.p1.codes16le": "313b7f9b3185dd79233c06ad2b93de8d7057d94e6f3f563da292b5484ea9346b",
+        "jxl-main5-1c10-MDM-16-9-8-o8.p2.codes16le": "3d9b52dee50d0485aa9c2f2fc85c65acb1d527fffad981e2b7907ace4af69d02"
+      }
+    },
+    {
+      "name": "jxl-main5-3c8-AMDM-12-16-8-9-o4-zero-alpha",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "AMDM",
+      "extra_bits": [
+        12,
+        16,
+        8,
+        9
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-zero-alpha.jxl": "e79e4b53c18d1ca189cfb4a58974210d5d4b42867ef769edec75dff9dbdfb149",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-zero-alpha.rgba16le": "e4623b07a33c5ddefe72d94a2f8e02d6075eb724a8e58b8ab6765490c026f40d",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-zero-alpha.p0.codes16le": "82fcfd5215175da9e65ca7c4fb927a1fb0e61f09d54987c368e8e16ebd9c2969",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-zero-alpha.p1.codes16le": "9a80b170c6e13f5721ca23380e4c50e0a187b78fe83a299143bc6907aa5b8b57",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-zero-alpha.p2.codes16le": "edd2139df33766c47e4e3fb3f5fad5a001fdcb30b6b2476fdaa12cdeebeee18d",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-zero-alpha.p3.codes16le": "f59d6907d92e280529583f19ccc1dda3ce353110a7072ae782054f7aa5bfd9cd"
+      }
+    },
+    {
+      "name": "jxl-main5-3c8-AMDM-12-16-8-9-o4-opaque-alpha",
+      "channels": 3,
+      "color_bits": 8,
+      "kinds": "AMDM",
+      "extra_bits": [
+        12,
+        16,
+        8,
+        9
+      ],
+      "orientation": 4,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "embedded_icc": true,
+      "sha256": {
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-opaque-alpha.jxl": "040b7d68bd2cb9bf3e4c718a7478a0048887f2aef92405dba06b3193abde8d92",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-opaque-alpha.rgba16le": "47c3e4148839f0b7d5861351cfcdd44cb940493b88de8d57a7b8575e65daedd6",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-opaque-alpha.p0.codes16le": "e2a17ac47f83a8be04cde41d8f035f02b5e63e50e4a87079c0daf419325a0419",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-opaque-alpha.p1.codes16le": "9a80b170c6e13f5721ca23380e4c50e0a187b78fe83a299143bc6907aa5b8b57",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-opaque-alpha.p2.codes16le": "edd2139df33766c47e4e3fb3f5fad5a001fdcb30b6b2476fdaa12cdeebeee18d",
+        "jxl-main5-3c8-AMDM-12-16-8-9-o4-opaque-alpha.p3.codes16le": "f59d6907d92e280529583f19ccc1dda3ce353110a7072ae782054f7aa5bfd9cd"
+      }
+    },
+    {
+      "name": "jxl-main5-refused-five",
+      "refused": true,
+      "kind": "five",
+      "sha256": "f266893e8ba5b177e5b056b09b1dedb91f3732d18d9aa7fa7834367ae2fabb66"
+    },
+    {
+      "name": "jxl-main5-refused-spot",
+      "refused": true,
+      "kind": "spot",
+      "sha256": "d68d98753f6b3bba042d68fec5279f1e4eb5b4067db06b3a24479a4e8cd17ea3"
+    },
+    {
+      "name": "jxl-main5-refused-float",
+      "refused": true,
+      "kind": "float",
+      "sha256": "2c9537ba7468e9ae95a45d74377fb3068b076f70d5c4c9641902721886bdc0cf"
+    },
+    {
+      "name": "jxl-main5-refused-subsampled",
+      "refused": true,
+      "kind": "subsampled",
+      "sha256": "c6aadaaf0ad4b3d490d6df024939d78de76745d932244223923ed3b21863aa36"
+    },
+    {
+      "name": "jxl-main5-refused-layers",
+      "refused": true,
+      "kind": "layers",
+      "sha256": "aaeeda9e0e08f724da8ea211768637cf5a663ed0364422de8b4b6810da67158f"
+    },
+    {
+      "name": "jxl-main5-refused-associated",
+      "refused": true,
+      "kind": "associated",
+      "sha256": "7c7a6844564621cb527a51fb72a76cef2fbd9e4345082b2e5aa901a3504951ae"
+    },
+    {
+      "name": "jxl-main5-refused-multiple-alpha",
+      "refused": true,
+      "kind": "multiple-alpha",
+      "sha256": "712bdaec02a74a0465411b4477c5cd59953c7e776f34d86d2345e5900aca7226"
+    }
+  ]
+}

@@ -239,13 +239,10 @@ fn all_unrepresented_channels_and_unqualified_modes_reject() {
     );
 
     for input in [
-        include_bytes!("fixtures/review/jxl-two-refused-three.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-two-refused-spot.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-two-refused-float.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-two-refused-subsampled.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-two-refused-layers.jxl").as_slice(),
-        include_bytes!("fixtures/review/jxl-rgba8.jxl").as_slice(),
-        include_bytes!("fixtures/review/jxl-alpha-refused-multiple.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-alpha-refused-spot.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-alpha-refused-multiple-alpha.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-alpha-refused-float-alpha.jxl").as_slice(),

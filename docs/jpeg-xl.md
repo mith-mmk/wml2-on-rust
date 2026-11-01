@@ -794,6 +794,7 @@ also has a bounded subset. An explicit [separate integer Depth-plane API](jpeg-x
 now preserves one qualified non-alpha extra alongside original-profile color on this draft stack.
 The same API also preserves a qualified integer [SelectionMask plane](jpeg-xl-selection-plane.md).
 A bounded [two-plane extension](jpeg-xl-two-planes.md) preserves either kind in source order,
-including duplicate kinds. More than two planes, Alpha combinations, other kinds/storage
-and name-based selection remain unsupported.
+including duplicate kinds. The [Main5 generalization](jpeg-xl-main5-extras.md) now covers all0..4 shipping extra slots,
+including at most one straight Alpha at any index. More than4 is a Main5 limit;
+associated/multiple Alpha, other kinds/storage and name-based selection remain residual.
 It does not change the deferred HDR display policy in #46.

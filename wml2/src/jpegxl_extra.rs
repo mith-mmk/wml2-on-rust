@@ -6,6 +6,8 @@ pub enum JxlExtraChannelKind {
     Depth,
     /// Raw integer selection codes; no threshold, coverage or compositing rule.
     SelectionMask,
+    /// Full-resolution straight alpha, retained at source depth.
+    Alpha,
 }
 /// Decoded integer sample codes at source depth; no physical-unit, threshold,
 /// coverage, or compositing interpretation is inferred.
@@ -23,7 +25,7 @@ pub struct JxlExtraPlane {
 }
 /// Original-profile normalized RGBA16 color plus ALL admitted extra planes.
 /// Gray coordinates are replicated, identified by color_channels=1. Alpha is
-/// opaque because this initial route refuses Alpha channels. Extras never pass
+/// opaque without Alpha, otherwise straight and normalized to16 bits. Extras never pass
 /// through ICC/CMS or get blended into color. No display conversion is implied.
 #[non_exhaustive]
 #[derive(Debug)]
@@ -41,9 +43,10 @@ pub struct JxlExtraImage {
     /// mean the source name is empty. Container boxes are not stored here.
     pub source_header: Vec<u8>,
 }
-/// Up to two full-resolution integer Depth/SelectionMask planes, original-profile Gray/RGB
+/// All Main5 full-resolution integer Depth/SelectionMask planes and at most one
+/// straight Alpha, original-profile Gray/RGB
 /// SDR, one unresampled full-canvas Modular frame, no preview. Other
-/// extras (including Alpha) reject rather than being discarded. Output is
+/// extras, associated/multiple Alpha reject rather than being discarded. Output is
 /// published only after complete input and final profile/boundary checks.
 pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
     bytes: &[u8],
@@ -107,7 +110,10 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
             )?,
         )?,
     )?;
-    let descriptors = add(descriptors, std::mem::size_of::<[Vec<u16>; 2]>())?;
+    let descriptors = add(
+        descriptors,
+        std::mem::size_of::<[Vec<u16>; MAX_EXTRA_PLANES]>(),
+    )?;
     workspace.claim(descriptors, "JPEG XL extra descriptors")?;
     workspace.claim(64 * 1024, "JPEG XL generated profile temporary")?;
     let mut options = JxlDecoderOptions::default();
@@ -140,6 +146,7 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         || info.extra_channels.len() != count
         || info.extra_channels.iter().enumerate().any(|(i, c)| {
             Some(match c.ec_type {
+                jxl_codec::api::ExtraChannel::Alpha => JxlExtraChannelKind::Alpha,
                 jxl_codec::api::ExtraChannel::Depth => JxlExtraChannelKind::Depth,
                 jxl_codec::api::ExtraChannel::SelectionMask => JxlExtraChannelKind::SelectionMask,
                 _ => return true,
@@ -218,7 +225,7 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
     resources::tests::before_metadata_copy("extra color buffer", color_bytes);
     rgba16.try_reserve_exact(mul(pixels, 4)?)?;
     rgba16.resize(mul(pixels, 4)?, 0u16);
-    let mut planes: [Vec<u16>; 2] = std::array::from_fn(|_| Vec::new());
+    let mut planes: [Vec<u16>; MAX_EXTRA_PLANES] = std::array::from_fn(|_| Vec::new());
     for (i, plane) in planes.iter_mut().take(count).enumerate() {
         #[cfg(not(test))]
         let _ = i;
@@ -226,8 +233,12 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         resources::tests::before_metadata_copy(
             if i == 0 {
                 "extra Depth buffer"
-            } else {
+            } else if i == 1 {
                 "extra second plane buffer"
+            } else if i == 2 {
+                "extra third plane buffer"
+            } else {
+                "extra fourth plane buffer"
             },
             plane_bytes,
         );
@@ -283,18 +294,35 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         return Err(invalid("extra-plane output profile changed"));
     }
     drop(final_profile);
-    for chunk in rgba16.chunks(256 * 4) {
-        check()?;
-        if chunk.chunks_exact(4).any(|p| p[3] != 65535) {
-            return Err(invalid("nonopaque color without source alpha"));
-        }
-    }
     for (plane, &(_, bits)) in planes.iter().zip(h.extras.iter().flatten()) {
         let max = (1u32 << bits) - 1;
         for chunk in plane.chunks(256) {
             check()?;
             if chunk.iter().any(|&v| u32::from(v) > max) {
                 return Err(invalid("extra source code out of range"));
+            }
+        }
+    }
+    let alpha = h
+        .extras
+        .iter()
+        .position(|e| matches!(e, Some((JxlExtraChannelKind::Alpha, _))));
+    for (block, chunk) in rgba16.chunks(256 * 4).enumerate() {
+        check()?;
+        for (i, pixel) in chunk.chunks_exact(4).enumerate() {
+            let expected = if let Some(index) = alpha {
+                let bits = h
+                    .alpha_bits
+                    .ok_or_else(|| invalid("missing preflight alpha depth"))?;
+                let maximum = (1u32 << bits) - 1;
+                ((u32::from(planes[index][block * 256 + i]) * 65535 + maximum / 2) / maximum) as u16
+            } else {
+                65535
+            };
+            if pixel[3].abs_diff(expected) > u16::from(alpha.is_some()) {
+                return Err(invalid(
+                    "RGBA alpha disagrees with retained source Alpha plane",
+                ));
             }
         }
     }

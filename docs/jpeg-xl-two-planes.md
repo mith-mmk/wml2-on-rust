@@ -2,7 +2,9 @@
 
 This is an **unmerged production draft**, based on #89
 (`cb41c10084c22d738735edfac4a5d0263e6f9aa3`) and its #88…#75/#73/#72 stack.
-Main0.0.41 is unchanged. It implements a bounded multiple-plane subset of #42;
+Main0.0.41 is unchanged. The subsequent [Main5 generalization](jpeg-xl-main5-extras.md)
+removes this staged2-plane limit and admits all4 Main5 slots plus straight Alpha;
+the reports below remain the historical #90 snapshot. It implements a bounded multiple-plane subset of #42;
 #42 remains open. No product dependency changes are made.
 
 The existing `image_with_extra_channels_from_with_resource_limits_and_cancel`

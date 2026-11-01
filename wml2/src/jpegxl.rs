@@ -40,6 +40,8 @@ const MAX_INPUT: usize = 64 * 1024 * 1024;
 // Separate from the file cap: caller unlimited() cannot admit unbounded brob expansion.
 const MAX_BROB_METADATA: usize = 64 * 1024 * 1024;
 const MAX_HEADER: usize = 64 * 1024;
+// Pinned0.8 Main5 parse_file_header has a hard extra-channel ceiling of4.
+const MAX_EXTRA_PLANES: usize = 4;
 const MAX_PIXELS: usize = 4 * 1024 * 1024;
 
 /// Cancellation returned by the cancellable sRGB API; downcast the boxed error
@@ -451,7 +453,7 @@ struct Header {
     height: usize,
     bits: u8,
     alpha_bits: Option<u8>,
-    extras: [Option<(JxlExtraChannelKind, u8)>; 2],
+    extras: [Option<(JxlExtraChannelKind, u8)>; MAX_EXTRA_PLANES],
     alpha_associated: bool,
     alpha_dim_shift: u8,
     native_bits: u8,
@@ -784,16 +786,24 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
     if EXTRA {
         if m.xyb_encoded
             || m.preview.is_some()
-            || m.extra_channel_info.len() > 2
+            || m.extra_channel_info.len() > MAX_EXTRA_PLANES
+            || m.extra_channel_info
+                .iter()
+                .filter(|c| c.ec_type == ExtraChannel::Alpha)
+                .count()
+                > 1
             || m.extra_channel_info.iter().any(|c| {
-                !matches!(c.ec_type, ExtraChannel::Depth | ExtraChannel::SelectionMask)
+                !matches!(
+                    c.ec_type,
+                    ExtraChannel::Depth | ExtraChannel::SelectionMask | ExtraChannel::Alpha
+                ) || c.alpha_associated()
                     || c.dim_shift() != 0
                     || c.bit_depth().floating_point_sample()
                     || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
             })
         {
             return Err(unsupported(
-                "extra-plane output supports up to two full-resolution integer Depth/SelectionMask channels on original-profile SDR without preview",
+                "extra-plane output supports Main5 Depth/SelectionMask and at most one straight Alpha, full-resolution integer channels on original-profile SDR without preview",
             ));
         }
     } else {
@@ -837,13 +847,14 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
     }
     let alpha_bits = m
         .extra_channel_info
-        .first()
-        .filter(|c| c.ec_type == ExtraChannel::Alpha)
+        .iter()
+        .find(|c| c.ec_type == ExtraChannel::Alpha)
         .map(|c| c.bit_depth().bits_per_sample() as u8);
-    let mut extras = [None; 2];
+    let mut extras = [None; MAX_EXTRA_PLANES];
     if EXTRA {
         for (slot, c) in extras.iter_mut().zip(&m.extra_channel_info) {
             let kind = match c.ec_type {
+                ExtraChannel::Alpha => JxlExtraChannelKind::Alpha,
                 ExtraChannel::Depth => JxlExtraChannelKind::Depth,
                 ExtraChannel::SelectionMask => JxlExtraChannelKind::SelectionMask,
                 _ => return Err(unsupported("unrepresented extra-channel kind")),

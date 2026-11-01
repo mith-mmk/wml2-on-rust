@@ -445,6 +445,7 @@ struct Header {
     height: usize,
     bits: u8,
     alpha_bits: Option<u8>,
+    alpha_associated: bool,
     native_bits: u8,
     orientation: u8,
     gray: bool,
@@ -465,7 +466,8 @@ fn validate_basic_info(info: &JxlBasicInfo, h: &Header) -> Result<(), Error> {
         || info.animation.is_some()
         || info.extra_channels.len() != usize::from(h.alpha_bits.is_some())
         || info.extra_channels.iter().any(|channel| {
-            channel.ec_type != jxl_codec::api::ExtraChannel::Alpha || channel.alpha_associated
+            channel.ec_type != jxl_codec::api::ExtraChannel::Alpha
+                || channel.alpha_associated != h.alpha_associated
         })
     {
         return Err(invalid(
@@ -715,7 +717,13 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
     if m.extra_channel_info.len() > 1
         || m.extra_channel_info.iter().any(|c| {
             c.ec_type != ExtraChannel::Alpha
-                || c.alpha_associated()
+                || (c.alpha_associated()
+                    && (HDR
+                        || FLOAT_BITS != 0
+                        || !matches!(bits, 8 | 16)
+                        || c.bit_depth().bits_per_sample() != bits
+                        || m.xyb_encoded
+                        || m.preview.is_some()))
                 || c.dim_shift() != 0
                 || (HDR
                     && (c.bit_depth().floating_point_sample()
@@ -740,16 +748,22 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
                 "JPEG XL F32 requires at most one full-resolution straight float alpha (32 bits, 8 exponent bits)"
             }
         } else {
-            "JPEG XL requires at most one full-resolution straight integer alpha channel with 8/9/10/12/16-bit depth"
+            "JPEG XL requires one supported full-resolution integer alpha; associated alpha requires matching8/16-bit original-profile samples without preview"
         }));
     }
     let alpha_bits = m
         .extra_channel_info
         .first()
         .map(|c| c.bit_depth().bits_per_sample() as u8);
+    let alpha_associated = m
+        .extra_channel_info
+        .first()
+        .is_some_and(|c| c.alpha_associated());
     // One output format cannot express independent channel depths. Normalize
     // mixed integer channels to 16 bits before EX storage/CMS/legacy rounding.
-    let native_bits = if matches!(bits, 9 | 10) || alpha_bits.is_some_and(|b| u32::from(b) != bits)
+    let native_bits = if alpha_associated
+        || matches!(bits, 9 | 10)
+        || alpha_bits.is_some_and(|b| u32::from(b) != bits)
     {
         16
     } else {
@@ -865,6 +879,16 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
         limits.expanded_bytes,
         "JPEG XL decode workspace",
     )?;
+    // Initially qualify associated alpha for one coded layer only. Reuse the
+    // complete pre-allocation frame scan; do not bypass reference/padding checks.
+    let frame_policy = if alpha_associated {
+        JxlResourceLimits {
+            internal_layers: policy.internal_layers.min(1),
+            ..policy
+        }
+    } else {
+        policy
+    };
     let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT_BITS, HDR>(
         &input.codestream,
         &header,
@@ -872,7 +896,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
         frame_pixels,
         base,
         limits,
-        policy,
+        frame_policy,
     )?;
     limits::check(workspace, limits.expanded_bytes, "JPEG XL decode workspace")?;
     Ok(Header {
@@ -882,6 +906,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
         height,
         bits: bits as u8,
         alpha_bits,
+        alpha_associated,
         native_bits,
         orientation: m.orientation as u8,
         gray: m.color_encoding.color_space == ColorSpace::Gray && m.extra_channel_info.is_empty(),
@@ -1990,7 +2015,13 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     let mut options = JxlDecoderOptions::default();
     options.sample_limit = Some(h.sample_limit);
     options.adjust_orientation = true;
-    options.alpha_mode = AlphaMode::AsIs;
+    // The public buffers carry straight alpha. Conversion is a codec in-place
+    // render stage, before WML2 CMS and final legacy quantization.
+    options.alpha_mode = if h.alpha_associated {
+        AlphaMode::Unpremultiplied
+    } else {
+        AlphaMode::AsIs
+    };
     // Preserve 0.7.4's three force_level5_* defaults, including when the
     // independently validated original container carries a jxll=10 label.
     options.max_profile_level = ProfileLevel::Main5;
@@ -2154,6 +2185,12 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
         "JPEG XL Source Bit Depth".into(),
         DataMap::UInt(h.bits.into()),
     ));
+    if h.alpha_associated {
+        input.metadata.push((
+            "JPEG XL Source Alpha Associated".into(),
+            DataMap::Bool(true),
+        ));
+    }
     // A mixed-depth image has one normalized 16-bit native layout; retain the
     // independent source alpha depth instead of relabeling it as color depth.
     if let Some(alpha_bits) = h.alpha_bits.filter(|&b| b != h.bits) {

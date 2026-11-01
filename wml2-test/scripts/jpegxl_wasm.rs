@@ -356,7 +356,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
-    count + intrinsic_cases() + composition_cases()
+    count + intrinsic_cases() + composition_cases() + associated_cases()
 }
 
 fn intrinsic_cases() -> u32 {
@@ -602,4 +602,139 @@ fn composition_cases() -> u32 {
         .is_err()
     );
     3
+}
+
+fn associated_cases() -> u32 {
+    let mut count = 0;
+    for (input, expected, bits) in [
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c8o1.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c8o1.rgba16le")
+                .as_slice(),
+            8,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c8o6.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c8o6.rgba16le")
+                .as_slice(),
+            8,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c8o8.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c8o8.rgba16le")
+                .as_slice(),
+            8,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c16o1.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c16o1.rgba16le")
+                .as_slice(),
+            16,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c16o6.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c16o6.rgba16le")
+                .as_slice(),
+            16,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c16o8.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-1c16o8.rgba16le")
+                .as_slice(),
+            16,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c8o1.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c8o1.rgba16le")
+                .as_slice(),
+            8,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c8o6.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c8o6.rgba16le")
+                .as_slice(),
+            8,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c8o8.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c8o8.rgba16le")
+                .as_slice(),
+            8,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c16o1.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c16o1.rgba16le")
+                .as_slice(),
+            16,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c16o6.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c16o6.rgba16le")
+                .as_slice(),
+            16,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c16o8.jxl").as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-3c16o8.rgba16le")
+                .as_slice(),
+            16,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-colored-zero-8.jxl")
+                .as_slice(),
+            include_bytes!(
+                "../../wml2/tests/fixtures/review/jxl-associated-colored-zero-8.rgba16le"
+            )
+            .as_slice(),
+            8,
+        ),
+        (
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-colored-zero-16.jxl")
+                .as_slice(),
+            include_bytes!(
+                "../../wml2/tests/fixtures/review/jxl-associated-colored-zero-16.rgba16le"
+            )
+            .as_slice(),
+            16,
+        ),
+        (include_bytes!("../../wml2/tests/fixtures/review/jxl-premult.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-associated-original-premult.rgba16le").as_slice(),16),
+    ] {
+        let im = image_from(input).unwrap();
+        let actual = im.buffer.unwrap();
+        let expected = words(expected, 16);
+        assert_eq!(actual.len(), expected.len());
+        assert!(matches!(
+            im.metadata.as_ref().unwrap()["JPEG XL Source Alpha Associated"],
+            wml2::metadata::DataMap::Bool(true)
+        ));
+        for (i, (a, b)) in actual.iter().zip(&expected).enumerate() {
+            let b = ((u32::from(*b) * 255 + 32767) / 65535) as u8;
+            if i % 4 == 3 {
+                assert_eq!(*a, b)
+            } else {
+                assert!(a.abs_diff(b) <= 1)
+            }
+        }
+        count += 1;
+        let im=image_from_ex(input,PixelFormatEx::Rgba16,PrecisionConversion::Exact).unwrap();
+        let values=words(im.bytes().unwrap(),16);
+        let _=bits;
+        assert_eq!(values.len(), expected.len());
+        for (i, (a, b)) in values.iter().zip(&expected).enumerate() {
+            let a = *a;
+            if i % 4 == 3 {
+                assert_eq!(a, *b)
+            } else {
+                assert!(a.abs_diff(*b) <= 1)
+            }
+        }
+        count += 1;
+    }
+    assert!(
+        image_from(include_bytes!(
+            "../../wml2/tests/fixtures/review/jxl-associated-layers-refused.jxl"
+        ))
+        .is_err()
+    );
+    count + 1
 }

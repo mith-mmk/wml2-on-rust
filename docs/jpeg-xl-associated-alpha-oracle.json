@@ -1,0 +1,241 @@
+{
+  "reference": "C libjxl0.11.2 explicit unpremultiply; LittleCMS2.16 RGB16 relative NOOPTIMIZE, alpha copied",
+  "generator_sha256": "cdda60d87a950ca56d8493d45cc73b176338b22c956116e50e4b77db4dd62b61",
+  "encoder_sha256": "997f28a3b57dcfd8648b6dad39b6675b066853faad05b65764a3753956a696df",
+  "reference_sha256": "875ea74cb0883120354baba2ccaedaf9aa8c664aa658c10923d1bf608ae1fcbd",
+  "cases": [
+    {
+      "name": "jxl-associated-1c8o1",
+      "color_channels": 1,
+      "bits": 8,
+      "orientation": 1,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "jxl_sha256": "fa3ea1a270f59ed72eeaa2c0869fa32e95b024d7fe3a7b1f8e775017ae4e3d15",
+      "rgba16_sha256": "665427560b72cdbcda51456e8da09605d393db000e601af8cc2394ef6e4381b0"
+    },
+    {
+      "name": "jxl-associated-1c8o6",
+      "color_channels": 1,
+      "bits": 8,
+      "orientation": 6,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "jxl_sha256": "2664ae580560d32ea5398d6eeac8a08947069287f4447c29f3a9e806ff416b1a",
+      "rgba16_sha256": "34cb67c33a6a2ba5f4e77489d177f81c2dd656f5d6a2aeaced7d69bc6be6f57d"
+    },
+    {
+      "name": "jxl-associated-1c8o8",
+      "color_channels": 1,
+      "bits": 8,
+      "orientation": 8,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "jxl_sha256": "0c6159c42430905094ab38f3c7f8a82b5decbec8174a7c9e7bcba2da41b7eeb5",
+      "rgba16_sha256": "41e76f2c5b7a5b09e501fbdaa06161aca3d1d08c31f5f126d614d38cdbfae7da"
+    },
+    {
+      "name": "jxl-associated-1c16o1",
+      "color_channels": 1,
+      "bits": 16,
+      "orientation": 1,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "jxl_sha256": "c3f03c73c5971a3a12d53c984005355270ab7d9c2016d00a834a079b37429483",
+      "rgba16_sha256": "dae67a7fa186360ff235bdaff7f03efaead1365d23c54c1ad2877b46e7726da8"
+    },
+    {
+      "name": "jxl-associated-1c16o6",
+      "color_channels": 1,
+      "bits": 16,
+      "orientation": 6,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "jxl_sha256": "81c4e6ef37795c4c26f88807654457dc2068d5e74547ca8a4ac287aa97746efb",
+      "rgba16_sha256": "a4e17004dc2df197c4e5c2a00d34037f4439c00719dfabeb0fe4861d401dd430"
+    },
+    {
+      "name": "jxl-associated-1c16o8",
+      "color_channels": 1,
+      "bits": 16,
+      "orientation": 8,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "jxl_sha256": "0443d831dfa00d9124fdda5ec3cd56e70f46c00d683105214cd347ed085b8b55",
+      "rgba16_sha256": "f432f5f119118387b5ae83253435e1f7bc02b58a31a6f0e251e787564aeb3bfe"
+    },
+    {
+      "name": "jxl-associated-3c8o1",
+      "color_channels": 3,
+      "bits": 8,
+      "orientation": 1,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "jxl_sha256": "984990743b3f1f9fa92af6f8c43a399e54cb71a8cad629cadfc491a3cf2c1798",
+      "rgba16_sha256": "dded8a923a8e000b3945e7c56cdb6b6e149ffe268c308398edc0bf8ef09e19a7"
+    },
+    {
+      "name": "jxl-associated-3c8o6",
+      "color_channels": 3,
+      "bits": 8,
+      "orientation": 6,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "jxl_sha256": "4352331b6ce3fd21cac377ffc7676adcbb3d19e7f366d7dc22c6371d74abad74",
+      "rgba16_sha256": "956ad7c3176188a31237c9f0e20b190f9c03dc2a35cce44ecf114c90a877f956"
+    },
+    {
+      "name": "jxl-associated-3c8o8",
+      "color_channels": 3,
+      "bits": 8,
+      "orientation": 8,
+      "embedded_icc": true,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "jxl_sha256": "b951606397d58c5166aa7565f7b4ba7c63aa579bd38f90875360405d5fe1fd60",
+      "rgba16_sha256": "a3a5afd4d7591bf76b17a0aacc2ab6bb88ef6139d7d51425c110ccd9ffd335d8",
+      "managed_sha256": "06582d6ec3ea00169ac0191135302b5b2bbb0aedab1a5301fd2ed61308cb6cfc",
+      "profile_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa"
+    },
+    {
+      "name": "jxl-associated-3c16o1",
+      "color_channels": 3,
+      "bits": 16,
+      "orientation": 1,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        7,
+        5
+      ],
+      "jxl_sha256": "2cbcc1dbefde9fde27466c84c796b6bd3d94c03706edef3f27449303f34f5be3",
+      "rgba16_sha256": "c1f190e65347cf31f1c4db0f8b9364b4e66b7a04e310dfaabef4f92f30088f89"
+    },
+    {
+      "name": "jxl-associated-3c16o6",
+      "color_channels": 3,
+      "bits": 16,
+      "orientation": 6,
+      "embedded_icc": false,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "jxl_sha256": "e3754b60c82407bd2e250fcaf2652e30545e0a9e93f4adfb50c0f1df29d98bbe",
+      "rgba16_sha256": "6a106a0ff8c7d48d81c0871c54d5c96ac3aa2b168d0e43981c0cb3872085f66b"
+    },
+    {
+      "name": "jxl-associated-3c16o8",
+      "color_channels": 3,
+      "bits": 16,
+      "orientation": 8,
+      "embedded_icc": true,
+      "coded": [
+        7,
+        5
+      ],
+      "output": [
+        5,
+        7
+      ],
+      "jxl_sha256": "3c8e97b66d33abff371f080cb413a096906c34c21246b823a43b37345c575240",
+      "rgba16_sha256": "148ffa8aff8a4cde3245c6772b7a7cbfb3a4bd8caf4b385d54ac7c348bd3d1bb",
+      "managed_sha256": "89a9a23e1af16b0a31e4bdd481307a51702fc8a45d40dd677b876aa6dc4f2de8",
+      "profile_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa"
+    },
+    {
+      "name": "jxl-associated-colored-zero-8",
+      "bits": 8,
+      "kind": "colored zero-alpha stress",
+      "jxl_sha256": "687bfa06b284886cb3454a2134c19c921b673f623330bde8a6e8fa9629b7515c",
+      "rgba16_sha256": "6a5d3fa8d9fe824c55fad87df20f2ccac4ab8690353b84d58a6510b4e3346468"
+    },
+    {
+      "name": "jxl-associated-colored-zero-16",
+      "bits": 16,
+      "kind": "colored zero-alpha stress",
+      "jxl_sha256": "a1df18c4dc4134e97a9e83f1ada101805013989c777c190d0dfa75afc0d9d386",
+      "rgba16_sha256": "692ac9d93ef075ee2af2dd62ee775ba51162e6229d04efd9804c81222ba02ef6"
+    },
+    {
+      "name": "jxl-associated-layers-refused",
+      "kind": "independently decodable multi-layer refusal",
+      "jxl_sha256": "8bf2733b29d07a442e7b737495fc4cdc7af587016bf93f13b7ddf496a0acc22c"
+    },
+    {
+      "name": "jxl-premult",
+      "kind": "previously refused original matching-depth fixture",
+      "jxl_sha256": "70965cc0f7d1c517eaca8dcd6a2fe94055e37a68e0c6997342f74933cb418a2d",
+      "rgba16_sha256": "6a2ad529ceaa6106b8f9a284c419a30c949cba3161da8abac2cc62fbb283b291"
+    }
+  ]
+}

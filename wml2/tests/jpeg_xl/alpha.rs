@@ -193,7 +193,7 @@ fn alpha_limits_admit_the_common_sixteen_bit_canvas_before_any_callbacks() {
     }
 }
 #[test]
-fn associated_subsampled_float_and_extra_planes_remain_explicit_refusals() {
+fn unsupported_associated_depth_subsampled_float_and_extra_planes_remain_refused() {
     for input in [
         include_bytes!("../fixtures/review/jxl-alpha-refused-associated.jxl").as_slice(),
         include_bytes!("../fixtures/review/jxl-alpha-refused-subsampled.jxl"),
@@ -209,7 +209,7 @@ fn associated_subsampled_float_and_extra_planes_remain_explicit_refusals() {
             let e = probe(input, &mut p, limits, false).unwrap_err();
             assert!(
                 e.to_string()
-                    .contains("at most one full-resolution straight integer"),
+                    .contains("one supported full-resolution integer alpha"),
                 "{e}"
             );
             assert!(p.events.is_empty());
@@ -233,4 +233,22 @@ fn original_mixed_depth_fixture_is_accepted_with_exact_normalized_output() {
         image.bytes().unwrap(),
         include_bytes!("../fixtures/review/jxl-alpha-original-mixed.rgba16le")
     );
+}
+
+#[test]
+fn associated_integer_abort_and_early_limits_follow_existing_callback_contract() {
+    let input=include_bytes!("../fixtures/review/jxl-associated-3c16o6.jxl");
+    for native in [false,true] {
+        for (abort,expected) in [
+            ("init",vec!["init","end"]),
+            ("draw",vec!["init","draw","end"]),
+            ("metadata",vec!["init","draw","metadata","end"])] {
+            let mut p=Probe{abort:Some(abort),..Default::default()};
+            probe(input,&mut p,DecodeLimits::default(),native).unwrap();
+            assert_eq!(p.events,expected);
+        }
+        for limits in [DecodeLimits{pixels:34,..Default::default()},DecodeLimits{animation_bytes:1,..Default::default()},DecodeLimits{metadata_bytes:0,..Default::default()}] {
+            let mut p=Probe::default();assert!(probe(input,&mut p,limits,native).is_err());assert!(p.events.is_empty());
+        }
+    }
 }

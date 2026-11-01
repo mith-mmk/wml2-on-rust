@@ -1,0 +1,111 @@
+{
+  "base_sha": "cc0d54535db3209317a5e0820fc3a9c3074f053b",
+  "scope": "Unmerged production subset, original-profile SDR, matching full-resolution integer8/16 alpha, no preview, one coded layer; native straight RGBA16; existing caps retained",
+  "native": {
+    "expanded": "50lib+42main+5associated+3layers+5linear+3encodedHDR+4F32+4F16+11preview+11resources=138 passing tests",
+    "minimal": "3associated+30main pass",
+    "disabled": "new test target builds with0 tests",
+    "cancellation_checkpoints": 18,
+    "heap": "Scoped current-thread net requested allocation is0 after every cancellation/result drop; not a process heap or codec-wide allocation guarantee",
+    "callback": "init/draw/metadata Abort on legacy/EX; early limit errors emit no callbacks"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 260,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14548992,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "7e017653265708c0c5bbfd97893ed7581c78b6a6f7c225732a9a1b401e3303ed",
+    "scope": "COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; associated matching8/16 integer alpha explicit straight normalization (15 independent vectors including colored zero-alpha, source flag, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "performance": {
+    "cpu": 0,
+    "build": "Rust1.91 release; jpeg-xl,color-management,image-buffer-ex; identical harness/input;3 warmup calls then1000 samples/process;6 alternating paired process blocks",
+    "before_sha": "cc0d54535db3209317a5e0820fc3a9c3074f053b",
+    "controls": {
+      "ordinary": {
+        "block_medians_ns": [
+          {
+            "before": 73188.0,
+            "after": 72297.0
+          },
+          {
+            "after": 71981.5,
+            "before": 71155.0
+          },
+          {
+            "before": 72247.5,
+            "after": 74220.0
+          },
+          {
+            "after": 74205.0,
+            "before": 72322.0
+          },
+          {
+            "before": 72282.0,
+            "after": 72527.5
+          },
+          {
+            "after": 74195.0,
+            "before": 72397.5
+          }
+        ],
+        "before_median_ns": 72302.0,
+        "after_median_ns": 73361.25,
+        "ratio": 1.0146503554535145
+      },
+      "managed": {
+        "block_medians_ns": [
+          {
+            "before": 124204.0,
+            "after": 125606.5
+          },
+          {
+            "after": 125801.0,
+            "before": 123899.0
+          },
+          {
+            "before": 127093.5,
+            "after": 141634.5
+          },
+          {
+            "after": 125827.0,
+            "before": 124815.0
+          },
+          {
+            "before": 124895.0,
+            "after": 127403.5
+          },
+          {
+            "after": 123754.0,
+            "before": 125361.0
+          }
+        ],
+        "before_median_ns": 124855.0,
+        "after_median_ns": 125814.0,
+        "ratio": 1.0076809098554322
+      }
+    },
+    "new_associated": {
+      "ordinary": [
+        75097.0,
+        77615.0,
+        74380.0
+      ],
+      "managed": [
+        153793.0,
+        152120.5,
+        152791.5
+      ]
+    }
+  },
+  "display": {
+    "source": "independent C decoded straight RGB -> LittleCMS sRGB compared to WML2 managed output, orientation8, composited over checkerboard",
+    "visual_result": "paired tiles agree visually",
+    "sha256": "6f13e303a06d5eb77b539d70f37d4034a95866d4db0dc78bedbc1d6e9e3339fb"
+  },
+  "platforms": "Local Linux Rust1.91 and actual Node24 WASM; Windows/macOS/Windows32 are CI, not local execution",
+  "limitations": "No general extra-channel, subsampled/mixed-associated, HDR-associated, preview/layer-associated or global allocator support; #42 open; ordinary still APIs continue to refuse animation"
+}

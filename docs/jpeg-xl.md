@@ -54,7 +54,8 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
 animations (no silent first-frame fallback),
-premultiplied or subsampled alpha, float or other alpha depths, multiple/other extra channels,
+associated alpha outside the [qualified integer subset](jpeg-xl-associated-alpha.md),
+subsampled alpha, float or other alpha depths, multiple/other extra channels,
 forbidden compressed control/nested boxes and unsupported depths.
 Supported embedded previews are [bounded and skipped](jpeg-xl-preview.md) while
 returning the main image. No preview extraction API or progressive-output mode is
@@ -320,7 +321,7 @@ compressed auxiliary metadata and native JPEG reconstruction. All eight orientat
 values have not been independently tested;90-degree rotation and orientation5
 transpose are covered.
 Browser UI integration, SIMD and threads are also outside the current evidence.
-9/10-bit sources, premultiplied alpha, HDR rendering, animation and encoding require a separate scope proposal before
+Broader associated-alpha support, HDR rendering, animation and encoding require a separate scope proposal before
 implementation. No PR, main merge or release is part of this branch work.
 
 ## Output orientation contract
@@ -783,3 +784,9 @@ with20 warmups: before median91.774ms, after89.707ms, ratio0.9775. Ranges overla
 regression in this test, not a speedup claim. Three runs of1000 in-place256×256
 conversions take PQ6.322–6.642s and HLG0.333–0.340s, excluding decode/input
 allocation and including output drop. The different transfer costs are explicit.
+
+
+Associated matching8/16-bit original-profile SDR alpha now has an [explicitly
+bounded straight-output subset](jpeg-xl-associated-alpha.md) on the unmerged
+stack. This partially addresses #42; general extras and subsampled alpha remain
+unsupported. It does not change the deferred HDR display policy in #46.

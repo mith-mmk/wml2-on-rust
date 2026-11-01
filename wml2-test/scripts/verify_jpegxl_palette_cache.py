@@ -37,6 +37,19 @@ def artifact(name):
     assert len(values) == 1, (name, values)
     return pathlib.Path(values[0])
 
+def has_palette_owner(symbols, size):
+    # Legacy and v0 demanglers spell inherent impls as Type::new / <Type>::new.
+    prefix = r'jxl::frame::modular::transforms::palette::'
+    owner = re.search(prefix + r'ImplicitPalette>?::new', symbols)
+    descriptor = size == '24' and re.search(prefix + r'Palette>?::new::', symbols)
+    return bool((owner or descriptor) and 'once_lock::OnceLock' in symbols)
+
+for spelling in ['jxl::frame::modular::transforms::palette::ImplicitPalette::new',
+                 '<jxl::frame::modular::transforms::palette::ImplicitPalette>::new']:
+    assert has_palette_owner(spelling + ' std::sync::once_lock::OnceLock', '1716')
+assert not has_palette_owner('<alloc::boxed::Box<jxl::frame::modular::transforms::palette::ImplicitPalette>>::new std::sync::once_lock::OnceLock', '1716')
+assert not has_palette_owner('other::ImplicitPalette::new std::sync::once_lock::OnceLock', '1716')
+
 if args.phase in ['all', 'build']:
     # Pin the diagnostic profile rather than relying on runner/cache defaults.
     build = run(['cargo', 'build', '-p', 'wml2', '--locked', '--target-dir', out / '.test-target',
@@ -76,8 +89,7 @@ for mode, expected in schedules:
             # Include inlined callers; physical unwind frames alone omit them.
             symbols = run(['addr2line', '-i', '-f', '-C', '-e', exe] + ['0x' + v for v in addresses])
             (out / ('stack-' + size + '.txt')).write_text(symbols)
-            assert 'ImplicitPalette::new' in symbols or (size == '24' and 'Palette::new::' in symbols)
-            assert 'once_lock::OnceLock' in symbols
+            assert has_palette_owner(symbols, size), ('unrecognized palette owner', size)
             stacks[size] = [s for s in symbols.splitlines()
                             if 'jxl::' in s or 'once_lock' in s or '/palette.rs:' in s]
     assert values == expected, (mode, values)

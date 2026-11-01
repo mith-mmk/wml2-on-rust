@@ -360,5 +360,64 @@
         "5cbdf89b8024965fc7524ce7a197d3bd102f5258e9f5dcc4a7a88a9450f87480"
       ]
     ]
+  },
+  "symbol_mangling_compatibility": {
+    "reproduced_failure": "With Rust1.91 and -C symbol-mangling-version=v0, old literal ImplicitPalette::new comparison fails on <jxl::...::ImplicitPalette>::new. Numeric4008-byte matrix unchanged.",
+    "fix": "Match fully-qualified owner with optional inherent-impl closing angle; include inline frames. Reject Box<ImplicitPalette>::new alone and unrelated owner. Both legacy and v0 full matrix/source/4 allocation-owner checks pass.",
+    "v0_cases": {
+      "success": [
+        4008,
+        0,
+        0
+      ],
+      "native": [
+        4008,
+        0,
+        0
+      ],
+      "begin": [
+        0,
+        0,
+        0
+      ],
+      "init": [
+        4008,
+        0,
+        0
+      ],
+      "draw": [
+        4008,
+        0,
+        0
+      ],
+      "early_error": [
+        0,
+        0,
+        0
+      ],
+      "late_error": [
+        4008,
+        0,
+        0
+      ],
+      "budget": [
+        0,
+        0,
+        0
+      ],
+      "depths": [
+        4008,
+        4008,
+        0,
+        0
+      ],
+      "threads": [
+        4008,
+        0
+      ]
+    },
+    "example": [
+      "<jxl::frame::modular::transforms::palette::ImplicitPalette>::new"
+    ]
   }
 }

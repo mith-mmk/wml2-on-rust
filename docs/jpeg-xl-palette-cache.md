@@ -109,3 +109,12 @@ bound. #43 stays open while unmerged. Fractional-ms common callbacks still refus
 explicitly and the rational native API stays exact; no extra Gray/preview/SMPTE/
 Alpha/profile matrix is invented as a new completion condition. The next work
 here is #37/#63's known allocation class, rather than extending #43 endlessly.
+
+The first CI diagnostic failed in symbol/source reporting after build and all
+numeric schedules passed. A local build with `RUSTFLAGS="-C symbol-mangling-version=v0"`
+reproduces the literal-owner mismatch: v0 renders `<...::ImplicitPalette>::new`,
+legacy renders `...::ImplicitPalette::new`. The matcher now recognizes both fully
+qualified forms, includes inline frames, and rejects a Box allocator name alone
+or an unrelated owner. Both complete local legacy/v0 schedules, locked-source
+checks and all4 owner traces pass; expected allocation sizes were not relaxed.
+CI exposes build, matrix, source and symbols as separate steps.

@@ -99,10 +99,10 @@ example is byte-identical for all3 managed frames. The new generator invokes the
 C libjxl0.11.2 reference and uses its actual output ICC, not WML2-produced expected
 pixels. Profile parsing/compilation remains the existing own engine in production.
 
-Net requested-byte checks use a warmup decode: a local first common-path call
-retained4008 bytes, not fully attributed; subsequent decode/drop and all measured
-cancellations have zero net increase. This is not a cold-start or global heap
-claim.
+Net requested-byte checks use a warmup decode. The first4008 bytes are now
+[attributed to the pinned codec's process-global implicit-palette cache](jpeg-xl-palette-cache.md),
+not the image or a TLS cache. Subsequent decode/drop and measured cancellations
+have zero net increase; this is not a general leak-absence or global heap claim.
 
 Native252 tests include102 library tests,17 shared EX tests, the existing JXL
 regressions and6 new callback tests. Every callback Abort/error boundary,73 managed

@@ -181,3 +181,9 @@ after building the library at either selected revision. Pass the boundary and
 qhd fixture paths. Generator and runtime use separate implementations; no
 private Windows corpus or TIFF XING_T24 file is used here. No issue closure,
 merge, approval, dependency migration or release accompanies this phase.
+
+The later [implicit-palette cache stage](jpeg-xl-palette-cache.md) adds an explicit
+25-slot fixed requested-heap allowance to finite resource admission. Legacy
+admission remains unchanged; finite workspace minima grow by100200 bytes on64-bit
+or99900 on32-bit. This is one identified codec allocation class, not full heap
+enforcement or large-image support.

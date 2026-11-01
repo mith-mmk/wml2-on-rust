@@ -157,6 +157,9 @@ jobs:
           FEATURES: ${{ matrix.features }}
           TEST_PROFILE: ${{ matrix.profile }}
         run: python3 -B .github/scripts/run_feature_tests.py
+      - name: Attribute JPEG XL fixed process palette cache
+        if: matrix.rust == 'stable' && matrix.features == 'jpeg-xl,image-buffer-ex'
+        run: python3 wml2-test/scripts/verify_jpegxl_palette_cache.py --output .test-palette-cache
       - uses: actions/upload-artifact@v4
         if: always()
         with:

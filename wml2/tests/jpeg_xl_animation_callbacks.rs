@@ -202,7 +202,8 @@ fn malformed_or_unrepresentable_input_never_initializes_callbacks() {
 }
 #[test]
 fn cumulative_callback_output_and_workspace_boundaries() {
-    // Initialize shared callback/TLS caches before measuring steady-state ownership.
+    // Initialize jxl0.8's process-global implicit-palette cache before
+    // measuring per-decode ownership; see jpeg-xl-palette-cache.md.
     drop(image_from_with_resource_limits(INPUT, Default::default(), Default::default()).unwrap());
     assert_eq!(
         allocation_tracking::measure(|| drop(

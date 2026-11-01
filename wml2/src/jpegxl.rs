@@ -837,7 +837,7 @@ fn preflight_samples<
     // FileHeader has bounded channel tables, but does not read ICC/pixel data.
     // Retained container metadata is already live, including expanded brob.
     // Reserve its existing 2x allowance before header/ICC/TOC allocation.
-    let header_workspace = add(1024 * 1024, mul(input.metadata_bytes, 2)?)?;
+    let header_workspace = resources::header_workspace(input.metadata_bytes, policy)?;
     limits::check(
         header_workspace,
         limits.expanded_bytes,
@@ -2308,7 +2308,11 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
         Ok(h) => h,
         Err(original) => {
             // Do not retry header parsing when its allocation allowance failed.
-            if add(1024 * 1024, mul(input.metadata_bytes, 2)?)? > limits.expanded_bytes {
+            if resources::header_workspace(
+                input.metadata_bytes,
+                resources.unwrap_or(JxlResourceLimits::legacy()),
+            )? > limits.expanded_bytes
+            {
                 return Err(original);
             }
             let mut br =

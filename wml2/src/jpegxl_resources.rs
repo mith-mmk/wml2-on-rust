@@ -1,5 +1,4 @@
 //! Caller-tightened admission and adapter-owned live storage accounting.
-#[cfg(feature = "color-management")]
 use super::mul;
 use super::{Error, MAX_BROB_METADATA, MAX_PIXELS, add, invalid};
 use crate::limits::{self, DecodeLimits};
@@ -75,6 +74,30 @@ impl JxlResourceLimits {
             ..limits
         }
     }
+}
+
+// Published jxl0.8.0 Palette::new owns25 process-global OnceLock entries.
+// Each entry owns3 fixed RGB i32 arrays and a3-pointer boxed descriptor. Admit
+// every slot independent of process history; do not inspect private cache state.
+// This does not cover other codec statics or make upstream allocation fallible.
+pub(super) const IMPLICIT_PALETTE_CACHE_BYTES: usize =
+    25 * (3 * (143 + 64 + 125) * std::mem::size_of::<i32>() + 3 * std::mem::size_of::<usize>());
+
+pub(super) fn header_workspace(
+    metadata_bytes: usize,
+    policy: JxlResourceLimits,
+) -> Result<usize, Error> {
+    let base = add(1024 * 1024, mul(metadata_bytes, 2)?)?;
+    // Legacy admission is unchanged. Explicit finite resource APIs always hold
+    // the worst-case static allowance, including when the cache is already warm.
+    add(
+        base,
+        if policy.workspace_bytes == usize::MAX {
+            0
+        } else {
+            IMPLICIT_PALETTE_CACHE_BYTES
+        },
+    )
 }
 
 /// Extra live adapter storage, on top of the conservative retained codec/metadata
@@ -367,7 +390,12 @@ pub(crate) mod tests {
         let _reset = ResetFault;
         let bytes = include_bytes!("../tests/fixtures/review/jxl-icc-lossless.jxl");
         let unpacked = super::super::unpack(bytes, DecodeLimits::unlimited()).unwrap();
-        let header = super::super::preflight(&unpacked, DecodeLimits::unlimited()).unwrap();
+        let header = super::super::preflight_with_resources(
+            &unpacked,
+            DecodeLimits::unlimited(),
+            JxlResourceLimits::default(),
+        )
+        .unwrap();
         let policy = JxlResourceLimits {
             workspace_bytes: header.workspace,
             ..Default::default()
@@ -845,5 +873,27 @@ pub(crate) mod tests {
         .err()
         .unwrap();
         assert!(error.to_string().contains("animation source frame"));
+    }
+    #[test]
+    fn finite_header_admission_reserves_all_process_palette_slots() {
+        let legacy = JxlResourceLimits::legacy();
+        let finite = JxlResourceLimits::default();
+        let per_slot = 3 * (143 + 64 + 125) * 4 + 3 * std::mem::size_of::<usize>();
+        assert_eq!(IMPLICIT_PALETTE_CACHE_BYTES, 25 * per_slot);
+        assert_eq!(
+            IMPLICIT_PALETTE_CACHE_BYTES,
+            if usize::BITS == 64 { 100200 } else { 99900 }
+        );
+        for bytes in [0, 1024, 65536] {
+            assert_eq!(
+                header_workspace(bytes, legacy).unwrap(),
+                1024 * 1024 + 2 * bytes
+            );
+            assert_eq!(
+                header_workspace(bytes, finite).unwrap() - header_workspace(bytes, legacy).unwrap(),
+                IMPLICIT_PALETTE_CACHE_BYTES
+            );
+        }
+        assert!(header_workspace(usize::MAX, finite).is_err());
     }
 }

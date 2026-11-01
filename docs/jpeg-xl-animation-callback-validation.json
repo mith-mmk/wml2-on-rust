@@ -283,5 +283,6 @@
     "Fractional-ms callback support needs shared timing extension; native rational API preserves exact ticks",
     "EX coalesced full-canvas replacements only; static picking/legacy/highres export refuses animation",
     "Actual wasm32 locally; native Windows32 only in CI"
-  ]
+  ],
+  "followup_retention_attribution": "jpeg-xl-palette-cache-validation.json:4008 bytes owned by process-global jxl0.8 implicit-palette OnceLock; original observation retained above as historical measurement."
 }

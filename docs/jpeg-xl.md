@@ -717,3 +717,69 @@ no universal performance claim follows. Stack: #81 → #80 → #79 → #78 → #
 → #75 → #73 → #72; #74 remains unapplied. Dependencies/caps are unchanged. #46
 stays open for remaining HDR/float/linearization/display work; this is unmerged
 implementation, not released/main support.
+
+### Explicit HDR transfer linearization (unmerged follow-up to #82)
+
+`JxlEncodedHdrImage::into_linear_with_resource_limits_and_cancel` consumes the
+encoded image, transforms RGB in place and returns `JxlLinearHdrImage`. Callers
+must choose `JxlHdrLinearization::PqDisplayNits` or `HlgSceneRelative`; a source
+transfer mismatch is an error. Geometry is already oriented; this step does not
+reorient it. Straight alpha bits, including negative zero, are preserved.
+
+PQ uses the ST2084 EOTF, with code1 yielding10000 nits. HLG uses the normalized
+inverse reference OETF, with code0.5 yielding1/12 in scene-relative units.
+These are distinct domains. The HLG constants are the published rounded
+`a=0.17883277`, `b=0.28466892`, `c=0.55991073`. Calculations use f64 intermediates
+and round to F32; extremely small caller-supplied values can underflow. Source
+luminance hints do not rescale these functions. See the [Khronos Data Format
+specification sections13.5.2 and13.6.1](https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html).
+
+Output RGB retains Rec.2020/D65 coordinates. `source_signal` is the encoded
+source descriptor, not an output ICC. No source ICC is fabricated or attached to
+linear values. This operator does not reconstruct camera exposure or perform an
+HLG display OOTF, gamut mapping, exposure selection, SDR encoding or tone mapping.
+
+The public, mutable input carrier is checked again: positive/consistent oriented
+geometry, sample length, supported source signal, finite normalized RGB and
+alpha. Invalid samples are refused, never repaired by clipping. Storage is
+consumed on error or cancellation, so no partial result can escape. Checks occur
+at entry, after admission, before each256-pixel batch and before publication.
+
+Conversion admission counts actual vector capacity ×4, the larger input/output
+inline object, and128 bytes scalar allowance against the tightened workspace.
+Logical output bytes, pixels, one frame and source-signal metadata have independent
+limits. There is no second image or CMS scratch allocation. Decoding has already
+finished: input bytes, internal padding, TOC and reference-layer limits remain
+part of the separate decode operation. This ledger bounds accounted owned storage,
+not all process heap/stack/RSS, codec allocation or a caller's other live images.
+Existing decode caps and all encoded/native/ordinary APIs remain unchanged.
+
+The [70-digit Decimal oracle](jpeg-xl-hdr-linear-oracle.json) is generated from
+independent C libjxl encoded F32 vectors, never candidate linear output. Regenerate
+with `python3 wml2-test/scripts/generate_jpegxl_hdr_linear.py`. Tests cover six
+PQ/HLG RGB/RGBA/oriented vectors within2 F32 ULP, anchors, the HLG breakpoint,
+unchanged alpha bits, metadata hints, bad public carriers, capacity slack and exact
+one-byte workspace boundaries. Cancellation is injected at all six checkpoints of
+a600-pixel conversion, with no scoped net heap left after consumed storage drops.
+
+Issue#46 remains open. Native F32, F16-to-F32, structured integer16 HDR codes and
+transfer linearization are implemented only on the unmerged stack. SDR display
+rendering still needs an explicit policy for reference white/exposure, tone curve
+and gamut handling; HLG display rendering additionally needs peak/black luminance
+and system-gamma conditions. Neither the source intensity hint nor an inverse OETF
+selects those conditions. Embedded-ICC/custom-primary/float HDR support remains
+outside the current input envelope. No new completion conditions are added.
+
+[Local validation](jpeg-xl-hdr-linear-validation.json) records actual Node24 WASM
+execution:69 checks,18 combined decode/conversion probes, no host imports and an
+enforced32 MiB memory ceiling. Existing ordinary WASM229 checks pass. Native
+minimal/expanded/disabled feature targets pass; CI also runs the new target on
+macOS, Windows and actual Windows32. A diagnostic-only normalized tile display
+matched the Decimal reference; it does not qualify an SDR renderer.
+
+Matched CPU0 release benchmarks use six alternating pairs of2000 encoded decodes
+with20 warmups: before median91.774ms, after89.707ms, ratio0.9775. Ranges overlap
+(89.858–95.013ms before,87.532–95.752ms after); this establishes no measured
+regression in this test, not a speedup claim. Three runs of1000 in-place256×256
+conversions take PQ6.322–6.642s and HLG0.333–0.340s, excluding decode/input
+allocation and including output drop. The different transfer costs are explicit.

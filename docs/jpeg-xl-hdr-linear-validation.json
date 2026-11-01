@@ -1,0 +1,90 @@
+{
+  "encoded_decode_comparison": {
+    "cpu": 0,
+    "configuration": "Rust1.91 release opt-level3, jpeg-xl only; identical source harness and input;20 warmups,2000 decode calls/process; six alternating paired blocks",
+    "base_sha": "95ff7ad01191b75a7a075f8aaec95537c1c88e40",
+    "blocks": [
+      {
+        "before": 92908285,
+        "after": 89716799
+      },
+      {
+        "after": 89696749,
+        "before": 95012883
+      },
+      {
+        "before": 94917000,
+        "after": 95752427
+      },
+      {
+        "after": 88778099,
+        "before": 90640276
+      },
+      {
+        "before": 89858329,
+        "after": 90327133
+      },
+      {
+        "after": 87532324,
+        "before": 89921081
+      }
+    ],
+    "before_median_ns": 91774280.5,
+    "after_median_ns": 89706774.0,
+    "median_ratio": 0.9774718310104321
+  },
+  "new_conversion": {
+    "configuration": "CPU0, Rust1.91 release opt-level3 jpeg-xl only;3 process runs, each1000 conversions of256x256 normalized0.5 RGBA; input allocation/decode outside timed region; conversion+drop timed",
+    "samples_ns": {
+      "pq": [
+        6642250311,
+        6347601986,
+        6321920177
+      ],
+      "hlg": [
+        332906070,
+        339856822,
+        340201518
+      ]
+    }
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 69,
+    "probes": 18,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 1507328,
+    "ceiling_bytes": 33554432,
+    "ceiling_rejected": true,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "b159d6776ede2f03204a0b18d85194ad7ab48d6d0c220e545a5e06bf8845b2d8",
+    "scope": "Structured integer16 PQ/HLG encoded F32 preservation and explicit PQ-nits / HLG-scene linearization against70-digit Decimal oracle; in-place pointer, exact budgets, bad samples, mismatch and conversion cancellation; independent vectors/source metadata, refusals, legacy API compatibility, all cancellation probes, recovery and budgets;32MiB ceiling",
+    "harness_sha256": "7d4f573af12babf5f436e5c4785a1e525f31f0b4221e011b826c8bc6f0233fa5"
+  },
+  "standard_wasm": {
+    "runtime": "v24.19.0",
+    "cases": 229,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14548992,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "4d5cbf6253d7c2065f90b2e1d014b5d57622808805f2933d52898586568bb2d5",
+    "scope": "COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "display": {
+    "file": ".test-diagnostic.png",
+    "sha256": "06b8650b2330b0bec47f605e6d896346ff507160c0bb5f6beb7a63aa5e19f072",
+    "observed": "Paired oriented3x5 Decimal/WML2 diagnostic tiles match visually. RGB normalized by10000(PQ) or1(HLG), square root solely for diagnostic visibility; alpha omitted. This is not an SDR or color-managed rendering qualification."
+  },
+  "native_validation": {
+    "new_tests": 5,
+    "expanded_tests": "50lib,41main,3layer,11resources,11preview,4F32,4F16,3encodedHDR,4linear; final minimal linear5 passed after oriented-carrier coverage was added",
+    "cancellation_conversion_probes": 6,
+    "oracle_tolerance": "2 binary32 ULP; alpha exact bits",
+    "feature_disabled": "new target compiled with0 tests, no defaults; no JPEG XL API exposure"
+  },
+  "limitations": "No HLG display OOTF, tone/gamut mapper, ICC/custom-primary/float HDR extension or codec-wide allocator guarantee. Windows32 and macOS delegated to CI, not locally executed."
+}

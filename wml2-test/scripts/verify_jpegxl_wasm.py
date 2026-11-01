@@ -32,13 +32,13 @@ if(result!==0||probes<=10||cases!==22+probes||!denied)throw Error(JSON.stringify
 console.log(JSON.stringify({runtime:process.version,cases,probes,all_passed:true,host_imports:imports,memory_bytes:i.exports.memory.buffer.byteLength,ceiling_bytes:33554432,ceiling_rejected:denied}));
 """)
 if a.hdr_encoded:
- runner.write_text(runner.read_text().replace('cases!==22+probes','cases!==35+probes'))
+ runner.write_text(runner.read_text().replace('cases!==22+probes','cases!==51+probes'))
 report=json.loads(run(['node',runner,wasm],'run.log'))
 report.update(target='wasm32-unknown-unknown',features='jpeg-xl,image-buffer-ex'+(',exif' if a.exif else '')+'; no defaults',wasm_sha256=hashlib.sha256(wasm.read_bytes()).hexdigest(),scope='COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)')
 if a.f16:
  report['scope']='F16-source/F32-output:7 exact independent vectors,7 immediate aborts,5 refusals, all cancellation checkpoints, recovery and both F32 acceptance/strict-source compatibility checks; enforced32MiB memory ceiling'
  report['harness_sha256']=hashlib.sha256(harness.read_bytes()).hexdigest()
 if a.hdr_encoded:
- report['scope']='Structured integer16 PQ/HLG encoded F32 preservation; independent vectors/source metadata, refusals, legacy API compatibility, all cancellation probes, recovery and budgets;32MiB ceiling'
+ report['scope']='Structured integer16 PQ/HLG encoded F32 preservation and explicit PQ-nits / HLG-scene linearization against70-digit Decimal oracle; in-place pointer, exact budgets, bad samples, mismatch and conversion cancellation; independent vectors/source metadata, refusals, legacy API compatibility, all cancellation probes, recovery and budgets;32MiB ceiling'
  report['harness_sha256']=hashlib.sha256(harness.read_bytes()).hexdigest()
 (out/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))

@@ -4,7 +4,8 @@ use std::{
 };
 use wml2::{
     jpegxl::{
-        DecodeCancelled, JxlHdrTransfer, JxlResourceLimits,
+        DecodeCancelled, JxlEncodedHdrImage, JxlHdrLinearization, JxlHdrTransfer,
+        JxlLinearHdrImage, JxlResourceLimits,
         image_hdr_encoded_from_with_resource_limits_and_cancel as decode,
     },
     limits::DecodeLimits,
@@ -22,11 +23,13 @@ pub extern "C" fn probes() -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn run() -> u32 {
     let mut checks = 0;
-    for (input, expected, transfer, intensity, min_nits, relative, linear) in [
+    for (input, expected, linear_expected, transfer, intensity, min_nits, relative, linear) in [
         (
             include_bytes!("../../wml2/tests/fixtures/review/jxl-encoded-hdr-pq-rgb.jxl")
                 .as_slice(),
             include_bytes!("../../wml2/tests/fixtures/review/jxl-encoded-hdr-pq-rgb.f32le.zlib")
+                .as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-linear-hdr-pq-rgb.f32le.zlib")
                 .as_slice(),
             JxlHdrTransfer::Pq,
             255.0f32,
@@ -38,6 +41,8 @@ pub extern "C" fn run() -> u32 {
             include_bytes!("../../wml2/tests/fixtures/review/jxl-encoded-hdr-pq-rgba.jxl")
                 .as_slice(),
             include_bytes!("../../wml2/tests/fixtures/review/jxl-encoded-hdr-pq-rgba.f32le.zlib")
+                .as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-linear-hdr-pq-rgba.f32le.zlib")
                 .as_slice(),
             JxlHdrTransfer::Pq,
             1000.0f32,
@@ -52,6 +57,10 @@ pub extern "C" fn run() -> u32 {
                 "../../wml2/tests/fixtures/review/jxl-encoded-hdr-pq-oriented.f32le.zlib"
             )
             .as_slice(),
+            include_bytes!(
+                "../../wml2/tests/fixtures/review/jxl-linear-hdr-pq-oriented.f32le.zlib"
+            )
+            .as_slice(),
             JxlHdrTransfer::Pq,
             2000.0f32,
             0.00499725342f32,
@@ -62,6 +71,8 @@ pub extern "C" fn run() -> u32 {
             include_bytes!("../../wml2/tests/fixtures/review/jxl-encoded-hdr-hlg-rgb.jxl")
                 .as_slice(),
             include_bytes!("../../wml2/tests/fixtures/review/jxl-encoded-hdr-hlg-rgb.f32le.zlib")
+                .as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-linear-hdr-hlg-rgb.f32le.zlib")
                 .as_slice(),
             JxlHdrTransfer::Hlg,
             255.0f32,
@@ -74,6 +85,8 @@ pub extern "C" fn run() -> u32 {
                 .as_slice(),
             include_bytes!("../../wml2/tests/fixtures/review/jxl-encoded-hdr-hlg-rgba.f32le.zlib")
                 .as_slice(),
+            include_bytes!("../../wml2/tests/fixtures/review/jxl-linear-hdr-hlg-rgba.f32le.zlib")
+                .as_slice(),
             JxlHdrTransfer::Hlg,
             1000.0f32,
             0.0199890137f32,
@@ -85,6 +98,10 @@ pub extern "C" fn run() -> u32 {
                 .as_slice(),
             include_bytes!(
                 "../../wml2/tests/fixtures/review/jxl-encoded-hdr-hlg-oriented.f32le.zlib"
+            )
+            .as_slice(),
+            include_bytes!(
+                "../../wml2/tests/fixtures/review/jxl-linear-hdr-hlg-oriented.f32le.zlib"
             )
             .as_slice(),
             JxlHdrTransfer::Hlg,
@@ -125,6 +142,52 @@ pub extern "C" fn run() -> u32 {
             return 3;
         }
         checks += 1;
+        let mode = if transfer == JxlHdrTransfer::Pq {
+            JxlHdrLinearization::PqDisplayNits
+        } else {
+            JxlHdrLinearization::HlgSceneRelative
+        };
+        let ptr = im.rgba_encoded.as_ptr();
+        let linear_expected =
+            miniz_oxide::inflate::decompress_to_vec_zlib(linear_expected).unwrap();
+        let result = im
+            .into_linear_with_resource_limits_and_cancel(
+                mode,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| false,
+            )
+            .unwrap();
+        if ptr != result.rgba_linear.as_ptr()
+            || result
+                .rgba_linear
+                .iter()
+                .zip(linear_expected.chunks_exact(4))
+                .any(|(a, b)| {
+                    a.to_bits()
+                        .abs_diff(f32::from_le_bytes(b.try_into().unwrap()).to_bits())
+                        > 2
+                })
+        {
+            return 12;
+        }
+        checks += 1;
+        match decode(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false,
+        )
+        .unwrap()
+        .into_linear_with_resource_limits_and_cancel(
+            mode,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| true,
+        ) {
+            Err(e) if e.is::<DecodeCancelled>() => checks += 1,
+            _ => return 13,
+        }
         match decode(
             input,
             DecodeLimits::default(),
@@ -238,6 +301,100 @@ pub extern "C" fn run() -> u32 {
         }
         checks += 1;
     }
+    let make = || {
+        let mut im = decode(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false,
+        )
+        .unwrap();
+        im.dimensions.coded.width = 600;
+        im.dimensions.coded.height = 1;
+        im.dimensions.output = Some(im.dimensions.coded);
+        im.rgba_encoded = vec![0.5; 2400];
+        im
+    };
+    let count = Cell::new(0);
+    drop(
+        make()
+            .into_linear_with_resource_limits_and_cancel(
+                JxlHdrLinearization::HlgSceneRelative,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| {
+                    count.set(count.get() + 1);
+                    false
+                },
+            )
+            .unwrap(),
+    );
+    let linear_probes = count.get();
+    if linear_probes != 6 {
+        return 14;
+    }
+    PROBES.store(n + linear_probes, Ordering::Relaxed);
+    for stop in 1..=linear_probes {
+        let count = Cell::new(0);
+        match make().into_linear_with_resource_limits_and_cancel(
+            JxlHdrLinearization::HlgSceneRelative,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| {
+                count.set(count.get() + 1);
+                count.get() == stop
+            },
+        ) {
+            Err(e) if e.is::<DecodeCancelled>() => checks += 1,
+            _ => return 15,
+        }
+    }
+    for delta in [0, 1] {
+        let im = make();
+        let bytes = im.rgba_encoded.capacity() * 4
+            + std::mem::size_of::<JxlEncodedHdrImage>()
+                .max(std::mem::size_of::<JxlLinearHdrImage>())
+            + 128;
+        let result = im.into_linear_with_resource_limits_and_cancel(
+            JxlHdrLinearization::HlgSceneRelative,
+            DecodeLimits::default(),
+            JxlResourceLimits {
+                workspace_bytes: bytes - delta,
+                ..Default::default()
+            },
+            &|| false,
+        );
+        if result.is_ok() != (delta == 0) {
+            return 16;
+        }
+        checks += 1;
+    }
+    if make()
+        .into_linear_with_resource_limits_and_cancel(
+            JxlHdrLinearization::PqDisplayNits,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false,
+        )
+        .is_ok()
+    {
+        return 17;
+    }
+    checks += 1;
+    let mut im = make();
+    im.rgba_encoded[3] = f32::NAN;
+    if im
+        .into_linear_with_resource_limits_and_cancel(
+            JxlHdrLinearization::HlgSceneRelative,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false,
+        )
+        .is_ok()
+    {
+        return 18;
+    }
+    checks += 1;
     CHECKS.store(checks, Ordering::Relaxed);
     0
 }

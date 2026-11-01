@@ -24,6 +24,9 @@ mod resources;
 #[path = "jpegxl_metadata.rs"]
 mod structured_metadata;
 pub use resources::JxlResourceLimits;
+#[path = "jpegxl_hdr_linear.rs"]
+mod hdr_linear;
+pub use hdr_linear::{JxlHdrLinearization, JxlLinearHdrImage};
 
 type Error = Box<dyn std::error::Error>;
 const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";

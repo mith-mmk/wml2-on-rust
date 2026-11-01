@@ -313,8 +313,10 @@ pub(super) fn deliver<const MANAGED: bool>(
     let check = || cancellation.check();
     check()?;
     let limits = policy.tighten(limits);
-    let (mut image, mut workspace) =
+    let (image, mut workspace) =
         animation_with_workspace(bytes, limits, policy, &|| cancellation.check().is_err())?;
+    #[cfg(feature = "color-management")]
+    let mut image = image;
     let size = image
         .dimensions
         .output

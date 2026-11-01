@@ -202,6 +202,12 @@ fn malformed_or_unrepresentable_input_never_initializes_callbacks() {
 }
 #[test]
 fn cumulative_callback_output_and_workspace_boundaries() {
+    assert_eq!(
+        allocation_tracking::measure(|| drop(
+            image_from_with_resource_limits(INPUT, Default::default(), Default::default()).unwrap()
+        )),
+        0
+    );
     for (cap, ok) in [(1819, false), (1820, true)] {
         assert_eq!(
             image_from_with_resource_limits(

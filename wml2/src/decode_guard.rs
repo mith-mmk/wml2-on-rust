@@ -64,6 +64,7 @@ struct Guard<'a> {
     handle_abort: bool,
     ready: bool,
     stopped: bool,
+    #[cfg(feature = "image-buffer-ex")]
     animated: bool,
     #[cfg(feature = "image-buffer-ex")]
     source: Option<(PixelFormatEx, Option<usize>)>,
@@ -279,6 +280,7 @@ fn run_inner<B: BinaryReader>(
             handle_abort: ex,
             ready: false,
             stopped: false,
+            #[cfg(feature = "image-buffer-ex")]
             animated: false,
             #[cfg(feature = "image-buffer-ex")]
             source: None,
@@ -387,6 +389,7 @@ mod tests {
             handle_abort,
             ready: false,
             stopped: false,
+            #[cfg(feature = "image-buffer-ex")]
             animated: false,
             #[cfg(feature = "image-buffer-ex")]
             source: None,

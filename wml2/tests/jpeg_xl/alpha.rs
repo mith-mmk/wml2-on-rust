@@ -193,10 +193,9 @@ fn alpha_limits_admit_the_common_sixteen_bit_canvas_before_any_callbacks() {
     }
 }
 #[test]
-fn unsupported_associated_depth_subsampled_float_and_extra_planes_remain_refused() {
+fn subsampled_float_and_extra_planes_remain_refused() {
     for input in [
-        include_bytes!("../fixtures/review/jxl-alpha-refused-associated.jxl").as_slice(),
-        include_bytes!("../fixtures/review/jxl-alpha-refused-subsampled.jxl"),
+        include_bytes!("../fixtures/review/jxl-alpha-refused-subsampled.jxl").as_slice(),
         include_bytes!("../fixtures/review/jxl-alpha-refused-float-alpha.jxl"),
         include_bytes!("../fixtures/review/jxl-alpha-refused-depth.jxl"),
         include_bytes!("../fixtures/review/jxl-alpha-refused-spot.jxl"),

@@ -718,12 +718,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
         || m.extra_channel_info.iter().any(|c| {
             c.ec_type != ExtraChannel::Alpha
                 || (c.alpha_associated()
-                    && (HDR
-                        || FLOAT_BITS != 0
-                        || !matches!(bits, 8 | 16)
-                        || c.bit_depth().bits_per_sample() != bits
-                        || m.xyb_encoded
-                        || m.preview.is_some()))
+                    && (HDR || FLOAT_BITS != 0 || m.xyb_encoded || m.preview.is_some()))
                 || c.dim_shift() != 0
                 || (HDR
                     && (c.bit_depth().floating_point_sample()
@@ -748,7 +743,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
                 "JPEG XL F32 requires at most one full-resolution straight float alpha (32 bits, 8 exponent bits)"
             }
         } else {
-            "JPEG XL requires one supported full-resolution integer alpha; associated alpha requires matching8/16-bit original-profile samples without preview"
+            "JPEG XL requires one supported full-resolution integer alpha; associated alpha requires supported8/9/10/12/16-bit original-profile samples without preview"
         }));
     }
     let alpha_bits = m

@@ -763,7 +763,6 @@ fn unsupported_preview_sources_still_reject_explicitly() {
     for input in [
         include_bytes!("fixtures/review/jxl-hdr.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-float.jxl").as_slice(),
-        include_bytes!("fixtures/review/jxl-alpha-refused-associated.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-alpha-refused-subsampled.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-alpha-refused-spot.jxl").as_slice(),
     ] {

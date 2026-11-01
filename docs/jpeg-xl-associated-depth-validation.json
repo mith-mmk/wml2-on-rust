@@ -1,0 +1,127 @@
+{
+  "base_sha": "aa6593ae8dc178cc908cd42738ef352704677ad0",
+  "scope": "Unmerged extension of associated integer source/alpha depths to8/9/10/12/16 and mixed pairs; original profile SDR, full-resolution, no preview, one coded main layer; native straight RGBA16; caps unchanged",
+  "native": {
+    "expanded": "50lib+42main+6associated+3layers+5linear+3encodedHDR+4F32+4F16+11preview+11resources=139 passing tests",
+    "minimal": "30main+4associated pass",
+    "disabled": "target compiles with0 tests",
+    "new_matrix_cases": 50,
+    "retained_old_mixed_positive_oracle": 1,
+    "combined_associated_pixel_cases": 66,
+    "cancellation_checkpoints": [
+      18,
+      18
+    ],
+    "heap": "Scoped current-thread net requested allocation0 after each cancellation/result drop; not a global codec allocator or RSS bound",
+    "cms": "Four depth combinations; source/reconstruction ICC exactly match source gamma2 profile; alpha exact against independent C+LittleCMS output"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 361,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14548992,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "de94ed1917412fb401a0bfc6335417178027ea6bc1e07f23598d8cd1333a5d29",
+    "scope": "COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; associated8/9/10/12/16 integer/mixed alpha explicit straight normalization (66 independent vectors including colored zero-alpha, all depth pairs, source depths, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "performance": {
+    "cpu": 0,
+    "build": "Rust1.91 release; jpeg-xl,color-management,image-buffer-ex; identical harness/input;3 warmups then1000 samples/process;6 alternating paired process blocks",
+    "before_sha": "aa6593ae8dc178cc908cd42738ef352704677ad0",
+    "controls": {
+      "ordinary": {
+        "block_medians_ns": [
+          {
+            "before": 75602.0,
+            "after": 74561.0
+          },
+          {
+            "after": 74240.5,
+            "before": 74691.0
+          },
+          {
+            "before": 73579.0,
+            "after": 73789.0
+          },
+          {
+            "after": 74811.0,
+            "before": 75106.5
+          },
+          {
+            "before": 75181.5,
+            "after": 74040.0
+          },
+          {
+            "after": 75607.0,
+            "before": 74084.5
+          }
+        ],
+        "before_median_ns": 74898.75,
+        "after_median_ns": 74400.75,
+        "ratio": 0.9933510238822411,
+        "common_hash_and_size": [
+          "7613101786784002531",
+          "5",
+          "7"
+        ]
+      },
+      "managed": {
+        "block_medians_ns": [
+          {
+            "before": 154874.5,
+            "after": 151634.5
+          },
+          {
+            "after": 153162.0,
+            "before": 155750.5
+          },
+          {
+            "before": 151745.0,
+            "after": 152902.0
+          },
+          {
+            "after": 152917.0,
+            "before": 153547.5
+          },
+          {
+            "before": 162315.5,
+            "after": 152746.5
+          },
+          {
+            "after": 149827.0,
+            "before": 155520.5
+          }
+        ],
+        "before_median_ns": 155197.5,
+        "after_median_ns": 152824.25,
+        "ratio": 0.9847081943974613,
+        "common_hash_and_size": [
+          "10980251124246367044",
+          "5",
+          "7"
+        ]
+      }
+    },
+    "new_associated_depths": {
+      "ordinary": [
+        73714.5,
+        75181.5,
+        73569.0
+      ],
+      "managed": [
+        176231.5,
+        159521.5,
+        159401.5
+      ]
+    }
+  },
+  "display": {
+    "file": ".test-depth-display.png",
+    "sha256": "bde85d06f378e44d8ada950f84a0a87e8c848c4b408b6fbcfef2668d0382b760",
+    "result": "Paired C+LittleCMS/WML2 oriented16/10 ICC checkerboard renders visually agree"
+  },
+  "platforms": "Local Linux Rust1.91 and actual Node24 WASM; macOS/Windows/Windows32 are CI, not local execution",
+  "remaining": "Subsampled alpha; non-alpha/multiple extra retention/selection/planes; associated XYB/float/HDR/preview/multiple layers remain refused; #42 open"
+}

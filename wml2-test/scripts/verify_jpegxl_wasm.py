@@ -20,7 +20,7 @@ runner=out/'run.cjs';runner.write_text('''const fs=require('fs');
 (async()=>{const module=await WebAssembly.compile(fs.readFileSync(process.argv[2]));
 const imports=WebAssembly.Module.imports(module);if(imports.length)throw Error('unexpected host imports');
 const instance=await WebAssembly.instantiate(module,{});const cases=instance.exports.verify_jpegxl();
-if(cases!==260)throw Error('case count mismatch: '+cases);
+if(cases!==361)throw Error('case count mismatch: '+cases);
 process.stdout.write(JSON.stringify({runtime:process.version,cases,all_passed:true,host_imports:imports,memory_bytes:instance.exports.memory.buffer.byteLength})+'\\n');
 })().catch(e=>{console.error(e);process.exit(1)});
 ''')
@@ -34,7 +34,7 @@ console.log(JSON.stringify({runtime:process.version,cases,probes,all_passed:true
 if a.hdr_encoded:
  runner.write_text(runner.read_text().replace('cases!==22+probes','cases!==51+probes'))
 report=json.loads(run(['node',runner,wasm],'run.log'))
-report.update(target='wasm32-unknown-unknown',features='jpeg-xl,image-buffer-ex'+(',exif' if a.exif else '')+'; no defaults',wasm_sha256=hashlib.sha256(wasm.read_bytes()).hexdigest(),scope='COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; associated matching8/16 integer alpha explicit straight normalization (15 independent vectors including colored zero-alpha, source flag, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)')
+report.update(target='wasm32-unknown-unknown',features='jpeg-xl,image-buffer-ex'+(',exif' if a.exif else '')+'; no defaults',wasm_sha256=hashlib.sha256(wasm.read_bytes()).hexdigest(),scope='COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; associated8/9/10/12/16 integer/mixed alpha explicit straight normalization (66 independent vectors including colored zero-alpha, all depth pairs, source depths, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)')
 if a.f16:
  report['scope']='F16-source/F32-output:7 exact independent vectors,7 immediate aborts,5 refusals, all cancellation checkpoints, recovery and both F32 acceptance/strict-source compatibility checks; enforced32MiB memory ceiling'
  report['harness_sha256']=hashlib.sha256(harness.read_bytes()).hexdigest()

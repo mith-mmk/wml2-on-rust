@@ -356,7 +356,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
-    count + intrinsic_cases() + composition_cases() + associated_cases()
+    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases()
 }
 
 fn intrinsic_cases() -> u32 {
@@ -526,8 +526,7 @@ fn alpha_cases() -> u32 {
         count+=1;
     }
     for input in [
-        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-associated.jxl").as_slice(),
-        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-subsampled.jxl"),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-subsampled.jxl").as_slice(),
         include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-depth.jxl"),
         include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-spot.jxl"),
         include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-multiple.jxl"),
@@ -737,4 +736,25 @@ fn associated_cases() -> u32 {
         .is_err()
     );
     count + 1
+}
+
+fn associated_depth_cases()->u32 {
+ let mut count=0;
+ for (input,expected,color,alpha,orientation) in include!("../../wml2/tests/jpeg_xl/associated_depth_cases.rs") {
+  let expected=words(expected,16);
+  let im=image_from_ex(input,PixelFormatEx::Rgba16,PrecisionConversion::Exact).unwrap();
+  assert_eq!((im.width(),im.height()),if orientation>=5{(5,7)}else{(7,5)});
+  let values=words(im.bytes().unwrap(),16);assert_eq!(values.len(),expected.len());
+  for (i,(a,b)) in values.iter().zip(&expected).enumerate(){if i%4==3{assert_eq!(a,b)}else{assert!(a.abs_diff(*b)<=1)}}
+  let metadata=im.metadata.as_ref().unwrap();
+  assert!(matches!(metadata["JPEG XL Source Bit Depth"],wml2::metadata::DataMap::UInt(v) if v==u64::from(color)));
+  if color!=alpha{assert!(matches!(metadata["JPEG XL Source Alpha Bit Depth"],wml2::metadata::DataMap::UInt(v) if v==u64::from(alpha)));}
+  count+=1;
+  let raw=image_from(input).unwrap().buffer.unwrap();assert_eq!(raw.len(),expected.len());
+  for (i,(a,b)) in raw.iter().zip(&expected).enumerate(){let b=((u32::from(*b)*255+32767)/65535)as u8;if i%4==3{assert_eq!(*a,b)}else{assert!(a.abs_diff(b)<=1)}}
+  assert!(image_from_with_limits(input,DecodeLimits{pixels:34,..Default::default()}).is_err());
+  assert!(image_from_ex(input,PixelFormatEx::Rgba8,PrecisionConversion::Exact).is_err());
+  count+=1;
+ }
+ count
 }

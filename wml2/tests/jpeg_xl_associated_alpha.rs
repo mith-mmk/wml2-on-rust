@@ -4,8 +4,8 @@ use wml2::{draw::image_from, jpegxl::*, limits::DecodeLimits};
 mod allocation_tracking;
 #[global_allocator]
 static ALLOCATOR: allocation_tracking::Allocator = allocation_tracking::Allocator;
-fn cases() -> [(&'static [u8], &'static [u8], u8, u8); 15] {
-    [
+fn cases() -> Vec<(&'static [u8], &'static [u8], u8, u8)> {
+    let mut cases: Vec<(&'static [u8], &'static [u8], u8, u8)> = vec![
         (
             include_bytes!("fixtures/review/jxl-associated-1c8o1.jxl"),
             include_bytes!("fixtures/review/jxl-associated-1c8o1.rgba16le"),
@@ -96,7 +96,13 @@ fn cases() -> [(&'static [u8], &'static [u8], u8, u8); 15] {
             16,
             1,
         ),
-    ]
+    ];
+    cases.extend(
+        include!("jpeg_xl/associated_depth_cases.rs")
+            .into_iter()
+            .map(|(i, e, c, _a, o)| (i, e, c, o)),
+    );
+    cases
 }
 #[test]
 fn straight_output_matches_independent_unpremultiply_at_source_precision() {
@@ -160,6 +166,14 @@ fn cms_sees_straight_rgb_and_never_transforms_alpha() {
             include_bytes!("fixtures/review/jxl-associated-3c16o8.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-associated-3c16o8.srgb.rgba").as_slice(),
         ),
+        (
+            include_bytes!("fixtures/review/jxl-associated-depth-3c9a16o2.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-associated-depth-3c9a16o2.srgb.rgba").as_slice(),
+        ),
+        (
+            include_bytes!("fixtures/review/jxl-associated-depth-3c16a10o7.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-associated-depth-3c16a10o7.srgb.rgba").as_slice(),
+        ),
     ] {
         let im = image_from_srgb(input).unwrap();
         assert!(matches!(
@@ -187,7 +201,7 @@ fn cms_sees_straight_rgb_and_never_transforms_alpha() {
 }
 #[test]
 fn limits_and_truncation_preserve_atomic_result_publication() {
-    let input = include_bytes!("fixtures/review/jxl-associated-3c16o8.jxl");
+    let input = include_bytes!("fixtures/review/jxl-associated-depth-3c9a16o2.jxl");
     let decode = |limits, resources| image_from_with_resource_limits(input, limits, resources);
     for limits in [
         DecodeLimits {
@@ -272,45 +286,49 @@ fn limits_and_truncation_preserve_atomic_result_publication() {
 #[test]
 fn every_associated_decode_and_cms_cancellation_checkpoint_releases_storage() {
     use std::cell::Cell;
-    let input = include_bytes!("fixtures/review/jxl-associated-3c16o8.jxl");
-    let n = Cell::new(0);
-    let decode = |cancel: &dyn Fn() -> bool| {
-        image_from_srgb_with_resource_limits_and_cancel(
-            input,
-            DecodeLimits::default(),
-            JxlResourceLimits::default(),
-            cancel,
-        )
-    };
-    drop(
-        decode(&|| {
-            n.set(n.get() + 1);
-            false
-        })
-        .unwrap(),
-    );
-    assert!(n.get() > 10);
-    eprintln!(
-        "associated decode/CMS cancellation checkpoints: {}",
-        n.get()
-    );
-    for stop in 1..=n.get() {
-        let count = Cell::new(0);
-        assert_eq!(
-            allocation_tracking::measure(|| {
-                let e = decode(&|| {
-                    count.set(count.get() + 1);
-                    count.get() == stop
-                })
-                .err()
-                .unwrap();
-                assert!(e.is::<DecodeCancelled>());
-                drop(e);
-            }),
-            0
+    for input in [
+        include_bytes!("fixtures/review/jxl-associated-3c16o8.jxl").as_slice(),
+        include_bytes!("fixtures/review/jxl-associated-depth-3c16a10o7.jxl").as_slice(),
+    ] {
+        let n = Cell::new(0);
+        let decode = |cancel: &dyn Fn() -> bool| {
+            image_from_srgb_with_resource_limits_and_cancel(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                cancel,
+            )
+        };
+        drop(
+            decode(&|| {
+                n.set(n.get() + 1);
+                false
+            })
+            .unwrap(),
         );
+        assert!(n.get() > 10);
+        eprintln!(
+            "associated decode/CMS cancellation checkpoints: {}",
+            n.get()
+        );
+        for stop in 1..=n.get() {
+            let count = Cell::new(0);
+            assert_eq!(
+                allocation_tracking::measure(|| {
+                    let e = decode(&|| {
+                        count.set(count.get() + 1);
+                        count.get() == stop
+                    })
+                    .err()
+                    .unwrap();
+                    assert!(e.is::<DecodeCancelled>());
+                    drop(e);
+                }),
+                0
+            );
+        }
+        drop(decode(&|| false).unwrap());
     }
-    drop(decode(&|| false).unwrap());
 }
 
 #[test]
@@ -321,4 +339,30 @@ fn associated_internal_layers_remain_outside_first_qualified_subset() {
         ))
         .is_err()
     );
+}
+
+#[test]
+fn mixed_associated_metadata_retains_both_depths_and_native_precision() {
+    for (input, _, color, alpha, _) in include!("jpeg_xl/associated_depth_cases.rs") {
+        let im = image_from(input).unwrap();
+        let metadata = im.metadata.as_ref().unwrap();
+        assert!(
+            matches!(metadata["JPEG XL Source Bit Depth"],wml2::metadata::DataMap::UInt(v) if v==u64::from(color))
+        );
+        if color != alpha {
+            assert!(
+                matches!(metadata["JPEG XL Source Alpha Bit Depth"],wml2::metadata::DataMap::UInt(v) if v==u64::from(alpha))
+            );
+        }
+        // No preview is a successful absence, not an unsupported-source error.
+        assert!(
+            preview_from_with_resource_limits(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+            )
+            .unwrap()
+            .is_none()
+        );
+    }
 }

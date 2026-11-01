@@ -1,6 +1,9 @@
 # JPEG XL associated integer alpha: first production subset
 
-This unmerged follow-up to #83 implements part of #42. It selects associated
+This report records the original #84 subset, an unmerged follow-up to #83.
+The current stack extends integer depths and mixed-depth association in the
+[depth-combination follow-up](jpeg-xl-associated-depths.md); the scope and evidence
+below describe #84 itself. It implements part of #42. It selects associated
 alpha because jxl0.8.0 exposes an explicit straight-output mode that can feed
 existing ordinary, EX and own-CMS APIs. Animation/progressive work still needs
 separate multi-frame or incremental admission; reconstruction/encoding remain

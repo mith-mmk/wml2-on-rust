@@ -54,7 +54,7 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
 animations (no silent first-frame fallback),
-associated alpha outside the [qualified integer subset](jpeg-xl-associated-alpha.md),
+associated alpha outside the [qualified integer subset](jpeg-xl-associated-depths.md),
 subsampled alpha, float or other alpha depths, multiple/other extra channels,
 forbidden compressed control/nested boxes and unsupported depths.
 Supported embedded previews are [bounded and skipped](jpeg-xl-preview.md) while
@@ -786,7 +786,7 @@ conversions take PQ6.322–6.642s and HLG0.333–0.340s, excluding decode/input
 allocation and including output drop. The different transfer costs are explicit.
 
 
-Associated matching8/16-bit original-profile SDR alpha now has an [explicitly
-bounded straight-output subset](jpeg-xl-associated-alpha.md) on the unmerged
+Associated8/9/10/12/16-bit and mixed-depth original-profile SDR alpha now has an
+[explicitly bounded straight-output subset](jpeg-xl-associated-depths.md) on the unmerged
 stack. This partially addresses #42; general extras and subsampled alpha remain
 unsupported. It does not change the deferred HDR display policy in #46.

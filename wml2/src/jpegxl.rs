@@ -475,7 +475,7 @@ fn validate_basic_info(info: &JxlBasicInfo, h: &Header) -> Result<(), Error> {
 // reference layers may exceed or lie outside the displayed canvas. Admit their
 // actual padded storage before the codec allocates pixels, then leave cropping,
 // orientation and blending to its coalescing render pipeline.
-fn frame_workspace<const FLOAT: bool>(
+fn frame_workspace<const FLOAT_BITS: u32>(
     input: &[u8],
     header: &FileHeader,
     frame_bits: usize,
@@ -535,7 +535,9 @@ fn frame_workspace<const FLOAT: bool>(
         let mut br = BitReader::new(data);
         let mut frame = FrameHeader::read_unconditional(&(), &mut br, nonserialized)
             .map_err(preflight_error)?;
-        if FLOAT && frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular {
+        if FLOAT_BITS != 0
+            && frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular
+        {
             return Err(unsupported(
                 "JPEG XL native F32 currently requires Modular frames",
             ));
@@ -652,10 +654,11 @@ fn preflight_with_resources(
     limits: DecodeLimits,
     policy: JxlResourceLimits,
 ) -> Result<Header, Error> {
-    preflight_samples::<false>(input, limits, policy)
+    preflight_samples::<0>(input, limits, policy)
 }
 
-fn preflight_samples<const FLOAT: bool>(
+// 0 retains the integer contract; 16/32 select exact floating source layouts.
+fn preflight_samples<const FLOAT_BITS: u32>(
     input: &Input,
     limits: DecodeLimits,
     policy: JxlResourceLimits,
@@ -676,17 +679,21 @@ fn preflight_samples<const FLOAT: bool>(
         return Err(unsupported("JPEG XL animations are unsupported"));
     }
     let bits = m.bit_depth.bits_per_sample();
-    if FLOAT
+    if FLOAT_BITS != 0
         && (!m.bit_depth.floating_point_sample()
-            || bits != 32
-            || m.bit_depth.exponent_bits_per_sample() != 8
+            || bits != FLOAT_BITS
+            || m.bit_depth.exponent_bits_per_sample() != if FLOAT_BITS == 16 { 5 } else { 8 }
             || m.xyb_encoded)
     {
-        return Err(unsupported(
-            "JPEG XL native F32 requires original-profile float samples (32 bits, 8 exponent bits)",
-        ));
+        return Err(unsupported(if FLOAT_BITS == 16 {
+            "JPEG XL native F16 requires original-profile float samples (16 bits, 5 exponent bits)"
+        } else {
+            "JPEG XL native F32 requires original-profile float samples (32 bits, 8 exponent bits)"
+        }));
     }
-    if !FLOAT && (m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 9 | 10 | 12 | 16)) {
+    if FLOAT_BITS == 0
+        && (m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 9 | 10 | 12 | 16))
+    {
         return Err(unsupported(
             "JPEG XL supports integer8/9/10/12/16-bit sources only",
         ));
@@ -696,18 +703,23 @@ fn preflight_samples<const FLOAT: bool>(
             c.ec_type != ExtraChannel::Alpha
                 || c.alpha_associated()
                 || c.dim_shift() != 0
-                || if FLOAT {
+                || if FLOAT_BITS != 0 {
                     !c.bit_depth().floating_point_sample()
-                        || c.bit_depth().bits_per_sample() != 32
-                        || c.bit_depth().exponent_bits_per_sample() != 8
+                        || c.bit_depth().bits_per_sample() != FLOAT_BITS
+                        || c.bit_depth().exponent_bits_per_sample()
+                            != if FLOAT_BITS == 16 { 5 } else { 8 }
                 } else {
                     c.bit_depth().floating_point_sample()
                         || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
                 }
         })
     {
-        return Err(unsupported(if FLOAT {
-            "JPEG XL F32 requires at most one full-resolution straight float alpha (32 bits, 8 exponent bits)"
+        return Err(unsupported(if FLOAT_BITS != 0 {
+            if FLOAT_BITS == 16 {
+                "JPEG XL F16 requires matching full-resolution straight float alpha (16 bits, 5 exponent bits)"
+            } else {
+                "JPEG XL F32 requires at most one full-resolution straight float alpha (32 bits, 8 exponent bits)"
+            }
         } else {
             "JPEG XL requires at most one full-resolution straight integer alpha channel with 8/9/10/12/16-bit depth"
         }));
@@ -793,7 +805,7 @@ fn preflight_samples<const FLOAT: bool>(
         limits.expanded_bytes,
         "JPEG XL decode workspace",
     )?;
-    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT>(
+    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT_BITS>(
         &input.codestream,
         &header,
         frame_bits,
@@ -953,7 +965,7 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
     decode::<B, false, false>(reader, option, true, None, None)
 }
 
-/// Native original-profile SDR F32 image with orientation applied.
+/// Native original-profile SDR samples in F32 storage, with orientation applied.
 ///
 /// RGBA samples are native f32, not normalized integer output. RGB may be
 /// negative or above1 but must be finite; straight alpha must be finite in0..=1.
@@ -982,6 +994,30 @@ pub fn image_f32_from_with_resource_limits_and_cancel(
     policy: JxlResourceLimits,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<JxlF32Image, Error> {
+    image_native_float::<32>(bytes, limits, policy, cancelled)
+}
+
+/// Decode original-profile Modular F16 input into exact F32 storage.
+///
+/// The same JxlF32Image shape/ICC/orientation and finite/straight-alpha policy
+/// applies. This explicitly promotes IEEE16/5 source samples into F32; it never
+/// requests backend F16 output (which is not subnormal-qualified). Existing F32
+/// input and ordinary/EX/sRGB APIs retain their source acceptance contracts.
+pub fn image_f16_as_f32_from_with_resource_limits_and_cancel(
+    bytes: &[u8],
+    limits: DecodeLimits,
+    policy: JxlResourceLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<JxlF32Image, Error> {
+    image_native_float::<16>(bytes, limits, policy, cancelled)
+}
+
+fn image_native_float<const SOURCE_BITS: u32>(
+    bytes: &[u8],
+    limits: DecodeLimits,
+    policy: JxlResourceLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<JxlF32Image, Error> {
     let cancellation = Cancellation {
         probe: Some(cancelled),
         cancelled: std::cell::Cell::new(false),
@@ -1002,7 +1038,7 @@ pub fn image_f32_from_with_resource_limits_and_cancel(
     )?;
     let input = unpack_with_resources(bytes, limits, Some(policy))?;
     check()?;
-    let h = preflight_samples::<true>(&input, limits, policy)?;
+    let h = preflight_samples::<SOURCE_BITS>(&input, limits, policy)?;
     check()?;
     let pixels = mul(h.width, h.height)?;
     let output_bytes = mul(pixels, 16)?;
@@ -1041,9 +1077,9 @@ pub fn image_f32_from_with_resource_limits_and_cancel(
         || !matches!(
             info.bit_depth,
             JxlBitDepth::Float {
-                bits_per_sample: 32,
-                exponent_bits_per_sample: 8
-            }
+                bits_per_sample,
+                exponent_bits_per_sample
+            } if bits_per_sample == SOURCE_BITS && exponent_bits_per_sample == if SOURCE_BITS == 16 {5} else {8}
         )
         || !info.uses_original_profile
         || info.animation.is_some()

@@ -591,3 +591,58 @@ Stack: #79 → #78 → #77 → #76 → #75 → #73 → #72 (no functional previe
 stacked on the latest shared0.8 admission/cancellation infrastructure). #74 is not
 applied. #46 stays open for the remaining HDR/float/tone-map contract; this draft
 is not merged/main/released support. No caps or product dependencies are raised.
+
+### Development: F16 input with exact F32 output (#46)
+
+`jpegxl::image_f16_as_f32_from_with_resource_limits_and_cancel` accepts original-profile
+Modular16/5 float stills and returns the existing `JxlF32Image`. The storage is
+**F32**, not F16: every finite IEEE half sample is exactly representable, including
+±2^-24, signed zero and ±65504. The backend F16 output route is never requested;
+#68's recorded half-subnormal loss in that output route is not claimed fixed.
+The original F32-input API retains its32/8-only acceptance and same return fields.
+No new pixel container is introduced. Source precision is explicit in the selected
+entrypoint; common float decoding/preflight is privately specialized for16 or32.
+
+Orientation/profiles/Gray-coordinate replication, unnormalized finite RGB, straight
+alpha in0..=1, complete-input publication, cumulative resource/cancellation contracts
+are the same as the native F32 companion. Matching16/5 alpha is required. Output
+budgets still reserve16 bytes/pixel (not the8 bytes/pixel encoded half RGBA width).
+PQ/HLG, tone metadata, VarDCT/XYB, animation and unsupported extras remain rejected.
+Ordinary/EX/sRGB entry points do not begin accepting float sources. This is precise
+source preservation through promoted storage, not HDR display or tone mapping.
+
+Seven independent C libjxl0.11.2 fixtures cover Gray/RGB with/without alpha, RGB/Gray
+ICC and orientation6. C F32 output with orientation kept must equal Python's exact
+IEEE-half-to-F32 promotion of original source bytes. Oriented C output supplies
+byte-exact product expectations. Both signs of the minimum half subnormal, signed
+zero, maximum finite half and minimum-alpha samples are checked. ORIGINAL/DATA ICC
+are queried separately; embedded profiles match the supplied bytes. Five refusal
+cases include a32-bit source (still accepted by the existing F32 endpoint), PQ/HLG,
+NaN/Infinity and out-of-range alpha. Finite-policy failures, every truncated ICC
+prefix, output-byte/metadata/ICC/TOC/internal/workspace boundaries, all17 local
+cancellation checkpoints and zero scoped owned-storage residue are tested.
+Four F16 tests, four original F32 tests,11 preview tests and existing44 library/
+41 main/3 layer/11 resource regressions pass in available native feature builds.
+
+The existing WASM verifier now accepts `--f16`; a committed harness uses the same
+independent vectors,5 refusals, both F32 compatibility directions, all cancellation
+checkpoints and recovery. Local Node24.19.0 executes39 checks, no imports, and an
+enforced32MiB ceiling; observed memory5,701,632 bytes. The original verifier's229
+checks still pass. CI executes the F16 verifier as a separate step; compile-only
+and execution results are distinguished in the PR.
+
+Reproduction: use the existing `jpegxl_f32_reference.c` C helper with official
+libjxl0.11.2 headers/runtime, then
+`python3 wml2-test/scripts/generate_jpegxl_native_f16.py --reference .test-reference --work .test-f16-fixtures`.
+Run `python3 wml2-test/scripts/verify_jpegxl_wasm.py --f16 --output .test-f16-wasm`.
+[Source/fixture/profile hashes](jpeg-xl-native-f16-validation.json) record precision
+and independently decoded headers. Diagnostic visualization explicitly clamps for
+inspection only and matches the C reference; no product SDR rendering is added.
+
+Release tiny ICC F16→F32 measurements (Rust1.91,20 warmups,1000 calls,3 processes)
+were65.015/62.765/65.084ms. A pinned-CPU0 F32 compatibility benchmark rebuilt #80
+and current source with identical release features,6 balanced alternating process
+blocks; medians60.472/60.453ms (ratio0.99967). This is a small workload check, not
+a universal performance guarantee. Stack: #80 → #79 → #78 → #77 → #76 → #75 →
+#73 → #72. Product dependencies/caps are unchanged; #74 remains unapplied. #46
+stays open for remaining float/HDR/tone-map work and unmerged implementation.

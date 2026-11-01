@@ -475,7 +475,7 @@ fn validate_basic_info(info: &JxlBasicInfo, h: &Header) -> Result<(), Error> {
 // reference layers may exceed or lie outside the displayed canvas. Admit their
 // actual padded storage before the codec allocates pixels, then leave cropping,
 // orientation and blending to its coalescing render pipeline.
-fn frame_workspace(
+fn frame_workspace<const FLOAT: bool>(
     input: &[u8],
     header: &FileHeader,
     frame_bits: usize,
@@ -535,6 +535,11 @@ fn frame_workspace(
         let mut br = BitReader::new(data);
         let mut frame = FrameHeader::read_unconditional(&(), &mut br, nonserialized)
             .map_err(preflight_error)?;
+        if FLOAT && frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular {
+            return Err(unsupported(
+                "JPEG XL native F32 currently requires Modular frames",
+            ));
+        }
         frame.postprocess(nonserialized);
         // In 0.7.4 a non-visible preview overrides Skip with SkipOutput and
         // would allocate pixel/reference state. Only a terminal visible preview
@@ -647,6 +652,14 @@ fn preflight_with_resources(
     limits: DecodeLimits,
     policy: JxlResourceLimits,
 ) -> Result<Header, Error> {
+    preflight_samples::<false>(input, limits, policy)
+}
+
+fn preflight_samples<const FLOAT: bool>(
+    input: &Input,
+    limits: DecodeLimits,
+    policy: JxlResourceLimits,
+) -> Result<Header, Error> {
     // FileHeader has bounded channel tables, but does not read ICC/pixel data.
     // Retained container metadata is already live, including expanded brob.
     // Reserve its existing 2x allowance before header/ICC/TOC allocation.
@@ -663,7 +676,17 @@ fn preflight_with_resources(
         return Err(unsupported("JPEG XL animations are unsupported"));
     }
     let bits = m.bit_depth.bits_per_sample();
-    if m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 9 | 10 | 12 | 16) {
+    if FLOAT
+        && (!m.bit_depth.floating_point_sample()
+            || bits != 32
+            || m.bit_depth.exponent_bits_per_sample() != 8
+            || m.xyb_encoded)
+    {
+        return Err(unsupported(
+            "JPEG XL native F32 requires original-profile float samples (32 bits, 8 exponent bits)",
+        ));
+    }
+    if !FLOAT && (m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 9 | 10 | 12 | 16)) {
         return Err(unsupported(
             "JPEG XL supports integer8/9/10/12/16-bit sources only",
         ));
@@ -673,13 +696,21 @@ fn preflight_with_resources(
             c.ec_type != ExtraChannel::Alpha
                 || c.alpha_associated()
                 || c.dim_shift() != 0
-                || c.bit_depth().floating_point_sample()
-                || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
+                || if FLOAT {
+                    !c.bit_depth().floating_point_sample()
+                        || c.bit_depth().bits_per_sample() != 32
+                        || c.bit_depth().exponent_bits_per_sample() != 8
+                } else {
+                    c.bit_depth().floating_point_sample()
+                        || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
+                }
         })
     {
-        return Err(unsupported(
-            "JPEG XL requires at most one full-resolution straight integer alpha channel with 8/9/10/12/16-bit depth",
-        ));
+        return Err(unsupported(if FLOAT {
+            "JPEG XL F32 requires at most one full-resolution straight float alpha (32 bits, 8 exponent bits)"
+        } else {
+            "JPEG XL requires at most one full-resolution straight integer alpha channel with 8/9/10/12/16-bit depth"
+        }));
     }
     let alpha_bits = m
         .extra_channel_info
@@ -762,7 +793,7 @@ fn preflight_with_resources(
         limits.expanded_bytes,
         "JPEG XL decode workspace",
     )?;
-    let (workspace, sample_limit, preview_workspace) = frame_workspace(
+    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT>(
         &input.codestream,
         &header,
         frame_bits,
@@ -920,6 +951,222 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
     decode::<B, false, false>(reader, option, true, None, None)
+}
+
+/// Native original-profile SDR F32 image with orientation applied.
+///
+/// RGBA samples are native f32, not normalized integer output. RGB may be
+/// negative or above1 but must be finite; straight alpha must be finite in0..=1.
+/// Gray coordinates are replicated into RGB when color_channels is1.
+/// Profiles describe encoded sample coordinates: F32 storage does not imply
+/// linear light. This is not HDR display, tone mapping or an extended-range CMS.
+#[derive(Debug)]
+pub struct JxlF32Image {
+    pub dimensions: crate::image_info::ImageDimensions,
+    pub source_orientation: u8,
+    pub color_channels: u8,
+    pub rgba: Vec<f32>,
+    pub source_icc: Vec<u8>,
+    pub output_icc: Vec<u8>,
+}
+
+/// Decode original-profile Modular32/8 float SDR stills without clipping RGB.
+///
+/// Explicit companion API; ordinary/EX/sRGB entry points keep their refusals.
+/// F16, VarDCT, XYB, PQ/HLG, tone mapping, animation and extra-channel restrictions are
+/// unchanged. Errors/cancellation return no image. Samples/ICC storage are
+/// admitted cumulatively on top of the existing conservative codec estimate.
+pub fn image_f32_from_with_resource_limits_and_cancel(
+    bytes: &[u8],
+    limits: DecodeLimits,
+    policy: JxlResourceLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<JxlF32Image, Error> {
+    let cancellation = Cancellation {
+        probe: Some(cancelled),
+        cancelled: std::cell::Cell::new(false),
+    };
+    let check = || cancellation.check();
+    check()?;
+    policy.validate()?;
+    let limits = policy.tighten(limits);
+    limits::check(
+        bytes.len(),
+        limits.input_bytes.min(MAX_INPUT),
+        "JPEG XL input",
+    )?;
+    limits::check(
+        mul(bytes.len(), 3)?,
+        limits.expanded_bytes,
+        "JPEG XL input assembly workspace",
+    )?;
+    let input = unpack_with_resources(bytes, limits, Some(policy))?;
+    check()?;
+    let h = preflight_samples::<true>(&input, limits, policy)?;
+    check()?;
+    let pixels = mul(h.width, h.height)?;
+    let output_bytes = mul(pixels, 16)?;
+    limits::check(
+        output_bytes,
+        limits.animation_bytes,
+        "JPEG XL F32 output bytes",
+    )?;
+    let mut workspace = resources::Workspace::new(h.workspace, limits.expanded_bytes)?;
+    workspace.claim(output_bytes, "JPEG XL F32 output workspace")?;
+    workspace.claim(64 * 1024, "JPEG XL F32 generated profile workspace")?;
+    let mut options = JxlDecoderOptions::default();
+    options.sample_limit = Some(h.sample_limit);
+    options.adjust_orientation = true;
+    options.skip_preview = true;
+    options.alpha_mode = AlphaMode::AsIs;
+    options.high_precision = true;
+    options.render_spot_colors = false;
+    options.max_profile_level = ProfileLevel::Main5;
+    let mut runner = CancellableRunner(&cancellation);
+    let mut decoder = JxlDecoder::new(options);
+    decoder.close_input();
+    let mut stream = input.codestream.as_slice();
+    expect_event(
+        decoder
+            .process(&mut stream, None, Some(&mut runner))
+            .map_err(|e| cancellation.codec_error(e))?,
+        Event::BasicInfo,
+    )?;
+    check()?;
+    let info = decoder
+        .basic_info()
+        .ok_or_else(|| invalid("missing JPEG XL F32 basic info"))?;
+    if info.size != (h.width, h.height)
+        || info.orientation as u8 != h.orientation
+        || !matches!(
+            info.bit_depth,
+            JxlBitDepth::Float {
+                bits_per_sample: 32,
+                exponent_bits_per_sample: 8
+            }
+        )
+        || !info.uses_original_profile
+        || info.animation.is_some()
+        || info.extra_channels.len() != usize::from(h.alpha_bits.is_some())
+        || info
+            .extra_channels
+            .iter()
+            .any(|a| a.ec_type != jxl_codec::api::ExtraChannel::Alpha || a.alpha_associated)
+    {
+        return Err(invalid(
+            "JPEG XL F32 basic info disagrees with bounded preflight",
+        ));
+    }
+    let extras = info.extra_channels.len();
+    let format = JxlPixelFormat {
+        color_type: JxlColorType::Rgba,
+        color_data_format: Some(JxlDataFormat::F32 {
+            endianness: Endianness::native(),
+        }),
+        extra_channel_format: vec![None; extras],
+    };
+    decoder
+        .set_pixel_format(format)
+        .map_err(|e| cancellation.codec_error(e))?;
+    let mut retained_metadata = input.metadata_bytes;
+    let mut copy_profile = |profile: Option<&JxlColorProfile>| -> Result<Vec<u8>, Error> {
+        check()?;
+        let profile = profile
+            .ok_or_else(|| invalid("missing JPEG XL F32 profile"))?
+            .try_as_icc()
+            .ok_or_else(|| unsupported("JPEG XL F32 ICC unavailable"))?;
+        validate_icc(&profile, h.color_channels)?;
+        let next = add(retained_metadata, profile.len())?;
+        limits::check(next, limits.metadata_bytes, "JPEG XL F32 retained metadata")?;
+        workspace.claim(profile.len(), "JPEG XL F32 retained profile workspace")?;
+        retained_metadata = next;
+        let mut bytes = Vec::new();
+        bytes.try_reserve_exact(profile.len())?;
+        bytes.extend_from_slice(&profile);
+        check()?;
+        Ok(bytes)
+    };
+    let source_icc = copy_profile(decoder.embedded_color_profile())?;
+    let output_icc = copy_profile(decoder.output_color_profile())?;
+    limits::check(
+        add(
+            add(input.metadata_bytes, source_icc.len())?,
+            output_icc.len(),
+        )?,
+        limits.metadata_bytes,
+        "JPEG XL F32 retained metadata",
+    )?;
+    expect_event(
+        decoder
+            .process(&mut stream, None, Some(&mut runner))
+            .map_err(|e| cancellation.codec_error(e))?,
+        Event::FrameHeader,
+    )?;
+    check()?;
+    let mut rgba = Vec::new();
+    rgba.try_reserve_exact(mul(pixels, 4)?)?;
+    rgba.resize(mul(pixels, 4)?, 0.0f32);
+    // SAFETY: initialized f32 storage, aligned/exclusive and covering output_bytes.
+    let out =
+        unsafe { std::slice::from_raw_parts_mut(rgba.as_mut_ptr().cast::<u8>(), output_bytes) };
+    let mut buffers = [JxlOutputBuffer::new(out, h.height, mul(h.width, 16)?)];
+    expect_event(
+        decoder
+            .process(&mut stream, Some(&mut buffers), Some(&mut runner))
+            .map_err(|e| cancellation.codec_error(e))?,
+        Event::FrameComplete {
+            has_more_frames: false,
+        },
+    )?;
+    check()?;
+    expect_event(
+        decoder
+            .process(&mut stream, None, Some(&mut runner))
+            .map_err(|e| cancellation.codec_error(e))?,
+        Event::Complete,
+    )?;
+    if decoder.file_length() != Some(input.codestream.len() as u64) {
+        return Err(invalid("JPEG XL F32 trailing/incomplete codestream"));
+    }
+    check()?;
+    // Observe DATA after completion as well; do not infer it from ORIGINAL.
+    let final_profile = decoder
+        .output_color_profile()
+        .ok_or_else(|| invalid("missing completed JPEG XL F32 profile"))?
+        .try_as_icc()
+        .ok_or_else(|| unsupported("completed JPEG XL F32 ICC unavailable"))?;
+    if final_profile.as_ref() != &output_icc {
+        return Err(invalid(
+            "JPEG XL F32 output profile changed during decoding",
+        ));
+    }
+    drop(final_profile);
+    check()?;
+    for chunk in rgba.chunks(256 * 4) {
+        check()?;
+        validate_f32_samples(chunk)?;
+    }
+    check()?;
+    Ok(JxlF32Image {
+        dimensions: h.dimensions,
+        source_orientation: h.orientation,
+        color_channels: h.color_channels as u8,
+        rgba,
+        source_icc,
+        output_icc,
+    })
+}
+
+fn validate_f32_samples(rgba: &[f32]) -> Result<(), Error> {
+    if rgba
+        .chunks_exact(4)
+        .any(|p| p.iter().any(|x| !x.is_finite()) || !(0.0..=1.0).contains(&p[3]))
+    {
+        return Err(invalid(
+            "JPEG XL F32 requires finite RGB and straight alpha in0..=1",
+        ));
+    }
+    Ok(())
 }
 
 /// Independently returned embedded preview in coded coordinates.

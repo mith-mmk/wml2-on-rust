@@ -6,19 +6,28 @@ pub enum JxlExtraChannelKind {
     Depth,
     /// Raw integer selection codes; no threshold, coverage or compositing rule.
     SelectionMask,
-    /// Full-resolution straight alpha, retained at source depth.
+    /// Alpha; source association, sampling and returned precision are explicit.
     Alpha,
 }
-/// Decoded integer sample codes at source depth; no physical-unit, threshold,
+/// Decoded integer codes at sample_bits_per_sample; no physical-unit, threshold,
 /// coverage, or compositing interpretation is inferred.
 /// Source and output geometry are separate; output samples are already oriented.
+/// For upsampling>1, samples are normalized reconstructed16-bit raster values,
+/// not the unavailable native coded-grid samples; source depth/geometry remain explicit.
 #[non_exhaustive]
 #[derive(Debug)]
 pub struct JxlExtraPlane {
     pub source_index: usize,
     pub kind: JxlExtraChannelKind,
+    /// Source depth.
     pub bits_per_sample: u8,
+    /// Returned code precision:16 for reconstructed planes, else source depth.
+    pub sample_bits_per_sample: u8,
+    /// Source color association; output RGBA16 is always straight. False for non-Alpha.
+    pub source_alpha_associated: bool,
     pub dim_shift: u8,
+    /// Effective source-to-output factor, including frame and metadata scaling.
+    pub upsampling: u8,
     pub source_dimensions: crate::image_info::ImageSize,
     pub dimensions: crate::image_info::ImageSize,
     pub samples: Vec<u16>,
@@ -43,11 +52,12 @@ pub struct JxlExtraImage {
     /// mean the source name is empty. Container boxes are not stored here.
     pub source_header: Vec<u8>,
 }
-/// All Main5 full-resolution integer Depth/SelectionMask planes and at most one
-/// straight Alpha, original-profile Gray/RGB
-/// SDR, one unresampled full-canvas Modular frame, no preview. Other
-/// extras, associated/multiple Alpha reject rather than being discarded. Output is
-/// published only after complete input and final profile/boundary checks.
+/// All Main5 integer Depth/SelectionMask planes and at most one Alpha, with
+/// associated-source straight normalization and uniform effective1/2/4/8x extra
+/// reconstruction. Original-profile Gray/RGB SDR, one full-canvas Modular frame,
+/// no color resampling/preview. Non-Alpha declared subsampling, mixed effective
+/// factors and other/multiple Alpha reject rather than dropping data. All output
+/// is published only after complete input and final profile/boundary checks.
 pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
     bytes: &[u8],
     limits: DecodeLimits,
@@ -120,7 +130,11 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
     options.sample_limit = Some(h.sample_limit);
     options.adjust_orientation = true;
     options.skip_preview = true;
-    options.alpha_mode = AlphaMode::AsIs;
+    options.alpha_mode = if h.alpha_associated {
+        AlphaMode::Unpremultiplied
+    } else {
+        AlphaMode::AsIs
+    };
     options.high_precision = true;
     options.render_spot_colors = false;
     options.max_profile_level = ProfileLevel::Main5;
@@ -152,6 +166,7 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
                 _ => return true,
             }) != h.extras[i].map(|(kind, _)| kind)
                 || c.alpha_associated
+                    != (c.ec_type == jxl_codec::api::ExtraChannel::Alpha && h.alpha_associated)
         })
     {
         return Err(invalid("extra-plane basic info disagrees with preflight"));
@@ -163,7 +178,12 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         count * std::mem::size_of::<Option<JxlDataFormat>>(),
     );
     formats.try_reserve_exact(count)?;
-    for &(_, bits) in h.extras.iter().flatten() {
+    for (i, &(_, source_bits)) in h.extras.iter().flatten().enumerate() {
+        let bits = if h.extra_upsampling[i] > 1 {
+            16
+        } else {
+            source_bits
+        };
         formats.push(Some(JxlDataFormat::U16 {
             endianness: Endianness::native(),
             bit_depth: bits.into(),
@@ -294,7 +314,13 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         return Err(invalid("extra-plane output profile changed"));
     }
     drop(final_profile);
-    for (plane, &(_, bits)) in planes.iter().zip(h.extras.iter().flatten()) {
+    for (i, (plane, &(_, source_bits))) in planes.iter().zip(h.extras.iter().flatten()).enumerate()
+    {
+        let bits = if h.extra_upsampling[i] > 1 {
+            16
+        } else {
+            source_bits
+        };
         let max = (1u32 << bits) - 1;
         for chunk in plane.chunks(256) {
             check()?;
@@ -311,9 +337,12 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
         check()?;
         for (i, pixel) in chunk.chunks_exact(4).enumerate() {
             let expected = if let Some(index) = alpha {
-                let bits = h
-                    .alpha_bits
-                    .ok_or_else(|| invalid("missing preflight alpha depth"))?;
+                let bits = if h.extra_upsampling[index] > 1 {
+                    16
+                } else {
+                    h.alpha_bits
+                        .ok_or_else(|| invalid("missing preflight alpha depth"))?
+                };
                 let maximum = (1u32 << bits) - 1;
                 ((u32::from(planes[index][block * 256 + i]) * 65535 + maximum / 2) / maximum) as u16
             } else {
@@ -342,8 +371,21 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
             source_index: i,
             kind,
             bits_per_sample: bits,
-            dim_shift: 0,
-            source_dimensions: h.dimensions.coded,
+            sample_bits_per_sample: if h.extra_upsampling[i] > 1 { 16 } else { bits },
+            source_alpha_associated: kind == JxlExtraChannelKind::Alpha && h.alpha_associated,
+            dim_shift: if kind == JxlExtraChannelKind::Alpha {
+                h.alpha_dim_shift
+            } else {
+                0
+            },
+            upsampling: h.extra_upsampling[i],
+            source_dimensions: {
+                let factor = u32::from(h.extra_upsampling[i]);
+                crate::image_info::ImageSize {
+                    width: h.dimensions.coded.width.div_ceil(factor),
+                    height: h.dimensions.coded.height.div_ceil(factor),
+                }
+            },
             dimensions: h.dimensions.output.unwrap(),
             samples,
         });

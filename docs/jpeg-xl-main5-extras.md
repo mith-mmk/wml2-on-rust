@@ -2,7 +2,9 @@
 
 This **unmerged production draft** extends #90
 (`1e2a27f0dc9a94cb70f8991c2b44b01cf7c6d868`) and its #89…#75/#73/#72 stack.
-Main0.0.41 is unchanged. It addresses the original #42 multiple-plane and Alpha
+Main0.0.41 is unchanged. A subsequent [associated/reconstructed extension](jpeg-xl-extra-alpha.md)
+qualifies associated Alpha and uniform1/2/4/8x extra reconstruction; the straight/full-resolution
+reports below remain the historical #91 snapshot. It addresses the original #42 multiple-plane and Alpha
 combination requirements as one generalization of the shipping envelope.
 
 The earlier2-plane bound was an implementation-stage restriction. The pinned0.8.0

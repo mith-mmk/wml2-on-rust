@@ -1,0 +1,263 @@
+{
+  "base_sha": "9efd75638e13132c09cac6ab834db730193e2ecd",
+  "scope": "Unmerged production API for Main5 count0..4 with associated Alpha and uniform1/2/4/8x reconstructed planes plus original-profile Gray/RGB color, not completion of general extra-channel support",
+  "source_inspection": [
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/data_types.rs",
+      "sha256": "0485f8425c1ab08452d94cb6637a17fa1de970e44251b0a71b26c13da8870221",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/decoder.rs",
+      "sha256": "74b1f886d7c494837ddeaa376ac54b4bbcbbb91ba8b655c19c2691e4c9bc0519",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.7.4",
+      "file": "src/headers/extra_channels.rs",
+      "sha256": "78baa0e732a40d8e1d3f0ad6a97ef3319351c620bd367f4b4c70ff96ea257ba9",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.7.4",
+      "file": "src/headers/image_metadata.rs",
+      "sha256": "7ed32ab8dcdbf3efd4ba08e41b2620906532be6a45ea827eee95fa7200a40442",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/codestream_parser/image_info.rs",
+      "sha256": "c3290896590e55e0f0068c964b080258491040345b2705c7dbd7ea884ece5eb7",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/frame/render.rs",
+      "sha256": "d8748209a0bf3aa90757174d27d1a3e9bdf2af46880f3aeffa9c814cb3339c1e",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.7.4",
+      "file": "src/headers/frame_header.rs",
+      "sha256": "26f2f3e38350a9ec57177c14d5a6050495019defc7f5064e81ad736cf1c3f918",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/headers/frame_header.rs",
+      "sha256": "a0acc6e9d17756c88c5e09e637a12e391348ab68b477bceda69b9199a4477768",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/render/stages/upsample.rs",
+      "sha256": "0d8a0d98d5876f27336063ae1f13da67c6e70b83d196368bccac8376af18743d",
+      "matches_locked_archive": true
+    }
+  ],
+  "oracle_manifest": "jpeg-xl-extra-alpha-oracle.json",
+  "native": {
+    "expanded_tests": 221,
+    "library_tests": 99,
+    "extra_alpha_tests": 5,
+    "main5_extras_tests": 5,
+    "two_plane_tests": 5,
+    "selection_tests": 6,
+    "depth_tests": 6,
+    "extra_alpha_cancellation_checkpoints": 20,
+    "actual_allocator_refusal_sites": 11,
+    "allocator_scope": "Test-thread net requested bytes balance, no global RSS/heap bound",
+    "minimal": "27 passed; jpeg-xl only/no defaults",
+    "disabled": "0 tests; feature-off target compiles",
+    "win32": "Not executed locally; actual Windows32 matrix in CI"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 909,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 15269888,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "3519a4a41047d32c2844045f3a202cf53dc610c0adae5378c7e72c0d2fe7f5b6",
+    "scope": "Associated and uniform1/2/4/8x reconstructed extras:120 C vectors, original source depth/association/declared shift plus effective factor/coded geometry/returned precision, straight normalized RGBA16, all owned planes, exact budgets and all cancellation checkpoints; associated refusal now admitted; Complete fixed Main5 count0..4 with at most one straight Alpha, duplicate/ordered Depth/SelectionMask:56 independent C vectors, mixed color/Alpha integer depths, all Alpha positions, colored transparency, exact560-byte/workspace boundaries, all cancellation checkpoints, count5/duplicate-Alpha/other storage refusals; Two independently retained Depth/SelectionMask planes:54 independent C vectors with distinct code patterns, both kind orders and duplicate kinds, exact combined420-byte/output-workspace boundary, all cancellation checkpoints, type/storage/layer refusal (historical count3 refusal now accepted by Main5 generalization); SelectionMask separate-plane:50 independent C depth-pair/orientation vectors,combined output/exact workspace,all cancellation checkpoints and unsupported modes; Depth separate-plane output:50 independent C vectors with all integer depth pairs and orientations,52 success groups, combined output/exact workspace boundaries, all cancellation checkpoints, unsupported extras refusal; COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; declared2/4/8x straight+associated subsampled alpha (98 native/legacy cases, coded-plane metadata, exact workspace boundary, unsupported layers; association, Exact/Round policy), plus associated8/9/10/12/16 integer/mixed alpha explicit straight normalization (66 independent vectors including colored zero-alpha, all depth pairs, source depths, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "performance": {
+    "cpu": 0,
+    "build": "Rust1.91 release; jpeg-xl,color-management,image-buffer-ex;3 warmups then1000 samples/process;6 alternating paired blocks",
+    "before_sha": "9efd75638e13132c09cac6ab834db730193e2ecd",
+    "before_binary": "rebuilt exact PR91 source; same release features and harness",
+    "controls": {
+      "ordinary": {
+        "block_medians_ns": [
+          {
+            "before": 74290.5,
+            "after": 74150.0
+          },
+          {
+            "after": 74460.0,
+            "before": 75001.0
+          },
+          {
+            "before": 75286.5,
+            "after": 74566.0
+          },
+          {
+            "after": 73649.0,
+            "before": 76002.5
+          },
+          {
+            "before": 76017.5,
+            "after": 75251.5
+          },
+          {
+            "after": 74025.0,
+            "before": 75292.0
+          }
+        ],
+        "before_median_ns": 75289.25,
+        "after_median_ns": 74305.0,
+        "ratio": 0.9869270845439422,
+        "common_hash_and_size": [
+          "7613101786784002531",
+          "5",
+          "7"
+        ]
+      },
+      "managed": {
+        "block_medians_ns": [
+          {
+            "before": 153397.5,
+            "after": 151916.0
+          },
+          {
+            "after": 151865.0,
+            "before": 154524.0
+          },
+          {
+            "before": 154464.0,
+            "after": 152867.0
+          },
+          {
+            "after": 152406.0,
+            "before": 151465.0
+          },
+          {
+            "before": 154664.5,
+            "after": 152892.0
+          },
+          {
+            "after": 202054.5,
+            "before": 202575.5
+          }
+        ],
+        "before_median_ns": 154494.0,
+        "after_median_ns": 152636.5,
+        "ratio": 0.9879768793610108,
+        "common_hash_and_size": [
+          "10980251124246367044",
+          "5",
+          "7"
+        ]
+      },
+      "explicit_Depth": {
+        "block_medians_ns": [
+          {
+            "before": 97986.0,
+            "after": 61426.0
+          },
+          {
+            "after": 62648.0,
+            "before": 61090.5
+          },
+          {
+            "before": 61421.0,
+            "after": 61581.0
+          },
+          {
+            "after": 61145.0,
+            "before": 60630.0
+          },
+          {
+            "before": 60940.0,
+            "after": 60910.0
+          },
+          {
+            "after": 60795.0,
+            "before": 59718.0
+          }
+        ],
+        "before_median_ns": 61015.25,
+        "after_median_ns": 61285.5,
+        "ratio": 1.0044292205637115,
+        "common_hash_and_size": [
+          "1307659025400899647",
+          "7",
+          "5"
+        ]
+      }
+    },
+    "associated_four_plane_reconstruction": [
+      109352.0,
+      109782.5,
+      112016.0
+    ]
+  },
+  "display": {
+    "inspected": true,
+    "scope": "Independent Gamma2-to-sRGB straight diagnostic composite and four reconstructed planes; source/native grid not returned",
+    "hashes": {
+      "rows": [
+        {
+          "label": "C oracle",
+          "rgba16_sha256": "8362633468fd7afa56441529a57e02fa8ab32b80fd0bdcc87f71c8d145d1d4a1",
+          "plane0_sha256": "c643325bc137a6ebe26baef7055545e0c73826c45964885a5d89dffaabf1a9b8",
+          "plane1_sha256": "faec1b52533111798c63ca1df02f32f0e18d91f6f33dc8ce089855eeffaef8ea",
+          "plane2_sha256": "57c62964b886454bb22a85e169956a84e493264e214e7b7b42924747bcf20830",
+          "plane3_sha256": "619f034044f25fd6af9e142dea414da78d175ba39bfe5fd3478c0188cc3c8e61"
+        },
+        {
+          "label": "WML2",
+          "rgba16_sha256": "8362633468fd7afa56441529a57e02fa8ab32b80fd0bdcc87f71c8d145d1d4a1",
+          "plane0_sha256": "c643325bc137a6ebe26baef7055545e0c73826c45964885a5d89dffaabf1a9b8",
+          "plane1_sha256": "faec1b52533111798c63ca1df02f32f0e18d91f6f33dc8ce089855eeffaef8ea",
+          "plane2_sha256": "57c62964b886454bb22a85e169956a84e493264e214e7b7b42924747bcf20830",
+          "plane3_sha256": "619f034044f25fd6af9e142dea414da78d175ba39bfe5fd3478c0188cc3c8e61"
+        }
+      ],
+      "raw_plane_max_u16_differences": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0
+      },
+      "diagnostic_display_max_u8_difference": 0
+    }
+  },
+  "boundaries": [
+    "560 combined output bytes accepts;559 refuses",
+    "input/pixel/frame/metadata caps",
+    "minimum workspace accepts,one byte below refuses",
+    "all truncated prefixes refuse",
+    "unsupported channels/counts/count5/multiple Alpha/Spot/float/non-Alpha declared subsampling/layers,preview,animation,HDR refuse",
+    "ordinary/EX/sRGB/F32/F16/HDR contracts unchanged; raw legacy Alpha-only acceptance retained",
+    "no product dependency/caps changes"
+  ],
+  "limitations": [
+    "Main5 count0..4 including one associated/straight Alpha; uniform1/2/4/8x only; no mixed factors/multiple Alpha/other kinds/storage, no preview/XYB/color resampling/layers",
+    "channel name unavailable from pinned public APIs; exact source header retained opaquely, not name-based selection",
+    "finite conservative codec preflight and adapter ledger; no all-codec allocator guarantee or large-image enablement",
+    "main unchanged; all dependent PRs remain draft"
+  ]
+}

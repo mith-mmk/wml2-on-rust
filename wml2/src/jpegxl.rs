@@ -454,6 +454,7 @@ struct Header {
     bits: u8,
     alpha_bits: Option<u8>,
     extras: [Option<(JxlExtraChannelKind, u8)>; MAX_EXTRA_PLANES],
+    extra_upsampling: [u8; MAX_EXTRA_PLANES],
     alpha_associated: bool,
     alpha_dim_shift: u8,
     native_bits: u8,
@@ -499,7 +500,7 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
     base: usize,
     limits: DecodeLimits,
     policy: JxlResourceLimits,
-) -> Result<(usize, usize, usize), Error> {
+) -> Result<(usize, usize, usize, [u8; MAX_EXTRA_PLANES]), Error> {
     use jxl_preflight::headers::encodings::UnconditionalCoder;
     use jxl_preflight::headers::frame_header::FrameHeader;
     use jxl_preflight::headers::toc::IncrementalTocReader;
@@ -511,6 +512,7 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
     let preview_nonserialized = header.preview_frame_header_nonserialized();
     let mut preview = preview_nonserialized.is_some();
     let channels = add(3, header.image_metadata.extra_channel_info.len())?;
+    let mut extra_upsampling = [1u8; MAX_EXTRA_PLANES];
     // The codec checks preview samples even while skipping. Admit their
     // dimensions independently, without reserving nonexistent preview planes.
     let mut sample_pixels = max_pixels;
@@ -559,30 +561,52 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
             ));
         }
         frame.postprocess(nonserialized);
-        if EXTRA
-            && (frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular
+        if EXTRA {
+            let info = &header.image_metadata.extra_channel_info;
+            if frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular
                 || frame.upsampling != 1
-                || frame.ec_upsampling.iter().any(|&u| u != 1)
                 || frame.x0 != 0
                 || frame.y0 != 0
                 || frame.size_upsampled()
-                    != (header.size.xsize() as usize, header.size.ysize() as usize))
-        {
-            return Err(unsupported(
-                "extra-plane output requires one full-canvas Modular frame without resampling",
-            ));
+                    != (header.size.xsize() as usize, header.size.ysize() as usize)
+                || frame.ec_upsampling.len() != info.len()
+            {
+                return Err(unsupported(
+                    "extra-plane reconstruction requires one full-canvas Modular frame without color resampling",
+                ));
+            }
+            for (i, (raw, ec)) in frame.ec_upsampling.iter().zip(info).enumerate() {
+                //0.7.4 leaves EC factors unshifted when color upsampling=1;
+                //0.8 applies the metadata shift unconditionally. Match0.8 here.
+                let effective = raw
+                    .checked_shl(ec.dim_shift())
+                    .ok_or_else(|| invalid("extra upsampling overflow"))?;
+                if !matches!(effective, 1 | 2 | 4 | 8) {
+                    return Err(unsupported("extra upsampling exceeds fixed8x bound"));
+                }
+                extra_upsampling[i] = u8::try_from(effective)?;
+            }
+            if extra_upsampling[..info.len()]
+                .iter()
+                .any(|&f| f != extra_upsampling[0])
+            {
+                return Err(unsupported(
+                    "mixed effective extra upsampling factors are unqualified",
+                ));
+            }
         }
 
         let alpha_shift = header
             .image_metadata
             .extra_channel_info
-            .first()
+            .iter()
+            .find(|c| c.ec_type == ExtraChannel::Alpha)
             .map_or(0, |c| c.dim_shift());
         // Parser-only0.7.4 shifts EC factors only when colour upsampling>1;
-        // pixel codec0.8 shifts unconditionally. This new route requires colour
-        // factor1 and raw EC factor1, so its effective factor is1<<dim_shift.
-        // Do not treat the old parser's postprocessed EC value as0.8's value.
-        if alpha_shift != 0 {
+        // pixel codec0.8 shifts unconditionally. The legacy Alpha-only subset
+        // requires colour/raw EC factor1. The explicit extra route computed
+        // every effective factor above rather than trusting0.7.4 postprocess.
+        if !EXTRA && alpha_shift != 0 {
             if frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular
                 || frame.upsampling != 1
                 || frame.ec_upsampling.as_slice() != [1]
@@ -648,8 +672,15 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
             toc_workspace = 8 * 1024 * 1024;
         }
         br.check_for_error().map_err(preflight_error)?;
-        let alpha_workspace = if alpha_shift != 0 {
-            let factor = 1usize << alpha_shift;
+        let legacy_factor = [1u8 << alpha_shift];
+        let factors = if EXTRA {
+            &extra_upsampling[..header.image_metadata.extra_channel_info.len()]
+        } else {
+            &legacy_factor[..]
+        };
+        let mut alpha_workspace = 0usize;
+        for &factor in factors.iter().filter(|&&f| f > 1) {
+            let factor = usize::from(factor);
             // Modular colour geometry has no codec padding. Alpha upsampling
             // can produce the full next factor-sized block at each odd edge.
             let alpha_width = mul(width.div_ceil(factor), factor)?;
@@ -664,10 +695,11 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
             max_pixels = max_pixels.max(alpha_pixels);
             // factor*5*5*factor f32 kernel plus two full rounded alpha planes.
             // Retain this alongside existing codec/row/retained estimates.
-            add(mul(mul(factor, factor)?, 100)?, mul(alpha_pixels, 8)?)?
-        } else {
-            0
-        };
+            alpha_workspace = add(
+                alpha_workspace,
+                add(mul(mul(factor, factor)?, 100)?, mul(alpha_pixels, 8)?)?,
+            )?;
+        }
         peak = peak.max(add(
             add(add(base, mul(max_pixels, 128)?)?, retained)?,
             toc_workspace,
@@ -715,6 +747,7 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
                 peak,
                 add(mul(sample_pixels, channels)?, 1)?,
                 preview_workspace,
+                extra_upsampling,
             ));
         }
     }
@@ -796,14 +829,15 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
                 !matches!(
                     c.ec_type,
                     ExtraChannel::Depth | ExtraChannel::SelectionMask | ExtraChannel::Alpha
-                ) || c.alpha_associated()
-                    || c.dim_shift() != 0
+                ) || (c.ec_type != ExtraChannel::Alpha
+                    && (c.alpha_associated() || c.dim_shift() != 0))
+                    || c.dim_shift() > 3
                     || c.bit_depth().floating_point_sample()
                     || !matches!(c.bit_depth().bits_per_sample(), 8 | 9 | 10 | 12 | 16)
             })
         {
             return Err(unsupported(
-                "extra-plane output supports Main5 Depth/SelectionMask and at most one straight Alpha, full-resolution integer channels on original-profile SDR without preview",
+                "extra-plane output supports Main5 Depth/SelectionMask and at most one declared2/4/8x or full-resolution associated/straight integer Alpha on original-profile SDR without preview",
             ));
         }
     } else {
@@ -864,11 +898,13 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
     }
     let alpha_associated = m
         .extra_channel_info
-        .first()
+        .iter()
+        .find(|c| c.ec_type == ExtraChannel::Alpha)
         .is_some_and(|c| c.alpha_associated());
     let alpha_dim_shift = m
         .extra_channel_info
-        .first()
+        .iter()
+        .find(|c| c.ec_type == ExtraChannel::Alpha)
         .map_or(0, |c| c.dim_shift() as u8);
     // One output format cannot express independent channel depths. Normalize
     // mixed integer channels to 16 bits before EX storage/CMS/legacy rounding.
@@ -1001,15 +1037,16 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
     } else {
         policy
     };
-    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT_BITS, HDR, EXTRA>(
-        &input.codestream,
-        &header,
-        frame_bits,
-        frame_pixels,
-        base,
-        limits,
-        frame_policy,
-    )?;
+    let (workspace, sample_limit, preview_workspace, extra_upsampling) =
+        frame_workspace::<FLOAT_BITS, HDR, EXTRA>(
+            &input.codestream,
+            &header,
+            frame_bits,
+            frame_pixels,
+            base,
+            limits,
+            frame_policy,
+        )?;
     limits::check(workspace, limits.expanded_bytes, "JPEG XL decode workspace")?;
     Ok(Header {
         dimensions,
@@ -1019,6 +1056,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool, const EXTRA: bool>(
         bits: bits as u8,
         alpha_bits,
         extras,
+        extra_upsampling,
         alpha_associated,
         alpha_dim_shift,
         native_bits,

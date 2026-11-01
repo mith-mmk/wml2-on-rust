@@ -239,7 +239,6 @@ fn all_unrepresented_channels_and_unqualified_modes_reject() {
 
     for input in [
         include_bytes!("fixtures/review/jxl-main5-refused-five.jxl").as_slice(),
-        include_bytes!("fixtures/review/jxl-main5-refused-associated.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-main5-refused-multiple-alpha.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-main5-refused-spot.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-main5-refused-float.jxl").as_slice(),

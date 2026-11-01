@@ -163,7 +163,10 @@ jobs:
       - name: Replay JPEG XL palette cold and warm allocation matrix
         if: matrix.rust == 'stable' && matrix.features == 'jpeg-xl,image-buffer-ex'
         run: python3 wml2-test/scripts/verify_jpegxl_palette_cache.py --output .test-palette-cache --phase matrix
-      - name: Symbolize JPEG XL palette ownership and verify locked source
+      - name: Verify compiled JPEG XL palette source against locked archive
+        if: matrix.rust == 'stable' && matrix.features == 'jpeg-xl,image-buffer-ex'
+        run: python3 wml2-test/scripts/verify_jpegxl_palette_cache.py --output .test-palette-cache --phase source
+      - name: Symbolize JPEG XL palette ownership including inline frames
         if: matrix.rust == 'stable' && matrix.features == 'jpeg-xl,image-buffer-ex'
         run: python3 wml2-test/scripts/verify_jpegxl_palette_cache.py --output .test-palette-cache --phase symbols
       - uses: actions/upload-artifact@v4

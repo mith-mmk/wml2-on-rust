@@ -360,3 +360,32 @@ adapter output, rounding, collector and CMS/profile storage cumulatively.
 This is the first runtime phase of #37, not larger-canvas support or a global
 allocation ledger: 2560x1440 still fails the fixed padded-frame screen.
 See [configuration, exact scope and validation](jpeg-xl-resource-contract.md).
+
+### Development: preview geometry query
+
+`jpegxl::preview_dimensions_with_resource_limits(input, limits, resources)` returns
+`Some(ImageDimensions)` for an admitted embedded preview and `None` for an admitted
+still without one. `coded` is preview geometry, `output` applies the shared image
+orientation, and `intrinsic_display` is absent (the main image intrinsic size is
+not a preview size). Errors are distinct from absence. The full existing container,
+ICC size, TOC and layer admission runs under finite caller-tightened limits before
+returning; this query initializes no pixel decoder and does not validate pixel
+entropy. It is intentionally stricter than a prefix-only metadata probe.
+
+This is the geometry-query substep of #44, stacked on #75 → #73 → #72. Preview
+pixel extraction, its color/alpha output and dedicated preview/combined allocation
+contract remain unimplemented; #44 stays open. Animation and HDR/float are unchanged.
+The parser-only 0.7.4 dependency and fixed safety caps remain; #74 is not applied.
+
+Validation of this substep: six existing independent libjxl preview-header fixtures
+(including shared ICC and transposed orientation), no-preview input, every truncated
+prefix of the ICC preview fixture, oversized preview, invalid signature, input/
+metadata/workspace and individual ICC/TOC/layer limits. Ordinary preview main-image
+and layer regressions remain covered. Local extended runs passed 41 JPEG XL, three
+layer, 11 resource and two query tests; the query tests also passed without EX/CMS.
+A release microbenchmark (Rust 1.91, no defaults, jpeg-xl/image-buffer-ex/color-management,
+20 warmups, three processes each doing 1,000 queries on jxl-preview-rgba8.jxl) took
+2.101/1.968/1.865 ms per process. This measures the new small-input query, not a
+before/after decoder speed claim. The main image was decoded and visually inspected;
+preview pixels were not decoded by this API. CI includes the query test target in
+the existing JPEG XL platform and Windows 32-bit commands.

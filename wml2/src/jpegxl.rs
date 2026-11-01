@@ -912,6 +912,56 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
     decode::<B, false, false>(reader, option, true, None, None)
 }
 
+/// Inspect embedded preview geometry after the same bounded admission as decoding.
+///
+/// Returns coded and orientation-applied preview dimensions, or `None` when the
+/// admitted still has no preview. This does not decode preview pixels, validate
+/// pixel entropy, or publish an image. The complete container, ICC size, TOC and
+/// internal-layer structure must pass admission, including for preview absence.
+/// Input assembly and preflight use finite caller-tightened resource limits.
+pub fn preview_dimensions_with_resource_limits(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+) -> Result<Option<crate::image_info::ImageDimensions>, Error> {
+    resources.validate()?;
+    let limits = resources.tighten(limits);
+    limits::check(
+        input.len(),
+        limits.input_bytes.min(MAX_INPUT),
+        "JPEG XL input",
+    )?;
+    limits::check(
+        mul(input.len(), 3)?,
+        limits.expanded_bytes,
+        "JPEG XL input assembly workspace",
+    )?;
+    let input = unpack_with_resources(input, limits, Some(resources))?;
+    preflight_with_resources(&input, limits, resources)?;
+    // Re-read only the bounded header; do not initialize a codec or ICC decoder.
+    let mut br = BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
+    let header = FileHeader::read(&mut br).map_err(preflight_error)?;
+    Ok(header.image_metadata.preview.as_ref().map(|size| {
+        let coded = crate::image_info::ImageSize {
+            width: size.xsize(),
+            height: size.ysize(),
+        };
+        let output = if header.image_metadata.orientation.is_transposing() {
+            crate::image_info::ImageSize {
+                width: coded.height,
+                height: coded.width,
+            }
+        } else {
+            coded
+        };
+        crate::image_info::ImageDimensions {
+            coded,
+            output: Some(output),
+            intrinsic_display: None,
+        }
+    }))
+}
+
 /// Decode a source-coordinate RGBA8 still with caller-tightened JPEG XL limits.
 ///
 /// Resource fields cannot raise fixed shipping caps. The finite workspace

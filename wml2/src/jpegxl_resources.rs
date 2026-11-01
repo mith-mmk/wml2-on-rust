@@ -800,5 +800,50 @@ pub(crate) mod tests {
             }
             assert_eq!(FAIL_BYTES.with(Cell::get), 0);
         }
+        // Source RGBA16 can exceed the per-frame workspace even where RGBA8
+        // geometry and the independent animation-byte quota both fit.
+        let mut image =
+            ImageBufferEx::with_storage(PixelFormatEx::Rgba16, PrecisionConversion::Exact);
+        let mut reader = bin_rs::reader::BytesReader::new(&[0u8; 8]);
+        let error = crate::decode_guard::run_ex(
+            &mut reader,
+            &mut DecodeOptions {
+                debug_flag: 0,
+                drawer: &mut image,
+            },
+            DecodeLimits {
+                expanded_bytes: 100,
+                animation_bytes: 1000,
+                ..Default::default()
+            },
+            |_, o| {
+                o.drawer.init_ex(
+                    1,
+                    1,
+                    Some(InitOptionsEx {
+                        source_format: PixelFormatEx::Rgba16,
+                        source_stride: None,
+                        legacy: Some(InitOptions {
+                            animation: true,
+                            loop_count: 1,
+                            background: None,
+                        }),
+                    }),
+                )?;
+                o.drawer.next(Some(NextOptions {
+                    image_rect: Some(ImageRect {
+                        start_x: 0,
+                        start_y: 0,
+                        width: 4,
+                        height: 4,
+                    }),
+                    ..NextOptions::new()
+                }))?;
+                Ok(None)
+            },
+        )
+        .err()
+        .unwrap();
+        assert!(error.to_string().contains("animation source frame"));
     }
 }

@@ -205,6 +205,7 @@ impl DrawCallback for Guard<'_> {
         } else {
             bytes
         };
+        limits::check(bytes, self.limits.expanded_bytes, "animation source frame")?;
         let total = self
             .bytes
             .checked_add(bytes)

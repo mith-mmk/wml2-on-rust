@@ -356,7 +356,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
-    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases() + subsampled_cases() + associated_subsampling_cases() + extra_plane_cases() + selection_plane_cases() + two_plane_cases() + main5_extra_cases() + reconstructed_extra_cases()
+    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases() + subsampled_cases() + associated_subsampling_cases() + extra_plane_cases() + selection_plane_cases() + two_plane_cases() + main5_extra_cases() + reconstructed_extra_cases() + buffered_animation_cases()
 }
 
 fn intrinsic_cases() -> u32 {
@@ -965,5 +965,23 @@ fn reconstructed_extra_cases()->u32 {
  let n=std::cell::Cell::new(0);drop(extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||{n.set(n.get()+1);false}).unwrap());assert!(n.get()>10);
  for stop in 1..=n.get(){let c=std::cell::Cell::new(0);let e=extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||{c.set(c.get()+1);c.get()==stop}).unwrap_err();assert!(e.is::<DecodeCancelled>());}count+=1;
  for input in [include_bytes!("../../wml2/tests/fixtures/review/jxl-main5-refused-five.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-main5-refused-multiple-alpha.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-main5-refused-spot.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-main5-refused-float.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-main5-refused-subsampled.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-main5-refused-layers.jxl").as_slice()]{assert!(extra(input,DecodeLimits::default(),JxlResourceLimits::default(),&||false).is_err());}
+ count+1
+}
+
+fn buffered_animation_cases()->u32 {
+ use wml2::jpegxl::{animation_rgba16_from_with_resource_limits_and_cancel as animation,JxlResourceLimits,DecodeCancelled};let mut count=0;
+ for(input,golden,ticks,num,den,loops,o,bits)in include!("../../wml2/tests/jpeg_xl/animation_cases.rs"){
+  let im=animation(input,DecodeLimits::default(),JxlResourceLimits::default(),&||false).unwrap();assert_eq!(im.source_orientation,o);assert_eq!(im.bits_per_sample,bits);assert_eq!((im.ticks_per_second_numerator,im.ticks_per_second_denominator,im.loop_count),(num,den,loops));assert_eq!(im.frames.len(),golden.len());assert_eq!(im.frames.len(),ticks.len());
+  for((frame,gold),ticks)in im.frames.iter().zip(golden).zip(ticks){assert_eq!(frame.duration_ticks,*ticks);let expected=words(gold,16);assert_eq!(frame.rgba16.len(),expected.len());for(a,b)in frame.rgba16.iter().zip(expected){assert!(a.abs_diff(b)<=1);}}
+  assert!(image_from(input).is_err());count+=1;
+ }
+ let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-internal.jxl");
+ for(cap,ok)in [(839,false),(840,true)]{assert_eq!(animation(input,DecodeLimits{animation_bytes:cap,..Default::default()},JxlResourceLimits::default(),&||false).is_ok(),ok);}
+ for(cap,ok)in [(3,false),(4,true)]{assert_eq!(animation(input,DecodeLimits::default(),JxlResourceLimits{internal_layers:cap,..Default::default()},&||false).is_ok(),ok);}
+ let(mut lo,mut hi)=(0,64<<20);while lo<hi{let mid=lo+(hi-lo)/2;if animation(input,DecodeLimits::default(),JxlResourceLimits{workspace_bytes:mid,..Default::default()},&||false).is_ok(){hi=mid}else{lo=mid+1}}
+ for(cap,ok)in [(lo-1,false),(lo,true)]{assert_eq!(animation(input,DecodeLimits::default(),JxlResourceLimits{workspace_bytes:cap,..Default::default()},&||false).is_ok(),ok);}count+=1;
+ let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.jxl");let n=std::cell::Cell::new(0);drop(animation(input,DecodeLimits::default(),JxlResourceLimits::default(),&||{n.set(n.get()+1);false}).unwrap());assert!(n.get()>20);
+ for stop in 1..=n.get(){let c=std::cell::Cell::new(0);let e=animation(input,DecodeLimits::default(),JxlResourceLimits::default(),&||{c.set(c.get()+1);c.get()==stop}).unwrap_err();assert!(e.is::<DecodeCancelled>());}count+=1;
+ for input in [include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-timecodes.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-preview.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-internal.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-icc16.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-icc16-variable.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-layers65.jxl").as_slice()]{assert!(animation(input,DecodeLimits::default(),JxlResourceLimits::default(),&||false).is_err());}
  count+1
 }

@@ -666,4 +666,47 @@ pub(crate) mod tests {
             .is_ok()
         );
     }
+    #[test]
+    fn every_buffered_animation_reservation_refuses_without_partial_result() {
+        let _reset = ResetFault;
+        let input =
+            include_bytes!("../tests/fixtures/review/jxl-animation-main5-icc16-variable.jxl");
+        for key in [
+            "animation timing plan",
+            "animation formats",
+            "animation source header",
+            "animation source ICC",
+            "animation output ICC",
+            "animation frame descriptors",
+            "animation frame0",
+            "animation frame1",
+            "animation later frame",
+        ] {
+            COPY_KEY.with(|f| f.set(Some(key)));
+            FAILED_BYTES.with(|f| f.set(0));
+            let result = super::super::animation_rgba16_from_with_resource_limits_and_cancel(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| false,
+            );
+            assert!(
+                result
+                    .unwrap_err()
+                    .is::<std::collections::TryReserveError>(),
+                "{key}"
+            );
+            assert_eq!(COPY_KEY.with(Cell::get), None);
+            assert!(FAILED_BYTES.with(Cell::get) > 0, "{key}");
+        }
+        assert!(
+            super::super::animation_rgba16_from_with_resource_limits_and_cancel(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| false
+            )
+            .is_ok()
+        );
+    }
 }

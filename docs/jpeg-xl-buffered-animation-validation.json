@@ -1,0 +1,246 @@
+{
+  "base_sha": "87b554fd01c258a36cbe9353894fb2681ac8c791",
+  "scope": "Unmerged partial #43 production stage: buffered original-profile native RGB8/16 animation. Main0.0.41 unchanged.",
+  "source_inspection": [
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/data_types.rs",
+      "sha256": "0485f8425c1ab08452d94cb6637a17fa1de970e44251b0a71b26c13da8870221",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/decoder.rs",
+      "sha256": "74b1f886d7c494837ddeaa376ac54b4bbcbbb91ba8b655c19c2691e4c9bc0519",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/codestream_parser/frame_info.rs",
+      "sha256": "7ba61ae7f8039c237534cae490466b5bf089a28fe2b610366f982506b93a5500",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/api/codestream_parser/image_info.rs",
+      "sha256": "c3290896590e55e0f0068c964b080258491040345b2705c7dbd7ea884ece5eb7",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/headers/frame_header.rs",
+      "sha256": "a0acc6e9d17756c88c5e09e637a12e391348ab68b477bceda69b9199a4477768",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.7.4",
+      "file": "src/headers/frame_header.rs",
+      "sha256": "26f2f3e38350a9ec57177c14d5a6050495019defc7f5064e81ad736cf1c3f918",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.7.4",
+      "file": "src/headers/image_metadata.rs",
+      "sha256": "7ed32ab8dcdbf3efd4ba08e41b2620906532be6a45ea827eee95fa7200a40442",
+      "matches_locked_archive": true
+    }
+  ],
+  "oracle_manifest": "jpeg-xl-buffered-animation-oracle.json",
+  "native": {
+    "full_tests": 227,
+    "library_tests": 100,
+    "new_animation_tests": 5,
+    "minimal_jxl_only": 32,
+    "disabled_feature_targets": 6,
+    "disabled_tests": 0,
+    "independent_supported_inputs": 10,
+    "displayed_canvases": 91,
+    "independently_valid_refused_inputs": 6,
+    "pixel_max_difference_u16": 1,
+    "cancellation_checkpoints": 27,
+    "adapter_allocation_failure_sites": 9,
+    "late_entropy_error_checkpoint_count": 21,
+    "post_drop_thread_net_allocation_bytes": 0,
+    "allocation_note": "Local thread-scoped requested-byte net checks only, not a peak or all-codec allocator guarantee.",
+    "command": "cargo test -p wml2 --locked --features jpeg-xl,color-management,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_associated_alpha --test jpeg_xl_buffered_animation --test jpeg_xl_encoded_hdr --test jpeg_xl_extra_alpha --test jpeg_xl_extra_planes --test jpeg_xl_hdr_linear --test jpeg_xl_layers --test jpeg_xl_main5_extras --test jpeg_xl_native_f16 --test jpeg_xl_native_f32 --test jpeg_xl_preview_dimensions --test jpeg_xl_resources --test jpeg_xl_selection_planes --test jpeg_xl_subsampled_alpha --test jpeg_xl_two_planes"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 922,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 15335424,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "93dceb267f870e95a0366e125a3f557bf92ca708f73bc1848a772ff5ebf2758d",
+    "scope": "Buffered original-profile RGB8/16 animation:10 independent inputs/91 canvases with exact raw ticks/timebase/loop, crop/reference/internal/final-zero/orientation/ICC,64 coded-layer boundary, cumulative output/workspace, all cancellation checkpoints, fixed Main5 rate and preview/SMPTE refusals; Associated and uniform1/2/4/8x reconstructed extras:120 C vectors, original source depth/association/declared shift plus effective factor/coded geometry/returned precision, straight normalized RGBA16, all owned planes, exact budgets and all cancellation checkpoints; associated refusal now admitted; Complete fixed Main5 count0..4 with at most one straight Alpha, duplicate/ordered Depth/SelectionMask:56 independent C vectors, mixed color/Alpha integer depths, all Alpha positions, colored transparency, exact560-byte/workspace boundaries, all cancellation checkpoints, count5/duplicate-Alpha/other storage refusals; Two independently retained Depth/SelectionMask planes:54 independent C vectors with distinct code patterns, both kind orders and duplicate kinds, exact combined420-byte/output-workspace boundary, all cancellation checkpoints, type/storage/layer refusal (historical count3 refusal now accepted by Main5 generalization); SelectionMask separate-plane:50 independent C depth-pair/orientation vectors,combined output/exact workspace,all cancellation checkpoints and unsupported modes; Depth separate-plane output:50 independent C vectors with all integer depth pairs and orientations,52 success groups, combined output/exact workspace boundaries, all cancellation checkpoints, unsupported extras refusal; COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; declared2/4/8x straight+associated subsampled alpha (98 native/legacy cases, coded-plane metadata, exact workspace boundary, unsupported layers; association, Exact/Round policy), plus associated8/9/10/12/16 integer/mixed alpha explicit straight normalization (66 independent vectors including colored zero-alpha, all depth pairs, source depths, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "performance": {
+    "cpu": 0,
+    "build": "Rust1.91 release; jpeg-xl,color-management,image-buffer-ex;3 warmups then1000 samples/process;6 alternating paired blocks",
+    "before_sha": "87b554fd01c258a36cbe9353894fb2681ac8c791",
+    "before_binary": "rebuilt exact PR92 source; same release features and harness",
+    "controls": {
+      "ordinary": {
+        "block_medians_ns": [
+          {
+            "before": 72538.0,
+            "after": 74265.5
+          },
+          {
+            "after": 73544.0,
+            "before": 74896.0
+          },
+          {
+            "before": 75046.0,
+            "after": 74675.5
+          },
+          {
+            "after": 73343.5,
+            "before": 74410.0
+          },
+          {
+            "before": 74711.0,
+            "after": 74160.5
+          },
+          {
+            "after": 74545.5,
+            "before": 75091.0
+          }
+        ],
+        "before_median_ns": 74803.5,
+        "after_median_ns": 74213.0,
+        "ratio": 0.9921059843456522,
+        "common_hash_and_size": [
+          "7613101786784002531",
+          "5",
+          "7"
+        ]
+      },
+      "managed": {
+        "block_medians_ns": [
+          {
+            "before": 151514.5,
+            "after": 153052.0
+          },
+          {
+            "after": 153658.0,
+            "before": 153517.5
+          },
+          {
+            "before": 153362.5,
+            "after": 153713.5
+          },
+          {
+            "after": 154349.0,
+            "before": 151170.0
+          },
+          {
+            "before": 152757.0,
+            "after": 151159.5
+          },
+          {
+            "after": 153608.0,
+            "before": 151340.0
+          }
+        ],
+        "before_median_ns": 152135.75,
+        "after_median_ns": 153633.0,
+        "ratio": 1.0098415395460962,
+        "common_hash_and_size": [
+          "10980251124246367044",
+          "5",
+          "7"
+        ]
+      },
+      "explicit_Depth": {
+        "block_medians_ns": [
+          {
+            "before": 61411.0,
+            "after": 62062.0
+          },
+          {
+            "after": 61511.0,
+            "before": 62693.0
+          },
+          {
+            "before": 60720.0,
+            "after": 61822.0
+          },
+          {
+            "after": 60640.0,
+            "before": 61376.5
+          },
+          {
+            "before": 61311.0,
+            "after": 61120.0
+          },
+          {
+            "after": 62027.0,
+            "before": 61622.0
+          }
+        ],
+        "before_median_ns": 61393.75,
+        "after_median_ns": 61666.5,
+        "ratio": 1.0044426346330042,
+        "common_hash_and_size": [
+          "1307659025400899647",
+          "7",
+          "5"
+        ]
+      }
+    },
+    "native_animation": [
+      136407.5,
+      133198.0,
+      136052.0
+    ]
+  },
+  "display": {
+    "method": "Pillow CMS Gamma2 to sRGB on both independently decoded outputs, checkerboard Alpha composition, nearest-neighbor display; diagnostic only, no managed product animation",
+    "visually_inspected": true,
+    "raw_hashes": [
+      {
+        "label": "C oracle",
+        "frames": [
+          "3f7f5e7cb00de9381ce3853cc7ca5208f65a7ed83a72d4596d9d25124ac6f052",
+          "05d175b1939e05521191d4b10624dd4ff59aedb7166ccd0ee68fa8eee36f622c",
+          "e35c9c2a92b551254da198ea64170c4af8dc634b13fcc5cf5b0483ff28232f42"
+        ]
+      },
+      {
+        "label": "WML2",
+        "frames": [
+          "3f7f5e7cb00de9381ce3853cc7ca5208f65a7ed83a72d4596d9d25124ac6f052",
+          "05d175b1939e05521191d4b10624dd4ff59aedb7166ccd0ee68fa8eee36f622c",
+          "e35c9c2a92b551254da198ea64170c4af8dc634b13fcc5cf5b0483ff28232f42"
+        ]
+      }
+    ]
+  },
+  "boundaries": [
+    "3 displayed35-pixel RGBA16 canvases:840 cumulative output accepts;839 refuses",
+    "Exact minimum joint workspace/metadata accepts;one below refuses",
+    "4 coded layers including invisible zero yield3 displayed;internal limit3 refuses4 accepts",
+    "64 coded/visible layers accepts;65 refuses",
+    "Fixed Main5 <=120fps; original200fps C fixtures reject; added100-tick variants accepted",
+    "Every truncated prefix of variable and ICC16 animations refuses;trailing byte refuses",
+    "Cancellation at all27 probe positions returns typed DecodeCancelled with no owned partial result",
+    "All9 adapter reserves fail with TryReserveError and recover;late entropy failure after21 checkpoints returns no owned result",
+    "Existing static/EX/sRGB/F32/HDR animation refusal retained;no dependencies or fixed caps changed"
+  ],
+  "limitations": [
+    "Common Draw/ImageBuffer callbacks and Abort, managed sRGB animation and EX delivery remain #43 work",
+    "Original-profile RGB8/16 only;matching full-resolution straight Alpha optional;Gray/preview/SMPTE/associated/subsampled/mixed Alpha/extras/XYB/HDR unqualified and refused",
+    "Conservative finite preflight + adapter ledger only;not codec-wide fallible allocation,peak RSS or large-image enablement",
+    "Actual wasm32 executed locally;actual Windows32 runs in CI;no claim of local native32 execution",
+    "All preceding PRs and this implementation unmerged;#42 audit in jpeg-xl-extra-acceptance-audit.md"
+  ]
+}

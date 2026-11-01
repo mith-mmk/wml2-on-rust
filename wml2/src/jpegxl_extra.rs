@@ -84,7 +84,7 @@ pub fn image_with_extra_channels_from_with_resource_limits_and_cancel(
     )?;
     let input = unpack_with_resources(bytes, limits, Some(policy))?;
     check()?;
-    let h = preflight_samples::<0, false, true>(&input, limits, policy)?;
+    let h = preflight_samples::<0, false, true, false>(&input, limits, policy)?;
     check()?;
     let count = h.extras.iter().flatten().count();
     let pixels = mul(h.width, h.height)?;

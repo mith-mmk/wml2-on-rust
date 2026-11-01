@@ -26,6 +26,11 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
+The unmerged [buffered native animation companion](jpeg-xl-buffered-animation.md)
+returns every displayed original-profile RGBA16 canvas with exact rational timing.
+Existing still-image APIs continue to reject animation; common callbacks and
+managed animation display remain #43 work.
+
 ## Supported profile and precision
 
 - Bare `ff 0a` codestreams and containers with `jxlc` or ordered `jxlp` chunks.

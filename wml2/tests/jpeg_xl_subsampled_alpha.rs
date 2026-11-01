@@ -4,13 +4,17 @@ use wml2::{draw::image_from, jpegxl::*, limits::DecodeLimits, metadata::DataMap}
 mod allocation_tracking;
 #[global_allocator]
 static ALLOCATOR: allocation_tracking::Allocator = allocation_tracking::Allocator;
+type Case = (&'static [u8], &'static [u8], u8, u8, u8, usize, usize, u8);
+fn cases() -> Vec<Case> {
+    let mut cases = include!("jpeg_xl/subsampled_cases.rs").to_vec();
+    cases.extend(include!("jpeg_xl/associated_subsampling_cases.rs"));
+    cases
+}
 #[test]
 fn subsampled_pixels_dimensions_and_source_metadata_match_independent_c() {
     #[cfg(feature = "image-buffer-ex")]
     let (mut rgb_diff, mut alpha_diff) = (0, 0);
-    for (input, expected, color, alpha, shift, w, h, orientation) in
-        include!("jpeg_xl/subsampled_cases.rs")
-    {
+    for (input, expected, color, alpha, shift, w, h, orientation) in cases() {
         let expected: Vec<_> = expected
             .chunks_exact(2)
             .map(|b| u16::from_le_bytes(b.try_into().unwrap()))
@@ -75,8 +79,10 @@ fn subsampled_pixels_dimensions_and_source_metadata_match_independent_c() {
                     "{color}/{alpha}/s{shift}/o{orientation}/i{i}: {a}/{b}"
                 );
             }
-            assert!(
-                image_from_ex(input, PixelFormatEx::Rgba8, PrecisionConversion::Exact).is_err()
+            let exactly_representable = actual.iter().all(|v| v % 257 == 0);
+            assert_eq!(
+                image_from_ex(input, PixelFormatEx::Rgba8, PrecisionConversion::Exact).is_ok(),
+                exactly_representable
             );
         }
     }
@@ -95,6 +101,16 @@ fn cms_transforms_rgb_and_copies_interpolated_alpha_without_change() {
         (
             include_bytes!("fixtures/review/jxl-subsampled-3c16a8s3o5.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-subsampled-3c16a8s3o5.srgb.rgba").as_slice(),
+        ),
+        (
+            include_bytes!("fixtures/review/jxl-associated-subsampled-3c9a16s1o6.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-associated-subsampled-3c9a16s1o6.srgb.rgba")
+                .as_slice(),
+        ),
+        (
+            include_bytes!("fixtures/review/jxl-associated-subsampled-3c16a8s3o5.jxl").as_slice(),
+            include_bytes!("fixtures/review/jxl-associated-subsampled-3c16a8s3o5.srgb.rgba")
+                .as_slice(),
         ),
     ] {
         let ordinary = image_from(input).unwrap().buffer.unwrap();
@@ -121,7 +137,7 @@ fn cms_transforms_rgb_and_copies_interpolated_alpha_without_change() {
 }
 #[test]
 fn reduced_alpha_limits_truncation_and_unsupported_combinations_are_explicit() {
-    let input = include_bytes!("fixtures/review/jxl-subsampled-3c16a8s3o5.jxl");
+    let input = include_bytes!("fixtures/review/jxl-associated-subsampled-3c16a8s3o5.jxl");
     let pixels = 33 * 17;
     for limits in [
         DecodeLimits {
@@ -218,8 +234,7 @@ fn reduced_alpha_limits_truncation_and_unsupported_combinations_are_explicit() {
         assert!(image_from(&input[..end]).is_err());
     }
     for input in [
-        include_bytes!("fixtures/review/jxl-subsampled-refused-associated-subsampled-1.jxl")
-            .as_slice(),
+        include_bytes!("fixtures/review/jxl-associated-subsampled-layers-refused.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-subsampled-refused-subsampled-layers.jxl").as_slice(),
     ] {
         assert!(image_from(input).is_err());
@@ -236,6 +251,8 @@ fn each_subsampled_decode_cms_checkpoint_releases_kernel_and_owned_buffers() {
     for input in [
         include_bytes!("fixtures/review/jxl-subsampled-3c9a16s1o6.jxl").as_slice(),
         include_bytes!("fixtures/review/jxl-subsampled-3c16a8s3o5.jxl").as_slice(),
+        include_bytes!("fixtures/review/jxl-associated-subsampled-3c9a16s1o6.jxl").as_slice(),
+        include_bytes!("fixtures/review/jxl-associated-subsampled-3c16a8s3o5.jxl").as_slice(),
     ] {
         let decode = |cancel: &dyn Fn() -> bool| {
             image_from_srgb_with_resource_limits_and_cancel(
@@ -270,6 +287,24 @@ fn each_subsampled_decode_cms_checkpoint_releases_kernel_and_owned_buffers() {
                 }),
                 0
             );
+        }
+    }
+}
+
+#[test]
+fn association_descriptor_and_rounding_remain_explicit() {
+    for (input, _, _, _, _, _, _, _) in include!("jpeg_xl/associated_subsampling_cases.rs") {
+        let ordinary = image_from(input).unwrap();
+        assert!(matches!(
+            ordinary.metadata.as_ref().unwrap()["JPEG XL Source Alpha Associated"],
+            DataMap::Bool(true)
+        ));
+        #[cfg(feature = "image-buffer-ex")]
+        {
+            use wml2::draw::{PixelFormatEx, PrecisionConversion, image_from_ex};
+            let im =
+                image_from_ex(input, PixelFormatEx::Rgba8, PrecisionConversion::Round).unwrap();
+            assert_eq!(im.bytes().unwrap(), ordinary.buffer.as_ref().unwrap());
         }
     }
 }

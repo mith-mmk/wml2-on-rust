@@ -83,3 +83,10 @@ before /149.827–153.162µs after. No speedup is inferred from these difference
 Three new16/10 process medians span ordinary73.569–75.182µs and managed
 159.402–176.232µs. Configuration, per-block numbers and common control hash/size
 are in the validation JSON; the harness is `jpegxl_alpha_bench.rs`.
+
+
+The subsequent [associated subsampling stage](jpeg-xl-associated-subsampling.md)
+implements that integer combination within the same bounded frame envelope. EX
+Exact remains value-aware: native Rgba16 can narrow exactly when every value is
+representable; otherwise use Round. Earlier descriptions of Rgba16 as required
+refer to native output, not an unconditional rejection of exact narrowing.

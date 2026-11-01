@@ -12,6 +12,7 @@ int main(int argc,char**argv) {
   unsigned subsample=0;
   if(!strcmp(argv[9],"subsampled"))subsample=1;
   else if(!strcmp(argv[9],"subsampled-layers"))subsample=1;
+  else if(!strcmp(argv[9],"associated-subsampled-layers"))subsample=1;
   else if(!strncmp(argv[9],"associated-subsampled-",22))subsample=(unsigned)atoi(argv[9]+22);
   else if(!strncmp(argv[9],"subsampled-",11))subsample=(unsigned)atoi(argv[9]+11);
   CHECK(subsample<=3);
@@ -38,7 +39,7 @@ int main(int argc,char**argv) {
   for(size_t i=0;i<(size_t)w*h;i++)memcpy(plane+i*2,input+(i*(color+1)+color)*2,2);
   if(nonalpha){for(size_t i=0;i<(size_t)w*h;i++)memmove(input+i*color*2,input+i*(color+1)*2,color*2);size=(size_t)w*h*color*2;}
   CHECK(JxlEncoderAddImageFrame(settings,&format,input,size)==JXL_ENC_SUCCESS);
-  if(!strcmp(argv[9],"associated-layers")||!strcmp(argv[9],"subsampled-layers"))CHECK(JxlEncoderAddImageFrame(settings,&format,input,size)==JXL_ENC_SUCCESS);
+  if(!strcmp(argv[9],"associated-layers")||!strcmp(argv[9],"subsampled-layers")||!strcmp(argv[9],"associated-subsampled-layers"))CHECK(JxlEncoderAddImageFrame(settings,&format,input,size)==JXL_ENC_SUCCESS);
   JxlPixelFormat extra_format={1,JXL_TYPE_UINT16,JXL_LITTLE_ENDIAN,0};
   if(nonalpha||info.num_extra_channels==2)CHECK(JxlEncoderSetExtraChannelBuffer(settings,&extra_format,plane,(size_t)w*h*2,nonalpha?0:1)==JXL_ENC_SUCCESS);
   free(plane);JxlEncoderCloseInput(enc);

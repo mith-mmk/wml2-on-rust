@@ -769,7 +769,6 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
                     && (c.dim_shift() > 3
                         || HDR
                         || FLOAT_BITS != 0
-                        || c.alpha_associated()
                         || m.xyb_encoded
                         || m.preview.is_some()))
                 || (HDR

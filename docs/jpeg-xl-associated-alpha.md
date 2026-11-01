@@ -87,3 +87,10 @@ are recorded without claiming either a speedup or an established absence of
 regression. Three independent runs of the newly accepted oriented ICC case take
 ordinary74.380–77.615µs and managed152.121–153.793µs median per decode. All use
 Rust1.91 release, identical feature flags, CPU0,3 warmups then1000 timed samples.
+
+
+The subsequent [associated subsampling stage](jpeg-xl-associated-subsampling.md)
+implements that integer combination within the same bounded frame envelope. EX
+Exact remains value-aware: native Rgba16 can narrow exactly when every value is
+representable; otherwise use Round. Earlier descriptions of Rgba16 as required
+refer to native output, not an unconditional rejection of exact narrowing.

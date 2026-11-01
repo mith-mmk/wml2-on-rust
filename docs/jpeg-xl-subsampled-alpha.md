@@ -93,3 +93,10 @@ and ranges in the validation JSON. Ranges overlap; no speedup inference is made.
 New33×17 8× costs are recorded separately because the parent rejects that input.
 Three warmups then1000 samples/process, Rust1.91 release and identical features;
 full per-block variability is retained in JSON. No merge, approval or release.
+
+
+The subsequent [associated subsampling stage](jpeg-xl-associated-subsampling.md)
+implements that integer combination within the same bounded frame envelope. EX
+Exact remains value-aware: native Rgba16 can narrow exactly when every value is
+representable; otherwise use Round. Earlier descriptions of Rgba16 as required
+refer to native output, not an unconditional rejection of exact narrowing.

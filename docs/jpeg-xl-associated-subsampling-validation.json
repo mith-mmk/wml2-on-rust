@@ -1,0 +1,181 @@
+{
+  "base_sha": "1543251aebe9047b1b5dbb9e26d4bdefdf821014",
+  "scope": "Unmerged associated declared2/4/8x integer subsampling under unchanged #86 envelope/caps; native straight RGBA16, value-aware Exact/Round unchanged",
+  "source_inspection": [
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/frame/render.rs",
+      "sha256": "d8748209a0bf3aa90757174d27d1a3e9bdf2af46880f3aeffa9c814cb3339c1e",
+      "matches_locked_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/render/stages/premultiply_alpha.rs",
+      "sha256": "9532f08d1d2c72a2d199aa69a0d470c101acfb2032c8dc1292afe45abf1b507e",
+      "matches_locked_archive": true
+    }
+  ],
+  "native": {
+    "expanded": "50lib+43main+6associated+3layers+5linear+3encodedHDR+4F32+4F16+11preview+11resources+5subsampled=145 passing tests",
+    "minimal": "31main+3subsampled pass",
+    "disabled": "target compiles with0 tests",
+    "new_c_oracle_cases": 49,
+    "combined_subsampled_cases": 98,
+    "c_decodable_new_layer_refusal": 1,
+    "observed_maximum_rgb_u16_difference": 1,
+    "observed_maximum_alpha_u16_difference": 1,
+    "cancellation_checkpoints": [
+      24,
+      24,
+      24,
+      24
+    ],
+    "heap": "Scoped current-thread net requested allocation0 after each cancellation/result drop; no global allocator/RSS bound",
+    "cms": "Four RGB ICC/depth/association cases; source/reconstruction ICC identity exact; own interpolated alpha copied unchanged; C+LittleCMS RGB<=2u8/alpha<=1u8",
+    "exact_policy": "Rgba8 Exact accepted iff all native Rgba16 samples are multiples of257; Round matches ordinary bytes"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 560,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 15073280,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "db48b92006dc02a807c8b8cf4a0e8153462bca3b228ea0a773af7a1a672e2068",
+    "scope": "COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; declared2/4/8x straight+associated subsampled alpha (98 native/legacy cases, coded-plane metadata, exact workspace boundary, unsupported layers; association, Exact/Round policy), plus associated8/9/10/12/16 integer/mixed alpha explicit straight normalization (66 independent vectors including colored zero-alpha, all depth pairs, source depths, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "performance": {
+    "cpu": 0,
+    "build": "Rust1.91 release; jpeg-xl,color-management,image-buffer-ex; identical harness/input;3 warmups then1000 samples/process;6 alternating paired process blocks",
+    "before_sha": "1543251aebe9047b1b5dbb9e26d4bdefdf821014",
+    "controls": {
+      "ordinary": {
+        "block_medians_ns": [
+          {
+            "before": 161319.0,
+            "after": 159732.0
+          },
+          {
+            "after": 193742.0,
+            "before": 159121.0
+          },
+          {
+            "before": 161339.5,
+            "after": 191864.0
+          },
+          {
+            "after": 163543.0,
+            "before": 162636.5
+          },
+          {
+            "before": 158785.5,
+            "after": 159176.5
+          },
+          {
+            "after": 179491.5,
+            "before": 199551.0
+          }
+        ],
+        "before_median_ns": 161329.25,
+        "after_median_ns": 171517.25,
+        "ratio": 1.0631503586609372,
+        "common_hash_and_size": [
+          "5587899073506242096",
+          "17",
+          "33"
+        ]
+      },
+      "managed": {
+        "block_medians_ns": [
+          {
+            "before": 1971740.0,
+            "after": 1965822.0
+          },
+          {
+            "after": 1959943.0,
+            "before": 1965862.0
+          },
+          {
+            "before": 1963558.5,
+            "after": 1973739.0
+          },
+          {
+            "after": 1960314.0,
+            "before": 1952402.0
+          },
+          {
+            "before": 1967420.0,
+            "after": 1960068.0
+          },
+          {
+            "after": 1975586.0,
+            "before": 1946751.5
+          }
+        ],
+        "before_median_ns": 1964710.25,
+        "after_median_ns": 1963068.0,
+        "ratio": 0.9991641261096897,
+        "common_hash_and_size": [
+          "6796667049832999356",
+          "17",
+          "33"
+        ]
+      }
+    },
+    "new_subsampled": {
+      "ordinary": [
+        200533.0,
+        200728.0,
+        163598.0
+      ],
+      "managed": [
+        1249897.0,
+        1225357.0,
+        1215423.5
+      ]
+    },
+    "ordinary_diagnostic": {
+      "reason": "1000-sample ordinary after-blocks showed clustered slow intervals; one bounded longer-block repeat to check reproducibility",
+      "warmups": 3,
+      "samples_per_process": 5000,
+      "cpu": 0,
+      "blocks": [
+        {
+          "before": 162626.0,
+          "after": 157994.0
+        },
+        {
+          "after": 159336.5,
+          "before": 181604.0
+        },
+        {
+          "before": 162261.0,
+          "after": 178270.0
+        },
+        {
+          "after": 158650.5,
+          "before": 158595.5
+        },
+        {
+          "before": 159772.0,
+          "after": 161359.0
+        },
+        {
+          "after": 159126.0,
+          "before": 161300.0
+        }
+      ],
+      "ratio": 0.9842425385012409
+    }
+  },
+  "display": {
+    "file": ".test-associated-subsampling-display.png",
+    "sha256": "b741acc1d8d437e067cbf4afadea65cf096344b5ee4dde54553e66db99eb09a4",
+    "result": "Paired C+LittleCMS/WML2 associated8x oriented checkerboard renders visually agree"
+  },
+  "remaining": "General non-alpha/multiple extra planes, broader frames and associated preview/XYB/float/HDR; #42 open",
+  "platforms": "Local Linux Rust1.91 and actual Node24 WASM; macOS/Windows/Windows32 are CI rather than local execution"
+}

@@ -253,12 +253,12 @@ fn associated_integer_abort_and_early_limits_follow_existing_callback_contract()
 
 #[test]
 fn subsampled_abort_and_early_limits_follow_existing_callback_contract() {
- let input=include_bytes!("../fixtures/review/jxl-subsampled-3c16a8s3o5.jxl");
+ let input=include_bytes!("../fixtures/review/jxl-associated-subsampled-3c16a8s3o5.jxl");
  for native in [false,true] {
   for (abort,expected) in [("init",vec!["init","end"]),("draw",vec!["init","draw","end"]),("metadata",vec!["init","draw","metadata","end"])] {
    let mut p=Probe{abort:Some(abort),..Default::default()};probe(input,&mut p,DecodeLimits::default(),native).unwrap();assert_eq!(p.events,expected);
   }
   for limits in [DecodeLimits{pixels:560,..Default::default()},DecodeLimits{animation_bytes:1,..Default::default()},DecodeLimits{metadata_bytes:0,..Default::default()}] {let mut p=Probe::default();assert!(probe(input,&mut p,limits,native).is_err());assert!(p.events.is_empty());}
  }
- for input in [include_bytes!("../fixtures/review/jxl-subsampled-refused-associated-subsampled-1.jxl").as_slice(),include_bytes!("../fixtures/review/jxl-subsampled-refused-subsampled-layers.jxl").as_slice()]{let mut p=Probe::default();assert!(probe(input,&mut p,DecodeLimits::default(),false).is_err());assert!(p.events.is_empty());}
+ for input in [include_bytes!("../fixtures/review/jxl-associated-subsampled-layers-refused.jxl").as_slice(),include_bytes!("../fixtures/review/jxl-subsampled-refused-subsampled-layers.jxl").as_slice()]{let mut p=Probe::default();assert!(probe(input,&mut p,DecodeLimits::default(),false).is_err());assert!(p.events.is_empty());}
 }

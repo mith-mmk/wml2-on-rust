@@ -646,3 +646,74 @@ blocks; medians60.472/60.453ms (ratio0.99967). This is a small workload check, n
 a universal performance guarantee. Stack: #80 → #79 → #78 → #77 → #76 → #75 →
 #73 → #72. Product dependencies/caps are unchanged; #74 remains unapplied. #46
 stays open for remaining float/HDR/tone-map work and unmerged implementation.
+
+### Development: encoded PQ/HLG preservation (#46)
+
+`image_hdr_encoded_from_with_resource_limits_and_cancel` returns `JxlEncodedHdrImage`
+with oriented normalized F32 **code values** in `rgba_encoded` and `JxlHdrSignal`.
+This step accepts structured original-profile Modular integer16 RGB, Rec.2020/D65,
+PQ or HLG, optionally matching full-resolution straight integer16 alpha. Input
+integer code values use full-range normalization q/65535. RGB is not linear light
+or luminance; alpha is linear opacity in0..=1 and never receives a transfer/gamut
+operation. Primaries/white, transfer, rendering intent and JPEG XL source fields
+intensity_target/min_nits/relative_to_max_display/linear_below are preserved.
+Public source/output descriptors must match bounded preflight and are observed
+again after decoding; source tone metadata is cross-checked against BasicInfo.
+
+PQ and HLG are distinct enum values. PQ's EOTF is absolute-luminance signaling
+(code1 corresponds to10000cd/m² for its equivalent neutral component); HLG's
+scene-relative signal needs declared display peak/black/system-gamma conditions
+for a display EOTF/OOTF. This endpoint applies neither, chooses no HLG viewing
+condition, and does not use intensity_target as a new normalization divisor.
+No linearization, tone mapping, gamut conversion or SDR display result is implied.
+See [Khronos Data Format §13.5–13.6](https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html)
+and [ITU-R BT.2100](https://www.itu.int/rec/R-REC-BT.2100). A later renderer would
+need a separate, explicit interpretation/condition contract; this preservation
+step needs no speculative user display choice.
+
+Structured JXL source encoding has no literal embedded ICC bytes. The pinned0.8
+HDR ICC factory can synthesize tone-mapped LUT profiles (api/color.rs HDR factory
+and tests); these are not fabricated as unprocessed original-profile bytes. The
+endpoint returns the actual structured signal instead and never calls that factory.
+Embedded-ICC HDR, P3/custom primaries/white, float HDR, associated/unhandled alpha
+and other existing unqualified forms return errors. SDR, F32/F16 and main/EX/sRGB
+entrypoint contracts remain unchanged; no alternate silent success is introduced.
+
+The integer admission mode is separately specialized for HDR, preserving all input,
+box/metadata, pixel, padded/reference/layer/TOC and byte caps. Structured signal and
+16-byte-per-pixel output are cumulatively admitted without ICC-generation storage.
+RGB/alpha must be finite normalized coordinates; no clamping is used to repair
+invalid samples. Complete event sequence/length, final signal descriptor, typed
+cooperative cancellation and private-until-success publication remain. The scoped
+allocation tracker reports zero owned-storage residue at all12 local checkpoints.
+These are conservative admission/adapter guarantees, not global codec heap/RSS.
+
+Six independent C libjxl0.11.2 references cover PQ/HLG RGB/RGBA,0/1 and fractional
+codes/alpha, default and nondefault source luminance fields and orientation6. C
+queries ORIGINAL and DATA structured descriptions separately, and its kept code
+coordinates agree with input uint16/65535 within2^-24. Product F32 arrays
+are byte-exact to C. Identical code arrays tagged PQ versus HLG remain identical
+numbers but have distinct signals. P3, embedded HDR ICC and associated-alpha inputs
+are C-decodable refusal fixtures. Fingerprinted zero/infinite intensity-header
+mutations fail both C and product; no valid malformed source is claimed. Every
+truncated prefix, output/metadata/workspace boundaries and source-type refusals
+are tested. Existing native/preview/main oracle tests retain their behavior.
+
+Reproduce with the #68-derived `jpegxl_hdr_encoded_reference.c` (test-only tone/
+structured-DATA reporting additions) and
+`python3 wml2-test/scripts/generate_jpegxl_encoded_hdr.py --reference .test-reference --work .test-hdr-fixtures`.
+[Independent hashes and metadata](jpeg-xl-encoded-hdr-validation.json). The committed
+`verify_jpegxl_wasm.py --hdr-encoded --output .test-hdr-wasm` harness executes47
+checks/12 cancellation positions locally on Node24.19.0, no imports,1,507,328 bytes
+of module memory and an enforced32MiB ceiling. Existing39 F16 and229 standard WASM
+checks also pass. Native3 HDR,4 F16,4 F32,11 preview,44lib,41 main,3 layer and11
+resource tests pass in available feature builds. Diagnostic display compares code
+values only and is explicitly not an HDR/gamut renderer.
+
+Rust1.91 release tiny HDR preservation (20 warmups,3 processes ×1000 calls) takes
+46.784/46.325/45.151ms. Existing F32 pinned-CPU0 six balanced process blocks compare
+#81/current medians60.959/61.415ms (ratio1.00749, within measured process variability);
+no universal performance claim follows. Stack: #81 → #80 → #79 → #78 → #77 → #76
+→ #75 → #73 → #72; #74 remains unapplied. Dependencies/caps are unchanged. #46
+stays open for remaining HDR/float/linearization/display work; this is unmerged
+implementation, not released/main support.

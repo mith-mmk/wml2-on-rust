@@ -449,6 +449,7 @@ struct Header {
     source_header_bytes: usize,
     workspace: usize,
     preview_workspace: usize,
+    hdr: Option<JxlHdrSignal>,
     sample_limit: usize,
 }
 
@@ -475,7 +476,7 @@ fn validate_basic_info(info: &JxlBasicInfo, h: &Header) -> Result<(), Error> {
 // reference layers may exceed or lie outside the displayed canvas. Admit their
 // actual padded storage before the codec allocates pixels, then leave cropping,
 // orientation and blending to its coalescing render pipeline.
-fn frame_workspace<const FLOAT_BITS: u32>(
+fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool>(
     input: &[u8],
     header: &FileHeader,
     frame_bits: usize,
@@ -654,11 +655,11 @@ fn preflight_with_resources(
     limits: DecodeLimits,
     policy: JxlResourceLimits,
 ) -> Result<Header, Error> {
-    preflight_samples::<0>(input, limits, policy)
+    preflight_samples::<0, false>(input, limits, policy)
 }
 
 // 0 retains the integer contract; 16/32 select exact floating source layouts.
-fn preflight_samples<const FLOAT_BITS: u32>(
+fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
     input: &Input,
     limits: DecodeLimits,
     policy: JxlResourceLimits,
@@ -677,6 +678,16 @@ fn preflight_samples<const FLOAT_BITS: u32>(
     let m = &header.image_metadata;
     if m.animation.is_some() {
         return Err(unsupported("JPEG XL animations are unsupported"));
+    }
+    if HDR
+        && (m.bit_depth.floating_point_sample()
+            || m.bit_depth.bits_per_sample() != 16
+            || m.xyb_encoded
+            || m.color_encoding.want_icc)
+    {
+        return Err(unsupported(
+            "encoded HDR currently requires structured original-profile integer16",
+        ));
     }
     let bits = m.bit_depth.bits_per_sample();
     if FLOAT_BITS != 0
@@ -703,6 +714,9 @@ fn preflight_samples<const FLOAT_BITS: u32>(
             c.ec_type != ExtraChannel::Alpha
                 || c.alpha_associated()
                 || c.dim_shift() != 0
+                || (HDR
+                    && (c.bit_depth().floating_point_sample()
+                        || c.bit_depth().bits_per_sample() != 16))
                 || if FLOAT_BITS != 0 {
                     !c.bit_depth().floating_point_sample()
                         || c.bit_depth().bits_per_sample() != FLOAT_BITS
@@ -714,7 +728,9 @@ fn preflight_samples<const FLOAT_BITS: u32>(
                 }
         })
     {
-        return Err(unsupported(if FLOAT_BITS != 0 {
+        return Err(unsupported(if HDR {
+            "encoded HDR requires at most one full-resolution straight integer16 alpha"
+        } else if FLOAT_BITS != 0 {
             if FLOAT_BITS == 16 {
                 "JPEG XL F16 requires matching full-resolution straight float alpha (16 bits, 5 exponent bits)"
             } else {
@@ -737,20 +753,61 @@ fn preflight_samples<const FLOAT_BITS: u32>(
         bits as u8
     };
     use jxl_preflight::headers::color_encoding::{ColorSpace, TransferFunction};
-    if !matches!(
-        m.color_encoding.color_space,
-        ColorSpace::Gray | ColorSpace::RGB
-    ) || (!m.color_encoding.want_icc
-        && matches!(
-            m.color_encoding.tf.transfer_function,
-            TransferFunction::PQ | TransferFunction::HLG
-        ))
-        || !m.tone_mapping.all_default
-    {
-        return Err(unsupported(
-            "JPEG XL HDR/tone mapping and non-Gray/RGB colour are unsupported",
-        ));
-    }
+    let hdr = if HDR {
+        use jxl_preflight::headers::color_encoding::{Primaries, WhitePoint};
+        let c = &m.color_encoding;
+        let t = &m.tone_mapping;
+        let transfer = match c.tf.transfer_function {
+            TransferFunction::PQ => JxlHdrTransfer::Pq,
+            TransferFunction::HLG => JxlHdrTransfer::Hlg,
+            _ => return Err(unsupported("encoded HDR requires PQ or HLG")),
+        };
+        if c.color_space != ColorSpace::RGB
+            || c.primaries != Primaries::BT2100
+            || c.white_point != WhitePoint::D65
+        {
+            return Err(unsupported(
+                "encoded HDR currently requires Rec.2020 RGB with D65",
+            ));
+        }
+        if ![t.intensity_target, t.min_nits, t.linear_below]
+            .iter()
+            .all(|v| v.is_finite())
+            || t.intensity_target <= 0.0
+            || t.min_nits < 0.0
+            || t.min_nits > t.intensity_target
+            || t.linear_below < 0.0
+            || (t.relative_to_max_display && t.linear_below > 1.0)
+        {
+            return Err(invalid("invalid encoded HDR luminance metadata"));
+        }
+        Some(JxlHdrSignal {
+            transfer,
+            primaries_xy: [[0.708, 0.292], [0.170, 0.797], [0.131, 0.046]],
+            white_xy: [0.3127, 0.3290],
+            rendering_intent: c.rendering_intent as u8,
+            intensity_target: t.intensity_target,
+            min_nits: t.min_nits,
+            relative_to_max_display: t.relative_to_max_display,
+            linear_below: t.linear_below,
+        })
+    } else {
+        if !matches!(
+            m.color_encoding.color_space,
+            ColorSpace::Gray | ColorSpace::RGB
+        ) || (!m.color_encoding.want_icc
+            && matches!(
+                m.color_encoding.tf.transfer_function,
+                TransferFunction::PQ | TransferFunction::HLG
+            ))
+            || !m.tone_mapping.all_default
+        {
+            return Err(unsupported(
+                "JPEG XL HDR/tone mapping and non-Gray/RGB colour are unsupported",
+            ));
+        }
+        None
+    };
     let dimensions = dimensions::mapped(&header.size, m.orientation, m.intrinsic_size.as_ref());
     let output = dimensions.output.unwrap();
     let (width, height) = (output.width as usize, output.height as usize);
@@ -805,7 +862,7 @@ fn preflight_samples<const FLOAT_BITS: u32>(
         limits.expanded_bytes,
         "JPEG XL decode workspace",
     )?;
-    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT_BITS>(
+    let (workspace, sample_limit, preview_workspace) = frame_workspace::<FLOAT_BITS, HDR>(
         &input.codestream,
         &header,
         frame_bits,
@@ -833,6 +890,7 @@ fn preflight_samples<const FLOAT_BITS: u32>(
         source_header_bytes: header_bytes,
         workspace,
         preview_workspace,
+        hdr,
         sample_limit,
     })
 }
@@ -965,6 +1023,80 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
     decode::<B, false, false>(reader, option, true, None, None)
 }
 
+/// Transfer of unlinearized normalized Rec.2020/D65 RGB code values.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum JxlHdrTransfer {
+    Pq,
+    Hlg,
+}
+/// Matching source/output color encoding plus verbatim source luminance metadata.
+/// No ICC is fabricated; luminance fields are not selected display conditions.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct JxlHdrSignal {
+    pub transfer: JxlHdrTransfer,
+    pub primaries_xy: [[f32; 2]; 3],
+    pub white_xy: [f32; 2],
+    /// 0 perceptual,1 relative colorimetric,2 saturation,3 absolute colorimetric.
+    pub rendering_intent: u8,
+    pub intensity_target: f32,
+    pub min_nits: f32,
+    pub relative_to_max_display: bool,
+    pub linear_below: f32,
+}
+/// Oriented encoded HDR RGB code coordinates in0..=1, with linear straight alpha.
+/// PQ is absolute-luminance signaling; HLG is relative scene signaling. Neither
+/// EOTF/OOTF, display peak/system gamma nor a tone/gamut operator is applied.
+#[derive(Debug)]
+pub struct JxlEncodedHdrImage {
+    pub dimensions: crate::image_info::ImageDimensions,
+    pub source_orientation: u8,
+    pub rgba_encoded: Vec<f32>,
+    pub signal: JxlHdrSignal,
+}
+/// Preserve structured original-profile Modular integer16 PQ/HLG Rec.2020/D65.
+/// Source/output structured descriptors must agree. Embedded ICC, float HDR,
+/// arbitrary primaries and display rendering remain unsupported.
+pub fn image_hdr_encoded_from_with_resource_limits_and_cancel(
+    bytes: &[u8],
+    limits: DecodeLimits,
+    policy: JxlResourceLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<JxlEncodedHdrImage, Error> {
+    let image = image_signal_f32::<0, true>(bytes, limits, policy, cancelled)?;
+    Ok(JxlEncodedHdrImage {
+        dimensions: image.dimensions,
+        source_orientation: image.source_orientation,
+        rgba_encoded: image.rgba,
+        signal: image
+            .hdr
+            .ok_or_else(|| invalid("missing encoded HDR signal"))?,
+    })
+}
+fn validate_hdr_profile(
+    profile: Option<&JxlColorProfile>,
+    signal: &JxlHdrSignal,
+) -> Result<(), Error> {
+    match profile {
+        Some(JxlColorProfile::Simple(JxlColorEncoding::RgbColorSpace {
+            white_point: JxlWhitePoint::D65,
+            primaries: JxlPrimaries::BT2100,
+            transfer_function,
+            rendering_intent,
+        })) if *rendering_intent as u8 == signal.rendering_intent
+            && matches!(
+                (signal.transfer, transfer_function),
+                (JxlHdrTransfer::Pq, JxlTransferFunction::PQ)
+                    | (JxlHdrTransfer::Hlg, JxlTransferFunction::HLG)
+            ) =>
+        {
+            Ok(())
+        }
+        _ => Err(invalid(
+            "encoded HDR public profile disagrees with bounded source signal",
+        )),
+    }
+}
+
 /// Native original-profile SDR samples in F32 storage, with orientation applied.
 ///
 /// RGBA samples are native f32, not normalized integer output. RGB may be
@@ -994,7 +1126,7 @@ pub fn image_f32_from_with_resource_limits_and_cancel(
     policy: JxlResourceLimits,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<JxlF32Image, Error> {
-    image_native_float::<32>(bytes, limits, policy, cancelled)
+    image_signal_f32::<32, false>(bytes, limits, policy, cancelled).map(SignalF32::into_sdr)
 }
 
 /// Decode original-profile Modular F16 input into exact F32 storage.
@@ -1009,15 +1141,38 @@ pub fn image_f16_as_f32_from_with_resource_limits_and_cancel(
     policy: JxlResourceLimits,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<JxlF32Image, Error> {
-    image_native_float::<16>(bytes, limits, policy, cancelled)
+    image_signal_f32::<16, false>(bytes, limits, policy, cancelled).map(SignalF32::into_sdr)
 }
 
-fn image_native_float<const SOURCE_BITS: u32>(
+// Internal carrier: structured HDR intentionally has no fabricated ICC bytes.
+struct SignalF32 {
+    dimensions: crate::image_info::ImageDimensions,
+    source_orientation: u8,
+    color_channels: u8,
+    rgba: Vec<f32>,
+    source_icc: Vec<u8>,
+    output_icc: Vec<u8>,
+    hdr: Option<JxlHdrSignal>,
+}
+impl SignalF32 {
+    fn into_sdr(self) -> JxlF32Image {
+        JxlF32Image {
+            dimensions: self.dimensions,
+            source_orientation: self.source_orientation,
+            color_channels: self.color_channels,
+            rgba: self.rgba,
+            source_icc: self.source_icc,
+            output_icc: self.output_icc,
+        }
+    }
+}
+
+fn image_signal_f32<const SOURCE_BITS: u32, const HDR: bool>(
     bytes: &[u8],
     limits: DecodeLimits,
     policy: JxlResourceLimits,
     cancelled: &dyn Fn() -> bool,
-) -> Result<JxlF32Image, Error> {
+) -> Result<SignalF32, Error> {
     let cancellation = Cancellation {
         probe: Some(cancelled),
         cancelled: std::cell::Cell::new(false),
@@ -1038,7 +1193,7 @@ fn image_native_float<const SOURCE_BITS: u32>(
     )?;
     let input = unpack_with_resources(bytes, limits, Some(policy))?;
     check()?;
-    let h = preflight_samples::<SOURCE_BITS>(&input, limits, policy)?;
+    let h = preflight_samples::<SOURCE_BITS, HDR>(&input, limits, policy)?;
     check()?;
     let pixels = mul(h.width, h.height)?;
     let output_bytes = mul(pixels, 16)?;
@@ -1049,7 +1204,14 @@ fn image_native_float<const SOURCE_BITS: u32>(
     )?;
     let mut workspace = resources::Workspace::new(h.workspace, limits.expanded_bytes)?;
     workspace.claim(output_bytes, "JPEG XL F32 output workspace")?;
-    workspace.claim(64 * 1024, "JPEG XL F32 generated profile workspace")?;
+    if HDR {
+        workspace.claim(
+            std::mem::size_of::<JxlHdrSignal>(),
+            "JPEG XL structured HDR signal workspace",
+        )?;
+    } else {
+        workspace.claim(64 * 1024, "JPEG XL F32 generated profile workspace")?;
+    }
     let mut options = JxlDecoderOptions::default();
     options.sample_limit = Some(h.sample_limit);
     options.adjust_orientation = true;
@@ -1074,13 +1236,22 @@ fn image_native_float<const SOURCE_BITS: u32>(
         .ok_or_else(|| invalid("missing JPEG XL F32 basic info"))?;
     if info.size != (h.width, h.height)
         || info.orientation as u8 != h.orientation
-        || !matches!(
-            info.bit_depth,
-            JxlBitDepth::Float {
-                bits_per_sample,
-                exponent_bits_per_sample
-            } if bits_per_sample == SOURCE_BITS && exponent_bits_per_sample == if SOURCE_BITS == 16 {5} else {8}
-        )
+        || if HDR {
+            !matches!(
+                info.bit_depth,
+                JxlBitDepth::Int {
+                    bits_per_sample: 16
+                }
+            )
+        } else {
+            !matches!(
+                info.bit_depth,
+                JxlBitDepth::Float {
+                    bits_per_sample,
+                    exponent_bits_per_sample
+                } if bits_per_sample == SOURCE_BITS && exponent_bits_per_sample == if SOURCE_BITS == 16 {5} else {8}
+            )
+        }
         || !info.uses_original_profile
         || info.animation.is_some()
         || info.extra_channels.len() != usize::from(h.alpha_bits.is_some())
@@ -1093,6 +1264,22 @@ fn image_native_float<const SOURCE_BITS: u32>(
             "JPEG XL F32 basic info disagrees with bounded preflight",
         ));
     }
+    if let Some(signal) = h.hdr {
+        let t = &info.tone_mapping;
+        if [t.intensity_target, t.min_nits, t.linear_below]
+            != [
+                signal.intensity_target,
+                signal.min_nits,
+                signal.linear_below,
+            ]
+            || t.relative_to_max_display != signal.relative_to_max_display
+        {
+            return Err(invalid(
+                "encoded HDR tone metadata disagrees with bounded preflight",
+            ));
+        }
+        validate_hdr_profile(decoder.embedded_color_profile(), &signal)?;
+    }
     let extras = info.extra_channels.len();
     let format = JxlPixelFormat {
         color_type: JxlColorType::Rgba,
@@ -1104,34 +1291,41 @@ fn image_native_float<const SOURCE_BITS: u32>(
     decoder
         .set_pixel_format(format)
         .map_err(|e| cancellation.codec_error(e))?;
-    let mut retained_metadata = input.metadata_bytes;
-    let mut copy_profile = |profile: Option<&JxlColorProfile>| -> Result<Vec<u8>, Error> {
-        check()?;
-        let profile = profile
-            .ok_or_else(|| invalid("missing JPEG XL F32 profile"))?
-            .try_as_icc()
-            .ok_or_else(|| unsupported("JPEG XL F32 ICC unavailable"))?;
-        validate_icc(&profile, h.color_channels)?;
-        let next = add(retained_metadata, profile.len())?;
-        limits::check(next, limits.metadata_bytes, "JPEG XL F32 retained metadata")?;
-        workspace.claim(profile.len(), "JPEG XL F32 retained profile workspace")?;
-        retained_metadata = next;
-        let mut bytes = Vec::new();
-        bytes.try_reserve_exact(profile.len())?;
-        bytes.extend_from_slice(&profile);
-        check()?;
-        Ok(bytes)
+    let (source_icc, output_icc) = if HDR {
+        validate_hdr_profile(decoder.output_color_profile(), &h.hdr.unwrap())?;
+        // Do not call the HDR ICC factory: its generated LUT can include tone mapping.
+        (Vec::new(), Vec::new())
+    } else {
+        let mut retained_metadata = input.metadata_bytes;
+        let mut copy_profile = |profile: Option<&JxlColorProfile>| -> Result<Vec<u8>, Error> {
+            check()?;
+            let profile = profile
+                .ok_or_else(|| invalid("missing JPEG XL F32 profile"))?
+                .try_as_icc()
+                .ok_or_else(|| unsupported("JPEG XL F32 ICC unavailable"))?;
+            validate_icc(&profile, h.color_channels)?;
+            let next = add(retained_metadata, profile.len())?;
+            limits::check(next, limits.metadata_bytes, "JPEG XL F32 retained metadata")?;
+            workspace.claim(profile.len(), "JPEG XL F32 retained profile workspace")?;
+            retained_metadata = next;
+            let mut bytes = Vec::new();
+            bytes.try_reserve_exact(profile.len())?;
+            bytes.extend_from_slice(&profile);
+            check()?;
+            Ok(bytes)
+        };
+        let source_icc = copy_profile(decoder.embedded_color_profile())?;
+        let output_icc = copy_profile(decoder.output_color_profile())?;
+        limits::check(
+            add(
+                add(input.metadata_bytes, source_icc.len())?,
+                output_icc.len(),
+            )?,
+            limits.metadata_bytes,
+            "JPEG XL F32 retained metadata",
+        )?;
+        (source_icc, output_icc)
     };
-    let source_icc = copy_profile(decoder.embedded_color_profile())?;
-    let output_icc = copy_profile(decoder.output_color_profile())?;
-    limits::check(
-        add(
-            add(input.metadata_bytes, source_icc.len())?,
-            output_icc.len(),
-        )?,
-        limits.metadata_bytes,
-        "JPEG XL F32 retained metadata",
-    )?;
     expect_event(
         decoder
             .process(&mut stream, None, Some(&mut runner))
@@ -1165,31 +1359,45 @@ fn image_native_float<const SOURCE_BITS: u32>(
         return Err(invalid("JPEG XL F32 trailing/incomplete codestream"));
     }
     check()?;
-    // Observe DATA after completion as well; do not infer it from ORIGINAL.
-    let final_profile = decoder
-        .output_color_profile()
-        .ok_or_else(|| invalid("missing completed JPEG XL F32 profile"))?
-        .try_as_icc()
-        .ok_or_else(|| unsupported("completed JPEG XL F32 ICC unavailable"))?;
-    if final_profile.as_ref() != &output_icc {
-        return Err(invalid(
-            "JPEG XL F32 output profile changed during decoding",
-        ));
+    if HDR {
+        validate_hdr_profile(decoder.output_color_profile(), &h.hdr.unwrap())?;
+    } else {
+        // Observe DATA after completion as well; do not infer it from ORIGINAL.
+        let final_profile = decoder
+            .output_color_profile()
+            .ok_or_else(|| invalid("missing completed JPEG XL F32 profile"))?
+            .try_as_icc()
+            .ok_or_else(|| unsupported("completed JPEG XL F32 ICC unavailable"))?;
+        if final_profile.as_ref() != &output_icc {
+            return Err(invalid(
+                "JPEG XL F32 output profile changed during decoding",
+            ));
+        }
+        drop(final_profile);
+        check()?;
     }
-    drop(final_profile);
-    check()?;
     for chunk in rgba.chunks(256 * 4) {
         check()?;
         validate_f32_samples(chunk)?;
+        if HDR
+            && chunk
+                .chunks_exact(4)
+                .any(|p| p[..3].iter().any(|v| !(0.0..=1.0).contains(v)))
+        {
+            return Err(invalid(
+                "encoded HDR RGB must remain normalized code coordinates",
+            ));
+        }
     }
     check()?;
-    Ok(JxlF32Image {
+    Ok(SignalF32 {
         dimensions: h.dimensions,
         source_orientation: h.orientation,
         color_channels: h.color_channels as u8,
         rgba,
         source_icc,
         output_icc,
+        hdr: h.hdr,
     })
 }
 

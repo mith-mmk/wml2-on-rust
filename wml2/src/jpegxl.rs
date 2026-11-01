@@ -950,14 +950,25 @@ pub fn preview_from_with_resource_limits(
     limits: DecodeLimits,
     resources: JxlResourceLimits,
 ) -> Result<Option<JxlPreview>, Error> {
-    Ok(preview_with_workspace(input, limits, resources)?.map(|(preview, _)| preview))
+    Ok(preview_with_workspace(input, limits, resources, None)?.map(|(preview, _)| preview))
 }
 
 fn preview_with_workspace(
     input: &[u8],
     limits: DecodeLimits,
     resources: JxlResourceLimits,
+    cancellation: Option<&Cancellation<'_>>,
 ) -> Result<Option<(JxlPreview, resources::Workspace)>, Error> {
+    let check = || cancellation.map_or(Ok(()), Cancellation::check);
+    let map_codec_error = |e| {
+        if let Some(c) = cancellation {
+            c.codec_error(e)
+        } else {
+            codec_error(e)
+        }
+    };
+    let mut runner = cancellation.map(CancellableRunner);
+    check()?;
     resources.validate()?;
     let limits = resources.tighten(limits);
     limits::check(
@@ -971,7 +982,9 @@ fn preview_with_workspace(
         "JPEG XL input assembly workspace",
     )?;
     let input = unpack_with_resources(input, limits, Some(resources))?;
+    check()?;
     let mut h = preflight_with_resources(&input, limits, resources)?;
+    check()?;
     let mut br = BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
     let header = FileHeader::read(&mut br).map_err(preflight_error)?;
     let Some(size) = header.image_metadata.preview.as_ref() else {
@@ -1004,15 +1017,21 @@ fn preview_with_workspace(
     options.high_precision = true;
     options.render_spot_colors = false;
     options.max_profile_level = ProfileLevel::Main5;
+    check()?;
     let mut decoder = JxlDecoder::new(options);
     decoder.close_input();
     let mut stream = input.codestream.as_slice();
     expect_event(
         decoder
-            .process(&mut stream, None, None)
-            .map_err(codec_error)?,
+            .process(
+                &mut stream,
+                None,
+                runner.as_mut().map(|r| r as &mut dyn JxlParallelRunner),
+            )
+            .map_err(map_codec_error)?,
         Event::BasicInfo,
     )?;
+    check()?;
     h.width = h.dimensions.coded.width as usize;
     h.height = h.dimensions.coded.height as usize;
     let info = decoder
@@ -1025,7 +1044,7 @@ fn preview_with_workspace(
     let extras = info.extra_channels.len();
     decoder
         .set_pixel_format(JxlPixelFormat::rgba16(extras))
-        .map_err(codec_error)?;
+        .map_err(map_codec_error)?;
     let profile = decoder
         .output_color_profile()
         .ok_or_else(|| invalid("missing preview output profile"))?
@@ -1043,28 +1062,40 @@ fn preview_with_workspace(
         "JPEG XL preview retained metadata",
     )?;
     workspace.claim(profile.len(), "JPEG XL preview retained profile workspace")?;
+    check()?;
     let mut icc_profile = Vec::new();
     icc_profile.try_reserve_exact(profile.len())?;
     icc_profile.extend_from_slice(&profile);
     drop(profile);
+    check()?;
     expect_event(
         decoder
-            .process(&mut stream, None, None)
-            .map_err(codec_error)?,
+            .process(
+                &mut stream,
+                None,
+                runner.as_mut().map(|r| r as &mut dyn JxlParallelRunner),
+            )
+            .map_err(map_codec_error)?,
         Event::FrameHeader,
     )?;
+    check()?;
     let mut rgba16 = aligned_output(bytes)?;
     // SAFETY: initialized u16 storage is aligned, exclusively borrowed and covers bytes.
     let output = unsafe { std::slice::from_raw_parts_mut(rgba16.as_mut_ptr().cast::<u8>(), bytes) };
     let mut buffers = [JxlOutputBuffer::new(output, height, mul(width, 8)?)];
     expect_event(
         decoder
-            .process(&mut stream, Some(&mut buffers), None)
-            .map_err(codec_error)?,
+            .process(
+                &mut stream,
+                Some(&mut buffers),
+                runner.as_mut().map(|r| r as &mut dyn JxlParallelRunner),
+            )
+            .map_err(map_codec_error)?,
         Event::FrameComplete {
             has_more_frames: true,
         },
     )?;
+    check()?;
     Ok(Some((
         JxlPreview {
             width: width as u32,
@@ -1091,13 +1122,45 @@ pub fn preview_from_srgb_with_resource_limits(
     limits: DecodeLimits,
     resources: JxlResourceLimits,
 ) -> Result<Option<crate::draw::ImageBuffer>, Error> {
+    preview_display(input, limits, resources, None)
+}
+
+/// Cancellable oriented sRGB preview; the probe semantics and DecodeCancelled
+/// error are identical to the cancellable main-image sRGB API. Probe boundaries
+/// cover admission, codec work groups, CMS batches, orientation rows and output
+/// publication. This is cooperative cancellation, not a hard time deadline.
+#[cfg(feature = "color-management")]
+pub fn preview_from_srgb_with_resource_limits_and_cancel(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<Option<crate::draw::ImageBuffer>, Error> {
+    preview_display(input, limits, resources, Some(cancelled))
+}
+
+#[cfg(feature = "color-management")]
+fn preview_display(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+    probe: Option<&dyn Fn() -> bool>,
+) -> Result<Option<crate::draw::ImageBuffer>, Error> {
+    let cancellation = Cancellation {
+        probe,
+        cancelled: std::cell::Cell::new(false),
+    };
+    let check = || cancellation.check();
+    check()?;
     resources.validate()?;
     let limits = resources.tighten(limits);
     limits::scope(limits, || {
-        let Some((mut preview, mut workspace)) = preview_with_workspace(input, limits, resources)?
+        let Some((mut preview, mut workspace)) =
+            preview_with_workspace(input, limits, resources, probe.map(|_| &cancellation))?
         else {
             return Ok(None);
         };
+        check()?;
         let (w, h) = (preview.width as usize, preview.height as usize);
         let output_bytes = mul(mul(w, h)?, 4)?;
         limits::check(
@@ -1137,7 +1200,7 @@ pub fn preview_from_srgb_with_resource_limits(
             crate::color_convert::SRGB_ICC,
             preview.color_channels == 1,
             workspace.remaining(),
-            &|| Ok(()),
+            &check,
         )?;
         workspace.release(parse)?;
         workspace.release(scratch)?;
@@ -1146,8 +1209,10 @@ pub fn preview_from_srgb_with_resource_limits(
         } else {
             (w, h)
         };
+        check()?;
         let mut output = crate::draw::zeroed_bytes(output_bytes)?;
         for y in 0..h {
+            check()?;
             for x in 0..w {
                 let (dx, dy) = preview_oriented_position(x, y, w, h, preview.orientation);
                 for c in 0..4 {
@@ -1157,6 +1222,7 @@ pub fn preview_from_srgb_with_resource_limits(
                 }
             }
         }
+        check()?;
         let mut profile = Vec::new();
         profile.try_reserve_exact(crate::color_convert::SRGB_ICC.len())?;
         profile.extend_from_slice(crate::color_convert::SRGB_ICC);
@@ -1174,6 +1240,7 @@ pub fn preview_from_srgb_with_resource_limits(
         );
         let mut image = crate::draw::ImageBuffer::from_buffer(ow, oh, output);
         image.metadata = Some(metadata);
+        check()?;
         Ok(Some(image))
     })
 }

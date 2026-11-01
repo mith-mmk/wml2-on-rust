@@ -1,0 +1,13 @@
+{
+  "source": "jxl-icc-gray16.jxl",
+  "source_sha256": "8059aecce6a855b4d24fca598978435904cba040c9f6247cbe6d034882c0c09a",
+  "construction": "Fingerprint-specific raw codestream bit splice: metadata starts31, tone mapping inserted before bit50, FileHeader ends53, ICC ends1093; new7x5 preview uses duplicated terminal frame payload. C libjxl validates both preview and main. No general serializer or product parser added.",
+  "oracle": "C libjxl0.11.2 normalized16 preview + LittleCMS2.16 relative-colorimetric RGB8 alpha bypass",
+  "preview_file": "jxl-preview-gray-icc16.jxl",
+  "preview_sha256": "2f38ee1ea401aa64c82ca459cd8bb251676023b3891b2ade70508e0cac808d3d",
+  "rgba16_sha256": "0a55bc88163aee94ec54f19a4c96328604ecd13d22a4e89c9406cfacdc44d3fc",
+  "srgb8_sha256": "d32e5d0a2f90f88a6dbe622ccf4ee7a41ea0d3941c6b02ca2e8da2e81ba442e1",
+  "icc_sha256": "42b5e9c571d2c41fca8901a23f86db33fb7b1821d23cb4878abc3647bc27ecb7",
+  "icc_space": "GRAY",
+  "header": "7 5 1 7 5 16 0"
+}

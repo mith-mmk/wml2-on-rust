@@ -471,3 +471,59 @@ Stack: #77 → #76 → #75 → #73 → #72; #74 remains unapplied. #44 now has n
 managed preview pixels in development, but stays open: caller cancellation, broader
 preview frame forms and full acceptance across the documented format envelope are
 not completed. No dependency/limit relaxation or published-release claim is made.
+
+### Development: cancellable preview and #44 acceptance
+
+`preview_from_srgb_with_resource_limits_and_cancel` adds the same cooperative
+`Fn() -> bool` probe and downcastable `DecodeCancelled` as main-image sRGB output.
+The raw and noncancellable managed signatures are preserved. Checks cover entry,
+bounded admission boundaries, codec runner work groups, CMS batches, each source
+orientation row, metadata/output allocation boundaries and final publication.
+Private preflight/ICC/TOC parsing and profile compilation remain bounded operations
+with checks around them, not an interruptible hard-deadline mechanism. A cancelled
+preview returns no ImageBuffer; partially converted native samples remain private.
+
+The 32×32 preview exercises55 checkpoints locally. Every checkpoint was cancelled
+individually and returned DecodeCancelled. After warming library state, a thread-local
+System allocator wrapper measured zero net owned heap bytes after dropping each
+error and after successful-result destruction. This verifies scoped storage cleanup,
+not global process RSS or arbitrary parallel allocator behavior. Immediate abort
+precedes malformed-input and absence handling; a false probe preserves pixels and
+normal errors. Existing sequential CancellableRunner and CMS checks are reused.
+
+Profile coverage now represents the actual SDR Gray/RGB device families: simple
+RGB and Gray, embedded RGB gamma2 and embedded Gray gamma2. The added Gray ICC
+preview is an independently C-validated fingerprint-specific bit splice of the
+existing Gray16 fixture, with normalized16 C pixels and LittleCMS sRGB expectations.
+It does not add a general serializer or loosen profile admission. HDR/float,
+associated/subsampled alpha and spot channels remain explicit UnsupportedFeature
+errors. Supported CMS profile parsing/transform errors remain errors. Gray ICC main
+RGBA expansion still requires explicit CMS; existing managed main output with and
+without preview remains identical.
+
+The original #44 acceptance maps to the development stack as follows:
+
+| Original condition | Evidence |
+| --- | --- |
+| Independent preview/main size, colour and alpha samples | #77 C preview vectors, including preview larger than main; main skip oracles |
+| Absence, damage and truncation | #76/#77/#78 query, all-prefix and entropy refusal/skip regressions |
+| Orientation and ICC | #78 all8 C+LittleCMS references; RGB/Gray ICC representative tests here |
+| Separate/combined memory limits | #77/#78 output limits, simultaneous native/output/CMS reservations and exact workspace refusal |
+| Main output oracle and existing users | Existing main/layer/resource oracles; raw and managed preview contracts remain explicit |
+
+JPEG XL preview and main share the global colour/alpha description; the independent
+fixtures differ in actual colour/alpha samples and geometry. The contract intentionally
+admits only one terminal-visible preview and requires a main frame. Arbitrary frame
+forms, all possible ICC constructions and removal of the old parser are not added as
+new #44 completion conditions. Cancellation is consistency with referenced #31.
+The original conditions are represented for this documented bounded envelope, but
+all new retrieval APIs remain unmerged draft work; #44 remains open, not advertised
+as released/main functionality. Stack: #78 → #77 → #76 → #75 → #73 → #72.
+
+Local validation:11 extended preview tests,6 minimal,44 library,41 main,3 layer and
+11 resource tests. Visual output for an oriented ICC16 preview was checked. Matched
+Rust1.91 release microbenchmarks use20 warmups and1000 calls per process. Alternating
+three processes each: #78 ordinary79.134/80.159/80.379ms versus current ordinary
+79.591/79.026/87.163ms (median essentially unchanged; visible run variability). False
+probe cancellation calls81.529/87.720/84.971ms versus paired prior79.907/80.275/
+83.530ms show callback-check overhead; no universal speedup claim.

@@ -1,4 +1,55 @@
 #![cfg(feature = "jpeg-xl")]
+#[cfg(feature = "color-management")]
+mod allocation_tracking {
+    use std::{
+        alloc::{GlobalAlloc, Layout, System},
+        cell::Cell,
+    };
+    thread_local! {static ENABLED:Cell<bool>=const{Cell::new(false)};static LIVE:Cell<isize>=const{Cell::new(0)};}
+    pub struct Allocator;
+    fn charge(n: isize) {
+        if ENABLED.try_with(Cell::get).unwrap_or(false) {
+            let _ = LIVE.try_with(|v| v.set(v.get() + n));
+        }
+    }
+    unsafe impl GlobalAlloc for Allocator {
+        unsafe fn alloc(&self, l: Layout) -> *mut u8 {
+            let p = unsafe { System.alloc(l) };
+            if !p.is_null() {
+                charge(l.size() as isize)
+            }
+            p
+        }
+        unsafe fn alloc_zeroed(&self, l: Layout) -> *mut u8 {
+            let p = unsafe { System.alloc_zeroed(l) };
+            if !p.is_null() {
+                charge(l.size() as isize)
+            }
+            p
+        }
+        unsafe fn dealloc(&self, p: *mut u8, l: Layout) {
+            charge(-(l.size() as isize));
+            unsafe { System.dealloc(p, l) }
+        }
+        unsafe fn realloc(&self, p: *mut u8, l: Layout, n: usize) -> *mut u8 {
+            let q = unsafe { System.realloc(p, l, n) };
+            if !q.is_null() {
+                charge(n as isize - l.size() as isize)
+            }
+            q
+        }
+    }
+    pub fn measure(f: impl FnOnce()) -> isize {
+        LIVE.with(|v| v.set(0));
+        ENABLED.with(|v| v.set(true));
+        f();
+        ENABLED.with(|v| v.set(false));
+        LIVE.with(Cell::get)
+    }
+}
+#[cfg(feature = "color-management")]
+#[global_allocator]
+static ALLOCATOR: allocation_tracking::Allocator = allocation_tracking::Allocator;
 use wml2::jpegxl::{JxlResourceLimits, preview_dimensions_with_resource_limits as inspect};
 use wml2::limits::DecodeLimits;
 fn check(
@@ -595,4 +646,181 @@ fn managed_preview_absence_errors_and_cumulative_budget_boundary() {
         .is_err()
     );
     assert!(display(input, DecodeLimits::default(), JxlResourceLimits::default()).is_ok());
+}
+
+#[test]
+#[cfg(feature = "color-management")]
+fn preview_cancellation_at_every_probe_drops_all_owned_storage() {
+    use std::cell::Cell;
+    use wml2::jpegxl::{
+        DecodeCancelled, preview_from_srgb_with_resource_limits as ordinary,
+        preview_from_srgb_with_resource_limits_and_cancel as decode,
+    };
+    let input = include_bytes!("fixtures/review/jxl-preview-larger.jxl");
+    let count = Cell::new(0);
+    let image = decode(
+        input,
+        DecodeLimits::default(),
+        JxlResourceLimits::default(),
+        &|| {
+            count.set(count.get() + 1);
+            false
+        },
+    )
+    .unwrap()
+    .unwrap();
+    let expected = ordinary(input, DecodeLimits::default(), JxlResourceLimits::default())
+        .unwrap()
+        .unwrap();
+    assert_eq!(image.buffer, expected.buffer);
+    drop(image);
+    drop(expected);
+    let probes = count.get();
+    eprintln!("preview cancellation checkpoints: {probes}");
+    assert!(probes > 40, "missing codec/CMS/row checkpoints: {probes}");
+    for stop in 1..=probes {
+        let count = Cell::new(0);
+        let cancelled = Cell::new(false);
+        let live = allocation_tracking::measure(|| {
+            let error = decode(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| {
+                    count.set(count.get() + 1);
+                    count.get() == stop
+                },
+            )
+            .err()
+            .unwrap();
+            cancelled.set(error.is::<DecodeCancelled>());
+            drop(error);
+        });
+        assert!(cancelled.get(), "probe {stop}");
+        assert_eq!(live, 0, "leaked owned bytes at probe {stop}");
+    }
+    assert_eq!(
+        allocation_tracking::measure(|| {
+            drop(
+                decode(
+                    input,
+                    DecodeLimits::default(),
+                    JxlResourceLimits::default(),
+                    &|| false,
+                )
+                .unwrap(),
+            );
+        }),
+        0
+    );
+    assert!(
+        decode(
+            b"bad",
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| true
+        )
+        .err()
+        .unwrap()
+        .is::<DecodeCancelled>()
+    );
+    let absent = include_bytes!("fixtures/review/jxl-rgba8.jxl");
+    assert!(
+        decode(
+            absent,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| true
+        )
+        .err()
+        .unwrap()
+        .is::<DecodeCancelled>()
+    );
+    assert!(
+        decode(
+            absent,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false
+        )
+        .unwrap()
+        .is_none()
+    );
+}
+
+#[test]
+#[cfg(feature = "color-management")]
+fn embedded_gray_icc_preview_matches_independent_profile_reference() {
+    use wml2::jpegxl::{
+        preview_from_srgb_with_resource_limits_and_cancel as display,
+        preview_from_with_resource_limits as raw,
+    };
+    let input = include_bytes!("fixtures/review/jxl-preview-gray-icc16.jxl");
+    let preview = raw(input, DecodeLimits::default(), JxlResourceLimits::default())
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        (preview.width, preview.height, preview.color_channels),
+        (7, 5, 1)
+    );
+    assert_eq!(&preview.icc_profile[16..20], b"GRAY");
+    let expected = miniz_oxide::inflate::decompress_to_vec_zlib(include_bytes!(
+        "fixtures/review/jxl-preview-gray-icc16.preview.rgba16le.zlib"
+    ))
+    .unwrap();
+    assert_eq!(
+        preview
+            .rgba16
+            .iter()
+            .flat_map(|v| v.to_le_bytes())
+            .collect::<Vec<_>>(),
+        expected
+    );
+    let image = display(
+        input,
+        DecodeLimits::default(),
+        JxlResourceLimits::default(),
+        &|| false,
+    )
+    .unwrap()
+    .unwrap();
+    let expected = miniz_oxide::inflate::decompress_to_vec_zlib(include_bytes!(
+        "fixtures/review/jxl-preview-gray-icc16.srgb-preview.rgba.zlib"
+    ))
+    .unwrap();
+    for (i, (&a, &b)) in image.buffer.unwrap().iter().zip(&expected).enumerate() {
+        assert!(a.abs_diff(b) <= if i % 4 == 3 { 0 } else { 1 });
+    }
+    // Independently encoded original main and duplicated-preview main remain identical.
+    assert_eq!(
+        wml2::jpegxl::image_from_srgb(input).unwrap().buffer,
+        wml2::jpegxl::image_from_srgb(include_bytes!("fixtures/review/jxl-icc-gray16.jxl"))
+            .unwrap()
+            .buffer
+    );
+}
+#[test]
+#[cfg(feature = "color-management")]
+fn unsupported_preview_sources_still_reject_explicitly() {
+    use wml2::jpegxl::{
+        DecodeCancelled, preview_from_srgb_with_resource_limits_and_cancel as display,
+    };
+    for input in [
+        include_bytes!("fixtures/review/jxl-hdr.jxl").as_slice(),
+        include_bytes!("fixtures/review/jxl-float.jxl").as_slice(),
+        include_bytes!("fixtures/review/jxl-alpha-refused-associated.jxl").as_slice(),
+        include_bytes!("fixtures/review/jxl-alpha-refused-subsampled.jxl").as_slice(),
+        include_bytes!("fixtures/review/jxl-alpha-refused-spot.jxl").as_slice(),
+    ] {
+        let e = display(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false,
+        )
+        .err()
+        .unwrap();
+        assert!(!e.is::<DecodeCancelled>());
+        assert!(format!("{e:?}").contains("UnsupportedFeature"), "{e:?}");
+    }
 }

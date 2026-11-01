@@ -1,0 +1,375 @@
+{
+  "features": "jpeg-xl,image-buffer-ex,color-management",
+  "target": "wasm32-unknown-unknown",
+  "scope": "fresh instance per managed case; existing Rust independent-oracle assertions; linear capacities are not live heap/RSS; Node memory ceiling applies to WASM pages only",
+  "artifacts": {
+    "source-ex": {
+      "bytes": 3371326,
+      "sha256": "9775fbdf56adf8f286e01bbdf1e5bfa8b0d19e56052f329d4f6eb4f7e34d3a40"
+    },
+    "managed": {
+      "bytes": 5774648,
+      "sha256": "c86b13ff610483fbaa46ec3f862bb140329c06e35fbffd6e3c809334889bbd76"
+    },
+    "typed-layer": {
+      "bytes": 3214854,
+      "sha256": "54c3eb659715223763ca886098abaec78c4cafe9a714230a73d606f8271de75d"
+    }
+  },
+  "runs": [
+    {
+      "node": "v24.19.0",
+      "host_imports": [],
+      "records": [
+        {
+          "case": "61 source/EX oracle cases",
+          "ok": true,
+          "before": 1376256,
+          "after": 14286848
+        }
+      ],
+      "process_max_rss_kib": 58204,
+      "harness": "source-ex",
+      "linear_page_ceiling": 1024,
+      "linear_byte_ceiling": 67108864
+    },
+    {
+      "node": "v24.19.0",
+      "host_imports": [],
+      "records": [
+        {
+          "case": "61 source/EX oracle cases",
+          "ok": true,
+          "before": 1376256,
+          "after": 14286848
+        }
+      ],
+      "process_max_rss_kib": 58796,
+      "harness": "source-ex",
+      "linear_page_ceiling": 512,
+      "linear_byte_ceiling": 33554432
+    },
+    {
+      "node": "v24.19.0",
+      "host_imports": [],
+      "records": [
+        {
+          "case": 0,
+          "ok": true,
+          "width": 2,
+          "height": 3,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 1,
+          "ok": true,
+          "width": 2,
+          "height": 3,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 2,
+          "ok": true,
+          "width": 2,
+          "height": 3,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 3,
+          "ok": true,
+          "width": 2,
+          "height": 3,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 4,
+          "ok": true,
+          "width": 3,
+          "height": 2,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 5,
+          "ok": true,
+          "width": 3,
+          "height": 2,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 6,
+          "ok": true,
+          "width": 3,
+          "height": 2,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 7,
+          "ok": true,
+          "width": 3,
+          "height": 2,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 8,
+          "ok": true,
+          "width": 7,
+          "height": 5,
+          "before": 8847360,
+          "after": 13172736
+        },
+        {
+          "case": 9,
+          "ok": true,
+          "width": 7,
+          "height": 5,
+          "before": 8847360,
+          "after": 13172736
+        },
+        {
+          "case": 10,
+          "ok": true,
+          "width": 7,
+          "height": 5,
+          "before": 8847360,
+          "after": 13172736
+        },
+        {
+          "case": 11,
+          "ok": true,
+          "width": 606,
+          "height": 500,
+          "before": 8847360,
+          "after": 20447232
+        },
+        {
+          "case": 12,
+          "ok": true,
+          "width": 200,
+          "height": 200,
+          "before": 8847360,
+          "after": 17760256
+        },
+        {
+          "case": 13,
+          "ok": true,
+          "width": 924,
+          "height": 1386,
+          "before": 8847360,
+          "after": 54394880
+        }
+      ],
+      "process_max_rss_kib": 109188,
+      "harness": "managed",
+      "linear_page_ceiling": 1024,
+      "linear_byte_ceiling": 67108864
+    },
+    {
+      "node": "v24.19.0",
+      "host_imports": [],
+      "records": [
+        {
+          "case": 0,
+          "ok": true,
+          "width": 2,
+          "height": 3,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 1,
+          "ok": true,
+          "width": 2,
+          "height": 3,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 2,
+          "ok": true,
+          "width": 2,
+          "height": 3,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 3,
+          "ok": true,
+          "width": 2,
+          "height": 3,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 4,
+          "ok": true,
+          "width": 3,
+          "height": 2,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 5,
+          "ok": true,
+          "width": 3,
+          "height": 2,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 6,
+          "ok": true,
+          "width": 3,
+          "height": 2,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 7,
+          "ok": true,
+          "width": 3,
+          "height": 2,
+          "before": 8847360,
+          "after": 8912896
+        },
+        {
+          "case": 8,
+          "ok": true,
+          "width": 7,
+          "height": 5,
+          "before": 8847360,
+          "after": 13172736
+        },
+        {
+          "case": 9,
+          "ok": true,
+          "width": 7,
+          "height": 5,
+          "before": 8847360,
+          "after": 13172736
+        },
+        {
+          "case": 10,
+          "ok": true,
+          "width": 7,
+          "height": 5,
+          "before": 8847360,
+          "after": 13172736
+        },
+        {
+          "case": 11,
+          "ok": true,
+          "width": 606,
+          "height": 500,
+          "before": 8847360,
+          "after": 20447232
+        },
+        {
+          "case": 12,
+          "ok": true,
+          "width": 200,
+          "height": 200,
+          "before": 8847360,
+          "after": 17760256
+        },
+        {
+          "case": 13,
+          "ok": false,
+          "before": 8847360,
+          "after": 32440320,
+          "width": 0,
+          "height": 0,
+          "error": "RuntimeError: unreachable"
+        }
+      ],
+      "process_max_rss_kib": 103992,
+      "harness": "managed",
+      "linear_page_ceiling": 512,
+      "linear_byte_ceiling": 33554432
+    },
+    {
+      "node": "v24.19.0",
+      "host_imports": [],
+      "records": [
+        {
+          "case": "typed-layer",
+          "expanded_mib": 256,
+          "ok": false,
+          "returned_error": true,
+          "error": "Out of memory: JPEG XL internal layer workspace exceeds decode limit",
+          "width": 0,
+          "height": 0,
+          "before": 1179648,
+          "after": 1245184
+        },
+        {
+          "case": "typed-layer",
+          "expanded_mib": 512,
+          "ok": true,
+          "returned_error": false,
+          "error": "",
+          "width": 924,
+          "height": 1386,
+          "before": 1179648,
+          "after": 43057152
+        }
+      ],
+      "process_max_rss_kib": 85072,
+      "harness": "typed-layer",
+      "linear_page_ceiling": 1024,
+      "linear_byte_ceiling": 67108864
+    },
+    {
+      "node": "v24.19.0",
+      "host_imports": [],
+      "records": [
+        {
+          "case": "typed-layer",
+          "expanded_mib": 256,
+          "ok": false,
+          "returned_error": true,
+          "error": "Out of memory: JPEG XL internal layer workspace exceeds decode limit",
+          "width": 0,
+          "height": 0,
+          "before": 1179648,
+          "after": 1245184
+        },
+        {
+          "case": "typed-layer",
+          "expanded_mib": 512,
+          "ok": false,
+          "returned_error": true,
+          "error": "memory allocation failed because the memory allocator returned an error",
+          "width": 0,
+          "height": 0,
+          "before": 1179648,
+          "after": 30605312
+        }
+      ],
+      "process_max_rss_kib": 75004,
+      "harness": "typed-layer",
+      "linear_page_ceiling": 512,
+      "linear_byte_ceiling": 33554432
+    }
+  ],
+  "runtime_sha": "f3ae057c4935f2bbfa104421ef001755388735a5",
+  "runtime_source_sha256": "b68f5a08fa65312f2ab92dbfb67992645e3ad74adab3e38ea63ca32a5610087f",
+  "harness_source_sha256": {
+    "jpegxl_wasm.rs": "b484af8f5ba5a28b2748337137c753d122eb11a44c9cc477f8a47eb9da697df3",
+    "jpegxl_browser.rs": "a0fd9e52cc2b2aab7c6e47ed3e085314832f8c3aa0381590642b81d644bfa4f1",
+    "jxl_resource_wasm.rs": "cb9ba590c50731e1db3bc0c213c95a049d3ea15900c9e515e31c558cdaecdb1e",
+    "evaluate_jxl_resources_wasm.py": "74dbda24bd79cf381f124b6e315ccc927d919d323b4a7dee6db64578a9047eee"
+  },
+  "review_gate_revalidation": {
+    "scope": "All six real WASM runs repeated with explicit32MiB source/EX success and typed allocation-error/no-successful-output assertions. Snapshot capacities do not establish hard allocation guarantees.",
+    "previous_artifacts_reproduced": true,
+    "negative_gate_checks": 7
+  }
+}

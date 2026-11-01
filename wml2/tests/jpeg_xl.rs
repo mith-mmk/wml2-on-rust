@@ -461,7 +461,6 @@ mod enabled {
     fn rejects_unsupported_and_malformed_inputs_before_callbacks() {
         let unsupported = [
             include_bytes!("fixtures/review/jxl-float.jxl").as_slice(),
-            include_bytes!("fixtures/review/jxl-animation.jxl").as_slice(),
             include_bytes!("fixtures/review/jxl-hdr.jxl").as_slice(),
         ];
         for (i, data) in unsupported.into_iter().enumerate() {

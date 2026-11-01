@@ -1,0 +1,418 @@
+{
+  "maximum_timebase_fixture": {
+    "file": "jxl-animation-timebase-max.jxl",
+    "sha256": "9b446fe09692d9fdd4d0b70cfbe808f952fb4b8e257d856d081f18ac3cdfae4f",
+    "construction": "C encoder long8 orientation1, numerator1 denominator1024 loops4294967295; C validates all3 frames and byte-compares to committed jxl-animation-long goldens",
+    "reference_output": "image 7 5 8 8 1 1024 4294967295 0 0\nframe 0 4294967295 0 0 7 5 0 0 0 0 0\nframe 1 4294967294 0 0 7 5 0 0 0 0 0\nframe 2 4294967293 0 1 7 5 0 0 0 0 0\nframes 3\n"
+  },
+  "generator_sha256": "c2191ef9a46da15e235728baae7820f53215d0790c34353082f0ed35406083bc",
+  "source": "C libjxl0.11.2 coalesced RGBA16 and C output ICC from PR93 manifest; independent LittleCMS2.16 relative intent, NOOPTIMIZE, COPY_ALPHA; quantize16-to8 last",
+  "cases": [
+    {
+      "input": "jxl-animation-variable.jxl",
+      "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+      "frames": [
+        {
+          "file": "jxl-animation-variable.0.srgb8",
+          "sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+        },
+        {
+          "file": "jxl-animation-variable.1.srgb8",
+          "sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+        },
+        {
+          "file": "jxl-animation-variable.2.srgb8",
+          "sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+        }
+      ]
+    },
+    {
+      "input": "jxl-animation-reference.jxl",
+      "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+      "frames": [
+        {
+          "file": "jxl-animation-reference.0.srgb8",
+          "sha256": "9cfd7df0a31bfdb3ff45c6da36aebbc9d9df2640f3923a9a45af75b5573363cd"
+        },
+        {
+          "file": "jxl-animation-reference.1.srgb8",
+          "sha256": "e1be9068838e09a700b4045073304ae0cd811fd6b1f3b04ff0484102db2726de"
+        },
+        {
+          "file": "jxl-animation-reference.2.srgb8",
+          "sha256": "6e72ebcc7361aecb0309fb700bbf67efb10a692a48da1b425b042853d0e83d09"
+        }
+      ]
+    },
+    {
+      "input": "jxl-animation-long.jxl",
+      "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+      "frames": [
+        {
+          "file": "jxl-animation-long.0.srgb8",
+          "sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+        },
+        {
+          "file": "jxl-animation-long.1.srgb8",
+          "sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+        },
+        {
+          "file": "jxl-animation-long.2.srgb8",
+          "sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+        }
+      ]
+    },
+    {
+      "input": "jxl-animation-main5-internal.jxl",
+      "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+      "frames": [
+        {
+          "file": "jxl-animation-main5-internal.0.srgb8",
+          "sha256": "2395589dbfe32b7dfb50026d79094a7b7e55cfb0cf8c1b877651777ae31f5614"
+        },
+        {
+          "file": "jxl-animation-main5-internal.1.srgb8",
+          "sha256": "85b2f5668ffaf6d51f9fc60400dece7ac25255ffc607e9c42a0eaff66ba4f170"
+        },
+        {
+          "file": "jxl-animation-main5-internal.2.srgb8",
+          "sha256": "358a7295adb7fe5152138ee6fb6b474f4d80980d1e0d09f04206717e8f8092a7"
+        }
+      ]
+    },
+    {
+      "input": "jxl-animation-main5-icc16.jxl",
+      "source_icc_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa",
+      "frames": [
+        {
+          "file": "jxl-animation-main5-icc16.0.srgb8",
+          "sha256": "d685e08cc07517d669560716c7c3a3ffbf939d47203dfe6f0ff9ad318c80a8f9"
+        },
+        {
+          "file": "jxl-animation-main5-icc16.1.srgb8",
+          "sha256": "8ed37d4f0fe1578d97377c2ba11547b8063456f47218b28e4db0d63e74aba465"
+        },
+        {
+          "file": "jxl-animation-main5-icc16.2.srgb8",
+          "sha256": "5cbdf89b8024965fc7524ce7a197d3bd102f5258e9f5dcc4a7a88a9450f87480"
+        }
+      ]
+    },
+    {
+      "input": "jxl-animation-main5-icc16-variable.jxl",
+      "source_icc_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa",
+      "frames": [
+        {
+          "file": "jxl-animation-main5-icc16-variable.0.srgb8",
+          "sha256": "ec8bcd4ba470f109bea041f33e9885373ad538b44d557d41f2de725c80c3fce0"
+        },
+        {
+          "file": "jxl-animation-main5-icc16-variable.1.srgb8",
+          "sha256": "845e6c8728b3c203cb736c4c3adc00f290fbf62045385adeb4058c3f2bc28515"
+        },
+        {
+          "file": "jxl-animation-main5-icc16-variable.2.srgb8",
+          "sha256": "ac4971cccdf2cb3292aa153b8d9f3fdd1ab25b99d17cacccb00ab33773bc48e6"
+        }
+      ]
+    },
+    {
+      "input": "jxl-animation-main5-rgb8.jxl",
+      "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+      "frames": [
+        {
+          "file": "jxl-animation-main5-rgb8.0.srgb8",
+          "sha256": "a15124114e88cfa856e4aeb3b3eba515d4881ab6e727633e71a38b2789d2ba58"
+        },
+        {
+          "file": "jxl-animation-main5-rgb8.1.srgb8",
+          "sha256": "2609eed37a14fc274fc051df950170a9ae1712ed8846fc5589f29598a9bcf3b8"
+        },
+        {
+          "file": "jxl-animation-main5-rgb8.2.srgb8",
+          "sha256": "de8e1c6e31275398558f20c2f5dcf75cd8d2262f432a68fd399f88549c91d9b2"
+        }
+      ]
+    },
+    {
+      "input": "jxl-animation-main5-rgb16.jxl",
+      "source_icc_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa",
+      "frames": [
+        {
+          "file": "jxl-animation-main5-rgb16.0.srgb8",
+          "sha256": "27bfa4f0f6545e65ab57a5821a8de988ceba7ec24d003d236b5b990f21747a87"
+        },
+        {
+          "file": "jxl-animation-main5-rgb16.1.srgb8",
+          "sha256": "f5e62989c3d1b85540dc0a8773870a4739387cec7bb3bbddacf90765382023b1"
+        },
+        {
+          "file": "jxl-animation-main5-rgb16.2.srgb8",
+          "sha256": "a7f708cbb68d5d65684c59305aa9243b5fb09c14f72fdecf9d88bed7190f9eff"
+        }
+      ]
+    },
+    {
+      "input": "jxl-animation-main5-layers64.jxl",
+      "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+      "frames": [
+        {
+          "file": "jxl-animation-main5-layers64.0.srgb8",
+          "sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.1.srgb8",
+          "sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.2.srgb8",
+          "sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.3.srgb8",
+          "sha256": "c5d43a031893452050cefb5421ff020a8ec785fe23b36e2be93b0bcbf233c44e"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.4.srgb8",
+          "sha256": "13cb1efd19e177cfa6e40d2541ecec062af9eaf12a308346193b81454a66ff86"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.5.srgb8",
+          "sha256": "5ebb3f2dd6e9f4d0a41ffe7adf4d94bda12624bd4887320d85cf6e1a3e041578"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.6.srgb8",
+          "sha256": "26c2a6e0b3d55dda20922eaa911468423500bb84eeb7c0f6d22cab8121f04f4e"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.7.srgb8",
+          "sha256": "c4102831d15d5763c2ac0cbf4e7184893048cf0c7e7d57724e63a2dfe44d88b7"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.8.srgb8",
+          "sha256": "af1c9e21085633eb9f25fc416c83801ef44430e2669293d89640b2bd5dec36f6"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.9.srgb8",
+          "sha256": "f9b38d5e4a38b49eb193215e65358a76be118b8ad202f81a8eb816b60de897c9"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.10.srgb8",
+          "sha256": "dfa10a401a33f3d3ad8d6cde91bafc03f5816642d78406d33622ff4fd611323f"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.11.srgb8",
+          "sha256": "ef1e97360704395a8433b4eff5f6c1ec055f557f48fea333cfd2f4dcbc5c7aff"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.12.srgb8",
+          "sha256": "61aa6a3c4550fea2754da2efd8e1f1b5b83df8992115cc98f6d28e65a262fae7"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.13.srgb8",
+          "sha256": "88dfcb95cd2f2a0642e8933bd68fa17599bfdef7f612bbf39f38cd3ef42b4b04"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.14.srgb8",
+          "sha256": "b3e40f0f9691f849e1472cf8ef28cf5c61eb5ce3df08f849e70b96c05d428df3"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.15.srgb8",
+          "sha256": "98ecd079073d7805dd3ba857414787e78ba5861a1c71223b67e8c681f8344953"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.16.srgb8",
+          "sha256": "dfa104f58a6460c746bb29d2edd1de261604ebd7767a8b17c2fe8788816376d0"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.17.srgb8",
+          "sha256": "004d2c34e340a8553a83eedc710fe5525a418b1d36b0dfbb582eaad3c822277e"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.18.srgb8",
+          "sha256": "aef7d345a879d85fa094e8d53c1f8325e5782d6fd3af14f660c210001c27439f"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.19.srgb8",
+          "sha256": "56090d22466511068b272469d91cf029c4e4399a7b5bc4f205de73900a51649a"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.20.srgb8",
+          "sha256": "78c833d62e17644b6525e0b75bcfc558054b25ce638c182f0372961498623bdd"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.21.srgb8",
+          "sha256": "9e744df2c02d8a387e3cab0812dfb249c395bff5ebf43162dcf0b986ccfd01e6"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.22.srgb8",
+          "sha256": "3db3c54e5b484082747a84a29dd29f57260d52ce5553c6fe24fd93c1b3e6bfae"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.23.srgb8",
+          "sha256": "e74199290070968ed5dcafc905ece0cf579b96183f4ac3e54b841f3ea6eca48c"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.24.srgb8",
+          "sha256": "6602a6b5b1bc8e58313cd72b447318b64c0d7cd5745a465759d0ed15f665fc01"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.25.srgb8",
+          "sha256": "6444c6d0cc3f5fe4aee27eb02210e7e33cc9e45a8100a62f34ffcbefd455f452"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.26.srgb8",
+          "sha256": "413c3fce634db61e001f2b0784bb5ca90e209a29d4a6d4fd739f5cb0b2e20ce7"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.27.srgb8",
+          "sha256": "950295bf44b2a3ee226ad054ddef70ba85e2643055c2b7c368104d2547f9fcb6"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.28.srgb8",
+          "sha256": "635fd15c20409d6e043b47c4a7f574a2ad1ecb8c681c00cd35b16f5c1e1d6d79"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.29.srgb8",
+          "sha256": "78ffb5f17f64c7614fe92c29b302c2854d621281acb8b11b6a4ccd903defd068"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.30.srgb8",
+          "sha256": "528a80f1867a4647feb6f870c8fba6fe1ce2dcdf18fee6caac49321a7dcc7244"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.31.srgb8",
+          "sha256": "ec388656c8619c554e6562c31adcf44c3160ef2c8a780a580c53feedfbe35c44"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.32.srgb8",
+          "sha256": "4a689650971fb1ff73ee0838b3e2401575fccec49f91f610e31d57ced1e05f95"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.33.srgb8",
+          "sha256": "4116f4adf70ac020e324d43ac94550128b8cc5d7cc89b8d2a9d1efaf48c8f271"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.34.srgb8",
+          "sha256": "ecbbe93c885039ff25b6e26ce5f744db38ee44dfd86a3599002a3bd14327102a"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.35.srgb8",
+          "sha256": "9e73ebd9655446054705198fb70c2b832b8530db74f874341e68fea9bddf401e"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.36.srgb8",
+          "sha256": "99783990aaa7e36c633e461c016e7f573fe892035f873c17a34ff6c22d65f021"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.37.srgb8",
+          "sha256": "8cc7cbbd5bcb7b6cbe755a48fe7b191c7572ae5d0295c10fbd1830542308ed8b"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.38.srgb8",
+          "sha256": "ca8f4f53a6be610f0cc43a10bc0bb20d8cc5f82cf9ced52ef60d337f1417bbe1"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.39.srgb8",
+          "sha256": "39bd91b83bd03d3c5746f08fd3a654d204e8ccd086e04534fadb3d105aa83bab"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.40.srgb8",
+          "sha256": "081eaf29916e7950e92418cec1a9d75393db51246c6209b418a6fd92e6c34044"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.41.srgb8",
+          "sha256": "f8d448bc6b0a540d09dd8d02cc362e4ae849a58129837b703fdef9fb144cd045"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.42.srgb8",
+          "sha256": "269183f2bed9aa0ebdc63372571efc0b3edada70d3a1c70f491ff04dcd67a0a2"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.43.srgb8",
+          "sha256": "2881c5b08e5f2b7ed0bf34347cbc424b3dc5a43592d4b55b2a905dfd4b30b02d"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.44.srgb8",
+          "sha256": "b2708ab1252664c2820066954ca0e5a897a4b85153ce47a08fc0ce720735baf9"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.45.srgb8",
+          "sha256": "f28e30de678456d762ab67af816e0b6d3e8dc6dda7454789ea2bc9cf510c0ccf"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.46.srgb8",
+          "sha256": "0a46ec1b53ffdac32c8537eec661c9881af24932bb7436b071d219bb54e199ba"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.47.srgb8",
+          "sha256": "3520c3a3e0e99fef7a4da7709e634e4bf680ce6cd2c351617defa0518ee69d20"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.48.srgb8",
+          "sha256": "5fca053e3aedfc2d1f7bc9c016f922e7cb7f63cec4fe5407a7fb04b24585065b"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.49.srgb8",
+          "sha256": "d5107c7f933279d8435f5f280696534cb72f0efaf776864cddb727bb3eb295d7"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.50.srgb8",
+          "sha256": "65c71beab2020b836c2660d920fdf1822891c9782b238973266bd719354a7097"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.51.srgb8",
+          "sha256": "e24e5a888c0543827d6d79a5c7103153c07a23832e7ee268a818c904d489cece"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.52.srgb8",
+          "sha256": "93a3bbefaacf6693168f240e43718ae8ed6b025a5bd66cabc52999eb3a4bc8ee"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.53.srgb8",
+          "sha256": "c111fd97732394449d785110e836b03c814fb603acead2cb43e37f19d5437f8a"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.54.srgb8",
+          "sha256": "419b8f6dda71d8d884f8be6b93d44a8a6b9c63ebd5a5112dd25b0e1954bf01f2"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.55.srgb8",
+          "sha256": "7817e9e8932e97cb43ede4373bdf47e3f80d400a10b94b1bfd65a546356fe632"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.56.srgb8",
+          "sha256": "75b63491655b3c0207dd48e4fc7e4d5b31e34765f26f58334294502668d95687"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.57.srgb8",
+          "sha256": "69842d1cb0b64e96e9beb6a35fb36a0d3cf14087246faf497a7d2a9b37cce86f"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.58.srgb8",
+          "sha256": "38196f4f47964f7eefd23768267f1f4bb604195d0f972577b698abefd5bbeaa2"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.59.srgb8",
+          "sha256": "3bacd344fddfd2fe4a546b2675971c60ef1f274815683fd8312648b58fcee8e3"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.60.srgb8",
+          "sha256": "b353d43882cd1f8f5f91ec5b5e41992a631c3ff216603a4a60562757f603c950"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.61.srgb8",
+          "sha256": "3181ca09dde7d3d7875e9889fb3f2d2ce08a78510aa3fa1f3edd99187a13376f"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.62.srgb8",
+          "sha256": "3d5cc3c5884f1c906443409103b6618669743e2e0a5b5b7ea8812ca0dc537a6b"
+        },
+        {
+          "file": "jxl-animation-main5-layers64.63.srgb8",
+          "sha256": "5ce9674c90aa03d506d7c1c26e5d945165f111f94fbe61cc2d2c60627dfc7f65"
+        }
+      ]
+    }
+  ]
+}

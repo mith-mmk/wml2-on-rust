@@ -64,6 +64,7 @@ struct Guard<'a> {
     handle_abort: bool,
     ready: bool,
     stopped: bool,
+    animated: bool,
     #[cfg(feature = "image-buffer-ex")]
     source: Option<(PixelFormatEx, Option<usize>)>,
 }
@@ -127,6 +128,7 @@ impl DrawCallback for Guard<'_> {
         let option = option.unwrap_or_default();
         let bytes = ex_source_bytes(w, h, &option, self.limits)?;
         let source = (option.source_format, option.source_stride);
+        let animated = option.legacy.as_ref().is_some_and(|o| o.animation);
         let result = self.drawer.init_ex(w, h, Some(option));
         let result = self.accept(result)?;
         if self.ready {
@@ -135,6 +137,7 @@ impl DrawCallback for Guard<'_> {
             self.frames = 0;
             self.terminated = false;
             self.source = Some(source);
+            self.animated = animated;
         }
         Ok(result)
     }
@@ -185,14 +188,22 @@ impl DrawCallback for Guard<'_> {
             .into());
         }
         #[cfg(feature = "image-buffer-ex")]
-        if self.source.is_some() {
-            return Err(std::io::Error::other("EX animation is unsupported").into());
+        if self.source.is_some() && !self.animated {
+            return Err(
+                std::io::Error::other("EX animation requires animated initialization").into(),
+            );
         }
         let (w, h) = option
             .as_ref()
             .and_then(|o| o.image_rect.as_ref())
             .map_or(self.canvas, |r| (r.width, r.height));
         let bytes = self.size(w, h)?;
+        #[cfg(feature = "image-buffer-ex")]
+        let bytes = if let Some((format, stride)) = self.source {
+            format.extent(w, h, stride)?.1
+        } else {
+            bytes
+        };
         let total = self
             .bytes
             .checked_add(bytes)
@@ -268,6 +279,7 @@ fn run_inner<B: BinaryReader>(
             handle_abort: ex,
             ready: false,
             stopped: false,
+            animated: false,
             #[cfg(feature = "image-buffer-ex")]
             source: None,
         };
@@ -375,6 +387,7 @@ mod tests {
             handle_abort,
             ready: false,
             stopped: false,
+            animated: false,
             #[cfg(feature = "image-buffer-ex")]
             source: None,
         }

@@ -34,6 +34,14 @@ pub fn animation_rgba16_from_with_resource_limits_and_cancel(
     policy: JxlResourceLimits,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<JxlAnimationImage, Error> {
+    animation_with_workspace(bytes, limits, policy, cancelled).map(|(image, _)| image)
+}
+fn animation_with_workspace(
+    bytes: &[u8],
+    limits: DecodeLimits,
+    policy: JxlResourceLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<(JxlAnimationImage, resources::Workspace), Error> {
     let cancellation = Cancellation {
         probe: Some(cancelled),
         cancelled: std::cell::Cell::new(false),
@@ -272,17 +280,311 @@ pub fn animation_rgba16_from_with_resource_limits_and_cancel(
     }
     drop(final_profile);
     check()?;
-    Ok(JxlAnimationImage {
-        dimensions: h.dimensions,
-        source_orientation: h.orientation,
-        bits_per_sample: h.bits,
-        alpha_bits_per_sample: h.alpha_bits,
-        ticks_per_second_numerator: plan.numerator,
-        ticks_per_second_denominator: plan.denominator,
-        loop_count: plan.loops,
-        frames,
-        source_icc,
-        output_icc,
-        source_header,
-    })
+    Ok((
+        JxlAnimationImage {
+            dimensions: h.dimensions,
+            source_orientation: h.orientation,
+            bits_per_sample: h.bits,
+            alpha_bits_per_sample: h.alpha_bits,
+            ticks_per_second_numerator: plan.numerator,
+            ticks_per_second_denominator: plan.denominator,
+            loop_count: plan.loops,
+            frames,
+            source_icc,
+            output_icc,
+            source_header,
+        },
+        workspace,
+    ))
+}
+
+// Common callback boundary: all codec/CMS work is completed before init/draw.
+pub(super) fn deliver<const MANAGED: bool>(
+    bytes: &[u8],
+    option: &mut DecodeOptions,
+    native: bool,
+    limits: DecodeLimits,
+    policy: JxlResourceLimits,
+    cancellation: &Cancellation<'_>,
+    mut metadata: Vec<(String, DataMap)>,
+    metadata_bytes: usize,
+) -> Result<Option<ImgWarnings>, Error> {
+    use crate::draw::{NextBlend, NextDispose, NextOption, NextOptions};
+    let check = || cancellation.check();
+    check()?;
+    let limits = policy.tighten(limits);
+    let (mut image, mut workspace) =
+        animation_with_workspace(bytes, limits, policy, &|| cancellation.check().is_err())?;
+    let size = image
+        .dimensions
+        .output
+        .ok_or_else(|| invalid("missing animation geometry"))?;
+    let (w, h) = (size.width as usize, size.height as usize);
+    let p = mul(w, h)?;
+    let n = image.frames.len();
+    let source_bytes = mul(mul(p, 8)?, n)?;
+    let delivered_frame = mul(p, if native { 8 } else { 4 })?;
+    let delivered = mul(delivered_frame, n)?;
+    let collector = mul(delivered_frame, add(n, 1)?)?; // poster + every displayed frame
+    let conversion = if native { mul(p, 8)? } else { 0 }; // EX storage precision scratch
+    limits::check(
+        add(add(source_bytes, delivered)?, add(collector, conversion)?)?,
+        limits.animation_bytes,
+        "JPEG XL cumulative animation delivery",
+    )?;
+    workspace.claim(delivered, "JPEG XL prepared callback frames")?;
+    workspace.claim(collector, "JPEG XL collector poster and frames")?;
+    workspace.claim(conversion, "JPEG XL EX storage conversion scratch")?;
+    workspace.claim(
+        mul(n, std::mem::size_of::<Vec<u8>>())?,
+        "JPEG XL prepared frame records",
+    )?;
+    workspace.claim(mul(add(n, 1)?, 128)?, "JPEG XL collector frame records")?;
+    workspace.claim(
+        add(bytes.len(), mul(metadata_bytes, 2)?)?,
+        "JPEG XL reader and callback metadata",
+    )?;
+    let retained_metadata = add(
+        metadata_bytes,
+        add(
+            add(image.source_icc.len(), image.output_icc.len())?,
+            image.source_header.len(),
+        )?,
+    )?;
+    let target_profile_bytes = if MANAGED {
+        #[cfg(feature = "color-management")]
+        {
+            crate::color_convert::SRGB_ICC.len()
+        }
+        #[cfg(not(feature = "color-management"))]
+        {
+            image.output_icc.len()
+        }
+    } else {
+        image.output_icc.len()
+    };
+    let callback_metadata = add(retained_metadata, add(target_profile_bytes, 4096)?)?;
+    limits::check(
+        callback_metadata,
+        limits.metadata_bytes,
+        "JPEG XL callback metadata",
+    )?;
+    workspace.claim(callback_metadata, "JPEG XL callback metadata copies")?;
+    let mut delays = Vec::new();
+    workspace.claim(mul(n, 8)?, "JPEG XL millisecond timing table")?;
+    #[cfg(test)]
+    resources::tests::before_metadata_copy("animation delays", mul(n, 8)?);
+    delays.try_reserve_exact(n)?;
+    for f in &image.frames {
+        let ms =
+            u128::from(f.duration_ticks) * u128::from(image.ticks_per_second_denominator) * 1000;
+        let num = u128::from(image.ticks_per_second_numerator);
+        if ms % num != 0 {
+            return Err(unsupported(
+                "animation callback requires exact integer milliseconds; use native rational-tick API",
+            ));
+        }
+        delays.push(u64::try_from(ms / num)?);
+    }
+    #[cfg(feature = "color-management")]
+    if MANAGED {
+        let parse = resources::cms_profiles(&image.output_icc, crate::color_convert::SRGB_ICC)?;
+        let scratch = 2 * 256 * 3 * std::mem::size_of::<f32>() + 256 * std::mem::size_of::<usize>();
+        workspace.claim(parse, "JPEG XL animation CMS profiles")?;
+        workspace.claim(scratch, "JPEG XL animation CMS batches")?;
+        for f in &mut image.frames {
+            check()?;
+            crate::color_convert::rgba16_to_rgb_profile_with_cancel(
+                &mut f.rgba16,
+                &image.output_icc,
+                crate::color_convert::SRGB_ICC,
+                false,
+                workspace.remaining(),
+                &check,
+            )?;
+        }
+        workspace.release(parse)?;
+        workspace.release(scratch)?;
+    }
+    #[cfg(not(feature = "color-management"))]
+    if MANAGED {
+        return Err(unsupported("animation sRGB requires color-management"));
+    }
+    let mut prepared = Vec::new();
+    #[cfg(test)]
+    resources::tests::before_metadata_copy(
+        "animation prepared records",
+        mul(n, std::mem::size_of::<Vec<u8>>())?,
+    );
+    prepared.try_reserve_exact(n)?;
+    for (_index, f) in image.frames.iter().enumerate() {
+        check()?;
+        let mut out = Vec::new();
+        #[cfg(test)]
+        resources::tests::before_metadata_copy(
+            match _index {
+                0 => "animation prepared pixels",
+                1 => "animation prepared second pixels",
+                _ => "animation prepared later pixels",
+            },
+            delivered_frame,
+        );
+        out.try_reserve_exact(delivered_frame)?;
+        for chunk in f.rgba16.chunks(256 * 4) {
+            check()?;
+            for &v in chunk {
+                if native {
+                    out.extend_from_slice(&v.to_le_bytes());
+                } else {
+                    out.push(((u32::from(v) * 255 + 32767) / 65535) as u8);
+                }
+            }
+        }
+        prepared.push(out);
+    }
+    // Reserve keys/profile copies before publication. Owned source buffers move;
+    // only the output ICC is duplicated to preserve both provenance and tagging.
+    #[cfg(test)]
+    resources::tests::before_metadata_copy(
+        "animation callback metadata",
+        mul(16, std::mem::size_of::<(String, DataMap)>())?,
+    );
+    metadata.try_reserve_exact(16)?;
+    let actual_profile: &[u8] = if MANAGED {
+        #[cfg(feature = "color-management")]
+        {
+            crate::color_convert::SRGB_ICC
+        }
+        #[cfg(not(feature = "color-management"))]
+        {
+            &image.output_icc
+        }
+    } else {
+        &image.output_icc
+    };
+    let mut icc = Vec::new();
+    #[cfg(test)]
+    resources::tests::before_metadata_copy("animation callback ICC", actual_profile.len());
+    icc.try_reserve_exact(actual_profile.len())?;
+    icc.extend_from_slice(actual_profile);
+    metadata.push(("ICC Profile".into(), DataMap::ICCProfile(icc)));
+    metadata.push((
+        "JPEG XL Source ICC Profile".into(),
+        DataMap::ICCProfile(image.source_icc),
+    ));
+    metadata.push((
+        "JPEG XL Reconstruction ICC Profile".into(),
+        DataMap::ICCProfile(image.output_icc),
+    ));
+    metadata.push((
+        "JPEG XL Source Header".into(),
+        DataMap::Raw(image.source_header),
+    ));
+    metadata.push((
+        "JPEG XL Source Orientation".into(),
+        DataMap::UInt(image.source_orientation.into()),
+    ));
+    metadata.push((
+        "JPEG XL Source Bits Per Sample".into(),
+        DataMap::UInt(image.bits_per_sample.into()),
+    ));
+    metadata.push((
+        "JPEG XL Animation Ticks Numerator".into(),
+        DataMap::UInt(image.ticks_per_second_numerator.into()),
+    ));
+    metadata.push((
+        "JPEG XL Animation Ticks Denominator".into(),
+        DataMap::UInt(image.ticks_per_second_denominator.into()),
+    ));
+    for (key, value) in [
+        ("coded_width", image.dimensions.coded.width),
+        ("coded_height", image.dimensions.coded.height),
+        ("output_width", size.width),
+        ("output_height", size.height),
+    ] {
+        metadata.push((key.into(), DataMap::UInt(value.into())));
+    }
+    if let Some(bits) = image.alpha_bits_per_sample {
+        metadata.push((
+            "JPEG XL Source Alpha Bits Per Sample".into(),
+            DataMap::UInt(bits.into()),
+        ));
+    }
+    metadata.push(("orientation_applied".into(), DataMap::Bool(true)));
+    let meta = metadata.iter().try_fold(0usize, |a, (k, v)| {
+        add(
+            a,
+            add(
+                k.len(),
+                match v {
+                    DataMap::Raw(v) | DataMap::ICCProfile(v) => v.len(),
+                    DataMap::Ascii(v) => v.len(),
+                    _ => 8,
+                },
+            )?,
+        )
+    })?;
+    limits::check(
+        meta,
+        limits.metadata_bytes,
+        "JPEG XL callback retained metadata",
+    )?;
+    let live = limits.expanded_bytes - workspace.remaining();
+    let augmented = structured_metadata::augment(&mut metadata, limits, meta, live)?;
+    workspace.claim(augmented - live, "JPEG XL structured animation metadata")?;
+    check()?;
+    let result = (|| {
+        let init = InitOptions {
+            loop_count: image.loop_count,
+            background: None,
+            animation: true,
+        };
+        #[cfg(feature = "image-buffer-ex")]
+        if native {
+            option.drawer.init_ex(
+                w,
+                h,
+                Some(crate::draw::InitOptionsEx {
+                    source_format: crate::draw::PixelFormatEx::Rgba16,
+                    source_stride: None,
+                    legacy: Some(init),
+                }),
+            )?;
+        } else {
+            option.drawer.init(w, h, Some(init))?;
+        }
+        #[cfg(not(feature = "image-buffer-ex"))]
+        option.drawer.init(w, h, Some(init))?;
+        check()?;
+        for (key, value) in metadata {
+            option.drawer.set_metadata(&key, value)?;
+            check()?;
+        }
+        // Poster is the first coalesced frame; it has no extra playback delay.
+        option.drawer.draw(0, 0, w, h, &prepared[0], None)?;
+        check()?;
+        for (index, data) in prepared.iter().enumerate() {
+            option.drawer.next(Some(NextOptions {
+                flag: if index == 0 {
+                    NextOption::Continue
+                } else {
+                    NextOption::Next
+                },
+                await_time: delays[index],
+                image_rect: None,
+                dispose_option: Some(NextDispose::None),
+                blend: Some(NextBlend::Override),
+            }))?;
+            check()?;
+            option.drawer.draw(0, 0, w, h, data, None)?;
+            check()?;
+        }
+        option.drawer.terminate(None)?;
+        check()?;
+        Ok(None)
+    })();
+    if result.is_err() {
+        let _ = option.drawer.terminate(None);
+    }
+    result
 }

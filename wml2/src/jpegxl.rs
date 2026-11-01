@@ -2115,7 +2115,7 @@ pub fn preview_dimensions_with_resource_limits(
     }))
 }
 
-/// Decode a source-coordinate RGBA8 still with caller-tightened JPEG XL limits.
+/// Decode source-profile RGBA8 stills or admitted exact-ms animations with finite limits.
 ///
 /// Resource fields cannot raise fixed shipping caps. The finite workspace
 /// budget includes conservative codec admission and cumulative adapter buffers.
@@ -2140,6 +2140,20 @@ pub fn image_from_with_resource_limits(
     Ok(image)
 }
 
+/// Source-profile RGBA8 still/animation decoding with finite resources and
+/// cooperative cancellation. Exact integer-ms animations use the common owned
+/// collector; unrepresentable timing returns an error, never silent rounding.
+/// Errors/cancellation return no owned image; callback Abort keeps its existing
+/// stop-success contract on callback APIs. Pre-cancellation wins over input errors.
+pub fn image_from_with_resource_limits_and_cancel(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<crate::draw::ImageBuffer, Error> {
+    cancelled_image::<false>(input, limits, Some(cancelled), Some(resources))
+}
+
 /// Explicit sRGB output with additional finite JPEG XL resource limits.
 #[cfg(feature = "color-management")]
 pub fn image_from_srgb_with_resource_limits(
@@ -2147,7 +2161,7 @@ pub fn image_from_srgb_with_resource_limits(
     limits: DecodeLimits,
     resources: JxlResourceLimits,
 ) -> Result<crate::draw::ImageBuffer, Error> {
-    cancelled_image(input, limits, None, Some(resources))
+    cancelled_image::<true>(input, limits, None, Some(resources))
 }
 
 /// Resource-limited sRGB output with the existing cooperative cancellation
@@ -2159,9 +2173,9 @@ pub fn image_from_srgb_with_resource_limits_and_cancel(
     resources: JxlResourceLimits,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<crate::draw::ImageBuffer, Error> {
-    cancelled_image(input, limits, Some(cancelled), Some(resources))
+    cancelled_image::<true>(input, limits, Some(cancelled), Some(resources))
 }
-/// Decode a supported JPEG XL still into sRGB RGBA8 for display.
+/// Decode a supported JPEG XL still or exact-ms animation into sRGB RGBA8.
 ///
 /// Unlike the source-coordinate ordinary/EX APIs, this explicitly applies the
 /// own ICC engine to the codec's actual reconstructed output profile. Alpha is
@@ -2178,7 +2192,7 @@ pub fn image_from_srgb_with_limits(
     input: &[u8],
     limits: DecodeLimits,
 ) -> Result<crate::draw::ImageBuffer, Error> {
-    cancelled_image(input, limits, None, None)
+    cancelled_image::<true>(input, limits, None, None)
 }
 
 /// Bounded sRGB display decoding with cooperative cancellation.
@@ -2198,11 +2212,10 @@ pub fn image_from_srgb_with_limits_and_cancel(
     limits: DecodeLimits,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<crate::draw::ImageBuffer, Error> {
-    cancelled_image(input, limits, Some(cancelled), None)
+    cancelled_image::<true>(input, limits, Some(cancelled), None)
 }
 
-#[cfg(feature = "color-management")]
-fn cancelled_image(
+fn cancelled_image<const MANAGED: bool>(
     input: &[u8],
     limits: DecodeLimits,
     probe: Option<&dyn Fn() -> bool>,
@@ -2229,9 +2242,9 @@ fn cancelled_image(
         limits,
         |reader, options| {
             if probe.is_some() {
-                decode::<_, true, true>(reader, options, false, Some(&cancellation), resources)
+                decode::<_, MANAGED, true>(reader, options, false, Some(&cancellation), resources)
             } else {
-                decode::<_, true, false>(reader, options, false, None, resources)
+                decode::<_, MANAGED, false>(reader, options, false, None, resources)
             }
         },
     )?;
@@ -2286,12 +2299,45 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     } else {
         unpack(&raw, limits)?
     };
-    drop(raw);
-    let h = if let Some(policy) = resources {
-        preflight_with_resources(&input, limits, policy)?
+    let admitted = if let Some(policy) = resources {
+        preflight_with_resources(&input, limits, policy)
     } else {
-        preflight(&input, limits)?
+        preflight(&input, limits)
     };
+    let h = match admitted {
+        Ok(h) => h,
+        Err(original) => {
+            // Do not retry header parsing when its allocation allowance failed.
+            if add(1024 * 1024, mul(input.metadata_bytes, 2)?)? > limits.expanded_bytes {
+                return Err(original);
+            }
+            let mut br =
+                BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
+            let is_animation =
+                FileHeader::read(&mut br).is_ok_and(|h| h.image_metadata.animation.is_some());
+            if !is_animation {
+                return Err(original);
+            }
+            let metadata = std::mem::take(&mut input.metadata);
+            let metadata_bytes = input.metadata_bytes;
+            drop(input);
+            let result = animation::deliver::<MANAGED>(
+                &raw,
+                option,
+                native,
+                limits,
+                resources.unwrap_or_default(),
+                cancellation,
+                metadata,
+                metadata_bytes,
+            );
+            if result.is_err() {
+                let _ = option.drawer.terminate(None);
+            }
+            return result;
+        }
+    };
+    drop(raw);
     check()?;
     let mut options = JxlDecoderOptions::default();
     options.sample_limit = Some(h.sample_limit);

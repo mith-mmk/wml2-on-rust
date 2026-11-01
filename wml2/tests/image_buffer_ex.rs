@@ -166,19 +166,32 @@ fn background_scaling_initializers_animation_and_failed_reinit() {
     image.init_ex(1, 1, None).unwrap();
     assert_eq!(image.bytes().unwrap(), [0; 8]);
     assert!(image.next(None).is_err());
-    assert!(
-        image
-            .init(
-                1,
-                1,
-                Some(InitOptions {
-                    loop_count: 2,
-                    animation: true,
-                    background: None
-                })
-            )
-            .is_err()
+    image
+        .init(
+            1,
+            1,
+            Some(InitOptions {
+                loop_count: 2,
+                animation: true,
+                background: None,
+            }),
+        )
+        .unwrap();
+    assert_eq!(image.loop_count(), Some(2));
+    assert!(image.animation().unwrap().is_empty());
+    image.next(Some(NextOptions::wait(17))).unwrap();
+    image.draw(0, 0, 1, 1, &[1, 2, 3, 4], None).unwrap();
+    assert_eq!(image.animation().unwrap()[0].control.await_time, 17);
+    assert_eq!(
+        image.animation().unwrap()[0].pixels.bytes(),
+        samples(PixelFormatEx::Rgba16, &[257, 514, 771, 1028])
     );
+    let mut blend = NextOptions::wait(0);
+    blend.blend = Some(NextBlend::Source);
+    assert!(image.next(Some(blend)).is_err());
+    assert_eq!(image.animation().unwrap().len(), 1);
+    assert!(image.init_ex(0, 1, None).is_err());
+    assert!(image.animation().is_none());
     assert!(image.draw(0, 0, 1, 1, &[0; 4], None).is_err());
     assert!(image.bytes().is_none());
 }

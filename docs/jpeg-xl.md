@@ -28,8 +28,9 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 
 The unmerged [buffered native animation companion](jpeg-xl-buffered-animation.md)
 returns every displayed original-profile RGBA16 canvas with exact rational timing.
-Existing still-image APIs continue to reject animation; common callbacks and
-managed animation display remain #43 work.
+The next unmerged [callback/EX/sRGB stage](jpeg-xl-animation-callbacks.md) connects
+exact-integer-millisecond animations to the common APIs. Fractional timing stays
+available only through the exact rational native companion; no silent rounding.
 
 ## Supported profile and precision
 
@@ -58,7 +59,7 @@ managed animation display remain #43 work.
   a promise that lossy input becomes lossless.
 
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
-animations (no silent first-frame fallback),
+animations outside the [qualified callback/native subsets](jpeg-xl-animation-callbacks.md) (no silent first-frame fallback),
 associated alpha outside the [qualified integer subset](jpeg-xl-associated-depths.md),
 subsampled alpha outside the [declared integer subset](jpeg-xl-associated-subsampling.md),
 float or other alpha depths, multiple/other extra channels,

@@ -129,7 +129,7 @@ source・storage・picker outputを別々に宣言し、8bit化はExact／Round�
 単一pixelの借用参照、静止画の旧ImageBufferからの検査付き所有権移譲、
 高精度格納を維持した旧encoder用の借用adapterに対応します。
 既存のPNG/TIFF EX経路とhighresのpixel-only連携を再利用し、
-YUV・HDR・EX animationは非対応です。JPEG2000の12/16bitは下記の明示EX経路で扱います。
+公開0.0.41のYUV・HDR・EX animationは非対応です。未マージの[JXL animation拡張](docs/jpeg-xl-animation-callbacks.md)では合成済みEXフレームを保持します。JPEG2000の12/16bitは下記の明示EX経路で扱います。
 [現行仕様と検証](docs/image-buffer-ex.md)を参照してください。AVIF依存は公開registryの各0.1.2で、共通bufferのsourceを統一しています。公開再エクスポート型を直接共有する利用側は、依存の版とsourceを揃えてください。**AVISは未保証**です。
 
 ## JPEG2000 のデコード

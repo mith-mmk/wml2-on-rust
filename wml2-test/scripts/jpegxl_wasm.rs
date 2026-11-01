@@ -356,7 +356,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
-    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases() + subsampled_cases() + associated_subsampling_cases() + extra_plane_cases() + selection_plane_cases() + two_plane_cases() + main5_extra_cases() + reconstructed_extra_cases() + buffered_animation_cases()
+    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases() + subsampled_cases() + associated_subsampling_cases() + extra_plane_cases() + selection_plane_cases() + two_plane_cases() + main5_extra_cases() + reconstructed_extra_cases() + buffered_animation_cases() + animation_delivery_cases()
 }
 
 fn intrinsic_cases() -> u32 {
@@ -973,7 +973,7 @@ fn buffered_animation_cases()->u32 {
  for(input,golden,ticks,num,den,loops,o,bits)in include!("../../wml2/tests/jpeg_xl/animation_cases.rs"){
   let im=animation(input,DecodeLimits::default(),JxlResourceLimits::default(),&||false).unwrap();assert_eq!(im.source_orientation,o);assert_eq!(im.bits_per_sample,bits);assert_eq!((im.ticks_per_second_numerator,im.ticks_per_second_denominator,im.loop_count),(num,den,loops));assert_eq!(im.frames.len(),golden.len());assert_eq!(im.frames.len(),ticks.len());
   for((frame,gold),ticks)in im.frames.iter().zip(golden).zip(ticks){assert_eq!(frame.duration_ticks,*ticks);let expected=words(gold,16);assert_eq!(frame.rgba16.len(),expected.len());for(a,b)in frame.rgba16.iter().zip(expected){assert!(a.abs_diff(b)<=1);}}
-  assert!(image_from(input).is_err());count+=1;
+  assert_eq!(image_from(input).is_ok(),ticks.iter().all(|&t|(u128::from(t)*u128::from(den)*1000)%u128::from(num)==0));count+=1;
  }
  let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-internal.jxl");
  for(cap,ok)in [(839,false),(840,true)]{assert_eq!(animation(input,DecodeLimits{animation_bytes:cap,..Default::default()},JxlResourceLimits::default(),&||false).is_ok(),ok);}
@@ -984,4 +984,32 @@ fn buffered_animation_cases()->u32 {
  for stop in 1..=n.get(){let c=std::cell::Cell::new(0);let e=animation(input,DecodeLimits::default(),JxlResourceLimits::default(),&||{c.set(c.get()+1);c.get()==stop}).unwrap_err();assert!(e.is::<DecodeCancelled>());}count+=1;
  for input in [include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-timecodes.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-preview.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-internal.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-icc16.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-icc16-variable.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-layers65.jxl").as_slice()]{assert!(animation(input,DecodeLimits::default(),JxlResourceLimits::default(),&||false).is_err());}
  count+1
+}
+
+fn animation_delivery_cases()->u32{
+ use wml2::jpegxl::{image_from_with_resource_limits_and_cancel,JxlResourceLimits,DecodeCancelled};
+ let mut count=0;
+ for(input,gold,ticks,num,den,loops,_,_)in include!("../../wml2/tests/jpeg_xl/animation_cases.rs"){
+  if ticks.iter().any(|&t|u128::from(t)*u128::from(den)*1000%u128::from(num)!=0){continue}
+  let im=image_from(input).unwrap();assert_eq!(im.loop_count,Some(loops));let frames=im.animation.unwrap();assert_eq!(frames.len(),gold.len());
+  let ex=wml2::draw::image_from_ex(input,wml2::draw::PixelFormatEx::Rgba16,wml2::draw::PrecisionConversion::Exact).unwrap();let native=ex.animation().unwrap();assert_eq!(native.len(),gold.len());assert_eq!(ex.loop_count(),Some(loops));
+  for(((f,n),g),t)in frames.iter().zip(native).zip(gold).zip(ticks){assert_eq!(f.control.await_time,u64::from(*t)*u64::from(den)*1000/u64::from(num));assert_eq!(n.control.await_time,f.control.await_time);for(a,b)in n.pixels.bytes().chunks_exact(2).zip(g.chunks_exact(2)){assert!(u16::from_le_bytes(a.try_into().unwrap()).abs_diff(u16::from_le_bytes(b.try_into().unwrap()))<=1);}}
+  count+=1;
+ }
+ let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.jxl");
+ for(cap,ok)in [(1819,false),(1820,true)]{assert_eq!(image_from_with_resource_limits_and_cancel(input,DecodeLimits{animation_bytes:cap,..Default::default()},JxlResourceLimits::default(),&||false).is_ok(),ok);}
+ let c=std::cell::Cell::new(0);drop(image_from_with_resource_limits_and_cancel(input,Default::default(),Default::default(),&||{c.set(c.get()+1);false}).unwrap());let total=c.get();assert!(total>40);for stop in 1..=total{let c=std::cell::Cell::new(0);let e=image_from_with_resource_limits_and_cancel(input,Default::default(),Default::default(),&||{c.set(c.get()+1);c.get()==stop}).err().unwrap();assert!(e.is::<DecodeCancelled>());}
+ for ex in [false,true]{let mut probe=AnimationAbortProbe{nexts:0,draws:0,ends:0};let mut reader=bin_rs::reader::StreamReader::new(std::io::Cursor::new(input));let mut options=DecodeOptions{debug_flag:0,drawer:&mut probe};if ex{image_decoder_ex_with_limits(&mut reader,&mut options,Default::default()).unwrap();}else{image_decoder_with_limits(&mut reader,&mut options,Default::default()).unwrap();}assert_eq!((probe.nexts,probe.draws,probe.ends),(2,2,1));}
+ count+1
+}
+
+struct AnimationAbortProbe{nexts:usize,draws:usize,ends:usize}
+impl DrawCallback for AnimationAbortProbe{
+ fn init(&mut self,_:usize,_:usize,_:Option<InitOptions>)->Response{Ok(None)}
+ fn init_ex(&mut self,_:usize,_:usize,_:Option<InitOptionsEx>)->Response{Ok(None)}
+ fn draw(&mut self,_:usize,_:usize,_:usize,_:usize,_:&[u8],_:Option<DrawOptions>)->Response{self.draws+=1;Ok(None)}
+ fn next(&mut self,_:Option<NextOptions>)->Response{self.nexts+=1;Ok((self.nexts==2).then(CallbackResponse::abort))}
+ fn set_metadata(&mut self,_:&str,_:wml2::metadata::DataMap)->Response{Ok(None)}
+ fn terminate(&mut self,_:Option<TerminateOptions>)->Response{self.ends+=1;Ok(None)}
+ fn verbose(&mut self,_:&str,_:Option<VerboseOptions>)->Response{Ok(None)}
 }

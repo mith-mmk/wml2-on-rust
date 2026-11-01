@@ -102,7 +102,6 @@ impl Workspace {
             .ok_or_else(|| invalid("JPEG XL workspace release mismatch"))?;
         Ok(())
     }
-    #[cfg(feature = "color-management")]
     pub(super) fn remaining(&self) -> usize {
         self.limit - self.live
     }
@@ -708,5 +707,98 @@ pub(crate) mod tests {
             )
             .is_ok()
         );
+    }
+    #[test]
+    fn every_animation_delivery_reserve_refuses_without_publication() {
+        let _reset = ResetFault;
+        let input =
+            include_bytes!("../tests/fixtures/review/jxl-animation-main5-icc16-variable.jxl");
+        for key in [
+            "animation delays",
+            "animation prepared records",
+            "animation prepared pixels",
+            "animation prepared second pixels",
+            "animation prepared later pixels",
+            "animation callback metadata",
+            "animation callback ICC",
+        ] {
+            COPY_KEY.with(|f| f.set(Some(key)));
+            FAILED_BYTES.with(|f| f.set(0));
+            let result = super::super::image_from_with_resource_limits(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+            );
+            assert!(
+                result
+                    .err()
+                    .unwrap()
+                    .is::<std::collections::TryReserveError>(),
+                "{key}"
+            );
+            assert_eq!(COPY_KEY.with(Cell::get), None);
+            assert!(FAILED_BYTES.with(Cell::get) > 0, "{key}");
+        }
+        assert!(
+            super::super::image_from_with_resource_limits(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default()
+            )
+            .is_ok()
+        );
+    }
+    #[cfg(feature = "image-buffer-ex")]
+    #[test]
+    fn ex_animation_storage_and_precision_allocation_failures_preserve_frame_state() {
+        use crate::draw::*;
+        let _reset = ResetFault;
+        for (storage, failed_bytes) in [(PixelFormatEx::Rgba16, 280), (PixelFormatEx::Rgba8, 140)] {
+            let mut image = ImageBufferEx::with_storage(storage, PrecisionConversion::Round);
+            image
+                .init_ex(
+                    7,
+                    5,
+                    Some(InitOptionsEx {
+                        source_format: PixelFormatEx::Rgba16,
+                        source_stride: None,
+                        legacy: Some(InitOptions {
+                            loop_count: 1,
+                            background: None,
+                            animation: true,
+                        }),
+                    }),
+                )
+                .unwrap();
+            if storage == PixelFormatEx::Rgba16 {
+                FAIL_BYTES.with(|f| f.set(failed_bytes));
+                assert!(
+                    image
+                        .next(Some(NextOptions::wait(50)))
+                        .err()
+                        .unwrap()
+                        .is::<std::collections::TryReserveError>()
+                );
+                assert!(image.animation().unwrap().is_empty());
+            } else {
+                image.next(Some(NextOptions::wait(50))).unwrap();
+                FAIL_BYTES.with(|f| f.set(failed_bytes));
+                assert!(
+                    image
+                        .draw(0, 0, 7, 5, &[128; 280], None)
+                        .err()
+                        .unwrap()
+                        .is::<std::collections::TryReserveError>()
+                );
+                assert!(
+                    image.animation().unwrap()[0]
+                        .pixels
+                        .bytes()
+                        .iter()
+                        .all(|&v| v == 0)
+                );
+            }
+            assert_eq!(FAIL_BYTES.with(Cell::get), 0);
+        }
     }
 }

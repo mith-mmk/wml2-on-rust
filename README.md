@@ -122,8 +122,8 @@ metadata collection and Exact/Round failure behavior.
 With `image-buffer-ex`, `draw::ImageBufferEx` stores bytes in `PixelFormatEx`:
 Gray8/12/16 or Rgba8/12/16 (straight alpha), defaulting to Rgba8. Twelve- and
 sixteen-bit samples occupy two little-endian bytes; twelve-bit values must
-have zero high four bits. Typed alignment, YUV, ten-bit, animation, and native
-codec output negotiation are outside this API.
+have zero high four bits. Typed alignment, YUV, ten-bit, and native
+codec output negotiation are outside this API. The unmerged [JXL animation draft](docs/jpeg-xl-animation-callbacks.md) adds complete coalesced EX frame storage; it is not in published0.0.41.
 
 `DrawCallback::init_ex` and `InitOptionsEx` declare the **source** format and
 optional byte stride for subsequent draw rectangles. `InitOptions::with_format`

@@ -23,7 +23,7 @@ versions and sources. See the [0.0.37 release notes](releases/0.0.37.md).
 | Legacy encoding | Explicit whole-canvas to_rgba8 or borrowed legacy_picker with per-rectangle conversion |
 | Native codec source | Static PNG/TIFF emit Gray8/16 or RGBA8/16; bounded AVIF emits RGBA16; bounded JPEG2000 EX emits native Gray/RGBA12/16, without ICC application; JPEG2000 EX emits unsigned Gray12/16 or RGBA12/16 from RGB/explicit straight RGBA in the reversible or bounded 9/7 profile |
 | Typed highres handoff | Pixel-only U8/U16 full-resolution Gray or straight RGBA at uniform 8/12/16 bits |
-| Unsupported | YUV, F32/HDR/signed/10-bit, premultiplied alpha, EX animation, general color/ICC transforms |
+| Unsupported | YUV, F32/HDR/signed/10-bit, premultiplied alpha, cropped/disposal/blended EX animation transport, general color/ICC transforms |
 
 Existing converters, rectangular pickers, highres adapters and PNG/TIFF EX
 decoding were ported commit-by-commit, rather than recreated or replacing main
@@ -238,3 +238,11 @@ odd padding/rectangle partition checks, late/clipped conversion failure
 atomicity, declaration/pixel/legacy bridge/encoder tests and early highres pixel
 budget validation. Runtime results are distinguished from build-only and
 unexecuted platform/viewer/CI checks in the validation record.
+
+The unmerged [JPEG XL animation stage](jpeg-xl-animation-callbacks.md) adds complete
+coalesced replacement canvases to `ImageBufferEx`. `animation()` retains every
+`AnimationFrameEx` with its `PixelBytesEx` and millisecond control; `loop_count()`
+retains the source loop field. `bytes()` remains the first-frame poster. Static
+picking/legacy conversion/highres export reject animated state so frames are not
+silently discarded. This draft does not add an animation encoder or cropped EX
+layer transport.

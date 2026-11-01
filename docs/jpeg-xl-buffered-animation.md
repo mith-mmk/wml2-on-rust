@@ -74,9 +74,13 @@ they are not regenerated from a Rust implementation. Preview construction remain
 the original fingerprinted evaluation artifact. The manifest retains historical
 #67 CMS measurements as provenance; current product output is original-profile.
 
-#43 remains open: this stage does not connect the common Draw/ImageBuffer
+#93 checkpoint: this stage did not connect the common Draw/ImageBuffer
 animation callback, callback `Abort`, EX delivery or managed sRGB display. Existing
 ordinary/EX/sRGB/F32/HDR APIs still reject animation rather than returning a silent
 first frame. A future callback stage must separately account for its collector's
 poster duplication and exact tick-to-callback time policy; it cannot claim this
 owned carrier's N-canvas budget or cancellation probe as callback Abort coverage.
+
+The subsequent [callback/EX/sRGB stage](jpeg-xl-animation-callbacks.md) now supplies
+that integer-ms callback/owned-frame integration. The native rational API above
+retains its original pixel/timing contract and narrower independent validation.

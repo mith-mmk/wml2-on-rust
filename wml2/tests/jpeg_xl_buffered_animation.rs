@@ -42,7 +42,10 @@ fn every_coalesced_canvas_and_raw_tick_matches_independent_c() {
                 assert!(a.abs_diff(b) <= 1, "{bits}/{o}: {a}/{b}")
             }
         }
-        assert!(wml2::draw::image_from(input).is_err());
+        let exact = ticks
+            .iter()
+            .all(|&t| (u128::from(t) * u128::from(den) * 1000) % u128::from(num) == 0);
+        assert_eq!(wml2::draw::image_from(input).is_ok(), exact);
     }
 }
 #[path = "jpeg_xl/allocation_tracking.rs"]

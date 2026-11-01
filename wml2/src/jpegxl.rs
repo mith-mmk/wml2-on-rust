@@ -950,6 +950,14 @@ pub fn preview_from_with_resource_limits(
     limits: DecodeLimits,
     resources: JxlResourceLimits,
 ) -> Result<Option<JxlPreview>, Error> {
+    Ok(preview_with_workspace(input, limits, resources)?.map(|(preview, _)| preview))
+}
+
+fn preview_with_workspace(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+) -> Result<Option<(JxlPreview, resources::Workspace)>, Error> {
     resources.validate()?;
     let limits = resources.tighten(limits);
     limits::check(
@@ -1057,14 +1065,137 @@ pub fn preview_from_with_resource_limits(
             has_more_frames: true,
         },
     )?;
-    Ok(Some(JxlPreview {
-        width: width as u32,
-        height: height as u32,
-        orientation: h.orientation,
-        rgba16,
-        icc_profile,
-        color_channels: color_channels as u8,
-    }))
+    Ok(Some((
+        JxlPreview {
+            width: width as u32,
+            height: height as u32,
+            orientation: h.orientation,
+            rgba16,
+            icc_profile,
+            color_channels: color_channels as u8,
+        },
+        workspace,
+    )))
+}
+
+/// Decode an embedded preview to oriented, straight-alpha sRGB RGBA8.
+///
+/// Requires `color-management`. Uses the same own-library ICC transform and
+/// final16-to8 rounding as main-image sRGB output. Raw preview remains unchanged.
+/// Returns None only for an admitted preview-free still. No partial output is
+/// published on errors. The conservative raw decode reservation remains charged
+/// during CMS and output creation; source samples are converted in place.
+#[cfg(feature = "color-management")]
+pub fn preview_from_srgb_with_resource_limits(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+) -> Result<Option<crate::draw::ImageBuffer>, Error> {
+    resources.validate()?;
+    let limits = resources.tighten(limits);
+    limits::scope(limits, || {
+        let Some((mut preview, mut workspace)) = preview_with_workspace(input, limits, resources)?
+        else {
+            return Ok(None);
+        };
+        let (w, h) = (preview.width as usize, preview.height as usize);
+        let output_bytes = mul(mul(w, h)?, 4)?;
+        limits::check(
+            output_bytes,
+            limits.animation_bytes,
+            "JPEG XL managed preview output",
+        )?;
+        // Both native16 and final oriented8 output are charged while CMS runs,
+        // so compiled transforms cannot consume the later output reservation.
+        workspace.claim(output_bytes, "JPEG XL managed preview output workspace")?;
+        let metadata = add(
+            add(
+                preview.icc_profile.len(),
+                crate::color_convert::SRGB_ICC.len(),
+            )?,
+            512,
+        )?;
+        limits::check(
+            metadata,
+            limits.metadata_bytes,
+            "JPEG XL managed preview metadata",
+        )?;
+        workspace.claim(
+            mul(add(crate::color_convert::SRGB_ICC.len(), 512)?, 2)?,
+            "JPEG XL managed preview metadata workspace",
+        )?;
+        let parse = resources::cms_profiles(&preview.icc_profile, crate::color_convert::SRGB_ICC)?;
+        let scratch = add(
+            2 * 256 * 3 * std::mem::size_of::<f32>(),
+            256 * std::mem::size_of::<usize>(),
+        )?;
+        workspace.claim(parse, "JPEG XL preview CMS profile workspace")?;
+        workspace.claim(scratch, "JPEG XL preview CMS batch workspace")?;
+        crate::color_convert::rgba16_to_rgb_profile_with_cancel(
+            &mut preview.rgba16,
+            &preview.icc_profile,
+            crate::color_convert::SRGB_ICC,
+            preview.color_channels == 1,
+            workspace.remaining(),
+            &|| Ok(()),
+        )?;
+        workspace.release(parse)?;
+        workspace.release(scratch)?;
+        let (ow, oh) = if preview.orientation >= 5 {
+            (h, w)
+        } else {
+            (w, h)
+        };
+        let mut output = crate::draw::zeroed_bytes(output_bytes)?;
+        for y in 0..h {
+            for x in 0..w {
+                let (dx, dy) = preview_oriented_position(x, y, w, h, preview.orientation);
+                for c in 0..4 {
+                    output[(dy * ow + dx) * 4 + c] =
+                        ((u32::from(preview.rgba16[(y * w + x) * 4 + c]) * 255 + 32767) / 65535)
+                            as u8;
+                }
+            }
+        }
+        let mut profile = Vec::new();
+        profile.try_reserve_exact(crate::color_convert::SRGB_ICC.len())?;
+        profile.extend_from_slice(crate::color_convert::SRGB_ICC);
+        let mut metadata = std::collections::HashMap::new();
+        metadata.try_reserve(4)?;
+        metadata.insert("ICC Profile".into(), DataMap::ICCProfile(profile));
+        metadata.insert(
+            "JPEG XL Reconstruction ICC Profile".into(),
+            DataMap::ICCProfile(preview.icc_profile),
+        );
+        metadata.insert("orientation_applied".into(), DataMap::Bool(true));
+        metadata.insert(
+            "JPEG XL Source Orientation".into(),
+            DataMap::UInt(preview.orientation.into()),
+        );
+        let mut image = crate::draw::ImageBuffer::from_buffer(ow, oh, output);
+        image.metadata = Some(metadata);
+        Ok(Some(image))
+    })
+}
+
+#[cfg(feature = "color-management")]
+fn preview_oriented_position(
+    x: usize,
+    y: usize,
+    w: usize,
+    h: usize,
+    orientation: u8,
+) -> (usize, usize) {
+    match orientation {
+        2 => (w - 1 - x, y),
+        3 => (w - 1 - x, h - 1 - y),
+        4 => (x, h - 1 - y),
+        5 => (y, x),
+        6 => (h - 1 - y, x),
+        7 => (h - 1 - y, w - 1 - x),
+        8 => (y, w - 1 - x),
+        _ => (x, y),
+    }
 }
 
 /// Inspect embedded preview geometry after the same bounded admission as decoding.

@@ -430,3 +430,44 @@ query tests pass; existing main/layer/resource regressions pass. The actual prev
 was visually inspected. Rust1.91 release, no defaults, jpeg-xl/image-buffer-ex/
 color-management, 20 warmups and three processes ×1000 tiny rgba8 preview decodes
 took 48.623/50.370/49.519 ms. This measures the new API, not a decoder-wide speedup.
+
+### Development: oriented sRGB preview
+
+With `jpeg-xl,color-management`,
+`jpegxl::preview_from_srgb_with_resource_limits(input, limits, resources)` returns
+`Option<ImageBuffer>` with oriented straight-alpha sRGB RGBA8. It reuses the main
+image's own-library ICC transform, converts normalized16 samples in place, then
+applies orientation and the same final16-to8 rounding in one output pass. The
+`ICC Profile` describes sRGB, `JPEG XL Reconstruction ICC Profile` retains the raw
+preview's output profile, and `orientation_applied` is true alongside the source
+orientation. The existing raw `JxlPreview` API still returns coded native16 samples
+and an unapplied orientation. Neither endpoint silently returns main pixels.
+
+The managed endpoint keeps the entire conservative raw reservation while CMS
+runs. Native16 samples, future RGBA8 output, metadata, both profile parse estimates,
+fixed CMS batch scratch and remaining compiled-transform budget are accounted
+together before conversion. Final output storage is reserved before compiling the
+transform. The native buffer is reused rather than cloned; profile parse and batch
+reservations are released after the transform drops. This is conservative admission
+and owned-buffer accounting, not a codec-wide allocation or RSS guarantee.
+
+Independent references combine C libjxl0.11.2 preview output with LittleCMS2.16
+relative-colorimetric conversion. All eight orientations are tested on an ICC16
+preview, with additional RGB8, GrayAlpha, larger-than-main and lossy previews. RGB
+agrees within one8bit unit (two for lossy); alpha agrees exactly, including fully
+transparent/opaque and intermediate alpha. The samples cover dark/high/saturated
+coordinates and gamma2 versus sRGB. General wide-gamut/LUT profiles are not claimed
+as newly qualified by this small fixture set. Raw output is rechecked unchanged.
+Absence, all truncated ICC prefixes, damaged preview entropy, metadata/output limits
+and exact combined workspace boundaries reject without partial output. The existing
+main-image skip regression remains enabled. Eight extended preview tests and six
+minimal tests pass, plus 44 library, 41 main, three layer and 11 resource tests.
+The oriented managed preview was visually inspected. Rust1.91 release, no defaults,
+jpeg-xl/color-management/image-buffer-ex, 20 warmups and three processes ×1000
+oriented ICC16 preview calls took 79.428/81.488/79.678 ms. This is a new-API
+microbenchmark, not a universal performance claim.
+
+Stack: #77 → #76 → #75 → #73 → #72; #74 remains unapplied. #44 now has native and
+managed preview pixels in development, but stays open: caller cancellation, broader
+preview frame forms and full acceptance across the documented format envelope are
+not completed. No dependency/limit relaxation or published-release claim is made.

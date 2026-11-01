@@ -1,0 +1,101 @@
+{
+  "oracle": "C libjxl 0.11.2 preview + LittleCMS 2.16 relative-colorimetric, normalized16 RGB transform then final8 rounding; alpha bypass",
+  "cases": [
+    {
+      "base": "jxl-preview-icc16.jxl",
+      "orientation": 1,
+      "patched_input_sha256": "2d4467d662d36f45ff33e1eec5e379f16bf1a105c329763b620b1dfde8fda53b",
+      "output": "jxl-preview-icc16-o1.srgb-preview.rgba.zlib",
+      "rgba_sha256": "2a987c3f98526dc76b07bf792801dba5a68cacb3b7ad20c7119cf805de30f44e",
+      "C_header": "7 5 1 2 3 16 16"
+    },
+    {
+      "base": "jxl-preview-icc16.jxl",
+      "orientation": 2,
+      "patched_input_sha256": "fb0043fff160871b29e619d745d659694fd2e3e76ae354147a258c9da3ff3697",
+      "output": "jxl-preview-icc16-o2.srgb-preview.rgba.zlib",
+      "rgba_sha256": "c06b574f197ccb035e21b80263fdde1188326e1f5b085d57b80ef8765b34c750",
+      "C_header": "7 5 1 2 3 16 16"
+    },
+    {
+      "base": "jxl-preview-icc16.jxl",
+      "orientation": 3,
+      "patched_input_sha256": "8ece777e07abc10595a0649d564e59a7aaa76816936baa3262fbecb81e32ab88",
+      "output": "jxl-preview-icc16-o3.srgb-preview.rgba.zlib",
+      "rgba_sha256": "0d0be0f2d0f5aa14ad08b68905b17be7198939fe81d1f5924e5faca6073409a1",
+      "C_header": "7 5 1 2 3 16 16"
+    },
+    {
+      "base": "jxl-preview-icc16.jxl",
+      "orientation": 4,
+      "patched_input_sha256": "280f3da823d1b14c7e14de6e549896cb89b3113b3496b368be72c1861b68bc52",
+      "output": "jxl-preview-icc16-o4.srgb-preview.rgba.zlib",
+      "rgba_sha256": "c043b077cb68dd8d9b9c0c73d4c01241c100a0aaf9d6159d3c854f2b0a7eea09",
+      "C_header": "7 5 1 2 3 16 16"
+    },
+    {
+      "base": "jxl-preview-icc16.jxl",
+      "orientation": 5,
+      "patched_input_sha256": "be87972c3c39640e39a3dfa783534e2abe1e5ed2b15579fff035e405440929b6",
+      "output": "jxl-preview-icc16-o5.srgb-preview.rgba.zlib",
+      "rgba_sha256": "acf0a2e43d1f1f7c6c40953c168ae6f5a72e360391d0ee5d8ac5e380685aa4cc",
+      "C_header": "5 7 1 2 3 16 16"
+    },
+    {
+      "base": "jxl-preview-icc16.jxl",
+      "orientation": 6,
+      "patched_input_sha256": "77fb6b4d3cb83acec8ce3b9fef60a91a68b988344ba8e4fdaa1e48fa34a52d75",
+      "output": "jxl-preview-icc16-o6.srgb-preview.rgba.zlib",
+      "rgba_sha256": "14e084acb9deb0ad0447aa01bd3e10c68f5893c616694b830f27570b606a7a61",
+      "C_header": "5 7 1 2 3 16 16"
+    },
+    {
+      "base": "jxl-preview-icc16.jxl",
+      "orientation": 7,
+      "patched_input_sha256": "acee4a2eb9fc75ae1b9908f90712bfc3d0b1e6fda622b7ff4700cb412418a66e",
+      "output": "jxl-preview-icc16-o7.srgb-preview.rgba.zlib",
+      "rgba_sha256": "cdb183f8aa315f5b0da1af80ca45887f1efe6f8f8393745b886b69d8d3785fb4",
+      "C_header": "5 7 1 2 3 16 16"
+    },
+    {
+      "base": "jxl-preview-icc16.jxl",
+      "orientation": 8,
+      "patched_input_sha256": "5ad193cfaa6c8663665015c11e9aa61300130d6743e6ffd3030d792228fd70dc",
+      "output": "jxl-preview-icc16-o8.srgb-preview.rgba.zlib",
+      "rgba_sha256": "bedad041c9e995658393b2097949b529e9f630efacdd061933e689cd1653b8cb",
+      "C_header": "5 7 1 2 3 16 16"
+    },
+    {
+      "base": "jxl-preview-rgba8.jxl",
+      "orientation": 1,
+      "patched_input_sha256": "59b0a1428cf6c54359a2e46eee955b00d8254c386b463e57ca368f6f558b49b9",
+      "output": "jxl-preview-rgba8-o1.srgb-preview.rgba.zlib",
+      "rgba_sha256": "110bdc62dd7df693e2f7b7d81886a9f5fd4d328519beecbdfe509a565eaf2ab9",
+      "C_header": "7 5 1 2 3 8 8"
+    },
+    {
+      "base": "jxl-preview-grayalpha8.jxl",
+      "orientation": 1,
+      "patched_input_sha256": "5b14ff403a2754e74e26c4e9a072e7558169aae7544c10876dd8312283295548",
+      "output": "jxl-preview-grayalpha8-o1.srgb-preview.rgba.zlib",
+      "rgba_sha256": "84c57da9bda128b27bfbedc6ba46d7679fff9060d2253836cb66bc20b869d427",
+      "C_header": "7 5 1 2 3 8 8"
+    },
+    {
+      "base": "jxl-preview-larger.jxl",
+      "orientation": 1,
+      "patched_input_sha256": "b3429f114eac40cce468797b8e0ac68d0edbc5e4db8e2e5f763c6768b1fe71ed",
+      "output": "jxl-preview-larger-o1.srgb-preview.rgba.zlib",
+      "rgba_sha256": "86d733030f2114be726543904a957a16c97e424f0ebe71583d8fc7f35e23e7bf",
+      "C_header": "2 3 1 32 32 8 8"
+    },
+    {
+      "base": "jxl-preview-lossy.jxl",
+      "orientation": 1,
+      "patched_input_sha256": "9e7204c45cc2d118211accbec91817c0fd692f554952453c0101e62287f3e805",
+      "output": "jxl-preview-lossy-o1.srgb-preview.rgba.zlib",
+      "rgba_sha256": "3bf67dcf811f997c5b4521c0ba28bc8f1e5372257bb075985fde95a3a15ff49c",
+      "C_header": "64 48 1 8 8 8 8"
+    }
+  ]
+}

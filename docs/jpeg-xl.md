@@ -389,3 +389,44 @@ A release microbenchmark (Rust 1.91, no defaults, jpeg-xl/image-buffer-ex/color-
 before/after decoder speed claim. The main image was decoded and visually inspected;
 preview pixels were not decoded by this API. CI includes the query test target in
 the existing JPEG XL platform and Windows 32-bit commands.
+
+### Development: independent embedded preview pixels
+
+`jpegxl::preview_from_with_resource_limits(input, limits, resources)` returns
+`Option<JxlPreview>`. An admitted still without preview returns `None`; malformed
+structure, invalid preview entropy and budget failures return errors with no result.
+The result contains normalized native-endian `Vec<u16>` RGBA samples in **coded
+preview coordinates**, width/height, source orientation (1..=8), and its actual
+output ICC. Orientation is intentionally not applied; callers apply it when
+displaying. `color_channels == 1` identifies Gray ICC coordinates replicated into
+R/G/B; otherwise the ICC describes RGB. Alpha remains straight and is never passed
+through CMS. This API performs no sRGB conversion or HDR rendering. Integer source
+precision is normalized to 16 bits; it does not expose float/HDR or general extra
+channels.
+
+This API is separate from main-image APIs: it stops at the preview FrameComplete
+event, expects a following main frame, and does not decode main pixel entropy. Full
+existing container/ICC-size/TOC/internal-layer admission still runs first, including
+for absence. Terminal-visible preview restrictions and fixed caps remain. Caller
+canvas pixels and animation_bytes additionally bound preview output; workspace
+reserves the existing main admission estimate plus padded preview codec/retained
+planes, aligned output, generated profile allowance and retained ICC copy. This
+conservative combined budget is not a global codec allocator/RSS guarantee.
+
+Stack: #76 → #75 → #73 → #72; #74 is not applied. #44 now has geometry and native
+preview pixels in development, while automatic orientation, managed sRGB preview,
+cancellable acquisition and broader preview frame forms remain outside this small
+step. Published main is unchanged and #44 remains open pending complete acceptance.
+
+Validation: independent C libjxl 0.11 preview references were rerun against the
+existing manifest hashes. Compressed preview vectors are committed, including
+RGB/ICC/GrayAlpha, orientation6 and preview larger than main. Integer previews
+match exactly; lossy RGB uses <=514/65535 tolerance and alpha is exact. The coded
+orientation6 vector matches the nonoriented ICC fixture; applying orientation6
+matches the independent C oriented hash. Every truncated ICC-preview prefix and
+output/combined-workspace refusal is checked. Corrupt preview entropy rejects
+extraction while existing main skip pixels remain identical. Native and minimal
+query tests pass; existing main/layer/resource regressions pass. The actual preview
+was visually inspected. Rust1.91 release, no defaults, jpeg-xl/image-buffer-ex/
+color-management, 20 warmups and three processes ×1000 tiny rgba8 preview decodes
+took 48.623/50.370/49.519 ms. This measures the new API, not a decoder-wide speedup.

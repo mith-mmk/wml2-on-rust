@@ -448,6 +448,7 @@ struct Header {
     color_channels: usize,
     source_header_bytes: usize,
     workspace: usize,
+    preview_workspace: usize,
     sample_limit: usize,
 }
 
@@ -482,7 +483,7 @@ fn frame_workspace(
     base: usize,
     limits: DecodeLimits,
     policy: JxlResourceLimits,
-) -> Result<(usize, usize), Error> {
+) -> Result<(usize, usize, usize), Error> {
     use jxl_preflight::headers::encodings::UnconditionalCoder;
     use jxl_preflight::headers::frame_header::FrameHeader;
     use jxl_preflight::headers::toc::IncrementalTocReader;
@@ -505,6 +506,7 @@ fn frame_workspace(
         limits::check(pixels, policy.internal_pixels, "JPEG XL preview pixels")?;
         sample_pixels = sample_pixels.max(pixels);
     }
+    let mut preview_workspace = 0;
     let mut retained = 0;
     let mut peak = add(base, mul(max_pixels, 128)?)?;
     let mut visible = 0;
@@ -568,6 +570,9 @@ fn frame_workspace(
             "JPEG XL internal layer pixels",
         )?;
         sample_pixels = sample_pixels.max(pixels);
+        if preview {
+            preview_workspace = add(mul(pixels, 128)?, mul(pixels, mul(channels, 4)?)?)?;
+        }
         if !preview {
             max_pixels = max_pixels.max(pixels);
         }
@@ -624,7 +629,11 @@ fn frame_workspace(
             }
             // Upstream rejects >=limit and counts three colour channels even
             // for Gray. Keep its runtime check, using the scanned layer bound.
-            return Ok((peak, add(mul(sample_pixels, channels)?, 1)?));
+            return Ok((
+                peak,
+                add(mul(sample_pixels, channels)?, 1)?,
+                preview_workspace,
+            ));
         }
     }
     Err(unsupported("JPEG XL exceeds64 internal layers"))
@@ -753,7 +762,7 @@ fn preflight_with_resources(
         limits.expanded_bytes,
         "JPEG XL decode workspace",
     )?;
-    let (workspace, sample_limit) = frame_workspace(
+    let (workspace, sample_limit, preview_workspace) = frame_workspace(
         &input.codestream,
         &header,
         frame_bits,
@@ -780,6 +789,7 @@ fn preflight_with_resources(
         },
         source_header_bytes: header_bytes,
         workspace,
+        preview_workspace,
         sample_limit,
     })
 }
@@ -910,6 +920,151 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
     decode::<B, false, false>(reader, option, true, None, None)
+}
+
+/// Independently returned embedded preview in coded coordinates.
+///
+/// `rgba16` contains normalized native-endian u16 RGBA samples with straight
+/// alpha. RGB uses `icc_profile`; alpha is never color transformed. Orientation
+/// is the source EXIF-style value (1..=8), intentionally not applied to samples.
+/// No main-image pixels or metadata are substituted into this result.
+#[derive(Debug)]
+pub struct JxlPreview {
+    pub width: u32,
+    pub height: u32,
+    pub orientation: u8,
+    pub rgba16: Vec<u16>,
+    pub icc_profile: Vec<u8>,
+    /// 1 means Gray coordinates replicated into R/G/B; 3 means RGB coordinates.
+    pub color_channels: u8,
+}
+
+/// Decode only the independently admitted terminal-visible embedded preview.
+///
+/// Full existing container/ICC/TOC/layer admission precedes codec allocation.
+/// Returns `None` only for an admitted still without a preview. Preview pixels
+/// and workspace are additionally budgeted; main pixel entropy is not decoded
+/// or validated. This leaves all existing main-image entry points unchanged.
+pub fn preview_from_with_resource_limits(
+    input: &[u8],
+    limits: DecodeLimits,
+    resources: JxlResourceLimits,
+) -> Result<Option<JxlPreview>, Error> {
+    resources.validate()?;
+    let limits = resources.tighten(limits);
+    limits::check(
+        input.len(),
+        limits.input_bytes.min(MAX_INPUT),
+        "JPEG XL input",
+    )?;
+    limits::check(
+        mul(input.len(), 3)?,
+        limits.expanded_bytes,
+        "JPEG XL input assembly workspace",
+    )?;
+    let input = unpack_with_resources(input, limits, Some(resources))?;
+    let mut h = preflight_with_resources(&input, limits, resources)?;
+    let mut br = BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
+    let header = FileHeader::read(&mut br).map_err(preflight_error)?;
+    let Some(size) = header.image_metadata.preview.as_ref() else {
+        return Ok(None);
+    };
+    let (width, height) = (size.xsize() as usize, size.ysize() as usize);
+    let pixels = mul(width, height)?;
+    limits::check(
+        pixels,
+        limits.pixels.min(MAX_PIXELS),
+        "JPEG XL preview output pixels",
+    )?;
+    let bytes = mul(pixels, 8)?;
+    limits::check(
+        bytes,
+        limits.animation_bytes,
+        "JPEG XL preview output bytes",
+    )?;
+    let mut workspace = resources::Workspace::new(h.workspace, limits.expanded_bytes)?;
+    workspace.claim(h.preview_workspace, "JPEG XL preview decode workspace")?;
+    workspace.claim(bytes, "JPEG XL preview output workspace")?;
+    // Bound canonical simple-profile generation before calling the factory.
+    workspace.claim(64 * 1024, "JPEG XL preview generated profile workspace")?;
+    drop(header);
+    let mut options = JxlDecoderOptions::default();
+    options.sample_limit = Some(h.sample_limit);
+    options.adjust_orientation = false;
+    options.skip_preview = false;
+    options.alpha_mode = AlphaMode::AsIs;
+    options.high_precision = true;
+    options.render_spot_colors = false;
+    options.max_profile_level = ProfileLevel::Main5;
+    let mut decoder = JxlDecoder::new(options);
+    decoder.close_input();
+    let mut stream = input.codestream.as_slice();
+    expect_event(
+        decoder
+            .process(&mut stream, None, None)
+            .map_err(codec_error)?,
+        Event::BasicInfo,
+    )?;
+    h.width = h.dimensions.coded.width as usize;
+    h.height = h.dimensions.coded.height as usize;
+    let info = decoder
+        .basic_info()
+        .ok_or_else(|| invalid("missing preview basic info"))?;
+    validate_basic_info(info, &h)?;
+    if info.preview_size != Some((width, height)) {
+        return Err(invalid("preview geometry disagrees with bounded preflight"));
+    }
+    let extras = info.extra_channels.len();
+    decoder
+        .set_pixel_format(JxlPixelFormat::rgba16(extras))
+        .map_err(codec_error)?;
+    let profile = decoder
+        .output_color_profile()
+        .ok_or_else(|| invalid("missing preview output profile"))?
+        .try_as_icc()
+        .ok_or_else(|| unsupported("preview output ICC is unavailable"))?;
+    let color_channels = if profile.get(16..20) == Some(b"GRAY".as_slice()) {
+        1
+    } else {
+        3
+    };
+    validate_icc(&profile, color_channels)?;
+    limits::check(
+        add(input.metadata_bytes, profile.len())?,
+        limits.metadata_bytes,
+        "JPEG XL preview retained metadata",
+    )?;
+    workspace.claim(profile.len(), "JPEG XL preview retained profile workspace")?;
+    let mut icc_profile = Vec::new();
+    icc_profile.try_reserve_exact(profile.len())?;
+    icc_profile.extend_from_slice(&profile);
+    drop(profile);
+    expect_event(
+        decoder
+            .process(&mut stream, None, None)
+            .map_err(codec_error)?,
+        Event::FrameHeader,
+    )?;
+    let mut rgba16 = aligned_output(bytes)?;
+    // SAFETY: initialized u16 storage is aligned, exclusively borrowed and covers bytes.
+    let output = unsafe { std::slice::from_raw_parts_mut(rgba16.as_mut_ptr().cast::<u8>(), bytes) };
+    let mut buffers = [JxlOutputBuffer::new(output, height, mul(width, 8)?)];
+    expect_event(
+        decoder
+            .process(&mut stream, Some(&mut buffers), None)
+            .map_err(codec_error)?,
+        Event::FrameComplete {
+            has_more_frames: true,
+        },
+    )?;
+    Ok(Some(JxlPreview {
+        width: width as u32,
+        height: height as u32,
+        orientation: h.orientation,
+        rgba16,
+        icc_profile,
+        color_channels: color_channels as u8,
+    }))
 }
 
 /// Inspect embedded preview geometry after the same bounded admission as decoding.

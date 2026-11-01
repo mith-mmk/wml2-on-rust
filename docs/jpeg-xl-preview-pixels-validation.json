@@ -1,0 +1,41 @@
+{
+  "oracle": [
+    {
+      "input": "jxl-preview-rgba8.jxl",
+      "preview_sha256": "ee5aac777c06b8fdf6dc2b89a01ccdb48d9f9e6af816c87524bb66c8d5ef0538",
+      "header": "7 5 1 2 3 8 8"
+    },
+    {
+      "input": "jxl-preview-icc16.jxl",
+      "preview_sha256": "7ffd9ab05ce993b0bbc265044aac45aea15fb8ed2cd1913274a53b93830acb35",
+      "header": "7 5 1 2 3 16 16"
+    },
+    {
+      "input": "jxl-preview-oriented-icc16.jxl",
+      "preview_sha256": "28cf36532c861a8eb7c728ec268325f23c0df79f3d92295d8368b4a444141e17",
+      "header": "5 7 1 2 3 16 16"
+    },
+    {
+      "input": "jxl-preview-grayalpha8.jxl",
+      "preview_sha256": "95487599fdcddf035d6903c5ce4a239f070e3b90ca5a2d98ea05c14256c98ec9",
+      "header": "7 5 1 2 3 8 8"
+    },
+    {
+      "input": "jxl-preview-larger.jxl",
+      "preview_sha256": "2d750acabdbb287279453c9210e03dfdef8df6a3a084f5eedc1ae9698f8b39fb",
+      "header": "2 3 1 32 32 8 8"
+    },
+    {
+      "input": "jxl-preview-lossy.jxl",
+      "preview_sha256": "b58e477cd948d712fa21bd38a7a3a0efc729748eca391ddea57cb3c1c86e49a3",
+      "header": "64 48 1 8 8 8 8"
+    }
+  ],
+  "runtime": "libjxl.so.0.11; reference reports 0.11.2, existing C helper and cached upstream headers",
+  "scope": "native coded-coordinate normalized16 preview; no product CMS/orientation transform",
+  "notes": "RGBA8/ICC/GrayAlpha/larger exact, orientation6 coded equals ICC fixture and rotated bytes match C hash, lossy RGB tolerance514 and exact alpha",
+  "source_sha256": {
+    "wml2-test/scripts/jpegxl_preview_reference.c": "1bbaadac87057da35d334202e51879272e6552f4600a21c867ff506dfd52ebe9",
+    "wml2/tests/fixtures/review/jxl-preview-fixtures.json": "fcc54044381cf7fa83e9242e9422a90ea62fdfab468f0626545a5e8172e0cd75"
+  }
+}

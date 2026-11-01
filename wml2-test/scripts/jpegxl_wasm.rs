@@ -356,7 +356,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
-    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases()
+    count + intrinsic_cases() + composition_cases() + associated_cases() + associated_depth_cases() + subsampled_cases()
 }
 
 fn intrinsic_cases() -> u32 {
@@ -526,8 +526,7 @@ fn alpha_cases() -> u32 {
         count+=1;
     }
     for input in [
-        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-subsampled.jxl").as_slice(),
-        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-depth.jxl"),
+        include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-depth.jxl").as_slice(),
         include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-spot.jxl"),
         include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-multiple.jxl"),
         include_bytes!("../../wml2/tests/fixtures/review/jxl-alpha-refused-multiple-alpha.jxl"),
@@ -757,4 +756,28 @@ fn associated_depth_cases()->u32 {
   count+=1;
  }
  count
+}
+
+fn subsampled_cases()->u32 {
+ let mut count=0;
+ for (input,expected,_color,_alpha,shift,w,h,orientation) in include!("../../wml2/tests/jpeg_xl/subsampled_cases.rs") {
+  let expected=words(expected,16);let im=image_from_ex(input,PixelFormatEx::Rgba16,PrecisionConversion::Exact).unwrap();
+  assert_eq!((im.width(),im.height()),if orientation>=5{(h,w)}else{(w,h)});
+  let actual=words(im.bytes().unwrap(),16);assert_eq!(actual.len(),expected.len());
+  for (a,b) in actual.iter().zip(&expected){assert!(a.abs_diff(*b)<=1)}
+  let metadata=im.metadata.as_ref().unwrap();
+  assert!(matches!(metadata["JPEG XL Source Alpha Dim Shift"],wml2::metadata::DataMap::UInt(v)if v==u64::from(shift)));
+  for (key,value) in [("JPEG XL Source Alpha Width",w.div_ceil(1usize<<shift)),("JPEG XL Source Alpha Height",h.div_ceil(1usize<<shift))]{assert!(matches!(metadata[key],wml2::metadata::DataMap::UInt(v) if v==value as u64));}
+  count+=1;
+  let raw=image_from(input).unwrap().buffer.unwrap();assert_eq!(raw.len(),expected.len());for (a,b) in raw.iter().zip(&expected){assert!(a.abs_diff(((u32::from(*b)*255+32767)/65535)as u8)<=1)}
+  assert!(image_from_with_limits(input,DecodeLimits{pixels:w*h-1,..Default::default()}).is_err());assert!(image_from_ex(input,PixelFormatEx::Rgba8,PrecisionConversion::Exact).is_err());count+=1;
+ }
+ for input in [include_bytes!("../../wml2/tests/fixtures/review/jxl-subsampled-refused-associated-subsampled-1.jxl").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-subsampled-refused-subsampled-layers.jxl").as_slice()]{assert!(image_from(input).is_err());count+=1;}
+ let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-subsampled-3c16a8s3o5.jxl");
+ for (cap,accepted) in [(959,false),(960,true)] {assert_eq!(wml2::jpegxl::image_from_with_resource_limits(input,DecodeLimits::default(),wml2::jpegxl::JxlResourceLimits{internal_pixels:cap,..Default::default()}).is_ok(),accepted);}
+ let (mut lo,mut hi)=(0,64<<20);
+ while lo<hi {let mid=lo+(hi-lo)/2;if wml2::jpegxl::image_from_with_resource_limits(input,DecodeLimits::default(),wml2::jpegxl::JxlResourceLimits{workspace_bytes:mid,..Default::default()}).is_ok(){hi=mid}else{lo=mid+1}}
+ assert!(wml2::jpegxl::image_from_with_resource_limits(input,DecodeLimits::default(),wml2::jpegxl::JxlResourceLimits{workspace_bytes:lo,..Default::default()}).is_ok());
+ assert!(wml2::jpegxl::image_from_with_resource_limits(input,DecodeLimits::default(),wml2::jpegxl::JxlResourceLimits{workspace_bytes:lo-1,..Default::default()}).is_err());
+ count+1
 }

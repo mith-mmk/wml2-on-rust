@@ -1,0 +1,156 @@
+{
+  "base_sha": "d979935ba4313034cd2147da2699985d307aa3e8",
+  "scope": "Unmerged declared2/4/8x straight alpha, original-profile integer8/9/10/12/16 SDR, one full-canvas Modular frame, no preview; raw color/EC upsampling1; RGBA16 normalized output",
+  "source_inspection": [
+    {
+      "crate": "jxl",
+      "version": "0.7.4",
+      "file": "src/headers/frame_header.rs",
+      "sha256": "26f2f3e38350a9ec57177c14d5a6050495019defc7f5064e81ad736cf1c3f918",
+      "cargo_package_checksum": "43b041e4bd5bb931cf73b271bc3304eb135bb473914877d64bf77fdf5b4d4687",
+      "local_file_matches_locked_crate_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/headers/frame_header.rs",
+      "sha256": "a0acc6e9d17756c88c5e09e637a12e391348ab68b477bceda69b9199a4477768",
+      "cargo_package_checksum": "b8379fc83d79477900c9aed78cb8370a556d834081bebcb771c6010381c4e230",
+      "local_file_matches_locked_crate_archive": true
+    },
+    {
+      "crate": "jxl",
+      "version": "0.8.0",
+      "file": "src/render/stages/upsample.rs",
+      "sha256": "0d8a0d98d5876f27336063ae1f13da67c6e70b83d196368bccac8376af18743d",
+      "cargo_package_checksum": "b8379fc83d79477900c9aed78cb8370a556d834081bebcb771c6010381c4e230",
+      "local_file_matches_locked_crate_archive": true
+    }
+  ],
+  "native": {
+    "expanded": "50lib+43main+6associated+3layers+5linear+3encodedHDR+4F32+4F16+11preview+11resources+4subsampled=144 passing tests",
+    "minimal": "31main+2subsampled pass",
+    "disabled": "new target compiles with0 tests",
+    "accepted_c_oracle_cases": 49,
+    "c_decodable_refusals": 2,
+    "observed_native_maximum_rgb_u16_difference": 1,
+    "observed_native_maximum_alpha_u16_difference": 1,
+    "cancellation_checkpoints": [
+      24,
+      24
+    ],
+    "heap": "Scoped current-thread net requested allocation0 after every cancellation/result drop, not a global codec allocator or RSS bound",
+    "cms": "Two embedded RGB ICC cases, source/reconstruction ICC identities exact; own interpolated alpha copied unchanged; independent C+LittleCMS RGB within2u8 and alpha within1u8",
+    "internal_alpha_grid_boundary": "33x17 at8x rounds to40x24: internal_pixels959 rejects,960 admits, native and actual WASM"
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 461,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14811136,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "f216bc33975cea2848fc27691fd7fd9d1bf08d21bb3148f4af6686e50fcbc338",
+    "scope": "COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; declared2/4/8x straight subsampled alpha (49 native/legacy cases, coded-plane metadata, exact workspace boundary, unsupported association/layers), plus associated8/9/10/12/16 integer/mixed alpha explicit straight normalization (66 independent vectors including colored zero-alpha, all depth pairs, source depths, native and legacy) plus multi-layer refusal; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "performance": {
+    "cpu": 0,
+    "build": "Rust1.91 release; jpeg-xl,color-management,image-buffer-ex; identical harness/input;3 warmups then1000 samples/process;6 alternating paired process blocks",
+    "before_sha": "d979935ba4313034cd2147da2699985d307aa3e8",
+    "controls": {
+      "ordinary": {
+        "block_medians_ns": [
+          {
+            "before": 75311.0,
+            "after": 74335.5
+          },
+          {
+            "after": 73779.0,
+            "before": 73263.5
+          },
+          {
+            "before": 75001.5,
+            "after": 74190.0
+          },
+          {
+            "after": 74465.0,
+            "before": 73128.0
+          },
+          {
+            "before": 73704.0,
+            "after": 73679.0
+          },
+          {
+            "after": 76168.0,
+            "before": 74896.0
+          }
+        ],
+        "before_median_ns": 74300.0,
+        "after_median_ns": 74262.75,
+        "ratio": 0.9994986541049798,
+        "common_hash_and_size": [
+          "7613101786784002531",
+          "5",
+          "7"
+        ]
+      },
+      "managed": {
+        "block_medians_ns": [
+          {
+            "before": 193942.5,
+            "after": 150558.0
+          },
+          {
+            "after": 152045.5,
+            "before": 152411.0
+          },
+          {
+            "before": 151114.0,
+            "after": 152080.5
+          },
+          {
+            "after": 151509.5,
+            "before": 196821.5
+          },
+          {
+            "before": 202375.0,
+            "after": 191319.0
+          },
+          {
+            "after": 151474.0,
+            "before": 151744.5
+          }
+        ],
+        "before_median_ns": 173176.75,
+        "after_median_ns": 151777.5,
+        "ratio": 0.876431160649452,
+        "common_hash_and_size": [
+          "10980251124246367044",
+          "5",
+          "7"
+        ]
+      }
+    },
+    "new_subsampled": {
+      "ordinary": [
+        159431.5,
+        161674.5,
+        164118.5
+      ],
+      "managed": [
+        1965167.5,
+        1988291.5,
+        1983189.0
+      ]
+    },
+    "interpretation": "Final controlled batch only; managed baseline varies substantially between process blocks. Preserve all samples; no speedup or stable performance delta is inferred."
+  },
+  "display": {
+    "file": ".test-subsampled-display.png",
+    "sha256": "48cdfd10007c07633a7b7467ab00452bd76b1309346da891ab0261d7ce79739b",
+    "result": "Paired independent C+LittleCMS/WML2 oriented8x ICC checkerboard renders visually agree"
+  },
+  "platforms": "Local Linux Rust1.91 and actual Node24 WASM; macOS/Windows/Windows32 are CI, not local execution",
+  "remaining": "Associated subsampling and broader subsampled frames; general non-alpha/multiple extra retention/selection/planes; #42 open; no global heap guarantee"
+}

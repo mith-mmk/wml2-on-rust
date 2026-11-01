@@ -446,6 +446,7 @@ struct Header {
     bits: u8,
     alpha_bits: Option<u8>,
     alpha_associated: bool,
+    alpha_dim_shift: u8,
     native_bits: u8,
     orientation: u8,
     gray: bool,
@@ -549,6 +550,30 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool>(
             ));
         }
         frame.postprocess(nonserialized);
+        let alpha_shift = header
+            .image_metadata
+            .extra_channel_info
+            .first()
+            .map_or(0, |c| c.dim_shift());
+        // Parser-only0.7.4 shifts EC factors only when colour upsampling>1;
+        // pixel codec0.8 shifts unconditionally. This new route requires colour
+        // factor1 and raw EC factor1, so its effective factor is1<<dim_shift.
+        // Do not treat the old parser's postprocessed EC value as0.8's value.
+        if alpha_shift != 0 {
+            if frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular
+                || frame.upsampling != 1
+                || frame.ec_upsampling.as_slice() != [1]
+                || frame.x0 != 0
+                || frame.y0 != 0
+                || frame.size_upsampled()
+                    != (header.size.xsize() as usize, header.size.ysize() as usize)
+            {
+                return Err(unsupported(
+                    "subsampled JPEG XL alpha requires one full-canvas Modular frame with declared-only2/4/8x upsampling",
+                ));
+            }
+        }
+
         // In 0.7.4 a non-visible preview overrides Skip with SkipOutput and
         // would allocate pixel/reference state. Only a terminal visible preview
         // reaches its section-skip path without constructing pixel state.
@@ -600,10 +625,31 @@ fn frame_workspace<const FLOAT_BITS: u32, const HDR: bool>(
             toc_workspace = 8 * 1024 * 1024;
         }
         br.check_for_error().map_err(preflight_error)?;
+        let alpha_workspace = if alpha_shift != 0 {
+            let factor = 1usize << alpha_shift;
+            // Modular colour geometry has no codec padding. Alpha upsampling
+            // can produce the full next factor-sized block at each odd edge.
+            let alpha_width = mul(width.div_ceil(factor), factor)?;
+            let alpha_height = mul(height.div_ceil(factor), factor)?;
+            let alpha_pixels = mul(alpha_width, alpha_height)?;
+            limits::check(
+                alpha_pixels,
+                policy.internal_pixels,
+                "JPEG XL padded alpha pixels",
+            )?;
+            sample_pixels = sample_pixels.max(alpha_pixels);
+            max_pixels = max_pixels.max(alpha_pixels);
+            // factor*5*5*factor f32 kernel plus two full rounded alpha planes.
+            // Retain this alongside existing codec/row/retained estimates.
+            add(mul(mul(factor, factor)?, 100)?, mul(alpha_pixels, 8)?)?
+        } else {
+            0
+        };
         peak = peak.max(add(
             add(add(base, mul(max_pixels, 128)?)?, retained)?,
             toc_workspace,
         )?);
+        peak = add(peak, alpha_workspace)?;
         limits::check(
             peak,
             limits.expanded_bytes,
@@ -719,7 +765,13 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
             c.ec_type != ExtraChannel::Alpha
                 || (c.alpha_associated()
                     && (HDR || FLOAT_BITS != 0 || m.xyb_encoded || m.preview.is_some()))
-                || c.dim_shift() != 0
+                || (c.dim_shift() != 0
+                    && (c.dim_shift() > 3
+                        || HDR
+                        || FLOAT_BITS != 0
+                        || c.alpha_associated()
+                        || m.xyb_encoded
+                        || m.preview.is_some()))
                 || (HDR
                     && (c.bit_depth().floating_point_sample()
                         || c.bit_depth().bits_per_sample() != 16))
@@ -743,7 +795,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
                 "JPEG XL F32 requires at most one full-resolution straight float alpha (32 bits, 8 exponent bits)"
             }
         } else {
-            "JPEG XL requires one supported full-resolution integer alpha; associated alpha requires supported8/9/10/12/16-bit original-profile samples without preview"
+            "JPEG XL requires one supported integer alpha; associated/subsampled alpha requires bounded original-profile SDR without preview"
         }));
     }
     let alpha_bits = m
@@ -754,9 +806,14 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
         .extra_channel_info
         .first()
         .is_some_and(|c| c.alpha_associated());
+    let alpha_dim_shift = m
+        .extra_channel_info
+        .first()
+        .map_or(0, |c| c.dim_shift() as u8);
     // One output format cannot express independent channel depths. Normalize
     // mixed integer channels to 16 bits before EX storage/CMS/legacy rounding.
-    let native_bits = if alpha_associated
+    let native_bits = if alpha_dim_shift != 0
+        || alpha_associated
         || matches!(bits, 9 | 10)
         || alpha_bits.is_some_and(|b| u32::from(b) != bits)
     {
@@ -874,9 +931,9 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
         limits.expanded_bytes,
         "JPEG XL decode workspace",
     )?;
-    // Initially qualify associated alpha for one coded layer only. Reuse the
+    // Qualify associated/declared-subsampled alpha for one coded layer. Reuse the
     // complete pre-allocation frame scan; do not bypass reference/padding checks.
-    let frame_policy = if alpha_associated {
+    let frame_policy = if alpha_associated || alpha_dim_shift != 0 {
         JxlResourceLimits {
             internal_layers: policy.internal_layers.min(1),
             ..policy
@@ -902,6 +959,7 @@ fn preflight_samples<const FLOAT_BITS: u32, const HDR: bool>(
         bits: bits as u8,
         alpha_bits,
         alpha_associated,
+        alpha_dim_shift,
         native_bits,
         orientation: m.orientation as u8,
         gray: m.color_encoding.color_space == ColorSpace::Gray && m.extra_channel_info.is_empty(),
@@ -2185,6 +2243,27 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
             "JPEG XL Source Alpha Associated".into(),
             DataMap::Bool(true),
         ));
+    }
+    if h.alpha_dim_shift != 0 {
+        input.metadata.push((
+            "JPEG XL Source Alpha Dim Shift".into(),
+            DataMap::UInt(h.alpha_dim_shift.into()),
+        ));
+        let factor = 1u32 << h.alpha_dim_shift;
+        for (key, value) in [
+            (
+                "JPEG XL Source Alpha Width",
+                h.dimensions.coded.width.div_ceil(factor),
+            ),
+            (
+                "JPEG XL Source Alpha Height",
+                h.dimensions.coded.height.div_ceil(factor),
+            ),
+        ] {
+            input
+                .metadata
+                .push((key.into(), DataMap::UInt(value.into())));
+        }
     }
     // A mixed-depth image has one normalized 16-bit native layout; retain the
     // independent source alpha depth instead of relabeling it as color depth.

@@ -12,7 +12,7 @@ The product change removes only the matching8/16 restriction. Both color and
 alpha still pass the existing finite integer-depth whitelist. Source association
 is cross-checked with public BasicInfo. Original profile, no preview, one coded
 layer, one full-resolution alpha, SDR, and all existing input/ICC/TOC/padding/
-workspace caps remain. Subsampled, non-alpha/multiple extras, float/HDR/XYB,
+workspace caps remain. Associated subsampled, non-alpha/multiple extras, float/HDR/XYB,
 preview and multi-layer associated inputs remain unsupported. No dependency,
 public API or global resource ceiling changes.
 
@@ -32,7 +32,7 @@ pre-association or hidden-color recovery is promised.
 | Odd sizes and orientation | All matrix inputs7×5; orientations1–8 across each color model, independently oriented C output. |
 | ICC, alpha outside transform | Two new9/16 and16/10 embedded RGB ICC cases plus #84 cases; source/reconstruction ICC identity and independent C→LittleCMS output checked. |
 | Channel and cumulative buffer limits | One full-resolution alpha; unchanged native16 buffers/ledgers, exact workspace boundary and limit-before-callback tests on new mixed input. |
-| Subsampled alpha and general extra planes | Not implemented; existing explicit refusals and channel-count limits remain. |
+| Subsampled alpha and general extra planes | Subsequent [declared straight subsampling](jpeg-xl-subsampled-alpha.md) implements a subset; general extra-plane API remains unimplemented. |
 
 #42 stays open. The completed integer-depth portion exists only on this draft
 stack, not main0.0.41. No broader completion condition is introduced.

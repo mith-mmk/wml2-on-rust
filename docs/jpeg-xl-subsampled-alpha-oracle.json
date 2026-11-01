@@ -1,0 +1,1122 @@
+{
+  "reference": "C libjxl0.11.2 default alpha resampling; LittleCMS2.16 RGB16 relative NOOPTIMIZE, alpha copied",
+  "generator_sha256": "7bc0e2ba51e02a76187abbb4bb0dff0afe58acd607129081b3b24eada59b6a1f",
+  "encoder_sha256": "55c617d2d269b613cad4dd9edafa3980832630a18d8880db09adcbad49662e26",
+  "reference_sha256": "875ea74cb0883120354baba2ccaedaf9aa8c664aa658c10923d1bf608ae1fcbd",
+  "cases": [
+    {
+      "name": "jxl-subsampled-1c8a8s1o2",
+      "color_channels": 1,
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 2,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "47584a03d5f6a643ff8dac327ce33fa5965cf3ebcbb2c0a2887670b466963e77",
+      "rgba16_sha256": "00587983e0d155ee6df39470015312984c22bc6d47d1a5a81e88f2839ba5156f"
+    },
+    {
+      "name": "jxl-subsampled-1c9a16s1o3",
+      "color_channels": 1,
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 3,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "13b6820158e261d859d31d0c667b53292f5984ee7ac11ef0014854a1d20b56ee",
+      "rgba16_sha256": "aa14f92b70b45620e3d31887ce44f023857c82b1048278641c736233ac851107"
+    },
+    {
+      "name": "jxl-subsampled-1c10a9s1o4",
+      "color_channels": 1,
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 4,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "59bc12eb168e574dc6a7a5e8a53afe3ee0c1341d696b868ac98a30f87c7490a4",
+      "rgba16_sha256": "761a0d8ec2e8fee01f3bf9e3be8c547c03f6b1678e6e7bac8165c4e255a1fc99"
+    },
+    {
+      "name": "jxl-subsampled-1c12a10s1o5",
+      "color_channels": 1,
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 5,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "cdfc4e2ed447cb6758a40d7aa7e00fe0022ddd582581e265c62f753dbc93f1ed",
+      "rgba16_sha256": "851bd05f2e42df2b41e04558eb5f1914ad974a99cf298c5728de73c938402241"
+    },
+    {
+      "name": "jxl-subsampled-1c16a12s1o6",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 6,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "09a0b285f5c5e9d3387a5d9bcc90c781019f94b09b316a60b85bc218e29968a0",
+      "rgba16_sha256": "698d06b233ee3c5f879365a29a31d825186e15bb5a6c1187a52b239027a5e5dc"
+    },
+    {
+      "name": "jxl-subsampled-1c16a16s1o7",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 7,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "b1be0c7b9b58aeeae6f85eb3dc87cc3f17b978ea2d68bb2b8c61a74abe3b8403",
+      "rgba16_sha256": "00c71e2732d29d917bacdfe2558c3c2eccbe5b336fd344516ae199f7ff6361e6"
+    },
+    {
+      "name": "jxl-subsampled-1c16a8s1o8",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 8,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "0c4e9ef44d1f8c0e1387193d83e136d80e136be55ce64dd2e6270aa9c66f64de",
+      "rgba16_sha256": "c1271dde11ce4b203d3184217af7f6a9c5c9f2986ca5901da1441c927a64f104"
+    },
+    {
+      "name": "jxl-subsampled-1c8a8s2o3",
+      "color_channels": 1,
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 3,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "ed0836ffd2743ba9f5f29bb99de128f62ec1d23e46233d880b4d94a5c39f4049",
+      "rgba16_sha256": "e99fa80fd3f190f3467509b28fe13688c098dad95e9f597148fa2c0788920efb"
+    },
+    {
+      "name": "jxl-subsampled-1c9a16s2o4",
+      "color_channels": 1,
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 4,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "ee3101eec059461f093f4217495159f2ea308eed2c2ad58f584446528cf59d6c",
+      "rgba16_sha256": "3dd1aaecd236f2c8e0ec569034c662276429b16b63f9bab6d8d99ce1e924c1b0"
+    },
+    {
+      "name": "jxl-subsampled-1c10a9s2o5",
+      "color_channels": 1,
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 5,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "0397fb9f45b26585b4e5a56e970bdcd2e3ec50d7c5802611d14b4e527145e17c",
+      "rgba16_sha256": "06c470d7e8676ec4e8ebaea0ea8ed7262b0f3725b79dbc52269a0238d563490a"
+    },
+    {
+      "name": "jxl-subsampled-1c12a10s2o6",
+      "color_channels": 1,
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 6,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "fab16b7c14ed6e6889d20ba440c151a493a446c561d77c890fd321700d80aae9",
+      "rgba16_sha256": "d421a55562c272a0c2ba83dd32280a4a76aae26bb1e47b434025dd2fcd96fba8"
+    },
+    {
+      "name": "jxl-subsampled-1c16a12s2o7",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 7,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "f4b3bff6cbc38a56afa6b64a182613a720534c8c2e4e4e667b7b48c6c3ad76d5",
+      "rgba16_sha256": "562edb589842bc6092829796fbb364c32bf51a033bc1c72cea1cef6def0ae35e"
+    },
+    {
+      "name": "jxl-subsampled-1c16a16s2o8",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 8,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "ba93ee7c58492fe5ac0b07fb6a523180bb820ed3e8aa4a06d5da52b550a5da05",
+      "rgba16_sha256": "6b0926ce654ce631e7db0135863d79f4affa7c0b2fffb05c60cde2f20587ef39"
+    },
+    {
+      "name": "jxl-subsampled-1c16a8s2o1",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 1,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "b0db9f3a0a8cd71f2f8132a07a96e8e156b2dad0fc34c7b7b02ffba95550305c",
+      "rgba16_sha256": "82fe2d0e4658ae2180799e804a400d575bbe8865d29eeaf8bfa76e66ec91257a"
+    },
+    {
+      "name": "jxl-subsampled-1c8a8s3o4",
+      "color_channels": 1,
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 4,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "8f96943aabf41a49ca2ea1c8d5ca86753db1ad106b755414019d1e589b44feb0",
+      "rgba16_sha256": "a2fbf5c4b1eecbc407245a2dddf4dc60a1f0d68f7af813d7c2f4765544f1f116"
+    },
+    {
+      "name": "jxl-subsampled-1c9a16s3o5",
+      "color_channels": 1,
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 5,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "aae69d84df4a3742fa0b505191fba324afbd917fdfd79aa5f858e0109fede886",
+      "rgba16_sha256": "ccd0d9a9ba9ebe1ef7dbe85c6401a587aa65c661f7ac9e653b7e9a00a87a1e11"
+    },
+    {
+      "name": "jxl-subsampled-1c10a9s3o6",
+      "color_channels": 1,
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 6,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "7ef33f30e6aab9a48836bf35e31a616b36e156b8e0ff8c89c2f1af8df3945524",
+      "rgba16_sha256": "4a29e5a069ca7f80a2fc883a4a471895ce7b81ae4501d9ea90feaf3871e27029"
+    },
+    {
+      "name": "jxl-subsampled-1c12a10s3o7",
+      "color_channels": 1,
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 7,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "51f35cc530a5bf0aeee1f852d9dd5d2ba47d78d59b4a1814d8df6537dcaf99fd",
+      "rgba16_sha256": "dc32b8306ffd876d2b3ba1e9708cb10ca03cb2851b4d023596f9dbfd0386153e"
+    },
+    {
+      "name": "jxl-subsampled-1c16a12s3o8",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 8,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "feeb0cd4b6acf655116431dfc4f3043396800850f1c41ecfa02b029a51c8904e",
+      "rgba16_sha256": "003b5a74ad70436449c38caa31d2c9e7bfd689f5c95b423e6c7dbe2b7d9dbf00"
+    },
+    {
+      "name": "jxl-subsampled-1c16a16s3o1",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 1,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "a7f814eabd9cc3a193065d756274cb6299b80d35b46a88566d33a9c60ca5e2af",
+      "rgba16_sha256": "182899f3fb7f13b07fb11f06066bccbe63f3ffc5f93ea3fb6ecdb7549d875c7b"
+    },
+    {
+      "name": "jxl-subsampled-1c16a8s3o2",
+      "color_channels": 1,
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 2,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "705a96f37737dec0c38badaef3ea1445ef5f0147ee7997142e65f4295e921ebe",
+      "rgba16_sha256": "bf5fd9a7254f21646df40042a993cf15727ace8379eb18697b73bc1eb1a57b5c"
+    },
+    {
+      "name": "jxl-subsampled-3c8a8s1o5",
+      "color_channels": 3,
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 5,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "ae06917cc711ce81099dc214be75fa4450a3bdd454cdc03085700d362a995bc7",
+      "rgba16_sha256": "9823dfdec0b7bcd390e8d8562325b1aa57042d2833bd7a6adeb7f5278fe7b07f"
+    },
+    {
+      "name": "jxl-subsampled-3c9a16s1o6",
+      "color_channels": 3,
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 6,
+      "embedded_icc": true,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "ba8064ad660feee5fa2c3615aa40f91f1d65c2ea188fa1aa8f8863d06f412392",
+      "rgba16_sha256": "146876f598fa1518aa2f773a58bd2a85df10d990c6c19f302ab925ed007427f6",
+      "managed_sha256": "b0c142f4dab8f96682186a6e08d1bc60095ad20035f535629411819eaba5545f",
+      "profile_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa"
+    },
+    {
+      "name": "jxl-subsampled-3c10a9s1o7",
+      "color_channels": 3,
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 7,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "3ef3a2aa2646ae8caae4071d0c1aa9d68824db7a7d7258bae1a5c6ec19278cd6",
+      "rgba16_sha256": "e99dc112b2eba7c68025a59d9ac1bc7da922f350ca5cef9945c8b26b761905b4"
+    },
+    {
+      "name": "jxl-subsampled-3c12a10s1o8",
+      "color_channels": 3,
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 8,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "9b0f4f95b45010f24f9e7ccd5bad81730f95c08e9578912b086b6bfeb66b4d62",
+      "rgba16_sha256": "4d5902f3ec999e50f73e049f7cec60f57856aef0eef30293b1bf633473914702"
+    },
+    {
+      "name": "jxl-subsampled-3c16a12s1o1",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 1,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "fab90af470a17fd0ef6c02b458bfe7525cc10c30433e8d591c75f1dfa3dc7767",
+      "rgba16_sha256": "0019a064de6070e0063031e4c20986e25dc6537e04aca17660b6b735c7e7242d"
+    },
+    {
+      "name": "jxl-subsampled-3c16a16s1o2",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 2,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "d7170f0492afba9710e5b07d712dda47c93d559091ff97e2bfdd1cb8bd4f6999",
+      "rgba16_sha256": "52de79bbfc3d75b8195dd0c011288b7d4be327bf31959d9218ea4271c8faefa4"
+    },
+    {
+      "name": "jxl-subsampled-3c16a8s1o3",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "dim_shift": 1,
+      "declared_alpha": [
+        17,
+        9
+      ],
+      "orientation": 3,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "2b81c20e3f7d6ea4907f3ad4b5f993ac1598299666fa81981fe6ff7b0384948f",
+      "rgba16_sha256": "d7132ed84ed666cad175adc18e18b290f1d5adea0d305325a4e5106b2c01195f"
+    },
+    {
+      "name": "jxl-subsampled-3c8a8s2o6",
+      "color_channels": 3,
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 6,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "f94c10b43cd1572634c4053f4c8a3f3629092344a9fcf1eb46e2cdc30bac660e",
+      "rgba16_sha256": "3da0287d77f97c8a3f57c9ccbd145162f5b0fdb0ca7baaf7f5b52376cb5773e7"
+    },
+    {
+      "name": "jxl-subsampled-3c9a16s2o7",
+      "color_channels": 3,
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 7,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "97fbe5387d406de0a55f2aa8c857efbcb1914109f2f97f6347549f73b0b5fc6c",
+      "rgba16_sha256": "988b11f5df68abf9977cbb83200b8453ad8dee9ba16190ca9481fd0f9f649695"
+    },
+    {
+      "name": "jxl-subsampled-3c10a9s2o8",
+      "color_channels": 3,
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 8,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "8067f3ddc049a59471aa38f4276094876b28ad11c340d8c7692e401a4bfde43b",
+      "rgba16_sha256": "29d5606628e37d7b5a43409ed93ee79f8ee59e61fffa924ccb4c23e5d87392fb"
+    },
+    {
+      "name": "jxl-subsampled-3c12a10s2o1",
+      "color_channels": 3,
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 1,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "872e2f0dd5f2e3f396eb8bcc615d1258079438e615d43e7d9d516c2bc009b2f6",
+      "rgba16_sha256": "60cc196014712a76ec5c7e6e2349dbc984f51627b4f04e0654862731670e777a"
+    },
+    {
+      "name": "jxl-subsampled-3c16a12s2o2",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 2,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "efb1ee80d7ad158de34320f4dbf2567f387d3283b19956b7f56d984102e5f212",
+      "rgba16_sha256": "09c74560e78b8f8cedcf84cfc7d6e956f921962f8358b3a97148eebbe8bd8ef8"
+    },
+    {
+      "name": "jxl-subsampled-3c16a16s2o3",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 3,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "11c5f41fad0b200ae210f8f13f99eca52ceeb20e10e5aa2cd5d55d46f13c26aa",
+      "rgba16_sha256": "a083b82be60be8e5bb35ac6cba744cda47bcd9235973a2fe89b03535c4589e79"
+    },
+    {
+      "name": "jxl-subsampled-3c16a8s2o4",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "dim_shift": 2,
+      "declared_alpha": [
+        9,
+        5
+      ],
+      "orientation": 4,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "a03fd3ef4f1644f2c377f82dbeacd6c4a14be4bd17bcb06e5aedd864f0e51748",
+      "rgba16_sha256": "08f47eb224b2e3b9ac597dcc0d7f878ea34e54d458a45d99afb5f1e9cf4b310b"
+    },
+    {
+      "name": "jxl-subsampled-3c8a8s3o7",
+      "color_channels": 3,
+      "color_bits": 8,
+      "alpha_bits": 8,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 7,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "98cb93810bea52b5b284ea086d43cda7af6d7929df790db74922bddf23e9b16a",
+      "rgba16_sha256": "61d5ad279cf7b61ab3ce78219b037e53f2555a8c56535deb9a49f34fb8241b81"
+    },
+    {
+      "name": "jxl-subsampled-3c9a16s3o8",
+      "color_channels": 3,
+      "color_bits": 9,
+      "alpha_bits": 16,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 8,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "e9e9cbd581551ff4efad90fb6109954b51ff7e9a423ea3d16fe57f0f0f25a123",
+      "rgba16_sha256": "3a14bc35f6ffdd8427d19f0edcc3dbeac3049073a948bad9fff293b1d869b258"
+    },
+    {
+      "name": "jxl-subsampled-3c10a9s3o1",
+      "color_channels": 3,
+      "color_bits": 10,
+      "alpha_bits": 9,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 1,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "736b0aa8b9d83d940ce431b73317690343ae355578948177b3d137f4a810ac24",
+      "rgba16_sha256": "0098abebb1dc7e13d1d60773e43224fb49aa06f8ddfb2efc893446048b8c4185"
+    },
+    {
+      "name": "jxl-subsampled-3c12a10s3o2",
+      "color_channels": 3,
+      "color_bits": 12,
+      "alpha_bits": 10,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 2,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "586ef870147e85a537ee2b220b55bfed56864f7e19b49bc03bc7460cd27a3c91",
+      "rgba16_sha256": "a1561bd41fe9645be7314a130c53d34e374cb63022839bf72e9f947ef0be8485"
+    },
+    {
+      "name": "jxl-subsampled-3c16a12s3o3",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 12,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 3,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "2e1d054671a68d6e2aee129bcaaa21c93a64029b4854fa061b4f2ce44305c4ca",
+      "rgba16_sha256": "fb061b4d57842419b0712f2badd9baf64c2b068ea73823d5ae4891987e5453c4"
+    },
+    {
+      "name": "jxl-subsampled-3c16a16s3o4",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 4,
+      "embedded_icc": false,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        33,
+        17
+      ],
+      "jxl_sha256": "418eabce94989e2e6c0d7d28dd9ea6fef2fe76d48810b0e1ac03633961065ec2",
+      "rgba16_sha256": "8f9fd4929d98aef87a0d3fa9e166f5a07b65a6aa34aaf47c56ff3f2fa37eb613"
+    },
+    {
+      "name": "jxl-subsampled-3c16a8s3o5",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "dim_shift": 3,
+      "declared_alpha": [
+        5,
+        3
+      ],
+      "orientation": 5,
+      "embedded_icc": true,
+      "coded": [
+        33,
+        17
+      ],
+      "output": [
+        17,
+        33
+      ],
+      "jxl_sha256": "214a5f17812297ad3cf78c4e5a1a271daf71b60c18a8df16385cc619d24569df",
+      "rgba16_sha256": "7680138a51d74fafcf5841a9129b5fc40cb97ef2079bebd1fe4addd6fb2a8bee",
+      "managed_sha256": "1e80c8e5687d808f512886953c462d625de49584a397b6e8d2e0bf1cb960ee4c",
+      "profile_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa"
+    },
+    {
+      "name": "jxl-subsampled-flat-s1a0",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "orientation": 6,
+      "output": [
+        5,
+        7
+      ],
+      "flat_alpha": 0,
+      "jxl_sha256": "5801b6416ac154da1e9dc611cd13d9d0d12b64a662d4f46cf0cf325db0a51d4f",
+      "rgba16_sha256": "ef237733252f813aec0947985fe41a7f251b28fb99cc9e5714848381355cf192"
+    },
+    {
+      "name": "jxl-subsampled-flat-s1a65535",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "orientation": 6,
+      "output": [
+        5,
+        7
+      ],
+      "flat_alpha": 65535,
+      "jxl_sha256": "4f486dbf848b2035321023a297486155fc32aa1817a3b25792c2df5f0dbba98b",
+      "rgba16_sha256": "4b699278deb5a9d0abf1a51920ed6e815fefd11b4998d7e43f85f167e976fd8f"
+    },
+    {
+      "name": "jxl-subsampled-flat-s2a0",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "orientation": 6,
+      "output": [
+        5,
+        7
+      ],
+      "flat_alpha": 0,
+      "jxl_sha256": "625e91508a3176ad8b3bb17b423eeeab8d7719bc222ce089a5aebfb2a617203a",
+      "rgba16_sha256": "ef237733252f813aec0947985fe41a7f251b28fb99cc9e5714848381355cf192"
+    },
+    {
+      "name": "jxl-subsampled-flat-s2a65535",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 2,
+      "coded": [
+        7,
+        5
+      ],
+      "orientation": 6,
+      "output": [
+        5,
+        7
+      ],
+      "flat_alpha": 65535,
+      "jxl_sha256": "069494b198194478081dd3f070532aaad28308ca98be59c1d00ae6c6a3d7ec36",
+      "rgba16_sha256": "4b699278deb5a9d0abf1a51920ed6e815fefd11b4998d7e43f85f167e976fd8f"
+    },
+    {
+      "name": "jxl-subsampled-flat-s3a0",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "orientation": 6,
+      "output": [
+        5,
+        7
+      ],
+      "flat_alpha": 0,
+      "jxl_sha256": "b152ceeab09663b99d0b81fc472769b62e7bf05eeee6d9337a1281442115a1d8",
+      "rgba16_sha256": "ef237733252f813aec0947985fe41a7f251b28fb99cc9e5714848381355cf192"
+    },
+    {
+      "name": "jxl-subsampled-flat-s3a65535",
+      "color_channels": 3,
+      "color_bits": 16,
+      "alpha_bits": 16,
+      "dim_shift": 3,
+      "coded": [
+        7,
+        5
+      ],
+      "orientation": 6,
+      "output": [
+        5,
+        7
+      ],
+      "flat_alpha": 65535,
+      "jxl_sha256": "fdb0ecf04571efd53e44b477e3bb3071747a3fb68e216e6beed7e5f87aa43b37",
+      "rgba16_sha256": "4b699278deb5a9d0abf1a51920ed6e815fefd11b4998d7e43f85f167e976fd8f"
+    },
+    {
+      "name": "jxl-alpha-refused-subsampled",
+      "color_bits": 16,
+      "alpha_bits": 8,
+      "dim_shift": 1,
+      "coded": [
+        7,
+        5
+      ],
+      "orientation": 6,
+      "kind": "historical subsampled16/8 refusal now positive",
+      "output": [
+        5,
+        7
+      ],
+      "jxl_sha256": "ae72f698c17a9fcc7e38bc914c0d5a2164c19246934dbcea17b48911f84052e5",
+      "rgba16_sha256": "26d6cf78629de1db5f627e4b1b787e8caa565b950e6753298f731f71f0661b20"
+    },
+    {
+      "name": "jxl-subsampled-refused-associated-subsampled-1",
+      "kind": "independently decodable explicit refusal",
+      "refused": true,
+      "jxl_sha256": "1fffab4212d91c48b0e1d723ed066c86564c2e7db4268f9ce61969221ca4ca02"
+    },
+    {
+      "name": "jxl-subsampled-refused-subsampled-layers",
+      "kind": "independently decodable explicit refusal",
+      "refused": true,
+      "jxl_sha256": "1ec3c503cf3b92adf10665575aecd54678e70716271cd6bc7db307438fceb7a1"
+    }
+  ]
+}

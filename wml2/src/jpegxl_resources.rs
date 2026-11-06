@@ -117,13 +117,15 @@ impl Workspace {
         self.live = live;
         Ok(())
     }
-    #[cfg(feature = "color-management")]
     pub(super) fn release(&mut self, bytes: usize) -> Result<(), Error> {
         self.live = self
             .live
             .checked_sub(bytes)
             .ok_or_else(|| invalid("JPEG XL workspace release mismatch"))?;
         Ok(())
+    }
+    pub(super) fn accounted(&self) -> usize {
+        self.live
     }
     pub(super) fn remaining(&self) -> usize {
         self.limit - self.live
@@ -302,6 +304,84 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn extra_formats_admit_before_allocating_and_roll_back_refusal() {
+        let _reset = ResetFault;
+        let bytes = std::mem::size_of::<Option<jxl_codec::api::JxlDataFormat>>();
+        let mut zero = Workspace::new(0, 0).unwrap();
+        let empty = super::super::output_extra_formats(0, Some(&mut zero)).unwrap();
+        assert_eq!(empty.capacity(), 0);
+        assert_eq!(zero.accounted(), 0);
+        let mut short = Workspace::new(10, 10 + bytes - 1).unwrap();
+        COPY_KEY.with(|f| f.set(Some("JPEG XL extra formats")));
+        FAILED_BYTES.with(|f| f.set(0));
+        assert!(super::super::output_extra_formats(1, Some(&mut short)).is_err());
+        assert_eq!(COPY_KEY.with(Cell::get), Some("JPEG XL extra formats"));
+        assert_eq!(FAILED_BYTES.with(Cell::get), 0);
+        assert_eq!(short.accounted(), 10);
+        let mut exact = Workspace::new(10, 10 + bytes).unwrap();
+        let error = super::super::output_extra_formats(1, Some(&mut exact)).unwrap_err();
+        assert!(error.is::<std::collections::TryReserveError>());
+        assert_eq!(FAILED_BYTES.with(Cell::get), bytes);
+        assert_eq!(exact.accounted(), 10);
+        let formats = super::super::output_extra_formats(1, Some(&mut exact)).unwrap();
+        assert_eq!(formats.len(), 1);
+        assert!(formats[0].is_none());
+        assert_eq!(exact.accounted(), 10 + bytes);
+        assert!(super::super::output_extra_formats(usize::MAX, None).is_err());
+    }
+
+    #[test]
+    fn each_extra_format_failure_returns_no_image_and_recovers() {
+        let _reset = ResetFault;
+        let size = std::mem::size_of::<Option<jxl_codec::api::JxlDataFormat>>();
+        let decode = |mode| -> Result<(), Error> {
+            let l = DecodeLimits::default();
+            let p = JxlResourceLimits::default();
+            match mode {
+                0 => crate::draw::image_from(include_bytes!(
+                    "../tests/fixtures/review/jxl-rgba8.jxl"
+                ))
+                .map(drop),
+                1 => super::super::image_from_with_resource_limits(
+                    include_bytes!("../tests/fixtures/review/jxl-rgba8.jxl"),
+                    l,
+                    p,
+                )
+                .map(drop),
+                2 => super::super::image_f32_from_with_resource_limits_and_cancel(
+                    include_bytes!("../tests/fixtures/review/jxl-native-f32-rgba.jxl"),
+                    l,
+                    p,
+                    &|| false,
+                )
+                .map(drop),
+                3 => super::super::image_hdr_encoded_from_with_resource_limits_and_cancel(
+                    include_bytes!("../tests/fixtures/review/jxl-float-hdr-hlg-f16-rgba-o6.jxl"),
+                    l,
+                    p,
+                    &|| false,
+                )
+                .map(drop),
+                _ => super::super::preview_from_with_resource_limits(
+                    include_bytes!("../tests/fixtures/review/jxl-preview-rgba8.jxl"),
+                    l,
+                    p,
+                )
+                .map(drop),
+            }
+        };
+        for mode in 0..5 {
+            COPY_KEY.with(|f| f.set(Some("JPEG XL extra formats")));
+            FAILED_BYTES.with(|f| f.set(0));
+            let e = decode(mode).unwrap_err();
+            assert!(e.is::<std::collections::TryReserveError>(), "{mode}: {e}");
+            assert_eq!(FAILED_BYTES.with(Cell::get), size);
+            assert_eq!(COPY_KEY.with(Cell::get), None);
+            decode(mode).unwrap();
+        }
+    }
+
+    #[test]
     fn runtime_output_reservation_propagates_allocator_refusal_and_checked_size() {
         let _reset = ResetFault;
         FAIL_BYTES.with(|f| f.set(256));
@@ -431,7 +511,9 @@ pub(crate) mod tests {
         )
         .unwrap();
         let policy = JxlResourceLimits {
-            workspace_bytes: header.workspace,
+            workspace_bytes: header.workspace
+                + usize::from(header.alpha_bits.is_some())
+                    * std::mem::size_of::<Option<jxl_codec::api::JxlDataFormat>>(),
             ..Default::default()
         };
         COPY_KEY.with(|f| f.set(Some("JPEG XL Source ICC Profile")));

@@ -164,6 +164,29 @@ fn mul(a: usize, b: usize) -> Result<usize, Error> {
     a.checked_mul(b)
         .ok_or_else(|| invalid("JPEG XL size overflow"))
 }
+// The codec retains this Vec after set_pixel_format. Charge its requested
+// payload through final decode/CMS, separately from conservative codec estimates.
+fn output_extra_formats(
+    count: usize,
+    mut workspace: Option<&mut resources::Workspace>,
+) -> Result<Vec<Option<JxlDataFormat>>, Error> {
+    let bytes = mul(count, std::mem::size_of::<Option<JxlDataFormat>>())?;
+    if let Some(w) = workspace.as_deref_mut() {
+        w.claim(bytes, "JPEG XL extra format workspace")?;
+    }
+    let mut formats = Vec::new();
+    #[cfg(test)]
+    resources::tests::before_metadata_copy("JPEG XL extra formats", bytes);
+    if let Err(e) = formats.try_reserve_exact(count) {
+        if let Some(w) = workspace {
+            w.release(bytes)?;
+        }
+        return Err(e.into());
+    }
+    formats.resize(count, None);
+    Ok(formats)
+}
+
 fn append(out: &mut Vec<u8>, data: &[u8]) -> Result<(), Error> {
     out.try_reserve_exact(data.len())?;
     out.extend_from_slice(data);
@@ -1621,7 +1644,7 @@ fn image_signal_f32<const SOURCE_BITS: u32, const HDR: bool>(
         color_data_format: Some(JxlDataFormat::F32 {
             endianness: Endianness::native(),
         }),
-        extra_channel_format: vec![None; extras],
+        extra_channel_format: output_extra_formats(extras, Some(&mut workspace))?,
     };
     decoder
         .set_pixel_format(format)
@@ -1871,7 +1894,14 @@ fn preview_with_workspace(
     }
     let extras = info.extra_channels.len();
     decoder
-        .set_pixel_format(JxlPixelFormat::rgba16(extras))
+        .set_pixel_format(JxlPixelFormat {
+            color_type: JxlColorType::Rgba,
+            color_data_format: Some(JxlDataFormat::U16 {
+                endianness: Endianness::native(),
+                bit_depth: 16,
+            }),
+            extra_channel_format: output_extra_formats(extras, Some(&mut workspace))?,
+        })
         .map_err(map_codec_error)?;
     let profile = decoder
         .output_color_profile()
@@ -2417,6 +2447,12 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
             .ok_or_else(|| invalid("missing JPEG XL basic info"))?,
         &h,
     )?;
+    let extras = usize::from(h.alpha_bits.is_some());
+    let mut format_workspace = resources
+        .map(|_| resources::Workspace::new(h.workspace, limits.expanded_bytes))
+        .transpose()?;
+    let extra_formats = output_extra_formats(extras, format_workspace.as_mut())?;
+    let codec_workspace = format_workspace.map_or(h.workspace, |w| w.accounted());
     // Decode at source precision even for the legacy path: upstream U8
     // narrowing dithers RGB, whereas WML2 promises deterministic rounding.
     let bits = if managed { 16 } else { h.native_bits };
@@ -2436,18 +2472,11 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
                 bit_depth: bits,
             }
         }),
-        extra_channel_format: vec![
-            None;
-            decoder
-                .basic_info()
-                .ok_or_else(|| invalid("missing JPEG XL basic info"))?
-                .extra_channels
-                .len()
-        ],
+        extra_channel_format: extra_formats,
     };
     decoder.set_pixel_format(format).map_err(codec_error)?;
     let mut copies = resources
-        .map(|_| resources::MetadataCopies::new(h.workspace, input.metadata_bytes, limits));
+        .map(|_| resources::MetadataCopies::new(codec_workspace, input.metadata_bytes, limits));
     input.metadata.push(profile_metadata(
         "JPEG XL Source ICC Profile",
         decoder
@@ -2608,7 +2637,7 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     if let Some(copies) = copies {
         copies.finish(added_metadata)?;
     }
-    let retained_workspace = add(h.workspace, mul(added_metadata, 2)?)?;
+    let retained_workspace = add(codec_workspace, mul(added_metadata, 2)?)?;
     limits::check(
         retained_workspace,
         limits.expanded_bytes,

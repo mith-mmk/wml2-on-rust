@@ -187,3 +187,9 @@ The later [implicit-palette cache stage](jpeg-xl-palette-cache.md) adds an expli
 admission remains unchanged; finite workspace minima grow by100200 bytes on64-bit
 or99900 on32-bit. This is one identified codec allocation class, not full heap
 enforcement or large-image support.
+
+The later [format-descriptor follow-up](jpeg-xl-format-admission.md) makes the
+ordinary, float/HDR and preview descriptor-list allocations fallible and includes
+their retained requested payload in finite admission. Historical minima in the
+original snapshots describe their own revisions; on the current x86_64 fixture
+cases, a single Alpha descriptor adds2 bytes and absent Alpha adds none.

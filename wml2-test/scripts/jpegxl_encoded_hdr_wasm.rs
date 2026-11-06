@@ -10,6 +10,8 @@ use wml2::{
     },
     limits::DecodeLimits,
 };
+#[path = "../../wml2/tests/jpeg_xl/float_hdr_cases.rs"]
+mod float_cases;
 static CHECKS: AtomicU32 = AtomicU32::new(0);
 static PROBES: AtomicU32 = AtomicU32::new(0);
 #[unsafe(no_mangle)]
@@ -395,6 +397,100 @@ pub extern "C" fn run() -> u32 {
         return 18;
     }
     checks += 1;
+    // Float HDR uses the same normalized-code carrier, never a display transform.
+    for &(input, expected, pq, orientation) in float_cases::CASES {
+        let image = match decode(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false,
+        ) {
+            Ok(image) => image,
+            Err(_) => return 19,
+        };
+        let expected = miniz_oxide::inflate::decompress_to_vec_zlib(expected).unwrap();
+        let actual: Vec<u8> = image
+            .rgba_encoded
+            .iter()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        if actual != expected
+            || image.source_orientation != orientation
+            || image.signal.transfer
+                != if pq {
+                    JxlHdrTransfer::Pq
+                } else {
+                    JxlHdrTransfer::Hlg
+                }
+        {
+            return 20;
+        }
+        checks += 1;
+    }
+    for &input in float_cases::REFUSED {
+        if decode(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false,
+        )
+        .is_ok()
+        {
+            return 21;
+        }
+        checks += 1;
+    }
+    let input = float_cases::CASES[7].0;
+    for bytes in [239, 240] {
+        if decode(
+            input,
+            DecodeLimits {
+                animation_bytes: bytes,
+                ..Default::default()
+            },
+            JxlResourceLimits::default(),
+            &|| false,
+        )
+        .is_ok()
+            != (bytes == 240)
+        {
+            return 22;
+        }
+        checks += 1;
+    }
+    let count = Cell::new(0);
+    drop(
+        decode(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| {
+                count.set(count.get() + 1);
+                false
+            },
+        )
+        .unwrap(),
+    );
+    let float_probes = count.get();
+    if float_probes <= 10 {
+        return 23;
+    }
+    for stop in 1..=float_probes {
+        let count = Cell::new(0);
+        match decode(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| {
+                count.set(count.get() + 1);
+                count.get() == stop
+            },
+        ) {
+            Err(e) if e.is::<DecodeCancelled>() => checks += 1,
+            _ => return 24,
+        }
+    }
+    PROBES.store(n + linear_probes + float_probes, Ordering::Relaxed);
     CHECKS.store(checks, Ordering::Relaxed);
     0
 }

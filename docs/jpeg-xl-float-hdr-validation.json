@@ -1,0 +1,165 @@
+{
+  "base": "052e30262f4bf84952986e95482acc0123d4b681",
+  "product_dependency_change": false,
+  "fixed_caps_changed": false,
+  "platform": "Linux x86_64 / Rust1.91.0; Node24.19.0 actual wasm32",
+  "native": {
+    "minimal": {
+      "total_passed": 50,
+      "test_target_counts": [
+        44,
+        6
+      ]
+    },
+    "expanded": {
+      "total_passed": 133,
+      "test_target_counts": [
+        60,
+        43,
+        6,
+        5,
+        4,
+        4,
+        11
+      ]
+    },
+    "disabled": {
+      "total_passed": 0,
+      "test_target_counts": [
+        0
+      ]
+    }
+  },
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 101,
+    "probes": 31,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 1507328,
+    "ceiling_bytes": 33554432,
+    "ceiling_rejected": true,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "98c9f5781fd9ae35480b1d4a159cb81b29b45cd5f7c62c32098ca7764d24c3d6",
+    "scope": "Structured integer16/F16/F32 PQ/HLG encoded F32 preservation (8 new bit-exact C float vectors, 9 new refusals, output boundaries and all float cancellation checkpoints) and explicit PQ-nits / HLG-scene linearization against70-digit Decimal oracle; in-place pointer, exact budgets, bad samples, mismatch and conversion cancellation; independent vectors/source metadata, refusals, legacy API compatibility, all cancellation probes, recovery and budgets;32MiB ceiling",
+    "harness_sha256": "49130e777b2ba18d12338975a1d091c4f599357950f61f2595dbefa0f37f113d"
+  },
+  "benchmark": {
+    "build": "Rust1.91 release, no defaults; jpeg-xl,image-buffer-ex,color-management; identical graphs/features/harness, baseline product source identical to #97 (through #95)",
+    "method": "3 alternating paired blocks, 3 warmups and 100 timed samples per process; no concurrent build/test",
+    "scope": "compatibility paths only; small inputs, no global throughput/RSS claim",
+    "cases": [
+      {
+        "case": "integer16-HDR",
+        "block_medians_ns": {
+          "before": [
+            45297.0,
+            45677.0,
+            46644.0
+          ],
+          "after": [
+            46799.0,
+            46774.0,
+            46383.5
+          ]
+        },
+        "ratio": 1.0240164634279834,
+        "output_hash": [
+          "17788425359013176140",
+          "5",
+          "3"
+        ]
+      },
+      {
+        "case": "ordinary",
+        "block_medians_ns": {
+          "before": [
+            51045.0,
+            49763.5,
+            50710.0
+          ],
+          "after": [
+            50664.5,
+            50119.0,
+            50334.0
+          ]
+        },
+        "ratio": 0.9925852888976533,
+        "output_hash": [
+          "14208654780104629357",
+          "7",
+          "5"
+        ]
+      },
+      {
+        "case": "managed",
+        "block_medians_ns": {
+          "before": [
+            278085.5,
+            315605.5,
+            434160.5
+          ],
+          "after": [
+            271145.0,
+            273388.5,
+            286783.0
+          ]
+        },
+        "ratio": 0.8662349040178324,
+        "output_hash": [
+          "17421433103156107027",
+          "7",
+          "5"
+        ]
+      }
+    ]
+  },
+  "controlled_integer_hdr_benchmark": {
+    "cpu": 0,
+    "blocks": 6,
+    "samples": 1000,
+    "warmups": 3,
+    "block_medians_ns": {
+      "before": [
+        43900.0,
+        43895.0,
+        43775.0,
+        43934.5,
+        43579.5,
+        44015.0
+      ],
+      "after": [
+        44290.0,
+        43534.5,
+        43749.5,
+        43254.0,
+        43804.0,
+        43779.5
+      ]
+    },
+    "ratio": 0.9969702147047098
+  },
+  "display": {
+    "independent_f32_bytes_exact": true,
+    "alpha_and_signed_zero_bits_exact": true,
+    "dimensions": [
+      3,
+      5
+    ],
+    "kind": "encoded-coordinate diagnostic only; not HDR rendering",
+    "sha256": "dc9177e9cdb3ba78ef277aab88e01d38690443f50b81411b6bba79b7e9d576ac",
+    "visually_inspected": true
+  },
+  "not_run": [
+    "native 32-bit runtime",
+    "Windows/macOS locally",
+    "whole-codec heap tracking",
+    "HDR display/tone mapping"
+  ],
+  "source_sha256": {
+    "wml2-test/scripts/generate_jpegxl_float_hdr.py": "3badbebdb89d3c5114630f997b4d5ac881bd590cc8c64735f171ffed0ab10927",
+    "wml2-test/scripts/jpegxl_encoded_hdr_wasm.rs": "49130e777b2ba18d12338975a1d091c4f599357950f61f2595dbefa0f37f113d",
+    "wml2/tests/jpeg_xl/float_hdr_cases.rs": "664d7a0dd2053de7086c21a6850f46ae74d5f1f293e9aa7d889dbf40cc3773f1"
+  }
+}

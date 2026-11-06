@@ -791,8 +791,9 @@ transfer linearization are implemented only on the unmerged stack. SDR display
 rendering still needs an explicit policy for reference white/exposure, tone curve
 and gamut handling; HLG display rendering additionally needs peak/black luminance
 and system-gamma conditions. Neither the source intensity hint nor an inverse OETF
-selects those conditions. Embedded-ICC/custom-primary/float HDR support remains
-outside the current input envelope. No new completion conditions are added.
+selects those conditions. Embedded-ICC/custom-primary HDR support remains outside the current input
+envelope. The later [float-HDR stage](jpeg-xl-float-hdr.md) adds normalized
+F16/F32 PQ/HLG codes to the existing encoded carrier without display rendering. No new completion conditions are added.
 
 [Local validation](jpeg-xl-hdr-linear-validation.json) records actual Node24 WASM
 execution:69 checks,18 combined decode/conversion probes, no host imports and an
@@ -822,3 +823,14 @@ The [associated/reconstructed extension](jpeg-xl-extra-alpha.md) qualifies assoc
 and uniform effective1/2/4/8x reconstruction with explicit source/returned precision.
 Mixed factors, multiple Alpha, other kinds/storage and names remain residual.
 It does not change the deferred HDR display policy in #46.
+
+
+### Development: F16/F32 encoded HDR inputs
+
+The existing `image_hdr_encoded_from_with_resource_limits_and_cancel` also
+accepts qualified original-profile Modular F16/5 and F32/8 PQ/HLG RGB, optionally
+matching-depth straight Alpha. [Float-HDR contract and evidence](jpeg-xl-float-hdr.md)
+distinguish exact source-code preservation in F32 storage from linearization and
+HDR/SDR display. RGB/Alpha outside0..=1 or nonfinite values are refused without
+clipping; native SDR float companions keep their existing extended-range contract.
+No new API, dependency, fixed cap or tone-map policy is introduced.

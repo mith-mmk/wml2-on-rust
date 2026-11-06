@@ -466,6 +466,7 @@ struct Header {
     width: usize,
     height: usize,
     bits: u8,
+    float_exponent_bits: u8,
     alpha_bits: Option<u8>,
     extras: [Option<(JxlExtraChannelKind, u8)>; MAX_EXTRA_PLANES],
     extra_upsampling: [u8; MAX_EXTRA_PLANES],
@@ -574,11 +575,11 @@ fn frame_workspace<
         let mut br = BitReader::new(data);
         let mut frame = FrameHeader::read_unconditional(&(), &mut br, nonserialized)
             .map_err(preflight_error)?;
-        if FLOAT_BITS != 0
+        if (FLOAT_BITS != 0 || (HDR && header.image_metadata.bit_depth.floating_point_sample()))
             && frame.encoding != jxl_preflight::headers::frame_header::Encoding::Modular
         {
             return Err(unsupported(
-                "JPEG XL native F32 currently requires Modular frames",
+                "JPEG XL native floating output currently requires Modular frames",
             ));
         }
         frame.postprocess(nonserialized);
@@ -849,14 +850,25 @@ fn preflight_samples<
     if !ANIMATION && m.animation.is_some() {
         return Err(unsupported("JPEG XL animations are unsupported"));
     }
+    let float_exponent_bits = if m.bit_depth.floating_point_sample() {
+        m.bit_depth.exponent_bits_per_sample()
+    } else {
+        0
+    };
     if HDR
-        && (m.bit_depth.floating_point_sample()
-            || m.bit_depth.bits_per_sample() != 16
-            || m.xyb_encoded
-            || m.color_encoding.want_icc)
+        && (m.xyb_encoded
+            || m.color_encoding.want_icc
+            || !matches!(
+                (
+                    m.bit_depth.floating_point_sample(),
+                    m.bit_depth.bits_per_sample(),
+                    float_exponent_bits
+                ),
+                (false, 16, 0) | (true, 16, 5) | (true, 32, 8)
+            ))
     {
         return Err(unsupported(
-            "encoded HDR currently requires structured original-profile integer16",
+            "encoded HDR requires structured original-profile integer16, F16/5 or F32/8",
         ));
     }
     let bits = m.bit_depth.bits_per_sample();
@@ -898,6 +910,7 @@ fn preflight_samples<
         }));
     }
     if FLOAT_BITS == 0
+        && !HDR
         && (m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 9 | 10 | 12 | 16))
     {
         return Err(unsupported(
@@ -940,10 +953,11 @@ fn preflight_samples<
                             || FLOAT_BITS != 0
                             || m.xyb_encoded
                             || m.preview.is_some()))
-                    || (HDR
-                        && (c.bit_depth().floating_point_sample()
-                            || c.bit_depth().bits_per_sample() != 16))
-                    || if FLOAT_BITS != 0 {
+                    || if HDR {
+                        c.bit_depth().floating_point_sample() != m.bit_depth.floating_point_sample()
+                            || c.bit_depth().bits_per_sample() != bits
+                            || c.bit_depth().exponent_bits_per_sample() != float_exponent_bits
+                    } else if FLOAT_BITS != 0 {
                         !c.bit_depth().floating_point_sample()
                             || c.bit_depth().bits_per_sample() != FLOAT_BITS
                             || c.bit_depth().exponent_bits_per_sample()
@@ -955,7 +969,7 @@ fn preflight_samples<
             })
         {
             return Err(unsupported(if HDR {
-                "encoded HDR requires at most one full-resolution straight integer16 alpha"
+                "encoded HDR requires at most one matching-depth full-resolution straight alpha"
             } else if FLOAT_BITS != 0 {
                 if FLOAT_BITS == 16 {
                     "JPEG XL F16 requires matching full-resolution straight float alpha (16 bits, 5 exponent bits)"
@@ -1182,6 +1196,7 @@ fn preflight_samples<
         width,
         height,
         bits: bits as u8,
+        float_exponent_bits: float_exponent_bits as u8,
         alpha_bits,
         extras,
         extra_upsampling,
@@ -1362,9 +1377,13 @@ pub struct JxlEncodedHdrImage {
     pub rgba_encoded: Vec<f32>,
     pub signal: JxlHdrSignal,
 }
-/// Preserve structured original-profile Modular integer16 PQ/HLG Rec.2020/D65.
-/// Source/output structured descriptors must agree. Embedded ICC, float HDR,
-/// arbitrary primaries and display rendering remain unsupported.
+/// Preserve structured original-profile Modular integer16 or F16/F32 PQ/HLG.
+/// Rec.2020/D65 RGB must be finite normalized code coordinates, not scene-linear
+/// or display-linear values. F16 input is exactly promoted to F32 output; source
+/// depth is not inferred from the carrier's F32 storage. Matching-depth straight
+/// Alpha is retained. No clipping, EOTF/OOTF or tone mapping is applied.
+/// Source/output descriptors must agree. Embedded ICC, arbitrary primaries,
+/// associated/subsampled Alpha and display rendering remain unsupported.
 pub fn image_hdr_encoded_from_with_resource_limits_and_cancel(
     bytes: &[u8],
     limits: DecodeLimits,
@@ -1546,12 +1565,19 @@ fn image_signal_f32<const SOURCE_BITS: u32, const HDR: bool>(
     if info.size != (h.width, h.height)
         || info.orientation as u8 != h.orientation
         || if HDR {
-            !matches!(
-                info.bit_depth,
-                JxlBitDepth::Int {
-                    bits_per_sample: 16
+            match info.bit_depth {
+                JxlBitDepth::Int { bits_per_sample } => {
+                    bits_per_sample != 16 || h.float_exponent_bits != 0
                 }
-            )
+                JxlBitDepth::Float {
+                    bits_per_sample,
+                    exponent_bits_per_sample,
+                } => {
+                    bits_per_sample != u32::from(h.bits)
+                        || exponent_bits_per_sample != u32::from(h.float_exponent_bits)
+                        || h.float_exponent_bits == 0
+                }
+            }
         } else {
             !matches!(
                 info.bit_depth,
@@ -1643,6 +1669,8 @@ fn image_signal_f32<const SOURCE_BITS: u32, const HDR: bool>(
     )?;
     check()?;
     let mut rgba = Vec::new();
+    #[cfg(test)]
+    resources::tests::before_metadata_copy("JPEG XL F32 output", output_bytes);
     rgba.try_reserve_exact(mul(pixels, 4)?)?;
     rgba.resize(mul(pixels, 4)?, 0.0f32);
     // SAFETY: initialized f32 storage, aligned/exclusive and covering output_bytes.

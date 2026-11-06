@@ -289,3 +289,151 @@ fn hdr_cancellation_releases_owned_storage_at_every_checkpoint() {
         0
     );
 }
+
+#[path = "jpeg_xl/float_hdr_cases.rs"]
+mod float_cases;
+#[test]
+fn float_hdr_preserves_independent_f16_f32_codes_without_display_conversion() {
+    for &(input, expected, pq, orientation) in float_cases::CASES {
+        let im = image(input).unwrap();
+        let size = im.dimensions.output.unwrap();
+        assert_eq!(
+            (size.width, size.height),
+            if orientation == 6 { (3, 5) } else { (5, 3) }
+        );
+        assert_eq!(im.source_orientation, orientation);
+        assert_eq!(
+            im.signal.transfer,
+            if pq {
+                JxlHdrTransfer::Pq
+            } else {
+                JxlHdrTransfer::Hlg
+            }
+        );
+        assert_eq!(im.signal.intensity_target, 1000.0);
+        let expected = miniz_oxide::inflate::decompress_to_vec_zlib(expected).unwrap();
+        let actual: Vec<u8> = im
+            .rgba_encoded
+            .iter()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        assert_eq!(actual, expected); // includes F32/F16 subnormals and signed zero
+        assert!(wml2::draw::image_from(input).is_err());
+        assert!(
+            wml2::jpegxl::image_f32_from_with_resource_limits_and_cancel(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| false
+            )
+            .is_err()
+        );
+        assert!(
+            wml2::jpegxl::image_f16_as_f32_from_with_resource_limits_and_cancel(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| false
+            )
+            .is_err()
+        );
+    }
+}
+#[test]
+fn float_hdr_refuses_invalid_ranges_profiles_and_every_prefix() {
+    for &input in float_cases::REFUSED {
+        assert!(image(input).is_err());
+    }
+    for &(input, _, _, _) in float_cases::CASES {
+        for end in 0..input.len() {
+            assert!(image(&input[..end]).is_err());
+        }
+        for bytes in [239, 240] {
+            assert_eq!(
+                decode(
+                    input,
+                    DecodeLimits {
+                        animation_bytes: bytes,
+                        ..Default::default()
+                    },
+                    JxlResourceLimits::default(),
+                    &|| false
+                )
+                .is_ok(),
+                bytes == 240
+            );
+        }
+        for policy in [
+            JxlResourceLimits {
+                workspace_bytes: 0,
+                ..Default::default()
+            },
+            JxlResourceLimits {
+                internal_pixels: 0,
+                ..Default::default()
+            },
+        ] {
+            assert!(decode(input, DecodeLimits::default(), policy, &|| false).is_err());
+        }
+    }
+}
+#[test]
+fn float_hdr_cancellation_and_owned_cleanup_cover_each_checkpoint() {
+    use std::cell::Cell;
+    for &(input, _, _, orientation) in float_cases::CASES {
+        if orientation != 6 {
+            continue;
+        }
+        let count = Cell::new(0);
+        drop(
+            decode(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| {
+                    count.set(count.get() + 1);
+                    false
+                },
+            )
+            .unwrap(),
+        );
+        let n = count.get();
+        assert!(n > 10);
+        for stop in 1..=n {
+            let count = Cell::new(0);
+            assert_eq!(
+                allocation_tracking::measure(|| {
+                    let e = decode(
+                        input,
+                        DecodeLimits::default(),
+                        JxlResourceLimits::default(),
+                        &|| {
+                            count.set(count.get() + 1);
+                            count.get() == stop
+                        },
+                    )
+                    .unwrap_err();
+                    assert!(e.is::<DecodeCancelled>());
+                    drop(e);
+                }),
+                0
+            );
+        }
+        assert_eq!(
+            allocation_tracking::measure(|| drop(image(input).unwrap())),
+            0
+        );
+        let e = decode(
+            &[],
+            DecodeLimits::default(),
+            JxlResourceLimits {
+                workspace_bytes: 0,
+                ..Default::default()
+            },
+            &|| true,
+        )
+        .unwrap_err();
+        assert!(e.is::<DecodeCancelled>());
+        eprintln!("float HDR cancellation checkpoints: {n}");
+    }
+}

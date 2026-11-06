@@ -268,6 +268,40 @@ pub(crate) mod tests {
     #[global_allocator]
     static ALLOCATOR: FailOutput = FailOutput;
     #[test]
+    fn float_hdr_output_allocator_refusal_is_recoverable() {
+        let _reset = ResetFault;
+        for input in [
+            include_bytes!("../tests/fixtures/review/jxl-float-hdr-pq-f16-rgba-o6.jxl").as_slice(),
+            include_bytes!("../tests/fixtures/review/jxl-float-hdr-hlg-f32-rgba-o6.jxl").as_slice(),
+        ] {
+            COPY_KEY.with(|f| f.set(Some("JPEG XL F32 output")));
+            FAILED_BYTES.with(|f| f.set(0));
+            let result = super::super::image_hdr_encoded_from_with_resource_limits_and_cancel(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+                &|| false,
+            );
+            assert!(
+                result
+                    .unwrap_err()
+                    .is::<std::collections::TryReserveError>()
+            );
+            assert_eq!(FAILED_BYTES.with(Cell::get), 240);
+            assert_eq!(COPY_KEY.with(Cell::get), None);
+            assert!(
+                super::super::image_hdr_encoded_from_with_resource_limits_and_cancel(
+                    input,
+                    DecodeLimits::default(),
+                    JxlResourceLimits::default(),
+                    &|| false
+                )
+                .is_ok()
+            );
+        }
+    }
+
+    #[test]
     fn runtime_output_reservation_propagates_allocator_refusal_and_checked_size() {
         let _reset = ResetFault;
         FAIL_BYTES.with(|f| f.set(256));

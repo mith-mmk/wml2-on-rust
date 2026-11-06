@@ -1,0 +1,62 @@
+pub type Case = (&'static [u8], &'static [u8], bool, u8);
+pub const CASES: &[Case] = &[
+    (
+        include_bytes!("../fixtures/review/jxl-float-hdr-pq-f16-rgb.jxl"),
+        include_bytes!("../fixtures/review/jxl-float-hdr-pq-f16-rgb.f32le.zlib"),
+        true,
+        1,
+    ),
+    (
+        include_bytes!("../fixtures/review/jxl-float-hdr-pq-f16-rgba-o6.jxl"),
+        include_bytes!("../fixtures/review/jxl-float-hdr-pq-f16-rgba-o6.f32le.zlib"),
+        true,
+        6,
+    ),
+    (
+        include_bytes!("../fixtures/review/jxl-float-hdr-pq-f32-rgb.jxl"),
+        include_bytes!("../fixtures/review/jxl-float-hdr-pq-f32-rgb.f32le.zlib"),
+        true,
+        1,
+    ),
+    (
+        include_bytes!("../fixtures/review/jxl-float-hdr-pq-f32-rgba-o6.jxl"),
+        include_bytes!("../fixtures/review/jxl-float-hdr-pq-f32-rgba-o6.f32le.zlib"),
+        true,
+        6,
+    ),
+    (
+        include_bytes!("../fixtures/review/jxl-float-hdr-hlg-f16-rgb.jxl"),
+        include_bytes!("../fixtures/review/jxl-float-hdr-hlg-f16-rgb.f32le.zlib"),
+        false,
+        1,
+    ),
+    (
+        include_bytes!("../fixtures/review/jxl-float-hdr-hlg-f16-rgba-o6.jxl"),
+        include_bytes!("../fixtures/review/jxl-float-hdr-hlg-f16-rgba-o6.f32le.zlib"),
+        false,
+        6,
+    ),
+    (
+        include_bytes!("../fixtures/review/jxl-float-hdr-hlg-f32-rgb.jxl"),
+        include_bytes!("../fixtures/review/jxl-float-hdr-hlg-f32-rgb.f32le.zlib"),
+        false,
+        1,
+    ),
+    (
+        include_bytes!("../fixtures/review/jxl-float-hdr-hlg-f32-rgba-o6.jxl"),
+        include_bytes!("../fixtures/review/jxl-float-hdr-hlg-f32-rgba-o6.f32le.zlib"),
+        false,
+        6,
+    ),
+];
+pub const REFUSED: &[&[u8]] = &[
+    include_bytes!("../fixtures/review/jxl-float-hdr-refused-negative.jxl"),
+    include_bytes!("../fixtures/review/jxl-float-hdr-refused-over-one.jxl"),
+    include_bytes!("../fixtures/review/jxl-float-hdr-refused-nan.jxl"),
+    include_bytes!("../fixtures/review/jxl-float-hdr-refused-infinite.jxl"),
+    include_bytes!("../fixtures/review/jxl-float-hdr-refused-alpha-negative.jxl"),
+    include_bytes!("../fixtures/review/jxl-float-hdr-refused-alpha-nan.jxl"),
+    include_bytes!("../fixtures/review/jxl-float-hdr-refused-f16-nan.jxl"),
+    include_bytes!("../fixtures/review/jxl-float-hdr-refused-associated.jxl"),
+    include_bytes!("../fixtures/review/jxl-float-hdr-refused-p3.jxl"),
+];

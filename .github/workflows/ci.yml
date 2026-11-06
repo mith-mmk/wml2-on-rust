@@ -169,13 +169,21 @@ jobs:
       - name: Symbolize JPEG XL palette ownership including inline frames
         if: matrix.rust == 'stable' && matrix.features == 'jpeg-xl,image-buffer-ex'
         run: python3 wml2-test/scripts/verify_jpegxl_palette_cache.py --output .test-palette-cache --phase symbols
+      - name: Evaluate isolated JPEG XL 0.8 entropy ownership
+        if: matrix.rust == 'stable' && matrix.features == 'jpeg-xl,image-buffer-ex'
+        run: |
+          rustup target add wasm32-unknown-unknown
+          python3 -B wml2-test/scripts/evaluate_jxl080_entropy_budget.py --output .test-entropy080 --wasm
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: diagnostics-${{ matrix.rust }}-${{ strategy.job-index }}
+          include-hidden-files: true
           path: |
             clippy.json
             Cargo.lock
+            .test-entropy080/report.json
+            .test-entropy080/*.log
   avif-test:
     name: test (${{ matrix.rust }}, ${{ matrix.features }})
     needs: [select, avif-oracles]

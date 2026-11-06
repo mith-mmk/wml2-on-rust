@@ -1,0 +1,179 @@
+{
+  "crate": "jxl",
+  "version": "0.8.0",
+  "archive_sha256": "b8379fc83d79477900c9aed78cb8370a556d834081bebcb771c6010381c4e230",
+  "base_sha": "721025a0ccbd19faeaaf3b68a5bcc8d7d4132e26",
+  "scope": "Evaluation only. Explicit low-level context-map payload and reusable LZ77 scratch; no decoder-wide propagation, product dependency change or guarantee.",
+  "files": {
+    "Cargo.toml": {
+      "before": "cb296ea583bb94d5037b8ca825f2535a9893ab1bcf80a4a34a72786043e2c0fc",
+      "after": "f358ebc2de140d3e78321fa98c5541cca336d2675cc91b414ed137fccbd1e81d"
+    },
+    "src/lib.rs": {
+      "before": "d4c4147898fd11c379ae7221fce78a80efa235d8232bfb819831074fa230396a",
+      "after": "6d9a2ef5e838645d575dddefc8e64670e9a2abedbd98952417ae637e457a7233"
+    },
+    "src/util/mod.rs": {
+      "before": "4351db67ab601fb82215d9f4e529053cbefe555c8e0c28245303e8a5f6826eb3",
+      "after": "54b6a8d2b9e13e391c099f7c85f9577c030eea39393f75a4fffef2d1debf0e86"
+    },
+    "src/util/entropy_budget.rs": {
+      "before": null,
+      "after": "6a75fa371ad82a59137ff548517cc5c383c12ff3908aec58cc1c7c6db90cf28f"
+    },
+    "src/error.rs": {
+      "before": "4492a1c7ef47d48f2c8026ae4de2d980670b37a134910536138dfa5c397094c8",
+      "after": "e84e64027a6c81a6c00acc76cc7dcae7ef1579a4a2cfb5dfae3077d25af1a39b"
+    },
+    "src/entropy_coding/context_map.rs": {
+      "before": "b4f34558282d1c1f4f76e79ec39de6b149d39e00602dc3f3d45abdf954119a84",
+      "after": "9693a45fe41abc9ee0608bf1d1963dcb344cffdd1ffbb05a3f9eb5bd758e8f81"
+    },
+    "src/entropy_coding/decode.rs": {
+      "before": "21665951c526b0cc3e09d54a85befacc5e9b3710f9593edef4b2c6a8962a7034",
+      "after": "8a20e412cca816c7a5482ef477a222c80ae654232e2f229e964e31f196960ece"
+    }
+  },
+  "patch_sha256": "a57cc8b15287d7f2bde4e797427d79c79e9a844fca7a91acb0037477fa8e1da4",
+  "local_validation": {
+    "scope": "Evaluation only. Explicit low-level context-map payload and reusable LZ77 scratch; no decoder-wide propagation, product dependency change or guarantee.",
+    "source_sha256": "b8379fc83d79477900c9aed78cb8370a556d834081bebcb771c6010381c4e230",
+    "patch_sha256": "a57cc8b15287d7f2bde4e797427d79c79e9a844fca7a91acb0037477fa8e1da4",
+    "native_tests": 10,
+    "compile_fail_checks": 2,
+    "wasm": {
+      "passed": true,
+      "groups": 6,
+      "imports": [],
+      "ceiling_bytes": 67108864,
+      "ceiling_enforced": true,
+      "memory_bytes": 9699328,
+      "node": "v24.19.0",
+      "sha256": "b6b291f7fe74592617637a58e4ff2977bde915bc6269cf4bf9e860d5fc1c78c7"
+    },
+    "unbudgeted_wml_regressions": 65
+  },
+  "performance": {
+    "build": "release, identical features jpeg-xl,image-buffer-ex,color-management; Rust 1.91.0; 3 warmups/process",
+    "scope": "unbudgeted default decode regression only; does not measure full budget propagation",
+    "results": [
+      {
+        "input": "jxl-rgba8",
+        "mode": "ordinary",
+        "block_median_ns": {
+          "original": [
+            50539.5,
+            50479.0,
+            51766.0
+          ],
+          "patched": [
+            45547.5,
+            45317.0,
+            44906.5
+          ]
+        },
+        "median_ratio": 0.8966649848138585,
+        "samples_per_block": 100,
+        "blocks": 3,
+        "hash": [
+          "14208654780104629357",
+          "7",
+          "5"
+        ]
+      },
+      {
+        "input": "jxl-rgba8",
+        "mode": "managed",
+        "block_median_ns": {
+          "original": [
+            148990.0,
+            145850.0,
+            146841.5
+          ],
+          "patched": [
+            139861.0,
+            140922.0,
+            141298.5
+          ]
+        },
+        "median_ratio": 0.9596878266702533,
+        "samples_per_block": 100,
+        "blocks": 3,
+        "hash": [
+          "14208654780104629357",
+          "7",
+          "5"
+        ]
+      },
+      {
+        "input": "jxl-icc-lossy",
+        "mode": "ordinary",
+        "block_median_ns": {
+          "original": [
+            203480.5,
+            201697.5,
+            195523.5
+          ],
+          "patched": [
+            199750.0,
+            197812.0,
+            199830.0
+          ]
+        },
+        "median_ratio": 0.990344451468164,
+        "samples_per_block": 100,
+        "blocks": 3,
+        "hash": [
+          "17421433103156107027",
+          "7",
+          "5"
+        ]
+      },
+      {
+        "input": "jxl-icc-lossy",
+        "mode": "managed",
+        "block_median_ns": {
+          "original": [
+            268776.0,
+            256203.0,
+            257790.5
+          ],
+          "patched": [
+            260279.0,
+            271976.5,
+            259383.0
+          ]
+        },
+        "median_ratio": 1.0096531873750196,
+        "samples_per_block": 100,
+        "blocks": 3,
+        "hash": [
+          "17421433103156107027",
+          "7",
+          "5"
+        ]
+      }
+    ]
+  },
+  "image_display": {
+    "dimensions": [
+      7,
+      5
+    ],
+    "rgb_max_abs_error": 0,
+    "alpha_exact": true,
+    "patched_equals_baseline": true,
+    "visually_inspected": true
+  },
+  "supporting_sha256": {
+    "jxl080_entropy_eval.rs": "d838ef8d80fb8cd51048f35299ddc3f22f6356ac957d8ad3d17d84cd56c99aef",
+    "jxl080_entropy_eval.lock": "ac5bdfa63dd0bfcdbd23d0e419de6ec399aae89315f163bc842582761b57c930",
+    "jxl080_entropy_wml_eval.lock": "3a3f5c5cbfc1f5d7858c31a7f37cb4d4789b6bb1ecb54265b066c100e17e70fc",
+    "jxl080_entropy_budget_LICENSE.txt": "8405932022a556380c2d8c272eff154a923feb197233f348ce5f7334fb0a5ede"
+  },
+  "not_run": [
+    "upstream crate unit suite (registry archive omits test resources)",
+    "native i686 runtime",
+    "whole-codec allocation tracking or large-canvas admission"
+  ]
+}

@@ -1,0 +1,612 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -34,6 +34,7 @@
+ resolver = "2"
+ 
+ [features]
++entropy-budget-evaluation = []
+ all-simd = ["jxl_simd/all-simd"]
+ avx = ["jxl_simd/avx"]
+ avx512 = ["jxl_simd/avx512"]
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -26,3 +26,15 @@
+ const BLOCK_SIZE: usize = BLOCK_DIM * BLOCK_DIM;
+ #[allow(clippy::excessive_precision)]
+ const MIN_SIGMA: f32 = -3.90524291751269967465540850526868;
++
++/// Experimental low-level facade for the isolated resource-budget evaluation.
++#[cfg(feature = "entropy-budget-evaluation")]
++pub mod entropy_budget_evaluation {
++    pub use crate::bit_reader::BitReader;
++    pub use crate::entropy_coding::context_map::decode_context_map_with_budget;
++    pub use crate::entropy_coding::decode::{
++        BudgetedHistograms, EntropyScratch, Histograms, SymbolReader,
++    };
++    pub use crate::error::Error;
++    pub use crate::util::entropy_budget::{EntropyBudget, EntropyVec};
++}
+--- a/src/util/mod.rs
++++ b/src/util/mod.rs
+@@ -34,3 +34,5 @@
+ pub use smallvec::*;
+ pub use vec_helpers::*;
+ pub use xorshift128plus::*;
++
++pub mod entropy_budget;
+--- a/src/util/entropy_budget.rs
++++ b/src/util/entropy_budget.rs
+@@ -0,0 +1,173 @@
++// Copyright (c) the JPEG XL Project Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license in LICENSE.
++
++//! Evaluation: requested payload capacity of context maps and LZ77 windows only.
++//! Setup's Arc allocation, allocator overhead and other codec storage are excluded.
++use crate::error::{Error, Result};
++use std::ops::{Deref, DerefMut};
++use std::sync::{
++    Arc,
++    atomic::{AtomicUsize, Ordering},
++};
++
++#[derive(Debug, Clone)]
++pub struct EntropyBudget(Arc<State>);
++#[derive(Debug)]
++struct State {
++    limit: usize,
++    live: AtomicUsize,
++    peak: AtomicUsize,
++}
++impl EntropyBudget {
++    pub fn new(limit: usize) -> Self {
++        Self(Arc::new(State {
++            limit,
++            live: AtomicUsize::new(0),
++            peak: AtomicUsize::new(0),
++        }))
++    }
++    pub fn same_budget(&self, other: &Self) -> bool {
++        Arc::ptr_eq(&self.0, &other.0)
++    }
++    pub fn live_bytes(&self) -> usize {
++        self.0.live.load(Ordering::Relaxed)
++    }
++    pub fn peak_bytes(&self) -> usize {
++        self.0.peak.load(Ordering::Relaxed)
++    }
++    pub(crate) fn reserve(&self, bytes: usize) -> Result<Lease> {
++        let previous = self
++            .0
++            .live
++            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |live| {
++                live.checked_add(bytes).filter(|&next| next <= self.0.limit)
++            })
++            .map_err(|_| Error::EntropyBudgetExceeded)?;
++        self.0.peak.fetch_max(previous + bytes, Ordering::Relaxed);
++        Ok(Lease {
++            budget: self.clone(),
++            bytes,
++        })
++    }
++}
++#[derive(Debug)]
++pub(crate) struct Lease {
++    budget: EntropyBudget,
++    bytes: usize,
++}
++impl Lease {
++    pub(crate) fn budget(&self) -> EntropyBudget {
++        self.budget.clone()
++    }
++}
++impl Drop for Lease {
++    fn drop(&mut self) {
++        self.budget.0.live.fetch_sub(self.bytes, Ordering::Relaxed);
++    }
++}
++
++/// No Clone or Vec escape: a lease follows the storage until it is freed.
++/// Counts requested element capacity, not allocator-internal rounding or RSS.
++#[derive(Debug)]
++pub struct EntropyVec<T> {
++    // Field drop order matters: release storage before its reservation.
++    data: Vec<T>,
++    lease: Option<Lease>,
++    requested: usize,
++}
++impl<T: Copy> EntropyVec<T> {
++    pub(crate) fn with_capacity(capacity: usize, budget: Option<&EntropyBudget>) -> Result<Self> {
++        let layout = std::alloc::Layout::array::<T>(capacity).map_err(|_| Error::SizeOverflow)?;
++        let lease = budget.map(|b| b.reserve(layout.size())).transpose()?;
++        let mut data = Vec::new();
++        data.try_reserve_exact(capacity)?; // lease rolls back if allocator refuses
++        Ok(Self {
++            data,
++            lease,
++            requested: capacity,
++        })
++    }
++    pub(crate) fn push_reserved(&mut self, value: T) {
++        assert!(self.data.len() < self.requested); // never grow outside admission
++        self.data.push(value);
++    }
++    pub fn try_resize(&mut self, len: usize, value: T) -> Result<()> {
++        if self.lease.is_none() {
++            self.data
++                .try_reserve_exact(len.saturating_sub(self.data.len()))?;
++            self.data.resize(len, value);
++            self.requested = self.requested.max(len);
++            return Ok(());
++        }
++        if len <= self.requested {
++            self.data.resize(len, value);
++            return Ok(());
++        }
++        // Admit full replacement while the old backing store remains alive.
++        let budget = self.budget();
++        let mut next = Self::with_capacity(len, budget.as_ref())?;
++        next.data.extend_from_slice(&self.data);
++        next.data.resize(len, value);
++        *self = next; // old Vec dies before old lease
++        Ok(())
++    }
++    pub(crate) fn budget(&self) -> Option<EntropyBudget> {
++        self.lease.as_ref().map(|l| l.budget.clone())
++    }
++    pub(crate) fn into_parts(self) -> (Vec<T>, Option<Lease>) {
++        (self.data, self.lease)
++    }
++    pub(crate) fn into_unbudgeted(self) -> Vec<T> {
++        assert!(self.lease.is_none());
++        self.data
++    }
++    #[cfg(test)]
++    pub(crate) fn unbudgeted(data: Vec<T>) -> Self {
++        let requested = data.capacity();
++        Self {
++            data,
++            lease: None,
++            requested,
++        }
++    }
++}
++impl<T> Deref for EntropyVec<T> {
++    type Target = [T];
++    fn deref(&self) -> &[T] {
++        &self.data
++    }
++}
++impl<T> DerefMut for EntropyVec<T> {
++    fn deref_mut(&mut self) -> &mut [T] {
++        &mut self.data
++    }
++}
++
++// Preserve raw Vec access in histogram hot loops; keep its lease separately.
++pub(crate) fn resize_parts<T: Copy>(
++    data: &mut Vec<T>,
++    lease: &mut Option<Lease>,
++    len: usize,
++    value: T,
++) -> Result<()> {
++    if let Some(current) = lease {
++        let admitted = current
++            .bytes
++            .checked_div(std::mem::size_of::<T>())
++            .unwrap_or(usize::MAX);
++        if len <= admitted {
++            data.resize(len, value);
++            return Ok(());
++        }
++        let mut replacement = EntropyVec::with_capacity(len, Some(&current.budget))?;
++        replacement.data.extend_from_slice(data);
++        replacement.data.resize(len, value);
++        let (new_data, new_lease) = replacement.into_parts();
++        *data = new_data; // free old allocation before releasing its lease
++        *lease = new_lease;
++    } else {
++        data.try_reserve_exact(len.saturating_sub(data.len()))?;
++        data.resize(len, value);
++    }
++    Ok(())
++}
+--- a/src/error.rs
++++ b/src/error.rs
+@@ -15,6 +15,13 @@
+ #[derive(Error, Debug)]
+ #[non_exhaustive]
+ pub enum Error {
++    #[error("Entropy map/window live payload budget exceeded")]
++    EntropyBudgetExceeded,
++    #[error("Entropy scratch belongs to another budget or unbudgeted histogram")]
++    EntropyBudgetMismatch,
++    #[error("Entropy context count must be nonzero")]
++    InvalidEntropyContextCount,
++
+     #[error("Invalid raw quantization table")]
+     InvalidRawQuantTable,
+     #[error("Invalid distance band {0}: {1}")]
+--- a/src/entropy_coding/context_map.rs
++++ b/src/entropy_coding/context_map.rs
+@@ -8,6 +8,7 @@
+ use crate::bit_reader::BitReader;
+ use crate::entropy_coding::decode::*;
+ use crate::error::Error;
++use crate::util::entropy_budget::{EntropyBudget, EntropyVec};
+ 
+ fn move_to_front(v: &mut [u8], index: u8) {
+     let value = v[index as usize];
+@@ -45,36 +46,50 @@
+     br: &mut BitReader,
+     lz77_scratch: &mut Vec<u32>,
+ ) -> Result<Vec<u8>, Error> {
++    Ok(decode_context_map_with_budget(num_contexts, br, lz77_scratch, None)?.into_unbudgeted())
++}
++
++pub fn decode_context_map_with_budget(
++    num_contexts: usize,
++    br: &mut BitReader,
++    lz77_scratch: &mut Vec<u32>,
++    budget: Option<&EntropyBudget>,
++) -> Result<EntropyVec<u8>, Error> {
++    if num_contexts == 0 {
++        return Err(Error::InvalidEntropyContextCount);
++    }
+     let is_simple = br.read(1)? != 0;
+     if is_simple {
+         let bits_per_entry = br.read(2)? as usize;
+-        let ctx_map: Vec<u8> = if bits_per_entry != 0 {
+-            let mut map = Vec::with_capacity(num_contexts);
+-            for _ in 0..num_contexts {
+-                map.push(br.read(bits_per_entry)? as u8);
+-            }
+-            map
+-        } else {
+-            vec![0u8; num_contexts]
+-        };
++        let mut ctx_map = EntropyVec::with_capacity(num_contexts, budget)?;
++        for _ in 0..num_contexts {
++            ctx_map.push_reserved(if bits_per_entry == 0 {
++                0
++            } else {
++                br.read(bits_per_entry)? as u8
++            });
++        }
+         verify_context_map(&ctx_map[..])?;
+         Ok(ctx_map)
+     } else {
+         let use_mtf = br.read(1)? != 0;
+-        let histograms =
+-            Histograms::decode(1, br, /*allow_lz77=*/ num_contexts > 2, lz77_scratch)?;
++        let histograms = Histograms::decode_impl(
++            1,
++            br,
++            /*allow_lz77=*/ num_contexts > 2,
++            lz77_scratch,
++            budget,
++        )?;
+         let mut reader = SymbolReader::new(&histograms, br, None, lz77_scratch)?;
+ 
+-        let mut ctx_map: Vec<u8> = (0..num_contexts)
+-            .map(|_| {
+-                let mv = reader.read_unsigned(&histograms, br, 0usize);
+-                if mv > u8::MAX as u32 {
+-                    Err(Error::InvalidContextMap(mv))
+-                } else {
+-                    Ok(mv as u8)
+-                }
+-            })
+-            .collect::<Result<_, _>>()?;
++        let mut ctx_map = EntropyVec::with_capacity(num_contexts, budget)?;
++        for _ in 0..num_contexts {
++            let mv = reader.read_unsigned(&histograms, br, 0usize);
++            if mv > u8::MAX as u32 {
++                return Err(Error::InvalidContextMap(mv));
++            }
++            ctx_map.push_reserved(mv as u8);
++        }
+         reader.reclaim_lz77_scratch(lz77_scratch);
+         reader.check_final_state(&histograms, br)?;
+         if use_mtf {
+--- a/src/entropy_coding/decode.rs
++++ b/src/entropy_coding/decode.rs
+@@ -12,6 +12,7 @@
+ use crate::entropy_coding::hybrid_uint::*;
+ use crate::error::{Error, Result};
+ use crate::headers::encodings::*;
++use crate::util::entropy_budget::{EntropyBudget, EntropyVec, Lease};
+ use crate::util::tracing_wrappers::*;
+ 
+ pub fn decode_varint16(br: &mut BitReader) -> Result<u16> {
+@@ -87,6 +88,8 @@
+     lz77_params: Lz77Params,
+     lz77_length_uint: Option<HybridUint>,
+     context_map: Vec<u8>,
++    // Vec is dropped before its capacity lease.
++    _context_map_lease: Option<Lease>,
+     /// Explicitly stored: context_map can get padded so we cannot use .last()
+     lz_dist_cluster: u8,
+     // TODO(veluca): figure out why this is unused.
+@@ -102,6 +105,7 @@
+     min_length: u32,
+     dist_multiplier: u32,
+     window: Vec<u32>,
++    _window_lease: Option<Lease>,
+     num_to_copy: u32,
+     copy_pos: u32,
+     num_decoded: u32,
+@@ -238,6 +242,38 @@
+         image_width: Option<usize>,
+         lz77_scratch: &mut Vec<u32>,
+     ) -> Result<Self> {
++        Self::new_impl(histograms, br, image_width, lz77_scratch, None)
++    }
++    pub fn new_with_budgeted_scratch(
++        histograms: &BudgetedHistograms,
++        br: &mut BitReader,
++        image_width: Option<usize>,
++        scratch: &mut EntropyScratch,
++    ) -> Result<Self> {
++        let budget = histograms
++            .0
++            ._context_map_lease
++            .as_ref()
++            .ok_or(Error::EntropyBudgetMismatch)?
++            .budget();
++        if !budget.same_budget(&scratch.budget) {
++            return Err(Error::EntropyBudgetMismatch);
++        }
++        Self::new_impl(
++            &histograms.0,
++            br,
++            image_width,
++            &mut Vec::new(),
++            Some(scratch),
++        )
++    }
++    fn new_impl(
++        histograms: &Histograms,
++        br: &mut BitReader,
++        image_width: Option<usize>,
++        lz77_scratch: &mut Vec<u32>,
++        mut owned: Option<&mut EntropyScratch>,
++    ) -> Result<Self> {
+         let ans_reader = if matches!(histograms.codes, Codes::Ans(_)) {
+             AnsReader::init(br)?
+         } else {
+@@ -254,7 +290,23 @@
+             let min_symbol = min_symbol.unwrap();
+             let min_length = min_length.unwrap();
+             let dist_multiplier = image_width.unwrap_or(0) as u32;
+-            let mut window = std::mem::take(lz77_scratch);
++            let (mut window, window_lease) =
++                if let Some(lease) = histograms._context_map_lease.as_ref() {
++                    if let Some(scratch) = owned.as_deref_mut().filter(|s| s.data.capacity() > 0) {
++                        if scratch.lease.is_none() {
++                            return Err(Error::EntropyBudgetMismatch);
++                        }
++                        (std::mem::take(&mut scratch.data), scratch.lease.take())
++                    } else {
++                        EntropyVec::<u32>::with_capacity(
++                            1 << Lz77State::LOG_WINDOW_SIZE,
++                            Some(&lease.budget()),
++                        )?
++                        .into_parts()
++                    }
++                } else {
++                    (std::mem::take(lz77_scratch), None)
++                };
+             window.clear();
+ 
+             SymbolReaderState::Lz77(Lz77State {
+@@ -262,6 +314,7 @@
+                 min_length,
+                 dist_multiplier,
+                 window,
++                _window_lease: window_lease,
+                 num_to_copy: 0,
+                 copy_pos: 0,
+                 num_decoded: 0,
+@@ -279,9 +332,117 @@
+ 
+     pub fn reclaim_lz77_scratch(&mut self, lz77_scratch: &mut Vec<u32>) {
+         if let SymbolReaderState::Lz77(lz77_state) = &mut self.state {
++            // A budgeted window cannot escape to a caller-owned raw Vec.
++            // Retain it until reader Drop; only the consuming typed finish may transfer it.
++            if lz77_state._window_lease.is_some() {
++                return;
++            }
+             lz77_state.window.clear();
+             *lz77_scratch = std::mem::take(&mut lz77_state.window);
+         }
++    }
++}
++
++impl SymbolReader {
++    /// Consumes the reader after final validation, transferring storage AND lease.
++    pub fn finish_with_budgeted_scratch(
++        mut self,
++        histograms: &BudgetedHistograms,
++        br: &mut BitReader,
++        scratch: &mut EntropyScratch,
++    ) -> Result<()> {
++        let budget = histograms
++            .0
++            ._context_map_lease
++            .as_ref()
++            .ok_or(Error::EntropyBudgetMismatch)?
++            .budget();
++        if !budget.same_budget(&scratch.budget) {
++            return Err(Error::EntropyBudgetMismatch);
++        }
++        if let SymbolReaderState::Lz77(state) = &self.state {
++            if !state
++                ._window_lease
++                .as_ref()
++                .is_some_and(|l| l.budget().same_budget(&budget))
++            {
++                return Err(Error::EntropyBudgetMismatch);
++            }
++        }
++        self.errors.check_for_error()?;
++        br.check_for_error()?;
++        if matches!(histograms.codes, Codes::Ans(_)) {
++            self.ans_reader.check_final_state()?;
++        }
++        if let SymbolReaderState::Lz77(state) = &mut self.state {
++            state.window.clear();
++            let old_data = std::mem::replace(&mut scratch.data, std::mem::take(&mut state.window));
++            drop(old_data); // Old backing allocation dies while its old lease is still held.
++            let old_lease = std::mem::replace(&mut scratch.lease, state._window_lease.take());
++            drop(old_lease);
++        }
++        Ok(())
++    }
++}
++
++/// Explicit scratch ownership for the0.8 reusable ring. No Clone or Vec escape.
++#[derive(Debug)]
++pub struct EntropyScratch {
++    data: Vec<u32>,
++    lease: Option<Lease>,
++    budget: EntropyBudget,
++}
++impl EntropyScratch {
++    pub fn new(budget: &EntropyBudget) -> Self {
++        Self {
++            data: Vec::new(),
++            lease: None,
++            budget: budget.clone(),
++        }
++    }
++    pub fn retained_bytes(&self) -> usize {
++        self.data.capacity() * std::mem::size_of::<u32>()
++    }
++    pub fn clear(&mut self) {
++        drop(std::mem::take(&mut self.data));
++        drop(self.lease.take());
++    }
++}
++/// Read-only exposure preserves legacy histogram APIs without an unbudgeted resize escape.
++#[derive(Debug)]
++pub struct BudgetedHistograms(Histograms);
++impl std::ops::Deref for BudgetedHistograms {
++    type Target = Histograms;
++    fn deref(&self) -> &Histograms {
++        &self.0
++    }
++}
++impl BudgetedHistograms {
++    pub fn decode(
++        num_contexts: usize,
++        br: &mut BitReader,
++        allow_lz77: bool,
++        raw_scratch: &mut Vec<u32>,
++        budget: &EntropyBudget,
++    ) -> Result<Self> {
++        Ok(Self(Histograms::decode_impl(
++            num_contexts,
++            br,
++            allow_lz77,
++            raw_scratch,
++            Some(budget),
++        )?))
++    }
++    pub fn try_resize(&mut self, num_contexts: usize) -> Result<()> {
++        if num_contexts == 0 {
++            return Err(Error::InvalidEntropyContextCount);
++        }
++        crate::util::entropy_budget::resize_parts(
++            &mut self.0.context_map,
++            &mut self.0._context_map_lease,
++            num_contexts,
++            0,
++        )
+     }
+ }
+ 
+@@ -653,13 +814,25 @@
+         allow_lz77: bool,
+         lz77_scratch: &mut Vec<u32>,
+     ) -> Result<Histograms> {
++        Self::decode_impl(num_contexts, br, allow_lz77, lz77_scratch, None)
++    }
++    pub(super) fn decode_impl(
++        num_contexts: usize,
++        br: &mut BitReader,
++        allow_lz77: bool,
++        lz77_scratch: &mut Vec<u32>,
++        budget: Option<&EntropyBudget>,
++    ) -> Result<Self> {
++        if num_contexts == 0 {
++            return Err(Error::InvalidEntropyContextCount);
++        }
+         let lz77_params = Lz77Params::read_unconditional(&(), br, &Empty {})?;
+         if !allow_lz77 && lz77_params.enabled {
+             return Err(Error::Lz77Disallowed);
+         }
+         let (num_contexts, lz77_length_uint) = if lz77_params.enabled {
+             (
+-                num_contexts + 1,
++                num_contexts.checked_add(1).ok_or(Error::SizeOverflow)?,
+                 Some(HybridUint::decode(/*log_alpha_size=*/ 8, br)?),
+             )
+         } else {
+@@ -667,10 +840,13 @@
+         };
+ 
+         let context_map = if num_contexts > 1 {
+-            decode_context_map(num_contexts, br, lz77_scratch)?
+-        } else {
+-            vec![0]
+-        };
++            decode_context_map_with_budget(num_contexts, br, lz77_scratch, budget)?
++        } else {
++            let mut map = EntropyVec::with_capacity(1, budget)?;
++            map.push_reserved(0);
++            map
++        };
++        let (context_map, context_map_lease) = context_map.into_parts();
+         assert_eq!(context_map.len(), num_contexts);
+ 
+         // Capture the LZ77 distance cluster BEFORE any later resize() can pad
+@@ -703,6 +879,7 @@
+             lz77_params,
+             lz77_length_uint,
+             context_map,
++            _context_map_lease: context_map_lease,
+             lz_dist_cluster,
+             log_alpha_size,
+             uint_configs,
+@@ -819,6 +996,7 @@
+             },
+             lz77_length_uint: None,
+             context_map: vec![0],
++            _context_map_lease: None,
+             lz_dist_cluster: 0,
+             log_alpha_size: 15,
+             uint_configs: vec![uint_config],
+@@ -836,6 +1014,7 @@
+             },
+             lz77_length_uint: None,
+             context_map: vec![0],
++            _context_map_lease: None,
+             lz_dist_cluster: 1, // cluster 1 is dist cluster, cluster 0 is data
+             log_alpha_size: 15,
+             uint_configs: vec![uint_config, uint_config],
+@@ -858,6 +1037,7 @@
+             },
+             lz77_length_uint: Some(uint_config),
+             context_map: vec![0, 0],
++            _context_map_lease: None,
+             lz_dist_cluster: 0,
+             log_alpha_size: 15,
+             uint_configs: vec![uint_config],
+@@ -872,6 +1052,7 @@
+                 min_length: 3,
+                 dist_multiplier: 0,
+                 window: vec![4],
++                _window_lease: None,
+                 num_to_copy: (window_size + 5) as u32,
+                 copy_pos: 0,
+                 num_decoded: 1,

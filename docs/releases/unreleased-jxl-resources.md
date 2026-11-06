@@ -15,3 +15,5 @@ decisions: [resource contract](../jpeg-xl-resource-contract.md).
 Draft pull request: [#72](https://github.com/mith-mmk/wml2-on-rust/pull/72).
 
 - Attribute jxl0.8's first4008-byte retention to its process-wide implicit-palette cache. Finite resource APIs now conservatively reserve all25 fixed slots (100200 bytes64-bit /99900 bytes32-bit), independent of warm state; legacy admission and fixed caps stay unchanged. This tightens explicit finite workspace minima without claiming codec-wide fallible allocation or a release. See [diagnosis and contract](../jpeg-xl-palette-cache.md) and draft [PR #95](https://github.com/mith-mmk/wml2-on-rust/pull/95).
+
+- Add an isolated, hash-verified jxl0.8 context-map / reusable LZ77 scratch budget evaluation. It changes no product dependency or admission cap; decoder-wide propagation remains unimplemented. See [evaluation and remaining integration boundaries](../jpeg-xl080-entropy-budget-evaluation.md).

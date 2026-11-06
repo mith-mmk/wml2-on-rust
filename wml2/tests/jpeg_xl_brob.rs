@@ -302,3 +302,35 @@ fn caller_unlimited_does_not_disable_the_cumulative_expanded_brob_cap() {
         rejected(&container(boxes), DecodeLimits::unlimited()).contains("brob expanded metadata")
     );
 }
+
+#[test]
+fn maximum_empty_brob_records_preserve_every_index_and_reject_the_next_box() {
+    let boxes = vec![brob(b"test", EMPTY_BR); 1024];
+    let mut all = container(boxes.clone());
+    all.extend(box_bytes(b"jxlc", RAW));
+    let image = wml2::jpegxl::image_from_with_resource_limits(
+        &all,
+        DecodeLimits::default(),
+        Default::default(),
+    )
+    .unwrap();
+    assert_eq!(image.buffer.as_deref().unwrap(), EXPECTED);
+    assert_eq!(values(&image, "Source").len(), 1024);
+    assert_eq!(values(&image, "Decoded").len(), 1024);
+    for n in [1, 9, 10, 99, 100, 1024] {
+        assert!(
+            matches!(&image.metadata.as_ref().unwrap()[&format!("JPEG XL Decoded Box {n} 74657374")],DataMap::Raw(v)if v.is_empty())
+        );
+    }
+    let mut extra = container(boxes);
+    extra.extend(brob(b"test", EMPTY_BR));
+    extra.extend(box_bytes(b"jxlc", RAW));
+    assert!(
+        wml2::jpegxl::image_from_with_resource_limits(
+            &extra,
+            DecodeLimits::default(),
+            Default::default()
+        )
+        .is_err()
+    );
+}

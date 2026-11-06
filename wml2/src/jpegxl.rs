@@ -17,6 +17,8 @@ use std::io::SeekFrom;
 
 #[path = "jpegxl_brob.rs"]
 mod brob;
+#[path = "jpegxl_container_metadata.rs"]
+mod container_metadata;
 #[path = "jpegxl_dimensions.rs"]
 pub(crate) mod dimensions;
 #[path = "jpegxl_resources.rs"]
@@ -48,6 +50,7 @@ const MAX_BROB_METADATA: usize = 64 * 1024 * 1024;
 const MAX_HEADER: usize = 64 * 1024;
 // Pinned0.8 Main5 parse_file_header has a hard extra-channel ceiling of4.
 const MAX_EXTRA_PLANES: usize = 4;
+const MAX_AUX_BOX_INDEX: usize = 1024;
 const MAX_PIXELS: usize = 4 * 1024 * 1024;
 
 /// Cancellation returned by the cancellable sRGB API; downcast the boxed error
@@ -193,17 +196,19 @@ fn append(out: &mut Vec<u8>, data: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-fn box_key(stage: &str, index: usize, kind: &[u8]) -> String {
-    format!(
-        "JPEG XL {stage} Box {index} {}",
-        kind.iter().map(|v| format!("{v:02x}")).collect::<String>()
-    )
-}
-
 struct Input {
     codestream: Vec<u8>,
     metadata: Vec<(String, DataMap)>,
     metadata_bytes: usize,
+}
+impl Input {
+    fn header_workspace(&self, policy: JxlResourceLimits) -> Result<usize, Error> {
+        container_metadata::workspace(
+            resources::header_workspace(self.metadata_bytes, policy)?,
+            self.metadata.capacity(),
+            policy.workspace_bytes != usize::MAX,
+        )
+    }
 }
 // Validate every box, including trailing boxes, before the codec sees input.
 // Never pass brob to an unbounded decompressor or discard unknown metadata.
@@ -319,18 +324,28 @@ fn unpack_with_resources(
                 if kind.starts_with(b"JXL") || kind == b"ftyp" {
                     return Err(unsupported("JPEG XL brob control box is unsupported"));
                 }
-                limits::check(box_count, 1024, "JPEG XL box count")?;
-                let source_key = box_key("Source", box_count, b"brob");
-                let decoded_key = box_key("Decoded", box_count, kind);
+                limits::check(box_count, MAX_AUX_BOX_INDEX, "JPEG XL box count")?;
+                let source_key_len = container_metadata::key_len("Source", box_count, b"brob")?;
+                let decoded_key_len = container_metadata::key_len("Decoded", box_count, kind)?;
                 let retained = add(
                     out.metadata_bytes,
-                    add(add(data.len(), source_key.len())?, decoded_key.len())?,
+                    add(add(data.len(), source_key_len)?, decoded_key_len)?,
                 )?;
                 limits::check(
                     retained,
                     limits.metadata_bytes,
                     "JPEG XL container metadata",
                 )?;
+                container_metadata::reserve(
+                    &mut out.metadata,
+                    2,
+                    retained,
+                    input.len(),
+                    limits,
+                    resources.is_some(),
+                )?;
+                let source_key = container_metadata::key("Source", box_count, b"brob")?;
+                let decoded_key = container_metadata::key("Decoded", box_count, kind)?;
                 let maximum = limits
                     .metadata_bytes
                     .saturating_sub(retained)
@@ -338,33 +353,43 @@ fn unpack_with_resources(
                 // The original input/codestream assembly and metadata copies
                 // remain live while Brotli runs. Output growth and all codec
                 // allocator requests are charged by the shared bounded helper.
-                let base = add(mul(input.len(), 3)?, mul(retained, 2)?)?;
+                let base = container_metadata::workspace(
+                    add(mul(input.len(), 3)?, mul(retained, 2)?)?,
+                    out.metadata.capacity(),
+                    resources.is_some(),
+                )?;
                 let decoded = brob::decompress(&data[4..], maximum, base, limits.expanded_bytes)?;
                 expanded_brob = add(expanded_brob, decoded.len())?;
                 out.metadata_bytes = add(retained, decoded.len())?;
                 let mut raw = Vec::new();
+                #[cfg(test)]
+                resources::tests::before_metadata_copy("container raw payload", data.len());
                 append(&mut raw, data)?;
                 out.metadata.push((source_key, DataMap::Raw(raw)));
                 out.metadata.push((decoded_key, DataMap::Raw(decoded)));
             }
             b"JXL " => return Err(invalid("duplicate JPEG XL signature")),
             _ => {
-                let key = box_key("Source", box_count, kind);
-                out.metadata_bytes = add(out.metadata_bytes, add(data.len(), key.len())?)?;
+                let key_len = container_metadata::key_len("Source", box_count, kind)?;
+                out.metadata_bytes = add(out.metadata_bytes, add(data.len(), key_len)?)?;
                 limits::check(
                     out.metadata_bytes,
                     limits.metadata_bytes,
                     "JPEG XL container metadata",
                 )?;
-                if resources.is_some() {
-                    limits::check(
-                        add(mul(input.len(), 3)?, mul(out.metadata_bytes, 2)?)?,
-                        limits.expanded_bytes,
-                        "JPEG XL container workspace",
-                    )?;
-                }
-                limits::check(box_count, 1024, "JPEG XL box count")?;
+                limits::check(box_count, MAX_AUX_BOX_INDEX, "JPEG XL box count")?;
+                container_metadata::reserve(
+                    &mut out.metadata,
+                    1,
+                    out.metadata_bytes,
+                    input.len(),
+                    limits,
+                    resources.is_some(),
+                )?;
+                let key = container_metadata::key("Source", box_count, kind)?;
                 let mut raw = Vec::new();
+                #[cfg(test)]
+                resources::tests::before_metadata_copy("container raw payload", data.len());
                 append(&mut raw, data)?;
                 out.metadata.push((key, DataMap::Raw(raw)));
             }
@@ -861,7 +886,7 @@ fn preflight_samples<
     // FileHeader has bounded channel tables, but does not read ICC/pixel data.
     // Retained container metadata is already live, including expanded brob.
     // Reserve its existing 2x allowance before header/ICC/TOC allocation.
-    let header_workspace = resources::header_workspace(input.metadata_bytes, policy)?;
+    let header_workspace = input.header_workspace(policy)?;
     limits::check(
         header_workspace,
         limits.expanded_bytes,
@@ -2366,10 +2391,8 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
         Ok(h) => h,
         Err(original) => {
             // Do not retry header parsing when its allocation allowance failed.
-            if resources::header_workspace(
-                input.metadata_bytes,
-                resources.unwrap_or(JxlResourceLimits::legacy()),
-            )? > limits.expanded_bytes
+            if input.header_workspace(resources.unwrap_or(JxlResourceLimits::legacy()))?
+                > limits.expanded_bytes
             {
                 return Err(original);
             }
@@ -3110,8 +3133,8 @@ mod tests {
         put(b"brob", &payload);
         let needed = payload.len()
             + xml.len()
-            + box_key("Source", 2, b"brob").len()
-            + box_key("Decoded", 2, b"xml ").len();
+            + "JPEG XL Source Box 2 62726f62".len()
+            + "JPEG XL Decoded Box 2 786d6c20".len();
         let limits = DecodeLimits {
             metadata_bytes: needed,
             ..Default::default()

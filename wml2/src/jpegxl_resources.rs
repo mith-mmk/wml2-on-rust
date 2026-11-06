@@ -382,6 +382,147 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn container_record_growth_admits_overlap_and_preserves_owners_on_failure() {
+        let _reset = ResetFault;
+        use super::super::container_metadata::{record_bytes, reserve};
+        let mut records = Vec::new();
+        let limit = |n| DecodeLimits {
+            expanded_bytes: n,
+            ..Default::default()
+        };
+        COPY_KEY.with(|f| f.set(Some("container records")));
+        FAILED_BYTES.with(|f| f.set(0));
+        assert!(
+            reserve(
+                &mut records,
+                1,
+                0,
+                0,
+                limit(record_bytes(4).unwrap() - 1),
+                true
+            )
+            .is_err()
+        );
+        assert_eq!(COPY_KEY.with(Cell::get), Some("container records"));
+        assert_eq!(FAILED_BYTES.with(Cell::get), 0);
+        assert!(
+            reserve(&mut records, 1, 0, 0, limit(record_bytes(4).unwrap()), true)
+                .unwrap_err()
+                .is::<std::collections::TryReserveError>()
+        );
+        assert_eq!(records.capacity(), 0);
+        assert_eq!(FAILED_BYTES.with(Cell::get), record_bytes(4).unwrap());
+        reserve(&mut records, 1, 0, 0, limit(record_bytes(4).unwrap()), true).unwrap();
+        for n in 0..4 {
+            records.push((n.to_string(), crate::metadata::DataMap::Raw(vec![n as u8])));
+        }
+        let old = records.clone();
+        let overlap = record_bytes(12).unwrap();
+        COPY_KEY.with(|f| f.set(Some("container records")));
+        FAILED_BYTES.with(|f| f.set(0));
+        assert!(reserve(&mut records, 1, 0, 0, limit(overlap - 1), true).is_err());
+        assert_eq!(FAILED_BYTES.with(Cell::get), 0);
+        assert!(
+            reserve(&mut records, 1, 0, 0, limit(overlap), true)
+                .unwrap_err()
+                .is::<std::collections::TryReserveError>()
+        );
+        assert_eq!(records, old);
+        assert_eq!(records.capacity(), 4);
+        assert_eq!(FAILED_BYTES.with(Cell::get), record_bytes(8).unwrap());
+        reserve(&mut records, 1, 0, 0, limit(overlap), true).unwrap();
+        assert_eq!(records, old);
+        assert_eq!(records.capacity(), 8);
+        assert!(
+            reserve(
+                &mut records,
+                usize::MAX,
+                0,
+                0,
+                DecodeLimits::unlimited(),
+                true
+            )
+            .is_err()
+        );
+        assert!(
+            reserve(
+                &mut records,
+                1,
+                usize::MAX,
+                0,
+                DecodeLimits::unlimited(),
+                true
+            )
+            .is_err()
+        );
+    }
+    #[test]
+    fn container_keys_records_and_raw_copy_fail_without_a_published_image() {
+        let _reset = ResetFault;
+        for (bytes, compressed) in [
+            (
+                include_bytes!("../tests/fixtures/review/jxl-brob-metadata.jxl").as_slice(),
+                true,
+            ),
+            (
+                include_bytes!("../tests/fixtures/review/jxl-brob-metadata-plain.jxl").as_slice(),
+                false,
+            ),
+        ] {
+            for finite in [false, true] {
+                for site in [
+                    "container records",
+                    "Source",
+                    "Decoded",
+                    "container raw payload",
+                ] {
+                    if site == "Decoded" && !compressed {
+                        continue;
+                    }
+                    COPY_KEY.with(|f| f.set(Some(site)));
+                    FAILED_BYTES.with(|f| f.set(0));
+                    let result = if finite {
+                        super::super::image_from_with_resource_limits(
+                            bytes,
+                            DecodeLimits::default(),
+                            JxlResourceLimits::default(),
+                        )
+                    } else {
+                        crate::draw::image_from(bytes)
+                    };
+                    let e = result.err().expect("allocation refusal must fail");
+                    assert!(e.is::<std::collections::TryReserveError>(), "{site}: {e}");
+                    assert!(FAILED_BYTES.with(Cell::get) > 0);
+                    assert_eq!(COPY_KEY.with(Cell::get), None);
+                    assert!(
+                        super::super::image_from_with_resource_limits(
+                            bytes,
+                            DecodeLimits::default(),
+                            JxlResourceLimits::default()
+                        )
+                        .is_ok()
+                    );
+                }
+            }
+            COPY_KEY.with(|f| f.set(Some("Source")));
+            FAILED_BYTES.with(|f| f.set(0));
+            assert!(
+                super::super::image_from_with_resource_limits(
+                    bytes,
+                    DecodeLimits {
+                        metadata_bytes: 0,
+                        ..Default::default()
+                    },
+                    JxlResourceLimits::default()
+                )
+                .is_err()
+            );
+            assert_eq!(COPY_KEY.with(Cell::get), Some("Source"));
+            assert_eq!(FAILED_BYTES.with(Cell::get), 0);
+        }
+    }
+
+    #[test]
     fn runtime_output_reservation_propagates_allocator_refusal_and_checked_size() {
         let _reset = ResetFault;
         FAIL_BYTES.with(|f| f.set(256));

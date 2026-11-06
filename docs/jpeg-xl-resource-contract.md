@@ -193,3 +193,9 @@ ordinary, float/HDR and preview descriptor-list allocations fallible and include
 their retained requested payload in finite admission. Historical minima in the
 original snapshots describe their own revisions; on the current x86_64 fixture
 cases, a single Alpha descriptor adds2 bytes and absent Alpha adds none.
+
+The [container metadata stage](jpeg-xl-container-metadata.md) additionally makes
+source/decoded box keys and container record-array growth fallible. Finite
+assembly/Brotli/preflight admission includes that retained array and growth
+overlap. Generated metadata and callback-owned arrays remain distinct residual
+paths; no full-codec heap guarantee or higher image cap follows.

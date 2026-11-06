@@ -32,6 +32,11 @@ The next unmerged [callback/EX/sRGB stage](jpeg-xl-animation-callbacks.md) conne
 exact-integer-millisecond animations to the common APIs. Fractional timing stays
 available only through the exact rational native companion; no silent rounding.
 
+For released-main versus unmerged companion APIs, use the
+[development status and original-issue map](jpeg-xl-development-status.md).
+The dependency/resource integration recommendation is recorded
+[separately](jpeg-xl-dependency-integration.md); it changes no product dependency.
+
 ## Supported profile and precision
 
 - Bare `ff 0a` codestreams and containers with `jxlc` or ordered `jxlp` chunks.
@@ -58,15 +63,20 @@ available only through the exact rational native companion; no silent rounding.
   `high_precision` decoder setting controls intermediate arithmetic; it is not
   a promise that lossy input becomes lossless.
 
-Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
+The ordinary/EX routes explicitly reject float sources/HDR PQ or HLG/tone-mapping requests,
 animations outside the [qualified callback/native subsets](jpeg-xl-animation-callbacks.md) (no silent first-frame fallback),
 associated alpha outside the [qualified integer subset](jpeg-xl-associated-depths.md),
 subsampled alpha outside the [declared integer subset](jpeg-xl-associated-subsampling.md),
 float or other alpha depths, multiple/other extra channels,
-forbidden compressed control/nested boxes and unsupported depths.
+forbidden compressed control/nested boxes and unsupported depths. The
+[dedicated finite extra-plane API](jpeg-xl-extra-acceptance-audit.md) preserves
+its qualified additional channels separately; it does not extend ordinary/EX
+acceptance. Dedicated float/HDR APIs below also have separate contracts.
 Supported embedded previews are [bounded and skipped](jpeg-xl-preview.md) while
-returning the main image. No preview extraction API or progressive-output mode is
-added; preview entropy is not validated by main-only decoding.
+returning the main image; preview entropy is not validated by main-only decoding.
+The unmerged dedicated preview APIs described below provide raw and oriented
+sRGB pixels with their own resource/cancellation contracts. No progressive-output
+session is added.
 Explicit Level5 and Level10 `jxll` boxes are accepted; dimensions, workspace and
 the supported sample profile remain independently bounded. This does not promise
 the entire Level10 profile. Native JPEG bitstream reconstruction is not implemented.
@@ -323,13 +333,19 @@ The [hosted56-job success for revision1b8007c](https://github.com/mith-mmk/wml2-
 is prior evidence, not a result for this patch. Normal pushes run existing CI automatically;
 no separate Windows execution or workflow dispatch is needed for this review.
 
-Remaining profile limitations include fixed resource caps, Gray ICC expansion,
-compressed auxiliary metadata and native JPEG reconstruction. All eight orientation
-values have not been independently tested;90-degree rotation and orientation5
-transpose are covered.
-Browser UI integration, SIMD and threads are also outside the current evidence.
-Broader associated-alpha support, HDR rendering, animation and encoding require a separate scope proposal before
-implementation. No PR, main merge or release is part of this branch work.
+Current limitations include fixed resource caps, the route-specific Gray ICC
+policy, progressive sessions and native JPEG reconstruction. All eight orientation
+values and9/10-bit normalization are covered by independent-reference regressions
+in `jpeg_xl_additional.rs`; bounded brob/common EXIF/XMP are implemented. These
+are existing source/test findings, not new executions by this documentation stage.
+
+The historical [layer validation](jpeg-xl-layers.md) records Node and Chromium
+coverage at its stated checkpoints. It does not establish a new browser run,
+manual viewer integration or private Windows corpus check for this revision.
+SIMD and threads remain outside the runtime feature. Later Alpha, HDR, preview
+and animation drafts are mapped to their finite acceptance contracts in the
+[development status](jpeg-xl-development-status.md); encoding, display tone mapping
+and codec-wide heap tracking remain unresolved. No merge or release is implied.
 
 ## Output orientation contract
 

@@ -1,4 +1,4 @@
-# Focused JXL integration (unmerged)
+# Focused JXL integration in WML2 0.0.42
 
 Target: published jxl 0.8 decoding and JXL animation. No encoder implementation or changes.
 Main baseline: `f2151b2408e9d04f1bc7b4e9e29679e078a57209` (0.0.41).

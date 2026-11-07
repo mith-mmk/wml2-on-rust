@@ -3,6 +3,8 @@
 Available in WML2 0.0.37 through the explicit `image-buffer-ex` feature.
 The original continuation incorporated main's0.0.36 update; the historical
 [main merge record](image-buffer-ex-main-merge.md) retains those checkpoints.
+The current 0.0.42 contract adds bounded JPEG XL still/animation output;
+see [JPEG XL](jpeg-xl.md) and [0.0.42 release notes](releases/0.0.42.md).
 Default features and existing legacy fields/signatures remain unchanged.
 Optional AVIF dependencies now use published registry0.1.2 with one shared
 buffer source. Direct consumers of standalone AVIF re-exports must align
@@ -23,7 +25,8 @@ versions and sources. See the [0.0.37 release notes](releases/0.0.37.md).
 | Legacy encoding | Explicit whole-canvas to_rgba8 or borrowed legacy_picker with per-rectangle conversion |
 | Native codec source | Static PNG/TIFF emit Gray8/16 or RGBA8/16; bounded AVIF emits RGBA16; bounded JPEG2000 EX emits native Gray/RGBA12/16, without ICC application; JPEG2000 EX emits unsigned Gray12/16 or RGBA12/16 from RGB/explicit straight RGBA in the reversible or bounded 9/7 profile |
 | Typed highres handoff | Pixel-only U8/U16 full-resolution Gray or straight RGBA at uniform 8/12/16 bits |
-| Unsupported | YUV, F32/HDR/signed/10-bit, premultiplied alpha, EX animation, general color/ICC transforms |
+| Animation decode | Bounded JPEG XL full-canvas frames through immutable `AnimationFrameEx`; raw loop count and exact integer-millisecond callback timing; see [animation contract](jpeg-xl-focused-animation.md) |
+| Unsupported | YUV, F32/HDR/signed/10-bit, premultiplied alpha, animation picking/encoding and implicit color/ICC transforms |
 
 Existing converters, rectangular pickers, highres adapters and PNG/TIFF EX
 decoding were ported commit-by-commit, rather than recreated or replacing main
@@ -125,7 +128,9 @@ assert_eq!(image.pixel_bytes(0, 0)?, &[1, 0]);
 
 EX decoding supports enabled static PNG/TIFF, the
 [bounded AVIF adapter](image-buffer-ex-avif.md), and
-[unsigned Gray/RGB/declared straight RGBA12/16 JPEG2000](jpeg2000-ex-97.md). AVIF encoding consumes an
+[unsigned Gray/RGB/declared straight RGBA12/16 JPEG2000](jpeg2000-ex-97.md), and
+[bounded JPEG XL still/animation](jpeg-xl.md). Animated EX state is not accepted
+by static picking, encoding or highres/legacy conversions. AVIF encoding consumes an
 explicit EX8/12-bit output request; RGBA16 storage stays independent.
 PNG packed Gray expands
 to Gray8; palette/RGB/GrayAlpha expand to straight RGBA at their sample depth.

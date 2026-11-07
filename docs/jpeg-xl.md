@@ -1,10 +1,11 @@
-# JPEG XL still-image decoding
+# JPEG XL decoding
 
-WML2 0.0.38 adds opt-in JPEG XL still decoding, together with shared native
-Gray↔RGB ICC layouts and explicit sRGB display conversion. Version0.0.37 does
-not contain this feature. Historical development checkpoints and measurements
-are retained in [continuation validation](jpeg-xl-continuation-20261019.md) and
-[internal-layer validation](jpeg-xl-layers.md).
+WML2 0.0.42 supports bounded integer still images and original-profile RGB8/16
+animation. Still-image support began in 0.0.38; bounded animation and the 0.8
+pixel decoder are new in 0.0.42. See [release notes](releases/0.0.42.md) and the
+[animation contract](jpeg-xl-focused-animation.md). Historical measurements
+below retain their original revision and environment; they are not new release
+verification or a promise of full JPEG XL conformance.
 
 The opt-in `jpeg-xl` feature uses **published `jxl =0.8.0`** for pixel decoding.
 Published 0.7.4 remains aliased only for bounded pre-allocation parsing and
@@ -14,7 +15,7 @@ for high-precision callback output. No C library, image-rs, CMS, SIMD or thread
 pool is pulled into the runtime by this feature.
 
 ```toml
-wml2 = { version = "0.0.38", features = ["jpeg-xl", "image-buffer-ex"] }
+wml2 = { version = "0.0.42", features = ["jpeg-xl", "image-buffer-ex"] }
 ```
 
 ```rust
@@ -25,7 +26,7 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
-## Supported profile and precision
+## Still-image profile and precision
 
 - Bare `ff 0a` codestreams and containers with `jxlc` or ordered `jxlp` chunks.
   Every box, including trailing boxes, is length-checked before decoding.
@@ -52,7 +53,7 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
   a promise that lossy input becomes lossless.
 
 Explicitly rejected: float sources/HDR PQ or HLG/tone-mapping requests,
-animations (no silent first-frame fallback),
+animation outside the separately documented bounded profile (no silent first-frame fallback),
 premultiplied or subsampled alpha, float or other alpha depths, multiple/other extra channels,
 forbidden compressed control/nested boxes and unsupported depths.
 Supported embedded previews are [bounded and skipped](jpeg-xl-preview.md) while
@@ -132,7 +133,7 @@ its request generation/flag to handle cancellation after this final check.
 
 The adapter checks before work, after bounded preflight, around codec stages,
 between sample-copy/rounding chunks, before private image initialization, and
-after population. The pinned **published `jxl 0.7.4`** provides a fallible
+after population. The **published `jxl 0.8.0`** provides a fallible
 `JxlParallelRunner`, rather than libjxl's cancellation API. The cancellable path
 uses a sequential runner, overriding both `run` and `run_ordered` (the latter's
 default implementation bypasses `run` for one thread). Checks occur before each
@@ -228,7 +229,7 @@ before parsing or generating profiles. The complete retained metadata is checked
 again before callback initialization. The dependency's public low-level APIs
 used by this probe must be reviewed when upgrading `jxl`.
 
-## Independent verification
+## Historical still-image verification
 
 `wml2-test/scripts/generate_jpegxl_fixtures.py` and
 `jpegxl_fixture_encoder.c` use **libjxl0.11.2**, independently of WML2/jxl-rs.
@@ -251,11 +252,12 @@ cargo test -p wml2 --locked --no-default-features --test jpeg_xl
 python3 wml2-test/scripts/generate_jpegxl_fixtures.py --tools /path/to/libjxl/usr --work .test-jxl-fixtures
 ```
 
-Upstream reference: [published source commit](https://github.com/libjxl/jxl-rs/tree/624ce908afcf8eb0dc2585a671535eaabb5d88cc/jxl).
-In particular,0.7.4 has typestate processing and `premultiply_output`; main's
-`AlphaMode` API must not be assumed to exist in the published crate.
+The original fixtures and validation used published `jxl 0.7.4`.
+[Focused integration](jpeg-xl-focused-integration.md) records the later 0.8
+migration, event API, parser-only compatibility dependency and measured tradeoffs.
+Do not use the old typestate API description as a guide to the current decoder.
 
-## Validation snapshot
+## Historical validation snapshot
 
 See [machine-readable results](jpeg-xl-validation.json) for commands, source
 hashes, local results, measured allocations and the actual WASM artifact hash.
@@ -271,25 +273,25 @@ warnings remain; the JPEG XL implementation/tests introduce none. Windows and
 macOS execution, browser UI integration, general ICC/HDR rendering, SIMD and
 threaded decoding are not covered by this local validation.
 
-## Branch CI coverage
+## Current CI coverage
 
 The shared `checks` workflow also runs dedicated JPEG XL jobs on Windows and
 macOS, with ordinary, EX and disabled-feature tests. Windows additionally
 executes those contracts as32-bit MSVC binaries. These dedicated jobs do not
 wait for the slower existing JPEG2000/TIFF platform regressions.
 
-The WASM compile job executes the55-case Node harness and uploads its report.
-A feature-contract job checks the expected mutually exclusive IDCT failure for
-`--all-features`, then checks all targets and executes JPEG XL tests for both
-all-codec and `noretoro` profiles with only one IDCT enabled. This also exposed
-and repaired the existing `SJIS` feature's missing optional `encoding_rs`
-dependency; its locked version and default features are unchanged.
+The WASM compile job executes the committed Node harness and uploads its report.
+The number of cases has grown since the original 55-case snapshot. A
+feature-contract job checks the expected mutually exclusive IDCT failure for
+`--all-features`, then checks all targets with only one IDCT enabled.
 
-These checks run on branch pushes; a PR is not required. For the result of an
-individual revision, use its GitHub Actions run and exact commit SHA rather
-than treating the older local validation snapshot as a cross-platform result.
+Checks run for pull requests and main pushes, plus manual/reusable invocations.
+The tag-triggered release workflow invokes the shared checks at the tag commit.
+An arbitrary feature-branch push without a PR does not trigger those checks.
+See [CI selection](ci-selection.md). For a revision's actual result use its
+Actions run and exact commit SHA; historical snapshots are not current CI passes.
 
-## Remaining validation and scope decisions
+## Historical review and local-corpus evidence
 
 The October18 independent still-image review found and fixed rejection of a
 valid explicit Level5 container. Its regression fails on revision
@@ -311,19 +313,20 @@ The [hosted56-job success for revision1b8007c](https://github.com/mith-mmk/wml2-
 is prior evidence, not a result for this patch. Normal pushes run existing CI automatically;
 no separate Windows execution or workflow dispatch is needed for this review.
 
-Remaining profile limitations include fixed resource caps, Gray ICC expansion,
-compressed auxiliary metadata and native JPEG reconstruction. All eight orientation
-values have not been independently tested;90-degree rotation and orientation5
-transpose are covered.
-Browser UI integration, SIMD and threads are also outside the current evidence.
-9/10-bit sources, premultiplied alpha, HDR rendering, animation and encoding require a separate scope proposal before
-implementation. No PR, main merge or release is part of this branch work.
+The preceding October review describes that checkpoint only. Since then,
+0.0.41 added bounded compressed metadata, intrinsic dimensions and mixed-depth
+straight alpha; 0.0.42 added the focused 0.8 migration and bounded animation.
+The still-image tests now cover all eight orientation values. Current remaining
+limits include fixed resource caps, arbitrary Gray ICC expansion without a CMS,
+float/HDR output or tone mapping, preview extraction, resumable/provisional
+output, associated/subsampled alpha, general extra channels, original JPEG
+reconstruction and JPEG XL encoding. XYB animation is not part of 0.0.42.
 
 ## Output orientation contract
 
 `orientation_applied` is a format-independent metadata key whose value is `DataMap::Bool`. `true` means the output pixels already include the source orientation; consumers must not apply source EXIF or other source orientation again. `false` means this marker does not suppress the consumer's existing orientation handling. An absent key likewise retains the legacy behavior. A value of another type is invalid; consumers should treat it as absent rather than infer a boolean. This affects automatic orientation only, not user-requested rotation.
 
-JPEG XL sets the marker to `true` and stores the original coded 1–8 value separately as `JPEG XL Source Orientation` (`DataMap::UInt`), alongside the raw source header. That original value describes the input, not a remaining transform on the delivered pixels. The pinned jxl 0.7.4 applies the coded transform to its output; its `adjust_orientation` option is not consumed by that version. The eight fixture tests check pixels against independent references so a change to that behavior is detected. Other formats do not acquire this marker merely because it is absent; their existing metadata and consumer behavior remain unchanged.
+JPEG XL sets the marker to `true` and stores the original coded 1–8 value separately as `JPEG XL Source Orientation` (`DataMap::UInt`), alongside the raw source header. That original value describes the input, not a remaining transform on the delivered pixels. The current jxl 0.8 decoder applies the coded transform to its output; WML2 cross-checks the resulting dimensions against its bounded preflight. The eight fixture tests check pixels against independent references so a change to that behavior is detected. Other formats do not acquire this marker merely because it is absent; their existing metadata and consumer behavior remain unchanged.
 
 
 ## Intrinsic display dimensions and information query
@@ -347,9 +350,24 @@ canvas before codec work, even for ordinary output. Existing same-depth/native
 Gray layouts and refusal of associated/subsampled/general extra planes remain.
 See [the bounded subset, independent oracles and upstream evaluation](jpeg-xl-alpha.md).
 
-## Unmerged animation development
+## Bounded animation in 0.0.42
 
-The focused follow-up provides bounded coalesced animation through common/EX
-callbacks and explicit sRGB APIs, with exact native ticks for fractional waits.
-See [animation contract and validation](jpeg-xl-focused-animation.md). This is
-development-branch behavior; released main0.0.41 remains still-only.
+Common/EX callbacks and explicit sRGB APIs now accept coalesced original-profile
+RGB8/16 animations with optional matching straight full-resolution alpha.
+Every displayed frame is a complete oriented canvas; crop/reference/blend work
+is done by the codec. Loop count zero means indefinite repetition, and the
+poster is the first frame rather than an extra delay.
+
+Callbacks require waits exactly representable as integer milliseconds. The
+native `animation_rgba16_from_with_limits_and_cancel` API preserves rational
+ticks without inventing rounding or playback policy. `ImageBufferEx::animation()`
+returns immutable frames; animated state is refused by static picking/encoding
+and conversion APIs rather than silently dropping frames.
+
+Pixel decode, final input validation, CMS and output preparation complete before
+callback initialization. Callback Abort/error behavior remains explicit and
+owned-output failure/cancellation returns no partial image. Existing resource
+limits and the 64-internal-layer bound remain. Preview-bearing animation,
+timecodes, XYB/HDR, associated/subsampled or mixed-depth animation alpha and
+general extra channels remain unsupported. See the
+[full animation contract and historical validation](jpeg-xl-focused-animation.md).

@@ -356,7 +356,7 @@ pub extern "C" fn verify_jpegxl() -> u32 {
     assert_eq!((image.width,image.height),(2,3));count+=1;
     assert!(image_from_with_limits(include_bytes!("../../wml2/tests/fixtures/review/jxl-preview-oversized-header.jxl"),DecodeLimits::unlimited()).is_err());count+=1;
     assert!(image_from(&input[..784]).is_err());count+=1;
-    count + intrinsic_cases() + composition_cases()
+    count + intrinsic_cases() + composition_cases() + animation_cases()
 }
 
 fn intrinsic_cases() -> u32 {
@@ -602,4 +602,52 @@ fn composition_cases() -> u32 {
         .is_err()
     );
     3
+}
+
+fn animation_cases()->u32 {
+    use wml2::jpegxl::animation_rgba16_from_with_limits_and_cancel as decode;
+    let mut count=0;
+    {
+    let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-variable.jxl");
+    let image=decode(input,Default::default(),&||false).unwrap();
+    let gold=[include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-variable.0.rgba16le").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-variable.1.rgba16le").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-variable.2.rgba16le").as_slice()];
+    assert_eq!(image.frames.len(),3);
+    for (f,g) in image.frames.iter().zip(gold) {
+        assert_eq!(f.rgba16.len()*2,g.len());
+        for (a,b) in f.rgba16.iter().zip(g.chunks_exact(2)) {assert!(a.abs_diff(u16::from_le_bytes(b.try_into().unwrap()))<=1);}
+    }
+    count+=1;
+    }
+    {
+    let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-fractional.jxl");
+    let image=decode(input,Default::default(),&||false).unwrap();
+    let gold=[include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-fractional.0.rgba16le").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-fractional.1.rgba16le").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-fractional.2.rgba16le").as_slice()];
+    assert_eq!(image.frames.len(),3);
+    for (f,g) in image.frames.iter().zip(gold) {
+        assert_eq!(f.rgba16.len()*2,g.len());
+        for (a,b) in f.rgba16.iter().zip(g.chunks_exact(2)) {assert!(a.abs_diff(u16::from_le_bytes(b.try_into().unwrap()))<=1);}
+    }
+    count+=1;
+    }
+    {
+    let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-internal.jxl");
+    let image=decode(input,Default::default(),&||false).unwrap();
+    let gold=[include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-internal.0.rgba16le").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-internal.1.rgba16le").as_slice(),include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-main5-internal.2.rgba16le").as_slice()];
+    assert_eq!(image.frames.len(),3);
+    for (f,g) in image.frames.iter().zip(gold) {
+        assert_eq!(f.rgba16.len()*2,g.len());
+        for (a,b) in f.rgba16.iter().zip(g.chunks_exact(2)) {assert!(a.abs_diff(u16::from_le_bytes(b.try_into().unwrap()))<=1);}
+    }
+    count+=1;
+    }
+    let input=include_bytes!("../../wml2/tests/fixtures/review/jxl-animation-variable.jxl");
+    let image=image_from(input).unwrap();
+    assert_eq!(image.loop_count,Some(7));
+    let frames=image.animation.unwrap();
+    assert_eq!(frames.iter().map(|f|f.control.await_time).collect::<Vec<_>>(),[50,170,30]);count+=1;
+    let ex=image_from_ex(input,PixelFormatEx::Rgba16,PrecisionConversion::Exact).unwrap();
+    assert_eq!(ex.animation().unwrap().len(),3);assert_eq!(ex.loop_count(),Some(7));count+=1;
+    assert!(decode(input,Default::default(),&||true).unwrap_err().is::<wml2::jpegxl::DecodeCancelled>());count+=1;
+    assert!(decode(input,DecodeLimits{frames:2,..Default::default()},&||false).is_err());count+=1;
+    count
 }

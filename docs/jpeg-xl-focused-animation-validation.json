@@ -1,0 +1,671 @@
+{
+  "method": "Rust1.91 release opt3; no-default jpeg-xl,image-buffer-ex,color-management,png; unchanged existing review_bench allocator meter. Identical source path; 3 balanced blocks, 3 warmups and 5 measured decodes/process. Rust requested bytes/peak are observed allocation deltas, not RSS, bounds or a codec-wide allocation guarantee.",
+  "results": [
+    {
+      "input": "jxl-rgb8.jxl",
+      "variants": {
+        "main": [
+          {
+            "median_ns": 51947,
+            "allocations": [
+              328
+            ],
+            "allocated_bytes": [
+              105053
+            ],
+            "peak_live_bytes": [
+              64222
+            ]
+          },
+          {
+            "median_ns": 52308,
+            "allocations": [
+              328
+            ],
+            "allocated_bytes": [
+              105053
+            ],
+            "peak_live_bytes": [
+              64222
+            ]
+          },
+          {
+            "median_ns": 54410,
+            "allocations": [
+              328
+            ],
+            "allocated_bytes": [
+              105053
+            ],
+            "peak_live_bytes": [
+              64222
+            ]
+          }
+        ],
+        "migration": [
+          {
+            "median_ns": 53209,
+            "allocations": [
+              272
+            ],
+            "allocated_bytes": [
+              105761
+            ],
+            "peak_live_bytes": [
+              71912
+            ]
+          },
+          {
+            "median_ns": 57534,
+            "allocations": [
+              272
+            ],
+            "allocated_bytes": [
+              105761
+            ],
+            "peak_live_bytes": [
+              71912
+            ]
+          },
+          {
+            "median_ns": 53919,
+            "allocations": [
+              272
+            ],
+            "allocated_bytes": [
+              105761
+            ],
+            "peak_live_bytes": [
+              71912
+            ]
+          }
+        ],
+        "animation": [
+          {
+            "median_ns": 54991,
+            "allocations": [
+              272
+            ],
+            "allocated_bytes": [
+              105761
+            ],
+            "peak_live_bytes": [
+              71912
+            ]
+          },
+          {
+            "median_ns": 55412,
+            "allocations": [
+              272
+            ],
+            "allocated_bytes": [
+              105761
+            ],
+            "peak_live_bytes": [
+              71912
+            ]
+          },
+          {
+            "median_ns": 54210,
+            "allocations": [
+              272
+            ],
+            "allocated_bytes": [
+              105761
+            ],
+            "peak_live_bytes": [
+              71912
+            ]
+          }
+        ]
+      },
+      "hash": "5701539870786561954"
+    },
+    {
+      "input": "jxl-icc-lossless.jxl",
+      "variants": {
+        "main": [
+          {
+            "median_ns": 73889,
+            "allocations": [
+              383
+            ],
+            "allocated_bytes": [
+              8524610
+            ],
+            "peak_live_bytes": [
+              4205264
+            ]
+          },
+          {
+            "median_ns": 75511,
+            "allocations": [
+              383
+            ],
+            "allocated_bytes": [
+              8524610
+            ],
+            "peak_live_bytes": [
+              4205264
+            ]
+          },
+          {
+            "median_ns": 73539,
+            "allocations": [
+              383
+            ],
+            "allocated_bytes": [
+              8524610
+            ],
+            "peak_live_bytes": [
+              4205264
+            ]
+          }
+        ],
+        "migration": [
+          {
+            "median_ns": 81330,
+            "allocations": [
+              332
+            ],
+            "allocated_bytes": [
+              4330286
+            ],
+            "peak_live_bytes": [
+              4197559
+            ]
+          },
+          {
+            "median_ns": 86357,
+            "allocations": [
+              332
+            ],
+            "allocated_bytes": [
+              4330286
+            ],
+            "peak_live_bytes": [
+              4197559
+            ]
+          },
+          {
+            "median_ns": 79858,
+            "allocations": [
+              332
+            ],
+            "allocated_bytes": [
+              4330286
+            ],
+            "peak_live_bytes": [
+              4197559
+            ]
+          }
+        ],
+        "animation": [
+          {
+            "median_ns": 86247,
+            "allocations": [
+              332
+            ],
+            "allocated_bytes": [
+              4330286
+            ],
+            "peak_live_bytes": [
+              4197559
+            ]
+          },
+          {
+            "median_ns": 81249,
+            "allocations": [
+              332
+            ],
+            "allocated_bytes": [
+              4330286
+            ],
+            "peak_live_bytes": [
+              4197559
+            ]
+          },
+          {
+            "median_ns": 78566,
+            "allocations": [
+              332
+            ],
+            "allocated_bytes": [
+              4330286
+            ],
+            "peak_live_bytes": [
+              4197559
+            ]
+          }
+        ]
+      },
+      "hash": "11934725841428314993"
+    },
+    {
+      "input": "jxl-jbrd-bench.jxl",
+      "variants": {
+        "main": [
+          {
+            "median_ns": 16500239,
+            "allocations": [
+              999
+            ],
+            "allocated_bytes": [
+              17296836
+            ],
+            "peak_live_bytes": [
+              5995746
+            ]
+          },
+          {
+            "median_ns": 17039524,
+            "allocations": [
+              999
+            ],
+            "allocated_bytes": [
+              17296836
+            ],
+            "peak_live_bytes": [
+              5995746
+            ]
+          },
+          {
+            "median_ns": 17001588,
+            "allocations": [
+              999
+            ],
+            "allocated_bytes": [
+              17296836
+            ],
+            "peak_live_bytes": [
+              5995746
+            ]
+          }
+        ],
+        "migration": [
+          {
+            "median_ns": 13338114,
+            "allocations": [
+              469
+            ],
+            "allocated_bytes": [
+              8586723
+            ],
+            "peak_live_bytes": [
+              4382783
+            ]
+          },
+          {
+            "median_ns": 13653230,
+            "allocations": [
+              469
+            ],
+            "allocated_bytes": [
+              8586723
+            ],
+            "peak_live_bytes": [
+              4382783
+            ]
+          },
+          {
+            "median_ns": 13498130,
+            "allocations": [
+              469
+            ],
+            "allocated_bytes": [
+              8586723
+            ],
+            "peak_live_bytes": [
+              4382783
+            ]
+          }
+        ],
+        "animation": [
+          {
+            "median_ns": 13100093,
+            "allocations": [
+              469
+            ],
+            "allocated_bytes": [
+              8586723
+            ],
+            "peak_live_bytes": [
+              4382783
+            ]
+          },
+          {
+            "median_ns": 13527083,
+            "allocations": [
+              469
+            ],
+            "allocated_bytes": [
+              8586723
+            ],
+            "peak_live_bytes": [
+              4382783
+            ]
+          },
+          {
+            "median_ns": 13557728,
+            "allocations": [
+              469
+            ],
+            "allocated_bytes": [
+              8586723
+            ],
+            "peak_live_bytes": [
+              4382783
+            ]
+          }
+        ]
+      },
+      "hash": "11298716346096407965"
+    },
+    {
+      "input": "jxl-sunset-logo.jxl",
+      "variants": {
+        "main": [
+          {
+            "median_ns": 168476756,
+            "allocations": [
+              804
+            ],
+            "allocated_bytes": [
+              58248379
+            ],
+            "peak_live_bytes": [
+              39339187
+            ]
+          },
+          {
+            "median_ns": 167870512,
+            "allocations": [
+              804
+            ],
+            "allocated_bytes": [
+              58248379
+            ],
+            "peak_live_bytes": [
+              39339187
+            ]
+          },
+          {
+            "median_ns": 166425669,
+            "allocations": [
+              804
+            ],
+            "allocated_bytes": [
+              58248379
+            ],
+            "peak_live_bytes": [
+              39339187
+            ]
+          }
+        ],
+        "migration": [
+          {
+            "median_ns": 151892514,
+            "allocations": [
+              683
+            ],
+            "allocated_bytes": [
+              49689211
+            ],
+            "peak_live_bytes": [
+              39300475
+            ]
+          },
+          {
+            "median_ns": 149970479,
+            "allocations": [
+              683
+            ],
+            "allocated_bytes": [
+              49689211
+            ],
+            "peak_live_bytes": [
+              39300475
+            ]
+          },
+          {
+            "median_ns": 155564726,
+            "allocations": [
+              683
+            ],
+            "allocated_bytes": [
+              49689211
+            ],
+            "peak_live_bytes": [
+              39300475
+            ]
+          }
+        ],
+        "animation": [
+          {
+            "median_ns": 152520009,
+            "allocations": [
+              683
+            ],
+            "allocated_bytes": [
+              49689211
+            ],
+            "peak_live_bytes": [
+              39300475
+            ]
+          },
+          {
+            "median_ns": 154648668,
+            "allocations": [
+              683
+            ],
+            "allocated_bytes": [
+              49689211
+            ],
+            "peak_live_bytes": [
+              39300475
+            ]
+          },
+          {
+            "median_ns": 154545627,
+            "allocations": [
+              683
+            ],
+            "allocated_bytes": [
+              49689211
+            ],
+            "peak_live_bytes": [
+              39300475
+            ]
+          }
+        ]
+      },
+      "hash": "8933294292655360903"
+    },
+    {
+      "input": "jxl-animation-main5-icc16-variable.jxl",
+      "variants": {
+        "animation": [
+          {
+            "median_ns": 182169,
+            "allocations": [
+              785
+            ],
+            "allocated_bytes": [
+              4465032
+            ],
+            "peak_live_bytes": [
+              4199859
+            ]
+          },
+          {
+            "median_ns": 183931,
+            "allocations": [
+              785
+            ],
+            "allocated_bytes": [
+              4465032
+            ],
+            "peak_live_bytes": [
+              4199859
+            ]
+          },
+          {
+            "median_ns": 144654,
+            "allocations": [
+              785
+            ],
+            "allocated_bytes": [
+              4465032
+            ],
+            "peak_live_bytes": [
+              4199859
+            ]
+          }
+        ]
+      },
+      "hash": "10418955762536626634"
+    }
+  ],
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 236,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14548992,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "8f3ac75637b3e1ffeffd8e60970a32083b5b0e7637a66c4c5e1d0a9252982f3b",
+    "scope": "Focused animation adds seven cases: native full canvases, rational timing, common callbacks, EX, cancellation and frame limits. COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "tests": {
+    "enabled_library_and_selected_targets": 112,
+    "focused_animation_enabled": 7,
+    "minimal_jxl_only": 6,
+    "wasm_cases": 236
+  },
+  "review_103_resident_metadata_fix": {
+    "baseline": "bde4518c3c9ba9acd48aebb9f7881cc2a56c04ef",
+    "enabled_tests": {
+      "library": 36,
+      "brob": 6,
+      "focused_animation": 8
+    },
+    "minimal_tests": {
+      "library": 29,
+      "focused_animation": 7
+    },
+    "wasm": {
+      "runtime": "v24.19.0",
+      "cases": 236,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 14548992,
+      "target": "wasm32-unknown-unknown",
+      "features": "jpeg-xl,image-buffer-ex; no defaults",
+      "wasm_sha256": "3d519100d5da135090471cad06474c3067313c11c8866780cc1e5fb747ea0363",
+      "scope": "Focused animation adds seven cases: native full canvases, rational timing, common callbacks, EX, cancellation and frame limits. COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+    },
+    "benchmark": {
+      "method": "Rust1.91 release opt3 jpeg-xl,image-buffer-ex,color-management,png, same worktree and unchanged review_bench harness; retained bde4518 binary vs patched binary; three alternating blocks with three warmups and five measured iterations; observed requested allocation deltas, not RSS guarantee.",
+      "results": [
+        {
+          "input": "wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.jxl",
+          "sha256": "c467f4cd51fb5c38ed752d6778efd19c5e336daf3c23858c8c333ac05757b6e2",
+          "trials": {
+            "before": [
+              {
+                "median_ns": 199535,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              },
+              {
+                "median_ns": 148980,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              },
+              {
+                "median_ns": 140968,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              }
+            ],
+            "after": [
+              {
+                "median_ns": 144523,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              },
+              {
+                "median_ns": 152585,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              },
+              {
+                "median_ns": 152816,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              }
+            ]
+          },
+          "ratio": 1.0241978789099209,
+          "pixel_hash": "10418955762536626634"
+        },
+        {
+          "input": ".test-review103-metadata.jxl",
+          "sha256": "6a6f8c7848ab74c43c6a939af6204623bfbd3af6ca41bf44670e2e80e5c4c8f0",
+          "trials": {
+            "before": [
+              {
+                "median_ns": 299572,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              },
+              {
+                "median_ns": 245292,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              },
+              {
+                "median_ns": 252563,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              }
+            ],
+            "after": [
+              {
+                "median_ns": 234115,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              },
+              {
+                "median_ns": 285181,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              },
+              {
+                "median_ns": 224341,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              }
+            ]
+          },
+          "ratio": 0.9269568384917822,
+          "pixel_hash": "10418955762536626634"
+        }
+      ]
+    },
+    "rendered_rgba_frames": "All three sRGB frame SHA256 hashes unchanged against previously inspected output."
+  }
+}

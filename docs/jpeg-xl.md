@@ -346,3 +346,10 @@ conversion. `animation_bytes` admits the common8-byte-per-pixel native working
 canvas before codec work, even for ordinary output. Existing same-depth/native
 Gray layouts and refusal of associated/subsampled/general extra planes remain.
 See [the bounded subset, independent oracles and upstream evaluation](jpeg-xl-alpha.md).
+
+## Unmerged animation development
+
+The focused follow-up provides bounded coalesced animation through common/EX
+callbacks and explicit sRGB APIs, with exact native ticks for fractional waits.
+See [animation contract and validation](jpeg-xl-focused-animation.md). This is
+development-branch behavior; released main0.0.41 remains still-only.

@@ -314,11 +314,19 @@ pub struct InitOptionsEx {
     pub source_stride: Option<usize>,
     /// Legacy background is always RGBA8. Its normalized range is scaled using
     /// the buffer's conversion policy; Gray storage accepts only opaque neutral
-    /// backgrounds. Animation is currently unsupported.
+    /// backgrounds. Animation accepts complete coalesced replacement canvases.
     pub legacy: Option<InitOptions>,
 }
 
-/// Checked byte-based static image storage. Initialization declares incoming
+/// One complete coalesced EX animation canvas, in the parent's storage format.
+/// Crop/disposal/blending are not reapplied to these stored full canvases.
+#[non_exhaustive]
+pub struct AnimationFrameEx {
+    pub control: NextOptions,
+    pub pixels: PixelBytesEx,
+}
+
+/// Checked byte-based image and coalesced-animation storage. Initialization declares incoming
 /// bytes separately from the storage selected by `with_storage`. Both callback
 /// initializers enter the same private routine without calling each other.
 /// Legacy encoders require an explicit `to_rgba8` precision conversion;
@@ -343,6 +351,9 @@ pub struct ImageBufferEx {
     format: PixelFormatEx,
     stride: usize,
     buffer: Option<Vec<u8>>,
+    animation: Option<Vec<AnimationFrameEx>>,
+    current: Option<usize>,
+    loop_count: Option<u32>,
     background_color: Option<RGBA>,
     source_format: PixelFormatEx,
     source_stride: Option<usize>,
@@ -391,6 +402,9 @@ impl ImageBufferEx {
             format,
             stride: 0,
             buffer: None,
+            animation: None,
+            current: None,
+            loop_count: None,
             background_color: None,
             source_format: PixelFormatEx::Rgba8,
             source_stride: None,
@@ -437,6 +451,13 @@ impl ImageBufferEx {
     }
     pub fn stride(&self) -> usize {
         self.stride
+    }
+    /// Coalesced full-canvas frames; the base bytes remain the first-frame poster.
+    pub fn animation(&self) -> Option<&[AnimationFrameEx]> {
+        self.animation.as_deref()
+    }
+    pub fn loop_count(&self) -> Option<u32> {
+        self.loop_count
     }
     pub fn bytes(&self) -> Option<&[u8]> {
         self.buffer.as_deref()
@@ -537,6 +558,9 @@ impl ImageBufferEx {
     ) -> Response {
         // Failed initialization invalidates the old callback target.
         self.buffer = None;
+        self.animation = None;
+        self.current = None;
+        self.loop_count = None;
         self.background_color = None;
         let (stride, length) = self.format.extent(width, height, None)?;
         let source_row = option.source_format.row_bytes(width)?;
@@ -549,9 +573,6 @@ impl ImageBufferEx {
         let source_length = source_stride
             .checked_mul(height)
             .ok_or_else(|| ex_error("EX source size overflow"))?;
-        if option.legacy.as_ref().is_some_and(|o| o.animation) {
-            return Err(ex_error("EX animation initialization is unsupported"));
-        }
         check_conversion(option.source_format, self.format)?;
         let limits = crate::limits::current();
         let pixels = width
@@ -604,6 +625,12 @@ impl ImageBufferEx {
         self.source_stride = option.source_stride;
         self.background_color = background.cloned();
         self.buffer = Some(buffer);
+        self.animation = option
+            .legacy
+            .as_ref()
+            .filter(|o| o.animation)
+            .map(|_| Vec::new());
+        self.loop_count = option.legacy.as_ref().map(|o| o.loop_count);
         Ok(None)
     }
 
@@ -632,6 +659,9 @@ impl ImageBufferEx {
         format: PixelFormatEx,
         conversion: PrecisionConversion,
     ) -> Result<Vec<u8>, Error> {
+        if self.animation.is_some() {
+            return Err(ex_error("EX static conversion would discard animation"));
+        }
         let source = self
             .buffer
             .as_ref()
@@ -736,6 +766,9 @@ impl DrawCallback for ImageBufferEx {
     fn begin_image(&mut self) -> Response {
         self.metadata = None;
         self.buffer = None;
+        self.animation = None;
+        self.current = None;
+        self.loop_count = None;
         self.background_color = None;
         self.width = 0;
         self.height = 0;
@@ -791,6 +824,16 @@ impl DrawCallback for ImageBufferEx {
         y.checked_add(height)
             .ok_or_else(|| ex_error("EX rectangle y overflow"))?;
         let clip = clipped_rect(x, y, width, height, self.width, self.height)?;
+        let destination = if let Some(i) = self.current {
+            &mut self
+                .animation
+                .as_mut()
+                .ok_or_else(|| ex_error("missing EX animation"))?[i]
+                .pixels
+                .bytes
+        } else {
+            self.buffer.as_mut().unwrap()
+        };
         // Validate precision even in the clipped-away portion, before mutation.
         if self.source_format != self.format {
             let converted = convert_validated_region(
@@ -803,7 +846,7 @@ impl DrawCallback for ImageBufferEx {
             )?;
             if let Some((w, h)) = clip {
                 copy_rows(
-                    self.buffer.as_mut().unwrap(),
+                    destination,
                     converted.bytes(),
                     converted.stride(),
                     self.stride,
@@ -814,7 +857,7 @@ impl DrawCallback for ImageBufferEx {
             }
         } else if let Some((w, h)) = clip {
             copy_rows(
-                self.buffer.as_mut().unwrap(),
+                destination,
                 data,
                 source_stride,
                 self.stride,
@@ -825,8 +868,63 @@ impl DrawCallback for ImageBufferEx {
         }
         Ok(None)
     }
-    fn next(&mut self, _: Option<NextOptions>) -> Response {
-        Err(ex_error("EX animation frames are unsupported"))
+    fn next(&mut self, option: Option<NextOptions>) -> Response {
+        let option = option.ok_or_else(|| ex_error("EX frame control required"))?;
+        let frames = self
+            .animation
+            .as_mut()
+            .ok_or_else(|| ex_error("EX animated initialization required"))?;
+        if option.image_rect.as_ref().is_some_and(|r| {
+            r.start_x != 0 || r.start_y != 0 || r.width != self.width || r.height != self.height
+        }) || !matches!(option.blend, None | Some(NextBlend::Override))
+            || !matches!(option.dispose_option, None | Some(NextDispose::None))
+            || !matches!(option.flag, NextOption::Continue | NextOption::Next)
+        {
+            return Err(ex_error(
+                "EX animation requires complete coalesced replacement canvases",
+            ));
+        }
+        let count = frames
+            .len()
+            .checked_add(1)
+            .ok_or_else(|| ex_error("EX frame count overflow"))?;
+        let bytes = self
+            .stride
+            .checked_mul(self.height)
+            .ok_or_else(|| ex_error("EX frame size overflow"))?;
+        let total = bytes
+            .checked_mul(
+                count
+                    .checked_add(1)
+                    .ok_or_else(|| ex_error("EX poster count overflow"))?,
+            )
+            .ok_or_else(|| ex_error("EX cumulative storage overflow"))?;
+        let limits = crate::limits::current();
+        crate::limits::check(count, limits.frames, "EX displayed frames")?;
+        crate::limits::check(
+            total,
+            limits.animation_bytes,
+            "EX poster and animation storage",
+        )?;
+        crate::limits::check(
+            total,
+            limits.expanded_bytes,
+            "EX cumulative frame workspace",
+        )?;
+        frames.try_reserve(1)?;
+        let pixels = PixelBytesEx {
+            width: self.width,
+            height: self.height,
+            format: self.format,
+            stride: self.stride,
+            bytes: zeroed_bytes(bytes)?,
+        };
+        frames.push(AnimationFrameEx {
+            control: option,
+            pixels,
+        });
+        self.current = Some(count - 1);
+        Ok(None)
     }
     fn terminate(&mut self, _: Option<TerminateOptions>) -> Response {
         Ok(None)
@@ -966,6 +1064,11 @@ fn convert_rows(
 
 impl ImageBufferEx {
     fn ex_pixels(&self) -> Result<&[u8], Error> {
+        if self.animation.is_some() {
+            return Err(ex_error(
+                "EX static picking requires no animation; access animation frames explicitly",
+            ));
+        }
         let source = self
             .buffer
             .as_deref()
@@ -1203,6 +1306,11 @@ impl ImageBufferEx {
     /// color information and empty metadata/timing. This is not a frame metadata
     /// or color conversion. Callers must explicitly supply those separately.
     pub fn to_highres_pixels(&self) -> Result<crate::highres::ImageFrame, Error> {
+        if self.animation.is_some() {
+            return Err(ex_error(
+                "EX static highres conversion would discard animation",
+            ));
+        }
         use crate::highres::{
             AlphaAssociation, ChannelModel, ChannelRole, ImageDescriptor, ImageFrame, PixelBuffer,
             Plane, PlaneDescriptor, PlaneLayout, Subsampling,

@@ -21,3 +21,5 @@ Draft pull request: [#72](https://github.com/mith-mmk/wml2-on-rust/pull/72).
 - Pre-admit and fallibly allocate ordinary, float/HDR and preview output-format descriptor lists. Finite workspace retains their payload charge through decode/CMS; legacy admission stays unchanged. This is a small [adapter follow-up](../jpeg-xl-format-admission.md), not codec-wide heap coverage.
 
 - Make container metadata keys and record-array growth fallible; pre-admit old/new backing storage and carry retained record bytes into finite Brotli/header workspace. Preserve key names, logical metadata quotas and legacy admission. See [contract and evidence](../jpeg-xl-container-metadata.md).
+
+- Reserve callback-held raw metadata capacity across nested native animation decode, account record-array replacement overlap and fallibly create fixed callback keys. See [ownership contract and tests](../jpeg-xl-animation-metadata.md). Direct native pixel/timing contracts and fixed caps stay unchanged.

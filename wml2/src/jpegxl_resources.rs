@@ -994,6 +994,156 @@ pub(crate) mod tests {
         );
     }
     #[test]
+    fn resident_animation_metadata_is_reserved_before_native_work_and_rejoined() {
+        let _reset = ResetFault;
+        use super::super::animation::{animation_with_workspace, incoming_metadata_storage};
+        let mut key = String::with_capacity(128);
+        key.push_str("key");
+        let mut raw = Vec::with_capacity(1024);
+        raw.extend_from_slice(b"abc");
+        let mut metadata = Vec::with_capacity(4);
+        metadata.push((key, crate::metadata::DataMap::Raw(raw)));
+        let resident = incoming_metadata_storage(&metadata).unwrap();
+        assert_eq!(
+            resident,
+            super::super::container_metadata::record_bytes(metadata.capacity()).unwrap()
+                + metadata[0].0.capacity()
+                + match &metadata[0].1 {
+                    crate::metadata::DataMap::Raw(v) => v.capacity(),
+                    _ => unreachable!(),
+                }
+        );
+        let input =
+            include_bytes!("../tests/fixtures/review/jxl-animation-main5-icc16-variable.jxl");
+        let (_, normal) = animation_with_workspace(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false,
+            0,
+        )
+        .unwrap();
+        let (_, held) = animation_with_workspace(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits::default(),
+            &|| false,
+            resident,
+        )
+        .unwrap();
+        assert_eq!(held.accounted(), normal.accounted() + resident);
+        assert_eq!(held.remaining() + resident, normal.remaining());
+        COPY_KEY.with(|f| f.set(Some("animation frame descriptors")));
+        FAILED_BYTES.with(|f| f.set(0));
+        let error = animation_with_workspace(
+            input,
+            DecodeLimits::default(),
+            JxlResourceLimits {
+                workspace_bytes: resident - 1,
+                ..Default::default()
+            },
+            &|| false,
+            resident,
+        )
+        .err()
+        .unwrap();
+        assert!(error.to_string().contains("resident callback metadata"));
+        assert_eq!(
+            COPY_KEY.with(Cell::get),
+            Some("animation frame descriptors")
+        );
+        assert_eq!(FAILED_BYTES.with(Cell::get), 0);
+        let e = animation_with_workspace(
+            &[],
+            DecodeLimits::default(),
+            JxlResourceLimits {
+                workspace_bytes: usize::MAX,
+                ..Default::default()
+            },
+            &|| true,
+            usize::MAX,
+        )
+        .err()
+        .unwrap();
+        assert!(e.is::<super::super::DecodeCancelled>());
+    }
+    #[test]
+    fn callback_record_replacement_and_key_refusal_preserve_the_ledger() {
+        let _reset = ResetFault;
+        use super::super::animation::{callback_key, reserve_callback_metadata};
+        let mut metadata = Vec::with_capacity(4);
+        metadata.push(("x".into(), crate::metadata::DataMap::Raw(vec![1])));
+        let old = super::super::container_metadata::record_bytes(metadata.capacity()).unwrap();
+        let next = super::super::container_metadata::record_bytes(metadata.len() + 16).unwrap();
+        let mut short = Workspace::new(old, old + next - 1).unwrap();
+        COPY_KEY.with(|f| f.set(Some("animation callback metadata")));
+        FAILED_BYTES.with(|f| f.set(0));
+        assert!(reserve_callback_metadata(&mut metadata, &mut short).is_err());
+        assert_eq!(FAILED_BYTES.with(Cell::get), 0);
+        let mut exact = Workspace::new(old, old + next).unwrap();
+        assert!(
+            reserve_callback_metadata(&mut metadata, &mut exact)
+                .unwrap_err()
+                .is::<std::collections::TryReserveError>()
+        );
+        assert_eq!(metadata.capacity(), 4);
+        assert_eq!(metadata.len(), 1);
+        assert_eq!(exact.accounted(), old);
+        reserve_callback_metadata(&mut metadata, &mut exact).unwrap();
+        assert_eq!(exact.accounted(), next);
+        assert_eq!(metadata[0].0, "x");
+        let live = exact.accounted();
+        COPY_KEY.with(|f| f.set(Some("test key")));
+        FAILED_BYTES.with(|f| f.set(0));
+        let e = callback_key("test key", &mut exact).unwrap_err();
+        assert!(e.is::<std::collections::TryReserveError>());
+        assert_eq!(exact.accounted(), live);
+        assert_eq!(callback_key("test key", &mut exact).unwrap(), "test key");
+        assert_eq!(exact.accounted(), live + 8);
+    }
+    #[test]
+    fn each_fixed_animation_key_allocation_error_publishes_no_image() {
+        let _reset = ResetFault;
+        let input =
+            include_bytes!("../tests/fixtures/review/jxl-animation-main5-icc16-variable.jxl");
+        for key in [
+            "ICC Profile",
+            "JPEG XL Source ICC Profile",
+            "JPEG XL Reconstruction ICC Profile",
+            "JPEG XL Source Header",
+            "JPEG XL Source Orientation",
+            "JPEG XL Source Bits Per Sample",
+            "JPEG XL Animation Ticks Numerator",
+            "JPEG XL Animation Ticks Denominator",
+            "coded_width",
+            "coded_height",
+            "output_width",
+            "output_height",
+            "JPEG XL Source Alpha Bits Per Sample",
+            "orientation_applied",
+        ] {
+            COPY_KEY.with(|f| f.set(Some(key)));
+            FAILED_BYTES.with(|f| f.set(0));
+            let e = super::super::image_from_with_resource_limits(
+                input,
+                DecodeLimits::default(),
+                JxlResourceLimits::default(),
+            )
+            .err()
+            .unwrap();
+            assert!(e.is::<std::collections::TryReserveError>(), "{key}: {e}");
+            assert_eq!(FAILED_BYTES.with(Cell::get), key.len());
+            assert!(
+                super::super::image_from_with_resource_limits(
+                    input,
+                    DecodeLimits::default(),
+                    JxlResourceLimits::default()
+                )
+                .is_ok()
+            );
+        }
+    }
+    #[test]
     fn every_animation_delivery_reserve_refuses_without_publication() {
         let _reset = ResetFault;
         let input =

@@ -542,5 +542,130 @@
     "focused_animation_enabled": 7,
     "minimal_jxl_only": 6,
     "wasm_cases": 236
+  },
+  "review_103_resident_metadata_fix": {
+    "baseline": "bde4518c3c9ba9acd48aebb9f7881cc2a56c04ef",
+    "enabled_tests": {
+      "library": 36,
+      "brob": 6,
+      "focused_animation": 8
+    },
+    "minimal_tests": {
+      "library": 29,
+      "focused_animation": 7
+    },
+    "wasm": {
+      "runtime": "v24.19.0",
+      "cases": 236,
+      "all_passed": true,
+      "host_imports": [],
+      "memory_bytes": 14548992,
+      "target": "wasm32-unknown-unknown",
+      "features": "jpeg-xl,image-buffer-ex; no defaults",
+      "wasm_sha256": "3d519100d5da135090471cad06474c3067313c11c8866780cc1e5fb747ea0363",
+      "scope": "Focused animation adds seven cases: native full canvases, rational timing, common callbacks, EX, cancellation and frame limits. COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+    },
+    "benchmark": {
+      "method": "Rust1.91 release opt3 jpeg-xl,image-buffer-ex,color-management,png, same worktree and unchanged review_bench harness; retained bde4518 binary vs patched binary; three alternating blocks with three warmups and five measured iterations; observed requested allocation deltas, not RSS guarantee.",
+      "results": [
+        {
+          "input": "wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.jxl",
+          "sha256": "c467f4cd51fb5c38ed752d6778efd19c5e336daf3c23858c8c333ac05757b6e2",
+          "trials": {
+            "before": [
+              {
+                "median_ns": 199535,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              },
+              {
+                "median_ns": 148980,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              },
+              {
+                "median_ns": 140968,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              }
+            ],
+            "after": [
+              {
+                "median_ns": 144523,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              },
+              {
+                "median_ns": 152585,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              },
+              {
+                "median_ns": 152816,
+                "peak_live_bytes": [
+                  4199859
+                ]
+              }
+            ]
+          },
+          "ratio": 1.0241978789099209,
+          "pixel_hash": "10418955762536626634"
+        },
+        {
+          "input": ".test-review103-metadata.jxl",
+          "sha256": "6a6f8c7848ab74c43c6a939af6204623bfbd3af6ca41bf44670e2e80e5c4c8f0",
+          "trials": {
+            "before": [
+              {
+                "median_ns": 299572,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              },
+              {
+                "median_ns": 245292,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              },
+              {
+                "median_ns": 252563,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              }
+            ],
+            "after": [
+              {
+                "median_ns": 234115,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              },
+              {
+                "median_ns": 285181,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              },
+              {
+                "median_ns": 224341,
+                "peak_live_bytes": [
+                  4727927
+                ]
+              }
+            ]
+          },
+          "ratio": 0.9269568384917822,
+          "pixel_hash": "10418955762536626634"
+        }
+      ]
+    },
+    "rendered_rgba_frames": "All three sRGB frame SHA256 hashes unchanged against previously inspected output."
   }
 }

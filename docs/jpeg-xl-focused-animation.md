@@ -42,7 +42,7 @@ Alpha and general extra channels remain explicit refusals. These are limitations
 of this bounded animation profile, not features silently converted or discarded.
 The old large-image restriction remains; it is not a prerequisite for this series.
 
-## Validation
+## Initial validation (bde4518)
 
 112 enabled tests passed across library, EX collector/contracts, still JXL,
 additional JXL and seven animation tests. Minimal jpeg-xl-only: six animation
@@ -69,3 +69,23 @@ RSS or an allocation contract. No speed claim is made for all inputs.
 Raw trials: [validation JSON](jpeg-xl-focused-animation-validation.json).
 
 #40/#43 remain open pending review/merge. CI completion is not awaited.
+
+## PR103 review: resident metadata during nested decode
+
+The common path retains its reader and expanded container metadata while the
+native animation decoder unpacks the container again. Previously their existing
+allowance was claimed only after native decoding, leaving that peak unaccounted.
+It is now deducted from expanded_bytes before nested input assembly, Brotli,
+preflight and pixels, then carried into the returned private allowance exactly
+once. Native-only calls reserve zero external bytes. No public API/cap changes.
+
+New tests reject before unpack at the assembly boundary, exercise exact quota
+transfer, overflow-sized reservations, cancellation precedence and recovery. A
+four-brob container retains all four expanded payloads across successful decode;
+the exact workspace boundary, failure before image publication, truncation and
+retry are checked. Current verification: 36 library + 6 brob + 8 animation tests;
+minimal jpeg-xl-only 29 library + 7 animation tests; actual WASM 236 cases passed.
+All three rendered sRGB frames retain their inspected hashes. Three alternating
+release blocks against bde4518 give median ratios 1.024 (plain) / 0.927 (metadata),
+with identical pixels and observed allocation peaks. Shared-host variation does
+not establish a speed improvement. Raw trials are in the validation JSON.

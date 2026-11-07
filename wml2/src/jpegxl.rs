@@ -1,4 +1,5 @@
-//! Bounded JPEG XL still-image adapter for the published `jxl 0.7.4` API.
+//! Bounded still-image decoding with published `jxl 0.8.0`.
+//! Published 0.7.4 is isolated to pre-allocation parser compatibility.
 //!
 //! Enable `jpeg-xl`; add `image-buffer-ex` for native Gray/RGBA8/12/16LE.
 //! See `docs/jpeg-xl.md` for precision, colour, resource and rejection contracts.
@@ -9,9 +10,9 @@ use crate::metadata::DataMap;
 use crate::warning::ImgWarnings;
 use bin_rs::reader::BinaryReader;
 use jxl_codec::api::*;
-use jxl_codec::bit_reader::BitReader;
-use jxl_codec::headers::extra_channels::ExtraChannel;
-use jxl_codec::headers::{FileHeader, JxlHeader};
+use jxl_preflight::bit_reader::BitReader;
+use jxl_preflight::headers::extra_channels::ExtraChannel;
+use jxl_preflight::headers::{FileHeader, JxlHeader};
 use std::io::SeekFrom;
 
 #[path = "jpegxl_brob.rs"]
@@ -111,12 +112,28 @@ fn codec_error(e: jxl_codec::error::Error) -> Error {
     };
     error(kind, format!("JPEG XL: {e}"))
 }
-fn complete<T, U>(result: ProcessingResult<T, U>) -> Result<T, Error> {
-    match result {
-        ProcessingResult::Complete { result } => Ok(result),
-        ProcessingResult::NeedsMoreInput { .. } => {
-            Err(error(ImgErrorKind::UnexpectedEof, "truncated JPEG XL"))
+// The auxiliary crate supplies only existing bounded preflight readers.
+fn preflight_error(e: jxl_preflight::error::Error) -> Error {
+    use jxl_preflight::error::Error::*;
+    let kind = match e {
+        OutOfBounds(_) | SectionTooShort | UnexpectedCodestreamBoxEnd | IccEndOfStream => {
+            ImgErrorKind::UnexpectedEof
         }
+        OutOfMemory(_)
+        | ImageOutOfMemory(..)
+        | ImageSizeTooLarge(..)
+        | ImageDimensionTooLarge(_) => ImgErrorKind::OutOfMemory,
+        _ => ImgErrorKind::IllegalData,
+    };
+    error(kind, format!("JPEG XL: {e}"))
+}
+fn expect_event(event: Event, expected: Event) -> Result<(), Error> {
+    if matches!(event, Event::NeedMoreInput { .. }) {
+        Err(error(ImgErrorKind::UnexpectedEof, "truncated JPEG XL"))
+    } else if event == expected {
+        Ok(())
+    } else {
+        Err(invalid("unexpected JPEG XL decoder event"))
     }
 }
 fn add(a: usize, b: usize) -> Result<usize, Error> {
@@ -307,17 +324,17 @@ fn unpack(input: &[u8], limits: DecodeLimits) -> Result<Input, Error> {
 // expanded size before profile allocation, then advance to the frame headers
 // using the same histogram/reader, without building an expanded ICC twice.
 fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
-    use jxl_codec::entropy_coding::decode::{Histograms, SymbolReader};
-    use jxl_codec::headers::encodings::{Empty, UnconditionalCoder};
-    let coded = u64::read_unconditional(&(), br, &Empty {}).map_err(codec_error)?;
+    use jxl_preflight::entropy_coding::decode::{Histograms, SymbolReader};
+    use jxl_preflight::headers::encodings::{Empty, UnconditionalCoder};
+    let coded = u64::read_unconditional(&(), br, &Empty {}).map_err(preflight_error)?;
     let coded = usize::try_from(coded)?;
     limits::check(coded, budget.min(1 << 24), "JPEG XL coded ICC")?;
-    let hist = Histograms::decode(41, br, true).map_err(codec_error)?;
-    let mut reader = SymbolReader::new(&hist, br, None).map_err(codec_error)?;
+    let hist = Histograms::decode(41, br, true).map_err(preflight_error)?;
+    let mut reader = SymbolReader::new(&hist, br, None).map_err(preflight_error)?;
     let mut prefix = [0u8; 20];
     for b in prefix.iter_mut().take(coded.min(20)) {
         let sym = reader.read_unsigned(&hist, br, 0);
-        br.check_for_error().map_err(codec_error)?;
+        br.check_for_error().map_err(preflight_error)?;
         *b = u8::try_from(sym).map_err(|_| invalid("invalid JPEG XL ICC symbol"))?;
     }
     fn varint(data: &[u8], pos: &mut usize) -> Result<u64, Error> {
@@ -378,10 +395,12 @@ fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
         };
         let byte = u8::try_from(reader.read_unsigned(&hist, br, context))
             .map_err(|_| invalid("invalid JPEG XL ICC symbol"))?;
-        br.check_for_error().map_err(codec_error)?;
+        br.check_for_error().map_err(preflight_error)?;
         previous = [byte, previous[0]];
     }
-    reader.check_final_state(&hist, br).map_err(codec_error)?;
+    reader
+        .check_final_state(&hist, br)
+        .map_err(preflight_error)?;
     add(coded, size)
 }
 
@@ -401,7 +420,26 @@ struct Header {
     sample_limit: usize,
 }
 
-// Use the pinned codec's header/TOC parsers, not a second pixel decoder. Internal
+// Cross-check the public 0.8 header projection against the independent bounded
+// preflight. This is defense in depth; ICC admission still precedes BasicInfo.
+fn validate_basic_info(info: &JxlBasicInfo, h: &Header) -> Result<(), Error> {
+    if info.size != (h.width, h.height)
+        || info.orientation as u8 != h.orientation
+        || !matches!(info.bit_depth, JxlBitDepth::Int { bits_per_sample } if bits_per_sample == u32::from(h.bits))
+        || info.animation.is_some()
+        || info.extra_channels.len() != usize::from(h.alpha_bits.is_some())
+        || info.extra_channels.iter().any(|channel| {
+            channel.ec_type != jxl_codec::api::ExtraChannel::Alpha || channel.alpha_associated
+        })
+    {
+        return Err(invalid(
+            "JPEG XL basic info disagrees with bounded preflight",
+        ));
+    }
+    Ok(())
+}
+
+// Use the parser-only compatibility alias; pixel decoding is exclusively 0.8.0. Internal
 // reference layers may exceed or lie outside the displayed canvas. Admit their
 // actual padded storage before the codec allocates pixels, then leave cropping,
 // orientation and blending to its coalescing render pipeline.
@@ -413,12 +451,12 @@ fn frame_workspace(
     base: usize,
     limits: DecodeLimits,
 ) -> Result<(usize, usize), Error> {
-    use jxl_codec::headers::encodings::UnconditionalCoder;
-    use jxl_codec::headers::frame_header::FrameHeader;
-    use jxl_codec::headers::toc::IncrementalTocReader;
+    use jxl_preflight::headers::encodings::UnconditionalCoder;
+    use jxl_preflight::headers::frame_header::FrameHeader;
+    use jxl_preflight::headers::toc::IncrementalTocReader;
     let mut br = BitReader::new(input);
-    br.skip_bits(frame_bits).map_err(codec_error)?;
-    br.jump_to_byte_boundary().map_err(codec_error)?;
+    br.skip_bits(frame_bits).map_err(preflight_error)?;
+    br.jump_to_byte_boundary().map_err(preflight_error)?;
     let mut pos = br.total_bits_read() / 8;
     let main_nonserialized = header.frame_header_nonserialized();
     let preview_nonserialized = header.preview_frame_header_nonserialized();
@@ -452,8 +490,8 @@ fn frame_workspace(
             .get(pos..end)
             .ok_or_else(|| invalid("invalid JPEG XL frame offset"))?;
         let mut br = BitReader::new(data);
-        let mut frame =
-            FrameHeader::read_unconditional(&(), &mut br, nonserialized).map_err(codec_error)?;
+        let mut frame = FrameHeader::read_unconditional(&(), &mut br, nonserialized)
+            .map_err(preflight_error)?;
         frame.postprocess(nonserialized);
         // In 0.7.4 a non-visible preview overrides Skip with SkipOutput and
         // would allocate pixel/reference state. Only a terminal visible preview
@@ -498,7 +536,7 @@ fn frame_workspace(
         if br.peek(1) != 0 {
             toc_workspace = 8 * 1024 * 1024;
         }
-        br.check_for_error().map_err(codec_error)?;
+        br.check_for_error().map_err(preflight_error)?;
         peak = peak.max(add(
             add(add(base, mul(max_pixels, 128)?)?, retained)?,
             toc_workspace,
@@ -509,12 +547,12 @@ fn frame_workspace(
             "JPEG XL internal layer workspace",
         )?;
         let mut toc =
-            IncrementalTocReader::new(u32::try_from(entries)?, &mut br).map_err(codec_error)?;
+            IncrementalTocReader::new(u32::try_from(entries)?, &mut br).map_err(preflight_error)?;
         while !toc.is_complete() {
-            toc.read_step(&mut br).map_err(codec_error)?;
+            toc.read_step(&mut br).map_err(preflight_error)?;
         }
         let toc = toc.finalize();
-        br.jump_to_byte_boundary().map_err(codec_error)?;
+        br.jump_to_byte_boundary().map_err(preflight_error)?;
         let payload = toc.entries.iter().try_fold(0, |n, &v| add(n, v as usize))?;
         pos = add(add(pos, br.total_bits_read() / 8)?, payload)?;
         if pos > input.len() {
@@ -558,7 +596,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         "JPEG XL header workspace",
     )?;
     let mut br = BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
-    let header = FileHeader::read(&mut br).map_err(codec_error)?;
+    let header = FileHeader::read(&mut br).map_err(preflight_error)?;
     let m = &header.image_metadata;
     if m.animation.is_some() {
         return Err(unsupported("JPEG XL animations are unsupported"));
@@ -594,7 +632,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     } else {
         bits as u8
     };
-    use jxl_codec::headers::color_encoding::{ColorSpace, TransferFunction};
+    use jxl_preflight::headers::color_encoding::{ColorSpace, TransferFunction};
     if !matches!(
         m.color_encoding.color_space,
         ColorSpace::Gray | ColorSpace::RGB
@@ -645,7 +683,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
             "JPEG XL ICC workspace",
         )?;
         let mut icc_reader = BitReader::new(&input.codestream);
-        icc_reader.skip_bits(header_bits).map_err(codec_error)?;
+        icc_reader.skip_bits(header_bits).map_err(preflight_error)?;
         let icc = icc_budget(&mut icc_reader, limits.metadata_bytes.saturating_sub(meta))?;
         frame_bits = icc_reader.total_bits_read();
         base = add(base, mul(icc, 4)?)?;
@@ -877,15 +915,22 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     check()?;
     let mut options = JxlDecoderOptions::default();
     options.sample_limit = Some(h.sample_limit);
+    options.adjust_orientation = true;
+    options.alpha_mode = AlphaMode::AsIs;
+    // Preserve 0.7.4's three force_level5_* defaults, including when the
+    // independently validated original container carries a jxll=10 label.
+    options.max_profile_level = ProfileLevel::Main5;
     options.skip_preview = true; // Explicit: return the main image, never preview pixels.
     options.high_precision = true;
     options.render_spot_colors = false;
     let mut stream = input.codestream.as_slice();
-    let decoder = JxlDecoder::<states::Initialized>::new(options);
-    let mut decoder = complete(
+    let mut decoder = JxlDecoder::new(options);
+    decoder.close_input();
+    expect_event(
         decoder
             .process(
                 &mut stream,
+                None,
                 if CANCELLABLE && cancellation.probe.is_some() {
                     Some(&mut runner)
                 } else {
@@ -899,11 +944,15 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
                     codec_error(e)
                 }
             })?,
+        Event::BasicInfo,
     )?;
     check()?;
-    if decoder.basic_info().size != (h.width, h.height) {
-        return Err(invalid("JPEG XL dimensions changed after preflight"));
-    }
+    validate_basic_info(
+        decoder
+            .basic_info()
+            .ok_or_else(|| invalid("missing JPEG XL basic info"))?,
+        &h,
+    )?;
     // Decode at source precision even for the legacy path: upstream U8
     // narrowing dithers RGB, whereas WML2 promises deterministic rounding.
     let bits = if managed { 16 } else { h.native_bits };
@@ -923,16 +972,28 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
                 bit_depth: bits,
             }
         }),
-        extra_channel_format: vec![None; decoder.basic_info().extra_channels.len()],
+        extra_channel_format: vec![
+            None;
+            decoder
+                .basic_info()
+                .ok_or_else(|| invalid("missing JPEG XL basic info"))?
+                .extra_channels
+                .len()
+        ],
     };
     decoder.set_pixel_format(format).map_err(codec_error)?;
     input.metadata.push(profile_metadata(
         "JPEG XL Source ICC Profile",
-        decoder.embedded_color_profile(),
+        decoder
+            .embedded_color_profile()
+            .ok_or_else(|| invalid("missing JPEG XL source profile"))?,
         h.color_channels,
     )?);
-    let mut output_profile = decoder.output_color_profile().clone();
-    if !managed && !gray && decoder.output_color_profile().channels() == 1 {
+    let mut output_profile = decoder
+        .output_color_profile()
+        .ok_or_else(|| invalid("missing JPEG XL output profile"))?
+        .clone();
+    if !managed && !gray && output_profile.channels() == 1 {
         output_profile = match output_profile {
             JxlColorProfile::Simple(JxlColorEncoding::GrayscaleColorSpace {
                 white_point,
@@ -1052,10 +1113,11 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
         metadata_bytes,
         retained_workspace,
     )?;
-    let decoder = complete(
+    expect_event(
         decoder
             .process(
                 &mut stream,
+                None,
                 if CANCELLABLE && cancellation.probe.is_some() {
                     Some(&mut runner)
                 } else {
@@ -1069,6 +1131,7 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
                     codec_error(e)
                 }
             })?,
+        Event::FrameHeader,
     )?;
     check()?;
     let row = mul(h.width, mul(channels, if bits == 8 { 1 } else { 2 })?)?;
@@ -1082,11 +1145,11 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     // initialized allocation covers bytes.len(), and out does not outlive it.
     let out = unsafe { std::slice::from_raw_parts_mut(aligned.as_mut_ptr().cast::<u8>(), bytes) };
     let mut buffers = [JxlOutputBuffer::new(out, h.height, row)];
-    let decoder = complete(
+    expect_event(
         decoder
             .process(
                 &mut stream,
-                &mut buffers,
+                Some(&mut buffers),
                 if CANCELLABLE && cancellation.probe.is_some() {
                     Some(&mut runner)
                 } else {
@@ -1100,13 +1163,32 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
                     codec_error(e)
                 }
             })?,
+        Event::FrameComplete {
+            has_more_frames: false,
+        },
     )?;
     check()?;
-    if decoder.has_more_frames() {
-        return Err(unsupported(
-            "JPEG XL multiple visible frames are unsupported",
-        ));
-    }
+    expect_event(
+        decoder
+            .process(
+                &mut stream,
+                None,
+                if CANCELLABLE && cancellation.probe.is_some() {
+                    Some(&mut runner)
+                } else {
+                    None
+                },
+            )
+            .map_err(|e| {
+                if CANCELLABLE {
+                    cancellation.codec_error(e)
+                } else {
+                    codec_error(e)
+                }
+            })?,
+        Event::Complete,
+    )?;
+    check()?;
     // The codestream parser may buffer ahead; file_length is its authoritative
     // boundary and catches trailing junk/multiple raw streams without guessing.
     if decoder.file_length() != Some(input.codestream.len() as u64) {
@@ -1239,13 +1321,67 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
 mod tests {
     use super::*;
     #[test]
+    fn event_protocol_and_preflight_projection_fail_closed() {
+        assert!(expect_event(Event::BasicInfo, Event::BasicInfo).is_ok());
+        assert!(expect_event(Event::NeedMoreInput { size_hint: 1 }, Event::Complete).is_err());
+        assert!(
+            expect_event(
+                Event::FrameComplete {
+                    has_more_frames: true
+                },
+                Event::FrameComplete {
+                    has_more_frames: false
+                }
+            )
+            .is_err()
+        );
+        let input = include_bytes!("../tests/fixtures/review/jxl-rgb8.jxl");
+        let envelope = unpack(input, DecodeLimits::default()).unwrap();
+        let h = preflight(&envelope, DecodeLimits::default()).unwrap();
+        let mut stream = envelope.codestream.as_slice();
+        let mut decoder = JxlDecoder::new(JxlDecoderOptions::default());
+        decoder.close_input();
+        assert_eq!(
+            decoder.process(&mut stream, None, None).unwrap(),
+            Event::BasicInfo
+        );
+        let info = decoder.basic_info().unwrap();
+        validate_basic_info(info, &h).unwrap();
+        let mut wrong = info.clone();
+        wrong.size.0 += 1;
+        assert!(validate_basic_info(&wrong, &h).is_err());
+        let mut wrong = info.clone();
+        wrong.bit_depth = JxlBitDepth::Float {
+            bits_per_sample: 16,
+            exponent_bits_per_sample: 5,
+        };
+        assert!(validate_basic_info(&wrong, &h).is_err());
+        let mut wrong = info.clone();
+        wrong.orientation = Orientation::Rotate180;
+        assert!(validate_basic_info(&wrong, &h).is_err());
+        let mut wrong = info.clone();
+        wrong.extra_channels.push(JxlExtraChannel {
+            ec_type: jxl_codec::api::ExtraChannel::Alpha,
+            alpha_associated: true,
+        });
+        assert!(validate_basic_info(&wrong, &h).is_err());
+    }
+
+    #[test]
     fn pinned_codec_observes_runner_cancellation_inside_frame_processing() {
         let mut stream = include_bytes!("../tests/fixtures/review/jxl-rgb8.jxl").as_slice();
-        let decoder = JxlDecoder::<states::Initialized>::new(JxlDecoderOptions::default());
-        let mut decoder = complete(decoder.process(&mut stream, None).unwrap()).unwrap();
-        let (width, height) = decoder.basic_info().size;
+        let mut decoder = JxlDecoder::new(JxlDecoderOptions::default());
+        decoder.close_input();
+        assert_eq!(
+            decoder.process(&mut stream, None, None).unwrap(),
+            Event::BasicInfo
+        );
+        let (width, height) = decoder.basic_info().unwrap().size;
         decoder.set_pixel_format(JxlPixelFormat::rgba8(0)).unwrap();
-        let decoder = complete(decoder.process(&mut stream, None).unwrap()).unwrap();
+        assert_eq!(
+            decoder.process(&mut stream, None, None).unwrap(),
+            Event::FrameHeader
+        );
         let mut output = vec![0; width * height * 4];
         let mut buffers = [JxlOutputBuffer::new(&mut output, height, width * 4)];
         let probe = || true;
@@ -1256,7 +1392,7 @@ mod tests {
         // This is inside the codec frame call, not an adapter before/after check.
         let result = decoder.process(
             &mut stream,
-            &mut buffers,
+            Some(&mut buffers),
             Some(&mut CancellableRunner(&cancellation)),
         );
         let err = result.err().expect("codec must propagate runner failure");
@@ -1423,7 +1559,7 @@ mod tests {
             let mut reference = BitReader::new(&input.codestream);
             reference.skip_bits(actual.total_bits_read()).unwrap();
             icc_budget(&mut actual, 32 << 20).unwrap();
-            let mut reader = jxl_codec::icc::IncrementalIccReader::new(&mut reference).unwrap();
+            let mut reader = jxl_preflight::icc::IncrementalIccReader::new(&mut reference).unwrap();
             reader.read_all(&mut reference).unwrap();
             let profile = reader.finalize(&mut reference).unwrap();
             assert!(profile.len() >= 128);

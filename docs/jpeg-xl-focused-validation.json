@@ -1,0 +1,108 @@
+{
+  "method": "Same worktree, rustc1.91.0 release opt3; no defaults jpeg-xl,image-buffer-ex,color-management; 5 alternating blocks, 3 warmups + 9 measurements each; end-to-end decode, no concurrent builds; ratio is descriptive on shared host.",
+  "results": [
+    {
+      "input": "jxl-rgb8.jxl",
+      "sha256": "148461672331dd85dd6adf9153d9d7e0070631daab615c2381362396ba650234",
+      "trial_medians_ns": {
+        "base": [
+          51085,
+          53048,
+          56743,
+          50915,
+          48411
+        ],
+        "migration": [
+          53579,
+          54461,
+          57225,
+          54330,
+          57374
+        ]
+      },
+      "ratio": 1.0660859352060292,
+      "pixel_hash": "6680927446485229151"
+    },
+    {
+      "input": "jxl-icc-lossless.jxl",
+      "sha256": "5ca8a8e39a4640ce49188cd9896163f5cbd88d870503efee5f9b941843ddede8",
+      "trial_medians_ns": {
+        "base": [
+          73108,
+          73799,
+          72317,
+          75482,
+          75221
+        ],
+        "migration": [
+          77104,
+          87068,
+          83353,
+          81771,
+          83173
+        ]
+      },
+      "ratio": 1.1270206913372809,
+      "pixel_hash": "17076559143681454236"
+    },
+    {
+      "input": "jxl-jbrd-bench.jxl",
+      "sha256": "e223fed907c6238622b2b6ec1c80609050c9d2db4d759cf3ca6f0db304cbb82a",
+      "trial_medians_ns": {
+        "base": [
+          15520945,
+          15304125,
+          16298643,
+          15439514,
+          15648369
+        ],
+        "migration": [
+          12446327,
+          12522720,
+          11951417,
+          12165683,
+          12050200
+        ]
+      },
+      "ratio": 0.7838236009469784,
+      "pixel_hash": "8439627164837879290"
+    },
+    {
+      "input": "jxl-sunset-logo.jxl",
+      "sha256": "6617480923e1fdef555e165a1e7df9ca648068dd0bdbc41a22c0e4213392d834",
+      "trial_medians_ns": {
+        "base": [
+          162071377,
+          167046725,
+          168742848,
+          161420512,
+          164441265
+        ],
+        "migration": [
+          146429938,
+          150460425,
+          151752996,
+          151581903,
+          145796786
+        ]
+      },
+      "ratio": 0.9149797345575029,
+      "pixel_hash": "8118888618506518518"
+    }
+  ],
+  "wasm": {
+    "runtime": "v24.19.0",
+    "cases": 229,
+    "all_passed": true,
+    "host_imports": [],
+    "memory_bytes": 14548992,
+    "target": "wasm32-unknown-unknown",
+    "features": "jpeg-xl,image-buffer-ex; no defaults",
+    "wasm_sha256": "28cfb4b66e82a285471db2fade7af6e417985acfe3e89bfe78ad35a5457efd21",
+    "scope": "COMPOSED mixed alpha, intrinsic, preview and structured metadata: structured XMP and optional normalized EXIF (LE/BE/offset/brob/multiple), plus bounded brob raw/decoded metadata, strict rejection and input/metadata/workspace limits; additional normalized9/10-bit promotion with source-code recovery, native Gray/GrayAlpha/RGB/RGBA8/12/16 and RGBA8 rounding, pixel limits, RGB/Gray embedded ICC and metadata limits, lossy djxl comparison, jxll levels5/10 with jxlc/jxlp and opaque jbrd, official jbrd still images (25 spatial pixel probes each, full ICC, dimensions, limits, ordinary Gray CMS refusal)"
+  },
+  "tests": {
+    "enabled": 106,
+    "feature_off": 1
+  }
+}

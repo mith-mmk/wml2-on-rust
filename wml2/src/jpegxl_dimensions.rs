@@ -2,7 +2,7 @@
 //! Use the pinned codec's validated Size/Preview readers; never initialize a
 //! decoder, ICC reader, frame/TOC parser, or output buffer on this route.
 use crate::image_info::{ImageDimensions, ImageSize};
-use jxl_codec::{
+use jxl_preflight::{
     bit_reader::BitReader,
     error::Error,
     headers::{JxlHeader, Orientation, Signature, Size, size::Preview},

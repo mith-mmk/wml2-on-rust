@@ -138,3 +138,8 @@ exact #93, source hashes and visual comparison hashes. Existing ordinary/managed
 Depth/native-animation medians overlap variation; no stable speedup or regression
 is claimed. New3-frame owned callback decode is measured separately; #93 refused
 that route, so there is no matching before throughput claim.
+
+The later [metadata-owner admission stage](jpeg-xl-animation-metadata.md) reserves
+outer metadata capacity before the nested native decode, admits replacement
+record arrays and fallibly creates fixed callback keys. Its stricter workspace
+minima supersede earlier snapshot minima without changing pixels/timing.

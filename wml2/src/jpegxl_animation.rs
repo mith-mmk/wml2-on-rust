@@ -34,13 +34,14 @@ pub fn animation_rgba16_from_with_resource_limits_and_cancel(
     policy: JxlResourceLimits,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<JxlAnimationImage, Error> {
-    animation_with_workspace(bytes, limits, policy, cancelled).map(|(image, _)| image)
+    animation_with_workspace(bytes, limits, policy, cancelled, 0).map(|(image, _)| image)
 }
-fn animation_with_workspace(
+pub(super) fn animation_with_workspace(
     bytes: &[u8],
     limits: DecodeLimits,
     policy: JxlResourceLimits,
     cancelled: &dyn Fn() -> bool,
+    resident_bytes: usize,
 ) -> Result<(JxlAnimationImage, resources::Workspace), Error> {
     let cancellation = Cancellation {
         probe: Some(cancelled),
@@ -50,6 +51,18 @@ fn animation_with_workspace(
     check()?;
     policy.validate()?;
     let limits = policy.tighten(limits);
+    let original_workspace = limits.expanded_bytes;
+    limits::check(
+        resident_bytes,
+        original_workspace,
+        "JPEG XL resident callback metadata",
+    )?;
+    // The caller owns these bytes throughout this nested decode. Every admission
+    // path, including unpack/Brotli/header parsing, receives the reduced quota.
+    let limits = DecodeLimits {
+        expanded_bytes: original_workspace - resident_bytes,
+        ..limits
+    };
     limits::check(
         bytes.len(),
         limits.input_bytes.min(MAX_INPUT),
@@ -280,6 +293,11 @@ fn animation_with_workspace(
     }
     drop(final_profile);
     check()?;
+    // Rejoin the reserved owner into the canonical ledger without adding slack.
+    let workspace = resources::Workspace::new(
+        add(workspace.accounted(), resident_bytes)?,
+        original_workspace,
+    )?;
     Ok((
         JxlAnimationImage {
             dimensions: h.dimensions,
@@ -298,6 +316,54 @@ fn animation_with_workspace(
     ))
 }
 
+// Storage already owned by the outer callback path, before native re-unpack.
+pub(super) fn incoming_metadata_storage(metadata: &Vec<(String, DataMap)>) -> Result<usize, Error> {
+    metadata.iter().try_fold(
+        container_metadata::record_bytes(metadata.capacity())?,
+        |n, (key, value)| {
+            let DataMap::Raw(raw) = value else {
+                return Err(invalid("animation expects raw incoming container metadata"));
+            };
+            add(n, add(key.capacity(), raw.capacity())?)
+        },
+    )
+}
+pub(super) fn reserve_callback_metadata(
+    metadata: &mut Vec<(String, DataMap)>,
+    workspace: &mut resources::Workspace,
+) -> Result<(), Error> {
+    let required = add(metadata.len(), 16)?;
+    if required <= metadata.capacity() {
+        return Ok(());
+    }
+    let old = container_metadata::record_bytes(metadata.capacity())?;
+    let replacement = container_metadata::record_bytes(required)?;
+    workspace.claim(replacement, "JPEG XL callback metadata growth")?;
+    #[cfg(test)]
+    resources::tests::before_metadata_copy("animation callback metadata", replacement);
+    if let Err(e) = metadata.try_reserve_exact(16) {
+        workspace.release(replacement)?;
+        return Err(e.into());
+    }
+    workspace.release(old)?; // old array has been deallocated by the successful realloc
+    Ok(())
+}
+pub(super) fn callback_key(
+    label: &str,
+    workspace: &mut resources::Workspace,
+) -> Result<String, Error> {
+    workspace.claim(label.len(), "JPEG XL callback metadata key")?;
+    let mut key = String::new();
+    #[cfg(test)]
+    resources::tests::before_metadata_copy(label, label.len());
+    if let Err(e) = key.try_reserve_exact(label.len()) {
+        workspace.release(label.len())?;
+        return Err(e.into());
+    }
+    key.push_str(label);
+    Ok(key)
+}
+
 // Common callback boundary: all codec/CMS work is completed before init/draw.
 pub(super) fn deliver<const MANAGED: bool>(
     bytes: &[u8],
@@ -313,8 +379,14 @@ pub(super) fn deliver<const MANAGED: bool>(
     let check = || cancellation.check();
     check()?;
     let limits = policy.tighten(limits);
-    let (image, mut workspace) =
-        animation_with_workspace(bytes, limits, policy, &|| cancellation.check().is_err())?;
+    let resident = incoming_metadata_storage(&metadata)?;
+    let (image, mut workspace) = animation_with_workspace(
+        bytes,
+        limits,
+        policy,
+        &|| cancellation.check().is_err(),
+        resident,
+    )?;
     #[cfg(feature = "color-management")]
     let mut image = image;
     let size = image
@@ -446,12 +518,7 @@ pub(super) fn deliver<const MANAGED: bool>(
     }
     // Reserve keys/profile copies before publication. Owned source buffers move;
     // only the output ICC is duplicated to preserve both provenance and tagging.
-    #[cfg(test)]
-    resources::tests::before_metadata_copy(
-        "animation callback metadata",
-        mul(16, std::mem::size_of::<(String, DataMap)>())?,
-    );
-    metadata.try_reserve_exact(16)?;
+    reserve_callback_metadata(&mut metadata, &mut workspace)?;
     let actual_profile: &[u8] = if MANAGED {
         #[cfg(feature = "color-management")]
         {
@@ -469,33 +536,36 @@ pub(super) fn deliver<const MANAGED: bool>(
     resources::tests::before_metadata_copy("animation callback ICC", actual_profile.len());
     icc.try_reserve_exact(actual_profile.len())?;
     icc.extend_from_slice(actual_profile);
-    metadata.push(("ICC Profile".into(), DataMap::ICCProfile(icc)));
     metadata.push((
-        "JPEG XL Source ICC Profile".into(),
+        callback_key("ICC Profile", &mut workspace)?,
+        DataMap::ICCProfile(icc),
+    ));
+    metadata.push((
+        callback_key("JPEG XL Source ICC Profile", &mut workspace)?,
         DataMap::ICCProfile(image.source_icc),
     ));
     metadata.push((
-        "JPEG XL Reconstruction ICC Profile".into(),
+        callback_key("JPEG XL Reconstruction ICC Profile", &mut workspace)?,
         DataMap::ICCProfile(image.output_icc),
     ));
     metadata.push((
-        "JPEG XL Source Header".into(),
+        callback_key("JPEG XL Source Header", &mut workspace)?,
         DataMap::Raw(image.source_header),
     ));
     metadata.push((
-        "JPEG XL Source Orientation".into(),
+        callback_key("JPEG XL Source Orientation", &mut workspace)?,
         DataMap::UInt(image.source_orientation.into()),
     ));
     metadata.push((
-        "JPEG XL Source Bits Per Sample".into(),
+        callback_key("JPEG XL Source Bits Per Sample", &mut workspace)?,
         DataMap::UInt(image.bits_per_sample.into()),
     ));
     metadata.push((
-        "JPEG XL Animation Ticks Numerator".into(),
+        callback_key("JPEG XL Animation Ticks Numerator", &mut workspace)?,
         DataMap::UInt(image.ticks_per_second_numerator.into()),
     ));
     metadata.push((
-        "JPEG XL Animation Ticks Denominator".into(),
+        callback_key("JPEG XL Animation Ticks Denominator", &mut workspace)?,
         DataMap::UInt(image.ticks_per_second_denominator.into()),
     ));
     for (key, value) in [
@@ -504,15 +574,21 @@ pub(super) fn deliver<const MANAGED: bool>(
         ("output_width", size.width),
         ("output_height", size.height),
     ] {
-        metadata.push((key.into(), DataMap::UInt(value.into())));
+        metadata.push((
+            callback_key(key, &mut workspace)?,
+            DataMap::UInt(value.into()),
+        ));
     }
     if let Some(bits) = image.alpha_bits_per_sample {
         metadata.push((
-            "JPEG XL Source Alpha Bits Per Sample".into(),
+            callback_key("JPEG XL Source Alpha Bits Per Sample", &mut workspace)?,
             DataMap::UInt(bits.into()),
         ));
     }
-    metadata.push(("orientation_applied".into(), DataMap::Bool(true)));
+    metadata.push((
+        callback_key("orientation_applied", &mut workspace)?,
+        DataMap::Bool(true),
+    ));
     let meta = metadata.iter().try_fold(0usize, |a, (k, v)| {
         add(
             a,

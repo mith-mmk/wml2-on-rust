@@ -337,3 +337,89 @@ fn every_managed_decode_cms_and_output_cancellation_drops_owned_results() {
         .is::<DecodeCancelled>()
     );
 }
+
+#[test]
+fn incoming_container_metadata_keeps_frames_and_has_an_exact_workspace_boundary() {
+    // Insert before the first codestream box, retaining original control boxes
+    // and any size-to-EOF codestream semantics of the fixed C fixture.
+    let mut at = 12;
+    while &INPUT[at + 4..at + 8] != b"jxlc" && &INPUT[at + 4..at + 8] != b"jxlp" {
+        let n = u32::from_be_bytes(INPUT[at..at + 4].try_into().unwrap()) as usize;
+        assert!(n >= 8);
+        at += n;
+    }
+    let mut input = INPUT[..at].to_vec();
+    for _ in 0..17 {
+        input.extend_from_slice(&264u32.to_be_bytes());
+        input.extend_from_slice(b"test");
+        input.extend_from_slice(&[42; 256]);
+    }
+    input.extend_from_slice(&INPUT[at..]);
+    let image = image_from_with_resource_limits(
+        &input,
+        DecodeLimits::default(),
+        JxlResourceLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(
+        image
+            .metadata
+            .as_ref()
+            .unwrap()
+            .keys()
+            .filter(|k| k.starts_with("JPEG XL Source Box "))
+            .count(),
+        17
+    );
+    let gold = [
+        include_bytes!("fixtures/review/jxl-animation-main5-icc16-variable.0.rgba16le").as_slice(),
+        include_bytes!("fixtures/review/jxl-animation-main5-icc16-variable.1.rgba16le").as_slice(),
+        include_bytes!("fixtures/review/jxl-animation-main5-icc16-variable.2.rgba16le").as_slice(),
+    ];
+    for (frame, expected) in image.animation.as_ref().unwrap().iter().zip(gold) {
+        for (a, b) in frame.buffer.iter().zip(expected.chunks_exact(2)) {
+            let v = u32::from(u16::from_le_bytes(b.try_into().unwrap()));
+            assert!(a.abs_diff(((v * 255 + 32767) / 65535) as u8) <= 1);
+        }
+    }
+    let (mut lo, mut hi) = (0, 64 << 20);
+    while lo < hi {
+        let mid = lo + (hi - lo) / 2;
+        if image_from_with_resource_limits(
+            &input,
+            DecodeLimits::default(),
+            JxlResourceLimits {
+                workspace_bytes: mid,
+                ..Default::default()
+            },
+        )
+        .is_ok()
+        {
+            hi = mid
+        } else {
+            lo = mid + 1
+        }
+    }
+    assert!(
+        image_from_with_resource_limits(
+            &input,
+            DecodeLimits::default(),
+            JxlResourceLimits {
+                workspace_bytes: lo,
+                ..Default::default()
+            }
+        )
+        .is_ok()
+    );
+    assert!(
+        image_from_with_resource_limits(
+            &input,
+            DecodeLimits::default(),
+            JxlResourceLimits {
+                workspace_bytes: lo - 1,
+                ..Default::default()
+            }
+        )
+        .is_err()
+    );
+}

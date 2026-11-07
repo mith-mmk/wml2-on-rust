@@ -1,0 +1,680 @@
+{
+  "checkout_sha": "5a1d8af2e7e9f8bda7f362f7b6febc6a9764d78b",
+  "rustc": "rustc 1.91.0 (f8297e351 2025-10-28)\nbinary: rustc\ncommit-hash: f8297e351a40c1439a467bbbb6879088047f50b3\ncommit-date: 2025-10-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.91.0\nLLVM version: 21.1.2\n",
+  "scope": "trusted-fixture core probe only; no WML2 admission or migrated API",
+  "default_features": false,
+  "fixture_manifest_sha256": {
+    "jxl-fixtures.json": "506394ac630b34a04031583527f8842a9666d1232a6173ac4a61679571a2a788",
+    "jxl-additional-fixtures.json": "4a9054e4874ecd3a422db10201385832565b831a9c74e836517bd5fe2e87ba65"
+  },
+  "comparisons": [
+    {
+      "case": "jxl-gray8.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-gray8.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-gray12.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-gray12.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-gray16.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-gray16.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-grayalpha8.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-grayalpha8.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-grayalpha12.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-grayalpha12.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-grayalpha16.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-grayalpha16.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgb8.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgb8.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgb12.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgb12.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgb16.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgb16.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba8.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba8.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba12.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba12.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba16.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba16.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-lossless.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-lossless.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-lossy.jxl/native16",
+      "version": "07",
+      "tolerance": 32,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-lossy.jxl/native16",
+      "version": "08",
+      "tolerance": 32,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-gray16.jxl/native16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-gray16.jxl/native16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-lossy.jxl/native16",
+      "version": "07",
+      "tolerance": 514,
+      "max_difference": 250,
+      "passed": true
+    },
+    {
+      "case": "jxl-lossy.jxl/native16",
+      "version": "08",
+      "tolerance": 514,
+      "max_difference": 250,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation1.jxl/orientation",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation1.jxl/orientation",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation2.jxl/orientation",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation2.jxl/orientation",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation3.jxl/orientation",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation3.jxl/orientation",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation4.jxl/orientation",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation4.jxl/orientation",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation5.jxl/orientation",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation5.jxl/orientation",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation6.jxl/orientation",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation6.jxl/orientation",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation7.jxl/orientation",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation7.jxl/orientation",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation8.jxl/orientation",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-orientation8.jxl/orientation",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba9.jxl/normalized16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba9.jxl/normalized16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba10.jxl/normalized16",
+      "version": "07",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-rgba10.jxl/normalized16",
+      "version": "08",
+      "tolerance": 1,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-gray16.jxl/srgb",
+      "version": "07",
+      "tolerance": 2,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-gray16.jxl/srgb",
+      "version": "08",
+      "tolerance": 2,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-lossless.jxl/srgb",
+      "version": "07",
+      "tolerance": 2,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-lossless.jxl/srgb",
+      "version": "08",
+      "tolerance": 2,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-lossy.jxl/srgb",
+      "version": "07",
+      "tolerance": 2,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-icc-lossy.jxl/srgb",
+      "version": "08",
+      "tolerance": 2,
+      "max_difference": 0,
+      "passed": true
+    },
+    {
+      "case": "jxl-jbrd-bench.jxl/srgb",
+      "version": "07",
+      "tolerance": 2,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-jbrd-bench.jxl/srgb",
+      "version": "08",
+      "tolerance": 2,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-jbrd-gray.jxl/srgb",
+      "version": "07",
+      "tolerance": 2,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-jbrd-gray.jxl/srgb",
+      "version": "08",
+      "tolerance": 2,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-sunset-logo.jxl/srgb",
+      "version": "07",
+      "tolerance": 2,
+      "max_difference": 1,
+      "passed": true
+    },
+    {
+      "case": "jxl-sunset-logo.jxl/srgb",
+      "version": "08",
+      "tolerance": 2,
+      "max_difference": 1,
+      "passed": true
+    }
+  ],
+  "benchmarks": [
+    {
+      "case": "jxl-icc-lossless",
+      "pair": 0,
+      "version": "07",
+      "warm_samples": 147,
+      "ns": 54292,
+      "allocated_bytes": 4316259,
+      "peak_extra_live_bytes": 4204459
+    },
+    {
+      "case": "jxl-icc-lossless",
+      "pair": 0,
+      "version": "08",
+      "warm_samples": 147,
+      "ns": 57576,
+      "allocated_bytes": 121935,
+      "peak_extra_live_bytes": 89825
+    },
+    {
+      "case": "jxl-icc-lossless",
+      "pair": 1,
+      "version": "08",
+      "warm_samples": 147,
+      "ns": 57937,
+      "allocated_bytes": 121935,
+      "peak_extra_live_bytes": 89825
+    },
+    {
+      "case": "jxl-icc-lossless",
+      "pair": 1,
+      "version": "07",
+      "warm_samples": 147,
+      "ns": 55294,
+      "allocated_bytes": 4316259,
+      "peak_extra_live_bytes": 4204459
+    },
+    {
+      "case": "jxl-icc-lossless",
+      "pair": 2,
+      "version": "07",
+      "warm_samples": 147,
+      "ns": 55734,
+      "allocated_bytes": 4316259,
+      "peak_extra_live_bytes": 4204459
+    },
+    {
+      "case": "jxl-icc-lossless",
+      "pair": 2,
+      "version": "08",
+      "warm_samples": 147,
+      "ns": 58658,
+      "allocated_bytes": 121935,
+      "peak_extra_live_bytes": 89825
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "pair": 0,
+      "version": "07",
+      "warm_samples": 10,
+      "ns": 16306302.0,
+      "allocated_bytes": 12711617.0,
+      "peak_extra_live_bytes": 7015766.0
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "pair": 0,
+      "version": "08",
+      "warm_samples": 10,
+      "ns": 11904633.0,
+      "allocated_bytes": 4000479.0,
+      "peak_extra_live_bytes": 3767489.0
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "pair": 1,
+      "version": "08",
+      "warm_samples": 10,
+      "ns": 11788533.5,
+      "allocated_bytes": 4000479.0,
+      "peak_extra_live_bytes": 3767489.0
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "pair": 1,
+      "version": "07",
+      "warm_samples": 10,
+      "ns": 17964574.0,
+      "allocated_bytes": 12711617.0,
+      "peak_extra_live_bytes": 7015766.0
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "pair": 2,
+      "version": "07",
+      "warm_samples": 10,
+      "ns": 17953462.5,
+      "allocated_bytes": 12711617.0,
+      "peak_extra_live_bytes": 7015766.0
+    },
+    {
+      "case": "jxl-jbrd-bench",
+      "pair": 2,
+      "version": "08",
+      "warm_samples": 10,
+      "ns": 12554176.5,
+      "allocated_bytes": 4000479.0,
+      "peak_extra_live_bytes": 3767489.0
+    },
+    {
+      "case": "jxl-sunset-logo",
+      "pair": 0,
+      "version": "07",
+      "warm_samples": 10,
+      "ns": 165693156.5,
+      "allocated_bytes": 47989983.0,
+      "peak_extra_live_bytes": 39336322.0
+    },
+    {
+      "case": "jxl-sunset-logo",
+      "pair": 0,
+      "version": "08",
+      "warm_samples": 10,
+      "ns": 145045930.5,
+      "allocated_bytes": 39430815.0,
+      "peak_extra_live_bytes": 39301704.0
+    },
+    {
+      "case": "jxl-sunset-logo",
+      "pair": 1,
+      "version": "08",
+      "warm_samples": 10,
+      "ns": 140831641.5,
+      "allocated_bytes": 39430815.0,
+      "peak_extra_live_bytes": 39301704.0
+    },
+    {
+      "case": "jxl-sunset-logo",
+      "pair": 1,
+      "version": "07",
+      "warm_samples": 10,
+      "ns": 162887512.0,
+      "allocated_bytes": 47989983.0,
+      "peak_extra_live_bytes": 39336322.0
+    },
+    {
+      "case": "jxl-sunset-logo",
+      "pair": 2,
+      "version": "07",
+      "warm_samples": 10,
+      "ns": 163254751.0,
+      "allocated_bytes": 47989983.0,
+      "peak_extra_live_bytes": 39336322.0
+    },
+    {
+      "case": "jxl-sunset-logo",
+      "pair": 2,
+      "version": "08",
+      "warm_samples": 10,
+      "ns": 142834864.5,
+      "allocated_bytes": 39430815.0,
+      "peak_extra_live_bytes": 39301704.0
+    }
+  ],
+  "passed": true,
+  "date": "2026-10-30",
+  "environment": "Linux x86_64 managed cloud; Rust 1.91.0; release cores, default features off; CPU 0 for paired measurements",
+  "probe_source_sha256": {
+    "wml2-test/scripts/jxl08_probe.rs": "c9d7c28e0f50e22f9b36049a9423c7ea1ce16bab56ecbff062ac8b0b08a72b00",
+    "wml2-test/scripts/evaluate_jxl08.py": "74a786df435b4d8bfd55e991b01fc14e351741433ac499acafae266cb80b1a33"
+  },
+  "runtime_base_sha": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
+  "jxl_080_source_sha": "9a08ca643fd2d01f803dd0be6a5bebc9cc11e597",
+  "version_only_check": {
+    "command": "cargo check -p wml2 --no-default-features --features jpeg-xl,color-management,image-buffer-ex",
+    "change": "only exact jxl version 0.7.4 -> 0.8.0 in wml2/Cargo.toml; restored manifest and lock afterward",
+    "exit_code": 101,
+    "errors": 19,
+    "codes": [
+      "E0061",
+      "E0107",
+      "E0412",
+      "E0433",
+      "E0599",
+      "E0603"
+    ]
+  },
+  "baseline_regression": {
+    "source_sha": "6a48db924b338c5ae7095bea6105fb4dbd436e95",
+    "command": "cargo test -p wml2 --no-default-features --features jpeg-xl,color-management,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_layers",
+    "passed": 53,
+    "failed": 0,
+    "ignored": 0
+  },
+  "wasm_compile": {
+    "command": "cargo check --target wasm32-unknown-unknown --manifest-path .test-jxl08/Cargo.toml",
+    "passed": true,
+    "scope": "probe with both published cores; compile only, no Node/browser execution or WML2 0.8 adapter"
+  },
+  "benchmark_method": "Three alternating process pairs (07/08, 08/07, 07/08), pinned CPU 0; 150 iterations for 7x5, 13 for larger images, first 3 omitted; median of process medians. Decode to RGBA16 + reconstruction profile only, excluding CMS and WML2 admission. Allocator instrumentation measures total requested bytes and peak extra live requested bytes, not RSS, stack or an input safety guarantee.",
+  "benchmark_output_hashes": {
+    "jxl-icc-lossless/07": [
+      "12074007629712871246"
+    ],
+    "jxl-icc-lossless/08": [
+      "12074007629712871246"
+    ],
+    "jxl-jbrd-bench/07": [
+      "502647493799202035"
+    ],
+    "jxl-jbrd-bench/08": [
+      "502647493799202035"
+    ],
+    "jxl-sunset-logo/07": [
+      "5602991812731012025"
+    ],
+    "jxl-sunset-logo/08": [
+      "5602991812731012025"
+    ]
+  }
+}

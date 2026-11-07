@@ -1,0 +1,42 @@
+{
+  "generator": "ImageMagick 7.1.2-21 Q16 / libjxl 0.11.2",
+  "reference_precision": "8-bit reference decoded by ImageMagick; Q16 export repeats each original 8-bit value. WML2 RGBA16 rounded to RGBA8; RGB tolerance 1, alpha exact.",
+  "cases": [
+    {
+      "file": "jxl-animation-xyb-icos4d.jxl",
+      "source": "https://raw.githubusercontent.com/libjxl/conformance/4bf053529c7cefd2951be453475bb3dccc7e7be8/testcases/animation_icos4d/input.jxl",
+      "sha256": "6df934e61b07779626988daa0c4a9f05f89e6142a030f915e8b8ea52c37b3fe2",
+      "reference_sha256": "3bfc589aa27ee0269efd7464d879113a7c94378f0e32f6044c5a9da665c8ad0d",
+      "size": [
+        128,
+        128
+      ],
+      "frames": 48,
+      "ticks_per_second": [
+        1000,
+        1
+      ],
+      "ticks_per_frame": 50,
+      "loops": 0,
+      "license": "BSD-3-Clause; source artwork CC0-1.0"
+    },
+    {
+      "file": "jxl-animation-xyb-spline.jxl",
+      "source": "https://raw.githubusercontent.com/libjxl/conformance/4bf053529c7cefd2951be453475bb3dccc7e7be8/testcases/animation_spline/input.jxl",
+      "sha256": "87793cac33d05eaa380011e3b0754ff6f228967431a126fd0a0ace2106940c79",
+      "reference_sha256": "9f1f7ee4f65878d1566f4853b2d5228d294d87fe7efda70a252e38b394c1ddb6",
+      "size": [
+        320,
+        320
+      ],
+      "frames": 60,
+      "ticks_per_second": [
+        100,
+        1
+      ],
+      "ticks_per_frame": 2,
+      "loops": 0,
+      "license": "BSD-3-Clause; source artwork CC0-1.0"
+    }
+  ]
+}

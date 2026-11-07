@@ -435,3 +435,13 @@ fn retained_brob_metadata_survives_nested_decode_limits_failure_and_retry() {
         "failed nested decode must release its reservation"
     );
 }
+
+#[test]
+fn xyb_truncation_is_atomic_before_callbacks() {
+    let input = include_bytes!("fixtures/review/jxl-animation-xyb-icos4d.jxl");
+    for ex in [false, true] {
+        let mut p = Probe::default();
+        assert!(run(&input[..input.len() - 1], &mut p, ex).is_err());
+        assert_eq!(p.events, vec!["begin", "end"]);
+    }
+}

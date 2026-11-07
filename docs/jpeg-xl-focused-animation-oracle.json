@@ -1,0 +1,1651 @@
+{
+  "origin_commit": "148240653e253043c5b4cba02e773fe7fe6ede1e",
+  "method": "Replay existing independent C libjxl0.11.2 coalesced and LittleCMS2.16 goldens; no new encoder implementation, generation or fresh C execution claimed. Original manifests and decoder reference utility remain at origin commit.",
+  "native_oracle": {
+    "source_pr": 67,
+    "source_sha": "78517b3084272128fe06184d92fbc05009825fce",
+    "oracle": {
+      "oracle": "C libjxl0.11.2 coalesced RGBA16 plus noncoalesced coded-layer metadata; LittleCMS2.16 RGB16 relative/NOOPTIMIZE with alpha copied and final8-bit rounding",
+      "construction": "C-generated animations; preview compound bit-splices a C-generated animation-syntax preview frame into a fingerprinted C global header. C validates both preview and all main frames. WML2/Rust never generates expected pixels.",
+      "cases": [
+        {
+          "name": "variable",
+          "file": "jxl-animation-variable.jxl",
+          "sha256": "05a740005dc3d94b4d666f26edc44622463d5631365d886b8d964378358d8d2b",
+          "source_orientation": 1,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            7,
+            5
+          ],
+          "color_bits": 8,
+          "alpha_bits": 8,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 7,
+          "have_timecodes": false,
+          "have_preview": false,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              5,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              17,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              3,
+              0,
+              1,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "50",
+              "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+              "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "170",
+              "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+              "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+            },
+            {
+              "index": 2,
+              "ticks": 3,
+              "timecode": 0,
+              "last": true,
+              "milliseconds_exact": "30",
+              "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+              "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+            }
+          ],
+          "buffered_main5_supported": true
+        },
+        {
+          "name": "fractional",
+          "file": "jxl-animation-fractional.jxl",
+          "sha256": "e2d0dec771f0dc1305ef350abbc77f6f9fe367a535cd1fee95794f9269741662",
+          "source_orientation": 1,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            7,
+            5
+          ],
+          "color_bits": 8,
+          "alpha_bits": 8,
+          "tps_numerator": 30000,
+          "tps_denominator": 1001,
+          "loop_count": 0,
+          "have_timecodes": false,
+          "have_preview": false,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              5,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              17,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              3,
+              0,
+              1,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "1001/6",
+              "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+              "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "17017/30",
+              "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+              "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+            },
+            {
+              "index": 2,
+              "ticks": 3,
+              "timecode": 0,
+              "last": true,
+              "milliseconds_exact": "1001/10",
+              "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+              "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+            }
+          ],
+          "buffered_main5_supported": true
+        },
+        {
+          "name": "reference",
+          "file": "jxl-animation-reference.jxl",
+          "sha256": "88d3d6edbf02c6e7abf72769c88ef65e08930691bb22308cf7cda10cb2144b06",
+          "source_orientation": 6,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            5,
+            7
+          ],
+          "color_bits": 8,
+          "alpha_bits": 8,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 1,
+          "have_timecodes": false,
+          "have_preview": false,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              5,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              17,
+              0,
+              0,
+              3,
+              2,
+              1,
+              1,
+              2,
+              1,
+              2
+            ],
+            [
+              2,
+              3,
+              0,
+              1,
+              3,
+              2,
+              -1,
+              2,
+              2,
+              2,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "50",
+              "rgba16_sha256": "bbf1c6b98aeedb319707c41ba6b647e2ce13db4f98096523a41058fc3c384995",
+              "srgb_sha256": "9cfd7df0a31bfdb3ff45c6da36aebbc9d9df2640f3923a9a45af75b5573363cd"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "170",
+              "rgba16_sha256": "c0473c32dda4cafab0659da7ff9decd62abaa22ce00c9717cea6f9d58e5f243e",
+              "srgb_sha256": "e1be9068838e09a700b4045073304ae0cd811fd6b1f3b04ff0484102db2726de"
+            },
+            {
+              "index": 2,
+              "ticks": 3,
+              "timecode": 0,
+              "last": true,
+              "milliseconds_exact": "30",
+              "rgba16_sha256": "011474e620c996baf957adba2283957855b274234b70d3b54cf2324bbcf41f4c",
+              "srgb_sha256": "6e72ebcc7361aecb0309fb700bbf67efb10a692a48da1b425b042853d0e83d09"
+            }
+          ],
+          "buffered_main5_supported": true
+        },
+        {
+          "name": "internal",
+          "file": "jxl-animation-internal.jxl",
+          "sha256": "925b0ac2673c29390e5f7d22aeb8e2cac706dcc8964c8804760bee08e87c73ab",
+          "source_orientation": 8,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            5,
+            7
+          ],
+          "color_bits": 8,
+          "alpha_bits": 8,
+          "tps_numerator": 1000,
+          "tps_denominator": 1,
+          "loop_count": 0,
+          "have_timecodes": false,
+          "have_preview": false,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              0,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              5,
+              0,
+              0,
+              3,
+              2,
+              1,
+              1,
+              2,
+              1,
+              2
+            ],
+            [
+              2,
+              17,
+              0,
+              0,
+              3,
+              2,
+              -1,
+              2,
+              2,
+              2,
+              1
+            ],
+            [
+              3,
+              0,
+              0,
+              1,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "5",
+              "rgba16_sha256": "f803ed7a0c97519db6745d70b05d6aaa805ba7008d97c1b49304a8674f3d94d4",
+              "srgb_sha256": "2395589dbfe32b7dfb50026d79094a7b7e55cfb0cf8c1b877651777ae31f5614"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "17",
+              "rgba16_sha256": "56d73fe6a4a3e560b6c759c0f3578c38dcfc7bd42d6d6ed959ec39bced8a3f30",
+              "srgb_sha256": "85b2f5668ffaf6d51f9fc60400dece7ac25255ffc607e9c42a0eaff66ba4f170"
+            },
+            {
+              "index": 2,
+              "ticks": 0,
+              "timecode": 0,
+              "last": true,
+              "milliseconds_exact": "0",
+              "rgba16_sha256": "ca8aea9e528ba8184fdbf9e424212f2aea4105115f01aeeeb6b4f05c62c08e8a",
+              "srgb_sha256": "358a7295adb7fe5152138ee6fb6b474f4d80980d1e0d09f04206717e8f8092a7"
+            }
+          ],
+          "buffered_main5_supported": false
+        },
+        {
+          "name": "timecodes",
+          "file": "jxl-animation-timecodes.jxl",
+          "sha256": "26d14bd848bc83b1f786c0010f7f1e32edacd01449a8faec88ec0d02c27f3d4f",
+          "source_orientation": 1,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            7,
+            5
+          ],
+          "color_bits": 8,
+          "alpha_bits": 8,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 1,
+          "have_timecodes": true,
+          "have_preview": false,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              5,
+              1,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              17,
+              2,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              3,
+              3,
+              1,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "timecode": 1,
+              "last": false,
+              "milliseconds_exact": "50",
+              "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+              "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "timecode": 2,
+              "last": false,
+              "milliseconds_exact": "170",
+              "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+              "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+            },
+            {
+              "index": 2,
+              "ticks": 3,
+              "timecode": 3,
+              "last": true,
+              "milliseconds_exact": "30",
+              "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+              "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+            }
+          ],
+          "buffered_main5_supported": false
+        },
+        {
+          "name": "long",
+          "file": "jxl-animation-long.jxl",
+          "sha256": "9b446fe09692d9fdd4d0b70cfbe808f952fb4b8e257d856d081f18ac3cdfae4f",
+          "source_orientation": 1,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            7,
+            5
+          ],
+          "color_bits": 8,
+          "alpha_bits": 8,
+          "tps_numerator": 1,
+          "tps_denominator": 1024,
+          "loop_count": 4294967295,
+          "have_timecodes": false,
+          "have_preview": false,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              4294967295,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              4294967294,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              4294967293,
+              0,
+              1,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 4294967295,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "4398046510080000",
+              "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+              "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+            },
+            {
+              "index": 1,
+              "ticks": 4294967294,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "4398046509056000",
+              "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+              "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+            },
+            {
+              "index": 2,
+              "ticks": 4294967293,
+              "timecode": 0,
+              "last": true,
+              "milliseconds_exact": "4398046508032000",
+              "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+              "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+            }
+          ],
+          "buffered_main5_supported": true
+        },
+        {
+          "name": "preview",
+          "file": "jxl-animation-preview.jxl",
+          "sha256": "b6b62b04a984830bdf01bf0f9a24b4896b9a117b9a4bc3e5e71b936c0dd32650",
+          "source_orientation": 1,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            7,
+            5
+          ],
+          "color_bits": 8,
+          "alpha_bits": 8,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 7,
+          "have_timecodes": false,
+          "have_preview": true,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              5,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              17,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              3,
+              0,
+              1,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "50",
+              "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+              "srgb_sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "timecode": 0,
+              "last": false,
+              "milliseconds_exact": "170",
+              "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+              "srgb_sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+            },
+            {
+              "index": 2,
+              "ticks": 3,
+              "timecode": 0,
+              "last": true,
+              "milliseconds_exact": "30",
+              "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+              "srgb_sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+            }
+          ],
+          "buffered_main5_supported": false
+        },
+        {
+          "name": "main5-internal",
+          "file": "jxl-animation-main5-internal.jxl",
+          "sha256": "b58813a4c810baf7e60af3f630e9e5a65ba6a52b35c70576134b6cd758b0705e",
+          "source_orientation": 8,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            5,
+            7
+          ],
+          "color_bits": 8,
+          "alpha_bits": 8,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 0,
+          "have_timecodes": false,
+          "have_preview": false,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              0,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              5,
+              0,
+              0,
+              3,
+              2,
+              1,
+              1,
+              2,
+              1,
+              2
+            ],
+            [
+              2,
+              17,
+              0,
+              0,
+              3,
+              2,
+              -1,
+              2,
+              2,
+              2,
+              1
+            ],
+            [
+              3,
+              0,
+              0,
+              1,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "timecode": 0,
+              "last": false,
+              "rgba16_sha256": "f803ed7a0c97519db6745d70b05d6aaa805ba7008d97c1b49304a8674f3d94d4"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "timecode": 0,
+              "last": false,
+              "rgba16_sha256": "56d73fe6a4a3e560b6c759c0f3578c38dcfc7bd42d6d6ed959ec39bced8a3f30"
+            },
+            {
+              "index": 2,
+              "ticks": 0,
+              "timecode": 0,
+              "last": true,
+              "rgba16_sha256": "ca8aea9e528ba8184fdbf9e424212f2aea4105115f01aeeeb6b4f05c62c08e8a"
+            }
+          ],
+          "buffered_main5_supported": true,
+          "main5_variant": true
+        },
+        {
+          "name": "main5-icc16",
+          "file": "jxl-animation-main5-icc16.jxl",
+          "sha256": "d04503b091ac1df337b410b3055b67b50650b06200f4a96fd05be2b7a2913716",
+          "source_orientation": 6,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            5,
+            7
+          ],
+          "color_bits": 16,
+          "alpha_bits": 16,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 3,
+          "have_timecodes": false,
+          "have_preview": false,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              5,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              17,
+              0,
+              0,
+              3,
+              2,
+              1,
+              1,
+              2,
+              1,
+              2
+            ],
+            [
+              2,
+              3,
+              0,
+              1,
+              3,
+              2,
+              -1,
+              2,
+              2,
+              2,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "timecode": 0,
+              "last": false,
+              "rgba16_sha256": "3f7f5e7cb00de9381ce3853cc7ca5208f65a7ed83a72d4596d9d25124ac6f052"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "timecode": 0,
+              "last": false,
+              "rgba16_sha256": "05d175b1939e05521191d4b10624dd4ff59aedb7166ccd0ee68fa8eee36f622c"
+            },
+            {
+              "index": 2,
+              "ticks": 3,
+              "timecode": 0,
+              "last": true,
+              "rgba16_sha256": "e35c9c2a92b551254da198ea64170c4af8dc634b13fcc5cf5b0483ff28232f42"
+            }
+          ],
+          "buffered_main5_supported": true,
+          "main5_variant": true
+        },
+        {
+          "name": "main5-icc16-variable",
+          "file": "jxl-animation-main5-icc16-variable.jxl",
+          "sha256": "c467f4cd51fb5c38ed752d6778efd19c5e336daf3c23858c8c333ac05757b6e2",
+          "source_orientation": 8,
+          "coded_canvas": [
+            7,
+            5
+          ],
+          "output_canvas": [
+            5,
+            7
+          ],
+          "color_bits": 16,
+          "alpha_bits": 16,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 3,
+          "have_timecodes": false,
+          "have_preview": false,
+          "C_noncoalesced_layers": [
+            [
+              0,
+              5,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              17,
+              0,
+              0,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              3,
+              0,
+              1,
+              7,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "timecode": 0,
+              "last": false,
+              "rgba16_sha256": "35fcebc160ddfe6be1dc7e05cbc58588c797bb75abee81b742b403bcbf384cb9"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "timecode": 0,
+              "last": false,
+              "rgba16_sha256": "d30e42df2b44136667f72c9a68a5701cdb27d9aa07ab83bb3bf095f80add6ae6"
+            },
+            {
+              "index": 2,
+              "ticks": 3,
+              "timecode": 0,
+              "last": true,
+              "rgba16_sha256": "51af504a2f6581243014337c3743fb30eacdabbd647d2d418f5cb3c08123557e"
+            }
+          ],
+          "buffered_main5_supported": true,
+          "main5_variant": true
+        },
+        {
+          "name": "main5-rgb8",
+          "file": "jxl-animation-main5-rgb8.jxl",
+          "sha256": "33b10ac82682be1549bf882aba34b5c9f6cb9fd6d1378bd05fb15ac179e60ffd",
+          "color_bits": 8,
+          "source_orientation": 1,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 0,
+          "have_timecodes": false,
+          "have_preview": false,
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "e4b0c528568618e6fdf7c81c480e5d904aec4eaa3573c3f4515161e9f421b7dd"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "last": false,
+              "rgba16_sha256": "b064b25e8e8a7dc557272dc6d2cf187125276ce57b0b73c7e1128fc164107c15"
+            },
+            {
+              "index": 2,
+              "ticks": 3,
+              "last": true,
+              "rgba16_sha256": "5bc67aac7fbcb8dd52875ede45632665a932c1aa58463e6cc1d86dcecc9ca78f"
+            }
+          ],
+          "new_source": true,
+          "too_many_layers": false,
+          "buffered_main5_supported": true
+        },
+        {
+          "name": "main5-rgb16",
+          "file": "jxl-animation-main5-rgb16.jxl",
+          "sha256": "ff36098f17c6ab5315d51d387dfbddcb92e2beef704a7d189a82dddb5032b160",
+          "color_bits": 16,
+          "source_orientation": 8,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 0,
+          "have_timecodes": false,
+          "have_preview": false,
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "12ffbae79383c4943a6187a10d55334940c485275770a2273e3425f3bb2f5e48"
+            },
+            {
+              "index": 1,
+              "ticks": 17,
+              "last": false,
+              "rgba16_sha256": "0ff9097f5beb0bac82830fe15bbc494239c6405face114e0ad8b156dc9601ddf"
+            },
+            {
+              "index": 2,
+              "ticks": 3,
+              "last": true,
+              "rgba16_sha256": "79a84bb58d06c860c2536bc5b91c19b9d4f4de1818d0dacf900524a2abb0bb37"
+            }
+          ],
+          "new_source": true,
+          "too_many_layers": false,
+          "buffered_main5_supported": true
+        },
+        {
+          "name": "main5-layers65",
+          "file": "jxl-animation-main5-layers65.jxl",
+          "sha256": "6a9c7a041afd4f1e6304876ee66dc3d2356475ef0aa945a7a2e4c3c4b5dfc1d4",
+          "color_bits": 8,
+          "source_orientation": 1,
+          "tps_numerator": 100,
+          "tps_denominator": 1,
+          "loop_count": 0,
+          "have_timecodes": false,
+          "have_preview": false,
+          "frames": [
+            {
+              "index": 0,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42"
+            },
+            {
+              "index": 1,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51"
+            },
+            {
+              "index": 2,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf"
+            },
+            {
+              "index": 3,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "54cbc5f5b77c5de0534c0156c167c5aee418cecbbc78b19ffe870b8d030bda1d"
+            },
+            {
+              "index": 4,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "5733959257394e303cbbc31c45ebee032eb2ccde1a0f476242c7c5c6473d216a"
+            },
+            {
+              "index": 5,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "8bcbee96c69d8594f8174b0e124774d788e2c7843a37cae720874f63e8fc79f3"
+            },
+            {
+              "index": 6,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "9953fe61af97571b29ccce39f3d861b88372f6133bda72c442135e704b68fb2a"
+            },
+            {
+              "index": 7,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "b1764c6fe7c84f0b0cef7289a97a7fb61cba2a552729d8aebe49e40c81e730b4"
+            },
+            {
+              "index": 8,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "4ba3f00c4d09a9933e044761195f9fad2946fb6d65b9c22408bf0cc114647644"
+            },
+            {
+              "index": 9,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "f06486b4c03818614e66a0d18a11d715aa8026394d4548bd02b8903898e512fe"
+            },
+            {
+              "index": 10,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "71a47fb21646a3511c57f9b5a18281d451d1ac90190f22ff12d7947f029668ef"
+            },
+            {
+              "index": 11,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "4c80a39d552b7b28193055c9032dcb3a7dfa6b39645d9df47782c6d83a3161db"
+            },
+            {
+              "index": 12,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "43fe5075f49bbfcfa6222973da502d34276675b6aef5581f003ddfe55e6a8aff"
+            },
+            {
+              "index": 13,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "0326ed37d5bec131a3abe4389694c778eea37187966d95e559f3b013b61e41e4"
+            },
+            {
+              "index": 14,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "005dd58bd3110f1ee128d947b30ca2cd526a350f3b4354863f94224fcc227cf6"
+            },
+            {
+              "index": 15,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "8d93fdd9ebe8cd6df426fbb23487dc281073e64d43065bbc2451e6870f2779d3"
+            },
+            {
+              "index": 16,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "9710b791f08f36527439f29de6911c25e1f849117e0a5351efeeda18286e50ff"
+            },
+            {
+              "index": 17,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "c06ebb47e371ccb70e72e817211fedd066966a0bb3c2ef1e51da5eefabed1ce7"
+            },
+            {
+              "index": 18,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "2998dd30e1a204ef372f46408f41aa7a864a305ca7afc9e88d5242fce44925d6"
+            },
+            {
+              "index": 19,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "e6ec0f1fb28a6ba724b00c64a1fd06009f5198329253b1de556030a6b253645d"
+            },
+            {
+              "index": 20,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "29a1883e4d453f5e7136f8ef7312808c06357795727175d5845ba30141b73bd7"
+            },
+            {
+              "index": 21,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "c5d77086a162405e0046070375bc966046d18e6fc40ff116cf3c6ec5dcf608b8"
+            },
+            {
+              "index": 22,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "653355181a533c99f6ce5feb1d8d87bc5ff20e47bc0ce01077a314485797fbb9"
+            },
+            {
+              "index": 23,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "0579b4e69c7ccc87d96e297ae57840fab1d25fc8f0a765add3a6374882f66f57"
+            },
+            {
+              "index": 24,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "c9835d46b27653617fb27f5d1ba9aeb4578fcb4ca1f5740f479e9c2f1f197edb"
+            },
+            {
+              "index": 25,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "0dc1bb54b1d9f2f1603166fdd8780d157069e47c9861c6385f17500df49fc692"
+            },
+            {
+              "index": 26,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "3e46888dd77b5725d4735f0fb261ca88fb2b674c254172d74e84ade0092d7c50"
+            },
+            {
+              "index": 27,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "e204d03af5b546cd4b9915edd97cf2362b3a82be93b2391dcde53c308efa9a9b"
+            },
+            {
+              "index": 28,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "e855eacad7c1e13d5adcc0d944d777d36794a7494563415306852c5fc5acad74"
+            },
+            {
+              "index": 29,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "76ebb3d471112aa0413691241243d646ba22e7b04541630c6d3e1e9e8f55caff"
+            },
+            {
+              "index": 30,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "f8215f261a5f54a96f60b22a3c768bf1d58bb2ab18f68523c2f414f58dee5a79"
+            },
+            {
+              "index": 31,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "4e505623e30f1620156ca3a27f41fd6930062bb65d500301e57398404a859fc5"
+            },
+            {
+              "index": 32,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "575bd29f0eca174649cb115fdd950676e05b18f3d4dec235816deb714d96126b"
+            },
+            {
+              "index": 33,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "fe24fb136fa6eddea78c58c56402f18b2045be5ec3884100207172bc7f635213"
+            },
+            {
+              "index": 34,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "2bed61947191b60fd8bac139c217489cddce7d498258a51cba5d4f9f77f8a5fa"
+            },
+            {
+              "index": 35,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "9b4f8f8fdb9d5fef94eab1a471b53361c3212f43ac02c469d72475ca074ce5ee"
+            },
+            {
+              "index": 36,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "0422b06039419d835933cd4a3e7e40598aea3f6fd1e8868de35c5ff72339dc22"
+            },
+            {
+              "index": 37,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "33f88ef50f1c51ca6409852674899824607f86c8ccade6e98ec3ecfe20a8c5a8"
+            },
+            {
+              "index": 38,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "53fd55d47f707e71a569a411a65ffe49ee2e852809021b7e7a644cb96a2048fd"
+            },
+            {
+              "index": 39,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "e7ca41954d138fb17e8e6877afd13021b37b1bfaa506f2890f3ec1c8c6ccf081"
+            },
+            {
+              "index": 40,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "bbca8e4a340374e16eca8f98eeed728db99466a8c801002d9c863457ade5599f"
+            },
+            {
+              "index": 41,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "9dc811acbe4ca23c4d3bbfd4860b23a525a9f7f37c126573ca3e3944fd0061a2"
+            },
+            {
+              "index": 42,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "acd4fe0ba2e95a57a06f4557c0489038905bc577ef1fb2f497de3862b1544623"
+            },
+            {
+              "index": 43,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "8e06875c99f4d500badcbac524db378caeac013113eba3e48f03cf5bcefbbbe1"
+            },
+            {
+              "index": 44,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "73752081d7c2040d2ce08576edc908cc453da0ec950b40ca53024d633ddac420"
+            },
+            {
+              "index": 45,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "adc6714097e1ae8e284a809320687a76004a18776c3c4ddb5ffc48545aefdccd"
+            },
+            {
+              "index": 46,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "096e08b4466a90bab3c0792be9c727d70f7bcc7a61ef764a945a097e916de9ba"
+            },
+            {
+              "index": 47,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "c4efbc1181b88ef75a278ffca765ca773fcb1d74d5cec52de13752d9d9053b8c"
+            },
+            {
+              "index": 48,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "aebebbc933c455eac6b7300ce5dca57995aada74b0b85a7a9890c0d41409911e"
+            },
+            {
+              "index": 49,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "d777e7b2397b5d0472485e09c243c805f127a54dd637bde9b101880d83485bef"
+            },
+            {
+              "index": 50,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "266e46b9ca47f13f28e108bc797572c26e006f334f2251f120975005a30d3e5a"
+            },
+            {
+              "index": 51,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "6969e0709b591c9e85d1cbf8b320397351a212a1e9c1f96f61f83b3d0f641861"
+            },
+            {
+              "index": 52,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "fdf5e4515b2d5f4447ec84fc93611e44faf5006d8cd6d6930415112a3d079dc2"
+            },
+            {
+              "index": 53,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "e347eed5a2a00f897a4a3c3754d7849400a993065ad40484c5beb681dbd8c52c"
+            },
+            {
+              "index": 54,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "a3d0f30391cca9d980fe364f98f8476ada58955a85e3cd90badcb85432573d97"
+            },
+            {
+              "index": 55,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "6aae3c599ed0a62562a467e01085538e5a508ce3bae9e24ae010e43267d8dd2f"
+            },
+            {
+              "index": 56,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "a76882e4bb55f3068288bed059d5b0da0e43fda3c93d2b290f5cd0dff40f68d2"
+            },
+            {
+              "index": 57,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "b96a57ea241e3429b815dad3a0487d6d838573ce06440e35aef545526452fa65"
+            },
+            {
+              "index": 58,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "9a72b6fc1e9fa223ab07404bbc34d995e51a293e0e1c284fcbae2413f14754ec"
+            },
+            {
+              "index": 59,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "e847aa2a41e65119c37b64b0e5453082def99e3642114a12d57cfba0156cb152"
+            },
+            {
+              "index": 60,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "e5f8aa1d6284a620bf5832f0d8b1a25cf1e969fc1cb0a9baa34e8b93812c304a"
+            },
+            {
+              "index": 61,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "08bb155d1f319cb049129fd76e7ad22e1d18495f4a5ca818068eb112b4c7bf6a"
+            },
+            {
+              "index": 62,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "50a88b8ccecb5197d6c0d9bbfcdf6ca8fac8348c486a02b6b30ab93a592b7971"
+            },
+            {
+              "index": 63,
+              "ticks": 5,
+              "last": false,
+              "rgba16_sha256": "9be04db230db052f0ba8dc0439d6e71d48e3b5a0912913a9ab848e6250d12a36"
+            },
+            {
+              "index": 64,
+              "ticks": 5,
+              "last": true,
+              "rgba16_sha256": "44b647305bd508e0b65e4a4cda46d2793d562cfe96d086b70ca0c13464bb3ff5"
+            }
+          ],
+          "new_source": true,
+          "too_many_layers": true,
+          "buffered_main5_supported": false
+        }
+      ]
+    },
+    "new_generator_sha256": "3669c321225279bcb8887a0ba84e4acfeab77cc0b6f4cfd29da0c256aa6999e5",
+    "C_sources_sha256": {
+      "jpegxl_animation_encoder.c": "9e346f3a970b521c2cd0c6f8861bf6c0bda52d1404b2a41053c6178cfc02ee7a",
+      "jpegxl_animation_reference.c": "20b3422b655c4da9b5c958810384ee1aa6d4a3c3df9465cb62b4d7ecb1607f2b"
+    }
+  },
+  "display_oracle": {
+    "maximum_timebase_fixture": {
+      "file": "jxl-animation-timebase-max.jxl",
+      "sha256": "9b446fe09692d9fdd4d0b70cfbe808f952fb4b8e257d856d081f18ac3cdfae4f",
+      "construction": "C encoder long8 orientation1, numerator1 denominator1024 loops4294967295; C validates all3 frames and byte-compares to committed jxl-animation-long goldens",
+      "reference_output": "image 7 5 8 8 1 1024 4294967295 0 0\nframe 0 4294967295 0 0 7 5 0 0 0 0 0\nframe 1 4294967294 0 0 7 5 0 0 0 0 0\nframe 2 4294967293 0 1 7 5 0 0 0 0 0\nframes 3\n"
+    },
+    "generator_sha256": "c2191ef9a46da15e235728baae7820f53215d0790c34353082f0ed35406083bc",
+    "source": "C libjxl0.11.2 coalesced RGBA16 and C output ICC from PR93 manifest; independent LittleCMS2.16 relative intent, NOOPTIMIZE, COPY_ALPHA; quantize16-to8 last",
+    "cases": [
+      {
+        "input": "jxl-animation-variable.jxl",
+        "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+        "frames": [
+          {
+            "file": "jxl-animation-variable.0.srgb8",
+            "sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+          },
+          {
+            "file": "jxl-animation-variable.1.srgb8",
+            "sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+          },
+          {
+            "file": "jxl-animation-variable.2.srgb8",
+            "sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+          }
+        ]
+      },
+      {
+        "input": "jxl-animation-reference.jxl",
+        "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+        "frames": [
+          {
+            "file": "jxl-animation-reference.0.srgb8",
+            "sha256": "9cfd7df0a31bfdb3ff45c6da36aebbc9d9df2640f3923a9a45af75b5573363cd"
+          },
+          {
+            "file": "jxl-animation-reference.1.srgb8",
+            "sha256": "e1be9068838e09a700b4045073304ae0cd811fd6b1f3b04ff0484102db2726de"
+          },
+          {
+            "file": "jxl-animation-reference.2.srgb8",
+            "sha256": "6e72ebcc7361aecb0309fb700bbf67efb10a692a48da1b425b042853d0e83d09"
+          }
+        ]
+      },
+      {
+        "input": "jxl-animation-long.jxl",
+        "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+        "frames": [
+          {
+            "file": "jxl-animation-long.0.srgb8",
+            "sha256": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90"
+          },
+          {
+            "file": "jxl-animation-long.1.srgb8",
+            "sha256": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3"
+          },
+          {
+            "file": "jxl-animation-long.2.srgb8",
+            "sha256": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca"
+          }
+        ]
+      },
+      {
+        "input": "jxl-animation-main5-internal.jxl",
+        "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+        "frames": [
+          {
+            "file": "jxl-animation-main5-internal.0.srgb8",
+            "sha256": "2395589dbfe32b7dfb50026d79094a7b7e55cfb0cf8c1b877651777ae31f5614"
+          },
+          {
+            "file": "jxl-animation-main5-internal.1.srgb8",
+            "sha256": "85b2f5668ffaf6d51f9fc60400dece7ac25255ffc607e9c42a0eaff66ba4f170"
+          },
+          {
+            "file": "jxl-animation-main5-internal.2.srgb8",
+            "sha256": "358a7295adb7fe5152138ee6fb6b474f4d80980d1e0d09f04206717e8f8092a7"
+          }
+        ]
+      },
+      {
+        "input": "jxl-animation-main5-icc16.jxl",
+        "source_icc_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa",
+        "frames": [
+          {
+            "file": "jxl-animation-main5-icc16.0.srgb8",
+            "sha256": "d685e08cc07517d669560716c7c3a3ffbf939d47203dfe6f0ff9ad318c80a8f9"
+          },
+          {
+            "file": "jxl-animation-main5-icc16.1.srgb8",
+            "sha256": "8ed37d4f0fe1578d97377c2ba11547b8063456f47218b28e4db0d63e74aba465"
+          },
+          {
+            "file": "jxl-animation-main5-icc16.2.srgb8",
+            "sha256": "5cbdf89b8024965fc7524ce7a197d3bd102f5258e9f5dcc4a7a88a9450f87480"
+          }
+        ]
+      },
+      {
+        "input": "jxl-animation-main5-icc16-variable.jxl",
+        "source_icc_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa",
+        "frames": [
+          {
+            "file": "jxl-animation-main5-icc16-variable.0.srgb8",
+            "sha256": "ec8bcd4ba470f109bea041f33e9885373ad538b44d557d41f2de725c80c3fce0"
+          },
+          {
+            "file": "jxl-animation-main5-icc16-variable.1.srgb8",
+            "sha256": "845e6c8728b3c203cb736c4c3adc00f290fbf62045385adeb4058c3f2bc28515"
+          },
+          {
+            "file": "jxl-animation-main5-icc16-variable.2.srgb8",
+            "sha256": "ac4971cccdf2cb3292aa153b8d9f3fdd1ab25b99d17cacccb00ab33773bc48e6"
+          }
+        ]
+      },
+      {
+        "input": "jxl-animation-main5-rgb8.jxl",
+        "source_icc_sha256": "d7f9e32ac2a06a7e3865a828e865dafb7cf1947584d3c06ec97a660c59786b51",
+        "frames": [
+          {
+            "file": "jxl-animation-main5-rgb8.0.srgb8",
+            "sha256": "a15124114e88cfa856e4aeb3b3eba515d4881ab6e727633e71a38b2789d2ba58"
+          },
+          {
+            "file": "jxl-animation-main5-rgb8.1.srgb8",
+            "sha256": "2609eed37a14fc274fc051df950170a9ae1712ed8846fc5589f29598a9bcf3b8"
+          },
+          {
+            "file": "jxl-animation-main5-rgb8.2.srgb8",
+            "sha256": "de8e1c6e31275398558f20c2f5dcf75cd8d2262f432a68fd399f88549c91d9b2"
+          }
+        ]
+      },
+      {
+        "input": "jxl-animation-main5-rgb16.jxl",
+        "source_icc_sha256": "04fe5adcb9a06733378a6162b64b17ebec5c1e921255382f993ff8e81b169dfa",
+        "frames": [
+          {
+            "file": "jxl-animation-main5-rgb16.0.srgb8",
+            "sha256": "27bfa4f0f6545e65ab57a5821a8de988ceba7ec24d003d236b5b990f21747a87"
+          },
+          {
+            "file": "jxl-animation-main5-rgb16.1.srgb8",
+            "sha256": "f5e62989c3d1b85540dc0a8773870a4739387cec7bb3bbddacf90765382023b1"
+          },
+          {
+            "file": "jxl-animation-main5-rgb16.2.srgb8",
+            "sha256": "a7f708cbb68d5d65684c59305aa9243b5fb09c14f72fdecf9d88bed7190f9eff"
+          }
+        ]
+      }
+    ]
+  },
+  "files": {
+    "wml2/tests/fixtures/review/jxl-animation-fractional.0.rgba16le": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+    "wml2/tests/fixtures/review/jxl-animation-fractional.1.rgba16le": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+    "wml2/tests/fixtures/review/jxl-animation-fractional.2.rgba16le": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+    "wml2/tests/fixtures/review/jxl-animation-fractional.jxl": "e2d0dec771f0dc1305ef350abbc77f6f9fe367a535cd1fee95794f9269741662",
+    "wml2/tests/fixtures/review/jxl-animation-internal.jxl": "925b0ac2673c29390e5f7d22aeb8e2cac706dcc8964c8804760bee08e87c73ab",
+    "wml2/tests/fixtures/review/jxl-animation-long.0.rgba16le": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+    "wml2/tests/fixtures/review/jxl-animation-long.0.srgb8": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90",
+    "wml2/tests/fixtures/review/jxl-animation-long.1.rgba16le": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+    "wml2/tests/fixtures/review/jxl-animation-long.1.srgb8": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3",
+    "wml2/tests/fixtures/review/jxl-animation-long.2.rgba16le": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+    "wml2/tests/fixtures/review/jxl-animation-long.2.srgb8": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca",
+    "wml2/tests/fixtures/review/jxl-animation-long.jxl": "9b446fe09692d9fdd4d0b70cfbe808f952fb4b8e257d856d081f18ac3cdfae4f",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.0.rgba16le": "35fcebc160ddfe6be1dc7e05cbc58588c797bb75abee81b742b403bcbf384cb9",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.0.srgb8": "ec8bcd4ba470f109bea041f33e9885373ad538b44d557d41f2de725c80c3fce0",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.1.rgba16le": "d30e42df2b44136667f72c9a68a5701cdb27d9aa07ab83bb3bf095f80add6ae6",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.1.srgb8": "845e6c8728b3c203cb736c4c3adc00f290fbf62045385adeb4058c3f2bc28515",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.2.rgba16le": "51af504a2f6581243014337c3743fb30eacdabbd647d2d418f5cb3c08123557e",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.2.srgb8": "ac4971cccdf2cb3292aa153b8d9f3fdd1ab25b99d17cacccb00ab33773bc48e6",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16-variable.jxl": "c467f4cd51fb5c38ed752d6778efd19c5e336daf3c23858c8c333ac05757b6e2",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16.0.rgba16le": "3f7f5e7cb00de9381ce3853cc7ca5208f65a7ed83a72d4596d9d25124ac6f052",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16.0.srgb8": "d685e08cc07517d669560716c7c3a3ffbf939d47203dfe6f0ff9ad318c80a8f9",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16.1.rgba16le": "05d175b1939e05521191d4b10624dd4ff59aedb7166ccd0ee68fa8eee36f622c",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16.1.srgb8": "8ed37d4f0fe1578d97377c2ba11547b8063456f47218b28e4db0d63e74aba465",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16.2.rgba16le": "e35c9c2a92b551254da198ea64170c4af8dc634b13fcc5cf5b0483ff28232f42",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16.2.srgb8": "5cbdf89b8024965fc7524ce7a197d3bd102f5258e9f5dcc4a7a88a9450f87480",
+    "wml2/tests/fixtures/review/jxl-animation-main5-icc16.jxl": "d04503b091ac1df337b410b3055b67b50650b06200f4a96fd05be2b7a2913716",
+    "wml2/tests/fixtures/review/jxl-animation-main5-internal.0.rgba16le": "f803ed7a0c97519db6745d70b05d6aaa805ba7008d97c1b49304a8674f3d94d4",
+    "wml2/tests/fixtures/review/jxl-animation-main5-internal.0.srgb8": "2395589dbfe32b7dfb50026d79094a7b7e55cfb0cf8c1b877651777ae31f5614",
+    "wml2/tests/fixtures/review/jxl-animation-main5-internal.1.rgba16le": "56d73fe6a4a3e560b6c759c0f3578c38dcfc7bd42d6d6ed959ec39bced8a3f30",
+    "wml2/tests/fixtures/review/jxl-animation-main5-internal.1.srgb8": "85b2f5668ffaf6d51f9fc60400dece7ac25255ffc607e9c42a0eaff66ba4f170",
+    "wml2/tests/fixtures/review/jxl-animation-main5-internal.2.rgba16le": "ca8aea9e528ba8184fdbf9e424212f2aea4105115f01aeeeb6b4f05c62c08e8a",
+    "wml2/tests/fixtures/review/jxl-animation-main5-internal.2.srgb8": "358a7295adb7fe5152138ee6fb6b474f4d80980d1e0d09f04206717e8f8092a7",
+    "wml2/tests/fixtures/review/jxl-animation-main5-internal.jxl": "b58813a4c810baf7e60af3f630e9e5a65ba6a52b35c70576134b6cd758b0705e",
+    "wml2/tests/fixtures/review/jxl-animation-main5-layers64.jxl": "3b5dc218a9c8452d7980c05ea07ae68e63d4ce60c900e48fed4909d5fbfa9389",
+    "wml2/tests/fixtures/review/jxl-animation-main5-layers65.jxl": "6a9c7a041afd4f1e6304876ee66dc3d2356475ef0aa945a7a2e4c3c4b5dfc1d4",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb16.0.rgba16le": "12ffbae79383c4943a6187a10d55334940c485275770a2273e3425f3bb2f5e48",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb16.0.srgb8": "27bfa4f0f6545e65ab57a5821a8de988ceba7ec24d003d236b5b990f21747a87",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb16.1.rgba16le": "0ff9097f5beb0bac82830fe15bbc494239c6405face114e0ad8b156dc9601ddf",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb16.1.srgb8": "f5e62989c3d1b85540dc0a8773870a4739387cec7bb3bbddacf90765382023b1",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb16.2.rgba16le": "79a84bb58d06c860c2536bc5b91c19b9d4f4de1818d0dacf900524a2abb0bb37",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb16.2.srgb8": "a7f708cbb68d5d65684c59305aa9243b5fb09c14f72fdecf9d88bed7190f9eff",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb16.jxl": "ff36098f17c6ab5315d51d387dfbddcb92e2beef704a7d189a82dddb5032b160",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb8.0.rgba16le": "e4b0c528568618e6fdf7c81c480e5d904aec4eaa3573c3f4515161e9f421b7dd",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb8.0.srgb8": "a15124114e88cfa856e4aeb3b3eba515d4881ab6e727633e71a38b2789d2ba58",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb8.1.rgba16le": "b064b25e8e8a7dc557272dc6d2cf187125276ce57b0b73c7e1128fc164107c15",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb8.1.srgb8": "2609eed37a14fc274fc051df950170a9ae1712ed8846fc5589f29598a9bcf3b8",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb8.2.rgba16le": "5bc67aac7fbcb8dd52875ede45632665a932c1aa58463e6cc1d86dcecc9ca78f",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb8.2.srgb8": "de8e1c6e31275398558f20c2f5dcf75cd8d2262f432a68fd399f88549c91d9b2",
+    "wml2/tests/fixtures/review/jxl-animation-main5-rgb8.jxl": "33b10ac82682be1549bf882aba34b5c9f6cb9fd6d1378bd05fb15ac179e60ffd",
+    "wml2/tests/fixtures/review/jxl-animation-preview.jxl": "b6b62b04a984830bdf01bf0f9a24b4896b9a117b9a4bc3e5e71b936c0dd32650",
+    "wml2/tests/fixtures/review/jxl-animation-reference.0.rgba16le": "bbf1c6b98aeedb319707c41ba6b647e2ce13db4f98096523a41058fc3c384995",
+    "wml2/tests/fixtures/review/jxl-animation-reference.0.srgb8": "9cfd7df0a31bfdb3ff45c6da36aebbc9d9df2640f3923a9a45af75b5573363cd",
+    "wml2/tests/fixtures/review/jxl-animation-reference.1.rgba16le": "c0473c32dda4cafab0659da7ff9decd62abaa22ce00c9717cea6f9d58e5f243e",
+    "wml2/tests/fixtures/review/jxl-animation-reference.1.srgb8": "e1be9068838e09a700b4045073304ae0cd811fd6b1f3b04ff0484102db2726de",
+    "wml2/tests/fixtures/review/jxl-animation-reference.2.rgba16le": "011474e620c996baf957adba2283957855b274234b70d3b54cf2324bbcf41f4c",
+    "wml2/tests/fixtures/review/jxl-animation-reference.2.srgb8": "6e72ebcc7361aecb0309fb700bbf67efb10a692a48da1b425b042853d0e83d09",
+    "wml2/tests/fixtures/review/jxl-animation-reference.jxl": "88d3d6edbf02c6e7abf72769c88ef65e08930691bb22308cf7cda10cb2144b06",
+    "wml2/tests/fixtures/review/jxl-animation-timebase-max.jxl": "9b446fe09692d9fdd4d0b70cfbe808f952fb4b8e257d856d081f18ac3cdfae4f",
+    "wml2/tests/fixtures/review/jxl-animation-timecodes.jxl": "26d14bd848bc83b1f786c0010f7f1e32edacd01449a8faec88ec0d02c27f3d4f",
+    "wml2/tests/fixtures/review/jxl-animation-variable.0.rgba16le": "dec8be8698e881e29c071cf5536ab8d7c16d6b71d123f1f95b43c302ac861d42",
+    "wml2/tests/fixtures/review/jxl-animation-variable.0.srgb8": "d746432fa23c3840bd36a20e447161c6f68bafb3e5d63193791eb51d2d525b90",
+    "wml2/tests/fixtures/review/jxl-animation-variable.1.rgba16le": "2e0d3cde5304b58e464669777d03fe718c248999c9c727f79b797ea064b31e51",
+    "wml2/tests/fixtures/review/jxl-animation-variable.1.srgb8": "13439f22a1b41a129a068f9ebd1a0ace5ea6206732ae3f32676825062703c3f3",
+    "wml2/tests/fixtures/review/jxl-animation-variable.2.rgba16le": "9249d1b05a6aa98e4f061a29b3436af023c9aa95e304b0276c7a3e587a3d85cf",
+    "wml2/tests/fixtures/review/jxl-animation-variable.2.srgb8": "babe7ca9403f521726fe25213f335002f16e900ee9d670b3d148cee0464f9cca",
+    "wml2/tests/fixtures/review/jxl-animation-variable.jxl": "05a740005dc3d94b4d666f26edc44622463d5631365d886b8d964378358d8d2b"
+  }
+}

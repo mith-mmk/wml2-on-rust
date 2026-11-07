@@ -22,6 +22,12 @@ pub(crate) mod dimensions;
 #[path = "jpegxl_metadata.rs"]
 mod structured_metadata;
 
+#[path = "jpegxl_animation.rs"]
+mod animation;
+pub use animation::{
+    JxlAnimationFrame, JxlAnimationImage, animation_rgba16_from_with_limits_and_cancel,
+};
+
 type Error = Box<dyn std::error::Error>;
 const SIGNATURE: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
 const MAX_INPUT: usize = 64 * 1024 * 1024;
@@ -404,6 +410,14 @@ fn icc_budget(br: &mut BitReader<'_>, budget: usize) -> Result<usize, Error> {
     add(coded, size)
 }
 
+struct AnimationPlan {
+    numerator: u32,
+    denominator: u32,
+    loops: u32,
+    ticks: Vec<u32>,
+    metadata: usize,
+}
+
 struct Header {
     dimensions: crate::image_info::ImageDimensions,
     source_intrinsic: Option<crate::image_info::ImageSize>,
@@ -418,6 +432,7 @@ struct Header {
     source_header_bytes: usize,
     workspace: usize,
     sample_limit: usize,
+    animation: Option<AnimationPlan>,
 }
 
 // Cross-check the public 0.8 header projection against the independent bounded
@@ -443,13 +458,14 @@ fn validate_basic_info(info: &JxlBasicInfo, h: &Header) -> Result<(), Error> {
 // reference layers may exceed or lie outside the displayed canvas. Admit their
 // actual padded storage before the codec allocates pixels, then leave cropping,
 // orientation and blending to its coalescing render pipeline.
-fn frame_workspace(
+fn frame_workspace<const ANIMATION: bool>(
     input: &[u8],
     header: &FileHeader,
     frame_bits: usize,
     mut max_pixels: usize,
-    base: usize,
+    mut base: usize,
     limits: DecodeLimits,
+    mut animation: Option<&mut AnimationPlan>,
 ) -> Result<(usize, usize), Error> {
     use jxl_preflight::headers::encodings::UnconditionalCoder;
     use jxl_preflight::headers::frame_header::FrameHeader;
@@ -531,6 +547,35 @@ fn frame_workspace(
         if !preview {
             retained = add(retained, mul(pixels, mul(channels, 4)?)?)?;
         }
+        if ANIMATION {
+            let plan = animation
+                .as_deref_mut()
+                .ok_or_else(|| invalid("missing animation plan"))?;
+            if frame.duration > 0
+                && u128::from(frame.duration) * u128::from(plan.denominator) * 120
+                    < u128::from(plan.numerator)
+            {
+                return Err(unsupported(
+                    "buffered animation exceeds fixed Main5 120fps limit",
+                ));
+            }
+            // Before the pixel codec sees a frame, admit retained header/name,
+            // scan/reference records and TOC handles for every coded layer.
+            let layer = add(
+                add(
+                    mul(br.total_bits_read().div_ceil(8), 4)?,
+                    mul(frame.num_toc_entries(), 32)?,
+                )?,
+                4096,
+            )?;
+            plan.metadata = add(plan.metadata, layer)?;
+            limits::check(
+                plan.metadata,
+                limits.metadata_bytes,
+                "JPEG XL animation layer metadata",
+            )?;
+            base = add(base, layer)?;
+        }
         let entries = frame.num_toc_entries();
         limits::check(entries, 4096, "JPEG XL frame TOC entries")?;
         if br.peek(1) != 0 {
@@ -568,13 +613,21 @@ fn frame_workspace(
             continue;
         }
         visible += usize::from(frame.is_visible());
-        if visible > 1 {
+        if ANIMATION && frame.is_visible() {
+            limits::check(visible, limits.frames, "JPEG XL displayed animation frames")?;
+            animation
+                .as_deref_mut()
+                .ok_or_else(|| invalid("missing animation plan"))?
+                .ticks
+                .push(frame.duration);
+        }
+        if !ANIMATION && visible > 1 {
             return Err(unsupported(
                 "JPEG XL multiple visible frames are unsupported",
             ));
         }
         if frame.is_last {
-            if pos != input.len() || visible != 1 {
+            if pos != input.len() || visible == 0 || (!ANIMATION && visible != 1) {
                 return Err(invalid("trailing or incomplete JPEG XL frame sequence"));
             }
             // Upstream rejects >=limit and counts three colour channels even
@@ -586,6 +639,12 @@ fn frame_workspace(
 }
 
 fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
+    preflight_image::<false>(input, limits)
+}
+fn preflight_image<const ANIMATION: bool>(
+    input: &Input,
+    limits: DecodeLimits,
+) -> Result<Header, Error> {
     // FileHeader has bounded channel tables, but does not read ICC/pixel data.
     // Retained container metadata is already live, including expanded brob.
     // Reserve its existing 2x allowance before header/ICC/TOC allocation.
@@ -598,10 +657,36 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
     let mut br = BitReader::new(&input.codestream[..input.codestream.len().min(MAX_HEADER)]);
     let header = FileHeader::read(&mut br).map_err(preflight_error)?;
     let m = &header.image_metadata;
-    if m.animation.is_some() {
+    if !ANIMATION && m.animation.is_some() {
         return Err(unsupported("JPEG XL animations are unsupported"));
     }
     let bits = m.bit_depth.bits_per_sample();
+    if ANIMATION {
+        let a = m
+            .animation
+            .as_ref()
+            .ok_or_else(|| unsupported("animation header required"))?;
+        if a.have_timecodes
+            || a.tps_numerator == 0
+            || a.tps_denominator == 0
+            || m.preview.is_some()
+            || m.xyb_encoded
+            || m.color_encoding.color_space
+                != jxl_preflight::headers::color_encoding::ColorSpace::RGB
+            || !matches!(bits, 8 | 16)
+            || m.extra_channel_info.iter().any(|c| {
+                c.ec_type != ExtraChannel::Alpha
+                    || c.alpha_associated()
+                    || c.dim_shift() != 0
+                    || c.bit_depth().bits_per_sample() != bits
+            })
+        {
+            return Err(unsupported(
+                "buffered animation requires original-profile RGB8/16, optional matching straight full-resolution Alpha, no preview/SMPTE",
+            ));
+        }
+    }
+
     if m.bit_depth.floating_point_sample() || !matches!(bits, 8 | 9 | 10 | 12 | 16) {
         return Err(unsupported(
             "JPEG XL supports integer8/9/10/12/16-bit sources only",
@@ -693,13 +778,48 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         limits.expanded_bytes,
         "JPEG XL decode workspace",
     )?;
-    let (workspace, sample_limit) = frame_workspace(
+    let mut animation = if ANIMATION {
+        let a = m
+            .animation
+            .as_ref()
+            .ok_or_else(|| invalid("missing animation timing"))?;
+        let capacity = 64;
+        let plan_bytes = add(
+            std::mem::size_of::<AnimationPlan>(),
+            mul(capacity, std::mem::size_of::<u32>())?,
+        )?;
+        let metadata = add(meta, plan_bytes)?;
+        limits::check(
+            metadata,
+            limits.metadata_bytes,
+            "JPEG XL animation timing plan",
+        )?;
+        base = add(base, plan_bytes)?;
+        limits::check(
+            base,
+            limits.expanded_bytes,
+            "JPEG XL animation timing workspace",
+        )?;
+        let mut ticks = Vec::new();
+        ticks.try_reserve_exact(capacity)?;
+        Some(AnimationPlan {
+            numerator: a.tps_numerator,
+            denominator: a.tps_denominator,
+            loops: a.num_loops,
+            ticks,
+            metadata,
+        })
+    } else {
+        None
+    };
+    let (workspace, sample_limit) = frame_workspace::<ANIMATION>(
         &input.codestream,
         &header,
         frame_bits,
         frame_pixels,
         base,
         limits,
+        animation.as_mut(),
     )?;
     limits::check(workspace, limits.expanded_bytes, "JPEG XL decode workspace")?;
     Ok(Header {
@@ -720,6 +840,7 @@ fn preflight(input: &Input, limits: DecodeLimits) -> Result<Header, Error> {
         source_header_bytes: header_bytes,
         workspace,
         sample_limit,
+        animation,
     })
 }
 
@@ -910,6 +1031,32 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
     let mut raw = crate::draw::zeroed_bytes(len)?;
     reader.read_exact(&mut raw)?;
     let mut input = unpack(&raw, limits)?;
+    limits::check(
+        add(1024 * 1024, mul(input.metadata_bytes, 2)?)?,
+        limits.expanded_bytes,
+        "JPEG XL header workspace",
+    )?;
+    if dimensions::prefix(&input.codestream[..input.codestream.len().min(MAX_HEADER)])
+        .map_err(preflight_error)?
+        .animated
+    {
+        let metadata = std::mem::take(&mut input.metadata);
+        let metadata_bytes = input.metadata_bytes;
+        drop(input);
+        let result = animation::deliver::<MANAGED>(
+            &raw,
+            option,
+            native,
+            limits,
+            cancellation,
+            metadata,
+            metadata_bytes,
+        );
+        if result.is_err() {
+            let _ = option.drawer.terminate(None);
+        }
+        return result;
+    }
     drop(raw);
     let h = preflight(&input, limits)?;
     check()?;

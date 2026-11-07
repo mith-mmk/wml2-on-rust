@@ -287,6 +287,66 @@ fn assemble_interchange<B: BinaryReader>(
             "old-style JPEG interchange data must begin with SOI",
         ));
     }
+    // JPEGInterchangeFormat can contain the entire image, with strip offsets
+    // referring back into that stream (and occasionally into the SOS header).
+    // Parse marker lengths rather than searching table payloads for FF DA.
+    if output.ends_with(&[0xff, 0xd9]) {
+        let mut position = 2usize;
+        while position < output.len() {
+            let marker_start = position;
+            if output[position] != 0xff {
+                return Err(old_jpeg_error("invalid old-style JPEG interchange marker"));
+            }
+            while output.get(position) == Some(&0xff) {
+                position += 1;
+            }
+            let code = *output
+                .get(position)
+                .ok_or_else(|| old_jpeg_error("truncated old-style JPEG marker"))?;
+            position += 1;
+            if code == 0xd9 {
+                break; // Tables-only interchange: use the existing strip path.
+            }
+            if matches!(code, 0 | 0x01 | 0xd0..=0xd8) {
+                return Err(old_jpeg_error(
+                    "unsupported old-style JPEG interchange marker",
+                ));
+            }
+            let length_bytes = output
+                .get(position..position + 2)
+                .ok_or_else(|| old_jpeg_error("truncated old-style JPEG marker length"))?;
+            let segment_len = usize::from(u16::from_be_bytes(length_bytes.try_into()?));
+            if segment_len < 2 || segment_len > output.len() - position {
+                return Err(old_jpeg_error("invalid old-style JPEG marker length"));
+            }
+            position += segment_len;
+            if code == 0xda {
+                let scan_offset = offset
+                    .checked_add(u64::try_from(marker_start)?)
+                    .ok_or_else(|| old_jpeg_error("old-style JPEG scan range overflows"))?;
+                let end = offset
+                    .checked_add(u64::try_from(output.len())?)
+                    .ok_or_else(|| old_jpeg_error("old-style JPEG interchange range overflows"))?;
+                for block in blocks {
+                    block.validate_range(input_len)?;
+                    let block_end = block
+                        .offset
+                        .checked_add(block.compressed_len)
+                        .ok_or_else(|| old_jpeg_error("old-style JPEG strip range overflows"))?;
+                    if block.kind != TiffBlockKind::Strip
+                        || block.compressed_len == 0
+                        || block.offset < scan_offset
+                        || block_end > end - 2
+                    {
+                        return Err(old_jpeg_error(
+                            "old-style JPEG strip is outside the complete interchange scan",
+                        ));
+                    }
+                }
+                return Ok(output);
+            }
+        }
+    }
     if output.ends_with(&[0xff, 0xd9]) {
         output.truncate(output.len() - 2);
     }

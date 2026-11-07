@@ -572,6 +572,114 @@ fn old_style_jpeg_rejects_out_of_range_table_pointer() {
     assert!(error.to_string().contains("outside"), "{error}");
 }
 
+fn set_long(data: &mut [u8], tag: u16, value: u32) {
+    let count = u16::from_le_bytes(data[8..10].try_into().unwrap()) as usize;
+    let entry = (0..count)
+        .map(|i| 10 + i * 12)
+        .find(|&at| u16::from_le_bytes(data[at..at + 2].try_into().unwrap()) == tag)
+        .unwrap();
+    data[entry + 2..entry + 4].copy_from_slice(&4u16.to_le_bytes());
+    data[entry + 4..entry + 8].copy_from_slice(&1u32.to_le_bytes());
+    data[entry + 8..entry + 12].copy_from_slice(&value.to_le_bytes());
+}
+
+fn complete_interchange() -> (Vec<u8>, usize, usize) {
+    let (jpeg, _) = jpeg([1, 2, 3], false);
+    let scan = jpeg.windows(2).position(|w| w == [0xff, 0xda]).unwrap();
+    let (q, dc, ac, entropy) = old_jpeg_fixture_parts(&jpeg, &jpeg);
+    let mut data = old_jpeg_tiff(&entropy, &q, &dc, &ac, false, false);
+    // The table-form builder reserves tag 513. Reuse its Q-table entry for
+    // interchange length; the remaining table arrays are unused on this path.
+    let count = u16::from_le_bytes(data[8..10].try_into().unwrap()) as usize;
+    for i in 0..count {
+        let at = 10 + i * 12;
+        if u16::from_le_bytes(data[at..at + 2].try_into().unwrap()) == 519 {
+            data[at..at + 2].copy_from_slice(&514u16.to_le_bytes());
+        }
+    }
+    let offset = data.len();
+    set_long(&mut data, 513, offset as u32);
+    set_long(&mut data, 514, jpeg.len() as u32);
+    // smallliz's strip starts inside the SOS header, not at FF DA, and its
+    // count covers only part of the complete interchange entropy stream.
+    set_long(&mut data, 273, (offset + scan + 11) as u32);
+    set_long(&mut data, 279, (jpeg.len() - scan - 13) as u32);
+    data.extend_from_slice(&jpeg);
+    (data, offset, scan)
+}
+
+#[test]
+fn old_style_jpeg_complete_interchange_avoids_duplicate_strip_bytes() {
+    let (data, _, _) = complete_interchange();
+    assert_color(&data, [91, 255, 9, 255]);
+}
+
+#[test]
+fn old_style_jpeg_header_interchange_still_appends_scan_strip() {
+    for eoi in [false, true] {
+        let (mut data, offset, scan) = complete_interchange();
+        let strip = data[offset + scan..].to_vec();
+        let strip_offset = data.len();
+        if eoi {
+            data[offset + scan..offset + scan + 2].copy_from_slice(&[0xff, 0xd9]);
+        }
+        set_long(&mut data, 514, (scan + if eoi { 2 } else { 0 }) as u32);
+        set_long(&mut data, 273, strip_offset as u32);
+        set_long(&mut data, 279, strip.len() as u32);
+        data.extend_from_slice(&strip);
+        assert_color(&data, [91, 255, 9, 255]);
+    }
+}
+
+#[test]
+fn old_style_jpeg_complete_interchange_keeps_range_and_limit_checks() {
+    let (data, offset, scan) = complete_interchange();
+    for (tag, value) in [
+        (273, offset as u32), // points into frame/tables, before the scan
+        (273, data.len() as u32),
+        (279, u32::MAX),
+        (279, 0),
+        (514, u32::MAX),
+    ] {
+        let mut invalid = data.clone();
+        set_long(&mut invalid, tag, value);
+        assert!(image_load(&invalid).is_err(), "tag {tag}, value {value}");
+    }
+    for length in [0, 1, u16::MAX] {
+        let mut invalid = data.clone();
+        invalid[offset + scan + 2..offset + scan + 4].copy_from_slice(&length.to_be_bytes());
+        assert!(image_load(&invalid).is_err());
+    }
+    for limit in [1, 64] {
+        assert!(
+            image_from_with_limits(
+                &data,
+                DecodeLimits {
+                    expanded_bytes: limit,
+                    ..DecodeLimits::default()
+                }
+            )
+            .is_err()
+        );
+    }
+    for end in [offset, offset + scan + 3, data.len() - 1] {
+        assert!(image_load(&data[..end]).is_err());
+    }
+    let mut small_canvas = data.clone();
+    set_long(&mut small_canvas, 256, 1);
+    set_long(&mut small_canvas, 257, 1);
+    assert!(
+        image_from_with_limits(
+            &small_canvas,
+            DecodeLimits {
+                pixels: 4,
+                ..DecodeLimits::default()
+            }
+        )
+        .is_err()
+    );
+}
+
 #[test]
 fn jpeg_tiles_continue_across_when_tile_height_equals_image_height() {
     assert_tiled_pixels(32, 16);

@@ -237,6 +237,98 @@ fn spec(
 fn raw(width: usize, height: usize, channels: usize, value: u8) -> Vec<u8> {
     vec![value; width * height * channels]
 }
+
+fn omit_classic_tags(data: &mut [u8], tags: &[u16], be: bool) {
+    let count = if be {
+        u16::from_be_bytes([data[8], data[9]])
+    } else {
+        u16::from_le_bytes([data[8], data[9]])
+    } as usize;
+    for i in 0..count {
+        let at = 10 + i * 12;
+        let tag = if be {
+            u16::from_be_bytes([data[at], data[at + 1]])
+        } else {
+            u16::from_le_bytes([data[at], data[at + 1]])
+        };
+        if tags.contains(&tag) {
+            data[at..at + 2].copy_from_slice(&u16b(65000 + i as u16, be));
+        }
+    }
+}
+
+#[test]
+fn missing_raw_rgb_strip_counts_are_derived_from_pixels() {
+    let rgb = vec![255, 0, 0, 0, 255, 0, 0, 0, 255, 17, 29, 41];
+    let expected: Vec<_> = rgb
+        .chunks_exact(3)
+        .flat_map(|p| [p[0], p[1], p[2], 255])
+        .collect();
+    for be in [false, true] {
+        for omit_rows in [false, true] {
+            let mut data = build(
+                &[spec(2, 2, &[8, 8, 8], 3, 2, vec![rgb.clone()])],
+                false,
+                be,
+            );
+            omit_classic_tags(&mut data, if omit_rows { &[278, 279] } else { &[279] }, be);
+            let image = image_load(&data).unwrap();
+            assert_eq!((image.width, image.height), (2, 2));
+            assert_eq!(image.buffer.unwrap(), expected);
+            // A count must not consume trailing directories or padding as pixels.
+            let mut padded = data.clone();
+            padded.extend_from_slice(&[0; 64]);
+            assert_eq!(image_load(&padded).unwrap().buffer.unwrap(), expected);
+            assert!(image_load(&data[..data.len() - 1]).is_err());
+            assert!(
+                image_from_with_limits(
+                    &data,
+                    DecodeLimits {
+                        pixels: 3,
+                        ..DecodeLimits::default()
+                    }
+                )
+                .is_err()
+            );
+            assert!(
+                image_from_with_limits(
+                    &data,
+                    DecodeLimits {
+                        expanded_bytes: 11,
+                        ..DecodeLimits::default()
+                    }
+                )
+                .is_err()
+            );
+        }
+    }
+}
+
+#[test]
+fn missing_strip_counts_do_not_guess_other_layouts() {
+    let base = spec(2, 2, &[8, 8, 8], 3, 2, vec![vec![42; 12]]);
+    let mut cases = Vec::new();
+    let mut compressed = base.clone();
+    compressed.compression = 5;
+    cases.push(compressed);
+    let mut planar = base.clone();
+    planar.planar = 2;
+    cases.push(planar);
+    let mut partial = base.clone();
+    partial.rows = 1;
+    cases.push(partial);
+    let mut multiple = base.clone();
+    multiple.blocks.push(vec![42; 12]);
+    cases.push(multiple);
+    let mut ycbcr = base.clone();
+    ycbcr.photo = 6;
+    cases.push(ycbcr);
+    for case in cases {
+        let mut data = build(&[case], false, false);
+        omit_classic_tags(&mut data, &[279], false);
+        assert!(image_load(&data).is_err());
+    }
+}
 fn lzw(raw: &[u8]) -> Vec<u8> {
     wml2::encoder::lzw::encode_tiff(raw, false).unwrap()
 }

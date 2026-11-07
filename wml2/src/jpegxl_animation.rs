@@ -33,12 +33,13 @@ pub fn animation_rgba16_from_with_limits_and_cancel(
     limits: DecodeLimits,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<JxlAnimationImage, Error> {
-    animation_with_workspace(bytes, limits, cancelled).map(|(image, _)| image)
+    animation_with_workspace(bytes, limits, cancelled, 0).map(|(image, _)| image)
 }
 fn animation_with_workspace(
     bytes: &[u8],
     limits: DecodeLimits,
     cancelled: &dyn Fn() -> bool,
+    resident_bytes: usize,
 ) -> Result<(JxlAnimationImage, AnimationBudget), Error> {
     let cancellation = Cancellation {
         probe: Some(cancelled),
@@ -46,6 +47,18 @@ fn animation_with_workspace(
     };
     let check = || cancellation.check();
     check()?;
+    let original_workspace = limits.expanded_bytes;
+    limits::check(
+        resident_bytes,
+        original_workspace,
+        "JPEG XL resident callback metadata",
+    )?;
+    // The outer reader and expanded metadata stay live during nested unpack,
+    // Brotli, preflight and pixel decoding. Reserve them before any of these.
+    let limits = DecodeLimits {
+        expanded_bytes: original_workspace - resident_bytes,
+        ..limits
+    };
     limits::check(
         bytes.len(),
         limits.input_bytes.min(MAX_INPUT),
@@ -90,7 +103,8 @@ fn animation_with_workspace(
         limits.metadata_bytes,
         "JPEG XL animation descriptors",
     )?;
-    let mut workspace = AnimationBudget::new(h.workspace, limits.expanded_bytes)?;
+    let mut workspace =
+        AnimationBudget::new(add(h.workspace, resident_bytes)?, original_workspace)?;
     workspace.claim(
         mul(frame_bytes, n)?,
         "JPEG XL all buffered animation canvases",
@@ -285,8 +299,13 @@ pub(super) fn deliver<const MANAGED: bool>(
     use crate::draw::{NextBlend, NextDispose, NextOption, NextOptions};
     let check = || cancellation.check();
     check()?;
-    let (image, mut workspace) =
-        animation_with_workspace(bytes, limits, &|| cancellation.check().is_err())?;
+    let resident_bytes = add(bytes.len(), mul(metadata_bytes, 2)?)?;
+    let (image, mut workspace) = animation_with_workspace(
+        bytes,
+        limits,
+        &|| cancellation.check().is_err(),
+        resident_bytes,
+    )?;
     #[cfg(feature = "color-management")]
     let mut image = image;
     let size = image
@@ -314,10 +333,6 @@ pub(super) fn deliver<const MANAGED: bool>(
         "JPEG XL prepared frame records",
     )?;
     workspace.claim(mul(add(n, 1)?, 128)?, "JPEG XL collector frame records")?;
-    workspace.claim(
-        add(bytes.len(), mul(metadata_bytes, 2)?)?,
-        "JPEG XL reader and callback metadata",
-    )?;
     let retained_metadata = add(
         metadata_bytes,
         add(
@@ -587,4 +602,91 @@ fn cms_profiles(source: &[u8], destination: &[u8]) -> Result<usize, Error> {
         )
     }
     add(one(source)?, one(destination)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const INPUT: &[u8] = include_bytes!("../tests/fixtures/review/jxl-animation-variable.jxl");
+    #[test]
+    fn resident_storage_is_reserved_before_unpack_and_transferred_once() {
+        let resident = 2 * 1024 * 1024;
+        let calls = std::cell::Cell::new(0);
+        let limits = DecodeLimits {
+            expanded_bytes: resident + INPUT.len() * 3 - 1,
+            ..Default::default()
+        };
+        let result = animation_with_workspace(
+            INPUT,
+            limits,
+            &|| {
+                calls.set(calls.get() + 1);
+                false
+            },
+            resident,
+        );
+        assert!(
+            result
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("assembly workspace")
+        );
+        assert_eq!(
+            calls.get(),
+            1,
+            "must reject before unpack and its post-unpack checkpoint"
+        );
+        assert!(animation_with_workspace(INPUT, limits, &|| false, usize::MAX).is_err());
+        assert!(
+            animation_with_workspace(INPUT, limits, &|| true, usize::MAX)
+                .err()
+                .unwrap()
+                .is::<DecodeCancelled>()
+        );
+        let (mut low, mut high) = (0, 32 * 1024 * 1024);
+        while low < high {
+            let mid = low + (high - low) / 2;
+            if animation_with_workspace(
+                INPUT,
+                DecodeLimits {
+                    expanded_bytes: mid,
+                    ..Default::default()
+                },
+                &|| false,
+                0,
+            )
+            .is_ok()
+            {
+                high = mid
+            } else {
+                low = mid + 1
+            }
+        }
+        for (cap, ok) in [(low + resident - 1, false), (low + resident, true)] {
+            assert_eq!(
+                animation_with_workspace(
+                    INPUT,
+                    DecodeLimits {
+                        expanded_bytes: cap,
+                        ..Default::default()
+                    },
+                    &|| false,
+                    resident
+                )
+                .is_ok(),
+                ok
+            );
+        }
+        let (raw, base) =
+            animation_with_workspace(INPUT, Default::default(), &|| false, 0).unwrap();
+        let (nested, budget) =
+            animation_with_workspace(INPUT, Default::default(), &|| false, resident).unwrap();
+        assert_eq!(budget.used, base.used + resident);
+        assert_eq!(nested.frames[0].rgba16, raw.frames[0].rgba16);
+        assert!(
+            animation_with_workspace(INPUT, Default::default(), &|| false, 0).is_ok(),
+            "failed reservations must not poison later calls"
+        );
+    }
 }

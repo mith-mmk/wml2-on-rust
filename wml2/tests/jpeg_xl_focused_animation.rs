@@ -355,3 +355,83 @@ fn buffer_reservation_failure_returns_error_and_can_retry() {
         animation_rgba16_from_with_limits_and_cancel(INPUT, Default::default(), &|| false).is_ok()
     );
 }
+
+#[test]
+fn retained_brob_metadata_survives_nested_decode_limits_failure_and_retry() {
+    fn add_box(out: &mut Vec<u8>, kind: &[u8; 4], payload: &[u8]) {
+        out.extend_from_slice(&u32::try_from(payload.len() + 8).unwrap().to_be_bytes());
+        out.extend_from_slice(kind);
+        out.extend_from_slice(payload);
+    }
+    let mut bytes = INPUT.to_vec();
+    assert!(bytes.starts_with(b"\0\0\0\x0cJXL \r\n\x87\n"));
+    let mut brob = b"test".to_vec();
+    brob.extend_from_slice(include_bytes!("fixtures/review/jxl-brob-repeat.br"));
+    for _ in 0..4 {
+        add_box(&mut bytes, b"brob", &brob);
+    }
+    let expected = image_from(INPUT).unwrap();
+    let run = |cap| {
+        image_from_with_limits(
+            &bytes,
+            DecodeLimits {
+                expanded_bytes: cap,
+                ..Default::default()
+            },
+        )
+    };
+    let (mut low, mut high) = (0, 32 * 1024 * 1024);
+    while low < high {
+        let mid = low + (high - low) / 2;
+        if run(mid).is_ok() {
+            high = mid
+        } else {
+            low = mid + 1
+        }
+    }
+    assert!(run(low - 1).is_err());
+    let image = run(low).unwrap();
+    assert_eq!(image.buffer, expected.buffer);
+    assert_eq!(image.animation.as_ref().unwrap().len(), 3);
+    assert_eq!(
+        image
+            .metadata
+            .as_ref()
+            .unwrap()
+            .iter()
+            .filter(|(key, value)| key.starts_with("JPEG XL Decoded Box ")
+                && matches!(value,wml2::metadata::DataMap::Raw(b) if b.len()==65659))
+            .count(),
+        4
+    );
+    let mut sink = Probe::default();
+    let mut reader = bin_rs::reader::StreamReader::new(std::io::Cursor::new(&bytes));
+    assert!(
+        image_decoder_with_limits(
+            &mut reader,
+            &mut DecodeOptions {
+                debug_flag: 0,
+                drawer: &mut sink
+            },
+            DecodeLimits {
+                expanded_bytes: low - 1,
+                ..Default::default()
+            }
+        )
+        .is_err()
+    );
+    assert!(
+        !sink
+            .events
+            .iter()
+            .any(|&e| matches!(e, "init" | "draw" | "next"))
+    );
+    let mut truncated = bytes.clone();
+    truncated.pop();
+    assert!(image_from(&truncated).is_err());
+    assert_eq!(
+        run(low).unwrap().buffer,
+        expected.buffer,
+        "failed nested decode must release its reservation"
+    );
+}

@@ -227,7 +227,7 @@ tiff = ["exif"]
 webp = ["exif", "dep:webp_codec"]
 psd = []
 jpeg2000 = ["dep:icc_profile"]
-jpeg-xl = ["dep:jxl_codec", "dep:brotli_decompressor", "dep:roxmltree"]
+jpeg-xl = ["dep:jxl_codec", "dep:jxl_preflight", "dep:brotli_decompressor", "dep:roxmltree"]
 avif = ["dep:avif_codec", "dep:icc_profile"]
 avifenc = ["avif", "dep:avifenc_codec", "dep:icc_profile"]
 high-bit-depth = []
@@ -272,7 +272,10 @@ noretoro = []
 [dependencies]
 encoding_rs = { version = "0.8.35", optional = true }
 # Published API differs from upstream main; audit upgrades with the bounded adapter.
-jxl_codec = { package = "jxl", version = "=0.7.4", default-features = false, optional = true }
+jxl_codec = { package = "jxl", version = "=0.8.0", default-features = false, optional = true }
+# Parser-only compatibility bridge: 0.8 hides these pre-allocation interfaces.
+# Never use this alias for pixel decoding. Remove only with equivalent admission.
+jxl_preflight = { package = "jxl", version = "=0.7.4", default-features = false, optional = true }
 # Brob uses strict streaming decode and caller-budgeted allocators, no C/FFI.
 roxmltree = { version = "=0.21.2", default-features = false, optional = true }
 brotli_decompressor = { package = "brotli-decompressor", version = "=6.2.0", default-features = false, optional = true }

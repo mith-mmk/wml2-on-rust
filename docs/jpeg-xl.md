@@ -6,7 +6,9 @@ not contain this feature. Historical development checkpoints and measurements
 are retained in [continuation validation](jpeg-xl-continuation-20261019.md) and
 [internal-layer validation](jpeg-xl-layers.md).
 
-The opt-in `jpeg-xl` feature uses **published `jxl =0.7.4`**, not upstream main.
+The opt-in `jpeg-xl` feature uses **published `jxl =0.8.0`** for pixel decoding.
+Published 0.7.4 remains aliased only for bounded pre-allocation parsing and
+dimension inspection; see [focused integration](jpeg-xl-focused-integration.md).
 Defaults are unchanged; JPEG XL encoding is unavailable. Add `image-buffer-ex`
 for high-precision callback output. No C library, image-rs, CMS, SIMD or thread
 pool is pulled into the runtime by this feature.

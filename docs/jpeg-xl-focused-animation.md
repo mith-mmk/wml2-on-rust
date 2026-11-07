@@ -125,7 +125,47 @@ Validation on Windows / Rust 1.99.0:
   establish a material regression or improvement. Raw trials and method are in
   [the benchmark record](jpeg-xl-xyb-animation-benchmark.json).
 
-This follow-up does not claim an independent 16-bit XYB source oracle, a new
-embedded-ICC XYB animation fixture, browser playback QA, or fresh WASM execution.
+This follow-up does not claim a new embedded-ICC XYB animation fixture, browser
+playback QA, or fresh WASM execution. Independent 16-bit coverage is recorded below.
 Existing original-profile 16-bit/ICC, crop/blend/orientation and security tests
 remain passing. CI completion is not awaited; no merge or release is performed.
+
+
+## Independent 16-bit XYB animation comparison
+
+The follow-up fixture is a deterministic synthetic 32x24 RGBA16 APNG with three
+frames. Official libjxl cjxl 0.12.0 (`4128790`, distance 1, effort 7) encodes XYB;
+its container is stripped without changing the codestream. The parser test
+asserts XYB, integer16 RGB and integer16 straight full-resolution alpha, D65/sRGB
+primaries and transfer, relative rendering intent. The decoded timing is
+50/90/130 ticks at 1000 ticks/second, with loop count zero. cjxl does not preserve
+the synthetic APNG's loop count of three, so the oracle contract checks the
+actual encoded JXL loop count rather than claiming APNG loop preservation.
+
+Independent djxl explicitly outputs **16-bit PAM**, all three coalesced frames,
+in `RGB_D65_SRG_Rel_SRG`, without alpha blending. The PAM header requires MAXVAL
+65535 and four channels. PAM's big-endian samples are stored as raw little-endian
+u16 goldens. Neither reference nor WML2 output passes through RGBA8, ImageMagick,
+CMS, premultiplication, or a background composite in this comparison. 8,979 of
+9,216 reference samples are not divisible by 257, ruling out 8-bit expansion.
+
+Both native RGBA16 and EX Rgba16/Exact compare every sample directly. On Windows
+x64 / Rust 1.99.0, all three frames have maximum RGBA error `[1,1,1,0]` in units
+of 1/65535. Per-frame sums of absolute RGBA error are `[25,18,19,0]`,
+`[25,15,29,0]`, and `[32,14,24,0]`. In total 201 of 6,912 RGB samples differ by
+one unit; all 2,304 alpha samples match both libjxl and the source alpha formula
+exactly. Tests enforce RGB tolerance **1/65535** and alpha tolerance **zero**.
+This is decoder reconstruction agreement, not lossless RGB encoding: the source
+was intentionally encoded with lossy XYB distance 1.
+
+The fixture, independent raw golden, manifest, and standard-library-only
+`generate_jxl_xyb_animation16.py` are under `wml2/tests/fixtures/review/`.
+The script requires the recorded official cjxl/djxl version and records source,
+codestream, reference and ICC SHA256 hashes. Native and EX tests pass, as do the
+previous XYB tests. Representative 16-bit renders were inspected after comparison;
+visualization alone is not precision evidence. No production decoder code changed.
+Final focused regression run: 122 tests passed across the library and eight JXL
+integration targets. The XYB target passes four tests with jpeg-xl only and
+compiles/runs zero tests with the feature disabled. The generator was rerun and
+produced the same codestream and reference hashes. `rustfmt --check` and
+`git diff --check` passed. CI/CD completion is not awaited.

@@ -1,0 +1,41 @@
+{
+  "source": "Deterministic synthetic RGBA16 APNG; generation formulas in this script; project MIT license",
+  "encoder": "libjxl cjxl 0.12.0 4128790 -d 1 -e 7; jxlp container stripped without changing codestream",
+  "decoder": "libjxl djxl 0.12.0 4128790 --bits_per_sample=16 --color_space=RGB_D65_SRG_Rel_SRG --output_frames",
+  "release": "https://github.com/libjxl/libjxl/releases/tag/v0.12.0",
+  "recorded_original_windows_archive_sha256": "3025d7e308390796d20492322e606bc92decaee7b6bc99d3f7547870ae5db7de",
+  "archive_note": "Hash of the verified original Windows distribution; a rerun validates tool version, not distribution bytes",
+  "source_apng_sha256": "8c1e8b5b1d1b622176f5aa4c148310220bcb3cff801cdc8d8101bf9ed540075d",
+  "codestream_sha256": "eddb00d26fa087c8e353ad204db829c4f691663de7bcd4fa625d53dbfaa72eb4",
+  "reference_sha256": "25d3bc437ef6f95f73dc2c809a01d04127aa29e20072b25e671bb6660fd0f6f0",
+  "source_icc_sha256": "87948cdb39dc5fe2044fa8a340b09b27ad06a3a0795f6eed5b8ef4cbcf6ea051",
+  "output_icc_sha256": "87948cdb39dc5fe2044fa8a340b09b27ad06a3a0795f6eed5b8ef4cbcf6ea051",
+  "dimensions": [
+    32,
+    24
+  ],
+  "frames": 3,
+  "source_rgb_bits": 16,
+  "source_alpha_bits": 16,
+  "color": "RGB D65 sRGB primaries, sRGB transfer, relative intent; straight alpha",
+  "timing": {
+    "ticks_per_second": [
+      1000,
+      1
+    ],
+    "frame_ticks": [
+      50,
+      90,
+      130
+    ],
+    "loops": 0
+  },
+  "reference_samples_not_divisible_by_257_per_frame": [
+    3005,
+    2988,
+    2986
+  ],
+  "comparison": "Compare native/EX u16 directly, no u8 normalization, CMS, premultiplication or background compositing",
+  "rgb_tolerance_u16": 1,
+  "alpha_tolerance_u16": 0
+}

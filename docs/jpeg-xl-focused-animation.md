@@ -6,7 +6,7 @@ public resource-policy dependencies. No encoder implementation or changes.
 
 ## Contract
 
-Common image/callback APIs decode admitted original-profile RGB8/16 with optional
+Common image/callback APIs decode admitted RGB8/16 (original-profile or XYB) with optional
 matching straight full-resolution Alpha. Codec coalescing applies crop/reference,
 blend and orientation once. Each displayed frame is a full canvas; invisible
 layers consume the unchanged 64-layer cap, not playback frames. Loop zero means
@@ -23,7 +23,9 @@ collector exposes immutable `AnimationFrameEx` through `animation()` and raw
 `loop_count()`. Existing precision policies still apply. Static picking/conversion
 refuses animated state rather than losing frames. This adds no encoder.
 Explicit `image_from_srgb*` uses the existing CMS per frame, excluding alpha.
-Raw source coordinates/profile tagging and sRGB output remain distinct.
+Raw reconstruction coordinates/profile tagging and sRGB output remain distinct.
+XYB reconstruction stays in `jxl`; output ICC can differ from source ICC (for
+example, embedded ICC XYB falls back to sRGB). Consumers must use output ICC.
 
 All decoding, final stream validation, CMS and output preparation precede
 init/draw; owned errors/cancellation expose no partial image. Callback side effects
@@ -37,7 +39,7 @@ and scratch are admitted cumulatively with checked arithmetic and fallible
 buffer reservations. A private operation-local allowance uses expanded_bytes;
 there is no new public resource policy, codec heap tracking or RSS guarantee.
 
-Preview-bearing animation, timecodes, XYB/HDR, associated/subsampled or mixed-depth
+Preview-bearing animation, timecodes, HDR, associated/subsampled or mixed-depth
 Alpha and general extra channels remain explicit refusals. These are limitations
 of this bounded animation profile, not features silently converted or discarded.
 The old large-image restriction remains; it is not a prerequisite for this series.
@@ -89,3 +91,41 @@ All three rendered sRGB frames retain their inspected hashes. Three alternating
 release blocks against bde4518 give median ratios 1.024 (plain) / 0.927 (metadata),
 with identical pixels and observed allocation peaks. Shared-host variation does
 not establish a speed improvement. Raw trials are in the validation JSON.
+
+## XYB animation follow-up
+
+XYB is now admitted through the existing bounded RGB8/16 animation path. The
+0.7.4 preflight's `!xyb_encoded` is cross-checked against the 0.8 codec's
+`uses_original_profile`, rather than requiring it to be true. No codec code,
+public API, hard cap or allocation policy changes. XYB reconstruction and
+coalescing remain in jxl 0.8.0. Source and output ICC are retained separately;
+CMS continues to use the reconstruction/output ICC and excludes alpha.
+
+Validation on Windows / Rust 1.99.0:
+
+- The two reported failures, libjxl conformance `animation_icos4d` and
+  `animation_spline`, now decode all 48 and 60 frames, with exact 50ms and 20ms
+  waits and infinite loops. Native RGBA16 (rounded for the independent 8-bit
+  oracle), ordinary, EX and explicit sRGB paths match every reference canvas:
+  RGB tolerance one 8-bit unit, alpha exact. The references are generated with
+  ImageMagick 7.1.2-21 / libjxl 0.11.2, not the Rust decoder. Provenance,
+  source hashes and reference hashes are in
+  [the oracle manifest](jpeg-xl-xyb-animation-oracle.json). The adjacent
+  `generate_jxl_xyb_animation.py` reproduces the compressed raw references.
+- New coverage also verifies frame/output/workspace/metadata/pixel limits,
+  truncation, trailing bytes, cooperative cancellation, recovery, and no
+  callbacks before failure. 115 existing focused library/JXL tests plus five
+  new tests passed. Minimal jpeg-xl-only: 11 animation tests passed; the new
+  feature-off test target compiles and runs zero tests.
+- Rendered frames 0/12/24 (icos4d) and 0/20/40 (spline) were inspected: geometry,
+  color and animation changes are readable, without visible corruption.
+- Five alternating release benchmark blocks against main `4e6e6baa`, 200
+  decodes/case after warmup: median ratios 1.033 (tiny RGB8), 0.995 (lossy still),
+  1.012 (existing ICC16 animation). These small shared-host differences do not
+  establish a material regression or improvement. Raw trials and method are in
+  [the benchmark record](jpeg-xl-xyb-animation-benchmark.json).
+
+This follow-up does not claim an independent 16-bit XYB source oracle, a new
+embedded-ICC XYB animation fixture, browser playback QA, or fresh WASM execution.
+Existing original-profile 16-bit/ICC, crop/blend/orientation and security tests
+remain passing. CI completion is not awaited; no merge or release is performed.

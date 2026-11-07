@@ -428,6 +428,7 @@ struct Header {
     native_bits: u8,
     orientation: u8,
     gray: bool,
+    uses_original_profile: bool,
     color_channels: usize,
     source_header_bytes: usize,
     workspace: usize,
@@ -670,7 +671,6 @@ fn preflight_image<const ANIMATION: bool>(
             || a.tps_numerator == 0
             || a.tps_denominator == 0
             || m.preview.is_some()
-            || m.xyb_encoded
             || m.color_encoding.color_space
                 != jxl_preflight::headers::color_encoding::ColorSpace::RGB
             || !matches!(bits, 8 | 16)
@@ -682,7 +682,7 @@ fn preflight_image<const ANIMATION: bool>(
             })
         {
             return Err(unsupported(
-                "buffered animation requires original-profile RGB8/16, optional matching straight full-resolution Alpha, no preview/SMPTE",
+                "buffered animation requires RGB8/16, optional matching straight full-resolution Alpha, no preview/SMPTE",
             ));
         }
     }
@@ -831,6 +831,7 @@ fn preflight_image<const ANIMATION: bool>(
         alpha_bits,
         native_bits,
         orientation: m.orientation as u8,
+        uses_original_profile: !m.xyb_encoded,
         gray: m.color_encoding.color_space == ColorSpace::Gray && m.extra_channel_info.is_empty(),
         color_channels: if m.color_encoding.color_space == ColorSpace::Gray {
             1

@@ -1,0 +1,58 @@
+{
+  "base_commit": "4e6e6baa3ee33cc13f2a262410730a38d1d4a7a1",
+  "rust": "1.99.0",
+  "method": "5 alternating release blocks, 10 warmup and 200 image_from decodes per case, nanoseconds/decode; shared Windows host; no RSS claim",
+  "trials": {
+    "baseline": {
+      "jxl-rgb8.jxl": [
+        39100,
+        39389,
+        38697,
+        41152,
+        41316
+      ],
+      "jxl-lossy.jxl": [
+        206927,
+        211629,
+        209695,
+        210026,
+        207515
+      ],
+      "jxl-animation-main5-icc16-variable.jxl": [
+        121697,
+        117348,
+        116711,
+        114764,
+        115414
+      ]
+    },
+    "changed": {
+      "jxl-rgb8.jxl": [
+        39626,
+        44071,
+        40877,
+        40270,
+        40682
+      ],
+      "jxl-lossy.jxl": [
+        215628,
+        210048,
+        206764,
+        207677,
+        208683
+      ],
+      "jxl-animation-main5-icc16-variable.jxl": [
+        116981,
+        117160,
+        118412,
+        118144,
+        119586
+      ]
+    }
+  },
+  "median_ratios": {
+    "jxl-rgb8.jxl": 1.0328264236208078,
+    "jxl-lossy.jxl": 0.9951739431078471,
+    "jxl-animation-main5-icc16-variable.jxl": 1.0122781914301138
+  }
+}

@@ -1,4 +1,4 @@
-//! Buffered original-profile animation; exact rational timing, atomic publication.
+//! Buffered RGB animation; exact rational timing, atomic publication.
 use super::*;
 #[non_exhaustive]
 #[derive(Debug)]
@@ -24,8 +24,9 @@ pub struct JxlAnimationImage {
     pub source_header: Vec<u8>,
 }
 /// Decode every displayed frame privately, returning only after final validation.
-/// Original-profile RGB8/16, optional matching straight full-resolution Alpha;
-/// no preview, SMPTE, XYB or HDR. Exact raw ticks preserve fractional durations
+/// RGB8/16 (original-profile or XYB), optional matching straight full-resolution Alpha;
+/// no preview, SMPTE or HDR. Pixels use the reported output ICC, which may differ
+/// from the source ICC for XYB. Exact raw ticks preserve fractional durations
 /// and visible final-zero frames without inventing a millisecond display policy.
 /// No poster duplicate, callbacks, playback, CMS or incremental publication.
 pub fn animation_rgba16_from_with_limits_and_cancel(
@@ -140,7 +141,7 @@ fn animation_with_workspace(
         .ok_or_else(|| invalid("missing codec animation timing"))?;
     if info.size != (h.width, h.height)
         || info.orientation as u8 != h.orientation
-        || !info.uses_original_profile
+        || info.uses_original_profile != h.uses_original_profile
         || !matches!(info.bit_depth,JxlBitDepth::Int{bits_per_sample}if bits_per_sample==u32::from(h.bits))
         || info.extra_channels.len() != usize::from(h.alpha_bits.is_some())
         || info

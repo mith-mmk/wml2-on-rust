@@ -1,6 +1,7 @@
 # Bounded legacy TIFF layouts
 
-This change follows published 0.0.41, main
+Included in WML2 0.0.42 through [#71](https://github.com/mith-mmk/wml2-on-rust/pull/71).
+The implementation and historical measurements below follow published 0.0.41, main
 `f2151b2408e9d04f1bc7b4e9e29679e078a57209`. It fixes two independently
 reproduced compatibility failures without changing public APIs or limits.
 

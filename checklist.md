@@ -1,4 +1,9 @@
-# AVIF decoder implementation checklist
+# Historical AVIF decoder implementation checklist
+
+This file preserves the early 0.0.24 development checklist and its measurements;
+it is not the current WML2 support matrix or release gate. For current library
+features use [README](README.md), [AVIF registry integration](docs/avif-registry-012.md),
+and [release notes](docs/releases/0.0.42.md).
 
 ## Repository layout and current state
 

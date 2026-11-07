@@ -1,6 +1,8 @@
-# Focused JXL animation (unmerged)
+# Bounded JPEG XL animation in WML2 0.0.42
 
-Stacks only on the main-based 0.8 migration #102 (`282056388c3d4c442be9f7275d102128e807972e`).
+Merged through [#103](https://github.com/mith-mmk/wml2-on-rust/pull/103),
+based on the 0.8 migration [#102](https://github.com/mith-mmk/wml2-on-rust/pull/102)
+(`282056388c3d4c442be9f7275d102128e807972e`).
 Transplants #93/#94's animation processing, not their preview/HDR/extra-plane or
 public resource-policy dependencies. No encoder implementation or changes.
 
@@ -68,7 +70,9 @@ peak increases 64,222 → 71,912. Requested bytes are observed allocation deltas
 RSS or an allocation contract. No speed claim is made for all inputs.
 Raw trials: [validation JSON](jpeg-xl-focused-animation-validation.json).
 
-#40/#43 remain open pending review/merge. CI completion is not awaited.
+These results describe the original implementation checkpoints, not a fresh
+release-tag CI run. See [0.0.42 release notes](releases/0.0.42.md) for release
+scope and validation. The separate XYB-animation follow-up #104 is not included.
 
 ## PR103 review: resident metadata during nested decode
 

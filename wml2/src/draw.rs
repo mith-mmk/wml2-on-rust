@@ -1142,6 +1142,9 @@ pub fn convert(
 
 /// Decodes an image from memory into an [`ImageBuffer`].
 ///
+/// This compatibility helper discards recoverable warnings. Use
+/// [`image_load_with_warnings`] when the caller needs to display them.
+///
 /// # Examples
 /// This example requires the `png` feature.
 ///

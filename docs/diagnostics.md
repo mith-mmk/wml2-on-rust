@@ -79,16 +79,16 @@ unchanged and concatenates messages without separators.
 use wml2::draw::image_from_with_limits_and_warnings;
 use wml2::limits::DecodeLimits;
 
-# fn load(bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-let (image, warnings) = image_from_with_limits_and_warnings(bytes, DecodeLimits::default())?;
-if let Some(warnings) = warnings {
-    for warning in warnings.iter() {
-        eprintln!("{warning}");
+fn load(bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
+    let (image, warnings) = image_from_with_limits_and_warnings(bytes, DecodeLimits::default())?;
+    if let Some(warnings) = warnings {
+        for warning in warnings.iter() {
+            eprintln!("{warning}");
+        }
     }
+    // Use image normally, even if the codec reported a recoverable condition.
+    Ok(())
 }
-// Use image normally, even if the codec reported a recoverable condition.
-# Ok(())
-# }
 ```
 
 `image_load_with_warnings` provides the same result with default limits.
@@ -156,3 +156,37 @@ dependency deliberately, downcast `ImgError` only when present, retain their own
 error types, and enumerate warnings instead of splitting display text. A WASM
 bridge can serialize explicitly selected diagnostics for its UI without changing
 the core callback error type or requiring every caller error to be thread-safe.
+
+## Validation (2026-11-08)
+
+Verified on Windows x86-64 with Rust/Cargo 1.99.0 against baseline
+`2a195f6ee18d4b55294be081710cb00533750d6c`:
+
+- `cargo fmt -p wml2 --check`: passed.
+- `cargo test -p wml2 --test diagnostics --no-default-features`: 6 passed.
+- `cargo test -p wml2 --test diagnostics`: 7 passed.
+- `cargo test -p wml2 --test diagnostics --no-default-features --features jpeg,idct_llm`:
+  7 passed, including exact pixel equality with recoverable EXIF warnings.
+- `cargo test -p wml2 --lib --tests`: 308 passed, 5 ignored, no failures
+  across 77 library/integration targets (including feature-gated empty targets).
+- `cargo test -p wml2 --lib --tests --profile ci --features image-buffer-ex,high-bit-depth,color-management,jpeg2000,jpeg-xl,avif,avifenc,psd,tga,pcx,dds,pic2,q4`:
+  799 passed, 18 ignored, no failures across 89 targets. Ignored tests are
+  existing manual benchmarks/display artifacts, external-corpus checks, and
+  an opt-in PNG mutation campaign; they were not run.
+- `cargo test -p wml2 --doc` and
+  `cargo test -p wml2 --doc --no-default-features`: 12 passed each.
+
+The existing `review_bench` example was built in release mode on baseline and
+patched source with `--no-default-features --features jpeg,idct_llm`, then run
+as `review_bench jpeg 9`. Each case ran nine times; iteration zero was excluded
+from the reported median. Baseline then head were measured on the same machine:
+
+| JPEG case | Baseline median | Patched median | Allocations (both) | Allocated bytes (both) | Pixel hash (both) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 16 x 16 | 21,300 ns | 19,950 ns | 154 | 31,101 | 4969434112955904360 |
+| 1024 x 768 | 22,632,800 ns | 20,857,700 ns | 73,858 | 18,512,421 | 1543857408883073829 |
+
+No regression was observed in these two samples; this single-machine,
+non-randomized measurement is not a general performance claim. Pixel hashes,
+allocation counts and allocated bytes matched exactly. Decoder/encoder pixel
+arithmetic was not changed. CI completion was intentionally not awaited.

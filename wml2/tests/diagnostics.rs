@@ -22,7 +22,12 @@ fn kinds_and_sources_preserve_existing_display_and_accessors() {
     assert_eq!(wrapped.kind(), ImgErrorKind::IOError);
     assert_eq!(wrapped.to_string(), "IO error: denied");
     assert_eq!(
-        wrapped.source().unwrap().downcast_ref::<std::io::Error>().unwrap().kind(),
+        wrapped
+            .source()
+            .unwrap()
+            .downcast_ref::<std::io::Error>()
+            .unwrap()
+            .kind(),
         std::io::ErrorKind::PermissionDenied
     );
     assert!(wrapped.get_ref().unwrap().is::<std::io::Error>());
@@ -30,7 +35,12 @@ fn kinds_and_sources_preserve_existing_display_and_accessors() {
 
     let nested = ImgError::new(ImgErrorKind::DecodeError, simple_error());
     assert_eq!(
-        nested.source().unwrap().downcast_ref::<ImgError>().unwrap().kind(),
+        nested
+            .source()
+            .unwrap()
+            .downcast_ref::<ImgError>()
+            .unwrap()
+            .kind(),
         ImgErrorKind::UnexpectedEof
     );
 }
@@ -41,12 +51,24 @@ fn simple_error() -> ImgError {
 
 #[test]
 fn shared_input_limit_has_a_typed_source_without_changing_legacy_kind_or_text() {
-    let limits = DecodeLimits { input_bytes: 2, ..DecodeLimits::unlimited() };
-    let error = image_from_with_limits_and_warnings(&[0; 3], limits).err().unwrap();
+    let limits = DecodeLimits {
+        input_bytes: 2,
+        ..DecodeLimits::unlimited()
+    };
+    let error = image_from_with_limits_and_warnings(&[0; 3], limits)
+        .err()
+        .unwrap();
     let image_error = error.downcast_ref::<ImgError>().unwrap();
     assert_eq!(image_error.kind(), ImgErrorKind::OutOfMemory);
-    assert_eq!(error.to_string(), "Out of memory: input exceeds decode limit");
-    let cause = image_error.source().unwrap().downcast_ref::<DecodeLimitExceeded>().unwrap();
+    assert_eq!(
+        error.to_string(),
+        "Out of memory: input exceeds decode limit"
+    );
+    let cause = image_error
+        .source()
+        .unwrap()
+        .downcast_ref::<DecodeLimitExceeded>()
+        .unwrap();
     assert_eq!(cause.resource(), "input");
     assert_eq!(cause.requested(), 3);
     assert_eq!(cause.limit(), 2);
@@ -54,14 +76,22 @@ fn shared_input_limit_has_a_typed_source_without_changing_legacy_kind_or_text() 
     // A fallible allocator's capacity rejection is not a decode policy limit.
     let reserve = Vec::<u8>::new().try_reserve(usize::MAX).unwrap_err();
     let allocation = ImgError::new(ImgErrorKind::OutOfMemory, reserve);
-    assert!(allocation.source().unwrap().is::<std::collections::TryReserveError>());
+    assert!(
+        allocation
+            .source()
+            .unwrap()
+            .is::<std::collections::TryReserveError>()
+    );
     assert!(!allocation.source().unwrap().is::<DecodeLimitExceeded>());
 }
 
 #[test]
 fn unknown_input_keeps_the_existing_unsupported_category() {
     let error = image_load(b"not an image").err().unwrap();
-    assert_eq!(error.downcast_ref::<ImgError>().unwrap().kind(), ImgErrorKind::NoSupportFormat);
+    assert_eq!(
+        error.downcast_ref::<ImgError>().unwrap().kind(),
+        ImgErrorKind::NoSupportFormat
+    );
 }
 
 // The callback object is Send + Sync, but its returned error need not be.
@@ -75,30 +105,72 @@ impl fmt::Display for LocalCallbackError {
 impl Error for LocalCallbackError {}
 
 #[derive(Default)]
-struct CallbackProbe { abort: bool, terminations: usize }
+struct CallbackProbe {
+    abort: bool,
+    terminations: usize,
+}
 impl DrawCallback for CallbackProbe {
     fn begin_image(&mut self) -> Response {
-        if self.abort { Ok(Some(CallbackResponse::abort())) }
-        else { Err(Box::new(LocalCallbackError(std::rc::Rc::new(7)))) }
+        if self.abort {
+            Ok(Some(CallbackResponse::abort()))
+        } else {
+            Err(Box::new(LocalCallbackError(std::rc::Rc::new(7))))
+        }
     }
-    fn init(&mut self, _: usize, _: usize, _: Option<InitOptions>) -> Response { panic!("unexpected init") }
-    fn draw(&mut self, _: usize, _: usize, _: usize, _: usize, _: &[u8], _: Option<DrawOptions>) -> Response { panic!("unexpected draw") }
-    fn terminate(&mut self, _: Option<TerminateOptions>) -> Response { self.terminations += 1; Ok(None) }
-    fn next(&mut self, _: Option<NextOptions>) -> Response { panic!("unexpected next") }
-    fn verbose(&mut self, _: &str, _: Option<VerboseOptions>) -> Response { panic!("unexpected verbose") }
-    fn set_metadata(&mut self, _: &str, _: DataMap) -> Response { panic!("unexpected metadata") }
+    fn init(&mut self, _: usize, _: usize, _: Option<InitOptions>) -> Response {
+        panic!("unexpected init")
+    }
+    fn draw(
+        &mut self,
+        _: usize,
+        _: usize,
+        _: usize,
+        _: usize,
+        _: &[u8],
+        _: Option<DrawOptions>,
+    ) -> Response {
+        panic!("unexpected draw")
+    }
+    fn terminate(&mut self, _: Option<TerminateOptions>) -> Response {
+        self.terminations += 1;
+        Ok(None)
+    }
+    fn next(&mut self, _: Option<NextOptions>) -> Response {
+        panic!("unexpected next")
+    }
+    fn verbose(&mut self, _: &str, _: Option<VerboseOptions>) -> Response {
+        panic!("unexpected verbose")
+    }
+    fn set_metadata(&mut self, _: &str, _: DataMap) -> Response {
+        panic!("unexpected metadata")
+    }
 }
 
 #[test]
 fn callback_errors_remain_downcastable_and_abort_remains_success() {
     let mut callback = CallbackProbe::default();
-    let error = image_loader(&[], &mut DecodeOptions { debug_flag: 0, drawer: &mut callback }).err().unwrap();
+    let error = image_loader(
+        &[],
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut callback,
+        },
+    )
+    .err()
+    .unwrap();
     assert_eq!(*error.downcast_ref::<LocalCallbackError>().unwrap().0, 7);
     assert!(!error.is::<ImgError>());
     assert_eq!(callback.terminations, 0);
 
     callback.abort = true;
-    let warnings = image_loader(&[], &mut DecodeOptions { debug_flag: 0, drawer: &mut callback }).unwrap();
+    let warnings = image_loader(
+        &[],
+        &mut DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut callback,
+        },
+    )
+    .unwrap();
     assert!(warnings.is_none());
     assert_eq!(callback.terminations, 1);
 }
@@ -114,7 +186,9 @@ fn filesystem_errors_keep_the_original_io_type() {
 #[derive(Debug)]
 struct CallerWarning(&'static str);
 impl fmt::Display for CallerWarning {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { f.write_str(self.0) }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.0)
+    }
 }
 // Existing external marker-trait implementations need no new methods.
 impl ImgWarning for CallerWarning {}
@@ -127,8 +201,18 @@ fn warning_iteration_preserves_individual_messages_and_order() {
     assert_eq!(warnings.len(), 2);
     assert!(!warnings.is_empty());
     assert_eq!(warnings.iter().len(), 2);
-    assert_eq!(warnings.iter().map(ToString::to_string).collect::<Vec<_>>(), ["first", "second"]);
-    assert_eq!(warnings.iter().rev().map(ToString::to_string).collect::<Vec<_>>(), ["second", "first"]);
+    assert_eq!(
+        warnings.iter().map(ToString::to_string).collect::<Vec<_>>(),
+        ["first", "second"]
+    );
+    assert_eq!(
+        warnings
+            .iter()
+            .rev()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>(),
+        ["second", "first"]
+    );
     assert_eq!(warnings.to_string(), "firstsecond");
     assert_eq!(format!("{warnings:?}"), "firstsecond");
     assert!(ImgWarnings::append(None, None).is_none());
@@ -151,14 +235,33 @@ fn warning_helpers_preserve_pixels_and_expose_recoverable_exif_warning() {
     let warnings = warnings.unwrap();
     assert_eq!(warnings.len(), 1);
     assert!(warnings.iter().next().unwrap().to_string().contains("EXIF"));
-    assert_eq!((image.width, image.height), (reference.width, reference.height));
+    assert_eq!(
+        (image.width, image.height),
+        (reference.width, reference.height)
+    );
     assert_eq!(image.buffer, reference.buffer);
-    assert_eq!(image_load(&damaged_metadata).unwrap().buffer, reference.buffer);
-    let (limited, warnings) = image_from_with_limits_and_warnings(&damaged_metadata, DecodeLimits::unlimited()).unwrap();
+    assert_eq!(
+        image_load(&damaged_metadata).unwrap().buffer,
+        reference.buffer
+    );
+    let (limited, warnings) =
+        image_from_with_limits_and_warnings(&damaged_metadata, DecodeLimits::unlimited()).unwrap();
     assert_eq!(limited.buffer, reference.buffer);
     assert_eq!(warnings.unwrap().len(), 1);
 
-    let error = image_from_with_limits_and_warnings(&plain, DecodeLimits { pixels: 63, ..DecodeLimits::unlimited() }).err().unwrap();
-    let cause = error.source().unwrap().downcast_ref::<DecodeLimitExceeded>().unwrap();
+    let error = image_from_with_limits_and_warnings(
+        &plain,
+        DecodeLimits {
+            pixels: 63,
+            ..DecodeLimits::unlimited()
+        },
+    )
+    .err()
+    .unwrap();
+    let cause = error
+        .source()
+        .unwrap()
+        .downcast_ref::<DecodeLimitExceeded>()
+        .unwrap();
     assert_eq!((cause.requested(), cause.limit()), (64, 63));
 }

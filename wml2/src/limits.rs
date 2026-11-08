@@ -250,10 +250,20 @@ mod tests {
     fn shared_count_limit_preserves_category_and_exposes_all_source_accessors() {
         use crate::error::{ImgError, ImgErrorKind};
         assert!(check(8, 8, "test resource").is_ok());
-        let error = check(9, 8, "test resource").unwrap_err().downcast::<ImgError>().unwrap();
+        let error = check(9, 8, "test resource")
+            .unwrap_err()
+            .downcast::<ImgError>()
+            .unwrap();
         assert_eq!(error.kind(), ImgErrorKind::OutOfMemory);
-        assert_eq!(error.to_string(), "Out of memory: test resource exceeds decode limit");
-        let cause = error.get_ref().unwrap().downcast_ref::<DecodeLimitExceeded>().unwrap();
+        assert_eq!(
+            error.to_string(),
+            "Out of memory: test resource exceeds decode limit"
+        );
+        let cause = error
+            .get_ref()
+            .unwrap()
+            .downcast_ref::<DecodeLimitExceeded>()
+            .unwrap();
         assert_eq!(cause.resource(), "test resource");
         assert_eq!((cause.requested(), cause.limit()), (9, 8));
         assert!(error.into_inner().unwrap().is::<DecodeLimitExceeded>());
@@ -292,7 +302,11 @@ mod tests {
         assert!(check_input_length(8, 8).is_ok());
         assert!(check_input_length(9, 8).is_err());
         let error = check_input_length(beyond_classic, 1024).unwrap_err();
-        let cause = error.source().unwrap().downcast_ref::<DecodeLimitExceeded>().unwrap();
+        let cause = error
+            .source()
+            .unwrap()
+            .downcast_ref::<DecodeLimitExceeded>()
+            .unwrap();
         assert_eq!(cause.requested(), beyond_classic);
         assert_eq!(cause.limit(), 1024);
     }

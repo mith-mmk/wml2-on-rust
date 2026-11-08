@@ -1,0 +1,105 @@
+{
+  "platform": "Windows x64 NERO, Rust 1.99.0",
+  "scope": "SDR Gray/GrayAlpha animation; bounded jxl 0.8 adapter only",
+  "oracle_manifest": "../wml2/tests/fixtures/review/jxl-animation-gray.json",
+  "cases": [
+    {
+      "case": "jxl-animation-gray8",
+      "reference_sha256": "9a282e20ad5292c5ec0b8d4f06e08756635cca73b2bc07b05a0134c2448ba9e0",
+      "native_rgba16_max_error": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "reference_samples_not_divisible_by_257": 0,
+      "native_release_ns_per_decode": [
+        549222,
+        613502,
+        470694,
+        343523,
+        378992
+      ],
+      "median_native_release_ns_per_decode": 470694
+    },
+    {
+      "case": "jxl-animation-grayalpha8",
+      "reference_sha256": "b1c456061c168fcfc6505d3a8060621defccca9c190627fe78a4570bc9f2808a",
+      "native_rgba16_max_error": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "reference_samples_not_divisible_by_257": 0,
+      "native_release_ns_per_decode": [
+        594319,
+        626519,
+        564020,
+        512695,
+        431586
+      ],
+      "median_native_release_ns_per_decode": 564020
+    },
+    {
+      "case": "jxl-animation-gray16",
+      "reference_sha256": "d5294ee5e588c54856587764ba5e5a54fab02277f7b5d7ad5604c58fc3198a1f",
+      "native_rgba16_max_error": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "reference_samples_not_divisible_by_257": 6894,
+      "native_release_ns_per_decode": [
+        307057,
+        306480,
+        338140,
+        309985,
+        422215
+      ],
+      "median_native_release_ns_per_decode": 309985
+    },
+    {
+      "case": "jxl-animation-grayalpha16",
+      "reference_sha256": "5a53c91742e9a8ee7bd7c6b019af7831bf7d13cdaa7265adc408da682620a44f",
+      "native_rgba16_max_error": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "reference_samples_not_divisible_by_257": 9189,
+      "native_release_ns_per_decode": [
+        729706,
+        639179,
+        541337,
+        516672,
+        566176
+      ],
+      "median_native_release_ns_per_decode": 566176
+    }
+  ],
+  "tests": {
+    "native_gray_with_ex_and_cms": 4,
+    "existing_focused_animation": 9,
+    "minimal_jpeg_xl_gray": 3,
+    "feature_disabled_gray": 0
+  },
+  "verification": [
+    "Every native and EX RGBA16 sample equals independent libjxl reference; lossless source formulas also exact",
+    "Ordinary all-frame RGBA8 output exact after normalized rounding",
+    "sRGB all-frame output within one RGB8 unit; alpha exact",
+    "Source ICC is GRAY; RGBA output/reconstruction ICC is equivalent RGB neutral-axis profile",
+    "Arbitrary embedded Gray ICC rejected before init/draw on native, ordinary, EX and managed routes",
+    "Frame, animation-byte, expanded-byte, metadata-byte and pixel caps; every-byte truncation; trailing data; every native cancellation checkpoint; failure atomicity and recovery",
+    "Independent generator rerun reproduces hashes"
+  ],
+  "render": {
+    "file": ".test-gray-animation/gray-output-contact.png",
+    "sha256": "cbf4e17ec8faa29b989354544744368859e2ded9527185807e4141409fd594cc",
+    "inspection": "All 12 decoded frame images inspected, neutral grayscale ramps/patterns and changing transparent samples readable without corruption; checkerboard only for visualization"
+  },
+  "benchmark_method": "jpeg-xl-only release native API; 10 warmup decodes then five blocks of 200 decodes per case, Instant elapsed/200; includes full output allocation/drop; shared host",
+  "benchmark_caveat": "These are new Gray cases, not a comparison against an unsupported baseline; existing RGB/XYB before-after regression benchmark is separate. No general speed claim."
+}

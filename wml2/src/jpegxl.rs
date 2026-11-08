@@ -671,8 +671,11 @@ fn preflight_image<const ANIMATION: bool>(
             || a.tps_numerator == 0
             || a.tps_denominator == 0
             || m.preview.is_some()
-            || m.color_encoding.color_space
-                != jxl_preflight::headers::color_encoding::ColorSpace::RGB
+            || !matches!(
+                m.color_encoding.color_space,
+                jxl_preflight::headers::color_encoding::ColorSpace::RGB
+                    | jxl_preflight::headers::color_encoding::ColorSpace::Gray
+            )
             || !matches!(bits, 8 | 16)
             || m.extra_channel_info.iter().any(|c| {
                 c.ec_type != ExtraChannel::Alpha
@@ -682,7 +685,7 @@ fn preflight_image<const ANIMATION: bool>(
             })
         {
             return Err(unsupported(
-                "buffered animation requires RGB8/16, optional matching straight full-resolution Alpha, no preview/SMPTE",
+                "buffered animation requires Gray/RGB8/16, optional matching straight full-resolution Alpha, no preview/SMPTE",
             ));
         }
     }
@@ -919,9 +922,9 @@ pub(crate) fn decode_ex_inner<B: BinaryReader>(
 ) -> Result<Option<ImgWarnings>, Error> {
     decode::<B, false, false>(reader, option, true, None)
 }
-/// Decode a supported JPEG XL still into sRGB RGBA8 for display.
+/// Decode a supported JPEG XL still or bounded animation into sRGB RGBA8.
 ///
-/// Unlike the source-coordinate ordinary/EX APIs, this explicitly applies the
+/// Unlike the reconstruction-coordinate ordinary/EX APIs, this explicitly applies the
 /// own ICC engine to the codec's actual reconstructed output profile. Alpha is
 /// excluded; ICC conversion precedes final RGBA8 rounding. Requires
 /// `jpeg-xl,color-management`. Source and reconstruction profiles are retained.
@@ -946,7 +949,7 @@ pub fn image_from_srgb_with_limits(
 /// boxed error. Pre-cancellation wins over input/limit errors; otherwise errors
 /// already encountered retain precedence. No image is returned on cancellation.
 ///
-/// Checks surround codec stages, run between jxl 0.7.4 runner tasks, between
+/// Checks surround codec stages, run between jxl 0.8 runner tasks, between
 /// 256-pixel ICC batches, and before/after private output population. Individual
 /// codec tasks, serial codec work, allocation/copies, preflight, and ICC profile
 /// parsing/transform compilation are non-interruptible. There is no latency bound.

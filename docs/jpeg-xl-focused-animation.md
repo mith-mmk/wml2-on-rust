@@ -1,14 +1,18 @@
-# Bounded JPEG XL animation in WML2 0.0.42
+# Bounded JPEG XL animation
 
-Merged through [#103](https://github.com/mith-mmk/wml2-on-rust/pull/103),
+The original-profile RGB8/16 base shipped in WML2 0.0.42 through [#103](https://github.com/mith-mmk/wml2-on-rust/pull/103),
 based on the 0.8 migration [#102](https://github.com/mith-mmk/wml2-on-rust/pull/102)
 (`282056388c3d4c442be9f7275d102128e807972e`).
 Transplants #93/#94's animation processing, not their preview/HDR/extra-plane or
 public resource-policy dependencies. No encoder implementation or changes.
 
+The working-tree follow-up adds XYB RGB and SDR Gray/Gray+alpha; these additions
+are not in the published 0.0.42 package. See [Gray support](jpeg-xl-gray-animation.md)
+and [SDR integration validation](jpeg-xl-sdr-validation.md).
+
 ## Contract
 
-Common image/callback APIs decode admitted RGB8/16 (original-profile or XYB) with optional
+Common image/callback APIs decode admitted Gray/RGB8/16 (original-profile or XYB) with optional
 matching straight full-resolution Alpha. Codec coalescing applies crop/reference,
 blend and orientation once. Each displayed frame is a full canvas; invisible
 layers consume the unchanged 64-layer cap, not playback frames. Loop zero means
@@ -129,8 +133,9 @@ Validation on Windows / Rust 1.99.0:
   establish a material regression or improvement. Raw trials and method are in
   [the benchmark record](jpeg-xl-xyb-animation-benchmark.json).
 
-This follow-up does not claim a new embedded-ICC XYB animation fixture, browser
-playback QA, or fresh WASM execution. Independent 16-bit coverage is recorded below.
+At this original XYB checkpoint, no new embedded-ICC fixture, browser playback
+QA or fresh WASM execution was claimed. The later SDR follow-up below adds those
+checks within its stated scope. Independent 16-bit coverage is recorded below.
 Existing original-profile 16-bit/ICC, crop/blend/orientation and security tests
 remain passing. CI completion is not awaited; no merge or release is performed.
 
@@ -173,3 +178,24 @@ integration targets. The XYB target passes four tests with jpeg-xl only and
 compiles/runs zero tests with the feature disabled. The generator was rerun and
 produced the same codestream and reference hashes. `rustfmt --check` and
 `git diff --check` passed. CI/CD completion is not awaited.
+
+## SDR follow-up
+
+[The integration report](jpeg-xl-sdr-validation.md) records the distinct
+source/output ICC fixture, Gray support, current native/WASM checks, Viewer
+playback and before-after benchmarks. Explicit `image_from_srgb*` returns sRGB
+RGBA8 for admitted supported profiles or fails before image publication. Ordinary
+and EX APIs intentionally preserve reconstruction coordinates and tag the actual
+output ICC; their samples must not be assumed to be sRGB.
+
+The verified ICC subset is standard SDR RGB matrix/TRC, plus simple Gray signaling
+expanded to a matching neutral-axis RGB profile. Existing original-profile RGB
+ICC conversion remains available through the bounded `icc-profile` engine. The
+XYB embedded-ICC fixture verifies jxl's sRGB reconstruction fallback with an
+input profile that cannot be represented by one simple transfer function. This
+is not a promise for arbitrary ICC LUT/device-link/CMYK profiles or opaque HDR
+curves. Unsupported CMS inputs fail; no new special-ICC or HDR handling is added.
+Expansion of arbitrary Gray reconstruction/output ICC to RGBA remains explicitly
+refused even by the managed API. Embedded source ICC is separate; the tested
+refusal fixture uses original-profile Gray. XYB Gray fallback combinations are
+not claimed as verified.

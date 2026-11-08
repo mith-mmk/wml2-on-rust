@@ -1,0 +1,98 @@
+{
+  "platform": "Windows x64 NERO",
+  "rust": "1.99.0 b940084d7",
+  "base": "a072671e5796fbce38c7274eeb8a22cb31dde743",
+  "merged_main": "2a195f6",
+  "test_command": "cargo test --offline -p wml2 --features jpeg-xl,color-management,image-buffer-ex --lib --test jpeg_xl --test jpeg_xl_additional --test jpeg_xl_brob --test jpeg_xl_focused_animation --test jpeg_xl_layers --test jpeg_xl_metadata --test jpeg_xl_slice_admission --test jpeg_xl_xyb_animation --test jpeg_xl_gray_animation --test jpeg_xl_xyb_icc_animation",
+  "native_tests_per_target": [
+    87,
+    41,
+    6,
+    6,
+    9,
+    4,
+    3,
+    7,
+    10,
+    6,
+    3
+  ],
+  "native_tests_passed": 182,
+  "new_targets_minimal_tests_passed": 5,
+  "new_targets_feature_disabled_tests": 0,
+  "xyb_differing_icc": {
+    "fixture": "../wml2/tests/fixtures/review/jxl-animation-xyb-icc16.json",
+    "frames": [
+      {
+        "frame": 0,
+        "maximum_rgba_error_u16": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "sum_rgba_absolute_error": [
+          22,
+          11,
+          25,
+          0
+        ]
+      },
+      {
+        "frame": 1,
+        "maximum_rgba_error_u16": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "sum_rgba_absolute_error": [
+          28,
+          17,
+          19,
+          0
+        ]
+      },
+      {
+        "frame": 2,
+        "maximum_rgba_error_u16": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "sum_rgba_absolute_error": [
+          17,
+          19,
+          25,
+          0
+        ]
+      }
+    ],
+    "ordinary_and_managed_max_rgb8_error": 1,
+    "alpha_error": 0,
+    "source_icc_bytes": 620,
+    "output_icc_bytes": 536,
+    "source_icc_sha256": "e66b2b6d309e8869a90bb0eab8e7e5ed17a39d0b0c4725937b0b0b4fd073a238",
+    "output_icc_sha256": "72c4e9508ec4c8136b3cb708443e0557d0cb827f96bfd14b4255cbead1c0cf49",
+    "visual_inspection": "All three decoded RGBA16 frames rounded only for checkerboard display; no visible corruption"
+  },
+  "review": "Independent review found no material defects; six generated codestreams and five goldens match manifests",
+  "checks": [
+    "Changed Rust files rustfmt --check",
+    "git diff --check",
+    "ICC generator rerun reproduced codestream/reference hashes"
+  ],
+  "unclaimed": [
+    "Exhaustive Gray non-sRGB/XYB/crop/blend combinations",
+    "HDR/float input or arbitrary ICC/LUT/device-link support",
+    "All browser/OS playback behavior",
+    "CI/CD completion",
+    "Merge/release/deployment"
+  ],
+  "wasm_tests_passed": 13,
+  "viewer_core_fixtures_passed": 8,
+  "viewer_gui_fixtures_played": 8,
+  "playback_evidence": "jpeg-xl-sdr-playback-validation.json",
+  "benchmark": "jpeg-xl-sdr-benchmark.json"
+}

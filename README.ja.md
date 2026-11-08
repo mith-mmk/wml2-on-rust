@@ -60,7 +60,7 @@ $ cargo run -p wml2-test --example converter -- <inputfiles...> -o <output_dir> 
 | Q4 | x | O | `q4`: 保持色run修正済みのQ4/XLD4 raster decode |
 | WEBP         | O   | O   | Pure Rust の静止画/アニメーション decoder と静止画/アニメーション encoder、lossless/lossy 出力に対応                |
 | AVIF         | O   | O   | `avif` は decoder、`avifenc` は独立 `avifenc-rust` による encoder                                                     |
-| JPEG XL | x | O | 0.0.38の任意 `jpeg-xl`。整数 8/9/10/12/16bit 静止画、EX 高精度出力。[対応範囲と制限](docs/jpeg-xl.md) |
+| JPEG XL | x | O | 任意 `jpeg-xl`。整数 8/9/10/12/16bit 静止画と制限付き original-profile RGB8/16 animation、EX 高精度出力。[対応範囲と制限](docs/jpeg-xl.md) |
 | JPEG2000 | x | O | 非既定の `jpeg2000`。1–8bit Gray/RGB/alpha、5/3・9/7・HTJ2KのJ2K/JP2。[対応範囲と検証](docs/jpeg2000.md) |
 | PSD          | x   | O   | 既定で無効の `psd` feature。Pure RustでPSD v1の統合画像と基本ラスターレイヤーをdecode                                |
 | MAG          | x   | O   | 日本の旧画像形式。`noretoro` 指定時は無効                                                                           |
@@ -82,7 +82,7 @@ retro decoderの画素互換は、可能な範囲でImageMagickに合わせて�
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.41", features = ["tga", "pcx", "dds", "q4"] }
+wml2 = { version = "0.0.42", features = ["tga", "pcx", "dds", "q4"] }
 ```
 
 TGA encoder: `color_type = Ascii("truecolor"|"grayscale"|"indexed")` defaults to truecolor; `compression = Ascii("none"|"rle")` defaults to RLE. Truecolor `depth = UInt(24|32)` defaults to32; 24 explicitly discards alpha. Grayscale depth8/16 defaults to16, requires equal RGB channels, and depth8 rejects nonopaque pixels. Indexed depth8 uses at most256 exact colors, with `palette_depth = UInt(24|32)` default32; palette24 rejects nonopaque pixels. No implicit luminance conversion or quantization occurs. 16-bit index encoding is deferred because common external decoders disagree. Straight alpha and transparent RGB are retained on wire; existing zero-alpha decode normalization remains. Output is top-left with row-bounded packets. TGA 2.0 extension alpha types0/1 ignore stored alpha, type3 uses straight alpha, and type4 converts premultiplied samples to straight RGBA8 using nearest rounding and saturation. Type2 (undefined alpha that must be retained) and reserved types are explicitly unsupported because RGBA8 cannot preserve unused attribute bits independently of alpha. Explicit useful alpha must agree with the header/storage. Without an extension, legacy alpha behavior is retained. Pixel reads stop before the v2 footer and referenced ancillary areas; invalid offsets and truncated metadata are rejected. Other extension metadata and Huffman image types32/33 remain unsupported.
@@ -129,7 +129,7 @@ source・storage・picker outputを別々に宣言し、8bit化はExact／Round�
 単一pixelの借用参照、静止画の旧ImageBufferからの検査付き所有権移譲、
 高精度格納を維持した旧encoder用の借用adapterに対応します。
 既存のPNG/TIFF EX経路とhighresのpixel-only連携を再利用し、
-YUV・HDR・EX animationは非対応です。JPEG2000の12/16bitは下記の明示EX経路で扱います。
+0.0.42では制限付きJPEG XL animationをEXで受け取れます。YUV・HDR・animation encodeは非対応です。JPEG2000の12/16bitは下記の明示EX経路で扱います。
 [現行仕様と検証](docs/image-buffer-ex.md)を参照してください。AVIF依存は公開registryの各0.1.2で、共通bufferのsourceを統一しています。公開再エクスポート型を直接共有する利用側は、依存の版とsourceを揃えてください。**AVISは未保証**です。
 
 ## JPEG2000 のデコード
@@ -137,7 +137,7 @@ YUV・HDR・EX animationは非対応です。JPEG2000の12/16bitは下記の明�
 0.0.36から非既定の `jpeg2000` feature でPure Rust decoderを有効にできます。
 
 ```toml
-wml2 = { version = "0.0.41", features = ["jpeg2000"] }
+wml2 = { version = "0.0.42", features = ["jpeg2000"] }
 ```
 
 符号付き・符号なし1–8bitのGray/RGB、alpha、palette、sYCCをRGBA8へ変換します。
@@ -155,13 +155,27 @@ RGBA12/16をLEのnative sampleで復号できます。
 全解像度を維持します。捨てる高解像度entropyは完全検証せず、全入力とcanvasを
 保持します。資源上限は論理的な見積もりでRSS上限ではありません。
 
+## JPEG XL のデコード
+
+非既定の `jpeg-xl` featureで整数の静止画を復号できます。0.0.42では
+original-profile RGB8/16と同一深度のstraight alphaの制限付きanimationに対応します。
+pixel復号は公開 `jxl =0.8.0` を使い、`jxl =0.7.4` は確保前の制限検査用parserとして残します。
+`image-buffer-ex` で高精度出力、`color-management` で明示的なsRGB変換を有効にできます。
+
+通常callbackとImageBufferExは合成済みの全canvas frameを返します。
+callbackは整数ミリ秒で正確に表せる待ち時間だけを扱い、native RGBA16 APIは分数tickを保持します。
+XYB animation、animationのpreview/timecode、HDR、associated/subsampled alpha、
+一般extra channel、JPEG XL encodeは対象外です。大画像を含む資源上限は維持します。
+[現行ガイド](docs/jpeg-xl.md)、[animation契約](docs/jpeg-xl-focused-animation.md)、
+[0.0.42リリースノート](docs/releases/0.0.42.md)を参照してください。
+
 ## PSD decode
 
 `psd` featureはdefault featureに含まれないため、明示的に有効化します。
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.41", features = ["psd"] }
+wml2 = { version = "0.0.42", features = ["psd"] }
 ```
 
 対応データはRGBA8へ変換します。16-bit値は丸めて8-bitへ縮小します。統合画像では
@@ -199,17 +213,17 @@ PSB、1/32-bit、Lab、Multichannelは未対応として拒否します。マス
 
 ```toml
 [dependencies]
-wml2 = "0.0.41"
+wml2 = "0.0.42"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.41", features = ["noretoro"] }
+wml2 = { version = "0.0.42", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.41", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.42", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -435,6 +449,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.30`: 資源上限の強化、callback abort時の安全性、高解像度ICC/AVIF回帰検証、WebP core互換整理
 - `0.0.31`: TIFF/BigTIFFのデコード・エンコード拡張、ブロック単位の展開上限、Predictor対応、高色深度TIFF native frame
 - `0.0.32`: PCX、TGA、DDS、PIC2、Q4 decoder対応、ImageMagick互換のPCX/TGA画素正規化、converter/metadata回帰検証
+- [0.0.42 リリースノート](docs/releases/0.0.42.md)
 - [0.0.41 リリースノート](docs/releases/0.0.41.md)
 - [0.0.40 リリースノート](docs/releases/0.0.40.md)
 - [0.0.39 リリースノート](docs/releases/0.0.39.md)

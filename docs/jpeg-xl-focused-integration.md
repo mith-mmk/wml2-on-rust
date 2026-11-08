@@ -1,4 +1,4 @@
-# Focused JXL integration (unmerged)
+# Focused JXL integration in WML2 0.0.42
 
 Target: published jxl 0.8 decoding and JXL animation. No encoder implementation or changes.
 Main baseline: `f2151b2408e9d04f1bc7b4e9e29679e078a57209` (0.0.41).
@@ -43,6 +43,13 @@ useful fixes; they were not rejected merely because their bases contain unwanted
 Independent cases left untouched: #51 docs, #71 TIFF, #60 JPEG reconstruction,
 #61 encoder evaluation, #63 resources, #68 HDR and #69 progressive evaluations.
 Encoder work remains outside this task, including #61.
+
+## Released scope
+
+The focused migration #102 and animation #103 are merged for WML2 0.0.42.
+The inventory above records earlier branch decisions, not the current PR state.
+TIFF #71 is also included in 0.0.42; the broad extension stack and XYB animation
+#104 are not. See [canonical release notes](releases/0.0.42.md).
 
 ## Migration boundary
 

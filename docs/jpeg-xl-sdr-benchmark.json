@@ -1,0 +1,90 @@
+{
+  "base_commit": "a072671e5796fbce38c7274eeb8a22cb31dde743",
+  "platform": "Windows x64 NERO",
+  "rust": "1.99.0",
+  "method": "Seven alternating release blocks, 10 warmup plus 200 image_from decodes per case, no-default-features + jpeg-xl, same dependency versions. Shared host, not RSS or allocation measurement.",
+  "trials_ns_per_decode": {
+    "base": {
+      "jxl-rgb8.jxl": [
+        52728,
+        44093,
+        44498,
+        65903,
+        45126,
+        48775,
+        45105
+      ],
+      "jxl-lossy.jxl": [
+        209349,
+        217497,
+        251061,
+        258542,
+        218990,
+        248275,
+        252315
+      ],
+      "jxl-animation-main5-icc16-variable.jxl": [
+        123041,
+        124546,
+        133662,
+        161234,
+        127529,
+        125938,
+        123847
+      ],
+      "jxl-animation-xyb-rgba16.jxl": [
+        613131,
+        605652,
+        564941,
+        590925,
+        577686,
+        597791,
+        562453
+      ]
+    },
+    "current": {
+      "jxl-rgb8.jxl": [
+        55706,
+        42615,
+        40656,
+        41485,
+        42230,
+        42361,
+        48790
+      ],
+      "jxl-lossy.jxl": [
+        188674,
+        211980,
+        213226,
+        220618,
+        209933,
+        234238,
+        213272
+      ],
+      "jxl-animation-main5-icc16-variable.jxl": [
+        125932,
+        130266,
+        127843,
+        131293,
+        135068,
+        150567,
+        144654
+      ],
+      "jxl-animation-xyb-rgba16.jxl": [
+        582211,
+        600218,
+        610565,
+        604374,
+        569178,
+        582430,
+        659225
+      ]
+    }
+  },
+  "median_ratios_current_over_base": {
+    "jxl-rgb8.jxl": 0.9387271196206178,
+    "jxl-lossy.jxl": 0.8588299264928003,
+    "jxl-animation-main5-icc16-variable.jxl": 1.0425209229938541,
+    "jxl-animation-xyb-rgba16.jxl": 1.0157261919871388
+  }
+}

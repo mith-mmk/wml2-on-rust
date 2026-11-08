@@ -1,4 +1,4 @@
-//! Buffered original-profile animation; exact rational timing, atomic publication.
+//! Buffered SDR Gray/RGB animation; exact rational timing, atomic publication.
 use super::*;
 #[non_exhaustive]
 #[derive(Debug)]
@@ -24,8 +24,10 @@ pub struct JxlAnimationImage {
     pub source_header: Vec<u8>,
 }
 /// Decode every displayed frame privately, returning only after final validation.
-/// Original-profile RGB8/16, optional matching straight full-resolution Alpha;
-/// no preview, SMPTE, XYB or HDR. Exact raw ticks preserve fractional durations
+/// Gray/RGB8/16 (original-profile or XYB), optional matching straight full-resolution Alpha;
+/// no preview, SMPTE or HDR. Pixels use the reported output ICC, which may differ
+/// from the source ICC for XYB or simple Gray expanded to RGB. Arbitrary Gray output ICC
+/// expansion is refused. Exact raw ticks preserve fractional durations
 /// and visible final-zero frames without inventing a millisecond display policy.
 /// No poster duplicate, callbacks, playback, CMS or incremental publication.
 pub fn animation_rgba16_from_with_limits_and_cancel(
@@ -140,7 +142,7 @@ fn animation_with_workspace(
         .ok_or_else(|| invalid("missing codec animation timing"))?;
     if info.size != (h.width, h.height)
         || info.orientation as u8 != h.orientation
-        || !info.uses_original_profile
+        || info.uses_original_profile != h.uses_original_profile
         || !matches!(info.bit_depth,JxlBitDepth::Int{bits_per_sample}if bits_per_sample==u32::from(h.bits))
         || info.extra_channels.len() != usize::from(h.alpha_bits.is_some())
         || info
@@ -189,16 +191,19 @@ fn animation_with_workspace(
         "animation source header",
         &input.codestream[..h.source_header_bytes],
     )?;
-    let mut profile = |key: &str, p: Option<&JxlColorProfile>| -> Result<Vec<u8>, Error> {
-        let p = p
-            .ok_or_else(|| invalid("missing animation profile"))?
+    let source_icc = {
+        let p = decoder
+            .embedded_color_profile()
+            .ok_or_else(|| invalid("missing animation source profile"))?
             .try_as_icc()
-            .ok_or_else(|| unsupported("animation ICC unavailable"))?;
-        validate_icc(&p, 3)?;
-        copy(key, &p)
+            .ok_or_else(|| unsupported("animation source ICC unavailable"))?;
+        validate_icc(&p, h.color_channels)?;
+        copy("animation source ICC", &p)?
     };
-    let source_icc = profile("animation source ICC", decoder.embedded_color_profile())?;
-    let output_icc = profile("animation output ICC", decoder.output_color_profile())?;
+    let output_icc = {
+        let p = rgba_output_icc(decoder.output_color_profile())?;
+        copy("animation output ICC", &p)?
+    };
     let mut frames = Vec::new();
     frames.try_reserve_exact(n)?;
     for (index, &ticks) in plan.ticks.iter().enumerate() {
@@ -258,11 +263,7 @@ fn animation_with_workspace(
         return Err(invalid("trailing/incomplete animation stream"));
     }
     check()?;
-    let final_profile = decoder
-        .output_color_profile()
-        .ok_or_else(|| invalid("missing final animation profile"))?
-        .try_as_icc()
-        .ok_or_else(|| unsupported("final animation ICC unavailable"))?;
+    let final_profile = rgba_output_icc(decoder.output_color_profile())?;
     if final_profile.as_ref() != &output_icc {
         return Err(invalid("animation output profile changed"));
     }
@@ -284,6 +285,42 @@ fn animation_with_workspace(
         },
         workspace,
     ))
+}
+
+// A replicated simple Gray axis can be represented by an equivalent RGB
+// profile, preserving its white point, transfer and intent. An arbitrary Gray
+// ICC has no safe RGB relabeling; reject it rather than mis-tagging RGBA samples.
+fn rgba_output_icc(
+    profile: Option<&JxlColorProfile>,
+) -> Result<std::borrow::Cow<'_, Vec<u8>>, Error> {
+    let profile = profile.ok_or_else(|| invalid("missing animation output profile"))?;
+    let icc = match profile {
+        JxlColorProfile::Simple(JxlColorEncoding::GrayscaleColorSpace {
+            white_point,
+            transfer_function,
+            rendering_intent,
+        }) => std::borrow::Cow::Owned(
+            JxlColorEncoding::RgbColorSpace {
+                white_point: white_point.clone(),
+                transfer_function: transfer_function.clone(),
+                rendering_intent: *rendering_intent,
+                primaries: JxlPrimaries::SRGB,
+            }
+            .maybe_create_profile()
+            .map_err(codec_error)?
+            .ok_or_else(|| unsupported("animation Gray profile cannot be represented as RGB"))?,
+        ),
+        _ if profile.channels() == 1 => {
+            return Err(unsupported(
+                "animation Gray ICC expansion to RGBA is unsupported",
+            ));
+        }
+        _ => profile
+            .try_as_icc()
+            .ok_or_else(|| unsupported("animation output ICC unavailable"))?,
+    };
+    validate_icc(&icc, 3)?;
+    Ok(icc)
 }
 
 // Common callback boundary: all codec/CMS work is completed before init/draw.

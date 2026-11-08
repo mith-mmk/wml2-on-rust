@@ -7,6 +7,10 @@ pixel decoder are new in 0.0.42. See [release notes](releases/0.0.42.md) and the
 below retain their original revision and environment; they are not new release
 verification or a promise of full JPEG XL conformance.
 
+The unreleased working-tree follow-up adds XYB RGB8/16 and SDR Gray/Gray+alpha
+animation. It is not included in the published 0.0.42 dependency. See the
+[SDR validation and ICC scope](jpeg-xl-sdr-validation.md).
+
 The opt-in `jpeg-xl` feature uses **published `jxl =0.8.0`** for pixel decoding.
 Published 0.7.4 remains aliased only for bounded pre-allocation parsing and
 dimension inspection; see [focused integration](jpeg-xl-focused-integration.md).

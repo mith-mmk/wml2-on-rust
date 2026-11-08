@@ -2,6 +2,55 @@
 use std::cell::Cell;
 type Error = Box<dyn std::error::Error>;
 
+/// A shared decode-budget check rejected a requested resource amount.
+///
+/// This is the source of an [`crate::error::ImgError`] whose legacy kind remains
+/// [`crate::error::ImgErrorKind::OutOfMemory`]. It distinguishes a policy limit
+/// from allocation failure without changing that kind or the display message.
+/// Not every codec-specific limit or decompression bound uses this type.
+#[derive(Debug)]
+pub struct DecodeLimitExceeded {
+    resource: String,
+    requested: u64,
+    limit: u64,
+}
+
+impl DecodeLimitExceeded {
+    /// Human-readable resource label, not a stable machine-readable identifier.
+    pub fn resource(&self) -> &str {
+        &self.resource
+    }
+
+    /// Requested amount, in the same units as [`Self::limit`].
+    pub fn requested(&self) -> u64 {
+        self.requested
+    }
+
+    /// Maximum permitted amount (bytes, pixels, frames, or other counted units).
+    pub fn limit(&self) -> u64 {
+        self.limit
+    }
+}
+
+impl std::fmt::Display for DecodeLimitExceeded {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} exceeds decode limit", self.resource)
+    }
+}
+
+impl std::error::Error for DecodeLimitExceeded {}
+
+fn exceeded(resource: &str, requested: u64, limit: u64) -> Error {
+    Box::new(crate::error::ImgError::new(
+        crate::error::ImgErrorKind::OutOfMemory,
+        DecodeLimitExceeded {
+            resource: resource.to_owned(),
+            requested,
+            limit,
+        },
+    ))
+}
+
 /// Independent limits. `usize::MAX` explicitly disables a particular limit.
 #[derive(Clone, Copy, Debug)]
 pub struct DecodeLimits {
@@ -80,10 +129,7 @@ pub(crate) fn scope<T>(limits: DecodeLimits, body: impl FnOnce() -> T) -> T {
 }
 pub(crate) fn check(value: usize, limit: usize, name: &str) -> Result<(), Error> {
     if value > limit {
-        return Err(Box::new(crate::error::ImgError::new_const(
-            crate::error::ImgErrorKind::OutOfMemory,
-            format!("{name} exceeds decode limit"),
-        )));
+        return Err(exceeded(name, value as u64, limit as u64));
     }
     Ok(())
 }
@@ -92,10 +138,7 @@ pub(crate) fn check(value: usize, limit: usize, name: &str) -> Result<(), Error>
 /// usize::MAX sentinel disables the input budget without narrowing the length.
 pub(crate) fn check_input_length(length: u64, limit: usize) -> Result<(), Error> {
     if limit != usize::MAX && length > u64::try_from(limit)? {
-        return Err(Box::new(crate::error::ImgError::new_const(
-            crate::error::ImgErrorKind::OutOfMemory,
-            "input exceeds decode limit".into(),
-        )));
+        return Err(exceeded("input", length, limit as u64));
     }
     Ok(())
 }
@@ -203,6 +246,29 @@ fn inflate_bounded(mut input: &[u8], limit: usize) -> Result<Vec<u8>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shared_count_limit_preserves_category_and_exposes_all_source_accessors() {
+        use crate::error::{ImgError, ImgErrorKind};
+        assert!(check(8, 8, "test resource").is_ok());
+        let error = check(9, 8, "test resource")
+            .unwrap_err()
+            .downcast::<ImgError>()
+            .unwrap();
+        assert_eq!(error.kind(), ImgErrorKind::OutOfMemory);
+        assert_eq!(
+            error.to_string(),
+            "Out of memory: test resource exceeds decode limit"
+        );
+        let cause = error
+            .get_ref()
+            .unwrap()
+            .downcast_ref::<DecodeLimitExceeded>()
+            .unwrap();
+        assert_eq!(cause.resource(), "test resource");
+        assert_eq!((cause.requested(), cause.limit()), (9, 8));
+        assert!(error.into_inner().unwrap().is::<DecodeLimitExceeded>());
+    }
+
     #[cfg(any(feature = "gif", feature = "bmp", feature = "tiff"))]
     #[test]
     fn legacy_metadata_scope_accumulates_and_preserves_outer_charges() {
@@ -235,6 +301,14 @@ mod tests {
         assert!(check_input_length(beyond_classic, usize::MAX).is_ok());
         assert!(check_input_length(8, 8).is_ok());
         assert!(check_input_length(9, 8).is_err());
+        let error = check_input_length(beyond_classic, 1024).unwrap_err();
+        let cause = error
+            .source()
+            .unwrap()
+            .downcast_ref::<DecodeLimitExceeded>()
+            .unwrap();
+        assert_eq!(cause.requested(), beyond_classic);
+        assert_eq!(cause.limit(), 1024);
     }
     #[test]
     fn inflation_and_aggregate_metadata_stop_at_the_budget() {

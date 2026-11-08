@@ -23,6 +23,12 @@ reduction. ImageBuffer WebP animation encoding borrows frame pixels.
 See the [implementation and compatibility record](docs/review-plan-progress.md)
 for defaults, API scope, validation, and [measured tradeoffs](docs/review-performance.md).
 
+Use `ImgError::kind()` and `Error::source()` instead of parsing error text.
+`image_load_with_warnings` / `image_from_with_limits_and_warnings` retain
+recoverable warnings, and `ImgWarnings::iter()` exposes each message separately.
+See [errors and warnings](docs/diagnostics.md) for the compatibility contract,
+typed shared-limit causes, and codec-specific limits of this information.
+
 ## Examples
 
 See `wml2-test/examples`.

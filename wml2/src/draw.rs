@@ -937,6 +937,9 @@ pub fn image_encoder_ex_with_limits(
 
 /// Decodes an image from memory into an [`ImageBuffer`].
 ///
+/// This compatibility helper discards recoverable warnings. Use
+/// [`image_load_with_warnings`] when the caller needs to display them.
+///
 /// # Examples
 /// This example requires the `png` feature.
 ///
@@ -1139,6 +1142,9 @@ pub fn convert(
 
 /// Decodes an image from memory into an [`ImageBuffer`].
 ///
+/// This compatibility helper discards recoverable warnings. Use
+/// [`image_load_with_warnings`] when the caller needs to display them.
+///
 /// # Examples
 /// This example requires the `png` feature.
 ///
@@ -1158,6 +1164,16 @@ pub fn convert(
 /// ```
 pub fn image_load(buffer: &[u8]) -> Result<ImageBuffer, Error> {
     image_from_with_limits(buffer, crate::limits::DecodeLimits::default())
+}
+
+/// Decodes an in-memory image and preserves the decoder's recoverable warnings.
+///
+/// Uses default resource limits. The warnings are not a complete validation
+/// report; no warning means only that the decoder did not report one.
+pub fn image_load_with_warnings(
+    buffer: &[u8],
+) -> Result<(ImageBuffer, Option<ImgWarnings>), Error> {
+    image_from_with_limits_and_warnings(buffer, crate::limits::DecodeLimits::default())
 }
 
 /// Decodes an in-memory image into a custom [`DrawCallback`].
@@ -1295,13 +1311,27 @@ pub fn image_decoder_with_limits<B: BinaryReader>(
     crate::decode_guard::run(reader, option, limits, image_decoder_inner)
 }
 
-/// Decode an in-memory image with explicit resource limits.
+/// Decode an in-memory image with explicit resource limits, discarding warnings.
+/// Use [`image_from_with_limits_and_warnings`] to retain recoverable diagnostics.
 pub fn image_from_with_limits(
     buffer: &[u8],
     limits: crate::limits::DecodeLimits,
 ) -> Result<ImageBuffer, Error> {
+    image_from_with_limits_and_warnings(buffer, limits).map(|(image, _warnings)| image)
+}
+
+/// Decode an in-memory image with explicit limits and retain reported warnings.
+///
+/// Pixel decoding, metadata and recovery behavior are the same as
+/// [`image_from_with_limits`]; only the otherwise discarded warnings are returned.
+/// EX callers can retain warnings through `image_decoder_ex_with_limits`
+/// (requires `image-buffer-ex`).
+pub fn image_from_with_limits_and_warnings(
+    buffer: &[u8],
+    limits: crate::limits::DecodeLimits,
+) -> Result<(ImageBuffer, Option<ImgWarnings>), Error> {
     let mut image = ImageBuffer::new();
-    image_decoder_from_slice(
+    let warnings = image_decoder_from_slice(
         buffer,
         &mut DecodeOptions {
             debug_flag: 0,
@@ -1309,7 +1339,7 @@ pub fn image_from_with_limits(
         },
         limits,
     )?;
-    Ok(image)
+    Ok((image, warnings))
 }
 
 // Borrow JXL input through existing BinaryReader/guard APIs so admission runs

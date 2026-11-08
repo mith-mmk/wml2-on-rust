@@ -21,6 +21,12 @@
 既定上限とAPIの適用範囲は[実装・互換性記録](docs/review-plan-progress.md)、
 性能とトレードオフは[測定結果](docs/review-performance.md)を参照してください。
 
+エラー文字列を照合する代わりに `ImgError::kind()` / `Error::source()` を利用できます。
+`image_load_with_warnings` / `image_from_with_limits_and_warnings` は回復可能な警告を保持し、
+`ImgWarnings::iter()` で個別に列挙できます。既存APIは変更しません。
+共通上限エラーの型付き原因と、codecごとの分類・警告取得範囲は
+[エラーと警告の契約](docs/diagnostics.md)を参照してください。
+
 ## 実装例
 
 `wml2-test/examples` を参照してください。

@@ -36,7 +36,7 @@ path = "lib.rs"
 [dependencies]
 wml2 = {{path={crate_path},default-features=false,features=["jpeg-xl","color-management","image-buffer-ex"]}}
 jxl_preflight = {{package="jxl",version="=0.7.4",default-features=false}}
-bin-rs = {{version="0.0.10",features=["util"]}}
+bin-rs = {{version="0.0.11",features=["util"]}}
 miniz_oxide = "0.7.1"
 [features]
 default=["jpeg-xl","color-management","image-buffer-ex"]

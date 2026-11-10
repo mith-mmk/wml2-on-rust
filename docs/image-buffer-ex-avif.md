@@ -4,7 +4,7 @@ AVIF の WML2 adapter を EX の入力宣言・保存・明示出力要求へ接
 既存 `image_decoder` / `image_encoder`、native highres API、依存 crate の
 公開 API と gitlink は変更しない。新 crate、wmlcore 分離、paintcore 統合は行わない。
 
-現在の依存は、公開registryの`avif-rust 0.1.2`／`avifenc-rust 0.1.2`と
+現在の依存は、公開registryの`avif-rust 0.2.0`／`avifenc-rust 0.1.2`と
 共通`avif-image-buffer 0.1.0`を利用する。再エクスポート型を直接共有する利用側は
 依存の版とsourceを揃える必要がある。**AVISは未保証**で、静止画統合の範囲は
 [0.0.37リリースノート](releases/0.0.37.md)を参照。
@@ -30,7 +30,7 @@ YUV plane や AVIF 型を追加しない。decode は codec が生成する正�
 そのまま宣言し、storage への変換は Callback が行う。10bit の EX enum は作らない。
 YUV→RGB の丸め・clamp と、EX の入力→保存の精度変換を区別する。
 
-公開済み `avif-rust = 0.1.2` / `avifenc-rust = 0.1.2` を registry から使う。
+公開済み `avif-rust = 0.2.0` / `avifenc-rust = 0.1.2` を registry から使う。
 両 codec の `buffer` re-export は同じ registry `avif-image-buffer = 0.1.0` を指す。
 追跡済み Cargo.lock の source/checksum を固定し、local path override は使わない。
 gitlink は独立 codec の oracle fixture 用に維持するが、WML2 の本番依存ではない。

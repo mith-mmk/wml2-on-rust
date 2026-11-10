@@ -42,7 +42,7 @@ def main():
             for wavelet in ['53','97']:
                 extra.append('Zero{data:include_bytes!('+json.dumps(str(fixtures/f'jp2_reduced_odd_{bits}b_{nc}c_{wavelet}.jp2'))+f'),bits:{bits},nc:{nc}'+'},')
     cargo = '[package]\nname="jpeg2000-reduced-wasm-check"\nversion="0.0.0"\nedition="2024"\n[workspace]\n[features]\ndefault=["image-buffer-ex"]\nimage-buffer-ex=["wml2/image-buffer-ex"]\n[lib]\npath="lib.rs"\ncrate-type=["cdylib"]\n[dependencies]\n'
-    cargo += 'wml2={path='+json.dumps(str(root/'wml2'))+',default-features='+str(args.default_features).lower()+',features=["jpeg2000"]}\nbin-rs={version="0.0.10",features=["util"]}\n'
+    cargo += 'wml2={path='+json.dumps(str(root/'wml2'))+',default-features='+str(args.default_features).lower()+',features=["jpeg2000"]}\nbin-rs={version="0.0.11",features=["util"]}\n'
     position_fields=(fixtures/'jpeg2000-reduced-packet-positions.txt').read_text().split()
     position_values=dict(zip(['eph','payload_start','payload_end','plt','tlm_length','sot_length'],position_fields[1:]))
     packet_constants='static PACKET:&[u8]=include_bytes!('+json.dumps(str(fixtures/position_fields[0]))+');\n'

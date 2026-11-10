@@ -144,7 +144,7 @@ path = "lib.rs"
 crate-type = ["cdylib"]
 [dependencies]
 wml2 = {{ path = {json.dumps(str(repo / 'wml2'), ensure_ascii=False)}, default-features = {default}, features = ["jpeg2000"] }}
-bin-rs = {{ version = "0.0.10", features = ["util"] }}
+bin-rs = {{ version = "0.0.11", features = ["util"] }}
 ''')
 entries = '\n'.join(
     f'Case {{ encoded: include_bytes!({json.dumps(str(p), ensure_ascii=False)}), source: include_bytes!({json.dumps(str(s), ensure_ascii=False)}), '

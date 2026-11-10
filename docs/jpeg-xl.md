@@ -1,15 +1,13 @@
 # JPEG XL decoding
 
-WML2 0.0.42 supports bounded integer still images and original-profile RGB8/16
-animation. Still-image support began in 0.0.38; bounded animation and the 0.8
-pixel decoder are new in 0.0.42. See [release notes](releases/0.0.42.md) and the
-[animation contract](jpeg-xl-focused-animation.md). Historical measurements
+WML2 0.0.43 supports bounded integer still images and SDR RGB/Gray8/16
+animation. Still-image support began in 0.0.38; original-profile RGB animation
+and the 0.8 pixel decoder shipped in 0.0.42. Version 0.0.43 adds bounded XYB
+RGB8/16 and Gray/Gray+alpha animation. See [release notes](releases/0.0.43.md),
+the [animation contract](jpeg-xl-focused-animation.md), and
+[SDR validation and ICC scope](jpeg-xl-sdr-validation.md). Historical measurements
 below retain their original revision and environment; they are not new release
 verification or a promise of full JPEG XL conformance.
-
-The unreleased working-tree follow-up adds XYB RGB8/16 and SDR Gray/Gray+alpha
-animation. It is not included in the published 0.0.42 dependency. See the
-[SDR validation and ICC scope](jpeg-xl-sdr-validation.md).
 
 The opt-in `jpeg-xl` feature uses **published `jxl =0.8.0`** for pixel decoding.
 Published 0.7.4 remains aliased only for bounded pre-allocation parsing and
@@ -19,7 +17,7 @@ for high-precision callback output. No C library, image-rs, CMS, SIMD or thread
 pool is pulled into the runtime by this feature.
 
 ```toml
-wml2 = { version = "0.0.42", features = ["jpeg-xl", "image-buffer-ex"] }
+wml2 = { version = "0.0.43", features = ["jpeg-xl", "image-buffer-ex"] }
 ```
 
 ```rust
@@ -70,7 +68,7 @@ the entire Level10 profile. Native JPEG bitstream reconstruction is not implemen
 ## Colour and source metadata
 
 JPEG XL's own XYB→RGB reconstruction stays inside `jxl`. The existing ordinary
-and EX APIs retain their source-coordinate colour contract. With
+and EX APIs return reconstruction-coordinate samples with their output profile. With
 `jpeg-xl,color-management`, `jpegxl::image_from_srgb` and
 `image_from_srgb_with_limits` explicitly produce sRGB RGBA8 through the own
 ICC engine, after16-bit reconstruction and before final rounding. They support
@@ -324,7 +322,8 @@ The still-image tests now cover all eight orientation values. Current remaining
 limits include fixed resource caps, arbitrary Gray ICC expansion without a CMS,
 float/HDR output or tone mapping, preview extraction, resumable/provisional
 output, associated/subsampled alpha, general extra channels, original JPEG
-reconstruction and JPEG XL encoding. XYB animation is not part of 0.0.42.
+reconstruction and JPEG XL encoding. XYB and SDR Gray animation are added in
+0.0.43; they were not part of 0.0.42.
 
 ## Output orientation contract
 
@@ -354,10 +353,12 @@ canvas before codec work, even for ordinary output. Existing same-depth/native
 Gray layouts and refusal of associated/subsampled/general extra planes remain.
 See [the bounded subset, independent oracles and upstream evaluation](jpeg-xl-alpha.md).
 
-## Bounded animation in 0.0.42
+## Bounded animation in 0.0.43
 
-Common/EX callbacks and explicit sRGB APIs now accept coalesced original-profile
-RGB8/16 animations with optional matching straight full-resolution alpha.
+Common/EX callbacks and explicit sRGB APIs accept coalesced RGB8/16 animations
+(original-profile or XYB) and SDR Gray/Gray+alpha8/16, with optional matching
+straight full-resolution alpha. Version 0.0.42 introduced the original-profile
+RGB subset; 0.0.43 extends it to XYB and Gray.
 Every displayed frame is a complete oriented canvas; crop/reference/blend work
 is done by the codec. Loop count zero means indefinite repetition, and the
 poster is the first frame rather than an extra delay.
@@ -372,6 +373,7 @@ Pixel decode, final input validation, CMS and output preparation complete before
 callback initialization. Callback Abort/error behavior remains explicit and
 owned-output failure/cancellation returns no partial image. Existing resource
 limits and the 64-internal-layer bound remain. Preview-bearing animation,
-timecodes, XYB/HDR, associated/subsampled or mixed-depth animation alpha and
-general extra channels remain unsupported. See the
+timecodes, HDR/float/tone mapping, arbitrary Gray reconstruction ICC expansion,
+associated/subsampled or mixed-depth animation alpha and general extra channels
+remain unsupported. See the
 [full animation contract and historical validation](jpeg-xl-focused-animation.md).

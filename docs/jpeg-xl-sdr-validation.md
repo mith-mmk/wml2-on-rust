@@ -1,7 +1,7 @@
 # SDR JPEG XL follow-up validation
 
-This unreleased follow-up completes the bounded XYB work in #104 and adds
-Gray/Gray+alpha. It starts from `a072671e`, merges the 0.0.42 documentation/version
+This historical pre-release validation covers the follow-up, now in WML2 0.0.43,
+which completes the bounded XYB work in #104 and adds Gray/Gray+alpha. It starts from `a072671e`, merges the 0.0.42 documentation/version
 base (`2a195f6`), and keeps decoding/coalescing in published `jxl =0.8.0`.
 No encoder, codec fork, new public resource policy, HDR path or general extra
 channel handling is added. Published WML2 0.0.42 does not contain these changes.

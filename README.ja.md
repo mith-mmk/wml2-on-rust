@@ -88,7 +88,7 @@ retro decoderの画素互換は、可能な範囲でImageMagickに合わせて�
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.42", features = ["tga", "pcx", "dds", "q4"] }
+wml2 = { version = "0.0.43", features = ["tga", "pcx", "dds", "q4"] }
 ```
 
 TGA encoder: `color_type = Ascii("truecolor"|"grayscale"|"indexed")` defaults to truecolor; `compression = Ascii("none"|"rle")` defaults to RLE. Truecolor `depth = UInt(24|32)` defaults to32; 24 explicitly discards alpha. Grayscale depth8/16 defaults to16, requires equal RGB channels, and depth8 rejects nonopaque pixels. Indexed depth8 uses at most256 exact colors, with `palette_depth = UInt(24|32)` default32; palette24 rejects nonopaque pixels. No implicit luminance conversion or quantization occurs. 16-bit index encoding is deferred because common external decoders disagree. Straight alpha and transparent RGB are retained on wire; existing zero-alpha decode normalization remains. Output is top-left with row-bounded packets. TGA 2.0 extension alpha types0/1 ignore stored alpha, type3 uses straight alpha, and type4 converts premultiplied samples to straight RGBA8 using nearest rounding and saturation. Type2 (undefined alpha that must be retained) and reserved types are explicitly unsupported because RGBA8 cannot preserve unused attribute bits independently of alpha. Explicit useful alpha must agree with the header/storage. Without an extension, legacy alpha behavior is retained. Pixel reads stop before the v2 footer and referenced ancillary areas; invalid offsets and truncated metadata are rejected. Other extension metadata and Huffman image types32/33 remain unsupported.
@@ -143,7 +143,7 @@ source・storage・picker outputを別々に宣言し、8bit化はExact／Round�
 0.0.36から非既定の `jpeg2000` feature でPure Rust decoderを有効にできます。
 
 ```toml
-wml2 = { version = "0.0.42", features = ["jpeg2000"] }
+wml2 = { version = "0.0.43", features = ["jpeg2000"] }
 ```
 
 符号付き・符号なし1–8bitのGray/RGB、alpha、palette、sYCCをRGBA8へ変換します。
@@ -163,17 +163,18 @@ RGBA12/16をLEのnative sampleで復号できます。
 
 ## JPEG XL のデコード
 
-非既定の `jpeg-xl` featureで整数の静止画を復号できます。0.0.42では
-original-profile RGB8/16と同一深度のstraight alphaの制限付きanimationに対応します。
+非既定の `jpeg-xl` featureで整数の静止画と制限付きanimationを復号できます。
+0.0.43ではoriginal-profile RGB8/16に加え、XYB RGB8/16とSDR Gray/Gray+alpha8/16に対応します。
+alphaは同一深度・straight・full-resolutionに限定します。
 pixel復号は公開 `jxl =0.8.0` を使い、`jxl =0.7.4` は確保前の制限検査用parserとして残します。
 `image-buffer-ex` で高精度出力、`color-management` で明示的なsRGB変換を有効にできます。
 
 通常callbackとImageBufferExは合成済みの全canvas frameを返します。
 callbackは整数ミリ秒で正確に表せる待ち時間だけを扱い、native RGBA16 APIは分数tickを保持します。
-XYB animation、animationのpreview/timecode、HDR、associated/subsampled alpha、
+任意のGray reconstruction ICCのRGB展開、animationのpreview/timecode、HDR、associated/subsampled alpha、
 一般extra channel、JPEG XL encodeは対象外です。大画像を含む資源上限は維持します。
 [現行ガイド](docs/jpeg-xl.md)、[animation契約](docs/jpeg-xl-focused-animation.md)、
-[0.0.42リリースノート](docs/releases/0.0.42.md)を参照してください。
+[0.0.43リリースノート](docs/releases/0.0.43.md)を参照してください。
 
 ## PSD decode
 
@@ -181,7 +182,7 @@ XYB animation、animationのpreview/timecode、HDR、associated/subsampled alpha
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.42", features = ["psd"] }
+wml2 = { version = "0.0.43", features = ["psd"] }
 ```
 
 対応データはRGBA8へ変換します。16-bit値は丸めて8-bitへ縮小します。統合画像では
@@ -219,17 +220,17 @@ PSB、1/32-bit、Lab、Multichannelは未対応として拒否します。マス
 
 ```toml
 [dependencies]
-wml2 = "0.0.42"
+wml2 = "0.0.43"
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.42", features = ["noretoro"] }
+wml2 = { version = "0.0.43", features = ["noretoro"] }
 ```
 
 ```toml
 [dependencies]
-wml2 = { version = "0.0.42", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
+wml2 = { version = "0.0.43", default-features = false, features = ["jpeg", "png", "exif", "idct_aan"] }
 ```
 
 ## エンコードと変換オプション
@@ -455,6 +456,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 - `0.0.30`: 資源上限の強化、callback abort時の安全性、高解像度ICC/AVIF回帰検証、WebP core互換整理
 - `0.0.31`: TIFF/BigTIFFのデコード・エンコード拡張、ブロック単位の展開上限、Predictor対応、高色深度TIFF native frame
 - `0.0.32`: PCX、TGA、DDS、PIC2、Q4 decoder対応、ImageMagick互換のPCX/TGA画素正規化、converter/metadata回帰検証
+- [0.0.43 リリースノート](docs/releases/0.0.43.md)
 - [0.0.42 リリースノート](docs/releases/0.0.42.md)
 - [0.0.41 リリースノート](docs/releases/0.0.41.md)
 - [0.0.40 リリースノート](docs/releases/0.0.40.md)

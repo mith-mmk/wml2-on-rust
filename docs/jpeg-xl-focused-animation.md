@@ -6,8 +6,8 @@ based on the 0.8 migration [#102](https://github.com/mith-mmk/wml2-on-rust/pull/
 Transplants #93/#94's animation processing, not their preview/HDR/extra-plane or
 public resource-policy dependencies. No encoder implementation or changes.
 
-The working-tree follow-up adds XYB RGB and SDR Gray/Gray+alpha; these additions
-are not in the published 0.0.42 package. See [Gray support](jpeg-xl-gray-animation.md)
+WML2 0.0.43 adds XYB RGB and SDR Gray/Gray+alpha; these additions
+were not in the 0.0.42 package. See [Gray support](jpeg-xl-gray-animation.md)
 and [SDR integration validation](jpeg-xl-sdr-validation.md).
 
 ## Contract

@@ -1,5 +1,5 @@
 # Unreleased
 
-The bounded JPEG XL SDR animation and additive diagnostics changes are recorded
-in the canonical [0.0.43 release notes](0.0.43.md).
+The published reader and codec dependency alignment is recorded in the canonical
+[0.0.44 release notes](0.0.44.md).
 No additional unreleased changes are listed here.

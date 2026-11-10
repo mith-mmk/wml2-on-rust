@@ -17,7 +17,7 @@ for high-precision callback output. No C library, image-rs, CMS, SIMD or thread
 pool is pulled into the runtime by this feature.
 
 ```toml
-wml2 = { version = "0.0.43", features = ["jpeg-xl", "image-buffer-ex"] }
+wml2 = { version = "0.0.44", features = ["jpeg-xl", "image-buffer-ex"] }
 ```
 
 ```rust

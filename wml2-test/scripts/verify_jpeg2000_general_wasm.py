@@ -33,7 +33,7 @@ path="lib.rs"
 crate-type=["cdylib"]
 [dependencies]
 wml2={{path={json.dumps(str(repo/'wml2'))},default-features={str(args.default_features).lower()},features=["jpeg2000"]}}
-bin-rs={{version="0.0.11",features=["util"]}}
+bin-rs={{version="0.1.0",features=["util"]}}
 ''')
 rust=r'''
 use bin_rs::reader::BytesReader;

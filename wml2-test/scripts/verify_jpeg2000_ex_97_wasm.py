@@ -36,7 +36,7 @@ def main():
         '[workspace]\n[lib]\npath="lib.rs"\ncrate-type=["cdylib"]\n[dependencies]\n'
         f'wml2={{path={json.dumps(str(repo / "wml2"))},default-features={str(args.default_features).lower()},'
         'features=["jpeg2000","image-buffer-ex"]}\n'
-        'bin-rs={version="0.0.11",features=["util"]}\n')
+        'bin-rs={version="0.1.0",features=["util"]}\n')
     (work / 'lib.rs').write_text('#[allow(dead_code)] #[path=' + json.dumps(str(base_checks)) + '] mod checks;\n#[path=' + json.dumps(str(source)) + '] mod irreversible;\n#[allow(dead_code)] #[path=' + json.dumps(str(color_checks)) + '] mod color;\n' + r'''
 struct Case { input: &'static [u8], expected: &'static [u8], bits: u8, w: usize, h: usize, nc: usize, extra: bool }
 static CASES: &[Case] = &[ENTRIES];

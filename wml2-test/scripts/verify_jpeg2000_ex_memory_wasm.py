@@ -23,7 +23,7 @@ def main():
     rejected=[]
     for name in ['gray','color']:
         rejected += ['include_bytes!('+json.dumps(str(fixtures/f['input']))+'),'for f in json.loads((fixtures/f'jpeg2000-ex-{name}-rejected.json').read_text())]
-    (work/'Cargo.toml').write_text('[package]\nname="jpeg2000-ex-memory-wasm-check"\nversion="0.0.0"\nedition="2024"\n[workspace]\n[lib]\npath="lib.rs"\ncrate-type=["cdylib"]\n[dependencies]\n'+f'wml2={{path={json.dumps(str(repo/"wml2"))},default-features={str(args.default_features).lower()},features=["jpeg2000","image-buffer-ex"]}}\n'+'bin-rs={version="0.0.11",features=["util"]}\n')
+    (work/'Cargo.toml').write_text('[package]\nname="jpeg2000-ex-memory-wasm-check"\nversion="0.0.0"\nedition="2024"\n[workspace]\n[lib]\npath="lib.rs"\ncrate-type=["cdylib"]\n[dependencies]\n'+f'wml2={{path={json.dumps(str(repo/"wml2"))},default-features={str(args.default_features).lower()},features=["jpeg2000","image-buffer-ex"]}}\n'+'bin-rs={version="0.1.0",features=["util"]}\n')
     (work/'lib.rs').write_text('#[path='+json.dumps(str(source))+'] mod checks;\n'+r'''
 struct Case{data:&'static[u8],bits:u8,w:usize,h:usize,nc:usize,extra:bool}
 static CASES:&[Case]=&[ENTRIES];

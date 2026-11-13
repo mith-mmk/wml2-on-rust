@@ -9,3 +9,6 @@ pub mod warning;
 
 mod scaled;
 pub use scaled::{JpegScale, ScaledJpegImage, image_from_scaled, image_from_scaled_with_limits};
+
+#[cfg(test)]
+mod cmyk_tests;

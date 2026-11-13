@@ -13,7 +13,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
     reader: &mut B,
     header: &mut JpegHaeder,
     option: &mut DecodeOptions,
-    warnings: Option<ImgWarnings>,
+    mut warnings: Option<ImgWarnings>,
 ) -> Result<Option<ImgWarnings>, Error> {
     let width = header.width;
     let height = header.height;
@@ -23,6 +23,8 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
     let plane = fh.plane;
     let mut _huffman_scan_header;
 
+    let mut cmyk = JpegCmyk::prepare(header, &mut warnings)?;
+    let mut packed = Vec::new();
     // decode
     option.drawer.init(width, height, InitOptions::new())?;
 
@@ -163,16 +165,15 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                     "scan header has no components".to_string(),
                 )) as Error
             })?;
-            let mut scanfirst = 0;
-            let mut i = 0;
-            for scannumber in 0..scan.len() {
-                let slot = &scan_slots[scannumber];
-                if slot.component_index + 1 == first_component && slot.is_first {
-                    scanfirst = scannumber;
-                    i = slot.component_index;
-                    break;
-                }
-            }
+            let scanfirst = scan_slots
+                .iter()
+                .position(|slot| {
+                    component[slot.component_index].c == first_component && slot.is_first
+                })
+                .ok_or_else(|| {
+                    std::io::Error::other("JPEG scan references unknown component ID")
+                })?;
+            let i = scan_slots[scanfirst].component_index;
 
             // A noninterleaved scan counts component blocks, not frame MCUs.
             let columns = (width * component[i].h + dx - 1) / dx;
@@ -300,19 +301,31 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                         let ff = idct(&zz);
                                         mcu_units.push(ff);
                                     }
-                                    let data = convert_rgb(
-                                        plane,
-                                        &mcu_units,
-                                        &component,
-                                        fh.color_space.to_string(),
-                                        (h_max, v_max),
-                                    );
+                                    if let Some(cmyk) = cmyk.as_mut() {
+                                        packed_cmyk(
+                                            &mcu_units,
+                                            &component,
+                                            (h_max, v_max),
+                                            fh.color_space == "YCcK",
+                                            cmyk.adobe,
+                                            &mut packed,
+                                        );
+                                        cmyk.convert(&mut packed)?;
+                                    } else {
+                                        packed = convert_rgb(
+                                            plane,
+                                            &mcu_units,
+                                            &component,
+                                            fh.color_space.to_string(),
+                                            (h_max, v_max),
+                                        );
+                                    }
                                     option.drawer.draw(
                                         mcu_x * dx,
                                         mcu_y * dy,
                                         dx,
                                         dy,
-                                        &data,
+                                        &packed,
                                         None,
                                     )?;
                                 }

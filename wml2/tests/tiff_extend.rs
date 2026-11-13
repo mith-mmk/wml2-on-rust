@@ -1409,3 +1409,137 @@ impl Seek for SparseReader {
         Ok(self.pos)
     }
 }
+
+#[test]
+fn cmyk_native_integer_fallback_warns_once_and_preserves_alpha() {
+    for bits in [6u16, 8, 16, 32] {
+        for be in [false, true] {
+            let maximum = if bits == 32 {
+                u32::MAX
+            } else {
+                (1u32 << bits) - 1
+            };
+            let values = [
+                maximum / 5,
+                maximum / 3,
+                maximum / 2,
+                maximum / 7,
+                maximum / 4,
+            ];
+            let mut raw = Vec::new();
+            for _ in 0..257 {
+                for value in values {
+                    match bits {
+                        8 => raw.push(value as u8),
+                        16 => put_u16(&mut raw, value as u16, be),
+                        32 => put_u32(&mut raw, value, be),
+                        _ => {}
+                    }
+                }
+            }
+            if bits == 6 {
+                raw.resize((257 * 5 * 6 + 7) / 8, 0);
+                for sample in 0..257 * 5 {
+                    for bit in 0..6 {
+                        let offset = sample * 6 + bit;
+                        raw[offset / 8] |=
+                            (((values[sample % 5] >> (5 - bit)) & 1) as u8) << (7 - offset % 8);
+                    }
+                }
+            }
+            let mut p = page(257, 1, &vec![bits; 5], 5, 5, vec![raw]);
+            p.extra = vec![2];
+            p.icc = b"broken".to_vec();
+            let (image, warning) =
+                wml2::draw::image_load_with_warnings(&build_pages(&[p], Variant::Classic, be))
+                    .unwrap();
+            assert_eq!(warning.unwrap().len(), 1);
+            let max = u128::from(maximum);
+            let q = |value: u128| ((value * 255 + max / 2) / max) as u8;
+            let expected = [
+                q(((max - u128::from(values[0])) * (max - u128::from(values[3])) + max / 2) / max),
+                q(((max - u128::from(values[1])) * (max - u128::from(values[3])) + max / 2) / max),
+                q(((max - u128::from(values[2])) * (max - u128::from(values[3])) + max / 2) / max),
+                q(u128::from(values[4])),
+            ];
+            assert_eq!(
+                image.buffer.unwrap(),
+                expected.repeat(257),
+                "bits={bits}, be={be}"
+            );
+        }
+    }
+}
+
+#[cfg(feature = "color-management")]
+#[path = "common/cmyk_profile.rs"]
+mod cmyk_test_profile;
+
+#[cfg(feature = "color-management")]
+#[test]
+fn cmyk_icc_preserves_native_precision_and_alpha() {
+    for bits in [6u16, 8, 16, 32] {
+        for be in [false, true] {
+            let maximum = if bits == 32 {
+                u32::MAX
+            } else {
+                (1u32 << bits) - 1
+            };
+            let values = [
+                maximum / 5,
+                maximum / 3,
+                maximum / 2,
+                maximum / 7,
+                maximum / 4,
+            ];
+            let mut raw = Vec::new();
+            for value in values {
+                match bits {
+                    8 => raw.push(value as u8),
+                    16 => put_u16(&mut raw, value as u16, be),
+                    32 => put_u32(&mut raw, value, be),
+                    _ => {}
+                }
+            }
+            if bits == 6 {
+                raw.resize(4, 0);
+                for sample in 0..5 {
+                    for bit in 0..6 {
+                        let offset = sample * 6 + bit;
+                        raw[offset / 8] |=
+                            (((values[sample] >> (5 - bit)) & 1) as u8) << (7 - offset % 8);
+                    }
+                }
+            }
+            let mut p = page(1, 1, &vec![bits; 5], 5, 5, vec![raw]);
+            p.extra = vec![2];
+            let plain = build_pages(&[p.clone()], Variant::Classic, be);
+            p.icc = cmyk_test_profile::cmyk_profile();
+            let (image, warning) =
+                wml2::draw::image_load_with_warnings(&build_pages(&[p], Variant::Classic, be))
+                    .unwrap();
+            if !cmyk_test_profile::supports_cmyk() {
+                assert_eq!(warning.unwrap().len(), 1);
+                assert_eq!(image.buffer, wml2::draw::image_from(&plain).unwrap().buffer);
+                assert!(!image.metadata.unwrap().contains_key("ICC Profile"));
+                continue;
+            }
+            assert!(warning.is_none());
+            let rgba = image.buffer.unwrap();
+            for channel in 0..3 {
+                let linear = (1.0 - f64::from(values[channel]) / f64::from(maximum))
+                    * (1.0 - f64::from(values[3]) / f64::from(maximum));
+                let expected = ((1.055 * linear.powf(1.0 / 2.4) - 0.055) * 255.0).round() as i32;
+                assert!(
+                    (i32::from(rgba[channel]) - expected).abs() <= 3,
+                    "bits={bits}, be={be}, {rgba:?}"
+                );
+            }
+            assert_eq!(
+                rgba[3],
+                ((u64::from(values[4]) * 255 + u64::from(maximum) / 2) / u64::from(maximum)) as u8
+            );
+            assert!(!image.metadata.unwrap().contains_key("ICC Profile"));
+        }
+    }
+}

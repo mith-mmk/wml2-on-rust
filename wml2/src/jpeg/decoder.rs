@@ -807,153 +807,168 @@ pub(crate) fn rgb_to_rgb(
     buffer
 }
 
-pub(crate) fn ycck_to_rgb(
-    yuv: &Vec<Vec<u8>>,
-    hv_maps: &Vec<Component>,
-    (h_max, v_max): (usize, usize),
-) -> Vec<u8> {
-    let mut buffer: Vec<u8> = (0..h_max * v_max * 64 * 4).map(|_| 0).collect();
-    let y_map = 0;
-    let c1_map = y_map + hv_maps[0].h * hv_maps[0].v;
-    let c2_map = c1_map + hv_maps[1].h * hv_maps[1].v;
-    let k_map = c2_map + hv_maps[2].h * hv_maps[2].v;
-
-    let _yy = v_max / hv_maps[0].v;
-    let c1y = v_max / hv_maps[1].v;
-    let c2y = v_max / hv_maps[2].v;
-    let _ky = v_max / hv_maps[3].v;
-
-    let _yx = h_max / hv_maps[0].h;
-    let c1x = h_max / hv_maps[1].h;
-    let c2x = h_max / hv_maps[2].h;
-    let _kx = h_max / hv_maps[3].h;
-
-    for v in 0..v_max {
-        let y_map_cur = y_map + v / v_max;
-        let c1_map_cur = c1_map + v / v_max;
-        let c2_map_cur = c2_map + v / v_max;
-        let k_map_cur = k_map + v / v_max;
-
-        for h in 0..h_max {
-            let y_map_cur = y_map_cur + h / h_max;
-            let c1_map_cur = c1_map_cur + h / h_max;
-            let c2_map_cur = c2_map_cur + h / h_max;
-            let k_map_cur = k_map_cur + h / h_max;
-
-            for y in 0..8 {
-                let offset = ((y + v * 8) * (8 * h_max)) * 4;
-                for x in 0..8 {
-                    let xx = (x + h * 8) * 4;
-                    let yin = yuv[y_map_cur]
-                        [(((y + v * 8) / _yy % 8) * 8) + ((x + h * 8) / _yx) % 8]
-                        as i32;
-                    let c1 = yuv[c1_map_cur]
-                        [(((y + v * 8) / c1y % 8) * 8) + ((x + h * 8) / c1x) % 8]
-                        as i32;
-                    let c2 = yuv[c2_map_cur]
-                        [(((y + v * 8) / c2y % 8) * 8) + ((x + h * 8) / c2x) % 8]
-                        as i32;
-                    let key = yuv[k_map_cur]
-                        [(((y + v * 8) / _ky % 8) * 8) + ((x + h * 8) / _kx) % 8]
-                        as i32;
-
-                    let cy = key - yin;
-                    let cb = 255 - c1;
-                    let cr = 255 - c2;
-
-                    let shift = 4096;
-
-                    let crr = (1.402 * shift as f32) as i32;
-                    let cbg = (-0.34414 * shift as f32) as i32;
-                    let crg = (-0.71414 * shift as f32) as i32;
-                    let cbb = (1.772 * shift as f32) as i32;
-
-                    let red = cy + (crr * (cr - 128)) / shift;
-                    let green = cy + (cbg * (cb - 128) + crg * (cr - 128)) / shift;
-                    let blue = cy + (cbb * (cb - 128)) / shift;
-
-                    let red = red.clamp(0, 255) as u8;
-                    let green = green.clamp(0, 255) as u8;
-                    let blue = blue.clamp(0, 255) as u8;
-
-                    buffer[xx + offset] = red; //R
-                    buffer[xx + offset + 1] = green; //G
-                    buffer[xx + offset + 2] = blue; //B
-                    buffer[xx + offset + 3] = 0xff; //A
-
-                    buffer[xx + offset] = red; //R
-                    buffer[xx + offset + 1] = green; //G
-                    buffer[xx + offset + 2] = blue; //B
-                    buffer[xx + offset + 3] = 0xff; //A
-                }
-            }
-        }
-    }
-
-    buffer
+// Component blocks are row-major within each component, not within the MCU.
+fn cmyk_sample(
+    units: &[Vec<u8>],
+    components: &[Component],
+    channel: usize,
+    x: usize,
+    y: usize,
+    sampling: (usize, usize),
+) -> u8 {
+    let component = &components[channel];
+    let sx = x * component.h / sampling.0;
+    let sy = y * component.v / sampling.1;
+    let start: usize = components[..channel].iter().map(|c| c.h * c.v).sum();
+    units[start + sy / 8 * component.h + sx / 8][sy % 8 * 8 + sx % 8]
 }
 
-/* spec known */
-pub(crate) fn cmyk_to_rgb(
-    yuv: &Vec<Vec<u8>>,
-    hv_maps: &Vec<Component>,
-    (h_max, v_max): (usize, usize),
+pub(crate) fn ycck_to_rgb(
+    units: &Vec<Vec<u8>>,
+    components: &Vec<Component>,
+    sampling: (usize, usize),
 ) -> Vec<u8> {
-    let mut buffer: Vec<u8> = (0..h_max * v_max * 64 * 4).map(|_| 0).collect();
-    let c_map = 0;
-    let m_map = c_map + hv_maps[0].h * hv_maps[0].v;
-    let y_map = m_map + hv_maps[1].h * hv_maps[1].v;
-    let k_map = y_map + hv_maps[2].h * hv_maps[2].v;
+    let mut out = vec![0; sampling.0 * sampling.1 * 64 * 4];
+    for y in 0..sampling.1 * 8 {
+        for x in 0..sampling.0 * 8 {
+            let yin = cmyk_sample(units, components, 0, x, y, sampling) as i32;
+            let cb = 255 - cmyk_sample(units, components, 1, x, y, sampling) as i32;
+            let cr = 255 - cmyk_sample(units, components, 2, x, y, sampling) as i32;
+            let key = cmyk_sample(units, components, 3, x, y, sampling) as i32;
+            // Preserve the historical additive approximation, including its
+            // signed integer rounding. Canonical CMYK quantization differs.
+            let cy = key - yin;
+            let rgb = [
+                cy + (5742 * (cr - 128)) / 4096,
+                cy + (-1409 * (cb - 128) - 2925 * (cr - 128)) / 4096,
+                cy + (7258 * (cb - 128)) / 4096,
+            ];
+            let p = (y * sampling.0 * 8 + x) * 4;
+            for c in 0..3 {
+                out[p + c] = rgb[c].clamp(0, 255) as u8;
+            }
+            out[p + 3] = 255;
+        }
+    }
+    out
+}
 
-    let cy = v_max / hv_maps[0].v;
-    let my = v_max / hv_maps[1].v;
-    let yy = v_max / hv_maps[2].v;
-    let ky = v_max / hv_maps[3].v;
+pub(crate) fn cmyk_to_rgb(
+    units: &Vec<Vec<u8>>,
+    components: &Vec<Component>,
+    sampling: (usize, usize),
+) -> Vec<u8> {
+    let mut out = vec![0; sampling.0 * sampling.1 * 64 * 4];
+    for y in 0..sampling.1 * 8 {
+        for x in 0..sampling.0 * 8 {
+            let k = cmyk_sample(units, components, 3, x, y, sampling) as i32;
+            let p = (y * sampling.0 * 8 + x) * 4;
+            for c in 0..3 {
+                out[p + c] = (k + cmyk_sample(units, components, c, x, y, sampling) as i32 - 255)
+                    .clamp(0, 255) as u8;
+            }
+            out[p + 3] = 255;
+        }
+    }
+    out
+}
 
-    let cx = h_max / hv_maps[0].h;
-    let mx = h_max / hv_maps[1].h;
-    let yx = h_max / hv_maps[2].h;
-    let kx = h_max / hv_maps[3].h;
-
-    for v in 0..v_max {
-        let mut c_map_cur = c_map + v / cy;
-        let mut m_map_cur = m_map + v / my;
-        let mut y_map_cur = y_map + v / yy;
-        let mut k_map_cur = k_map + v / ky;
-
-        for h in 0..h_max {
-            c_map_cur += h / cx;
-            m_map_cur += h / mx;
-            y_map_cur += h / yx;
-            k_map_cur += h / kx;
-
-            for y in 0..8 {
-                let offset = ((y + v * 8) * (8 * h_max)) * 4;
-                for x in 0..8 {
-                    let xx = (x + h * 8) * 4;
-                    let cc = yuv[c_map_cur][(((y + v * 8) / cy % 8) * 8) + ((x + h * 8) / cx) % 8]
-                        as i32;
-                    let cm = yuv[m_map_cur][(((y + v * 8) / my % 8) * 8) + ((x + h * 8) / mx) % 8]
-                        as i32;
-                    let cy = yuv[y_map_cur][(((y + v * 8) / yy % 8) * 8) + ((x + h * 8) / yx) % 8]
-                        as i32;
-                    let ck = yuv[k_map_cur][(((y + v * 8) / ky % 8) * 8) + ((x + h * 8) / kx) % 8]
-                        as i32;
-
-                    let red = (ck + cc - 255).clamp(0, 255) as u8;
-                    let green = (ck + cm - 255).clamp(0, 255) as u8;
-                    let blue = (ck + cy - 255).clamp(0, 255) as u8;
-
-                    buffer[xx + offset] = red; //R
-                    buffer[xx + offset + 1] = green; //G
-                    buffer[xx + offset + 2] = blue; //B
-                    buffer[xx + offset + 3] = 0xff; //A
+// Adobe CMYK stores complements; unmarked CMYK stores ink amounts.
+// YCCK's YCbCr triplet describes C/M/Y, while K is complemented.
+pub(crate) fn packed_cmyk(
+    units: &[Vec<u8>],
+    components: &[Component],
+    sampling: (usize, usize),
+    ycck: bool,
+    adobe: bool,
+    out: &mut Vec<u8>,
+) {
+    out.resize(sampling.0 * sampling.1 * 64 * 4, 0);
+    for y in 0..sampling.1 * 8 {
+        for x in 0..sampling.0 * 8 {
+            let p = (y * sampling.0 * 8 + x) * 4;
+            let v: [i32; 4] =
+                std::array::from_fn(|c| cmyk_sample(units, components, c, x, y, sampling) as i32);
+            if ycck {
+                let cb = v[1] - 128;
+                let cr = v[2] - 128;
+                let ink = [
+                    v[0] + 5742 * cr / 4096,
+                    v[0] + (-1409 * cb - 2925 * cr) / 4096,
+                    v[0] + 7258 * cb / 4096,
+                ];
+                for c in 0..3 {
+                    out[p + c] = ink[c].clamp(0, 255) as u8;
+                }
+                out[p + 3] = 255 - v[3] as u8;
+            } else {
+                for c in 0..4 {
+                    out[p + c] = if adobe { 255 - v[c] as u8 } else { v[c] as u8 };
                 }
             }
         }
     }
+}
 
-    buffer
+pub(crate) struct JpegCmyk {
+    converter: crate::color_convert::cmyk::CmykConverter,
+    pub(crate) adobe: bool,
+    rgba: Vec<u8>,
+}
+impl JpegCmyk {
+    pub(crate) fn prepare(
+        header: &JpegHaeder,
+        warnings: &mut Option<ImgWarnings>,
+    ) -> Result<Option<Self>, Error> {
+        if !header.frame_header.as_ref().is_some_and(|f| f.plane == 4) {
+            return Ok(None);
+        }
+        if header.icc_profile.is_none()
+            && header.jpeg_app_headers.as_ref().is_some_and(|apps| {
+                apps.iter().any(|app| match app {
+                    JpegAppHeaders::ICCProfile(_) => true,
+                    JpegAppHeaders::Unknown(app) => {
+                        app.number == 2 && app.raw.starts_with(b"ICC_PROFILE\0")
+                    }
+                    _ => false,
+                })
+            })
+        {
+            *warnings = ImgWarnings::add(
+                warnings.take(),
+                Box::new(JpegWarning::new_const(
+                    JpegWarningKind::InvalidIcc,
+                    "Invalid ICC APP2 chunk association; using additive approximation".into(),
+                )),
+            );
+        }
+        let (converter, warning) = crate::color_convert::cmyk::CmykConverter::prepare(
+            header.icc_profile.as_deref(),
+            crate::color_convert::cmyk::Approximation::Additive,
+            crate::limits::current().expanded_bytes.min(64 << 20),
+        )?;
+        if let Some(warning) = warning {
+            *warnings = ImgWarnings::add(warnings.take(), Box::new(warning));
+        }
+        if !converter.has_icc() {
+            return Ok(None);
+        }
+        let adobe = header
+            .jpeg_app_headers
+            .as_ref()
+            .is_some_and(|apps| apps.iter().any(|a| matches!(a, JpegAppHeaders::Adobe(_))));
+        Ok(Some(Self {
+            converter,
+            adobe,
+            rgba: Vec::new(),
+        }))
+    }
+    pub(crate) fn convert(&mut self, data: &mut Vec<u8>) -> Result<(), Error> {
+        self.rgba.resize(data.len(), 0);
+        self.converter.convert_u8(data, None, &mut self.rgba)?;
+        std::mem::swap(data, &mut self.rgba);
+        Ok(())
+    }
 }
 
 pub(crate) fn expand_huffman_table(huffman_table: &HuffmanTable) -> Option<HuffmanDecodeTable> {
@@ -1217,6 +1232,7 @@ fn baseline_pixels(
     components: &Vec<Component>,
     color_space: &str,
     sampling: (usize, usize),
+    cmyk_adobe: Option<bool>,
 ) -> Vec<u8> {
     units.clear();
     let order = &super::util::ZIG_ZAG_SEQUENCE;
@@ -1228,7 +1244,20 @@ fn baseline_pixels(
         }
         units.push(idct(&coefficients));
     }
-    convert_rgb(plane, units, components, color_space.to_string(), sampling)
+    if let Some(adobe) = cmyk_adobe {
+        let mut packed = Vec::new();
+        packed_cmyk(
+            units,
+            components,
+            sampling,
+            color_space == "YCcK",
+            adobe,
+            &mut packed,
+        );
+        packed
+    } else {
+        convert_rgb(plane, units, components, color_space.to_string(), sampling)
+    }
 }
 
 #[cfg(feature = "multithread")]
@@ -1261,6 +1290,8 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
     let color_space = fh.color_space.to_string();
     let component = require_components(fh)?;
     let plane = fh.plane;
+    let mut cmyk = JpegCmyk::prepare(header, &mut warnings)?;
+    let cmyk_adobe = cmyk.as_ref().map(|c| c.adobe);
     // decode
     option.drawer.init(width, height, InitOptions::new())?;
 
@@ -1314,6 +1345,7 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                         component,
                         color_space,
                         (h_max, v_max),
+                        cmyk_adobe,
                     );
                     if results.send((data, x, y)).is_err() {
                         break;
@@ -1365,15 +1397,18 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                             .map_err(|_| std::io::Error::other("JPEG worker disconnected"))?;
                         pending += 1;
                         if pending == 8 {
-                            let (data, x, y) = receiver
+                            let (mut data, x, y) = receiver
                                 .recv()
                                 .map_err(|_| std::io::Error::other("JPEG worker disconnected"))?;
+                            if let Some(cmyk) = cmyk.as_mut() {
+                                cmyk.convert(&mut data)?;
+                            }
                             option.drawer.draw(x * dx, y * dy, dx, dy, &data, None)?;
                             pending -= 1;
                         }
                     }
                     if !parallel {
-                        let data = baseline_pixels(
+                        let mut data = baseline_pixels(
                             &blocks,
                             &scan_slots,
                             quantization_tables,
@@ -1382,7 +1417,11 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                             component,
                             &color_space,
                             (h_max, v_max),
+                            cmyk_adobe,
                         );
+                        if let Some(cmyk) = cmyk.as_mut() {
+                            cmyk.convert(&mut data)?;
+                        }
                         option
                             .drawer
                             .draw(mcu_x * dx, mcu_y * dy, dx, dy, &data, None)?;
@@ -1402,9 +1441,12 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
 
             #[cfg(feature = "multithread")]
             while pending > 0 {
-                let (data, x, y) = receiver
+                let (mut data, x, y) = receiver
                     .recv()
                     .map_err(|_| std::io::Error::other("JPEG worker disconnected"))?;
+                if let Some(cmyk) = cmyk.as_mut() {
+                    cmyk.convert(&mut data)?;
+                }
                 option.drawer.draw(x * dx, y * dy, dx, dy, &data, None)?;
                 pending -= 1;
             }

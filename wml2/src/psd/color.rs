@@ -1,3 +1,4 @@
+use crate::color_convert::cmyk::CmykConverter;
 use crate::error::{ImgError, ImgErrorKind};
 
 type Error = Box<dyn std::error::Error>;
@@ -54,6 +55,7 @@ pub(crate) fn planes_to_rgba(
     planes: &[Option<Vec<u8>>],
     alpha: Option<&[u8]>,
     opacity: u8,
+    mut converter: Option<&mut CmykConverter>,
 ) -> Result<Vec<u8>, Error> {
     let RasterFormat {
         width,
@@ -88,6 +90,63 @@ pub(crate) fn planes_to_rgba(
     } else {
         None
     };
+
+    // Fixed-size scratch keeps profile conversion independent of image/layer size.
+    if mode == 4 {
+        if let Some(converter) = converter.as_mut() {
+            rgba.resize(length, 0);
+            let mut input8 = [0u8; 256 * 4];
+            let mut input16 = [0u16; 256 * 4];
+            let mut output16 = [0u16; 256 * 4];
+            for start in (0..pixels).step_by(256) {
+                let count = (pixels - start).min(256);
+                let output = &mut rgba[start * 4..(start + count) * 4];
+                if depth == 16 && converter.has_icc() {
+                    for local in 0..count {
+                        for channel in 0..4 {
+                            let plane = planes[channel].as_deref().unwrap_or_default();
+                            let offset = (start + local) * 2;
+                            let bytes = plane
+                                .get(offset..offset + 2)
+                                .ok_or_else(|| err("PSD 16-bit sample is truncated"))?;
+                            input16[local * 4 + channel] =
+                                u16::MAX - u16::from_be_bytes([bytes[0], bytes[1]]);
+                        }
+                    }
+                    converter.convert_u16(
+                        &input16[..count * 4],
+                        None,
+                        &mut output16[..count * 4],
+                    )?;
+                    for (dst, value) in output.iter_mut().zip(&output16[..count * 4]) {
+                        *dst = ((u32::from(*value) + 128) / 257) as u8;
+                    }
+                } else {
+                    // Preserve PSD's historical quantize-before-multiply fallback.
+                    for local in 0..count {
+                        for channel in 0..4 {
+                            input8[local * 4 + channel] = 255
+                                - sample(
+                                    planes[channel].as_deref().unwrap_or_default(),
+                                    start + local,
+                                    depth,
+                                )?;
+                        }
+                    }
+                    converter.convert_u8(&input8[..count * 4], None, output)?;
+                }
+                for local in 0..count {
+                    let alpha = match alpha {
+                        Some(plane) => sample(plane, start + local, depth)?,
+                        None => 255,
+                    };
+                    output[local * 4 + 3] =
+                        ((u16::from(alpha) * u16::from(opacity) + 127) / 255) as u8;
+                }
+            }
+            return Ok(rgba);
+        }
+    }
 
     for index in 0..pixels {
         let (red, green, blue) = match mode {
@@ -155,6 +214,7 @@ mod tests {
                 &planes,
                 None,
                 255,
+                None,
             )
             .unwrap(),
             [255, 0, 0, 255]

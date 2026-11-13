@@ -4,6 +4,7 @@ type Error = Box<dyn std::error::Error>;
 #[cfg(feature = "tiff-jpeg")]
 use self::jpeg::{decode_jpeg_compresson, decode_old_jpeg_compresson};
 use crate::color::RGBA;
+use crate::color_convert::cmyk::{Approximation, CmykConverter};
 use crate::draw::*;
 use crate::error::ImgError;
 use crate::error::ImgErrorKind;
@@ -283,6 +284,23 @@ pub(crate) fn decode_unsigned_samples(
     )
 }
 
+// Prepared once per page, before the first draw. JPEG-in-TIFF uses its own
+// delegated decoder and never enters this path, avoiding double conversion.
+fn prepare_cmyk(header: &Tiff) -> Result<(Option<CmykConverter>, Option<ImgWarnings>), Error> {
+    if header.photometric_interpretation != 5 {
+        return Ok((None, None));
+    }
+    let (converter, warning) = CmykConverter::prepare(
+        header.icc_profile.as_deref(),
+        Approximation::Multiplicative,
+        crate::limits::current().expanded_bytes.min(64 << 20),
+    )?;
+    Ok((
+        Some(converter),
+        warning.and_then(|warning| ImgWarnings::add(None, Box::new(warning))),
+    ))
+}
+
 fn decode_blocked<B: BinaryReader>(
     reader: &mut B,
     option: &mut DecodeOptions,
@@ -290,12 +308,13 @@ fn decode_blocked<B: BinaryReader>(
     initialize: bool,
     animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
+    let (mut converter, warnings) = prepare_cmyk(header)?;
     if initialize {
         init_canvas(option, header, animation)?;
     }
     if header.photometric_interpretation == 6 {
         ycbcr::decode(reader, option, header, false, animation)?;
-        return Ok(None);
+        return Ok(warnings);
     }
     let block_list = blocks(header)?;
     let input_len = reader.seek(std::io::SeekFrom::End(0))?;
@@ -397,9 +416,10 @@ fn decode_blocked<B: BinaryReader>(
                 true,
                 Some(first.stored_width),
                 Some(first.stored_height),
+                converter.as_mut(),
             )?;
         }
-        return Ok(None);
+        return Ok(warnings);
     }
 
     for block in &block_list {
@@ -435,9 +455,10 @@ fn decode_blocked<B: BinaryReader>(
             true,
             Some(block.stored_width),
             Some(block.stored_height),
+            converter.as_mut(),
         )?;
     }
-    Ok(None)
+    Ok(warnings)
 }
 
 pub fn draw_strip(
@@ -459,7 +480,21 @@ pub fn draw_tile(
     option: &mut DecodeOptions,
     header: &Tiff,
 ) -> Result<Option<ImgWarnings>, Error> {
-    draw_tile_internal(data, y, strip, x, width, option, header, false, None, None)
+    let (mut converter, warnings) = prepare_cmyk(header)?;
+    let drawn = draw_tile_internal(
+        data,
+        y,
+        strip,
+        x,
+        width,
+        option,
+        header,
+        false,
+        None,
+        None,
+        converter.as_mut(),
+    )?;
+    Ok(ImgWarnings::append(warnings, drawn))
 }
 
 fn draw_tile_internal(
@@ -473,6 +508,7 @@ fn draw_tile_internal(
     prepared: bool,
     stored_width: Option<usize>,
     stored_height: Option<usize>,
+    mut converter: Option<&mut CmykConverter>,
 ) -> Result<Option<ImgWarnings>, Error> {
     crate::tiff::page::validate_alpha_support(header)?;
     if data.is_empty() {
@@ -677,7 +713,11 @@ fn draw_tile_internal(
     let end_y = y
         .checked_add(draw_rows)
         .ok_or_else(|| std::io::Error::other("TIFF row position overflows"))?;
+    let mut cmyk = [0u32; 256 * 4];
+    let mut alpha = [0u32; 256];
+    let mut converted = [0u8; 256 * 4];
     for (l, y) in (y..end_y).enumerate() {
+        let mut cmyk_count = 0;
         let mut buf = vec![];
         let mut prevs = vec![0_u8; header.samples_per_pixel as usize];
         // Packed grayscale branches below use `i` as a sample index (the
@@ -1251,11 +1291,24 @@ fn draw_tile_internal(
                             .and_then(|value| value.checked_mul(row_len))
                             .ok_or_else(|| std::io::Error::other("CMYK row end overflows"))?;
                     }
-                    let rgba = crate::tiff::color::cmyk_to_rgba8(c, m, y, k, maximum, a);
-                    buf.push(rgba.red);
-                    buf.push(rgba.green);
-                    buf.push(rgba.blue);
-                    buf.push(rgba.alpha);
+                    if let Some(converter) = converter.as_deref_mut() {
+                        cmyk[cmyk_count * 4..cmyk_count * 4 + 4].copy_from_slice(&[c, m, y, k]);
+                        alpha[cmyk_count] = a;
+                        cmyk_count += 1;
+                        if cmyk_count == 256 || pixel + 1 == stored_width {
+                            converter.convert_u32(
+                                &cmyk[..cmyk_count * 4],
+                                maximum,
+                                Some(&alpha[..cmyk_count]),
+                                &mut converted[..cmyk_count * 4],
+                            )?;
+                            buf.extend_from_slice(&converted[..cmyk_count * 4]);
+                            cmyk_count = 0;
+                        }
+                    } else {
+                        let rgba = crate::tiff::color::cmyk_to_rgba8(c, m, y, k, maximum, a);
+                        buf.extend_from_slice(&[rgba.red, rgba.green, rgba.blue, rgba.alpha]);
+                    }
                 }
                 // not support
                 /*
@@ -1457,6 +1510,7 @@ pub fn decode_ccitt_compresson<'decode, B: BinaryReader>(
             true,
             Some(block.stored_width),
             Some(block.stored_height),
+            None,
         )?;
     }
     Ok(None)
@@ -1669,6 +1723,12 @@ fn decode_inner<B: BinaryReader>(
                     warnings = ImgWarnings::append(warnings, warn);
                 }
                 Err(error) => {
+                    // CMYK compiler resource limits and transform failures are
+                    // fatal, including on later pages; never hide a partial CMS
+                    // result behind the historical best-effort page warning.
+                    if append.photometric_interpretation == 5 {
+                        return Err(error);
+                    }
                     let warning = TiffWarning::new(error.to_string());
                     warnings = ImgWarnings::add(warnings, Box::new(warning));
                 }

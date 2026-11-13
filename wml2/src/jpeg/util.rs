@@ -359,7 +359,11 @@ pub fn make_metadata(header: &JpegHaeder) -> HashMap<String, DataMap> {
         );
         map.insert(
             "Color Space".to_string(),
-            DataMap::Ascii(fh.color_space.to_string()),
+            DataMap::Ascii(if fh.plane == 4 {
+                "RGB".to_string()
+            } else {
+                fh.color_space.to_string()
+            }),
         );
     }
 

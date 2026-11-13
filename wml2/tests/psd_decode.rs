@@ -627,3 +627,123 @@ fn later_psd_icc_record_cannot_leave_an_earlier_active_profile() {
         .is_err()
     );
 }
+
+#[test]
+fn cmyk_fallback_preserves_precision_alpha_and_warns_once() {
+    for depth in [8, 16] {
+        let width = 257;
+        let values = [12345u16, 32768, 54321, 43210, 34567];
+        let planes: Vec<Vec<u8>> = values
+            .iter()
+            .map(|value| {
+                if depth == 16 {
+                    value.to_be_bytes().repeat(width)
+                } else {
+                    vec![((u32::from(*value) + 128) / 257) as u8; width]
+                }
+            })
+            .collect();
+        let encoded = psd(
+            width,
+            1,
+            depth,
+            4,
+            &planes,
+            0,
+            &[],
+            &resource(1039, b"broken"),
+            &[],
+        );
+        let (image, warnings) = wml2::draw::image_load_with_warnings(&encoded).unwrap();
+        assert_eq!(warnings.unwrap().len(), 1);
+        let q: Vec<u16> = values
+            .iter()
+            .map(|v| ((u32::from(*v) + 128) / 257) as u16)
+            .collect();
+        let expected = [
+            ((q[0] * q[3] + 127) / 255) as u8,
+            ((q[1] * q[3] + 127) / 255) as u8,
+            ((q[2] * q[3] + 127) / 255) as u8,
+            q[4] as u8,
+        ];
+        assert_eq!(image.buffer.unwrap(), expected.repeat(width));
+        let mut resources = resource(1039, b"broken");
+        resources.extend(resource(1041, &[1]));
+        let (_, warnings) = wml2::draw::image_load_with_warnings(&psd(
+            width,
+            1,
+            depth,
+            4,
+            &planes,
+            0,
+            &[],
+            &resources,
+            &[],
+        ))
+        .unwrap();
+        assert!(warnings.is_none());
+    }
+}
+
+#[cfg(feature = "color-management")]
+#[path = "common/cmyk_profile.rs"]
+mod cmyk_test_profile;
+
+#[cfg(feature = "color-management")]
+#[test]
+fn cmyk_icc_normalizes_inverted_8_and_16_bit_planes() {
+    for depth in [8, 16] {
+        let width = 257;
+        let values = [12345u16, 32768, 54321, 43210, 34567];
+        let planes: Vec<Vec<u8>> = values
+            .iter()
+            .map(|value| {
+                if depth == 16 {
+                    value.to_be_bytes().repeat(width)
+                } else {
+                    vec![((u32::from(*value) + 128) / 257) as u8; width]
+                }
+            })
+            .collect();
+        let encoded = psd(
+            width,
+            1,
+            depth,
+            4,
+            &planes,
+            0,
+            &[],
+            &resource(1039, &cmyk_test_profile::cmyk_profile()),
+            &[],
+        );
+        let (image, warnings) = wml2::draw::image_load_with_warnings(&encoded).unwrap();
+        if !cmyk_test_profile::supports_cmyk() {
+            let plain = psd(width, 1, depth, 4, &planes, 0, &[], &[], &[]);
+            assert_eq!(warnings.unwrap().len(), 1);
+            assert_eq!(image.buffer, wml2::draw::image_from(&plain).unwrap().buffer);
+            assert!(!image.metadata.unwrap().contains_key("ICC Profile"));
+            continue;
+        }
+        assert!(warnings.is_none());
+        let rgba = image.buffer.unwrap();
+        for pixel in rgba.chunks_exact(4) {
+            for channel in 0..3 {
+                let normalized = |v: u16| {
+                    if depth == 16 {
+                        f64::from(v) / 65535.0
+                    } else {
+                        f64::from((u32::from(v) + 128) / 257) / 255.0
+                    }
+                };
+                let linear = normalized(values[channel]) * normalized(values[3]);
+                let expected = ((1.055 * linear.powf(1.0 / 2.4) - 0.055) * 255.0).round() as i32;
+                assert!(
+                    (i32::from(pixel[channel]) - expected).abs() <= 3,
+                    "depth={depth}, {pixel:?}"
+                );
+            }
+            assert_eq!(pixel[3], ((u32::from(values[4]) + 128) / 257) as u8);
+        }
+        assert!(!image.metadata.unwrap().contains_key("ICC Profile"));
+    }
+}

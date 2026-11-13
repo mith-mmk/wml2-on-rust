@@ -408,7 +408,7 @@ fn read_app(num: usize, tag: &String, buffer: &[u8]) -> Result<JpegAppHeaders, E
             _ => {}
         },
         14 => match tag.as_str() {
-            "Adobe" => {
+            "Adobe" if buffer.len() >= 12 => {
                 let ver = read_byte(buffer, ptr) as usize;
                 let flag1 = read_u16_be(buffer, ptr + 1) as usize;
                 let flag2 = read_u16_be(buffer, ptr + 3) as usize;

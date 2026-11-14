@@ -441,6 +441,8 @@ fn rejects_corrupt_compression_lengths_and_dimensions() {
 
 #[derive(Default)]
 struct AbortOnComposite {
+    abort_on_outcome: bool,
+    saw_outcome: bool,
     draws: usize,
     nexts: usize,
     terminates: usize,
@@ -495,9 +497,14 @@ impl DrawCallback for AbortOnComposite {
 
     fn set_metadata(
         &mut self,
-        _: &str,
+        key: &str,
         _: DataMap,
     ) -> Result<Option<CallbackResponse>, Box<dyn std::error::Error>> {
+        if self.abort_on_outcome && key == wml2::color_outcome::metadata_key(0) {
+            self.saw_outcome = true;
+            return Ok(Some(CallbackResponse::abort()));
+        }
+        assert!(!self.saw_outcome, "metadata after Abort");
         Ok(None)
     }
 }
@@ -669,7 +676,7 @@ fn cmyk_fallback_preserves_precision_alpha_and_warns_once() {
         assert_eq!(image.buffer.unwrap(), expected.repeat(width));
         let mut resources = resource(1039, b"broken");
         resources.extend(resource(1041, &[1]));
-        let (_, warnings) = wml2::draw::image_load_with_warnings(&psd(
+        let (ignored, warnings) = wml2::draw::image_load_with_warnings(&psd(
             width,
             1,
             depth,
@@ -682,6 +689,15 @@ fn cmyk_fallback_preserves_precision_alpha_and_warns_once() {
         ))
         .unwrap();
         assert!(warnings.is_none());
+        use wml2::color_outcome::*;
+        let metadata = ignored.metadata.unwrap();
+        assert_eq!(
+            ColorOutcome::from_metadata(metadata.get(&metadata_key(0))).conversion,
+            Conversion::Approximation(
+                ApproximationReason::ProfileIgnored,
+                ApproximationMethod::MultiplicativeCmyk
+            )
+        );
     }
 }
 
@@ -917,5 +933,68 @@ fn cmyk_outcomes_follow_composite_then_emitted_layers() {
     assert_eq!(
         ColorOutcome::from_metadata(metadata.get(&metadata_key(2))),
         ColorOutcome::default()
+    );
+}
+
+#[test]
+fn outcome_metadata_abort_stops_public_and_common_psd_before_pixels() {
+    let data = psd(
+        1,
+        1,
+        8,
+        4,
+        &[vec![255], vec![255], vec![255], vec![255]],
+        0,
+        &[],
+        &[],
+        &[],
+    );
+    for direct in [false, true] {
+        let mut drawer = AbortOnComposite {
+            abort_on_outcome: true,
+            ..Default::default()
+        };
+        let mut options = DecodeOptions {
+            debug_flag: 0,
+            drawer: &mut drawer,
+        };
+        if direct {
+            wml2::psd::decoder::decode(&mut bin_rs::reader::BytesReader::new(&data), &mut options)
+                .unwrap();
+        } else {
+            image_loader(&data, &mut options).unwrap();
+        }
+        assert!(drawer.saw_outcome);
+        assert_eq!((drawer.draws, drawer.nexts, drawer.terminates), (0, 0, 0));
+    }
+}
+#[test]
+fn outcome_metadata_budget_has_exact_and_one_byte_short_boundaries() {
+    let data = psd(
+        1,
+        1,
+        8,
+        4,
+        &[vec![255], vec![255], vec![255], vec![255]],
+        0,
+        &[],
+        &[],
+        &[],
+    );
+    let exact = wml2::color_outcome::metadata_key(0).len() + 8;
+    let limits = wml2::limits::DecodeLimits {
+        metadata_bytes: exact,
+        ..Default::default()
+    };
+    assert!(wml2::draw::image_from_with_limits(&data, limits).is_ok());
+    assert!(
+        wml2::draw::image_from_with_limits(
+            &data,
+            wml2::limits::DecodeLimits {
+                metadata_bytes: exact - 1,
+                ..limits
+            }
+        )
+        .is_err()
     );
 }

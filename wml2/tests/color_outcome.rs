@@ -103,3 +103,69 @@ fn cancelled_owned_decode_never_returns_success_at_any_probe() {
         );
     }
 }
+
+#[cfg(feature = "jpeg-xl")]
+#[test]
+fn outcome_abort_stops_jxl_static_and_animation_callbacks() {
+    use wml2::draw::*;
+    #[derive(Default)]
+    struct Probe {
+        stopped: bool,
+        ends: usize,
+    }
+    impl DrawCallback for Probe {
+        fn init(&mut self, _: usize, _: usize, _: Option<InitOptions>) -> Response {
+            assert!(!self.stopped);
+            Ok(None)
+        }
+        fn draw(
+            &mut self,
+            _: usize,
+            _: usize,
+            _: usize,
+            _: usize,
+            _: &[u8],
+            _: Option<DrawOptions>,
+        ) -> Response {
+            assert!(!self.stopped);
+            Ok(None)
+        }
+        fn next(&mut self, _: Option<NextOptions>) -> Response {
+            assert!(!self.stopped);
+            Ok(None)
+        }
+        fn verbose(&mut self, _: &str, _: Option<VerboseOptions>) -> Response {
+            assert!(!self.stopped);
+            Ok(None)
+        }
+        fn terminate(&mut self, _: Option<TerminateOptions>) -> Response {
+            self.ends += 1;
+            Ok(None)
+        }
+        fn set_metadata(&mut self, key: &str, _: wml2::metadata::DataMap) -> Response {
+            assert!(!self.stopped, "metadata after Abort");
+            if key == wml2::color_outcome::metadata_key(0) {
+                self.stopped = true;
+                Ok(Some(CallbackResponse::abort()))
+            } else {
+                Ok(None)
+            }
+        }
+    }
+    for input in [
+        include_bytes!("fixtures/review/jxl-icc-lossless.jxl").as_slice(),
+        include_bytes!("fixtures/review/jxl-animation-xyb-icc16.jxl").as_slice(),
+    ] {
+        let mut probe = Probe::default();
+        image_loader(
+            input,
+            &mut DecodeOptions {
+                debug_flag: 0,
+                drawer: &mut probe,
+            },
+        )
+        .unwrap();
+        assert!(probe.stopped);
+        assert_eq!(probe.ends, 1);
+    }
+}

@@ -27,6 +27,8 @@ pub enum ApproximationReason {
     ColorManagementDisabled,
     /// Reserved for an explicit future fallback; current CMYK runtime failures are errors.
     TransformFailed,
+    /// An embedded profile was explicitly marked not to be used (PSD untagged).
+    ProfileIgnored,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]
@@ -88,6 +90,7 @@ impl ColorOutcome {
                     ApproximationReason::UnsupportedProfile => 3,
                     ApproximationReason::ColorManagementDisabled => 4,
                     ApproximationReason::TransformFailed => 5,
+                    ApproximationReason::ProfileIgnored => 6,
                 },
                 match method {
                     ApproximationMethod::AdditiveCmyk => 1,
@@ -142,6 +145,7 @@ impl ColorOutcome {
                     3 => ApproximationReason::UnsupportedProfile,
                     4 => ApproximationReason::ColorManagementDisabled,
                     5 => ApproximationReason::TransformFailed,
+                    6 => ApproximationReason::ProfileIgnored,
                     _ => return Self::default(),
                 };
                 let method = match m {
@@ -178,6 +182,7 @@ mod tests {
             ApproximationReason::UnsupportedProfile,
             ApproximationReason::ColorManagementDisabled,
             ApproximationReason::TransformFailed,
+            ApproximationReason::ProfileIgnored,
         ] {
             for method in [
                 ApproximationMethod::AdditiveCmyk,

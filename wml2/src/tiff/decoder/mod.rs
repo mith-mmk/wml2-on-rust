@@ -1661,11 +1661,15 @@ fn publish_color_outcome(
     option: &mut DecodeOptions,
     index: usize,
     outcome: crate::color_outcome::ColorOutcome,
-) -> Result<(), Error> {
+) -> Result<bool, Error> {
     let key = crate::color_outcome::metadata_key(index);
     crate::limits::charge_metadata(key.len() + 8)?;
-    option.drawer.set_metadata(&key, outcome.to_metadata())?;
-    Ok(())
+    let response = option.drawer.set_metadata(&key, outcome.to_metadata())?;
+    if matches!(response, Some(r) if r.response == ResponseCommand::Abort) {
+        option.drawer.terminate(None)?;
+        return Ok(false);
+    }
+    Ok(true)
 }
 
 fn decode_inner<B: BinaryReader>(
@@ -1765,7 +1769,9 @@ fn decode_inner<B: BinaryReader>(
 
     let mut outcome = crate::color_outcome::ColorOutcome::default();
     let warn = compression_decode(reader, option, &pages[0], true, count > 1, &mut outcome)?;
-    publish_color_outcome(option, 0, outcome)?;
+    if !publish_color_outcome(option, 0, outcome)? {
+        return Ok(ImgWarnings::append(warnings, warn));
+    }
 
     warnings = ImgWarnings::append(warnings, warn);
 
@@ -1795,7 +1801,9 @@ fn decode_inner<B: BinaryReader>(
             let result = compression_decode(reader, option, append, false, false, &mut outcome);
             match result {
                 Ok(warn) => {
-                    publish_color_outcome(option, index, outcome)?;
+                    if !publish_color_outcome(option, index, outcome)? {
+                        return Ok(ImgWarnings::append(warnings, warn));
+                    }
                     warnings = ImgWarnings::append(warnings, warn);
                 }
                 Err(error) => {

@@ -49,7 +49,8 @@ association), unsupported profile and feature-disabled CMS. A valid prepared ICC
 route is reported applied only after successful pixel work. CMYK transform runtime
 errors remain fatal, **not** a newly introduced fallback: `TransformFailed` is
 reserved for a future explicit fallback producer. No current route emits it.
-PSD untagged ICC is deliberately not selected as a conversion profile.
+PSD untagged ICC is deliberately not selected as a conversion profile and reports
+`ProfileIgnored`, distinct from a missing ICC.
 
 For JXL, `JPEG XL Source ICC Profile` describes the embedded/source profile;
 `JPEG XL Reconstruction ICC Profile` describes reconstructed samples before a
@@ -98,3 +99,21 @@ On hadrianus (aarch64 macOS), source base `a6bdc86a`:
 This is a bounded first implementation of #113, not universal color-management
 coverage. Wider codec instrumentation and direct native-animation typed accessors
 remain follow-up work. Do not close #113 as complete for every codec/API.
+
+### Review follow-up
+
+The first review found two gaps, both corrected before publication: PSD's explicit
+untagged-profile flag now reports `ProfileIgnored`, and raw TIFF decoding stops
+when the newly introduced outcome callback returns Abort. Regression coverage
+includes raw/common TIFF and public/common JPEG, raw/common PSD, static/animated
+JXL outcome callbacks, and the exact/-1-byte PSD outcome metadata budget.
+After these fixes: JPEG/TIFF CMS 49 passed/1 manual ignored; PSD/JXL targeted
+callback and result tests 21 passed; PSD CMS-disabled 13 passed (before adding
+its two callback/quota tests); protocol reason tests 2 passed. Extended JXL
+oracle/admission/cancellation suites passed 31 tests.
+
+[Local benchmark and image validation](color-outcomes-validation-20261114.json)
+records baseline/candidate pixel equality and descriptive debug timings. Six JPEG
+PNG files are byte-identical to baseline; PSD/JXL pixel hashes also match. Images
+were visually inspected. These shared-host measurements are not a general speed
+claim, and were made before the final callback/reason-only follow-up.

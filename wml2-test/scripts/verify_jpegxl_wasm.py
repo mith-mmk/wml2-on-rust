@@ -9,7 +9,7 @@ def run(cmd,log):
  r=subprocess.run([str(x) for x in cmd],cwd=root,capture_output=True,text=True);(out/log).write_text(r.stdout+r.stderr);r.check_returncode();return r.stdout
 build=run(['cargo','build','-p','wml2','--locked','--release','--target','wasm32-unknown-unknown','--target-dir',target,'--no-default-features','--features','jpeg-xl,image-buffer-ex'+(',exif' if a.exif else ''),'--message-format=json-render-diagnostics'],'build.log')
 deps=target/'wasm32-unknown-unknown/release';wasm=out/'verify.wasm';harness=pathlib.Path(__file__).with_name('jpegxl_wasm.rs')
-# Cargo 1.97 may place libraries under release/build/<crate>/<hash>/out.
+# Recent Cargo may place libraries under release/build/<crate>/<hash>/out.
 # Resolve Cargo-reported artifacts within the requested target, not a fixed deps
 # directory and never Rust std's private miniz crate or host-built libraries.
 artifacts=[json.loads(line) for line in build.splitlines() if line.startswith('{')]
@@ -20,8 +20,10 @@ def target_rlibs(name):
 miniz=target_rlibs('miniz_oxide');wml2=target_rlibs('wml2')
 if len(miniz)!=1:raise RuntimeError('expected one target miniz artifact: '+str(miniz))
 if len(wml2)!=1:raise RuntimeError('expected one target wml2 artifact: '+str(wml2))
+# rustc also needs host proc-macro artifacts referenced by dependency metadata.
 search_dirs=sorted({pathlib.Path(f).parent for item in artifacts for f in item['filenames']
-                    if f.endswith('.rlib') and pathlib.Path(f).is_relative_to(deps)})
+                    if pathlib.Path(f).suffix in {'.rlib', '.rmeta', '.so', '.dylib', '.dll'}
+                    and pathlib.Path(f).is_relative_to(target)})
 search_args=[arg for directory in search_dirs for arg in ['-L',f'dependency={directory}']]
 run(['rustc','--edition','2024','--target','wasm32-unknown-unknown','--crate-type','cdylib','-C','opt-level=3','-C','panic=abort',harness,*(['--cfg','feature="exif"'] if a.exif else []),'--extern',f'wml2={next(iter(wml2))}','--extern',f'miniz_oxide={next(iter(miniz))}',*search_args,'-L',f'dependency={target/"release/deps"}','-o',wasm],'harness.log')
 runner=out/'run.cjs';runner.write_text('''const fs=require('fs');

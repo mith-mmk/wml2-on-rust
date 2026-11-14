@@ -34,10 +34,11 @@ Ordinary PSD is a compatibility sample, not an independent CMYK accuracy oracle.
 ## Toolchain compatibility correction
 
 The full CI's wasm compile passed, then the JPEG XL runtime verification script
-failed to locate miniz because Cargo 1.97 reports rlibs below
+failed to locate miniz because CI Cargo 1.100 reports rlibs below
 `release/build/<crate>/<hash>/out`, not always `release/deps`. The script now uses
-Cargo-reported target rlibs and their dependency directories, excludes host/std
-artifacts, and requires exactly one WML2 and miniz artifact. After this script-only
+Cargo-reported target rlibs and their dependency directories, selects only target
+WML2/miniz artifacts, and requires exactly one of each. Cargo-reported host
+proc-macro directories are also added for transitive metadata resolution. After this script-only
 fix, actual Node wasm runs passed 236 cases each with EXIF off and on, with no host
 imports. Final-head CI still needs to be read separately.
 

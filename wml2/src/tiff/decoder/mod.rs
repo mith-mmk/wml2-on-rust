@@ -1,6 +1,24 @@
 //! TIFF decoder implementation.
 
 type Error = Box<dyn std::error::Error>;
+
+// Mark only CMYK color-management failures. A later page's ordinary container
+// or compression error keeps TIFF's historical warning-and-continue behavior.
+#[derive(Debug)]
+struct CmykProcessingError(Error);
+impl std::fmt::Display for CmykProcessingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.0, f)
+    }
+}
+impl std::error::Error for CmykProcessingError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(self.0.as_ref())
+    }
+}
+fn cmyk_processing_error(error: Error) -> Error {
+    Box::new(CmykProcessingError(error))
+}
 #[cfg(feature = "tiff-jpeg")]
 use self::jpeg::{decode_jpeg_compresson, decode_old_jpeg_compresson};
 use crate::color::RGBA;
@@ -294,7 +312,8 @@ fn prepare_cmyk(header: &Tiff) -> Result<(Option<CmykConverter>, Option<ImgWarni
         header.icc_profile.as_deref(),
         Approximation::Multiplicative,
         crate::limits::current().expanded_bytes.min(64 << 20),
-    )?;
+    )
+    .map_err(cmyk_processing_error)?;
     Ok((
         Some(converter),
         warning.and_then(|warning| ImgWarnings::add(None, Box::new(warning))),
@@ -1296,12 +1315,21 @@ fn draw_tile_internal(
                         alpha[cmyk_count] = a;
                         cmyk_count += 1;
                         if cmyk_count == 256 || pixel + 1 == stored_width {
-                            converter.convert_u32(
-                                &cmyk[..cmyk_count * 4],
-                                maximum,
-                                Some(&alpha[..cmyk_count]),
-                                &mut converted[..cmyk_count * 4],
-                            )?;
+                            let managed = converter.has_icc();
+                            converter
+                                .convert_u32(
+                                    &cmyk[..cmyk_count * 4],
+                                    maximum,
+                                    Some(&alpha[..cmyk_count]),
+                                    &mut converted[..cmyk_count * 4],
+                                )
+                                .map_err(|error| {
+                                    if managed {
+                                        cmyk_processing_error(error)
+                                    } else {
+                                        error
+                                    }
+                                })?;
                             buf.extend_from_slice(&converted[..cmyk_count * 4]);
                             cmyk_count = 0;
                         }
@@ -1723,10 +1751,10 @@ fn decode_inner<B: BinaryReader>(
                     warnings = ImgWarnings::append(warnings, warn);
                 }
                 Err(error) => {
-                    // CMYK compiler resource limits and transform failures are
-                    // fatal, including on later pages; never hide a partial CMS
-                    // result behind the historical best-effort page warning.
-                    if append.photometric_interpretation == 5 {
+                    // Only marked CMS preparation/transform failures are fatal.
+                    // Corrupt CMYK strips/pages still use best-effort recovery,
+                    // just like other color models, even when ICC is attached.
+                    if error.is::<CmykProcessingError>() {
                         return Err(error);
                     }
                     let warning = TiffWarning::new(error.to_string());

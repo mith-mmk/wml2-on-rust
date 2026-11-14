@@ -1660,3 +1660,115 @@ fn cmyk_icc_preserves_native_precision_and_alpha() {
         }
     }
 }
+
+mod cmyk_later_page_errors {
+    use super::*;
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::*;
+    use wml2::metadata::DataMap;
+    #[derive(Default)]
+    struct Probe {
+        page: usize,
+        draws: Vec<(usize, Vec<u8>)>,
+    }
+    impl DrawCallback for Probe {
+        fn init(&mut self, _: usize, _: usize, _: Option<InitOptions>) -> Response {
+            Ok(None)
+        }
+        fn draw(
+            &mut self,
+            _: usize,
+            _: usize,
+            _: usize,
+            _: usize,
+            data: &[u8],
+            _: Option<DrawOptions>,
+        ) -> Response {
+            self.draws.push((self.page, data.to_vec()));
+            Ok(None)
+        }
+        fn next(&mut self, _: Option<NextOptions>) -> Response {
+            self.page += 1;
+            Ok(None)
+        }
+        fn terminate(&mut self, _: Option<TerminateOptions>) -> Response {
+            Ok(None)
+        }
+        fn verbose(&mut self, _: &str, _: Option<VerboseOptions>) -> Response {
+            Ok(None)
+        }
+        fn set_metadata(&mut self, _: &str, _: DataMap) -> Response {
+            Ok(None)
+        }
+    }
+    fn rgb() -> Page {
+        page(1, 1, &[8, 8, 8], 3, 2, vec![vec![9, 8, 7]])
+    }
+    #[test]
+    fn corrupt_later_cmyk_page_warns_and_continues_with_or_without_icc() {
+        let profiles = vec![Vec::new(), b"broken".to_vec()];
+        #[cfg(feature = "color-management")]
+        let profiles = {
+            let mut profiles = profiles;
+            profiles.push(cmyk_test_profile::cmyk_profile());
+            profiles
+        };
+        for profile in profiles {
+            for variant in [Variant::Classic, Variant::Big] {
+                let mut corrupt = page(1, 1, &[8; 4], 4, 5, vec![vec![1]]);
+                corrupt.icc = profile.clone();
+                let bytes = build_pages(&[rgb(), corrupt, rgb()], variant, false);
+                let mut probe = Probe::default();
+                let warning = image_decoder_with_limits(
+                    &mut BytesReader::new(&bytes),
+                    &mut DecodeOptions {
+                        debug_flag: 0,
+                        drawer: &mut probe,
+                    },
+                    DecodeLimits::unlimited(),
+                )
+                .unwrap();
+                assert!(
+                    warning.is_some(),
+                    "corrupt later page must report a warning"
+                );
+                assert_eq!(
+                    probe.draws,
+                    vec![(0, vec![9, 8, 7, 255]), (2, vec![9, 8, 7, 255])],
+                    "must keep first/third pages, skip corrupt second page"
+                );
+            }
+        }
+    }
+    #[cfg(feature = "color-management")]
+    #[test]
+    fn later_cmyk_icc_resource_error_is_fatal_not_best_effort() {
+        for variant in [Variant::Classic, Variant::Big] {
+            let mut managed = page(1, 1, &[8; 4], 4, 5, vec![vec![0; 4]]);
+            managed.icc = cmyk_test_profile::cmyk_profile();
+            let bytes = build_pages(&[rgb(), managed, rgb()], variant, false);
+            let mut probe = Probe::default();
+            let error = image_decoder_with_limits(
+                &mut BytesReader::new(&bytes),
+                &mut DecodeOptions {
+                    debug_flag: 0,
+                    drawer: &mut probe,
+                },
+                DecodeLimits {
+                    expanded_bytes: 8192,
+                    ..DecodeLimits::unlimited()
+                },
+            )
+            .unwrap_err();
+            assert!(
+                error.to_string().contains("CMYK converter workspace"),
+                "{error}"
+            );
+            assert_eq!(
+                probe.draws,
+                vec![(0, vec![9, 8, 7, 255])],
+                "second page must publish no pixels and third must not run"
+            );
+        }
+    }
+}

@@ -117,3 +117,19 @@ records baseline/candidate pixel equality and descriptive debug timings. Six JPE
 PNG files are byte-identical to baseline; PSD/JXL pixel hashes also match. Images
 were visually inspected. These shared-host measurements are not a general speed
 claim, and were made before the final callback/reason-only follow-up.
+
+## Final review corrections and rerun
+
+Review of `31a9b2c0` identified a stale JPEG ICC exact-budget test: the
+new outcome contributes 28 bytes (key plus v1 record), so the old 716-byte
+expectation correctly failed at 744 bytes. The test now derives the added cost
+from the public key/schema and checks both the exact budget and one byte less.
+No resource limit or runtime accounting was weakened.
+
+After this test correction, `cargo test -p wml2 --locked --lib --tests
+--features 'psd,color-management,image-buffer-ex' --no-fail-fast` passed
+486 tests with zero failures and 13 intentionally ignored tests on hadrianus.
+The JPEG ICC target also passed all eight tests in five configurations:
+no-default JPEG with IDCT llm/aan/slower, llm plus CMS, and default features
+(40 executions, not 40 distinct tests). CI on the previous SHA is failed,
+not evidence for this correction; the new head must pass independently.

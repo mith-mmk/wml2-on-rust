@@ -137,9 +137,16 @@ fn all_255_sequence_numbers_are_supported_for_opaque_profile_bytes() {
 }
 
 #[test]
-fn metadata_budget_includes_retained_chunks_and_assembled_profile() {
+fn metadata_budget_includes_retained_chunks_assembled_profile_and_color_outcome() {
     let data = jpeg(&[chunk(2, 2, &PROFILE[100..]), chunk(1, 2, &PROFILE[..100])]);
-    let required = 2 * PROFILE.len() + 2 * 14;
+    // The completed decode also retains the versioned machine-readable outcome.
+    // Derive its wire size from the public schema rather than duplicating it.
+    let DataMap::Raw(outcome_record) = wml2::color_outcome::ColorOutcome::default().to_metadata()
+    else {
+        panic!("color outcome wire record must use the compatible Raw carrier");
+    };
+    let outcome_bytes = wml2::color_outcome::metadata_key(0).len() + outcome_record.len();
+    let required = 2 * PROFILE.len() + 2 * 14 + outcome_bytes;
     let limits = DecodeLimits {
         metadata_bytes: required,
         ..DecodeLimits::unlimited()

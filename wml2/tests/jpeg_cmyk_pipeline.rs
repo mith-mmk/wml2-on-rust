@@ -362,3 +362,80 @@ fn cmyk_profile_budget_failure_is_an_error_before_any_pixel_callback() {
         );
     }
 }
+
+#[test]
+fn cmyk_outcomes_distinguish_missing_and_malformed_profiles() {
+    use wml2::color_outcome::*;
+    for jpeg in [BASE, PROGRESSIVE] {
+        let image = image_from(jpeg).unwrap();
+        let outcome = ColorOutcome::from_metadata(
+            image
+                .metadata
+                .as_ref()
+                .and_then(|m| m.get(&metadata_key(0))),
+        );
+        assert_eq!(
+            outcome,
+            ColorOutcome {
+                conversion: Conversion::Approximation(
+                    ApproximationReason::MissingProfile,
+                    ApproximationMethod::AdditiveCmyk
+                ),
+                output: OutputColorSpace::DeviceApproximation
+            }
+        );
+        let malformed = append_app(jpeg, 0xe2, b"ICC_PROFILE\0\x02\x01bad");
+        let image = image_from(&malformed).unwrap();
+        let outcome = ColorOutcome::from_metadata(
+            image
+                .metadata
+                .as_ref()
+                .and_then(|m| m.get(&metadata_key(0))),
+        );
+        assert_eq!(
+            outcome.conversion,
+            Conversion::Approximation(
+                ApproximationReason::InvalidProfile,
+                ApproximationMethod::AdditiveCmyk
+            )
+        );
+    }
+}
+
+#[cfg(feature = "color-management")]
+#[test]
+fn cmyk_outcomes_report_applied_only_for_completed_managed_pixels() {
+    use wml2::color_outcome::*;
+    for jpeg in [BASE, PROGRESSIVE] {
+        let image = image_from(&tagged(jpeg)).unwrap();
+        let outcome = ColorOutcome::from_metadata(
+            image
+                .metadata
+                .as_ref()
+                .and_then(|m| m.get(&metadata_key(0))),
+        );
+        assert_eq!(outcome.conversion, Conversion::AppliedToSrgb);
+        assert_eq!(outcome.output, OutputColorSpace::Srgb);
+    }
+}
+
+#[test]
+fn incomplete_cmyk_jpeg_never_reports_completed_color_processing() {
+    use wml2::color_outcome::*;
+    for jpeg in [BASE, PROGRESSIVE] {
+        for length in 2..jpeg.len() - 2 {
+            if let Ok(image) = image_from(&jpeg[..length]) {
+                assert_eq!(
+                    ColorOutcome::from_metadata(
+                        image
+                            .metadata
+                            .as_ref()
+                            .and_then(|m| m.get(&metadata_key(0)))
+                    ),
+                    ColorOutcome::default(),
+                    "length={length}"
+                );
+            }
+        }
+    }
+}

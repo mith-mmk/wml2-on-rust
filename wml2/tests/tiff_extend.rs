@@ -1772,3 +1772,64 @@ mod cmyk_later_page_errors {
         }
     }
 }
+
+#[test]
+fn cmyk_color_outcomes_are_page_scoped_and_corrupt_pages_are_unknown() {
+    use wml2::color_outcome::*;
+    let cmyk = page(1, 1, &[8; 4], 4, 5, vec![vec![1, 2, 3, 4]]);
+    let mut invalid = cmyk.clone();
+    invalid.icc = b"broken".to_vec();
+    let corrupt = page(1, 1, &[8; 4], 4, 5, vec![vec![1]]);
+    let rgb = page(1, 1, &[8; 3], 3, 2, vec![vec![9, 8, 7]]);
+    let bytes = build_pages(&[cmyk, invalid, corrupt, rgb], Variant::Classic, false);
+    let (image, warning) = wml2::draw::image_load_with_warnings(&bytes).unwrap();
+    assert!(warning.is_some());
+    let metadata = image.metadata.unwrap();
+    let result = |index| ColorOutcome::from_metadata(metadata.get(&metadata_key(index)));
+    assert_eq!(
+        result(0).conversion,
+        Conversion::Approximation(
+            ApproximationReason::MissingProfile,
+            ApproximationMethod::MultiplicativeCmyk
+        )
+    );
+    let reason = if cfg!(feature = "color-management") {
+        ApproximationReason::InvalidProfile
+    } else {
+        ApproximationReason::ColorManagementDisabled
+    };
+    assert_eq!(
+        result(1).conversion,
+        Conversion::Approximation(reason, ApproximationMethod::MultiplicativeCmyk)
+    );
+    assert_eq!(result(2), ColorOutcome::default());
+    assert_eq!(result(3), ColorOutcome::default());
+}
+
+#[cfg(feature = "color-management")]
+#[test]
+fn cmyk_color_outcomes_keep_managed_and_fallback_pages_distinct() {
+    use wml2::color_outcome::*;
+    let fallback = page(1, 1, &[8; 4], 4, 5, vec![vec![1, 2, 3, 4]]);
+    let mut managed = fallback.clone();
+    managed.icc = cmyk_test_profile::cmyk_profile();
+    let rgb = page(1, 1, &[8; 3], 3, 2, vec![vec![9, 8, 7]]);
+    let bytes = build_pages(&[managed, rgb, fallback], Variant::Classic, false);
+    let image = wml2::draw::image_from(&bytes).unwrap();
+    let metadata = image.metadata.unwrap();
+    assert_eq!(
+        ColorOutcome::from_metadata(metadata.get(&metadata_key(0))).conversion,
+        Conversion::AppliedToSrgb
+    );
+    assert_eq!(
+        ColorOutcome::from_metadata(metadata.get(&metadata_key(1))),
+        ColorOutcome::default()
+    );
+    assert_eq!(
+        ColorOutcome::from_metadata(metadata.get(&metadata_key(2))).conversion,
+        Conversion::Approximation(
+            ApproximationReason::MissingProfile,
+            ApproximationMethod::MultiplicativeCmyk
+        )
+    );
+}

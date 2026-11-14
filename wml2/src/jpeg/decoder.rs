@@ -910,6 +910,16 @@ pub(crate) fn packed_cmyk(
     }
 }
 
+pub(crate) fn publish_color_outcome(
+    option: &mut DecodeOptions,
+    outcome: crate::color_outcome::ColorOutcome,
+) -> Result<(), Error> {
+    let key = crate::color_outcome::metadata_key(0);
+    crate::limits::charge_metadata(key.len() + 8)?;
+    option.drawer.set_metadata(&key, outcome.to_metadata())?;
+    Ok(())
+}
+
 pub(crate) struct JpegCmyk {
     converter: crate::color_convert::cmyk::CmykConverter,
     pub(crate) adobe: bool,
@@ -919,11 +929,11 @@ impl JpegCmyk {
     pub(crate) fn prepare(
         header: &JpegHaeder,
         warnings: &mut Option<ImgWarnings>,
-    ) -> Result<Option<Self>, Error> {
+    ) -> Result<(Option<Self>, crate::color_outcome::ColorOutcome), Error> {
         if !header.frame_header.as_ref().is_some_and(|f| f.plane == 4) {
-            return Ok(None);
+            return Ok((None, crate::color_outcome::ColorOutcome::default()));
         }
-        if header.icc_profile.is_none()
+        let invalid_association = header.icc_profile.is_none()
             && header.jpeg_app_headers.as_ref().is_some_and(|apps| {
                 apps.iter().any(|app| match app {
                     JpegAppHeaders::ICCProfile(_) => true,
@@ -932,8 +942,8 @@ impl JpegCmyk {
                     }
                     _ => false,
                 })
-            })
-        {
+            });
+        if invalid_association {
             *warnings = ImgWarnings::add(
                 warnings.take(),
                 Box::new(JpegWarning::new_const(
@@ -950,18 +960,28 @@ impl JpegCmyk {
         if let Some(warning) = warning {
             *warnings = ImgWarnings::add(warnings.take(), Box::new(warning));
         }
+        let mut outcome = converter.outcome();
+        if invalid_association {
+            outcome.conversion = crate::color_outcome::Conversion::Approximation(
+                crate::color_outcome::ApproximationReason::InvalidProfile,
+                crate::color_outcome::ApproximationMethod::AdditiveCmyk,
+            );
+        }
         if !converter.has_icc() {
-            return Ok(None);
+            return Ok((None, outcome));
         }
         let adobe = header
             .jpeg_app_headers
             .as_ref()
             .is_some_and(|apps| apps.iter().any(|a| matches!(a, JpegAppHeaders::Adobe(_))));
-        Ok(Some(Self {
-            converter,
-            adobe,
-            rgba: Vec::new(),
-        }))
+        Ok((
+            Some(Self {
+                converter,
+                adobe,
+                rgba: Vec::new(),
+            }),
+            outcome,
+        ))
     }
     pub(crate) fn convert(&mut self, data: &mut Vec<u8>) -> Result<(), Error> {
         self.rgba.resize(data.len(), 0);
@@ -1290,7 +1310,7 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
     let color_space = fh.color_space.to_string();
     let component = require_components(fh)?;
     let plane = fh.plane;
-    let mut cmyk = JpegCmyk::prepare(header, &mut warnings)?;
+    let (mut cmyk, color_outcome) = JpegCmyk::prepare(header, &mut warnings)?;
     let cmyk_adobe = cmyk.as_ref().map(|c| c.adobe);
     // decode
     option.drawer.init(width, height, InitOptions::new())?;
@@ -1455,7 +1475,8 @@ pub(crate) fn decode_baseline<'decode, B: BinaryReader>(
                 Ok(marker) => {
                     match marker {
                         0xd9 => {
-                            // EOI
+                            // EOI: all output chunks have completed conversion and drawing.
+                            publish_color_outcome(option, color_outcome)?;
                             option.drawer.terminate(None)?;
                             return Ok(warnings);
                         }

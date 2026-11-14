@@ -714,6 +714,15 @@ fn parse_psd(data: &[u8]) -> Result<ParsedPsd, Error> {
             );
         }
     }
+    // All composite and layer pixels have completed conversion at this point.
+    // Preserve each output's own record instead of inheriting a prior layer.
+    if let Some(converter) = converter.as_ref() {
+        for index in 0..=layers.len() {
+            let key = crate::color_outcome::metadata_key(index);
+            crate::limits::charge_metadata(key.len() + 8)?;
+            metadata.insert(key, converter.outcome().to_metadata());
+        }
+    }
     Ok(ParsedPsd {
         warnings,
         header,

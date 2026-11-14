@@ -834,3 +834,88 @@ fn cmyk_icc_normalizes_inverted_8_and_16_bit_planes() {
         assert!(!image.metadata.unwrap().contains_key("ICC Profile"));
     }
 }
+
+#[test]
+fn color_outcome_is_machine_readable_and_missing_output_stays_unknown() {
+    use wml2::color_outcome::*;
+    let planes = vec![vec![128], vec![128], vec![128], vec![255]];
+    for profile in [None, Some(b"invalid profile".as_slice())] {
+        let resources = profile.map(|p| resource(1039, p)).unwrap_or_default();
+        let encoded = psd(1, 1, 8, 4, &planes, 0, &[], &resources, &[]);
+        let image = wml2::draw::image_from(&encoded).unwrap();
+        let metadata = image.metadata.unwrap();
+        let reason = if profile.is_none() {
+            ApproximationReason::MissingProfile
+        } else if cfg!(feature = "color-management") {
+            ApproximationReason::InvalidProfile
+        } else {
+            ApproximationReason::ColorManagementDisabled
+        };
+        assert_eq!(
+            ColorOutcome::from_metadata(metadata.get(&metadata_key(0))),
+            ColorOutcome {
+                conversion: Conversion::Approximation(
+                    reason,
+                    ApproximationMethod::MultiplicativeCmyk
+                ),
+                output: OutputColorSpace::DeviceApproximation
+            }
+        );
+        assert_eq!(
+            ColorOutcome::from_metadata(metadata.get(&metadata_key(1))),
+            ColorOutcome::default()
+        );
+        assert_eq!(image.buffer.unwrap(), [128, 128, 128, 255]);
+    }
+}
+
+#[test]
+fn cmyk_outcomes_follow_composite_then_emitted_layers() {
+    use wml2::color_outcome::*;
+    let layers = layer_section(
+        &[LayerSpec {
+            top: 0,
+            left: 0,
+            width: 1,
+            height: 1,
+            name: "cmyk",
+            visible: true,
+            opacity: 255,
+            blend: *b"norm",
+            channels: vec![(0, vec![255]), (1, vec![0]), (2, vec![0]), (3, vec![255])],
+            compression: 0,
+        }],
+        8,
+    );
+    let image = wml2::draw::image_from(&psd(
+        1,
+        1,
+        8,
+        4,
+        &[vec![0], vec![255], vec![0], vec![255]],
+        0,
+        &[],
+        &[],
+        &layers,
+    ))
+    .unwrap();
+    assert_eq!(image.buffer.as_deref(), Some([0, 255, 0, 255].as_slice()));
+    assert_eq!(
+        image.animation.as_ref().unwrap()[0].buffer,
+        [255, 0, 0, 255]
+    );
+    let metadata = image.metadata.unwrap();
+    for index in [0, 1] {
+        assert_eq!(
+            ColorOutcome::from_metadata(metadata.get(&metadata_key(index))).conversion,
+            Conversion::Approximation(
+                ApproximationReason::MissingProfile,
+                ApproximationMethod::MultiplicativeCmyk
+            )
+        );
+    }
+    assert_eq!(
+        ColorOutcome::from_metadata(metadata.get(&metadata_key(2))),
+        ColorOutcome::default()
+    );
+}

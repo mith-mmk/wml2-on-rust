@@ -15,6 +15,26 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  cmyk-icc:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable]
+        include:
+          - os: ubuntu-latest
+            rust: "1.91.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Published ICC CMYK regression tests
+        env:
+          WML2_TEST_CMYK_ICC: transform
+        run: cargo test -p wml2 --locked --features color-management,psd --lib --test jpeg_cmyk_pipeline --test psd_decode --test tiff_extend --test jpeg_icc --test jpeg_png_icc_metadata
   select:
     runs-on: ubuntu-latest
     outputs:

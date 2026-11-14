@@ -179,6 +179,9 @@ pub fn get_encode_extentions() -> Vec<String> {
 pub mod bmp;
 #[cfg(any(
     feature = "avif",
+    feature = "jpeg",
+    feature = "tiff",
+    feature = "psd",
     all(feature = "jpeg-xl", feature = "color-management")
 ))]
 mod color_convert;

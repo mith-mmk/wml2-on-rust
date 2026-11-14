@@ -393,9 +393,9 @@ dependencies = [
 
 [[package]]
 name = "icc-profile"
-version = "0.0.8"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "137293a8fecc29c42652fbffa9d13bc251781b077d570fdd9b5bc29c43720c0e"
+checksum = "b7f43fd73989d11494bf2c99530bbd0dad17b48d3de9604ae6819848324998e8"
 dependencies = [
  "bin-rs",
 ]
@@ -1062,7 +1062,7 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
 name = "wml2"
-version = "0.0.45"
+version = "0.0.46"
 dependencies = [
  "avif-rust",
  "avifenc-rust",

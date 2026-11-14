@@ -5,6 +5,7 @@ use std::io::SeekFrom;
 
 use bin_rs::reader::BinaryReader;
 
+use crate::color_convert::cmyk::{Approximation, CmykConverter};
 use crate::draw::{
     CallbackResponse, DecodeOptions, ImageRect, InitOptions, NextBlend, NextDispose, NextOption,
     NextOptions, ResponseCommand,
@@ -131,6 +132,7 @@ struct LayerFrame {
 }
 
 struct ParsedPsd {
+    warnings: Option<ImgWarnings>,
     header: Header,
     metadata: HashMap<String, DataMap>,
     composite: Vec<u8>,
@@ -280,6 +282,15 @@ fn parse_resources(
                 metadata.remove("ICC Profile");
                 metadata.remove("Source ICC Profile");
                 metadata.insert(key.to_string(), DataMap::ICCProfile(profile));
+            }
+            1041 => {
+                // Photoshop's untagged flag leaves the resource as provenance.
+                if let Some(value) = resource.first() {
+                    metadata.insert(
+                        "PSD ICC Untagged".to_string(),
+                        DataMap::UInt(u64::from(*value != 0)),
+                    );
+                }
             }
             1058 | 1059 => {
                 metadata.insert("EXIF Raw".to_string(), DataMap::Raw(resource.to_vec()));
@@ -445,6 +456,7 @@ fn parse_layers(
     data: &[u8],
     header: Header,
     palette: Option<&[u8]>,
+    mut converter: Option<&mut CmykConverter>,
 ) -> Result<(usize, Vec<LayerFrame>), Error> {
     if data.is_empty() {
         return Ok((0, Vec::new()));
@@ -521,6 +533,7 @@ fn parse_layers(
             &planes,
             alpha.as_deref(),
             record.opacity,
+            converter.as_deref_mut(),
         )?;
         layers.push(LayerFrame {
             source_index,
@@ -597,8 +610,27 @@ fn parse_psd(data: &[u8]) -> Result<ParsedPsd, Error> {
     let resources = cursor.sized_u32("image resources")?;
     let mut metadata = HashMap::new();
     parse_resources(resources, header.mode, &mut metadata)?;
+    let (mut converter, warnings) = if header.mode == 4 {
+        let untagged = matches!(metadata.get("PSD ICC Untagged"), Some(DataMap::UInt(1)));
+        let profile = match metadata.get("Source ICC Profile") {
+            Some(DataMap::ICCProfile(profile)) if !untagged => Some(profile.as_slice()),
+            _ => None,
+        };
+        let (converter, warning) = CmykConverter::prepare(
+            profile,
+            Approximation::Multiplicative,
+            crate::limits::current().expanded_bytes.min(64 << 20),
+        )?;
+        (
+            Some(converter),
+            warning.and_then(|warning| ImgWarnings::add(None, Box::new(warning))),
+        )
+    } else {
+        (None, None)
+    };
     let layer_data = cursor.sized_u32("layer and mask information")?;
-    let (layer_record_count, layers) = parse_layers(layer_data, header, palette.as_deref())?;
+    let (layer_record_count, layers) =
+        parse_layers(layer_data, header, palette.as_deref(), converter.as_mut())?;
 
     let compression = cursor.u16()?;
     let planar = decompress_planar(
@@ -623,6 +655,7 @@ fn parse_psd(data: &[u8]) -> Result<ParsedPsd, Error> {
         &planes[..base],
         alpha,
         255,
+        converter.as_mut(),
     )?;
 
     metadata.insert("Format".to_string(), DataMap::Ascii("PSD".to_string()));
@@ -682,6 +715,7 @@ fn parse_psd(data: &[u8]) -> Result<ParsedPsd, Error> {
         }
     }
     Ok(ParsedPsd {
+        warnings,
         header,
         metadata,
         composite,
@@ -696,7 +730,7 @@ fn aborted(response: Option<CallbackResponse>) -> bool {
 fn emit(parsed: ParsedPsd, option: &mut DecodeOptions<'_>) -> Result<Option<ImgWarnings>, Error> {
     for (key, value) in parsed.metadata {
         if aborted(option.drawer.set_metadata(&key, value)?) {
-            return Ok(None);
+            return Ok(parsed.warnings);
         }
     }
     let init = InitOptions {
@@ -709,7 +743,7 @@ fn emit(parsed: ParsedPsd, option: &mut DecodeOptions<'_>) -> Result<Option<ImgW
             .drawer
             .init(parsed.header.width, parsed.header.height, Some(init))?,
     ) {
-        return Ok(None);
+        return Ok(parsed.warnings);
     }
     if aborted(option.drawer.draw(
         0,
@@ -719,7 +753,7 @@ fn emit(parsed: ParsedPsd, option: &mut DecodeOptions<'_>) -> Result<Option<ImgW
         &parsed.composite,
         None,
     )?) {
-        return Ok(None);
+        return Ok(parsed.warnings);
     }
     for layer in parsed.layers {
         let next = NextOptions {
@@ -735,18 +769,18 @@ fn emit(parsed: ParsedPsd, option: &mut DecodeOptions<'_>) -> Result<Option<ImgW
             blend: Some(NextBlend::Source),
         };
         if aborted(option.drawer.next(Some(next))?) {
-            return Ok(None);
+            return Ok(parsed.warnings);
         }
         if aborted(
             option
                 .drawer
                 .draw(0, 0, layer.width, layer.height, &layer.rgba, None)?,
         ) {
-            return Ok(None);
+            return Ok(parsed.warnings);
         }
     }
     let _ = option.drawer.terminate(None)?;
-    Ok(None)
+    Ok(parsed.warnings)
 }
 
 /// Decodes a PSD v1 image into WML2 callbacks.

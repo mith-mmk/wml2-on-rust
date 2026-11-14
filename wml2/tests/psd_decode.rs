@@ -691,6 +691,93 @@ mod cmyk_test_profile;
 
 #[cfg(feature = "color-management")]
 #[test]
+fn cmyk_icc_varied_rows_cross_batch_boundaries_for_all_compressions() {
+    let supported = cmyk_test_profile::supports_cmyk();
+    let profile = cmyk_test_profile::cmyk_profile();
+    // A partial second batch and two different rows catch stale scratch data,
+    // channel ordering, and prediction state leaking across row boundaries.
+    let (width, height) = (259, 2);
+    for depth in [8, 16] {
+        let maximum = if depth == 8 { 255u32 } else { 65535 };
+        let samples: Vec<[u32; 5]> = (0..width * height)
+            .map(|i| {
+                std::array::from_fn(|c| {
+                    ((i * (7919 + c * 2017) + c * 12347) % (maximum as usize + 1)) as u32
+                })
+            })
+            .collect();
+        let planes: Vec<Vec<u8>> = (0..5)
+            .map(|c| {
+                samples
+                    .iter()
+                    .flat_map(|v| {
+                        if depth == 16 {
+                            (v[c] as u16).to_be_bytes().to_vec()
+                        } else {
+                            vec![v[c] as u8]
+                        }
+                    })
+                    .collect()
+            })
+            .collect();
+        for compression in 0..=3 {
+            let encoded = psd(
+                width,
+                height,
+                depth,
+                4,
+                &planes,
+                compression,
+                &[],
+                &resource(1039, &profile),
+                &[],
+            );
+            let (image, warnings) = wml2::draw::image_load_with_warnings(&encoded).unwrap();
+            assert_eq!(
+                warnings.as_ref().map_or(0, |w| w.len()),
+                usize::from(!supported)
+            );
+            let rgba = image.buffer.unwrap();
+            assert_eq!(rgba.len(), width * height * 4);
+            for (i, (pixel, values)) in rgba.chunks_exact(4).zip(&samples).enumerate() {
+                let q = |v: u32| ((v * 255 + maximum / 2) / maximum) as u8;
+                for c in 0..3 {
+                    let expected = if supported {
+                        let linear = f64::from(values[c]) * f64::from(values[3])
+                            / f64::from(maximum).powi(2);
+                        let srgb = if linear <= 0.0031308 {
+                            12.92 * linear
+                        } else {
+                            1.055 * linear.powf(1.0 / 2.4) - 0.055
+                        };
+                        (srgb * 255.0).round() as i32
+                    } else {
+                        ((u32::from(q(values[c])) * u32::from(q(values[3])) + 127) / 255) as i32
+                    };
+                    assert!(
+                        (i32::from(pixel[c]) - expected).abs() <= if supported { 3 } else { 0 },
+                        "depth={depth}, compression={compression}, pixel={i}, channel={c}, actual={}, expected={expected}",
+                        pixel[c]
+                    );
+                }
+                assert_eq!(
+                    pixel[3],
+                    q(values[4]),
+                    "depth={depth}, compression={compression}, alpha pixel={i}"
+                );
+            }
+            let metadata = image.metadata.unwrap();
+            assert!(!metadata.contains_key("ICC Profile"));
+            assert_eq!(
+                metadata.get("Source ICC Profile"),
+                Some(&DataMap::ICCProfile(profile.clone()))
+            );
+        }
+    }
+}
+
+#[cfg(feature = "color-management")]
+#[test]
 fn cmyk_icc_normalizes_inverted_8_and_16_bit_planes() {
     for depth in [8, 16] {
         let width = 257;

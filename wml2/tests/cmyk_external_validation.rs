@@ -152,3 +152,64 @@ fn cmyk_profile_stage_timings() {
         })
     );
 }
+
+#[test]
+#[ignore = "local real YCCK profile/no-profile pair; needs WML2_CMYK_PROFILE_JPEG"]
+fn real_ycck_profile_and_profile_removed_select_expected_routes() {
+    let original = std::fs::read(std::env::var("WML2_CMYK_PROFILE_JPEG").unwrap()).unwrap();
+    assert_eq!(&original[..2], &[255, 216]);
+    let mut stripped = original[..2].to_vec();
+    let mut pos = 2;
+    let mut icc_chunks = 0;
+    let mut ycck = false;
+    while pos + 4 <= original.len() {
+        assert_eq!(original[pos], 255);
+        let marker = original[pos + 1];
+        if marker == 0xda {
+            stripped.extend_from_slice(&original[pos..]);
+            break;
+        }
+        let length = usize::from(u16::from_be_bytes([original[pos + 2], original[pos + 3]]));
+        assert!(length >= 2 && pos + 2 + length <= original.len());
+        let payload = &original[pos + 4..pos + 2 + length];
+        if marker == 0xee && payload.starts_with(b"Adobe") {
+            ycck = payload.get(11) == Some(&2);
+        }
+        if marker == 0xe2 && payload.starts_with(b"ICC_PROFILE\0") {
+            icc_chunks += 1;
+        } else {
+            stripped.extend_from_slice(&original[pos..pos + 2 + length]);
+        }
+        pos += 2 + length;
+    }
+    assert!(
+        ycck && icc_chunks > 0,
+        "explicit real YCCK plus embedded ICC sample required"
+    );
+    let (managed, warnings) = wml2::draw::image_load_with_warnings(&original).unwrap();
+    let (fallback, fallback_warnings) = wml2::draw::image_load_with_warnings(&stripped).unwrap();
+    assert_eq!(
+        (managed.width, managed.height),
+        (fallback.width, fallback.height)
+    );
+    let managed_pixels = managed.buffer.unwrap();
+    let fallback_pixels = fallback.buffer.unwrap();
+    assert_eq!(managed_pixels.len(), managed.width * managed.height * 4);
+    assert!(managed_pixels.chunks_exact(4).all(|p| p[3] == 255));
+    assert!(fallback_pixels.chunks_exact(4).all(|p| p[3] == 255));
+    assert!(!format!("{fallback_warnings:?}").contains("CMYK color management:"));
+    #[cfg(feature = "color-management")]
+    {
+        assert!(!format!("{warnings:?}").contains("CMYK color management:"));
+        assert_ne!(
+            managed_pixels, fallback_pixels,
+            "tagged real YCCK must use the ICC route"
+        );
+        assert!(managed.metadata.unwrap().contains_key("Source ICC Profile"));
+    }
+    #[cfg(not(feature = "color-management"))]
+    {
+        assert!(format!("{warnings:?}").contains("color-management is disabled"));
+        assert_eq!(managed_pixels, fallback_pixels);
+    }
+}

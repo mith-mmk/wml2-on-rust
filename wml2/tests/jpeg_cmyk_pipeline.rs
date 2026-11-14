@@ -199,3 +199,166 @@ fn jpeg_cmyk_visual_benchmark() {
         std::fs::write(format!("../.test-jpeg-validation/{name}.png"), png).unwrap();
     }
 }
+
+#[cfg(feature = "color-management")]
+fn analytic_srgb_from_ink(ink: [f64; 4]) -> [u8; 3] {
+    std::array::from_fn(|c| {
+        let linear = (1.0 - ink[c]) * (1.0 - ink[3]);
+        let encoded = if linear <= 0.0031308 {
+            12.92 * linear
+        } else {
+            1.055 * linear.powf(1.0 / 2.4) - 0.055
+        };
+        (encoded * 255.0).round() as u8
+    })
+}
+
+#[cfg(feature = "color-management")]
+#[test]
+fn cmyk_and_ycck_match_independent_analytic_srgb_not_backend_self_comparison() {
+    for jpeg in [BASE, PROGRESSIVE] {
+        for adobe in [true, false] {
+            let unmarked = [&jpeg[..2], &jpeg[18..]].concat();
+            let (image, warnings) =
+                image_load_with_warnings(&tagged(if adobe { jpeg } else { &unmarked })).unwrap();
+            assert!(!format!("{warnings:?}").contains("CMYK color management:"));
+            for (index, pixel) in image.buffer.unwrap().chunks_exact(4).enumerate() {
+                let b = (index / 16 / 8 * 2 + index % 16 / 8) as u8;
+                let samples = [180 + b * 12, 200 - b * 8, 210 - b * 10, 240];
+                let ink = samples.map(|v| {
+                    if adobe {
+                        f64::from(255 - v) / 255.0
+                    } else {
+                        f64::from(v) / 255.0
+                    }
+                });
+                let expected = analytic_srgb_from_ink(ink);
+                for c in 0..3 {
+                    assert!(
+                        pixel[c].abs_diff(expected[c]) <= 3,
+                        "adobe={adobe}, block={b}, {pixel:?} vs {expected:?}"
+                    );
+                }
+                assert_eq!(pixel[3], 255);
+            }
+        }
+    }
+    let ycck = include_bytes!("fixtures/review/jpeg-icc-ycck.jpg");
+    let image = image_from(&tagged(ycck)).unwrap();
+    let expected =
+        analytic_srgb_from_ink([64.0 / 255.0, 96.0 / 255.0, 127.0 / 255.0, 32.0 / 255.0]);
+    for pixel in image.buffer.unwrap().chunks_exact(4) {
+        for c in 0..3 {
+            assert!(
+                pixel[c].abs_diff(expected[c]) <= 3,
+                "YCCK {pixel:?} vs {expected:?}"
+            );
+        }
+        assert_eq!(pixel[3], 255);
+    }
+}
+
+#[cfg(feature = "color-management")]
+#[test]
+fn unusable_embedded_cmyk_profile_warns_once_and_preserves_all_legacy_pixels() {
+    let valid = profiles::cmyk_profile();
+    for jpeg in [
+        BASE,
+        PROGRESSIVE,
+        include_bytes!("fixtures/review/jpeg-icc-ycck.jpg").as_slice(),
+    ] {
+        let plain = image_from(jpeg).unwrap();
+        for profile in [
+            b"broken".as_slice(),
+            &valid[..100],
+            include_bytes!("../src/srgb.icc").as_slice(),
+        ] {
+            let mut payload = b"ICC_PROFILE\0\x01\x01".to_vec();
+            payload.extend(profile);
+            let (image, warnings) =
+                image_load_with_warnings(&append_app(jpeg, 0xe2, &payload)).unwrap();
+            assert_eq!(image.buffer, plain.buffer);
+            assert_eq!((image.width, image.height), (plain.width, plain.height));
+            assert_eq!(
+                warnings
+                    .unwrap()
+                    .iter()
+                    .filter(|w| w.to_string().starts_with("CMYK color management:"))
+                    .count(),
+                1
+            );
+            assert!(!image.metadata.unwrap().contains_key("ICC Profile"));
+        }
+    }
+}
+
+#[cfg(feature = "color-management")]
+#[test]
+fn cmyk_profile_budget_failure_is_an_error_before_any_pixel_callback() {
+    use bin_rs::reader::BytesReader;
+    use wml2::draw::*;
+    use wml2::limits::DecodeLimits;
+    #[derive(Default)]
+    struct Probe {
+        draws: usize,
+    }
+    impl DrawCallback for Probe {
+        fn init(&mut self, _: usize, _: usize, _: Option<InitOptions>) -> Response {
+            Ok(None)
+        }
+        fn draw(
+            &mut self,
+            _: usize,
+            _: usize,
+            _: usize,
+            _: usize,
+            _: &[u8],
+            _: Option<DrawOptions>,
+        ) -> Response {
+            self.draws += 1;
+            Ok(None)
+        }
+        fn terminate(&mut self, _: Option<TerminateOptions>) -> Response {
+            Ok(None)
+        }
+        fn next(&mut self, _: Option<NextOptions>) -> Response {
+            Ok(None)
+        }
+        fn verbose(&mut self, _: &str, _: Option<VerboseOptions>) -> Response {
+            Ok(None)
+        }
+        fn set_metadata(&mut self, _: &str, _: DataMap) -> Response {
+            Ok(None)
+        }
+    }
+    for jpeg in [BASE, PROGRESSIVE] {
+        let limits = DecodeLimits {
+            expanded_bytes: 8192,
+            ..DecodeLimits::unlimited()
+        };
+        assert!(
+            image_from_with_limits(jpeg, limits).is_ok(),
+            "plain fixture fits the same resource budget"
+        );
+        let encoded = tagged(jpeg);
+        let mut reader = BytesReader::new(&encoded);
+        let mut probe = Probe::default();
+        let error = image_decoder_with_limits(
+            &mut reader,
+            &mut DecodeOptions {
+                debug_flag: 0,
+                drawer: &mut probe,
+            },
+            limits,
+        )
+        .unwrap_err();
+        assert!(
+            error.to_string().contains("CMYK converter workspace"),
+            "{error}"
+        );
+        assert_eq!(
+            probe.draws, 0,
+            "resource failure must not become pixel fallback"
+        );
+    }
+}

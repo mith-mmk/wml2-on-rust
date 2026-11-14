@@ -1477,6 +1477,123 @@ mod cmyk_test_profile;
 
 #[cfg(feature = "color-management")]
 #[test]
+fn cmyk_icc_varied_strip_tile_chunky_planar_matrix() {
+    let supported = cmyk_test_profile::supports_cmyk();
+    let profile = cmyk_test_profile::cmyk_profile();
+    let (width, height) = (259usize, 3usize);
+    for bits in [8u16, 16] {
+        let maximum = (1u32 << bits) - 1;
+        let samples: Vec<[u32; 5]> = (0..width * height)
+            .map(|i| {
+                std::array::from_fn(|c| {
+                    ((i * (7919 + c * 2017) + c * 12347) % (maximum as usize + 1)) as u32
+                })
+            })
+            .collect();
+        for be in [false, true] {
+            for planar in [1, 2] {
+                for tiled in [false, true] {
+                    for mode in [1, 8] {
+                        let block_width = if tiled { 257 } else { width };
+                        let block_height = 2;
+                        let mut blocks = Vec::new();
+                        for plane in 0..if planar == 2 { 5 } else { 1 } {
+                            for top in (0..height).step_by(block_height) {
+                                for left in (0..width).step_by(block_width) {
+                                    let mut raw = Vec::new();
+                                    let rows = if tiled {
+                                        block_height
+                                    } else {
+                                        block_height.min(height - top)
+                                    };
+                                    for y in top..top + rows {
+                                        for x in left..left + block_width {
+                                            let values = if x < width && y < height {
+                                                samples[y * width + x]
+                                            } else {
+                                                [maximum; 5]
+                                            };
+                                            for c in
+                                                if planar == 2 { plane..plane + 1 } else { 0..5 }
+                                            {
+                                                if bits == 8 {
+                                                    raw.push(values[c] as u8);
+                                                } else {
+                                                    put_u16(&mut raw, values[c] as u16, be);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    blocks.push(compression(&raw, mode));
+                                }
+                            }
+                        }
+                        let mut p = page(width as u32, height as u32, &[bits; 5], 5, 5, blocks);
+                        p.rows = block_height as u32;
+                        p.tile = tiled.then_some((block_width as u32, block_height as u32));
+                        p.planar = planar;
+                        p.compression = mode;
+                        p.extra = vec![2];
+                        p.icc = profile.clone();
+                        for variant in [Variant::Classic, Variant::Big] {
+                            let (image, warning) = wml2::draw::image_load_with_warnings(
+                                &build_pages(&[p.clone()], variant, be),
+                            )
+                            .unwrap();
+                            assert_eq!(
+                                warning.as_ref().map_or(0, |w| w.len()),
+                                usize::from(!supported)
+                            );
+                            let rgba = image.buffer.unwrap();
+                            assert_eq!(rgba.len(), width * height * 4);
+                            for (i, (pixel, values)) in
+                                rgba.chunks_exact(4).zip(&samples).enumerate()
+                            {
+                                let max = u64::from(maximum);
+                                let q = |v: u64| ((v * 255 + max / 2) / max) as u8;
+                                for c in 0..3 {
+                                    let expected = if supported {
+                                        let linear = (1.0
+                                            - f64::from(values[c]) / f64::from(maximum))
+                                            * (1.0 - f64::from(values[3]) / f64::from(maximum));
+                                        let srgb = if linear <= 0.0031308 {
+                                            12.92 * linear
+                                        } else {
+                                            1.055 * linear.powf(1.0 / 2.4) - 0.055
+                                        };
+                                        (srgb * 255.0).round() as i32
+                                    } else {
+                                        i32::from(q(((max - u64::from(values[c]))
+                                            * (max - u64::from(values[3]))
+                                            + max / 2)
+                                            / max))
+                                    };
+                                    assert!(
+                                        (i32::from(pixel[c]) - expected).abs()
+                                            <= if supported { 3 } else { 0 },
+                                        "bits={bits}, be={be}, planar={planar}, tiled={tiled}, mode={mode}, big={}, pixel={i}, channel={c}, actual={}, expected={expected}",
+                                        matches!(variant, Variant::Big),
+                                        pixel[c]
+                                    );
+                                }
+                                assert_eq!(pixel[3], q(u64::from(values[4])), "alpha pixel={i}");
+                            }
+                            let metadata = image.metadata.unwrap();
+                            assert!(!metadata.contains_key("ICC Profile"));
+                            assert_eq!(
+                                metadata.get("Source ICC Profile"),
+                                Some(&wml2::metadata::DataMap::ICCProfile(profile.clone()))
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[cfg(feature = "color-management")]
+#[test]
 fn cmyk_icc_preserves_native_precision_and_alpha() {
     for bits in [6u16, 8, 16, 32] {
         for be in [false, true] {

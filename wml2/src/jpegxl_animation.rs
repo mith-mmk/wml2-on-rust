@@ -514,6 +514,37 @@ pub(super) fn deliver<const MANAGED: bool>(
         ));
     }
     metadata.push(("orientation_applied".into(), DataMap::Bool(true)));
+    // All frame conversions completed above; output zero is the poster and
+    // outputs 1.. are playback frames (including the repeated first frame).
+    let outcome = if MANAGED {
+        crate::color_outcome::ColorOutcome {
+            conversion: crate::color_outcome::Conversion::AppliedToSrgb,
+            output: crate::color_outcome::OutputColorSpace::Srgb,
+        }
+    } else {
+        crate::color_outcome::ColorOutcome {
+            conversion: crate::color_outcome::Conversion::NotApplied(
+                crate::color_outcome::NotAppliedReason::ReconstructionPreserved,
+            ),
+            output: crate::color_outcome::OutputColorSpace::Reconstruction,
+        }
+    };
+    let outcome_bytes = (0..=prepared.len()).try_fold(0usize, |sum, index| {
+        add(sum, crate::color_outcome::metadata_key(index).len() + 8)
+    })?;
+    limits::check(
+        outcome_bytes,
+        limits.metadata_bytes,
+        "JPEG XL color outcomes",
+    )?;
+    workspace.claim(outcome_bytes, "JPEG XL color outcomes")?;
+    metadata.try_reserve_exact(prepared.len() + 1)?;
+    for index in 0..=prepared.len() {
+        metadata.push((
+            crate::color_outcome::metadata_key(index),
+            outcome.to_metadata(),
+        ));
+    }
     let meta = metadata.iter().try_fold(0usize, |a, (k, v)| {
         add(
             a,

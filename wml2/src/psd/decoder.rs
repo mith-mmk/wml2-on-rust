@@ -714,6 +714,24 @@ fn parse_psd(data: &[u8]) -> Result<ParsedPsd, Error> {
             );
         }
     }
+    // All composite and layer pixels have completed conversion at this point.
+    // Preserve each output's own record instead of inheriting a prior layer.
+    if let Some(converter) = converter.as_ref() {
+        let mut outcome = converter.outcome();
+        if matches!(metadata.get("PSD ICC Untagged"), Some(DataMap::UInt(1)))
+            && metadata.contains_key("Source ICC Profile")
+        {
+            outcome.conversion = crate::color_outcome::Conversion::Approximation(
+                crate::color_outcome::ApproximationReason::ProfileIgnored,
+                crate::color_outcome::ApproximationMethod::MultiplicativeCmyk,
+            );
+        }
+        for index in 0..=layers.len() {
+            let key = crate::color_outcome::metadata_key(index);
+            crate::limits::charge_metadata(key.len() + 8)?;
+            metadata.insert(key, outcome.to_metadata());
+        }
+    }
     Ok(ParsedPsd {
         warnings,
         header,

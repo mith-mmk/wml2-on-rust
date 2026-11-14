@@ -302,3 +302,62 @@ mod native_precision_tests {
         );
     }
 }
+
+#[test]
+fn typed_routes_distinguish_missing_invalid_disabled_and_applied() {
+    use crate::color_outcome::*;
+    let (mut plain, _) = CmykConverter::prepare(None, Approximation::Additive, 4 << 20).unwrap();
+    let mut rgba = [0; 4];
+    plain.convert_u8(&[0, 0, 0, 0], None, &mut rgba).unwrap();
+    assert_eq!(
+        plain.outcome(),
+        ColorOutcome {
+            conversion: Conversion::Approximation(
+                ApproximationReason::MissingProfile,
+                ApproximationMethod::AdditiveCmyk
+            ),
+            output: OutputColorSpace::DeviceApproximation
+        }
+    );
+    let (mut invalid, _) =
+        CmykConverter::prepare(Some(b"invalid"), Approximation::Multiplicative, 4 << 20).unwrap();
+    invalid.convert_u8(&[0, 0, 0, 0], None, &mut rgba).unwrap();
+    assert_eq!(
+        invalid.outcome().conversion,
+        Conversion::Approximation(
+            if cfg!(feature = "color-management") {
+                ApproximationReason::InvalidProfile
+            } else {
+                ApproximationReason::ColorManagementDisabled
+            },
+            ApproximationMethod::MultiplicativeCmyk
+        )
+    );
+    #[cfg(feature = "color-management")]
+    {
+        let profile = profiles::cmyk_profile();
+        let (mut managed, _) =
+            CmykConverter::prepare(Some(&profile), Approximation::Additive, 4 << 20).unwrap();
+        managed.convert_u8(&[0, 0, 0, 0], None, &mut rgba).unwrap();
+        assert_eq!(
+            managed.outcome(),
+            ColorOutcome {
+                conversion: Conversion::AppliedToSrgb,
+                output: OutputColorSpace::Srgb
+            }
+        );
+        let (wrong, _) = CmykConverter::prepare(
+            Some(include_bytes!("srgb.icc")),
+            Approximation::Additive,
+            4 << 20,
+        )
+        .unwrap();
+        assert!(matches!(
+            wrong.outcome().conversion,
+            Conversion::Approximation(
+                ApproximationReason::UnsupportedProfile,
+                ApproximationMethod::AdditiveCmyk
+            )
+        ));
+    }
+}

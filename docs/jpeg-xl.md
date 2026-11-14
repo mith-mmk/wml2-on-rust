@@ -28,6 +28,8 @@ assert_eq!(image.source_format(), Some(PixelFormatEx::Rgba12));
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
+See the [open-issue reconciliation](issue-inventory-20261114.md) for released support versus remaining umbrella-issue scope.
+
 ## Still-image profile and precision
 
 - Bare `ff 0a` codestreams and containers with `jxlc` or ordered `jxlp` chunks.

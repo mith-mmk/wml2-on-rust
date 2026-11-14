@@ -327,6 +327,24 @@ fn decode_blocked<B: BinaryReader>(
     initialize: bool,
     animation: bool,
 ) -> Result<Option<ImgWarnings>, Error> {
+    decode_blocked_with_outcome(
+        reader,
+        option,
+        header,
+        initialize,
+        animation,
+        &mut crate::color_outcome::ColorOutcome::default(),
+    )
+}
+
+fn decode_blocked_with_outcome<B: BinaryReader>(
+    reader: &mut B,
+    option: &mut DecodeOptions,
+    header: &Tiff,
+    initialize: bool,
+    animation: bool,
+    outcome: &mut crate::color_outcome::ColorOutcome,
+) -> Result<Option<ImgWarnings>, Error> {
     let (mut converter, warnings) = prepare_cmyk(header)?;
     if initialize {
         init_canvas(option, header, animation)?;
@@ -438,6 +456,9 @@ fn decode_blocked<B: BinaryReader>(
                 converter.as_mut(),
             )?;
         }
+        if let Some(converter) = &converter {
+            *outcome = converter.outcome();
+        }
         return Ok(warnings);
     }
 
@@ -476,6 +497,9 @@ fn decode_blocked<B: BinaryReader>(
             Some(block.stored_height),
             converter.as_mut(),
         )?;
+    }
+    if let Some(converter) = &converter {
+        *outcome = converter.outcome();
     }
     Ok(warnings)
 }
@@ -1550,13 +1574,18 @@ fn compression_decode<'decode, B: BinaryReader>(
     header: &Tiff,
     initialize: bool,
     animation: bool,
+    outcome: &mut crate::color_outcome::ColorOutcome,
 ) -> Result<Option<ImgWarnings>, Error> {
     match header.compression {
         Compression::NoneCompression => {
-            return decode_none_compresson(reader, option, header, initialize, animation);
+            return decode_blocked_with_outcome(
+                reader, option, header, initialize, animation, outcome,
+            );
         }
         Compression::LZW => {
-            return decode_lzw_compresson(reader, option, header, initialize, animation);
+            return decode_blocked_with_outcome(
+                reader, option, header, initialize, animation, outcome,
+            );
         }
         Compression::Jpeg => {
             #[cfg(feature = "tiff-jpeg")]
@@ -1583,10 +1612,14 @@ fn compression_decode<'decode, B: BinaryReader>(
             }
         }
         Compression::Packbits => {
-            return decode_packbits_compresson(reader, option, header, initialize, animation);
+            return decode_blocked_with_outcome(
+                reader, option, header, initialize, animation, outcome,
+            );
         }
         Compression::AdobeDeflate | Compression::DEFLATE => {
-            return decode_deflate_compresson(reader, option, header, initialize, animation);
+            return decode_blocked_with_outcome(
+                reader, option, header, initialize, animation, outcome,
+            );
         }
         Compression::CCITTHuffmanRLE
         | Compression::CCITTGroup3Fax
@@ -1622,6 +1655,21 @@ pub fn decode<B: BinaryReader>(
     option: &mut DecodeOptions,
 ) -> Result<Option<ImgWarnings>, Error> {
     crate::limits::metadata_scope(|| decode_inner(reader, option))
+}
+
+fn publish_color_outcome(
+    option: &mut DecodeOptions,
+    index: usize,
+    outcome: crate::color_outcome::ColorOutcome,
+) -> Result<bool, Error> {
+    let key = crate::color_outcome::metadata_key(index);
+    crate::limits::charge_metadata(key.len() + 8)?;
+    let response = option.drawer.set_metadata(&key, outcome.to_metadata())?;
+    if matches!(response, Some(r) if r.response == ResponseCommand::Abort) {
+        option.drawer.terminate(None)?;
+        return Ok(false);
+    }
+    Ok(true)
 }
 
 fn decode_inner<B: BinaryReader>(
@@ -1719,12 +1767,16 @@ fn decode_inner<B: BinaryReader>(
     }
     let mut warnings = None;
 
-    let warn = compression_decode(reader, option, &pages[0], true, count > 1)?;
+    let mut outcome = crate::color_outcome::ColorOutcome::default();
+    let warn = compression_decode(reader, option, &pages[0], true, count > 1, &mut outcome)?;
+    if !publish_color_outcome(option, 0, outcome)? {
+        return Ok(ImgWarnings::append(warnings, warn));
+    }
 
     warnings = ImgWarnings::append(warnings, warn);
 
     if count > 1 {
-        for append in pages.iter().skip(1) {
+        for (index, append) in pages.iter().enumerate().skip(1) {
             let rect = ImageRect {
                 width: append.width as usize,
                 height: append.height as usize,
@@ -1745,9 +1797,13 @@ fn decode_inner<B: BinaryReader>(
                     return Ok(warnings);
                 }
             }
-            let result = compression_decode(reader, option, append, false, false);
+            let mut outcome = crate::color_outcome::ColorOutcome::default();
+            let result = compression_decode(reader, option, append, false, false, &mut outcome);
             match result {
                 Ok(warn) => {
+                    if !publish_color_outcome(option, index, outcome)? {
+                        return Ok(ImgWarnings::append(warnings, warn));
+                    }
                     warnings = ImgWarnings::append(warnings, warn);
                 }
                 Err(error) => {

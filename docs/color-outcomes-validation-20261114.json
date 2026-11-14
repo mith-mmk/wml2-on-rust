@@ -1,0 +1,233 @@
+{
+  "date": "2026-11-14",
+  "environment": "hadrianus macOS arm64",
+  "baseline_commit": "a6bdc86a65b5a182f14209ad79d5b3fdb760488a",
+  "candidate": "working-tree color outcome implementation before 0.0.47 release metadata and later callback Abort fix; not an exact final-head benchmark",
+  "mode": "debug; local shared host; descriptive timings only; no general performance improvement claim",
+  "jpeg": {
+    "command": "cargo test -p wml2 --test jpeg_cmyk_pipeline --features color-management --locked jpeg_cmyk_visual_benchmark -- --ignored --nocapture",
+    "method": "Three alternating baseline/candidate runs, 100 decodes per case per run. Values are integer microseconds/decode.",
+    "case_order": [
+      "baseline",
+      "progressive",
+      "icc-baseline",
+      "icc-progressive",
+      "ycck",
+      "icc-ycck"
+    ],
+    "baseline_us": [
+      [
+        144,
+        144,
+        2028,
+        2077,
+        58,
+        558
+      ],
+      [
+        120,
+        149,
+        2066,
+        2092,
+        58,
+        560
+      ],
+      [
+        120,
+        146,
+        2060,
+        2090,
+        58,
+        565
+      ]
+    ],
+    "candidate_us": [
+      [
+        120,
+        148,
+        2077,
+        2108,
+        59,
+        566
+      ],
+      [
+        119,
+        151,
+        2093,
+        2098,
+        59,
+        567
+      ],
+      [
+        119,
+        151,
+        2078,
+        2104,
+        58,
+        569
+      ]
+    ],
+    "pixels": "All six output PNG byte hashes match baseline."
+  },
+  "psd": {
+    "input": "local corpus psd/sample_640×426.psd",
+    "command": "review_bench decode-file 5 <input>; features color-management,jpeg-xl,psd",
+    "baseline_ns": [
+      61681375,
+      60561834,
+      59934625,
+      59273334,
+      59832041
+    ],
+    "candidate_ns": [
+      91093042,
+      59753708,
+      59286458,
+      58401542,
+      58664792
+    ],
+    "pixel_hash": 13735396012614154734,
+    "pixel_hash_equal": true,
+    "baseline_and_candidate_allocations": 96,
+    "baseline_and_candidate_allocated_bytes": 12660935,
+    "baseline_and_candidate_peak_live_bytes": 8099792,
+    "scope": "RGB PSD sample, not CMYK ICC oracle"
+  },
+  "jxl": {
+    "input": "wml2/tests/fixtures/review/jxl-icc-lossless.jxl",
+    "command": "review_bench decode-file 5 <input>; features color-management,jpeg-xl,psd",
+    "scope": "ordinary decode, not explicit sRGB API",
+    "baseline_ns": [
+      [
+        1674583,
+        1087459,
+        1027625,
+        1018834,
+        1014791
+      ],
+      [
+        1594834,
+        1062666,
+        1037500,
+        1072375,
+        1041750
+      ],
+      [
+        1555625,
+        1057167,
+        1030083,
+        1015875,
+        1036084
+      ]
+    ],
+    "candidate_ns": [
+      [
+        3683625,
+        1100125,
+        1027292,
+        1018666,
+        1037917
+      ],
+      [
+        1585959,
+        1057875,
+        1031083,
+        1009666,
+        1028292
+      ],
+      [
+        1009000,
+        644125,
+        613875,
+        600375,
+        594708
+      ]
+    ],
+    "pixel_hash": 11934725841428314993,
+    "pixel_hash_equal": true,
+    "warm_allocations": [
+      345,
+      349
+    ],
+    "warm_allocated_bytes": [
+      4335190,
+      4335294
+    ],
+    "peak_live_bytes": [
+      4197559,
+      4197559
+    ],
+    "note": "Clock/scheduling variability is visible; exclude first iteration as warmup. No speedup claim."
+  },
+  "images": [
+    {
+      "output": "baseline.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "2109dbf5512a0f7fd3758d61f65f575e580e4ac19c1c36164f1291f9ace801f7",
+      "baseline_png_sha256_equal": true,
+      "visually_inspected": false
+    },
+    {
+      "output": "icc-baseline.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "4d5febb3bd5af9ae6b1d77c6746d66c087ba94b0844f18130baaa200388de87a",
+      "baseline_png_sha256_equal": true,
+      "visually_inspected": true
+    },
+    {
+      "output": "icc-progressive.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "4d5febb3bd5af9ae6b1d77c6746d66c087ba94b0844f18130baaa200388de87a",
+      "baseline_png_sha256_equal": true,
+      "visually_inspected": true
+    },
+    {
+      "output": "icc-ycck.png",
+      "width": 8,
+      "height": 8,
+      "sha256": "5dd1387e97f3bec36f04e35ff4b5f1c30993f604b5af52ce9d1ac8caa364eb29",
+      "baseline_png_sha256_equal": true,
+      "visually_inspected": false
+    },
+    {
+      "output": "progressive.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "2109dbf5512a0f7fd3758d61f65f575e580e4ac19c1c36164f1291f9ace801f7",
+      "baseline_png_sha256_equal": true,
+      "visually_inspected": false
+    },
+    {
+      "output": "ycck.png",
+      "width": 8,
+      "height": 8,
+      "sha256": "1b58c4d1f37cf07392e4c686098665d57bcbd556874716f8eda1efb294033c84",
+      "baseline_png_sha256_equal": true,
+      "visually_inspected": false
+    },
+    {
+      "output": "jxl-icc-lossless.jxl.png",
+      "width": 7,
+      "height": 5,
+      "sha256": "069433abb75ece3e88095df23179681729903824488bcf4737d9bd383214b6c6",
+      "baseline_png_sha256_equal": null,
+      "visually_inspected": true
+    },
+    {
+      "output": "sample_640×426.psd.png",
+      "width": 640,
+      "height": 426,
+      "sha256": "d82a89e89fdd9ada61707d1d7aa93cf129e58505f1a99d1d1b19cdf2779003a2",
+      "baseline_png_sha256_equal": null,
+      "visually_inspected": true
+    }
+  ],
+  "tests": {
+    "cms": "JPEG/TIFF focused 48 passed, 1 ignored before Abort addition; added raw/common callback Abort regression passes for TIFF, baseline JPEG, progressive JPEG",
+    "without_cms": "JPEG/TIFF focused 35 passed before metadata budget follow-up",
+    "limitations": "Counts overlap other reports. Final-head full feature/platform checks are recorded separately."
+  }
+}

@@ -8,6 +8,9 @@
 //! errors. Conversion errors never change the route, including after earlier
 //! chunks have been drawn. The caller must discard its unpublished output
 //! chunk on error: this is not image-wide rollback or atomic streaming.
+use crate::color_outcome::{
+    ApproximationMethod, ApproximationReason, ColorOutcome, Conversion, OutputColorSpace,
+};
 use crate::warning::ImgWarning;
 type Error = Box<dyn std::error::Error>;
 
@@ -41,6 +44,7 @@ const CHUNK_PIXELS: usize = 256;
 /// Fixed scratch handles arbitrary caller chunks in bounded inner batches.
 pub(crate) struct CmykConverter {
     approximation: Approximation,
+    outcome: ColorOutcome,
     #[cfg(feature = "color-management")]
     transform: Option<icc_profile::Transform>,
     #[cfg(feature = "color-management")]
@@ -60,16 +64,37 @@ impl CmykConverter {
         compiled_budget: usize,
     ) -> Result<(Self, Option<CmykWarning>), Error> {
         let mut warning = None;
+        let method = match approximation {
+            Approximation::Additive => ApproximationMethod::AdditiveCmyk,
+            Approximation::Multiplicative => ApproximationMethod::MultiplicativeCmyk,
+        };
+        let mut outcome = ColorOutcome {
+            conversion: Conversion::Approximation(ApproximationReason::MissingProfile, method),
+            output: OutputColorSpace::DeviceApproximation,
+        };
         #[cfg(feature = "color-management")]
         let transform = if let Some(profile) = profile {
             use icc_profile::transform::TransformError;
             match prepare_transform(profile, compiled_budget) {
-                Ok(transform) => Some(transform),
+                Ok(transform) => {
+                    outcome = ColorOutcome {
+                        conversion: Conversion::AppliedToSrgb,
+                        output: OutputColorSpace::Srgb,
+                    };
+                    Some(transform)
+                }
                 Err(
                     error @ (TransformError::InvalidProfile(_)
                     | TransformError::MalformedProfile(_)
                     | TransformError::UnsupportedProfileFeature(_)),
                 ) => {
+                    let reason = match &error {
+                        TransformError::UnsupportedProfileFeature(_) => {
+                            ApproximationReason::UnsupportedProfile
+                        }
+                        _ => ApproximationReason::InvalidProfile,
+                    };
+                    outcome.conversion = Conversion::Approximation(reason, method);
                     warning = Some(CmykWarning::new(format!(
                         "{error}; using the decoder's device-CMYK approximation"
                     )));
@@ -84,6 +109,8 @@ impl CmykConverter {
         {
             let _ = compiled_budget;
             if profile.is_some() {
+                outcome.conversion =
+                    Conversion::Approximation(ApproximationReason::ColorManagementDisabled, method);
                 warning = Some(CmykWarning::new(
                     "embedded profile not applied because color-management is disabled; using the decoder's device-CMYK approximation",
                 ));
@@ -92,6 +119,7 @@ impl CmykConverter {
         Ok((
             Self {
                 approximation,
+                outcome,
                 #[cfg(feature = "color-management")]
                 transform,
                 #[cfg(feature = "color-management")]
@@ -105,6 +133,11 @@ impl CmykConverter {
             },
             warning,
         ))
+    }
+
+    /// Prepared route only: publish after the corresponding pixels converted successfully.
+    pub(crate) fn outcome(&self) -> ColorOutcome {
+        self.outcome
     }
 
     pub(crate) fn has_icc(&self) -> bool {

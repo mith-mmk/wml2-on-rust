@@ -23,7 +23,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
     let plane = fh.plane;
     let mut _huffman_scan_header;
 
-    let mut cmyk = JpegCmyk::prepare(header, &mut warnings)?;
+    let (mut cmyk, color_outcome) = JpegCmyk::prepare(header, &mut warnings)?;
     let mut packed = Vec::new();
     // decode
     option.drawer.init(width, height, InitOptions::new())?;
@@ -330,6 +330,7 @@ pub fn decode_progressive<'decode, B: BinaryReader>(
                                     )?;
                                 }
                             }
+                            publish_color_outcome(option, color_outcome)?;
                             option.drawer.terminate(None)?;
                             return Ok(warnings);
                         }

@@ -256,3 +256,6 @@ mod decode_guard;
 /// Bounded image information without pixel decoding.
 pub mod image_info;
 pub mod limits;
+
+/// Typed observations of actual color processing.
+pub mod color_outcome;

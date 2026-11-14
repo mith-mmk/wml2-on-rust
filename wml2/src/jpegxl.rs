@@ -1238,14 +1238,17 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
         "JPEG XL Source Header".into(),
         DataMap::Raw(input.codestream[..h.source_header_bytes].to_vec()),
     ));
-    let metadata_bytes = input.metadata.iter().try_fold(0usize, |n, (k, v)| {
-        let bytes = match v {
-            DataMap::Raw(b) | DataMap::ICCProfile(b) => b.len(),
-            DataMap::Ascii(s) => s.len(),
-            _ => 8,
-        };
-        add(n, add(k.len(), bytes)?)
-    })?;
+    let metadata_bytes = input.metadata.iter().try_fold(
+        crate::color_outcome::metadata_key(0).len() + 8,
+        |n, (k, v)| {
+            let bytes = match v {
+                DataMap::Raw(b) | DataMap::ICCProfile(b) => b.len(),
+                DataMap::Ascii(s) => s.len(),
+                _ => 8,
+            };
+            add(n, add(k.len(), bytes)?)
+        },
+    )?;
     limits::check(metadata_bytes, limits.metadata_bytes, "JPEG XL metadata")?;
     // Preflight already holds the 2x container allowance. Only generated
     // profiles/header/output metadata are additional at this boundary.
@@ -1459,6 +1462,25 @@ fn decode<B: BinaryReader, const MANAGED: bool, const CANCELLABLE: bool>(
             .or(legacy.as_deref())
             .unwrap_or(out),
         None,
+    )?;
+    // The codec has completed reconstruction and the optional CMS operation.
+    // Source/reconstruction/output profile records remain distinct above.
+    let outcome = if managed {
+        crate::color_outcome::ColorOutcome {
+            conversion: crate::color_outcome::Conversion::AppliedToSrgb,
+            output: crate::color_outcome::OutputColorSpace::Srgb,
+        }
+    } else {
+        crate::color_outcome::ColorOutcome {
+            conversion: crate::color_outcome::Conversion::NotApplied(
+                crate::color_outcome::NotAppliedReason::ReconstructionPreserved,
+            ),
+            output: crate::color_outcome::OutputColorSpace::Reconstruction,
+        }
+    };
+    option.drawer.set_metadata(
+        &crate::color_outcome::metadata_key(0),
+        outcome.to_metadata(),
     )?;
     for (key, value) in input.metadata {
         option.drawer.set_metadata(&key, value)?;

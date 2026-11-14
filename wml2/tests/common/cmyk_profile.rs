@@ -59,9 +59,8 @@ pub fn cmyk_profile() -> Vec<u8> {
     profile
 }
 
-/// The published 0.0.8 backend deliberately rejects CMYK. Candidate runs set
-/// WML2_TEST_CMYK_ICC=transform to make an unexpected fallback a hard failure.
-/// Published-backend CI can set it to fallback to pin that contract as well.
+/// The required published 0.1.0 backend must support this analytic CMYK profile.
+/// An explicit fallback override is retained only for historical-backend probes.
 pub fn supports_cmyk() -> bool {
     use icc_profile::{Profile, Transform, TransformOptions};
     let source = Profile::parse(&cmyk_profile()).unwrap();
@@ -73,7 +72,8 @@ pub fn supports_cmyk() -> bool {
         )) => false,
         Err(error) => panic!("unexpected CMYK backend failure: {error}"),
     };
-    if let Ok(expected) = std::env::var("WML2_TEST_CMYK_ICC") {
+    {
+        let expected = std::env::var("WML2_TEST_CMYK_ICC").unwrap_or_else(|_| "transform".into());
         assert!(matches!(expected.as_str(), "transform" | "fallback"));
         assert_eq!(
             supported,

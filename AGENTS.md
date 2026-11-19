@@ -6,3 +6,6 @@ Do not create or use any folders other than those starting with `.test*`.
 
 - If you modify the decoder or encoder, verify image display to ensure files remain readable and are not corrupted.
 - Run benchmarks to ensure performance has not degraded.
+
+# function tests
+- **MUST** Use tests folder.

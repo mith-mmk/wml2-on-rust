@@ -29,7 +29,7 @@ class PreparationTests(unittest.TestCase):
             for digest in ['a' * 64, 'b' * 64]:
                 transaction = "'https://archive.ubuntu.com/ubuntu/pool/f/ffmpeg_6.1_amd64.deb' ffmpeg_6.1_amd64.deb 42 SHA256:" + digest
                 metadata = f'Package: ffmpeg\nFilename: pool/f/ffmpeg_6.1_amd64.deb\nSize: 42\nSHA256: {digest}\n'
-                with patch.object(preparation.check_ffmpeg, 'usable', return_value=False), patch.object(preparation, 'ROOT', root), patch.object(preparation, 'STATE', root / 'state.json'), patch.object(Path, 'read_text', read), patch.object(preparation, 'run', side_effect=['amd64', '', '  Candidate: 7:6.1.1-3ubuntu5\n', transaction, metadata]) as run, patch.object(preparation, 'output') as output:
+                with patch.object(preparation.check_ffmpeg, 'usable', return_value=False), patch.object(preparation, 'APT_ROOT', root), patch.object(preparation, 'STATE', root / 'state.json'), patch.object(Path, 'read_text', read), patch.object(preparation, 'run', side_effect=['amd64', '', '  Candidate: 7:6.1.1-3ubuntu5\n', transaction, metadata]) as run, patch.object(preparation, 'output') as output:
                     preparation.plan()
                     state = json.loads((root / 'state.json').read_text())
                     self.assertEqual(state['version'], '7:6.1.1-3ubuntu5')
@@ -38,10 +38,30 @@ class PreparationTests(unittest.TestCase):
                     sources = (root / '.test-ffmpeg.sources').read_text()
                     self.assertIn('https://archive.ubuntu.com/ubuntu', sources)
                     self.assertIn('https://security.ubuntu.com/ubuntu', sources)
-                    self.assertIn('Signed-By:', sources)
+                    self.assertEqual(sources.count('Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg'), 2)
+                    self.assertEqual(sources.count('Targets: Packages'), 2)
+                    self.assertEqual(sources.count('Architectures: amd64'), 2)
+                    self.assertIn(f'Dir::State::lists={root / ".test-ffmpeg-lists"}', state['options'])
+                    self.assertIn('APT::Update::Error-Mode=any', run.call_args_list[1].args[0])
                     self.assertNotIn('trusted=yes', sources)
                     keys.append(output.call_args.kwargs['package_key'])
         self.assertNotEqual(*keys)
+
+    def test_refresh_retries_once_with_live_logs_and_fails_closed(self):
+        for results in ([subprocess.CalledProcessError(124, 'apt-get'), None],
+                        [subprocess.TimeoutExpired('apt-get', 180), subprocess.CalledProcessError(100, 'apt-get')]):
+            with patch.object(preparation, 'run', side_effect=results) as run, patch.object(preparation.time, 'sleep') as sleep, patch('builtins.print') as log:
+                if results[1] is None:
+                    preparation.update_indices(['signed-only-options'])
+                else:
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        preparation.update_indices(['signed-only-options'])
+                self.assertEqual(len(run.call_args_list), 2)
+                for call in run.call_args_list:
+                    self.assertEqual(call.args, (preparation.APT + ['signed-only-options', 'update'], 180))
+                    self.assertIs(call.kwargs['capture'], False)
+                sleep.assert_called_once_with(5)
+                self.assertTrue(any('timed out' in call.args[0] for call in log.call_args_list))
 
     def installation(self, results, usable=True):
         with tempfile.TemporaryDirectory(prefix='.test-ffmpeg-install-', dir='.') as directory:
@@ -72,7 +92,7 @@ class PreparationTests(unittest.TestCase):
             self.installation(['', '7:fixed'], usable=False)
 
     def test_timeout_covers_sudo_process_group(self):
-        with patch.object(preparation.subprocess, 'check_output') as check:
+        with patch.object(preparation.subprocess, 'run') as check:
             preparation.run(['sudo', 'apt-get', 'update'], 180)
             self.assertEqual(check.call_args.args[0][:3], ['timeout', '--kill-after=10s', '180s'])
             self.assertEqual(check.call_args.kwargs['timeout'], 200)

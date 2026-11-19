@@ -14,23 +14,42 @@ from pathlib import Path
 import re
 import shlex
 import subprocess
+import time
 from urllib.parse import unquote, urlparse
 
 import check_ffmpeg
 
 ROOT = Path(__file__).resolve().parents[2]
-STATE = ROOT / '.test-ffmpeg-state.json'
-ARCHIVES = ROOT / '.test-ffmpeg-debs'
+# apt's _apt-owned partial/ directories must not be scanned by rust-cache.
+APT_ROOT = Path(os.environ.get('RUNNER_TEMP') or ROOT)
+STATE = APT_ROOT / '.test-ffmpeg-state.json'
+ARCHIVES = APT_ROOT / '.test-ffmpeg-debs'
 APT = ['sudo', 'apt-get', '-o', 'Acquire::Retries=1', '-o', 'Acquire::http::Timeout=20',
        '-o', 'Acquire::https::Timeout=20', '-o', 'APT::Update::Error-Mode=any']
 
 
-def run(command, timeout):
+def run(command, timeout, *, capture=True):
     # Coreutils timeout forwards signals to the child process group, including
     # sudo/apt children. A Python timeout alone could leave apt running behind.
-    return subprocess.check_output(['timeout', '--kill-after=10s', f'{timeout}s', *command],
-                                   text=True, timeout=timeout + 20,
-                                   env={**os.environ, 'LC_ALL': 'C'})
+    return subprocess.run(['timeout', '--kill-after=10s', f'{timeout}s', *command],
+                          check=True, stdout=subprocess.PIPE if capture else None,
+                          text=True, timeout=timeout + 20,
+                          env={**os.environ, 'LC_ALL': 'C'}).stdout
+
+
+def update_indices(options):
+    for attempt in range(1, 3):
+        print(f'Refreshing signed Ubuntu package indices (attempt {attempt}/2, 180s limit)', flush=True)
+        try:
+            run(APT + options + ['update'], 180, capture=False)
+            return
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            timed_out = isinstance(error, subprocess.TimeoutExpired) or error.returncode in (124, 137)
+            reason = 'timed out' if timed_out else f'exit status {error.returncode}'
+            print(f'Ubuntu package index refresh failed: {reason}', flush=True)
+            if attempt == 2:
+                raise
+            time.sleep(5)
 
 
 def output(**values):
@@ -100,20 +119,21 @@ def plan():
     architecture = run(['dpkg', '--print-architecture'], 10).strip()
     if architecture != 'amd64':
         raise RuntimeError('FFmpeg fallback requires amd64')
-    sources = ROOT / '.test-ffmpeg.sources'
+    sources = APT_ROOT / '.test-ffmpeg.sources'
+    # Binary package indices suffice; omit translations and optional metadata.
     sources.write_text(
         'Types: deb\nURIs: https://archive.ubuntu.com/ubuntu\n'
-        'Suites: noble noble-updates\nComponents: main universe\n'
+        'Suites: noble noble-updates\nComponents: main universe\nArchitectures: amd64\nTargets: Packages\n'
         'Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n\n'
         'Types: deb\nURIs: https://security.ubuntu.com/ubuntu\n'
-        'Suites: noble-security\nComponents: main universe\n'
+        'Suites: noble-security\nComponents: main universe\nArchitectures: amd64\nTargets: Packages\n'
         'Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n', encoding='utf-8')
-    lists = ROOT / '.test-ffmpeg-lists'
+    lists = APT_ROOT / '.test-ffmpeg-lists'
     lists.mkdir(exist_ok=True)
     options = ['-o', f'Dir::Etc::sourcelist={sources}', '-o', 'Dir::Etc::sourceparts=-',
                '-o', f'Dir::State::lists={lists}', '-o', 'Dir::Cache::pkgcache=',
                '-o', 'Dir::Cache::srcpkgcache=']
-    print(run(APT + options + ['update'], 180), flush=True)
+    update_indices(options)
     policy = run(['apt-cache', *options, 'policy', 'ffmpeg'], 30)
     match = re.search(r'^\s*Candidate:\s*([0-9][A-Za-z0-9.+:~\-]*)\s*$', policy, re.MULTILINE)
     if not match:
@@ -144,7 +164,7 @@ def install():
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             if attempt:
                 raise
-            # Only discard package files inside our fixed workspace cache.
+            # Only discard package files inside our job-local archive cache.
             # Apt can fetch a corrupt/missing package again from signed sources.
             for package in ARCHIVES.glob('*.deb'):
                 package.unlink()

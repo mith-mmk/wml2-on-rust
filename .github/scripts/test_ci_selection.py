@@ -5,6 +5,7 @@ import subprocess
 import unittest
 from unittest.mock import patch
 import tomllib
+from urllib.parse import unquote
 
 import check_ffmpeg
 import select_ci as selection
@@ -87,6 +88,8 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual({(r['rust'], r['features']) for r in core + avif},
                          {(r['rust'], r['features']) for r in result['matrix']['include']})
         for row in core + avif:
+            self.assertNotIn(',', row['cache_features'])
+            self.assertEqual(unquote(row['cache_features']), row['features'])
             self.assertEqual(row['profile'], 'ci' if 'jpeg2000' in row['features'] else 'test')
             self.assertEqual(row['ffmpeg'], 'avifenc' in row['features'])
 

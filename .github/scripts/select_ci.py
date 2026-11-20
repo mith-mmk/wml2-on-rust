@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import tomllib
+from urllib.parse import quote
 
 FEATURES = [
     'default', 'minimal', 'jpeg-xl', 'jpeg-xl,image-buffer-ex',
@@ -154,7 +155,9 @@ def plan(event, base, head, manifest):
     for features in selected:
         for codec in CODECS & enabled_features(features, manifest):
             modes[codec] = 'full'
-    matrix = {'include': [{'rust': rust, 'features': f, 'avif': uses_avif(f, manifest),
+    # actions/cache keys cannot contain commas; leave Cargo's feature list untouched.
+    matrix = {'include': [{'rust': rust, 'features': f, 'cache_features': quote(f, safe=''),
+                           'avif': uses_avif(f, manifest),
                            'ffmpeg': bool(enabled_features(f, manifest) & {'avifenc', 'dep:avifenc_codec'}),
                            'profile': 'ci' if 'jpeg2000' in enabled_features(f, manifest) else 'test'}
                           for rust in ['1.91.0', 'stable'] for f in selected]}
@@ -164,7 +167,7 @@ def plan(event, base, head, manifest):
         modes['avif'] = 'full'
     # Job-level `if` handles the unselected case; keep a valid matrix even then.
     if not avif_matrix['include']:
-        avif_matrix = {'include': [{'rust': 'stable', 'features': 'minimal', 'avif': False, 'ffmpeg': False, 'profile': 'test'}]}
+        avif_matrix = {'include': [{'rust': 'stable', 'features': 'minimal', 'cache_features': 'minimal', 'avif': False, 'ffmpeg': False, 'profile': 'test'}]}
     return {'matrix': matrix, 'core_matrix': core_matrix, 'avif_matrix': avif_matrix,
             'full': full, 'avif': modes['avif'] == 'full',
             'jpeg2000': modes['jpeg2000'] == 'full', 'jpegxl': modes['jpeg-xl'] == 'full',

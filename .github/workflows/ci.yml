@@ -94,7 +94,7 @@ jobs:
         id: ffmpeg-cache
         if: steps.ffmpeg.outputs.ready == 'false'
         with:
-          path: .test-ffmpeg-debs/*.deb
+          path: ${{ runner.temp }}/.test-ffmpeg-debs/*.deb
           key: ${{ steps.ffmpeg.outputs.package_key }}
       - name: Install pinned distro packages and verify actual oracle operations
         if: steps.ffmpeg.outputs.ready == 'false'
@@ -102,19 +102,19 @@ jobs:
       - uses: actions/cache/save@v4
         if: steps.ffmpeg.outputs.ready == 'false' && steps.ffmpeg-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
-          path: .test-ffmpeg-debs/*.deb
+          path: ${{ runner.temp }}/.test-ffmpeg-debs/*.deb
           key: ${{ steps.ffmpeg.outputs.package_key }}
       - name: Mark package availability for same-run consumers
         run: |
-          mkdir -p .test-ffmpeg-debs
-          touch .test-ffmpeg-debs/package-info.json
+          mkdir -p "$RUNNER_TEMP/.test-ffmpeg-debs"
+          touch "$RUNNER_TEMP/.test-ffmpeg-debs/package-info.json"
       - uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-packages
           include-hidden-files: true
           path: |
-            .test-ffmpeg-debs/*.deb
-            .test-ffmpeg-debs/package-info.json
+            ${{ runner.temp }}/.test-ffmpeg-debs/*.deb
+            ${{ runner.temp }}/.test-ffmpeg-debs/package-info.json
           if-no-files-found: error
       - name: Bootstrap AVIF oracles once per run
         run: pwsh -File avif/scripts/bootstrap_oracles.ps1
@@ -144,7 +144,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: features-jpeg2000,image-buffer-ex-ci
+          shared-key: features-jpeg2000%2Cimage-buffer-ex-ci
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Exact bounded integration contracts
         env:
@@ -170,7 +170,7 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: features-${{ matrix.features }}-${{ matrix.profile }}
+          shared-key: features-${{ matrix.cache_features }}-${{ matrix.profile }}
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Test selected feature set
         env:
@@ -213,7 +213,7 @@ jobs:
         if: matrix.ffmpeg && steps.ffmpeg.outputs.ready == 'false'
         with:
           name: ffmpeg-packages
-          path: .test-ffmpeg-debs
+          path: ${{ runner.temp }}/.test-ffmpeg-debs
       - name: Install and validate FFmpeg for independent encoder tests
         if: matrix.ffmpeg && steps.ffmpeg.outputs.ready == 'false'
         run: python3 -B .github/scripts/prepare_ffmpeg.py install
@@ -223,7 +223,7 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: features-${{ matrix.features }}-${{ matrix.profile }}
+          shared-key: features-${{ matrix.cache_features }}-${{ matrix.profile }}
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Test selected feature set
         env:
